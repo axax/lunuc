@@ -1015,6 +1015,7 @@ class JsonDom extends React.Component {
                         }
 
                         if (eleProps._json) {
+                            eleProps._dynamic = this.props.dynamic
                             eleProps._tagName = tagName
                             eleProps._inlineEditor = this.props.inlineEditor
                             eleProps._options = $inlineEditor || {}

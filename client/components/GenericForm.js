@@ -446,6 +446,7 @@ class GenericForm extends React.Component {
             } else if (field.tab) {
                 let tab = this.getOrCreateTab(tabs, field)
                 currentFormFields = tab.fields
+
             }
 
 
@@ -469,16 +470,16 @@ class GenericForm extends React.Component {
                     let subFieldValues = []
                     if (value && value.constructor === Array) {
 
-                        value.forEach(val=>{
-                            subFieldValues.push(Object.assign({},val))
+                        value.forEach(val => {
+                            subFieldValues.push(Object.assign({}, val))
                         })
                     }
                     subFieldValues.forEach((values, index) => {
                         const valueFieldKey = fieldKey + '-' + index
                         let title = ''
-                        if(field.titleTemplate){
-                            title = Util.replacePlaceholders(field.titleTemplate,values)
-                        }else {
+                        if (field.titleTemplate) {
+                            title = Util.replacePlaceholders(field.titleTemplate, values)
+                        } else {
                             Object.keys(values).map(k => {
                                 if (title && values[k]) {
                                     title += ' / '
@@ -486,7 +487,6 @@ class GenericForm extends React.Component {
                                 title += values[k] || ''
                             })
                         }
-
 
 
                         currentFormFields.push(
@@ -508,7 +508,7 @@ class GenericForm extends React.Component {
                                 }} primaryButton={false} values={values} key={valueFieldKey} subForm={true}
                                              classes={classes}
                                              fields={subFields}/>
-                                <Button key={'delete'+valueFieldKey}
+                                <Button key={'delete' + valueFieldKey}
                                         color="secondary"
                                         size="small"
                                         onClick={() => {
@@ -598,13 +598,15 @@ class GenericForm extends React.Component {
                 })
 
             } else {
-                if (this.createInputField({uitype,
+                if (this.createInputField({
+                    uitype,
                     uistate: field.uistate,
                     field,
                     value,
                     currentFormFields,
                     fieldKey,
-                    fieldIndex})) {
+                    fieldIndex
+                })) {
                     continue
                 }
             }
@@ -656,6 +658,12 @@ class GenericForm extends React.Component {
         console.log('render GenericForm')
         const Wrapper = subForm ? 'div' : 'form'
 
+        for (let i = tabs.length - 1; i >= 0; i--) {
+            if (tabs[i].fields.length == 0) {
+                tabs.splice(i, 1)
+            }
+        }
+
         return (
             <Wrapper className={classes.form}>
                 {tabs.length === 0 && formFields}
@@ -704,7 +712,7 @@ class GenericForm extends React.Component {
         if (field.description) {
             currentFormFields.push(<p>{field.description}</p>)
         }
-        if (uitype === 'wrapper' || (uistate && uistate.visible && matchExpr(uistate.visible, this.state.fields)) ) {
+        if (uitype === 'wrapper' || (uistate && uistate.visible && matchExpr(uistate.visible, this.state.fields))) {
             // do nothing
         } else if (['json', 'editor', 'jseditor', 'css'].indexOf(uitype) >= 0) {
 

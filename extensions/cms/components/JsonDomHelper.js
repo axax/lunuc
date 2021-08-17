@@ -625,7 +625,6 @@ const m = Math.max((offX+offY) / 2,100)
         e.stopPropagation()
         e.preventDefault()
         const {_cmsActions, _key, _json, _scope} = this.props
-
         _cmsActions.editTemplate(_key, _json, _scope)
         this.setState({toolbarHovered: false, hovered: false, dragging: false})
 
@@ -824,9 +823,12 @@ const m = Math.max((offX+offY) / 2,100)
     }
 
     render() {
-        const {classes, _WrappedComponent, _json, _cmsActions, _onTemplateChange, _onDataResolverPropertyChange, children, _tagName, _options, _user, _inlineEditor, onChange, onClick, ...rest} = this.props
+        const {classes, _WrappedComponent, _json, _cmsActions, _onTemplateChange, _onDataResolverPropertyChange, children, _tagName, _options, _user, _inlineEditor, _dynamic, onChange, onClick, ...rest} = this.props
         const {hovered, toolbarHovered, toolbarMenuOpen, addChildDialog, deleteConfirmDialog, deleteSourceConfirmDialog} = this.state
 
+        if(!rest._key){
+            return
+        }
         const menuItems = [],
             isCms = _tagName === 'Cms',
             isInLoop = rest._key.indexOf('$loop') >= 0,
@@ -876,6 +878,11 @@ const m = Math.max((offX+offY) / 2,100)
                 parsedSource = this.parseDataSource(_options.source)
             }
 
+        }
+
+        if(!parsedSource && _dynamic){
+            return <_WrappedComponent
+                {...rest}>{children}</_WrappedComponent>
         }
 
         const isDraggable = !isInLoop && hasJsonToEdit && _options.allowDrag !== false
@@ -986,131 +993,134 @@ const m = Math.max((offX+offY) / 2,100)
                         })
                     }
                 }
-                if (_options.menu.edit !== false && _options.elementKey) {
-                    const jsonElement = getJsonDomElements(_options.elementKey)
 
-                    if (jsonElement && (isCms || jsonElement.options || jsonElement.groupOptions)) {
+                if(!_dynamic) {
+                    if (_options.menu.edit !== false && _options.elementKey) {
+                        const jsonElement = getJsonDomElements(_options.elementKey)
 
-                        editElementEvent = () => {
-                            this.handleEditElement(jsonElement, subJson, isCms)
-                        }
-                        menuItems.push({
-                            name: _options.menuTitle.edit || 'Bearbeiten',
-                            icon: <EditIcon/>,
-                            onClick: editElementEvent
-                        })
-                    }
-                }
+                        if (jsonElement && (isCms || jsonElement.options || jsonElement.groupOptions)) {
 
-                if (_options.menu.editTemplate !== false && Util.hasCapability(_user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
-                    menuItems.push({
-                        name: 'Template bearbeiten',
-                        icon: <BuildIcon/>,
-                        onClick: this.handleTemplateEditClick.bind(this)
-                    })
-                }
-
-                if (_options.menu.clone !== false) {
-                    menuItems.push({
-                        name: 'Element duplizieren',
-                        icon: <FileCopyIcon/>,
-                        onClick: this.handleCopyClick.bind(this)
-                    })
-                }
-
-                if (!isInLoop) {
-
-
-                    if (_options.allowDrop && _options.menu.add !== false) {
-                        menuItems.push({
-                            name: 'Element hinzufügen',
-                            icon: <AddIcon/>,
-                            onClick: () => {
-                                JsonDomHelper.disableEvents = true
-                                this.setState({addChildDialog: {selected: false}})
+                            editElementEvent = () => {
+                                this.handleEditElement(jsonElement, subJson, isCms)
                             }
-                        })
-                    }
-
-                    if (_options.menu.addAbove !== false) {
-
-                        menuItems.push({
-                            name: 'Element oberhalb einfügen',
-                            icon: <PlaylistAddIcon/>,
-                            onClick: () => {
-                                JsonDomHelper.disableEvents = true
-                                this.setState({addChildDialog: {selected: false, addabove: true}})
-                            }
-                        })
-                    }
-
-                    if (_options.menu.addBelow !== false) {
-                        menuItems.push({
-                            name: 'Element unterhalb einfügen',
-                            icon: <PlaylistAddIcon/>,
-                            onClick: () => {
-                                JsonDomHelper.disableEvents = true
-                                this.setState({addChildDialog: {selected: false, addbelow: true}})
-                            }
-                        })
-                    }
-                    if (_options.menu.wrap !== false) {
-                        menuItems.push({
-                            name: 'Element ausserhalb einfügen',
-                            icon: <FlipToBackIcon/>,
-                            onClick: () => {
-                                JsonDomHelper.disableEvents = true
-                                this.setState({addChildDialog: {selected: false, wrap: true}})
-                            }
-                        })
-                    }
-                }
-
-                if (_options.menu.remove !== false) {
-                    menuItems.push({
-                        name: 'Element entfernen',
-                        icon: <DeleteIcon/>,
-                        onClick: () => {
-                            JsonDomHelper.disableEvents = true
-                            this.setState({deleteConfirmDialog: true})
-                        }
-                    })
-                }
-
-                if (_options.menu.clipboard !== false) {
-                    menuItems.push({
-                        divider: true,
-                        name: 'Element in Zwischenablage kopieren',
-                        icon: <FileCopyIcon/>,
-                        onClick: () => {
-                            navigator.clipboard.writeText(JSON.stringify(subJson, null, 2))
-                        }
-                    })
-
-
-                    menuItems.push({
-                        name: 'Element von Zwischenablage einfügen',
-                        icon: <FileCopyIcon/>,
-                        onClick: () => {
-
-                            navigator.clipboard.readText().then(text => {
-                                if (text) {
-                                    try {
-                                        const json = JSON.parse(text),
-                                            pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1)) + 1
-
-                                        this.handleAddChildClick(json, pos)
-
-                                    } catch (e) {
-
-                                    }
-                                }
-                            }).catch(err => {
-                                console.log('Something went wrong', err)
+                            menuItems.push({
+                                name: _options.menuTitle.edit || 'Bearbeiten',
+                                icon: <EditIcon/>,
+                                onClick: editElementEvent
                             })
-
                         }
-                    })
+                    }
+
+                    if (_options.menu.editTemplate !== false && Util.hasCapability(_user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
+                        menuItems.push({
+                            name: 'Template bearbeiten',
+                            icon: <BuildIcon/>,
+                            onClick: this.handleTemplateEditClick.bind(this)
+                        })
+                    }
+
+                    if (_options.menu.clone !== false) {
+                        menuItems.push({
+                            name: 'Element duplizieren',
+                            icon: <FileCopyIcon/>,
+                            onClick: this.handleCopyClick.bind(this)
+                        })
+                    }
+
+                    if (!isInLoop) {
+
+
+                        if (_options.allowDrop && _options.menu.add !== false) {
+                            menuItems.push({
+                                name: 'Element hinzufügen',
+                                icon: <AddIcon/>,
+                                onClick: () => {
+                                    JsonDomHelper.disableEvents = true
+                                    this.setState({addChildDialog: {selected: false}})
+                                }
+                            })
+                        }
+
+                        if (_options.menu.addAbove !== false) {
+
+                            menuItems.push({
+                                name: 'Element oberhalb einfügen',
+                                icon: <PlaylistAddIcon/>,
+                                onClick: () => {
+                                    JsonDomHelper.disableEvents = true
+                                    this.setState({addChildDialog: {selected: false, addabove: true}})
+                                }
+                            })
+                        }
+
+                        if (_options.menu.addBelow !== false) {
+                            menuItems.push({
+                                name: 'Element unterhalb einfügen',
+                                icon: <PlaylistAddIcon/>,
+                                onClick: () => {
+                                    JsonDomHelper.disableEvents = true
+                                    this.setState({addChildDialog: {selected: false, addbelow: true}})
+                                }
+                            })
+                        }
+                        if (_options.menu.wrap !== false) {
+                            menuItems.push({
+                                name: 'Element ausserhalb einfügen',
+                                icon: <FlipToBackIcon/>,
+                                onClick: () => {
+                                    JsonDomHelper.disableEvents = true
+                                    this.setState({addChildDialog: {selected: false, wrap: true}})
+                                }
+                            })
+                        }
+                    }
+
+                    if (_options.menu.remove !== false) {
+                        menuItems.push({
+                            name: 'Element entfernen',
+                            icon: <DeleteIcon/>,
+                            onClick: () => {
+                                JsonDomHelper.disableEvents = true
+                                this.setState({deleteConfirmDialog: true})
+                            }
+                        })
+                    }
+
+                    if (_options.menu.clipboard !== false) {
+                        menuItems.push({
+                            divider: true,
+                            name: 'Element in Zwischenablage kopieren',
+                            icon: <FileCopyIcon/>,
+                            onClick: () => {
+                                navigator.clipboard.writeText(JSON.stringify(subJson, null, 2))
+                            }
+                        })
+
+
+                        menuItems.push({
+                            name: 'Element von Zwischenablage einfügen',
+                            icon: <FileCopyIcon/>,
+                            onClick: () => {
+
+                                navigator.clipboard.readText().then(text => {
+                                    if (text) {
+                                        try {
+                                            const json = JSON.parse(text),
+                                                pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1)) + 1
+
+                                            this.handleAddChildClick(json, pos)
+
+                                        } catch (e) {
+
+                                        }
+                                    }
+                                }).catch(err => {
+                                    console.log('Something went wrong', err)
+                                })
+
+                            }
+                        })
+                    }
                 }
             }
 

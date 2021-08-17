@@ -19,8 +19,11 @@ export const isPreview = () => {
 }
 
 export const isEditMode = (props) => {
-    const {user, dynamic, cmsPage} = props
+    const {user, dynamic, cmsPage, forceEditMode} = props
 
+    if(forceEditMode){
+        return true
+    }
     if(cmsPage) {
         if (cmsPage.publicEdit) {
             return true
