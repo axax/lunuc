@@ -91,7 +91,7 @@
     "jsonwebtoken": "^8.5.1",
     "mail-notifier": "^0.5.0",
     "merge-graphql-schemas": "^1.7.8",
-    "mongodb": "^4.1.0",
+    "mongodb": "^3.6.10",
     "natural": "^5.0.4",
     "node-cron": "^3.0.0",
     "node-fetch": "^2.6.1",
