@@ -707,7 +707,7 @@ class JsonDom extends React.Component {
 
                 if( $is === false) {
                     return
-                }else if ($is && $is !== 'true') {
+                }else if ($is && $is !== true && $is !== 'true') {
                     if ($is === 'false' || matchExpr($is, scope)) {
                         return
                     }
@@ -1268,10 +1268,24 @@ class JsonDom extends React.Component {
                 }
             }
         }
+        // pass event to components
+        if (finalArgs._passEvent) {
 
-        // pass event to parent
-        if (this.props._parentRef && finalArgs._passEvent) {
-            this.props._parentRef.runJsEvent(name, async, ...args)
+            if(finalArgs._passEvent=='all') {
+                // to all components
+                const comps = this.getAllComponents()
+                const keys = Object.keys(comps)
+                delete finalArgs._passEvent
+                for (let i = 0; i < keys.length; i++) {
+                    const o = comps[keys[i]]
+                    if (o.comp !== this) {
+                        o.comp.runJsEvent(name, async, ...args)
+                    }
+                }
+            }else if (this.props._parentRef) {
+                // to parents only
+                this.props._parentRef.runJsEvent(name, async, ...args)
+            }
         }
     }
 
@@ -1380,32 +1394,30 @@ class JsonDom extends React.Component {
         }
         return root
     }
-    getComponent = (id) => {
-        if (!id) {
-            return null
-        }
-
-        const jsGetComponentRec = (comp, id) => {
-            let res = null
+    getAllComponents = () =>{
+        const jsGetComponentRec = (comp, data) => {
             if (comp && comp.componentRefs) {
-                let k
-                for (k of Object.keys(comp.componentRefs)) {
-                    const o = comp.componentRefs[k].comp
-                    if (id === k) {
-                        res = o
-                        break
-                    } else {
-                        res = jsGetComponentRec(o, id)
-                        if (res) {
-                            break
-                        }
-                    }
+                Object.assign(data, comp.componentRefs)
+                const keys = Object.keys(comp.componentRefs)
+                for(let i=0;i<keys.length;i++) {
+                    jsGetComponentRec(comp.componentRefs[keys[i]].comp,data)
                 }
 
             }
-            return res
+            return data
         }
-        return jsGetComponentRec(this.getRootComponent(), id)
+
+        return jsGetComponentRec(this.getRootComponent(), {})
+    }
+    getComponent = (id) => {
+        if (id) {
+            const comps = this.getAllComponents()
+
+            if (comps[id]) {
+                return comps[id].comp
+            }
+        }
+        return null
     }
 
     setStyle = (style, preprocess, id, inworker) => {
