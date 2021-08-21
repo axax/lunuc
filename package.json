@@ -74,7 +74,7 @@
     "body-parser": "^1.19.0",
     "cheerio": "^1.0.0-rc.10",
     "classnames": "^2.3.1",
-    "codemirror": "^5.62.2",
+    "codemirror": "^5.62.3",
     "compression": "^1.7.4",
     "draft-js": "^0.11.7",
     "draft-js-drag-n-drop-plugin": "^2.0.4",
@@ -91,7 +91,7 @@
     "jsonwebtoken": "^8.5.1",
     "mail-notifier": "^0.5.0",
     "merge-graphql-schemas": "^1.7.8",
-    "mongodb": "^3.6.10",
+    "mongodb": "^4.1.0",
     "natural": "^5.0.4",
     "node-cron": "^3.0.0",
     "node-fetch": "^2.6.1",
@@ -115,16 +115,16 @@
   "optionalDependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@ffprobe-installer/ffprobe": "^1.2.0",
-    "@google-cloud/storage": "^5.13.0",
+    "@google-cloud/storage": "^5.13.1",
     "@google-cloud/translate": "^6.2.7",
-    "aws-sdk": "^2.970.0",
+    "aws-sdk": "^2.973.0",
     "fluent-ffmpeg": "^2.1.2",
     "lighthouse": "^8.3.0",
-    "mssql": "^7.2.0",
+    "mssql": "^7.2.1",
     "native-dns": "^0.7.0",
     "nodemon": "^2.0.12",
     "puppeteer": "^10.2.0",
-    "soap": "^0.40.0",
+    "soap": "^0.41.0",
     "xml2js": "^0.4.23",
     "ytdl-core": "^4.9.1"
   },
@@ -146,9 +146,9 @@
     "react-test-renderer": "^17.0.2",
     "style-loader": "^3.2.1",
     "terser-webpack-plugin": "^5.1.4",
-    "webpack": "^5.50.0",
+    "webpack": "^5.51.1",
     "webpack-bundle-analyzer": "^4.4.2",
     "webpack-cli": "^4.8.0",
-    "webpack-dev-server": "^3.11.2"
+    "webpack-dev-server": "^4.0.0"
   }
 }
