@@ -1275,11 +1275,12 @@ class JsonDom extends React.Component {
                 // to all components
                 const comps = this.getAllComponents()
                 const keys = Object.keys(comps)
-                delete finalArgs._passEvent
+                const newArgs = args.slice(0)
+                newArgs[0] = Object.assign({},newArgs[0],{_passEvent: false})
                 for (let i = 0; i < keys.length; i++) {
                     const o = comps[keys[i]]
                     if (o.comp !== this) {
-                        o.comp.runJsEvent(name, async, ...args)
+                        o.comp.runJsEvent(name, async, ...newArgs)
                     }
                 }
             }else if (this.props._parentRef) {
