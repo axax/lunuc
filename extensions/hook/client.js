@@ -7,3 +7,9 @@ try {
 } catch (ex) {
     console.log(ex)
 }
+
+
+
+export default () => {
+
+}

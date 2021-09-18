@@ -179,6 +179,8 @@ export const MenuListItem = ({primary, secondary, ...rest}) => {
 import MaterialCard from '@material-ui/core/Card'
 import MaterialCardActions from '@material-ui/core/CardActions'
 import MaterialCardContent from '@material-ui/core/CardContent'
+export CardContent from '@material-ui/core/CardContent'
+export CardActions from '@material-ui/core/CardActions'
 
 export const Card = ({children, ...rest}) => {
     return <MaterialCard {...rest}>

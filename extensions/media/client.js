@@ -18,3 +18,8 @@ Hook.on('Routes', ({routes, container}) => {
         }
     })
 }, 99)
+
+export default () => {
+
+
+}

@@ -161,7 +161,6 @@ export default function (WrappedComponent) {
             let resolvedDataJson
             if (!internal) {
                 resolvedDataJson = JSON.parse(cmsPage.resolvedData)
-
                 // Update data in resolved data
                 const kvk = resolvedDataJson._meta && resolvedDataJson._meta.keyValueKey
                 if (kvk) {

@@ -264,8 +264,21 @@ if (DEV_MODE) {
     config.plugins.push(new webpack.HotModuleReplacementPlugin())
 
     config.devServer = {
-        publicPath: '/',
-        contentBase: [path.join(__dirname, ''), path.join(__dirname, 'static'), path.join(__dirname, APP_VALUES.UPLOAD_DIR)],
+        /*contentBase: [path.join(__dirname, ''), path.join(__dirname, 'static'), path.join(__dirname, APP_VALUES.UPLOAD_DIR)],*/
+        static: [
+            {
+                directory: path.resolve(__dirname, ''),
+                publicPath: '/'
+            },
+            {
+                directory: path.resolve(__dirname, 'static'),
+                publicPath: '/'
+            },
+            {
+                directory: path.resolve(__dirname, APP_VALUES.UPLOAD_DIR),
+                publicPath: '/'
+            }
+        ],
         historyApiFallback: {
             rewrites: [
                 {
@@ -283,18 +296,23 @@ if (DEV_MODE) {
                 }
             ]
         },
-        inline: true,
+        /*inline: true,*/
         hot: true,
-        stats: 'errors-only',
         port: PORT,
         host: '0.0.0.0',
         proxy: {
             '/graphql': {target: `http://0.0.0.0:${API_PORT}`},
             ['/' + APP_VALUES.API_PREFIX]: {target: `http://0.0.0.0:${API_PORT}`},
-            '/ws': {
+            '/lunucws': {
                 target: `ws://0.0.0.0:${API_PORT}`,
                 ws: true
             }
+        },
+        devMiddleware: {
+
+            publicPath: '/',
+            stats: 'errors-only'
+
         }
     }
 

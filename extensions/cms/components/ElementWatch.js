@@ -154,6 +154,7 @@ class ElementWatch extends React.Component {
                 this.setState({madeVisible: true})
             })
         }else{
+
             loadedSvgData.loading = true
             fetch(tagSrc).then((response) => response.blob()).then((blob) => {
                 const reader = new FileReader()

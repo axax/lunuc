@@ -22,7 +22,7 @@ const RequestType = {
 
 const location = window.location
 let GRAPHQL_URL = `${location.protocol}//${location.hostname}:${location.port}/graphql`
-let GRAPHQL_WS_URL = (location.protocol === 'https:' ? 'wss' : 'ws') + `://${location.hostname}:${location.port}/ws`
+let GRAPHQL_WS_URL = (location.protocol === 'https:' ? 'wss' : 'ws') + `://${location.hostname}:${location.port}/lunucws`
 
 export let SSR_FETCH_CHAIN = {}
 

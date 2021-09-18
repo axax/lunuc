@@ -10,10 +10,13 @@ import Button from '@material-ui/core/Button'
 import {withStyles} from '@material-ui/core/styles'
 
 const styles = theme => ({
+    root: {
+        zIndex: '9999 !important'
+    },
     paper: {
         overflow: 'visible'
     },
-    root: {
+    contentRoot: {
         overflow: 'visible'
     }
 })
@@ -24,6 +27,7 @@ export const SimpleDialog = withMobileDialog()(({classes, children, onClose, act
         onClose={onClose}
         disableEnforceFocus={true}
         classes={{
+            root: classes.root,
             paper: classes.paper,
         }}
         scroll="body"
@@ -31,7 +35,7 @@ export const SimpleDialog = withMobileDialog()(({classes, children, onClose, act
         <DialogTitle id="responsive-dialog-title">{title}</DialogTitle>
         <DialogContent
             classes={{
-                root: classes.root
+                root: classes.contentRoot
             }}>
             {children.constructor === String ?
                 <DialogContentText>

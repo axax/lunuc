@@ -4,7 +4,8 @@
 require("@babel/register")
 require('./util/localStorage')
 
-const fetch = require('node-fetch')
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+
 const config = require('../gensrc/config').default
 
 globalThis.fetch = fetch

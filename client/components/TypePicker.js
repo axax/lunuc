@@ -43,14 +43,14 @@ const styles = theme => {
         suggestions: {
             position: 'absolute',
             zIndex: 999,
-            top: '100%',
+            top: '3rem',
             maxWidth: '100%'
         },
         clips: {
             display: 'flex',
             width: '100%',
             flexWrap: 'wrap',
-            marginTop: theme.spacing(0),
+            marginTop: theme.spacing(1),
             marginBottom: theme.spacing(0)
         },
         clip: {
