@@ -11,7 +11,7 @@ import {withStyles} from '@material-ui/core/styles'
 
 const styles = theme => ({
     root: {
-        zIndex: '9999 !important'
+        /*zIndex: '9999 !important'*/
     },
     paper: {
         overflow: 'visible'

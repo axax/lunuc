@@ -21,6 +21,16 @@ export const theme = createTheme({
         primary: blue,
     },
     overrides: {
+        MuiDialog: {
+            root: {
+                zIndex: '9999 !important'
+            }
+        },
+        MuiPopover: {
+            root: {
+                zIndex: '9999 !important'
+            }
+        },
         MuiButton: {
             // Name of the styleSheet
             root: {
