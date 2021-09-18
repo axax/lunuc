@@ -93,7 +93,7 @@ const defaultWSHandler = (err, req, socket, head) => {
 }
 
 const webSocket = function (req, socket, head) {
-    if (req.url === '/ws') {
+    if (req.url === '/lunucws') {
         socket.on('error', (e)=>{
             console.log('ws socket error',e)
         })
