@@ -69,7 +69,7 @@ class Routes extends React.Component {
             let newPath
             if (path.constructor === Object)
                 path = path.pathname
-            if (path.indexOf('#')!==0 && path.split('?')[0].split('#')[0] !== _app_.contextPath && path.indexOf(_app_.contextPath + '/') !== 0) {
+            if (path.indexOf('#') !== 0 && path.split('?')[0].split('#')[0] !== _app_.contextPath && path.indexOf(_app_.contextPath + '/') !== 0) {
                 newPath = _app_.contextPath + path
             } else {
                 newPath = path
@@ -92,6 +92,11 @@ class Routes extends React.Component {
             this.history._push(encodeURI(newPath), state)
         }
         this.history.replace = (o, state) => {
+
+            if (o.constructor !== Object) {
+                o = {pathname: o}
+            }
+
             if (o.pathname !== _app_.contextPath && o.pathname.indexOf(_app_.contextPath + '/') < 0) {
                 o.pathname = _app_.contextPath + o.pathname
             }

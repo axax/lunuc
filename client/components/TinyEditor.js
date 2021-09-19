@@ -161,6 +161,7 @@ class TinyEditor extends React.Component {
                         }, 0)
                     },
                     init_instance_callback: (editor) => {
+
                         editor.on('Change', (e) => {
                             const {onChange, name} = this.props
                             if (onChange) {
@@ -180,7 +181,7 @@ class TinyEditor extends React.Component {
 
             }
             if (!window.tinymce) {
-                DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.8.2/tinymce.min.js', {
+                DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.9.2/tinymce.min.js', {
                     onload: assestLoaded
                 }, {ignoreIfExist: true})
             } else {
