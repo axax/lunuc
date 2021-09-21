@@ -46,12 +46,9 @@ export default db => ({
                 createdBy: ObjectId(context.id)
             })
 
-            if (insertResult.insertedCount) {
-                const doc = insertResult.ops[0]
-
-
+            if (insertResult.insertedId) {
                 return {
-                    _id: doc._id,
+                    _id: insertResult.insertedId,
                     title,
                     body,
                     createdBy: {

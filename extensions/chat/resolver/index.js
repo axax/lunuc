@@ -485,10 +485,9 @@ export default (db) => ({
                 users: [ObjectId(context.id)]
             })
 
-            if (insertResult.insertedCount) {
-                const doc = insertResult.ops[0]
+            if (insertResult.insertedId) {
                 return {
-                    _id: doc._id,
+                    _id: insertResult.insertedId,
                     name: name,
                     messages: [],
                     createdBy: {_id: context.id, username: context.username},

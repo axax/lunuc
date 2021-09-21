@@ -21,7 +21,7 @@ Hook.on('schema', ({schemas}) => {
 
 // Hook to add mongodb schema
 Hook.on('NewUserCreated', async ({meta, email, insertResult, db, language}) => {
-    if (insertResult.insertedCount) {
+    if (insertResult.insertedId) {
         if (meta && meta.newsletter) {
             const user = (await db.collection('User').findOne({email}))
 

@@ -323,9 +323,8 @@ const GenericResolver = {
             ...dataSet,
             createdBy: ObjectId(createdBy)
         })
-        if (insertResult.insertedCount) {
-            const doc = insertResult.ops[0]
 
+        if (insertResult.insertedId) {
             const newData = Object.keys(data).reduce((o, k) => {
                 const item = data[k]
                 if (item === null || item === undefined) {
@@ -344,7 +343,7 @@ const GenericResolver = {
             }, {})
 
             const resultData = {
-                _id: doc._id,
+                _id: insertResult.insertedId,
                 status: 'created',
                 createdBy: {
                     _id: ObjectId(createdBy),
@@ -638,11 +637,10 @@ const GenericResolver = {
         delete clone._id
 
         const insertResult = await collection.insertOne(clone)
-        if (insertResult.insertedCount) {
-            const doc = insertResult.ops[0]
+        if (insertResult.insertedId) {
 
             const result = {
-                _id: doc._id,
+                _id: insertResult.insertedId,
                 status: 'created',
                 createdBy: {
                     _id: ObjectId(context.id),

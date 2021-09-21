@@ -101,6 +101,7 @@ const createUser = async ({username, role, junior, password, language, email, em
     let insertResult
     if (!opts.override || !userExists) {
         insertResult = await userCollection.insertOne(dataToInsert)
+        dataToInsert._id = insertResult.insertedId
     } else {
         insertResult = await userCollection.updateOne(
             {_id: existingUser._id},
@@ -108,8 +109,11 @@ const createUser = async ({username, role, junior, password, language, email, em
                 $set: dataToInsert
             }
         )
-        insertResult.ops = [dataToInsert]
+        dataToInsert._id = existingUser._id
+
     }
+    insertResult.ops = [dataToInsert]
+
     Hook.call('NewUserCreated', {insertResult, meta, email, db, language: dataToInsert.language})
 
     return insertResult
@@ -369,7 +373,7 @@ export const userResolver = (db) => ({
                 junior
             })
 
-            if (insertResult.insertedCount) {
+            if (insertResult.ops && insertResult.ops.length > 0 ) {
                 const doc = insertResult.ops[0]
                 return doc
             }
@@ -407,7 +411,7 @@ export const userResolver = (db) => ({
 
             const insertResult = await createUser({db, context, username, email, password, meta}, options)
 
-            if (insertResult.insertedCount || insertResult.modifiedCount) {
+            if (insertResult.ops && insertResult.ops.length > 0 ) {
                 if (mailTemplate) {
                     const signupToken = insertResult.ops[0].signupToken
 
