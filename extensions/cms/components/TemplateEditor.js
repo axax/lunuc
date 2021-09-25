@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import CodeEditor from 'client/components/CodeEditor'
-import JsonEditor from './JsonEditor'
+import JsonDomEditor from './JsonDomEditor'
 import {Tabs, Tab, CodeIcon, WebIcon, SubjectIcon, withStyles} from 'ui/admin'
 import {getComponentByKey} from '../util/jsonDomUtil'
 import {jsonPropertyTemplates, jsonTemplates} from './templates/template'
@@ -168,7 +168,7 @@ class TemplateEditor extends React.Component {
 
             </TabContainer>}
             {currentTab === 1 && <TabContainer>
-                <JsonEditor onChange={this.handleChange.bind(this)}>{data}</JsonEditor>
+                <JsonDomEditor onChange={this.handleChange.bind(this)}>{data}</JsonDomEditor>
             </TabContainer>}
             {component && currentTab === 2 && <TabContainer>
                 <CodeEditor showFab fabButtonStyle={fabButtonStyle} lineNumbers type="json" readOnly>

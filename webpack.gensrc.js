@@ -45,8 +45,12 @@ GenSourceCode.prototype.apply = function (compiler) {
         let clientContent = GENSRC_HEADER, serverContent = GENSRC_HEADER, manifestJson = {},
             clientAdminContent = GENSRC_HEADER
 
-        clientContent += '\nconst settings = (_app_.localSettings && _app_.localSettings.extensions) || {}\n\n'
-        clientAdminContent += '\nconst settings = (_app_.localSettings && _app_.localSettings.extensions) || {}\n\n'
+        let base = '\nconst settings = (_app_.localSettings && _app_.localSettings.extensions) || {}\n'
+        base += 'const start = (f, s)=>{if(typeof f === "function" && (!settings[s] || settings[s].enabled)){f()}}\n\n'
+
+        clientContent += base
+
+        clientAdminContent += base
 
         for (const file of exteionsion) {
             if (fs.statSync(EXTENSION_PATH + file).isDirectory()) {
@@ -118,7 +122,7 @@ GenSourceCode.prototype.apply = function (compiler) {
                          gensrcExtension(file,buildOptions)
                          }*/
                         if (fs.existsSync(EXTENSION_PATH + file + '/client-admin.js')) {
-                            clientAdminContent += `import ${file} from '.${EXTENSION_PATH}${file}/client-admin.js'\nif(typeof ${file} === "function" && (!settings['${file}'] || settings['${file}'].enabled)){\n\t${file}()\n}\n`
+                            clientAdminContent += `import ${file} from '.${EXTENSION_PATH}${file}/client-admin.js'\nstart(${file},'${file}')\n`
                         }
                         if (fs.existsSync(EXTENSION_PATH + file + '/client.js')) {
                             if (manifestJson[file].lazyLoad) {
@@ -126,7 +130,7 @@ GenSourceCode.prototype.apply = function (compiler) {
 import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
 `
                             } else {
-                                clientContent += `import ${file} from '.${EXTENSION_PATH}${file}/client.js'\nif(typeof ${file} === "function" && (!settings['${file}'] || settings['${file}'].enabled)){\n\t${file}()\n}\n`
+                                clientContent += `import ${file} from '.${EXTENSION_PATH}${file}/client.js'\nstart(${file},'${file}')\n`
                             }
                         }
                         if (fs.existsSync(EXTENSION_PATH + file + '/server.js')) {

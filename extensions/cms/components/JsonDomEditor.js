@@ -17,6 +17,7 @@ import {getComponentByKey, addComponent, removeComponent} from '../util/jsonDomU
 import DomUtil from 'client/util/dom'
 import DomUtilAdmin from 'client/util/domAdmin'
 import {getJsonDomElements} from '../util/elements'
+
 const INDENT = 30
 
 const styles = theme => ({
@@ -25,7 +26,7 @@ const styles = theme => ({
     }
 })
 
-class JsonEditor extends React.Component {
+class JsonDomEditor extends React.Component {
 
 
     constructor(props) {
@@ -33,21 +34,28 @@ class JsonEditor extends React.Component {
 
         this.state = {
             dataOri: props.children,
-            open: JsonEditor.openState || {}
+            open: JsonDomEditor.openState || {}
         }
 
         if (props.children) {
-            try {
-                this.state.json = JSON.parse(props.children)
-            } catch (e) {
-                console.log(e, props.children)
+
+            if (props.children.constructor === String) {
+                try {
+                    this.state.json = JSON.parse(props.children)
+                } catch (e) {
+                    console.log(e, props.children)
+                }
+            } else {
+
+                this.state.json = props.children
+
             }
         }
     }
 
     componentWillUnmount() {
         // keep latest state
-        JsonEditor.openState = this.state.open
+        JsonDomEditor.openState = this.state.open
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
@@ -319,10 +327,10 @@ class JsonEditor extends React.Component {
 
 }
 
-JsonEditor.propTypes = {
+JsonDomEditor.propTypes = {
     style: PropTypes.object,
     onChange: PropTypes.func,
     classes: PropTypes.object.isRequired,
 }
 
-export default withStyles(styles)(JsonEditor)
+export default withStyles(styles)(JsonDomEditor)

@@ -32,56 +32,60 @@ export default () => {
     Hook.on('TypeTable', ({type, dataSource, data, container}) => {
         if (type === 'GenericData' && data.results.length > 0) {
             dataSource.forEach((row, i) => {
-
                 const item = data.results[i],
-                    structure = item.definition.structure
+                    structure = item.definition?item.definition.structure:{}
 
-                let pickerFields
+                if (structure.titleTemplate) {
+                    row.data = Util.replacePlaceholders(structure.titleTemplate, item)
+                }else {
 
-                if (structure.pickerField) {
-                    // can be a String or an Array
-                    pickerFields = structure.pickerField
-                } else if (item.data.title) {
-                    // take title attribute if available
-                    pickerFields = 'title'
+                    let pickerFields
 
-                } else {
+                    if (structure.pickerField) {
+                        // can be a String or an Array
+                        pickerFields = structure.pickerField
+                    } else if (item.data.title) {
+                        // take title attribute if available
+                        pickerFields = 'title'
 
-                    // take the fist attribute of the object if none is specified
-                    const keys = Object.keys(item.data)
+                    } else {
 
-                    if (keys.length > 0) {
-                        pickerFields = keys[0]
-                    }
-                }
-                if (pickerFields) {
-                    if (pickerFields.constructor !== Array) {
-                        pickerFields = [pickerFields]
-                    }
-                    row.data = ''
-                    pickerFields.forEach(picker => {
-                        if (item.data[picker]) {
+                        // take the fist attribute of the object if none is specified
+                        const keys = Object.keys(item.data)
 
-                            let value
-
-                            if (item.data[picker].constructor === Object) {
-                                //TODO it is not save to assume that it is a localized value
-                                value = item.data[picker][_app_.lang]
-                            } else {
-                                value = item.data[picker]
-                            }
-
-                            if (value) {
-                                if (row.data) {
-                                    row.data += ' | '
-                                }
-                                row.data += value
-                            }
+                        if (keys.length > 0) {
+                            pickerFields = keys[0]
                         }
-                    })
+                    }
+                    if (pickerFields) {
+                        if (pickerFields.constructor !== Array) {
+                            pickerFields = [pickerFields]
+                        }
+                        row.data = ''
+                        pickerFields.forEach(picker => {
+                            if (item.data[picker]) {
 
-                    if (row.data.length > 83) {
-                        row.data = row.data.substring(0, 80) + '...'
+                                let value
+
+                                if (item.data[picker].constructor === Object) {
+                                    //TODO it is not save to assume that it is a localized value
+                                    value = item.data[picker][_app_.lang]
+                                } else {
+                                    value = item.data[picker]
+                                }
+
+                                if (value) {
+                                    if (row.data) {
+                                        row.data += ' | '
+                                    }
+                                    row.data += value
+                                }
+                            }
+                        })
+
+                        if (row.data.length > 83) {
+                            row.data = row.data.substring(0, 80) + '...'
+                        }
                     }
                 }
 

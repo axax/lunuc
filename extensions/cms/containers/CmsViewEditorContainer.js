@@ -1106,8 +1106,13 @@ class CmsViewEditorContainer extends React.Component {
             try {
                 let props
                 if (cmsEditData.props) {
-                    const correctJson = cmsEditData.props.replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": ');
-                    props = JSON.parse(correctJson)
+
+                    if(cmsEditData.props.constructor === Object) {
+                        props = cmsEditData.props
+                    }else {
+                        const correctJson = cmsEditData.props.replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": ');
+                        props = JSON.parse(correctJson)
+                    }
                 }
                 const newProps = {value: propertyByPath(path, segment)}
                 if (newProps.value.constructor === Object || newProps.value.constructor === Array) {

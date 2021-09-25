@@ -32,6 +32,7 @@ import {_t} from '../../util/i18n'
 import Util from '../util'
 import DomUtil from '../util/dom'
 import {matchExpr} from '../util/json'
+import JsonEditor from '../../extensions/cms/components/JsonEditor'
 
 const styles = theme => {
     return {
@@ -474,6 +475,7 @@ class GenericForm extends React.Component {
                             subFieldValues.push(Object.assign({}, val))
                         })
                     }
+
                     subFieldValues.forEach((values, index) => {
                         const valueFieldKey = fieldKey + '-' + index
                         let title = ''
@@ -527,6 +529,7 @@ class GenericForm extends React.Component {
                     currentFormFields.push(<Button key={fieldKey}
                                                    color="primary"
                                                    variant="contained"
+                                                   size="small"
                                                    style={field.style}
                                                    onClick={() => {
                                                        subFieldValues.push({})
@@ -536,26 +539,33 @@ class GenericForm extends React.Component {
                                                                value: subFieldValues
                                                            }
                                                        })
-                                                   }}>{field.label}</Button>)
+                                                   }}>{field.addButton || field.label}</Button>)
 
                 } else {
 
 
-                    let values
-                    try {
-                        values = JSON.parse(value)
-                    } catch (e) {
+                    let values, wasString = false
+                    if (value && value.constructor === String) {
+                        wasString = true
+                        try {
+                            values = JSON.parse(value)
+                        } catch (e) {
+                        }
+                    } else {
+                        values = value
                     }
 
                     if (!values) {
                         values = {}
                     }
+
+
                     currentFormFields.push(<GenericForm onChange={(e) => {
                         values[e.name] = e.value
                         this.handleInputChange({
                             target: {
                                 name: fieldKey,
-                                value: JSON.stringify(values)
+                                value: wasString ? JSON.stringify(values) : values
                             }
                         })
 
@@ -712,9 +722,13 @@ class GenericForm extends React.Component {
         if (field.description) {
             currentFormFields.push(<p>{field.description}</p>)
         }
-        if (uitype === 'wrapper' || (uistate && uistate.visible && matchExpr(uistate.visible, this.state.fields))) {
+        if (uitype === 'htmlParser') {
+
+            currentFormFields.push(<span dangerouslySetInnerHTML={{__html: field.html}}/>)
+
+        } else if (uitype === 'wrapper' || (uistate && uistate.visible && matchExpr(uistate.visible, this.state.fields))) {
             // do nothing
-        } else if (['json', 'editor', 'jseditor', 'css'].indexOf(uitype) >= 0) {
+        } else if (['json', 'jsonEditor', 'editor', 'jseditor', 'css'].indexOf(uitype) >= 0) {
 
             let highlight, jsonStr
             if (uitype === 'css') {
@@ -745,18 +759,32 @@ class GenericForm extends React.Component {
             currentFormFields.push(<FormControl key={'control' + fieldKey}
                                                 className={classNames(classes.formFieldFull)}>
                 <InputLabel key={'label' + fieldKey}
-                            shrink>{field.label + (languageCode ? ' [' + languageCode + ']' : '')}</InputLabel><CodeEditor
-                className={classes.editor} key={fieldKey}
-                forceJson={field.type === 'Object'}
-                onChange={(newValue) => this.handleInputChange({
-                    target: {
-                        dataset: {
-                            language: languageCode
-                        },
-                        name: fieldKey,
-                        value: newValue
-                    }
-                })} lineNumbers type={highlight}>{jsonStr ? jsonStr : value}</CodeEditor></FormControl>)
+                            shrink>{field.label + (languageCode ? ' [' + languageCode + ']' : '')}</InputLabel>
+
+                {uitype == 'jsonEditor' ? <JsonEditor onChange={(newValue) => this.handleInputChange({
+                        target: {
+                            dataset: {
+                                language: languageCode
+                            },
+                            name: fieldKey,
+                            value: newValue
+                        }
+                    })}>{value}</JsonEditor> :
+
+                    <CodeEditor
+                        className={classes.editor} key={fieldKey}
+                        forceJson={field.type === 'Object'}
+                        onChange={(newValue) => this.handleInputChange({
+                            target: {
+                                dataset: {
+                                    language: languageCode
+                                },
+                                name: fieldKey,
+                                value: newValue
+                            }
+                        })} lineNumbers type={highlight}>{jsonStr ? jsonStr : value}</CodeEditor>
+                }
+            </FormControl>)
 
         } else if (uitype === 'html') {
             const hasError = !!this.state.fieldErrors[fieldKey]
