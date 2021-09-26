@@ -318,7 +318,7 @@ Hook.on('typeUpdated_GenericDataDefinition', ({db, result}) => {
 // Clear cache when the type GenericData has changed
 Hook.on('typeUpdated_GenericData', async ({db, result}) => {
 
-    if(result.definition._id) {
+    if(result.definition && result.definition._id) {
         const def = await getGenericTypeDefinitionWithStructure(db, {id: result.definition._id})
 
         if(def){

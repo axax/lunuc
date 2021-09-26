@@ -127,7 +127,11 @@
         "ShoppingCart",
         "Label",
         "Business",
-        "Event"
+        "Event",
+        "School",
+        "Schedule",
+        "Shop",
+        "BeachAccess"
       ],
       "theme":{
         "colors":{

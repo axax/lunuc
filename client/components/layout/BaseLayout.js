@@ -27,7 +27,11 @@ import {
     ViewModuleIcon,
     LabelIcon,
     BusinessIcon,
-    EventIcon
+    EventIcon,
+    SchoolIcon,
+    ScheduleIcon,
+    ShopIcon,
+    BeachAccessIcon
 } from 'ui/admin'
 import ErrorHandler from './ErrorHandler'
 import NotificationHandler from './NotificationHandler'
@@ -62,14 +66,18 @@ const iconComponents = {
     chat: ChatIcon,
     launch: LaunchIcon,
     web: WebIcon,
-    shop: ShoppingCartIcon,
+    cart: ShoppingCartIcon,
     image: ImageIcon,
     done: DoneIcon,
     view: ViewListIcon,
     module: ViewModuleIcon,
     label: LabelIcon,
     business: BusinessIcon,
-    event: EventIcon
+    event: EventIcon,
+    school: SchoolIcon,
+    schedule: ScheduleIcon,
+    shop: ShopIcon,
+    beach: BeachAccessIcon
 }
 
 const BaseLayout = props => {
@@ -133,26 +141,26 @@ const BaseLayout = props => {
     if (settings.menu) {
 
         const genMenuEntry = (item) => {
-            if(!item){
+            if (!item) {
                 return
             }
 
-            if(item.constructor === Array){
+            if (item.constructor === Array) {
                 return item.map(genMenuEntry)
             }
 
-            if(item.divider){
+            if (item.divider) {
                 return item
             }
             const Icon = iconComponents[item.icon] || SettingsIcon
 
             let to
 
-            if(item.to){
+            if (item.to) {
                 to = item.to
-            }else if( item.name ){
-                to = `${ADMIN_BASE_URL}/types/GenericData?fixType=GenericData&title=${encodeURIComponent(item.label || item.name)}&meta=${item.name}`
-            }else if( item.type){
+            } else if (item.name) {
+                to = `${ADMIN_BASE_URL}/types/GenericData?fixType=GenericData&title=${encodeURIComponent(item.label || item.name)}&meta=${item.name}${item.baseFilter?'&baseFilter='+encodeURIComponent(item.baseFilter):''}`
+            } else if (item.type) {
                 to = `${ADMIN_BASE_URL}/types/${item.type}?fixType=${item.type}&title=${encodeURIComponent(item.label || item.type)}`
             }
 
@@ -179,7 +187,7 @@ const BaseLayout = props => {
                 if (existingItem) {
                     // extend menu item
                     if (item.items) {
-                        if(!existingItem.items){
+                        if (!existingItem.items) {
                             existingItem.items = []
                         }
                         existingItem.items.push(...genMenuEntry(item.items))
@@ -238,7 +246,7 @@ const BaseLayout = props => {
                                         onClick: handleOpenMenuEditor,
                                         icon: <EditIcon/>
                                     }
-                                ]} />}
+                                ]}/>}
                                 headerRight={
                                     [
                                         (isAuthenticated ?
