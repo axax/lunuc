@@ -116,7 +116,7 @@ class BackupContainer extends React.Component {
         const {dbDumps, mediaDumps, hostruleDumps} = this.props
         const {creatingDump, creatingMediaDump, creatingHostruleDump, importingMediaDump, importMediaDumpDialog, importDbDumpDialog, importHostruleDumpDialog, importingDbDump} = this.state
         return (
-            <BaseLayout>
+            <BaseLayout key="baseLayout">
                 <Typography variant="h3" gutterBottom>Backups</Typography>
 
                 <Row spacing={4}>

@@ -142,18 +142,12 @@ const findActiveItem = (props) => {
 
 
 const MenuList = (props) => {
-    const {items, isAuthenticated, depth} = props
+    const {items, isAuthenticated, depth, onMenuChange} = props
     const classes = useStyles()
     const history = useHistory()
     const activeItem = findActiveItem(props)
 
-    const initialOpen = {}
-    items.map((item, i) => {
-        initialOpen[i] = !!item.open
-    })
-
-    const [open, setOpen] = React.useState(initialOpen)
-
+    const [open, setOpen] = React.useState({})
 
     return <List disablePadding={depth > 0} style={{paddingLeft: (depth * 16) + 'px'}}>
         {items.map((item, i) => {
@@ -161,9 +155,11 @@ const MenuList = (props) => {
                 if (item.divider) {
                     return <Divider key={i}/>
                 }
+                const isOpen = open[i] || (open[i]==undefined && item.open)
                 return [<ListItem onClick={() => {
                     if(item.items){
-                        setOpen(Object.assign({}, open,{[i]:!open[i]}))
+                        onMenuChange(item, !isOpen)
+                        setOpen(Object.assign({}, open,{[i]:!isOpen}))
                     }
                     if(item.to) {
                         history.push(item.to)
@@ -183,16 +179,17 @@ const MenuList = (props) => {
                                                        className={(activeItem === item ? classes.listItemActive : '')}>{item.name}</Typography>}/>
 
                     {item.actions}
-                    {item.items && (item.open ? <ExpandLess /> : <ExpandMore />)}
+                    {item.items && (isOpen ? <ExpandLess /> : <ExpandMore />)}
                 </ListItem>,
-                    item.items && <Collapse in={open[i]} timeout="auto" unmountOnExit>
-                        <MenuList items={item.items} depth={depth + 1} isAuthenticated={isAuthenticated}/>
+                    item.items && <Collapse in={isOpen} timeout="auto" unmountOnExit>
+                        <MenuList items={item.items} onMenuChange={onMenuChange} depth={depth + 1} isAuthenticated={isAuthenticated}/>
                     </Collapse>]
             }
         })}
     </List>
 
 }
+
 
 const ResponsiveDrawer = (props) => {
 
@@ -202,7 +199,7 @@ const ResponsiveDrawer = (props) => {
         setMobileOpen(!mobileOpen)
     }
 
-    const {menuItems, isAuthenticated, children, headerLeft, headerRight, title, logo, toolbarStyle, headerStyle, extra} = props
+    const {onMenuChange, menuItems, isAuthenticated, children, headerLeft, headerRight, title, logo, toolbarStyle, headerStyle, extra} = props
 
     const classes = useStyles()
 
@@ -214,7 +211,7 @@ const ResponsiveDrawer = (props) => {
                 <div className={classes.drawerHeaderLeft}>{headerLeft}</div>
             </div>
             <Divider/>
-            <MenuList depth={0} items={menuItems} isAuthenticated={isAuthenticated}/>
+            <MenuList key="mainMenu" depth={0} onMenuChange={onMenuChange} items={menuItems} isAuthenticated={isAuthenticated}/>
             <Divider/>
             {extra}
         </div>

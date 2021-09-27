@@ -51,6 +51,7 @@ const {ADMIN_BASE_URL, APP_NAME} = config
 import {_t, registerTrs} from 'util/i18n'
 import {translations} from '../../translations/admin'
 import CodeEditor from '../CodeEditor'
+import {propertyByPath} from '../../util/json'
 
 registerTrs(translations, 'AdminTranslations')
 
@@ -140,13 +141,13 @@ const BaseLayout = props => {
 
     if (settings.menu) {
 
-        const genMenuEntry = (item) => {
+        const genMenuEntry = (item, path) => {
             if (!item) {
                 return
             }
 
             if (item.constructor === Array) {
-                return item.map(genMenuEntry)
+                return item.map((singleItem, index) => genMenuEntry(singleItem, path+'.'+index))
             }
 
             if (item.divider) {
@@ -169,18 +170,22 @@ const BaseLayout = props => {
                 to,
                 auth: true,
                 icon: <Icon/>,
-                items: genMenuEntry(item.items)
+                items: genMenuEntry(item.items, path+'.items'),
+                path,
+                open: item.open
             }
         }
 
         if (settings.menu.items) {
 
-            settings.menu.items.forEach(item => {
+            settings.menu.items.forEach((item, i) => {
                 let existingItem
                 if (item.key) {
                     const existingItems = menuItems.filter(m => m.key === item.key)
                     if (existingItems.length > 0) {
                         existingItem = existingItems[0]
+                        existingItem.path = 'items.'+i
+                        existingItem.open = item.open
                     }
                 }
 
@@ -190,12 +195,12 @@ const BaseLayout = props => {
                         if (!existingItem.items) {
                             existingItem.items = []
                         }
-                        existingItem.items.push(...genMenuEntry(item.items))
+                        existingItem.items.push(...genMenuEntry(item.items, 'items.'+i))
                     }
 
                 } else {
                     // add new menu item
-                    menuItems.push(genMenuEntry(item))
+                    menuItems.push(genMenuEntry(item, 'items.'+i))
                 }
 
             })
@@ -204,8 +209,8 @@ const BaseLayout = props => {
         if (settings.menu.genericTypes) {
             menuItems.push({divider: true, auth: true})
 
-            settings.menu.genericTypes.forEach(item => {
-                menuItems.push(genMenuEntry(item))
+            settings.menu.genericTypes.forEach((item,i) => {
+                menuItems.push(genMenuEntry(item,'genericTypes.'+i))
             })
         }
 
@@ -227,6 +232,15 @@ const BaseLayout = props => {
         <ResponsiveDrawerLayout title={settings.title || APP_NAME}
                                 logo={settings.logo}
                                 menuItems={menuItems}
+                                onMenuChange={(item,open)=>{
+                                    if(item.path) {
+                                        const oriItem = propertyByPath(item.path, settings.menu)
+                                        if(oriItem){
+                                            oriItem.open = open
+                                            setKeyValue({key: 'BaseLayoutSettings', value: settings})
+                                        }
+                                    }
+                                }}
                                 extra={!userKeys.loading && settings.history !== false && history._urlStack && history._urlStack.length > 0 &&
                                 <div style={{
                                     padding: '1rem',

@@ -16,7 +16,7 @@ const Util = {
         return str
     },
     safeTags: str => {
-        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        return str?str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'):''
     },
     escapeForJson: (str) => {
         if (str === undefined || str === null) return ''

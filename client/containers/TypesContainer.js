@@ -899,7 +899,7 @@ class TypesContainer extends React.Component {
         if (noLayout) {
             return content
         }
-        return <BaseLayout>{content}</BaseLayout>
+        return <BaseLayout key="baseLayout">{content}</BaseLayout>
     }
 
     isColumnActive(type, id) {
