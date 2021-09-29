@@ -6,7 +6,7 @@ import GenericResolver from './generic/genericResolver'
 import Cache from 'util/cache'
 import {
     CAPABILITY_MANAGE_USER_ROLE,
-    CAPABILITY_MANAGE_OTHER_USERS, CAPABILITY_MANAGE_COLLECTION
+    CAPABILITY_MANAGE_OTHER_USERS, CAPABILITY_MANAGE_COLLECTION, CAPABILITY_MANAGE_USER_GROUP
 } from 'util/capabilities'
 import {sendMail} from 'api/util/mail'
 import crypto from 'crypto'
@@ -20,7 +20,7 @@ const LOGIN_ATTEMPTS_MAP = {},
     MAX_LOGIN_ATTEMPTS = 10,
     LOGIN_DELAY_IN_SEC = 180
 
-const createUser = async ({username, role, junior, password, language, email, emailConfirmed, requestNewPassword, meta, picture, db, context}, opts) => {
+const createUser = async ({username, role, junior, group, password, language, email, emailConfirmed, requestNewPassword, meta, picture, db, context}, opts) => {
 
     if (!opts) {
         opts = {override: false}
@@ -83,9 +83,16 @@ const createUser = async ({username, role, junior, password, language, email, em
             juniorIds.push(ObjectId(sup))
         })
     }
+    const groupIds = []
+    if (group && await Util.userHasCapability(db, context, CAPABILITY_MANAGE_USER_GROUP)) {
+        group.forEach(sup => {
+            groupIds.push(ObjectId(sup))
+        })
+    }
 
     const dataToInsert = {
         role: roleId,
+        group: groupIds,
         junior: juniorIds,
         emailConfirmed: !!emailConfirmed,
         requestNewPassword: !!requestNewPassword,
@@ -125,7 +132,7 @@ export const userResolver = (db) => ({
     Query: {
         users: async ({limit, page, offset, filter, sort}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'signupToken', 'language', 'picture', 'email', 'meta', 'emailConfirmed', 'requestNewPassword', 'role$UserRole', 'junior$[User]', 'lastLogin'], {
+            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'signupToken', 'language', 'picture', 'email', 'meta', 'emailConfirmed', 'requestNewPassword', 'role$UserRole', 'junior$[User]', 'group$[UserGroup]', 'lastLogin'], {
                 limit,
                 page,
                 offset,
@@ -135,7 +142,7 @@ export const userResolver = (db) => ({
         },
         userRoles: async ({limit, page, offset, filter, sort}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            return await GenericResolver.entities(db, context, 'UserRole', ['name', 'capabilities'], {
+            return await GenericResolver.entities(db, context, 'UserRole', ['name','capabilities'], {
                 limit,
                 page,
                 offset,
@@ -353,7 +360,7 @@ export const userResolver = (db) => ({
         }
     },
     Mutation: {
-        createUser: async ({username, password, email, language, meta, picture, emailConfirmed, requestNewPassword, role, junior}, {context}) => {
+        createUser: async ({username, password, email, language, meta, picture, emailConfirmed, requestNewPassword, role, junior, group}, {context}) => {
 
             if (email) {
                 email = email.trim()
@@ -370,7 +377,8 @@ export const userResolver = (db) => ({
                 requestNewPassword,
                 password,
                 role,
-                junior
+                junior,
+                group
             })
 
             if (insertResult.ops && insertResult.ops.length > 0 ) {
@@ -438,7 +446,7 @@ export const userResolver = (db) => ({
                 return result
             }
         },
-        updateUser: async ({_id, username, email, password, picture, language, emailConfirmed, requestNewPassword, role, junior, meta}, {context}) => {
+        updateUser: async ({_id, username, email, password, picture, language, emailConfirmed, requestNewPassword, role, junior, meta, group}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
             if (email) {
@@ -515,6 +523,16 @@ export const userResolver = (db) => ({
                 if (junior) {
                     junior.forEach(sup => {
                         user.junior.push(ObjectId(sup))
+                    })
+                }
+            }
+
+            if (group !== undefined) {
+                await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_GROUP)
+                user.group = []
+                if (group) {
+                    group.forEach(sup => {
+                        user.group.push(ObjectId(sup))
                     })
                 }
             }

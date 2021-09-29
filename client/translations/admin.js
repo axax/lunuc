@@ -49,6 +49,7 @@ export const translations = {
         'User.field.lastLogin': 'Letzte Anmeldung',
         'User.field.role': 'Role',
         'User.field.junior': 'Untergeordnete Benutzer',
+        'User.field.group': 'Benutzergruppe',
     },
     en: {
         'BaseLayout.editMenu': 'Edit menu',
@@ -100,5 +101,6 @@ export const translations = {
         'User.field.lastLogin': 'Last Login',
         'User.field.role': 'Role',
         'User.field.junior': 'Junior User',
+        'User.field.group': 'User group',
     }
 }

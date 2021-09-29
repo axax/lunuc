@@ -12,6 +12,7 @@ export const userSchemaRaw = `
         offset: Int
         limit: Int
         total: Int
+        meta: String
     }
     
 	type User {
@@ -31,6 +32,7 @@ export const userSchemaRaw = `
         language: String
         role: UserRole
         junior: [User]
+        group: [UserGroup]
     }
     
     type UserResult {
@@ -112,6 +114,7 @@ export const userSchemaRaw = `
             meta: String
             language: String
             junior: [ID]
+            group: [ID]
 		): User
 		
 		updateUser (
@@ -126,6 +129,7 @@ export const userSchemaRaw = `
             role: ID
             meta: String
             junior: [ID]
+            group: [ID]
 		): User
 		
 		updateUserRole (

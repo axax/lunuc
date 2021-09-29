@@ -1,5 +1,6 @@
 import {commonResolver} from './common'
 import {userResolver} from './user'
+import {userGroupResolver} from './userGroup'
 import {notificationResolver} from './notification'
 import {keyvalueResolver} from './keyvalue'
 import {systemResolver} from './system'
@@ -13,6 +14,7 @@ export const resolver = (db) => {
     // default core resolvers
     const resolvers =deepMerge({},
         commonResolver(db),
+        userGroupResolver(db),
         userResolver(db),
         notificationResolver(db),
         keyvalueResolver(db),

@@ -387,11 +387,6 @@ class TypesContainer extends React.Component {
                             disabled: (item.status == 'deleting' || item.status == 'updating'),
                             onClick: this.handleDeleteDataClick.bind(this, item),
                             icon: <DeleteIcon/>
-                        }, {
-                            name: _t('TypesContainer.editEntry'),
-                            disabled: (item.status == 'deleting' || item.status == 'updating'),
-                            onClick: this.handleEditDataClick.bind(this, item),
-                            icon: <EditIcon/>
                         }]
 
                         if (this.types[type].entryClonable) {
@@ -410,6 +405,13 @@ class TypesContainer extends React.Component {
                                 onClick: this.handleExportClick.bind(this, item, fields),
                                 icon: <CloudUploadIcon/>
                             })
+
+                        entryActions.push({
+                            name: _t('TypesContainer.editEntry'),
+                            disabled: (item.status == 'deleting' || item.status == 'updating'),
+                            onClick: this.handleEditDataClick.bind(this, item),
+                            icon: <EditIcon/>
+                        })
                         Hook.call('TypeTableEntryAction', {type, actions: entryActions, item, container: this})
 
                         dynamic._action = <SimpleMenu mini items={entryActions}/>

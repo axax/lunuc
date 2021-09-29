@@ -282,12 +282,27 @@ Hook.on('Types', ({types}) => {
         usedBy: ['core'],
         fields: [
             {
-                name: 'name'
+                name: 'name',
+                required: true
             },
             {
                 name: 'capabilities',
+                required: true,
                 multi: true,
                 enum: getAllCapabilites()
+            }
+        ]
+    }
+
+
+    types.UserGroup = {
+        name: 'UserGroup',
+        noUserRelation: true,
+        usedBy: ['core'],
+        fields: [
+            {
+                name: 'name',
+                required: true
             }
         ]
     }
@@ -362,6 +377,15 @@ Hook.on('Types', ({types}) => {
                 reference: true,
                 multi: true,
                 fields: ['username'],
+                tab: _t('Types.accessControl'),
+                hideColumnInTypes: true
+            },
+            {
+                name: 'group',
+                type: 'UserGroup',
+                reference: true,
+                multi: true,
+                fields: ['name'],
                 tab: _t('Types.accessControl'),
                 hideColumnInTypes: true
             }

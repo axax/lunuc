@@ -113,6 +113,7 @@ class CmsViewContainer extends React.Component {
             editMode={editMode}
             inlineEditor={settings && !!settings.inlineEditor}
             slug={slug}
+            title={cmsPage.name}
             dynamic={dynamic}
             subscriptionCallback={cb => {
                 this._subscriptionCallback = cb

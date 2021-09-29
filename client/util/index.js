@@ -16,7 +16,7 @@ const Util = {
         return str
     },
     safeTags: str => {
-        return str?str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'):''
+        return str ? str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''
     },
     escapeForJson: (str) => {
         if (str === undefined || str === null) return ''
@@ -184,6 +184,14 @@ const Util = {
         }
         return b
     },
+    paramsToQuery: (obj) => {
+        return Object.keys(obj).reduce(function (a, k) {
+            if (obj[k] !== undefined && obj[k] !== '') {
+                a.push(k + '=' + encodeURIComponent(obj[k]))
+            }
+            return a
+        }, []).join('&')
+    },
     hasCapability(user, capa) {
         const capabilities = (user && user.userData && user.userData.role && user.userData.role.capabilities) || []
         return capabilities.indexOf(capa) >= 0
@@ -211,9 +219,9 @@ const Util = {
         let image
         if (!raw) {
             let src
-            if( options && options.resize && options.resize.height && options.resize.width){
+            if (options && options.resize && options.resize.height && options.resize.width) {
                 src = Util.createDummySvg(options.resize.width, options.resize.height)
-            }else{
+            } else {
                 src = '/placeholder.svg'
             }
 
@@ -256,7 +264,7 @@ const Util = {
         if (_app_.ssr && data.src.indexOf('https://') !== 0 && data.src.indexOf('http://') !== 0) {
             try {
                 data.src = new URL(data.src, location.origin).href
-            }catch (e) {
+            } catch (e) {
                 console.error(e, data.src)
             }
         }
@@ -301,8 +309,8 @@ const Util = {
             }
 
             if (options.format) {
-                params += '&format='+options.format
-            }else if (options.webp) {
+                params += '&format=' + options.format
+            } else if (options.webp) {
                 params += '&format=webp'
             }
             if (params) {
@@ -383,7 +391,7 @@ const Util = {
     },
     chunkArray(arr, chunk, opts) {
 
-        if(!arr || arr.constructor !== Array){
+        if (!arr || arr.constructor !== Array) {
             return []
         }
 
