@@ -274,7 +274,7 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress) => {
         }
         const pages = await parseWebsiteBrowser.pages()
 
-        if( pages.length > 8){
+        if( pages.length > 5){
             console.warn('browser to busy to process more requests -> ignore')
             return {html: 'too busy to process request', statusCode: 500}
         }
@@ -284,7 +284,7 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress) => {
         setTimeout(async () => {
             /* if page is still not closed after 20s something is wrong */
             try {
-                if(!page._closed) {
+                if(!page.isClosed()) {
                     const procInfo = await parseWebsiteBrowser.process()
                     if (!procInfo.signalCode) {
                         parseWebsiteBrowser.process().kill('SIGINT')
