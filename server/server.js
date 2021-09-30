@@ -243,7 +243,15 @@ const sendFile = function (req, res, {headers, filename, statusCode = 200}) {
     }
 }
 
+
 let parseWebsiteBrowser
+const wasBrowserKilled = async (browser) => {
+    if(!browser || !browser.process){
+        return true
+    }
+    const procInfo = await browser.process()
+    return !!procInfo.signalCode // null if browser is still running
+}
 const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress) => {
 
 
@@ -251,7 +259,7 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress) => {
         const startTime = new Date().getTime()
 
         console.log(`fetch ${urlToFetch}`)
-        if(!parseWebsiteBrowser) {
+        if(await wasBrowserKilled(parseWebsiteBrowser)) {
             parseWebsiteBrowser = await puppeteer.launch({
                 devtools: false,
                 /*userDataDir: './server/myUserDataDir',*/
@@ -264,6 +272,13 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress) => {
                 ]
             })
         }
+        const pages = await parseWebsiteBrowser.pages()
+
+        if( pages.length > 8){
+            console.warn('browser to busy to process more requests -> ignore')
+            return {html: 'too busy to process request', statusCode: 500}
+        }
+
         const page = await parseWebsiteBrowser.newPage()
 
         setTimeout(async () => {
@@ -337,6 +352,7 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress) => {
 
         return {html, statusCode}
     } catch (e) {
+        console.warn('parseWebsite error',e)
         return {html: e.message, statusCode: 500}
 
     }
