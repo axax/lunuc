@@ -131,7 +131,8 @@
         "School",
         "Schedule",
         "Shop",
-        "BeachAccess"
+        "BeachAccess",
+        "Group"
       ],
       "theme":{
         "colors":{

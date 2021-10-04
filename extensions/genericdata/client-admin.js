@@ -12,6 +12,7 @@ import config from 'gen/config-client'
 import {_t, registerTrs} from '../../util/i18n'
 
 import {translations} from './translations/admin'
+import {setPropertyByPath} from "../../client/util/json";
 
 registerTrs(translations, 'GenericData')
 
@@ -97,7 +98,6 @@ export default () => {
     Hook.on('TypeCreateEdit', function ({type, props, meta, formFields, dataToEdit, parentRef}) {
         if (type === 'GenericData') {
 
-
             if (!dataToEdit) {
                 // create empty object
                 dataToEdit = {}
@@ -106,6 +106,21 @@ export default () => {
                 if(data.meta){
                     dataToEdit.definition = JSON.parse(data.meta)
                 }
+
+                const {baseFilter} = Util.extractQueryParams(window.location.search.substring(1))
+
+                if(baseFilter){
+                    const query = Util.extractQueryParams(baseFilter.replace(/==/g,'='))
+                    Object.keys(query).forEach(key=>{
+                        const value = query[key]
+                        if(value){
+                            setPropertyByPath(value, key, dataToEdit)
+                        }
+                    })
+
+                }
+
+
             }
 
 

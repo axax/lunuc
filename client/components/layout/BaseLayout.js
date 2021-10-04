@@ -31,7 +31,8 @@ import {
     SchoolIcon,
     ScheduleIcon,
     ShopIcon,
-    BeachAccessIcon
+    BeachAccessIcon,
+    GroupIcon
 } from 'ui/admin'
 import ErrorHandler from './ErrorHandler'
 import NotificationHandler from './NotificationHandler'
@@ -78,7 +79,8 @@ const iconComponents = {
     school: SchoolIcon,
     schedule: ScheduleIcon,
     shop: ShopIcon,
-    beach: BeachAccessIcon
+    beach: BeachAccessIcon,
+    group: GroupIcon
 }
 
 const BaseLayout = props => {
