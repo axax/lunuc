@@ -665,7 +665,7 @@ class JsonDom extends React.Component {
         if (!onError)
             return
 
-        onError(e, meta)
+        onError(e, {slug:this.props.slug, ...meta})
     }
 
     parseRec(a, rootKey, scope) {

@@ -320,9 +320,16 @@ Hook.on('Types', ({types}) => {
             },
             {
                 name: 'password',
-                fullWidth: true,
+                fullWidth: false,
                 required: true,
                 uitype: 'password',
+                tab: 'General',
+                hideColumnInTypes: true
+            },
+            {
+                name: 'requestNewPassword',
+                fullWidth: false,
+                type: 'Boolean',
                 tab: 'General',
                 hideColumnInTypes: true
             },
@@ -344,11 +351,6 @@ Hook.on('Types', ({types}) => {
             },
             {
                 name: 'emailConfirmed',
-                type: 'Boolean',
-                hideColumnInTypes: true
-            },
-            {
-                name: 'requestNewPassword',
                 type: 'Boolean',
                 hideColumnInTypes: true
             },

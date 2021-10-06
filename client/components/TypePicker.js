@@ -156,6 +156,44 @@ class TypePicker extends React.Component {
         const {classes, placeholder, multi, error, helperText, className, fullWidth, pickerField, metaFields, type, filter, label, genericType} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
         console.log(`render TypePicker | hasFocus=${hasFocus} | pickerField=${pickerField}`, data)
+
+        const openTypeWindow = ()=>{
+            const w = screen.width / 3 * 2, h = screen.height / 3 * 2,
+                left = (screen.width / 2) - (w / 2),
+                top = (screen.height / 2) - (h / 2)
+
+            const newwindow = window.open(
+                `${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/types/?noLayout=true&multi=${!!multi}&fixType=${type}${genericType?'&meta='+genericType:''}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}${label ? '&title=' + encodeURIComponent(label) : ''}`, '_blank',
+                'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
+
+            setTimeout(() => {
+                newwindow.addEventListener('beforeunload', (e) => {
+                    const value = newwindow.resultValue
+
+                    if (value) {
+
+                        delete value.createdBy
+
+                        Hook.call('TypePickerWindowCallback', {
+                            value,
+                            type,
+                            pickerField
+                        })
+
+
+                        Util.removeNullValues(value, {
+                            recursiv: true,
+                            emptyObject: true,
+                            emptyArray: true,
+                            nullArrayItems: true
+                        })
+                        this.selectValue(value)
+                    }
+                    delete e['returnValue']
+                })
+            }, 500)
+        }
+
         return <FormControl
             fullWidth={fullWidth} className={classNames(classes.root, className)}>
             {!value.length || multi ?
@@ -172,6 +210,7 @@ class TypePicker extends React.Component {
                            label={label}
                            InputLabelProps={{
                                shrink: true,
+
                            }}
                            InputProps={{
                                endAdornment: (
@@ -180,40 +219,7 @@ class TypePicker extends React.Component {
                                            edge="end"
                                            onClick={() => {
 
-                                               const w = screen.width / 3 * 2, h = screen.height / 3 * 2,
-                                                   left = (screen.width / 2) - (w / 2),
-                                                   top = (screen.height / 2) - (h / 2)
-
-                                               const newwindow = window.open(
-                                                   `${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/types/?noLayout=true&multi=${multi}&fixType=${type}${genericType?'&meta='+genericType:''}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}${label ? '&title=' + encodeURIComponent(label) : ''}`, '_blank',
-                                                   'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
-
-                                               setTimeout(() => {
-                                                   newwindow.addEventListener('beforeunload', (e) => {
-                                                       const value = newwindow.resultValue
-
-                                                       if (value) {
-
-                                                           delete value.createdBy
-
-                                                           Hook.call('TypePickerWindowCallback', {
-                                                               value,
-                                                               type,
-                                                               pickerField
-                                                           })
-
-
-                                                           Util.removeNullValues(value, {
-                                                               recursiv: true,
-                                                               emptyObject: true,
-                                                               emptyArray: true,
-                                                               nullArrayItems: true
-                                                           })
-                                                           this.selectValue(value)
-                                                       }
-                                                       delete e['returnValue']
-                                                   })
-                                               }, 500)
+                                               openTypeWindow()
                                            }}>
                                            <SearchIcon/>
                                        </IconButton>
@@ -342,6 +348,8 @@ class TypePicker extends React.Component {
                                                       onClick={() => {
                                                           if (singleValue.type === 'Media' || singleValue.__typename=== 'Media') {
                                                               window.open(getImageSrc(singleValue), '_blank').focus()
+                                                          }else {
+                                                              openTypeWindow()
                                                           }
                                                       }}
                                                       avatar={singleValue && singleValue.__typename === 'Media' && singleValue.mimeType && singleValue.mimeType.indexOf('image') === 0 ?
@@ -412,7 +420,7 @@ class TypePicker extends React.Component {
 
     selectValue(item) {
         if (item) {
-            const value = (this.state.value ? this.state.value.slice(0) : [])
+            let value = (this.state.value ? this.state.value.slice(0) : [])
             if (item.forEach) {
                 item.forEach(itm => {
                     value.push({__typename: this.props.type, ...itm})
@@ -420,6 +428,11 @@ class TypePicker extends React.Component {
             } else {
                 value.push({__typename: this.props.type, ...item})
             }
+            if(!this.props.multi) {
+                // remove all items but last one
+                value = value.slice(-1)
+            }
+
             this.props.onChange({target: {value, name: this.props.name}})
             this.setState({value, textValue: '', hastFocus: false, data: null})
         }

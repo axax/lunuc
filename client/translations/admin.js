@@ -44,7 +44,7 @@ export const translations = {
         'User.field.language': 'Sprache',
         'User.field.picture': 'Bild',
         'User.field.emailConfirmed': 'E-Mail bestätigt',
-        'User.field.requestNewPassword': 'Neues Passwort anfordern',
+        'User.field.requestNewPassword': 'Neues Passwort anfordern (beim nächsten Login)',
         'User.field.meta': 'Meta',
         'User.field.lastLogin': 'Letzte Anmeldung',
         'User.field.role': 'Role',

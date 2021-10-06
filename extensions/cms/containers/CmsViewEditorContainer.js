@@ -1182,7 +1182,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     handleCmsError(e, meta) {
-        this.props.errorHandlerAction.addError({key: 'cmsError', msg: `${meta.loc}: ${e.message}`})
+        this.props.errorHandlerAction.addError({key: 'cmsError', msg: `${meta.loc}: ${e.message} -> ${meta.slug}`})
     }
 
     saveUnsafedChanges() {

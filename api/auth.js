@@ -21,7 +21,7 @@ export const auth = {
             user.role = await Util.getUserRoles(db, user.role)
 
             // from now on we'll identify the user by the id and the id is the only personalized value that goes into our token
-            const payload = {username: user.username, id: user._id, role: user.role.name}
+            const payload = {username: user.username, id: user._id, role: user.role.name, group: user.group}
             const token = jwt.sign(payload, SECRET_KEY, {expiresIn: AUTH_EXPIRES_IN})
             return {token: token, user}
         } else {

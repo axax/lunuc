@@ -6,6 +6,25 @@ import {getFormFieldsByType, addAlwaysUpdateData, referencesToIds} from '../../.
 import {SimpleDialog} from 'ui/admin'
 import {_t} from 'util/i18n'
 
+
+
+const compareRef = (prev, current) =>{
+
+    if(!prev || !current){
+        // an empty array is same as null
+        if(prev && prev.length==0){
+            prev = null
+        }
+
+        return prev !== current
+    }
+
+    const prevStr = prev.constructor === String? prev : (prev.constructor === Array ? prev.map(f => f._id?f._id:f).join('') : prev._id)
+    const currentStr = current.constructor === String? current : (current.constructor === Array ? current.map(f => f._id?f._id:f).join('') : current._id)
+    return prevStr !== currentStr
+
+}
+
 /*
 edit popup with form to edit an object of a type
  */
@@ -170,7 +189,9 @@ class TypeEdit extends React.Component {
                         const before = dataToEdit[k]
                         const fieldDefinition = formFields[k]
                         if (fieldDefinition.reference ) {
-                            if (!before || before._id !== editedDataWithRefs[k]) {
+                            //console.log(before, editedDataWithRefs[k])
+
+                            if (compareRef(before,editedDataWithRefs[k])) {
                                 editedDataToUpdate[k] = editedDataWithRefs[k]
                             }
                         } else if( fieldDefinition.type === 'Object'){

@@ -6,7 +6,11 @@ import GenericResolver from './generic/genericResolver'
 import Cache from 'util/cache'
 import {
     CAPABILITY_MANAGE_USER_ROLE,
-    CAPABILITY_MANAGE_OTHER_USERS, CAPABILITY_MANAGE_COLLECTION, CAPABILITY_MANAGE_USER_GROUP
+    CAPABILITY_MANAGE_OTHER_USERS,
+    CAPABILITY_MANAGE_COLLECTION,
+    CAPABILITY_MANAGE_USER_GROUP,
+    CAPABILITY_MANAGE_TYPES,
+    CAPABILITY_MANAGE_SAME_GROUP
 } from 'util/capabilities'
 import {sendMail} from 'api/util/mail'
 import crypto from 'crypto'
@@ -516,7 +520,6 @@ export const userResolver = (db) => ({
                 await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)
                 user.role = ObjectId(role)
             }
-
             if (junior !== undefined) {
                 await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)
                 user.junior = []
@@ -537,11 +540,29 @@ export const userResolver = (db) => ({
                 }
             }
 
+            const userCanManageOthers = await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
+
+
+            const match = {_id: ObjectId(_id)}
+
+            if(!userCanManageOthers && _id !== context.id ){
+
+                const userCanManageSameGroup = await Util.userHasCapability(db, context, CAPABILITY_MANAGE_SAME_GROUP)
+
+                if (userCanManageSameGroup) {
+                    match.group = {$in: context.group.map(f=>ObjectId(f))}
+                }else{
+                    throw new ApiError('User can not change other users')
+                }
+            }
+
+
+
             if (meta !== undefined) {
                 user.meta = JSON.parse(meta)
             }
 
-            const result = (await userCollection.findOneAndUpdate({_id: ObjectId(_id)}, {$set: user}, {returnOriginal: false}))
+            const result = (await userCollection.findOneAndUpdate(match, {$set: user}, {returnOriginal: false}))
             if (result.ok !== 1) {
                 throw new ApiError('User could not be changed')
             }

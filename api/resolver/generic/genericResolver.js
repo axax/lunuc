@@ -4,7 +4,7 @@ import {getType} from 'util/types'
 import {getFormFieldsByType} from 'util/typesAdmin'
 import config from 'gen/config'
 import {
-    CAPABILITY_MANAGE_TYPES,
+    CAPABILITY_MANAGE_TYPES, CAPABILITY_MANAGE_SAME_GROUP,
     CAPABILITY_MANAGE_OTHER_USERS, CAPABILITY_MANAGE_KEYVALUES, CAPABILITY_MANAGE_COLLECTION
 } from 'util/capabilities'
 import Hook from 'util/hook'
@@ -140,7 +140,21 @@ const GenericResolver = {
                 match = {}
             } else {
                 if (typeName === 'User') {
+
+                    // handling User type
                     match = {_id: {$in: await Util.userAndJuniorIds(db, context.id)}}
+
+
+                    if (context.group && context.group.length > 0) {
+                        // if user has capability to manage subscribers
+                        // show subscribers that are in the same group
+                        const userCanManageSameGroup = await Util.userHasCapability(db, context, CAPABILITY_MANAGE_SAME_GROUP)
+
+                        if (userCanManageSameGroup) {
+                            match = {$or: [match, {group: {$in: context.group.map(f=>ObjectId(f))}}]}
+                        }
+                    }
+
                 } else {
                     const typeDefinition = getType(typeName)
                     let userFilter = true
@@ -215,7 +229,7 @@ const GenericResolver = {
         /* if (typeName.indexOf("GenericData") >= 0) {
              console.log(JSON.stringify(dataQuery, null, 4))
          }*/
-   //      console.log(options,JSON.stringify(dataQuery, null, 4))
+        //      console.log(options,JSON.stringify(dataQuery, null, 4))
         const collection = db.collection(collectionName)
         const startTimeAggregate = new Date()
 
@@ -249,7 +263,17 @@ const GenericResolver = {
         const aggregateTime = new Date() - startTimeAggregate
         //result.meta.aggregateTime = new Date() - startTimeAggregate
 
-        Hook.call('typeLoaded', {type: typeName, data, db, context, otherOptions, result, dataQuery, collectionName, aggregateTime})
+        Hook.call('typeLoaded', {
+            type: typeName,
+            data,
+            db,
+            context,
+            otherOptions,
+            result,
+            dataQuery,
+            collectionName,
+            aggregateTime
+        })
         if (cacheKey) {
             Cache.set(cacheKey, result, cacheTime)
         }
@@ -291,7 +315,7 @@ const GenericResolver = {
 
         let createdBy, username
         if (data.createdBy && data.createdBy !== context.id) {
-            if( !options || !options.skipCheck ) {
+            if (!options || !options.skipCheck) {
                 await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
             }
             createdBy = data.createdBy
@@ -599,7 +623,7 @@ const GenericResolver = {
             }
         }
 
-        if( !options.ignoreHooks ) {
+        if (!options.ignoreHooks) {
             Hook.call('typeUpdated', {type: typeName, data, db, context})
             Hook.call('typeUpdated_' + typeName, {result: returnValue, db})
         }
