@@ -167,7 +167,7 @@ const Util = {
                 if (p.length === 1)
                     b[key] = ''
                 else {
-                    const str = p[1].replace(/\+/g, ' ')
+                    const str = p[1].replace(/\+/g, ' ').trim()
                     if (typeDetection) {
                         if (str === 'true') {
                             b[key] = true
