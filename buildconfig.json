@@ -132,7 +132,9 @@
         "Schedule",
         "Shop",
         "BeachAccess",
-        "Group"
+        "Group",
+        "ThumbUp",
+        "Park"
       ],
       "theme":{
         "colors":{

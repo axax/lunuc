@@ -188,26 +188,33 @@ const config = {
     plugins: [
         {
             apply: (compiler) => {
-                compiler.hooks.emit.tap('AfterEmitPlugin', (compilation) => {
-
-                    const {assets} = compilation; // eslint-disable-next-line consistent-return
-                    const key = 'main.bundle.js?v=' + BUILD_NUMBER,
-                        asset = assets[key]
-                    let content = asset.source()
-
-                    content = content.replace(/new Error\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'new Error()')
-                    content = content.replace(/new TypeError\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'new TypeError()')
-                    content = content.replace(/new ReferenceError\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'new ReferenceError()')
-                    content = content.replace(/throw E\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'throw E()')
-                    compilation.assets[key] = {
-                        source: function () {
-                            return new Buffer(content)
+                compiler.hooks.thisCompilation.tap('Replace', (compilation) => {
+                    compilation.hooks.processAssets.tap(
+                        {
+                            name: 'Replace',
+                            stage: webpack.Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE,
                         },
-                        size: function () {
-                            return Buffer.byteLength(content)
-                        }
-                    }
+                        () => {
+                            // get the file main.js
+                            const key = 'main.bundle.js?v=' + BUILD_NUMBER
 
+                            const file = compilation.getAsset(key)
+
+                            let content = file.source.source()
+
+                            content = content.replace(/new Error\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'new Error()')
+                            content = content.replace(/new URIError\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'new URIError()')
+                            content = content.replace(/new TypeError\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'new TypeError()')
+                            content = content.replace(/new ReferenceError\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'new ReferenceError()')
+                            content = content.replace(/throw E\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'throw E()')
+                            content = content.replace(/throw Error\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'throw Error()')
+                            // update main.js with new content
+                            compilation.updateAsset(
+                                key,
+                                new webpack.sources.RawSource(content)
+                            )
+                        }
+                    )
                 })
             }
         },

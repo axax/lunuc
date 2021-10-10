@@ -116,7 +116,7 @@ const findActiveItem = (props) => {
             if (item.to.indexOf('?') >= 0) {
                 const paramsItem = Util.extractQueryParams(item.to.split('?')[1])
 
-                if ((params.fixType && params.fixType === paramsItem.fixType && params.meta && params.meta === paramsItem.meta) ||
+                if ((params.fixType && params.fixType === paramsItem.fixType && params.meta && params.meta === paramsItem.meta && params.title === paramsItem.title) ||
                     (!params.meta && params.fixType && params.fixType === paramsItem.fixType) ||
                     (params.key && params.key === paramsItem.key)) {
 

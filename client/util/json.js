@@ -5,11 +5,11 @@ export function propertyByPath(path, obj, separator = '.', assign = false) {
     let escapedPath
     return path.split(separator).reduce((res, prop) => {
         if (res) {
-            if (prop.lastIndexOf('\\') === prop.length-1) {
+            if (prop.lastIndexOf('\\') === prop.length - 1) {
                 if (!escapedPath) {
                     escapedPath = ''
                 }
-                escapedPath += prop.substring(0, prop.length - 1)+separator
+                escapedPath += prop.substring(0, prop.length - 1) + separator
                 return res
             }
             let finalPath
@@ -48,7 +48,7 @@ export function matchExpr(expr, scope) {
     if (expr === 'false') {
         return true
     }
-    const match = expr.match(/([\w|$|\.]*)(==|\!=|>=|<=|>|<| in )(.*)/)
+    const match = expr.match(/([\w|$|\.]*)(==|\!=|>=|<=|>|<| in | nin )(.*)/)
     if (match && match.length === 4) {
         let prop
         try {
@@ -79,18 +79,24 @@ export function matchExpr(expr, scope) {
             if (!(prop <= parseInt(match[3]))) {
                 return true
             }
-        } else if (match[2] === ' in ') {
-            if(prop && prop.constructor === Array){
+        } else if (match[2] === ' in ' || match[2] === ' nin ') {
+            if (prop && prop.constructor === Array) {
                 let exists = false
-                for(let i = 0; i<prop.length;i++){
-                    if (match[3].indexOf('"' + prop[i] + '"') >=0) {
+                for (let i = 0; i < prop.length; i++) {
+                    if (match[3].indexOf('"' + prop[i] + '"') >= 0) {
                         exists = true
                         break
                     }
                 }
-                return exists?false:true
-            }else if (match[3].indexOf('"' + prop + '"') === -1) {
-                return true
+                let res = exists ? false : true
+                return match[2] === ' nin ' ? !res : res
+            } else {
+                const idx = match[3].indexOf('"' + prop + '"')
+                if (match[2] === ' nin ') {
+                    return idx >= 0
+                } else {
+                    return idx === -1
+                }
             }
         }
     }
@@ -104,11 +110,11 @@ export function setPropertyByPath(value, path, obj, separator = '.') {
     for (let i = 0, n = fields.length; i < n; i++) {
 
         let field = fields[i]
-        if (field.lastIndexOf('\\') === field.length-1) {
+        if (field.lastIndexOf('\\') === field.length - 1) {
             if (!escapedPath) {
                 escapedPath = ''
             }
-            escapedPath += field.substring(0, field.length - 1)+separator
+            escapedPath += field.substring(0, field.length - 1) + separator
             continue
         }
         let finalPath
@@ -127,16 +133,16 @@ export function setPropertyByPath(value, path, obj, separator = '.') {
             }
         } else {
             if (obj[finalPath] == undefined) {
-                if( !isNaN(finalPath)){
-                    if(obj.constructor !== Array){
-                        obj = objLast[finalPathLast]=[]
+                if (!isNaN(finalPath)) {
+                    if (obj.constructor !== Array) {
+                        obj = objLast[finalPathLast] = []
                     }
                 }
                 obj[finalPath] = {}
             }
 
             objLast = obj
-            finalPathLast =finalPath
+            finalPathLast = finalPath
             obj = obj[finalPath]
         }
 

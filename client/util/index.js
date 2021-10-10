@@ -162,22 +162,23 @@ const Util = {
         const b = {}
         for (let i = 0; i < a.length; ++i) {
             const p = a[i].split('=', 2)
-            if (p[0]) {
+            const key = p[0].trim()
+            if (key) {
                 if (p.length === 1)
-                    b[p[0]] = ''
+                    b[key] = ''
                 else {
                     const str = p[1].replace(/\+/g, ' ')
                     if (typeDetection) {
                         if (str === 'true') {
-                            b[p[0]] = true
+                            b[key] = true
                         } else if (str === 'false') {
-                            b[p[0]] = false
+                            b[key] = false
                         } else {
-                            b[p[0]] = decodeURIComponent(str)
+                            b[key] = decodeURIComponent(str)
                         }
 
                     } else {
-                        b[p[0]] = decodeURIComponent(str)
+                        b[key] = decodeURIComponent(str)
                     }
                 }
             }

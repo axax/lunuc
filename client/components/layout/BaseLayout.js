@@ -32,7 +32,9 @@ import {
     ScheduleIcon,
     ShopIcon,
     BeachAccessIcon,
-    GroupIcon
+    GroupIcon,
+    ThumbUpIcon,
+    ParkIcon
 } from 'ui/admin'
 import ErrorHandler from './ErrorHandler'
 import NotificationHandler from './NotificationHandler'
@@ -80,7 +82,9 @@ const iconComponents = {
     schedule: ScheduleIcon,
     shop: ShopIcon,
     beach: BeachAccessIcon,
-    group: GroupIcon
+    group: GroupIcon,
+    thumbup:ThumbUpIcon,
+    park:ParkIcon,
 }
 
 const BaseLayout = props => {
