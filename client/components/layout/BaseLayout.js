@@ -33,8 +33,7 @@ import {
     ShopIcon,
     BeachAccessIcon,
     GroupIcon,
-    ThumbUpIcon,
-    ParkIcon
+    ThumbUpIcon
 } from 'ui/admin'
 import ErrorHandler from './ErrorHandler'
 import NotificationHandler from './NotificationHandler'
@@ -83,8 +82,7 @@ const iconComponents = {
     shop: ShopIcon,
     beach: BeachAccessIcon,
     group: GroupIcon,
-    thumbup:ThumbUpIcon,
-    park:ParkIcon,
+    thumbup:ThumbUpIcon
 }
 
 const BaseLayout = props => {
