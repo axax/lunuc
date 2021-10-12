@@ -72,7 +72,11 @@ class TinyEditor extends React.Component {
 
                                 {title: 'Telefon', value: 'icon-phone black'},
                                 {title: 'Fax', value: 'icon-fax black'},
-                                {title: 'Email', value: 'icon-email black'}
+                                {title: 'Email', value: 'icon-email black'},
+                                {title: 'Maps', value: 'icon-maps black'},
+                                {title: 'Website', value: 'icon-website black'},
+                                {title: 'Pfeil rechts', value: 'icon-right black'},
+                                {title: 'Popup', value: 'icon-popup black'}
 
                             ]
                         }
