@@ -920,6 +920,7 @@ class JsonDom extends React.Component {
                         // remove properties with empty values unless they start with $
                         Object.keys(p).forEach(elKey => {
                             if (elKey === '#') {
+                                // ignore
                             } else if (elKey.startsWith('$')) {
                                 eleProps[elKey.substring(1)] = p[elKey]
                             } else if (p[elKey] !== '') {
@@ -932,7 +933,22 @@ class JsonDom extends React.Component {
                                         this.runJsEvent(eLower, false, payload, ...args, {key})
                                     }
                                 } else {
-                                    eleProps[elKey] = p[elKey]
+
+                                    const pos = elKey.indexOf('@')
+                                    let curKey
+                                    if(pos>=0){
+                                        //elKey
+                                        curKey = elKey.substring(0,pos)
+                                    }else{
+                                        curKey = elKey
+                                    }
+
+                                    let cur = eleProps[curKey]
+                                    if(cur && cur.constructor === String){
+                                        eleProps[curKey] = cur + p[elKey]
+                                    }else {
+                                        eleProps[curKey] = p[elKey]
+                                    }
                                 }
                             }
                         })

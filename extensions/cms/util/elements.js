@@ -66,6 +66,75 @@ const classOptions = key => ({
     }
 })
 
+const classLinkStylingOptions = key => ({
+    [`${key}className@linkstyling`]: {
+        label: 'Link Styling',
+        tab: DEFAULT_TAB,
+        enum: [
+            {
+                value: ' underlined-link ',
+                name: 'Link Animation'
+            }
+        ]
+    }
+})
+
+const classIconListOptions = key => ({
+    [`${key}className@icons`]: {
+        label: 'Icon',
+        tab: DEFAULT_TAB,
+        enum: [
+            {
+                value: ' icon-pdf black-icon black ',
+                name: 'PDF (schwarz)'
+            },
+            {
+                value: ' icon-right black-icon black ',
+                name: 'Pfeil rechts (schwarz)'
+            }
+        ]
+    }
+})
+
+const classLayoutOptions = key => ({
+    [`${key}className@space`]: {
+        label: 'Abstand zwischen Spalten',
+        tab: DEFAULT_TAB,
+        enum: [
+            {
+                value: ' row-space-2 ',
+                name: 'Klein'
+            },
+            {
+                value: ' row-space-4 ',
+                name: 'Mittel'
+            },
+            {
+                value: ' row-space-6 ',
+                name: 'Gross'
+            }
+        ]
+    },
+    [`${key}className@align`]: {
+        label: 'Ausrichtung',
+        tab: DEFAULT_TAB,
+        enum: [
+            {
+                value: '',
+                name: 'Ohne'
+            },
+            {
+                value: ' vcenter ',
+                name: 'Vertikal zentriert'
+            }
+        ]
+    }
+})
+
+
+
+
+
 const marginOptions = key => ({
     [`${key}style_marginTop`]: {
         label: 'Abstand oben',
@@ -480,6 +549,7 @@ const baseElements = [
                 tab: DEFAULT_TAB,
                 tabPosition: 0
             },
+            ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
             ...marginOptions('p_')
         }
@@ -504,12 +574,8 @@ const baseElements = [
                 label: 'Url',
                 tab: DEFAULT_TAB
             },
-            p_className: {
-                fullWidth: true,
-                value: '',
-                label: 'Klassname',
-                tab: DEFAULT_TAB
-            },
+            ...classIconListOptions('p_'),
+            ...classOptions('p_'),
             p_target: {
                 fullWidth: true,
                 value: '',
@@ -667,6 +733,7 @@ const baseElements = [
                 tab: DEFAULT_TAB
             },
             ...marginOptions('p_'),
+            ...classIconListOptions('p_'),
             ...classOptions('p_')
         }
     },
@@ -1066,6 +1133,8 @@ const baseElements = [
                 tab: DEFAULT_TAB
             },
             ...marginOptions('p_'),
+            ...classLayoutOptions('p_'),
+            ...classLinkStylingOptions('p_'),
             ...classOptions('p_')
         }
     },
@@ -1117,6 +1186,8 @@ const baseElements = [
                 tab: DEFAULT_TAB
             },
             ...marginOptions('p_'),
+            ...classLayoutOptions('p_'),
+            ...classLinkStylingOptions('p_'),
             ...classOptions('p_')
         }
     },
@@ -1175,6 +1246,8 @@ const baseElements = [
                 tab: DEFAULT_TAB
             },
             ...marginOptions('p_'),
+            ...classLayoutOptions('p_'),
+            ...classLinkStylingOptions('p_'),
             ...classOptions('p_')
         }
     },
@@ -1243,6 +1316,8 @@ const baseElements = [
                 tab: DEFAULT_TAB
             },
             ...marginOptions('p_'),
+            ...classLayoutOptions('p_'),
+            ...classLinkStylingOptions('p_'),
             ...classOptions('p_')
         }
     },
@@ -1321,6 +1396,8 @@ const baseElements = [
                 tab: DEFAULT_TAB
             },
             ...marginOptions('p_'),
+            ...classLayoutOptions('p_'),
+            ...classLinkStylingOptions('p_'),
             ...classOptions('p_')
         }
     },
@@ -1336,6 +1413,8 @@ const baseElements = [
             }
         },
         options: {
+            ...classLayoutOptions('p_'),
+            ...classLinkStylingOptions('p_'),
             ...classOptions('p_')
         }
     },
@@ -1388,6 +1467,7 @@ const baseElements = [
                 value: '',
                 label: 'Tag Name'
             },
+            ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
             ...marginOptions('p_')
         },

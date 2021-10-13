@@ -67,7 +67,7 @@ class TinyEditor extends React.Component {
                             ]
                         },
                         {
-                            title: 'Icon',
+                            title: 'Icon farbig',
                             menu: [
 
                                 {title: 'Telefon', value: 'icon-phone black'},
@@ -75,9 +75,22 @@ class TinyEditor extends React.Component {
                                 {title: 'Email', value: 'icon-email black'},
                                 {title: 'Maps', value: 'icon-maps black'},
                                 {title: 'Website', value: 'icon-website black'},
-                                {title: 'Pfeil rechts', value: 'icon-right black'},
+                                {title: 'Pfeil nach rechts', value: 'icon-right black'},
                                 {title: 'Popup', value: 'icon-popup black'}
 
+                            ]
+                        },
+                        {
+                            title: 'Icon schwarz',
+                            menu: [
+                                {title: 'Telefon', value: 'icon-phone black-icon black'},
+                                {title: 'Fax', value: 'icon-fax black-icon black'},
+                                {title: 'Email', value: 'icon-email black-icon black'},
+                                {title: 'Maps', value: 'icon-maps black-icon black'},
+                                {title: 'Website', value: 'icon-website black-icon black'},
+                                {title: 'Pfeil nach rechts', value: 'icon-right black-icon black'},
+                                {title: 'Popup', value: 'icon-popup black-icon black'},
+                                {title: 'Popup (rechts)', value: 'icon-popup push-icon-left black-icon black'},
                             ]
                         }
                     ],
