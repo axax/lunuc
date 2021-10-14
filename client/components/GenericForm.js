@@ -47,6 +47,13 @@ const styles = theme => {
                 width: 'calc(50% - ' + theme.spacing(2) + 'px)'
             }
         },
+        formFieldThird: {
+            margin: theme.spacing(1) + 'px',
+            width: 'calc(100% - ' + theme.spacing(2) + 'px)',
+            [theme.breakpoints.up('md')]: {
+                width: 'calc(33.33% - ' + theme.spacing(2) + 'px)'
+            }
+        },
         formFieldFull: {
             width: 'calc(100% - ' + theme.spacing(2) + 'px)',
             margin: theme.spacing(1) + 'px',
@@ -864,6 +871,18 @@ class GenericForm extends React.Component {
                 fields={field.fields}
                 type={field.type} placeholder={field.placeholder}/>)
         } else if (uitype === 'select') {
+
+            if(value && value.constructor === Object) {
+                // find key for value
+                const strValue = JSON.stringify(value)
+                for(let i = 0;i<field.enum.length;i++){
+                    if( JSON.stringify(field.enum[i].value) == strValue){
+                        value = field.enum[i].name
+                        break
+                    }
+                }
+            }
+
             currentFormFields.push(<SimpleSelect
                 key={fieldKey} name={fieldKey}
                 onChange={this.handleInputChange}
@@ -872,7 +891,7 @@ class GenericForm extends React.Component {
                 hint={this.state.fieldErrors[fieldKey]}
                 multi={field.multi}
                 label={field.label}
-                className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
+                className={classNames(classes.formField, field.fullWidth && classes.formFieldFull, field.thirdWidth && classes.formFieldThird)}
                 InputLabelProps={{
                     shrink: true,
                 }}
@@ -903,7 +922,7 @@ class GenericForm extends React.Component {
                                               key={fieldKey}
                                               id={fieldKey}
                                               label={(field.label || field.name) + (languageCode ? ' [' + languageCode + ']' : '')}
-                                              className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
+                                              className={classNames(classes.formField, field.fullWidth && classes.formFieldFull, field.thirdWidth && classes.formFieldThird )}
                                               InputLabelProps={{
                                                   shrink: true,
                                               }}

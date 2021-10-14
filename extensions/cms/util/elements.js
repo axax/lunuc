@@ -72,6 +72,10 @@ const classLinkStylingOptions = key => ({
         tab: DEFAULT_TAB,
         enum: [
             {
+                value: '',
+                name: 'Keine'
+            },
+            {
                 value: ' underlined-link ',
                 name: 'Link Animation'
             }
@@ -79,11 +83,65 @@ const classLinkStylingOptions = key => ({
     }
 })
 
+const colClasses = [
+    {
+        short: 'xs',
+        long: 'Mobile'
+    },
+    {
+        short: 'sm',
+        long: 'Tablet'
+    },
+    {
+        short: 'md',
+        long: 'Desktop'
+    }
+]
+const classLayoutColumnOptions = (count, options) => {
+
+    const obj = {}
+    for (let i = 1; i <= count; i++) {
+
+        for (let j = 0; j < colClasses.length; j++) {
+            const col = colClasses[j]
+
+            const enumA = []
+
+            for (let k = 1; k < 13; k++) {
+                enumA.push({
+                    value: ` col-${col.short}-${k} `,
+                    name: k
+                })
+            }
+
+            obj[`c_${i-1}_p_className@${col.short}`] = {
+                thirdWidth: true,
+                label: `Spalte ${i}: ${col.long}`,
+                value: ` col-${col.short}-${options[col.short]} `,
+                tab: DEFAULT_TAB,
+                enum: enumA
+            }
+        }
+
+
+        obj[`c_${i-1}_p_className`] = {
+            fullWidth: true,
+            label: 'Klasse Spalte ' + i,
+            value: ''
+        }
+    }
+    return obj
+}
+
 const classIconListOptions = key => ({
     [`${key}className@icons`]: {
         label: 'Icon',
         tab: DEFAULT_TAB,
         enum: [
+            {
+                value: '',
+                name: 'Keine'
+            },
             {
                 value: ' icon-pdf black-icon black ',
                 name: 'PDF (schwarz)'
@@ -128,11 +186,22 @@ const classLayoutOptions = key => ({
                 name: 'Vertikal zentriert'
             }
         ]
+    },
+    [`${key}className@order`]: {
+        label: 'Anordnung',
+        tab: DEFAULT_TAB,
+        enum: [
+            {
+                value: '',
+                name: 'Ohne'
+            },
+            {
+                value: ' row-sm-reverse ',
+                name: 'Auf Mobile umkehren'
+            }
+        ]
     }
 })
-
-
-
 
 
 const marginOptions = key => ({
@@ -182,7 +251,7 @@ const baseElements = [
                 tab: DEFAULT_TAB
             },
             ...marginOptions('p_'),
-            p_style_float: {
+            'p_style@align': {
                 label: 'Ausrichtung',
                 enum: [
                     {
@@ -191,11 +260,15 @@ const baseElements = [
                     },
                     {
                         name: 'Rechts',
-                        value: 'right'
+                        value: {float: 'right'}
                     },
                     {
                         name: 'Links',
-                        value: 'left'
+                        value: {float: 'left'}
+                    },
+                    {
+                        name: 'Zentriert',
+                        value: {marginLeft: 'auto', marginRight: 'auto', display: 'block'}
                     },
                 ],
                 tab: DEFAULT_TAB
@@ -1120,18 +1193,7 @@ const baseElements = [
             ]
         },
         options: {
-            c_0_p_className: {
-                fullWidth: true,
-                label: 'Spalte 1',
-                value: 'col-md-6 col-sm-6 col-xs-12',
-                tab: DEFAULT_TAB
-            },
-            c_1_p_className: {
-                fullWidth: true,
-                label: 'Spalte 2',
-                value: 'col-md-6 col-sm-6 col-xs-12',
-                tab: DEFAULT_TAB
-            },
+            ...classLayoutColumnOptions(2,{md:6, sm:6, xs:12}),
             ...marginOptions('p_'),
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
@@ -1167,24 +1229,7 @@ const baseElements = [
             ]
         },
         options: {
-            c_0_p_className: {
-                label: 'Spalte 1',
-                fullWidth: true,
-                value: 'col-md-4 col-sm-4 col-xs-12',
-                tab: DEFAULT_TAB
-            },
-            c_1_p_className: {
-                label: 'Spalte 2',
-                fullWidth: true,
-                value: 'col-md-4 col-sm-4 col-xs-12',
-                tab: DEFAULT_TAB
-            },
-            c_2_p_className: {
-                label: 'Spalte 3',
-                fullWidth: true,
-                value: 'col-md-4 col-sm-4 col-xs-12',
-                tab: DEFAULT_TAB
-            },
+            ...classLayoutColumnOptions(3, {md:4, sm:4, xs:12}),
             ...marginOptions('p_'),
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
@@ -1225,26 +1270,7 @@ const baseElements = [
             ]
         },
         options: {
-            c_0_p_className: {
-                label: 'Spalte 1',
-                value: 'col-md-3 col-sm-3 col-xs-6',
-                tab: DEFAULT_TAB
-            },
-            c_1_p_className: {
-                label: 'Spalte 2',
-                value: 'col-md-3 col-sm-3 col-xs-6',
-                tab: DEFAULT_TAB
-            },
-            c_2_p_className: {
-                label: 'Spalte 3',
-                value: 'col-md-3 col-sm-3 col-xs-6',
-                tab: DEFAULT_TAB
-            },
-            c_3_p_className: {
-                label: 'Spalte 4',
-                value: 'col-md-3 col-sm-3 col-xs-6',
-                tab: DEFAULT_TAB
-            },
+            ...classLayoutColumnOptions(4, {md:3, sm:3, xs:6}),
             ...marginOptions('p_'),
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),

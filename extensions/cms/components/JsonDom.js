@@ -22,7 +22,7 @@ import {connect} from 'react-redux'
 import {bindActionCreators} from 'redux'
 
 const JsonDomHelper = (props) => <Async {...props}
-                                        load={import(/* webpackChunkName: "admin" */ './JsonDomHelper')}/>
+                                        load={import(/* webpackChunkName: "jsondom" */ './JsonDomHelper')}/>
 
 const PrettyErrorMessage = (props) => <Async {...props}
                                              load={import(/* webpackChunkName: "admin" */ './PrettyErrorMessage')}/>
@@ -944,8 +944,14 @@ class JsonDom extends React.Component {
                                     }
 
                                     let cur = eleProps[curKey]
-                                    if(cur && cur.constructor === String){
-                                        eleProps[curKey] = cur + p[elKey]
+                                    if(cur){
+                                        if(cur.constructor === String) {
+                                            eleProps[curKey] = cur + p[elKey]
+                                        }else if(cur.constructor === Object) {
+                                            eleProps[curKey] = Object.assign(cur, p[elKey])
+                                        }else{
+                                            eleProps[curKey] = p[elKey]
+                                        }
                                     }else {
                                         eleProps[curKey] = p[elKey]
                                     }
