@@ -12,13 +12,16 @@ const GENSRC_PATH = path.join(__dirname, './gensrc')
 const register = async (db) => {
     unregister()
     const results = (await db.collection('Hook').find({active: true}).toArray())
-    let frontEndHooks = '/* this file is generated */\n\n'
+    let frontEndHooks = '/* this file is generated */\nimport Hook from \'util/hook\'\n\n'
+    let frontEndAdminHooks = frontEndHooks
     results.forEach(async entry => {
         if (!entry.execfilter || Util.execFilter(entry.execfilter)) {
             console.log(`register hook ${entry.name} (${entry.hook})`)
 
             if(entry.hook === 'Frontend'){
                 frontEndHooks+=entry.script+'\n\n'
+            }else if(entry.hook === 'FrontendAdmin'){
+                frontEndAdminHooks+=entry.script+'\n\n'
             }else {
                 try {
                     const fun = new Function(`
@@ -61,6 +64,11 @@ const register = async (db) => {
         }
     })
     fs.writeFile(GENSRC_PATH + "/frontendhook.js", frontEndHooks, function (err) {
+        if (err) {
+            return console.log(err)
+        }
+    })
+    fs.writeFile(GENSRC_PATH + "/frontendAdminHook.js", frontEndAdminHooks, function (err) {
         if (err) {
             return console.log(err)
         }

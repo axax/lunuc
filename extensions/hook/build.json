@@ -28,6 +28,7 @@
             "beforeSignUp",
             "NewUserCreated",
             "Frontend",
+            "FrontendAdmin",
             "OnMail"
           ]
         },
