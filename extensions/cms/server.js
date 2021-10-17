@@ -50,7 +50,7 @@ Hook.on('createUserRoles', ({userRoles}) => {
 Hook.on('cmsTemplateRenderer', async ({db, context, body, slug, req}) => {
 
     let cmsPages = await getCmsPage({db, context, slug, checkHostrules: false})
-    if (!cmsPages.results) {
+    if (!cmsPages.results || cmsPages.results.length === 0) {
         throw new Error(`Template ${slug} doesn't exist`)
     }
     let mailContext = {}

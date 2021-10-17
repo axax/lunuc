@@ -27,7 +27,7 @@ const LOGIN_ATTEMPTS_MAP = {},
 const createUser = async ({username, role, junior, group, password, language, email, emailConfirmed, requestNewPassword, meta, picture, db, context}, opts) => {
 
     if (!opts) {
-        opts = {override: false}
+        opts = {override: false, skipCheck: false}
     }
     const errors = []
 
@@ -92,7 +92,7 @@ const createUser = async ({username, role, junior, group, password, language, em
         group.forEach(sup => {
             groupIds.push(ObjectId(sup))
         })
-    }else if(context.group && await Util.userHasCapability(db, context, CAPABILITY_MANAGE_SAME_GROUP)){
+    }else if(context.group && (opts.skipCheck || await Util.userHasCapability(db, context, CAPABILITY_MANAGE_SAME_GROUP))){
         // copy group of current user
         context.group.forEach(g=>{
             groupIds.push(ObjectId(g))
