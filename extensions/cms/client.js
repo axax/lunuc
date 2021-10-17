@@ -55,8 +55,9 @@ export default () => {
             // match everything but paths that start with ADMIN_BASE_URL
             exact: false, path: '/:slug*', render: ({match, location, history}) => {
                 Hook.call('CMSSlug', {match})
-                let slug = match.params.slug
-                const pos = (slug ? slug.indexOf('/' + PRETTYURL_SEPERATOR + '/') : -1)
+                let slug = match.params.slug ? match.params.slug.split('?')[0] : ''
+
+                const pos = slug.indexOf('/' + PRETTYURL_SEPERATOR + '/')
                 if (pos >= 0) {
                     slug = slug.substring(0, pos)
                     /*const subpage = slug.substring(pos + 3)
@@ -64,10 +65,10 @@ export default () => {
                 }
 
                 if (slug === undefined || (slug && slug.split('/')[0] !== container.adminBaseUrlPlain)) {
-                    return <CmsViewContainer match={match} location={location} history={history} slug={slug || ''}/>
+                    return <CmsViewContainer match={match} location={location} history={history} slug={slug}/>
                 }
 
-                if(_app_.redirect404 && _app_.redirect404!==location.pathname){
+                if (_app_.redirect404 && _app_.redirect404 !== location.pathname) {
                     location.replace(_app_.redirect404)
                     return null
                 }
