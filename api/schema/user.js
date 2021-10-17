@@ -98,7 +98,6 @@ export const userSchemaRaw = `
 			mailSubject: String
 			mailUrl: String
             meta: String
-            role: ID,
             fromEmail: String
 		): Token
 		

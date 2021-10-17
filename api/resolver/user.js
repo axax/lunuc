@@ -395,7 +395,7 @@ export const userResolver = (db) => ({
                 return doc
             }
         },
-        signUp: async ({password, username, email, mailTemplate, mailSubject, mailUrl, role, meta, fromEmail}, req) => {
+        signUp: async ({password, username, email, mailTemplate, mailSubject, mailUrl, meta, fromEmail}, req) => {
 
             const {context} = req
 
@@ -407,26 +407,28 @@ export const userResolver = (db) => ({
 
             meta = meta && meta.constructor!==Object ? JSON.parse(meta) : {}
 
+            const newUserData = {username, email, password, meta}
             if (Hook.hooks['beforeSignUp'] && Hook.hooks['beforeSignUp'].length) {
                 let c = Hook.hooks['beforeSignUp'].length
                 for (let i = 0; i < Hook.hooks['beforeSignUp'].length; ++i) {
                     await Hook.hooks['beforeSignUp'][i].callback({
                         context,
                         options,
-                        password,
-                        username,
-                        email,
                         mailTemplate,
                         mailSubject,
                         mailUrl,
-                        role,
-                        meta,
-                        db
+                        db,
+                        newUserData,
+                        /* the following parameters are deprecated use newUserData object instead */
+                        password,
+                        username,
+                        email,
+                        meta
                     })
                 }
             }
 
-            const insertResult = await createUser({db, context, username, email, password, meta}, options)
+            const insertResult = await createUser({db, context, ...newUserData}, options)
 
             if (insertResult.ops && insertResult.ops.length > 0 ) {
                 if (mailTemplate) {
