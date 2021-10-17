@@ -271,7 +271,7 @@ export const userResolver = (db) => ({
 
             return {status: 'done'}
         },
-        forgotPassword: async ({username, url, subject}, req) => {
+        forgotPassword: async ({username, url, subject, fromEmail}, req) => {
 
             const {context, headers} = req
             const userCollection = db.collection('User')
@@ -288,6 +288,7 @@ export const userResolver = (db) => ({
             const user = result.value
             if (user) {
                 await sendMail(db, context, {
+                    from: fromEmail,
                     slug: 'core/forgot-password/mail',
                     recipient: user.email,
                     subject: subject || 'Password reset',
