@@ -34,11 +34,11 @@ export default () => {
         if (type === 'GenericData' && data.results.length > 0) {
             dataSource.forEach((row, i) => {
                 const item = data.results[i],
-                    structure = item.definition?item.definition.structure:{}
+                    structure = item.definition ? item.definition.structure : {}
 
                 if (structure.titleTemplate) {
                     row.data = Util.replacePlaceholders(structure.titleTemplate, item)
-                }else {
+                } else {
 
                     let pickerFields
 
@@ -103,24 +103,22 @@ export default () => {
                 dataToEdit = {}
 
                 const data = meta.TypeContainer.state.data
-                if(data.meta){
+                if (data.meta) {
                     dataToEdit.definition = JSON.parse(data.meta)
                 }
 
                 const {baseFilter} = Util.extractQueryParams(window.location.search.substring(1))
 
-                if(baseFilter){
-                    const query = Util.extractQueryParams(baseFilter.replace(/==/g,'='))
-                    Object.keys(query).forEach(key=>{
+                // if there is a base filter set try to use its value to set as default when creating a new object
+                if (baseFilter) {
+                    const query = Util.extractQueryParams(baseFilter.replace(/==/g, '='))
+                    Object.keys(query).forEach(key => {
                         const value = query[key]
-                        if(value){
+                        if (value) {
                             setPropertyByPath(value, key, dataToEdit)
                         }
                     })
-
                 }
-
-
             }
 
 
@@ -307,28 +305,31 @@ export default () => {
 
     Hook.on('TypeCreateEditBeforeSave', function ({type, editedData, optimisticData, formFields}) {
         if (type === 'GenericData' && editedData && editedData.definition) {
-
             const definition = editedData.definition.constructor === Array ? editedData.definition[0] : editedData.definition,
-                structure = definition.structure,
                 dataObject = {},
                 optimisticDataObject = {}
 
+
+            if (definition.structure.constructor === String) {
+                definition.structure = JSON.parse(definition.structure)
+            }
+
             // Combine data attributes to the data object
-            structure.fields.forEach(field => {
+            definition.structure.fields.forEach(field => {
 
                 if (field.genericType) {
                     // only keep reference _id
                     const fieldData = editedData['data_' + field.name]
                     if (fieldData && fieldData.constructor === Array && fieldData.length > 0 && fieldData[0]._id) {
-                        if( field.metaFields){
-                            dataObject[field.name] = fieldData.map(e => ({_id:e._id, metaValues: e.metaValues}) )
-                        }else {
+                        if (field.metaFields) {
+                            dataObject[field.name] = fieldData.map(e => ({_id: e._id, metaValues: e.metaValues}))
+                        } else {
                             dataObject[field.name] = fieldData.map(e => e._id)
                         }
                     } else if (fieldData && fieldData._id) {
-                        if( field.metaFields){
-                            dataObject[field.name] = {_id:fieldData._id, metaValues: fieldData.metaValues}
-                        }else {
+                        if (field.metaFields) {
+                            dataObject[field.name] = {_id: fieldData._id, metaValues: fieldData.metaValues}
+                        } else {
                             dataObject[field.name] = fieldData._id
                         }
                     } else {
@@ -342,8 +343,8 @@ export default () => {
                     if (field.type === 'Object' && !(editedData['data_' + field.name] instanceof Object)) {
                         try {
                             currentDataAttr = JSON.parse(editedData['data_' + field.name])
-                        }catch (e) {
-                            console.log(e,editedData['data_' + field.name] )
+                        } catch (e) {
+                            console.log(e, editedData['data_' + field.name])
                         }
                     } else {
                         currentDataAttr = editedData['data_' + field.name]
@@ -479,11 +480,11 @@ export default () => {
    */
     Hook.on('TypesContainerBeforeFilterDialog', function ({type, filterFields}) {
         if (type === 'GenericData') {
-            if(this.state.data.meta){
+            if (this.state.data.meta) {
                 const definition = JSON.parse(this.state.data.meta)
-                definition.structure.fields.forEach(field=>{
-                    if(field.searchable) {
-                        filterFields['data.' + field.name] = Object.assign({},field,{tab:null, required: false})
+                definition.structure.fields.forEach(field => {
+                    if (field.searchable) {
+                        filterFields['data.' + field.name] = Object.assign({}, field, {tab: null, required: false})
                     }
 
                 })

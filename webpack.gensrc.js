@@ -332,7 +332,7 @@ function gensrcExtension(name, options) {
 
     const gendir = EXTENSION_PATH + name + '/' + GENSRC_PATH
     try {
-        deleteFolderRecursive(path.resolve(__dirname, gendir), ['frontendhook.js'])
+        deleteFolderRecursive(path.resolve(__dirname, gendir), ['frontendhook.js','frontendAdminHook.js'])
     } catch (err) {
         if (err.code !== 'EEXIST') throw err
     }

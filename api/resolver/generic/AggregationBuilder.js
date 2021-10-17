@@ -519,6 +519,11 @@ export default class AggregationBuilder {
             projectResultData = {},
             hasMatchInReference = false
 
+        if (rootMatch.$or) {
+            // warp or
+            rootMatch.$and = [{$or:rootMatch.$or}]
+            delete rootMatch.$or
+        }
 
         const aggHook = Hook.hooks['AggregationBuilderBeforeQuery']
         if (aggHook && aggHook.length) {

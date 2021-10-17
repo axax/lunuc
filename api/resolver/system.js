@@ -299,7 +299,7 @@ export const systemResolver = (db) => ({
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
             let jsonParsed = JSON.parse(json)
 
-            if(jsonParsed.constructor !== Array){
+            if (jsonParsed.constructor !== Array) {
                 jsonParsed = [jsonParsed]
             }
 
@@ -311,11 +311,18 @@ export const systemResolver = (db) => ({
 
                     const match = {}, set = {}
 
+                    // convert to proper ObjectId
+                    Object.keys(entry).forEach(k => {
+                        if (entry[k] && entry[k].constructor === String && ObjectId.isValid(entry[k])) {
+                            entry[k] = ObjectId(entry[k])
+                        }
+                    })
+
                     if (entry._id) {
-                        if(entry._id.$oid){
+                        if (entry._id.$oid) {
                             entry._id = entry._id.$oid
                         }
-                        match._id = ObjectId(entry._id)
+                        match._id = entry._id && entry._id.constructor === String ? ObjectId(entry._id) : entry._id
                     }
                     typeDefinition.fields.forEach(field => {
 
@@ -326,8 +333,11 @@ export const systemResolver = (db) => ({
                             set[field.name] = entry[field.name]
                         }
                     })
-
-                    col.updateOne(match, {$set: set}, {upsert: true})
+                    if(Object.keys(match).length===0){
+                        col.insertOne(set)
+                    }else {
+                        col.updateOne(match, {$set: set}, {upsert: true})
+                    }
 
                 })
             }
@@ -368,9 +378,9 @@ export const systemResolver = (db) => ({
 
             return {result}
         },
-        exportQuery: async ({type, query}) =>{
+        exportQuery: async ({type, query}) => {
 
-            return {result:mongoExport({type, query})}
+            return {result: mongoExport({type, query})}
         }
     },
     Mutation: {

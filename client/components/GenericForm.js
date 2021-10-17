@@ -33,6 +33,7 @@ import Util from '../util'
 import DomUtil from '../util/dom'
 import {matchExpr} from '../util/json'
 import JsonEditor from '../../extensions/cms/components/JsonEditor'
+import {CAPABILITY_MANAGE_OTHER_USERS} from "../../extensions/cms/constants";
 
 const styles = theme => {
     return {
@@ -539,13 +540,38 @@ class GenericForm extends React.Component {
                                                    size="small"
                                                    style={field.style}
                                                    onClick={() => {
-                                                       subFieldValues.push({})
-                                                       this.handleInputChange({
-                                                           target: {
-                                                               name: fieldKey,
-                                                               value: subFieldValues
+
+                                                       const initData = {}
+                                                       let c = 0
+                                                       const next = () => {
+                                                           if (c == 0) {
+
+                                                               subFieldValues.push(initData)
+
+                                                               this.handleInputChange({
+                                                                   target: {
+                                                                       name: fieldKey,
+                                                                       value: subFieldValues
+                                                                   }
+                                                               })
+                                                           }
+
+                                                       }
+
+                                                       Object.keys(subFields).forEach(k=>{
+                                                           if(subFields[k].autoIncrement){
+                                                               c++
+                                                               fetch('/lunucapi/autoIncrement?key='+subFields[k].autoIncrement)
+                                                                   .then(response => response.json().then(json=>{
+                                                                       initData[k] = json.nr
+                                                                       c--
+                                                                       next()
+                                                                   }))
                                                            }
                                                        })
+
+                                                       next()
+
                                                    }}>{field.addButton || field.label}</Button>)
 
                 } else {
@@ -602,7 +628,6 @@ class GenericForm extends React.Component {
 
                         this.createInputField({
                             uitype,
-                            uistate: field.uistate,
                             field,
                             value: value && value[languageCode] ? value[languageCode] : '',
                             currentFormFields,
@@ -617,7 +642,6 @@ class GenericForm extends React.Component {
             } else {
                 if (this.createInputField({
                     uitype,
-                    uistate: field.uistate,
                     field,
                     value,
                     currentFormFields,
@@ -719,7 +743,7 @@ class GenericForm extends React.Component {
         )
     }
 
-    createInputField({uitype, uistate, field, value, currentFormFields, fieldKey, fieldIndex, languageCode, translateButton}) {
+    createInputField({uitype, field, value, currentFormFields, fieldKey, fieldIndex, languageCode, translateButton}) {
         const {onKeyDown, classes, autoFocus} = this.props
         let langButtonWasInserted = false
         if (!field.label) {
@@ -733,7 +757,10 @@ class GenericForm extends React.Component {
 
             currentFormFields.push(<span dangerouslySetInnerHTML={{__html: field.html}}/>)
 
-        } else if (uitype === 'wrapper' || (uistate && uistate.visible && matchExpr(uistate.visible, this.state.fields))) {
+        } else if (uitype === 'wrapper' ||
+            (field.uistate && field.uistate.visible && matchExpr(field.uistate.visible, this.state.fields)) ||
+            (field.access && field.access.ui && field.access.ui.role && !Util.hasCapability({userData: _app_.user}, field.access.ui.role))
+        ) {
             // do nothing
         } else if (['json', 'jsonEditor', 'editor', 'jseditor', 'css'].indexOf(uitype) >= 0) {
 
@@ -872,11 +899,11 @@ class GenericForm extends React.Component {
                 type={field.type} placeholder={field.placeholder}/>)
         } else if (uitype === 'select') {
 
-            if(value && value.constructor === Object) {
+            if (value && value.constructor === Object) {
                 // find key for value
                 const strValue = JSON.stringify(value)
-                for(let i = 0;i<field.enum.length;i++){
-                    if( JSON.stringify(field.enum[i].value) == strValue){
+                for (let i = 0; i < field.enum.length; i++) {
+                    if (JSON.stringify(field.enum[i].value) == strValue) {
                         value = field.enum[i].name
                         break
                     }
@@ -922,7 +949,7 @@ class GenericForm extends React.Component {
                                               key={fieldKey}
                                               id={fieldKey}
                                               label={(field.label || field.name) + (languageCode ? ' [' + languageCode + ']' : '')}
-                                              className={classNames(classes.formField, field.fullWidth && classes.formFieldFull, field.thirdWidth && classes.formFieldThird )}
+                                              className={classNames(classes.formField, field.fullWidth && classes.formFieldFull, field.thirdWidth && classes.formFieldThird)}
                                               InputLabelProps={{
                                                   shrink: true,
                                               }}

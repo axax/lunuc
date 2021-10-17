@@ -4,6 +4,9 @@ import {getType, getTypes} from './types'
 import {_t} from 'util/i18n'
 import extensionsPrivate from 'gen/extensions-private'
 import extensions from 'gen/extensions'
+import {
+    CAPABILITY_MANAGE_USER_GROUP
+} from 'util/capabilities'
 
 console.log('merge extension defintion')
 Object.keys(extensionsPrivate).forEach(key => {
@@ -316,28 +319,28 @@ Hook.on('Types', ({types}) => {
                 name: 'username',
                 fullWidth: true,
                 required: true,
-                tab: 'General'
+                tab: 'Allgemein'
             },
             {
                 name: 'password',
                 fullWidth: false,
                 required: true,
                 uitype: 'password',
-                tab: 'General',
+                tab: 'Allgemein',
                 hideColumnInTypes: true
             },
             {
                 name: 'requestNewPassword',
                 fullWidth: false,
                 type: 'Boolean',
-                tab: 'General',
+                tab: 'Allgemein',
                 hideColumnInTypes: true
             },
             {
                 name: 'email',
                 fullWidth: true,
                 required: true,
-                tab: 'General'
+                tab: 'Allgemein'
             },
             {
                 name: 'language'
@@ -347,7 +350,7 @@ Hook.on('Types', ({types}) => {
                 type: 'Media',
                 reference: true,
                 fields: ['name'],
-                tab: 'General'
+                tab: 'Allgemein'
             },
             {
                 name: 'emailConfirmed',
@@ -371,7 +374,12 @@ Hook.on('Types', ({types}) => {
                 type: 'UserRole',
                 reference: true,
                 fields: ['name'],
-                tab: _t('Types.accessControl')
+                tab: _t('Types.accessControl'),
+                access:{
+                    ui: {
+                        role: CAPABILITY_MANAGE_USER_GROUP
+                    }
+                }
             },
             {
                 name: 'junior',
@@ -380,7 +388,12 @@ Hook.on('Types', ({types}) => {
                 multi: true,
                 fields: ['username'],
                 tab: _t('Types.accessControl'),
-                hideColumnInTypes: true
+                hideColumnInTypes: true,
+                access:{
+                    ui: {
+                        role: CAPABILITY_MANAGE_USER_GROUP
+                    }
+                }
             },
             {
                 name: 'group',
@@ -389,7 +402,12 @@ Hook.on('Types', ({types}) => {
                 multi: true,
                 fields: ['name'],
                 tab: _t('Types.accessControl'),
-                hideColumnInTypes: true
+                hideColumnInTypes: true,
+                access:{
+                    ui: {
+                        role: CAPABILITY_MANAGE_USER_GROUP
+                    }
+                }
             }
         ]
     }

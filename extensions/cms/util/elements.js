@@ -147,7 +147,15 @@ const classIconListOptions = key => ({
                 name: 'PDF (schwarz)'
             },
             {
+                value: ' icon-pdf push-icon-left black-icon black ',
+                name: 'PDF rechts (schwarz)'
+            },
+            {
                 value: ' icon-right black-icon black ',
+                name: 'Pfeil (schwarz)'
+            },
+            {
+                value: ' icon-right push-icon-left black-icon black ',
                 name: 'Pfeil rechts (schwarz)'
             }
         ]

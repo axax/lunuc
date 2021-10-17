@@ -11,6 +11,7 @@ import Hook from 'util/hook'
 import AggregationBuilder from './AggregationBuilder'
 import Cache from 'util/cache'
 import {_t} from '../../../util/i18nServer'
+import {ApiError} from "../../error";
 
 const {DEFAULT_LANGUAGE} = config
 
@@ -229,7 +230,7 @@ const GenericResolver = {
         /* if (typeName.indexOf("GenericData") >= 0) {
              console.log(JSON.stringify(dataQuery, null, 4))
          }*/
-        //      console.log(options,JSON.stringify(dataQuery, null, 4))
+              //console.log(options,JSON.stringify(dataQuery, null, 4))
         const collection = db.collection(collectionName)
         const startTimeAggregate = new Date()
 
@@ -398,7 +399,12 @@ const GenericResolver = {
         }
         if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
             if (typeName === 'User') {
-                throw new Error('Error deleting entry. You might not have premissions to manage other users')
+                // special case for type User
+                if ( await Util.userHasCapability(db, context, CAPABILITY_MANAGE_SAME_GROUP)) {
+                    options.group = {$in: context.group.map(f=>ObjectId(f))}
+                }else{
+                    throw new Error('Error deleting entry. You might not have premissions to manage other users')
+                }
             } else {
                 options.createdBy = {$in: await Util.userAndJuniorIds(db, context.id)}
             }
@@ -466,7 +472,12 @@ const GenericResolver = {
 
         if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
             if (typeName === 'User') {
-                throw new Error('Error deleting entries. You might not have premissions to manage other users')
+                // special case for type User
+                if ( await Util.userHasCapability(db, context, CAPABILITY_MANAGE_SAME_GROUP)) {
+                    options.group = {$in: context.group.map(f=>ObjectId(f))}
+                }else{
+                    throw new Error('Error deleting entry. You might not have premissions to manage other users')
+                }
             } else {
                 options.createdBy = {$in: await Util.userAndJuniorIds(db, context.id)}
             }
