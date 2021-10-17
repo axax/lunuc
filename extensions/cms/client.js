@@ -64,14 +64,14 @@ export default () => {
                     location.search += '&_subpage=' + subpage*/
                 }
 
-                if (slug === undefined || (slug && slug.split('/')[0] !== container.adminBaseUrlPlain)) {
+                if (slug.split('/')[0] !== container.adminBaseUrlPlain) {
                     return <CmsViewContainer match={match} location={location} history={history} slug={slug}/>
                 }
 
-                if (_app_.redirect404 && _app_.redirect404 !== location.pathname) {
+                /*if (_app_.redirect404 && _app_.redirect404 !== location.pathname) {
                     location.replace(_app_.redirect404)
                     return null
-                }
+                }*/
                 return <ErrorPage/>
             }
         })
