@@ -232,7 +232,6 @@ export default class AggregationBuilder {
                 }
             }
 
-
             if (!exact && !reference && vagueSearchable !== false && ['Boolean'].indexOf(type) < 0) {
 
                 // if it is an object only add filter if searchable is explicitly set to true
@@ -350,7 +349,9 @@ export default class AggregationBuilder {
         } else if (type === 'Object' && filterValue) {
 
             filterValue = {
-                body: `function(data) {return data && Object.keys(data).some(key => /${filterValue}/i.test(data[key]))}`,
+                body: `function(data) {return data && Object.keys(data).some(
+                key => /${filterValue}/i.test( data[key] && (data[key].constructor===Object || data[key].constructor===Array)?JSON.stringify(data[key]):data[key])
+                )}`,
                 args: ['$'+filterKey],
                 lang: 'js'
             }

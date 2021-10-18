@@ -159,7 +159,6 @@ class TypesContainer extends React.Component {
     saveSettings() {
         const value = JSON.stringify(this.settings)
         if (value !== JSON.stringify(this.props.keyValueMap.TypesContainerSettings)) {
-            console.log('save settings', value)
             this.props.setKeyValue({key: 'TypesContainerSettings', value})
         }
     }

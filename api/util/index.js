@@ -443,8 +443,14 @@ const Util = {
                     const comparator = item.match(/==|>=|<=|!==|!=|=|>|<|:/)
                     if (comparator) {
 
-                        let key = item.substring(0, comparator.index)
+                        let parenthesesOpen = item.startsWith('(')
+
+                        let key = item.substring(parenthesesOpen?1:0, comparator.index)
                         let value = item.substring(comparator.index + comparator[0].length)
+                        let parenthesesClose = value.endsWith(')')
+                        if(parenthesesClose){
+                            value = value.slice(0, -1)
+                        }
                         let inDoubleQuotes = false
 
                         if (value.length > 1 && value.endsWith('"') && value.startsWith('"')) {
@@ -459,9 +465,9 @@ const Util = {
                             if (parts[key].constructor !== Array) {
                                 parts[key] = [parts[key]]
                             }
-                            parts[key].push({value, operator, comparator: comparator[0], inDoubleQuotes})
+                            parts[key].push({value, operator, comparator: comparator[0], inDoubleQuotes, parenthesesOpen, parenthesesClose})
                         } else {
-                            parts[key] = {value, operator, comparator: comparator[0], inDoubleQuotes}
+                            parts[key] = {value, operator, comparator: comparator[0], inDoubleQuotes, parenthesesOpen, parenthesesClose}
                         }
 
                     } else {

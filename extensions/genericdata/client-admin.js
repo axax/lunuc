@@ -280,6 +280,7 @@ export default () => {
                                      }}
                                      primaryButton={false}
                                      fields={newFields}
+                                     trigger={structure.trigger}
                                      values={newDataToEdit}/>
                     </React.Fragment>
                 }
@@ -344,7 +345,7 @@ export default () => {
                         try {
                             currentDataAttr = JSON.parse(editedData['data_' + field.name])
                         } catch (e) {
-                            console.log(e, editedData['data_' + field.name])
+                            console.log(e, field.name + ' -> ' + editedData['data_' + field.name])
                         }
                     } else {
                         currentDataAttr = editedData['data_' + field.name]
@@ -429,22 +430,29 @@ export default () => {
         TypePicker: This gets called after the user picks items in a new window
         filter the object with only the attributes that are specified as pickerFields
      */
-    Hook.on(['TypePickerWindowCallback', 'TypePickerBeforeHandlePick'], function ({type, value, pickerField}) {
+    Hook.on(['TypePickerWindowCallback', 'TypePickerBeforeHandlePick'], function ({type, value, pickerField, queryFields}) {
         if (type === 'GenericData') {
             try {
-                if (!pickerField && value.definition && value.definition.structure) {
-                    pickerField = value.definition.structure.pickerField
+
+                let fieldsToReturn
+
+                if (queryFields) {
+                    fieldsToReturn = queryFields
+                } else if (pickerField) {
+                    fieldsToReturn = pickerField
+                } else if (!pickerField && value.definition && value.definition.structure) {
+                    fieldsToReturn = value.definition.structure.pickerField
                 }
 
 
-                if (pickerField) {
+                if (fieldsToReturn) {
 
                     const newData = {}
-                    if (pickerField.constructor !== Array) {
-                        pickerField = [pickerField]
+                    if (fieldsToReturn.constructor !== Array) {
+                        fieldsToReturn = [fieldsToReturn]
                     }
 
-                    for (const key of pickerField) {
+                    for (const key of fieldsToReturn) {
                         newData[key] = value.data[key]
                     }
 

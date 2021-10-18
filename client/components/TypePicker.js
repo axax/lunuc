@@ -404,9 +404,9 @@ class TypePicker extends React.Component {
     handlePick(idx) {
         const value = this.state.data.results[idx]
 
-        const {type, pickerField} = this.props
+        const {type, pickerField, queryFields} = this.props
 
-        Hook.call('TypePickerBeforeHandlePick', {type, pickerField, value})
+        Hook.call('TypePickerBeforeHandlePick', {type, pickerField, queryFields, value})
 
         Util.removeNullValues(value, {
             recursiv: true,
@@ -456,7 +456,6 @@ class TypePicker extends React.Component {
                 Hook.call('TypePickerBeforeHandleChange', {
                     value,
                     searchFields,
-                    pickerField: this.props.pickerField,
                     type: this.props.type
                 })
 

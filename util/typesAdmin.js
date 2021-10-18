@@ -26,7 +26,7 @@ export const typeDataToLabel = (item, pickerField) => {
     if (item.__typename === 'GenericData') {
         const definition = item.definition
         try {
-            if ( typeof item.data === 'object') {
+            if (typeof item.data === 'object') {
                 item = item.data
             } else {
                 item = JSON.parse(item.data)
@@ -117,28 +117,28 @@ export const getFormFieldsByType = (type) => {
                 label = _t(`${type}.field.${field.name}`, null, field.label || field.name)
                 placeholder = _t('Types.enterField', field)
             }
-            typeFormFields[type][field.name] = Object.assign({},field, {label, placeholder, uitype})
+            typeFormFields[type][field.name] = Object.assign({}, field, {label, placeholder, uitype})
 
-             /*   placeholder,
-                label,
-                uitype,
-                multi: !!field.multi,
-                fullWidth: !!field.fullWidth,
-                readOnly: !!field.readOnly,
-                alwaysUpdate: !!field.alwaysUpdate,
-                type: field.type,
-                tab: field.tab,
-                required: !!field.required,
-                localized: !!field.localized,
-                pickerField: field.pickerField,
-                fields: field.fields,
-                subFields: field.subFields,
-                reference: !!field.reference,
-                enum: field.enum,
-                name: field.name,
-                searchable: !!field.searchable,
-                vagueSearchable:
-            }*/
+            /*   placeholder,
+               label,
+               uitype,
+               multi: !!field.multi,
+               fullWidth: !!field.fullWidth,
+               readOnly: !!field.readOnly,
+               alwaysUpdate: !!field.alwaysUpdate,
+               type: field.type,
+               tab: field.tab,
+               required: !!field.required,
+               localized: !!field.localized,
+               pickerField: field.pickerField,
+               fields: field.fields,
+               subFields: field.subFields,
+               reference: !!field.reference,
+               enum: field.enum,
+               name: field.name,
+               searchable: !!field.searchable,
+               vagueSearchable:
+           }*/
         }
     })
     return typeFormFields[type]
@@ -148,7 +148,7 @@ export const getFormFieldsByFieldList = (fieldList) => {
 
     const fields = {}
     for (let i = 0; i < fieldList.length; ++i) {
-        fields[ fieldList[i].name ] = fieldList[i]
+        fields[fieldList[i].name] = fieldList[i]
     }
     return fields
 }
@@ -158,9 +158,9 @@ export const addAlwaysUpdateData = (data, changedData, type) => {
     const typeDef = getFormFieldsByType(type)
     Object.keys(typeDef).forEach((key) => {
         if (typeDef[key].alwaysUpdate) {
-            if( typeDef[key].reference && data[key] && data[key]._id){
+            if (typeDef[key].reference && data[key] && data[key]._id) {
                 changedData[key] = data[key]._id
-            }else {
+            } else {
                 changedData[key] = data[key]
             }
         }
@@ -322,52 +322,58 @@ Hook.on('Types', ({types}) => {
                 tab: 'Allgemein'
             },
             {
-                name: 'password',
-                fullWidth: false,
-                required: true,
-                uitype: 'password',
-                tab: 'Allgemein',
-                hideColumnInTypes: true
-            },
-            {
-                name: 'requestNewPassword',
-                fullWidth: false,
-                type: 'Boolean',
-                tab: 'Allgemein',
-                hideColumnInTypes: true
-            },
-            {
                 name: 'email',
                 fullWidth: true,
                 required: true,
                 tab: 'Allgemein'
             },
             {
-                name: 'language'
+                name: 'password',
+                fullWidth: false,
+                required: true,
+                uitype: 'password',
+                tab: 'Allgemein',
+                hideColumnInTypes: true,
+                searchable:false
+            },
+            {
+                name: 'requestNewPassword',
+                fullWidth: false,
+                type: 'Boolean',
+                tab: 'Allgemein',
+                hideColumnInTypes: true,
+                vagueSearchable:false
+            },
+            {
+                name: 'language',
+                vagueSearchable:false
             },
             {
                 name: 'picture',
                 type: 'Media',
                 reference: true,
                 fields: ['name'],
-                tab: 'Allgemein'
+                vagueSearchable:false
             },
             {
                 name: 'emailConfirmed',
                 type: 'Boolean',
-                hideColumnInTypes: true
+                hideColumnInTypes: true,
+                vagueSearchable:false
             },
             {
                 name: 'meta',
                 type: 'Object',
                 uitype: 'json',
                 tab: 'Meta',
+                vagueSearchable: true,
                 hideColumnInTypes: true
             },
             {
                 name: 'lastLogin',
                 uitype: 'datetime',
-                readOnly: true
+                readOnly: true,
+                vagueSearchable:false
             },
             {
                 name: 'role',
@@ -375,11 +381,12 @@ Hook.on('Types', ({types}) => {
                 reference: true,
                 fields: ['name'],
                 tab: _t('Types.accessControl'),
-                access:{
+                access: {
                     ui: {
                         role: CAPABILITY_MANAGE_USER_GROUP
                     }
-                }
+                },
+                vagueSearchable:false
             },
             {
                 name: 'junior',
@@ -389,11 +396,12 @@ Hook.on('Types', ({types}) => {
                 fields: ['username'],
                 tab: _t('Types.accessControl'),
                 hideColumnInTypes: true,
-                access:{
+                access: {
                     ui: {
                         role: CAPABILITY_MANAGE_USER_GROUP
                     }
-                }
+                },
+                vagueSearchable:false
             },
             {
                 name: 'group',
@@ -403,11 +411,12 @@ Hook.on('Types', ({types}) => {
                 fields: ['name'],
                 tab: _t('Types.accessControl'),
                 hideColumnInTypes: true,
-                access:{
+                access: {
                     ui: {
                         role: CAPABILITY_MANAGE_USER_GROUP
                     }
-                }
+                },
+                vagueSearchable:false
             }
         ]
     }

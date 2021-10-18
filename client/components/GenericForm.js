@@ -31,9 +31,10 @@ import Expandable from 'client/components/Expandable'
 import {_t} from '../../util/i18n'
 import Util from '../util'
 import DomUtil from '../util/dom'
-import {matchExpr} from '../util/json'
+import {matchExpr, propertyByPath} from '../util/json'
 import JsonEditor from '../../extensions/cms/components/JsonEditor'
-import {CAPABILITY_MANAGE_OTHER_USERS} from "../../extensions/cms/constants";
+import {Query} from '../middleware/graphql'
+import {getTypeQueries} from 'util/types'
 
 const styles = theme => {
     return {
@@ -71,6 +72,24 @@ const styles = theme => {
     }
 }
 
+const autoIncrement = (key, cb) => {
+    fetch('/lunucapi/autoIncrement?key=' + key).then(response => response.json().then(cb))
+}
+
+function matchObjectValueFromList(value, field, list) {
+    if (value && value.constructor === Object) {
+        // find key for value
+        const strValue = JSON.stringify(value)
+        for (let i = 0; i < list.length; i++) {
+            if (JSON.stringify(list[i].value) == strValue) {
+                return list[i].name
+            }
+        }
+        return ''
+    }
+    return value
+}
+
 class GenericForm extends React.Component {
     constructor(props) {
         super(props)
@@ -79,11 +98,11 @@ class GenericForm extends React.Component {
 
     static getInitalState = (props, prevState) => {
         const initalState = {
-            updatekey: props.updatekey,
             fieldsOri: props.fields,
             fields: {},
+            valuesOri: props.values,
             showTranslations: {},
-            tabValue: prevState && prevState.tabValue ? prevState.tabValue : 0
+            tabValue: prevState.tabValue ? prevState.tabValue : 0
         }
         Object.keys(props.fields).map(fieldKey => {
             const field = props.fields[fieldKey]
@@ -124,7 +143,8 @@ class GenericForm extends React.Component {
 
 
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (nextProps.updatekey !== prevState.updatekey || (!nextProps.updatekey && nextProps.fields !== prevState.fieldsOri)) {
+        if (nextProps.fields !== prevState.fieldsOri ||
+            (nextProps.updateOnValueChange && Util.shallowCompare(nextProps.values, prevState.valuesOri))) {
             console.log('GenericForm fields changed')
             return GenericForm.getInitalState(nextProps, prevState)
         }
@@ -364,7 +384,7 @@ class GenericForm extends React.Component {
     }
 
     handleInputChange = (e) => {
-        const {fields} = this.props
+        const {fields, trigger} = this.props
         const target = e.target, name = target.name
         let value = target.type === 'checkbox' ? target.checked : target.value
         if (target.type !== 'datetime' && fields[name]) {
@@ -376,6 +396,24 @@ class GenericForm extends React.Component {
                 value,
                 localized: target.dataset && !!target.dataset.language
             })
+            const fieldTrigger = fields[name].trigger
+            const changeTrigger = []
+
+            if(trigger && trigger.change){
+                changeTrigger.push(...trigger.change)
+            }
+
+            if(fieldTrigger && fieldTrigger.change){
+                changeTrigger.push(...fieldTrigger.change)
+            }
+
+            if(changeTrigger.length>0){
+                let script = 'const state=this.state,props=this.props;'+changeTrigger.join(';')
+                new Function(script).call({
+                    state:newState,
+                    props:this.props
+                })
+            }
             if (this.props.onChange) {
                 this.props.onChange({name, value, target})
             }
@@ -430,6 +468,13 @@ class GenericForm extends React.Component {
             if (field.readOnly || (field.role && !Util.hasCapability({userData: _app_.user}, field.role))) {
                 continue
             }
+
+            if ((field.uistate && field.uistate.visible && matchExpr(field.uistate.visible, this.state.fields)) ||
+                (field.access && field.access.ui && field.access.ui.role && !Util.hasCapability({userData: _app_.user}, field.access.ui.role))
+            ) {
+                continue
+            }
+
             let value = this.state.fields[fieldKey]
             if (field.replaceBreaks && value) {
                 value = value.replace(/<br>/g, '\n')
@@ -458,6 +503,22 @@ class GenericForm extends React.Component {
 
             }
 
+            if (field.autoIncrement) {
+                if (!value) {
+                    //
+                    autoIncrement(field.autoIncrement, json => {
+                        if (json.status === 'success') {
+                            const newState = this.newStateForField(this.state, {
+                                name: field.name,
+                                value: json.nr
+                            })
+                            newState.fieldErrors[field.name] = false
+                            this.setState(newState)
+
+                        }
+                    })
+                }
+            }
 
             if (field.newLine) {
                 currentFormFields.push(<br key={'br' + fieldKey}/>)
@@ -515,7 +576,7 @@ class GenericForm extends React.Component {
                                         }
                                     })
 
-                                }} primaryButton={false} values={values} key={valueFieldKey} subForm={true}
+                                }} primaryButton={false} values={values} updateOnValueChange={true} key={valueFieldKey} subForm={true}
                                              classes={classes}
                                              fields={subFields}/>
                                 <Button key={'delete' + valueFieldKey}
@@ -558,15 +619,16 @@ class GenericForm extends React.Component {
 
                                                        }
 
-                                                       Object.keys(subFields).forEach(k=>{
-                                                           if(subFields[k].autoIncrement){
+                                                       Object.keys(subFields).forEach(k => {
+                                                           if (subFields[k].autoIncrement) {
                                                                c++
-                                                               fetch('/lunucapi/autoIncrement?key='+subFields[k].autoIncrement)
-                                                                   .then(response => response.json().then(json=>{
+                                                               autoIncrement(subFields[k].autoIncrement, json => {
+                                                                   if (json.status === 'success') {
                                                                        initData[k] = json.nr
-                                                                       c--
-                                                                       next()
-                                                                   }))
+                                                                   }
+                                                                   c--
+                                                                   next()
+                                                               })
                                                            }
                                                        })
 
@@ -592,7 +654,6 @@ class GenericForm extends React.Component {
                         values = {}
                     }
 
-
                     currentFormFields.push(<GenericForm onChange={(e) => {
                         values[e.name] = e.value
                         this.handleInputChange({
@@ -602,7 +663,7 @@ class GenericForm extends React.Component {
                             }
                         })
 
-                    }} primaryButton={false} values={values} key={fieldKey} subForm={true} classes={classes}
+                    }} primaryButton={false} values={values} updateOnValueChange={true} key={fieldKey} subForm={true} classes={classes}
                                                         fields={field.subFields}/>)
 
                 }
@@ -757,11 +818,8 @@ class GenericForm extends React.Component {
 
             currentFormFields.push(<span dangerouslySetInnerHTML={{__html: field.html}}/>)
 
-        } else if (uitype === 'wrapper' ||
-            (field.uistate && field.uistate.visible && matchExpr(field.uistate.visible, this.state.fields)) ||
-            (field.access && field.access.ui && field.access.ui.role && !Util.hasCapability({userData: _app_.user}, field.access.ui.role))
-        ) {
-            // do nothing
+        } else if (uitype === 'wrapper') {
+            // do nothing for now
         } else if (['json', 'jsonEditor', 'editor', 'jseditor', 'css'].indexOf(uitype) >= 0) {
 
             let highlight, jsonStr
@@ -892,37 +950,80 @@ class GenericForm extends React.Component {
                 genericType={field.genericType}
                 filter={field.filter}
                 multi={field.multi}
-                pickerField={field.pickerField}
-                searchFields={field.searchFields}
-                metaFields={field.metaFields}
+                pickerField={field.pickerField} /* fields that are searched */
+                searchFields={field.searchFields} /* fields that are shown in the picker */
+                queryFields={field.queryFields} /* fields that are selected and returned */
+                metaFields={field.metaFields} /* fields that need user input and are returend in addtion */
                 fields={field.fields}
                 type={field.type} placeholder={field.placeholder}/>)
         } else if (uitype === 'select') {
 
-            if (value && value.constructor === Object) {
-                // find key for value
-                const strValue = JSON.stringify(value)
-                for (let i = 0; i < field.enum.length; i++) {
-                    if (JSON.stringify(field.enum[i].value) == strValue) {
-                        value = field.enum[i].name
-                        break
-                    }
-                }
+            if (field.filter && field.type && field.path) {
+
+                const queries = getTypeQueries(field.type, field.queryFields, {loadAll: false})
+
+                currentFormFields.push(<Query query={queries.query}
+                                              fetchPolicy="cache-and-network"
+                                              variables={{
+                                                  filter: Util.replacePlaceholders(field.filter, this.state),
+                                                  limit: field.limit || 1
+                                              }}>
+                    {({loading, error, data}) => {
+                        if (loading) return 'Loading...'
+                        if (error) return `Error! ${error.message}`
+                        if (!data[queries.name + 's'].results) return null
+
+                        const obj = propertyByPath(field.path, data[queries.name + 's'].results[0])
+
+                        const items = obj.reduce((a, c) => {
+
+                            const name = Util.replacePlaceholders(field.titleTemplate, c)
+                            a.push({
+                                value: c,
+                                name
+                            })
+                            return a
+                        }, [])
+
+
+                        value = matchObjectValueFromList(value, field, items)
+
+                        return <SimpleSelect
+                            key={fieldKey} name={fieldKey}
+                            onChange={this.handleInputChange}
+                            items={items}
+                            error={!!this.state.fieldErrors[fieldKey]}
+                            hint={this.state.fieldErrors[fieldKey]}
+                            multi={field.multi}
+                            label={field.label}
+                            className={classNames(classes.formField, field.fullWidth && classes.formFieldFull, field.thirdWidth && classes.formFieldThird)}
+                            InputLabelProps={{
+                                shrink: true,
+                            }}
+                            value={value || []}/>
+                    }}
+                </Query>)
+
+            } else {
+
+                value = matchObjectValueFromList(value, field, field.enum)
+
+                currentFormFields.push(<SimpleSelect
+                    key={fieldKey} name={fieldKey}
+                    onChange={this.handleInputChange}
+                    items={field.enum}
+                    error={!!this.state.fieldErrors[fieldKey]}
+                    hint={this.state.fieldErrors[fieldKey]}
+                    multi={field.multi}
+                    label={field.label}
+                    className={classNames(classes.formField, field.fullWidth && classes.formFieldFull, field.thirdWidth && classes.formFieldThird)}
+                    InputLabelProps={{
+                        shrink: true,
+                    }}
+                    value={value || []}/>)
             }
 
-            currentFormFields.push(<SimpleSelect
-                key={fieldKey} name={fieldKey}
-                onChange={this.handleInputChange}
-                items={field.enum}
-                error={!!this.state.fieldErrors[fieldKey]}
-                hint={this.state.fieldErrors[fieldKey]}
-                multi={field.multi}
-                label={field.label}
-                className={classNames(classes.formField, field.fullWidth && classes.formFieldFull, field.thirdWidth && classes.formFieldThird)}
-                InputLabelProps={{
-                    shrink: true,
-                }}
-                value={value || []}/>)
+
         } else if (field.type === 'Boolean') {
             currentFormFields.push(<SimpleSwitch key={fieldKey}
                                                  label={field.label || field.placeholder}
@@ -1009,7 +1110,6 @@ class GenericForm extends React.Component {
 }
 
 GenericForm.propTypes = {
-    updatekey: PropTypes.string,
     fields: PropTypes.object.isRequired,
     values: PropTypes.object,
     onClick: PropTypes.func,
