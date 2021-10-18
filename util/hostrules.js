@@ -6,6 +6,26 @@ import config from 'gen/config'
 
 const {HOSTRULES_ABSPATH} = config
 
+const CERT_BASE_DIR = '/etc/letsencrypt/live/'
+const certDirs = (domainname) => {
+    try {
+        return fs.readdirSync(CERT_BASE_DIR, {withFileTypes: true})
+            .filter(d => d.isDirectory() && d.name.startsWith(domainname) )
+            .map((v) => {
+                return {
+                    name:v.name,
+                    time:fs.statSync(CERT_BASE_DIR + v.name).mtime.getTime()
+                }
+            })
+            .sort((a, b) => {
+                return b.time - a.time
+            })
+    }catch (e) {
+        console.log('error reading cert dir', e)
+    }
+    return []
+}
+
 
 const loadHostRules = (dir, withCertContext, hostrules) => {
 
@@ -17,7 +37,7 @@ const loadHostRules = (dir, withCertContext, hostrules) => {
                     stats = fs.statSync(absFilePaht)
 
                 // only read file if it has changed
-                if ( !hostrules[domainname] || stats.mtime > hostrules[domainname]._lastModified) {
+                if (!hostrules[domainname] || stats.mtime > hostrules[domainname]._lastModified) {
 
                     const content = fs.readFileSync(absFilePaht)
 
@@ -26,16 +46,23 @@ const loadHostRules = (dir, withCertContext, hostrules) => {
                     hostrule._basedir = dir
                     hostrule._lastModified = stats.mtime
 
-                    if(hostrule.botregex){
+                    if (hostrule.botregex) {
                         hostrule.botregex = new RegExp(hostrule.botregex)
                     }
 
                     if (withCertContext) {
                         if (!hostrule.certDir) {
-                            hostrule.certDir = '/etc/letsencrypt/live/' + domainname
+                            const dirs = certDirs(domainname)
+                            if(dirs.length>0){
+                                hostrule.certDir = CERT_BASE_DIR + dirs[0].name
+                                console.log(` found newest certs for ${domainname} in ${hostrule.certDir}`)
+                            }
+                           // hostrule.certDir = '/etc/letsencrypt/live/' + domainname
                         }
 
                         if (hostrule.certDir) {
+
+
                             try {
                                 hostrule.certContext = tls.createSecureContext({
                                     key: fs.readFileSync(path.join(hostrule.certDir, './privkey.pem')),
