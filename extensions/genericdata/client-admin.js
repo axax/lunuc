@@ -171,6 +171,22 @@ export default () => {
                     let overrideTranslations = false, translateTimeout = 0
                     const userHasCapa = Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_CMS_TEMPLATE)
 
+                    const actions = structure.actions
+                    if(actions){
+
+                        try {
+                            for (let i = actions.length - 1; i >= 0; i--) {
+                                const actionStr = new Function('const data=this.data;return `'+JSON.stringify(actions[i])+'`').call({
+                                    data: dataObject
+                                })
+
+                                props.actions.unshift(JSON.parse(actionStr))
+                            }
+                        }catch (e) {
+                            console.log('Error in actions', e)
+                        }
+                    }
+
                     props.title = <React.Fragment>
                         {structure.title || newDataToEdit.definition.name}{newDataToEdit._id && userHasCapa ? ' (' + newDataToEdit._id + ')' : ''}
                         <div

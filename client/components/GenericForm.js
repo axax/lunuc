@@ -409,10 +409,14 @@ class GenericForm extends React.Component {
 
             if(changeTrigger.length>0){
                 let script = 'const state=this.state,props=this.props;'+changeTrigger.join(';')
-                new Function(script).call({
-                    state:newState,
-                    props:this.props
-                })
+                try {
+                    new Function(script).call({
+                        state: newState,
+                        props: this.props
+                    })
+                }catch (e) {
+                    console.log('Error in trigger', e)
+                }
             }
             if (this.props.onChange) {
                 this.props.onChange({name, value, target})
@@ -1000,11 +1004,17 @@ class GenericForm extends React.Component {
                             InputLabelProps={{
                                 shrink: true,
                             }}
-                            value={value || []}/>
+                            value={value}/>
                     }}
                 </Query>)
 
             } else {
+
+                if(field.$enum){
+                    field.enum = new Function('const state = this.state;return ' + field.$enum).call({
+                        state:this.state
+                    })
+                }
 
                 value = matchObjectValueFromList(value, field, field.enum)
 
@@ -1020,7 +1030,7 @@ class GenericForm extends React.Component {
                     InputLabelProps={{
                         shrink: true,
                     }}
-                    value={value || []}/>)
+                    value={value}/>)
             }
 
 

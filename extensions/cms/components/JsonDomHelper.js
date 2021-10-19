@@ -31,6 +31,7 @@ import {getJsonDomElements} from '../util/elements'
 import {deepMergeOptional, deepMerge} from 'util/deepMerge'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants'
 import {client} from '../../../client/middleware/graphql'
+import {openWindow} from '../../../client/util/window'
 
 const {UPLOAD_URL, DEFAULT_LANGUAGE} = config
 
@@ -773,12 +774,9 @@ const m = Math.max((offX+offY) / 2,100)
     openPicker(picker) {
         const {_onTemplateChange, _key, _json} = this.props
 
-        const w = screen.width / 3 * 2, h = screen.height / 3 * 2,
-            left = (screen.width / 2) - (w / 2), top = (screen.height / 2) - (h / 2)
+        const newwindow = openWindow({url:`${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/types/?noLayout=true&fixType=${picker.type}&baseFilter=${encodeURIComponent(picker.baseFilter || '')}`})
 
-        const newwindow = window.open(
-            `${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/types/?noLayout=true&fixType=${picker.type}&baseFilter=${encodeURIComponent(picker.baseFilter || '')}`, '_blank',
-            'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
+
         setTimeout(() => {
             newwindow.addEventListener('beforeunload', (e) => {
                 if (newwindow.resultValue) {

@@ -9,20 +9,19 @@ import Util from "../../util";
 import {setPropertyByPath} from "../../util/json";
 
 
+const compareRef = (prev, current) => {
 
-const compareRef = (prev, current) =>{
-
-    if(!prev || !current){
+    if (!prev || !current) {
         // an empty array is same as null
-        if(prev && prev.length==0){
+        if (prev && prev.length == 0) {
             prev = null
         }
 
         return prev !== current
     }
 
-    const prevStr = prev.constructor === String? prev : (prev.constructor === Array ? prev.map(f => f._id?f._id:f).join('') : prev._id)
-    const currentStr = current.constructor === String? current : (current.constructor === Array ? current.map(f => f._id?f._id:f).join('') : current._id)
+    const prevStr = prev.constructor === String ? prev : (prev.constructor === Array ? prev.map(f => f._id ? f._id : f).join('') : prev._id)
+    const currentStr = current.constructor === String ? current : (current.constructor === Array ? current.map(f => f._id ? f._id : f).join('') : current._id)
     return prevStr !== currentStr
 
 }
@@ -63,15 +62,15 @@ class TypeEdit extends React.Component {
         const {title, type, meta} = this.props
         let {dataToEdit, open} = this.state
 
-        const formFields = Object.assign({},getFormFieldsByType(type))
+        const formFields = Object.assign({}, getFormFieldsByType(type))
 
 
-        if(!dataToEdit){
+        if (!dataToEdit) {
             dataToEdit = this.props.initialData
 
         }
 
-        if( !dataToEdit) {
+        if (!dataToEdit) {
             // delete createdBy if new data is created
             delete formFields.createdBy
         }
@@ -82,16 +81,22 @@ class TypeEdit extends React.Component {
             maxWidth: 'xl',
             open,
             onClose: this.handleSaveData.bind(this),
-            actions: [{key: 'cancel', label: _t('core.cancel')}, {
-                key: 'save',
-                label: _t('core.save'),
-                type: 'primary'
-            },
+            actions: [
+                {
+                    key: 'cancel',
+                    label: _t('core.cancel')
+                },
+                {
+                    key: 'save',
+                    label: _t('core.save'),
+                    type: 'primary'
+                },
                 {
                     key: 'save_close',
                     label: _t('core.saveandclose'),
                     type: 'primary'
-                }],
+                }
+            ],
             children: <GenericForm key="genericForm" closing={!open} autoFocus innerRef={ref => {
                 this.createEditForm = ref
             }} onBlur={event => {
@@ -100,7 +105,7 @@ class TypeEdit extends React.Component {
                 Hook.call('TypeCreateEditChange', {field, type, props, dataToEdit})
             }} primaryButton={false} fields={formFields} values={dataToEdit}/>
         }
-        if(open) {
+        if (open) {
             Hook.call('TypeCreateEdit', {type, props, dataToEdit, formFields, meta, parentRef: this})
         }
         return <SimpleDialog {...props}/>
@@ -113,11 +118,11 @@ class TypeEdit extends React.Component {
         let editedData
 
         const closeModal = (optimisticData) => {
-            onClose(action,{optimisticData,dataToEdit,type})
+            onClose(action, {optimisticData, dataToEdit, type})
         }
 
         if (action && ['save', 'save_close'].indexOf(action.key) >= 0) {
-            const formValidation = this.createEditForm.validate( this.createEditForm.state,true,{changeTab:true})
+            const formValidation = this.createEditForm.validate(this.createEditForm.state, true, {changeTab: true})
             if (!formValidation.isValid) {
                 return
             }
@@ -129,7 +134,7 @@ class TypeEdit extends React.Component {
                 const field = formFields[key]
                 if (field.reference && !field.multi && editedData[key] && editedData[key].length) {
                     editedData[key] = editedData[key][0]
-                }else if( field.type==="Object" && editedData[key] && editedData[key].constructor===Object){
+                } else if (field.type === "Object" && editedData[key] && editedData[key].constructor === Object) {
                     editedData[key] = JSON.stringify(editedData[key])
                 }
             })
@@ -157,10 +162,10 @@ class TypeEdit extends React.Component {
                 } else {
 
                     // set use for newly created objects
-                    if( !optimisticData._id && data['create' + type]) {
+                    if (!optimisticData._id && data['create' + type]) {
                         optimisticData._id = data['create' + type]._id
 
-                        if(!optimisticData.createdBy){
+                        if (!optimisticData.createdBy) {
                             optimisticData.createdBy = data['create' + type].createdBy
                         }
 
@@ -185,22 +190,22 @@ class TypeEdit extends React.Component {
                 const editedDataToUpdate = {}
                 Object.keys(editedDataWithRefs).forEach(k => {
 
-                    if( this.state.forceSave){
+                    if (this.state.forceSave) {
                         editedDataToUpdate[k] = editedDataWithRefs[k]
-                    }else {
+                    } else {
                         const before = dataToEdit[k]
                         const fieldDefinition = formFields[k]
-                        if (fieldDefinition.reference ) {
+                        if (fieldDefinition.reference) {
                             //console.log(before, editedDataWithRefs[k])
 
-                            if (compareRef(before,editedDataWithRefs[k])) {
+                            if (compareRef(before, editedDataWithRefs[k])) {
                                 editedDataToUpdate[k] = editedDataWithRefs[k]
                             }
-                        } else if( fieldDefinition.type === 'Object'){
+                        } else if (fieldDefinition.type === 'Object') {
                             // stringify Object and compare
-                            const s1 = before ? before.constructor !== String ? JSON.stringify(before): before : ''
-                            const s2 = editedDataWithRefs[k] ? editedDataWithRefs[k].constructor !== String ? JSON.stringify(editedDataWithRefs[k]): editedDataWithRefs[k] : ''
-                            if( s1 !== s2) {
+                            const s1 = before ? before.constructor !== String ? JSON.stringify(before) : before : ''
+                            const s2 = editedDataWithRefs[k] ? editedDataWithRefs[k].constructor !== String ? JSON.stringify(editedDataWithRefs[k]) : editedDataWithRefs[k] : ''
+                            if (s1 !== s2) {
                                 editedDataToUpdate[k] = s2
                             }
 

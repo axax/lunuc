@@ -4,6 +4,7 @@ import DomUtil from 'client/util/dom'
 import Util from '../util'
 import config from 'gen/config-client'
 
+import {openWindow} from '../util/window'
 const {DEFAULT_LANGUAGE} = config
 
 class TinyEditor extends React.Component {
@@ -136,12 +137,9 @@ class TinyEditor extends React.Component {
                             //callback('movie.mp4', {source2: 'alt.ogg', poster: 'image.jpg'});
                         }
 
-                        const w = screen.width / 3 * 2, h = screen.height / 3 * 2,
-                            left = (screen.width / 2) - (w / 2), top = (screen.height / 2) - (h / 2)
+                        const newwindow = openWindow({url:`${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/types/?noLayout=true&fixType=Media&baseFilter=${encodeURIComponent(baseFilter || '')}`})
 
-                        const newwindow = window.open(
-                            `${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/types/?noLayout=true&fixType=Media&baseFilter=${encodeURIComponent(baseFilter || '')}`, '_blank',
-                            'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
+
                         setTimeout(() => {
                             newwindow.addEventListener('beforeunload', (e) => {
                                 console.log(newwindow.resultValue)

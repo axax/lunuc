@@ -31,6 +31,7 @@ import {client} from '../middleware/graphql'
 import Util from '../util'
 import Hook from '../../util/hook'
 import GenericForm from './GenericForm'
+import {openWindow} from '../util/window'
 
 const styles = theme => {
     return {
@@ -158,13 +159,8 @@ class TypePicker extends React.Component {
         console.log(`render TypePicker | hasFocus=${hasFocus} | pickerField=${pickerField}`, data)
 
         const openTypeWindow = ()=>{
-            const w = screen.width / 3 * 2, h = screen.height / 3 * 2,
-                left = (screen.width / 2) - (w / 2),
-                top = (screen.height / 2) - (h / 2)
 
-            const newwindow = window.open(
-                `${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/types/?noLayout=true&multi=${!!multi}&fixType=${type}${genericType?'&meta='+genericType:''}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}${label ? '&title=' + encodeURIComponent(label) : ''}`, '_blank',
-                'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
+            const newwindow = openWindow({url:`${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/types/?noLayout=true&multi=${!!multi}&fixType=${type}${genericType?'&meta='+genericType:''}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}${label ? '&title=' + encodeURIComponent(label) : ''}`})
 
             setTimeout(() => {
                 newwindow.addEventListener('beforeunload', (e) => {
