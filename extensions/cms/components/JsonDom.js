@@ -40,7 +40,7 @@ const QuillEditor = (props) => <Async {...props}
                                       load={import(/* webpackChunkName: "admin" */ '../../../client/components/QuillEditor')}/>
 
 const CodeEditor = (props) => <Async {...props}
-                                     load={import(/* webpackChunkName: "admin" */ '../../../client/components/CodeEditor')}/>
+                                     load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
 
 const MarkDown = (props) => <Async {...props}
                                    load={import(/* webpackChunkName: "markdown" */ '../../../client/components/MarkDown')}/>

@@ -1,7 +1,9 @@
 import React from 'react'
-import CodeEditor from 'client/components/CodeEditor'
 import {BuildIcon} from 'ui/admin'
 import {jsonPropertyTemplates, jsonTemplates} from './templates/dataResolver'
+import Async from '../../../client/components/Async'
+
+const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
 
 class DataResolverEditor extends React.Component {
 

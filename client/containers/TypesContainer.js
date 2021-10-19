@@ -52,10 +52,12 @@ import {_t} from 'util/i18n'
 
 const {ADMIN_BASE_URL, LANGUAGES} = config
 import {COLLECTIONS_QUERY} from '../constants'
-import CodeEditor from '../components/CodeEditor'
 import GenericForm from '../components/GenericForm'
 import {client, Query} from '../middleware/graphql'
 import json2csv from 'util/json2csv'
+import Async from '../components/Async'
+
+const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
 
 
 const DEFAULT_RESULT_LIMIT = 10

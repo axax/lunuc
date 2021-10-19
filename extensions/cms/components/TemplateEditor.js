@@ -1,10 +1,12 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import CodeEditor from 'client/components/CodeEditor'
 import JsonDomEditor from './JsonDomEditor'
 import {Tabs, Tab, CodeIcon, WebIcon, SubjectIcon, withStyles} from 'ui/admin'
 import {getComponentByKey} from '../util/jsonDomUtil'
 import {jsonPropertyTemplates, jsonTemplates} from './templates/template'
+import Async from '../../../client/components/Async'
+
+const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
 
 const styles = theme => ({
     root: {

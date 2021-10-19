@@ -52,8 +52,12 @@ const {ADMIN_BASE_URL, APP_NAME} = config
 
 import {_t, registerTrs} from 'util/i18n'
 import {translations} from '../../translations/admin'
-import CodeEditor from '../CodeEditor'
 import {propertyByPath} from '../../util/json'
+import Async from 'client/components/Async'
+
+
+const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../CodeEditor')}/>
+
 
 registerTrs(translations, 'AdminTranslations')
 

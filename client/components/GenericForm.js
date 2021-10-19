@@ -21,7 +21,6 @@ import {
 import FileDrop from './FileDrop'
 import TypePicker from './TypePicker'
 import config from 'gen/config-client'
-import CodeEditor from './CodeEditor'
 import TinyEditor from './TinyEditor'
 import {withStyles} from 'ui/admin'
 import {checkFieldType} from 'util/typesAdmin'
@@ -35,6 +34,11 @@ import {matchExpr, propertyByPath} from '../util/json'
 import JsonEditor from '../../extensions/cms/components/JsonEditor'
 import {Query} from '../middleware/graphql'
 import {getTypeQueries} from 'util/types'
+import Async from './Async'
+
+const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ './CodeEditor')}/>
+
+
 
 const styles = theme => {
     return {
