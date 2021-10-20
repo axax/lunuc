@@ -117,7 +117,7 @@
     "@ffprobe-installer/ffprobe": "^1.2.0",
     "@google-cloud/storage": "^5.15.3",
     "@google-cloud/translate": "^6.3.1",
-    "aws-sdk": "^2.1010.0",
+    "aws-sdk": "^2.1011.0",
     "fluent-ffmpeg": "^2.1.2",
     "lighthouse": "^8.5.1",
     "mssql": "^7.2.1",

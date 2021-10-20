@@ -1,5 +1,4 @@
 import GenericResolver from 'api/resolver/generic/genericResolver'
-import ReactDOMServer from 'react-dom/server';
 import JsonDom from '../components/JsonDom'
 import React from 'react'
 import Util from 'api/util'
@@ -84,6 +83,7 @@ export default db => ({
 
             let editable = Util.isUserLoggedIn(context)
             let cmsPages = await getCmsPage({db, context, slug, _version, checkHostrules: !dynamic, headers, editmode})
+            //console.log(`get cms ${slug} in ${(new Date()).getTime() - startTime}ms`)
             if (!cmsPages.results || cmsPages.results.length === 0) {
 
                 Hook.call('trackMail', {req, event: '404', slug, db, context, data: query, meta})

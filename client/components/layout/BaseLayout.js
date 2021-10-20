@@ -308,7 +308,7 @@ const BaseLayout = props => {
                         type: 'primary'
                     }]}
             >
-                <CodeEditor lineNumbers type="json" forceJson={true} ref={(e) => {
+                <CodeEditor lineNumbers type="json" forceJson={true} forwardRef={(e) => {
                     menuEditor = e
                 }}>
                     {settings}

@@ -435,9 +435,12 @@ class TypePicker extends React.Component {
     }
 
     handleChange(e) {
-        const value = e.target.value.trim()
+        const value = e.target.value
         clearTimeout(this.pickTimeout)
-        if (value === '') {
+
+        if( value===this.state.textValue){
+            // ignore nothing changed
+        }else if (value === '') {
             this.setState({data: null, textValue: value})
         } else {
             this.setState({textValue: value})

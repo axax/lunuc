@@ -153,13 +153,18 @@ const Util = {
         })
         return obj
     },
-    extractQueryParams: (query, typeDetection) => {
+    extractQueryParams: (query, options) => {
+        if (!options) {
+            options = {}
+        } else if (options === true) {
+            options = {typeDetection: true}
+        }
+
         if (!query) {
             query = window && window.location.search.substring(1)
         }
 
-        const a = decodeURI(query).split('&')
-        const b = {}
+        const a = (options.decodeURI === false ? query : decodeURI(query)).split('&'),b = {}
         for (let i = 0; i < a.length; ++i) {
             const p = a[i].split('=', 2)
             const key = p[0].trim()
@@ -168,7 +173,7 @@ const Util = {
                     b[key] = ''
                 else {
                     const str = p[1].replace(/\+/g, ' ').trim()
-                    if (typeDetection) {
+                    if (options.typeDetection) {
                         if (str === 'true') {
                             b[key] = true
                         } else if (str === 'false') {

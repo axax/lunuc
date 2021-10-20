@@ -56,6 +56,8 @@ class SimpleSelect extends React.Component {
             if( multi && value.constructor !== Array){
                 value = [value]
             }
+        }else if(multi){
+            value = []
         }
         return <FormControl className={className || classes.formControl} disabled={disabled} fullWidth={fullWidth}
                             style={style}

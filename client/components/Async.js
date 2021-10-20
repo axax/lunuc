@@ -24,7 +24,8 @@ class Async extends React.Component {
     }
 
     render = () => {
-        const { load, expose, ...rest} = this.props
+        const { load, expose, forwardRef, ...rest} = this.props
+        rest.ref = forwardRef
         return this.Component ? React.createElement(this.Component, rest) : null
     }
 }

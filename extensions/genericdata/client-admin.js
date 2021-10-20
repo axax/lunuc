@@ -176,8 +176,9 @@ export default () => {
 
                         try {
                             for (let i = actions.length - 1; i >= 0; i--) {
-                                const actionStr = new Function('const data=this.data;return `'+JSON.stringify(actions[i])+'`').call({
-                                    data: dataObject
+                                const actionStr = new Function('const data=this.data,Util=this.Util;return `'+JSON.stringify(actions[i])+'`').call({
+                                    data: dataObject,
+                                    Util
                                 })
 
                                 props.actions.unshift(JSON.parse(actionStr))
