@@ -8,7 +8,6 @@ import DialogTitle from '@material-ui/core/DialogTitle'
 import withMobileDialog from '@material-ui/core/withMobileDialog'
 import Button from '@material-ui/core/Button'
 import {withStyles} from '@material-ui/core/styles'
-import {openWindow} from '../../../../util/window'
 
 const styles = theme => ({
     root: {
@@ -49,9 +48,6 @@ export const SimpleDialog = withMobileDialog()(({classes, children, onClose, act
                 {actions.map((action, i) => {
                     return (
                         <Button autoFocus={action.autoFocus} key={i} onClick={() => {
-                            if(action.url){
-                                openWindow(action)
-                            }
                             onClose(action)
                         }} color={action.type}>
                             {action.label}

@@ -36,7 +36,7 @@ export default class AggregationBuilder {
 
         if (!offset) {
 
-            if (page && page>0) {
+            if (page && page > 0) {
                 return (page - 1) * this.getLimit()
             } else {
                 return 0
@@ -120,7 +120,7 @@ export default class AggregationBuilder {
                     pipeline: [
                         {
                             $match: {
-                                $expr
+                                $and:[{$expr}]
                             }
                         }
                     ]
@@ -235,7 +235,7 @@ export default class AggregationBuilder {
             if (!exact && !reference && vagueSearchable !== false && ['Boolean'].indexOf(type) < 0) {
 
                 // if it is an object only add filter if searchable is explicitly set to true
-                if( type !== 'Object' || vagueSearchable === true) {
+                if (type !== 'Object' || vagueSearchable === true) {
                     filters.rest.forEach(e => {
                         hasAtLeastOneMatch = true
                         const {added} = this.addFilterToMatch({
@@ -352,7 +352,7 @@ export default class AggregationBuilder {
                 body: `function(data) {return data && Object.keys(data).some(
                 key => /${filterValue}/i.test( data[key] && (data[key].constructor===Object || data[key].constructor===Array)?JSON.stringify(data[key]):data[key])
                 )}`,
-                args: ['$'+filterKey],
+                args: ['$' + filterKey],
                 lang: 'js'
             }
 
@@ -522,7 +522,7 @@ export default class AggregationBuilder {
 
         if (rootMatch.$or) {
             // warp or
-            rootMatch.$and = [{$or:rootMatch.$or}]
+            rootMatch.$and = [{$or: rootMatch.$or}]
             delete rootMatch.$or
         }
 
@@ -648,6 +648,10 @@ export default class AggregationBuilder {
                                 }, match, {exact: true, filters})) {
                                     hasMatchInReference = true
                                 }
+
+                                // execute sub query
+                                //console.log(fieldDefinition)
+
                             }
                         }
                     }
@@ -847,7 +851,7 @@ export default class AggregationBuilder {
             "$count": "count"
         })
 
-        if (!doMatchAfterLookup && !dataFacetQuery.some(f => !!f.$match) ) {
+        if (!doMatchAfterLookup && !dataFacetQuery.some(f => !!f.$match)) {
             // add sort at the beginning if there is not another match
             // it is much faster when skip limit is outside of facet
             if (!includeCount) {
@@ -925,15 +929,15 @@ export default class AggregationBuilder {
 
 
             Object.keys(match.$or[0]).forEach(key => {
-                if(match[key]){
-                    if(!match.$and){
-                        match.$and = [{[key]:match[key]}]
-                    }else{
-                        match.$and.push({[key]:match[key]})
+                if (match[key]) {
+                    if (!match.$and) {
+                        match.$and = [{[key]: match[key]}]
+                    } else {
+                        match.$and.push({[key]: match[key]})
                     }
                     match.$and.push(match.$or[0])
                     delete match[key]
-                }else {
+                } else {
                     match[key] = match.$or[0][key]
                 }
             })

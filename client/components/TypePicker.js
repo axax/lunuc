@@ -157,7 +157,6 @@ class TypePicker extends React.Component {
         const {classes, placeholder, multi, error, helperText, className, fullWidth, pickerField, metaFields, type, filter, label, genericType} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
         console.log(`render TypePicker | hasFocus=${hasFocus} | pickerField=${pickerField}`, data)
-
         const openTypeWindow = ()=>{
 
             const newwindow = openWindow({url:`${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/types/?noLayout=true&multi=${!!multi}&fixType=${type}${genericType?'&meta='+genericType:''}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}${label ? '&title=' + encodeURIComponent(label) : ''}`})
@@ -235,7 +234,9 @@ class TypePicker extends React.Component {
                         style={{
                             fontWeight: selIdx === idx ? 500 : 400,
                         }}
-                    >{item.__typename === 'Media' && item.mimeType && item.mimeType.indexOf('image') === 0 ? getImageTag(item, {height: 30}) : ''} {typeDataToLabel(item, pickerField)}
+                    >{item.__typename === 'Media' && item.mimeType && item.mimeType.indexOf('image') === 0 ? getImageTag(item, {height: 30}) : ''} {
+                        typeDataToLabel(item, pickerField)
+                    }
                     </MenuItem>
                 )}
 

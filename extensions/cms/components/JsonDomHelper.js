@@ -1390,7 +1390,7 @@ const m = Math.max((offX+offY) / 2,100)
 
                                                           if (currentOpt.tr && currentOpt.trKey) {
 
-                                                              setPropertyByPath(`$\{_t('${currentOpt.trKey}')\}`, key, comp, '_')
+                                                              setPropertyByPath(`$\{_t('${currentOpt.trKey}'${currentOpt.trContext?','+currentOpt.trContext:''})\}`, key, comp, '_')
                                                               if (val !== null) {
                                                                   _onDataResolverPropertyChange({
                                                                       value: Util.escapeForJson(Util.escapeForJson(val.replace(/\n/g, ''))),

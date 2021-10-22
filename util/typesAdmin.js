@@ -21,40 +21,22 @@ export const typeDataToLabel = (item, pickerField) => {
     if (!item) {
         return 'null'
     }
+    const context = {item, pickerField}
 
-    //TODO move to extension
-    if (item.__typename === 'GenericData') {
-        const definition = item.definition
-        try {
-            if (typeof item.data === 'object') {
-                item = item.data
-            } else {
-                item = JSON.parse(item.data)
-            }
-        } catch (e) {
-            console.log(e)
-        }
 
-        if (!pickerField) {
-            if (definition) {
-                try {
-                    pickerField = definition.structure.pickerField
-                } catch (e) {
-                    console.log(e)
-                }
-            }
-        }
-    }
+
+    Hook.call('typeDataToLabel', context)
+
 
     let pickers = []
-    if (pickerField) {
-        if (pickerField.constructor === Array) {
-            pickers.push(...pickerField)
+    if (context.pickerField) {
+        if (context.pickerField.constructor === Array) {
+            pickers.push(...context.pickerField)
         } else {
-            pickers.push(pickerField)
+            pickers.push(context.pickerField)
         }
     } else {
-        for (const key of Object.keys(item)) {
+        for (const key of Object.keys(context.item)) {
             if (['_id', 'createdBy', '__typename', 'status'].indexOf(key) < 0) {
                 pickers.push(key)
                 break
@@ -63,12 +45,12 @@ export const typeDataToLabel = (item, pickerField) => {
     }
 
     pickers.forEach(key => {
-        if (item[key]) {
+        if (context.item[key]) {
 
-            if (item[key] && item[key][_app_.lang]) {
-                label.push(item[key][_app_.lang])
+            if (context.item[key] && context.item[key][_app_.lang]) {
+                label.push(context.item[key][_app_.lang])
             } else {
-                label.push(item[key])
+                label.push(context.item[key])
             }
         }
     })

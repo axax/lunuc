@@ -14,6 +14,8 @@ import {_t, registerTrs} from '../../util/i18n'
 import {translations} from './translations/admin'
 import {setPropertyByPath} from "../../client/util/json";
 
+import {openWindow} from '../../client/util/window'
+
 registerTrs(translations, 'GenericData')
 
 const GenericForm = (props) => <Async {...props}
@@ -172,20 +174,8 @@ export default () => {
                     const userHasCapa = Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_CMS_TEMPLATE)
 
                     const actions = structure.actions
-                    if(actions){
-
-                        try {
-                            for (let i = actions.length - 1; i >= 0; i--) {
-                                const actionStr = new Function('const data=this.data,Util=this.Util;return `'+JSON.stringify(actions[i])+'`').call({
-                                    data: dataObject,
-                                    Util
-                                })
-
-                                props.actions.unshift(JSON.parse(actionStr))
-                            }
-                        }catch (e) {
-                            console.log('Error in actions', e)
-                        }
+                    if (actions) {
+                        props.actions.unshift(...structure.actions)
                     }
 
                     props.title = <React.Fragment>
@@ -515,6 +505,55 @@ export default () => {
                 })
             }
 
+        }
+    })
+
+
+    /*
+      TypesContainer: This gets called before the filter dialog is shown
+   */
+    Hook.on('typeDataToLabel', function (context) {
+
+
+        if (context.item.__typename === 'GenericData') {
+            const definition = context.item.definition
+            try {
+                if (typeof context.item.data === 'object') {
+                    context.item = context.item.data
+                } else {
+                    context.item = JSON.parse(context.item.data)
+                }
+            } catch (e) {
+                console.log(e)
+            }
+
+            if (!context.pickerField) {
+                if (definition) {
+                    try {
+                        context.pickerField = definition.structure.pickerField
+                    } catch (e) {
+                        console.log(e)
+                    }
+                }
+            }
+        }
+    })
+
+
+    Hook.on('TypeCreateEditAction', ({type, action, dataToEdit}) => {
+
+        if (type==='GenericData' && action.url) {
+            try {
+                const actionStr = new Function('const data=this.data,Util=this.Util;return `' + JSON.stringify(action) + '`').call({
+                    data: dataToEdit.data,
+                    Util
+                })
+                const newAction = JSON.parse(actionStr)
+                openWindow(newAction)
+
+            } catch (e) {
+                console.log('Error in actions', e)
+            }
         }
     })
 

@@ -647,13 +647,13 @@ class JsonDom extends React.Component {
     }
 
 
-    onTemplateChange(json) {
+    onTemplateChange(json, instantSave) {
         const status = {}
         this.runJsEvent('templatechange', false, {json, status})
         if (!status.abort) {
             const {onTemplateChange} = this.props
             if (onTemplateChange) {
-                onTemplateChange(json)
+                onTemplateChange(json, instantSave)
             }
         }
     }

@@ -384,10 +384,10 @@ class TypesContainer extends React.Component {
                     if (columnsMap['_action']) {
 
                         const entryActions = [{
-                            name: _t('TypesContainer.deleteEntry'),
+                            name: _t('TypesContainer.editEntry'),
                             disabled: (item.status == 'deleting' || item.status == 'updating'),
-                            onClick: this.handleDeleteDataClick.bind(this, item),
-                            icon: <DeleteIcon/>
+                            onClick: this.handleEditDataClick.bind(this, item),
+                            icon: <EditIcon/>
                         }]
 
                         if (this.types[type].entryClonable) {
@@ -408,10 +408,10 @@ class TypesContainer extends React.Component {
                             })
 
                         entryActions.push({
-                            name: _t('TypesContainer.editEntry'),
-                            disabled: (item.status == 'deleting' || item.status == 'updating'),
-                            onClick: this.handleEditDataClick.bind(this, item),
-                            icon: <EditIcon/>
+                            name: _t('TypesContainer.deleteEntry'),
+                                disabled: (item.status == 'deleting' || item.status == 'updating'),
+                                onClick: this.handleDeleteDataClick.bind(this, item),
+                                icon: <DeleteIcon/>
                         })
                         Hook.call('TypeTableEntryAction', {type, actions: entryActions, item, container: this})
 
