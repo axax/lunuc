@@ -170,7 +170,7 @@ class CmsViewContainer extends React.Component {
                             fileType = params
                         }
                         if (!fileType) {
-                            const temp = resource.split('?')
+                            const temp = resource.split('?')[0]
                             fileType = temp.substring(temp.lastIndexOf('.') + 1)
                         }
 
