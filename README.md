@@ -128,7 +128,7 @@ sudo ufw delete 8
 
 #### auto-restart Mongodb
 
-1. Edit your mongod service: `sudo vim /lib/systemd/system/mongod.service`
+1. Edit your mongod service: `sudo vi /lib/systemd/system/mongod.service`
 2. Add `Restart=always` under service
 3. Reload systemctl daemon: `sudo systemctl daemon-reload`
 

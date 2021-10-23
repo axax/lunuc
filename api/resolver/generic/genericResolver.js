@@ -218,7 +218,7 @@ const GenericResolver = {
 
         const estimateCount = includeCount !== false && !options.filter && Object.keys(match).length === 0
 
-        const aggregationBuilder = new AggregationBuilder(typeName, data, {
+        const aggregationBuilder = new AggregationBuilder(typeName, data, db, {
             match,
             includeCount: (includeCount !== false && !estimateCount),
             lang: context.lang,
@@ -226,10 +226,10 @@ const GenericResolver = {
             includeUserFilter: userCanManageTypes
         })
 
-        const {dataQuery, countQuery} = await aggregationBuilder.query(db)
-        /* if (typeName.indexOf("GenericData") >= 0) {
-             console.log(JSON.stringify(dataQuery, null, 4))
-         }*/
+        const {dataQuery, countQuery, debugInfo} = await aggregationBuilder.query()
+        // if (typeName.indexOf("Media") >= 0) {
+            // console.log(JSON.stringify(dataQuery, null, 4))
+        // }
               //console.log(options,JSON.stringify(dataQuery, null, 4))
         const collection = db.collection(collectionName)
         const startTimeAggregate = new Date()
@@ -259,27 +259,55 @@ const GenericResolver = {
         } else {
             result.total = estimateCount ? await collection.estimatedDocumentCount() : 0
         }
+
         //console.log(JSON.stringify(result, null, 4))
 
         const aggregateTime = new Date() - startTimeAggregate
-        //result.meta.aggregateTime = new Date() - startTimeAggregate
+        const totalTime = new Date() - startTime
 
-        Hook.call('typeLoaded', {
-            type: typeName,
-            data,
-            db,
-            context,
-            otherOptions,
-            result,
-            dataQuery,
-            collectionName,
-            aggregateTime
-        })
+
+
+
+        if (Hook.hooks['typeLoaded'] && Hook.hooks['typeLoaded'].length) {
+            for (let i = 0; i < Hook.hooks['typeLoaded'].length; ++i) {
+                await Hook.hooks['typeLoaded'][i].callback({
+                    type: typeName,
+                    data,
+                    db,
+                    context,
+                    otherOptions,
+                    result,
+                    dataQuery,
+                    collectionName,
+                    aggregateTime,
+                    debugInfo
+                })
+            }
+        }
+
+        if (otherOptions.returnMeta !== false) {
+            if(!result.meta){
+                result.meta = {}
+            }
+
+            result.meta.aggregateTime = aggregateTime
+            result.meta.totalTime = totalTime
+            result.meta.debugInfo = debugInfo
+
+        }
+
+        if(result.meta){
+            result.meta = JSON.stringify(result.meta)
+        }
+
+
+
+
         if (cacheKey) {
             Cache.set(cacheKey, result, cacheTime)
         }
 
-        console.log(`GenericResolver for ${collectionName} complete: aggregate time = ${aggregateTime}ms total time ${new Date() - startTime}ms`)
+        console.log(`GenericResolver for ${collectionName} complete: aggregate time = ${aggregateTime}ms total time ${totalTime}ms`)
         return result
     },
     createEntity: async (db, req, typeName, {_version, ...data}, options) => {

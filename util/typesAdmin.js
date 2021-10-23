@@ -101,26 +101,6 @@ export const getFormFieldsByType = (type) => {
             }
             typeFormFields[type][field.name] = Object.assign({}, field, {label, placeholder, uitype})
 
-            /*   placeholder,
-               label,
-               uitype,
-               multi: !!field.multi,
-               fullWidth: !!field.fullWidth,
-               readOnly: !!field.readOnly,
-               alwaysUpdate: !!field.alwaysUpdate,
-               type: field.type,
-               tab: field.tab,
-               required: !!field.required,
-               localized: !!field.localized,
-               pickerField: field.pickerField,
-               fields: field.fields,
-               subFields: field.subFields,
-               reference: !!field.reference,
-               enum: field.enum,
-               name: field.name,
-               searchable: !!field.searchable,
-               vagueSearchable:
-           }*/
         }
     })
     return typeFormFields[type]

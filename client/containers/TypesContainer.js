@@ -57,7 +57,8 @@ import {client, Query} from '../middleware/graphql'
 import json2csv from 'util/json2csv'
 import Async from '../components/Async'
 
-const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
+const CodeEditor = (props) => <Async {...props}
+                                     load={import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
 
 
 const DEFAULT_RESULT_LIMIT = 10
@@ -86,7 +87,12 @@ const styles = theme => ({
         padding: '2px 4px',
         display: 'flex',
         alignItems: 'center',
-        marginBottom: theme.spacing(2),
+        marginBottom: theme.spacing(0),
+    },
+    searchHint: {
+        color: 'rgb(150,150,150)',
+        marginBottom: theme.spacing(1),
+        marginTop: theme.spacing(0.5),
     },
     searchInput: {
         marginLeft: theme.spacing(1),
@@ -296,9 +302,9 @@ class TypesContainer extends React.Component {
                                                 let str = ''
                                                 field.fields.forEach(f => {
                                                     if (str) str += ', '
-                                                    if(fieldValue[f].constructor === Object){
+                                                    if (fieldValue[f].constructor === Object) {
                                                         str += fieldValue[f][_app_.lang]
-                                                    }else{
+                                                    } else {
                                                         str += fieldValue[f]
                                                     }
 
@@ -409,9 +415,9 @@ class TypesContainer extends React.Component {
 
                         entryActions.push({
                             name: _t('TypesContainer.deleteEntry'),
-                                disabled: (item.status == 'deleting' || item.status == 'updating'),
-                                onClick: this.handleDeleteDataClick.bind(this, item),
-                                icon: <DeleteIcon/>
+                            disabled: (item.status == 'deleting' || item.status == 'updating'),
+                            onClick: this.handleDeleteDataClick.bind(this, item),
+                            icon: <DeleteIcon/>
                         })
                         Hook.call('TypeTableEntryAction', {type, actions: entryActions, item, container: this})
 
@@ -734,6 +740,7 @@ class TypesContainer extends React.Component {
         }
         const selectedLength = Object.keys(this.state.selectedRows).length
         const {description} = this.types[type]
+
         const content = [
             !title && !this.pageParams.title ? null :
                 <Typography key="typeTitle" variant="h3"
@@ -782,9 +789,10 @@ class TypesContainer extends React.Component {
                                 <SettingsIcon/>
                             </IconButton>
                         </Paper>
-
                     </Col>
                 </Row>
+                <Typography className={classes.searchHint} component="div" key="searchHint"
+                            variant="caption">{this.searchHint()}</Typography>
             </div>,
             this.renderTable(columns),
             dataToDelete &&
@@ -903,6 +911,15 @@ class TypesContainer extends React.Component {
             return content
         }
         return <BaseLayout key="baseLayout">{content}</BaseLayout>
+    }
+
+    searchHint() {
+        const {data} = this.state
+        if (data && data.meta) {
+            const meta = JSON.parse(data.meta)
+            return `Abfragezeit ${meta.aggregateTime}ms / ${meta.totalTime}ms${meta.debugInfo && meta.debugInfo.length>0?' - '+meta.debugInfo.join(' | '):''}`
+        }
+        return ' '
     }
 
     isColumnActive(type, id) {

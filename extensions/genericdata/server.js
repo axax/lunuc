@@ -254,7 +254,7 @@ Hook.on('typeLoaded', async ({type, db, data, result, otherOptions}) => {
 
             const def = await getGenericTypeDefinitionWithStructure(db, {name: genericType})
             if (otherOptions.returnMeta !== false) {
-                result.meta = JSON.stringify(def)
+                result.meta = def
             }
 
             // remove definition on entries
