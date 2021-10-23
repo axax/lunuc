@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import JsonDom from '../components/JsonDom'
-import config from 'gen/config-client'
+//import config from 'gen/config-client'
 import Util from 'client/util'
 import DomUtil from 'client/util/dom'
 import {getType} from 'util/types'
@@ -13,7 +13,7 @@ import {connect} from 'react-redux'
 
 class CmsViewContainer extends React.Component {
     oriTitle = document.title
-    registeredSubscriptions = {}
+    subscriptions = {}
 
     constructor(props) {
         super(props)
@@ -158,7 +158,7 @@ class CmsViewContainer extends React.Component {
                         if( index>=resourceList.length){
                             return
                         }
-                        let resource = resourceList[index], ext, params, attrs
+                        let resource = resourceList[index], fileType, params, attrs
 
                         if(resource.constructor === Object){
                             attrs = resource
@@ -167,40 +167,38 @@ class CmsViewContainer extends React.Component {
                         }else if (resource.startsWith('[')) {
                             params = resource.substring(1, resource.indexOf(']'))
                             resource = resource.substring(resource.indexOf(']') + 1)
-                            ext = params
+                            fileType = params
+                        }
+                        if (!fileType) {
+                            const temp = resource.split('?')
+                            fileType = temp.substring(temp.lastIndexOf('.') + 1)
                         }
 
-                        if (!ext) {
-                            ext = resource.substring(resource.lastIndexOf('.') + 1)
-                        }
-
-                        if (!params) {
+                        /*if (!params) {
                             if (resource.indexOf('?') >= 0) {
                                 resource += '&'
                             } else {
                                 resource += '?'
                             }
                             resource += 'v=' + config.BUILD_NUMBER
+                        }*/
+                        const finalAttrs = {
+                            data: {cmsView: true},
+                            ...attrs
                         }
 
-                        if (ext.indexOf('css') === 0) {
-                            DomUtil.addStyle(resource, {
-                                data: {cmsView: true},
-                                ...attrs
-                            })
+                        if (fileType.indexOf('css') === 0) {
+                            DomUtil.addStyle(resource, finalAttrs)
                             loadNext(index+1)
-                        } else if (ext.indexOf('js') === 0) {
-                            if(attrs && attrs.async === false){
-                                attrs.onload = ()=>{
+                        } else if (fileType.indexOf('js') === 0) {
+                            if(finalAttrs.async === false){
+                                finalAttrs.onload = ()=>{
                                     loadNext(index+1)
                                 }
                             }else{
                                 loadNext(index+1)
                             }
-                            DomUtil.addScript(resource, {
-                                data: {cmsView: true},
-                                ...attrs
-                            })
+                            DomUtil.addScript(resource, finalAttrs)
                         }
 
                     }
@@ -214,11 +212,11 @@ class CmsViewContainer extends React.Component {
     }
 
 
-    removeSubscriptions(subscriptions) {
+    removeSubscriptions() {
         // remove all subscriptions
-        Object.keys(this.registeredSubscriptions).forEach(key => {
-            this.registeredSubscriptions[key].unsubscribe()
-            delete this.registeredSubscriptions[key]
+        Object.keys(this.subscriptions).forEach(key => {
+            this.subscriptions[key].unsubscribe()
+            delete this.subscriptions[key]
         })
     }
 
@@ -238,7 +236,7 @@ class CmsViewContainer extends React.Component {
         }
 
         // remove subscriptions
-        this.removeSubscriptions(subscriptionArray)
+        this.removeSubscriptions()
 
         const _this = this
 
@@ -251,7 +249,7 @@ class CmsViewContainer extends React.Component {
                 return
             }
 
-            if (!this.registeredSubscriptions[subscriptionKey]) {
+            if (!this.subscriptions[subscriptionKey]) {
                 let subscriptionQuery = subscription.query,
                     subscriptionName = subscription.name,
                     subscriptionVariablesDefinition = '',
@@ -308,7 +306,7 @@ class CmsViewContainer extends React.Component {
 
                 const qqlSubscribe = `subscription ${subscriptionName}${subscriptionVariablesDefinition?'('+subscriptionVariablesDefinition+')':''}{${subscriptionName}${subscriptionVariables?'('+subscriptionVariables+')':''}{${subscriptionQuery}}}`
 
-                this.registeredSubscriptions[subscriptionKey] = client.subscribe({
+                this.subscriptions[subscriptionKey] = client.subscribe({
                     query: qqlSubscribe,
                     variables: subscription.variables
                 }).subscribe({

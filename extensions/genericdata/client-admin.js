@@ -10,6 +10,7 @@ import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../cms/constants'
 import {client} from 'client/middleware/graphql'
 import config from 'gen/config-client'
 import {_t, registerTrs} from '../../util/i18n'
+import {projectFields} from '../../util/project'
 
 import {translations} from './translations/admin'
 import {setPropertyByPath} from "../../client/util/json";
@@ -454,14 +455,13 @@ export default () => {
 
                 if (fieldsToReturn) {
 
-                    const newData = {}
                     if (fieldsToReturn.constructor !== Array) {
                         fieldsToReturn = [fieldsToReturn]
                     }
 
-                    for (const key of fieldsToReturn) {
-                        newData[key] = value.data[key]
-                    }
+                    const newData = projectFields(fieldsToReturn, value.data)
+
+                    console.log(newData)
 
                     value.data = newData
                     delete value.definition
