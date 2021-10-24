@@ -400,26 +400,29 @@ class GenericForm extends React.Component {
                 value,
                 localized: target.dataset && !!target.dataset.language
             })
-            const fieldTrigger = fields[name].trigger
-            const changeTrigger = []
 
-            if(trigger && trigger.change){
-                changeTrigger.push(...trigger.change)
-            }
+            if(fields[name]) {
+                const fieldTrigger = fields[name].trigger
+                const changeTrigger = []
 
-            if(fieldTrigger && fieldTrigger.change){
-                changeTrigger.push(...fieldTrigger.change)
-            }
+                if (trigger && trigger.change) {
+                    changeTrigger.push(...trigger.change)
+                }
 
-            if(changeTrigger.length>0){
-                let script = 'const state=this.state,props=this.props;'+changeTrigger.join(';')
-                try {
-                    new Function(script).call({
-                        state: newState,
-                        props: this.props
-                    })
-                }catch (e) {
-                    console.log('Error in trigger', e)
+                if (fieldTrigger && fieldTrigger.change) {
+                    changeTrigger.push(...fieldTrigger.change)
+                }
+
+                if (changeTrigger.length > 0) {
+                    let script = 'const state=this.state,props=this.props;' + changeTrigger.join(';')
+                    try {
+                        new Function(script).call({
+                            state: newState,
+                            props: this.props
+                        })
+                    } catch (e) {
+                        console.log('Error in trigger', e)
+                    }
                 }
             }
             if (this.props.onChange) {
