@@ -544,21 +544,29 @@ const GenericResolver = {
             options = {}
         }
 
-        const primaryKey = options.primaryKey || '_id'
+        let primaryKey = options.primaryKey || '_id'
+        const params = {}
 
-        if (!data[primaryKey]) {
-            throw new Error('primary key is missing')
+        if(primaryKey.constructor === Array){
+
+            primaryKey.forEach(pk=>{
+                if (!data[pk]) {
+                    throw new Error('primary key is missing')
+                }
+                params[pk] = ObjectId.isValid(data[pk])?ObjectId(data[pk]):data[pk]
+            })
+
+        }else {
+
+            if (!data[primaryKey]) {
+                throw new Error('primary key is missing')
+            }
+            params[primaryKey] = ObjectId.isValid(data[primaryKey])?ObjectId(data[primaryKey]):data[primaryKey]
         }
+
 
         const collectionName = await buildCollectionName(db, context, typeName, _version)
 
-        const params = {}
-
-        if (primaryKey === '_id') {
-            params._id = ObjectId(data._id)
-        } else {
-            params[primaryKey] = data[primaryKey]
-        }
 
 
         if (!await Util.userHasCapability(db, context, options.capability ? options.capability : CAPABILITY_MANAGE_OTHER_USERS)) {
