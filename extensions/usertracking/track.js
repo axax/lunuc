@@ -49,7 +49,7 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
         db.collection('UserTracking').insertOne(insertData).then(result => {
             insertData._id = result.insertedId
             if (insertData.data && insertData.data.constructor === Object) {
-                insertData.data = JSON.stringify(result.data)
+                insertData.data = JSON.stringify(insertData.data)
             }
 
             // for real time tracking

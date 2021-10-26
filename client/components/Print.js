@@ -259,10 +259,25 @@ class Print extends React.PureComponent {
 
 
                     if(watermarkImage) {
+                        const wmOptions = this.props.watermarkOption
+
+
                         const w=watermarkImage.width * scale,
                             h=watermarkImage.height * scale,
-                            x = canvas.width - w,
                             y = canvas.height - h
+
+
+                        let x
+                        if(wmOptions){
+                            if( wmOptions.left==='center'){
+                                x = (canvas.width - w)/2
+                            }
+                        }
+
+                        if(!x){
+                            x = canvas.width - w
+                        }
+
 
                         context.drawImage(watermarkImage, x, y,  w, h)
                     }
