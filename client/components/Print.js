@@ -273,7 +273,7 @@ class Print extends React.PureComponent {
                                 x = (canvas.width - w)/2
                             }
                             if( wmOptions.bottom){
-                                y = wmOptions.bottom * scale
+                                y -= wmOptions.bottom * scale
                             }
                         }
 
