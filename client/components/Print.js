@@ -262,7 +262,7 @@ class Print extends React.PureComponent {
                         const wmOptions = this.props.watermarkOption
 
 
-                        const w=watermarkImage.width * scale,
+                        let w=watermarkImage.width * scale,
                             h=watermarkImage.height * scale,
                             y = canvas.height - h
 
@@ -271,6 +271,9 @@ class Print extends React.PureComponent {
                         if(wmOptions){
                             if( wmOptions.left==='center'){
                                 x = (canvas.width - w)/2
+                            }
+                            if( wmOptions.bottom){
+                                y = wmOptions.bottom * scale
                             }
                         }
 
