@@ -107,6 +107,29 @@ class UserProfileContainer extends React.Component {
             })
     }
 
+    updatePassword = (e) => {
+        e.preventDefault()
+
+        const {password, passwordConfirm} = this.state
+
+        if(password !== passwordConfirm){
+
+            this.setState({passwordError: 'Passwörter stimmen nicht überrein'})
+        }else{
+            this.setState({passwordError: '', loading: true})
+            this.props.updateMe({email: this.state.email, password, passwordConfirm})
+                .then(resp => {
+                    this.setState({password:'',passwordConfirm:'', passwordMessage: 'Passwort wurde gespeichert',loading: false})
+                })
+                .catch(res => {
+                    this.setState({loading: false})
+                    if (res.error) {
+                        this.setState({passwordError: res.error.message})
+                    }
+                })
+        }
+    }
+
     createNote = (e) => {
         e.preventDefault()
         this.setState({loading: true})
@@ -136,7 +159,7 @@ class UserProfileContainer extends React.Component {
         const {me} = this.props
         if (!me) return <BaseLayout/>
         console.log('render UserProfileContainer')
-        const {username, email, usernameError, loading, note} = this.state
+        const {username, email, password, passwordConfirm, passwordError, passwordMessage, usernameError, loading, note} = this.state
         let noteElements = []
         if (note) {
             note.forEach(
@@ -161,6 +184,17 @@ class UserProfileContainer extends React.Component {
                     <Button onClick={this.updateProfile.bind(this)} variant="contained" color="primary">{_t('core.save')}</Button>
                     {usernameError ? <strong>{usernameError}</strong> : ''}
 
+                </ContentBlock>
+
+                <Typography variant="h4" component="h2" gutterBottom>{_t('Profile.changePassword')}</Typography>
+
+
+                <ContentBlock style={{maxWidth: '600px'}}>
+                    <TextField fullWidth={true} type="password" label="Password" name="password" value={password} onChange={this.handleInputChange}/>
+                    <TextField fullWidth={true} type="password" label="Passwort bestätigen" name="passwordConfirm" value={passwordConfirm} onChange={this.handleInputChange}/>
+                    <Button onClick={this.updatePassword.bind(this)} variant="contained" color="primary">{_t('core.save')}</Button>
+                    {passwordError ? <strong>{passwordError}</strong> : ''}
+                    {passwordMessage ? <strong>{passwordMessage}</strong> : ''}
                 </ContentBlock>
 
                 <Typography variant="h4" component="h2" gutterBottom>{_t('Profile.roleCapabilities')}</Typography>
@@ -202,7 +236,7 @@ UserProfileContainer.propTypes = {
 
 const gqlQuery = 'query{me{username email _id note{_id value}role{_id name capabilities}}}'
 
-const gqlUpdate = 'mutation updateMe($username: String, $email: String){updateMe(username:$username,email:$email){_id username}}'
+const gqlUpdate = 'mutation updateMe($username:String,$email:String,$password:String,$passwordConfirm:String){updateMe(username:$username,email:$email,password:$password,passwordConfirm:$passwordConfirm){_id username}}'
 
 const gqlUpdateNote = 'mutation updateNote($id: ID!, $value: String){updateNote(value:$value,_id:$id){_id value}}'
 
@@ -225,9 +259,9 @@ const UserProfileContainerWithGql = compose(
     }),
     graphql(gqlUpdate, {
         props: ({ownProps, mutate}) => ({
-            updateMe: ({username, email}) => {
+            updateMe: (variables) => {
                 return mutate({
-                    variables: {username, email}
+                    variables
                 })
             }
         })

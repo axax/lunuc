@@ -1055,7 +1055,7 @@ class CmsViewEditorContainer extends React.Component {
                                              label: 'Vorlage',
                                              searchFields: ['name'],
                                              required: true,
-                                             filter: !canMangeCmsTemplate ? 'isTemplate=true' : ''
+                                           /*  filter: !canMangeCmsTemplate ? 'isTemplate=true' : ''*/
                                          },
                                          slug: {
                                              fullWidth: true,

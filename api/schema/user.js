@@ -148,6 +148,7 @@ export const userSchemaRaw = `
 			email: String
 			username: String
 			password: String
+			passwordConfirm:String
 			picture: ID
             role: ID
             language: String

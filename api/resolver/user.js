@@ -137,6 +137,21 @@ const createUser = async ({username, role, junior, group, password, language, em
 }
 
 
+const validateAndHashPassword = ({password, passwordConfirm, context}) => {
+    if (passwordConfirm && password !== passwordConfirm) {
+        throw new ApiError(`Make sure the passwords match`, 'password.match')
+    }
+
+    // Validate Password
+    const err = Util.validatePassword(password, context)
+    if (err.length > 0) {
+        throw new ApiError('Invalid Password: \n' + err.join('\n'), 'password.invalid')
+    }
+
+
+    return Util.hashPassword(password)
+}
+
 export const userResolver = (db) => ({
     Query: {
         users: async ({limit, page, offset, filter, sort}, {context}) => {
@@ -305,23 +320,12 @@ export const userResolver = (db) => ({
 
             const userCollection = db.collection('User')
 
-            if (passwordConfirm && password !== passwordConfirm) {
-                throw new ApiError(`Make sure the passwords match`, 'password.match')
-            }
 
-            // Validate Password
-            const err = Util.validatePassword(password, context)
-            if (err.length > 0) {
-                throw new ApiError('Invalid Password: \n' + err.join('\n'), 'password.invalid')
-            }
-
-
-            const hashPassword = Util.hashPassword(password)
-
+            const hashedPassword = validateAndHashPassword({password, passwordConfirm, context})
 
             const result = await userCollection.findOneAndUpdate({$and: [{'resetToken': token}, {passwordReset: {$gte: (new Date().getTime()) - 3600000}}]}, {
                 $set: {
-                    password: hashPassword,
+                    password: hashedPassword,
                     requestNewPassword: false,
                     resetToken: null
                 }
@@ -596,7 +600,7 @@ export const userResolver = (db) => ({
             return {_id, name, capabilities}
 
         },
-        updateMe: async (user, {context}) => {
+        updateMe: async ({password, passwordConfirm, ...user}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
             const userCollection = db.collection('User')
@@ -614,6 +618,10 @@ export const userResolver = (db) => ({
 
                 if (user.meta !== undefined) {
                     user.meta = JSON.parse(user.meta)
+                }
+
+                if (password && passwordConfirm){
+                    user.password = validateAndHashPassword({password, passwordConfirm, context})
                 }
 
                 const result = (await userCollection.findOneAndUpdate({_id: ObjectId(context.id)}, {$set: user}))

@@ -168,6 +168,47 @@ const classIconListOptions = key => ({
     }
 })
 
+const classTextOptions = key => ({
+    [`${key}className@text`]: {
+        label: 'Styling',
+        tab: DEFAULT_TAB,
+        enum: [
+            {
+                value: '',
+                name: 'Keine'
+            },
+            {
+                value: ' h1 ',
+                name: 'Überschrift 1'
+            },
+            {
+                value: ' h2 ',
+                name: 'Überschrift 2'
+            },
+            {
+                value: ' h3 ',
+                name: 'Überschrift 3'
+            },
+            {
+                value: ' h4 ',
+                name: 'Überschrift 4'
+            },
+            {
+                value: ' h5 ',
+                name: 'Überschrift 5'
+            },
+            {
+                value: ' h6 ',
+                name: 'Überschrift 6'
+            },
+            {
+                value: ' strong ',
+                name: 'Fett'
+            }
+        ]
+    }
+})
+
 const classLayoutOptions = key => ({
     [`${key}className@space`]: {
         label: 'Abstand zwischen Spalten',
@@ -608,6 +649,7 @@ const baseElements = [
                 tab: DEFAULT_TAB
             },
             ...marginOptions('p_'),
+            ...classTextOptions('p_'),
             ...classOptions('p_')
         }
     },
@@ -1049,6 +1091,7 @@ const baseElements = [
                 tabPosition: 0
             },
             ...marginOptions('p_'),
+            ...classTextOptions('p_'),
             ...classOptions('p_')
         }
     },

@@ -551,7 +551,7 @@ const GenericResolver = {
 
             primaryKey.forEach(pk=>{
                 if (!data[pk]) {
-                    throw new Error('primary key is missing')
+                    throw new Error(`primary key ${pk} is missing`)
                 }
                 params[pk] = ObjectId.isValid(data[pk])?ObjectId(data[pk]):data[pk]
             })
@@ -559,7 +559,7 @@ const GenericResolver = {
         }else {
 
             if (!data[primaryKey]) {
-                throw new Error('primary key is missing')
+                throw new Error(`primary key ${primaryKey} is missing`)
             }
             params[primaryKey] = ObjectId.isValid(data[primaryKey])?ObjectId(data[primaryKey]):data[primaryKey]
         }
