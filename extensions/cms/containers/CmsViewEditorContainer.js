@@ -972,7 +972,7 @@ class CmsViewEditorContainer extends React.Component {
                                                   if (slug.startsWith('/')) {
                                                       slug = slug.substring(1)
                                                   }
-                                                  if (!canMangeCmsTemplate) {
+                                                  if (!canMangeCmsTemplate && cmsPage.realSlug) {
                                                       //prefix needs to be same as current page
                                                       const prefix = cmsPage.realSlug.split('/')[0]
                                                       if (!slug.startsWith(prefix + '/')) {
