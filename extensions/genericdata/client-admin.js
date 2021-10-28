@@ -129,8 +129,7 @@ export default () => {
                 dataToEdit.definition = meta.TypeContainer.pageParams.meta
             }
 
-            if (dataToEdit.definition) {
-
+            if (dataToEdit.definition && (dataToEdit.definition.structure || dataToEdit.definition.constructor === String)) {
                 if (!dataToEdit.definition.structure) {
 
                     client.query({
@@ -298,6 +297,7 @@ export default () => {
                 newFields.definition.readOnly = false
 
                 delete newFields.data
+                delete dataToEdit.definition
                 // override default
                 props.children = [<Typography key="GenericDataLabel" variant="subtitle1"
                                               gutterBottom>{_t('GenericData.createNewHint')}</Typography>,

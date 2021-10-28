@@ -26,7 +26,7 @@ class ElementWatch extends React.Component {
         let tagSrc, tagImg
         if (tagName === 'SmartImage') {
             tagImg = Util.getImageObject(eleProps.src, eleProps.options)
-            tagSrc = tagImg.src
+            tagSrc = tagImg.src + (eleProps.inlineSvg?'#inlinesvg':'')
         } else {
             tagSrc = eleProps.id || props._key
         }
