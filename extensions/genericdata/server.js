@@ -7,6 +7,7 @@ import GenericResolver from '../../api/resolver/generic/genericResolver'
 import Util from '../../api/util'
 import {ObjectId} from 'mongodb'
 import {matchExpr} from '../../client/util/json'
+import {findProjection} from '../../util/project'
 
 async function getGenericTypeDefinitionWithStructure(db, {name, id}) {
 
@@ -98,16 +99,26 @@ Hook.on('beforePubSub', async ({triggerName, payload, db, context}) => {
 })
 
 
-function addGenericTypeLookup(field, otherOptions, key) {
-
-
+function addGenericTypeLookup(field, otherOptions, projection, key) {
     /*if (field.subFields) {
         Object.keys(field.subFields).forEach(subFieldKey => {
             addGenericTypeLookup(field.subFields[subFieldKey], otherOptions, key + '.' + subFieldKey)
         })
     }*/
-
     if (field.genericType) {
+
+        // check if lookup is needed
+        if (projection) {
+
+            const dataProjection = findProjection('data', projection)
+            if(dataProjection && dataProjection.constructor === Array){
+                if( !findProjection(field.name,dataProjection)){
+                    //console.log(`no lookup for ${field.name} needed`)
+                    return
+                }
+            }
+
+        }
 
         if (!key) {
             key = field.name
@@ -202,7 +213,7 @@ function addGenericTypeLookup(field, otherOptions, key) {
     }
 }
 
-Hook.on('beforeTypeLoaded', async ({type, db, context, match, otherOptions}) => {
+Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions}) => {
 
 
     if (type === 'GenericData') {
@@ -231,7 +242,7 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, otherOptions}) => 
 
                     struct.fields.forEach(field => {
 
-                       addGenericTypeLookup(field, otherOptions)
+                        addGenericTypeLookup(field, otherOptions, data)
 
                     })
                 }

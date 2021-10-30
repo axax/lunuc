@@ -211,7 +211,7 @@ const GenericResolver = {
         if (Hook.hooks['beforeTypeLoaded'] && Hook.hooks['beforeTypeLoaded'].length) {
             for (let i = 0; i < Hook.hooks['beforeTypeLoaded'].length; ++i) {
                 await Hook.hooks['beforeTypeLoaded'][i].callback({
-                    type: typeName, db, context, otherOptions, match
+                    type: typeName, db, context, otherOptions, match, data
                 })
             }
         }

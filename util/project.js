@@ -27,3 +27,20 @@ export const performFieldProjection = (projection, data, newData)=>{
     }
     return newData
 }
+
+
+export const findProjection = (key, projection) => {
+    for (let i = 0; i < projection.length; i++) {
+        const pro = projection[i]
+        if (pro) {
+            if (pro.constructor === Object) {
+
+                if (Object.keys(pro)[0] === key) {
+                    return pro[key]
+                }
+            }else if(pro===key){
+                return key
+            }
+        }
+    }
+}

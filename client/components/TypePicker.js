@@ -400,7 +400,11 @@ class TypePicker extends React.Component {
                     fieldsToProject = queryFields
 
                 } else if (pickerField) {
-                    fieldsToProject = pickerField
+                    if(pickerField.constructor==Array) {
+                        fieldsToProject = pickerField
+                    }else{
+                        fieldsToProject = [pickerField]
+                    }
                 }
 
                 // keep _id
