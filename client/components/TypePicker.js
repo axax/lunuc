@@ -32,6 +32,7 @@ import Util from '../util'
 import Hook from '../../util/hook'
 import GenericForm from './GenericForm'
 import {openWindow} from '../util/window'
+import {performFieldProjection} from '../../util/project'
 
 const styles = theme => {
     return {
@@ -163,27 +164,8 @@ class TypePicker extends React.Component {
 
             setTimeout(() => {
                 newwindow.addEventListener('beforeunload', (e) => {
-                    const value = newwindow.resultValue
+                    this.selectValue(newwindow.resultValue)
 
-                    if (value) {
-
-                        delete value.createdBy
-
-                        Hook.call('TypePickerWindowCallback', {
-                            value,
-                            type,
-                            pickerField
-                        })
-
-
-                        Util.removeNullValues(value, {
-                            recursiv: true,
-                            emptyObject: true,
-                            emptyArray: true,
-                            nullArrayItems: true
-                        })
-                        this.selectValue(value)
-                    }
                     delete e['returnValue']
                 })
             }, 500)
@@ -399,38 +381,83 @@ class TypePicker extends React.Component {
     }
 
     handlePick(idx) {
-        const value = this.state.data.results[idx]
-
-        const {type, pickerField, queryFields} = this.props
-
-        Hook.call('TypePickerBeforeHandlePick', {type, pickerField, queryFields, value})
-
-        Util.removeNullValues(value, {
-            recursiv: true,
-            emptyObject: true,
-            emptyArray: true,
-            nullArrayItems: true
-        })
-
-        this.selectValue(value)
+        this.selectValue(this.state.data.results[idx])
     }
 
-    selectValue(item) {
-        if (item) {
+
+
+    selectValue(rawValue) {
+        if (rawValue) {
+
+            const {type, pickerField, name, queryFields, projection, onChange} = this.props
+
+            let fieldsToProject
+
+            if(projection){
+                fieldsToProject = projection
+            }else{
+                if (queryFields) {
+                    fieldsToProject = queryFields
+
+                } else if (pickerField) {
+                    fieldsToProject = pickerField
+                }
+
+                // keep _id
+                if(fieldsToProject && fieldsToProject.indexOf('_id')<0){
+                    fieldsToProject.push('_id')
+                }
+            }
+
+            if(!fieldsToProject){
+                fieldsToProject = []
+            }else if (fieldsToProject.constructor !== Array) {
+                fieldsToProject = [fieldsToProject]
+            }else{
+                // copy array to prevent overriding existing one
+
+                fieldsToProject = fieldsToProject.slice(0)
+            }
+
+
+            Hook.call('TypePickerBeforeHandlePick', {type, pickerField, queryFields, fieldsToProject, projection, rawValue})
+
+
+
+            //always remove creator
+            delete rawValue.createdBy
+
+            let projectedValue = rawValue
+
+            if (fieldsToProject.length > 0) {
+
+
+                projectedValue = performFieldProjection(fieldsToProject, rawValue)
+            }
+
+            Util.removeNullValues(projectedValue, {
+                recursiv: true,
+                emptyObject: true,
+                emptyArray: true,
+                nullArrayItems: true
+            })
+
             let value = (this.state.value ? this.state.value.slice(0) : [])
-            if (item.forEach) {
-                item.forEach(itm => {
-                    value.push({__typename: this.props.type, ...itm})
+            if (projectedValue.forEach) {
+                projectedValue.forEach(itm => {
+                    value.push({__typename: type, ...itm})
                 })
             } else {
-                value.push({__typename: this.props.type, ...item})
+                value.push({__typename: type, ...projectedValue})
             }
+
+
             if(!this.props.multi) {
                 // remove all items but last one
                 value = value.slice(-1)
             }
 
-            this.props.onChange({target: {value, name: this.props.name}})
+            onChange({target: {value, name: name}, rawValue})
             this.setState({value, textValue: '', hastFocus: false, data: null})
         }
     }
@@ -497,44 +524,40 @@ class TypePicker extends React.Component {
     }
 
     getData(filter) {
-        const {type, fields, pickerField} = this.props
+        const {type, queryFields, pickerField} = this.props
         if (type) {
 
             const nameStartLower = type.charAt(0).toLowerCase() + type.slice(1) + 's'
-            let queryFields
-
-
-            // Hook.call('TypePickerBeforeGetData', {fields, pickerField, type})
-
+            let queryString
 
             // TODO: move to genericData extension
             if (pickerField && type !== 'GenericData') {
-                queryFields = pickerField
-            } else if (fields && type !== 'GenericData') {
+                queryString = pickerField
+            } else if (queryFields && type !== 'GenericData') {
 
-                queryFields = ''
+                queryString = ''
 
-                fields.forEach(field => {
-                    if (queryFields != '') {
-                        queryFields += ' '
+                queryFields.forEach(field => {
+                    if (queryString != '') {
+                        queryString += ' '
                     }
                     if (field.constructor === String) {
-                        queryFields += field
+                        queryString += field
                     } else {
                         Object.keys(field).forEach(key => {
-                            queryFields += key + '{'
+                            queryString += key + '{'
                             field[key].forEach(name => {
-                                queryFields += name + ' '
+                                queryString += name + ' '
                             })
-                            queryFields += '}'
+                            queryString += '}'
                         })
                     }
                 })
             } else {
-                queryFields = queryStatemantForType(type)
+                queryString = queryStatemantForType(type)
             }
             const variables = {filter, limit: 20},
-                gqlQuery = `query ${nameStartLower}($sort: String,$limit: Int,$page: Int,$filter: String){${nameStartLower}(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results{_id __typename ${queryFields}}}}`
+                gqlQuery = `query ${nameStartLower}($sort: String,$limit: Int,$page: Int,$filter: String){${nameStartLower}(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results{_id __typename ${queryString}}}}`
 
             const storeData = client.readQuery({
                 query: gqlQuery,
@@ -563,15 +586,17 @@ class TypePicker extends React.Component {
 
 TypePicker.propTypes = {
     value: PropTypes.array,
-    fields: PropTypes.array,
+    pickerField: PropTypes.string,
+    queryFields: PropTypes.array,
     searchFields: PropTypes.array,
+    metaFields: PropTypes.array,
+    projection: PropTypes.array,
     placeholder: PropTypes.string,
     filter: PropTypes.string,
     error: PropTypes.bool,
     helperText: PropTypes.string,
     multi: PropTypes.bool,
     name: PropTypes.string.isRequired,
-    pickerField: PropTypes.string,
     type: PropTypes.string.isRequired,
     onChange: PropTypes.func.isRequired,
     classes: PropTypes.object.isRequired

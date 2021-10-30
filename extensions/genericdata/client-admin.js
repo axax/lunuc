@@ -10,7 +10,7 @@ import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../cms/constants'
 import {client} from 'client/middleware/graphql'
 import config from 'gen/config-client'
 import {_t, registerTrs} from '../../util/i18n'
-import {projectFields} from '../../util/project'
+import {performFieldProjection} from '../../util/project'
 
 import {translations} from './translations/admin'
 import {setPropertyByPath} from "../../client/util/json";
@@ -438,37 +438,36 @@ export default () => {
         TypePicker: This gets called after the user picks items in a new window
         filter the object with only the attributes that are specified as pickerFields
      */
-    Hook.on(['TypePickerWindowCallback', 'TypePickerBeforeHandlePick'], function ({type, value, pickerField, queryFields}) {
+    Hook.on('TypePickerBeforeHandlePick', function ({type, pickerField, queryFields, fieldsToProject, projection, rawValue}) {
+
         if (type === 'GenericData') {
-            try {
 
-                let fieldsToReturn
+            let dataFieldsToProject
 
-                if (queryFields) {
-                    fieldsToReturn = queryFields
-                } else if (pickerField) {
-                    fieldsToReturn = pickerField
-                } else if (!pickerField && value.definition && value.definition.structure) {
-                    fieldsToReturn = value.definition.structure.pickerField
+            if(!fieldsToProject && rawValue.definition && rawValue.definition.structure){
+                dataFieldsToProject =  rawValue.definition.structure.pickerField
+                if (dataFieldsToProject.constructor !== Array) {
+                    dataFieldsToProject = [dataFieldsToProject]
+                }
+            }else{
+                dataFieldsToProject = fieldsToProject.slice(0)
+            }
+
+            if(dataFieldsToProject){
+                // project data
+                try {
+                    const newData = performFieldProjection(dataFieldsToProject, rawValue.data)
+
+                    rawValue.data = newData
+                    delete rawValue.definition
+                } catch (e) {
+                    console.log('Error in TypePickerBeforeHandlePick', e)
                 }
 
+                fieldsToProject.splice(0,fieldsToProject.length)
+                fieldsToProject.push('_id')
+                fieldsToProject.push('data')
 
-                if (fieldsToReturn) {
-
-                    if (fieldsToReturn.constructor !== Array) {
-                        fieldsToReturn = [fieldsToReturn]
-                    }
-
-                    const newData = projectFields(fieldsToReturn, value.data)
-
-                    console.log(newData)
-
-                    value.data = newData
-                    delete value.definition
-                }
-
-            } catch (e) {
-                console.log('Error in TypePickerWindowCallback', e)
             }
         }
     })

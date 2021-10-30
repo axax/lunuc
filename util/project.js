@@ -1,4 +1,4 @@
-export const projectFields = (projection, data, newData)=>{
+export const performFieldProjection = (projection, data, newData)=>{
     if(!data){
         return
     }
@@ -10,9 +10,9 @@ export const projectFields = (projection, data, newData)=>{
     for (const project of projection) {
         if(project.constructor===Object){
             const key = Object.keys(project)[0]
-            newData[key] = projectFields(project[key], data[key])
+            newData[key] = performFieldProjection(project[key], data[key])
         }else {
-            if(data.constructor===Array){
+            if(data.constructor===Array && data.forEach){
                 data.forEach((d,i)=>{
                     if(newData.length-1<i){
                         newData.push({})

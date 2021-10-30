@@ -414,10 +414,11 @@ class GenericForm extends React.Component {
                 }
 
                 if (changeTrigger.length > 0) {
-                    let script = 'const state=this.state,props=this.props;' + changeTrigger.join(';')
+                    let script = 'const rawValue=this.rawValue,state=this.state,props=this.props;' + changeTrigger.join(';')
                     try {
                         new Function(script).call({
                             state: newState,
+                            rawValue: e.rawValue,
                             props: this.props
                         })
                     } catch (e) {
@@ -963,15 +964,15 @@ class GenericForm extends React.Component {
                 multi={field.multi}
                 pickerField={field.pickerField} /* fields that are searched */
                 searchFields={field.searchFields} /* fields that are shown in the picker */
-                queryFields={field.queryFields} /* fields that are selected and returned */
-                metaFields={field.metaFields} /* fields that need user input and are returend in addtion */
-                fields={field.fields}
+                projection={field.projection} /* fields that are projected and returned */
+                metaFields={field.metaFields} /* fields that need user input and are returned in addtion */
+                queryFields={field.fields}
                 type={field.type} placeholder={field.placeholder}/>)
         } else if (uitype === 'select') {
 
             if (field.filter && field.type && field.path) {
 
-                const queries = getTypeQueries(field.type, field.queryFields, {loadAll: false})
+                const queries = getTypeQueries(field.type, field.fields, {loadAll: false})
 
                 currentFormFields.push(<Query query={queries.query}
                                               fetchPolicy="cache-and-network"
