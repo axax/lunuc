@@ -17,11 +17,11 @@
           "fullWidth": true,
           "tab": "Optionen",
           "vagueSearchable": false,
-          "hideColumnInTypes": true
-        },
-        "access": {
-          "ui": {
-            "role": "manage_types"
+          "hideColumnInTypes": true,
+          "access": {
+            "ui": {
+              "role": "manage_types"
+            }
           }
         },
         {
