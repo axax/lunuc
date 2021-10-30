@@ -231,7 +231,7 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, otherOptions}) => 
 
                     struct.fields.forEach(field => {
 
-                        addGenericTypeLookup(field, otherOptions)
+                       addGenericTypeLookup(field, otherOptions)
 
                     })
                 }

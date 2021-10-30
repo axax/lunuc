@@ -19,6 +19,11 @@
           "vagueSearchable": false,
           "hideColumnInTypes": true
         },
+        "access": {
+          "ui": {
+            "role": "manage_types"
+          }
+        },
         {
           "name": "group",
           "type": "MediaGroup",
@@ -46,7 +51,12 @@
           "alwaysLoad": false,
           "hideColumnInTypes": true,
           "vagueSearchable": false,
-          "tab": "Meta"
+          "tab": "Meta",
+          "access": {
+            "ui": {
+              "role": "manage_types"
+            }
+          }
         },
         {
           "name": "info",
@@ -55,7 +65,12 @@
           "alwaysLoad": false,
           "hideColumnInTypes": true,
           "vagueSearchable": false,
-          "tab": "Info"
+          "tab": "Info",
+          "access": {
+            "ui": {
+              "role": "manage_types"
+            }
+          }
         },
         {
           "name": "references",
@@ -63,7 +78,12 @@
           "uitype": "json",
           "hideColumnInTypes": true,
           "vagueSearchable": false,
-          "tab": "Refrenzen"
+          "tab": "Refrenzen",
+          "access": {
+            "ui": {
+              "role": "manage_types"
+            }
+          }
         },
         {
           "name": "size",
@@ -76,21 +96,36 @@
           "type": "Boolean",
           "tab": "Optionen",
           "hideColumnInTypes": true,
-          "vagueSearchable": false
+          "vagueSearchable": false,
+          "access": {
+            "ui": {
+              "role": "manage_types"
+            }
+          }
         },
         {
           "name": "useCdn",
           "type": "Boolean",
           "tab": "Optionen",
           "hideColumnInTypes": true,
-          "vagueSearchable": false
+          "vagueSearchable": false,
+          "access": {
+            "ui": {
+              "role": "manage_types"
+            }
+          }
         },
         {
           "name": "private",
           "type": "Boolean",
           "tab": "Optionen",
           "hideColumnInTypes": true,
-          "vagueSearchable": false
+          "vagueSearchable": false,
+          "access": {
+            "ui": {
+              "role": "manage_types"
+            }
+          }
         },
         {
           "name": "conversion",

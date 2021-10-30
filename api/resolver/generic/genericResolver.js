@@ -645,7 +645,7 @@ const GenericResolver = {
 
         const newData = Object.keys(data).reduce((o, k) => {
             const item = data[k]
-            if (item && item.constructor === ObjectId) {
+            if (k !== '_id' && item && item.constructor === ObjectId) {
                 o[k] = {_id: item}
             } else {
                 o[k] = item

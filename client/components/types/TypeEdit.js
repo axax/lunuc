@@ -98,7 +98,9 @@ class TypeEdit extends React.Component {
                 }
             ],
             children: <GenericForm key="genericForm" closing={!open} autoFocus innerRef={ref => {
-                this.createEditForm = ref
+                if(ref) {
+                    this.createEditForm = ref
+                }
             }} onBlur={event => {
                 Hook.call('TypeCreateEditBlur', {type, event})
             }} onChange={field => {
