@@ -32,7 +32,7 @@ import Util from '../util'
 import Hook from '../../util/hook'
 import GenericForm from './GenericForm'
 import {openWindow} from '../util/window'
-import {performFieldProjection} from '../../util/project'
+import {performFieldProjection, projectionToQueryString} from '../../util/project'
 
 const styles = theme => {
     return {
@@ -394,14 +394,13 @@ class TypePicker extends React.Component {
             let fieldsToProject
 
             if(projection){
-                fieldsToProject = projection
+                fieldsToProject = projection.slice(0)
             }else{
                 if (queryFields) {
-                    fieldsToProject = queryFields
-
+                    fieldsToProject = queryFields.slice(0)
                 } else if (pickerField) {
                     if(pickerField.constructor==Array) {
-                        fieldsToProject = pickerField
+                        fieldsToProject = pickerField.slice(0)
                     }else{
                         fieldsToProject = [pickerField]
                     }
@@ -417,10 +416,6 @@ class TypePicker extends React.Component {
                 fieldsToProject = []
             }else if (fieldsToProject.constructor !== Array) {
                 fieldsToProject = [fieldsToProject]
-            }else{
-                // copy array to prevent overriding existing one
-
-                fieldsToProject = fieldsToProject.slice(0)
             }
 
 
@@ -534,29 +529,22 @@ class TypePicker extends React.Component {
             const nameStartLower = type.charAt(0).toLowerCase() + type.slice(1) + 's'
             let queryString
 
-            // TODO: move to genericData extension
-            if (pickerField && type !== 'GenericData') {
-                queryString = pickerField
-            } else if (queryFields && type !== 'GenericData') {
 
-                queryString = ''
+            if(queryFields || pickerField){
 
-                queryFields.forEach(field => {
-                    if (queryString != '') {
-                        queryString += ' '
-                    }
-                    if (field.constructor === String) {
-                        queryString += field
-                    } else {
-                        Object.keys(field).forEach(key => {
-                            queryString += key + '{'
-                            field[key].forEach(name => {
-                                queryString += name + ' '
-                            })
-                            queryString += '}'
-                        })
-                    }
-                })
+                let finalFields
+                if(queryFields){
+                    finalFields = queryFields.slice(0)
+                }else if(pickerField.constructor === Array){
+                    finalFields = pickerField.slice(0)
+                }else{
+                    finalFields = [pickerField]
+                }
+
+                Hook.call('TypePickerBeforeQueryString', {type, finalFields})
+
+                queryString = projectionToQueryString(finalFields)
+
             } else {
                 queryString = queryStatemantForType(type)
             }
@@ -586,6 +574,7 @@ class TypePicker extends React.Component {
             })
         }
     }
+
 }
 
 TypePicker.propTypes = {

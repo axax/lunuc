@@ -44,3 +44,25 @@ export const findProjection = (key, projection) => {
         }
     }
 }
+
+export const projectionToQueryString = (projection) => {
+    let queryString = ''
+
+    projection.forEach(field => {
+        if (queryString != '') {
+            queryString += ' '
+        }
+        if (field.constructor === String) {
+            queryString += field
+        } else {
+            Object.keys(field).forEach(key => {
+                queryString += key + '{'
+                field[key].forEach(name => {
+                    queryString += name + ' '
+                })
+                queryString += '}'
+            })
+        }
+    })
+    return queryString
+}

@@ -472,6 +472,24 @@ export default () => {
         }
     })
 
+
+    /*
+        TypePicker: This gets called before the query string is built
+     */
+    Hook.on('TypePickerBeforeQueryString', function ({type, finalFields}) {
+
+        if (type === 'GenericData') {
+
+            finalFields.splice(0,finalFields.length)
+
+            finalFields.push('data')
+
+
+        }
+    })
+
+
+
     /*
       TypePicker: This gets called after the user types in the picker field and before data are loaded
    */

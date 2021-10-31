@@ -146,7 +146,7 @@ class CmsViewEditorContainer extends React.Component {
     watchCmsPageStatus(instant) {
         clearTimeout(this._watchCmsPageStatus)
         this._watchCmsPageStatus = setTimeout(() => {
-            if (!this.state.ignoreStatus && this.props.cmsPage && this.props.cmsPage.realSlug !== undefined) {
+            if (!this.state.ignoreStatus && !this.props.dynamic && this.props.cmsPage && this.props.cmsPage.realSlug !== undefined) {
                 client.query({
                     fetchPolicy: 'no-cache',
                     query: `query cmsPageStatus($slug: String!){cmsPageStatus(slug: $slug){data user{username _id}}}`,
