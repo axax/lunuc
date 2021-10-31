@@ -691,27 +691,36 @@ const m = Math.max((offX+offY) / 2,100)
 
     parseDataSource(source) {
         let parsedSource
-        if (source && source.constructor === String) {
+        if(source) {
+            if (source.constructor === String) {
 
-            // source expression: Type:_id
-            // or = :tr.de.key
-            const pos = source.indexOf(':'), pos2 = source.indexOf(':', pos + 1)
+                // source expression: Type:_id
+                // or = :tr.de.key
+                const pos = source.indexOf(':'), pos2 = source.indexOf(':', pos + 1)
 
-            if (pos > -1) {
+                if (pos > -1) {
 
-                parsedSource = {
-                    type: source.substring(0, pos),
-                    _id: source.substring(pos + 1, pos2 > -1 ? pos2 : source.length)
+                    parsedSource = {
+                        type: source.substring(0, pos),
+                        _id: source.substring(pos + 1, pos2 > -1 ? pos2 : source.length)
+                    }
+
+                    if (pos2 > -1) {
+                        parsedSource.props = source.substring(pos2 + 1)
+                    }
+
                 }
+            } else {
+                parsedSource = source
+            }
 
-                if (pos2 > -1) {
-                    parsedSource.props = source.substring(pos2 + 1)
-                }
+            if (parsedSource && parsedSource.$_id) {
+                // resolve _id
+                parsedSource._id = propertyByPath(parsedSource.$_id, this.props)
 
             }
-        } else {
-            parsedSource = source
         }
+
         return parsedSource
     }
 

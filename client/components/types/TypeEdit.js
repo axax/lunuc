@@ -5,8 +5,6 @@ import Hook from '../../../util/hook'
 import {getFormFieldsByType, addAlwaysUpdateData, referencesToIds} from '../../../util/typesAdmin'
 import {SimpleDialog} from 'ui/admin'
 import {_t} from 'util/i18n'
-import Util from "../../util";
-import {setPropertyByPath} from "../../util/json";
 
 
 const compareRef = (prev, current) => {

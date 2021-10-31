@@ -1,11 +1,12 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {SimpleMenu, SimpleDialog, ViewListIcon, LaunchIcon, EditIcon, CodeIcon, AddIcon} from 'ui/admin'
+import {SimpleMenu, SimpleDialog, ViewListIcon, LaunchIcon, EditIcon, CodeIcon, WebIcon, AddIcon, } from 'ui/admin'
 import {withStyles} from '@material-ui/core/styles'
 import classNames from 'classnames'
 import CodeMirrorWrapper from './codemirror/CodeMirrorWrapper'
 import CodeMirror from 'codemirror'
 import './codemirror/javascript'
+import './codemirror/keywords'
 import './codemirror/search'
 import 'codemirror/addon/display/rulers'
 import 'codemirror/mode/htmlmixed/htmlmixed'
@@ -303,6 +304,11 @@ class CodeEditor extends React.Component {
             options.extraKeys['Shift-Tab'] = (cm) => cm.execCommand('indentLess')
 
 
+            options.keyword = {
+                "\"$inlineEditor\"": "custom",
+                "\"slug\"": "custom-link"
+            }
+
             const rulers = []
             for (let i = 1; i <= 30; i++) {
                 rulers.push({color: 'rgba(0,0,0,0.05)', column: i * 2, lineStyle: "dashed"})
@@ -411,6 +417,17 @@ class CodeEditor extends React.Component {
                         }
                     }
                 ]
+                const keys = Object.keys(tempJson)
+                if(keys.length>0 && keys[0]=='slug'){
+                    contextMenuItems.push({
+                        icon: <CodeIcon/>,
+                        name: 'Open Page',
+                        onClick: () => {
+                            location.href = '/'+tempJson.slug
+                        }
+                    })
+                }
+
                 if (this.props.propertyTemplates) {
                     contextMenuItems.push({
                         icon: <AddIcon/>,
@@ -445,11 +462,11 @@ class CodeEditor extends React.Component {
                         items: this.props.templates.map(f => ({
                             name: f.title,
                             onClick: () => {
-                                if( !this.changeLine({
+                                if (!this.changeLine({
                                     value,
                                     lineNr: this._curLineNr,
                                     line: `${this._curLine}${commaAtStart ? ',' : ''}${f.template}${commaAtEnd ? ',' : ''}`
-                                })){
+                                })) {
 
                                     this.changeLine({
                                         value,
@@ -633,6 +650,14 @@ class CodeEditor extends React.Component {
                                 onChange(newDataAsJson)
                             } else {
                                 onChange(newDataAsString)
+                            }
+
+                            if (this._editor.hasFocus()) {
+
+                                // restore focus
+                                setTimeout(() => {
+                                    this._editor.focus()
+                                }, 500)
                             }
                         }
                     })
