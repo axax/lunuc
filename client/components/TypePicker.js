@@ -427,10 +427,7 @@ class TypePicker extends React.Component {
             delete rawValue.createdBy
 
             let projectedValue = rawValue
-
             if (fieldsToProject.length > 0) {
-
-
                 projectedValue = performFieldProjection(fieldsToProject, rawValue)
             }
 

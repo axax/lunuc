@@ -99,20 +99,18 @@ Hook.on('beforePubSub', async ({triggerName, payload, db, context}) => {
 })
 
 
-function addGenericTypeLookup(field, otherOptions, projection, key) {
-    /*if (field.subFields) {
-        Object.keys(field.subFields).forEach(subFieldKey => {
-            addGenericTypeLookup(field.subFields[subFieldKey], otherOptions, key + '.' + subFieldKey)
-        })
-    }*/
+async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
+
     if (field.genericType) {
 
+        let currentProjection
         // check if lookup is needed
         if (projection) {
 
             const dataProjection = findProjection('data', projection)
             if(dataProjection && dataProjection.constructor === Array){
-                if( !findProjection(field.name,dataProjection)){
+                currentProjection = findProjection(field.name,dataProjection)
+                if( !currentProjection){
                     //console.log(`no lookup for ${field.name} needed`)
                     return
                 }
@@ -162,34 +160,54 @@ function addGenericTypeLookup(field, otherOptions, projection, key) {
                         }
                 }
             }
-        otherOptions.lookups.push(
-            {
-                $lookup: {
-                    from: 'GenericData',
-                    let: {
-                        id
-                    },
-                    pipeline: [
-                        {
-                            $match
-                        },
-                        {
-                            $project: {
-                                __typename: 'GenericData',
-                                _id: 1,
-                                data: 1
-                            }
-                        }
-                    ],
-                    as: field.metaFields ? `lookupRelation${key}` : `data.${key}`
-                }
-            })
+        let subLookup = []
+        if(otherOptions.lookupLevel > 1/* && currentProjection && currentProjection.constructor===Array*/){
 
-        if (field.metaFields
-        ) {
+            const def = await getGenericTypeDefinitionWithStructure(db, {name: field.genericType})
+            if(def && def.structure && def.structure.fields){
+
+                for( const subField of def.structure.fields){
+                   if(subField.genericType){
+                       await addGenericTypeLookup(subField,{lookups:subLookup,lookupLevel: otherOptions.lookupLevel-1},currentProjection, db)
+                   }
+                }
+
+               // const defField = def.structure.fields.filter(f=>f.name==field.name)
+            }
+        }
+
+        const newLookup = {
+            $lookup: {
+                from: 'GenericData',
+                let: {
+                    id
+                },
+                pipeline: [
+                    {
+                        $match
+                    }
+                ],
+                as: field.metaFields ? `lookupRelation${key}` : `data.${key}`
+            }
+        }
+        if(subLookup.length > 0){
+            subLookup.forEach(sub=>{
+                newLookup.$lookup.pipeline.push(sub)
+            })
+        }
+
+        newLookup.$lookup.pipeline.push({
+            $project: {
+                __typename: 'GenericData',
+                    _id: 1,
+                    data: 1
+            }
+        })
+
+        otherOptions.lookups.push(newLookup)
+        if (field.metaFields) {
 
             // merge lookup result with original object which contains the metaValues
-
             otherOptions.lookups.push({
                 $addFields: {
                     [`data.${key}`]: {
@@ -239,12 +257,10 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions
                 match.definition = {$eq: ObjectId(def._id)}
                 if (struct.fields) {
 
-
-                    struct.fields.forEach(field => {
-
-                        addGenericTypeLookup(field, otherOptions, data)
-
-                    })
+                    for(let i = 0; i< struct.fields.length;i++){
+                        const field = struct.fields[i]
+                        await addGenericTypeLookup(field, otherOptions, data, db)
+                    }
                 }
             } else {
                 throw new Error(`Invalid type GenericType.${genericType}`)

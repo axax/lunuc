@@ -444,7 +444,7 @@ export default () => {
 
             let dataFieldsToProject
 
-            if(!fieldsToProject && rawValue.definition && rawValue.definition.structure){
+            if(fieldsToProject.length===0 && rawValue.definition && rawValue.definition.structure){
                 dataFieldsToProject =  rawValue.definition.structure.pickerField
                 if (dataFieldsToProject.constructor !== Array) {
                     dataFieldsToProject = [dataFieldsToProject]
@@ -453,7 +453,7 @@ export default () => {
                 dataFieldsToProject = fieldsToProject.slice(0)
             }
 
-            if(dataFieldsToProject){
+            if(dataFieldsToProject && dataFieldsToProject.length>0){
                 // project data
                 try {
                     const newData = performFieldProjection(dataFieldsToProject, rawValue.data)
