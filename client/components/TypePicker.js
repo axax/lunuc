@@ -399,7 +399,7 @@ class TypePicker extends React.Component {
                 if (queryFields) {
                     fieldsToProject = queryFields.slice(0)
                 } else if (pickerField) {
-                    if(pickerField.constructor==Array) {
+                    if(Array.isArray(pickerField)) {
                         fieldsToProject = pickerField.slice(0)
                     }else{
                         fieldsToProject = [pickerField]
@@ -412,12 +412,12 @@ class TypePicker extends React.Component {
                 }
             }
 
+
             if(!fieldsToProject){
                 fieldsToProject = []
-            }else if (fieldsToProject.constructor !== Array) {
+            }else if (!Array.isArray(fieldsToProject)) {
                 fieldsToProject = [fieldsToProject]
             }
-
 
             Hook.call('TypePickerBeforeHandlePick', {type, pickerField, queryFields, fieldsToProject, projection, rawValue})
 
@@ -425,7 +425,6 @@ class TypePicker extends React.Component {
 
             //always remove creator
             delete rawValue.createdBy
-
             let projectedValue = rawValue
             if (fieldsToProject.length > 0) {
                 projectedValue = performFieldProjection(fieldsToProject, rawValue)
@@ -439,7 +438,7 @@ class TypePicker extends React.Component {
             })
 
             let value = (this.state.value ? this.state.value.slice(0) : [])
-            if (projectedValue.forEach) {
+            if (Array.isArray(projectedValue)) {
                 projectedValue.forEach(itm => {
                     value.push({__typename: type, ...itm})
                 })
@@ -532,7 +531,7 @@ class TypePicker extends React.Component {
                 let finalFields
                 if(queryFields){
                     finalFields = queryFields.slice(0)
-                }else if(pickerField.constructor === Array){
+                }else if(Array.isArray(pickerField)){
                     finalFields = pickerField.slice(0)
                 }else{
                     finalFields = [pickerField]

@@ -148,7 +148,7 @@ export default () => {
                 // remove save button
                 props.actions.splice(1, 1)
 
-                props.children = <MediaUploader meta={meta}/>
+                props.children = <MediaUploader meta={meta} type={type}/>
             } else if (dataToEdit) {
 
                 props.children = <MediaEditorWrapper meta={meta} dataToEdit={dataToEdit}>{props.children}</MediaEditorWrapper>
@@ -239,7 +239,7 @@ export default () => {
     })
 
 
-    const MediaUploader = ({meta}) => {
+    const MediaUploader = ({meta, type}) => {
 
         const mediaSetting = meta.TypeContainer.settings.Media
 
@@ -295,7 +295,8 @@ export default () => {
                                           createEditDialogOption: null
                                       })
 
-                                      meta.TypeContainer.getData(meta, false)
+                                      meta.TypeContainer.getData(meta.TypeContainer.pageParams, false)
+
                                   }, 2000)
 
                               }
