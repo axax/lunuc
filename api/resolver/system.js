@@ -196,7 +196,7 @@ export const systemResolver = (db) => ({
                                 id: currentId
                             }
                         })
-                    }, 60000)
+                    }, 600000)
                 }
             }
 
