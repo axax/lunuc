@@ -256,6 +256,7 @@ const GenericResolver = {
 
         if (result.count && result.count.length > 0) {
             result.total = result.count[0].count
+            delete result.count
         } else {
             result.total = estimateCount ? await collection.estimatedDocumentCount() : 0
         }
