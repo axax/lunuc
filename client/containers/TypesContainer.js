@@ -917,7 +917,7 @@ class TypesContainer extends React.Component {
         const {data} = this.state
         if (data && data.meta) {
             const meta = JSON.parse(data.meta)
-            return `Abfragezeit ${meta.aggregateTime}ms / ${meta.totalTime}ms${meta.debugInfo && meta.debugInfo.length>0?' - '+meta.debugInfo.join(' | '):''}`
+            return `Abfragezeit ${meta.aggregateTime}ms / ${meta.totalTime}ms${meta.debugInfo && meta.debugInfo.length > 0 ? ' - ' + meta.debugInfo.join(' | ') : ''}`
         }
         return ' '
     }
@@ -1081,7 +1081,7 @@ class TypesContainer extends React.Component {
 
     determinePageParams(props) {
         const {params} = props.match || {}
-        const {p, l, s, f, v, noLayout, fixType, title, baseFilter, multi, meta} = Util.extractQueryParams(window.location.search.substring(1))
+        const {p, l, s, f, v, noLayout, fixType, title, baseFilter, multi, meta, action} = Util.extractQueryParams(window.location.search.substring(1))
         const pInt = parseInt(p), lInt = parseInt(l)
 
         const finalFixType = fixType || props.fixType,
@@ -1107,6 +1107,7 @@ class TypesContainer extends React.Component {
             multi,
             title,
             meta,
+            action,
             fixType: finalFixType,
             noLayout: finalNoLayout,
             limit: lInt || typeSettings.limit || DEFAULT_RESULT_LIMIT,
@@ -1176,6 +1177,13 @@ class TypesContainer extends React.Component {
                     if (typeChanged) {
                         newState.filter = filter
                     }
+                    if (this.pageParams.action === 'new') {
+                        newState.createEditDialog = true
+
+
+                    }
+
+
                     this.setState(newState)
 
                 }).catch(error => {

@@ -118,6 +118,10 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
 
         }
 
+        if(!currentProjection && field.vagueLookup===false){
+            return
+        }
+
         if (!key) {
             key = field.name
         }
@@ -172,7 +176,6 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
                    }
                 }
 
-               // const defField = def.structure.fields.filter(f=>f.name==field.name)
             }
         }
 

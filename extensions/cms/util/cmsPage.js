@@ -103,6 +103,8 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, _
                             .replace(/(^[ \t]*\n)/gm, "") // remove empty lines
                             .replace(/^\s+|\s+$/gm, '') // remove whitespace at beginning of line
                             .replace(/,$\n/gm, ',') // remove line break after ,
+                            .replace(/\/\*[\s\S]*?\*\//gm, '') // remove block comments /**/
+
                     }
                 }
                 try {

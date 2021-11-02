@@ -306,6 +306,7 @@ class CmsViewContainer extends React.Component {
 
                 const qqlSubscribe = `subscription ${subscriptionName}${subscriptionVariablesDefinition?'('+subscriptionVariablesDefinition+')':''}{${subscriptionName}${subscriptionVariables?'('+subscriptionVariables+')':''}{${subscriptionQuery}}}`
 
+
                 this.subscriptions[subscriptionKey] = client.subscribe({
                     query: qqlSubscribe,
                     variables: subscription.variables
@@ -400,6 +401,7 @@ class CmsViewContainer extends React.Component {
                         console.error('err', err)
                     },
                 })
+
             }
         })
     }

@@ -55,33 +55,56 @@ function removeLoader() {
 
 
 /* Websocket */
-let wsCurrentConnection, subscribeCount = 0, openWsSubscription = []
+let wsCurrentConnection, subscribeCount = 0, openWsSubscription = [], sharedKeyIdMap = {}
 
-const createWsSubscription = (id, payload, next) => {
-    openWsSubscription.push({
-        id,
-        payload,
-        next
-    })
 
-    if (wsCurrentConnection && wsCurrentConnection.readyState === 1) {
-        wsCurrentConnection.send(JSON.stringify({type: 'start', id, payload}))
-    }
-}
+const isConnected = ws => ws && ws.readyState===1
 
-const removeWsSubscription = (id) => {
-    if (wsCurrentConnection) {
-        if (wsCurrentConnection.readyState === 1) {
-            wsCurrentConnection.send(`{"type":"stop","id":${id}}`)
+const createWsSubscription = (id, subId, payload, next) => {
+
+    const withSameId = openWsSubscription.filter(f=>f.id===id)
+
+    if(withSameId.length>0){
+        const data = withSameId[0]
+        data.nexts[subId] = next
+    }else{
+        openWsSubscription.push({
+            id,
+            payload,
+            nexts: {[subId]: next}
+        })
+
+        if (isConnected(wsCurrentConnection)) {
+            wsCurrentConnection.send(JSON.stringify({type: 'start', id, payload}))
         }
     }
-    // remove from array by id
+
+}
+
+const removeWsSubscription = (id, subId) => {
+
     for (let i = 0; i < openWsSubscription.length; i++) {
         if (openWsSubscription[i].id === id) {
+            const data = openWsSubscription[i]
+
+            delete data.nexts[subId]
+
+            if(Object.keys(data.nexts).length>0){
+                return false
+            }
+            // remove from array by id
             openWsSubscription.splice(i, 1)
             break
         }
     }
+
+    if (isConnected(wsCurrentConnection)) {
+        wsCurrentConnection.send(`{"type":"stop","id":${id}}`)
+    }else{
+        console.log('ws connection not ready')
+    }
+
+    return true
 }
 
 
@@ -119,7 +142,11 @@ const setUpWs = () => {
                 if (msg.payload) {
                     for (let i = 0; i < openWsSubscription.length; i++) {
                         const sub = openWsSubscription[i]
-                        sub.next(msg.payload)
+                        const subIds = Object.keys(sub.nexts)
+                        subIds.forEach(subId=>{
+                            sub.nexts[subId](msg.payload)
+                        })
+
                     }
                 }
             }, false)
@@ -261,7 +288,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
     })
 }
 
-let CACHE_QUERIES = {}, CACHE_ITEMS = {}, QUERY_WATCHER = {}
+let CACHE_QUERIES = {}, CACHE_ITEMS = {}, QUERY_WATCHER = {}, SUB_CACHE = {}
 
 export const client = {
     query: ({query, variables, fetchPolicy}) => {
@@ -350,8 +377,16 @@ export const client = {
     subscribe: ({query, variables, extensions}) => {
         subscribeCount++
 
-        const id = subscribeCount
+        const shareKey = query + (variables?JSON.stringify(variables):'') + (extensions?JSON.stringify(extensions):'')
 
+        let id, subId
+        if(sharedKeyIdMap[shareKey]){
+            id = sharedKeyIdMap[shareKey]
+            subId = subscribeCount
+        }else{
+            subId = id = subscribeCount
+            sharedKeyIdMap[shareKey] = id
+        }
 
         return {
             subscribe: ({next}) => {
@@ -362,10 +397,12 @@ export const client = {
                     auth: Util.getAuthToken(), // auth is only set when USE_COOKIES is false
                     session: _app_.session // session is only set when USE_COOKIES is false
                 }
-                createWsSubscription(id, payload, next)
+                createWsSubscription(id, subId, payload, next)
                 return {
                     unsubscribe: () => {
-                        removeWsSubscription(id)
+                        if(removeWsSubscription(id, subId)){
+                            delete sharedKeyIdMap[shareKey]
+                        }
                     }
                 }
             }
