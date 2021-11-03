@@ -476,6 +476,7 @@ class JsonDom extends React.Component {
                 scope.props = _props
                 scope.dataState = {loading, isNew}
 
+
                 // find root parent
                 let root = this, parent = this.props._parentRef
                 while (root.props._parentRef) {
@@ -492,7 +493,7 @@ class JsonDom extends React.Component {
                             this.jsOnStack = {}
                             this.scriptResult = new Function(DomUtil.toES5('\'use strict\';const __this=this._this;' +
                                 'const {serverMethod,on,setLocal,getLocal,refresh,getComponent,addMetaTag,setStyle,fetchMore}=__this;' +
-                                'const {history,clientQuery,setKeyValue,updateResolvedData}=__this.props;' +
+                                'const {history,clientQuery,setKeyValue,getKeyValue,updateResolvedData}=__this.props;' +
                                 'const {scope,parent,root,Util,DomUtil}=this;' +
                                 'const _t=this._t.bind(scope.data),forceUpdate=refresh;' + script)).call({
                                 _this: this,
@@ -1535,6 +1536,7 @@ JsonDom.propTypes = {
 
     /* Methods */
     setKeyValue: PropTypes.func,
+    getKeyValue: PropTypes.func,
     updateResolvedData: PropTypes.func,
     serverMethod: PropTypes.func,
     clientQuery: PropTypes.func,

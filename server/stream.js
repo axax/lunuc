@@ -16,6 +16,9 @@ const stream = (socket)=>{
 
     })
 
+    socket.on('error', (e) => {
+        console.log('http error in stream socket', e)
+    })
 
     socket.on('newUserStart', (data)=>{
         socket.to(data.to).emit('newUserStart', {sender:data.sender})

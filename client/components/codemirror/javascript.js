@@ -35,7 +35,7 @@
             const customKeywordObj = {}
             if(!jsonMode && !jsonldMode){
                 const customKeywords = ['__this', 'serverMethod', '_app_', 'require', 'fetchMore', 'addMetaTag', 'setStyle', 'clientQuery', 'on', 'Util', 'DomUtil', 'scope', 'history', 'refresh', 'forceUpdate', 'getLocal',
-                    'setLocal', 'parent', 'root', 'getComponent', 'updateResolvedData', 'setKeyValue']
+                    'setLocal', 'parent', 'root', 'getComponent', 'updateResolvedData', 'setKeyValue', 'getKeyValue']
                 for (const customKeyword of customKeywords) {
                     customKeywordObj[customKeyword] = {type: "atom", style: "custom"};
                 }

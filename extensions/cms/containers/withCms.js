@@ -85,6 +85,7 @@ export default function (WrappedComponent) {
             if (isEditMode(this.props) && window.self === window.top) {
                 return <CmsViewEditorContainer updateResolvedData={this.updateResolvedData.bind(this)}
                                                setKeyValue={this.setKeyValue.bind(this)}
+                                               getKeyValue={this.getKeyValue.bind(this)}
                                                WrappedComponent={WrappedComponent}
                                                {...this.props}/>
             } else {
@@ -94,6 +95,7 @@ export default function (WrappedComponent) {
                                          cmsPage={cmsPage}/></AdminComponents>*/
                 return <WrappedComponent updateResolvedData={this.updateResolvedData.bind(this)}
                                          setKeyValue={this.setKeyValue.bind(this)}
+                                         getKeyValue={this.getKeyValue.bind(this)}
                                          {...this.props}
                                          cmsPage={cmsPage}/>
             }
@@ -107,16 +109,20 @@ export default function (WrappedComponent) {
          * @param {String} key
          * @param {Boolean} server if true the values are sent to the server on a request
          * @param {Boolean} global if true the value is stored as globally for all users
+         * @param {Boolean} local only lookup in localStorage
          * @param {Function} callback a function that gets called at the end
          */
-        /* it is not used */
-        /*getKeyValue({key, global, server, callback}){
+        getKeyValue({key, global, local, server, callback}){
 
             if (!key) {
                 return
             }
 
-            if (global || this.props.user.isAuthenticated) {
+            if(local){
+                return getKeyValueFromLS(key)
+            }
+
+            /*if (global || this.props.user.isAuthenticated) {
                 client.query({
                     query: global ? QUERY_KEY_VALUES_GLOBAL : QUERY_KEY_VALUES,
                     variables: {keys: key.constructor!==Array?[key]:key}
@@ -136,8 +142,8 @@ export default function (WrappedComponent) {
                 }).catch(callback)
             }else {
                 callback(getKeyValueFromLS(key))
-            }
-        }*/
+            }*/
+        }
 
 
         /**

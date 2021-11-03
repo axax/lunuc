@@ -1522,6 +1522,7 @@ CmsViewEditorContainer.propTypes = {
     cmsTemplateEditData: PropTypes.object,
     cmsEditData: PropTypes.object,
     setKeyValue: PropTypes.func.isRequired,
+    getKeyValue: PropTypes.func.isRequired,
     slug: PropTypes.string.isRequired,
     user: PropTypes.object.isRequired,
     /* with Router */
