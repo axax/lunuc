@@ -74,6 +74,13 @@ if (fs.existsSync(path.join(CERT_DIR, './chain.pem'))) {
     options.ca = fs.readFileSync(path.join(CERT_DIR, './chain.pem'))
 }
 
+process.on('uncaughtException', (error) => {
+    console.log(error)
+    console.error(error.stack);
+    console.log("Node NOT Exiting...");
+})
+
+
 
 const defaultWebHandler = (err, req, res) => {
     if (err) {
@@ -413,7 +420,7 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
     const agent = req.headers['user-agent']
     const {version, browser, isBot} = parseUserAgent(agent, hostrule.botregex || (hostrules.general && hostrules.general.botregex))
 
-    if (false && (isBot || (browser === 'firefox' && version <= 12) || (browser === 'chrome' && version <= 16) || (browser === 'msie' && version <= 6))) {
+    if (isBot || (browser === 'firefox' && version <= 12) || (browser === 'chrome' && version <= 16) || (browser === 'msie' && version <= 6)) {
 
         if ( req.headers.accept && req.headers.accept.indexOf('text/html') < 0 && req.headers.accept.indexOf('*/*') < 0) {
             console.log('headers not valid', req.headers.accept)
