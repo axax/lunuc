@@ -5,8 +5,8 @@
   "main": "index.js",
   "repository": "git://github.com/axax/lunuc.git",
   "engines": {
-    "node": "13.x",
-    "npm": "6.x"
+    "node": "17.x",
+    "npm": "8.x"
   },
   "jest": {
     "moduleNameMapper": {
@@ -117,7 +117,7 @@
     "@ffprobe-installer/ffprobe": "^1.2.0",
     "@google-cloud/storage": "^5.15.4",
     "@google-cloud/translate": "^6.3.1",
-    "aws-sdk": "^2.1020.0",
+    "aws-sdk": "^2.1021.0",
     "fluent-ffmpeg": "^2.1.2",
     "lighthouse": "^8.6.0",
     "mssql": "^7.2.1",
