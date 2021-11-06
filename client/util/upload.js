@@ -136,7 +136,7 @@ const UploadUtil = {
                         return
                     } else if (e === '*') {
                         acceptsType.forEach(type => {
-                            if (type === '*' || (type === 'image' && isImage)) {
+                            if (type === '*' || (type === 'image' && isImage)  || (type === 'video')) {
                                 isValid = true
                                 return
                             }

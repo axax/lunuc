@@ -400,7 +400,7 @@ export const userResolver = (db) => ({
                 return doc
             }
         },
-        signUp: async ({password, username, email, mailTemplate, mailSubject, mailUrl, meta, fromEmail}, req) => {
+        signUp: async ({password, username, email, mailTemplate, mailSubject, mailUrl, meta, fromEmail, replyTo}, req) => {
 
             const {context} = req
 
@@ -440,6 +440,7 @@ export const userResolver = (db) => ({
                     const signupToken = insertResult.ops[0].signupToken
 
                     sendMail(db, context, {
+                        replyTo,
                         from: fromEmail,
                         slug: mailTemplate,
                         recipient: email,

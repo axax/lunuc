@@ -17,10 +17,10 @@ import {loadAllHostrules} from '../util/hostrules'
 import {PassThrough} from 'stream'
 import {contextByRequest} from '../api/util/sessionContext'
 import {parseUserAgent} from '../util/userAgent'
-import {USE_COOKIES} from "../api/constants";
-import {parseCookies} from "../api/util/parseCookies";
-import {decodeToken} from "../api/util/jwt";
+import {USE_COOKIES} from '../api/constants'
+import {parseCookies} from '../api/util/parseCookies'
 import puppeteer from 'puppeteer'
+import crypto from "crypto";
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
 const ABS_UPLOAD_DIR = path.join(__dirname, '../' + UPLOAD_DIR)
@@ -574,11 +574,14 @@ function transcodeVideoOptions(parsedUrl, filename) {
         /*"audioQuality": 0,*/
         /*"fps": 24,*/
         /*"size": "720x?",*/
-        crf: 10,
+        crf: 22,
         /*"speed": 1,*/
         /*"preset": "slow",*/
         keep: false,
-        format: 'mp4'
+        format: 'mp4',
+        hvc1: false, /* for libx265 */
+        audioBitrate: '160k',
+        /*videoFilters: ['format=yuv420p']*/
     }
 
     try {
@@ -633,8 +636,14 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, filename}) {
         outputOptions.push('-preset ' + options.preset)
     }
 
+    if (options.pass) {
+        outputOptions.push('-pass ' + options.pass)
+    }
     if (options.duration) {
         outputOptions.push('-t ' + options.duration)
+    }
+    if (options.hvc1) {
+        outputOptions.push('-tag:v hvc1')
     }
 
     let video = ffmpeg(filename)
@@ -663,7 +672,7 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, filename}) {
             aFilter.push('atempo=' + options.speed)
         }
 
-        video.audioCodec('aac').audioFilters(aFilter) /*.audioBitrate('128k')*/
+        video.audioCodec('aac').audioFilters(aFilter)//.audioBitrate(options.audioBitrate || '160k')
 
         if (options.audioQuality) {
             video.audioQuality(options.audioQuality)
@@ -676,8 +685,11 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, filename}) {
     if (options.speed) {
         vFilter.push(`setpts=${1 / options.speed}*PTS`)
     }
+    if(options.videoFilters){
+        vFilter.push(...options.videoFilters)
+    }
 
-    video.videoCodec('libx264')
+    video.videoCodec(options.codec || 'libx264')
         .videoFilter(vFilter)
         .outputOptions(outputOptions)
         .format(options.format)
@@ -691,15 +703,20 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, filename}) {
     if (options.size) {
         video.size(options.size)
     }
+
+
     video.on('progress', (progress) => {
         console.log('Processing: ' + progress.timemark + '% done')
     }).on('start', console.log).on('end', () => {
+
         if (options.keep) {
             // rename
             fs.rename(options.filename + '.temp', options.filename, () => {
                 console.log('transcode ended and file saved as ' + options.filename)
             })
 
+        }else{
+            console.log('transcode ended')
         }
 
     }).on('error', console.error)

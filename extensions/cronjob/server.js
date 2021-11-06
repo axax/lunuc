@@ -33,7 +33,8 @@ const registerCronJobs = async (db) => {
         if (!cronJob.execfilter || Util.execFilter(cronJob.execfilter)) {
 
             console.log(`register cronjob ${cronJob.name}`)
-            registeredCronJobs.push(cron.schedule(cronJob.expression, () => {
+
+            const task = cron.schedule(cronJob.expression, () => {
 
                 const context = {lang: 'en', id: cronJob.createdBy, username: 'unknown'}
 
@@ -45,17 +46,21 @@ const registerCronJobs = async (db) => {
                     db
                 })
 
-            }))
+            })
+
+            registeredCronJobs.push(task)
         }
     })
 }
 
 
 const unregisterCronJobs = (db) => {
-    registeredCronJobs.forEach(job => {
+
+    for(let i = registeredCronJobs.length-1; i>=0; i--){
         console.log(`stop job`)
-        job.stop()
-    })
+        registeredCronJobs[i].stop()
+        delete registeredCronJobs[i]
+    }
 
     registeredCronJobs = []
 }

@@ -1,9 +1,8 @@
 import 'gen/extensions-server'
 import express from 'express'
-import {buildSchema} from 'graphql'
+import {buildASTSchema} from 'graphql'
 import {graphqlHTTP} from 'express-graphql'
 import bodyParser from 'body-parser'
-//import {ApolloServer, gql} from 'apollo-server-express'
 import {createServer} from 'http'
 import {SubscriptionServer} from 'subscriptions-transport-ws'
 import {execute, subscribe} from 'graphql'
@@ -97,17 +96,8 @@ export const start = (done) => {
 
             const resolvers = resolver(db)
 
-            // ApolloServer
-            // Construct a schema, using GraphQL schema language
-            /* const typeDefs = gql(schemaString)
-             const apolloServer = new ApolloServer({
-                 typeDefs, resolvers, formatError,
-                 context: ({ req }) => req
-             })
-             apolloServer.applyMiddleware({app, path: '/graphql'})*/
-
-            // Graphql-Express
-            const schema = buildSchema(schemaString)
+                      // Graphql-Express
+            const schema = buildASTSchema(schemaString)
             let rootValue = {}
             Object.keys(resolvers).forEach(key => {
                 if (key === 'Query' || key === 'Mutation' || key === 'Subscription') {
@@ -117,17 +107,12 @@ export const start = (done) => {
                 }
             })
 
-
-            //app.use(bodyParser.urlencoded({ extended: false }))
             // fix graphql limit of 100kb body size
             app.use(bodyParser.json({limit: '10000mb'}))
 
             // only allow post methode
             app.post('/graphql', (req, res, next) => {
 
-                //var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-                //console.log(ip)*
-                // TODO: replace with ApolloServer so with can use batch queries
                 graphqlHTTP({
                     schema,
                     rootValue,

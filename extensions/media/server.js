@@ -91,9 +91,9 @@ Hook.on('FileUpload', async ({db, context, file, data, response}) => {
     }
     response.files.push({
         _id,
-        name: file.name,
+        name: file.originalFilename,
         size: file.size,
-        mimeType: file.type
+        mimeType: file.mimetype
     })
 
 
@@ -115,7 +115,7 @@ Hook.on('FileUpload', async ({db, context, file, data, response}) => {
 
 
             if(data.keepFileName){
-                finalName = file.name
+                finalName = file.originalFilename
             }
 
         }else{
@@ -127,7 +127,7 @@ Hook.on('FileUpload', async ({db, context, file, data, response}) => {
         }
 
 
-        fs.copyFile(file.path, path.join(upload_dir, finalName), async (err) => {
+        fs.copyFile(file.filepath, path.join(upload_dir, finalName), async (err) => {
             if (err) throw err
             if( data.createMediaEntry !== false) {
                 createMediaEntry({db, _id, file, data, context})
@@ -173,33 +173,37 @@ const createMediaEntry = async ({db, _id, file, data, context}) => {
         data.meta = JSON.stringify(await ImageClassfier.classifyByUrl(data.url || ('http://www.lunuc.com' + UPLOAD_URL + '/' + _id.toString()) )) //)
     }
 
-    if( file.type.indexOf('audio/')===0 || file.type.indexOf('video/')===0){
+    if( file.mimetype.indexOf('audio/')===0 || file.mimetype.indexOf('video/')===0){
 
-        const ffprobePath = require('@ffprobe-installer/ffprobe').path,
-            ffmpeg = require('fluent-ffmpeg')
+        try {
+            const ffprobePath = require('@ffprobe-installer/ffprobe').path,
+                ffmpeg = require('fluent-ffmpeg')
 
-        ffmpeg.setFfprobePath(ffprobePath)
+            ffmpeg.setFfprobePath(ffprobePath)
 
 
-        const {meta} = await (new Promise((resolve) => {
-            ffmpeg.ffprobe(file.path, function(error, meta) {
-                if(error){
-                    console.warn(error)
-                }
-                resolve({error,meta})
-            })
-        }))
-        removeInvalidProperties(meta)
-        data.info = meta
+            const {meta} = await (new Promise((resolve) => {
+                ffmpeg.ffprobe(file.filepath, function (error, meta) {
+                    if (error) {
+                        console.warn(error)
+                    }
+                    resolve({error, meta})
+                })
+            }))
+            removeInvalidProperties(meta)
+            data.info = meta
+        }catch (e) {
+            console.warn('error in ffprobe', e)
+        }
     }
 
 
 
 
     const media = {
-        name: file.name,
+        name: file.originalFilename,
         size: file.size,
-        mimeType: file.type || 'application/octet-stream',
+        mimeType: file.mimetype || 'application/octet-stream',
         ...data
     }
 

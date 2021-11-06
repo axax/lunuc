@@ -99,6 +99,7 @@ export const userSchemaRaw = `
 			mailUrl: String
             meta: String
             fromEmail: String
+            replyTo: String
 		): Token
 		
 			

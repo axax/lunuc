@@ -76,9 +76,7 @@ export const handleUpload = db => async (req, res) => {
                 }
 
                 /* Process the uploads */
-                const form = new formidable.IncomingForm()
-
-                form.maxFileSize = 10 * 1024 * 1024 * 1024 // 10GB
+                const form =  formidable({maxFileSize:10 * 1024 * 1024 * 1024})  // 10GB
 
 
                 const fileIds = []

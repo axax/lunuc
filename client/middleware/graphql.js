@@ -58,16 +58,16 @@ function removeLoader() {
 let wsCurrentConnection, subscribeCount = 0, openWsSubscription = [], sharedKeyIdMap = {}
 
 
-const isConnected = ws => ws && ws.readyState===1
+const isConnected = ws => ws && ws.readyState === 1
 
 const createWsSubscription = (id, subId, payload, next) => {
 
-    const withSameId = openWsSubscription.filter(f=>f.id===id)
+    const withSameId = openWsSubscription.filter(f => f.id === id)
 
-    if(withSameId.length>0){
+    if (withSameId.length > 0) {
         const data = withSameId[0]
         data.nexts[subId] = next
-    }else{
+    } else {
         openWsSubscription.push({
             id,
             payload,
@@ -89,7 +89,7 @@ const removeWsSubscription = (id, subId) => {
 
             delete data.nexts[subId]
 
-            if(Object.keys(data.nexts).length>0){
+            if (Object.keys(data.nexts).length > 0) {
                 return false
             }
             // remove from array by id
@@ -100,17 +100,17 @@ const removeWsSubscription = (id, subId) => {
 
     if (isConnected(wsCurrentConnection)) {
         wsCurrentConnection.send(`{"type":"stop","id":${id}}`)
-    }else{
+    } else {
         console.log('ws connection not ready')
     }
 
     return true
 }
 
-
+let setUpWsWasCalled = false
 const setUpWs = () => {
-    if (!_app_.ssr) {
-
+    if (!setUpWsWasCalled && !_app_.ssr) {
+        setUpWsWasCalled = true
         try {
             wsCurrentConnection = new WebSocket(GRAPHQL_WS_URL, ['graphql-ws'])
 
@@ -134,6 +134,7 @@ const setUpWs = () => {
 
             wsCurrentConnection.onclose = () => {
                 console.log(`WebSocket closed.  Try to reconnect in 5 seconds`)
+                setUpWsWasCalled = false
                 setTimeout(setUpWs, 5000)
             }
 
@@ -143,7 +144,7 @@ const setUpWs = () => {
                     for (let i = 0; i < openWsSubscription.length; i++) {
                         const sub = openWsSubscription[i]
                         const subIds = Object.keys(sub.nexts)
-                        subIds.forEach(subId=>{
+                        subIds.forEach(subId => {
                             sub.nexts[subId](msg.payload)
                         })
 
@@ -159,7 +160,6 @@ const setUpWs = () => {
 
     }
 }
-setUpWs()
 const getHeaders = (lang) => {
     const headers = {
         'Content-Language': lang || _app_.lang,
@@ -233,6 +233,8 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
             headers: getHeaders(lang),
             body
         }).then(r => {
+            setUpWs()
+
             removeLoader()
             // x-session is only set when USE_COOKIES is false
             _app_.session = r.headers.get('x-session')
@@ -377,13 +379,13 @@ export const client = {
     subscribe: ({query, variables, extensions}) => {
         subscribeCount++
 
-        const shareKey = query + (variables?JSON.stringify(variables):'') + (extensions?JSON.stringify(extensions):'')
+        const shareKey = query + (variables ? JSON.stringify(variables) : '') + (extensions ? JSON.stringify(extensions) : '')
 
         let id, subId
-        if(sharedKeyIdMap[shareKey]){
+        if (sharedKeyIdMap[shareKey]) {
             id = sharedKeyIdMap[shareKey]
             subId = subscribeCount
-        }else{
+        } else {
             subId = id = subscribeCount
             sharedKeyIdMap[shareKey] = id
         }
@@ -400,7 +402,7 @@ export const client = {
                 createWsSubscription(id, subId, payload, next)
                 return {
                     unsubscribe: () => {
-                        if(removeWsSubscription(id, subId)){
+                        if (removeWsSubscription(id, subId)) {
                             delete sharedKeyIdMap[shareKey]
                         }
                     }
