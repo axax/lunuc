@@ -1,7 +1,7 @@
 import DomUtil from '../../../client/util/dom'
 
 export const scrollByHash = (url, {scrollStep, scrollOffset, scrollTimeout}) => {
-    if (url.indexOf('#') >= 0) {
+    if (url.indexOf('#') >= 0 && url.length>1) {
         const checkScroll = (el, c) => {
             if (el) {
                 let w = window, de = w.document.documentElement, mt = parseInt(w.getComputedStyle(el).marginTop)

@@ -117,8 +117,7 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
             }
 
         }
-
-        if(!currentProjection && field.vagueLookup===false){
+        if(!currentProjection && field.vagueLookup===false && (!otherOptions.filter || otherOptions.filter.indexOf('_id=')!==0)){
             return
         }
 

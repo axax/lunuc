@@ -375,9 +375,14 @@ export default () => {
     /*
     Send the name of the generic type as meta data
      */
-    Hook.on('TypeTableBeforeEdit', function ({type, data, variables}) {
+    Hook.on('TypeTableBeforeEdit', function ({type, data, variables, fieldsToLoad}) {
         if (type === 'GenericData' && data.definition) {
             variables.meta = data.definition.name
+            if (data.definition.structure && fieldsToLoad.indexOf('data') < 0) {
+                if (data.definition.structure.fields.some(f => f.vagueLookup===false)) {
+                    fieldsToLoad.push('data')
+                }
+            }
         }
     })
 
@@ -444,16 +449,16 @@ export default () => {
 
             let dataFieldsToProject
 
-            if(fieldsToProject.length===0 && rawValue.definition && rawValue.definition.structure){
-                dataFieldsToProject =  rawValue.definition.structure.pickerField
+            if (fieldsToProject.length === 0 && rawValue.definition && rawValue.definition.structure) {
+                dataFieldsToProject = rawValue.definition.structure.pickerField
                 if (dataFieldsToProject.constructor !== Array) {
                     dataFieldsToProject = [dataFieldsToProject]
                 }
-            }else{
+            } else {
                 dataFieldsToProject = fieldsToProject.slice(0)
             }
 
-            if(dataFieldsToProject && dataFieldsToProject.length>0){
+            if (dataFieldsToProject && dataFieldsToProject.length > 0) {
                 // project data
                 try {
                     const newData = performFieldProjection(dataFieldsToProject, rawValue.data)
@@ -464,7 +469,7 @@ export default () => {
                     console.log('Error in TypePickerBeforeHandlePick', e)
                 }
 
-                fieldsToProject.splice(0,fieldsToProject.length)
+                fieldsToProject.splice(0, fieldsToProject.length)
                 fieldsToProject.push('_id')
                 fieldsToProject.push('data')
 
@@ -480,14 +485,13 @@ export default () => {
 
         if (type === 'GenericData') {
 
-            finalFields.splice(0,finalFields.length)
+            finalFields.splice(0, finalFields.length)
 
             finalFields.push('data')
 
 
         }
     })
-
 
 
     /*
@@ -559,7 +563,7 @@ export default () => {
 
     Hook.on('TypeCreateEditAction', ({type, action, dataToEdit}) => {
 
-        if (type==='GenericData' && action.url) {
+        if (type === 'GenericData' && action.url) {
             try {
                 const actionStr = new Function('const data=this.data,Util=this.Util;return `' + JSON.stringify(action) + '`').call({
                     data: dataToEdit.data,

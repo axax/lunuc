@@ -1,11 +1,13 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {SimpleMenu, SimpleDialog, ViewListIcon, LaunchIcon, EditIcon, CodeIcon, WebIcon, AddIcon, } from 'ui/admin'
+import RenderInNewWindow from './layout/RenderInNewWindow'
 import {withStyles} from '@material-ui/core/styles'
 import classNames from 'classnames'
 import CodeMirrorWrapper from './codemirror/CodeMirrorWrapper'
 import CodeMirror from 'codemirror'
 import './codemirror/javascript'
+import './codemirror/formatting'
 import './codemirror/keywords'
 import './codemirror/search'
 import 'codemirror/addon/display/rulers'
@@ -47,8 +49,14 @@ const styles = theme => ({
     rootError: {
         border: 'solid 1px red'
     },
+    rootInWindow: {
+        height:'100%'
+    },
     codemirror: {
         height: '30rem'
+    },
+    codemirrorInWindow: {
+        height: '100%'
     },
     files: {},
     file: {
@@ -139,6 +147,7 @@ class CodeEditor extends React.Component {
             identifier: props.identifier,
             fileIndex: props.fileIndex || 0,
             showFileSplit: true,
+            renderInWindow:false,
             stateDate: new Date()
         }
     }
@@ -165,6 +174,7 @@ class CodeEditor extends React.Component {
     shouldComponentUpdate(nextProps, nextState) {
         return nextState.stateError !== this.state.stateError ||
             nextState.stateDate !== this.state.stateDate ||
+            nextState.renderInWindow !== this.state.renderInWindow ||
             nextState.identifier !== this.state.identifier ||
             nextState.error !== this.state.error ||
             nextState.fileIndex !== this.state.fileIndex ||
@@ -255,7 +265,7 @@ class CodeEditor extends React.Component {
 
     render() {
         const {height, onFileChange, onChange, onBlur, onScroll, error, onError, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, scrollPosition, fileSplit, classes} = this.props
-        const {stateError, showFileSplit, fileIndex, showContextMenu, editData, data} = this.state
+        const {stateError, showFileSplit, fileIndex, showContextMenu, editData, data, renderInWindow} = this.state
         const options = {
                 mode: {},
                 /* theme: 'material-ocean',*/
@@ -328,7 +338,8 @@ class CodeEditor extends React.Component {
                 icon: <LaunchIcon/>,
                 name: 'Open in new window',
                 onClick: () => {
-                    alert('todo')
+
+                    this.setState({renderInWindow:true})
                 }
             },
         ]
@@ -480,7 +491,7 @@ class CodeEditor extends React.Component {
                 ]
             }
         }
-        return <div className={classNames(classes.root, (error || stateError) && classes.rootError, className)}
+        const comp = <div className={classNames(classes.root, (error || stateError) && classes.rootError, renderInWindow && classes.rootInWindow, className)}
                     style={style}>
 
 
@@ -563,7 +574,7 @@ class CodeEditor extends React.Component {
                 })}</div>
                 : null}
             <CodeMirrorWrapper
-                className={!height && classes.codemirror}
+                className={classNames(!height && classes.codemirror, renderInWindow && classes.codemirrorInWindow)}
                 autoCursor={false}
                 key="editor"
                 editorDidMount={editor => {
@@ -665,6 +676,15 @@ class CodeEditor extends React.Component {
                 }}/>
             {hasError &&
             <div style={{color: 'red'}}>{error ? error + ' ' : ''}{stateError ? stateError : ''}</div>}</div>
+
+        if(renderInWindow){
+            return <RenderInNewWindow title="Code Editor" onClose={()=>{
+                this.setState({renderInWindow:false})
+            }}>{comp}</RenderInNewWindow>
+
+        }
+
+        return comp
     }
 }
 

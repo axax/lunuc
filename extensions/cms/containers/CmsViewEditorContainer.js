@@ -922,7 +922,7 @@ class CmsViewEditorContainer extends React.Component {
                 inner
             }, this)
             return <UIProvider>
-                <Drawer anchor="right" classes={{paper: this.props.classes.pageOptionsDrawer}} open={showPageSettings}
+                <Drawer anchor="right" classes={{paper: this.props.classes.pageOptionsDrawer}} disableEnforceFocus={true} open={showPageSettings}
                         onClose={() => {
                             if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
                                 return

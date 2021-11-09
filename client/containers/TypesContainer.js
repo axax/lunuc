@@ -1548,7 +1548,7 @@ class TypesContainer extends React.Component {
 
         const variables = {_version, filter: '_id=' + data._id}
 
-        Hook.call('TypeTableBeforeEdit', {type, data, variables})
+        Hook.call('TypeTableBeforeEdit', {type, data, variables, fieldsToLoad})
 
         if (fieldsToLoad.length > 0) {
 
