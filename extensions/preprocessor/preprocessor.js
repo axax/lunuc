@@ -12,17 +12,17 @@ export const processById = async (id, content, context) => {
     if (preProcessor) {
         const process = await processByProcessor(preProcessor, content, context)
         if (process.error) {
-            console.error(process.error)
+            return {data: content, error: process.error}
         } else {
-            return await process.data
+            return {data: await process.data}
         }
 
     } else {
-
         console.warn(`PreProcessor with id ${id} doesn't exist`)
+        return {data: content, error: `PreProcessor with id ${id} doesn't exist`}
     }
 
-    return content
+
 }
 
 

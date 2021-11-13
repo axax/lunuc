@@ -39,7 +39,8 @@ export const createOrDeleteStaticFile = async (staticFile, {db,force}) => {
                 if (staticFile.preprocessor && staticFile.preprocessor.length > 0) {
 
                     for (let i = 0; i < staticFile.preprocessor.length; i++) {
-                        content = await processById(staticFile.preprocessor[i], staticFile.content, {db})
+                        const result = await processById(staticFile.preprocessor[i], staticFile.content, {db})
+                        content = result.data
                     }
 
                 } else {

@@ -49,7 +49,7 @@ const MarkDown = (props) => <Async {...props}
 class JsonDom extends React.Component {
 
     /* Events that are listened to */
-    static events = ['onMouseOver', 'onMouseOut', 'onMouseEnter', 'onMouseDown', 'onClick', 'onKeyDown', 'onKeyUp', 'onFocus', 'onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput']
+    static events = ['onMouseOver', 'onMouseOut', 'onMouseEnter', 'onMouseDown', 'onClick', 'onKeyDown', 'onKeyUp', 'onFocus', 'onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput', 'onForwardRef']
 
     /*
      * Default components
@@ -1038,7 +1038,7 @@ class JsonDom extends React.Component {
                         }
 
                         if (eleProps._json) {
-                            eleProps._dynamic = this.props.dynamic
+                            eleProps._dynamic = !this.props.publicEdit && this.props.dynamic
                             eleProps._tagName = tagName
                             eleProps._inlineEditor = this.props.inlineEditor
                             eleProps._options = $inlineEditor || {}

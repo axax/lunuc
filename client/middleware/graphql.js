@@ -62,11 +62,10 @@ const isConnected = ws => ws && ws.readyState === 1
 
 const createWsSubscription = (id, subId, payload, next) => {
 
-    const withSameId = openWsSubscription.filter(f => f.id === id)
+    const withSameId = openWsSubscription.find(f => f.id === id)
 
-    if (withSameId.length > 0) {
-        const data = withSameId[0]
-        data.nexts[subId] = next
+    if (withSameId) {
+        withSameId.nexts[subId] = next
     } else {
         openWsSubscription.push({
             id,

@@ -292,6 +292,7 @@ export default class AggregationBuilder {
         }
         if (type === 'ID') {
             if (filterValue) {
+
                 if (filterValue.constructor === ObjectId) {
                     // do nothing
                 } else if (filterValue.startsWith('[') && filterValue.endsWith(']')) {
@@ -321,25 +322,42 @@ export default class AggregationBuilder {
                 }
             } else {
 
-                if (!match.$or) {
-                    match.$or = []
+                if(comparator === '$ne') {
+                    if (!match.$and) {
+                        match.$and = []
+                    }
+                    match.$and.push({
+                        // Check about no Company key
+                        [filterKey]: {
+                            $exists: true,
+                        },
+                    })
+                    match.$and.push({
+                        // Check about no Company key
+                        [filterKey]: {$ne: null},
+                    })
+                }else{
+
+                    if (!match.$or) {
+                        match.$or = []
+                    }
+                    match.$or.push({
+                        // Check about no Company key
+                        [filterKey]: {
+                            $exists: false,
+                        },
+                    })
+                    match.$or.push({
+                        // Check about no Company key
+                        [filterKey]: null,
+                    })
+                    match.$or.push({
+                        // Check about no Company key
+                        [filterKey]: {
+                            $size: 0
+                        },
+                    })
                 }
-                match.$or.push({
-                    // Check about no Company key
-                    [filterKey]: {
-                        $exists: false,
-                    },
-                })
-                match.$or.push({
-                    // Check about no Company key
-                    [filterKey]: null,
-                })
-                match.$or.push({
-                    // Check about no Company key
-                    [filterKey]: {
-                        $size: 0
-                    },
-                })
                 return true
             }
         } else if (type === 'Boolean') {

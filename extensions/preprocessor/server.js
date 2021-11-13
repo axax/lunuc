@@ -1,5 +1,7 @@
 import Hook from 'util/hook'
+import schema from './schema'
 import schemaGen from './gensrc/schema'
+import resolver from './resolver'
 import resolverGen from './gensrc/resolver'
 import {deepMergeToFirst} from 'util/deepMerge'
 import {preProcessorsCache} from './preprocessor'
@@ -8,12 +10,13 @@ import {createOrDeleteStaticFile} from '../staticfile/staticfile'
 
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
-    deepMergeToFirst(resolvers, resolverGen(db))
+    deepMergeToFirst(resolvers, resolver(db), resolverGen(db))
 })
 
 // Hook to add mongodb schema
 Hook.on('schema', ({schemas}) => {
     schemas.push(schemaGen)
+    schemas.push(schema)
 })
 
 // Hook when the type StaticFile has changed
