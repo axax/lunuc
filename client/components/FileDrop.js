@@ -132,6 +132,7 @@ class FileDrop extends React.Component {
             }
         }
         return {
+            uploadQueue: [],
             isHover: false,
             images,
             uploadCompleted: 0,
@@ -145,7 +146,7 @@ class FileDrop extends React.Component {
 
 
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (nextProps.conversion !== prevState.conversionOri) {
+        if (JSON.stringify(nextProps.conversion) !== JSON.stringify(prevState.conversionOri)) {
             return FileDrop.initialState(nextProps)
         }
         return null
@@ -158,7 +159,7 @@ class FileDrop extends React.Component {
 
     render() {
         const {style, classes, multi, label, accept, className, name, onChange, imagePreview, deleteButton} = this.props
-        const {isHover, images, uploading, uploadCompleted, errorMessage, successMessage, uploadingFile} = this.state
+        const {isHover, images, uploading, uploadCompleted, errorMessage, successMessage, uploadingFile, uploadQueue} = this.state
         return <div style={style} className={classNames(classes.uploader, isHover && classes.uploaderOver, className)}>
             <input className={classes.inputFile}
                    multiple={!!multi}
@@ -193,7 +194,7 @@ class FileDrop extends React.Component {
             {errorMessage && <Typography variant="body2" color="error">{errorMessage}</Typography>}
             {successMessage && <Typography variant="body2" color="primary">{successMessage}</Typography>}
 
-            {uploading && <Typography variant="body2">uploading {uploadingFile} ({uploadCompleted}%{this.uploadQueue.length>0?' / '+this.uploadQueue.length+' in queue':''})...</Typography>}
+            {uploading && <Typography variant="body2">uploading {uploadingFile} ({uploadCompleted}%{uploadQueue.length>0?' / '+uploadQueue.length+' in queue':''})...</Typography>}
             {uploading && <LinearProgress className={classes.progress} variant="determinate" value={uploadCompleted}/>}
 
         </div>
@@ -289,16 +290,17 @@ class FileDrop extends React.Component {
         this.setState({uploadCompleted: Math.ceil(e.loaded * 100 / e.total)})
     }
 
-    uploadQueue = []
     uploadData(dataUrl, file, uploadTo, fromQueue) {
 
+        const uploadQueue = this.state.uploadQueue
+
         if( !fromQueue && this.uploading) {
-            this.uploadQueue.push({dataUrl, file, uploadTo})
+            uploadQueue.push({dataUrl, file, uploadTo})
             return
         }
         // uploading from state is delayed
         this.uploading = true
-        this.setState({uploading: true, successMessage: null, errorMessage: null, uploadCompleted: 0, uploadingFile:file.name})
+        this.setState({uploadQueue, uploading: true, successMessage: null, errorMessage: null, uploadCompleted: 0, uploadingFile:file.name})
         UploadUtil.uploadData({
             dataUrl,
             data: this.props.data,
@@ -320,13 +322,13 @@ class FileDrop extends React.Component {
                             onChange({target: {name, value: e.target.response}})
                         }
 
-                        if( this.uploadQueue.length > 0){
-                            const fromQueue = this.uploadQueue.shift()
+                        if( uploadQueue.length > 0){
+                            const fromQueue = uploadQueue.shift()
                             this.uploadData(fromQueue.dataUrl, fromQueue.file, fromQueue.uploadTo, true)
                             return
                         }
                         this.uploading = false
-                        this.setState({successMessage: _t('FileDrop.uploadSuccess'), uploading: false})
+                        this.setState({uploadQueue, successMessage: _t('FileDrop.uploadSuccess'), uploading: false})
 
                     } else {
                         this.uploading = false

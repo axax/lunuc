@@ -7,7 +7,7 @@ export const jsonTemplates = [
   {
     "key": "GenericDataDefinition",
     "cache": {
-      "policy": "\$\{this.context.id?'cache-only':''}",
+      "policy": "\$\{this.editmode?'cache-only':''}",
       "expires":600000,
       "key":"GenericDataDefinition"
     },    
@@ -27,7 +27,7 @@ export const jsonTemplates = [
   {
     "key": "GenericData",
     "cache": {
-      "policy": "\$\{this.context.id?'cache-only':''}",
+      "policy": "\$\{this.editmode?'cache-only':''}",
       "expires":600000,
       "key":"GenericData"
     },    
