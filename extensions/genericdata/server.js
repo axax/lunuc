@@ -392,6 +392,12 @@ Hook.on('AggregationBuilderBeforeQuery', async ({db, type, filters}) => {
                 filters.parts['definition'].value = def._id
             }
         }
+        Object.keys(filters.parts).forEach(key=>{
+            if(key.indexOf('.')<0 && key!=='data' && key!=='_id' && key!=='definition'){
+                filters.parts['data.'+key] = filters.parts[key]
+                delete filters.parts[key]
+            }
+        })
     }
 
 })
