@@ -20,7 +20,7 @@ class ElementWatch extends React.Component {
     }
 
     static propsToState(props, state) {
-        const {tagName, eleProps, $observe} = props
+        const {tagName, eleProps, $observe, jsonDom, _key} = props
 
 
         let tagSrc, tagImg
@@ -28,12 +28,13 @@ class ElementWatch extends React.Component {
             tagImg = Util.getImageObject(eleProps.src, eleProps.options)
             tagSrc = tagImg.src + (eleProps.inlineSvg?'#inlinesvg':'')
         } else {
-            tagSrc = eleProps.id || props._key
+            tagSrc = eleProps.id || _key
         }
         return {
             oriSrc: eleProps.src,
             tagSrc,
             tagImg,
+            key: jsonDom.instanceId + '_' + _key,
             madeVisible: state && state.madeVisible ? true : ElementWatch.hasLoaded[tagSrc],
             initialVisible: tagName === 'SmartImage' ? false : ($observe.initialClass && !$observe.waitVisible) || !$observe.waitVisible
         }
@@ -64,8 +65,9 @@ class ElementWatch extends React.Component {
 
 
     render() {
-        const {initialVisible, madeVisible, tagImg, tagSrc} = this.state
-        const {$observe, eleProps, eleType, jsonDom, _key, c, $c, scope, tagName} = this.props
+        const {initialVisible, madeVisible, tagImg, tagSrc, key} = this.state
+        const {$observe, eleProps, eleType, jsonDom, c, $c, scope, tagName, _key} = this.props
+
         if (!initialVisible && !madeVisible && (!tagSrc || !ElementWatch.hasLoaded[tagSrc])) {
 
 
@@ -97,8 +99,8 @@ class ElementWatch extends React.Component {
                             options: null,
                             src: tmpSrc,
                             alt: (tagImg.alt || eleProps.alt),
-                            key: _key + 'watch',
-                            'data-element-watch-key': _key,
+                            key: key + 'watch',
+                            'data-element-watch-key': key,
                             _key
                         },
                         ($c ? null : jsonDom.parseRec(c, _key, scope))
@@ -106,7 +108,7 @@ class ElementWatch extends React.Component {
                 }
 
             }
-            return <div data-element-watch-key={_key} data-wait-visible={jsonDom.instanceId}
+            return <div data-element-watch-key={key} data-wait-visible={jsonDom.instanceId}
                         style={{minHeight: '1rem', minWidth: '1rem'}}></div>
         } else {
             if (eleProps.inlineSvg && ElementWatch.loadedSvgData[tagSrc]) {
@@ -114,7 +116,7 @@ class ElementWatch extends React.Component {
             }
             eleProps['data-element-watch'] = true
             if ($observe.initialClass || $observe.visibleClass) {
-                eleProps['data-element-watch-key'] = _key
+                eleProps['data-element-watch-key'] = key
 
                 // we change props here so components get updated
                 if (!eleProps.className) {
@@ -181,7 +183,7 @@ class ElementWatch extends React.Component {
 
     makeVisible(ele) {
         const {tagSrc} = this.state
-        const {$observe, eleProps, _key, tagName} = this.props
+        const {$observe, eleProps, tagName} = this.props
         if (this.state.initialVisible) {
             ele.classList.add($observe.visibleClass)
         } else {
@@ -220,17 +222,17 @@ class ElementWatch extends React.Component {
     }
 
     addIntersectionObserver() {
-        const {$observe, _key} = this.props
+        const {key} = this.state
+        const {$observe} = this.props
 
-        const ele = document.querySelector(`[data-element-watch-key='${_key}']`)
-
+        const ele = document.querySelector(`[data-element-watch-key='${key}']`)
         if (ele) {
             if (_app_.JsonDom._elementWatchForceVisible || window._elementWatchForceVisible) {
                 this.makeVisible(ele)
             } else {
                 let observer = new IntersectionObserver((entries, observer) => {
                     entries.forEach(entry => {
-                        //console.log(_key, entry.intersectionRatio)
+                        //console.log(key, entry.intersectionRatio)
                         if (entry.isIntersecting) {
                             observer.unobserve(entry.target)
 
