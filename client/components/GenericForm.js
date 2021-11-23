@@ -525,7 +525,14 @@ class GenericForm extends React.Component {
                                 value: json.nr
                             })
                             newState.fieldErrors[field.name] = false
-                            this.setState(newState)
+                            this.handleInputChange({
+                                target: {
+                                    name:  field.name,
+                                    value: json.nr
+                                }
+                            })
+
+                            //this.setState(newState)
 
                         }
                     })
@@ -556,7 +563,6 @@ class GenericForm extends React.Component {
                             subFieldValues.push(Object.assign({}, val))
                         })
                     }
-
                     subFieldValues.forEach((values, index) => {
                         const valueFieldKey = fieldKey + '-' + index
                         let title = ''
@@ -632,7 +638,7 @@ class GenericForm extends React.Component {
                                                        }
 
                                                        Object.keys(subFields).forEach(k => {
-                                                           if (subFields[k].autoIncrement) {
+                                                           if (subFields[k].autoIncrement && !initData[k]) {
                                                                c++
                                                                autoIncrement(subFields[k].autoIncrement, json => {
                                                                    if (json.status === 'success') {
