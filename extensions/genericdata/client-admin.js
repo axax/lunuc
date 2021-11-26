@@ -25,6 +25,16 @@ const GenericForm = (props) => <Async {...props}
 const Typography = (props) => <Async {...props} expose="Typography"
                                      load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 
+
+const findField = (definition, key) =>{
+    if( definition && definition.structure && definition.structure.fields){
+        if(key.startsWith('data.')){
+            key = key.substring(5)
+        }
+        return definition.structure.fields.find(f=>f.name===key)
+    }
+}
+
 export default () => {
 
 
@@ -116,8 +126,17 @@ export default () => {
                 if (baseFilter) {
                     const query = Util.extractQueryParams(baseFilter.replace(/==/g, '='))
                     Object.keys(query).forEach(key => {
-                        const value = query[key]
+                        let value = query[key]
                         if (value) {
+
+                            const field = findField(dataToEdit.definition, key)
+
+                            if( field ){
+                                if(field.type==='Boolean'){
+                                    value = value==='true'?true:false
+                                }
+                            }
+
                             setPropertyByPath(value, key, dataToEdit)
                         }
                     })
@@ -451,7 +470,7 @@ export default () => {
 
             if (fieldsToProject.length === 0 && rawValue.definition && rawValue.definition.structure) {
                 dataFieldsToProject = rawValue.definition.structure.pickerField
-                if (dataFieldsToProject.constructor !== Array) {
+                if (dataFieldsToProject && dataFieldsToProject.constructor !== Array) {
                     dataFieldsToProject = [dataFieldsToProject]
                 }
             } else {
