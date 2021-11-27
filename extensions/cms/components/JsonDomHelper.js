@@ -1327,7 +1327,6 @@ const m = Math.max((offX+offY) / 2,100)
                                           if (e.key === 'save' && selected) {
 
                                               let comp = {'t': selected.tagName, ...selected.defaults}
-
                                               if (addChildDialog.edit) {
                                                   // merge existing component
                                                   comp = deepMergeOptional({
@@ -1336,8 +1335,11 @@ const m = Math.max((offX+offY) / 2,100)
                                                   }, comp, subJson)
                                               }
 
+
                                               if (addChildDialog.form) {
                                                   const fields = addChildDialog.form.state.fields
+
+                                                  let groupKeyMap = {}
                                                   Object.keys(fields).forEach(key => {
                                                       let val = fields[key]
                                                       if (key.startsWith('!')) {
@@ -1345,7 +1347,6 @@ const m = Math.max((offX+offY) / 2,100)
                                                           const parts = key.split('!'),
                                                               groupKey = parts[1], groupProp = parts[2],
                                                               groupIdx = parseInt(parts[3])
-
 
                                                           if (!isNaN(groupIdx) && selected.groupOptions[groupKey]) {
 
@@ -1358,30 +1359,42 @@ const m = Math.max((offX+offY) / 2,100)
                                                                       selected.groupOptions[groupKey][groupProp],
                                                                       comp.$inlineEditor && comp.$inlineEditor.groupOptions && comp.$inlineEditor.groupOptions[groupKey] && comp.$inlineEditor.groupOptions[groupKey][groupProp])
 
-                                                                  let groupArray = propertyByPath(groupKey, comp, '_')
-                                                                  if (!groupArray) {
-                                                                      groupArray = []
-                                                                  } else {
-                                                                      groupArray.length = groupIdx + 1
-                                                                  }
-                                                                  if (!groupArray[groupIdx]) {
-                                                                      groupArray[groupIdx] = {}
+                                                                  let groupArray = groupKeyMap[groupKey]
+
+                                                                  if(!groupArray){
+                                                                      groupKeyMap[groupKey] = groupArray = []
                                                                   }
 
+                                                                  let groupData
+                                                                  if(!groupArray[groupIdx]){
+                                                                      const prevGroupArray = propertyByPath(groupKey, comp, '_')
+                                                                      if(prevGroupArray && prevGroupArray[groupIdx]){
+                                                                          groupData = Object.assign({},prevGroupArray[groupIdx])
+                                                                      }else{
+                                                                          groupData = {}
+                                                                      }
+                                                                      groupArray[groupIdx] = groupData
+                                                                  }else{
+                                                                      groupData = groupArray[groupIdx]
+                                                                  }
 
                                                                   if (groupFieldOption.tr && groupFieldOption.trKey) {
-                                                                      groupArray[groupIdx][groupProp] = `$\{Util.escapeForJson(_t('${groupFieldOption.trKey}-${groupIdx}'))\}`
-                                                                      setPropertyByPath(groupArray, groupKey, comp, '_')
+
+                                                                      if(!groupData.trKey){
+                                                                          groupData.trKey = `${groupFieldOption.trKey}-${groupIdx}-${Math.random().toString(36).substr(2, 9)}`
+                                                                      }
+
+                                                                      groupData[groupProp] = `$\{Util.escapeForJson(_t('${groupData.trKey}'))\}`
                                                                       if (val !== null) {
+                                                                          // update translation
                                                                           _onDataResolverPropertyChange({
                                                                               value: Util.escapeForJson(val.replace(/\n/g, '')),
-                                                                              path: 'tr.' + _app_.lang + '.' + groupFieldOption.trKey + '-' + groupIdx,
+                                                                              path: 'tr.' + _app_.lang + '.' + groupData.trKey,
                                                                               instantSave: true
                                                                           })
                                                                       }
                                                                   } else {
-                                                                      groupArray[groupIdx][groupProp] = val
-                                                                      setPropertyByPath(groupArray, groupKey, comp, '_')
+                                                                      groupData[groupProp] = val
                                                                   }
                                                               }
                                                           }
@@ -1412,6 +1425,10 @@ const m = Math.max((offX+offY) / 2,100)
                                                               setPropertyByPath(val, key, comp, '_')
                                                           }
                                                       }
+                                                  })
+
+                                                  Object.keys(groupKeyMap).forEach(groupKey=>{
+                                                      setPropertyByPath(groupKeyMap[groupKey], groupKey, comp, '_')
                                                   })
                                               }
 
@@ -1683,7 +1700,8 @@ const m = Math.max((offX+offY) / 2,100)
                             let groupFieldValue
                             if (groupFieldOption.tr && groupFieldOption.trKey) {
                                 if (this.props._scope.data.tr) {
-                                    groupFieldValue = this.props._scope.data.tr[groupFieldOption.trKey + '-' + idx]
+                                    const trKey = groupValue.trKey || (groupFieldOption.trKey + '-' + idx)
+                                    groupFieldValue = this.props._scope.data.tr[trKey]
                                 }
                             } else {
                                 groupFieldValue = groupValue[fieldKey]
