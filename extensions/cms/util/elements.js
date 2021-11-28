@@ -278,6 +278,17 @@ const marginOptions = key => ({
     }
 })
 
+const sizeOptions = key => ({
+    [`${key}style_width`]: {
+        label: 'Breite',
+        tab: MARGIN_TAB
+    },
+    [`${key}style_height`]: {
+        label: 'Höhe',
+        tab: MARGIN_TAB
+    }
+})
+
 
 const baseElements = [
     {
@@ -344,6 +355,7 @@ const baseElements = [
                 fullWidth: true
             },
             ...imageOptions('p_'),
+            ...sizeOptions('p_'),
             ...lazyImageOptions('$observe_')
         }
     },
@@ -878,7 +890,8 @@ const baseElements = [
         },
         options: {
             ...marginOptions('p_'),
-            ...classOptions('p_')
+            ...classOptions('p_'),
+            ...sizeOptions('p_')
         }
     },
     {
