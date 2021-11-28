@@ -59,7 +59,7 @@ const trOptions = key => ({
     },
     [`${key}trContext`]: {
         label: 'Übersetzungskontext (für Plazhalter)',
-        value: '__uid__',
+        value: '',
         tab: TRANSLATION_TAB,
         role: CAPABILITY_MANAGE_CMS_PAGES
     }
