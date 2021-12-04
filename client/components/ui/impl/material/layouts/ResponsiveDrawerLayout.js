@@ -90,16 +90,8 @@ const useStyles = makeStyles(theme => ({
     }
 }))
 
-
-const removeTrailingSlash = (link) => {
-    if (link.endsWith('/')) {
-        link = link.substring(0, link.length - 1)
-    }
-    return link
-}
-
 const findActiveItem = (props) => {
-    let currentLink = removeTrailingSlash(window.location.pathname)
+    let currentLink = Util.removeTrailingSlash(window.location.pathname)
     const contextLang = currentLink.split('/')[1].toLowerCase()
     const params = Util.extractQueryParams(window.location.search.substring(1))
 
@@ -125,7 +117,7 @@ const findActiveItem = (props) => {
             }
 
 
-            const to = removeTrailingSlash(item.to)
+            const to = Util.removeTrailingSlash(item.to)
             if (to === currentLink) {
                 // exact match
                 return item
