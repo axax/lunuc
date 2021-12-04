@@ -346,6 +346,15 @@ const Util = {
             return e.message
         }
     },
+    baseUrl() {
+        return Util.removeTrailingSlash(location.pathname.split('/-/')[0])
+    },
+    removeTrailingSlash (url) {
+        if(url !== '/' && url.substr(-1) === '/') {
+            return url.substr(0, url.length - 1)
+        }
+        return url
+    },
     translateUrl(lang) {
         const path = window.location.pathname
         if (lang === _app_.lang) return path

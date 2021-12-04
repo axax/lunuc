@@ -6,6 +6,7 @@ import App from './components/App'
 import {getStore} from './store/index'
 import config from 'gen/config-client'
 import DomUtil from 'client/util/dom'
+import Util from 'client/util'
 
 try {
     if (typeof localStorage === 'object') {
@@ -21,14 +22,6 @@ try {
     }
 }catch (e) {
     _app_.noStorage = true
-}
-
-function removeTrailingSlash(url) {
-    // has trailing slash
-    if (url !== '/' && url.lastIndexOf('/') === url.length - 1) {
-        url = url.substring(0, url.length - 1)
-    }
-    return url
 }
 
 function addCanonicalTag(href) {
@@ -77,11 +70,11 @@ function mainInit() {
 
     if (contextLanguage && LANGUAGES.indexOf(contextLanguage) >= 0) {
         _app_.contextPath = '/' + contextLanguage
-        basePath = removeTrailingSlash(loc.pathname.substring(contextLanguage.length + 1))
+        basePath = Util.removeTrailingSlash(loc.pathname.substring(contextLanguage.length + 1))
     } else {
         _app_.contextPath = ''
         contextLanguage = false
-        basePath = removeTrailingSlash(loc.pathname)
+        basePath = Util.removeTrailingSlash(loc.pathname)
     }
     basePath += loc.search + loc.hash
 
@@ -133,7 +126,7 @@ function mainInit() {
 
 
     // has trailing slash --> set canonical link of seo
-    const cleanPathnameWithoutTrailingSlash = removeTrailingSlash(cleanPathname)
+    const cleanPathnameWithoutTrailingSlash = Util.removeTrailingSlash(cleanPathname)
     if (cleanPathnameWithoutTrailingSlash !== cleanPathname) {
         addCanonicalTag(loc.origin + cleanPathnameWithoutTrailingSlash + loc.search + loc.hash)
     }
