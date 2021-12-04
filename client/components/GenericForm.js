@@ -1098,6 +1098,14 @@ class GenericForm extends React.Component {
                                               onKeyDown={(e) => {
                                                   onKeyDown && onKeyDown(e, value)
                                               }}
+                                              onPaste={(e)=>{
+                                                if(field.type==='Float') {
+                                                    // remove thousand separators
+                                                    const value = e.clipboardData.getData('text/plain').replace(/’/g, '')
+                                                    this.handleInputChange({target:{value, name: fieldKey}})
+                                                    e.preventDefault()
+                                                }
+                                              }}
                                               onBlur={this.handleBlur}
                                               onChange={this.handleInputChange}/>)
 
