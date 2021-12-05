@@ -346,8 +346,20 @@ const Util = {
             return e.message
         }
     },
-    baseUrl() {
-        return Util.removeTrailingSlash(location.pathname.split('/-/')[0])
+    baseUrl(path, query) {
+        let url = Util.removeTrailingSlash(location.pathname.split('/'+config.PRETTYURL_SEPERATOR+'/')[0])
+
+        if(path){
+            url += '/'+config.PRETTYURL_SEPERATOR+'/'+encodeURI(path)
+        }
+        if(query){
+            const queryStr = Util.paramsToQuery(query)
+            if(queryStr) {
+                url += '?'+queryStr
+            }
+        }
+
+        return url
     },
     removeTrailingSlash (url) {
         if(url !== '/' && url.substr(-1) === '/') {
