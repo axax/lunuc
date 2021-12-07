@@ -5,6 +5,7 @@ import {deepMergeToFirst} from 'util/deepMerge'
 import Cache from 'util/cache'
 import GenericResolver from '../../api/resolver/generic/genericResolver'
 import Util from '../../api/util'
+import ClientUtil from '../../client/util'
 import {ObjectId} from 'mongodb'
 import {matchExpr} from '../../client/util/json'
 import {findProjection} from '../../util/project'
@@ -275,13 +276,51 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions
 /*
 Return the structure of the dynamic type as meta data
  */
-Hook.on('typeLoaded', async ({type, db, data, result, otherOptions}) => {
+Hook.on('typeLoaded', async ({type, db, context, result, otherOptions}) => {
     if (type === 'GenericData') {
 
         const genericType = otherOptions.genericType || otherOptions.meta
         if (genericType) {
 
             const def = await getGenericTypeDefinitionWithStructure(db, {name: genericType})
+
+
+            if(def && def.structure && def.structure.fields){
+                for(let i = 0; i< def.structure.fields.length; i++){
+                    const field = def.structure.fields[i]
+                    if(field.dynamic){
+
+                        if(!field.dynamic.genericType){
+                            console.warn('field.dynamic.genericType is missing')
+                        }else {
+
+                            for(let j = 0; j< result.results.length; j++){
+                                const item = result.results[j]
+                                const data = JSON.parse(item.data)
+                                const subData = await GenericResolver.entities(db, context, 'GenericData', ['_id', {definition: ['_id']}, 'data'],
+                                    {
+                                        filter: `definition.name==${field.dynamic.genericType}${field.dynamic.filter?' && '+ClientUtil.replacePlaceholders(field.dynamic.filter,item):''}`,
+                                        limit: 1000,
+                                        includeCount: false,
+                                        meta: field.dynamic.genericType
+                                    })
+
+                                subData.results.forEach(subItem=>{
+                                    subItem.data = JSON.parse(subItem.data)
+                                    subItem.__typename = field.type
+                                })
+
+                                data[field.name] = subData.results
+                                item.data = JSON.stringify(data)
+                            }
+                        }
+
+                    }
+                }
+
+            }
+
+
             if (otherOptions.returnMeta !== false) {
                 result.meta = def
             }

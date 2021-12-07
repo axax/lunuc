@@ -495,8 +495,10 @@ class GenericForm extends React.Component {
                 //iso date without ms
                 try {
                     value = new Date(value).toISOString()
-                } catch
-                    (e) {
+                } catch (e) {
+                    if(!field.required){
+                        value = ''
+                    }
                     console.log(e)
                 }
                 datePolyfill = true
