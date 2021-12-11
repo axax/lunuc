@@ -185,7 +185,13 @@ export const keyvalueResolver = (db) => ({
         },
         setKeyValueGlobal: async ({key, value}, {context}) => {
 
-            return await updateKeyValueGlobal({key, value}, {context}, db)
+            // check if key already exists
+            const existing = await db.collection('KeyValueGlobal').distinct('_id',{key})
+            const data = {key, value}
+            if(existing && existing.length>0){
+                data._id = existing[0]
+            }
+            return await updateKeyValueGlobal(data, {context}, db)
 
 
             /*

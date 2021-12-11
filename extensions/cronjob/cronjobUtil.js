@@ -49,10 +49,15 @@ const cronjobUtil = {
         const select = async (collection, fields, filter) => {
             await GenericResolver.entities(db, context, collection, fields, filter)
         }
-        if (scriptLanguage === 'Python') {
-            cronjobUtil.runPythonScript(script, {log, debug, end, error, select, ...props})
-        } else {
-            cronjobUtil.runJavascript(script, {__dirname, require, log, debug, end, error, select, ...props})
+        try {
+            if (scriptLanguage === 'Python') {
+                cronjobUtil.runPythonScript(script, {log, debug, end, error, select, ...props})
+            } else {
+                cronjobUtil.runJavascript(script, {__dirname, require, log, debug, end, error, select, ...props})
+            }
+        }catch (e) {
+            console.log('Error in runCronJob', e)
+            error(e.message)
         }
         return result;
     },
