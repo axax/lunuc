@@ -18,10 +18,16 @@ const Util = {
     safeTags: str => {
         return str ? str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''
     },
-    escapeForJson: (str) => {
+    escapeForJson: (str, options) => {
         if (str === undefined || str === null) return ''
         if (str.constructor !== String)
             str = JSON.stringify(str)
+        if(options){
+
+            if(options.regex){
+                str = Util.escapeRegex(str)
+            }
+        }
 
         return str.replace(/[\\]/g, '\\\\')
             .replace(/[\"]/g, '\\\"')
@@ -30,6 +36,9 @@ const Util = {
             .replace(/[\n]/g, '\\n')
             .replace(/[\r]/g, '\\r')
             .replace(/[\t]/g, '\\t')
+    },
+    escapeRegex: (str) => {
+        return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
     },
     tryCatch: function (str, ignoreError) {
         try {
