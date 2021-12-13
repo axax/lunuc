@@ -136,7 +136,7 @@ class JsonDom extends React.Component {
                 url = location.origin + '/lunucapi/tracking?url=' + encodeURIComponent(url) + tracking
             }
 
-            if (isAbs || native || url.indexOf('tel:')===0 || url.indexOf('mailto:')===0) {
+            if (isAbs || native || url.indexOf('tel:') === 0 || url.indexOf('mailto:') === 0) {
                 return <a href={url} target={newTarget} rel={rel} onClick={(e) => {
 
                     if (onClick) {
@@ -316,7 +316,7 @@ class JsonDom extends React.Component {
                 this.scriptResult = null
                 this.runScript = true
                 this.jsOnStack = {}
-            }else if(propsChanged){
+            } else if (propsChanged) {
                 this.runJsEvent('propschanged', true, {props: props._props})
             }
 
@@ -392,10 +392,10 @@ class JsonDom extends React.Component {
     triggerMountEvent() {
         if (!this._ismounted && !this.props.loading) {
             this._ismounted = true
-            setTimeout(()=>{
+            setTimeout(() => {
                 this.node = ReactDOM.findDOMNode(this)
                 this.runJsEvent('mount')
-            },0)
+            }, 0)
 
         }
     }
@@ -666,7 +666,7 @@ class JsonDom extends React.Component {
         if (!onError)
             return
 
-        onError(e, {slug:this.props.slug, ...meta})
+        onError(e, {slug: this.props.slug, ...meta})
     }
 
     parseRec(a, rootKey, scope) {
@@ -706,9 +706,9 @@ class JsonDom extends React.Component {
                     }
                 }
 
-                if( $is === false) {
+                if ($is === false) {
                     return
-                }else if ($is && $is !== true && $is !== 'true') {
+                } else if ($is && $is !== true && $is !== 'true') {
                     if ($is === 'false' || matchExpr($is, scope)) {
                         return
                     }
@@ -876,7 +876,7 @@ class JsonDom extends React.Component {
 
                         this.emitJsonError(ex, {loc: "Loop"})
 
-                        console.log('------------- ERROR in '+this.props.slug)
+                        console.log('------------- ERROR in ' + this.props.slug)
                         console.log(ex, c)
                         if (ex.message.startsWith('Unexpected token')) {
                             console.error('There is an error in the Json. Try to use Util.escapeForJson')
@@ -907,9 +907,9 @@ class JsonDom extends React.Component {
                     } else {
                         tagName = t
                     }
-                    if(tagName.indexOf('$')>=0){
+                    if (tagName.indexOf('$') >= 0) {
                         tagName = 'div'
-                    }else if (tagName.indexOf('.') >= 0) {
+                    } else if (tagName.indexOf('.') >= 0) {
                         const arr = tagName.split('.')
                         tagName = arr[0]
                         arr.shift()
@@ -937,23 +937,23 @@ class JsonDom extends React.Component {
 
                                     const pos = elKey.indexOf('@')
                                     let curKey
-                                    if(pos>=0){
+                                    if (pos >= 0) {
                                         //elKey
-                                        curKey = elKey.substring(0,pos)
-                                    }else{
+                                        curKey = elKey.substring(0, pos)
+                                    } else {
                                         curKey = elKey
                                     }
 
                                     let cur = eleProps[curKey]
-                                    if(cur){
-                                        if(cur.constructor === String) {
+                                    if (cur) {
+                                        if (cur.constructor === String) {
                                             eleProps[curKey] = cur + p[elKey]
-                                        }else if(cur.constructor === Object) {
+                                        } else if (cur.constructor === Object) {
                                             eleProps[curKey] = Object.assign(cur, p[elKey])
-                                        }else{
+                                        } else {
                                             eleProps[curKey] = p[elKey]
                                         }
-                                    }else {
+                                    } else {
                                         eleProps[curKey] = p[elKey]
                                     }
                                 }
@@ -988,7 +988,7 @@ class JsonDom extends React.Component {
                                 eleProps.checked = this.bindings[eleProps.name] === eleProps.value
 
                             } else if (this.bindings[eleProps.name] === undefined) {
-                                if(eleProps.value) {
+                                if (eleProps.value) {
                                     this.bindings[eleProps.name] = eleProps.value
                                 }
                             } else {
@@ -1097,7 +1097,7 @@ class JsonDom extends React.Component {
                  delete this.scope[key]
              })*/
 
-            this.scope.page = {slug: props.slug, lang: _app_.lang, title: props.title ? props.title[_app_.lang]: ''}
+            this.scope.page = {slug: props.slug, lang: _app_.lang, title: props.title ? props.title[_app_.lang] : ''}
             this.scope.user = props.user
             this.scope.editMode = props.editMode
             this.scope.inEditor = props.inEditor
@@ -1133,7 +1133,7 @@ class JsonDom extends React.Component {
     addLocationToScope() {
         this.scope.pathname = this.props.history.location.pathname
         this.scope.params = Util.extractQueryParams()
-        this.scope.hashParams = (window.location.hash ? Util.extractQueryParams(window.location.hash.substring(1), {decodeURI:false}) : {})
+        this.scope.hashParams = (window.location.hash ? Util.extractQueryParams(window.location.hash.substring(1), {decodeURI: false}) : {})
     }
 
     getJson(props) {
@@ -1294,19 +1294,19 @@ class JsonDom extends React.Component {
         // pass event to components
         if (finalArgs._passEvent) {
 
-            if(finalArgs._passEvent=='all') {
+            if (finalArgs._passEvent == 'all') {
                 // to all components
                 const comps = this.getAllComponents()
                 const keys = Object.keys(comps)
                 const newArgs = args.slice(0)
-                newArgs[0] = Object.assign({},newArgs[0],{_passEvent: false})
+                newArgs[0] = Object.assign({}, newArgs[0], {_passEvent: false})
                 for (let i = 0; i < keys.length; i++) {
                     const o = comps[keys[i]]
                     if (o.comp !== this) {
                         o.comp.runJsEvent(name, async, ...newArgs)
                     }
                 }
-            }else if (this.props._parentRef) {
+            } else if (this.props._parentRef) {
                 // to parents only
                 this.props._parentRef.runJsEvent(name, async, ...args)
             }
@@ -1336,7 +1336,7 @@ class JsonDom extends React.Component {
         }
 
         let meta
-        if(options && options.meta){
+        if (options && options.meta) {
             meta = options.meta
         }
 
@@ -1418,13 +1418,13 @@ class JsonDom extends React.Component {
         }
         return root
     }
-    getAllComponents = () =>{
+    getAllComponents = () => {
         const jsGetComponentRec = (comp, data) => {
             if (comp && comp.componentRefs) {
                 Object.assign(data, comp.componentRefs)
                 const keys = Object.keys(comp.componentRefs)
-                for(let i=0;i<keys.length;i++) {
-                    jsGetComponentRec(comp.componentRefs[keys[i]].comp,data)
+                for (let i = 0; i < keys.length; i++) {
+                    jsGetComponentRec(comp.componentRefs[keys[i]].comp, data)
                 }
 
             }
@@ -1471,9 +1471,9 @@ class JsonDom extends React.Component {
     addMetaTag = (name, content) => {
 
         let attr
-        if(name.constructor !== Object){
+        if (name.constructor !== Object) {
             attr = {name, content}
-        }else{
+        } else {
             attr = name
         }
         attr.data = {jsonDomId: this.instanceId}
@@ -1512,7 +1512,7 @@ class JsonDom extends React.Component {
     }
 
     reload = props => {
-        this.props.cmsActions.cmsRender(deepMerge({}, this.scope.props, props), {
+        this.props.cmsActions.cmsRender(deepMerge({$:{}}, this.scope.props, props), {
             slug: this.props.slug,
             id: this.props.id
         })
