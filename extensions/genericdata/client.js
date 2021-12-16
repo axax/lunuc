@@ -18,9 +18,10 @@ export default () => {
     // add some extra data to the table
     Hook.on('ApiClientQueryResponse', ({response}) => {
 
-        if (response && response.data && response.data.genericDatas && response.data.genericDatas.results) {
+        const data = response && response.data && response.data.genericDatas
 
-            const data = response.data.genericDatas
+        if (data && data.results) {
+
 
             let definition
             if( data.meta ){

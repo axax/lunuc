@@ -60,18 +60,12 @@ export default () => {
                 const pos = slug.indexOf('/' + PRETTYURL_SEPERATOR + '/')
                 if (pos >= 0) {
                     slug = slug.substring(0, pos)
-                    /*const subpage = slug.substring(pos + 3)
-                    location.search += '&_subpage=' + subpage*/
                 }
 
                 if (slug.split('/')[0] !== container.adminBaseUrlPlain) {
                     return <CmsViewContainer match={match} location={location} history={history} slug={slug}/>
                 }
 
-                /*if (_app_.redirect404 && _app_.redirect404 !== location.pathname) {
-                    location.replace(_app_.redirect404)
-                    return null
-                }*/
                 return <ErrorPage/>
             }
         })

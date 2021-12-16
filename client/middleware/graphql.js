@@ -113,10 +113,6 @@ const setUpWs = () => {
         try {
             wsCurrentConnection = new WebSocket(GRAPHQL_WS_URL, ['graphql-ws'])
 
-            if (navigator.userAgent.indexOf('Chrome-Lighthouse') > -1) {
-                throw Error('Chrome-Lighthouse does not support ws')
-            }
-
             wsCurrentConnection.onopen = () => {
                 wsCurrentConnection.send('{"type":"connection_init","payload":{}}')
 

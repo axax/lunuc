@@ -265,10 +265,10 @@ class GenericForm extends React.Component {
 
     loadFlatpickr() {
 
-        DomUtil.addScript('https://npmcdn.com/flatpickr@4.6.6/dist/flatpickr.min.js', {
+        DomUtil.addScript('/flatpickr.min.js', {
             id: 'flatpickr',
             onload: () => {
-                DomUtil.addScript('https://npmcdn.com/flatpickr@4.6.6/dist/l10n/de.js', {
+                DomUtil.addScript('/flatpickr-de.js', {
                     id: 'flatpickrDe',
                     onload: () => {
                         this.initFlatpickr()
@@ -278,7 +278,7 @@ class GenericForm extends React.Component {
         }, {ignoreIfExist: true})
 
 
-        DomUtil.addStyle('https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css', {id: 'flatpickrCss'}, {ignoreIfExist: true})
+        DomUtil.addStyle('/flatpickr.min.css', {id: 'flatpickrCss'}, {ignoreIfExist: true})
 
     }
 
