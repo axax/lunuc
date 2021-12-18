@@ -407,7 +407,7 @@ const GenericResolver = {
             }
 
             Hook.call('typeCreated', {type: typeName, data, db, context})
-            Hook.call('typeCreated_' + typeName, {data, db, context, resultData})
+            Hook.call('typeCreated_' + typeName, {data, db, context, result:resultData})
 
             return resultData
         }

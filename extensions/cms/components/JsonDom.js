@@ -688,13 +688,6 @@ class JsonDom extends React.Component {
                  $if = condition (only parse if condition is fullfilled)
                  p = prop
                  */
-                if (t === '#') {
-                    // hidden element
-                    if (c) {
-                        h.push(this.parseRec(c, rootKey + '.' + aIdx, scope))
-                    }
-                    return
-                }
                 if ($ifexist) {
                     try {
                         const value = propertyByPath($ifexist, scope)
@@ -725,6 +718,14 @@ class JsonDom extends React.Component {
                         console.log(e, scope)
                         return
                     }
+                }
+
+                if (t === '#') {
+                    // hidden element
+                    if (c) {
+                        h.push(this.parseRec(c, rootKey + '.' + aIdx, scope))
+                    }
+                    return
                 }
 
                 //set
