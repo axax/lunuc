@@ -2,6 +2,7 @@ import React, {useState, useEffect} from 'react'
 import Util from '../util'
 import {getStore} from '../store/index'
 import {setNetworkStatus} from '../actions/NetworkStatusAction'
+import {setUser} from '../actions/UserAction'
 import {addError} from '../actions/ErrorHandlerAction'
 import Hook from '../../util/hook'
 
@@ -235,6 +236,10 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
             _app_.session = r.headers.get('x-session')
 
             r.json().then(response => {
+                if(!response.isAuth && _app_.user && _app_.user._id){
+                    // if a user is logged in and for some reason user session is not valid anymore update user in client
+                    getStore().dispatch(setUser(null, false))
+                }
                 if (!r.ok || response.errors) {
                     const rejectData = {...response, loading: false, networkStatus: NetworkStatus.ready}
                     if (response.errors) {

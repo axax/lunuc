@@ -258,8 +258,9 @@ class JsonDom extends React.Component {
         const resourcesChanged = (this.props.resources !== props.resources)
         const templateChanged = !props.template || (this.props.template !== props.template)
 
-        const propsChanged = this.props._props !== props._props || this.props.inlineEditor !== props.inlineEditor
-        const slugChanged = this.props.slug !== props.slug
+        const propsChanged = this.props._props !== props._props || this.props.inlineEditor !== props.inlineEditor,
+            slugChanged = this.props.slug !== props.slug,
+            userChanged = this.props.user !== props.user
 
         const updateIsNeeded = resolvedDataChanged ||
             locationChanged ||
@@ -268,8 +269,8 @@ class JsonDom extends React.Component {
             resourcesChanged ||
             propsChanged ||
             slugChanged ||
+            userChanged ||
             props.children !== this.props.children ||
-            this.props.user !== props.user ||
             this.props.loading !== props.loading
 
         if (updateIsNeeded) {
@@ -306,7 +307,11 @@ class JsonDom extends React.Component {
             if (slugChanged || locationChanged || templateChanged || propsChanged || scriptChanged) {
                 this.json = this.jsonRaw = null
                 this.updateScope = true
+            }else if(userChanged){
+                // set new user to scope
+                this.scope.user = props.user
             }
+
 
             if (this.props.loading !== props.loading) {
                 this.json = null

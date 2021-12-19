@@ -120,6 +120,10 @@ export const start = (done) => {
                     customFormatErrorFn: formatError,
                     extensions({document, variables, operationName, result}) {
                         //UserStats.addData(req, {operationName})
+
+                        // return auth state
+                        result.isAuth = !!(req.context && req.context.id)
+
                     }
                 })(req, res, next).then(() => {
                     if (req.context) {
