@@ -390,6 +390,13 @@ export default class AggregationBuilder {
                 matchExpression = {[comparator === '$eq' ? '$in' : '$nin']: [filterValue]}
             } else if (filterValue === '') {
                 matchExpression = {[comparator === '$eq' ? '$in' : '$nin']: [null, ""]}
+
+                if(comparator !== '$eq'){
+                    // array must exist and must not be empty
+                    matchExpression.$exists = true
+                    matchExpression.$not = {$size: 0}
+                }
+
             } else if (!filterOptions.inDoubleQuotes && filterValue === 'null') {
                 matchExpression = {[comparator]: null}
             } else if (filterValue.constructor === ObjectId) {
