@@ -73,15 +73,19 @@ const Util = {
         if (options) {
             lang = options.lang
         }
-        const intlOptions = Intl.DateTimeFormat().resolvedOptions(), numeric = 'numeric'
-        return new Intl.DateTimeFormat(lang || _app_.lang || intlOptions.locale, Object.assign({
+        if(!Util._intl) {
+            Util._intl = Intl.DateTimeFormat().resolvedOptions()
+        }
+
+        const numeric = 'numeric'
+        return new Intl.DateTimeFormat(lang || _app_.lang || Util._intl.locale, Object.assign({
             year: numeric,
             month: numeric,
             day: numeric,
             hour: numeric,
             minute: numeric,
             second: numeric,
-            timeZone: intlOptions.timeZone || 'UTC'
+            timeZone: Util._intl.timeZone || 'UTC'
         }, options))
     },
     formattedDateFromObjectId: (objectId, options) => {

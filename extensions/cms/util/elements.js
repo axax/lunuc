@@ -275,6 +275,10 @@ const marginOptions = key => ({
     [`${key}style_marginRight`]: {
         label: 'Abstand recht',
         tab: MARGIN_TAB
+    },
+    [`${key}style_padding`]: {
+        label: 'Innen abstand',
+        tab: MARGIN_TAB
     }
 })
 

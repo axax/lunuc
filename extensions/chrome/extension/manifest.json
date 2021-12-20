@@ -22,5 +22,6 @@
       "48": "icon.png",
       "128": "icon.png"
     }
-  }
+  },
+  "content_security_policy": "script-src 'self' https://www.lunuc.com; object-src 'self'"
 }
