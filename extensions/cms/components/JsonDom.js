@@ -81,19 +81,12 @@ class JsonDom extends React.Component {
             }
 
             /*TODO remove  figureStyle, figureClassName use figureProps instead */
-
             if (caption || wrapper) {
                 return <figure style={figureStyle} className={figureClassName} {...figureProps}>
                     {imgTag()}
                     {caption && <figcaption dangerouslySetInnerHTML={{__html: caption}}/>}
                 </figure>
             }
-            /*
-             <picture>
-             <source srcset="mdn-logo-wide.png" media="(min-width: 600px)">
-             <img src="mdn-logo-narrow.png" alt="MDN">
-             </picture>
-             */
             return imgTag()
         },
         Print,
@@ -111,7 +104,7 @@ class JsonDom extends React.Component {
         'Redirect': ({to, push, _this}) => {
             if (_this && Util.hasCapability(_this.props.user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
 
-                _this.emitJsonError({message: 'Redirect prevented for this user'}, {loc: 'Redirect'})
+                _this.emitJsonError({message: 'Redirect prevented for user'}, {loc: 'Redirect'})
                 return null
             } else {
                 return <Redirect to={{pathname: to}} push={push}/>
@@ -122,7 +115,7 @@ class JsonDom extends React.Component {
             const newTarget = target && target !== 'undefined' ? target : '_self',
                 rel = target === '_blank' ? 'noopener' : ''
 
-            let isAbs = url.indexOf('https://') === 0 || url.indexOf('http://') === 0
+            let isAbs = url.startsWith('https://') || url.startsWith('http://')
 
             if (_app_.ssr && !isAbs) {
                 isAbs = true
@@ -136,7 +129,7 @@ class JsonDom extends React.Component {
                 url = location.origin + '/lunucapi/tracking?url=' + encodeURIComponent(url) + tracking
             }
 
-            if (isAbs || native || url.indexOf('tel:') === 0 || url.indexOf('mailto:') === 0) {
+            if (isAbs || native || url.startsWith('tel:') || url.startsWith('mailto:')) {
                 return <a href={url} target={newTarget} rel={rel} onClick={(e) => {
 
                     if (onClick) {
@@ -145,7 +138,7 @@ class JsonDom extends React.Component {
                 }
                 } {...rest}/>
             } else {
-                if (_app_.slugContext && url.indexOf('/' + _app_.slugContext) === 0) {
+                if (_app_.slugContext && url.startsWith('/' + _app_.slugContext)) {
                     url = url.substring(_app_.slugContext.length + 1)
                     if (!url) {
                         url = '/'
@@ -307,7 +300,7 @@ class JsonDom extends React.Component {
             if (slugChanged || locationChanged || templateChanged || propsChanged || scriptChanged) {
                 this.json = this.jsonRaw = null
                 this.updateScope = true
-            }else if(userChanged){
+            } else if (userChanged) {
                 // set new user to scope
                 this.scope.user = props.user
             }
@@ -784,7 +777,7 @@ class JsonDom extends React.Component {
                                 try {
                                     data = JSON.parse(data)
                                 } catch (e) {
-
+                                    console.warn(e)
                                 }
                             }
                             if ($sort) {
@@ -1518,7 +1511,7 @@ class JsonDom extends React.Component {
     }
 
     reload = props => {
-        this.props.cmsActions.cmsRender(deepMerge({$:{}}, this.scope.props, props), {
+        this.props.cmsActions.cmsRender(deepMerge({$: {}}, this.scope.props, props), {
             slug: this.props.slug,
             id: this.props.id
         })

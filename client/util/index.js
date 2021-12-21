@@ -5,6 +5,9 @@ import config from 'gen/config-client'
 /**
  * Object with general client helper methods. It is also accessible in the CMS Editor
  */
+const JSON_ESCAPE_MAP = {'\\':'\\\\','\"':'\\\"','\b':'\\b','\f':'\\f','\n':'\\n','\r':'\\r','\t':'\\t'}
+const DATE_FORMATS = {}
+
 const Util = {
     getType: getType,
     getTypes: getTypes,
@@ -19,6 +22,7 @@ const Util = {
         return str ? str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''
     },
     escapeForJson: (str, options) => {
+       // console.log(str)
         if (str === undefined || str === null) return ''
         if (str.constructor !== String)
             str = JSON.stringify(str)
@@ -29,13 +33,17 @@ const Util = {
             }
         }
 
-        return str.replace(/[\\]/g, '\\\\')
+        return str.replace(/[\\|\"|\b|\f|\n|\r|\t]/g, (matched)=>{
+            return JSON_ESCAPE_MAP[matched]
+        })
+
+        /*return str.replace(/[\\]/g, '\\\\')
             .replace(/[\"]/g, '\\\"')
             .replace(/[\b]/g, '\\b')
             .replace(/[\f]/g, '\\f')
             .replace(/[\n]/g, '\\n')
             .replace(/[\r]/g, '\\r')
-            .replace(/[\t]/g, '\\t')
+            .replace(/[\t]/g, '\\t')*/
     },
     escapeRegex: (str) => {
         return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
@@ -76,9 +84,11 @@ const Util = {
         if(!Util._intl) {
             Util._intl = Intl.DateTimeFormat().resolvedOptions()
         }
-
-        const numeric = 'numeric'
-        return new Intl.DateTimeFormat(lang || _app_.lang || Util._intl.locale, Object.assign({
+        if(!lang){
+            lang = _app_.lang || Util._intl.locale
+        }
+        const numeric = 'numeric',
+            o = Object.assign({
             year: numeric,
             month: numeric,
             day: numeric,
@@ -86,7 +96,14 @@ const Util = {
             minute: numeric,
             second: numeric,
             timeZone: Util._intl.timeZone || 'UTC'
-        }, options))
+        }, options),
+            key = lang + Object.values(o).join('')
+
+        if(!DATE_FORMATS[key]){
+            // cache formats as Intl.DateTimeFormat has bad performance
+            DATE_FORMATS[key] = new Intl.DateTimeFormat(lang, o)
+        }
+        return DATE_FORMATS[key]
     },
     formattedDateFromObjectId: (objectId, options) => {
         return Util.getDateTimeFormat(options).format(Util.dateFromObjectId(objectId, new Date()))
@@ -249,16 +266,19 @@ const Util = {
                 alt: 'Placeholder'
             }
         } else if (raw.constructor === String) {
-            try {
-                image = JSON.parse(raw)
-                if (!image) {
-                    image = {
-                        src: raw
+            image = {
+                src: raw
+            }
+            if(raw.startsWith('[') || raw.startsWith('{')) {
+                try {
+                    image = JSON.parse(raw)
+                    if (!image) {
+                        image = {
+                            src: raw
+                        }
                     }
-                }
-            } catch (e) {
-                image = {
-                    src: raw
+                } catch (e) {
+                    console.log(e, raw)
                 }
             }
         } else {

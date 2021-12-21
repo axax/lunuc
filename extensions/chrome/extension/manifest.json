@@ -23,5 +23,8 @@
       "128": "icon.png"
     }
   },
-  "content_security_policy": "script-src 'self' https://www.lunuc.com; object-src 'self'"
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'",
+    "sandbox": "sandbox allow-scripts; script-src 'self' 'https://www.lunuc.com'; object-src 'self'"
+  }
 }
