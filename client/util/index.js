@@ -33,7 +33,7 @@ const Util = {
             }
         }
 
-        return str.replace(/[\\|\"|\b|\f|\n|\r|\t]/g, (matched)=>{
+        return str.replace(/[\\]|[\"]|[\b]|[\f]|[\n]|[\r]|[\t]/g, (matched)=>{
             return JSON_ESCAPE_MAP[matched]
         })
 
@@ -300,7 +300,7 @@ const Util = {
             data.src = image.src
         }
 
-        if (_app_.ssr && data.src.indexOf('https://') !== 0 && data.src.indexOf('http://') !== 0) {
+        if (_app_.ssr && !data.src.startsWith('https://') && !data.src.startsWith('http://')) {
             try {
                 data.src = new URL(data.src, location.origin).href
             } catch (e) {
