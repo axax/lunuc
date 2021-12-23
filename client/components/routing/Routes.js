@@ -105,26 +105,6 @@ class Routes extends React.Component {
 
         scrollByHash(location.href, {})
 
-        /* if (_app_.scrollRestoration) {
-             if ('scrollRestoration' in history) {
-                 history.scrollRestoration = 'manual'
-             }
-             let lastPosY = {}, lastKey
-             this.history.listen((location, action) => {
-                 if (action === 'POP') {
-                     if (lastPosY[location.key] > 0) {
-                         setTimeout(() => {
-                             if (window.scrollY === 0) {
-                                 window.scrollTo({top: lastPosY[location.key]})
-                             }
-                         }, 100)
-                     }
-                 } else if (action === 'PUSH' && lastKey) {
-                     lastPosY[lastKey] = window.scrollY
-                 }
-                 lastKey = location.key
-             })
-         }*/
     }
 
     render() {

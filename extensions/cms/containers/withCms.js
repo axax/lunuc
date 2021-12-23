@@ -69,7 +69,7 @@ export default function (WrappedComponent) {
                                                            cmsPage={{name: {}}}/>
                         } else {
 
-                            if (_app_.redirect404 && _app_.redirect404 !== location.pathname) {
+                            if (_app_.redirect404 !== location.pathname) {
                                 location.replace(_app_.redirect404)
                                 return null
                             }
@@ -81,7 +81,6 @@ export default function (WrappedComponent) {
                     }
                 }
             }
-
             if (isEditMode(this.props) && window.self === window.top) {
                 return <CmsViewEditorContainer updateResolvedData={this.updateResolvedData.bind(this)}
                                                setKeyValue={this.setKeyValue.bind(this)}
@@ -89,10 +88,6 @@ export default function (WrappedComponent) {
                                                WrappedComponent={WrappedComponent}
                                                {...this.props}/>
             } else {
-                /*return <AdminComponents><WrappedComponent updateResolvedData={this.updateResolvedData.bind(this)}
-                                         setKeyValue={this.setKeyValue.bind(this)}
-                                         {...this.props}
-                                         cmsPage={cmsPage}/></AdminComponents>*/
                 return <WrappedComponent updateResolvedData={this.updateResolvedData.bind(this)}
                                          setKeyValue={this.setKeyValue.bind(this)}
                                          getKeyValue={this.getKeyValue.bind(this)}

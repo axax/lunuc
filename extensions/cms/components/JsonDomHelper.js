@@ -681,9 +681,9 @@ const m = Math.max((offX+offY) / 2,100)
 
         const {_cmsActions, _options} = this.props
 
-
         const dataSource = this.parseDataSource(_options.source)
         dataSource.options = options
+        dataSource._jsonDom = this.props._this
 
         _cmsActions.editCmsData(dataSource)
 

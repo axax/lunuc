@@ -1426,6 +1426,10 @@ class CmsViewEditorContainer extends React.Component {
                     })
                     updateResolvedData({json: resolvedDataJson})
                 }
+
+                if(cmsEditData._jsonDom && cmsEditData._jsonDom.props.forceEditMode) {
+                    cmsEditData._jsonDom.reload({$:{_reloadDate: new Date()}})
+                }
             }
         }
     }

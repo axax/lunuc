@@ -21,7 +21,7 @@ export const isPreview = () => {
 export const isEditMode = (props) => {
     const {user, dynamic, cmsPage, forceEditMode} = props
 
-    if(forceEditMode===true || forceEditMode === 'true'){
+    if(forceEditMode===true){
         return true
     }
     if(cmsPage) {

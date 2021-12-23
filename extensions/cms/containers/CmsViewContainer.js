@@ -42,7 +42,6 @@ class CmsViewContainer extends React.Component {
             // there is no need to update
             return false
         }
-
         // only update if it is needed
         return !cmsPage ||
             !cmsPageOld ||
@@ -191,10 +190,10 @@ class CmsViewContainer extends React.Component {
                             ...attrs
                         }
 
-                        if (fileType.indexOf('css') === 0) {
+                        if (fileType.startsWith('css')) {
                             DomUtil.addStyle(resource, finalAttrs)
                             loadNext(index+1)
-                        } else if (fileType.indexOf('js') === 0) {
+                        } else if (fileType.startsWith('js')) {
                             if(finalAttrs.async === false){
                                 finalAttrs.onload = ()=>{
                                     loadNext(index+1)
