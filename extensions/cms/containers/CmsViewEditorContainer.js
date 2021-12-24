@@ -1396,42 +1396,40 @@ class CmsViewEditorContainer extends React.Component {
 
         if (optimisticData) {
             if (!dataToEdit) {
-
                 window.location.href = window.location.href
-                /* setTimeout(()=>{
-                     this.forceUpdate()
-                 },100)*/
             } else {
-                const resolvedDataJson = JSON.parse(cmsPage.resolvedData),
-                    resolver = resolvedDataJson[cmsEditData.resolverKey || type]
-
-                if (resolver) {
-                    const results = resolver.results
-                    let idx = results.findIndex(x => x._id === dataToEdit._id)
-
-                    if (idx < 0) {
-                        idx = 0
-                        results.unshift({_id: dataToEdit._id})
-                    }
-
-                    results[idx] = Object.assign(results[idx], optimisticData)
-
-                    const formFields = getFormFieldsByType(type)
-                    // convert type=Object to Object
-                    Object.keys(formFields).forEach(key => {
-                        const field = formFields[key]
-                        if (field.type === 'Object' && results[idx][key].constructor !== Object) {
-                            results[idx][key] = JSON.parse(optimisticData[key])
-                        }
-                    })
-                    updateResolvedData({json: resolvedDataJson})
-                }
-
-                if(cmsEditData._jsonDom && cmsEditData._jsonDom.props.forceEditMode) {
-                    cmsEditData._jsonDom.reload({$:{_reloadDate: new Date()}})
-                }
+                this.findAndUpdateResolvedData(cmsEditData._jsonDom.scope.root, cmsEditData.resolverKey || type, type, optimisticData, dataToEdit)
             }
         }
+    }
+
+    findAndUpdateResolvedData(jsonDom, resolverKey, type, optimisticData, dataToEdit) {
+        const {cmsPage, updateResolvedData, cmsEditData} = this.props
+        const resolvedDataJson = JSON.parse(jsonDom.props.resolvedData),
+            resolver = resolvedDataJson[resolverKey]
+        if (resolver) {
+            const results = resolver.results
+            let idx = results.findIndex(x => x._id === dataToEdit._id)
+
+            if (idx < 0) {
+                idx = 0
+                results.unshift({_id: dataToEdit._id})
+            }
+
+            results[idx] = Object.assign(results[idx], optimisticData)
+            const formFields = getFormFieldsByType(type)
+            // convert type=Object to Object
+            Object.keys(formFields).forEach(key => {
+                const field = formFields[key]
+                if (field.type === 'Object' && results[idx][key].constructor !== Object) {
+                    results[idx][key] = JSON.parse(optimisticData[key])
+                }
+            })
+            jsonDom.props.updateResolvedData({json: resolvedDataJson})
+        }
+        Object.keys(jsonDom.componentRefs).forEach(key=>{
+            this.findAndUpdateResolvedData(jsonDom.componentRefs[key].comp, resolverKey, type, optimisticData, dataToEdit)
+        })
     }
 
     handleSettingChange(key, pageSetting = false, any, callback) {

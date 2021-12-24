@@ -162,7 +162,7 @@ class TypeEdit extends React.Component {
                 } else {
 
                     // set use for newly created objects
-                    if (!optimisticData._id && data['create' + type]) {
+                    if (!optimisticData._id && data && data['create' + type]) {
                         optimisticData._id = data['create' + type]._id
 
                         if (!optimisticData.createdBy) {

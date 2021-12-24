@@ -171,7 +171,7 @@ class JsonDom extends React.Component {
                 }} to={url} {...rest}/>
             }
         },
-        'Cms': ({props, _this, forceEditMode, ...rest}) => {
+        'Cms': ({props, _this, ...rest}) => {
             if (!rest.id) {
                 console.warn(`There is no id set for included Cms Component ${rest.slug}`, props)
             }
@@ -186,12 +186,10 @@ class JsonDom extends React.Component {
             if (!rest.slug) {
                 return <div>No Slug</div>
             }
-            forceEditMode = forceEditMode === 'true' || forceEditMode === true
             return <CmsViewContainer key={rest.id}
                                      _props={_props}
                                      _parentRef={_this}
-                                     forceEditMode={forceEditMode}
-                                     fetchPolicy={forceEditMode?'':'cache-first'}
+                                     fetchPolicy='cache-first'
                                      dynamic={true} {...rest}/>
         },
         'ContentEditable': ({_this, onChange, ...props}) => {
