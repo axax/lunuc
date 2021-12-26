@@ -50,7 +50,7 @@ export default () => {
                     structure = item.definition ? item.definition.structure : {}
 
                 if (structure.titleTemplate) {
-                    row.data = Util.replacePlaceholders(structure.titleTemplate, item)
+                    row.data = Util.replacePlaceholders(structure.titleTemplate, {Util,...item})
                 } else {
 
                     let pickerFields

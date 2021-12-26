@@ -33,6 +33,27 @@
                 "definition": 1,
                 "data.id": 1
               }
+            },
+            {
+              "unique": false,
+              "fields": {
+                "definition": 1,
+                "data.date": 1
+              }
+            },
+            {
+              "unique": false,
+              "fields": {
+                "definition": 1,
+                "data.createdon": 1
+              }
+            },
+            {
+              "unique": false,
+              "fields": {
+                "definition": 1,
+                "data.datetimeFrom": 1
+              }
             }
           ]
         },
