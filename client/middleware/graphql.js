@@ -137,6 +137,8 @@ const setUpWs = () => {
             wsCurrentConnection.addEventListener('message', (e) => {
                 const msg = JSON.parse(e.data)
                 if (msg.payload) {
+                    Hook.call('ApiClientWsResponse', {payload: msg.payload})
+
                     for (let i = 0; i < openWsSubscription.length; i++) {
                         const sub = openWsSubscription[i]
                         const subIds = Object.keys(sub.nexts)

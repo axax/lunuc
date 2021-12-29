@@ -450,7 +450,7 @@ function gensrcExtension(name, options) {
             }
             typeSchema += '}\n\n'
 
-            typeSchema += 'type ' + type.name + 'SubscribeResult {\n\tdata:[' + type.name + ']\n\tfilter:String\n\taction:String\n}\n\n'
+            typeSchema += 'type ' + type.name + 'SubscribeResult {\n\tdata:[' + type.name + ']\n\t_meta:String\n\tfilter:String\n\taction:String\n}\n\n'
 
 
             typeSchema += 'type Subscription{\n'
@@ -481,10 +481,10 @@ function gensrcExtension(name, options) {
             }
             return result
         },
-        update${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}${type.noUserRelation ? '' : 'createdBy,'}...rest}, {context}, options) => {
-            const result =  await GenericResolver.updateEnity(db, context, '${type.name}', {...rest,${type.noUserRelation ? '' : 'createdBy:(createdBy?ObjectId(createdBy):createdBy),'}${refResolversObjectId}}, options)
+        update${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}${type.noUserRelation ? '' : 'createdBy,'}_meta,...rest}, {context}, options) => {
+            const result =  await GenericResolver.updateEnity(db, context, '${type.name}', {...rest,_meta,${type.noUserRelation ? '' : 'createdBy:(createdBy?ObjectId(createdBy):createdBy),'}${refResolversObjectId}}, options)
             if(options && options.publish!==false){
-                ${type.subscription === false ? '//' : ''}pubsubHooked.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'update', data: [result]}}, db, context)
+                ${type.subscription === false ? '//' : ''}pubsubHooked.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {_meta, action: 'update', data: [result]}}, db, context)
             }
             return result
         },

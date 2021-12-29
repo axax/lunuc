@@ -3,7 +3,7 @@ import http from 'http'
 
 export const request = (options) => {
 
-    const finalOptions = Object.assign({timeout: 5000}, options)
+    const finalOptions = Object.assign({timeout: 60000}, options)
 
     let httpx = https
     if (finalOptions.url) {
@@ -19,8 +19,11 @@ export const request = (options) => {
         }
     }
 
-    return new Promise((resolve, reject) => {
+    if( finalOptions.body && !finalOptions.headers['Content-Length']) {
+        finalOptions.headers['Content-Length'] = Buffer.byteLength(finalOptions.body)
+    }
 
+    return new Promise((resolve, reject) => {
         const req = httpx.request(finalOptions, res => {
 
             if(finalOptions.followAllRedirects && (res.statusCode === 301 || res.statusCode === 302 || res.statusCode === 307)) {

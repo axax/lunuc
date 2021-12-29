@@ -14,6 +14,14 @@ export default () => {
         }
     })
 
+    Hook.on('ApiClientWsResponse', ({payload}) => {
+        const data = payload.data.subscribeGenericData
+        if(data){
+            data.data.forEach(item=>{
+                item.data = JSON.parse(item.data)
+            })
+        }
+    })
 
     // add some extra data to the table
     Hook.on('ApiClientQueryResponse', ({response}) => {

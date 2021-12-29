@@ -345,11 +345,9 @@ Hook.on('typeBeforeUpdate', async ({type, data, _meta, db, context}) => {
                 // if object it is updated partially
                 data.data = JSON.parse(data.data)
 
-                console.log(data)
+                //console.log(data)
             }
         }
-
-
     }
 
 })
@@ -456,7 +454,7 @@ Hook.on('ResolverBeforePublishSubscription', async ({context, payload, hookRespo
 
             for (let i = 0; i < datas.length; i++) {
                 const data = datas[i]
-                console.log(data, filter)
+                //console.log(data, filter)
                 if (matchExpr(filter, data)) {
                     console.log('abort publish')
                     hookResponse.abort = true

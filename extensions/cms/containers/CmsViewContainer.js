@@ -10,6 +10,7 @@ import withCms from './withCms'
 import {client} from '../../../client/middleware/graphql'
 import Hook from "../../../util/hook";
 import {connect} from 'react-redux'
+import {deepMerge} from "../../../util/deepMerge";
 
 class CmsViewContainer extends React.Component {
     oriTitle = document.title
@@ -272,7 +273,7 @@ class CmsViewContainer extends React.Component {
                             return
                         }
 
-                        subscriptionQuery = 'action filter data{_id'
+                        subscriptionQuery = '_meta action filter data{_id'
                         type.fields.map(({name, reference, localized}) => {
 
                             if (reference) {
@@ -326,7 +327,7 @@ class CmsViewContainer extends React.Component {
                                 //console.warn('subscription data missing')
                                 return
                             }
-                            const {action, filter, data} = supscriptionData.data[subscriptionName]
+                            const {action, _meta, filter, data} = supscriptionData.data[subscriptionName]
                             if (data && (!filter || filter === subscription.filter[action])) {
                                 const storedData = client.readQuery({
                                     query: CMS_PAGE_QUERY,
@@ -335,15 +336,11 @@ class CmsViewContainer extends React.Component {
 
                                 // upadate data in resolvedData string
                                 if (storedData.cmsPage && storedData.cmsPage.resolvedData) {
-
                                     const resolvedDataJson = JSON.parse(storedData.cmsPage.resolvedData)
-
-                                    console.log(subscription.autoUpdate, data)
 
                                     if (resolvedDataJson[subscription.autoUpdate] && resolvedDataJson[subscription.autoUpdate].results) {
 
                                         const refResults = resolvedDataJson[subscription.autoUpdate].results
-
                                         data.forEach(entry=>{
                                             // remove null values from new data
                                             const noNullData = Util.removeNullValues(entry)
@@ -363,8 +360,20 @@ class CmsViewContainer extends React.Component {
 
                                                 if (idx > -1) {
                                                     if (action === 'update') {
-                                                        // update data
-                                                        refResults[idx] = Object.assign({}, refResults[idx], noNullData)
+                                                        let partialUpdate = false
+                                                        try {
+                                                            partialUpdate = _meta && JSON.parse(_meta).partialUpdate
+                                                        }catch (e) {
+                                                            console.log(e)
+                                                        }
+                                                        if(partialUpdate){
+                                                           // TODO partialUpdate
+                                                            console.log( noNullData)
+                                                            refResults[idx] = deepMerge({}, refResults[idx], noNullData)
+                                                        }else {
+                                                            // update data
+                                                            refResults[idx] = Object.assign({}, refResults[idx], noNullData)
+                                                        }
                                                     } else {
                                                         // delete data
                                                         refResults.splice(idx, 1)

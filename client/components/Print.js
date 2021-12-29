@@ -227,6 +227,7 @@ class Print extends React.PureComponent {
 
 
                 html2canvas(printArea, {
+                    dpi: 300,
                     imageTimeout: 20000,
                     width: PAGE_WIDTH - 1,
                     height: PAGE_HEIGHT,
