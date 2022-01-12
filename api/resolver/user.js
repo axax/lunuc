@@ -400,7 +400,7 @@ export const userResolver = (db) => ({
                 return doc
             }
         },
-        signUp: async ({password, username, email, mailTemplate, mailSubject, mailUrl, meta, fromEmail, replyTo}, req) => {
+        signUp: async ({password, username, email, mailTemplate, mailSubject, mailUrl, meta, fromEmail, fromName, replyTo}, req) => {
 
             const {context} = req
 
@@ -441,6 +441,7 @@ export const userResolver = (db) => ({
 
                     sendMail(db, context, {
                         replyTo,
+                        fromName,
                         from: fromEmail,
                         slug: mailTemplate,
                         recipient: email,
