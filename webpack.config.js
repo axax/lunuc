@@ -9,7 +9,7 @@ const TerserPlugin = require('terser-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin').default
 const CompressionPlugin = require("compression-webpack-plugin")
 const GenSourceCode = require('./webpack.gensrc')
-
+console.log(MiniCssExtractPlugin)
 const date = new Date()
 const DEV_MODE = process.env.NODE_ENV !== 'production' && process.argv.indexOf('-p') === -1,
     BUILD_NUMBER = `${date.getYear() - 100}${date.getMonth() + 1}${date.getDate()}.${Math.ceil((date - new Date().setHours(0, 0, 0, 0)) / 8641)}`

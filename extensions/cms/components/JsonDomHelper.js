@@ -1603,7 +1603,7 @@ const m = Math.max((offX+offY) / 2,100)
     }
 
     onAddChildDialogClose(event){
-        const {_onTemplateChange, _onDataResolverPropertyChange} = this.props
+        const {_onTemplateChange, _onDataResolverPropertyChange, _key} = this.props
         const {addChildDialog} = this.state
 
         const selected = addChildDialog.selected
@@ -1773,9 +1773,9 @@ const m = Math.max((offX+offY) / 2,100)
                     let pos
                     // determine position to insert in parent node
                     if (addChildDialog.addbelow) {
-                        pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1)) + 1
+                        pos = parseInt(_key.substring(_key.lastIndexOf('.') + 1)) + 1
                     } else if (addChildDialog.addabove) {
-                        pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1))
+                        pos = parseInt(_key.substring(_key.lastIndexOf('.') + 1))
                     }
                     this.handleAddChildClick(comp, pos)
                 }
