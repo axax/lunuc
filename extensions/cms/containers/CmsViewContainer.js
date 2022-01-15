@@ -82,11 +82,15 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {slug, aboutToChange, cmsPage, children, dynamic, settings, setKeyValue, getKeyValue, updateResolvedData, _props, cmsRender, ...props} = this.props
+        const {slug, aboutToChange, cmsPage, children, dynamic, settings, setKeyValue, getKeyValue, updateResolvedData, _props, cmsRender, loaderClass, ...props} = this.props
         const editMode = isEditMode(this.props)
         if (!cmsPage) {
             // show a loader here
-            return null //<div className={classNameByPath(slug, 'Cms--loading')}/>
+            if(loaderClass){
+                return <div className={loaderClass}/>
+            }
+
+            return null
         } else {
             // set page title
             if (!dynamic && cmsPage.name)

@@ -477,7 +477,7 @@ class GenericForm extends React.Component {
             }
 
 
-            if (field.readOnly || (field.role && !Util.hasCapability({userData: _app_.user}, field.role))) {
+            if (field.role && !Util.hasCapability({userData: _app_.user}, field.role)) {
                 continue
             }
 
@@ -884,6 +884,7 @@ class GenericForm extends React.Component {
                     })}>{value}</JsonEditor> :
 
                     <CodeEditor
+                        readOnly={field.readOnly}
                         className={classes.editor} key={fieldKey}
                         forceJson={field.type === 'Object'}
                         onChange={(newValue) => this.handleInputChange({
@@ -967,8 +968,10 @@ class GenericForm extends React.Component {
                 key={fieldKey}
                 name={fieldKey}
                 label={field.label}
+                readOnly={field.readOnly}
                 genericType={field.genericType}
                 filter={field.filter}
+                linkTemplate={field.linkTemplate}
                 multi={field.multi}
                 pickerField={field.pickerField} /* fields that are searched */
                 searchFields={field.searchFields} /* fields that are shown in the picker */
@@ -1009,6 +1012,7 @@ class GenericForm extends React.Component {
                         value = matchObjectValueFromList(value, field, items)
 
                         return <SimpleSelect
+                            readOnly={field.readOnly}
                             key={fieldKey} name={fieldKey}
                             onChange={this.handleInputChange}
                             items={items}
@@ -1035,7 +1039,9 @@ class GenericForm extends React.Component {
                 value = matchObjectValueFromList(value, field, field.enum)
 
                 currentFormFields.push(<SimpleSelect
-                    key={fieldKey} name={fieldKey}
+                    readOnly={field.readOnly}
+                    key={fieldKey}
+                    name={fieldKey}
                     onChange={this.handleInputChange}
                     items={field.enum}
                     error={!!this.state.fieldErrors[fieldKey]}
@@ -1052,6 +1058,7 @@ class GenericForm extends React.Component {
 
         } else if (field.type === 'Boolean') {
             currentFormFields.push(<SimpleSwitch key={fieldKey}
+                                                 readOnly={field.readOnly}
                                                  label={field.label || field.placeholder}
                                                  name={fieldKey}
                                                  className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
@@ -1072,6 +1079,7 @@ class GenericForm extends React.Component {
 
             langButtonWasInserted = true
             currentFormFields.push(<TextField autoFocus={autoFocus && fieldIndex === 0}
+                                              readOnly={field.readOnly}
                                               error={!!this.state.fieldErrors[fieldKey]}
                                               key={fieldKey}
                                               id={fieldKey}

@@ -155,25 +155,34 @@ class TypePicker extends React.Component {
     }
 
     render() {
-        const {classes, placeholder, multi, error, helperText, className, fullWidth, pickerField, metaFields, type, filter, label, genericType} = this.props
+        const {classes, placeholder, multi, error, helperText, className, fullWidth, linkTemplate, pickerField, metaFields, type, filter, label, genericType, readOnly} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
         console.log(`render TypePicker | hasFocus=${hasFocus} | pickerField=${pickerField}`, data)
-        const openTypeWindow = ()=>{
+        const openTypeWindow = (value)=>{
 
-            const newwindow = openWindow({url:`${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/types/?noLayout=true&multi=${!!multi}&fixType=${type}${genericType?'&meta='+genericType:''}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}${label ? '&title=' + encodeURIComponent(label) : ''}`})
+            let url
+            if(linkTemplate){
+                url = Util.replacePlaceholders(linkTemplate,value)
+            }else{
+                url = `${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/types/?noLayout=true&multi=${!!multi}&fixType=${type}${genericType?'&meta='+genericType:''}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}${label ? '&title=' + encodeURIComponent(label) : ''}`
+            }
+            console.log(url)
+            const newwindow = openWindow({url})
 
-            setTimeout(() => {
-                newwindow.addEventListener('beforeunload', (e) => {
-                    this.selectValue(newwindow.resultValue)
+            if(!readOnly) {
+                setTimeout(() => {
+                    newwindow.addEventListener('beforeunload', (e) => {
+                        this.selectValue(newwindow.resultValue)
 
-                    delete e['returnValue']
-                })
-            }, 500)
+                        delete e['returnValue']
+                    })
+                }, 500)
+            }
         }
 
         return <FormControl
             fullWidth={fullWidth} className={classNames(classes.root, className)}>
-            {!value.length || multi ?
+            {(!value.length || multi) && !readOnly ?
                 <TextField error={error}
                            fullWidth={fullWidth}
                            className={classes.textField}
@@ -241,12 +250,12 @@ class TypePicker extends React.Component {
                                      src={getImageSrc(singleValue)}/>
                                 <div className={classes.dummyTxt}>{typeDataToLabel(singleValue, pickerField)}</div>
 
-                                <IconButton className={classes.dummyRemove}
+                                {!readOnly && <IconButton className={classes.dummyRemove}
                                             edge="end"
                                             onClick={this.handleRemovePick.bind(this, singleValueIndex)}
                                 >
                                     <DeleteIcon/>
-                                </IconButton>
+                                </IconButton>}
 
                                 <IconButton className={classes.openFile}
                                             edge="end"
@@ -276,6 +285,10 @@ class TypePicker extends React.Component {
                                                      onBlur={event => {
                                                      }}
                                                      onChange={field => {
+
+                                                         if(readOnly){
+                                                             return
+                                                         }
 
 
                                                          const newValue = this.state.value.slice(0),
@@ -308,9 +321,9 @@ class TypePicker extends React.Component {
                                     </CardContent>
                                     <CardActions disableSpacing>
 
-                                        <IconButton onClick={this.handleRemovePick.bind(this, singleValueIndex)}>
+                                        {!readOnly && <IconButton onClick={this.handleRemovePick.bind(this, singleValueIndex)}>
                                             <DeleteIcon/>
-                                        </IconButton>
+                                        </IconButton>}
                                     </CardActions>
                                 </Card>)
 
@@ -323,12 +336,12 @@ class TypePicker extends React.Component {
                                                       key={singleValueIndex}
                                                       className={classNames(classes.clip)}
                                                       label={typeDataToLabel(singleValue, pickerField)}
-                                                      onDelete={this.handleRemovePick.bind(this, singleValueIndex)}
+                                                      onDelete={!readOnly && this.handleRemovePick.bind(this, singleValueIndex)}
                                                       onClick={() => {
                                                           if (singleValue.type === 'Media' || singleValue.__typename=== 'Media') {
                                                               window.open(getImageSrc(singleValue), '_blank').focus()
                                                           }else {
-                                                              openTypeWindow()
+                                                              openTypeWindow(singleValue)
                                                           }
                                                       }}
                                                       avatar={singleValue && singleValue.__typename === 'Media' && singleValue.mimeType && singleValue.mimeType.indexOf('image') === 0 ?

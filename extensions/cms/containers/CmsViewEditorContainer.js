@@ -734,6 +734,19 @@ class CmsViewEditorContainer extends React.Component {
 
                                     </div>
 
+                                } else if (parsedData.serverScript) {
+
+                                    return <div>
+                                        <p>Server Script changed</p>
+
+                                        <CodeEditor lineNumbers
+                                                    type="js"
+                                                    readOnly={true}>{parsedData.script}</CodeEditor>
+                                        <a href={'/system/diff?preview=true#value=' + encodeURIComponent(parsedData.serverScript) + '&orig1=' + encodeURIComponent(serverScript)}
+                                           target="_blank">Show diff</a>
+
+                                    </div>
+
                                 }
                                 return <pre>{JSON.stringify(parsedData, null, 2)}</pre>
                             }}

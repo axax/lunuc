@@ -133,7 +133,8 @@
         "Shop",
         "BeachAccess",
         "Group",
-        "ThumbUp"
+        "ThumbUp",
+        "SettingsInputComponent"
       ],
       "theme":{
         "colors":{

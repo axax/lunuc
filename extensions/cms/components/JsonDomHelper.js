@@ -9,6 +9,7 @@ import {
     SimpleSelect,
     SimpleDialog,
     SimpleMenu,
+    SettingsInputComponentIcon,
     EditIcon,
     LaunchIcon,
     DeleteIcon,
@@ -999,6 +1000,27 @@ const m = Math.max((offX+offY) / 2,100)
                             }
                         })
                     }
+
+
+
+                    if(_dynamic) {
+
+                        const parent = rest._scope.parent
+                        const parentJson = parent.getJsonRaw(parent.props, true)
+
+                        const parentSubJson = getComponentByKey(rest._rootKey, parentJson)
+
+                        if (parentSubJson) {
+                            menuItems.push({
+                                name: 'Komponenten Einstellungen',
+                                icon: <SettingsInputComponentIcon/>,
+                                onClick: () => {
+                                    this.handleEditElement({jsonElement: getJsonDomElements('Cms'), json: parentJson, subJson: parentSubJson, isCms: true, jsonDom:parent})
+                                }
+                            })
+                        }
+                    }
+
                 }
 
                 if(!_dynamic) {
@@ -1008,11 +1030,11 @@ const m = Math.max((offX+offY) / 2,100)
                         if (jsonElement && (isCms || jsonElement.options || jsonElement.groupOptions)) {
 
                             editElementEvent = () => {
-                                this.handleEditElement(jsonElement, subJson, isCms)
+                                this.handleEditElement({jsonElement, subJson, isCms, json: _json})
                             }
                             menuItems.push({
-                                name: _options.menuTitle.edit || 'Bearbeiten',
-                                icon: <EditIcon/>,
+                                name: _options.menuTitle.edit || 'Komponenten Einstellungen',
+                                icon: <SettingsInputComponentIcon/>,
                                 onClick: editElementEvent
                             })
                         }
@@ -1322,178 +1344,7 @@ const m = Math.max((offX+offY) / 2,100)
                 {(addChildDialog &&
                     <AddToBody>
                         <SimpleDialog fullWidth={true} maxWidth="lg" key="addChildDialog" open={true}
-                                      onClose={(e) => {
-                                          const selected = addChildDialog.selected
-                                          if (e.key === 'save' && selected) {
-
-                                              let comp = {'t': selected.tagName, ...selected.defaults}
-                                              if (addChildDialog.edit) {
-                                                  // merge existing component
-                                                  comp = deepMergeOptional({
-                                                      mergeArray: true,
-                                                      arrayCutToLast: true
-                                                  }, comp, subJson)
-                                              }
-
-
-                                              if (addChildDialog.form) {
-                                                  const fields = addChildDialog.form.state.fields
-
-                                                  let groupKeyMap = {}
-                                                  Object.keys(fields).forEach(key => {
-                                                      let val = fields[key]
-                                                      if (key.startsWith('!')) {
-                                                          // group Options
-                                                          const parts = key.split('!'),
-                                                              groupKey = parts[1], groupProp = parts[2],
-                                                              groupIdx = parseInt(parts[3])
-
-                                                          if (!isNaN(groupIdx) && selected.groupOptions[groupKey]) {
-
-
-                                                              const groupFieldOption = selected.groupOptions[groupKey][groupProp]
-
-                                                              if (selected.groupOptions[groupKey][groupProp]) {
-
-                                                                  const groupFieldOption = Object.assign({},
-                                                                      selected.groupOptions[groupKey][groupProp],
-                                                                      comp.$inlineEditor && comp.$inlineEditor.groupOptions && comp.$inlineEditor.groupOptions[groupKey] && comp.$inlineEditor.groupOptions[groupKey][groupProp])
-
-                                                                  let groupArray = groupKeyMap[groupKey]
-
-                                                                  if(!groupArray){
-                                                                      groupKeyMap[groupKey] = groupArray = []
-                                                                  }
-
-                                                                  let groupData
-                                                                  if(!groupArray[groupIdx]){
-                                                                      const prevGroupArray = propertyByPath(groupKey, comp, '_')
-                                                                      if(prevGroupArray && prevGroupArray[groupIdx]){
-                                                                          groupData = Object.assign({},prevGroupArray[groupIdx])
-                                                                      }else{
-                                                                          groupData = {}
-                                                                      }
-                                                                      groupArray[groupIdx] = groupData
-                                                                  }else{
-                                                                      groupData = groupArray[groupIdx]
-                                                                  }
-
-                                                                  if (groupFieldOption.tr && groupFieldOption.trKey) {
-
-                                                                      if(!groupData.trKey){
-                                                                          groupData.trKey = `${groupFieldOption.trKey}-${groupIdx}-${Math.random().toString(36).substr(2, 9)}`
-                                                                      }
-
-                                                                      groupData[groupProp] = `$\{Util.escapeForJson(_t('${groupData.trKey}'))\}`
-                                                                      if (val !== null) {
-                                                                          // update translation
-                                                                          _onDataResolverPropertyChange({
-                                                                              value: Util.escapeForJson(val.replace(/\n/g, '')),
-                                                                              path: 'tr.' + _app_.lang + '.' + groupData.trKey,
-                                                                              instantSave: true
-                                                                          })
-                                                                      }
-                                                                  } else {
-                                                                      groupData[groupProp] = val
-                                                                  }
-                                                              }
-                                                          }
-                                                      } else {
-
-                                                          const currentOpt = Object.assign({},
-                                                              selected.options && selected.options[key],
-                                                              comp.$inlineEditor && comp.$inlineEditor.options && comp.$inlineEditor.options[key])
-
-                                                          if (currentOpt.template && val !== undefined && val !== null) {
-                                                              setPropertyByPath(val, '$original_' + key, comp, '_')
-                                                              val = Util.replacePlaceholders(currentOpt.template, {_comp: comp, ...(val.constructor === String ? {data: val} : val[0])})
-
-                                                          }
-
-                                                          if (currentOpt.tr && currentOpt.trKey) {
-
-                                                              setPropertyByPath(`$\{_t('${currentOpt.trKey}'${currentOpt.trContext?','+currentOpt.trContext:''})\}`, key, comp, '_')
-                                                              if (val !== null) {
-                                                                  _onDataResolverPropertyChange({
-                                                                      value: Util.escapeForJson(Util.escapeForJson(val.replace(/\n/g, ''))),
-                                                                      path: 'tr.' + _app_.lang + '.' + currentOpt.trKey,
-                                                                      instantSave: true
-                                                                  })
-                                                              }
-
-                                                          } else {
-                                                              setPropertyByPath(val, key, comp, '_')
-                                                          }
-                                                      }
-                                                  })
-
-                                                  Object.keys(groupKeyMap).forEach(groupKey=>{
-                                                      setPropertyByPath(groupKeyMap[groupKey], groupKey, comp, '_')
-                                                  })
-                                              }
-
-
-                                              if (addChildDialog.edit) {
-
-                                                  Object.keys(comp).forEach((key) => {
-                                                      subJson[key] = comp[key]
-                                                  })
-
-                                                  Util.removeNullValues(subJson, {
-                                                      recursiv: true,
-                                                      emptyObject: true,
-                                                      emptyArray: true,
-                                                      nullArrayItems: true
-                                                  })
-
-                                                  if (subJson.$inlineEditor && subJson.$inlineEditor.options) {
-                                                      Object.keys(subJson.$inlineEditor.options).forEach(optKey => {
-                                                          delete subJson.$inlineEditor.options[optKey].value
-                                                      })
-                                                  }
-
-                                                  _onTemplateChange(_json, true)
-
-                                              } else {
-
-                                                  Util.removeNullValues(comp, {
-                                                      recursiv: true,
-                                                      emptyObject: true,
-                                                      emptyArray: true,
-                                                      nullArrayItems: true
-                                                  })
-
-                                                  if (addChildDialog.wrap) {
-                                                      const wrapped = Object.assign({}, subJson)
-
-                                                      Object.keys(subJson).forEach((key) => {
-                                                          delete subJson[key]
-                                                      })
-
-
-                                                      Object.keys(comp).forEach((key) => {
-                                                          subJson[key] = comp[key]
-                                                      })
-                                                      subJson.c = [wrapped]
-
-                                                      _onTemplateChange(_json, true)
-                                                  } else {
-
-                                                      // add new
-                                                      let pos
-                                                      // determine position to insert in parent node
-                                                      if (addChildDialog.addbelow) {
-                                                          pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1)) + 1
-                                                      } else if (addChildDialog.addabove) {
-                                                          pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1))
-                                                      }
-                                                      this.handleAddChildClick(comp, pos)
-                                                  }
-                                              }
-                                          }
-                                          JsonDomHelper.disableEvents = false
-                                          this.setState({addChildDialog: null})
-                                      }}
+                                      onClose={this.onAddChildDialogClose.bind(this)}
                                       actions={[
                                           {
                                               key: 'cancel',
@@ -1646,7 +1497,7 @@ const m = Math.max((offX+offY) / 2,100)
         }
     }
 
-    handleEditElement(jsonElement, subJson, isCms) {
+    handleEditElement({jsonElement, subJson, isCms, json, jsonDom}) {
         JsonDomHelper.disableEvents = true
 
         //clone
@@ -1747,8 +1598,191 @@ const m = Math.max((offX+offY) / 2,100)
             toolbarHovered: false,
             hovered: false,
             dragging: false,
-            addChildDialog: {selected: newJsonElement, edit: true}
+            addChildDialog: {selected: newJsonElement, json, subJson, jsonDom, edit: true}
         })
+    }
+
+    onAddChildDialogClose(event){
+        const {_onTemplateChange, _onDataResolverPropertyChange} = this.props
+        const {addChildDialog} = this.state
+
+        const selected = addChildDialog.selected
+        const subJson = addChildDialog.subJson
+        const json = addChildDialog.json
+
+        if (event.key === 'save' && selected) {
+
+            let comp = {'t': selected.tagName, ...selected.defaults}
+            if (addChildDialog.edit) {
+                // merge existing component
+                comp = deepMergeOptional({
+                    mergeArray: true,
+                    arrayCutToLast: true
+                }, comp, subJson)
+            }
+
+
+            if (addChildDialog.form) {
+                const fields = addChildDialog.form.state.fields
+
+                let groupKeyMap = {}
+                Object.keys(fields).forEach(key => {
+                    let val = fields[key]
+                    if (key.startsWith('!')) {
+                        // group Options
+                        const parts = key.split('!'),
+                            groupKey = parts[1], groupProp = parts[2],
+                            groupIdx = parseInt(parts[3])
+
+                        if (!isNaN(groupIdx) && selected.groupOptions[groupKey]) {
+
+
+                            const groupFieldOption = selected.groupOptions[groupKey][groupProp]
+
+                            if (selected.groupOptions[groupKey][groupProp]) {
+
+                                const groupFieldOption = Object.assign({},
+                                    selected.groupOptions[groupKey][groupProp],
+                                    comp.$inlineEditor && comp.$inlineEditor.groupOptions && comp.$inlineEditor.groupOptions[groupKey] && comp.$inlineEditor.groupOptions[groupKey][groupProp])
+
+                                let groupArray = groupKeyMap[groupKey]
+
+                                if(!groupArray){
+                                    groupKeyMap[groupKey] = groupArray = []
+                                }
+
+                                let groupData
+                                if(!groupArray[groupIdx]){
+                                    const prevGroupArray = propertyByPath(groupKey, comp, '_')
+                                    if(prevGroupArray && prevGroupArray[groupIdx]){
+                                        groupData = Object.assign({},prevGroupArray[groupIdx])
+                                    }else{
+                                        groupData = {}
+                                    }
+                                    groupArray[groupIdx] = groupData
+                                }else{
+                                    groupData = groupArray[groupIdx]
+                                }
+
+                                if (groupFieldOption.tr && groupFieldOption.trKey) {
+
+                                    if(!groupData.trKey){
+                                        groupData.trKey = `${groupFieldOption.trKey}-${groupIdx}-${Math.random().toString(36).substr(2, 9)}`
+                                    }
+
+                                    groupData[groupProp] = `$\{Util.escapeForJson(_t('${groupData.trKey}'))\}`
+                                    if (val !== null) {
+                                        // update translation
+                                        _onDataResolverPropertyChange({
+                                            value: Util.escapeForJson(val.replace(/\n/g, '')),
+                                            path: 'tr.' + _app_.lang + '.' + groupData.trKey,
+                                            instantSave: true
+                                        })
+                                    }
+                                } else {
+                                    groupData[groupProp] = val
+                                }
+                            }
+                        }
+                    } else {
+
+                        const currentOpt = Object.assign({},
+                            selected.options && selected.options[key],
+                            comp.$inlineEditor && comp.$inlineEditor.options && comp.$inlineEditor.options[key])
+
+                        if (currentOpt.template && val !== undefined && val !== null) {
+                            setPropertyByPath(val, '$original_' + key, comp, '_')
+                            val = Util.replacePlaceholders(currentOpt.template, {_comp: comp, ...(val.constructor === String ? {data: val} : val[0])})
+
+                        }
+
+                        if (currentOpt.tr && currentOpt.trKey) {
+
+                            setPropertyByPath(`$\{_t('${currentOpt.trKey}'${currentOpt.trContext?','+currentOpt.trContext:''})\}`, key, comp, '_')
+                            if (val !== null) {
+                                _onDataResolverPropertyChange({
+                                    value: Util.escapeForJson(Util.escapeForJson(val.replace(/\n/g, ''))),
+                                    path: 'tr.' + _app_.lang + '.' + currentOpt.trKey,
+                                    instantSave: true
+                                })
+                            }
+
+                        } else {
+                            setPropertyByPath(val, key, comp, '_')
+                        }
+                    }
+                })
+
+                Object.keys(groupKeyMap).forEach(groupKey=>{
+                    setPropertyByPath(groupKeyMap[groupKey], groupKey, comp, '_')
+                })
+            }
+
+
+            if (addChildDialog.edit) {
+
+                Object.keys(comp).forEach((key) => {
+                    subJson[key] = comp[key]
+                })
+
+                Util.removeNullValues(subJson, {
+                    recursiv: true,
+                    emptyObject: true,
+                    emptyArray: true,
+                    nullArrayItems: true
+                })
+
+                if (subJson.$inlineEditor && subJson.$inlineEditor.options) {
+                    Object.keys(subJson.$inlineEditor.options).forEach(optKey => {
+                        delete subJson.$inlineEditor.options[optKey].value
+                    })
+                }
+
+                if(addChildDialog.jsonDom){
+                    addChildDialog.jsonDom.props.onTemplateChange(json, true)
+                }else {
+                    _onTemplateChange(json, true)
+                }
+
+            } else {
+
+                Util.removeNullValues(comp, {
+                    recursiv: true,
+                    emptyObject: true,
+                    emptyArray: true,
+                    nullArrayItems: true
+                })
+
+                if (addChildDialog.wrap) {
+                    const wrapped = Object.assign({}, subJson)
+
+                    Object.keys(subJson).forEach((key) => {
+                        delete subJson[key]
+                    })
+
+
+                    Object.keys(comp).forEach((key) => {
+                        subJson[key] = comp[key]
+                    })
+                    subJson.c = [wrapped]
+
+                    _onTemplateChange(json, true)
+                } else {
+
+                    // add new
+                    let pos
+                    // determine position to insert in parent node
+                    if (addChildDialog.addbelow) {
+                        pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1)) + 1
+                    } else if (addChildDialog.addabove) {
+                        pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1))
+                    }
+                    this.handleAddChildClick(comp, pos)
+                }
+            }
+        }
+        JsonDomHelper.disableEvents = false
+        this.setState({addChildDialog: null})
     }
 }
 
