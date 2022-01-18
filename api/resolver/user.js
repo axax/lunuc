@@ -286,7 +286,7 @@ export const userResolver = (db) => ({
 
             return {status: 'done'}
         },
-        forgotPassword: async ({username, url, subject, fromEmail}, req) => {
+        forgotPassword: async ({username, url, subject, fromEmail, fromName}, req) => {
 
             const {context, headers} = req
             const userCollection = db.collection('User')
@@ -304,6 +304,7 @@ export const userResolver = (db) => ({
             if (user) {
                 await sendMail(db, context, {
                     from: fromEmail,
+                    fromName,
                     slug: 'core/forgot-password/mail',
                     recipient: user.email,
                     subject: subject || 'Password reset',
@@ -355,7 +356,7 @@ export const userResolver = (db) => ({
                 throw new ApiError('Something went wrong. Please try again!', 'general.error')
             }
         },
-        sendConformationEmail: async ({mailTemplate, mailSubject, mailUrl, fromEmail}, req) => {
+        sendConformationEmail: async ({mailTemplate, mailSubject, mailUrl, fromEmail, fromName}, req) => {
             const {context} = req
             Util.checkIfUserIsLoggedIn(context)
 
@@ -363,6 +364,7 @@ export const userResolver = (db) => ({
 
             sendMail(db, context, {
                 from: fromEmail,
+                fromName,
                 slug: mailTemplate,
                 recipient: user.email,
                 subject: mailSubject,

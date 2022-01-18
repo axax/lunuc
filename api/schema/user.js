@@ -82,10 +82,10 @@ export const userSchemaRaw = `
         me: User
         login(username: String!, password: String!): Token
         logout: LogoutResult
-        forgotPassword(username: String!, url: String!, subject: String, fromEmail: String): ForgotPasswordResult
+        forgotPassword(username: String!, url: String!, subject: String, fromEmail: String, fromName: String): ForgotPasswordResult
         newPassword(token:String!, password:String!, passwordConfirm:String): NewPasswordResult
         confirmEmail(token:String!): ConfirmEmailResult
-        sendConformationEmail(mailTemplate: String!, mailSubject: String!, mailUrl: String!,fromEmail: String): ConfirmEmailResult
+        sendConformationEmail(mailTemplate: String!, mailSubject: String!, mailUrl: String!,fromEmail: String,fromName: String): ConfirmEmailResult
     }
 		
 	type Mutation {

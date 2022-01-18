@@ -128,7 +128,7 @@ export default db => ({
                 status: 'Newsletter sent to: ' + emails.join(',')
             }
         },
-        subscribeNewsletter: async ({email, fromEmail, confirmSlug, location, url, meta, list}, req) => {
+        subscribeNewsletter: async ({email, fromEmail, fromName, confirmSlug, location, url, meta, list}, req) => {
 
             const {context}  = req
 
@@ -186,6 +186,7 @@ export default db => ({
 
                 await sendMail(db, context, {
                     from: fromEmail,
+                    fromName,
                     slug: 'core/newsletter/optin/mail',
                     recipient: email,
                     subject: 'Anmeldung Newsletter',

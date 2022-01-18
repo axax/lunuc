@@ -50,7 +50,7 @@ Hook.on('beforePubSub', async ({triggerName, payload, db, context}) => {
     if (triggerName === 'subscribeGenericData') {
         if (payload.subscribeGenericData.action === 'update' || payload.subscribeGenericData.action === 'create') {
             const item = payload.subscribeGenericData.data[0]
-            if (item && item.definition) {
+            if (item && item.definition && item.data) {
 
                 const def = await getGenericTypeDefinitionWithStructure(db, {id: item.definition._id})
 
