@@ -391,7 +391,7 @@ class GenericForm extends React.Component {
         const {fields, trigger} = this.props
         const target = e.target, name = target.name
         let value = target.type === 'checkbox' ? target.checked : target.value
-        if (target.type !== 'datetime' && fields[name]) {
+        if (fields[name]) {
             value = checkFieldType(value, fields[name])
         }
         this.setState((prevState) => {
@@ -438,6 +438,8 @@ class GenericForm extends React.Component {
     handleBlur = (e) => {
         const {onBlur, fields} = this.props
         if (e.target.type === 'datetime') {
+
+            //TODO check if this part is really used
             const field = fields[e.target.name]
             if (field.type === 'Float') {
                 // a float value is expected so convert the iso date to an unix timestamp
@@ -835,7 +837,6 @@ class GenericForm extends React.Component {
             currentFormFields.push(<p>{field.description}</p>)
         }
         if (uitype === 'htmlParser') {
-
             currentFormFields.push(<span dangerouslySetInnerHTML={{__html: field.html}}/>)
 
         } else if (uitype === 'wrapper') {

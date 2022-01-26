@@ -175,8 +175,13 @@ export const referencesToIds = (data, type) => {
 }
 
 export const checkFieldType = (value, field) => {
-    if (field.type === 'Float') {
-        value = parseFloat(value)
+    if (field.type === 'Float'){
+        if( field.uitype === 'datetime') {
+            // save date as unix timestamp number
+            value = Date.parse(value)
+        } else {
+            value = parseFloat(value)
+        }
         if (isNaN(value)) {
             value = null
         }

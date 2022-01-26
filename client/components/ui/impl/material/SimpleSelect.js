@@ -31,6 +31,18 @@ const styles = theme => ({
 });
 
 
+
+function matchSingleValue(value, list){
+    if (value.constructor === String) {
+        for (let i = 0; i < list.length; i++) {
+            if (list[i].value === value) {
+                return list[i].name
+            }
+        }
+    }
+    return value
+}
+
 class SimpleSelect extends React.Component {
 
     itemNameByValue(value) {
@@ -76,7 +88,7 @@ class SimpleSelect extends React.Component {
                     selected.constructor === Array ?
                         <div className={classes.chips}>
                             {selected.map(value => (
-                                <Chip key={value} label={value} className={classes.chip}/>
+                                <Chip key={value} label={matchSingleValue(value,items)} className={classes.chip}/>
                             ))}
                         </div> : this.itemNameByValue(selected)
                 )}
