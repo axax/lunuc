@@ -767,6 +767,14 @@ export default class AggregationBuilder {
             })
         }
 
+
+        // add at the beginning of the query
+        if (this.options.afterRootMatch) {
+            if (this.options.afterRootMatch.constructor === Array) {
+                dataQuery.push(...this.options.afterRootMatch)
+            }
+        }
+
         if (hasResultMatch) {
             dataFacetQuery.push({$match: resultMatch})
         }
