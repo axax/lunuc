@@ -170,10 +170,14 @@ class GenericForm extends React.Component {
                     tabs.push(field.tab)
                 }
             }
+            if (field.required && (!field.uistate || !field.uistate.visible || !matchExpr(field.uistate.visible, state.fields))) {
 
-            if (field.required) {
-
-                if (field.reference) {
+                if(field.uitype==='select'){
+                    const value = state.fields[fieldKey]
+                    if(!value || value.length===0){
+                        fieldErrors[fieldKey] = _t('GenericForm.fieldIsRequired')
+                    }
+                }else if (field.reference) {
                     let fieldValue = state.fields[fieldKey]
                     if (fieldValue && fieldValue.length) {
                         fieldValue = fieldValue[0]
