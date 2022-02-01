@@ -1589,7 +1589,7 @@ const CmsViewEditorContainerWithGql = compose(
                             query: CMS_PAGE_QUERY,
                             variables
                         })
-                        if (data.cmsPage && respons.data && respons.data.updateCmsPage) {
+                        if (data && data.cmsPage && respons.data && respons.data.updateCmsPage) {
 
                             const updateCmsPage = respons.data.updateCmsPage
 
