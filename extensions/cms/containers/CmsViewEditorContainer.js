@@ -1583,13 +1583,15 @@ const CmsViewEditorContainerWithGql = compose(
                 }
                 return mutate({
                     variables: variablesWithNewValue,
-                    update: (store, {data: {updateCmsPage}}) => {
+                    update: (store, respons) => {
 
                         const data = client.readQuery({
                             query: CMS_PAGE_QUERY,
                             variables
                         })
-                        if (data.cmsPage && updateCmsPage) {
+                        if (data.cmsPage && respons.data && respons.data.updateCmsPage) {
+
+                            const updateCmsPage = respons.data.updateCmsPage
 
                             // update cmsPage
                             const newData = {
