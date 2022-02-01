@@ -35,6 +35,9 @@ class ErrorHandler extends React.Component {
             />
         }
 
+        if(msg.indexOf('user aborted a request')>=0){
+            return null
+        }
         return <SimpleDialog open={true} onClose={this.handleDialogClose.bind(this, key)}
                              actions={[{autoFocus: true, key: 'ok', label: 'Ok', type: 'primary'}]} title={_t('ErrorHandler.title')}>
             {msg}
