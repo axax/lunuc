@@ -449,7 +449,7 @@ class GenericForm extends React.Component {
                 // a float value is expected so convert the iso date to an unix timestamp
                 const newState = this.newStateForField(this.state, {
                     name: e.target.name,
-                    value: Date.parse(e.target.value)
+                    value: e.target.value?Date.parse(e.target.value):0
                 })
                 this.setState(newState)
             }
@@ -499,13 +499,17 @@ class GenericForm extends React.Component {
             }
             if (field.uitype === 'datetime') {
                 //iso date without ms
-                try {
-                    value = new Date(value).toISOString()
-                } catch (e) {
-                    if(!field.required){
-                        value = ''
+                if(value===0){
+                    value = ''
+                }else {
+                    try {
+                        value = new Date(value).toISOString()
+                    } catch (e) {
+                        if (!field.required) {
+                            value = ''
+                        }
+                        console.log(e)
                     }
-                    console.log(e)
                 }
                 datePolyfill = true
             }

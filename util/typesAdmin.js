@@ -178,7 +178,11 @@ export const checkFieldType = (value, field) => {
     if (field.type === 'Float'){
         if( field.uitype === 'datetime') {
             // save date as unix timestamp number
-            value = Date.parse(value)
+            if(value) {
+                value = Date.parse(value)
+            }else{
+                value = 0
+            }
         } else {
             value = parseFloat(value)
         }
