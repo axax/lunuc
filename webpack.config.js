@@ -6,7 +6,7 @@ const zlib = require('zlib')
 
 // webpack plugins
 const TerserPlugin = require('terser-webpack-plugin')
-const MiniCssExtractPlugin = require('mini-css-extract-plugin').default
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const CompressionPlugin = require("compression-webpack-plugin")
 const GenSourceCode = require('./webpack.gensrc')
 
