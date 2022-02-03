@@ -176,7 +176,7 @@ export const referencesToIds = (data, type) => {
 
 export const checkFieldType = (value, field) => {
     if (field.type === 'Float'){
-        if( field.uitype === 'datetime') {
+        if( field.uitype === 'datetime' || field.uitype === 'date') {
             // save date as unix timestamp number
             if(value) {
                 value = Date.parse(value)

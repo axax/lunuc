@@ -289,30 +289,45 @@ class GenericForm extends React.Component {
     initFlatpickr() {
 
         if (window.flatpickr) {
-            setTimeout(() => {
-                flatpickr('input[type="datetime"]', {
-                    enableTime: true,
-                    allowInput: true,
-                    altInput: true,
-                    locale: 'de',
-                    time_24hr: true,
-                    timeFormat: "H:i",
-                    defaultDate: null,
-                    altFormat: "d.m.Y H:i",
-                    dateFormat: "Z",
-                    onChange: (date, dateStr, obj) => {
-                        /*const offset = date[0].getTimezoneOffset()/60
-                        const offsetStr = '+'+(offset<10 && offset>-10?'0':'')+(-(offset))+':00'*/
-                        this.handleInputChange({
-                            target: {
-                                name: obj.element.name,
-                                value: dateStr,
-                                type: 'datetime'
-                            }
-                        })
-                    }
-                })
-            }, 100)
+            setTimeout(()=>{
+
+                const {fields} = this.props
+                const selector = '[data-datetime-field="true"]'
+                DomUtil.waitForElement(selector,{all:true}).then((els)=>{
+                    els.forEach(el=>{
+                        console.log(el)
+                        if(!el._flatpickr) {
+                            const field = fields[el.name]
+                            flatpickr(el, {
+                                mode: field.multi ? 'multiple' : 'single',
+                                enableTime: field.uitype === 'datetime',
+                                allowInput: true,
+                                altInput: true,
+                                locale: 'de',
+                                time_24hr: true,
+                                timeFormat: "H:i",
+                                defaultDate: null,
+                                altFormat: field.uitype === 'datetime' ? 'd.m.Y H:i' : 'd.m.Y',
+                                dateFormat: "Z",
+                                onChange: (date, dateStr, obj) => {
+                                    /*const offset = date[0].getTimezoneOffset()/60
+                                    const offsetStr = '+'+(offset<10 && offset>-10?'0':'')+(-(offset))+':00'*/
+                                    this.handleInputChange({
+                                        target: {
+                                            name: obj.element.name,
+                                            value: dateStr,
+                                            type: 'datetime'
+                                        }
+                                    })
+                                }
+                            })
+                        }
+
+                    })
+
+                }).catch(()=>{})
+
+            },50)
 
         }
 
@@ -502,13 +517,15 @@ class GenericForm extends React.Component {
                 if(value===0){
                     value = ''
                 }else {
-                    try {
-                        value = new Date(value).toISOString()
-                    } catch (e) {
-                        if (!field.required) {
-                            value = ''
+                    if(!field.multi) {
+                        try {
+                            value = new Date(value).toISOString()
+                        } catch (e) {
+                            if (!field.required) {
+                                value = ''
+                            }
+                            console.log(e)
                         }
-                        console.log(e)
                     }
                 }
                 datePolyfill = true
@@ -1086,6 +1103,8 @@ class GenericForm extends React.Component {
                 return true
             }
 
+            const isDateOrTime = uitype==='date' || uitype==='datetime'
+
             langButtonWasInserted = true
             currentFormFields.push(<TextField autoFocus={autoFocus && fieldIndex === 0}
                                               readOnly={field.readOnly}
@@ -1099,7 +1118,8 @@ class GenericForm extends React.Component {
                                               }}
                                               inputProps={{
                                                   step: field.step || '',
-                                                  'data-language': languageCode
+                                                  'data-language': languageCode,
+                                                  'data-datetime-field': isDateOrTime
                                               }}
                                               InputProps={{
                                                   endAdornment: languageCode === _app_.lang &&
@@ -1109,7 +1129,7 @@ class GenericForm extends React.Component {
                                               }}
                                               helperText={this.state.fieldErrors[fieldKey]}
                                               fullWidth={field.fullWidth}
-                                              type={uitype}
+                                              type={isDateOrTime && field.multi?'text':uitype}
                                               multiline={uitype === 'textarea'}
                                               placeholder={field.placeholder}
                                               value={value || field.defaultValue || ''}
