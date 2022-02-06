@@ -11,7 +11,7 @@ import Cache from 'util/cache'
 import {withFilter} from 'graphql-subscriptions'
 import {getHostFromHeaders} from 'util/host'
 import Hook from '../../../util/hook'
-import {ObjectId} from "mongodb";
+import {ObjectId} from 'mongodb'
 import {getStore} from '../../../client/store/index'
 import {setGraphQlOptions} from '../../../client/middleware/graphql'
 import {renderToString} from '../../../api/resolver/graphqlSsr'
@@ -19,6 +19,10 @@ import {Provider} from 'react-redux'
 import {
     settingKeyPrefix
 } from '../util/cmsView'
+
+import config from 'gen/config'
+
+const {STATIC_PRIVATE_DIR} = config
 
 
 const PORT = (process.env.PORT || 3000)
@@ -300,7 +304,17 @@ export default db => ({
             try {
                 const script = await new Promise(resolve => {
                     const tpl = new Function(`
-                    const require = this.require
+                    const fs = this.require('fs')
+                    const path = this.require('path')
+                    const require = (filePath)=>{      
+                        if(filePath.startsWith('lu/')){                 
+                            let pathToCheck = path.join(this.__dirname, '../../..${STATIC_PRIVATE_DIR}/'+filePath.substring(3))
+                            if (fs.existsSync(pathToCheck+'.js') || fs.existsSync(pathToCheck)) {                             
+                                return this.require(pathToCheck)
+                            }
+                        }
+                        return this.require(filePath)
+                    }
                     const data = (async () => {
                         try{
                             ${serverScript}

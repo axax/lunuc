@@ -24,7 +24,7 @@ Hook.on('appready', ({db}) => {
 
 // Hook when the type StaticFile has changed
 Hook.on(['typeUpdated_StaticFile', 'typeCreated_StaticFile', 'typeCloned_StaticFile'], async ({db, result}) => {
-    const staticFile = await db.collection('StaticFile').findOne({_id: ObjectId(result._id)})
+    const staticFile = await db.collection('StaticFile').findOne({_id: result._id.constructor === ObjectId?result._id: ObjectId(result._id)})
     if(staticFile){
         createOrDeleteStaticFile(staticFile,{db})
     }

@@ -7,7 +7,8 @@
         {
           "name": "name",
           "required": true,
-          "clone": "${name} (copy)"
+          "clone": "${name} (copy)",
+          "tab": "Allgemein"
         },
         {
           "name": "modifiedAt",
@@ -22,15 +23,18 @@
           "type": "PreProcessor"
         },
         {
-          "name": "mimeType"
+          "name": "mimeType",
+          "tab": "Allgemein"
         },
         {
           "name": "active",
-          "type": "Boolean"
+          "type": "Boolean",
+          "tab": "Allgemein"
         },
         {
           "name": "private",
-          "type": "Boolean"
+          "type": "Boolean",
+          "tab": "Allgemein"
         },
         {
           "name": "template",
@@ -38,7 +42,10 @@
         },
         {
           "name": "content",
-          "uitype": "editor"
+          "uitype": "editor",
+          "highlight": "${mimeType.indexOf('application/javascript')>=0?'js':''}",
+          "alwaysLoad": false,
+          "tab": "Allgemein"
         }
       ]
     }

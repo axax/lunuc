@@ -867,8 +867,9 @@ class GenericForm extends React.Component {
         } else if (uitype === 'wrapper') {
             // do nothing for now
         } else if (['json', 'jsonEditor', 'editor', 'jseditor', 'css'].indexOf(uitype) >= 0) {
-
             let highlight, jsonStr
+
+
             if (uitype === 'css') {
                 highlight = 'css'
             } else if (uitype === 'jseditor') {
@@ -894,6 +895,16 @@ class GenericForm extends React.Component {
 
                 }
             }
+
+
+            if(field.highlight){
+                const newHighlight = Util.replacePlaceholders(field.highlight, this.state.fields)
+                if(newHighlight){
+                    highlight = newHighlight
+                }
+            }
+
+
             currentFormFields.push(<FormControl key={'control' + fieldKey}
                                                 className={classNames(classes.formFieldFull)}>
                 <InputLabel key={'label' + fieldKey}
