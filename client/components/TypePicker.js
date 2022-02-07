@@ -434,8 +434,6 @@ class TypePicker extends React.Component {
 
             Hook.call('TypePickerBeforeHandlePick', {type, pickerField, queryFields, fieldsToProject, projection, rawValue})
 
-
-
             //always remove creator
             delete rawValue.createdBy
             let projectedValue = rawValue

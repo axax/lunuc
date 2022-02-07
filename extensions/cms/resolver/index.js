@@ -306,13 +306,37 @@ export default db => ({
                     const tpl = new Function(`
                     const fs = this.require('fs')
                     const path = this.require('path')
-                    const require = (filePath)=>{      
-                        if(filePath.startsWith('lu/')){                 
-                            let pathToCheck = path.join(this.__dirname, '../../..${STATIC_PRIVATE_DIR}/'+filePath.substring(3))
-                            if (fs.existsSync(pathToCheck+'.js') || fs.existsSync(pathToCheck)) {                             
-                                return this.require(pathToCheck)
-                            }
+                    const paths = [
+                        {
+                            name: 'static_private',
+                            rel: '../../..${STATIC_PRIVATE_DIR}/'
+                        },
+                        {
+                            name: 'api',
+                            rel: '../../../api/'
+                        },
+                        {
+                            name: 'client',
+                            rel: '../../../client/'
+                        },
+                        {
+                            name: 'ext',
+                            rel: '../../../extensions/'
                         }
+                    ]
+                    const require = (filePath)=>{   
+                        if(filePath.startsWith('@')){
+                            for(let i = 0; i < paths.length;i++){
+                                const p = paths[i]
+                                if(filePath.startsWith('@'+p.name+'/')){                 
+                                    let pathToCheck = path.join(this.__dirname, p.rel+filePath.substring(p.name.length+2))
+                                    if (fs.existsSync(pathToCheck+'.js') || fs.existsSync(pathToCheck)) {                             
+                                        return this.require(pathToCheck)
+                                    }
+                                }
+                            }   
+                        }
+                        
                         return this.require(filePath)
                     }
                     const data = (async () => {

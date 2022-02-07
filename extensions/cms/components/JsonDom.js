@@ -354,7 +354,7 @@ class JsonDom extends React.Component {
         }
 
         this.checkResources()
-        this._historyUnlisten = this.props.history.listen(() => {
+        this._historyUnlisten = this.props.history.listen((e) => {
             const before = {pathname: this.scope.pathname, params: this.scope.params, hashParams: this.scope.params}
             this.addLocationToScope()
             this.runJsEvent('urlchange', false, before)

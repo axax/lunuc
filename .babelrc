@@ -19,12 +19,23 @@
         ],
         "alias": {
           "client": "./client",
+          "@client": "./client",
+          "static_private": "./static_private",
+          "@static_private": "./static_private",
+          "static": "./static",
+          "@static": "./static",
           "util": "./util",
+          "@util": "./util",
           "server": "./server",
+          "@server": "./server",
           "api": "./api",
+          "@api": "./api",
           "ui": "./gensrc/ui",
+          "@ui": "./gensrc/ui",
           "gen": "./gensrc",
-          "gensrc": "./gensrc"
+          "@gen": "./gensrc",
+          "gensrc": "./gensrc",
+          "@gensrc": "./gensrc"
         }
       }
     ]

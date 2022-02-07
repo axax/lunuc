@@ -3,7 +3,8 @@ import {
 } from '../constants'
 
 const DEFAULT_TAB = 'Allgemein', IMAGE_OPTIMIZATION_TAB = 'Bild Optimierung', MARGIN_TAB = 'Abstände',
-    TRANSLATION_TAB = 'Übersetzung'
+    TRANSLATION_TAB = 'Übersetzung',
+    MEDIA_PROJECTION = ['_id','size','name','group','src','mimeType']
 const imageOptions = key => ({
     [`${key}options_quality`]: {
         type: 'number',
@@ -318,7 +319,8 @@ const baseElements = [
                 uitype: 'type_picker',
                 type: 'Media',
                 filter: 'mimeType=image',
-                tab: DEFAULT_TAB
+                tab: DEFAULT_TAB,
+                projection: MEDIA_PROJECTION
             },
             ...marginOptions('p_'),
             'p_style@align': {
@@ -390,6 +392,7 @@ const baseElements = [
                 uitype: 'type_picker',
                 type: 'Media',
                 filter: 'mimeType=image',
+                projection: MEDIA_PROJECTION,
                 tab: DEFAULT_TAB,
                 template: '${this.context._id?_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+name:\'\'}',
             },
@@ -400,6 +403,7 @@ const baseElements = [
                 uitype: 'type_picker',
                 type: 'Media',
                 filter: 'mimeType=video',
+                projection: MEDIA_PROJECTION,
                 tab: DEFAULT_TAB,
                 template: '${this.context._id?\'<video controls poster="\'+_comp.$set.poster+\'"><source src="\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+name+(_comp.$set.transcode?\'?transcode=\'+encodeURIComponent(_comp.$set.transcode):\'\')+\'" type="\'+mimeType+\'"/></video>\':\'\'}',
             },
@@ -452,6 +456,7 @@ const baseElements = [
                 uitype: 'type_picker',
                 type: 'Media',
                 filter: 'mimeType=pdf',
+                projection: MEDIA_PROJECTION,
                 tab: DEFAULT_TAB
             },
             $set_url: {
@@ -573,6 +578,7 @@ const baseElements = [
                 uitype: 'type_picker',
                 type: 'Media',
                 filter: 'mimeType=image',
+                projection: MEDIA_PROJECTION,
                 multi: true,
                 tab: DEFAULT_TAB
             },
@@ -779,6 +785,7 @@ const baseElements = [
                 uitype: 'type_picker',
                 type: 'Media',
                 filter: 'mimeType=image',
+                projection: MEDIA_PROJECTION,
                 tab: DEFAULT_TAB
             },
             c_1_c: {
@@ -868,6 +875,7 @@ const baseElements = [
                 uitype: 'type_picker',
                 type: 'Media',
                 filter: 'mimeType=pdf',
+                projection: MEDIA_PROJECTION,
                 template: '${_app_.config.UPLOAD_URL}/${_id}/-/${name}',
                 tab: DEFAULT_TAB
             },
@@ -1054,7 +1062,8 @@ const baseElements = [
                     label: 'Bild',
                     uitype: 'type_picker',
                     type: 'Media',
-                    filter: 'mimeType=image'
+                    filter: 'mimeType=image',
+                    projection: MEDIA_PROJECTION
                 },
                 link: {
                     tab: 'Slides',
@@ -1536,6 +1545,7 @@ const baseElements = [
                 uitype: 'type_picker',
                 type: 'Media',
                 filter: 'mimeType=image',
+                projection: MEDIA_PROJECTION,
                 template: '${_comp.$set.image.options.background?_comp.$set.image.options.background:""}${this.context._id?(_comp.$set.image.options.background?\', \':\'\')+\'url(\\\'\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+encodeURIComponent(name)+\'?format=\'+(_comp.$set.image.options.webp?\'webp\':\'\')+\'&quality=\'+(_comp.$set.image.options.quality || \'\')+\'&width=\'+(_comp.$set.image.options.resize.width || \'\')+\'&height=\'+(_comp.$set.image.options.resize.height || \'\')+\'\\\')\':\'\'}',
                 tab: DEFAULT_TAB,
                 tabPosition: 0
