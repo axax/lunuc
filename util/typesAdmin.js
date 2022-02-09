@@ -35,7 +35,10 @@ export const typeDataToLabel = (item, pickerField) => {
         } else {
             pickers.push(context.pickerField)
         }
-    } else {
+    } else if(context.item.name){
+        pickers.push('name')
+    }else {
+
         for (const key of Object.keys(context.item)) {
             if (['_id', 'createdBy', '__typename', 'status'].indexOf(key) < 0) {
                 pickers.push(key)
