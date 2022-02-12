@@ -121,6 +121,67 @@ const postConvertData = async (data, {typeName, db}) => {
     return data
 }
 
+const createMatchForCurrentUser = async ({typeName, db, context}) => {
+    let match
+
+    if (typeName === 'User') {
+
+        // special handling for type User
+
+        match = {_id: {$in: await Util.userAndJuniorIds(db, context.id)}}
+
+        if (context.group && context.group.length > 0) {
+            // if user has capability to manage subscribers
+            // show subscribers that are in the same group
+            const userCanManageSameGroup = await Util.userHasCapability(db, context, CAPABILITY_MANAGE_SAME_GROUP)
+
+            if (userCanManageSameGroup) {
+                match = {$or: [match, {group: {$in: context.group.map(f => ObjectId(f))}}]}
+            }
+        }
+
+    } else {
+        const typeDefinition = getType(typeName)
+        let userFilter = true
+        if (typeDefinition) {
+            if (typeDefinition.noUserRelation) {
+                userFilter = false
+            }
+            if (typeDefinition.access && typeDefinition.access.read) {
+                if (await Util.userHasCapability(db, context, typeDefinition.access.read)) {
+                    // user can read everything
+                    return {}
+                } else if (typeDefinition.noUserRelation) {
+                    // user has no permission
+                    return
+                }
+            }
+        }
+
+        if (userFilter) {
+            match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
+        }
+
+        if (typeDefinition && context.group && context.group.length > 0) {
+
+            // check for same ownerGroup
+            const ownerGroup = typeDefinition.fields.find(f => f.name === 'ownerGroup')
+            if (ownerGroup) {
+                const ownerMatch = {ownerGroup: {$in: context.group.map(f => ObjectId(f))}}
+                if(match) {
+                    match = {$or: [match, ownerMatch]}
+                }else{
+                    match = ownerMatch
+                }
+            }
+
+        }
+
+    }
+
+    return match
+}
+
 const GenericResolver = {
     entities: async (db, context, typeName, data, options) => {
         if (!context.lang) {
@@ -136,48 +197,19 @@ const GenericResolver = {
 
         // Default match
         if (!match) {
-            // if not specific match is defined, only select items that belong to the current user
             if (userCanManageTypes) {
+                // the user has the right to read everything
                 match = {}
             } else {
-                if (typeName === 'User') {
+                // only select items that belong to the current user or the user has permission to read
+                match = await createMatchForCurrentUser({typeName, db, context})
 
-                    // handling User type
-                    match = {_id: {$in: await Util.userAndJuniorIds(db, context.id)}}
-
-
-                    if (context.group && context.group.length > 0) {
-                        // if user has capability to manage subscribers
-                        // show subscribers that are in the same group
-                        const userCanManageSameGroup = await Util.userHasCapability(db, context, CAPABILITY_MANAGE_SAME_GROUP)
-
-                        if (userCanManageSameGroup) {
-                            match = {$or: [match, {group: {$in: context.group.map(f=>ObjectId(f))}}]}
-                        }
-                    }
-
-                } else {
-                    const typeDefinition = getType(typeName)
-                    let userFilter = true
-                    if (typeDefinition) {
-                        if (typeDefinition.noUserRelation) {
-                            userFilter = false
-                        }
-                        if (typeDefinition.access && typeDefinition.access.read) {
-                            if (await Util.userHasCapability(db, context, typeDefinition.access.read)) {
-                                match = {}
-                                userFilter = false
-                            } else if (typeDefinition.noUserRelation) {
-                                throw new Error(`no permission to access data ${typeName}`)
-                            }
-                        }
-                    }
-
-                    if (userFilter) {
-                        match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
-                    }
-                }
             }
+
+        }
+
+        if(!match){
+            throw new Error(`no permission to read data for type ${typeName}`)
         }
         //console.log(`1 time ${new Date() - startTime}ms`)
 

@@ -3,6 +3,9 @@ import Hook from 'util/hook'
 import Async from 'client/components/Async'
 import {client} from 'client/middleware/graphql'
 
+import {registerTrs} from '../../util/i18n'
+import {translations} from './translations/admin'
+registerTrs(translations, 'Newsletter')
 
 const SimpleDialog = (props) => <Async {...props} expose="SimpleDialog"
                                        load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>

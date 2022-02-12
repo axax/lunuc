@@ -5,6 +5,7 @@ import {sendMail} from "../../../api/util/mail";
 import crypto from "crypto";
 import {getHostFromHeaders} from "../../../util/host";
 import config from 'gen/config'
+import Hook from '../../../util/hook'
 
 export default db => ({
     Query: {
@@ -128,7 +129,7 @@ export default db => ({
                 status: 'Newsletter sent to: ' + emails.join(',')
             }
         },
-        subscribeNewsletter: async ({email, fromEmail, fromName, confirmSlug, location, url, meta, list}, req) => {
+        subscribeNewsletter: async ({email, replyTo, fromEmail, fromName, confirmSlug, location, url, meta, list}, req) => {
 
             const {context}  = req
 
@@ -169,6 +170,17 @@ export default db => ({
             const selector = {email}
             if(location){
                 selector.location = location
+            }
+
+            if (Hook.hooks['beforeNewsletterSubscribe'] && Hook.hooks['beforeNewsletterSubscribe'].length) {
+                for (let i = 0; i < Hook.hooks['beforeNewsletterSubscribe'].length; ++i) {
+                    await Hook.hooks['beforeNewsletterSubscribe'][i].callback({
+                        context,
+                        db,
+                        selector,
+                        data
+                    })
+                }
             }
 
             const insertResult = await collection.updateOne(

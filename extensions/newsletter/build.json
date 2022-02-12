@@ -7,15 +7,54 @@
         {
           "name": "email",
           "required": true,
+          "tab": "general",
+          "index": 1
+        },
+        {
+          "name": "state",
+          "enum": [
+            "optin",
+            "subscribed",
+            "unsubscribed",
+            "invalid"
+          ],
+          "tab": "general",
           "index": 1
         },
         {
           "name": "language",
+          "tab": "general",
           "required": false
+        },
+        {
+          "name": "confirmed",
+          "type": "Boolean",
+          "tab": "general",
+          "index": 1
+        },
+        {
+          "name": "account",
+          "type": "User",
+          "fields": [
+            "username"
+          ],
+          "index": 1
+        },
+        {
+          "name": "list",
+          "multi": true,
+          "fullWidth": false,
+          "index": 1,
+          "tab": "general",
+          "type": "NewsletterList",
+          "fields": [
+            "name"
+          ]
         },
         {
           "name": "location",
           "index": 1,
+          "hideColumnInTypes": true,
           "compoundIndex": [
             {
               "unique": true,
@@ -27,52 +66,29 @@
           ]
         },
         {
-          "name": "confirmed",
-          "type": "Boolean",
-          "tab": "General",
-          "index": 1
-        },
-        {
-          "name": "state",
-          "enum": [
-            "optin",
-            "subscribed",
-            "unsubscribed",
-            "invalid"
-          ],
-          "tab": "General",
-          "index": 1
-        },
-        {
           "name": "token",
-          "type": "String",
-          "tab": "General"
+          "hideColumnInTypes": true,
+          "type": "String"
         },
         {
           "name": "unsubscribeMailing",
-          "type": "NewsletterMailing",
-          "tab": "General"
-        },
-        {
-          "name": "list",
-          "multi": true,
-          "index": 1,
-          "type": "NewsletterList",
-          "fields": [
-            "name"
-          ]
+          "hideColumnInTypes": true,
+          "type": "NewsletterMailing"
         },
         {
           "name": "meta",
+          "hideColumnInTypes": true,
           "type": "Object",
           "uitype": "json",
           "tab": "Meta"
         },
         {
-          "name": "account",
-          "type": "User",
+          "name": "ownerGroup",
+          "hideColumnInTypes": true,
+          "type": "UserGroup",
+          "multi": true,
           "fields": [
-            "username"
+            "name"
           ],
           "index": 1
         }
@@ -110,44 +126,61 @@
         {
           "name": "subject",
           "required": true,
-          "tab": "General",
+          "tab": "general",
           "localized": true
         },
         {
-          "name": "text",
-          "uitype": "editor",
-          "label": "Plain text version",
-          "localized": true
-        },
-        {
-          "name": "list",
-          "multi": true,
-          "type": "NewsletterList",
-          "fields": [
-            "name"
-          ],
-          "tab": "General"
-        },
-        {
-          "name": "template",
-          "type": "CmsPage"
-        },
-        {
-          "name": "batchSize",
-          "type": "Float"
-        },
-        {
-          "name": "perHour",
-          "type": "Float"
-        },
-        {
+          "tab": "general",
           "name": "active",
           "type": "Boolean",
           "index": 1
         },
         {
+          "name": "list",
+          "multi": true,
+          "fullWidth": true,
+          "type": "NewsletterList",
+          "fields": [
+            "name"
+          ],
+          "tab": "general"
+        },
+        {
+          "tab": "content",
+          "name": "template",
+          "type": "CmsPage",
+          "hideColumnInTypes": true
+        },
+        {
+          "tab": "content",
+          "name": "text",
+          "uitype": "editor",
+          "hideColumnInTypes": true,
+          "localized": true
+        },
+        {
+          "tab": "content",
+          "name": "html",
+          "uitype": "html",
+          "hideColumnInTypes": true,
+          "localized": true
+        },
+        {
+          "tab": "send",
+          "name": "batchSize",
+          "hideColumnInTypes": true,
+          "type": "Float"
+        },
+        {
+          "tab": "send",
+          "name": "perHour",
+          "hideColumnInTypes": true,
+          "type": "Float"
+        },
+        {
           "name": "mailSettings",
           "type": "Object",
+          "hideColumnInTypes": true,
           "uitype": "json",
           "tab": "Optional"
         }
