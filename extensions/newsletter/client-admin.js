@@ -38,12 +38,13 @@ export default () => {
             }
             client.query({
                 fetchPolicy: 'network-only',
-                query: 'query sendNewsletter($mailing: ID!, $subject: LocalizedStringInput!,$template: String!, $list:[ID], $batchSize: Float, $text: LocalizedStringInput){sendNewsletter(mailing:$mailing,subject:$subject,template:$template,list:$list,batchSize:$batchSize, text: $text){status}}',
+                query: 'query sendNewsletter($mailing: ID!, $subject: LocalizedStringInput!,$template: String!, $list:[ID], $batchSize: Float, $text: LocalizedStringInput, $html: LocalizedStringInput){sendNewsletter(mailing:$mailing,subject:$subject,template:$template,list:$list,batchSize:$batchSize, text: $text,html:$html){status}}',
                 variables: {
                     mailing: dataToEdit._id,
                     subject: createEditForm.state.fields.subject,
                     batchSize: createEditForm.state.fields.batchSize,
                     text: createEditForm.state.fields.text,
+                    html: createEditForm.state.fields.html,
                     template: template.slug,
                     list: listIds
             }

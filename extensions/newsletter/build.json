@@ -98,11 +98,13 @@
       "name": "NewsletterList",
       "fields": [
         {
+          "tab": "general",
           "name": "name",
           "required": true,
           "index": 1
         },
         {
+          "tab": "general",
           "name": "count",
           "readOnly": true,
           "dynamic": {

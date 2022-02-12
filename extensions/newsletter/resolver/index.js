@@ -9,7 +9,7 @@ import Hook from '../../../util/hook'
 
 export default db => ({
     Query: {
-        sendNewsletter: async ({mailing, subject, template, text, batchSize, list}, req) => {
+        sendNewsletter: async ({mailing, subject, template, text, html, batchSize, list}, req) => {
             await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_RUN_SCRIPT)
             let result
             const mailingId = ObjectId(mailing)
@@ -78,6 +78,7 @@ export default db => ({
 
                     let finalSubject = subject,
                         finalText = text,
+                        finalHtml = html,
                         subLang = sub.language || config.DEFAULT_LANGUAGE
 
                     if(mailingData){
@@ -86,6 +87,9 @@ export default db => ({
                         }
                         if(mailingData.text && text === undefined){
                             finalText = mailingData.text
+                        }
+                        if(mailingData.html && html === undefined){
+                            finalHtml = mailingData.html
                         }
                     }
 
@@ -103,11 +107,19 @@ export default db => ({
                             finalText = finalText[config.DEFAULT_LANGUAGE]
                         }
                     }
+                    if(finalHtml && finalHtml.constructor === Object){
+                        if(finalHtml[subLang]){
+                            finalHtml = finalHtml[subLang]
+                        }else{
+                            finalHtml = finalHtml[config.DEFAULT_LANGUAGE]
+                        }
+                    }
+                    const body = Object.assign({html: finalHtml},sub)
                     const result = await sendMail(db, Object.assign(req.context, {lang: subLang}), {
                         slug: template,
                         recipient: sub.email,
                         subject: finalSubject,
-                        body: sub,
+                        body,
                         text: finalText,
                         headerList,
                         req,
@@ -199,6 +211,7 @@ export default db => ({
                 await sendMail(db, context, {
                     from: fromEmail,
                     fromName,
+                    replyTo,
                     slug: 'core/newsletter/optin/mail',
                     recipient: email,
                     subject: 'Anmeldung Newsletter',
