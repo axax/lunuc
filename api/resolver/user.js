@@ -356,7 +356,7 @@ export const userResolver = (db) => ({
                 throw new ApiError('Something went wrong. Please try again!', 'general.error')
             }
         },
-        sendConformationEmail: async ({mailTemplate, mailSubject, mailUrl, fromEmail, fromName}, req) => {
+        sendConformationEmail: async ({mailTemplate, mailSubject, mailUrl, fromEmail, fromName,replyTo}, req) => {
             const {context} = req
             Util.checkIfUserIsLoggedIn(context)
 
@@ -365,6 +365,7 @@ export const userResolver = (db) => ({
             sendMail(db, context, {
                 from: fromEmail,
                 fromName,
+                replyTo,
                 slug: mailTemplate,
                 recipient: user.email,
                 subject: mailSubject,

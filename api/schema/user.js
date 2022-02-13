@@ -85,7 +85,7 @@ export const userSchemaRaw = `
         forgotPassword(username: String!, url: String!, subject: String, fromEmail: String, fromName: String): ForgotPasswordResult
         newPassword(token:String!, password:String!, passwordConfirm:String): NewPasswordResult
         confirmEmail(token:String!): ConfirmEmailResult
-        sendConformationEmail(mailTemplate: String!, mailSubject: String!, mailUrl: String!,fromEmail: String,fromName: String): ConfirmEmailResult
+        sendConformationEmail(mailTemplate: String!, mailSubject: String!, mailUrl: String!,fromEmail: String,fromName: String,replyTo: String): ConfirmEmailResult
     }
 		
 	type Mutation {
