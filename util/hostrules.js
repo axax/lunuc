@@ -81,7 +81,7 @@ const loadHostRules = (dir, withCertContext, hostrules) => {
 }
 
 export const loadAllHostrules = (withCertContext, hostrules = {}) => {
-    console.log(`load all host rules (${new Date() - _app_.start}ms)`)
+    console.log(`load all host rules`)
 
     loadHostRules(HOSTRULES_ABSPATH, withCertContext, hostrules)
     loadHostRules(path.join(__dirname, '../hostrules/'), withCertContext, hostrules)
