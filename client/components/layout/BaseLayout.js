@@ -36,12 +36,8 @@ import {
     ThumbUpIcon,
     SettingsInputComponentIcon,
     TrainIcon,
-    PaidIcon,
-    FactoryIcon,
-    SupportIcon,
     TrafficIcon,
     MailIcon,
-    QueryStatsIcon,
     CardMembershipIcon
 } from 'ui/admin'
 import ErrorHandler from './ErrorHandler'
@@ -98,12 +94,8 @@ const iconComponents = {
     thumbup:ThumbUpIcon,
     component:SettingsInputComponentIcon,
     train:TrainIcon,
-    paid:PaidIcon,
-    factory:FactoryIcon,
-    support:SupportIcon,
     traffic:TrafficIcon,
     mail:MailIcon,
-    stats:QueryStatsIcon,
     member:CardMembershipIcon
 }
 
