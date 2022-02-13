@@ -347,6 +347,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     }
 
                     resolvedData._meta.keyValueKey = segment.key || 'keyValues'
+                    resolvedData._meta.keyValueExtend = segment.extend
                     resolvedData[resolvedData._meta.keyValueKey] = map
 
                 } else if (segment.website) {

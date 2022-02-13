@@ -20,6 +20,7 @@ import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants'
 import * as CmsActions from '../actions/CmsAction'
 import {connect} from 'react-redux'
 import {bindActionCreators} from 'redux'
+import {getKeyValuesFromLS} from '../../../client/util/keyvalue'
 
 const JsonDomHelper = (props) => <Async {...props}
                                         load={import(/* webpackChunkName: "jsondom" */ './JsonDomHelper')}/>
@@ -463,6 +464,14 @@ class JsonDom extends React.Component {
                     }
                     if (this.resolvedDataJson.error) {
                         this.error = {type: 'dataResolver', msg: this.resolvedDataJson.error}
+                    }else{
+                        const meta = this.resolvedDataJson._meta
+                        if(meta && meta.keyValueExtend){
+                            const lsk = getKeyValuesFromLS()
+                            if(lsk){
+                                this.resolvedDataJson[meta.keyValueKey] = Object.assign({},lsk, this.resolvedDataJson[meta.keyValueKey])
+                            }
+                        }
                     }
                 } catch (e) {
                     console.log(e, resolvedData)
