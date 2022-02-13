@@ -8,7 +8,7 @@ import {
     CAPABILITY_MANAGE_USER_GROUP
 } from 'util/capabilities'
 
-console.log(`merge extension defintion (${new Date() - _app_.start}ms)`)
+console.log(`merge extension defintion`)
 
 Object.keys(extensionsPrivate).forEach(key => {
     extensions[key] = extensionsPrivate[key]
