@@ -154,7 +154,7 @@
           "hideColumnInTypes": true
         },
         {
-          "tab": "content",
+          "tab": "plainContent",
           "name": "text",
           "uitype": "editor",
           "hideColumnInTypes": true,

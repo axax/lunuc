@@ -134,7 +134,15 @@
         "BeachAccess",
         "Group",
         "ThumbUp",
-        "SettingsInputComponent"
+        "SettingsInputComponent",
+        "Train",
+        "Paid",
+        "Factory",
+        "Support",
+        "Traffic",
+        "Mail",
+        "QueryStats",
+        "CardMembership"
       ],
       "theme":{
         "colors":{

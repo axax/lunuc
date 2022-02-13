@@ -356,6 +356,9 @@ class Print extends React.PureComponent {
                                 overlay.style.display = 'none'
                             })
                         }
+                        if(!this.props.showPageBreak) {
+                            this.removeExistingPageBreaks(printAreaInner)
+                        }
                         /*}*/
                     }
                 })
@@ -384,12 +387,8 @@ class Print extends React.PureComponent {
 
     calculatePageBreaks({printAreaInner, paddingTop, paddingBottom, offsetTop}) {
 
-        const {classes} = this.props
 
-        //remove existing breaks
-        this.$('.' + classes.pageBreak, printAreaInner).forEach(n => {
-            n.parentNode.removeChild(n)
-        })
+        this.removeExistingPageBreaks(printAreaInner)
 
         // check if there is a break needed
         if (printAreaInner.clientHeight < PAGE_HEIGHT) {
@@ -399,6 +398,16 @@ class Print extends React.PureComponent {
         console.log('calculatePageBreaks')
 
         this.setBreakRec(printAreaInner, {offsetTop, PAGE_HEIGHT, paddingBottom, paddingTop})
+
+    }
+
+    removeExistingPageBreaks(printAreaInner){
+        const {classes} = this.props
+
+        //remove existing breaks
+        this.$('.' + classes.pageBreak, printAreaInner).forEach(n => {
+            n.parentNode.removeChild(n)
+        })
 
     }
 

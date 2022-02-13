@@ -34,7 +34,15 @@ import {
     BeachAccessIcon,
     GroupIcon,
     ThumbUpIcon,
-    SettingsInputComponentIcon
+    SettingsInputComponentIcon,
+    TrainIcon,
+    PaidIcon,
+    FactoryIcon,
+    SupportIcon,
+    TrafficIcon,
+    MailIcon,
+    QueryStatsIcon,
+    CardMembershipIcon
 } from 'ui/admin'
 import ErrorHandler from './ErrorHandler'
 import NotificationHandler from './NotificationHandler'
@@ -88,7 +96,15 @@ const iconComponents = {
     beach: BeachAccessIcon,
     group: GroupIcon,
     thumbup:ThumbUpIcon,
-    component:SettingsInputComponentIcon
+    component:SettingsInputComponentIcon,
+    train:TrainIcon,
+    paid:PaidIcon,
+    factory:FactoryIcon,
+    support:SupportIcon,
+    traffic:TrafficIcon,
+    mail:MailIcon,
+    stats:QueryStatsIcon,
+    member:CardMembershipIcon
 }
 
 const BaseLayout = props => {

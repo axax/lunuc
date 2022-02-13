@@ -1,16 +1,16 @@
 import {ObjectId} from "mongodb";
 import Util from '../../../api/util'
-import {CAPABILITY_RUN_SCRIPT} from '../../../util/capabilities'
 import {sendMail} from "../../../api/util/mail";
 import crypto from "crypto";
 import {getHostFromHeaders} from "../../../util/host";
 import config from 'gen/config'
 import Hook from '../../../util/hook'
+import {CAPABILITY_SEND_NEWSLETTER} from '../constants'
 
 export default db => ({
     Query: {
         sendNewsletter: async ({mailing, subject, template, text, html, batchSize, list}, req) => {
-            await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_RUN_SCRIPT)
+            await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_SEND_NEWSLETTER)
             let result
             const mailingId = ObjectId(mailing)
 

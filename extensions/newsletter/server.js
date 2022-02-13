@@ -5,7 +5,7 @@ import schema from './schema'
 import resolver from './resolver'
 import {deepMergeToFirst} from 'util/deepMerge'
 import {ObjectId} from "mongodb";
-
+import {CAPABILITY_SEND_NEWSLETTER} from './constants'
 
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
@@ -18,6 +18,15 @@ Hook.on('schema', ({schemas}) => {
     schemas.push(schema)
 })
 
+// Hook to add or modify user roles
+Hook.on('createUserRoles', ({userRoles}) => {
+    userRoles.forEach(userRole => {
+        if (['administrator', 'editor', 'author'].indexOf(userRole.name) >= 0) {
+            console.log(`Add capabilities "${CAPABILITY_SEND_NEWSLETTER}" for user role "${userRole.name}"`)
+            userRole.capabilities.push(CAPABILITY_SEND_NEWSLETTER)
+        }
+    })
+})
 
 // Hook to add mongodb schema
 Hook.on('NewUserCreated', async ({meta, email, insertResult, db, language}) => {

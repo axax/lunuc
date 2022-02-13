@@ -20,7 +20,6 @@ import {parseUserAgent} from '../util/userAgent'
 import {USE_COOKIES} from '../api/constants'
 import {parseCookies} from '../api/util/parseCookies'
 import puppeteer from 'puppeteer'
-import crypto from "crypto";
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
 const ABS_UPLOAD_DIR = path.join(__dirname, '../' + UPLOAD_DIR)
