@@ -121,6 +121,22 @@ const postConvertData = async (data, {typeName, db}) => {
     return data
 }
 
+const extendWithOwnerGroupMatch = (typeDefinition, context, match) => {
+    if (typeDefinition && context.group && context.group.length > 0) {
+        // check for same ownerGroup
+        const ownerGroup = typeDefinition.fields.find(f => f.name === 'ownerGroup')
+        if (ownerGroup) {
+            const ownerMatch = {ownerGroup: {$in: context.group.map(f => ObjectId(f))}}
+            if (match) {
+                match = {$or: [match, ownerMatch]}
+            } else {
+                match = ownerMatch
+            }
+        }
+    }
+    return match
+}
+
 const createMatchForCurrentUser = async ({typeName, db, context}) => {
     let match
 
@@ -162,20 +178,7 @@ const createMatchForCurrentUser = async ({typeName, db, context}) => {
             match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
         }
 
-        if (typeDefinition && context.group && context.group.length > 0) {
-
-            // check for same ownerGroup
-            const ownerGroup = typeDefinition.fields.find(f => f.name === 'ownerGroup')
-            if (ownerGroup) {
-                const ownerMatch = {ownerGroup: {$in: context.group.map(f => ObjectId(f))}}
-                if(match) {
-                    match = {$or: [match, ownerMatch]}
-                }else{
-                    match = ownerMatch
-                }
-            }
-
-        }
+        match = extendWithOwnerGroupMatch(typeDefinition, context, match)
 
     }
 
@@ -619,6 +622,7 @@ const GenericResolver = {
 
                 const typeDefinition = getType(typeName)
                 let userFilter = true
+                let match
                 if (typeDefinition) {
                     if (typeDefinition.access && typeDefinition.access.update) {
                         if (await Util.userHasCapability(db, context, typeDefinition.access.update)) {
@@ -628,8 +632,21 @@ const GenericResolver = {
                 }
 
                 if (userFilter) {
-                    params.createdBy = {$in: await Util.userAndJuniorIds(db, context.id)}
+                    match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
                 }
+
+                match = extendWithOwnerGroupMatch(typeDefinition, context, match)
+
+                if(match){
+                    Object.keys(match).forEach(k=>{
+                        params[k] = match[k]
+                    })
+                }
+                console.log(params)
+
+
+                // use
+                delete data.ownerGroup
             }
         }
 

@@ -84,6 +84,16 @@
           "name": "modifiedAt",
           "type": "Float",
           "index": 1
+        },
+        {
+          "name": "ownerGroup",
+          "hideColumnInTypes": true,
+          "type": "UserGroup",
+          "multi": true,
+          "fields": [
+            "name"
+          ],
+          "index": 1
         }
       ]
     }

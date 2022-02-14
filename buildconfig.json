@@ -138,7 +138,10 @@
         "Train",
         "Traffic",
         "Mail",
-        "CardMembership"
+        "CardMembership",
+        "Money",
+        "Store",
+        "BarChart"
       ],
       "theme":{
         "colors":{

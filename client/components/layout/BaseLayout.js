@@ -38,7 +38,10 @@ import {
     TrainIcon,
     TrafficIcon,
     MailIcon,
-    CardMembershipIcon
+    CardMembershipIcon,
+    MoneyIcon,
+    BarChartIcon,
+    StoreIcon
 } from 'ui/admin'
 import ErrorHandler from './ErrorHandler'
 import NotificationHandler from './NotificationHandler'
@@ -96,7 +99,10 @@ const iconComponents = {
     train:TrainIcon,
     traffic:TrafficIcon,
     mail:MailIcon,
-    member:CardMembershipIcon
+    member:CardMembershipIcon,
+    money:MoneyIcon,
+    store:StoreIcon,
+    barchart:BarChartIcon
 }
 
 const BaseLayout = props => {
