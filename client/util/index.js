@@ -5,7 +5,7 @@ import config from 'gen/config-client'
 /**
  * Object with general client helper methods. It is also accessible in the CMS Editor
  */
-const JSON_ESCAPE_MAP = {'\\':'\\\\','\"':'\\\"','\b':'\\b','\f':'\\f','\n':'\\n','\r':'\\r','\t':'\\t','\`':'\''}
+const JSON_ESCAPE_MAP = {'\\':'\\\\','\"':'\\\"','\b':'\\b','\f':'\\f','\n':'\\n','\r':'\\r','\t':'\\t'}
 const DATE_FORMATS = {}
 
 const Util = {
@@ -33,7 +33,7 @@ const Util = {
             }
         }
 
-        return str.replace(/[\\]|[\"]|[\b]|[\f]|[\n]|[\r]|[\t]|[\`]/g, (matched)=>{
+        return str.replace(/[\\]|[\"]|[\b]|[\f]|[\n]|[\r]|[\t]/g, (matched)=>{
             return JSON_ESCAPE_MAP[matched]
         })
 
