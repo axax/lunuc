@@ -28,7 +28,6 @@ const register = async (db) => {
             }else {
                 try {
                     const fun = new Function(`
-            const require = this.require            
             const fs = this.require('fs')
             const path = this.require('path')
             const paths = [
