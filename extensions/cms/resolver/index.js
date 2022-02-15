@@ -322,6 +322,10 @@ export default db => ({
                         {
                             name: 'ext',
                             rel: '../../../extensions/'
+                        },
+                        {
+                            name: 'gen',
+                            rel: '../../../gensrc/'
                         }
                     ]
                     const require = (filePath)=>{   

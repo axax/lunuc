@@ -197,8 +197,13 @@ export const checkFieldType = (value, field) => {
         if (isNaN(value)) {
             value = null
         }
-    } else if (field.type === 'Int') {
+    } else if (field.type === 'Int' || field.type === 'Integer') {
         value = parseInt(value)
+        if (isNaN(value)) {
+            value = null
+        }
+    } else if (field.type === 'Double') {
+        value = parseFloat(value)
         if (isNaN(value)) {
             value = null
         }

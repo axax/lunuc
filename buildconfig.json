@@ -141,7 +141,13 @@
         "CardMembership",
         "Money",
         "Store",
-        "BarChart"
+        "BarChart",
+        "House",
+        "Work",
+        "LocalCafe",
+        "SportsTennis",
+        "Accessible",
+        "AccountBalance"
       ],
       "theme":{
         "colors":{

@@ -41,7 +41,13 @@ import {
     CardMembershipIcon,
     MoneyIcon,
     BarChartIcon,
-    StoreIcon
+    StoreIcon,
+    HouseIcon,
+    WorkIcon,
+    LocalCafeIcon,
+    SportsTennisIcon,
+    AccessibleIcon,
+    AccountBalanceIcon
 } from 'ui/admin'
 import ErrorHandler from './ErrorHandler'
 import NotificationHandler from './NotificationHandler'
@@ -102,7 +108,13 @@ const iconComponents = {
     member:CardMembershipIcon,
     money:MoneyIcon,
     store:StoreIcon,
-    barchart:BarChartIcon
+    barchart:BarChartIcon,
+    house:HouseIcon,
+    work:WorkIcon,
+    cafe:LocalCafeIcon,
+    sport:SportsTennisIcon,
+    accessible:AccessibleIcon,
+    politics:AccountBalanceIcon
 }
 
 const BaseLayout = props => {

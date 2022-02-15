@@ -9,6 +9,9 @@ const registeredHook = []
 
 const GENSRC_PATH = path.join(__dirname, './gensrc')
 
+import config from 'gen/config'
+const {STATIC_PRIVATE_DIR} = config
+
 const register = async (db) => {
     unregister()
     const results = (await db.collection('Hook').find({active: true}).toArray())
@@ -25,7 +28,47 @@ const register = async (db) => {
             }else {
                 try {
                     const fun = new Function(`
-            const require = this.require
+            const require = this.require            
+            const fs = this.require('fs')
+            const path = this.require('path')
+            const paths = [
+                {
+                    name: 'static_private',
+                    rel: '../..${STATIC_PRIVATE_DIR}/'
+                },
+                {
+                    name: 'api',
+                    rel: '../../api/'
+                },
+                {
+                    name: 'client',
+                    rel: '../../client/'
+                },
+                {
+                    name: 'ext',
+                    rel: '../../extensions/'
+                },
+                {
+                    name: 'gen',
+                    rel: '../../gensrc/'
+                }
+            ]
+            const require = (filePath)=>{   
+                if(filePath.startsWith('@')){
+                    for(let i = 0; i < paths.length;i++){
+                        const p = paths[i]
+                        if(filePath.startsWith('@'+p.name+'/')){                 
+                            let pathToCheck = path.join(this.__dirname, p.rel+filePath.substring(p.name.length+2))
+                            if (fs.existsSync(pathToCheck+'.js') || fs.existsSync(pathToCheck)) {                             
+                                return this.require(pathToCheck)
+                            }
+                        }
+                    }   
+                }
+                
+                return this.require(filePath)
+            }
+                    
             const data = (async () => {
                 try{
                     ${entry.script}

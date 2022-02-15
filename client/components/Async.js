@@ -1,5 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import Hook from '../../util/hook'
 
 class Async extends React.Component {
 
@@ -19,6 +20,8 @@ class Async extends React.Component {
                     this.Component = Component.default
                 }
                 this.forceUpdate()
+            }).catch(e=>{
+                Hook.call('AsyncError', {error: e})
             })
         }
     }

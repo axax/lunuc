@@ -24,4 +24,21 @@ export default () => {
             })
         }
     })
+
+    // add routes for this extension
+    Hook.on('AsyncError', ({error}) => {
+        const queries = getTypeQueries('Log')
+        return client.mutate({
+            mutation: queries.create,
+            variables: {
+                location: 'Async',
+                type: 'error',
+                message: error.message + '\n\n' + error.stack,
+                meta: JSON.stringify({
+                    agent: navigator.userAgent,
+                    href: location.href
+                })
+            }
+        })
+    })
 }
