@@ -566,11 +566,11 @@ const GenericResolver = {
 
         Util.checkIfUserIsLoggedIn(context)
 
-
+        const payload = {}
         if (Hook.hooks['typeBeforeUpdate'] && Hook.hooks['typeBeforeUpdate'].length) {
             for (let i = 0; i < Hook.hooks['typeBeforeUpdate'].length; ++i) {
                 await Hook.hooks['typeBeforeUpdate'][i].callback({
-                    type: typeName, _version, _meta, data, db, context
+                    type: typeName, _version, _meta, data, db, context, payload
                 })
             }
         }
@@ -642,8 +642,6 @@ const GenericResolver = {
                         params[k] = match[k]
                     })
                 }
-                console.log(params)
-
 
                 // use
                 delete data.ownerGroup
@@ -721,7 +719,7 @@ const GenericResolver = {
         }
 
         if (!options.ignoreHooks) {
-            Hook.call('typeUpdated', {type: typeName, data, db, context})
+            Hook.call('typeUpdated', {type: typeName, data, db, context, payload})
             Hook.call('typeUpdated_' + typeName, {result: returnValue, db})
         }
         return returnValue

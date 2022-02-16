@@ -52,12 +52,13 @@ const register = async (db) => {
                     rel: '../../gensrc/'
                 }
             ]
-            const require = (filePath)=>{   
+            const require = (filePath)=>{               
                 if(filePath.startsWith('@')){
                     for(let i = 0; i < paths.length;i++){
                         const p = paths[i]
-                        if(filePath.startsWith('@'+p.name+'/')){                 
+                        if(filePath.startsWith('@'+p.name+'/')){    
                             let pathToCheck = path.join(this.__dirname, p.rel+filePath.substring(p.name.length+2))
+                            
                             if (fs.existsSync(pathToCheck+'.js') || fs.existsSync(pathToCheck)) {                             
                                 return this.require(pathToCheck)
                             }
@@ -83,7 +84,7 @@ const register = async (db) => {
                     Hook.on(`${name}.${key}`, async (args) => {
 
                         const result = await new Promise(resolve => {
-                            fun.call({require, resolve, Util, ...args})
+                            fun.call({require, resolve, __dirname, Util, ...args})
                         })
                         if(result.error){
                             console.error(result.error)
