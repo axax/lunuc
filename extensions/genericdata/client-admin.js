@@ -462,7 +462,7 @@ export default () => {
         TypePicker: This gets called after the user picks items in a new window
         filter the object with only the attributes that are specified as pickerFields
      */
-    Hook.on('TypePickerBeforeHandlePick', function ({type, pickerField, queryFields, fieldsToProject, projection, rawValue}) {
+    Hook.on('TypePickerBeforeHandlePick', function ({type, fieldsToProject, rawValue}) {
 
         if (type === 'GenericData') {
 

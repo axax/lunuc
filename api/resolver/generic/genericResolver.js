@@ -8,10 +8,10 @@ import {
     CAPABILITY_MANAGE_OTHER_USERS, CAPABILITY_MANAGE_KEYVALUES, CAPABILITY_MANAGE_COLLECTION
 } from 'util/capabilities'
 import Hook from 'util/hook'
+import HookAsync from 'util/hookAsync'
 import AggregationBuilder from './AggregationBuilder'
 import Cache from 'util/cache'
 import {_t} from '../../../util/i18nServer'
-import {ApiError} from "../../error";
 
 const {DEFAULT_LANGUAGE} = config
 
@@ -567,13 +567,8 @@ const GenericResolver = {
         Util.checkIfUserIsLoggedIn(context)
 
         const payload = {}
-        if (Hook.hooks['typeBeforeUpdate'] && Hook.hooks['typeBeforeUpdate'].length) {
-            for (let i = 0; i < Hook.hooks['typeBeforeUpdate'].length; ++i) {
-                await Hook.hooks['typeBeforeUpdate'][i].callback({
-                    type: typeName, _version, _meta, data, db, context, payload
-                })
-            }
-        }
+
+        await HookAsync.call('typeBeforeUpdate', {type: typeName, _version, _meta, data, db, context, payload})
 
 
         if (!options) {

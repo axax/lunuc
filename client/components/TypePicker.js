@@ -18,7 +18,8 @@ import {
     CardActions,
     CardContent
 } from 'ui/admin'
-import {getImageTag, getImageSrc} from 'client/util/media'
+import {getImageTag, isValidImage, getImageSrc} from 'client/util/media'
+import {convertRawValuesFromPicker} from 'client/util/picker'
 import {queryStatemantForType} from 'util/types'
 import {typeDataToLabel} from 'util/typesAdmin'
 import classNames from 'classnames'
@@ -32,7 +33,7 @@ import Util from '../util'
 import Hook from '../../util/hook'
 import GenericForm from './GenericForm'
 import {openWindow} from '../util/window'
-import {performFieldProjection, projectionToQueryString} from '../../util/project'
+import {projectionToQueryString} from '../../util/project'
 
 const styles = theme => {
     return {
@@ -68,7 +69,7 @@ const styles = theme => {
             position: 'relative'
         },
         clipDrop: {
-            textAlign:'center',
+            textAlign: 'center',
             padding: '0.2rem',
             writingMode: 'vertical-rl',
             width: '1.6%',
@@ -158,18 +159,16 @@ class TypePicker extends React.Component {
         const {classes, placeholder, multi, error, helperText, className, fullWidth, linkTemplate, pickerField, metaFields, type, filter, label, genericType, readOnly} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
         console.log(`render TypePicker | hasFocus=${hasFocus} | pickerField=${pickerField}`, data)
-        const openTypeWindow = (value)=>{
+        const openTypeWindow = (value) => {
 
             let url
-            if(linkTemplate){
-                url = Util.replacePlaceholders(linkTemplate,value)
-            }else{
-                url = `${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/types/?noLayout=true&multi=${!!multi}&fixType=${type}${genericType?'&meta='+genericType:''}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}${label ? '&title=' + encodeURIComponent(label) : ''}`
+            if (linkTemplate) {
+                url = Util.replacePlaceholders(linkTemplate, value)
+            } else {
+                url = `${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/types/?noLayout=true&multi=${!!multi}&fixType=${type}${genericType ? '&meta=' + genericType : ''}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}${label ? '&title=' + encodeURIComponent(label) : ''}`
             }
-            console.log(url)
             const newwindow = openWindow({url})
-
-            if(!readOnly) {
+            if (!readOnly) {
                 setTimeout(() => {
                     newwindow.addEventListener('beforeunload', (e) => {
                         this.selectValue(newwindow.resultValue)
@@ -179,7 +178,6 @@ class TypePicker extends React.Component {
                 }, 500)
             }
         }
-
         return <FormControl
             fullWidth={fullWidth} className={classNames(classes.root, className)}>
             {(!value.length || multi) && !readOnly ?
@@ -225,9 +223,9 @@ class TypePicker extends React.Component {
                         style={{
                             fontWeight: selIdx === idx ? 500 : 400,
                         }}
-                    >{item.__typename === 'Media' && item.mimeType && item.mimeType.indexOf('image') === 0 ? getImageTag(item, {height: 30}) : ''} {
-                        typeDataToLabel(item, pickerField)
-                    }
+                    >
+                        {isValidImage(item) ? getImageTag(item, {height: 30}) : ''}
+                        {typeDataToLabel(item, pickerField)}
                     </MenuItem>
                 )}
 
@@ -238,7 +236,7 @@ class TypePicker extends React.Component {
 
                         const components = []
 
-                        if (singleValue && singleValue.__typename === 'Media' && singleValue.mimeType && singleValue.mimeType.indexOf('image') === 0) {
+                        if (isValidImage(singleValue)) {
                             components.push(<div draggable={true}
                                                  data-index={singleValueIndex}
                                                  onDragStart={(e) => {
@@ -251,8 +249,8 @@ class TypePicker extends React.Component {
                                 <div className={classes.dummyTxt}>{typeDataToLabel(singleValue, pickerField)}</div>
 
                                 {!readOnly && <IconButton className={classes.dummyRemove}
-                                            edge="end"
-                                            onClick={this.handleRemovePick.bind(this, singleValueIndex)}
+                                                          edge="end"
+                                                          onClick={this.handleRemovePick.bind(this, singleValueIndex)}
                                 >
                                     <DeleteIcon/>
                                 </IconButton>}
@@ -286,7 +284,7 @@ class TypePicker extends React.Component {
                                                      }}
                                                      onChange={field => {
 
-                                                         if(readOnly){
+                                                         if (readOnly) {
                                                              return
                                                          }
 
@@ -321,7 +319,8 @@ class TypePicker extends React.Component {
                                     </CardContent>
                                     <CardActions disableSpacing>
 
-                                        {!readOnly && <IconButton onClick={this.handleRemovePick.bind(this, singleValueIndex)}>
+                                        {!readOnly &&
+                                        <IconButton onClick={this.handleRemovePick.bind(this, singleValueIndex)}>
                                             <DeleteIcon/>
                                         </IconButton>}
                                     </CardActions>
@@ -338,13 +337,13 @@ class TypePicker extends React.Component {
                                                       label={typeDataToLabel(singleValue, pickerField)}
                                                       onDelete={!readOnly && this.handleRemovePick.bind(this, singleValueIndex)}
                                                       onClick={() => {
-                                                          if (singleValue.type === 'Media' || singleValue.__typename=== 'Media') {
+                                                          if (singleValue.type === 'Media' || singleValue.__typename === 'Media') {
                                                               window.open(getImageSrc(singleValue), '_blank').focus()
-                                                          }else {
+                                                          } else {
                                                               openTypeWindow(singleValue)
                                                           }
                                                       }}
-                                                      avatar={singleValue && singleValue.__typename === 'Media' && singleValue.mimeType && singleValue.mimeType.indexOf('image') === 0 ?
+                                                      avatar={isValidImage(singleValue) ?
                                                           <Avatar src={getImageSrc(singleValue, {height: 30})}/> : null}/>)
                             }
                         }
@@ -398,83 +397,62 @@ class TypePicker extends React.Component {
     }
 
 
-
     selectValue(rawValue) {
         if (rawValue) {
 
-            const {type, pickerField, name, queryFields, projection, onChange} = this.props
+            const {type, pickerField, name, queryFields, projection, onChange, multi} = this.props
 
             let fieldsToProject
 
-            if(projection){
+            if (projection) {
                 fieldsToProject = projection.slice(0)
-            }else{
+            } else {
                 if (queryFields) {
                     fieldsToProject = queryFields.slice(0)
                 } else if (pickerField) {
-                    if(Array.isArray(pickerField)) {
+                    if (Array.isArray(pickerField)) {
                         fieldsToProject = pickerField.slice(0)
-                    }else{
+                    } else {
                         fieldsToProject = [pickerField]
                     }
                 }
 
                 // keep _id
-                if(fieldsToProject && fieldsToProject.indexOf('_id')<0){
+                if (fieldsToProject && fieldsToProject.indexOf('_id') < 0) {
                     fieldsToProject.push('_id')
                 }
             }
 
 
-            if(!fieldsToProject){
+            if (!fieldsToProject) {
                 fieldsToProject = []
-            }else if (!Array.isArray(fieldsToProject)) {
+            } else if (!Array.isArray(fieldsToProject)) {
                 fieldsToProject = [fieldsToProject]
             }
 
-            Hook.call('TypePickerBeforeHandlePick', {type, pickerField, queryFields, fieldsToProject, projection, rawValue})
-
-            //always remove creator
-            delete rawValue.createdBy
-            let projectedValue = rawValue
-            if (fieldsToProject.length > 0) {
-                projectedValue = performFieldProjection(fieldsToProject, rawValue)
-            }
-
-            Util.removeNullValues(projectedValue, {
-                recursiv: true,
-                emptyObject: true,
-                emptyArray: true,
-                nullArrayItems: true
-            })
-
-            let value = (this.state.value ? this.state.value.slice(0) : [])
-            if (Array.isArray(projectedValue)) {
-                projectedValue.forEach(itm => {
-                    value.push({__typename: type, ...itm})
-                })
-            } else {
-                value.push({__typename: type, ...projectedValue})
-            }
+            let value = convertRawValuesFromPicker({type, fieldsToProject, rawValue, multi})
 
 
-            if(!this.props.multi) {
-                // remove all items but last one
-                value = value.slice(-1)
+            if (multi && this.state.value) {
+                value = [...this.state.value,...value]
             }
 
             onChange({target: {value, name: name}, rawValue})
+
+
             this.setState({value, textValue: '', hastFocus: false, data: null})
         }
     }
+
+
 
     handleChange(e) {
         const value = e.target.value
         clearTimeout(this.pickTimeout)
 
-        if( value===this.state.textValue){
+        if (value === this.state.textValue) {
             // ignore nothing changed
-        }else if (value === '') {
+        } else if (value === '') {
             this.setState({data: null, textValue: value})
         } else {
             this.setState({textValue: value})
@@ -537,14 +515,14 @@ class TypePicker extends React.Component {
             let queryString
 
 
-            if(queryFields || pickerField){
+            if (queryFields || pickerField) {
 
                 let finalFields
-                if(queryFields){
+                if (queryFields) {
                     finalFields = queryFields.slice(0)
-                }else if(Array.isArray(pickerField)){
+                } else if (Array.isArray(pickerField)) {
                     finalFields = pickerField.slice(0)
-                }else{
+                } else {
                     finalFields = [pickerField]
                 }
 

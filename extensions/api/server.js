@@ -7,6 +7,7 @@ import config from 'gensrc/config'
 import Cache from '../../util/cache'
 const CACHE_PREFIX = 'ExtensionsApi-'
 
+const {STATIC_PRIVATE_DIR} = config
 
 const getApi = async ({slug, db}) => {
 
@@ -32,7 +33,48 @@ const runApiScript = ({api, db, req, res}) => {
 
         try {
             const tpl = new Function(`
-            const require = this.require
+            
+            const fs = this.require('fs')
+            const path = this.require('path')
+            const paths = [
+                {
+                    name: 'static_private',
+                    rel: '../..${STATIC_PRIVATE_DIR}/'
+                },
+                {
+                    name: 'api',
+                    rel: '../../api/'
+                },
+                {
+                    name: 'client',
+                    rel: '../../client/'
+                },
+                {
+                    name: 'ext',
+                    rel: '../../extensions/'
+                },
+                {
+                    name: 'gen',
+                    rel: '../../gensrc/'
+                }
+            ]
+            const require = (filePath)=>{               
+                if(filePath.startsWith('@')){
+                    for(let i = 0; i < paths.length;i++){
+                        const p = paths[i]
+                        if(filePath.startsWith('@'+p.name+'/')){    
+                            let pathToCheck = path.join(this.__dirname, p.rel+filePath.substring(p.name.length+2))
+                            
+                            if (fs.existsSync(pathToCheck+'.js') || fs.existsSync(pathToCheck)) {                             
+                                return this.require(pathToCheck)
+                            }
+                        }
+                    }   
+                }
+                
+                return this.require(filePath)
+            }
+            
             this.responseStatus = {}
             const data = (async () => {
                 try{

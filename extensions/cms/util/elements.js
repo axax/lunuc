@@ -1876,8 +1876,7 @@ const advancedElements = [
 
 let elementsMap, elementsMapAdvanced
 
-
-export function getJsonDomElements(value, options) {
+const getJsonDomElements = (value, options) => {
     if (!elementsMap) {
         elementsMap = {}
         baseElements.forEach(element => {
@@ -1900,3 +1899,5 @@ export function getJsonDomElements(value, options) {
     }
     return baseElements
 }
+
+export {getJsonDomElements, MEDIA_PROJECTION}

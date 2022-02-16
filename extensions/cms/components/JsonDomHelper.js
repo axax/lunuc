@@ -28,11 +28,12 @@ import Util from 'client/util'
 import {propertyByPath, setPropertyByPath} from '../../../client/util/json'
 import {getComponentByKey, addComponent, removeComponent, getParentKey, isTargetAbove} from '../util/jsonDomUtil'
 import config from 'gen/config-client'
-import {getJsonDomElements} from '../util/elements'
+import {getJsonDomElements, MEDIA_PROJECTION} from '../util/elements'
 import {deepMergeOptional, deepMerge} from 'util/deepMerge'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants'
 import {client} from '../../../client/middleware/graphql'
 import {openWindow} from '../../../client/util/window'
+import {convertRawValuesFromPicker} from "../../../client/util/picker";
 
 const {UPLOAD_URL, DEFAULT_LANGUAGE} = config
 
@@ -781,7 +782,8 @@ const m = Math.max((offX+offY) / 2,100)
             className={this.props.classes.dropArea}>Hier plazieren</div>
     }
 
-    openPicker(picker) {
+    openPicker(options) {
+        const picker = options.picker
         const {_onTemplateChange, _key, _json} = this.props
 
         const newwindow = openWindow({url:`${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/types/?noLayout=true&fixType=${picker.type}&baseFilter=${encodeURIComponent(picker.baseFilter || '')}`})
@@ -790,7 +792,6 @@ const m = Math.max((offX+offY) / 2,100)
         setTimeout(() => {
             newwindow.addEventListener('beforeunload', (e) => {
                 if (newwindow.resultValue) {
-                    //_cmsActions.editCmsComponent(rest._key, _json, _scope)
                     const source = getComponentByKey(_key, _json)
                     if (source) {
                         if (picker.template) {
@@ -799,7 +800,9 @@ const m = Math.max((offX+offY) / 2,100)
                             if (!source.p) {
                                 source.p = {}
                             }
-                            source.p.src = newwindow.resultValue.constructor !== Array ? [newwindow.resultValue] : newwindow.resultValue
+                            const jsonElement = getJsonDomElements(options.elementKey)
+                            const items = convertRawValuesFromPicker({type: picker.type, fieldsToProject: picker.type==='Media'?MEDIA_PROJECTION:[], rawValue: newwindow.resultValue, multi: picker.multi})
+                            source.p.src = items
                         }
                         setTimeout(() => {
                             _onTemplateChange(_json)
@@ -1207,7 +1210,7 @@ const m = Math.max((offX+offY) / 2,100)
                             if (isCms) {
                                 this.props.history.push('/' + subJson.p.slug)
                             } else {
-                                this.openPicker(_options.picker)
+                                this.openPicker(_options)
                             }
                         }}
                         className={classes.picker}>{isCms && subJson && subJson.p ? subJson.p.id || subJson.p.slug :
