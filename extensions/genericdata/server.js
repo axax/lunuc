@@ -9,31 +9,7 @@ import ClientUtil from '../../client/util'
 import {ObjectId} from 'mongodb'
 import {matchExpr} from '../../client/util/json'
 import {findProjection} from '../../util/project'
-
-async function getGenericTypeDefinitionWithStructure(db, {name, id}) {
-
-    if (!id && !name) {
-        return
-    }
-
-
-    const cacheKeyPrefix = 'GenericDataDefinition-WithStructure-', cacheKey = cacheKeyPrefix + (id ? id : name)
-
-    let definition = Cache.get(cacheKey)
-    if (definition === undefined) {
-        definition = await db.collection('GenericDataDefinition').findOne({$or: [{_id: id && ObjectId(id)}, {name}]})
-
-        console.log(`load GenericDataDefinition by id=${id} or by name=${name} -> ${definition}`)
-
-        // put in cache with both name and id as key
-        Cache.set(cacheKey, definition, 86400000) // cache expires in 100 min
-        if (definition) {
-            Cache.setAlias(cacheKeyPrefix + (id ? definition.name : definition._id), cacheKey)
-        }
-    }
-
-    return definition
-}
+import {getGenericTypeDefinitionWithStructure} from './util'
 
 
 // Hook to add mongodb resolver

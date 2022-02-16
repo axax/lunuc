@@ -21,7 +21,7 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
                 }
                 referer = metaJson.referer
             } catch (e) {
-                console.log(e)
+                console.log(e, meta)
             }
         }
 
