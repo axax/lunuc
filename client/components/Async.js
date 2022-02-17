@@ -21,7 +21,14 @@ class Async extends React.Component {
                 }
                 this.forceUpdate()
             }).catch(e=>{
-                Hook.call('AsyncError', {error: e})
+                const hasForcedReload = localStorage.getItem('forced-reload')
+                if(!hasForcedReload){
+                    // try to force reload one time
+                    localStorage.setItem('forced-reload', true)
+                    window.location.reload(true)
+                }else {
+                    Hook.call('AsyncError', {error: e})
+                }
             })
         }
     }

@@ -1,4 +1,5 @@
 import Cache from '../../../util/cache'
+import {ObjectId} from 'mongodb'
 
 export const getGenericTypeDefinitionWithStructure = async (db, {name, id}) => {
 

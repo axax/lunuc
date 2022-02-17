@@ -270,7 +270,9 @@ const GenericResolver = {
         const startTimeAggregate = new Date()
 
 
-        const results = await collection.aggregate(dataQuery, {allowDiskUse: true}).toArray()
+        const results = await collection.aggregate(dataQuery, {allowDiskUse: true, collation: {
+                locale : 'de'
+            }}).toArray()
         let result
 
         if (results.length === 0) {
