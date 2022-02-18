@@ -122,7 +122,7 @@ const postConvertData = async (data, {typeName, db}) => {
 }
 
 const extendWithOwnerGroupMatch = (typeDefinition, context, match) => {
-    if (typeDefinition && context.group && context.group.length > 0) {
+    if (typeDefinition && context.role !== 'subscriber' && context.group && context.group.length > 0) {
         // check for same ownerGroup
         const ownerGroup = typeDefinition.fields.find(f => f.name === 'ownerGroup')
         if (ownerGroup) {

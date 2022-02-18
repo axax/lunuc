@@ -5,7 +5,7 @@ import {bindActionCreators} from 'redux'
 import {
     Button,
     ResponsiveDrawerLayout,
-    HomeIconButton,
+    IconButton,
     HomeIcon,
     BuildIcon,
     SettingsIcon,
@@ -47,7 +47,8 @@ import {
     LocalCafeIcon,
     SportsTennisIcon,
     AccessibleIcon,
-    AccountBalanceIcon
+    AccountBalanceIcon,
+    DirectionsBoatIcon
 } from 'ui/admin'
 import ErrorHandler from './ErrorHandler'
 import NotificationHandler from './NotificationHandler'
@@ -76,7 +77,7 @@ const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName
 registerTrs(translations, 'AdminTranslations')
 
 const iconComponents = {
-    home: HomeIconButton,
+    home: HomeIcon,
     build: BuildIcon,
     settings: SettingsIcon,
     account: AccountCircleIcon,
@@ -100,21 +101,22 @@ const iconComponents = {
     shop: ShopIcon,
     beach: BeachAccessIcon,
     group: GroupIcon,
-    thumbup:ThumbUpIcon,
-    component:SettingsInputComponentIcon,
-    train:TrainIcon,
-    traffic:TrafficIcon,
-    mail:MailIcon,
-    member:CardMembershipIcon,
-    money:MoneyIcon,
-    store:StoreIcon,
-    barchart:BarChartIcon,
-    house:HouseIcon,
-    work:WorkIcon,
-    cafe:LocalCafeIcon,
-    sport:SportsTennisIcon,
-    accessible:AccessibleIcon,
-    politics:AccountBalanceIcon
+    thumbup: ThumbUpIcon,
+    component: SettingsInputComponentIcon,
+    train: TrainIcon,
+    traffic: TrafficIcon,
+    mail: MailIcon,
+    member: CardMembershipIcon,
+    money: MoneyIcon,
+    store: StoreIcon,
+    barchart: BarChartIcon,
+    house: HouseIcon,
+    work: WorkIcon,
+    cafe: LocalCafeIcon,
+    sport: SportsTennisIcon,
+    accessible: AccessibleIcon,
+    politics: AccountBalanceIcon,
+    boat: DirectionsBoatIcon
 }
 
 const BaseLayout = props => {
@@ -183,7 +185,7 @@ const BaseLayout = props => {
             }
 
             if (item.constructor === Array) {
-                return item.map((singleItem, index) => genMenuEntry(singleItem, path+'.'+index))
+                return item.map((singleItem, index) => genMenuEntry(singleItem, path + '.' + index))
             }
 
             if (item.divider) {
@@ -196,9 +198,9 @@ const BaseLayout = props => {
             if (item.to) {
                 to = item.to
             } else if (item.name) {
-                to = `${ADMIN_BASE_URL}/types/GenericData?fixType=GenericData&title=${encodeURIComponent(item.label || item.name)}&meta=${item.name}${item.baseFilter?'&baseFilter='+encodeURIComponent(item.baseFilter):''}`
+                to = `${ADMIN_BASE_URL}/types/GenericData?fixType=GenericData&title=${encodeURIComponent(item.label || item.name)}&meta=${item.name}${item.baseFilter ? '&baseFilter=' + encodeURIComponent(item.baseFilter) : ''}`
             } else if (item.type) {
-                to = `${ADMIN_BASE_URL}/types/${item.type}?fixType=${item.type}&title=${encodeURIComponent(item.label || item.type)}${item.baseFilter?'&baseFilter='+encodeURIComponent(item.baseFilter):''}`
+                to = `${ADMIN_BASE_URL}/types/${item.type}?fixType=${item.type}&title=${encodeURIComponent(item.label || item.type)}${item.baseFilter ? '&baseFilter=' + encodeURIComponent(item.baseFilter) : ''}`
             }
 
             return {
@@ -206,7 +208,7 @@ const BaseLayout = props => {
                 to,
                 auth: true,
                 icon: <Icon/>,
-                items: genMenuEntry(item.items, path+'.items'),
+                items: genMenuEntry(item.items, path + '.items'),
                 path,
                 open: item.open
             }
@@ -220,7 +222,7 @@ const BaseLayout = props => {
                     const existingItems = menuItems.filter(m => m.key === item.key)
                     if (existingItems.length > 0) {
                         existingItem = existingItems[0]
-                        existingItem.path = 'items.'+i
+                        existingItem.path = 'items.' + i
                         existingItem.open = item.open
                     }
                 }
@@ -231,12 +233,12 @@ const BaseLayout = props => {
                         if (!existingItem.items) {
                             existingItem.items = []
                         }
-                        existingItem.items.push(...genMenuEntry(item.items, 'items.'+i))
+                        existingItem.items.push(...genMenuEntry(item.items, 'items.' + i))
                     }
 
                 } else {
                     // add new menu item
-                    menuItems.push(genMenuEntry(item, 'items.'+i))
+                    menuItems.push(genMenuEntry(item, 'items.' + i))
                 }
 
             })
@@ -245,8 +247,8 @@ const BaseLayout = props => {
         if (settings.menu.genericTypes) {
             menuItems.push({divider: true, auth: true})
 
-            settings.menu.genericTypes.forEach((item,i) => {
-                menuItems.push(genMenuEntry(item,'genericTypes.'+i))
+            settings.menu.genericTypes.forEach((item, i) => {
+                menuItems.push(genMenuEntry(item, 'genericTypes.' + i))
             })
         }
 
@@ -264,14 +266,48 @@ const BaseLayout = props => {
 
     const history = useHistory()
 
+    const headerRight = []
+
+    if (isAuthenticated) {
+        headerRight.push(<Button key="logout" color="inherit" size="small"
+                                 onClick={() => {
+                                     history.push(ADMIN_BASE_URL + '/logout')
+                                 }}>Logout {username}</Button>)
+    } else {
+        headerRight.push(<Button key="login" color="inherit" size="small"
+                                 onClick={() => {
+                                     history.push(ADMIN_BASE_URL + '/login')
+                                 }}>Login</Button>)
+    }
+
+    if (!settings.headerActions) {
+        settings.headerActions = [{
+            to: '/',
+            icon: 'home'
+        }]
+    }
+
+    settings.headerActions.forEach((item, index) => {
+        const Icon = iconComponents[item.icon] || SettingsIcon
+        headerRight.push(
+            <IconButton key={'headerAction' + index}
+                    onClick={() => {
+
+                        history.push(item.to)
+                    }}
+                    color="inherit"><Icon/></IconButton>
+        )
+    })
+
+
     return <UIProvider>
         <ResponsiveDrawerLayout title={settings.title || APP_NAME}
                                 logo={settings.logo}
                                 menuItems={menuItems}
-                                onMenuChange={(item,open)=>{
-                                    if(item.path) {
+                                onMenuChange={(item, open) => {
+                                    if (item.path) {
                                         const oriItem = propertyByPath(item.path, settings.menu)
-                                        if(oriItem){
+                                        if (oriItem) {
                                             oriItem.open = open
                                             setKeyValue({key: 'BaseLayoutSettings', value: settings})
                                         }
@@ -297,26 +333,7 @@ const BaseLayout = props => {
                                         icon: <EditIcon/>
                                     }
                                 ]}/>}
-                                headerRight={
-                                    [
-                                        (isAuthenticated ?
-                                            <Button key="logout" color="inherit" size="small"
-                                                    onClick={() => {
-                                                        history.push(ADMIN_BASE_URL + '/logout')
-                                                    }}>Logout {username}</Button>
-
-                                            : <Button key="login" color="inherit" size="small"
-                                                      onClick={() => {
-                                                          history.push(ADMIN_BASE_URL + '/login')
-                                                      }}>Login</Button>),
-                                        <HomeIconButton
-                                            key="home"
-                                            onClick={() => {
-                                                history.push('/')
-                                            }}
-                                            color="inherit"/>
-                                    ]
-                                }>
+                                headerRight={headerRight}>
 
             <ErrorHandler/>
             <NotificationHandler/>
