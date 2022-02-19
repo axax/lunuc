@@ -192,7 +192,7 @@ const GenericResolver = {
         }
         const startTime = new Date()
 
-        let {match, _version, cache, includeCount, postConvert, ...otherOptions} = options
+        let {match, _version, cache, includeCount, postConvert, aggregateOptions, ...otherOptions} = options
 
         const collectionName = await buildCollectionName(db, context, typeName, _version)
 
@@ -262,19 +262,17 @@ const GenericResolver = {
         })
 
         const {dataQuery, countQuery, debugInfo} = await aggregationBuilder.query()
-        // if (typeName.indexOf("Media") >= 0) {
-            // console.log(JSON.stringify(dataQuery, null, 4))
-        // }
+      /*   if (typeName.indexOf("UserTracking") >= 0) {
+             console.log(JSON.stringify(dataQuery, null, 4))
+         }*/
               //console.log(options,JSON.stringify(dataQuery, null, 4))
         const collection = db.collection(collectionName)
         const startTimeAggregate = new Date()
 
+        const finalAggregateOptions = {allowDiskUse: true, ...aggregateOptions}
 
-        const results = await collection.aggregate(dataQuery, {allowDiskUse: true, collation: {
-                locale : 'de'
-            }}).toArray()
+        const results = await collection.aggregate(dataQuery, finalAggregateOptions).toArray()
         let result
-
         if (results.length === 0) {
             result = {
                 page: aggregationBuilder.getPage(),
