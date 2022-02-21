@@ -21,7 +21,7 @@ class UserDataContainer extends React.PureComponent {
 
         client.query({
             fetchPolicy: (_app_.lang !== _app_.langBefore || this.state.force ? 'network-only' : 'cache-first'),
-            query: 'query{me{username language email _id emailConfirmed requestNewPassword picture{_id} role{_id capabilities}}}'
+            query: 'query{me{username language email _id emailConfirmed group{_id} requestNewPassword picture{_id} role{_id capabilities}}}'
         }).then(response => {
             _app_.user = response.data.me
             userActions.setUser(response.data.me, !!response.data.me)

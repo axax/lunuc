@@ -190,6 +190,10 @@ export const userResolver = (db) => ({
                 if (user.meta) {
                     user.meta = JSON.stringify(user.meta)
                 }
+                if( user.group)
+                {
+                    user.group = user.group.map(m=>({_id:m}))
+                }
                 /*if( user.picture){
                     user.picture = await db.collection('Media').findOne({_id: ObjectId(user.picture)})
                 }*/
