@@ -295,7 +295,6 @@ class GenericForm extends React.Component {
                 const selector = '[data-datetime-field="true"]'
                 DomUtil.waitForElement(selector,{all:true}).then((els)=>{
                     els.forEach(el=>{
-                        console.log(el)
                         if(!el._flatpickr) {
                             const field = fields[el.name]
                             flatpickr(el, {

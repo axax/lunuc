@@ -546,12 +546,20 @@ export default () => {
         if (type === 'GenericData') {
             if (this.state.data.meta) {
                 const definition = JSON.parse(this.state.data.meta)
-                definition.structure.fields.forEach(field => {
-                    if (field.searchable) {
-                        filterFields['data.' + field.name] = Object.assign({}, field, {tab: null, required: false})
-                    }
+                if(definition.structure) {
+                    delete filterFields.definition
 
-                })
+                    definition.structure.fields.forEach(field => {
+                        if (field.searchable) {
+                            filterFields['data.' + field.name] = Object.assign({}, field, {
+                                tab: null,
+                                required: false,
+                                fullWidth: true
+                            })
+                        }
+
+                    })
+                }
             }
 
         }

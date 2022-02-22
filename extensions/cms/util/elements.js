@@ -73,6 +73,17 @@ const classOptions = key => ({
     }
 })
 
+const invisibleOptions = key => ({
+    [`${key}data-is-invisible`]: {
+        fullWidth: true,
+        type: 'Boolean',
+        value: false,
+        placeholder: 'Ausblenden',
+        label: 'Ausblenden',
+        tab: DEFAULT_TAB
+    },
+})
+
 const classLinkStylingOptions = key => ({
     [`${key}className@linkstyling`]: {
         label: 'Link Styling',
@@ -816,14 +827,7 @@ const baseElements = [
                 label: 'Target',
                 tab: DEFAULT_TAB
             },
-            ['data-is-invisible']: {
-                fullWidth: true,
-                type: 'Boolean',
-                value: false,
-                placeholder: 'Ausblenden',
-                label: 'Ausblenden',
-                tab: DEFAULT_TAB
-            },
+            ...invisibleOptions('p_'),
             ...marginOptions('p_'),
             ...classOptions('p_'),
             ...imageOptions('c_0_p_'),
@@ -1280,7 +1284,8 @@ const baseElements = [
             ...marginOptions('p_'),
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
-            ...classOptions('p_')
+            ...classOptions('p_'),
+            ...invisibleOptions('p_')
         }
     },
     {
@@ -1316,7 +1321,8 @@ const baseElements = [
             ...marginOptions('p_'),
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
-            ...classOptions('p_')
+            ...classOptions('p_'),
+            ...invisibleOptions('p_')
         }
     },
     {
@@ -1357,7 +1363,8 @@ const baseElements = [
             ...marginOptions('p_'),
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
-            ...classOptions('p_')
+            ...classOptions('p_'),
+            ...invisibleOptions('p_')
         }
     },
     {
@@ -1427,7 +1434,8 @@ const baseElements = [
             ...marginOptions('p_'),
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
-            ...classOptions('p_')
+            ...classOptions('p_'),
+            ...invisibleOptions('p_')
         }
     },
     {
@@ -1507,7 +1515,8 @@ const baseElements = [
             ...marginOptions('p_'),
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
-            ...classOptions('p_')
+            ...classOptions('p_'),
+            ...invisibleOptions('p_')
         }
     },
     {
@@ -1565,14 +1574,7 @@ const baseElements = [
                 label: 'Farbe',
                 tab: DEFAULT_TAB
             },
-            ['p_data-is-ivisible']: {
-                fullWidth: true,
-                type: 'Boolean',
-                value: false,
-                placeholder: 'Ausblenden',
-                label: 'Ausblenden',
-                tab: DEFAULT_TAB
-            },
+            ...invisibleOptions('p_'),
             t: {
                 value: '',
                 label: 'Tag Name'

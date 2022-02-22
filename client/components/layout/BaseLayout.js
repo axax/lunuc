@@ -48,7 +48,8 @@ import {
     SportsTennisIcon,
     AccessibleIcon,
     AccountBalanceIcon,
-    DirectionsBoatIcon
+    DirectionsBoatIcon,
+    FilterListIcon
 } from 'ui/admin'
 import ErrorHandler from './ErrorHandler'
 import NotificationHandler from './NotificationHandler'
@@ -116,7 +117,8 @@ const iconComponents = {
     sport: SportsTennisIcon,
     accessible: AccessibleIcon,
     politics: AccountBalanceIcon,
-    boat: DirectionsBoatIcon
+    boat: DirectionsBoatIcon,
+    filter:FilterListIcon
 }
 
 const BaseLayout = props => {

@@ -25,7 +25,7 @@ import {
     Toolbar,
     IconButton,
     InputBase,
-    SettingsIcon,
+    FilterListIcon,
     Divider,
     Paper,
     CloudUploadIcon
@@ -127,6 +127,8 @@ class TypesContainer extends React.Component {
 
         // initial state
         this.state = {
+            type: this.pageParams.type,
+            meta: this.pageParams.meta,
             selectAllRows: false,
             selectedRows: {},
             confirmDeletionDialog: true,
@@ -159,9 +161,15 @@ class TypesContainer extends React.Component {
     }
 
     setSettingsForType(type, settings) {
-        this.settings[type] = Object.assign({}, this.settings[type], settings)
+        const key = type + (this.pageParams.meta?'-'+this.pageParams.meta:'')
+        this.settings[key] = Object.assign({}, this.settings[key], settings)
 
         this.saveSettings()
+    }
+
+    getSettingsForType(type, meta) {
+        const key = type + (meta?'-'+meta:'')
+        return this.settings[key] || {}
     }
 
     saveSettings() {
@@ -206,7 +214,8 @@ class TypesContainer extends React.Component {
     shouldComponentUpdate(props, state) {
         const settingsChanged = this.props.keyValueMap.TypesContainerSettings !== props.keyValueMap.TypesContainerSettings
         const pageParams = this.determinePageParams(props),
-            typeChanged = this.pageParams.type !== pageParams.type
+            typeChanged = this.pageParams.type !== pageParams.type,
+            metaChanged = this.pageParams.meta !== pageParams.meta
 
         if (settingsChanged) {
             this.parseSettings(props)
@@ -216,15 +225,15 @@ class TypesContainer extends React.Component {
             this.props.baseFilter !== props.baseFilter ||
             this.pageParams.page !== pageParams.page ||
             typeChanged ||
+            metaChanged ||
             this.pageParams._version !== pageParams._version ||
             this.pageParams.limit !== pageParams.limit ||
             this.pageParams.sort !== pageParams.sort ||
             this.pageParams.baseFilter !== pageParams.baseFilter ||
-            this.pageParams.meta !== pageParams.meta ||
             this.pageParams.filter !== pageParams.filter) {
 
             this.pageParams = pageParams
-            this.getData(pageParams, true, typeChanged)
+            this.getData(pageParams, true, typeChanged || metaChanged)
 
             return false
         }
@@ -640,6 +649,8 @@ class TypesContainer extends React.Component {
             let formRef
             viewFilterDialogProps = {
                 title: 'Filter',
+                maxWidth:'md',
+                fullWidth:true,
                 open: this.state.viewFilterDialog,
                 onClose: () => {
                     let newFilter = ''
@@ -655,7 +666,7 @@ class TypesContainer extends React.Component {
                                 value.forEach(item => {
                                     ids.push(item._id)
                                 })
-                                newFilter += `${fieldKey}=[${ids.join(',')}]`
+                                newFilter += `${fieldKey}==[${ids.join(',')}]`
                             } else {
                                 newFilter += `${fieldKey}=${value}`
                             }
@@ -786,7 +797,7 @@ class TypesContainer extends React.Component {
                                             this.setState({viewFilterDialog: true})
                                         }}
                                         className={classes.searchIconButton}>
-                                <SettingsIcon/>
+                                <FilterListIcon/>
                             </IconButton>
                         </Paper>
                     </Col>
@@ -929,7 +940,7 @@ class TypesContainer extends React.Component {
             // check settings from props if available
             s = settings[type]
         } else {
-            s = this.settings[type]
+            s = this.getSettingsForType(type, this.pageParams.meta)
         }
 
         if (s && s.columns) {
@@ -1101,7 +1112,7 @@ class TypesContainer extends React.Component {
                 break
             }
         }
-        const typeSettings = this.settings[type] || {}
+        const typeSettings = this.getSettingsForType(type, meta)
         const result = {
             baseFilter: finalBaseFilter,
             multi,

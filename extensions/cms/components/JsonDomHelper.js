@@ -893,6 +893,8 @@ const m = Math.max((offX+offY) / 2,100)
 
         if(!parsedSource && _dynamic){
             return <_WrappedComponent
+                onClick={onClick}
+                onChange={onChange}
                 {...rest}>{children}</_WrappedComponent>
         }
 

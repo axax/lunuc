@@ -148,7 +148,8 @@
         "SportsTennis",
         "Accessible",
         "AccountBalance",
-        "DirectionsBoat"
+        "DirectionsBoat",
+        "FilterList"
       ],
       "theme":{
         "colors":{
