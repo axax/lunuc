@@ -630,8 +630,9 @@ class TypesContainer extends React.Component {
 
 
             columns.map(c => {
-                if (formFields[c.id] && formFields[c.id].type !== 'Object' && formFields[c.id].uitype !== 'password' && this.isColumnActive(type, c.id)) {
-                    const filterField = Object.assign({}, formFields[c.id])
+                const id = c.sortid || c.id
+                if (formFields[id] && formFields[id].type !== 'Object' && formFields[id].uitype !== 'password' && this.isColumnActive(type, id)) {
+                    const filterField = Object.assign({}, formFields[id])
                     filterField.fullWidth = true
                     delete filterField.tab
                     delete filterField.required
@@ -639,7 +640,7 @@ class TypesContainer extends React.Component {
                         filterField.uitype = 'text'
                     }
 
-                    filterFields[c.id] = filterField
+                    filterFields[id] = filterField
                 }
             })
 
@@ -655,22 +656,26 @@ class TypesContainer extends React.Component {
                 onClose: () => {
                     let newFilter = ''
                     Object.keys(formRef.state.fields).forEach(fieldKey => {
-                        const value = formRef.state.fields[fieldKey]
-                        if (value) {
-                            if (newFilter) {
-                                newFilter += ' && '
-                            }
+                        if(!fieldKey.startsWith('__operator.data.')) {
+                            const value = formRef.state.fields[fieldKey]
+                            if (value) {
+                                if (newFilter) {
+                                    newFilter += ' && '
+                                }
 
-                            if (value.constructor === Array) {
-                                let ids = []
-                                value.forEach(item => {
-                                    ids.push(item._id)
-                                })
-                                newFilter += `${fieldKey}==[${ids.join(',')}]`
-                            } else {
-                                newFilter += `${fieldKey}=${value}`
-                            }
+                                if (value.constructor === Array) {
+                                    let ids = []
+                                    value.forEach(item => {
+                                        ids.push(item._id)
+                                    })
+                                    newFilter += `${fieldKey}==[${ids.join(',')}]`
+                                } else {
 
+                                    const operator = formRef.state.fields['__operator.'+fieldKey] || '='
+
+                                    newFilter += `${fieldKey}${operator}${value}`
+                                }
+                            }
                         }
                     })
                     this.setState({viewFilterDialog: false, filter: newFilter}, () => {

@@ -60,6 +60,12 @@
         {
           "name": "definition",
           "type": "GenericDataDefinition",
+          "hideColumnInTypes": true,
+          "access": {
+            "ui": {
+              "role": "manage_types"
+            }
+          },
           "required": true,
           "index": 1,
           "alwaysUpdate": true,
@@ -88,6 +94,11 @@
         {
           "name": "ownerGroup",
           "hideColumnInTypes": true,
+          "access": {
+            "ui": {
+              "role": "manage_user_group"
+            }
+          },
           "type": "UserGroup",
           "multi": true,
           "fields": [

@@ -324,8 +324,16 @@ export const systemResolver = (db) => ({
                         }
                         match._id = entry._id && entry._id.constructor === String ? ObjectId(entry._id) : entry._id
                     }
+
+                    if (entry.createdBy && entry.createdBy.$oid) {
+                        entry.createdBy = ObjectId(entry.createdBy.$oid)
+                    }
+
                     typeDefinition.fields.forEach(field => {
 
+                        if(entry[field.name] && entry[field.name].$oid){
+                            entry[field.name] = ObjectId(entry[field.name].$oid)
+                        }
 
                         if (field.unique) {
                             match[field.name] = entry[field.name]

@@ -603,7 +603,18 @@ const GenericResolver = {
         if (!await Util.userHasCapability(db, context, options.capability ? options.capability : CAPABILITY_MANAGE_OTHER_USERS)) {
 
             if (data.createdBy && data.createdBy.toString() !== context.id) {
-                throw new Error('user is not allow to change field createdBy')
+
+                if(!context.group || context.group.length===0){
+                    throw new Error('user is not allow to change field createdBy')
+                }
+
+                // check if has same owenerGroup
+                const newUser = await Util.userById(db,data.createdBy)
+                const found = newUser && newUser.group && newUser.group.some(r=> context.group.includes(r.toString()))
+
+                if(!found){
+                    throw new Error('user is not allow to set createdBy with user from another group')
+                }
             }
 
             if (typeName === 'User') {

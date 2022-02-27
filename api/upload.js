@@ -173,7 +173,7 @@ export const handleMediaDumpUpload = db => async (req, res) => {
             // rename it to it's orignal name
             form.on('file', function (field, file) {
                 try {
-                    zipper.sync.unzip(file.path).save(upload_dir);
+                    zipper.sync.unzip(file.filepath).save(upload_dir);
                 } catch (e) {
                     console.log(file.path)
                     console.error(e)
@@ -225,9 +225,9 @@ export const handleDbDumpUpload = (db, client) => async (req, res) => {
         // rename it to it's orignal name
         form.on('file', function (field, file) {
 
-            console.log(client.s.url)
+            console.log(client.s.url, file.filepath)
             // --drop --> drops collections before
-            const response = execSync(`mongorestore --nsInclude=lunuc.* --noIndexRestore --uri="${client.s.url}" --drop --gzip --archive="${file.path}"`)
+            const response = execSync(`mongorestore --nsInclude=lunuc.* --noIndexRestore --uri="${client.s.url}" --drop --gzip --archive="${file.filepath}"`)
             console.log('restoreDbDump', response)
 
         })

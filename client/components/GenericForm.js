@@ -60,6 +60,13 @@ const styles = theme => {
                 width: 'calc(33.33% - ' + theme.spacing(2) + 'px)'
             }
         },
+        formFieldTwoThird: {
+            margin: theme.spacing(1) + 'px',
+            width: 'calc(100% - ' + theme.spacing(2) + 'px)',
+            [theme.breakpoints.up('md')]: {
+                width: 'calc(66.66% - ' + theme.spacing(2) + 'px)'
+            }
+        },
         formFieldFull: {
             width: 'calc(100% - ' + theme.spacing(2) + 'px)',
             margin: theme.spacing(1) + 'px',
@@ -513,7 +520,7 @@ class GenericForm extends React.Component {
             }
             if (field.uitype === 'datetime') {
                 //iso date without ms
-                if(value===0){
+                if(value===0 || value === null){
                     value = ''
                 }else {
                     if(!field.multi) {
@@ -1046,7 +1053,6 @@ class GenericForm extends React.Component {
 
 
                         value = matchObjectValueFromList(value, field, items)
-
                         return <SimpleSelect
                             readOnly={field.readOnly}
                             key={fieldKey} name={fieldKey}
@@ -1056,7 +1062,7 @@ class GenericForm extends React.Component {
                             hint={this.state.fieldErrors[fieldKey]}
                             multi={field.multi}
                             label={field.label}
-                            className={classNames(classes.formField, field.fullWidth && classes.formFieldFull, field.thirdWidth && classes.formFieldThird)}
+                            className={classNames(classes.formField, field.fullWidth && classes.formFieldFull, field.thirdWidth && classes.formFieldThird, field.twoThirdWidth && classes.formFieldTwoThird)}
                             InputLabelProps={{
                                 shrink: true,
                             }}
@@ -1084,7 +1090,7 @@ class GenericForm extends React.Component {
                     hint={this.state.fieldErrors[fieldKey]}
                     multi={field.multi}
                     label={field.label}
-                    className={classNames(classes.formField, field.fullWidth && classes.formFieldFull, field.thirdWidth && classes.formFieldThird)}
+                    className={classNames(classes.formField, field.fullWidth && classes.formFieldFull, field.thirdWidth && classes.formFieldThird, field.twoThirdWidth && classes.formFieldTwoThird)}
                     InputLabelProps={{
                         shrink: true,
                     }}
@@ -1122,7 +1128,7 @@ class GenericForm extends React.Component {
                                               key={fieldKey}
                                               id={fieldKey}
                                               label={(field.label || field.name) + (languageCode ? ' [' + languageCode + ']' : '')}
-                                              className={classNames(classes.formField, field.fullWidth && classes.formFieldFull, field.thirdWidth && classes.formFieldThird)}
+                                              className={classNames(classes.formField, field.fullWidth && classes.formFieldFull, field.thirdWidth && classes.formFieldThird, field.twoThirdWidth && classes.formFieldTwoThird)}
                                               InputLabelProps={{
                                                   shrink: true,
                                               }}

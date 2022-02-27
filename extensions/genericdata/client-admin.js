@@ -16,6 +16,7 @@ import {translations} from './translations/admin'
 import {setPropertyByPath} from "../../client/util/json";
 
 import {openWindow} from '../../client/util/window'
+import {deepMergeToFirst} from '../../util/deepMerge'
 
 registerTrs(translations, 'GenericData')
 
@@ -49,65 +50,67 @@ export default () => {
                 const item = data.results[i],
                     structure = item.definition ? item.definition.structure : {}
 
-                if (structure.titleTemplate) {
+                if(structure) {
+                    if (structure.titleTemplate) {
 
-                    row.data = Util.replacePlaceholders(structure.titleTemplate, {Util,...item})
+                        row.data = Util.replacePlaceholders(structure.titleTemplate, {Util, ...item})
 
-                    if (structure.titleIsHtml) {
+                        if (structure.titleIsHtml) {
 
-                        row.data  = <div dangerouslySetInnerHTML={{
-                            __html: row.data
-                        }}/>
-                    }
-
-                } else {
-
-                    let pickerFields
-
-                    if (structure.pickerField) {
-                        // can be a String or an Array
-                        pickerFields = structure.pickerField
-                    } else if (item.data.title) {
-                        // take title attribute if available
-                        pickerFields = 'title'
+                            row.data = <div dangerouslySetInnerHTML={{
+                                __html: row.data
+                            }}/>
+                        }
 
                     } else {
 
-                        // take the fist attribute of the object if none is specified
-                        const keys = Object.keys(item.data)
+                        let pickerFields
 
-                        if (keys.length > 0) {
-                            pickerFields = keys[0]
-                        }
-                    }
-                    if (pickerFields) {
-                        if (pickerFields.constructor !== Array) {
-                            pickerFields = [pickerFields]
-                        }
-                        row.data = ''
-                        pickerFields.forEach(picker => {
-                            if (item.data[picker]) {
+                        if (structure.pickerField) {
+                            // can be a String or an Array
+                            pickerFields = structure.pickerField
+                        } else if (item.data.title) {
+                            // take title attribute if available
+                            pickerFields = 'title'
 
-                                let value
+                        } else {
 
-                                if (item.data[picker].constructor === Object) {
-                                    //TODO it is not save to assume that it is a localized value
-                                    value = item.data[picker][_app_.lang]
-                                } else {
-                                    value = item.data[picker]
-                                }
+                            // take the fist attribute of the object if none is specified
+                            const keys = Object.keys(item.data)
 
-                                if (value) {
-                                    if (row.data) {
-                                        row.data += ' | '
-                                    }
-                                    row.data += value
-                                }
+                            if (keys.length > 0) {
+                                pickerFields = keys[0]
                             }
-                        })
+                        }
+                        if (pickerFields) {
+                            if (pickerFields.constructor !== Array) {
+                                pickerFields = [pickerFields]
+                            }
+                            row.data = ''
+                            pickerFields.forEach(picker => {
+                                if (item.data[picker]) {
 
-                        if (row.data.length > 83) {
-                            row.data = row.data.substring(0, 80) + '...'
+                                    let value
+
+                                    if (item.data[picker].constructor === Object) {
+                                        //TODO it is not save to assume that it is a localized value
+                                        value = item.data[picker][_app_.lang]
+                                    } else {
+                                        value = item.data[picker]
+                                    }
+
+                                    if (value) {
+                                        if (row.data) {
+                                            row.data += ' | '
+                                        }
+                                        row.data += value
+                                    }
+                                }
+                            })
+
+                            if (row.data.length > 83) {
+                                row.data = row.data.substring(0, 80) + '...'
+                            }
                         }
                     }
                 }
@@ -302,6 +305,11 @@ export default () => {
                             }
                         }
                     })
+
+                    if(structure.extendFields){
+                        deepMergeToFirst(newFields,structure.extendFields)
+
+                    }
 
                     // override default
                     props.children = <React.Fragment>
@@ -556,6 +564,33 @@ export default () => {
                                 required: false,
                                 fullWidth: true
                             })
+
+                            if(field.uitype === 'datetime') {
+
+                                filterFields['data.' + field.name].fullWidth = false
+                                filterFields['data.' + field.name].twoThirdWidth = true
+
+                                filterFields['__operator.data.' + field.name] ={
+                                    label: 'Vergleichsoperator',
+                                    enum:[
+                                        {
+                                            value:'==',
+                                            name: 'ist gleich'
+                                        },
+                                        {
+                                            value:'>',
+                                            name: 'ist grösser'
+                                        },
+                                        {
+                                            value:'<',
+                                            name: 'ist kleiner'
+                                        }
+                                    ],
+                                    tab: null,
+                                    required: false,
+                                    thirdWidth: true
+                                }
+                            }
                         }
 
                     })

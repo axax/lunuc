@@ -301,9 +301,7 @@ export default db => ({
 
             console.log(`Server methode call ${methodName}`)
             let result
-            try {
-                const script = await new Promise(resolve => {
-                    const tpl = new Function(`
+            const scriptExecution = `
                     const fs = this.require('fs')
                     const path = this.require('path')
                     const paths = [
@@ -351,7 +349,11 @@ export default db => ({
                         }catch(error){                       
                             this.resolve({error})
                         }
-                    })()`)
+                    })()`
+
+            try {
+                const script = await new Promise(resolve => {
+                    const tpl = new Function(scriptExecution)
 
                     tpl.call({
                         args,
@@ -369,7 +371,7 @@ export default db => ({
                 })
                 if (script.error) {
                     result = {error: script.error}
-                    console.log(script)
+                    console.log(script.error)
                 } else {
                     result = await script.result
                 }
