@@ -520,17 +520,17 @@ class GenericForm extends React.Component {
             }
             if (field.uitype === 'datetime') {
                 //iso date without ms
-                if(value===0 || value === null){
+                if(value===0 || value === null || value === undefined){
                     value = ''
                 }else {
                     if(!field.multi) {
                         try {
-                            value = new Date(value).toISOString()
+                            value = new Date(value.constructor===String && !isNaN(value)?parseFloat(value):value).toISOString()
                         } catch (e) {
+                            console.log(e, value)
                             if (!field.required) {
                                 value = ''
                             }
-                            console.log(e)
                         }
                     }
                 }

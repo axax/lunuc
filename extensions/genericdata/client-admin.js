@@ -27,12 +27,12 @@ const Typography = (props) => <Async {...props} expose="Typography"
                                      load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 
 
-const findField = (definition, key) =>{
-    if( definition && definition.structure && definition.structure.fields){
-        if(key.startsWith('data.')){
+const findField = (definition, key) => {
+    if (definition && definition.structure && definition.structure.fields) {
+        if (key.startsWith('data.')) {
             key = key.substring(5)
         }
-        return definition.structure.fields.find(f=>f.name===key)
+        return definition.structure.fields.find(f => f.name === key)
     }
 }
 
@@ -50,7 +50,7 @@ export default () => {
                 const item = data.results[i],
                     structure = item.definition ? item.definition.structure : {}
 
-                if(structure) {
+                if (structure) {
                     if (structure.titleTemplate) {
 
                         row.data = Util.replacePlaceholders(structure.titleTemplate, {Util, ...item})
@@ -143,9 +143,9 @@ export default () => {
 
                             const field = findField(dataToEdit.definition, key)
 
-                            if( field ){
-                                if(field.type==='Boolean'){
-                                    value = value==='true'?true:false
+                            if (field) {
+                                if (field.type === 'Boolean') {
+                                    value = value === 'true' ? true : false
                                 }
                             }
 
@@ -306,10 +306,11 @@ export default () => {
                         }
                     })
 
-                    if(structure.extendFields){
-                        deepMergeToFirst(newFields,structure.extendFields)
+                    if (structure.extendFields) {
+                        deepMergeToFirst(newFields, structure.extendFields)
 
                     }
+
 
                     // override default
                     props.children = <React.Fragment>
@@ -415,7 +416,7 @@ export default () => {
         if (type === 'GenericData' && data.definition) {
             variables.meta = data.definition.name
             if (data.definition.structure && fieldsToLoad.indexOf('data') < 0) {
-                if (data.definition.structure.fields.some(f => f.vagueLookup===false)) {
+                if (data.definition.structure.fields.some(f => f.vagueLookup === false)) {
                     fieldsToLoad.push('data')
                 }
             }
@@ -554,7 +555,7 @@ export default () => {
         if (type === 'GenericData') {
             if (this.state.data.meta) {
                 const definition = JSON.parse(this.state.data.meta)
-                if(definition.structure) {
+                if (definition.structure) {
                     delete filterFields.definition
 
                     definition.structure.fields.forEach(field => {
@@ -565,24 +566,24 @@ export default () => {
                                 fullWidth: true
                             })
 
-                            if(field.uitype === 'datetime') {
+                            if (field.uitype === 'datetime') {
 
                                 filterFields['data.' + field.name].fullWidth = false
                                 filterFields['data.' + field.name].twoThirdWidth = true
 
-                                filterFields['__operator.data.' + field.name] ={
+                                filterFields['__operator.data.' + field.name] = {
                                     label: 'Vergleichsoperator',
-                                    enum:[
+                                    enum: [
                                         {
-                                            value:'==',
+                                            value: '==',
                                             name: 'ist gleich'
                                         },
                                         {
-                                            value:'>',
+                                            value: '>',
                                             name: 'ist grösser'
                                         },
                                         {
-                                            value:'<',
+                                            value: '<',
                                             name: 'ist kleiner'
                                         }
                                     ],
@@ -602,10 +603,54 @@ export default () => {
 
 
     /*
+     TypesContainer: This gets called before the filter dialog is shown
+  */
+    Hook.on('TypesContainerBeforeFilterLabel', function ({type, payload}) {
+        if (type === 'GenericData') {
+            if (this.state.data && this.state.data.meta) {
+                const definition = JSON.parse(this.state.data.meta)
+                if (definition.structure) {
+
+                    const newPrettyFilter = {}
+
+                    if(payload.prettyFilter.createdBy){
+                        newPrettyFilter['Kunde'] = payload.prettyFilter.createdBy
+                    }
+
+                    definition.structure.fields.forEach(field => {
+
+                        let value = payload.prettyFilter['data.'+field.name]
+                        if(value){
+
+                            if(field.enum){
+                                const tmp = field.enum.find(f=>f.value===value)
+                                if(tmp){
+                                    value = tmp.name
+                                }
+                            }else  if (field.uitype === 'datetime') {
+
+                                value = new Date(value)
+                            }
+                            const key = field.label || field.name
+
+                            newPrettyFilter['__operator.'+key] = payload.prettyFilter['__operator.data.'+field.name]
+
+                            newPrettyFilter[key] = value
+                        }
+
+                    })
+
+                    payload.prettyFilter = newPrettyFilter
+                }
+            }
+        }
+    })
+
+
+    /*
       TypesContainer: This gets called before the filter dialog is shown
    */
     Hook.on('typeDataToLabel', function (context) {
-
 
         if (context.item.__typename === 'GenericData') {
             const definition = context.item.definition

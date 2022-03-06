@@ -161,14 +161,14 @@ class TypesContainer extends React.Component {
     }
 
     setSettingsForType(type, settings) {
-        const key = type + (this.pageParams.meta?'-'+this.pageParams.meta:'')
+        const key = type + (this.pageParams.meta ? '-' + this.pageParams.meta : '')
         this.settings[key] = Object.assign({}, this.settings[key], settings)
 
         this.saveSettings()
     }
 
     getSettingsForType(type, meta) {
-        const key = type + (meta?'-'+meta:'')
+        const key = type + (meta ? '-' + meta : '')
         return this.settings[key] || {}
     }
 
@@ -230,6 +230,7 @@ class TypesContainer extends React.Component {
             this.pageParams.limit !== pageParams.limit ||
             this.pageParams.sort !== pageParams.sort ||
             this.pageParams.baseFilter !== pageParams.baseFilter ||
+            this.pageParams.prettyFilter !== pageParams.prettyFilter ||
             this.pageParams.filter !== pageParams.filter) {
 
             this.pageParams = pageParams
@@ -622,6 +623,9 @@ class TypesContainer extends React.Component {
         }
 
 
+        let prettyFilter = this.getPrettyFilter()
+
+
         let viewSettingDialogProps, editDialogProps, manageColDialogProps, viewFilterDialogProps
 
         if (viewFilterDialog !== undefined) {
@@ -650,36 +654,15 @@ class TypesContainer extends React.Component {
             let formRef
             viewFilterDialogProps = {
                 title: 'Filter',
-                maxWidth:'md',
-                fullWidth:true,
+                maxWidth: 'md',
+                fullWidth: true,
                 open: this.state.viewFilterDialog,
                 onClose: () => {
-                    let newFilter = ''
-                    Object.keys(formRef.state.fields).forEach(fieldKey => {
-                        if(!fieldKey.startsWith('__operator.data.')) {
-                            const value = formRef.state.fields[fieldKey]
-                            if (value) {
-                                if (newFilter) {
-                                    newFilter += ' && '
-                                }
+                    prettyFilter = formRef.state.fields
 
-                                if (value.constructor === Array) {
-                                    let ids = []
-                                    value.forEach(item => {
-                                        ids.push(item._id)
-                                    })
-                                    newFilter += `${fieldKey}==[${ids.join(',')}]`
-                                } else {
-
-                                    const operator = formRef.state.fields['__operator.'+fieldKey] || '='
-
-                                    newFilter += `${fieldKey}${operator}${value}`
-                                }
-                            }
-                        }
-                    })
-                    this.setState({viewFilterDialog: false, filter: newFilter}, () => {
-                        this.handleFilter({value: newFilter}, true)
+                    this.setState({viewFilterDialog: false}, () => {
+                        const filter = this.prettyFilterToStringFilter(prettyFilter)
+                        this.goTo({page: 1, prettyFilter: filter?JSON.stringify(prettyFilter):''})
                     })
 
                 },
@@ -691,7 +674,7 @@ class TypesContainer extends React.Component {
                 children: <div>
                     <GenericForm primaryButton={false} ref={(e) => {
                         formRef = e
-                    }} fields={filterFields}/>
+                    }} fields={filterFields} values={prettyFilter}/>
                 </div>
             }
 
@@ -756,7 +739,6 @@ class TypesContainer extends React.Component {
         }
         const selectedLength = Object.keys(this.state.selectedRows).length
         const {description} = this.types[type]
-
         const content = [
             !title && !this.pageParams.title ? null :
                 <Typography key="typeTitle" variant="h3"
@@ -791,7 +773,6 @@ class TypesContainer extends React.Component {
                             />
                             <IconButton onClick={() => {
                                 this.setState({filter: ''})
-
                                 this.handleFilter({value: ''}, true)
                             }} className={classes.searchIconButton}>
                                 <DeleteIcon/>
@@ -807,6 +788,23 @@ class TypesContainer extends React.Component {
                         </Paper>
                     </Col>
                 </Row>
+                {
+                    prettyFilter && <div style={{margin:'1rem 0'}}>
+                        <Typography variant="caption">Filter: </Typography>
+                        <Chip
+                            label={this.prettyFilterLabel(prettyFilter)}
+                            onClick={() => {
+                                this.setState({viewFilterDialog: true})
+                            }}
+                            onDelete={() => {
+                                this.goTo({page: 1, prettyFilter: ''})
+                            }}
+                            deleteIcon={<DeleteIcon/>}
+                            variant="outlined"
+                        />
+                    </div>
+
+                }
                 <Typography className={classes.searchHint} component="div" key="searchHint"
                             variant="caption">{this.searchHint()}</Typography>
             </div>,
@@ -1097,7 +1095,7 @@ class TypesContainer extends React.Component {
 
     determinePageParams(props) {
         const {params} = props.match || {}
-        const {p, l, s, f, v, noLayout, fixType, title, baseFilter, multi, meta, action} = Util.extractQueryParams(window.location.search.substring(1))
+        const {p, l, s, f, v, noLayout, fixType, title, baseFilter, prettyFilter, multi, meta, action} = Util.extractQueryParams(window.location.search.substring(1))
         const pInt = parseInt(p), lInt = parseInt(l)
 
         const finalFixType = fixType || props.fixType,
@@ -1120,6 +1118,7 @@ class TypesContainer extends React.Component {
         const typeSettings = this.getSettingsForType(type, meta)
         const result = {
             baseFilter: finalBaseFilter,
+            prettyFilter,
             multi,
             title,
             meta,
@@ -1151,7 +1150,16 @@ class TypesContainer extends React.Component {
 
     extendFilter(filter) {
         const {baseFilter} = this.pageParams
-        return filter + (baseFilter ? (filter ? ' && ' : '') + baseFilter : '')
+        let finalFilter = (filter || '') + (baseFilter ? (filter ? ' && ' : '') + baseFilter : '')
+
+        const prettyFilter = this.getPrettyFilter()
+        if (prettyFilter) {
+            if (finalFilter) {
+                finalFilter += ' && '
+            }
+            finalFilter += this.prettyFilterToStringFilter(prettyFilter)
+        }
+        return finalFilter
     }
 
     getData({type, page, limit, sort, filter, meta, _version}, cacheFirst, typeChanged) {
@@ -1225,6 +1233,10 @@ class TypesContainer extends React.Component {
                 },
                 update: (store, {data}) => {
 
+                    if(!optimisticInput.createdBy){
+                        //
+                        delete optimisticInput.createdBy
+                    }
                     const freshData = {
                         ...data['create' + type],
                         createdBy: {
@@ -1234,6 +1246,7 @@ class TypesContainer extends React.Component {
                         }, ...optimisticInput
                     }
                     this.enhanceOptimisticData(freshData)
+                    console.log(freshData, optimisticInput)
 
                     const storeKey = this.getStoreKey(type)
                     const extendedFilter = this.extendFilter(filter)
@@ -1457,15 +1470,94 @@ class TypesContainer extends React.Component {
 
     goTo(args) {
         const {baseUrl} = this.props
-        const {type, page, limit, sort, filter, fixType, _version, multi, baseFilter, noLayout, title, meta} = Object.assign({}, this.pageParams, args)
-        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL + '/types' + (type ? '/' + type : '')}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${fixType ? '&fixType=' + fixType : ''}${noLayout ? '&noLayout=' + noLayout : ''}${title ? '&title=' + encodeURIComponent(title) : ''}${meta ? '&meta=' + meta : ''}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}`)
+        const {type, page, limit, sort, filter, fixType, _version, multi, baseFilter, noLayout, title, meta, prettyFilter} = Object.assign({}, this.pageParams, args)
+
+        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL + '/types' + (type ? '/' + type : '')}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${fixType ? '&fixType=' + fixType : ''}${noLayout ? '&noLayout=' + noLayout : ''}${title ? '&title=' + encodeURIComponent(title) : ''}${meta ? '&meta=' + meta : ''}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}${prettyFilter ? '&prettyFilter=' + encodeURIComponent(prettyFilter) : ''}`)
     }
 
+    getPrettyFilter() {
+        let prettyFilter
+        if (this.pageParams.prettyFilter) {
+            try {
+                prettyFilter = JSON.parse(this.pageParams.prettyFilter)
+            } catch (e) {
+
+            }
+        }
+        return prettyFilter
+    }
+
+    prettyFilterToStringFilter(prettyFilter) {
+        let newFilter = ''
+
+        Object.keys(prettyFilter).forEach(fieldKey => {
+            if (!fieldKey.startsWith('__operator.data.')) {
+                const value = prettyFilter[fieldKey]
+                if (value) {
+                    if (newFilter) {
+                        newFilter += ' && '
+                    }
+
+                    if (value.constructor === Array) {
+                        if (value.length > 0) {
+
+                            let ids = []
+                            value.forEach(item => {
+                                ids.push(item._id)
+                            })
+                            newFilter += `${fieldKey}==[${ids.join(',')}]`
+                        }
+                    } else {
+
+                        const operator = prettyFilter['__operator.' + fieldKey] || '='
+
+                        newFilter += `${fieldKey}${operator}${value}`
+                    }
+                }
+            }
+        })
+        return newFilter
+    }
+
+    prettyFilterLabel(prettyFilter) {
+        let newFilter = []
+
+        let payload = {prettyFilter}
+
+        Hook.call('TypesContainerBeforeFilterLabel', {type: this.pageParams.type, payload}, this)
+
+        Object.keys(payload.prettyFilter).forEach(fieldKey => {
+            if (!fieldKey.startsWith('__operator.')) {
+                const value = payload.prettyFilter[fieldKey]
+                if (value) {
+                    if (newFilter.length > 0) {
+                        newFilter.push(<span> und </span>)
+                    }
+                    const operator = payload.prettyFilter['__operator.' + fieldKey] || '='
+
+                    newFilter.push(<span>{fieldKey}{operator}</span>)
+
+                    if (value.constructor === Array) {
+                        if (value.length > 0) {
+                            value.forEach(item => {
+                                newFilter.push(
+                                    <strong>{item.data ? item.data.name : item.name || item.username}</strong>)
+                            })
+                        }
+                    } else {
+
+                        newFilter.push(<strong>{value}</strong>)
+                    }
+                }
+            }
+        })
+        return newFilter
+    }
 
     runFilter(f) {
         const {type} = this.pageParams
         this.setSettingsForType(type, {filter: f})
-        this.goTo({page: 1, filter: f})
+        this.goTo({page: 1, filter: f, prettyFilter: undefined})
     }
 
     handleFilterTimeout = null

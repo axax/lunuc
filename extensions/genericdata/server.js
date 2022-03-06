@@ -85,16 +85,16 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
         if (projection) {
 
             const dataProjection = findProjection('data', projection)
-            if(dataProjection && dataProjection.constructor === Array){
-                currentProjection = findProjection(field.name,dataProjection)
-                if( !currentProjection){
+            if (dataProjection && dataProjection.constructor === Array) {
+                currentProjection = findProjection(field.name, dataProjection)
+                if (!currentProjection) {
                     //console.log(`no lookup for ${field.name} needed`)
                     return
                 }
             }
 
         }
-        if(!currentProjection && field.vagueLookup===false && (!otherOptions.filter || otherOptions.filter.indexOf('_id=')!==0)){
+        if (!currentProjection && field.vagueLookup === false && (!otherOptions.filter || otherOptions.filter.indexOf('_id=') !== 0)) {
             return
         }
 
@@ -141,15 +141,18 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
                 }
             }
         let subLookup = []
-        if(otherOptions.lookupLevel > 1/* && currentProjection && currentProjection.constructor===Array*/){
+        if (otherOptions.lookupLevel > 1/* && currentProjection && currentProjection.constructor===Array*/) {
 
             const def = await getGenericTypeDefinitionWithStructure(db, {name: field.genericType})
-            if(def && def.structure && def.structure.fields){
+            if (def && def.structure && def.structure.fields) {
 
-                for( const subField of def.structure.fields){
-                   if(subField.genericType){
-                       await addGenericTypeLookup(subField,{lookups:subLookup,lookupLevel: otherOptions.lookupLevel-1},currentProjection, db)
-                   }
+                for (const subField of def.structure.fields) {
+                    if (subField.genericType) {
+                        await addGenericTypeLookup(subField, {
+                            lookups: subLookup,
+                            lookupLevel: otherOptions.lookupLevel - 1
+                        }, currentProjection, db)
+                    }
                 }
 
             }
@@ -169,8 +172,8 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
                 as: field.metaFields ? `lookupRelation${key}` : `data.${key}`
             }
         }
-        if(subLookup.length > 0){
-            subLookup.forEach(sub=>{
+        if (subLookup.length > 0) {
+            subLookup.forEach(sub => {
                 newLookup.$lookup.pipeline.push(sub)
             })
         }
@@ -178,8 +181,8 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
         newLookup.$lookup.pipeline.push({
             $project: {
                 __typename: 'GenericData',
-                    _id: 1,
-                    data: 1
+                _id: 1,
+                data: 1
             }
         })
 
@@ -236,7 +239,7 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions
                 match.definition = {$eq: ObjectId(def._id)}
                 if (struct.fields) {
 
-                    for(let i = 0; i< struct.fields.length;i++){
+                    for (let i = 0; i < struct.fields.length; i++) {
                         const field = struct.fields[i]
                         await addGenericTypeLookup(field, otherOptions, data, db)
                     }
@@ -261,27 +264,27 @@ Hook.on('typeLoaded', async ({type, db, context, result, otherOptions}) => {
             const def = await getGenericTypeDefinitionWithStructure(db, {name: genericType})
 
 
-            if(def && def.structure && def.structure.fields){
-                for(let i = 0; i< def.structure.fields.length; i++){
+            if (def && def.structure && def.structure.fields) {
+                for (let i = 0; i < def.structure.fields.length; i++) {
                     const field = def.structure.fields[i]
-                    if(field.dynamic){
+                    if (field.dynamic) {
 
-                        if(!field.dynamic.genericType){
+                        if (!field.dynamic.genericType) {
                             console.warn('field.dynamic.genericType is missing')
-                        }else {
+                        } else {
 
-                            for(let j = 0; j< result.results.length; j++){
+                            for (let j = 0; j < result.results.length; j++) {
                                 const item = result.results[j]
                                 const data = JSON.parse(item.data)
                                 const subData = await GenericResolver.entities(db, context, 'GenericData', ['_id', {definition: ['_id']}, 'data'],
                                     {
-                                        filter: `definition.name==${field.dynamic.genericType}${field.dynamic.filter?' && '+ClientUtil.replacePlaceholders(field.dynamic.filter,item):''}`,
+                                        filter: `definition.name==${field.dynamic.genericType}${field.dynamic.filter ? ' && ' + ClientUtil.replacePlaceholders(field.dynamic.filter, item) : ''}`,
                                         limit: 1000,
                                         includeCount: false,
                                         meta: field.dynamic.genericType
                                     })
 
-                                subData.results.forEach(subItem=>{
+                                subData.results.forEach(subItem => {
                                     subItem.data = JSON.parse(subItem.data)
                                     subItem.__typename = field.type
                                 })
@@ -357,8 +360,30 @@ Hook.on('typeBeforeCreate', async ({db, type, data}) => {
                         }
 
                     }
+
+                    if (field.defaultValue) {
+                        if (!data.data[field.name]) {
+                            data.data[field.name] = field.defaultValue
+                        }
+                    }
                 }
 
+            }
+
+            if (struct.extendFields) {
+                Object.keys(struct.extendFields).forEach(key => {
+                    const dvalue = struct.extendFields[key].defaultValue
+                    if (dvalue && !data[key]) {
+
+                        if( dvalue.constructor === Array){
+                            data[key] = dvalue.map(f=>ObjectId(f))
+                        }else {
+
+                            data[key] = dvalue
+                        }
+                    }
+
+                })
             }
 
         }
@@ -375,13 +400,22 @@ Hook.on('typeUpdated_GenericDataDefinition', ({db, result}) => {
 })
 
 // Clear cache when the type GenericData has changed
-Hook.on('typeUpdated_GenericData', async ({db, result}) => {
-
+Hook.on(['typeUpdated_GenericData','typeCreated_GenericData'], async ({db, result}) => {
     if (result.definition && result.definition._id) {
         const def = await getGenericTypeDefinitionWithStructure(db, {id: result.definition._id})
-
         if (def) {
             Cache.clearStartWith(def.name)
+        }
+    }
+})
+
+Hook.on(['typeDeleted_GenericData'], async ({db, deletedDocuments}) => {
+    for(const deltedDoc of deletedDocuments){
+        if (deltedDoc.definition) {
+            const def = await getGenericTypeDefinitionWithStructure(db, {id: deltedDoc.definition})
+            if (def) {
+                Cache.clearStartWith(def.name)
+            }
         }
     }
 })
@@ -405,9 +439,9 @@ Hook.on('AggregationBuilderBeforeQuery', async ({db, type, filters}) => {
                 filters.parts['definition'].value = def._id
             }
         }
-        Object.keys(filters.parts).forEach(key=>{
-            if(key.indexOf('.')<0 && key!=='data' && key!=='_id' && key!=='definition' && key!=='createdBy'){
-                filters.parts['data.'+key] = filters.parts[key]
+        Object.keys(filters.parts).forEach(key => {
+            if (key.indexOf('.') < 0 && key !== 'data' && key !== '_id' && key !== 'definition' && key !== 'createdBy') {
+                filters.parts['data.' + key] = filters.parts[key]
                 delete filters.parts[key]
             }
         })
