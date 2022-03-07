@@ -15,6 +15,15 @@
           "index": 1
         },
         {
+          "name": "keyword",
+          "label": "Keywords",
+          "localized": true,
+          "uitype": "textarea",
+          "index": 1,
+          "hideColumnInTypes": true,
+          "Tab": "SEO"
+        },
+        {
           "name": "slug",
           "label": "Slug",
           "required": false,
