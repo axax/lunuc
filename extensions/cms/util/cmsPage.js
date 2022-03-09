@@ -9,7 +9,7 @@ import {loadAllHostrules} from 'util/hostrules'
 const hostrules = loadAllHostrules(false)
 
 
-export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, _version, headers}) => {
+export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, _version, headers, ignorePublicState}) => {
     let host = headers && headers['x-host-rule'] ? headers['x-host-rule'].split(':')[0] : getHostFromHeaders(headers)
 
     if(!host){
@@ -71,7 +71,7 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, _
             parts.splice(-1,1)
         }*/
 
-        if (!Util.isUserLoggedIn(context)) {
+        if (!ignorePublicState && !Util.isUserLoggedIn(context)) {
             // if no user only match public entries
             match = {$and: [slugMatch, {public: true}]}
         } else {
