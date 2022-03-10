@@ -337,7 +337,6 @@ Hook.on('typeBeforeCreate', async ({db, type, data}) => {
 
         const def = await getGenericTypeDefinitionWithStructure(db, {id: data.definition})
 
-
         if (def && def.structure) {
             const struct = def.structure
             if (struct.fields) {
@@ -361,7 +360,7 @@ Hook.on('typeBeforeCreate', async ({db, type, data}) => {
 
                     }
 
-                    if (field.defaultValue) {
+                    if (field.defaultValue && data.data.constructor === Object) {
                         if (!data.data[field.name]) {
                             data.data[field.name] = field.defaultValue
                         }
