@@ -318,13 +318,14 @@ class GenericForm extends React.Component {
                                 onChange: (date, dateStr, obj) => {
                                     /*const offset = date[0].getTimezoneOffset()/60
                                     const offsetStr = '+'+(offset<10 && offset>-10?'0':'')+(-(offset))+':00'*/
+                                    /*
                                     this.handleInputChange({
                                         target: {
                                             name: obj.element.name,
                                             value: dateStr,
                                             type: 'datetime'
                                         }
-                                    })
+                                    })*/
                                 }
                             })
                         }
@@ -437,12 +438,12 @@ class GenericForm extends React.Component {
                 if (fieldTrigger && fieldTrigger.change) {
                     changeTrigger.push(...fieldTrigger.change)
                 }
-
                 if (changeTrigger.length > 0) {
                     let script = 'const rawValue=this.rawValue,state=this.state,props=this.props;' + changeTrigger.join(';')
                     try {
                         new Function(script).call({
                             state: newState,
+                            name,
                             rawValue: e.rawValue,
                             props: this.props
                         })

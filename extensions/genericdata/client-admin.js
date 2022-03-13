@@ -683,6 +683,7 @@ export default () => {
             try {
                 const actionStr = new Function('const data=this.data,Util=this.Util;return `' + JSON.stringify(action) + '`').call({
                     data: dataToEdit.data,
+                    _id: dataToEdit._id,
                     Util
                 })
                 const newAction = JSON.parse(actionStr)
