@@ -66,7 +66,7 @@ Hook.on('cmsTemplateRenderer', async ({db, context, body, slug, req}) => {
             }
         }
     }
-    const scope = {page: {slug, lang: context.lang}}
+    const scope = {page: {slug, lang: context.lang}, props: {context:mailContext}}
     const {template, script, dataResolver, style} = cmsPages.results[0]
     const {resolvedData} = await resolveData({db, context, dataResolver, scope})
 
