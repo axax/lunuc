@@ -137,8 +137,12 @@ const extendWithOwnerGroupMatch = (typeDefinition, context, match) => {
     return match
 }
 
-const createMatchForCurrentUser = async ({typeName, db, context}) => {
+const createMatchForCurrentUser = async ({typeName, db, context, operation}) => {
     let match
+
+    if(!operation){
+        operation='read'
+    }
 
     if (typeName === 'User') {
 
@@ -163,8 +167,8 @@ const createMatchForCurrentUser = async ({typeName, db, context}) => {
             if (typeDefinition.noUserRelation) {
                 userFilter = false
             }
-            if (typeDefinition.access && typeDefinition.access.read) {
-                if (await Util.userHasCapability(db, context, typeDefinition.access.read)) {
+            if (typeDefinition.access && typeDefinition.access[operation]) {
+                if (await Util.userHasCapability(db, context, typeDefinition.access[operation])) {
                     // user can read everything
                     return {}
                 } else if (typeDefinition.noUserRelation) {
@@ -457,26 +461,20 @@ const GenericResolver = {
 
         const collectionName = await buildCollectionName(db, context, typeName, _version)
 
-
-        const options = {
-            _id: ObjectId(data._id)
-        }
+        let match = {}
         if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
-            if (typeName === 'User') {
-                // special case for type User
-                if ( await Util.userHasCapability(db, context, CAPABILITY_MANAGE_SAME_GROUP)) {
-                    options.group = {$in: context.group.map(f=>ObjectId(f))}
-                }else{
-                    throw new Error('Error deleting entry. You might not have premissions to manage other users')
-                }
-            } else {
-                options.createdBy = {$in: await Util.userAndJuniorIds(db, context.id)}
-            }
+            match = await createMatchForCurrentUser({typeName, db, context, operation:'delete'})
         }
+
+        if(!match){
+            throw new Error(`no permission to delete data for type ${typeName}`)
+        }
+
+        match._id= ObjectId(data._id)
 
         const collection = db.collection(collectionName)
 
-        const deletedResult = await collection.findOneAndDelete(options)
+        const deletedResult = await collection.findOneAndDelete(match)
 
         if (deletedResult.ok && deletedResult.value) {
             Hook.call('typeDeleted', {
@@ -530,28 +528,26 @@ const GenericResolver = {
             })
         })
 
-        const options = {
-            _id: {$in}
+
+
+        let match = {}
+        if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
+            match = await createMatchForCurrentUser({typeName, db, context, operation:'delete'})
         }
 
-        if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
-            if (typeName === 'User') {
-                // special case for type User
-                if ( await Util.userHasCapability(db, context, CAPABILITY_MANAGE_SAME_GROUP)) {
-                    options.group = {$in: context.group.map(f=>ObjectId(f))}
-                }else{
-                    throw new Error('Error deleting entry. You might not have premissions to manage other users')
-                }
-            } else {
-                options.createdBy = {$in: await Util.userAndJuniorIds(db, context.id)}
-            }
+
+        if(!match){
+            throw new Error(`no permission to delete data for type ${typeName}`)
         }
+
+        match._id= {$in}
+
 
         const collection = db.collection(collectionName)
 
-        const deletedDocuments = await collection.find(options).toArray()
+        const deletedDocuments = await collection.find(match).toArray()
 
-        const deletedResult = await collection.deleteMany(options)
+        const deletedResult = await collection.deleteMany(match)
 
         if (deletedResult.deletedCount > 0) {
             Hook.call('typeDeleted', {type: typeName, ids: data._id, deletedDocuments, db, context})
