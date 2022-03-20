@@ -531,22 +531,25 @@ function hasHttpsWwwRedirect(host, req, res) {
 
                 const agent = req.headers['user-agent']
 
+                // don't force redirect for letsencrypt
+                if( agent && agent.indexOf('www.letsencrypt.org') < 0) {
 
-                const {browser, version} = parseUserAgent(agent)
+                    const {browser, version} = parseUserAgent(agent)
 
 
-                console.log(`${req.connection.remoteAddress}: Redirect to https ${newhost} / user-agent: ${agent} / browser=${browser} / version=${version}`)
+                    console.log(`${req.connection.remoteAddress}: Redirect to https ${newhost} / user-agent: ${agent} / browser=${browser} / version=${version}`)
 
-                if ((browser === 'safari' && version < 6) ||
-                    (browser === 'firefox' && version <= 12) ||
-                    (browser === 'chrome' && version <= 16) ||
-                    (browser === 'opera' && version <= 10) ||
-                    (browser === 'msie' && version <= 6)) {
-                    // for browser that doesn't support tls 1.2
-                } else {
-                    res.writeHead(301, {'Location': 'https://' + newhost + req.url})
-                    res.end()
-                    return true
+                    if ((browser === 'safari' && version < 6) ||
+                        (browser === 'firefox' && version <= 12) ||
+                        (browser === 'chrome' && version <= 16) ||
+                        (browser === 'opera' && version <= 10) ||
+                        (browser === 'msie' && version <= 6)) {
+                        // for browser that doesn't support tls 1.2
+                    } else {
+                        res.writeHead(301, {'Location': 'https://' + newhost + req.url})
+                        res.end()
+                        return true
+                    }
                 }
             }
         }
