@@ -31,6 +31,7 @@ class BackupContainer extends React.Component {
             creatingHostruleDump: false,
             importingDbDump: false,
             importingMediaDump: false,
+            importingHostruleDump: false,
             importMediaDumpDialog: false,
             importDbDumpDialog: false,
             importHostruleDumpDialog: false
@@ -63,12 +64,20 @@ class BackupContainer extends React.Component {
         this.setState({importMediaDumpDialog: true})
     }
 
+    importHostruleDump() {
+        this.setState({importHostruleDumpDialog: true})
+    }
+
     importDbDump() {
         this.setState({importDbDumpDialog: true})
     }
 
     handleConfirmMediaDialog() {
         this.setState({importMediaDumpDialog: false})
+    }
+
+    handleConfirmHostruleDialog() {
+        this.setState({importHostruleDumpDialog: false})
     }
 
     handleConfirmDbDialog() {
@@ -114,7 +123,7 @@ class BackupContainer extends React.Component {
 
     render() {
         const {dbDumps, mediaDumps, hostruleDumps} = this.props
-        const {creatingDump, creatingMediaDump, creatingHostruleDump, importingMediaDump, importMediaDumpDialog, importDbDumpDialog, importHostruleDumpDialog, importingDbDump} = this.state
+        const {creatingDump, creatingMediaDump, creatingHostruleDump, importingMediaDump, importingHostruleDump, importMediaDumpDialog, importDbDumpDialog, importHostruleDumpDialog, importingDbDump} = this.state
         return (
             <BaseLayout key="baseLayout">
                 <Typography variant="h3" gutterBottom>Backups</Typography>
@@ -190,6 +199,11 @@ class BackupContainer extends React.Component {
                                       onClick={this.createHostruleDump.bind(this)}>{creatingHostruleDump ? 'Dump is beeing created' : 'Create hostrule dump'}</SimpleButton>
 
 
+                        <SimpleButton color="secondary"
+                                      showProgress={importingHostruleDump}
+                                      onClick={this.importHostruleDump.bind(this)}>{importingHostruleDump ? 'Dump is beeing imported' : 'Import hostrule dump'}</SimpleButton>
+
+
                         {hostruleDumps && hostruleDumps.results && hostruleDumps.results.length > 0 &&
                         <SimpleList items={hostruleDumps.results.reduce((a, i) => {
                             a.push({
@@ -207,6 +221,16 @@ class BackupContainer extends React.Component {
                         }
                     </Col>
                 </Row>
+
+                <SimpleDialog open={importHostruleDumpDialog} onClose={this.handleConfirmHostruleDialog.bind(this)}
+                              actions={[{key: 'close', label: 'Close'}]}
+                              title="Select a hostrule dump file">
+
+                    <FileDrop maxSize={10000000} style={{width: '15rem', height: '10rem'}} accept="application/x-gzip"
+                              uploadTo="/graphql/upload/hostrule"
+                              label="Drop file here"/>
+
+                </SimpleDialog>
 
                 <SimpleDialog open={importMediaDumpDialog} onClose={this.handleConfirmMediaDialog.bind(this)}
                               actions={[{key: 'close', label: 'Close'}]}

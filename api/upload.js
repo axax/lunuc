@@ -9,7 +9,7 @@ import {
     CAPABILITY_MANAGE_BACKUPS
 } from 'util/capabilities'
 
-const {UPLOAD_DIR, UPLOAD_URL, DEFAULT_LANGUAGE} = config
+const {UPLOAD_DIR, UPLOAD_URL, DEFAULT_LANGUAGE, HOSTRULES_ABSPATH} = config
 import {contextByRequest} from '../api/util/sessionContext'
 
 
@@ -174,6 +174,59 @@ export const handleMediaDumpUpload = db => async (req, res) => {
             form.on('file', function (field, file) {
                 try {
                     zipper.sync.unzip(file.filepath).save(upload_dir);
+                } catch (e) {
+                    console.log(file.path)
+                    console.error(e)
+                    res.end('{"status":"error","message":"' + e.message + '"}')
+
+                }
+            })
+
+            // log any errors that occur
+            form.on('error', function (err) {
+                console.log(err)
+                res.end('{"status":"error","message":"' + err.message + '"}')
+            })
+            form.on('aborted', function () {
+                res.end('{"status":"aborted","message":"Upload was aborted"}')
+            })
+
+            form.on('progress', function (bytesReceived, bytesExpected) {
+                const percent = (bytesReceived / bytesExpected * 100) | 0
+                console.log('Uploading: ' + percent + '%')
+            })
+
+
+            // once all the files have been uploaded, send a response to the client
+            form.on('end', function () {
+                res.end('{"status":"success"}')
+            })
+
+            // parse the incoming request containing the form data
+            form.parse(req)
+        }
+    }
+}
+
+export const handleHostruleDumpUpload = db => async (req, res) => {
+
+    // make sure upload dir exists
+    if (beforeUpload(res, req, HOSTRULES_ABSPATH)) {
+
+        const authContext = await authContextOrError(db, res, req, CAPABILITY_MANAGE_BACKUPS)
+        if (authContext) {
+
+            /* Process the uploads */
+            const form = formidable({maxFileSize: 1014 * 1024 * 1024, keepExtensions: false})
+
+            res.writeHead(200, {'content-type': 'application/json'})
+
+
+            // every time a file has been uploaded successfully,
+            // rename it to it's orignal name
+            form.on('file', function (field, file) {
+                try {
+                    zipper.sync.unzip(file.filepath).save(HOSTRULES_ABSPATH);
                 } catch (e) {
                     console.log(file.path)
                     console.error(e)

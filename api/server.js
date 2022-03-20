@@ -11,7 +11,7 @@ import {resolver} from './resolver/index'
 import {dbConnection, dbPreparation, MONGO_URL, BACKUP_MONGO_URL} from './database'
 import {auth} from './auth'
 import {formatError} from './error'
-import {handleUpload, handleMediaDumpUpload, handleDbDumpUpload} from './upload'
+import {handleUpload, handleMediaDumpUpload, handleDbDumpUpload, handleHostruleDumpUpload} from './upload'
 import Hook from 'util/hook'
 import compression from 'compression'
 import {pubsub} from './subscription'
@@ -90,6 +90,8 @@ export const start = (done) => {
 
             // upload media dump
             app.use('/graphql/upload/mediadump', handleMediaDumpUpload(db))
+
+            app.use('/graphql/upload/hostrule', handleHostruleDumpUpload(db))
 
             // maybe move file upload to another server
             app.use('/graphql/upload', handleUpload(db))
