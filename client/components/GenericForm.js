@@ -519,7 +519,7 @@ class GenericForm extends React.Component {
             if (field.replaceBreaks && value) {
                 value = value.replace(/<br>/g, '\n')
             }
-            if (field.uitype === 'datetime') {
+            if (field.uitype === 'date' || field.uitype === 'datetime') {
                 //iso date without ms
                 if(value===0 || value === null || value === undefined){
                     value = ''
@@ -1146,7 +1146,7 @@ class GenericForm extends React.Component {
                                               }}
                                               helperText={this.state.fieldErrors[fieldKey]}
                                               fullWidth={field.fullWidth}
-                                              type={isDateOrTime && field.multi?'text':uitype}
+                                              type={isDateOrTime?'text':uitype}
                                               multiline={uitype === 'textarea'}
                                               placeholder={field.placeholder}
                                               value={value || field.defaultValue || ''}
