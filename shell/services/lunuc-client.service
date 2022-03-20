@@ -3,6 +3,7 @@ Description=Lunuc Client
 
 [Service]
 Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
+Environment="LUNUC_UPLOAD_DIR=/../../srv/uploads"
 Environment="LUNUC_CERT_DIR=/etc/letsencrypt/live/lunuc.com"
 Environment="LUNUC_PORT=8080"
 Environment="LUNUC_FORCE_HTTPS=false"

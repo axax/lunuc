@@ -126,7 +126,7 @@ https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/
    bindIp: 127.0.0.1,mongodb_server_ip`
 `sudo ufw allow from 194.230.16.16 to any port 27017`
 `sudo ufw status numbered`
-sudo ufw delete 8
+`sudo ufw delete 8`
 
 #### When mongodb doesn't start
 `rm /tmp/mongodb-27017.sock`
@@ -244,8 +244,9 @@ create lunuc-api.service file under /etc/systemd/system
 
 ### Port forwarding
 
-`sudo iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 8080`
-`sudo iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 443 -j REDIRECT --to-port 8080`
+
+`sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 8080`
+`sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 8080`
 
 #### On local machine
 `iptables -t nat -A OUTPUT -o lo -p tcp --dport 80 -j REDIRECT --to-port 8080`
@@ -307,7 +308,7 @@ Add this to the file:
 ### Disable Apache 2
 `sudo systemctl disable apache2 && sudo systemctl stop apache2`
 `/etc/init.d/apache2 stop`
-`sudo systemctl disable apache2
+`sudo systemctl disable apache2`
 
 ### Security
 

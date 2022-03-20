@@ -4,6 +4,7 @@ Description=Lunuc Api
 [Service]
 Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
 Environment="LUNUC_MONGO_URL=mongodb+srv://xxx:xxx@cluster0-ullnt.gcp.mongodb.net/lunuc?retryWrites=true&w=majority"
+Environment="LUNUC_SUPER_PASSWORD="
 Environment="LUNUC_ALPHA_VANTAGE_API_KEY=xxx"
 Environment="AWS_KEY=xxx"
 Environment="AWS_SECRET=xxx"

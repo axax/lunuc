@@ -20,6 +20,7 @@ import {parseUserAgent} from '../util/userAgent'
 import {USE_COOKIES} from '../api/constants'
 import {parseCookies} from '../api/util/parseCookies'
 import puppeteer from 'puppeteer'
+import {decodeToken} from '../api/util/jwt'
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
 const ABS_UPLOAD_DIR = path.join(__dirname, '../' + UPLOAD_DIR)
@@ -37,6 +38,7 @@ const USE_HTTPX = process.env.LUNUC_HTTPX === 'false' ? false : true
 // Port to listen to
 const PORT = (process.env.PORT || process.env.LUNUC_PORT || 8080)
 const API_PORT = (process.env.API_PORT || process.env.LUNUC_API_PORT || 3000)
+const LUNUC_SERVER_NODES = process.env.LUNUC_SERVER_NODES || ''
 
 // Build dir
 const BUILD_DIR = path.join(__dirname, '../build')
@@ -844,8 +846,8 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
         modUri = uri
     }
 
-
-    let filename = path.join(ABS_UPLOAD_DIR, modUri.substring(UPLOAD_URL.length + 1)) //.replace(/\.\.\//g, ''))
+    const baseFilename = path.join(ABS_UPLOAD_DIR, modUri.substring(UPLOAD_URL.length + 1)) //.replace(/\.\.\//g, ''))
+    let filename = baseFilename
 
     if (!fs.existsSync(filename)) {
         let context
@@ -861,6 +863,14 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
             filename = path.join(ABS_UPLOAD_DIR, 'private' + modUri.substring(UPLOAD_URL.length + 1))
         }
     }
+
+
+    if (!fs.existsSync(filename)) {
+        if(getFileFromOtherServer(modUri,baseFilename,res)){
+            return
+        }
+    }
+
 
     if (fs.existsSync(filename)) {
 
@@ -957,6 +967,31 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
         sendError(res, 404)
     }
 }
+
+function getFileFromOtherServer(urlPath, filename, baseResponse) {
+
+
+    if(LUNUC_SERVER_NODES){
+        const url = LUNUC_SERVER_NODES+urlPath
+        console.log('laod from ' + url)
+        http.get(url, function(response) {
+
+
+            const file = fs.createWriteStream(filename);
+            const passStream = new PassThrough()
+            response.pipe(passStream)
+            passStream.pipe(baseResponse)
+            passStream.pipe(file)
+
+        }).on('error', function(err) { // Handle errors
+            sendError(res, 404)
+        })
+        return true
+    }
+
+    return false
+}
+
 
 function decodeURIComponentSafe(s) {
     if (!s) {
