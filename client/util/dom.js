@@ -119,7 +119,7 @@ const DomUtil = {
 
                 const observer = new MutationObserver(mutations => {
                     const el = fn(selector)
-                    if (el) {
+                    if (el && (!isAll || el.length>0)) {
                         clearTimeout(timer)
 
                         resolve(el)
