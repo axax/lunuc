@@ -580,7 +580,11 @@ export const userResolver = (db) => ({
 
 
             if (meta !== undefined) {
-                user.meta = JSON.parse(meta)
+                if(meta.constructor === Object) {
+                    user.meta = meta
+                }else{
+                    user.meta = JSON.parse(meta)
+                }
             }
 
             const result = (await userCollection.findOneAndUpdate(match, {$set: user}, {returnOriginal: false}))

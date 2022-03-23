@@ -1526,6 +1526,18 @@ class TypesContainer extends React.Component {
 
         Hook.call('TypesContainerBeforeFilterLabel', {type: this.pageParams.type, payload}, this)
 
+        const getValues = (data) =>{
+            let str = ''
+            const keys = Object.keys(data)
+            for(let i = 0; i<Math.min(keys.length,3);i++){
+                if(str){
+                    str += ' '
+                }
+                str += data[keys[i]]
+            }
+            return str
+        }
+
         Object.keys(payload.prettyFilter).forEach(fieldKey => {
             if (!fieldKey.startsWith('__operator.')) {
                 const value = payload.prettyFilter[fieldKey]
@@ -1541,7 +1553,7 @@ class TypesContainer extends React.Component {
                         if (value.length > 0) {
                             value.forEach(item => {
                                 newFilter.push(
-                                    <strong>{item.data ? item.data.name : item.name || item.username}</strong>)
+                                    <strong>{item.data ? item.data.name || getValues(item.data) : item.name || item.username}</strong>)
                             })
                         }
                     } else {
