@@ -1494,9 +1494,7 @@ class TypesContainer extends React.Component {
             if (!fieldKey.startsWith('__operator.data.')) {
                 const value = prettyFilter[fieldKey]
                 if (value) {
-                    if (newFilter) {
-                        newFilter += ' && '
-                    }
+
 
                     if (value.constructor === Array) {
                         if (value.length > 0) {
@@ -1505,12 +1503,28 @@ class TypesContainer extends React.Component {
                             value.forEach(item => {
                                 ids.push(item._id)
                             })
+                            if (newFilter) {
+                                newFilter += ' && '
+                            }
                             newFilter += `${fieldKey}==[${ids.join(',')}]`
                         }
+                    }else if (value.constructor === Object) {
+
+                        const operator = prettyFilter['__operator.' + fieldKey] || '='
+                        Object.keys(value).forEach(key=>{
+
+                            if (newFilter) {
+                                newFilter += ' && '
+                            }
+                            newFilter += `${fieldKey}.${key}${operator}${value[key]}`
+                        })
+
                     } else {
 
                         const operator = prettyFilter['__operator.' + fieldKey] || '='
-
+                        if (newFilter) {
+                            newFilter += ' && '
+                        }
                         newFilter += `${fieldKey}${operator}${value}`
                     }
                 }
@@ -1548,7 +1562,6 @@ class TypesContainer extends React.Component {
                     const operator = payload.prettyFilter['__operator.' + fieldKey] || '='
 
                     newFilter.push(<span>{fieldKey}{operator}</span>)
-
                     if (value.constructor === Array) {
                         if (value.length > 0) {
                             value.forEach(item => {
@@ -1556,6 +1569,9 @@ class TypesContainer extends React.Component {
                                     <strong>{item.data ? item.data.name || getValues(item.data) : item.name || item.username}</strong>)
                             })
                         }
+                    }else if(value.constructor === Object){
+
+                        newFilter.push(<strong>{getValues(value)}</strong>)
                     } else {
 
                         newFilter.push(<strong>{value}</strong>)
