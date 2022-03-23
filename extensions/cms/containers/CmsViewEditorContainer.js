@@ -1202,7 +1202,8 @@ class CmsViewEditorContainer extends React.Component {
 
     saveUnsafedChanges() {
         // blur on unload to make sure everything gets saved
-        document.activeElement.blur()
+        const curElement = document.activeElement
+        curElement.blur()
 
         // clear timeouts
         if (this._saveSettings) {
@@ -1228,6 +1229,7 @@ class CmsViewEditorContainer extends React.Component {
         if (this._autoSaveDataResolverTimeout) {
             this._autoSaveDataResolver()
         }
+        curElement.focus()
         return true
     }
 
