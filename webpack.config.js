@@ -310,10 +310,10 @@ if (DEV_MODE) {
         proxy: {
             '/graphql': {target: `http://0.0.0.0:${API_PORT}`},
             ['/' + APP_VALUES.API_PREFIX]: {target: `http://0.0.0.0:${API_PORT}`},
-            '/lunucws': {
+            /*'/lunucws': {
                 target: `ws://0.0.0.0:${API_PORT}`,
                 ws: true
-            }
+            }*/
         },
         devMiddleware: {
 

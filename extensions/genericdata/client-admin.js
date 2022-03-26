@@ -17,6 +17,7 @@ import {setPropertyByPath} from "../../client/util/json";
 
 import {openWindow} from '../../client/util/window'
 import {deepMergeToFirst} from '../../util/deepMerge'
+import {parseStyles} from '../../client/util/style'
 
 registerTrs(translations, 'GenericData')
 
@@ -51,6 +52,13 @@ export default () => {
                     structure = item.definition ? item.definition.structure : {}
 
                 if (structure) {
+                    if(structure.rowStyle){
+                        const styleString = Util.replacePlaceholders(structure.rowStyle, {Util, ...item})
+
+                        if(styleString) {
+                            row.style = parseStyles(styleString)
+                        }
+                    }
                     if (structure.titleTemplate) {
 
                         row.data = Util.replacePlaceholders(structure.titleTemplate, {Util, ...item})

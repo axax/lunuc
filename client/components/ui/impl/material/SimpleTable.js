@@ -129,7 +129,9 @@ class SimpleTable extends React.Component {
                     <TableBody>
                         {dataSource.map((entry, i) => {
                             return (
-                                <TableRow hover onClick={(e) => {
+                                <TableRow
+                                    style={entry.style}
+                                    hover onClick={(e) => {
                                     if (onRowClick) {
                                         onRowClick(e, i)
                                     }

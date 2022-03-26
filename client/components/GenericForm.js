@@ -277,10 +277,10 @@ class GenericForm extends React.Component {
     loadFlatpickr() {
 
         DomUtil.addScript('/flatpickr.min.js', {
-            id: 'flatpickr',
+            id: 'flatpickrJs',
             onload: () => {
                 DomUtil.addScript('/flatpickr-de.js', {
-                    id: 'flatpickrDe',
+                    id: 'flatpickrJsDe',
                     onload: () => {
                         this.initFlatpickr()
                     }
