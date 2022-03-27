@@ -126,16 +126,18 @@ class CmsViewContainer extends React.Component {
                 this._subscriptionCallback = cb
             }}
             onFetchMore={({query, meta}, cb) => {
-                this.props.fetchMore({
-                    variables: {
-                        query,
-                        meta
-                    },
-                    updateQuery: (prev, {fetchMoreResult}) => {
+                if(this.props.fetchMore) {
+                    this.props.fetchMore({
+                        variables: {
+                            query,
+                            meta
+                        },
+                        updateQuery: (prev, {fetchMoreResult}) => {
 
-                        cb(fetchMoreResult)
-                    }
-                })
+                            cb(fetchMoreResult)
+                        }
+                    })
+                }
             }}
             _props={cmsRender?cmsRender.props:_props}
             {...props}>{children}</JsonDom>
