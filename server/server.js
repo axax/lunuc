@@ -532,7 +532,7 @@ function hasHttpsWwwRedirect(host, req, res) {
                 const agent = req.headers['user-agent']
 
                 // don't force redirect for letsencrypt
-                if( (agent && agent.indexOf('www.letsencrypt.org') < 0) || ) {
+                if( agent && agent.indexOf('www.letsencrypt.org') < 0 ) {
 
                     const {browser, version} = parseUserAgent(agent)
 
