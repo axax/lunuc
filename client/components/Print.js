@@ -422,7 +422,12 @@ class Print extends React.PureComponent {
             noBreakClassName = []
         }
 
-        node.childNodes.forEach(childNode => {
+        let nodes = node.childNodes
+        if(this.props.manualBreakSelector){
+            nodes = node.querySelectorAll(this.props.manualBreakSelector)
+        }
+
+        nodes.forEach(childNode => {
 
                 const newOffsetTop = this.offsetTop(childNode)
 
@@ -455,7 +460,7 @@ class Print extends React.PureComponent {
                         offsetTop = this.offsetTop(br)
 
 
-                    } else if ( !noBreak && childNode.hasChildNodes() && childNode.childNodes[0].nodeType !== Node.TEXT_NODE) {
+                    } else if ( !noBreak && !this.props.manualBreakSelector && childNode.hasChildNodes() && childNode.childNodes[0].nodeType !== Node.TEXT_NODE) {
                         offsetTop = this.setBreakRec(childNode, {offsetTop, PAGE_HEIGHT, paddingBottom, paddingTop})
                     } else {
                         let br = document.createElement('div')

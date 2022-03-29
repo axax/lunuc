@@ -513,7 +513,7 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
 
         const controller = new AbortController()
         if (!skip) {
-            const newResponse = {}
+            const newResponse = {fetchMore: response.fetchMore}
             newResponse.loading = response.networkStatus !== NetworkStatus.error
 
             if (fetchPolicy !== 'network-only' || fetchPolicy !== 'no-cache') {
@@ -526,7 +526,6 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
 
             client.addQueryWatcher({
                 cacheKey, update: data => {
-                    // console.log(data, response.data)
                     if (data !== response.data) {
                         setResponse({...response, loading: false, data})
                     }
@@ -558,7 +557,6 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
             controller.abort()
         }
     }, [cacheKey])
-
 
     return response
 }
