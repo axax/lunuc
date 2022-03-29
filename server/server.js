@@ -532,7 +532,7 @@ function hasHttpsWwwRedirect(host, req, res) {
                 const agent = req.headers['user-agent']
 
                 // don't force redirect for letsencrypt
-                if( agent && agent.indexOf('www.letsencrypt.org') < 0) {
+                if( (agent && agent.indexOf('www.letsencrypt.org') < 0) || ) {
 
                     const {browser, version} = parseUserAgent(agent)
 
@@ -1060,7 +1060,11 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             const host = getHostFromHeaders(req.headers)
             req.isHttps = req.socket.encrypted || this.constructor.name === 'Server'
 
-            if (hasHttpsWwwRedirect.call(this, host, req, res)) {
+            // check with and without www
+            const hostRuleHost = req.headers['x-host-rule'] ? req.headers['x-host-rule'].split(':')[0] : host
+            const hostrule = {...hostrules.general, ...(hostrules[hostRuleHost] || hostrules[hostRuleHost.substring(4)])}
+
+            if (hostrule.certDir && hasHttpsWwwRedirect.call(this, host, req, res)) {
                 return
             }
 
@@ -1123,9 +1127,6 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     await resolveUploadedFile(urlPathname, parsedUrl, req, res)
                 } else {
 
-                    // check with and without www
-                    const hostRuleHost = req.headers['x-host-rule'] ? req.headers['x-host-rule'].split(':')[0] : host
-                    const hostrule = {...hostrules.general, ...(hostrules[hostRuleHost] || hostrules[hostRuleHost.substring(4)])}
 
                     if (hostrule.redirects) {
 
