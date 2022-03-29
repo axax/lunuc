@@ -66,7 +66,7 @@ const loadHostRules = (dir, withCertContext, hostrules) => {
                             try {
                                 hostrule.certContext = tls.createSecureContext({
                                     key: fs.readFileSync(path.join(hostrule.certDir, './privkey.pem')),
-                                    cert: fs.readFileSync(path.join(hostrule.certDir, './cert.pem'))
+                                    cert: fs.readFileSync(path.join(hostrule.certDir, './fullchain.pem'))
                                 })
                             } catch (e) {
                                 console.warn(e.message)
