@@ -275,10 +275,6 @@ if (DEV_MODE) {
         /*contentBase: [path.join(__dirname, ''), path.join(__dirname, 'static'), path.join(__dirname, APP_VALUES.UPLOAD_DIR)],*/
         static: [
             {
-                directory: path.resolve(__dirname, ''),
-                publicPath: '/'
-            },
-            {
                 directory: path.resolve(__dirname, 'static'),
                 publicPath: '/'
             },
@@ -319,7 +315,7 @@ if (DEV_MODE) {
         client: {
             logging: 'info'
         },
-        liveReload:false,
+        liveReload:true,
         watchFiles: {
             paths: ['client/**/*'],
             options: {
