@@ -95,7 +95,7 @@ class TypeEdit extends React.Component {
                     type: 'primary'
                 }
             ],
-            children: <GenericForm key="genericForm" closing={!open} autoFocus innerRef={ref => {
+            children: <GenericForm key="genericForm" closing={!open} autoFocus ref={ref => {
                 if(ref) {
                     this.createEditForm = ref
                 }
@@ -120,7 +120,6 @@ class TypeEdit extends React.Component {
         const closeModal = (optimisticData) => {
             onClose(action, {optimisticData, dataToEdit, type})
         }
-
         if (action && ['save', 'save_close'].indexOf(action.key) >= 0) {
             const formValidation = this.createEditForm.validate(this.createEditForm.state, true, {changeTab: true})
             if (!formValidation.isValid) {

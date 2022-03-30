@@ -1,42 +1,24 @@
 import React from 'react'
-import PropTypes from 'prop-types'
-import Dialog from '@material-ui/core/Dialog'
-import DialogActions from '@material-ui/core/DialogActions'
-import DialogContent from '@material-ui/core/DialogContent'
-import DialogContentText from '@material-ui/core/DialogContentText'
-import DialogTitle from '@material-ui/core/DialogTitle'
-import withMobileDialog from '@material-ui/core/withMobileDialog'
-import Button from '@material-ui/core/Button'
-import {withStyles} from '@material-ui/core/styles'
+import Dialog from '@mui/material/Dialog'
+import DialogActions from '@mui/material/DialogActions'
+import DialogContent from '@mui/material/DialogContent'
+import DialogContentText from '@mui/material/DialogContentText'
+import DialogTitle from '@mui/material/DialogTitle'
+import Button from '@mui/material/Button'
 
-const styles = theme => ({
-    root: {
-        /*zIndex: '9999 !important'*/
-    },
-    paper: {
-        overflow: 'visible'
-    },
-    contentRoot: {
-        overflow: 'visible'
-    }
-})
+export const SimpleDialog = ({children, onClose, actions, title, ...rest}) => {
 
-export const SimpleDialog = withMobileDialog()(({classes, children, onClose, actions, title, ...rest}) => {
+
     return <Dialog
         aria-labelledby="responsive-dialog-title"
         onClose={onClose}
         disableEnforceFocus={true}
-        classes={{
-            root: classes.root,
-            paper: classes.paper,
-        }}
+        PaperProps={{sx: { overflow: 'visible' } }}
+        sx={{zIndex: '9999 !important'}}
         scroll="body"
         {...rest}>
         <DialogTitle id="responsive-dialog-title">{title}</DialogTitle>
-        <DialogContent
-            classes={{
-                root: classes.contentRoot
-            }}>
+        <DialogContent sx={{overflow: 'visible'}}>
             {children.constructor === String ?
                 <DialogContentText>
                     {children}
@@ -57,10 +39,6 @@ export const SimpleDialog = withMobileDialog()(({classes, children, onClose, act
             </DialogActions>
             : ''}
     </Dialog>
-})
-
-SimpleDialog.propTypes = {
-    classes: PropTypes.object.isRequired
 }
 
-export default withStyles(styles)(SimpleDialog)
+export default SimpleDialog

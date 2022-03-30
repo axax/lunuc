@@ -1,94 +1,66 @@
 import PropTypes from 'prop-types'
-import {makeStyles} from '@material-ui/core/styles'
-import Drawer from '@material-ui/core/Drawer'
-import AppBar from '@material-ui/core/AppBar'
-import Toolbar from '@material-ui/core/Toolbar'
-import Typography from '@material-ui/core/Typography'
-import IconButton from '@material-ui/core/IconButton'
-import Hidden from '@material-ui/core/Hidden'
-import Divider from '@material-ui/core/Divider'
-import MenuIcon from '@material-ui/icons/Menu'
-import List from '@material-ui/core/List'
-import ListItem from '@material-ui/core/ListItem'
-import ListItemText from '@material-ui/core/ListItemText'
-import ListItemIcon from '@material-ui/core/ListItemIcon'
+import Drawer from '@mui/material/Drawer'
+import AppBar from '@mui/material/AppBar'
+import Toolbar from '@mui/material/Toolbar'
+import Typography from '@mui/material/Typography'
+import IconButton from '@mui/material/IconButton'
+import Divider from '@mui/material/Divider'
+import MenuIcon from '@mui/icons-material/Menu'
+import List from '@mui/material/List'
+import ListItem from '@mui/material/ListItem'
+import ListItemText from '@mui/material/ListItemText'
+import ListItemIcon from '@mui/material/ListItemIcon'
 import {connect} from 'react-redux'
 import {useHistory} from 'react-router-dom'
 import React, {useState} from 'react'
 import Util from '../../../../../util'
-import ExpandLess from '@material-ui/icons/ExpandLess'
-import ExpandMore from '@material-ui/icons/ExpandMore'
-import Collapse from '@material-ui/core/Collapse'
+import ExpandLess from '@mui/icons-material/ExpandLess'
+import ExpandMore from '@mui/icons-material/ExpandMore'
+import Collapse from '@mui/material/Collapse'
+import styled from '@emotion/styled'
+import theme from '../theme'
 
 const drawerWidth = 300;
 
-const useStyles = makeStyles(theme => ({
-    root: {
-        width: '100%',
-        height: '100%',
-        zIndex: 1,
-        overflow: 'hidden'
-    },
-    appFrame: {
-        position: 'relative',
-        display: 'flex',
-        width: '100%',
-        height: '100%',
-    },
-    appBar: {
-        position: 'fixed',
-        marginLeft: drawerWidth,
-        [theme.breakpoints.up('lg')]: {
-            width: `calc(100% - ${drawerWidth}px)`,
-        },
-    },
-    flex: {
-        flex: 1,
-    },
-    navIconHide: {
-        [theme.breakpoints.up('lg')]: {
-            display: 'none',
-        },
-    },
-    drawerLogo: {
-        height: '3rem'
-    },
-    drawerHeaderLeft: {
-        marginLeft: 'auto'
-    },
-    drawerHeader: {
-        ...theme.mixins.toolbar,
-        padding: '0.5rem',
-        display: 'flex'
-    },
-    drawerPaper: {
-        width: drawerWidth,
-        [theme.breakpoints.up('lg')]: {
-            width: drawerWidth,
-            position: 'fixed',
-            height: '100%',
-        },
-    },
-    content: {
-        position: 'relative',
-        boxSizing: 'border-box',
-        backgroundColor: theme.palette.background.default,
-        width: '100%',
-        padding: theme.spacing(3),
-        height: 'calc(100% - 56px)',
-        marginTop: 56,
-        marginLeft: 0,
-        [theme.breakpoints.up('lg')]: {
-            height: 'calc(100% - 64px)',
-            marginTop: 64,
-            marginLeft: drawerWidth,
-            width: `calc(100% - ${drawerWidth}px)`
-        },
-    },
-    listItemActive: {
-        fontWeight: 'bold'
+
+const StyledDrawerRoot = styled.div`
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    overflow: hidden;
+`
+
+const StyledAppFrame = styled.div`
+    position: relative;
+    display: flex;
+    width: 100%;
+    height: 100%;
+`
+
+const StyledAppBar = styled(AppBar)({
+    position: 'fixed',
+    marginLeft: `${drawerWidth}px`,
+    [theme.breakpoints.up('lg')]: {
+        width: `calc(100% - ${drawerWidth}px)`,
     }
-}))
+})
+
+const StyledDrawerContent = styled.main`
+    position: relative;
+    box-sizing: border-box;
+    background-color: ${theme.palette.background.default};
+    width: 100%;
+    padding: ${theme.spacing(3)};
+    height: calc(100% - 56px);
+    margin-top: 56px;
+    margin-feft: 0;
+    ${theme.breakpoints.up('lg')} {
+        height: calc(100% - 64px);
+        margin-top: 64px;
+        margin-left: ${drawerWidth}px;
+        width: calc(100% - ${drawerWidth}px);
+    }
+`
 
 const findActiveItem = (props) => {
     let currentLink = Util.removeTrailingSlash(window.location.pathname)
@@ -135,7 +107,6 @@ const findActiveItem = (props) => {
 
 const MenuList = (props) => {
     const {items, isAuthenticated, depth, onMenuChange} = props
-    const classes = useStyles()
     const history = useHistory()
     const activeItem = findActiveItem(props)
 
@@ -168,7 +139,7 @@ const MenuList = (props) => {
                     <ListItemText disableTypography
                                   primary={<Typography variant="subtitle1"
                                                        component="h3"
-                                                       className={(activeItem === item ? classes.listItemActive : '')}>{item.name}</Typography>}/>
+                                                       style={{fontWeight:(activeItem === item ? 'bold' : 'normal')}}>{item.name}</Typography>}/>
 
                     {item.actions}
                     {item.items && (isOpen ? <ExpandLess /> : <ExpandMore />)}
@@ -193,15 +164,12 @@ const ResponsiveDrawer = (props) => {
 
     const {onMenuChange, menuItems, isAuthenticated, children, headerLeft, headerRight, title, logo, toolbarStyle, headerStyle, extra} = props
 
-    const classes = useStyles()
-
     const drawer = (
         <div>
-            <div className={classes.drawerHeader}>
-
-                {logo && <img className={classes.drawerLogo} src={logo}/>}
-                <div className={classes.drawerHeaderLeft}>{headerLeft}</div>
-            </div>
+            <Toolbar sx={{ padding: '0.5rem !important'}}>
+                {logo && <img style={{height:'3rem'}} src={logo}/>}
+                <div style={{marginLeft:'auto'}}>{headerLeft}</div>
+            </Toolbar>
             <Divider/>
             <MenuList key="mainMenu" depth={0} onMenuChange={onMenuChange} items={menuItems} isAuthenticated={isAuthenticated}/>
             <Divider/>
@@ -210,59 +178,53 @@ const ResponsiveDrawer = (props) => {
     )
 
     return (
-        <div className={classes.root}>
-            <div className={classes.appFrame}>
-                <AppBar style={headerStyle} className={classes.appBar}>
+        <StyledDrawerRoot>
+            <StyledAppFrame>
+                <StyledAppBar style={headerStyle}>
                     <Toolbar style={toolbarStyle}>
 
                         <IconButton
                             color="inherit"
                             aria-label="open drawer"
                             onClick={handleDrawerToggle}
-                            className={classes.navIconHide}
+                            sx={{display: { xs: 'block', lg: 'none' } }}
                         >
                             <MenuIcon/>
                         </IconButton>
-                        <Typography className={classes.flex} variant="h6" color="inherit" noWrap>
+                        <Typography sx={{display: { flex: 1 } }} variant="h6" color="inherit" noWrap>
                             {title}
                         </Typography>
-
                         {headerRight}
-
-
                     </Toolbar>
-                </AppBar>
-                <Hidden lgUp>
-                    <Drawer
-                        variant="temporary"
-                        open={mobileOpen}
-                        classes={{
-                            paper: classes.drawerPaper,
-                        }}
-                        onClose={handleDrawerToggle}
-                        ModalProps={{
-                            keepMounted: true, // Better open performance on mobile.
-                        }}
-                    >
-                        {drawer}
-                    </Drawer>
-                </Hidden>
-                <Hidden mdDown implementation="css">
-                    <Drawer
-                        variant="permanent"
-                        open
-                        classes={{
-                            paper: classes.drawerPaper,
-                        }}
-                    >
-                        {drawer}
-                    </Drawer>
-                </Hidden>
-                <main className={classes.content}>
+                </StyledAppBar>
+                <Drawer
+                    variant="temporary"
+                    open={mobileOpen}
+                    sx={{
+                        display: { xs: 'block', lg: 'none' },
+                        '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+                    }}
+                    onClose={handleDrawerToggle}
+                    ModalProps={{
+                        keepMounted: true, // Better open performance on mobile.
+                    }}
+                >
+                    {drawer}
+                </Drawer>
+                <Drawer
+                    variant="permanent"
+                    open
+                    sx={{
+                        display: { xs: 'none', lg: 'block' },
+                        '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+                    }}>
+                    {drawer}
+                </Drawer>
+                <StyledDrawerContent>
                     {children}
-                </main>
-            </div>
-        </div>
+                </StyledDrawerContent>
+            </StyledAppFrame>
+        </StyledDrawerRoot>
     )
 
 }

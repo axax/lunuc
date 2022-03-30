@@ -278,21 +278,21 @@ function gensrcUi() {
 
             if (ui.icons) {
                 if (ui.impl === 'material') {
-                    uiContentIcons += "import IconButton from '@material-ui/core/IconButton'\n"
+                    uiContentIcons += "import IconButton from '@mui/material/IconButton'\n"
                 }
 
                 //https://github.com/mui-org/material-ui/tree/v1-beta/packages/material-ui-icons/src
                 ui.icons.forEach(icon => {
                     if (ui.impl === 'material') {
                         uiContentIcons += `
-import ${icon}Icon from '@material-ui/icons/${icon}'
+import ${icon}Icon from '@mui/icons-material/${icon}'
 export {${icon}Icon}
 
-export const ${icon}IconButton = ({...rest}) => {
-    return <IconButton{...rest} >
+export const ${icon}IconButton = React.forwardRef((props, ref) => {
+    return <IconButton ref={ref} {...props}>
         <${icon}Icon />
     </IconButton>
-}
+})
 `
                         uiContentIconsHooks += `components['${icon}Icon'] = ${icon}Icon\ncomponents['${icon}IconButton'] = ${icon}IconButton\n`
 

@@ -21,6 +21,7 @@ const DEV_MODE = process.env.NODE_ENV !== 'production' && process.argv.indexOf('
 
 const EXCLUDE_FROM_BUILD = [
     path.resolve(__dirname, 'node_modules'),
+    path.resolve(__dirname, 'mongodb_tmp'),
     path.resolve(__dirname, 'test'),
     path.resolve(__dirname, 'server'),
     path.resolve(__dirname, 'build'),
@@ -268,7 +269,7 @@ if (DEV_MODE) {
     const PORT = (process.env.PORT || 8080)
     const API_PORT = (process.env.API_PORT || 3000)
 
-    config.plugins.push(new webpack.HotModuleReplacementPlugin())
+   // config.plugins.push(new webpack.HotModuleReplacementPlugin())
 
     config.devServer = {
         /*contentBase: [path.join(__dirname, ''), path.join(__dirname, 'static'), path.join(__dirname, APP_VALUES.UPLOAD_DIR)],*/
@@ -304,16 +305,26 @@ if (DEV_MODE) {
             ]
         },
         /*inline: true,*/
-        hot: true,
+        hot: false,
         port: PORT,
         host: '0.0.0.0',
         proxy: {
             '/graphql': {target: `http://0.0.0.0:${API_PORT}`},
             ['/' + APP_VALUES.API_PREFIX]: {target: `http://0.0.0.0:${API_PORT}`},
-            /*'/lunucws': {
+            '/lunucws': {
                 target: `ws://0.0.0.0:${API_PORT}`,
                 ws: true
-            }*/
+            }
+        },
+        client: {
+            logging: 'info'
+        },
+        liveReload:false,
+        watchFiles: {
+            paths: ['client/**/*'],
+            options: {
+                usePolling: false,
+            },
         },
         devMiddleware: {
 

@@ -53,7 +53,6 @@ class ManageCollectionClones extends React.PureComponent {
             {({loading, error, data}) => {
                 if (loading) return 'Loading...'
                 if (error) return `Error! ${error.message}`
-
                 if (!data.collections.results) return null
 
                 const versions = keyValueGlobalMap['TypesSelectedVersions'] || {}

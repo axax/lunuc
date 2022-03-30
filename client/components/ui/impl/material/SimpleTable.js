@@ -1,57 +1,39 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import Table from '@material-ui/core/Table'
-import TableBody from '@material-ui/core/TableBody'
-import TableCell from '@material-ui/core/TableCell'
-import TableHead from '@material-ui/core/TableHead'
-import TableRow from '@material-ui/core/TableRow'
-import TableFooter from '@material-ui/core/TableFooter'
-import TablePagination from '@material-ui/core/TablePagination'
-import TableSortLabel from '@material-ui/core/TableSortLabel'
-import Tooltip from '@material-ui/core/Tooltip'
-import Toolbar from '@material-ui/core/Toolbar'
-import {withStyles} from '@material-ui/core/styles'
-import Paper from '@material-ui/core/Paper'
-import Typography from '@material-ui/core/Typography'
-import IconButton from '@material-ui/core/IconButton'
-import DeleteIcon from '@material-ui/icons/Delete'
-import classNames from 'classnames'
-import {lighten} from '@material-ui/core/styles/colorManipulator'
+import Table from '@mui/material/Table'
+import TableBody from '@mui/material/TableBody'
+import TableCell from '@mui/material/TableCell'
+import TableHead from '@mui/material/TableHead'
+import TableRow from '@mui/material/TableRow'
+import TableFooter from '@mui/material/TableFooter'
+import TablePagination from '@mui/material/TablePagination'
+import TableSortLabel from '@mui/material/TableSortLabel'
+import Tooltip from '@mui/material/Tooltip'
+import Toolbar from '@mui/material/Toolbar'
+import Paper from '@mui/material/Paper'
+import Typography from '@mui/material/Typography'
+import IconButton from '@mui/material/IconButton'
+import DeleteIcon from '@mui/icons-material/Delete'
 import SimpleMenu from './SimpleMenu'
+import theme from './theme'
 import {_t} from 'util/i18n'
+import styled from '@emotion/styled'
 
-const styles = theme => ({
-    scrollArea: {
-        width: '100%',
-        overflowY: 'auto',
-    },
-    toolbar: {
-        paddingRight: theme.spacing(1),
-    },
-    highlight: theme.palette.type === 'light'
-        ? {
-            color: theme.palette.secondary.dark,
-            backgroundColor: lighten(theme.palette.secondary.light, 0.4),
-        }
-        : {
-            color: lighten(theme.palette.secondary.light, 0.4),
-            backgroundColor: theme.palette.secondary.dark,
-        },
-    spacer: {
-        flex: '1 1 100%',
-    },
-    actions: {
-        color: theme.palette.text.secondary,
-        position:'relative'
-    },
-    title: {
-        flex: '0 0 auto',
-    },
-    th: {
-        fontWeight:'bold'
-    }
-})
 
+const StyledScrollArea = styled.div`
+    width: 100%;
+    overflow-y: hidden;
+`
+const StyledSpacer = styled.div`
+    flex: 1 1 100%;
+`
+const StyledTitle = styled.div`
+    flex: 0 0 auto;
+`
+const StyledActions = styled.div`
+    color: ${theme.palette.text.secondary};
+    position:relative;
+`
 
 class SimpleTable extends React.Component {
 
@@ -62,28 +44,32 @@ class SimpleTable extends React.Component {
     }
 
     render() {
-        const {style, title, actions, header, classes, count, rowsPerPage, page, orderDirection, orderBy, onChangePage, onChangeRowsPerPage, onRowClick, columns, dataSource, footer} = this.props
+        const {style, title, actions, header, count, rowsPerPage, page, orderDirection, orderBy, onChangePage, onChangeRowsPerPage, onRowClick, columns, dataSource, footer} = this.props
 
         const numSelected = 0
         return <Paper style={style}>
 
             { (header || title || actions ?
                 <Toolbar
-                    className={classNames(classes.toolbar, {
-                        [classes.highlight]: numSelected > 0,
-                    })}
+                    sx={{
+                        paddingRight: 1,
+                        ...(numSelected > 0 && {
+                            backgroundColor: theme.palette.secondary.light,
+                            color: theme.palette.secondary.dark
+                        })
+                    }}
                 >
-                    <div className={classes.title}>
+                    <StyledTitle>
                         {numSelected > 0 ? (
                             <Typography variant="subtitle1">{numSelected} selected</Typography>
                         ) : (
                             <Typography variant="h6">{title}</Typography>
                         )}
-                    </div>
+                    </StyledTitle>
                     {header}
-                    <div className={classes.spacer}/>
+                    <StyledSpacer/>
                     {actions &&
-                    <div className={classes.actions}>
+                    <StyledActions>
                         {numSelected > 0 ? (
                             <Tooltip title="Delete">
                                 <IconButton aria-label="Delete">
@@ -93,17 +79,17 @@ class SimpleTable extends React.Component {
                         ) : (
                             <SimpleMenu items={actions}/>
                         )}
-                    </div>
+                    </StyledActions>
                     }
                 </Toolbar> : null)
             }
 
-            <div className={classes.scrollArea}>
+            <StyledScrollArea>
                 <Table size="small">
                     <TableHead>
                         <TableRow>
                             {columns && columns.map(column => {
-                                return !column.hidden && <TableCell className={classes.th} key={column.id}>
+                                return !column.hidden && <TableCell sx={{fontWeight:'bold'}} key={column.id}>
 
                                         {column.sortable ?
                                             <Tooltip
@@ -154,7 +140,7 @@ class SimpleTable extends React.Component {
                     }
 
                 </Table>
-            </div>
+            </StyledScrollArea>
             <Table>
                 <TableFooter>
                     <TableRow>
@@ -165,8 +151,8 @@ class SimpleTable extends React.Component {
                             count={count}
                             rowsPerPage={rowsPerPage}
                             page={(page - 1)}
-                            onChangePage={(e, page) => onChangePage(page + 1)}
-                            onChangeRowsPerPage={(e) => onChangeRowsPerPage(e.target.value)}
+                            onPageChange={(e, page) => onChangePage(page + 1)}
+                            onRowsPerPageChange={(e) => onChangeRowsPerPage(e.target.value)}
                         />
                     </TableRow>
                 </TableFooter>
@@ -176,8 +162,6 @@ class SimpleTable extends React.Component {
 }
 
 SimpleTable.propTypes = {
-    classes: PropTypes.object.isRequired,
-    theme: PropTypes.object,
     footer: PropTypes.any,
     count: PropTypes.number,
     rowsPerPage: PropTypes.number,
@@ -196,4 +180,4 @@ SimpleTable.propTypes = {
 }
 
 
-export default withStyles(styles, {withTheme: true})(SimpleTable)
+export default SimpleTable

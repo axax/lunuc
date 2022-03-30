@@ -1,19 +1,17 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import Button from '@material-ui/core/Button'
-import {withStyles} from '@material-ui/core/styles'
-import CircularProgress from '@material-ui/core/CircularProgress'
+import Button from '@mui/material/Button'
+import CircularProgress from '@mui/material/CircularProgress'
+import styled from '@emotion/styled'
 
-const styles = theme => ({
-    buttonProgress: {
-        color: theme.palette.primary.light,
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        marginTop: -12,
-        marginLeft: -12,
-    },
-})
+const StyledCircularProgress = styled(CircularProgress)(({ theme }) => ({
+    color: theme.palette.primary.light,
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    marginTop: -12,
+    marginLeft: -12
+}))
 
 class SimpleButton extends React.Component {
     render() {
@@ -23,7 +21,7 @@ class SimpleButton extends React.Component {
             return <Button
                     {...rest}
                     disabled={true}
-                ><CircularProgress size={24} className={classes.buttonProgress} /> {children}</Button>
+                ><StyledCircularProgress size={24} /> {children}</Button>
         }else{
             return <Button children={children} {...rest} />
         }
@@ -32,9 +30,8 @@ class SimpleButton extends React.Component {
 
 
 SimpleButton.propTypes = {
-    classes: PropTypes.object.isRequired,
     showProgress: PropTypes.bool
 }
 
-export default withStyles(styles)(SimpleButton)
+export default SimpleButton
 

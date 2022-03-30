@@ -1,21 +1,12 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import Switch from '@material-ui/core/Switch'
-import FormControlLabel from '@material-ui/core/FormControlLabel'
-import { withStyles } from '@material-ui/core/styles';
+import Switch from '@mui/material/Switch'
+import FormControlLabel from '@mui/material/FormControlLabel'
 
-
-const styles = {
-    labelContrast: {
-        color:'#fff'
-    },
-};
-
-export const SimpleSwitch = ({label,classes,contrast,className, ...rest}) => {
+export const SimpleSwitch = ({label,className, ...rest}) => {
     return <FormControlLabel
         classes={{
             root: className,
-            label: contrast && classes.labelContrast,
         }}
         control={
             <Switch
@@ -28,8 +19,7 @@ export const SimpleSwitch = ({label,classes,contrast,className, ...rest}) => {
 
 
 SimpleSwitch.propTypes = {
-    label: PropTypes.string,
-    classes: PropTypes.object.isRequired
+    label: PropTypes.string
 }
 
-export default withStyles(styles)(SimpleSwitch)
+export default SimpleSwitch

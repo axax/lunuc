@@ -323,7 +323,7 @@ export default () => {
                     // override default
                     props.children = <React.Fragment>
                         <GenericForm autoFocus
-                                     innerRef={ref => {
+                                     ref={ref => {
                                          parentRef.createEditForm = ref
                                      }}
                                      onBlur={event => {
@@ -346,7 +346,7 @@ export default () => {
                 // override default
                 props.children = [<Typography key="GenericDataLabel" variant="subtitle1"
                                               gutterBottom>{_t('GenericData.createNewHint')}</Typography>,
-                    <GenericForm key="genericForm" autoFocus innerRef={ref => {
+                    <GenericForm key="genericForm" autoFocus ref={ref => {
                         parentRef.createEditForm = ref
                     }} onBlur={event => {
                         Hook.call('TypeCreateEditBlur', {type, event})

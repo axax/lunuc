@@ -26,7 +26,7 @@ import {
     Divider,
     UIProvider
 } from 'ui/admin'
-import Drawer from '@material-ui/core/Drawer'
+import Drawer from '@mui/material/Drawer'
 
 import NetworkStatusHandler from 'client/components/layout/NetworkStatusHandler'
 import * as ErrorHandlerAction from 'client/actions/ErrorHandlerAction'
@@ -45,18 +45,12 @@ import config from 'gen/config-client'
 import {getFormFieldsByType} from '../../../util/typesAdmin'
 import Hook from '../../../util/hook'
 import {client, Query, graphql} from '../../../client/middleware/graphql'
-import {withStyles} from '@material-ui/core/styles'
 import Async from '../../../client/components/Async'
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
 
 const DEFAULT_EDITOR_SETTINGS = {inlineEditor: true, fixedLayout: true, drawerOpen: false, drawerWidth: 500}
 
-const styles = () => ({
-    pageOptionsDrawer: {
-        maxWidth: '50%'
-    }
-})
 
 class CmsViewEditorContainer extends React.Component {
 
@@ -909,12 +903,10 @@ class CmsViewEditorContainer extends React.Component {
                 toolbarRight.push(<SimpleSwitch key="fixedLayoutSwitch" color="default"
                                                 checked={!!EditorOptions.fixedLayout}
                                                 onChange={this.handleSettingChange.bind(this, 'fixedLayout', false)}
-                                                contrast
                                                 label={_t('CmsViewEditorContainer.fixed')}/>,
                     <SimpleSwitch key="inlineEditorSwitch" color="default"
                                   checked={!!EditorOptions.inlineEditor}
                                   onChange={this.handleSettingChange.bind(this, 'inlineEditor', false)}
-                                  contrast
                                   label={_t('CmsViewEditorContainer.inlineEditor')}/>)
             }
             toolbarRight.push(
@@ -935,7 +927,14 @@ class CmsViewEditorContainer extends React.Component {
                 inner
             }, this)
             return <UIProvider>
-                <Drawer anchor="right" classes={{paper: this.props.classes.pageOptionsDrawer}} disableEnforceFocus={true} open={showPageSettings}
+                <Drawer anchor="right"
+                        sx={{
+                            zIndex: 1300,
+                            '& .MuiDrawer-paper': {
+                                maxWidth: '50%'
+                            },
+                        }}
+                        disableEnforceFocus={true} open={showPageSettings}
                         onClose={() => {
                             if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
                                 return
@@ -1650,5 +1649,5 @@ const mapDispatchToProps = (dispatch) => ({
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(withStyles(styles)(CmsViewEditorContainerWithGql))
+)(CmsViewEditorContainerWithGql)
 

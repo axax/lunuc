@@ -168,7 +168,7 @@ export default () => {
                                 textDecoration: 'underline'
                             }}>Go to CMS Editor</span></Link>
             </Typography>,
-                <GenericForm key="CmsPageForm" autoFocus innerRef={ref => {
+                <GenericForm key="CmsPageForm" autoFocus ref={ref => {
                     parentRef.createEditForm = ref
                 }} onBlur={event => {
                     Hook.call('TypeCreateEditBlur', {type, event})

@@ -1,25 +1,16 @@
 import React from 'react'
-import PropTypes from 'prop-types'
-import {withStyles} from '@material-ui/core/styles'
+import styled from '@emotion/styled'
 
-const styles = theme => ({
-    contentBlock: {
-        marginBottom: theme.spacing(4)
-    },
-})
+const StyledContentBlock = styled('div')(({ theme }) => ({
+    marginBottom: theme.spacing(4)
+}))
 
 class ContentBlock extends React.PureComponent {
     render() {
-        const {classes, children, style} = this.props
-
-        return <div className={classes.contentBlock} style={style} children={children} />
+        return <StyledContentBlock {...this.props} />
     }
 }
 
 
-ContentBlock.propTypes = {
-    classes: PropTypes.object.isRequired
-}
-
-export default withStyles(styles)(ContentBlock)
+export default ContentBlock
 

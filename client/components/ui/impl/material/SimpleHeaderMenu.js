@@ -1,19 +1,12 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
-import {withStyles} from '@material-ui/core/styles'
-import AppBar from '@material-ui/core/AppBar'
-import Toolbar from '@material-ui/core/Toolbar'
-import Button from '@material-ui/core/Button'
+import AppBar from '@mui/material/AppBar'
+import Toolbar from '@mui/material/Toolbar'
+import Button from '@mui/material/Button'
 import config from 'gen/config-client'
-import Typography from '@material-ui/core/Typography'
+import Typography from '@mui/material/Typography'
 import { useHistory } from 'react-router-dom'
-
-const styles = theme => ({
-    toolbarLeft: {
-        flex: 1
-    }
-})
 
 class SimpleHeaderMenu extends React.Component {
 
@@ -29,7 +22,7 @@ class SimpleHeaderMenu extends React.Component {
 
     linkTo(item) {
         const history = useHistory()
-        history.push(item.to);
+        history.push(item.to)
     }
 
     isActive(link) {
@@ -38,11 +31,11 @@ class SimpleHeaderMenu extends React.Component {
     }
 
     render() {
-        const {classes, isAuthenticated, items, title, children, position} = this.props;
+        const {isAuthenticated, items, title, children, position} = this.props;
         return (
             <AppBar position={position}>
                 <Toolbar>
-                    <div className={classes.toolbarLeft}>
+                    <div style={{flex: 1}}>
                         {title &&
                         <Typography variant="h6" color="inherit">
                             {title}
@@ -70,7 +63,6 @@ SimpleHeaderMenu.propTypes = {
     position: PropTypes.string,
     items: PropTypes.array,
     isAuthenticated: PropTypes.bool,
-    classes: PropTypes.object.isRequired
 }
 
 
@@ -91,4 +83,4 @@ const mapStateToProps = (store) => {
  */
 export default connect(
     mapStateToProps
-)(withStyles(styles, {withTheme: true})(SimpleHeaderMenu))
+)(SimpleHeaderMenu)

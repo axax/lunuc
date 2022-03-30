@@ -1,14 +1,14 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import List from '@material-ui/core/List'
-import ListItemIcon from '@material-ui/core/ListItemIcon'
-import ListItem from '@material-ui/core/ListItem'
-import ListItemText from '@material-ui/core/ListItemText'
-import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction'
-import Paper from '@material-ui/core/Paper'
-import TablePagination from '@material-ui/core/TablePagination'
-import Divider from '@material-ui/core/Divider'
-import TextField from '@material-ui/core/TextField'
+import List from '@mui/material/List'
+import ListItemIcon from '@mui/material/ListItemIcon'
+import ListItem from '@mui/material/ListItem'
+import ListItemText from '@mui/material/ListItemText'
+import ListItemSecondaryAction from '@mui/material/ListItemSecondaryAction'
+import Paper from '@mui/material/Paper'
+import TablePagination from '@mui/material/TablePagination'
+import Divider from '@mui/material/Divider'
+import TextField from '@mui/material/TextField'
 
 
 class SimpleList extends React.Component {

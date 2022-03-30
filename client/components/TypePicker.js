@@ -57,14 +57,14 @@ const styles = theme => {
             marginBottom: theme.spacing(0)
         },
         clip: {
-            margin: theme.spacing(2) + 'px 0px 0px ' + theme.spacing(1) + 'px;',
+            margin: theme.spacing(2) + ' 0px 0px ' + theme.spacing(1),
             '&:first-child': {
                 marginLeft: 0
             },
             position: 'relative'
         },
         clipMulti: {
-            margin: theme.spacing(1) + 'px 0',
+            margin: theme.spacing(1) + ' 0',
             width: '15%',
             position: 'relative'
         },
@@ -73,7 +73,7 @@ const styles = theme => {
             padding: '0.2rem',
             writingMode: 'vertical-rl',
             width: '1.6%',
-            margin: '0 0 -' + theme.spacing(2) + 'px 0',
+            margin: '0 0 -' + theme.spacing(2) + ' 0',
             opacity: '0',
             fontSize: '0.8rem',
             backgroundColor: 'rgba(255,0,0,0.3)'
@@ -270,6 +270,7 @@ class TypePicker extends React.Component {
 
                                 components.push(<Card variant="outlined" key={'metaFields' + singleValueIndex}
                                                       draggable={true}
+                                                      sx={{marginBottom: 3}}
                                                       data-index={singleValueIndex}
                                                       onDragStart={(e) => {
                                                           e.dataTransfer.setData('text', e.target.getAttribute('data-index'));
@@ -277,9 +278,6 @@ class TypePicker extends React.Component {
                                     <CardContent>
                                         {typeDataToLabel(singleValue, pickerField)}
                                         <GenericForm autoFocus
-                                                     innerRef={ref => {
-                                                         //parentRef.createEditForm = ref
-                                                     }}
                                                      onBlur={event => {
                                                      }}
                                                      onChange={field => {
@@ -318,7 +316,6 @@ class TypePicker extends React.Component {
 
                                     </CardContent>
                                     <CardActions disableSpacing>
-
                                         {!readOnly &&
                                         <IconButton onClick={this.handleRemovePick.bind(this, singleValueIndex)}>
                                             <DeleteIcon/>

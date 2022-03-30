@@ -1,22 +1,23 @@
 import React from 'react'
 
-import {withStyles} from '@material-ui/core/styles'
-import Typography from '@material-ui/core/Typography'
-import Tabs from '@material-ui/core/Tabs'
-import Tab from '@material-ui/core/Tab'
-import Box from '@material-ui/core/Box'
+import Typography from '@mui/material/Typography'
+import Tabs from '@mui/material/Tabs'
+import Tab from '@mui/material/Tab'
+import Box from '@mui/material/Box'
+import styled from '@emotion/styled'
 
-
-export const SimpleTabs = withStyles({
+/*
+export const StyledTabs = styled(Tabs)({
     root: {
         borderBottom: '1px solid #e8e8e8',
     },
     indicator: {
         backgroundColor: '#1890ff',
     },
-})(Tabs)
+})
 
-export const SimpleTab = withStyles((theme) => ({
+
+const StyledTab = styled(Tab)(({theme}) => ({
     root: {
         textTransform: 'none',
         minWidth: 72,
@@ -45,9 +46,54 @@ export const SimpleTab = withStyles((theme) => ({
         '&:focus': {
             color: '#40a9ff',
         },
+    }
+}))
+*/
+
+const StyledTabs = styled(Tabs)({
+    borderBottom: '1px solid #e8e8e8',
+    '& .MuiTabs-indicator': {
+        backgroundColor: '#1890ff',
     },
-    selected: {},
-}))((props) => <Tab disableRipple {...props} />)
+})
+
+const StyledTab = styled((props) => <Tab disableRipple {...props} />)(({ theme }) => ({
+    textTransform: 'none',
+    minWidth: 72,
+    [theme.breakpoints.up('sm')]: {
+        minWidth: 0,
+    },
+    fontWeight: theme.typography.fontWeightRegular,
+    marginRight: theme.spacing(1),
+    color: 'rgba(0, 0, 0, 0.85)',
+    fontFamily: [
+        '-apple-system',
+        'BlinkMacSystemFont',
+        '"Segoe UI"',
+        'Roboto',
+        '"Helvetica Neue"',
+        'Arial',
+        'sans-serif',
+        '"Apple Color Emoji"',
+        '"Segoe UI Emoji"',
+        '"Segoe UI Symbol"',
+    ].join(','),
+    '&:hover': {
+        color: '#40a9ff',
+        opacity: 1,
+    },
+    '&.Mui-selected': {
+        color: '#1890ff',
+        fontWeight: theme.typography.fontWeightMedium,
+    },
+    '&.Mui-focusVisible': {
+        backgroundColor: '#d1eaff',
+    },
+}))
+
+
+export const SimpleTabs = (props) => <StyledTabs {...props}/>
+export const SimpleTab = (props) => <StyledTab disableRipple {...props} />
 
 
 export const SimpleTabPanel = (props) => {

@@ -4,7 +4,6 @@ import {connect} from 'react-redux'
 import BaseLayout from '../components/layout/BaseLayout'
 import ManageCollectionClones from '../components/types/ManageCollectionClones'
 import {
-    withStyles,
     FileCopyIcon,
     DeleteIcon,
     EditIcon,
@@ -28,7 +27,8 @@ import {
     FilterListIcon,
     Divider,
     Paper,
-    CloudUploadIcon
+    CloudUploadIcon,
+    UIProvider
 } from 'ui/admin'
 import Util from 'client/util'
 import TypeEdit from 'client/components/types/TypeEdit'
@@ -56,6 +56,7 @@ import GenericForm from '../components/GenericForm'
 import {client, Query} from '../middleware/graphql'
 import json2csv from 'util/json2csv'
 import Async from '../components/Async'
+import styled from '@emotion/styled'
 
 const CodeEditor = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
@@ -63,48 +64,23 @@ const CodeEditor = (props) => <Async {...props}
 
 const DEFAULT_RESULT_LIMIT = 10
 
-const styles = theme => ({
-    textLight: {
-        color: 'rgba(0,0,0,0.4)'
-    },
-    tableContent: {
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        maxWidth: 200
-    },
-    tableLargeContent: {
-        overflowX: 'hidden',
-        overflowY: 'auto',
-        maxWidth: 600,
-        maxHeight: 250
-    },
-    script: {
-        fontFamily: '"Courier 10 Pitch", Courier, monospace',
-        fontSize: '85%'
-    },
-    searchRoot: {
-        padding: '2px 4px',
-        display: 'flex',
-        alignItems: 'center',
-        marginBottom: theme.spacing(0),
-    },
-    searchHint: {
-        color: 'rgb(150,150,150)',
-        marginBottom: theme.spacing(1),
-        marginTop: theme.spacing(0.5),
-    },
-    searchInput: {
-        marginLeft: theme.spacing(1),
-        flex: 1,
-    },
-    searchIconButton: {
-        padding: 10,
-    },
-    searchDivider: {
-        height: 28,
-        margin: 4,
-    }
+const StyledTableContentEllipsis = styled('div')({
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    maxWidth: 200
+})
+
+const StyledTableContent = styled('div')({
+    overflowX: 'hidden',
+    overflowY: 'auto',
+    maxWidth: 600,
+    maxHeight: 250
+})
+
+const StyledTableScript = styled('span')({
+    fontFamily: '"Courier 10 Pitch", Courier, monospace',
+    fontSize: '85%'
 })
 
 
@@ -249,7 +225,6 @@ class TypesContainer extends React.Component {
     }
 
     renderTable(columns) {
-        const {classes} = this.props
         const {data, selectedRows} = this.state
         if (data) {
 
@@ -338,10 +313,11 @@ class TypesContainer extends React.Component {
                             } else if (['json', 'editor', 'jseditor'].indexOf(field.uitype) >= 0) {
                                 if (fieldValue && fieldValue.constructor === String) {
                                     if (fieldValue.length > 50) {
-                                        dynamic[field.name] = <span
-                                            className={classes.script}>{fieldValue.substring(0, 20) + '...' + fieldValue.substring(fieldValue.length - 20)}</span>
+                                        dynamic[field.name] = <StyledTableScript>
+                                            {fieldValue.substring(0, 20) + '...' + fieldValue.substring(fieldValue.length - 20)}
+                                        </StyledTableScript>
                                     } else {
-                                        dynamic[field.name] = <span className={classes.script}>{fieldValue}</span>
+                                        dynamic[field.name] = <StyledTableScript>{fieldValue}</StyledTableScript>
                                     }
                                 } else {
                                     dynamic[field.name] = ''
@@ -356,17 +332,15 @@ class TypesContainer extends React.Component {
                                     const langVar = []
 
                                     LANGUAGES.map(lang => {
-                                        langVar.push(<div key={lang} className={classes.tableContent}>
-                                        <span
-                                            className={classes.textLight}>{lang}:</span> <span
+                                        langVar.push(<StyledTableContentEllipsis key={lang}>
+                                        <Typography mb={0} variant="body2" component="span" color="text.disabled">{lang}:</Typography> <span
                                             onBlur={e => this.handleDataChange.bind(this)(e, item, field, lang)}
                                             suppressContentEditableWarning
                                             dangerouslySetInnerHTML={{
                                                 __html: fieldValue && fieldValue[lang]
                                             }}
                                             contentEditable/>
-                                            <br/>
-                                        </div>)
+                                        </StyledTableContentEllipsis>)
                                     })
                                     dynamic[field.name] = langVar
                                 } else {
@@ -374,7 +348,7 @@ class TypesContainer extends React.Component {
                                         dynamic[field.name] = fieldValue.map(e => <Chip key={e} label={e}/>)
                                     } else {
                                         dynamic[field.name] =
-                                            <div className={classes.tableLargeContent}
+                                            <StyledTableContent
                                                  onBlur={e => this.handleDataChange.bind(this)(e, item, field)}
                                                  suppressContentEditableWarning contentEditable
                                                  dangerouslySetInnerHTML={{
@@ -534,7 +508,7 @@ class TypesContainer extends React.Component {
             Hook.call('TypeTableAction', {type, actions, pageParams: this.pageParams}, this)
 
             return <SimpleTable key="typeTable"
-                                style={{marginBottom: window.opener && selectedLength > 0 && this.pageParams.multi === 'true' ? '5rem' : ''}}
+                                style={{marginBottom: '5rem'}}
                                 title=""
                                 onRowClick={this.handleRowClick.bind(this)}
                                 dataSource={dataSource}
@@ -586,14 +560,16 @@ class TypesContainer extends React.Component {
                                 </Query>
                                 }
                                 actions={actions}
-                                footer={<div style={{display: 'flex', alignItems: 'center'}}><p
-                                    style={{marginRight: '2rem'}}>{_t('TypesContainer.selectedRows', {count: selectedLength})}</p>{selectedLength ?
+                                footer={<div style={{display: 'flex', alignItems: 'center',minHeight:'48px'}}>
+                                    <p style={{marginRight: '2rem'}}>{_t('TypesContainer.selectedRows', {count: selectedLength})}</p>{selectedLength ?
                                     <SimpleSelect
                                         label="Select action"
                                         value=""
+                                        style={{marginBottom:0,marginTop:0}}
                                         onChange={this.handleBatchAction.bind(this)}
                                         items={[{name: 'Delete', value: 'delete'}, {name: 'Bulk edit', value: 'edit'}]}
-                                    /> : ''}</div>}
+                                    /> : ''}
+                                </div>}
                                 orderDirection={asort.length > 1 && asort[1] || null}
                                 onSort={this.handleSortChange}
                                 onChangePage={this.handleChangePage.bind(this)}
@@ -608,7 +584,7 @@ class TypesContainer extends React.Component {
     render() {
         const startTime = new Date()
         const {simpleDialog, dataToEdit, createEditDialog, viewSettingDialog, viewFilterDialog, confirmCloneColDialog, manageColDialog, dataToDelete, dataToBulkEdit, confirmDeletionDialog} = this.state
-        const {title, classes} = this.props
+        const {title} = this.props
         const {type, fixType, noLayout} = this.pageParams
         const formFields = getFormFieldsByType(type), columns = this.getTableColumns(type)
 
@@ -758,7 +734,9 @@ class TypesContainer extends React.Component {
                     }
                     <Col xs={12} md={(fixType ? 12 : 6)} align="right">
 
-                        <Paper elevation={1} component="form" className={classes.searchRoot}>
+                        <Paper elevation={1}
+                               component="form"
+                               sx={{ p: '2px 4px', display: 'flex', alignItems: 'center'}}>
                             <InputBase
                                 value={this.state.filter}
                                 onChange={(e) => {
@@ -768,21 +746,21 @@ class TypesContainer extends React.Component {
                                 onKeyDown={(e) => {
                                     this.handelFilterKeyDown(e, e.target.value)
                                 }}
-                                className={classes.searchInput}
+                                sx={{ ml: 1, flex: 1 }}
                                 placeholder={_t('TypesContainer.filter')}
                             />
                             <IconButton onClick={() => {
                                 this.setState({filter: ''})
                                 this.handleFilter({value: ''}, true)
-                            }} className={classes.searchIconButton}>
+                            }} sx={{ p: '10px' }}>
                                 <DeleteIcon/>
                             </IconButton>
-                            <Divider className={classes.searchDivider} orientation="vertical"/>
+                            <Divider sx={{ height: 28, m: 0.5 }} orientation="vertical"/>
                             <IconButton color="primary"
                                         onClick={() => {
                                             this.setState({viewFilterDialog: true})
                                         }}
-                                        className={classes.searchIconButton}>
+                                        sx={{ p: '10px' }}>
                                 <FilterListIcon/>
                             </IconButton>
                         </Paper>
@@ -805,7 +783,7 @@ class TypesContainer extends React.Component {
                     </div>
 
                 }
-                <Typography className={classes.searchHint} component="div" key="searchHint"
+                <Typography mb={2} mt={0.5} color="text.disabled" component="div" key="searchHint"
                             variant="caption">{this.searchHint()}</Typography>
             </div>,
             this.renderTable(columns),
@@ -922,7 +900,7 @@ class TypesContainer extends React.Component {
         console.info(`render ${this.constructor.name} in ${new Date() - startTime}ms`)
 
         if (noLayout) {
-            return content
+            return <UIProvider><div style={{margin:'8px'}}>{content}</div></UIProvider>
         }
         return <BaseLayout key="baseLayout">{content}</BaseLayout>
     }
@@ -1787,7 +1765,6 @@ TypesContainer.propTypes = {
     settings: PropTypes.object,
     title: PropTypes.any,
     onRef: PropTypes.func,
-    classes: PropTypes.object.isRequired,
     /* To get and set settings */
     setKeyValue: PropTypes.func.isRequired,
     keyValueMap: PropTypes.object
@@ -1799,4 +1776,4 @@ const mapStateToProps = (store) => ({user: store.user})
 
 export default connect(
     mapStateToProps
-)(withStyles(styles)(withKeyValues(TypesContainer, ['TypesContainerSettings', 'TypesContainerBulkEdit'])))
+)(withKeyValues(TypesContainer, ['TypesContainerSettings', 'TypesContainerBulkEdit']))

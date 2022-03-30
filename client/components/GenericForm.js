@@ -44,32 +44,32 @@ const styles = theme => {
     return {
         editor: {
             border: '1px solid ' + theme.palette.grey['200'],
-            margin: theme.spacing(3) + 'px 0'
+            margin: theme.spacing(3) + ' 0'
         },
         formField: {
-            margin: theme.spacing(1) + 'px',
-            width: 'calc(100% - ' + theme.spacing(2) + 'px)',
+            margin: theme.spacing(1),
+            width: 'calc(100% - ' + theme.spacing(2) + ')',
             [theme.breakpoints.up('md')]: {
-                width: 'calc(50% - ' + theme.spacing(2) + 'px)'
+                width: 'calc(50% - ' + theme.spacing(2) + ')'
             }
         },
         formFieldThird: {
-            margin: theme.spacing(1) + 'px',
-            width: 'calc(100% - ' + theme.spacing(2) + 'px)',
+            margin: theme.spacing(1) + '',
+            width: 'calc(100% - ' + theme.spacing(2) + ')',
             [theme.breakpoints.up('md')]: {
-                width: 'calc(33.33% - ' + theme.spacing(2) + 'px)'
+                width: 'calc(33.33% - ' + theme.spacing(2) + ')'
             }
         },
         formFieldTwoThird: {
-            margin: theme.spacing(1) + 'px',
-            width: 'calc(100% - ' + theme.spacing(2) + 'px)',
+            margin: theme.spacing(1),
+            width: 'calc(100% - ' + theme.spacing(2) + ')',
             [theme.breakpoints.up('md')]: {
-                width: 'calc(66.66% - ' + theme.spacing(2) + 'px)'
+                width: 'calc(66.66% - ' + theme.spacing(2) + ')'
             }
         },
         formFieldFull: {
-            width: 'calc(100% - ' + theme.spacing(2) + 'px)',
-            margin: theme.spacing(1) + 'px',
+            width: 'calc(100% - ' + theme.spacing(2) + ')',
+            margin: theme.spacing(1) + '',
         },
         tabContainer: {
             backgroundColor: theme.palette.background.paper
@@ -314,19 +314,7 @@ class GenericForm extends React.Component {
                                 timeFormat: "H:i",
                                 defaultDate: null,
                                 altFormat: field.uitype === 'datetime' ? 'd.m.Y H:i' : 'd.m.Y',
-                                dateFormat: "Z",
-                                onChange: (date, dateStr, obj) => {
-                                    /*const offset = date[0].getTimezoneOffset()/60
-                                    const offsetStr = '+'+(offset<10 && offset>-10?'0':'')+(-(offset))+':00'*/
-                                    /*
-                                    this.handleInputChange({
-                                        target: {
-                                            name: obj.element.name,
-                                            value: dateStr,
-                                            type: 'datetime'
-                                        }
-                                    })*/
-                                }
+                                dateFormat: "Z"
                             })
                         }
 
@@ -825,6 +813,7 @@ class GenericForm extends React.Component {
                 {tabs.length === 0 && formFields}
                 {tabs.length > 0 && <div className={classes.tabContainer}>
                     <SimpleTabs
+                        style={{width:'100%'}}
                         value={tabValue}
                         onChange={(e, newValue) => {
                             this.setState({tabValue: newValue})
@@ -869,7 +858,14 @@ class GenericForm extends React.Component {
             currentFormFields.push(<p>{field.description}</p>)
         }
         if (uitype === 'htmlParser') {
-            currentFormFields.push(<span dangerouslySetInnerHTML={{__html: field.html}}/>)
+            let html
+            if(field.replacePlaceholders){
+                html =  Util.replacePlaceholders(field.html, {data:this.state.fields})
+            }else{
+                html = field.html
+            }
+
+            currentFormFields.push(<span dangerouslySetInnerHTML={{__html: html}}/>)
 
         } else if (uitype === 'wrapper') {
             // do nothing for now

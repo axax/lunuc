@@ -1,23 +1,23 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import extensions from 'gen/extensions'
 import BaseLayout from '../components/layout/BaseLayout'
-import {withStyles, Typography, ExpansionPanel, Button, SimpleSwitch, ContentBlock} from 'ui/admin'
+import {Typography, ExpansionPanel, Button, SimpleSwitch, ContentBlock} from 'ui/admin'
 import Hook from 'util/hook'
 import {client} from '../middleware/graphql'
+import styled from '@emotion/styled'
 
-
-const styles = theme => ({
-    column: {
-        flexBasis: '50%',
-
-    },
-    detail: {
+const StyledColumn = styled('div')({
+    flexBasis: '50%'
+})
+const StyledExpansionPanel = styled(ExpansionPanel)(({theme}) => ({
+    '.MuiAccordionDetails-root': {
+        display: 'flex',
         [theme.breakpoints.down('sm')]: {
             flexDirection: 'column'
         }
     }
-})
+}))
+
 
 class SystemContainer extends React.Component {
 
@@ -52,7 +52,6 @@ class SystemContainer extends React.Component {
 
     render() {
         const {extensionStates} = this.state
-        const {classes} = this.props
 
         return <BaseLayout>
             <div key="systemHead">
@@ -72,13 +71,13 @@ class SystemContainer extends React.Component {
                         const extension = extensions[k]
                         Hook.call('ExtensionSystemInfo', {extension})
 
-                        return <ExpansionPanel className={{detail: classes.detail}}
-                                               heading={<Typography variant="h6"><SimpleSwitch color="primary"
-                                                                                               checked={extensionStates[k].enabled}
-                                                                                               onClick={this.setExtensionState.bind(this, k)}
-                                                                                               contrast/>{extension.name}
-                                               </Typography>} key={k}>
-                            <div className={classes.column}>
+                        return <StyledExpansionPanel heading={<Typography variant="h6">
+                            <SimpleSwitch color="primary"
+                                          checked={extensionStates[k].enabled}
+                                          onClick={this.setExtensionState.bind(this, k)}
+                            />{extension.name}
+                        </Typography>} key={k}>
+                            <StyledColumn>
                                 <Typography variant="body2" gutterBottom>{extension.description}</Typography>
                                 {extension.options && extension.options.types &&
                                 <ul>
@@ -90,11 +89,11 @@ class SystemContainer extends React.Component {
                                     })}
                                 </ul>
                                 }
-                            </div>
-                            <div className={classes.column}>
+                            </StyledColumn>
+                            <StyledColumn>
                                 {extension.systemContent}
-                            </div>
-                        </ExpansionPanel>
+                            </StyledColumn>
+                        </StyledExpansionPanel>
                     })
                 }
             </ContentBlock>
@@ -109,10 +108,4 @@ class SystemContainer extends React.Component {
     }
 }
 
-
-SystemContainer.propTypes = {
-    classes: PropTypes.object.isRequired
-}
-
-
-export default withStyles(styles)(SystemContainer)
+export default SystemContainer

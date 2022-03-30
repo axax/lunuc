@@ -1,38 +1,30 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import Input from '@material-ui/core/Input'
-import Chip from '@material-ui/core/Chip'
-import Select from '@material-ui/core/Select'
-import MenuItem from '@material-ui/core/MenuItem'
-import ListSubheader from '@material-ui/core/ListSubheader'
-import ListItemText from '@material-ui/core/ListItemText'
-import ListItemAvatar from '@material-ui/core/ListItemAvatar'
-import Avatar from '@material-ui/core/Avatar'
-import InputLabel from '@material-ui/core/InputLabel';
-import FormControl from '@material-ui/core/FormControl';
-import FormHelperText from '@material-ui/core/FormHelperText';
-import {withStyles} from '@material-ui/core/styles';
+import Input from '@mui/material/Input'
+import Chip from '@mui/material/Chip'
+import Select from '@mui/material/Select'
+import MenuItem from '@mui/material/MenuItem'
+import ListSubheader from '@mui/material/ListSubheader'
+import ListItemText from '@mui/material/ListItemText'
+import ListItemAvatar from '@mui/material/ListItemAvatar'
+import Avatar from '@mui/material/Avatar'
+import InputLabel from '@mui/material/InputLabel';
+import FormControl from '@mui/material/FormControl';
+import FormHelperText from '@mui/material/FormHelperText';
+import styled from '@emotion/styled'
+
+const StyledChips = styled.div`
+    display: flex;
+    flex-wrap: wrap;
+`
+const StyledChip = styled(Chip, {
+    height: 'auto',
+    padding: '2px',
+    margin: '-2px 2px'
+})
 
 
-const styles = theme => ({
-    formControl: {
-        margin: theme.spacing(1),
-        minWidth: 200,
-    },
-    chips: {
-        display: 'flex',
-        flexWrap: 'wrap'
-    },
-    chip: {
-        height:'auto',
-        padding: '2px',
-        margin:'-2px 2px'
-    }
-});
-
-
-
-function matchSingleValue(value, list){
+function matchSingleValue(value, list) {
     if (value.constructor === String) {
         for (let i = 0; i < list.length; i++) {
             if (list[i].value === value) {
@@ -61,17 +53,19 @@ class SimpleSelect extends React.Component {
     }
 
     render() {
-        const {onChange, items, label, classes, className, multi, disabled, hint, fullWidth, error, style} = this.props
+        const {onChange, items, label, className, multi, disabled, hint, fullWidth, error, style} = this.props
         const name = this.props.name || ('name_' + Math.random())
         let value = this.props.value
-        if( value ){
-            if( multi && value.constructor !== Array){
+        if (value) {
+            if (multi && value.constructor !== Array) {
                 value = [value]
             }
-        }else if(multi){
+        } else if (multi) {
             value = []
         }
-        return <FormControl className={className || classes.formControl} disabled={disabled} fullWidth={fullWidth}
+        return <FormControl className={className}
+                            disabled={disabled}
+                            fullWidth={fullWidth}
                             style={style}
                             error={error}>
             {label && <InputLabel htmlFor={name}>{label}</InputLabel>}
@@ -86,25 +80,26 @@ class SimpleSelect extends React.Component {
                 input={<Input/>}
                 renderValue={selected => (
                     selected.constructor === Array ?
-                        <div className={classes.chips}>
+                        <StyledChips>
                             {selected.map(value => (
-                                <Chip key={value} label={matchSingleValue(value,items)} className={classes.chip}/>
+                                <StyledChip key={value} label={matchSingleValue(value, items)}/>
                             ))}
-                        </div> : this.itemNameByValue(selected)
+                        </StyledChips> : this.itemNameByValue(selected)
                 )}
             >
                 {
                     items.map(item => {
                         if (item.constructor === Object) {
-                            return [item.subHeader?<ListSubheader>{item.subHeader}</ListSubheader>:null,<MenuItem key={item.value}
-                                             value={item.value}>
+                            return [item.subHeader ? <ListSubheader>{item.subHeader}</ListSubheader> : null,
+                                <MenuItem key={item.value}
+                                          value={item.value}>
 
-                                {item.icon && <ListItemAvatar>
-                                    <Avatar src={item.icon} />
-                                </ListItemAvatar>}
+                                    {item.icon && <ListItemAvatar>
+                                        <Avatar src={item.icon}/>
+                                    </ListItemAvatar>}
 
-                                <ListItemText primary={item.name} secondary={item.hint}/>
-                            </MenuItem>]
+                                    <ListItemText primary={item.name} secondary={item.hint}/>
+                                </MenuItem>]
                         } else {
                             return <MenuItem key={item} value={item}>{item}</MenuItem>
                         }
@@ -125,8 +120,7 @@ SimpleSelect.propTypes = {
     items: PropTypes.array.isRequired,
     label: PropTypes.string,
     name: PropTypes.string,
-    hint: PropTypes.string,
-    classes: PropTypes.object.isRequired
+    hint: PropTypes.string
 }
 
-export default withStyles(styles)(SimpleSelect)
+export default SimpleSelect
