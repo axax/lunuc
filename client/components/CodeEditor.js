@@ -522,7 +522,7 @@ class CodeEditor extends React.Component {
                                        title={'Edit'}>
 
 
-                <GenericForm ref={(e) => {
+                <GenericForm onRef={(e) => {
                     this.editDataForm = e
                 }} primaryButton={false}
                              values={{data: editData.value}}

@@ -154,7 +154,6 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 
 
 export const ExpansionPanel = ({className, heading, children, ...rest}) => {
-    console.log(rest, className)
     return <MaterialExpansionPanel className={className && className.constructor === String?className:''} {...rest}>
         <ExpansionPanelSummary className={className && className.heading} expandIcon={<ExpandMoreIcon/>}>
             {heading}

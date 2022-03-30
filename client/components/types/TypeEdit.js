@@ -29,6 +29,8 @@ edit popup with form to edit an object of a type
  */
 class TypeEdit extends React.Component {
 
+    createEditForm = null
+
     constructor(props) {
         super(props)
         this.state = TypeEdit.propsToState(props)
@@ -62,7 +64,6 @@ class TypeEdit extends React.Component {
 
         const formFields = Object.assign({}, getFormFieldsByType(type))
 
-
         if (!dataToEdit) {
             dataToEdit = this.props.initialData
 
@@ -95,7 +96,7 @@ class TypeEdit extends React.Component {
                     type: 'primary'
                 }
             ],
-            children: <GenericForm key="genericForm" closing={!open} autoFocus ref={ref => {
+            children: <GenericForm key="genericForm" closing={!open} autoFocus onRef={ref => {
                 if(ref) {
                     this.createEditForm = ref
                 }

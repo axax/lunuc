@@ -128,7 +128,7 @@ export default () => {
     })
 
 
-    Hook.on('TypeCreateEdit', function ({type, props, meta, formFields, dataToEdit, parentRef}) {
+    Hook.on('TypeCreateEdit', ({type, props, meta, formFields, dataToEdit, parentRef}) => {
         if (type === 'GenericData') {
 
             if (!dataToEdit) {
@@ -321,10 +321,11 @@ export default () => {
 
 
                     // override default
-                    props.children = <React.Fragment>
-                        <GenericForm autoFocus
-                                     ref={ref => {
-                                         parentRef.createEditForm = ref
+                    props.children = <GenericForm autoFocus
+                                        onRef={ref => {
+                                         if(ref) {
+                                             parentRef.createEditForm = ref
+                                         }
                                      }}
                                      onBlur={event => {
                                      }}
@@ -334,7 +335,6 @@ export default () => {
                                      fields={newFields}
                                      trigger={structure.trigger}
                                      values={newDataToEdit}/>
-                    </React.Fragment>
                 }
             } else {
 
@@ -346,8 +346,10 @@ export default () => {
                 // override default
                 props.children = [<Typography key="GenericDataLabel" variant="subtitle1"
                                               gutterBottom>{_t('GenericData.createNewHint')}</Typography>,
-                    <GenericForm key="genericForm" autoFocus ref={ref => {
-                        parentRef.createEditForm = ref
+                    <GenericForm key="genericForm" autoFocus onRef={ref => {
+                        if(ref) {
+                            parentRef.createEditForm = ref
+                        }
                     }} onBlur={event => {
                         Hook.call('TypeCreateEditBlur', {type, event})
                     }} onChange={field => {

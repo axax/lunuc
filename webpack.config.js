@@ -274,13 +274,21 @@ if (DEV_MODE) {
     config.devServer = {
         /*contentBase: [path.join(__dirname, ''), path.join(__dirname, 'static'), path.join(__dirname, APP_VALUES.UPLOAD_DIR)],*/
         static: [
+
+            {
+                directory: path.resolve(__dirname, ''),
+                publicPath: '/',
+                watch: false
+            },
             {
                 directory: path.resolve(__dirname, 'static'),
-                publicPath: '/'
+                publicPath: '/',
+                watch: false
             },
             {
                 directory: path.resolve(__dirname, APP_VALUES.UPLOAD_DIR),
-                publicPath: '/'
+                publicPath: '/',
+                watch: false
             }
         ],
         historyApiFallback: {
@@ -316,12 +324,7 @@ if (DEV_MODE) {
             logging: 'info'
         },
         liveReload:true,
-        watchFiles: {
-            paths: ['client/**/*'],
-            options: {
-                usePolling: false,
-            },
-        },
+        hot:true,
         devMiddleware: {
 
             publicPath: '/',

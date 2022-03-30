@@ -265,6 +265,11 @@ class GenericForm extends React.Component {
         }
     }
 
+    componentDidMount() {
+        if (this.props.onRef)
+            this.props.onRef(this)
+    }
+
     validate(state = this.state, updateState = true, options) {
 
         const validationState = GenericForm.staticValidate(state, this.props, options)

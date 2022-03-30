@@ -359,7 +359,7 @@ class CmsViewEditorContainer extends React.Component {
                                              }]}
                                          title="Bearbeitung">
 
-                        <GenericForm primaryButton={false} ref={(e) => {
+                        <GenericForm primaryButton={false} onRef={(e) => {
                             formRef = e
                         }} fields={cmsEditDataProps}/>
 
@@ -1033,7 +1033,7 @@ class CmsViewEditorContainer extends React.Component {
                                   title={this.state.addNewSite.slugNoExist ? `Seite "${this.state.addNewSite.slugNoExist}" exisitert nicht. Möchten Sie die Seite jetzt erstellen?` : 'Neue Seite erstellen'}>
 
 
-                        <GenericForm ref={(e) => {
+                        <GenericForm onRef={(e) => {
                             this.addNewSiteForm = e
                         }} primaryButton={false}
                                      values={this.state.addNewSite}

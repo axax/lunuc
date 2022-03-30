@@ -136,7 +136,7 @@ class PostContainer extends React.Component {
                                     count={posts.total}
                                     page={posts.page}/>
 
-                        <GenericForm ref={(e) => {
+                        <GenericForm onRef={(e) => {
                             this.addPostForm = e
                         }} fields={{title: {value: '', placeholder: 'Enter a titel',label:'Title'}}}
                                      onValidate={this.handleAddPostValidate} onClick={this.handleAddPostClick}/>

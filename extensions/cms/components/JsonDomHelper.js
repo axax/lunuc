@@ -1493,7 +1493,7 @@ const m = Math.max((offX+offY) / 2,100)
 
                                              this.setState({addChildDialog: {...addChildDialog, selected: item}})
                                          }}
-                                         ref={(e) => {
+                                         onRef={(e) => {
                                              addChildDialog.form = e
                                          }}
                                          fields={addChildDialog.selected.options}/>}

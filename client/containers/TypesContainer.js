@@ -648,7 +648,7 @@ class TypesContainer extends React.Component {
                     type: 'primary'
                 }],
                 children: <div>
-                    <GenericForm primaryButton={false} ref={(e) => {
+                    <GenericForm primaryButton={false} onRef={(e) => {
                         formRef = e
                     }} fields={filterFields} values={prettyFilter}/>
                 </div>
