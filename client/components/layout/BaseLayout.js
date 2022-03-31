@@ -121,12 +121,47 @@ const iconComponents = {
     filter:FilterListIcon
 }
 
+const genMenuEntry = (item, path) => {
+    if (!item) {
+        return
+    }
+
+    if (item.constructor === Array) {
+        return item.map((singleItem, index) => genMenuEntry(singleItem, path + '.' + index))
+    }
+
+    if (item.divider) {
+        return item
+    }
+    const Icon = iconComponents[item.icon] || SettingsIcon
+
+    let to
+
+    if (item.to) {
+        to = item.to
+    } else if (item.name) {
+        to = `${ADMIN_BASE_URL}/types/GenericData?fixType=GenericData&title=${encodeURIComponent(item.label || item.name)}&meta=${item.name}${item.baseFilter ? '&baseFilter=' + encodeURIComponent(item.baseFilter) : ''}`
+    } else if (item.type) {
+        to = `${ADMIN_BASE_URL}/types/${item.type}?fixType=${item.type}&title=${encodeURIComponent(item.label || item.type)}${item.baseFilter ? '&baseFilter=' + encodeURIComponent(item.baseFilter) : ''}`
+    }
+
+    return {
+        name: item.label || item.type,
+        to,
+        auth: true,
+        icon: <Icon/>,
+        items: genMenuEntry(item.items, path + '.items'),
+        path,
+        open: item.open
+    }
+}
+
 const BaseLayout = props => {
     const {children, isAuthenticated, user} = props
 
     const userKeys = useKeyValues(['BaseLayoutSettings'])
 
-    const [openMenuEditor, setOpenMenuEditor] = React.useState(false)
+    const [openMenuEditor, setOpenMenuEditor] = React.useState(undefined)
 
     const handleOpenMenuEditor = () => {
         setOpenMenuEditor(true)
@@ -181,40 +216,6 @@ const BaseLayout = props => {
 
     if (settings.menu) {
 
-        const genMenuEntry = (item, path) => {
-            if (!item) {
-                return
-            }
-
-            if (item.constructor === Array) {
-                return item.map((singleItem, index) => genMenuEntry(singleItem, path + '.' + index))
-            }
-
-            if (item.divider) {
-                return item
-            }
-            const Icon = iconComponents[item.icon] || SettingsIcon
-
-            let to
-
-            if (item.to) {
-                to = item.to
-            } else if (item.name) {
-                to = `${ADMIN_BASE_URL}/types/GenericData?fixType=GenericData&title=${encodeURIComponent(item.label || item.name)}&meta=${item.name}${item.baseFilter ? '&baseFilter=' + encodeURIComponent(item.baseFilter) : ''}`
-            } else if (item.type) {
-                to = `${ADMIN_BASE_URL}/types/${item.type}?fixType=${item.type}&title=${encodeURIComponent(item.label || item.type)}${item.baseFilter ? '&baseFilter=' + encodeURIComponent(item.baseFilter) : ''}`
-            }
-
-            return {
-                name: item.label || item.type,
-                to,
-                auth: true,
-                icon: <Icon/>,
-                items: genMenuEntry(item.items, path + '.items'),
-                path,
-                open: item.open
-            }
-        }
 
         if (settings.menu.items) {
 
@@ -301,6 +302,7 @@ const BaseLayout = props => {
         )
     })
 
+    console.log('Render BaseLayout')
 
     return <UIProvider>
         <ResponsiveDrawerLayout title={settings.title || APP_NAME}
@@ -340,8 +342,10 @@ const BaseLayout = props => {
             <ErrorHandler/>
             <NotificationHandler/>
             <NetworkStatusHandler/>
-            <SimpleDialog
-                fullWidth={true} maxWidth="lg"
+            {openMenuEditor !== undefined && <SimpleDialog
+                fullWidth={true}
+                fullScreenMobile={true}
+                maxWidth="lg"
                 open={openMenuEditor}
                 onClose={handleCloseMenuEditor}
                 actions={[{
@@ -360,7 +364,7 @@ const BaseLayout = props => {
                 }}>
                     {settings}
                 </CodeEditor>
-            </SimpleDialog>
+            </SimpleDialog>}
 
             {children}
         </ResponsiveDrawerLayout>

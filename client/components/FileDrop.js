@@ -1,12 +1,14 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {withStyles, CloudUploadIcon, Typography, LinearProgress} from 'ui/admin'
-import classNames from 'classnames'
+import {CloudUploadIcon, Typography, LinearProgress} from 'ui/admin'
 import UploadUtil from 'client/util/upload'
 import {_t, registerTrs} from 'util/i18n'
-
+import {theme} from 'ui/admin'
 import config from 'gen/config-client'
+import styled from '@emotion/styled'
+
 const {UPLOAD_URL} = config
+
 
 //expose
 _app_.UploadUtil = UploadUtil
@@ -17,42 +19,47 @@ const DEFAULT_MAX_FILE_SIZE_MB = 20,
     IMAGE_MAX_HEIGHT = 2400,
     DEFAULT_ACCEPT = 'image/*'
 
-const styles = theme => ({
-    uploader: {
-        boxSizing: 'border-box',
-        position: 'relative',
-        maxWidth: '100%',
-        padding: '1rem 1rem',
-        textAlign: 'center',
-        background: '#fff',
-        borderRadius: '7px',
-        border: '3px solid #eee',
-        transition: 'all .2s ease',
-        '&:hover': {
-            borderColor: theme.palette.secondary.light
-        }
 
-    },
-    uploaderOver: {
+const StyledUploader = styled('div')(({isHover}) => ({
+    boxSizing: 'border-box',
+    position: 'relative',
+    maxWidth: '100%',
+    padding: '1rem 1rem',
+    textAlign: 'center',
+    background: '#fff',
+    borderRadius: '7px',
+    border: '3px solid #eee',
+    transition: 'all .2s ease',
+    ...(isHover && {
         border: '3px solid ' + theme.palette.primary.light,
         boxShadow: 'inset 0 0 0 6px #eee'
+    }),
+    '&:hover': {
+        borderColor: theme.palette.secondary.light
     },
-    uploadIcon: {
-        height: '60px',
-        width: '60px',
-        transition: 'all .2s ease-in-out'
-    },
-    uploadIconOver: {
-        transform: 'scale(0.8)',
-        opacity: 0.3
-    },
-    image: {
+    '> input': {
+        position: 'absolute',
+        height: '100% !important',
+        width: '100% !important',
+        top: 0,
+        bottom: 0,
+        right: 0,
+        left: 0,
+        opacity: 0,
+        zIndex: 2
+    }
+}))
+
+
+const StyledUploadedImage = styled('div')({
+    position: 'relative',
+    '> img': {
         maxWidth: '100%',
         display: 'block',
         margin: '0 auto 0.5rem auto',
         pointerEvents: 'none'
     },
-    imageDelete: {
+    '> button': {
         position: 'absolute',
         top: '-0.5rem',
         right: '-0.5rem',
@@ -70,29 +77,25 @@ const styles = theme => ({
         '&:hover': {
             fontWeight:'bold'
         }
-    },
-    imageWrap: {
-        position: 'relative'
-    },
-    progress: {
-        position: 'absolute',
-        bottom: -1,
-        left: -1,
-        right: -1,
-        borderRadius: '7px',
-    },
-    inputFile: {
-        position: 'absolute',
-        height: '100% !important',
-        width: '100% !important',
-        top: 0,
-        bottom: 0,
-        right: 0,
-        left: 0,
-        opacity: 0,
-        zIndex: 2
     }
+})
 
+const StyledUploadIcon = styled(CloudUploadIcon)(({isHover}) => ({
+    height: '60px',
+    width: '60px',
+    transition: 'all .2s ease-in-out',
+    ...(isHover && {
+        transform: 'scale(0.8)',
+        opacity: 0.3
+    }),
+}))
+
+const StyledLinearProgress = styled(LinearProgress)({
+    position: 'absolute',
+    bottom: -1,
+    left: -1,
+    right: -1,
+    borderRadius: '7px'
 })
 
 
@@ -158,11 +161,10 @@ class FileDrop extends React.Component {
     }
 
     render() {
-        const {style, classes, multi, label, accept, className, name, onChange, imagePreview, deleteButton} = this.props
+        const {style, multi, label, accept, className, name, onChange, imagePreview, deleteButton} = this.props
         const {isHover, images, uploading, uploadCompleted, errorMessage, successMessage, uploadingFile, uploadQueue} = this.state
-        return <div style={style} className={classNames(classes.uploader, isHover && classes.uploaderOver, className)}>
-            <input className={classes.inputFile}
-                   multiple={!!multi}
+        return <StyledUploader isHover={isHover} style={style} className={className}>
+            <input multiple={!!multi}
                    type="file"
                    name={name || 'fileUpload'}
                    accept={accept || DEFAULT_ACCEPT}
@@ -171,8 +173,9 @@ class FileDrop extends React.Component {
                    onChange={this.handelDrop.bind(this)}/>
             {
                 (imagePreview===undefined || imagePreview) && images.map(i => {
-                    return <div key={'uploadImage'+i} className={classes.imageWrap}><img className={classes.image} src={i}/>
-                        {deleteButton !== false ? <button className={classes.imageDelete} onClick={
+                    return <StyledUploadedImage key={'uploadImage'+i}>
+                        <img src={i}/>
+                        {deleteButton !== false ? <button onClick={
                             (e)=>{
                                 this.setState({images:[]})
                                 if( onChange ) {
@@ -180,13 +183,12 @@ class FileDrop extends React.Component {
                                 }
                             }
                         }>×</button>:null}
-                    </div>
+                    </StyledUploadedImage>
                 })
             }
 
             <div data-drop-text>
-                <CloudUploadIcon className={classNames(classes.uploadIcon, isHover && classes.uploadIconOver)}
-                                 color="disabled"/>
+                <StyledUploadIcon isHover={isHover} color="disabled"/>
 
                 <Typography component="div"
                             variant="caption">{label || _t('FileDrop.dropArea')}</Typography>
@@ -195,9 +197,9 @@ class FileDrop extends React.Component {
             {successMessage && <Typography variant="body2" color="primary">{successMessage}</Typography>}
 
             {uploading && <Typography variant="body2">uploading {uploadingFile} ({uploadCompleted}%{uploadQueue.length>0?' / '+uploadQueue.length+' in queue':''})...</Typography>}
-            {uploading && <LinearProgress className={classes.progress} variant="determinate" value={uploadCompleted}/>}
+            {uploading && <StyledLinearProgress variant="determinate" value={uploadCompleted}/>}
 
-        </div>
+        </StyledUploader>
     }
 
     setDragState(e, isHover) {
@@ -349,7 +351,6 @@ class FileDrop extends React.Component {
 }
 
 FileDrop.propTypes = {
-    classes: PropTypes.object.isRequired,
     onSuccess: PropTypes.func,
     label: PropTypes.string,
     accept: PropTypes.string,
@@ -370,4 +371,4 @@ FileDrop.propTypes = {
     maxSize: PropTypes.number
 }
 
-export default withStyles(styles)(FileDrop)
+export default FileDrop

@@ -116,9 +116,6 @@ const styles = theme => {
             padding: '0.2rem',
             background: 'rgba(0,0,0,0.5)',
             color: '#fff'
-        },
-        textField: {
-            margin: '0',
         }
     }
 }
@@ -178,12 +175,12 @@ class TypePicker extends React.Component {
                 }, 500)
             }
         }
-        return <FormControl
-            fullWidth={fullWidth} className={classNames(classes.root, className)}>
+        return <FormControl fullWidth={fullWidth}
+                            className={classNames(classes.root, className)}>
             {(!value.length || multi) && !readOnly ?
                 <TextField error={error}
                            fullWidth={fullWidth}
-                           className={classes.textField}
+                           sx={{margin:0}}
                            helperText={helperText}
                            value={textValue}
                            onChange={this.handleChange.bind(this)}

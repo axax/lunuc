@@ -252,9 +252,6 @@ class GenericForm extends React.Component {
 
 
     shouldComponentUpdate(props, state) {
-        if (props.closing) {
-            return false
-        }
         return state !== this.state || state.fieldErrors !== this.state.fieldErrors || state.showTranslations !== this.state.showTranslations
     }
 

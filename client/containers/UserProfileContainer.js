@@ -174,7 +174,7 @@ class UserProfileContainer extends React.Component {
         }
 
         return (
-            <BaseLayout>
+            <BaseLayout key="baseLayout">
                 <Typography variant="h3" component="h1" gutterBottom>{_t('Profile.title')}</Typography>
 
 

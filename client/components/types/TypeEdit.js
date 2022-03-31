@@ -7,7 +7,7 @@ import {SimpleDialog} from 'ui/admin'
 import {_t} from 'util/i18n'
 
 
-const compareRef = (prev, current) => {
+const compareDataReferences = (prev, current) => {
 
     if (!prev || !current) {
         // an empty array is same as null
@@ -62,6 +62,10 @@ class TypeEdit extends React.Component {
         const {title, type, meta} = this.props
         let {dataToEdit, open} = this.state
 
+        if(!open){
+            return null
+        }
+
         const formFields = Object.assign({}, getFormFieldsByType(type))
 
         if (!dataToEdit) {
@@ -76,7 +80,7 @@ class TypeEdit extends React.Component {
         const props = {
             title,
             fullWidth: true,
-            fullScreen: false,
+            fullScreenMobile: true,
             maxWidth: 'xl',
             open,
             onClose: this.handleSaveData.bind(this),
@@ -96,7 +100,7 @@ class TypeEdit extends React.Component {
                     type: 'primary'
                 }
             ],
-            children: <GenericForm key="genericForm" closing={!open} autoFocus onRef={ref => {
+            children: <GenericForm key="genericForm" autoFocus onRef={ref => {
                 if(ref) {
                     this.createEditForm = ref
                 }
@@ -106,9 +110,8 @@ class TypeEdit extends React.Component {
                 Hook.call('TypeCreateEditChange', {field, type, props, dataToEdit})
             }} primaryButton={false} fields={formFields} values={dataToEdit}/>
         }
-        if (open) {
-            Hook.call('TypeCreateEdit', {type, props, dataToEdit, formFields, meta, parentRef: this})
-        }
+
+        Hook.call('TypeCreateEdit', {type, props, dataToEdit, formFields, meta, parentRef: this})
         return <SimpleDialog {...props}/>
     }
 
@@ -198,7 +201,7 @@ class TypeEdit extends React.Component {
                         if (fieldDefinition.reference) {
                             //console.log(before, editedDataWithRefs[k])
 
-                            if (compareRef(before, editedDataWithRefs[k])) {
+                            if (compareDataReferences(before, editedDataWithRefs[k])) {
                                 editedDataToUpdate[k] = editedDataWithRefs[k]
                             }
                         } else if (fieldDefinition.type === 'Object') {
@@ -241,7 +244,6 @@ class TypeEdit extends React.Component {
             })
         }
     }
-
 }
 
 

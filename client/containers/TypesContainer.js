@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import BaseLayout from '../components/layout/BaseLayout'
+import BlankLayout from '../components/layout/BlankLayout'
 import ManageCollectionClones from '../components/types/ManageCollectionClones'
 import {
     FileCopyIcon,
@@ -27,8 +28,7 @@ import {
     FilterListIcon,
     Divider,
     Paper,
-    CloudUploadIcon,
-    UIProvider
+    CloudUploadIcon
 } from 'ui/admin'
 import Util from 'client/util'
 import TypeEdit from 'client/components/types/TypeEdit'
@@ -900,7 +900,7 @@ class TypesContainer extends React.Component {
         console.info(`render ${this.constructor.name} in ${new Date() - startTime}ms`)
 
         if (noLayout) {
-            return <UIProvider><div style={{margin:'8px'}}>{content}</div></UIProvider>
+            return <BlankLayout key="baseLayout">{content}</BlankLayout>
         }
         return <BaseLayout key="baseLayout">{content}</BaseLayout>
     }

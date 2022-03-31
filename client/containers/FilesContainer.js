@@ -200,7 +200,7 @@ class FilesContainer extends React.Component {
             // without layout
             return content
         } else {
-            return <BaseLayout>
+            return <BaseLayout key="baseLayout">
                 <Typography variant="h3" gutterBottom>Files</Typography>
 
                 {content}

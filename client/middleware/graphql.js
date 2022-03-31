@@ -266,13 +266,15 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
                         })
 
                         Hook.call('ApiClientQueryResponse', {response})
-
+                        resolve(resolveData)
                         if (fetchPolicy !== 'no-cache') {
                             client.writeQuery({cacheKey, data: response.data})
                         }
+                    } else {
+                        resolve(resolveData)
                     }
 
-                    resolve(resolveData)
+
                 }
 
             }).catch(error => {
@@ -486,7 +488,6 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
 
 
     const cacheKey = getCacheKey({query, variables})
-
     const [response, setResponse] = useState({
         data: _app_.ssr || fetchPolicy === 'cache-first' ? client.readQuery({cacheKey}) : null,
         networkStatus: 0,
@@ -522,17 +523,19 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
                 if (newResponse.data && fetchPolicy === 'cache-first') {
                     newResponse.loading = false
                 }
+
+                setResponse(newResponse)
             }
 
             client.addQueryWatcher({
                 cacheKey, update: data => {
-                    if (data !== response.data) {
-                        setResponse({...response, loading: false, data})
+                    if (data !== newResponse.data) {
+                        setResponse({...newResponse, loading: false, data})
                     }
                 }
             })
 
-            setResponse(newResponse)
+
 
             if (newResponse.loading) {
 

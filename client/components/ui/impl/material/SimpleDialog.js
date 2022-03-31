@@ -5,10 +5,13 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
 import Button from '@mui/material/Button'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import theme from './theme'
 
-export const SimpleDialog = ({children, onClose, actions, title, ...rest}) => {
 
-
+export const SimpleDialog = ({children, onClose, actions, title, fullScreen, fullScreenMobile, ...rest}) => {
+    const fullScreenFinal = fullScreenMobile ? useMediaQuery(theme.breakpoints.down('md')): fullScreen
+    console.log('render SimpleDialog')
     return <Dialog
         aria-labelledby="responsive-dialog-title"
         onClose={onClose}
@@ -16,6 +19,7 @@ export const SimpleDialog = ({children, onClose, actions, title, ...rest}) => {
         PaperProps={{sx: { overflow: 'visible' } }}
         sx={{zIndex: '9999 !important'}}
         scroll="body"
+        fullScreen={fullScreenFinal}
         {...rest}>
         <DialogTitle id="responsive-dialog-title">{title}</DialogTitle>
         <DialogContent sx={{overflow: 'visible'}}>

@@ -130,7 +130,6 @@ export default () => {
 
     Hook.on('TypeCreateEdit', ({type, props, meta, formFields, dataToEdit, parentRef}) => {
         if (type === 'GenericData') {
-
             if (!dataToEdit) {
                 // create empty object
                 dataToEdit = {}
@@ -344,8 +343,9 @@ export default () => {
                 delete newFields.data
                 delete dataToEdit.definition
                 // override default
-                props.children = [<Typography key="GenericDataLabel" variant="subtitle1"
-                                              gutterBottom>{_t('GenericData.createNewHint')}</Typography>,
+                props.children = <React.Fragment>
+                    <Typography key="GenericDataLabel" variant="subtitle1"
+                                              gutterBottom>{_t('GenericData.createNewHint')}</Typography>
                     <GenericForm key="genericForm" autoFocus onRef={ref => {
                         if(ref) {
                             parentRef.createEditForm = ref
@@ -353,7 +353,8 @@ export default () => {
                     }} onBlur={event => {
                         Hook.call('TypeCreateEditBlur', {type, event})
                     }} onChange={field => {
-                    }} primaryButton={false} fields={newFields} values={dataToEdit}/>]
+                    }} primaryButton={false} fields={newFields} values={dataToEdit}/>
+                </React.Fragment>
             }
 
         }

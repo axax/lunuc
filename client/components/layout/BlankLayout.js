@@ -11,6 +11,7 @@ registerTrs(translations, 'AdminTranslations')
 class BlankLayout extends React.Component {
 
     render() {
+        console.log('render BlankLayout')
         return <UIProvider>
             <div style={this.props.style}>
                 <NetworkStatusHandler />

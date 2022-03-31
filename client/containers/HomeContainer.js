@@ -33,7 +33,7 @@ class HomeContainer extends React.Component {
         }
         Hook.call('HomeContainerRender', {content, ...this.props})
 
-        return <BaseLayout>{content}</BaseLayout>
+        return <BaseLayout key="baseLayout">{content}</BaseLayout>
     }
 }
 
