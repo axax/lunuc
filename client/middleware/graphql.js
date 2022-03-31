@@ -488,10 +488,17 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
 
 
     const cacheKey = getCacheKey({query, variables})
+
+    let currentData = null
+    if(_app_.ssr || fetchPolicy === 'cache-first' || fetchPolicy === 'cache-and-network'){
+        currentData = client.readQuery({cacheKey})
+    }
+
+
     const [response, setResponse] = useState({
-        data: _app_.ssr || fetchPolicy === 'cache-first' ? client.readQuery({cacheKey}) : null,
+        data: currentData,
         networkStatus: 0,
-        loading: !_app_.ssr,
+        loading: _app_.ssr || (fetchPolicy === 'cache-first' && currentData) ? false : true,
         fetchMore: getFetchMore({
             fetchPolicy,
             variables,
@@ -513,11 +520,12 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
     useEffect(() => {
 
         const controller = new AbortController()
-        if (!skip) {
+        if (!skip || !response.loading) {
             const newResponse = {fetchMore: response.fetchMore}
             newResponse.loading = response.networkStatus !== NetworkStatus.error
 
-            if (fetchPolicy !== 'network-only' || fetchPolicy !== 'no-cache') {
+            /*if (fetchPolicy !== 'network-only' && fetchPolicy !== 'no-cache') {
+                console.log(fetchPolicy)
                 newResponse.data = client.readQuery({cacheKey})
 
                 if (newResponse.data && fetchPolicy === 'cache-first') {
@@ -525,7 +533,7 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
                 }
 
                 setResponse(newResponse)
-            }
+            }*/
 
             client.addQueryWatcher({
                 cacheKey, update: data => {

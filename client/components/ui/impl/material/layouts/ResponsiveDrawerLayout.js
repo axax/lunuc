@@ -153,15 +153,13 @@ const MenuList = (props) => {
 
 }
 
-
-const ResponsiveDrawer = (props) => {
+const ResponsiveDrawer = React.memo((props) => {
 
     const [mobileOpen, setMobileOpen] = useState(false)
 
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen)
     }
-
     const {onMenuChange, menuItems, isAuthenticated, children, headerLeft, headerRight, title, logo, toolbarStyle, headerStyle, extra} = props
 
     const drawer = (
@@ -176,7 +174,7 @@ const ResponsiveDrawer = (props) => {
             {extra}
         </div>
     )
-
+    console.log('render ResponsiveDrawer')
     return (
         <StyledDrawerRoot>
             <StyledAppFrame>
@@ -227,7 +225,11 @@ const ResponsiveDrawer = (props) => {
         </StyledDrawerRoot>
     )
 
-}
+}, (prev, next) => {
+    let equal = prev.menuItems.length === next.menuItems.length && prev.children[prev.children.length-1] === next.children[next.children.length-1]
+
+    return equal
+})
 
 ResponsiveDrawer.propTypes = {
     menuItems: PropTypes.array.isRequired,

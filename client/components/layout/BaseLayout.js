@@ -216,7 +216,6 @@ const BaseLayout = props => {
 
     if (settings.menu) {
 
-
         if (settings.menu.items) {
 
             settings.menu.items.forEach((item, i) => {
@@ -302,6 +301,7 @@ const BaseLayout = props => {
         )
     })
 
+
     console.log('Render BaseLayout')
 
     return <UIProvider>
@@ -342,32 +342,31 @@ const BaseLayout = props => {
             <ErrorHandler/>
             <NotificationHandler/>
             <NetworkStatusHandler/>
-            {openMenuEditor !== undefined && <SimpleDialog
-                fullWidth={true}
-                fullScreenMobile={true}
-                maxWidth="lg"
-                open={openMenuEditor}
-                onClose={handleCloseMenuEditor}
-                actions={[{
-                    key: 'cancel',
-                    label: _t('core.cancel'),
-                    type: 'secondary'
-                },
-                    {
-                        key: 'save',
-                        label: _t('core.save'),
-                        type: 'primary'
-                    }]}
-            >
-                <CodeEditor lineNumbers type="json" forceJson={true} onForwardRef={(e) => {
-                    menuEditor = e
-                }}>
-                    {settings}
-                </CodeEditor>
-            </SimpleDialog>}
-
             {children}
         </ResponsiveDrawerLayout>
+        {openMenuEditor !== undefined && <SimpleDialog
+            fullWidth={true}
+            fullScreenMobile={true}
+            maxWidth="lg"
+            open={openMenuEditor}
+            onClose={handleCloseMenuEditor}
+            actions={[{
+                key: 'cancel',
+                label: _t('core.cancel'),
+                type: 'secondary'
+            },
+                {
+                    key: 'save',
+                    label: _t('core.save'),
+                    type: 'primary'
+                }]}
+        >
+            <CodeEditor lineNumbers type="json" forceJson={true} onForwardRef={(e) => {
+                menuEditor = e
+            }}>
+                {settings}
+            </CodeEditor>
+        </SimpleDialog>}
     </UIProvider>
 
 }
