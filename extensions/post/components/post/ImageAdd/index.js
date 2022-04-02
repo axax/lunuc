@@ -29,7 +29,6 @@ const styles = theme => ({
         border: '1px solid #ddd',
         padding: 0,
         color: '#888',
-        margin: 0,
         borderRadius: '1.5em',
         cursor: 'pointer',
         height: '1.5em',
@@ -74,7 +73,6 @@ const styles = theme => ({
         width: '18%',
         fontSize: '1em',
         lineHeight: '2.1em',
-        margin: 0,
         marginLeft: '4%',
         '&:focus': {
             outline: 0

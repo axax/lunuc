@@ -35,17 +35,18 @@ import JsonEditor from '../../extensions/cms/components/JsonEditor'
 import {Query} from '../middleware/graphql'
 import {getTypeQueries} from 'util/types'
 import Async from './Async'
+import styled from '@emotion/styled'
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ './CodeEditor')}/>
 
 
+const StyledTabContainer = styled('div')(({ theme }) => ({
+    backgroundColor: theme.palette.background.paper
+}))
+
 
 const styles = theme => {
     return {
-        editor: {
-            border: '1px solid ' + theme.palette.grey['200'],
-            margin: theme.spacing(3) + ' 0'
-        },
         formField: {
             margin: theme.spacing(1),
             width: 'calc(100% - ' + theme.spacing(2) + ')',
@@ -70,15 +71,6 @@ const styles = theme => {
         formFieldFull: {
             width: 'calc(100% - ' + theme.spacing(2) + ')',
             margin: theme.spacing(1) + '',
-        },
-        tabContainer: {
-            backgroundColor: theme.palette.background.paper
-        },
-        translationAbsolute: {
-            right: '3.55rem',
-            marginTop: '-0.5rem',
-            position: 'absolute',
-            zIndex: 2
         }
     }
 }
@@ -813,7 +805,7 @@ class GenericForm extends React.Component {
         return (
             <Wrapper className={classes.form}>
                 {tabs.length === 0 && formFields}
-                {tabs.length > 0 && <div className={classes.tabContainer}>
+                {tabs.length > 0 && <StyledTabContainer>
                     <SimpleTabs
                         style={{width:'100%'}}
                         value={tabValue}
@@ -840,7 +832,7 @@ class GenericForm extends React.Component {
                         {formFields}
                     </SimpleTabPanel>}
 
-                </div>}
+                </StyledTabContainer>}
                 {primaryButton != false ?
                     <Button color="primary" variant="contained" disabled={!this.state.isValid}
                             onClick={this.onAddClick}>{caption || 'Add'}</Button>
@@ -926,8 +918,9 @@ class GenericForm extends React.Component {
                     })}>{value}</JsonEditor> :
 
                     <CodeEditor
+                        style={{border: '1px solid #eeeeee',margin: '24px 0'}}
                         readOnly={field.readOnly}
-                        className={classes.editor} key={fieldKey}
+                        key={fieldKey}
                         forceJson={field.type === 'Object'}
                         onChange={(newValue) => this.handleInputChange({
                             target: {
@@ -1172,7 +1165,10 @@ class GenericForm extends React.Component {
 
         if (!langButtonWasInserted && translateButton && languageCode === _app_.lang) {
             currentFormFields.splice(currentFormFields.length - 1, 0, <div key={'tr' + fieldKey}
-                                                                           className={classes.translationAbsolute}>{translateButton}</div>)
+                                                                           style={{right: '3.55rem',
+                                                                               marginTop: '-0.5rem',
+                                                                               position: 'absolute',
+                                                                               zIndex: 2}}>{translateButton}</div>)
         }
 
     }

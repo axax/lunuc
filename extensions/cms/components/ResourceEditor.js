@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import {
     Fab,
     AddIcon,
-    withStyles,
     List,
     ListItem,
     TextField,
@@ -13,22 +12,15 @@ import {
     SimpleDialog
 } from 'ui/admin'
 import FilesContainer from 'client/containers/FilesContainer'
+import styled from '@emotion/styled'
 
+const StyledFab = styled(Fab)(({theme})=>({
+    position: 'absolute',
+    bottom: '0px',
+    right: '0px',
+    margin: theme.spacing(1)
+}))
 
-const styles = theme => ({
-    resources: {
-        marginBottom: '30px'
-    },
-    textfield: {
-        width: '80%'
-    },
-    fab: {
-        position: 'absolute',
-        bottom: '0px',
-        right: '0px',
-        margin: theme.spacing(1)
-    }
-})
 
 class ResourceEditor extends React.Component {
 
@@ -57,10 +49,9 @@ class ResourceEditor extends React.Component {
     }
 
     render() {
-        const {classes, ...rest} = this.props
         const {resourcesArray} = this.state
 
-        return <div className={classes.resources}>
+        return <div style={{marginBottom: '30px'}}>
             <List dense={true}>
                 {resourcesArray.map((item, i) => {
                     let src
@@ -74,7 +65,7 @@ class ResourceEditor extends React.Component {
                     return <ListItem key={'resource-' + i}>
                         <TextField value={item}
                                    onChange={this.handleChange.bind(this, i)}
-                                   className={classes.textfield}
+                                   style={{width: '80%'}}
                                    placeholder="Enter a url"/>
                         <ListItemSecondaryAction>
                             {!isExternal && <EditIconButton onClick={this.handleEditClick.bind(this, item)}/>}
@@ -84,14 +75,13 @@ class ResourceEditor extends React.Component {
                 })
                 }
             </List>
-            <Fab
+            <StyledFab
                 size="small"
                 onClick={this.handleAddClick.bind(this)}
                 color="secondary"
-                aria-label="Add"
-                className={classes.fab}>
+                aria-label="Add">
                 <AddIcon />
-            </Fab>
+            </StyledFab>
             <SimpleDialog open={!!this.state.editResource} onClose={this.handleDialogClose.bind(this)}
                           actions={[{
                               key: 'ok',
@@ -165,10 +155,8 @@ class ResourceEditor extends React.Component {
 }
 
 ResourceEditor.propTypes = {
-    classes: PropTypes.object.isRequired,
     resources: PropTypes.string,
     onChange: PropTypes.func
 }
 
-export default withStyles(styles)(ResourceEditor)
-
+export default ResourceEditor

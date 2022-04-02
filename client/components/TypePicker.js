@@ -6,7 +6,6 @@ import {
     FormControl,
     Paper,
     MenuItem,
-    withStyles,
     Chip,
     Avatar,
     IconButton,
@@ -22,7 +21,6 @@ import {getImageTag, isValidImage, getImageSrc} from 'client/util/media'
 import {convertRawValuesFromPicker} from 'client/util/picker'
 import {queryStatemantForType} from 'util/types'
 import {typeDataToLabel} from 'util/typesAdmin'
-import classNames from 'classnames'
 import config from 'gen/config-client'
 import {getFormFieldsByFieldList} from '../../util/typesAdmin'
 
@@ -34,91 +32,98 @@ import Hook from '../../util/hook'
 import GenericForm from './GenericForm'
 import {openWindow} from '../util/window'
 import {projectionToQueryString} from '../../util/project'
+import styled from '@emotion/styled'
 
-const styles = theme => {
-    return {
-        root: {
-            position: 'relative',
-            zIndex: 'auto',
-            marginLeft: 0,
-            minHeight: '69px'
-        },
-        suggestions: {
-            position: 'absolute',
-            zIndex: 999,
-            top: '3rem',
-            maxWidth: '100%'
-        },
-        clips: {
-            display: 'flex',
-            width: '100%',
-            flexWrap: 'wrap',
-            marginTop: theme.spacing(1),
-            marginBottom: theme.spacing(0)
-        },
-        clip: {
-            margin: theme.spacing(2) + ' 0px 0px ' + theme.spacing(1),
-            '&:first-child': {
-                marginLeft: 0
-            },
-            position: 'relative'
-        },
-        clipMulti: {
-            margin: theme.spacing(1) + ' 0',
-            width: '15%',
-            position: 'relative'
-        },
-        clipDrop: {
-            textAlign: 'center',
-            padding: '0.2rem',
-            writingMode: 'vertical-rl',
-            width: '1.6%',
-            margin: '0 0 -' + theme.spacing(2) + ' 0',
-            opacity: '0',
-            fontSize: '0.8rem',
-            backgroundColor: 'rgba(255,0,0,0.3)'
-        },
-        dummyImg: {
-            pointerEvents: 'none',
-            maxWidth: '100%',
-            maxHeight: '12rem',
-            objectFit: 'cover'
-        },
-        dummyImgMulti: {
-            maxWidth: 'none',
-            width: '100%',
-            maxHeight: '6rem'
-        },
-        dummyTxt: {
-            pointerEvents: 'none',
-            fontSize: '0.85rem',
-            whiteSpace: 'nowrap',
-            width: '100%',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
-        },
-        dummyRemove: {
-            position: 'absolute',
-            left: '5px',
-            top: '5px',
-            zIndex: 2,
-            margin: 0,
-            padding: '0.2rem',
-            background: 'rgba(0,0,0,0.5)',
-            color: '#fff'
-        },
-        openFile: {
-            position: 'absolute',
-            left: '40px',
-            top: '5px',
-            zIndex: 2,
-            margin: 0,
-            padding: '0.2rem',
-            background: 'rgba(0,0,0,0.5)',
-            color: '#fff'
-        }
-    }
-}
+const StyledForm = styled(FormControl)({
+    position: 'relative',
+    zIndex: 'auto',
+    marginLeft: 0,
+    minHeight: '69px'
+})
+
+const StyledSuggestions = styled(Paper)({
+    position: 'absolute',
+    zIndex: 999,
+    top: '3rem',
+    maxWidth: '100%'
+})
+
+const StyledChips = styled('div')(({ theme }) => ({
+    display: 'flex',
+    width: '100%',
+    flexWrap: 'wrap',
+    marginTop: theme.spacing(1),
+    marginBottom: theme.spacing(0)
+}))
+
+const StyledChip = styled(Chip)(({ theme, isMulti }) => ({
+    margin: theme.spacing(2) + ' 0px 0px ' + theme.spacing(1),
+    '&:first-of-type': {
+        marginLeft: 0
+    },
+    position: 'relative',
+    ...(isMulti && {
+        margin: theme.spacing(1) + ' 0',
+        width: '15%',
+        position: 'relative'
+    }),
+}))
+
+const StyledDropArea = styled('div')(({ theme }) => ({
+    textAlign: 'center',
+    padding: '0.2rem',
+    writingMode: 'vertical-rl',
+    width: '1.6%',
+    margin: '0 0 -' + theme.spacing(2) + ' 0',
+    opacity: '0',
+    fontSize: '0.8rem',
+    backgroundColor: 'rgba(255,0,0,0.3)'
+}))
+
+const StyledImageChip = styled('div')(({ theme, isMulti }) => ({
+    margin: theme.spacing(2) + ' 0px 0px ' + theme.spacing(1),
+    '&:first-of-type': {
+        marginLeft: 0
+    },
+    position: 'relative',
+    ...(isMulti && {
+        margin: theme.spacing(1) + ' 0',
+        width: '15%',
+        position: 'relative'
+    }),
+}))
+
+
+const StyledDummyImage = styled('img')(({ isMulti }) => ({
+    pointerEvents: 'none',
+    maxWidth: '100%',
+    maxHeight: '12rem',
+    objectFit: 'cover',
+    ...(isMulti && {
+        maxWidth: 'none',
+        width: '100%',
+        maxHeight: '6rem'
+    }),
+}))
+
+const StyledDummyImageText = styled('p')({
+    pointerEvents: 'none',
+    fontSize: '0.85rem',
+    whiteSpace: 'nowrap',
+    width: '100%',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis'
+})
+
+const StyledDummyButton = styled(IconButton)({
+    position: 'absolute',
+    top: '5px',
+    zIndex: 2,
+    margin: 0,
+    padding: '0.2rem',
+    background: 'rgba(0,0,0,0.5)',
+    color: '#fff'
+})
 
 
 class TypePicker extends React.Component {
@@ -153,7 +158,7 @@ class TypePicker extends React.Component {
     }
 
     render() {
-        const {classes, placeholder, multi, error, helperText, className, fullWidth, linkTemplate, pickerField, metaFields, type, filter, label, genericType, readOnly} = this.props
+        const {placeholder, multi, error, helperText, className, fullWidth, linkTemplate, pickerField, metaFields, type, filter, label, genericType, readOnly} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
         console.log(`render TypePicker | hasFocus=${hasFocus} | pickerField=${pickerField}`, data)
         const openTypeWindow = (value) => {
@@ -175,8 +180,7 @@ class TypePicker extends React.Component {
                 }, 500)
             }
         }
-        return <FormControl fullWidth={fullWidth}
-                            className={classNames(classes.root, className)}>
+        return <StyledForm fullWidth={fullWidth} className={className}>
             {(!value.length || multi) && !readOnly ?
                 <TextField error={error}
                            fullWidth={fullWidth}
@@ -207,9 +211,9 @@ class TypePicker extends React.Component {
                                    </InputAdornment>
                                ),
                            }}
-                /> : <InputLabel className={classes.label} shrink>{label}</InputLabel>}
+                /> : <InputLabel shrink>{label}</InputLabel>}
 
-            <Paper className={classes.suggestions} square>
+            <StyledSuggestions square>
 
                 {hasFocus && data && data.results && data.results.map((item, idx) =>
                     <MenuItem
@@ -227,41 +231,41 @@ class TypePicker extends React.Component {
                 )}
 
 
-            </Paper>
-            <div className={classes.clips}>
+            </StyledSuggestions>
+            <StyledChips>
                 {value.map((singleValue, singleValueIndex) => {
 
                         const components = []
 
                         if (isValidImage(singleValue)) {
-                            components.push(<div draggable={true}
+                            console.log(singleValue)
+                            components.push(<StyledImageChip
+                                                 draggable={true}
                                                  data-index={singleValueIndex}
                                                  onDragStart={(e) => {
                                                      e.dataTransfer.setData('text', e.target.getAttribute('data-index'));
                                                  }}
-                                                 key={singleValueIndex}
-                                                 className={classNames(classes.clip, multi && classes.clipMulti)}>
-                                <img className={classNames(classes.dummyImg, multi && classes.dummyImgMulti)}
+                                                 isMulti={multi}
+                                                 key={singleValueIndex}>
+
+                                <StyledDummyImage isMulti={multi}
                                      src={getImageSrc(singleValue)}/>
-                                <div className={classes.dummyTxt}>{typeDataToLabel(singleValue, pickerField)}</div>
+                                <StyledDummyImageText>{typeDataToLabel(singleValue, pickerField)}</StyledDummyImageText>
 
-                                {!readOnly && <IconButton className={classes.dummyRemove}
-                                                          edge="end"
-                                                          onClick={this.handleRemovePick.bind(this, singleValueIndex)}
-                                >
+                                {!readOnly && <StyledDummyButton sx={{left:'4px'}} edge="end"
+                                                          onClick={this.handleRemovePick.bind(this, singleValueIndex)}>
                                     <DeleteIcon/>
-                                </IconButton>}
+                                </StyledDummyButton>}
 
-                                <IconButton className={classes.openFile}
-                                            edge="end"
+                                <StyledDummyButton sx={{left:'40px'}} edge="end"
                                             onClick={() => {
                                                 window.open(getImageSrc(singleValue), '_blank').focus()
                                             }}
                                 >
                                     <LaunchIcon/>
-                                </IconButton>
+                                </StyledDummyButton>
 
-                            </div>)
+                            </StyledImageChip>)
                         } else {
                             if (metaFields) {
 
@@ -321,13 +325,12 @@ class TypePicker extends React.Component {
                                 </Card>)
 
                             } else {
-                                components.push(<Chip draggable={true}
+                                components.push(<StyledChip draggable={true}
                                                       data-index={singleValueIndex}
                                                       onDragStart={(e) => {
                                                           e.dataTransfer.setData('text', e.target.getAttribute('data-index'));
                                                       }}
                                                       key={singleValueIndex}
-                                                      className={classNames(classes.clip)}
                                                       label={typeDataToLabel(singleValue, pickerField)}
                                                       onDelete={!readOnly && this.handleRemovePick.bind(this, singleValueIndex)}
                                                       onClick={() => {
@@ -342,9 +345,8 @@ class TypePicker extends React.Component {
                             }
                         }
 
-                        components.push(<div key={'drop' + singleValueIndex}
+                        components.push(<StyledDropArea key={'drop' + singleValueIndex}
                                              data-index={singleValueIndex}
-                                             className={classes.clipDrop}
                                              onDrop={(e) => {
                                                  const targetIndex = parseInt(e.currentTarget.getAttribute('data-index')) + 1,
                                                      sourceIndex = parseInt(e.dataTransfer.getData("text"))
@@ -366,15 +368,15 @@ class TypePicker extends React.Component {
                                              }}
                                              onDragLeave={(e) => {
                                                  e.target.style.opacity = 0
-                                             }}>Hier einfügen</div>)
+                                             }}>Hier einfügen</StyledDropArea>)
 
                         return components
 
                     }
                 )
                 }
-            </div>
-        </FormControl>
+            </StyledChips>
+        </StyledForm>
     }
 
     handleRemovePick(idx) {
@@ -570,8 +572,7 @@ TypePicker.propTypes = {
     multi: PropTypes.bool,
     name: PropTypes.string.isRequired,
     type: PropTypes.string.isRequired,
-    onChange: PropTypes.func.isRequired,
-    classes: PropTypes.object.isRequired
+    onChange: PropTypes.func.isRequired
 }
 
-export default withStyles(styles)(TypePicker)
+export default TypePicker

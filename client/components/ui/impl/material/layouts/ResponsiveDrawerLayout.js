@@ -163,7 +163,7 @@ const ResponsiveDrawer = React.memo((props) => {
     const {onMenuChange, menuItems, isAuthenticated, children, headerLeft, headerRight, title, logo, toolbarStyle, headerStyle, extra} = props
 
     const drawer = (
-        <div>
+        <div key="drawer">
             <Toolbar sx={{ padding: '0.5rem !important'}}>
                 {logo && <img style={{height:'3rem'}} src={logo}/>}
                 <div style={{marginLeft:'auto'}}>{headerLeft}</div>

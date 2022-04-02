@@ -2,8 +2,6 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {SimpleMenu, SimpleDialog, ViewListIcon, LaunchIcon, EditIcon, CodeIcon, WebIcon, AddIcon} from 'ui/admin'
 import RenderInNewWindow from './layout/RenderInNewWindow'
-import {withStyles} from '@mui/styles'
-import classNames from 'classnames'
 import CodeMirrorWrapper from './codemirror/CodeMirrorWrapper'
 import CodeMirror from 'codemirror'
 import './codemirror/javascript'
@@ -41,39 +39,32 @@ import 'codemirror/addon/fold/comment-fold'
 import 'codemirror/addon/fold/foldgutter.css'
 import GenericForm from './GenericForm'
 import Util from '../util'
+import styled from '@emotion/styled'
 
-const styles = theme => ({
-    root: {
-        display: 'flex',
-        flexDirection: 'column'
-    },
-    rootError: {
+const StyledRoot = styled('div')(({ error, inWindow}) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    ...(error && {
         border: 'solid 1px red'
-    },
-    rootInWindow: {
+    }),
+    ...(inWindow && {
         height:'100%'
-    },
-    codemirror: {
-        height: '30rem'
-    },
-    codemirrorInWindow: {
-        height: '100%'
-    },
-    files: {},
-    file: {
-        display: 'inline-block',
-        padding: '0.5rem',
-        background: '#efefef',
-        borderRadius: '0.1rem',
-        cursor: 'pointer',
-        '&:hover': {
-            background: '#aaa'
-        }
-    },
-    fileActive: {
+    })
+}))
+
+const StyledFile = styled('a')(({ active }) => ({
+    display: 'inline-block',
+    padding: '0.5rem',
+    background: '#efefef',
+    borderRadius: '0.1rem',
+    cursor: 'pointer',
+    '&:hover': {
         background: '#aaa'
-    }
-})
+    },
+    ...(active && {
+        background: '#aaa'
+    })
+}))
 
 
 const snippets = {
@@ -265,7 +256,7 @@ class CodeEditor extends React.Component {
 
 
     render() {
-        const {height, onFileChange, onChange, onBlur, onScroll, error, onError, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, scrollPosition, fileSplit, classes} = this.props
+        const {height, onFileChange, onChange, onBlur, onScroll, error, onError, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, scrollPosition, fileSplit} = this.props
         const {stateError, showFileSplit, fileIndex, showContextMenu, editData, data, renderInWindow} = this.state
         const options = {
                 mode: {},
@@ -492,8 +483,11 @@ class CodeEditor extends React.Component {
                 ]
             }
         }
-        const comp = <div className={classNames(classes.root, (error || stateError) && classes.rootError, renderInWindow && classes.rootInWindow, className)}
-                    style={style}>
+        const comp = <StyledRoot
+                        error={error || stateError}
+                        inWindow={renderInWindow}
+                        className={className}
+                        style={style}>
 
 
             {editData && <SimpleDialog fullWidth={true} maxWidth="md" key="newSiteDialog" open={true}
@@ -559,9 +553,9 @@ class CodeEditor extends React.Component {
                 }}
                 mini items={contextMenuItems}/>}
             {filenames ?
-                <div className={classes.files}>{filenames.map((entry, i) => {
+                <div>{filenames.map((entry, i) => {
                     return (
-                        <a key={'file' + i}
+                        <StyledFile key={'file' + i}
                            onClick={() => {
                                //this._editor.clearHistory()
                                this.setState({fileIndex: i})
@@ -570,12 +564,12 @@ class CodeEditor extends React.Component {
                                    onFileChange(i)
                                }
                            }}
-                           className={classNames(classes.file, i === finalFileIndex && classes.fileActive)}>{entry}</a>
+                           active={i === finalFileIndex}>{entry}</StyledFile>
                     )
                 })}</div>
                 : null}
             <CodeMirrorWrapper
-                className={classNames(!height && classes.codemirror, renderInWindow && classes.codemirrorInWindow)}
+                className={(!height ? 'react-codemirror2-height':'')+(renderInWindow ? ' react-codemirror2-in-window':'')}
                 autoCursor={false}
                 key="editor"
                 editorDidMount={editor => {
@@ -676,7 +670,7 @@ class CodeEditor extends React.Component {
 
                 }}/>
             {hasError &&
-            <div style={{color: 'red'}}>{error ? error + ' ' : ''}{stateError ? stateError : ''}</div>}</div>
+            <div style={{color: 'red'}}>{error ? error + ' ' : ''}{stateError ? stateError : ''}</div>}</StyledRoot>
 
         if(renderInWindow){
             return <RenderInNewWindow title="Code Editor" onClose={()=>{
@@ -714,5 +708,5 @@ CodeEditor.propTypes = {
 }
 
 
-export default withStyles(styles, {withTheme: true})(CodeEditor)
+export default CodeEditor
 

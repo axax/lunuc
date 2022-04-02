@@ -11,3 +11,9 @@
     color: mediumblue;
     font-weight: bold;
 }
+.react-codemirror2-height{
+    height: 30rem;
+}
+.react-codemirror2-in-window{
+    height: 100%;
+}

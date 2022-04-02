@@ -1,7 +1,5 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {withStyles} from '@mui/styles'
-import classNames from 'classnames'
 import Drawer from '@mui/material/Drawer'
 import AppBar from '@mui/material/AppBar'
 import Toolbar from '@mui/material/Toolbar'
@@ -10,63 +8,59 @@ import Divider from '@mui/material/Divider'
 import IconButton from '@mui/material/IconButton'
 import MenuIcon from '@mui/icons-material/Menu'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
-import ChevronRightIcon from '@mui/icons-material/ChevronRight'
+import styled from '@emotion/styled'
 
 const DRAWER_WIDTH_DEFAULT = 540
 
-const styles = theme => ({
-    /*'@global': {
-        html: {
-            height: '100%'
-        },
-        body: {
-            height: '100%'
-        },
-        '#app':{
-            height: '100%'
-        }
-    },*/
-    root: {
-        width: '100%',
-        height: '100%',
-        zIndex: 1,
-        overflow: 'hidden',
-    },
-    appFrame: {
-        position: 'relative',
-        display: 'flex',
-        width: '100%',
-        height: '100%',
-    },
-    appBar: {
-        position: 'absolute',
-        maxWidth: '100%',
-        zIndex: theme.zIndex.drawer + 1,
-        transition: theme.transitions.create(['width', 'margin'], {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-        }),
-    },
-    appBarFixed: {
+const StyledDrawerRoot = styled.div`
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    overflow: hidden;
+`
+const StyledAppFrame = styled.div`
+    position: relative;
+    display: flex;
+    width: 100%;
+    height: 100%;
+`
+
+const StyledAppBar = styled(AppBar, {
+    shouldForwardProp: (prop) => prop !== 'fixed',
+})(({ theme, fixed }) => ({
+    position: 'absolute',
+    maxWidth: '100%',
+    zIndex: theme.zIndex.drawer + 1,
+    transition: theme.transitions.create(['width', 'margin'], {
+        easing: theme.transitions.easing.sharp,
+        duration: theme.transitions.duration.leavingScreen,
+    }),
+    ...(fixed && {
         position: 'fixed'
-    },
-    menuButton: {
-        marginLeft: 12,
-        marginRight: 36,
-    },
-    hide: {
+    })
+}))
+
+const StyledMenuButton = styled(IconButton, {
+    shouldForwardProp: (prop) => prop !== 'hidden',
+})(({ hidden }) => ({
+    marginLeft: 12,
+    marginRight: 36,
+    ...(hidden && {
         display: 'none',
-    },
-    drawerDocked: {
-        maxWidth: '100%'
-    },
-    drawerDockedFixed: {
+    })
+}))
+
+const StyledDrawer = styled(Drawer, {
+    shouldForwardProp: (prop) => prop !== 'fixed',
+})(({ theme, fixed, open }) => ({
+    maxWidth: '100%',
+    ...(fixed && {
         position: 'fixed',
         top: '0px',
         bottom: '0px',
         zIndex: 1201
-    },
-    drawerPaper: {
+    }),
+    '.MuiPaper-root':{
         display: 'block',
         position: 'relative',
         height: '100%',
@@ -75,67 +69,69 @@ const styles = theme => ({
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.enteringScreen,
         }),
-        flex: '1 auto'
-    },
-    drawerPaperClose: {
-        width: 0,
-        overflowY: 'hidden',
-        height: window.innerHeight, /* otherwise with width=0, in some brower, the height get enormuous */
-        transition: theme.transitions.create('width', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-        }),
-    },
-    drawerInner: {
-        maxWidth: '100%',
-        position: 'relative'
-    },
-    drawerHeader: {
-        backgroundColor: '#fff',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'flex-end',
-        padding: '0 8px',
-        ...theme.mixins.toolbar,
-    },
-    drawerDivider: {
-        position: 'absolute',
-        width: '4px',
-        background: 'black',
-        right: 0,
-        top: 0,
-        bottom: 0,
-        cursor: 'ew-resize',
-        zIndex: 999,
-        opacity: 0,
-        '&:hover': {
-            opacity: 1
-        }
-    },
-    content: {
-        boxSizing: 'border-box',
-        width: '100%',
-        flexGrow: 1,
-        backgroundColor: theme.palette.background.default,
-        padding: 24,
-        height: 'calc(100% - 56px)',
-        marginTop: 56,
-        [theme.breakpoints.up('sm')]: {
-            height: 'calc(100% - 64px)',
-            marginTop: 64,
-        },
-        transition: theme.transitions.create('margin', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-        }),
-    },
-    contentClose: {
-        transition: theme.transitions.create('margin', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-        }),
-    },
+        flex: '1 auto',
+        ...(!open && {
+            width: 0,
+            overflowY: 'hidden',
+            height: window.innerHeight, /* otherwise with width=0, in some brower, the height get enormuous */
+            transition: theme.transitions.create('width', {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.leavingScreen,
+            })
+        })
+    }
+}))
+
+
+const StyledDrawerHeader = styled('div')(({ theme }) => ({
+    backgroundColor: '#fff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    padding: '0 8px',
+    ...theme.mixins.toolbar
+}))
+
+const StyledDrawerDivider = styled('div')({
+    position: 'absolute',
+    width: '4px',
+    background: 'black',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    cursor: 'ew-resize',
+    zIndex: 999,
+    opacity: 0,
+    '&:hover': {
+        opacity: 1
+    }
 })
+
+
+const StyledContent = styled('main')(({ theme, fixed, open }) => ({
+    boxSizing: 'border-box',
+    width: '100%',
+    flexGrow: 1,
+    backgroundColor: theme.palette.background.default,
+    padding: 24,
+    height: 'calc(100% - 56px)',
+    marginTop: 56,
+    [theme.breakpoints.up('sm')]: {
+        height: 'calc(100% - 64px)',
+        marginTop: 64,
+    },
+    transition: theme.transitions.create('margin', {
+        easing: theme.transitions.easing.sharp,
+        duration: theme.transitions.duration.leavingScreen,
+    }),
+    ...(fixed && !open && {
+        transition: theme.transitions.create('margin', {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.leavingScreen,
+        })
+    })
+}))
+
 
 class DrawerLayout extends React.Component {
 
@@ -228,7 +224,7 @@ class DrawerLayout extends React.Component {
 
 
     render() {
-        const {classes, theme, title, sidebar, toolbarRight, children, fixedLayout} = this.props
+        const {theme, title, sidebar, toolbarRight, children, fixedLayout} = this.props
         const {open, drawerWidth, dragEntered} = this.state
         const contentFixed = {}
         if (fixedLayout && open) {
@@ -243,64 +239,61 @@ class DrawerLayout extends React.Component {
             style.pointerEvents ='none'
         }
         return (
-            <div className={classes.root}>
-                <div className={classes.appFrame}>
-                    <AppBar
+            <StyledDrawerRoot>
+                <StyledAppFrame>
+                    <StyledAppBar
                         onDragEnter={(e)=>{
                             this.setState({dragEntered:true})
                         }}
-                        className={classNames(classes.appBar, fixedLayout && classes.appBarFixed)}
+                        fixed={fixedLayout}
                         style={style}
                         id="drawerLayoutHeader"
                     >
                         <Toolbar>
-                            <IconButton
+                            <StyledMenuButton
                                 color="inherit"
                                 aria-label="open drawer"
                                 onClick={this.handleDrawerOpen}
-                                className={classNames(classes.menuButton, open && classes.hide)}
+                                hidden={open}
                             >
                                 <MenuIcon/>
-                            </IconButton>
+                            </StyledMenuButton>
                             <Typography variant="h6" color="inherit" noWrap style={{flex: 1}}>
                                 {title}
                             </Typography>
                             {toolbarRight}
                         </Toolbar>
 
-                    </AppBar>
-                    <Drawer
+                    </StyledAppBar>
+                    <StyledDrawer
                         variant="permanent"
-                        classes={{
-                            docked: classNames(classes.drawerDocked, fixedLayout && classes.drawerDockedFixed),
-                            paper: classNames(classes.drawerPaper, !open && classes.drawerPaperClose),
-                        }}
+                        fixed={fixedLayout}
                         open={open}
                     >
-                        <div className={classNames(classes.drawerInner)} style={{width: drawerWidth + 'px'}}>
-                            <div className={classes.drawerHeader}>
+                        <div style={{
+                            maxWidth: '100%',
+                            position: 'relative',
+                            width: drawerWidth + 'px'}}>
+                            <StyledDrawerHeader>
                                 <IconButton onClick={this.handleDrawerClose}>
-                                    {theme.direction === 'rtl' ? <ChevronRightIcon/> : <ChevronLeftIcon/>}
+                                    <ChevronLeftIcon/>
                                 </IconButton>
-                            </div>
+                            </StyledDrawerHeader>
                             <Divider/>
                             {open && sidebar}
-                            <div className={classes.drawerDivider}
-                                 onMouseDown={this.dividerMouseDown}></div>
+                            <StyledDrawerDivider onMouseDown={this.dividerMouseDown}/>
                         </div>
-                    </Drawer>
-                    <main data-layout-content="true" style={contentFixed}
-                          className={classNames(classes.content, fixedLayout && !open && classes.contentClose)}>
+                    </StyledDrawer>
+                    <StyledContent data-layout-content="true" style={contentFixed} fixed={fixedLayout} open={open}>
                         {children}
-                    </main>
-                </div>
-            </div>
+                    </StyledContent>
+                </StyledAppFrame>
+            </StyledDrawerRoot>
         )
     }
 }
 
 DrawerLayout.propTypes = {
-    classes: PropTypes.object.isRequired,
     theme: PropTypes.object.isRequired,
     fixedLayout: PropTypes.bool,
     open: PropTypes.bool,
@@ -310,4 +303,4 @@ DrawerLayout.propTypes = {
 }
 
 
-export default withStyles(styles, {withTheme: true})(DrawerLayout);
+export default DrawerLayout

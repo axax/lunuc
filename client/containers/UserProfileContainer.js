@@ -157,7 +157,7 @@ class UserProfileContainer extends React.Component {
 
     render() {
         const {me} = this.props
-        if (!me) return <BaseLayout/>
+        if (!me) return null
         console.log('render UserProfileContainer')
         const {username, email, password, passwordConfirm, passwordError, passwordMessage, usernameError, loading, note} = this.state
         let noteElements = []

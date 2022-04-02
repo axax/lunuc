@@ -233,7 +233,12 @@ class CmsViewEditorContainer extends React.Component {
             state.serverScript !== this.state.serverScript ||
             state.EditorOptions !== this.state.EditorOptions ||
             state.EditorPageOptions !== this.state.EditorPageOptions ||
-            state.cmsStatusData !== this.state.cmsStatusData
+            state.cmsStatusData !== this.state.cmsStatusData  ||
+            (
+                props.cmsPage.urlSensitiv && (
+                    props.location.search !== this.props.location.search ||
+                    props.location.hash !== this.props.location.hash)
+            )
 
     }
 

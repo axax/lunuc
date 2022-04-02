@@ -1,7 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import PropTypes from 'prop-types'
-import {withStyles} from 'ui/admin'
 import * as CmsActions from '../actions/CmsEditorAction'
 import {bindActionCreators} from 'redux'
 import {connect} from 'react-redux'
@@ -21,7 +20,6 @@ import {
     FlipToBackIcon
 } from 'ui/admin'
 import GenericForm from 'client/components/GenericForm'
-import classNames from 'classnames'
 import AddToBody from './AddToBody'
 import DomUtilAdmin from 'client/util/domAdmin'
 import Util from 'client/util'
@@ -33,82 +31,85 @@ import {deepMergeOptional, deepMerge} from 'util/deepMerge'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants'
 import {client} from '../../../client/middleware/graphql'
 import {openWindow} from '../../../client/util/window'
-import {convertRawValuesFromPicker} from "../../../client/util/picker";
+import {convertRawValuesFromPicker} from '../../../client/util/picker'
+import {showTooltip} from '../../../client/util/tooltip'
+import styled from '@emotion/styled'
 
 const {UPLOAD_URL, DEFAULT_LANGUAGE} = config
 
 
-const styles = theme => ({
-    wrapper: {},
-    highlighter: {
-        zIndex: 999,
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        minWidth: '10px',
-        minHeight: '10px',
-        display: 'flex',
-        border: '1px dashed rgba(0,0,0,0.3)',
-        pointerEvents: 'none',
-        justifyContent: 'center',
-        alignItems: 'center',
-        boxShadow: '0px 0px 5px 0px rgba(235,252,0,1)'
-    },
-    bgYellow: {
-        background: 'rgba(245, 245, 66,0.05)',
-    },
-    bgBlue: {
+const StyledHighlighter = styled('span')(({ color }) => ({
+    zIndex: 999,
+    position: 'fixed',
+    bottom: 0,
+    left: 0,
+    minWidth: '10px',
+    minHeight: '10px',
+    display: 'flex',
+    border: '1px dashed rgba(0,0,0,0.3)',
+    pointerEvents: 'none',
+    justifyContent: 'center',
+    alignItems: 'center',
+    boxShadow: '0px 0px 5px 0px rgba(235,252,0,1)',
+    ...(color==='yellow' && {
+        background: 'rgba(245, 245, 66,0.05)'
+    }),
+    ...(color==='blue' && {
         background: 'rgba(84, 66, 245,0.1)',
         color: 'black',
         fontWeight: 'bold',
         fontSize: '0.9rem',
         textShadow: '1px 1px 2px white'
-    },
-    dropArea: {
-        overflow: 'hidden',
-        whiteSpace: 'pre',
-        transition: 'display .5s ease-out,visibility .5s ease-out, opacity .5s ease-out',
-        opacity: 0,
-        zIndex: 999,
-        display: 'table',
-        visibility: 'hidden',
+    }),
+}))
+
+const DROPAREA_ACTIVE = 'jdh-da-active'
+const DROPAREA_OVERLAP = 'jdh-da-overlap'
+const DROPAREA_OVER = 'jdh-da-over'
+const StyledDropArea = styled('span')({
+    overflow: 'hidden',
+    whiteSpace: 'pre',
+    transition: 'display .5s ease-out,visibility .5s ease-out, opacity .5s ease-out',
+    opacity: 0,
+    zIndex: 999,
+    display: 'table',
+    visibility: 'hidden',
+    position: 'absolute',
+    fontWeight: 'bold',
+    borderRadius: '5px',
+    background: '#000',
+    padding: '0',
+    maxWidth: '100%',
+    margin: '-28px 0 0 0 !important',
+    border: '1px dashed #c1c1c1',
+    height: '28px',
+    lineHeight: '28px',
+    color: '#fff',
+    textAlign: 'center',
+    fontSize: '1rem',
+    '&:after': {
+        top: '100%',
+        left: '50%',
+        border: 'solid transparent',
+        content: '""',
+        height: 0,
+        width: 0,
         position: 'absolute',
-        fontWeight: 'bold',
-        borderRadius: '5px',
-        background: '#000',
-        padding: '0',
-        maxWidth: '100%',
-        margin: '-28px 0 0 0 !important',
-        border: '1px dashed #c1c1c1',
-        height: '28px',
-        lineHeight: '28px',
-        color: '#fff',
-        textAlign: 'center',
-        fontSize: '1rem',
-        '&:after': {
-            top: '100%',
-            left: '50%',
-            border: 'solid transparent',
-            content: '""',
-            height: 0,
-            width: 0,
-            position: 'absolute',
-            pointerEvents: 'none',
-            borderColor: 'rgba(0, 0, 0, 0)',
-            borderTopColor: '#000',
-            borderWidth: '10px',
-            marginLeft: '-10px'
-        }
+        pointerEvents: 'none',
+        borderColor: 'rgba(0, 0, 0, 0)',
+        borderTopColor: '#000',
+        borderWidth: '10px',
+        marginLeft: '-10px'
     },
-    dropAreaActive: {
+    [`&.${DROPAREA_ACTIVE}`]:{
         visibility: 'visible',
         opacity: 0.8
     },
-    dropAreaOverlap: {
+    [`&.${DROPAREA_OVERLAP}`]:{
         position: 'relative',
         marginTop: '0px !important',
     },
-    dropAreaOver: {
+    [`&.${DROPAREA_OVER}`]:{
         zIndex: 1000,
         opacity: '1 !important',
         visibility: 'visible !important',
@@ -116,44 +117,36 @@ const styles = theme => ({
         '&:after': {
             borderTopColor: 'red'
         }
-    },
-    toolbar: {
-        zIndex: 999,
-        position: 'fixed',
-        maxHeight: '200px'
-    },
-    toolbarHovered: {},
-    picker: {
-        cursor: 'pointer',
-        pointerEvents: 'auto'
-    },
-    toolbarMenu: {
-        position: 'absolute',
-        left: '-2.2rem',
-        top: 'calc(50% - 1.5rem)'
-    },
-    info: {
-        position: 'fixed',
-        bottom: '0px',
-        right: '0px',
-        background: '#fff',
-        padding: '3px',
-        zIndex: 99999
-    },
-    tooltip: {
-        zIndex: 99999,
-        position: 'fixed',
-        background: 'rgba(245, 245, 66,0.4)',
-        padding: '1rem',
-        visibility: 'hidden',
-        opacity: 0,
-        transition: 'visibility 0.3s linear,opacity 0.3s linear'
-    },
-    tooltipShow: {
-        opacity: 1,
-        visibility: 'visible'
     }
 })
+
+
+const StyledPicker = styled('div')({
+    cursor: 'pointer',
+    pointerEvents: 'auto'
+})
+
+const StyledToolbarButton = styled('div')({
+    zIndex: 999,
+    position: 'fixed',
+    maxHeight: '200px'
+})
+
+const StyledToolbarMenu = styled(SimpleMenu)({
+    position: 'absolute',
+    left: '-2.2rem',
+    top: 'calc(50% - 1.5rem)'
+})
+
+const StyledInfoBox = styled('div')({
+    position: 'fixed',
+    bottom: '0px',
+    right: '0px',
+    background: '#fff',
+    padding: '3px',
+    zIndex: 99999
+})
+
 
 const ALLOW_DROP = ['div', 'main', 'Col', 'Row', 'section', 'Cms', 'Print', 'td']
 const ALLOW_DROP_IN = {'Col': ['Row'], 'li': ['ul']}
@@ -280,8 +273,8 @@ class JsonDomHelper extends React.Component {
             state.left !== this.state.left ||
             state.height !== this.state.height ||
             state.width !== this.state.width ||
-            state.toolbarHovered !== this.state.toolbarHovered
-        state.mouseX !== this.state.mouseX
+            state.toolbarHovered !== this.state.toolbarHovered ||
+            state.mouseX !== this.state.mouseX
     }
 
     helperTimeoutOut = null
@@ -355,13 +348,12 @@ class JsonDomHelper extends React.Component {
         }
     }
 
-    onToolbarMouseOut(className, e) {
+    onToolbarMouseOut(e) {
         e.stopPropagation()
-
         if (!this.state.toolbarMenuOpen) {
             let el = e.toElement || e.relatedTarget
-            while (el && el.parentNode && el.parentNode != window) {
-                if (el.classList.contains(className)) {
+            while (el && el.parentNode && el.parentNode !== window) {
+                if (el.dataset.toolbar || el.dataset.picker) {
                     e.preventDefault()
                     e.stopPropagation()
                     return false
@@ -383,8 +375,6 @@ class JsonDomHelper extends React.Component {
             JsonDomHelper.currentDragElement = this
             this.setState({toolbarHovered: false, hovered: false, dragging: true})
         }
-        //DomUtil.setAttrForSelector('.'+classes.dropArea, {style:'display:block'})
-
     }
 
     _clientY = 0
@@ -408,7 +398,7 @@ class JsonDomHelper extends React.Component {
 
                 /*const elementOnMouseOver = document.elementFromPoint(this._clientX, this._clientY)*/
 
-                const tags = document.querySelectorAll('.' + this.props.classes.dropArea)
+                const tags = document.querySelectorAll('[data-drop-area="true"]')
 
                 const dragableProps = JsonDomHelper.currentDragElement.props
 
@@ -420,7 +410,7 @@ class JsonDomHelper extends React.Component {
                     if (draggable === tag.nextSibling ||
                         draggable === tag.previousSibling ||
                         (dragableProps._options.leaveParent === false && draggable.parentNode !== tag.parentNode) /*|| !elementOnMouseOver.contains(tag)*/) {
-                        tag.classList.remove(this.props.classes.dropAreaActive)
+                        tag.classList.remove(DROPAREA_ACTIVE)
                         continue
                     }
 
@@ -458,35 +448,13 @@ class JsonDomHelper extends React.Component {
                                     elementWidth -= parseFloat(computedStyle.paddingLeft) + parseFloat(computedStyle.paddingRight)
 
 
-                                    tag.classList.add(this.props.classes.dropAreaActive)
+                                    tag.classList.add(DROPAREA_ACTIVE)
                                     tag.style.width = (elementWidth) + 'px'
                                     allTags.push(tag)
 
-                                    /*const rect = tag.getBoundingClientRect()
-                                    const offY = Math.abs(this._clientY - (rect.top + (rect.top - rect.bottom) / 2)),
-                                        offX = Math.abs(this._clientX - (rect.left + (rect.left - rect.right) / 2))
-const m = Math.max((offX+offY) / 2,100)
-
-                                    tag.style.transform= 'scale('+(100/m)+')'*/
-
-                                    /*if (!(rect.right < this._clientX - 50 ||
-                                        rect.left > this._clientX + 50 ||
-                                        rect.bottom < this._clientY - 50 ||
-                                        rect.top > this._clientY + 50)) {
-
-                                        // tag.style.position='relative'
-                                        //   tag.style.margin='0'
-                                        // tag.style.background = 'green'
-                                    } else {
-                                        //   tag.style.background = null
-                                        //  tag.style.position=null
-                                        //  tag.style.margin=null
-                                    }*/
-
-
                                 } else {
                                     if (distanceTop > 200 && distanceMiddle > 200 && distanceBottom > 200) {
-                                        tag.classList.remove(this.props.classes.dropAreaActive)
+                                        tag.classList.remove(DROPAREA_ACTIVE)
                                     } else {
                                         allTags.push(tag)
                                     }
@@ -508,8 +476,8 @@ const m = Math.max((offX+offY) / 2,100)
                                 rect.bottom < rect2.top ||
                                 rect.top > rect2.bottom)) {
 
-                                allTags[z].classList.add(this.props.classes.dropAreaOverlap)
-                                allTags[y].classList.add(this.props.classes.dropAreaOverlap)
+                                allTags[z].classList.add(DROPAREA_OVERLAP)
+                                allTags[y].classList.add(DROPAREA_OVERLAP)
                                 break
                             }
                         }
@@ -528,7 +496,7 @@ const m = Math.max((offX+offY) / 2,100)
     onDragEnterDropArea(e) {
         e.stopPropagation()
         e.preventDefault()
-        e.currentTarget.classList.add(this.props.classes.dropAreaOver)
+        e.currentTarget.classList.add(DROPAREA_OVER)
     }
 
     onDragOverDropArea(e) {
@@ -538,7 +506,7 @@ const m = Math.max((offX+offY) / 2,100)
 
     onDragLeaveDropArea(e) {
         e.stopPropagation()
-        e.currentTarget.classList.remove(this.props.classes.dropAreaOver)
+        e.currentTarget.classList.remove(DROPAREA_OVER)
     }
 
     onDrop(e) {
@@ -546,8 +514,8 @@ const m = Math.max((offX+offY) / 2,100)
         e.preventDefault()
         JsonDomHelper.disableEvents = true
 
-        const {classes, _json, _onTemplateChange} = this.props
-        e.currentTarget.classList.remove(classes.dropAreaOver)
+        const {_json, _onTemplateChange} = this.props
+        e.currentTarget.classList.remove(DROPAREA_OVER)
 
         if (JsonDomHelper.currentDragElement) {
             let sourceKey = JsonDomHelper.currentDragElement.props._key,
@@ -589,7 +557,15 @@ const m = Math.max((offX+offY) / 2,100)
 
 
     resetDragState() {
-        DomUtilAdmin.setAttrForSelector('.' + this.props.classes.dropArea, {className: this.props.classes.dropArea})
+
+        const dropAreas = document.querySelectorAll('[data-drop-area="true"]')
+        for (let i = 0; i < dropAreas.length; ++i) {
+            const dropArea = dropAreas[i]
+            dropArea.classList.remove(DROPAREA_OVERLAP)
+            dropArea.classList.remove(DROPAREA_OVER)
+            dropArea.classList.remove(DROPAREA_ACTIVE)
+        }
+
         JsonDomHelper.currentDragElement = null
         if (JsonDomHelper.altKeyDown) {
             altKeyReleased()
@@ -597,32 +573,6 @@ const m = Math.max((offX+offY) / 2,100)
         this.setState({toolbarHovered: false, hovered: false, dragging: false})
     }
 
-    showTooltip(msg, opt) {
-        const {classes} = this.props
-
-        let tooltip = document.querySelector('.' + classes.tooltip)
-        if (!tooltip) {
-            tooltip = document.createElement('div')
-            tooltip.classList.add(classes.tooltip)
-            document.body.appendChild(tooltip)
-        }
-
-        tooltip.classList.add(classes.tooltipShow)
-        tooltip.style.left = opt.left + 'px'
-        tooltip.style.top = opt.top + 'px'
-        tooltip.innerText = msg
-        if (opt.closeIn) {
-            clearTimeout(this.tooltipTimeout)
-            this.tooltipTimeout = setTimeout(() => {
-                tooltip.classList.remove(classes.tooltipShow)
-                this.tooltipTimeout = setTimeout(() => {
-                    if (tooltip && tooltip.parentNode) {
-                        tooltip.parentNode.removeChild(tooltip)
-                    }
-                }, 300)
-            }, opt.closeIn)
-        }
-    }
 
     handleTemplateEditClick(e) {
         e.stopPropagation()
@@ -767,7 +717,7 @@ const m = Math.max((offX+offY) / 2,100)
 
 
     getDropArea(rest, index) {
-        return <div
+        return <StyledDropArea
             onMouseOver={(e) => {
                 e.stopPropagation()
             }}
@@ -777,9 +727,9 @@ const m = Math.max((offX+offY) / 2,100)
             onDrop={this.onDrop.bind(this)}
             data-key={rest._key}
             data-index={index}
+            data-drop-area
             data-tag-name={rest._tagName}
-            key={`${rest._key}.dropArea.${index}`}
-            className={this.props.classes.dropArea}>Hier plazieren</div>
+            key={`${rest._key}.dropArea.${index}`}>Hier plazieren</StyledDropArea>
     }
 
     openPicker(options) {
@@ -834,7 +784,7 @@ const m = Math.max((offX+offY) / 2,100)
     }
 
     render() {
-        const {classes, _WrappedComponent, _json, _cmsActions, _onTemplateChange, _onDataResolverPropertyChange, children, _tagName, _options, _user, _inlineEditor, _dynamic, onChange, onClick, ...rest} = this.props
+        const {_WrappedComponent, _json, _cmsActions, _onTemplateChange, _onDataResolverPropertyChange, children, _tagName, _options, _user, _inlineEditor, _dynamic, onChange, onClick, ...rest} = this.props
         const {hovered, toolbarHovered, toolbarMenuOpen, addChildDialog, deleteConfirmDialog, deleteSourceConfirmDialog} = this.state
 
         if(!rest._key){
@@ -907,17 +857,11 @@ const m = Math.max((offX+offY) / 2,100)
             events.onMouseDown = (e) => {
                 if (e.target.tagName === 'SELECT') {
                     const rect = e.target.getBoundingClientRect()
-                    this.showTooltip('Formelement mit gedrückter alt Taste verschieben', {
+                    showTooltip('Formelement mit gedrückter alt Taste verschieben', {
                         top: rect.top - 60,
                         left: rect.left,
                         closeIn: 2500
                     })
-
-                    /*const mdown = document.createEvent("MouseEvents")
-                    mdown.initMouseEvent("mousedown", true, true, window, 0, e.screenX, e.screenY, e.clientX, e.clientY, true, false, false, true, 0, null)
-                    e.target.parentNode.dispatchEvent(mdown)
-                    e.target.style.pointerEvents = 'none'*/
-                    // e.preventDefault()
                 }
             }
         }
@@ -1158,18 +1102,16 @@ const m = Math.max((offX+offY) / 2,100)
                 }
             }
 
-            toolbar = <div
+            toolbar = <StyledToolbarButton
                 key={rest._key + '.toolbar'}
                 data-toolbar={rest._key}
                 onMouseOver={this.onToolbarMouseOver.bind(this)}
-                onMouseOut={this.onToolbarMouseOut.bind(this, classes.toolbar)}
-                style={{top: this.state.top, left: this.state.left, height: this.state.height}}
-                className={classNames(classes.toolbar, toolbarHovered && classes.toolbarHovered)}>
+                onMouseOut={this.onToolbarMouseOut.bind(this)}
+                style={{top: this.state.top, left: this.state.left, height: this.state.height}}>
 
-                <div style={{display: 'none'}}
-                     className={classes.info}>{subJson ? subJson.t || 'Text' + ' - ' : ''}{rest.id || rest._key}</div>
+                <StyledInfoBox style={{display: 'none'}}>{subJson ? subJson.t || 'Text' + ' - ' : ''}{rest.id || rest._key}</StyledInfoBox>
 
-                {menuItems.length > 0 && <SimpleMenu
+                {menuItems.length > 0 && <StyledToolbarMenu
                     anchorReference={this.state.mouseY ? "anchorPosition" : "anchorEl"}
                     anchorPosition={
                         this.state.mouseY && this.state.mouseX
@@ -1189,11 +1131,12 @@ const m = Math.max((offX+offY) / 2,100)
                             mouseX: undefined
                         })
                     }}
-                    className={classes.toolbarMenu} mini items={menuItems}/>}
-            </div>
+                    mini items={menuItems}/>}
+            </StyledToolbarButton>
 
             if (_options.highlight !== false) {
-                highlighter = <span
+                const highligherColor = isCms || _options.picker ? 'blue' : 'yellow'
+                highlighter = <StyledHighlighter
                     key={rest._key + '.highlighter'}
                     data-highlighter={rest._key}
                     style={{
@@ -1202,10 +1145,11 @@ const m = Math.max((offX+offY) / 2,100)
                         height: this.state.height + 2,
                         width: this.state.width + 2
                     }}
-                    className={classNames(classes.highlighter, isCms || _options.picker ? classes.bgBlue : classes.bgYellow)}>{_options.picker || isCms ?
-                    <div
+                    color={highligherColor}>{_options.picker || isCms ?
+                    <StyledPicker
+                        data-picker={rest._key}
                         onMouseOver={this.onToolbarMouseOver.bind(this)}
-                        onMouseOut={this.onToolbarMouseOut.bind(this, classes.picker)}
+                        onMouseOut={this.onToolbarMouseOut.bind(this)}
                         onContextMenu={events.onContextMenu.bind(this)}
                         onClick={(e) => {
                             e.stopPropagation()
@@ -1214,9 +1158,8 @@ const m = Math.max((offX+offY) / 2,100)
                             } else {
                                 this.openPicker(_options)
                             }
-                        }}
-                        className={classes.picker}>{isCms && subJson && subJson.p ? subJson.p.id || subJson.p.slug :
-                        <ImageIcon/>}</div> : ''}</span>
+                        }}>{isCms && subJson && subJson.p ? subJson.p.id || subJson.p.slug :
+                        <ImageIcon/>}</StyledPicker> : ''}</StyledHighlighter>
             }
         }
 
@@ -1793,7 +1736,6 @@ const m = Math.max((offX+offY) / 2,100)
 
 
 JsonDomHelper.propTypes = {
-    classes: PropTypes.object.isRequired,
     _WrappedComponent: PropTypes.any.isRequired,
     _cmsActions: PropTypes.object.isRequired,
     _key: PropTypes.string.isRequired,
@@ -1828,4 +1770,4 @@ const mapDispatchToProps = (dispatch) => ({
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(withStyles(styles)(JsonDomHelper))
+)(JsonDomHelper)

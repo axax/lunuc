@@ -546,7 +546,6 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
 
 
             if (newResponse.loading) {
-
                 finalFetch({
                     cacheKey,
                     query,

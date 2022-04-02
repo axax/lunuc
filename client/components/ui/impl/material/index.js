@@ -14,26 +14,17 @@ import {ThemeProvider as ThemeProviderLegacy} from '@mui/styles'
 
 import CssBaseline from '@mui/material/CssBaseline'
 
-import {JssProvider} from 'react-jss'
-import {createGenerateClassName} from '@mui/styles'
 
 import theme from './theme'
 
 export {theme}
 
-const generateClassName = createGenerateClassName({
-    dangerouslyUseGlobalCSS: false,
-    productionPrefix: 'c',
-})
-
 // Theme provider
 export const UIProvider = ({children, ...rest}) => {
-    return <JssProvider generateClassName={generateClassName}>
-        <ThemeProvider theme={theme} {...rest}>
+    return <ThemeProvider theme={theme} {...rest}>
             <ThemeProviderLegacy theme={theme}>{children}</ThemeProviderLegacy>
             <CssBaseline/>
         </ThemeProvider>
-    </JssProvider>
 }
 
 // define some styles so it can be used in the components
