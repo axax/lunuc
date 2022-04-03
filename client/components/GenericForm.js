@@ -22,10 +22,8 @@ import FileDrop from './FileDrop'
 import TypePicker from './TypePicker'
 import config from 'gen/config-client'
 import TinyEditor from './TinyEditor'
-import {withStyles} from 'ui/admin'
 import {checkFieldType} from 'util/typesAdmin'
 import Hook from '../../util/hook'
-import classNames from 'classnames'
 import Expandable from 'client/components/Expandable'
 import {_t} from '../../util/i18n'
 import Util from '../util'
@@ -36,6 +34,7 @@ import {Query} from '../middleware/graphql'
 import {getTypeQueries} from 'util/types'
 import Async from './Async'
 import styled from '@emotion/styled'
+import theme from './ui/impl/material/theme'
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ './CodeEditor')}/>
 
@@ -44,36 +43,16 @@ const StyledTabContainer = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.background.paper
 }))
 
-
-const styles = theme => {
-    return {
-        formField: {
-            margin: theme.spacing(1),
-            width: 'calc(100% - ' + theme.spacing(2) + ')',
-            [theme.breakpoints.up('md')]: {
-                width: 'calc(50% - ' + theme.spacing(2) + ')'
-            }
-        },
-        formFieldThird: {
-            margin: theme.spacing(1) + '',
-            width: 'calc(100% - ' + theme.spacing(2) + ')',
-            [theme.breakpoints.up('md')]: {
-                width: 'calc(33.33% - ' + theme.spacing(2) + ')'
-            }
-        },
-        formFieldTwoThird: {
-            margin: theme.spacing(1),
-            width: 'calc(100% - ' + theme.spacing(2) + ')',
-            [theme.breakpoints.up('md')]: {
-                width: 'calc(66.66% - ' + theme.spacing(2) + ')'
-            }
-        },
-        formFieldFull: {
-            width: 'calc(100% - ' + theme.spacing(2) + ')',
-            margin: theme.spacing(1) + '',
+const getSxProps = field => ({
+    margin: 1,
+    width: 'calc(100% - ' + theme.spacing(2) + ')',
+    ...(!field.fullWidth && {
+        [theme.breakpoints.up('md')]: {
+            width: `calc(${field.twoThirdWidth?'66.66':field.thirdWidth?'33.33':'50'}% - ${theme.spacing(2)})`
         }
-    }
-}
+    })
+})
+
 
 const autoIncrement = (key, cb) => {
     fetch('/lunucapi/autoIncrement?key=' + key).then(response => response.json().then(cb))
@@ -470,7 +449,7 @@ class GenericForm extends React.Component {
     }
 
     render() {
-        const {fields, primaryButton, caption, classes, subForm} = this.props
+        const {fields, primaryButton, caption, subForm} = this.props
 
 
         const fieldKeys = Object.keys(fields), formFields = [], tabs = []
@@ -613,7 +592,6 @@ class GenericForm extends React.Component {
                                     })
 
                                 }} primaryButton={false} values={values} updateOnValueChange={true} key={valueFieldKey} subForm={true}
-                                             classes={classes}
                                              fields={subFields}/>
                                 <Button key={'delete' + valueFieldKey}
                                         color="secondary"
@@ -699,7 +677,7 @@ class GenericForm extends React.Component {
                             }
                         })
 
-                    }} primaryButton={false} values={values} updateOnValueChange={true} key={fieldKey} subForm={true} classes={classes}
+                    }} primaryButton={false} values={values} updateOnValueChange={true} key={fieldKey} subForm={true}
                                                         fields={field.subFields}/>)
 
                 }
@@ -803,7 +781,7 @@ class GenericForm extends React.Component {
         }
 
         return (
-            <Wrapper className={classes.form}>
+            <Wrapper>
                 {tabs.length === 0 && formFields}
                 {tabs.length > 0 && <StyledTabContainer>
                     <SimpleTabs
@@ -842,7 +820,7 @@ class GenericForm extends React.Component {
     }
 
     createInputField({uitype, field, value, currentFormFields, fieldKey, fieldIndex, languageCode, translateButton}) {
-        const {onKeyDown, classes, autoFocus} = this.props
+        const {onKeyDown, autoFocus} = this.props
         let langButtonWasInserted = false
         if (!field.label) {
             field.label = ''
@@ -903,7 +881,7 @@ class GenericForm extends React.Component {
 
 
             currentFormFields.push(<FormControl key={'control' + fieldKey}
-                                                className={classNames(classes.formFieldFull)}>
+                                                sx={getSxProps({fullWidth:true})}>
                 <InputLabel key={'label' + fieldKey}
                             shrink>{field.label + (languageCode ? ' [' + languageCode + ']' : '')}</InputLabel>
 
@@ -939,7 +917,7 @@ class GenericForm extends React.Component {
 
 
             currentFormFields.push(<FormControl style={{zIndex: 1}} key={'control' + fieldKey}
-                                                className={classNames(classes.formFieldFull)}>
+                                                sx={getSxProps({fullWidth:true})}>
                 <InputLabel key={'label' + fieldKey}
                             shrink>{field.label + (languageCode ? ' [' + languageCode + ']' : '')}</InputLabel>
                 <TinyEditor key={fieldKey} id={fieldKey} error={hasError} style={{marginTop: '1.5rem'}}
@@ -981,7 +959,7 @@ class GenericForm extends React.Component {
         } else if (uitype === 'color_picker') {
 
             currentFormFields.push(<FormControl key={'control' + fieldKey}
-                                                className={classNames(classes.formFieldFull)}>
+                                                sx={getSxProps({fullWidth:true})}>
                 <InputLabel key={'label' + fieldKey} shrink>{field.label}</InputLabel><Input data-colorpicker=""
                                                                                              onChange={this.handleInputChange}
                                                                                              name={fieldKey}
@@ -998,7 +976,7 @@ class GenericForm extends React.Component {
                 error={!!this.state.fieldErrors[fieldKey]}
                 helperText={this.state.fieldErrors[fieldKey]}
                 onChange={this.handleInputChange}
-                className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
+                sx={getSxProps(field)}
                 fullWidth={field.fullWidth}
                 key={fieldKey}
                 name={fieldKey}
@@ -1054,7 +1032,7 @@ class GenericForm extends React.Component {
                             hint={this.state.fieldErrors[fieldKey]}
                             multi={field.multi}
                             label={field.label}
-                            className={classNames(classes.formField, field.fullWidth && classes.formFieldFull, field.thirdWidth && classes.formFieldThird, field.twoThirdWidth && classes.formFieldTwoThird)}
+                            sx={getSxProps(field)}
                             InputLabelProps={{
                                 shrink: true,
                             }}
@@ -1082,7 +1060,7 @@ class GenericForm extends React.Component {
                     hint={this.state.fieldErrors[fieldKey]}
                     multi={field.multi}
                     label={field.label}
-                    className={classNames(classes.formField, field.fullWidth && classes.formFieldFull, field.thirdWidth && classes.formFieldThird, field.twoThirdWidth && classes.formFieldTwoThird)}
+                    sx={getSxProps(field)}
                     InputLabelProps={{
                         shrink: true,
                     }}
@@ -1095,7 +1073,7 @@ class GenericForm extends React.Component {
                                                  readOnly={field.readOnly}
                                                  label={field.label || field.placeholder}
                                                  name={fieldKey}
-                                                 className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
+                                                 sx={getSxProps(field)}
                                                  onChange={this.handleInputChange}
                                                  checked={value ? true : false}/>)
 
@@ -1120,7 +1098,7 @@ class GenericForm extends React.Component {
                                               key={fieldKey}
                                               id={fieldKey}
                                               label={(field.label || field.name) + (languageCode ? ' [' + languageCode + ']' : '')}
-                                              className={classNames(classes.formField, field.fullWidth && classes.formFieldFull, field.thirdWidth && classes.formFieldThird, field.twoThirdWidth && classes.formFieldTwoThird)}
+                                              sx={getSxProps(field)}
                                               InputLabelProps={{
                                                   shrink: true,
                                               }}
@@ -1203,8 +1181,7 @@ GenericForm.propTypes = {
     onBlur: PropTypes.func,
     caption: PropTypes.string,
     primaryButton: PropTypes.bool,
-    classes: PropTypes.object.isRequired,
     autoFocus: PropTypes.bool
 }
 
-export default withStyles(styles)(GenericForm)
+export default GenericForm

@@ -1,7 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {
-    withStyles,
     List,
     ListItem,
     ListItemText,
@@ -20,11 +19,6 @@ import {getJsonDomElements} from '../util/elements'
 
 const INDENT = 30
 
-const styles = theme => ({
-    type: {
-        fontWeight: 'bold'
-    }
-})
 
 class JsonDomEditor extends React.Component {
 
@@ -75,7 +69,6 @@ class JsonDomEditor extends React.Component {
 
     renderJsonRec(json, key, level) {
         if (json === undefined) return null
-        const {classes} = this.props
         if (!key) {
             key = '0'
             if (json.constructor !== Array) {
@@ -233,7 +226,7 @@ class JsonDomEditor extends React.Component {
                               onClick={this.handleClick.bind(this, key)}>
 
                 {actions && <SimpleMenu mini color="secondary" items={actions}/>}
-                <ListItemText classes={{primary: classes.type}}>
+                <ListItemText style={{fontWeight: 'bold'}}>
 
                     {specialType ? t :
                         <SimpleAutosuggest placeholder="Enter component type" value={t}
@@ -329,8 +322,7 @@ class JsonDomEditor extends React.Component {
 
 JsonDomEditor.propTypes = {
     style: PropTypes.object,
-    onChange: PropTypes.func,
-    classes: PropTypes.object.isRequired,
+    onChange: PropTypes.func
 }
 
-export default withStyles(styles)(JsonDomEditor)
+export default JsonDomEditor

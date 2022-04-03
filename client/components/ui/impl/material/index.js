@@ -1,16 +1,8 @@
-/*
- There are different options for styling
- 1. Add styles to the style.less file
- 2. Change properties in the theme (see const theme below)
- 3. use withStyles (see const styles below)
- */
-
 import './style.less'
 import React from 'react'
 
 // material theme
 import {ThemeProvider} from '@mui/material/styles'
-import {ThemeProvider as ThemeProviderLegacy} from '@mui/styles'
 
 import CssBaseline from '@mui/material/CssBaseline'
 
@@ -22,13 +14,11 @@ export {theme}
 // Theme provider
 export const UIProvider = ({children, ...rest}) => {
     return <ThemeProvider theme={theme} {...rest}>
-            <ThemeProviderLegacy theme={theme}>{children}</ThemeProviderLegacy>
+            {children}
             <CssBaseline/>
         </ThemeProvider>
 }
 
-// define some styles so it can be used in the components
-export {withStyles} from '@mui/styles'
 
 // Export material-ui coponents directly
 export Typography from '@mui/material/Typography'

@@ -1,17 +1,15 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import Autosuggest from 'react-autosuggest';
-import TextField from '@mui/material/TextField';
-import Paper from '@mui/material/Paper';
-import MenuItem from '@mui/material/MenuItem';
-import {withStyles} from '@mui/styles';
+import React from 'react'
+import PropTypes from 'prop-types'
+import Autosuggest from 'react-autosuggest'
+import TextField from '@mui/material/TextField'
+import Paper from '@mui/material/Paper'
+import MenuItem from '@mui/material/MenuItem'
 import Util from 'client/util'
 
 
 const renderInputComponent = (inputProps) => {
     const {
-        helperText,
-        classes, inputRef = () => {
+        helperText, inputRef = () => {
         }, ref, ...other
     } = inputProps
     return <TextField
@@ -21,10 +19,7 @@ const renderInputComponent = (inputProps) => {
             inputRef: node => {
                 ref(node);
                 inputRef(node);
-            },
-            classes: {
-                input: classes.input,
-            },
+            }
         }}
         {...other}
     />
@@ -58,10 +53,6 @@ const getSuggestions = (suggestions, value) => {
 
 
 const styles = theme => ({
-    root: {},
-    hightlight: {
-        backgroundColor: '#FFF59D'
-    },
     container: {
         position: 'relative'
     },
@@ -121,11 +112,10 @@ class SimpleAutosuggest extends React.Component {
     }
 
     renderSuggestion = (suggestion, {query, isHighlighted}) => {
-        const {classes} = this.props
         const pattern = new RegExp(`(${query.replace(/\s/g, '|')})`, 'gi')
         return <MenuItem selected={isHighlighted} component="div">
             <span
-                dangerouslySetInnerHTML={{__html: Util.hightlight(`${suggestion.value} (${suggestion.name})`, query, classes.hightlight)}}/>
+                dangerouslySetInnerHTML={{__html: Util.hightlight(`${suggestion.value} (${suggestion.name})`, query, {style: 'backgroundColor: "#FFF59D"'})}}/>
         </MenuItem>
     }
 
@@ -135,7 +125,7 @@ class SimpleAutosuggest extends React.Component {
     }
 
     render() {
-        const {classes, placeholder, onClick, onBlur} = this.props;
+        const {placeholder, onClick, onBlur} = this.props;
         const autosuggestProps = {
             renderInputComponent,
             suggestions: this.state.suggestions,
@@ -145,11 +135,9 @@ class SimpleAutosuggest extends React.Component {
             renderSuggestion: this.renderSuggestion
         }
 
-        return <div className={classes.root}>
-            <Autosuggest
+        return <Autosuggest
                 {...autosuggestProps}
                 inputProps={{
-                    classes,
                     placeholder,
                     helperText: this.helperText(),
                     value: this.state.single,
@@ -157,24 +145,16 @@ class SimpleAutosuggest extends React.Component {
                     onClick,
                     onBlur
                 }}
-                theme={{
-                    container: classes.container,
-                    suggestionsContainerOpen: classes.suggestionsContainerOpen,
-                    suggestionsList: classes.suggestionsList,
-                    suggestion: classes.suggestion,
-                }}
                 renderSuggestionsContainer={options => (
                     <Paper {...options.containerProps} square>
                         {options.children}
                     </Paper>
                 )}
             />
-        </div>
     }
 }
 
 SimpleAutosuggest.propTypes = {
-    classes: PropTypes.object.isRequired,
     placeholder: PropTypes.string,
     value: PropTypes.string,
     items: PropTypes.array.isRequired,
@@ -183,4 +163,4 @@ SimpleAutosuggest.propTypes = {
     onChange: PropTypes.func
 }
 
-export default withStyles(styles, {withTheme: true})(SimpleAutosuggest)
+export default SimpleAutosuggest

@@ -12,25 +12,10 @@ import {
     SimpleSwitch,
     Card,
     ContentBlock,
-    Divider,
-    withStyles
+    Divider
 } from 'ui/admin'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import Util from 'client/util'
-
-const styles = theme => ({
-    card: {
-        marginBottom: theme.spacing(2)
-    },
-    divider: {
-        marginTop: theme.spacing(1),
-        marginBottom: theme.spacing(1)
-    },
-    hightlight: {
-        backgroundColor: '#FFF59D'
-    }
-})
-
 
 class SearchWhileSpeechContainer extends React.Component {
 
@@ -191,8 +176,6 @@ class SearchWhileSpeechContainer extends React.Component {
     }
 
     render() {
-        const {classes} = this.props
-
         console.log('render SearchWhileSpeechContainer')
 
         return <BaseLayout>
@@ -238,20 +221,22 @@ class SearchWhileSpeechContainer extends React.Component {
 
             {
                 this.state.searchResults.map(
-                    (k, i) => <Card className={classes.card}
-                                    key={i}><Typography color="textSecondary" gutterBottom>
+                    (k, i) => <Card sx={{marginBottom:2}} key={i}><Typography color="textSecondary" gutterBottom>
                         {k.query}
                     </Typography>
                         {k.data.map((k2, i2) => [
                             (i2 > 0 ?
-                                <Divider light className={classes.divider} key={'divider' + i + '-' + i2}/> : null),
+                                <Divider light sx={{
+                                    marginBottom: 1,
+                                    marginTop:1
+                                }} key={'divider' + i + '-' + i2}/> : null),
                             <Typography key={'main' + i + '-' + i2} variant="h5">
                                 <span
-                                    dangerouslySetInnerHTML={{__html: Util.hightlight(k2.title, k.query, classes.hightlight)}}/>
+                                    dangerouslySetInnerHTML={{__html: Util.hightlight(k2.title, k.query, {style: "backgroundColor: '#FFF59D'"})}}/>
                             </Typography>,
                             <Typography key={'text' + i + '-' + i2}>
                                 <span
-                                    dangerouslySetInnerHTML={{__html: Util.hightlight(k2.search.unstyled, k.query, classes.hightlight)}}/>
+                                    dangerouslySetInnerHTML={{__html: Util.hightlight(k2.search.unstyled, k.query, {style: "backgroundColor: '#FFF59D'"})}}/>
                             </Typography>])}</Card>
                 )
             }
@@ -262,11 +247,10 @@ class SearchWhileSpeechContainer extends React.Component {
 
 SearchWhileSpeechContainer.propTypes = {
     client: PropTypes.instanceOf(ApolloClient).isRequired,
-    classes: PropTypes.object.isRequired,
     /* To get and set settings */
     setKeyValue: PropTypes.func.isRequired,
     keyValueMap: PropTypes.object
 }
 
 
-export default withKeyValues(withApollo(withStyles(styles, {withTheme: true})(SearchWhileSpeechContainer)), ['SearchWhileSpeechContainerState'])
+export default withKeyValues(withApollo(SearchWhileSpeechContainer), ['SearchWhileSpeechContainerState'])

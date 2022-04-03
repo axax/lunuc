@@ -1,11 +1,11 @@
 import React, {Component} from 'react'
 import FileDrop from 'client/components/FileDrop'
-import {withStyles} from 'ui/admin'
 import PropTypes from 'prop-types'
 import classNames from 'classnames'
+import injectSheet from 'react-jss'
 
 
-const styles = theme => ({
+const styles = () => ({
     addImage: {
         background: '#FFF',
         display: 'inline-block'
@@ -197,4 +197,4 @@ ImageAdd.propTypes = {
     classes: PropTypes.object.isRequired
 }
 
-export default withStyles(styles)(ImageAdd)
+export default injectSheet(styles)(ImageAdd)

@@ -158,7 +158,7 @@ class TypePicker extends React.Component {
     }
 
     render() {
-        const {placeholder, multi, error, helperText, className, fullWidth, linkTemplate, pickerField, metaFields, type, filter, label, genericType, readOnly} = this.props
+        const {placeholder, multi, error, helperText, className, sx, fullWidth, linkTemplate, pickerField, metaFields, type, filter, label, genericType, readOnly} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
         console.log(`render TypePicker | hasFocus=${hasFocus} | pickerField=${pickerField}`, data)
         const openTypeWindow = (value) => {
@@ -180,7 +180,7 @@ class TypePicker extends React.Component {
                 }, 500)
             }
         }
-        return <StyledForm fullWidth={fullWidth} className={className}>
+        return <StyledForm fullWidth={fullWidth} className={className} sx={sx}>
             {(!value.length || multi) && !readOnly ?
                 <TextField error={error}
                            fullWidth={fullWidth}

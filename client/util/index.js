@@ -232,13 +232,21 @@ const Util = {
         const capabilities = (user && user.userData && user.userData.role && user.userData.role.capabilities) || []
         return capabilities.indexOf(capa) >= 0
     },
-    hightlight(text, query, cls) {
+    hightlight(text, query, options) {
         if (!text) return ''
         if (!query) return text
 
+        let className, style
+        if(options && options.constructor === Object){
+            className = options.className
+            style = options.style
+        } else {
+            className = options
+        }
+
         const pattern = new RegExp(`(${query.replace(/\s/g, '|')})`, 'gi');
 
-        return text.replace(pattern, match => `<span class='${cls || ''}'>${match}</span>`);
+        return text.replace(pattern, match => `<span style='${style || ''}' class='${className || ''}'>${match}</span>`);
     },
     getProfileImage(userAny) {
         const user = userAny && userAny.userData ? userAny.userData : userAny

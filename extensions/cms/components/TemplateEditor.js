@@ -1,64 +1,56 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import JsonDomEditor from './JsonDomEditor'
-import {Tabs, Tab, CodeIcon, WebIcon, SubjectIcon, withStyles} from 'ui/admin'
+import {Tabs, Tab, CodeIcon, WebIcon, SubjectIcon} from 'ui/admin'
 import {getComponentByKey} from '../util/jsonDomUtil'
 import {jsonPropertyTemplates, jsonTemplates} from './templates/template'
 import Async from '../../../client/components/Async'
+import styled from '@emotion/styled'
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
 
-const styles = theme => ({
-    root: {
-        flexGrow: 1,
-        backgroundColor: theme.palette.background.paper,
-    },
-    tabsRoot: {
-        borderBottom: '1px solid #e8e8e8',
-    },
-    tabsIndicator: {
+
+
+const StyledTabs = styled(Tabs)(({is50Percentage }) => ({
+    borderBottom: '1px solid #e8e8e8',
+    '.MuiTabs-indicator': {
         width: '33.33% !important',
         backgroundColor: '#1890ff',
+        ...(is50Percentage && {
+            width: '50% !important',
+        })
+    }
+}))
+const StyledTab = styled(Tab)(({ theme , isSelected }) => ({
+    textTransform: 'initial',
+    minWidth: 72,
+    maxWidth: '100%',
+    fontWeight: theme.typography.fontWeightRegular,
+    marginRight: theme.spacing(4),
+    fontFamily: [
+        '-apple-system',
+        'BlinkMacSystemFont',
+        '"Segoe UI"',
+        'Roboto',
+        '"Helvetica Neue"',
+        'Arial',
+        'sans-serif',
+        '"Apple Color Emoji"',
+        '"Segoe UI Emoji"',
+        '"Segoe UI Symbol"',
+    ].join(','),
+    '&:hover': {
+        color: '#40a9ff',
+        opacity: 1,
     },
-    tabsIndicator50: {
-        width: '50% !important',
-        backgroundColor: '#1890ff',
+    '&:focus': {
+        color: '#40a9ff',
     },
-    tabRoot: {
-        textTransform: 'initial',
-        minWidth: 72,
-        maxWidth: '100%',
-        fontWeight: theme.typography.fontWeightRegular,
-        marginRight: theme.spacing(4),
-        fontFamily: [
-            '-apple-system',
-            'BlinkMacSystemFont',
-            '"Segoe UI"',
-            'Roboto',
-            '"Helvetica Neue"',
-            'Arial',
-            'sans-serif',
-            '"Apple Color Emoji"',
-            '"Segoe UI Emoji"',
-            '"Segoe UI Symbol"',
-        ].join(','),
-        '&:hover': {
-            color: '#40a9ff',
-            opacity: 1,
-        },
-        '&$tabSelected': {
-            color: '#1890ff',
-            fontWeight: theme.typography.fontWeightMedium,
-        },
-        '&:focus': {
-            color: '#40a9ff',
-        },
-    },
-    tabSelected: {},
-    typography: {
-        padding: theme.spacing(3),
-    },
-})
+    ...(isSelected && {
+        color: '#1890ff',
+        fontWeight: theme.typography.fontWeightMedium,
+    })
+}))
 
 
 function TabContainer(props) {
@@ -127,27 +119,24 @@ class TemplateEditor extends React.Component {
     }
 
     render() {
-        const {classes, component, fabButtonStyle, onScroll, scrollPosition} = this.props
+        const {component, fabButtonStyle, onScroll, scrollPosition} = this.props
         const {tab, data, type, error} = this.state
         const currentTab = (!component && this.state.tab === 2 ? 0 : this.state.tab) || 0
         return <div>
-            <Tabs
+            <StyledTabs
                 value={currentTab}
                 onChange={this.handleTabChange.bind(this)}
                 variant="fullWidth"
                 indicatorColor="primary"
                 textColor="primary"
-                classes={{
-                    root: classes.tabsRoot,
-                    indicator: (component ? classes.tabsIndicator : classes.tabsIndicator50)
-                }}
+                is50Percentage={component ? false : true}
             >
-                <Tab icon={<CodeIcon/>} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>
+                <StyledTab icon={<CodeIcon/>}/>
                 {type === 'json' &&
-                <Tab icon={<WebIcon/>} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>}
+                <StyledTab icon={<WebIcon/>}/>}
                 {component &&
-                <Tab icon={<SubjectIcon/>} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>}
-            </Tabs>
+                <StyledTab icon={<SubjectIcon/>}/>}
+            </StyledTabs>
             {currentTab === 0 && <TabContainer>
                 <CodeEditor onScroll={onScroll}
                             scrollPosition={scrollPosition}
@@ -227,12 +216,11 @@ class TemplateEditor extends React.Component {
 
 TemplateEditor.propTypes = {
     component: PropTypes.object,
-    classes: PropTypes.object.isRequired,
     onTabChange: PropTypes.func.isRequired,
     onChange: PropTypes.func.isRequired,
     fabButtonStyle: PropTypes.object,
     tab: PropTypes.any
 }
 
-export default withStyles(styles)(TemplateEditor)
+export default TemplateEditor
 

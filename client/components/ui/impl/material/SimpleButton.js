@@ -15,7 +15,7 @@ const StyledCircularProgress = styled(CircularProgress)(({ theme }) => ({
 
 class SimpleButton extends React.Component {
     render() {
-        const {classes,showProgress,children, ...rest} = this.props
+        const {showProgress,children, ...rest} = this.props
 
         if( showProgress ){
             return <Button

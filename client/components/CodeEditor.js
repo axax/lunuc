@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {SimpleMenu, SimpleDialog, ViewListIcon, LaunchIcon, EditIcon, CodeIcon, WebIcon, AddIcon} from 'ui/admin'
+import {SimpleMenu, SimpleDialog, ViewListIcon, LaunchIcon, EditIcon, CodeIcon, AddIcon} from 'ui/admin'
 import RenderInNewWindow from './layout/RenderInNewWindow'
 import CodeMirrorWrapper from './codemirror/CodeMirrorWrapper'
 import CodeMirror from 'codemirror'

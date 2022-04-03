@@ -7,7 +7,7 @@ import Typography from '@mui/material/Typography'
 
 class SimpleToolbar extends React.Component {
     render() {
-        const {title,classes,children,...rest} = this.props
+        const {title,children,...rest} = this.props
 
         return <AppBar {...rest} ><Toolbar>
             <Typography variant="h6" color="inherit" sx={{flex:1}}>
@@ -20,8 +20,7 @@ class SimpleToolbar extends React.Component {
 
 
 SimpleToolbar.propTypes = {
-    title: PropTypes.string,
-    classes: PropTypes.object.isRequired
+    title: PropTypes.string
 }
 
 export default SimpleToolbar
