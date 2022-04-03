@@ -445,7 +445,8 @@ export const graphql = (query, operationOptions = {}) => {
                     variables = options.variables,
                     skip = operationOptions.skip ? (typeof operationOptions.skip === 'function' ? operationOptions.skip(this.props, this.prevData) : operationOptions.skip) : false
 
-                return <Query skip={skip} query={query} variables={variables} hiddenVariables={options.hiddenVariables}
+                return <Query skip={skip} query={query} variables={variables}
+                              hiddenVariables={options.hiddenVariables}
                               fetchPolicy={options.fetchPolicy}>{(res) => {
 
                     let data = res.data
@@ -490,15 +491,16 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
     const cacheKey = getCacheKey({query, variables})
 
     let currentData = null
-    if(_app_.ssr || fetchPolicy === 'cache-first' || fetchPolicy === 'cache-and-network'){
+    if(_app_.ssr || skip || fetchPolicy === 'cache-first' || fetchPolicy === 'cache-and-network'){
         currentData = client.readQuery({cacheKey})
     }
 
+    const initialLoading = _app_.ssr || ((skip || fetchPolicy === 'cache-first') && currentData) ? false : true
 
     const [response, setResponse] = useState({
         data: currentData,
         networkStatus: 0,
-        loading: _app_.ssr || (fetchPolicy === 'cache-first' && currentData) ? false : true,
+        loading: initialLoading,
         fetchMore: getFetchMore({
             fetchPolicy,
             variables,
@@ -520,20 +522,10 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
     useEffect(() => {
 
         const controller = new AbortController()
-        if (!skip || !response.loading) {
+        if (initialLoading) {
             const newResponse = {fetchMore: response.fetchMore}
             newResponse.loading = response.networkStatus !== NetworkStatus.error
 
-            /*if (fetchPolicy !== 'network-only' && fetchPolicy !== 'no-cache') {
-                console.log(fetchPolicy)
-                newResponse.data = client.readQuery({cacheKey})
-
-                if (newResponse.data && fetchPolicy === 'cache-first') {
-                    newResponse.loading = false
-                }
-
-                setResponse(newResponse)
-            }*/
 
             client.addQueryWatcher({
                 cacheKey, update: data => {

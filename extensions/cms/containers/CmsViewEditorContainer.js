@@ -196,7 +196,6 @@ class CmsViewEditorContainer extends React.Component {
         if(props.aboutToChange){
             return false
         }
-
         /*console.log('children changed', props.children != this.props.children)
         console.log('_props changed', props._props !== this.props._props)
         console.log('slug changed', slugChanged)
@@ -234,6 +233,7 @@ class CmsViewEditorContainer extends React.Component {
             state.EditorOptions !== this.state.EditorOptions ||
             state.EditorPageOptions !== this.state.EditorPageOptions ||
             state.cmsStatusData !== this.state.cmsStatusData  ||
+            (props.cmsRender && Util.shallowCompare(props.cmsRender, this.props.cmsRender)) ||
             (
                 props.cmsPage.urlSensitiv && (
                     props.location.search !== this.props.location.search ||

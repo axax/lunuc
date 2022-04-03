@@ -187,7 +187,7 @@ const BaseLayout = props => {
         }
         setOpenMenuEditor(false)
     }
-    const settings = userKeys.data && userKeys.data.BaseLayoutSettings || {}
+    const settings = !userKeys.loading && userKeys.data && userKeys.data.BaseLayoutSettings || {}
 
     const menuItems = [
         {
@@ -339,9 +339,9 @@ const BaseLayout = props => {
                                 ]}/>}
                                 headerRight={headerRight}>
 
-            <ErrorHandler/>
-            <NotificationHandler/>
-            <NetworkStatusHandler/>
+            {!userKeys.loading && <ErrorHandler/>}
+            {!userKeys.loading && <NotificationHandler/>}
+            {!userKeys.loading && <NetworkStatusHandler/>}
             {children}
         </ResponsiveDrawerLayout>
         {openMenuEditor !== undefined && <SimpleDialog
