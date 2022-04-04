@@ -453,6 +453,7 @@ export const graphql = (query, operationOptions = {}) => {
                     if (!data && res.loading) {
                         data = this.prevData
                     }
+
                     this.prevData = data
                     const props = operationOptions.props({
                         data: {
@@ -514,10 +515,8 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
         if (!response.data) {
             SSR_FETCH_CHAIN[cacheKey] = {query, variables}
         }
-
         return response
     }
-
 
     useEffect(() => {
 
@@ -559,6 +558,12 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
             controller.abort()
         }
     }, [cacheKey])
+
+    if(!initialLoading && response.data !== currentData){
+        const newResponse = {...response, loading: false, data: currentData}
+        setResponse(newResponse)
+        return newResponse
+    }
 
     return response
 }
