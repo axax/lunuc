@@ -552,6 +552,13 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
                     }
                 })
             }
+        } else {
+
+            if(response.data !== currentData){
+                const newResponse = {...response, networkStatus: 0, loading: false, data: currentData}
+                setResponse(newResponse)
+            }
+
         }
 
         return () => {
@@ -559,11 +566,6 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
         }
     }, [cacheKey])
 
-    if(!initialLoading && response.data !== currentData){
-        const newResponse = {...response, loading: false, data: currentData}
-        setResponse(newResponse)
-        return newResponse
-    }
 
     return response
 }
