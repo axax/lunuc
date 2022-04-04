@@ -991,6 +991,7 @@ class GenericForm extends React.Component {
                 projection={field.projection} /* fields that are projected and returned */
                 metaFields={field.metaFields} /* fields that need user input and are returned in addtion */
                 queryFields={field.fields}
+                pickerSort={field.pickerSort}
                 type={field.type} placeholder={field.placeholder}/>)
         } else if (uitype === 'select') {
 

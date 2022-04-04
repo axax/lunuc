@@ -504,7 +504,7 @@ class TypePicker extends React.Component {
     }
 
     getData(filter) {
-        const {type, queryFields, pickerField} = this.props
+        const {type, queryFields, pickerField, pickerSort} = this.props
         if (type) {
 
             const nameStartLower = type.charAt(0).toLowerCase() + type.slice(1) + 's'
@@ -532,6 +532,9 @@ class TypePicker extends React.Component {
             const variables = {filter, limit: 20},
                 gqlQuery = `query ${nameStartLower}($sort: String,$limit: Int,$page: Int,$filter: String){${nameStartLower}(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results{_id __typename ${queryString}}}}`
 
+            if(pickerSort){
+                variables.sort = pickerSort
+            }
             const storeData = client.readQuery({
                 query: gqlQuery,
                 variables

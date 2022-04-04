@@ -257,6 +257,15 @@ const GenericResolver = {
 
         const estimateCount = includeCount !== false && !options.filter && Object.keys(match).length === 0
 
+
+        const finalAggregateOptions = {allowDiskUse: true, ...aggregateOptions}
+
+        if(!finalAggregateOptions.collation && otherOptions.sort && otherOptions.sort.startsWith('$')){
+
+            otherOptions.sort = otherOptions.sort.substring(1)
+            finalAggregateOptions.collation =  {locale: context.lang}
+        }
+
         const aggregationBuilder = new AggregationBuilder(typeName, data, db, {
             match,
             includeCount: (includeCount !== false && !estimateCount),
@@ -273,7 +282,6 @@ const GenericResolver = {
         const collection = db.collection(collectionName)
         const startTimeAggregate = new Date()
 
-        const finalAggregateOptions = {allowDiskUse: true, ...aggregateOptions}
 
         const results = await collection.aggregate(dataQuery, finalAggregateOptions).toArray()
         let result
