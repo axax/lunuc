@@ -1521,10 +1521,12 @@ class JsonDom extends React.Component {
     }
 
     reload = props => {
-        this.props.cmsActions.cmsRender(deepMerge({$: {}}, this.scope.props, props), {
-            slug: this.props.slug,
-            id: this.props.id
-        })
+        setTimeout(()=> {
+            this.props.cmsActions.cmsRender(deepMerge({$: {}}, this.scope.props, props), {
+                slug: this.props.slug,
+                id: this.props.id
+            })
+        },0)
     }
 
 }

@@ -423,6 +423,7 @@ export const graphql = (query, operationOptions = {}) => {
 
         class Wrapper extends React.Component {
 
+            prevRespone = {}
             render() {
                 //this.renderCount++
                 //console.log(this.renderCount,query)
@@ -443,7 +444,7 @@ export const graphql = (query, operationOptions = {}) => {
 
                 const options = operationOptions.options ? (typeof operationOptions.options === 'function' ? operationOptions.options(this.props) : operationOptions.options) : {},
                     variables = options.variables,
-                    skip = operationOptions.skip ? (typeof operationOptions.skip === 'function' ? operationOptions.skip(this.props, this.prevData) : operationOptions.skip) : false
+                    skip = operationOptions.skip ? (typeof operationOptions.skip === 'function' ? operationOptions.skip(this.props, this.prevRespone.data) : operationOptions.skip) : false
 
                 return <Query skip={skip} query={query} variables={variables}
                               hiddenVariables={options.hiddenVariables}
@@ -451,10 +452,10 @@ export const graphql = (query, operationOptions = {}) => {
 
                     let data = res.data
                     if (!data && res.loading) {
-                        data = this.prevData
+                        data = this.prevRespone.data
                     }
 
-                    this.prevData = data
+                    this.prevRespone = res
                     const props = operationOptions.props({
                         data: {
                             variables, ...data,
@@ -498,7 +499,7 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
 
     const initialLoading = _app_.ssr || ((skip || fetchPolicy === 'cache-first') && currentData) ? false : true
 
-    const [response, setResponse] = useState({
+    const initialData = {
         data: currentData,
         networkStatus: 0,
         loading: initialLoading,
@@ -508,15 +509,19 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
             type: RequestType.query,
             query
         })
-    })
+    }
+
 
     if (_app_.ssr) {
 
-        if (!response.data) {
+        if (!currentData) {
             SSR_FETCH_CHAIN[cacheKey] = {query, variables}
         }
-        return response
+        return initialData
     }
+
+    const [response, setResponse] = useState(initialData)
+
 
     useEffect(() => {
 
@@ -552,13 +557,6 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
                     }
                 })
             }
-        } else {
-
-            if(response.data !== currentData){
-                const newResponse = {...response, networkStatus: 0, loading: false, data: currentData}
-                setResponse(newResponse)
-            }
-
         }
 
         return () => {
@@ -566,6 +564,8 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
         }
     }, [cacheKey])
 
-
+    if(!initialLoading){
+        return initialData
+    }
     return response
 }
