@@ -253,12 +253,12 @@ export const userResolver = (db) => ({
                 }
             }
 
-            let result = await auth.createToken({username, password, domain, db, context})
+            const result = await auth.createToken({username, password, domain, db, context})
 
-            if(!result.token && domain) {
+            /*if(!result.token && domain) {
                 //try without domain
                 result = await auth.createToken({username, password, db, context})
-            }
+            }*/
 
             if (!result.token) {
 
@@ -434,7 +434,7 @@ export const userResolver = (db) => ({
 
             meta = meta && meta.constructor !== Object ? JSON.parse(meta) : {}
 
-            const newUserData = {username, email, password, meta}
+            const newUserData = {username, email, password, meta, domain}
             if (Hook.hooks['beforeSignUp'] && Hook.hooks['beforeSignUp'].length) {
                 let c = Hook.hooks['beforeSignUp'].length
                 for (let i = 0; i < Hook.hooks['beforeSignUp'].length; ++i) {
@@ -450,7 +450,8 @@ export const userResolver = (db) => ({
                         password,
                         username,
                         email,
-                        meta
+                        meta,
+                        domain
                     })
                 }
             }
