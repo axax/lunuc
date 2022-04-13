@@ -329,6 +329,13 @@ Hook.on('Types', ({types}) => {
                 vagueSearchable:false
             },
             {
+                name: 'domain',
+                fullWidth: true,
+                required: false,
+                alwaysUpdate: true,
+                tab: 'Allgemein'
+            },
+            {
                 name: 'language',
                 vagueSearchable:false
             },

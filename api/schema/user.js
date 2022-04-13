@@ -28,6 +28,7 @@ export const userSchemaRaw = `
         picture: Media
         note: [Note]
         meta: String
+        domain: String
         signupToken: String
         language: String
         role: UserRole
@@ -80,9 +81,9 @@ export const userSchemaRaw = `
         userRoles(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String): UserRoleResult      
         publicUsers(limit: Int=10, offset: Int=0): [UserPublic]
         me: User
-        login(username: String!, password: String!): Token
+        login(username: String!, password: String!, domain: String): Token
         logout: LogoutResult
-        forgotPassword(username: String!, url: String!, subject: String, fromEmail: String, fromName: String): ForgotPasswordResult
+        forgotPassword(username: String!,domain: String, url: String!, subject: String, fromEmail: String, fromName: String): ForgotPasswordResult
         newPassword(token:String!, password:String!, passwordConfirm:String): NewPasswordResult
         confirmEmail(token:String!): ConfirmEmailResult
         sendConformationEmail(mailTemplate: String!, mailSubject: String!, mailUrl: String!,fromEmail: String,fromName: String,replyTo: String): ConfirmEmailResult
@@ -98,6 +99,7 @@ export const userSchemaRaw = `
 			mailSubject: String
 			mailUrl: String
             meta: String
+            domain: String
             fromEmail: String
             fromName: String
             replyTo: String
@@ -113,6 +115,7 @@ export const userSchemaRaw = `
 			requestNewPassword: Boolean
             role: ID
             meta: String
+            domain: String
             language: String
             junior: [ID]
             group: [ID]
@@ -129,6 +132,7 @@ export const userSchemaRaw = `
 			requestNewPassword: Boolean
             role: ID
             meta: String
+            domain: String
             junior: [ID]
             group: [ID]
 		): User

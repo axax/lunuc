@@ -1209,7 +1209,11 @@ class TypesContainer extends React.Component {
                     _version,
                     ...input
                 },
-                update: (store, {data}) => {
+                update: (store, {data, error}) => {
+
+                    if(error){
+                        return
+                    }
 
                     if(!optimisticInput.createdBy){
                         //

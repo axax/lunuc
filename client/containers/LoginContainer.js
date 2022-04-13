@@ -20,7 +20,8 @@ class LoginContainer extends React.Component {
         loading: false,
         error: null,
         username: '',
-        password: ''
+        password: '',
+        domain:''
     }
 
     constructor(props) {
@@ -56,10 +57,11 @@ class LoginContainer extends React.Component {
 
         client.query({
             fetchPolicy: 'no-cache',
-            query: 'query login($username:String!,$password:String!){login(username:$username,password:$password){token error user{username email _id role{_id capabilities}}}}',
+            query: 'query login($username:String!,$password:String!,$domain:String){login(username:$username,password:$password,domain:$domain){token error user{username email _id role{_id capabilities}}}}',
             variables: {
                 username: this.state.username,
-                password: this.state.password
+                password: this.state.password,
+                domain: this.state.domain
             }
         }).then( response => {
             this.setState({loading: false})
@@ -113,7 +115,7 @@ class LoginContainer extends React.Component {
         const {signupLink, showSignupLink} = this.props
         const from = this.getFromUrl()
 
-        const {redirectToReferrer, loading, username, password, error} = this.state
+        const {redirectToReferrer, loading, username, password, domain, error} = this.state
 
         if (redirectToReferrer) {
             return <Redirect to={from} push={true}/>
@@ -159,6 +161,16 @@ class LoginContainer extends React.Component {
                                            type="password"
                                            name="password" required/>
 
+
+                                <TextField label={_t('Login.domain')}
+                                           error={!!error}
+                                           disabled={!!loading}
+                                           fullWidth
+                                           autoFocus
+                                           value={domain}
+                                           onChange={this.handleInputChange}
+                                           type="text"
+                                           name="domain"/>
 
                                 <div style={{textAlign: 'right'}}>
                                     <SimpleButton variant="contained" color="primary"

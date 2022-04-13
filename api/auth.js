@@ -7,11 +7,10 @@ import {contextByRequest} from './util/sessionContext'
 const {DEFAULT_LANGUAGE} = config
 
 export const auth = {
-    createToken: async (username, password, db, context) => {
+    createToken: async ({username, password, domain, db, context}) => {
 
         const userCollection = db.collection('User')
-
-        const result = await userCollection.findOneAndUpdate({$or: [{'email': username}, {'username': username}]}, {$set: {lastLogin: new Date().getTime()}})
+        const result = await userCollection.findOneAndUpdate({domain: domain?domain:undefined, $or: [{'email': username}, {'username': username}]}, {$set: {lastLogin: new Date().getTime()}})
 
         const user = result.value
 

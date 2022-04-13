@@ -113,7 +113,12 @@ class Routes extends React.Component {
         return <Router history={this.history}>
             <Switch>
                 {_app_.redirect404 !== location.pathname && this.routes.map((o, i) => {
-                    if (!isAuthenticated || !o.path.startsWith(ADMIN_BASE_URL) || o.path.startsWith(ADMIN_BASE_URL + '/login') || o.path.startsWith(ADMIN_BASE_URL + '/types') || o.path.startsWith(ADMIN_BASE_URL + '/logout') || capabilities.indexOf(CAPABILITY_ACCESS_ADMIN_PAGE) >= 0) {
+                    if (!isAuthenticated || !o.path.startsWith(ADMIN_BASE_URL) ||
+                        o.path.startsWith(ADMIN_BASE_URL + '/login') ||
+                        o.path.startsWith(ADMIN_BASE_URL + '/profile') ||
+                        o.path.startsWith(ADMIN_BASE_URL + '/types') ||
+                        o.path.startsWith(ADMIN_BASE_URL + '/logout') ||
+                        capabilities.indexOf(CAPABILITY_ACCESS_ADMIN_PAGE) >= 0) {
                         if (o.private) {
                             return <PrivateRoute key={i} path={_app_.contextPath + o.path}
                                                  isAuthenticated={isAuthenticated}

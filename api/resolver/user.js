@@ -24,7 +24,7 @@ const LOGIN_ATTEMPTS_MAP = {},
     MAX_LOGIN_ATTEMPTS = 10,
     LOGIN_DELAY_IN_SEC = 180
 
-const createUser = async ({username, role, junior, group, password, language, email, emailConfirmed, requestNewPassword, meta, picture, db, context}, opts) => {
+const createUser = async ({username, role, junior, group, password, language, email, emailConfirmed, requestNewPassword, meta, domain, picture, db, context}, opts) => {
 
     if (!opts) {
         opts = {override: false, skipCheck: false}
@@ -53,7 +53,11 @@ const createUser = async ({username, role, junior, group, password, language, em
 
     const userCollection = db.collection('User')
 
-    const existingUser = (await userCollection.findOne({$or: [{'email': email}, {'username': username}]}))
+    const findMatch = {$or: [{'email': email}, {'username': username}]}
+    if (domain) {
+        findMatch.domain = domain
+    }
+    const existingUser = (await userCollection.findOne(findMatch))
     const userExists = existingUser != null
 
     if (!opts.override) {
@@ -65,7 +69,7 @@ const createUser = async ({username, role, junior, group, password, language, em
     }
 
     if (meta !== undefined && meta !== null) {
-        if(meta.constructor !== Object) {
+        if (meta.constructor !== Object) {
             meta = JSON.parse(meta)
         }
     }
@@ -92,9 +96,9 @@ const createUser = async ({username, role, junior, group, password, language, em
         group.forEach(sup => {
             groupIds.push(ObjectId(sup))
         })
-    }else if(context.group && await Util.userHasCapability(db, context, CAPABILITY_MANAGE_SAME_GROUP)){
+    } else if (context.group && await Util.userHasCapability(db, context, CAPABILITY_MANAGE_SAME_GROUP)) {
         // copy group of current user
-        context.group.forEach(g=>{
+        context.group.forEach(g => {
             groupIds.push(ObjectId(g))
         })
     }
@@ -113,6 +117,11 @@ const createUser = async ({username, role, junior, group, password, language, em
         language: language || context.lang,
         signupToken: signupToken
     }
+
+    if (domain) {
+        dataToInsert.domain = domain
+    }
+
 
     let insertResult
     if (!opts.override || !userExists) {
@@ -156,7 +165,7 @@ export const userResolver = (db) => ({
     Query: {
         users: async ({limit, page, offset, filter, sort}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'signupToken', 'language', 'picture', 'email', 'meta', 'emailConfirmed', 'requestNewPassword', 'role$UserRole', 'junior$[User]', 'group$[UserGroup]', 'lastLogin'], {
+            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'signupToken', 'language', 'picture', 'email', 'meta', 'domain', 'emailConfirmed', 'requestNewPassword', 'role$UserRole', 'junior$[User]', 'group$[UserGroup]', 'lastLogin'], {
                 limit,
                 page,
                 offset,
@@ -166,7 +175,7 @@ export const userResolver = (db) => ({
         },
         userRoles: async ({limit, page, offset, filter, sort}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            return await GenericResolver.entities(db, context, 'UserRole', ['name','capabilities'], {
+            return await GenericResolver.entities(db, context, 'UserRole', ['name', 'capabilities'], {
                 limit,
                 page,
                 offset,
@@ -190,9 +199,8 @@ export const userResolver = (db) => ({
                 if (user.meta) {
                     user.meta = JSON.stringify(user.meta)
                 }
-                if( user.group)
-                {
-                    user.group = user.group.map(m=>({_id:m}))
+                if (user.group) {
+                    user.group = user.group.map(m => ({_id: m}))
                 }
                 /*if( user.picture){
                     user.picture = await db.collection('Media').findOne({_id: ObjectId(user.picture)})
@@ -231,7 +239,7 @@ export const userResolver = (db) => ({
 
             return users
         },
-        login: async ({username, password}, req) => {
+        login: async ({username, password, domain}, req) => {
             const {context} = req
             const ip = clientAddress(req)
 
@@ -245,7 +253,13 @@ export const userResolver = (db) => ({
                 }
             }
 
-            const result = await auth.createToken(username, password, db, context)
+            let result = await auth.createToken({username, password, domain, db, context})
+
+            if(!result.token && domain) {
+                //try without domain
+                result = await auth.createToken({username, password, db, context})
+            }
+
             if (!result.token) {
 
                 if (!LOGIN_ATTEMPTS_MAP[ip]) {
@@ -360,7 +374,7 @@ export const userResolver = (db) => ({
                 throw new ApiError('Something went wrong. Please try again!', 'general.error')
             }
         },
-        sendConformationEmail: async ({mailTemplate, mailSubject, mailUrl, fromEmail, fromName,replyTo}, req) => {
+        sendConformationEmail: async ({mailTemplate, mailSubject, mailUrl, fromEmail, fromName, replyTo}, req) => {
             const {context} = req
             Util.checkIfUserIsLoggedIn(context)
 
@@ -381,7 +395,7 @@ export const userResolver = (db) => ({
         }
     },
     Mutation: {
-        createUser: async ({username, password, email, language, meta, picture, emailConfirmed, requestNewPassword, role, junior, group}, {context}) => {
+        createUser: async ({username, password, email, language, meta, domain, picture, emailConfirmed, requestNewPassword, role, junior, group}, {context}) => {
 
             if (email) {
                 email = email.trim()
@@ -393,6 +407,7 @@ export const userResolver = (db) => ({
                 picture,
                 language,
                 meta,
+                domain,
                 email,
                 emailConfirmed,
                 requestNewPassword,
@@ -402,12 +417,12 @@ export const userResolver = (db) => ({
                 group
             })
 
-            if (insertResult.ops && insertResult.ops.length > 0 ) {
+            if (insertResult.ops && insertResult.ops.length > 0) {
                 const doc = insertResult.ops[0]
                 return doc
             }
         },
-        signUp: async ({password, username, email, mailTemplate, mailSubject, mailUrl, meta, fromEmail, fromName, replyTo}, req) => {
+        signUp: async ({password, username, domain, email, mailTemplate, mailSubject, mailUrl, meta, fromEmail, fromName, replyTo}, req) => {
 
             const {context} = req
 
@@ -417,7 +432,7 @@ export const userResolver = (db) => ({
 
             const options = {override: false}
 
-            meta = meta && meta.constructor!==Object ? JSON.parse(meta) : {}
+            meta = meta && meta.constructor !== Object ? JSON.parse(meta) : {}
 
             const newUserData = {username, email, password, meta}
             if (Hook.hooks['beforeSignUp'] && Hook.hooks['beforeSignUp'].length) {
@@ -442,7 +457,7 @@ export const userResolver = (db) => ({
 
             const insertResult = await createUser({db, context, ...newUserData}, options)
 
-            if (insertResult.ops && insertResult.ops.length > 0 ) {
+            if (insertResult.ops && insertResult.ops.length > 0) {
                 if (mailTemplate) {
                     const signupToken = insertResult.ops[0].signupToken
 
@@ -457,7 +472,7 @@ export const userResolver = (db) => ({
                         req
                     })
                 }
-                const result = await auth.createToken(email, password, db, context)
+                const result = await auth.createToken({username: email, password, domain, db, context})
 
 
                 if (USE_COOKIES && result.token) {
@@ -471,14 +486,14 @@ export const userResolver = (db) => ({
                 return result
             }
         },
-        updateUser: async ({_id, username, email, password, picture, language, emailConfirmed, requestNewPassword, role, junior, meta, group}, {context}) => {
+        updateUser: async ({_id, username, email, password, picture, language, emailConfirmed, requestNewPassword, role, junior, meta, domain, group}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
             if (email) {
                 email = email.trim()
             }
 
-            const user = {}
+            const user = {domain: domain ? domain : undefined}
             const errors = []
             const userCollection = db.collection('User')
 
@@ -498,7 +513,10 @@ export const userResolver = (db) => ({
 
             if (username) {
                 // Validate Username
-                const existingUser = (await userCollection.findOne({$or: [{username}]}))
+                const existingUser = (await userCollection.findOne({
+                    domain: domain ? domain : undefined,
+                    $or: [{username}]
+                }))
                 if (existingUser != null && existingUser._id.toString() !== _id) {
                     //errors.push({key: 'usernameError', message: `Username ${username} already taken`, messageKey:'username.taken'})
                     throw new ApiError(`Username ${username} already taken`, 'username.taken', {x: 'sss'})
@@ -512,7 +530,11 @@ export const userResolver = (db) => ({
                 if (!Util.validateEmail(email)) {
                     errors.push({key: 'emailError', message: 'Email is not valid'})
                 } else {
-                    const existingUser = (await userCollection.findOne({$or: [{email}]}))
+                    const existingUser = (await userCollection.findOne({
+                        domain: domain ? domain : undefined,
+                        $or: [{email}]
+                    }))
+                    console.log(existingUser)
                     if (existingUser != null && existingUser._id.toString() !== _id) {
                         throw new ApiError(`Email ${email} already taken`, 'email.taken')
                     } else {
@@ -566,23 +588,22 @@ export const userResolver = (db) => ({
 
             const match = {_id: ObjectId(_id)}
 
-            if(!userCanManageOthers && _id !== context.id ){
+            if (!userCanManageOthers && _id !== context.id) {
 
                 const userCanManageSameGroup = await Util.userHasCapability(db, context, CAPABILITY_MANAGE_SAME_GROUP)
 
                 if (userCanManageSameGroup) {
-                    match.group = {$in: context.group.map(f=>ObjectId(f))}
-                }else{
+                    match.group = {$in: context.group.map(f => ObjectId(f))}
+                } else {
                     throw new ApiError('User can not change other users')
                 }
             }
 
 
-
             if (meta !== undefined) {
-                if(meta.constructor === Object) {
+                if (meta.constructor === Object) {
                     user.meta = meta
-                }else{
+                } else {
                     user.meta = JSON.parse(meta)
                 }
             }
@@ -618,7 +639,7 @@ export const userResolver = (db) => ({
 
             const userCollection = db.collection('User')
 
-            let existingUser = (await userCollection.findOne({$or: [{'username': user.username},{'email': user.email}]}))
+            let existingUser = (await userCollection.findOne({$or: [{'username': user.username}, {'email': user.email}]}))
             if (existingUser != null && existingUser._id.toString() !== context.id) {
                 throw new ApiError(`Username or Email already taken`, 'username.taken', {x: 'sss'})
             } else {
@@ -633,7 +654,7 @@ export const userResolver = (db) => ({
                     user.meta = JSON.parse(user.meta)
                 }
 
-                if (password && passwordConfirm){
+                if (password && passwordConfirm) {
                     user.password = validateAndHashPassword({password, passwordConfirm, context})
                 }
 

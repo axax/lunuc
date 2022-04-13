@@ -14,9 +14,10 @@ export const createAllIndexes = async (db) => {
     db.collection('KeyValueGlobal').createIndex({key: 1}, {unique: true})
 
 
-    db.collection('User').createIndex({email: 1}, {unique: true})
+    db.collection('User').createIndex({email: 1, domain: 1}, {unique: true})
     db.collection('User').createIndex({username: 1}, {unique: true})
 
+    //db.collection('User').dropIndex( 'email_1')
 
 
     //await db.collection('NewsletterSubscriber').dropIndex( 'email_1_location_1')
