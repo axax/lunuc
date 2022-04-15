@@ -37,7 +37,7 @@ import styled from '@emotion/styled'
 const StyledForm = styled(FormControl)({
     position: 'relative',
     zIndex: 'auto',
-    marginLeft: 0,
+    /*marginLeft: 0,*/
     minHeight: '69px'
 })
 

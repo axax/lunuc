@@ -1,12 +1,28 @@
 export const userSchemaRaw = `
    
-	type UserRole {
+	
+  
+	type UserSetting {
+		_id: ID!
+		status: String
+        name: String!
+    }
+    
+    type UserSettingResult {
+        results: [UserSetting]
+        offset: Int
+        limit: Int
+        total: Int
+        meta: String
+    }
+  
+    type UserRole {
 		_id: ID!
 		status: String
         name: String!
         capabilities: [String]!
     }
-  
+    
     type UserRoleResult {
         results: [UserRole]
         offset: Int
@@ -34,6 +50,7 @@ export const userSchemaRaw = `
         role: UserRole
         junior: [User]
         group: [UserGroup]
+        setting: [UserSetting]
     }
     
     type UserResult {
@@ -79,6 +96,7 @@ export const userSchemaRaw = `
     type Query {
         users(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String): UserResult
         userRoles(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String): UserRoleResult      
+        userSettings(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String): UserSettingResult      
         publicUsers(limit: Int=10, offset: Int=0): [UserPublic]
         me: User
         login(username: String!, password: String!, domain: String): Token
@@ -119,7 +137,19 @@ export const userSchemaRaw = `
             language: String
             junior: [ID]
             group: [ID]
+            setting: [ID]
 		): User
+		
+		
+		createUserRole (
+			name: String
+			capabilities: [String]
+		): UserRole
+		
+		
+		createUserSetting (
+			name: String
+		): UserSetting
 		
 		updateUser (
 		    _id: ID!
@@ -135,6 +165,7 @@ export const userSchemaRaw = `
             domain: String
             junior: [ID]
             group: [ID]
+            setting: [ID]
 		): User
 		
 		updateUserRole (
@@ -143,13 +174,23 @@ export const userSchemaRaw = `
 			capabilities: [String]
 		): UserRole
 		
+		
+		updateUserSetting (
+		    _id: ID!
+			name: String
+		): UserSetting
+		
+		
     	deleteUser(_id: ID!): User
 	    deleteUsers (_id:[ID]):[User]
 
     	deleteUserRole(_id: ID!): UserRole
 	    deleteUserRoles (_id:[ID]):[UserRole]
 
-						
+					
+    	deleteUserSetting(_id: ID!): UserSetting
+	    deleteUserSettings (_id:[ID]):[UserSetting]
+	
 		updateMe (
 			email: String
 			username: String

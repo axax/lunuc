@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react'
+import React, {useEffect, useMemo} from 'react'
 import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import {bindActionCreators} from 'redux'
@@ -12,6 +12,7 @@ import {
     AccountCircleIcon,
     SimpleDialog,
     SimpleMenu,
+    SimpleSelect,
     BackupIcon,
     EditIcon,
     InsertDriveFileIcon,
@@ -70,6 +71,7 @@ import {_t, registerTrs} from 'util/i18n'
 import {translations} from '../../translations/admin'
 import {propertyByPath} from '../../util/json'
 import Async from 'client/components/Async'
+import {deepMergeToFirst} from '../../../util/deepMerge'
 
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../CodeEditor')}/>
@@ -118,7 +120,7 @@ const iconComponents = {
     accessible: AccessibleIcon,
     politics: AccountBalanceIcon,
     boat: DirectionsBoatIcon,
-    filter:FilterListIcon
+    filter: FilterListIcon
 }
 
 const genMenuEntry = (item, path) => {
@@ -159,7 +161,20 @@ const genMenuEntry = (item, path) => {
 const BaseLayout = props => {
     const {children, isAuthenticated, user} = props
 
-    const userKeys = useKeyValues(['BaseLayoutSettings'])
+    const keys = []
+    let useKeySettings = {}
+
+    if (user.userData && user.userData.setting && user.userData.setting.length > 0) {
+        user.userData.setting.forEach(k => {
+            keys.push('BaseLayoutSettings-' + k._id)
+        })
+        useKeySettings.global = true
+    }
+
+    keys.push('BaseLayoutSettings')
+
+
+    const userKeys = useKeyValues(keys, useKeySettings)
 
     const [openMenuEditor, setOpenMenuEditor] = React.useState(undefined)
 
@@ -187,7 +202,12 @@ const BaseLayout = props => {
         }
         setOpenMenuEditor(false)
     }
-    const settings = !userKeys.loading && userKeys.data && userKeys.data.BaseLayoutSettings || {}
+    let settings = {}
+    if(!userKeys.loading && userKeys.data){
+        Object.keys(userKeys.data).forEach(k=>{
+            deepMergeToFirst(settings, userKeys.data[k])
+        })
+    }
 
     const menuItems = [
         {
@@ -293,11 +313,11 @@ const BaseLayout = props => {
         const Icon = iconComponents[item.icon] || SettingsIcon
         headerRight.push(
             <IconButton key={'headerAction' + index}
-                    onClick={() => {
+                        onClick={() => {
 
-                        history.push(item.to)
-                    }}
-                    color="inherit"><Icon/></IconButton>
+                            history.push(item.to)
+                        }}
+                        color="inherit"><Icon/></IconButton>
         )
     })
 
@@ -361,6 +381,14 @@ const BaseLayout = props => {
                     type: 'primary'
                 }]}
         >
+            <SimpleSelect
+                label="Select action"
+                value=""
+                style={{marginBottom: 0, marginTop: 0}}
+                onChange={() => {
+                }}
+                items={[{name: 'Delete', value: 'delete'}, {name: 'Bulk edit', value: 'edit'}]}
+            />
             <CodeEditor lineNumbers type="json" forceJson={true} onForwardRef={(e) => {
                 menuEditor = e
             }}>

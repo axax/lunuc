@@ -418,6 +418,11 @@ const GenericResolver = {
             return o
         }, {})
 
+        if( fields.ownerGroup && !dataSet.ownerGroup && userContext.group && userContext.group.length > 0){
+            // set ownerGroup from current user if it is not specified
+            dataSet.ownerGroup = userContext.group.map(g => ObjectId(g))
+        }
+
         const collection = db.collection(collectionName)
 
         const insertResult = await collection.insertOne({

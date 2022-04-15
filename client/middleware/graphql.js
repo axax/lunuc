@@ -497,7 +497,7 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
         currentData = client.readQuery({cacheKey})
     }
 
-    const initialLoading = _app_.ssr || ((skip || fetchPolicy === 'cache-first') && currentData) ? false : true
+    const initialLoading = _app_.ssr || skip || (fetchPolicy === 'cache-first' && currentData) ? false : true
 
     const initialData = {
         data: currentData,

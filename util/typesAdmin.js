@@ -294,6 +294,18 @@ Hook.on('Types', ({types}) => {
         ]
     }
 
+    types.UserSetting = {
+        name: 'UserSetting',
+        noUserRelation: true,
+        usedBy: ['core'],
+        fields: [
+            {
+                name: 'name',
+                required: true
+            }
+        ]
+    }
+
     types.User = {
         name: 'User',
         noUserRelation: true,
@@ -333,7 +345,18 @@ Hook.on('Types', ({types}) => {
                 fullWidth: true,
                 required: false,
                 alwaysUpdate: true,
+                hideColumnInTypes: true,
                 tab: 'Allgemein'
+            },
+            {
+                name: 'setting',
+                type: 'UserSetting',
+                reference: true,
+                fields: ['name'],
+                tab: 'Allgemein',
+                multi:true,
+                hideColumnInTypes: true,
+                vagueSearchable:false
             },
             {
                 name: 'language',

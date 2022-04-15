@@ -53,7 +53,7 @@ const updateKeyValueGlobal = async ({_id, key, value, ispublic, createdBy}, {con
 
 export const keyvalueResolver = (db) => ({
     Query: {
-        keyValues: async ({keys, limit, sort, offset, page, filter, all}, {context}) => {
+        keyValues: async ({keys, limit, sort, offset, page, filter, all, global}, {context}, {operation}) => {
             const match = {}
 
             if (!all || !await Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)) {
@@ -62,7 +62,7 @@ export const keyvalueResolver = (db) => ({
             if (keys && keys.length > 0) {
                 match.key = {$in: keys}
             }
-            return await GenericResolver.entities(db, context, 'KeyValue', ['key', 'value'], {
+            const result =  await GenericResolver.entities(db, context, 'KeyValue', ['key', 'value'], {
                 limit,
                 offset,
                 page,
@@ -70,6 +70,17 @@ export const keyvalueResolver = (db) => ({
                 filter,
                 match
             })
+
+            if(global){
+                const foundKeys = result.results.map(f=>f.key)
+                const notFoundKeys = keys.filter(k => foundKeys.indexOf(k)<0 )
+
+                const resultGlobal = await keyvalueResolver(db).Query.keyValueGlobals({keys:notFoundKeys},{context},{operation})
+
+                result.results.push(...resultGlobal.results)
+            }
+
+            return result
         },
         keyValueGlobals: async ({keys, limit, sort, offset, page, filter}, {context}, {operation}) => {
             const selection = operation.selectionSet.selections[0].selectionSet.selections

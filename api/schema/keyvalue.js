@@ -34,7 +34,7 @@ export const keyvalueSchemaRaw = `
     }
     
     type Query {
-    	keyValues(user: String, limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String, keys: [String], all: Boolean): KeyValueResult
+    	keyValues(user: String, limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String, keys: [String], global: Boolean, all: Boolean): KeyValueResult
     	keyValue(user: String, key: String!): KeyValue
     	
     	keyValueGlobals(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String, keys: [String]): KeyValueGlobalResult

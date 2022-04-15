@@ -1,28 +1,35 @@
 import {NO_SESSION_KEY_VALUES} from 'client/constants'
 import {client, useQuery} from '../middleware/graphql'
 
-export const QUERY_KEY_VALUES = 'query keyValues($keys:[String]){keyValues(keys:$keys){limit offset total results{key value status createdBy{_id username}}}}'
+export const QUERY_KEY_VALUES = 'query keyValues($keys:[String],$global:Boolean){keyValues(keys:$keys,global:$global){limit offset total results{key value status createdBy{_id username}}}}'
 export const QUERY_SET_KEY_VALUE = 'mutation setKeyValue($key:String!,$value:String){setKeyValue(key:$key,value:$value){key value status createdBy{_id username}}}'
 export const QUERY_KEY_VALUES_GLOBAL = 'query keyValueGlobals($keys:[String]){keyValueGlobals(keys:$keys){limit offset total results{key value status}}}'
 export const QUERY_SET_KEY_VALUE_GLOBAL = 'mutation setKeyValueGlobal($key:String!,$value:String){setKeyValueGlobal(key:$key,value:$value){key value status}}'
 
-export const useKeyValues = (keys) => {
-    const {data, loading} = useQuery(QUERY_KEY_VALUES, {variables: {keys}})
+export const useKeyValues = (keys, options, keyName = 'keyValues') => {
+    const {data, loading} = useQuery(keyName === 'keyValues' ? QUERY_KEY_VALUES : QUERY_KEY_VALUES_GLOBAL, {variables: {keys,...options}})
     const enhancedData = {}
-    if (data && data.keyValues && data.keyValues.results) {
-        for (const i in data.keyValues.results) {
-            const o = data.keyValues.results[i]
-            try {
-                enhancedData[o.key] = JSON.parse(o.value)
-            } catch (e) {
-                enhancedData[o.key] = o.value
+    if (data) {
+        const keyData = data[keyName]
+        if (keyData && keyData.results) {
+            for (const i in keyData.results) {
+                const o = keyData.results[i]
+                try {
+                    enhancedData[o.key] = JSON.parse(o.value)
+                } catch (e) {
+                    enhancedData[o.key] = o.value
+                }
             }
         }
     }
     return {loading, data: enhancedData}
 }
 
-export const setKeyValue = ({key, value})=>{
+export const useKeyValuesGlobal = (keys, options) => {
+    return useKeyValues(keys,options, 'keyValuesGlobals')
+}
+
+export const setKeyValue = ({key, value}) => {
 
     const variables = {
         key,
@@ -30,12 +37,12 @@ export const setKeyValue = ({key, value})=>{
     }
 
     // if there is a exact match update the value
-    const existingData = client.readQuery({query:QUERY_KEY_VALUES, variables:{keys:[key]}})
-    if(existingData && existingData.keyValues){
+    const existingData = client.readQuery({query: QUERY_KEY_VALUES, variables: {keys: [key]}})
+    if (existingData && existingData.keyValues) {
         const res = existingData.keyValues.results
-        if(res && res.length > 0 && res[0].key == key){
+        if (res && res.length > 0 && res[0].key == key) {
             res[0].value = variables.value
-            client.writeQuery({query:QUERY_KEY_VALUES, variables: {keys:[key]}, data: existingData})
+            client.writeQuery({query: QUERY_KEY_VALUES, variables: {keys: [key]}, data: existingData})
         }
     }
 

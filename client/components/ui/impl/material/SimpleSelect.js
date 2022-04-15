@@ -17,10 +17,10 @@ const StyledChips = styled.div`
     display: flex;
     flex-wrap: wrap;
 `
-const StyledChip = styled(Chip, {
+const StyledChip = styled(Chip)({
     height: 'auto',
     padding: '2px',
-    margin: '-2px 2px'
+    margin: '2px 2px'
 })
 
 

@@ -24,7 +24,7 @@ const LOGIN_ATTEMPTS_MAP = {},
     MAX_LOGIN_ATTEMPTS = 10,
     LOGIN_DELAY_IN_SEC = 180
 
-const createUser = async ({username, role, junior, group, password, language, email, emailConfirmed, requestNewPassword, meta, domain, picture, db, context}, opts) => {
+const createUser = async ({username, role, junior, group, setting, password, language, email, emailConfirmed, requestNewPassword, meta, domain, picture, db, context}, opts) => {
 
     if (!opts) {
         opts = {override: false, skipCheck: false}
@@ -103,9 +103,17 @@ const createUser = async ({username, role, junior, group, password, language, em
         })
     }
 
+    const settingsIds = []
+    if (setting) {
+        setting.forEach(s => {
+            settingsIds.push(ObjectId(s))
+        })
+    }
+
     const dataToInsert = {
         role: roleId,
         group: groupIds,
+        setting: settingsIds,
         junior: juniorIds,
         emailConfirmed: !!emailConfirmed,
         requestNewPassword: !!requestNewPassword,
@@ -165,7 +173,7 @@ export const userResolver = (db) => ({
     Query: {
         users: async ({limit, page, offset, filter, sort}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'signupToken', 'language', 'picture', 'email', 'meta', 'domain', 'emailConfirmed', 'requestNewPassword', 'role$UserRole', 'junior$[User]', 'group$[UserGroup]', 'lastLogin'], {
+            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'signupToken', 'language', 'picture', 'email', 'meta', 'domain', 'emailConfirmed', 'requestNewPassword', 'role$UserRole', 'junior$[User]', 'group$[UserGroup]', 'setting$[UserSetting]', 'lastLogin'], {
                 limit,
                 page,
                 offset,
@@ -176,6 +184,16 @@ export const userResolver = (db) => ({
         userRoles: async ({limit, page, offset, filter, sort}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
             return await GenericResolver.entities(db, context, 'UserRole', ['name', 'capabilities'], {
+                limit,
+                page,
+                offset,
+                filter,
+                sort
+            })
+        },
+        userSettings: async ({limit, page, offset, filter, sort}, {context}) => {
+            Util.checkIfUserIsLoggedIn(context)
+            return await GenericResolver.entities(db, context, 'UserSetting', ['name'], {
                 limit,
                 page,
                 offset,
@@ -201,6 +219,10 @@ export const userResolver = (db) => ({
                 }
                 if (user.group) {
                     user.group = user.group.map(m => ({_id: m}))
+                }
+
+                if (user.setting) {
+                    user.setting = user.setting.map(m => ({_id: m}))
                 }
                 /*if( user.picture){
                     user.picture = await db.collection('Media').findOne({_id: ObjectId(user.picture)})
@@ -395,7 +417,7 @@ export const userResolver = (db) => ({
         }
     },
     Mutation: {
-        createUser: async ({username, password, email, language, meta, domain, picture, emailConfirmed, requestNewPassword, role, junior, group}, {context}) => {
+        createUser: async ({username, password, email, language, meta, domain, picture, emailConfirmed, requestNewPassword, role, junior, group, setting}, {context}) => {
 
             if (email) {
                 email = email.trim()
@@ -414,7 +436,8 @@ export const userResolver = (db) => ({
                 password,
                 role,
                 junior,
-                group
+                group,
+                setting
             })
 
             if (insertResult.ops && insertResult.ops.length > 0) {
@@ -487,7 +510,7 @@ export const userResolver = (db) => ({
                 return result
             }
         },
-        updateUser: async ({_id, username, email, password, picture, language, emailConfirmed, requestNewPassword, role, junior, meta, domain, group}, {context}) => {
+        updateUser: async ({_id, username, email, password, picture, language, emailConfirmed, requestNewPassword, role, junior, meta, domain, group, setting}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
             if (email) {
@@ -573,6 +596,14 @@ export const userResolver = (db) => ({
                     })
                 }
             }
+            if (setting !== undefined) {
+                user.setting = []
+                if (setting) {
+                    setting.forEach(s => {
+                        user.setting.push(ObjectId(s))
+                    })
+                }
+            }
 
             if (group !== undefined) {
                 await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_GROUP)
@@ -622,6 +653,19 @@ export const userResolver = (db) => ({
             return result.value
 
         },
+        createUserRole: async ({name, capabilities}, req) => {
+            await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_MANAGE_OTHER_USERS)
+
+            return await GenericResolver.createEntity(db, req, 'UserRole', {
+                name,
+                capabilities
+            })
+        },
+        createUserSetting: async ({name}, req) => {
+            return await GenericResolver.createEntity(db, req, 'UserSetting', {
+                name
+            })
+        },
         updateUserRole: async ({_id, name, capabilities}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
 
@@ -631,8 +675,12 @@ export const userResolver = (db) => ({
                 capabilities
             })
 
-
-            return {_id, name, capabilities}
+        },
+        updateUserSetting: async ({_id, name}, {context}) => {
+            return await GenericResolver.updateEnity(db, context, 'UserSetting', {
+                _id,
+                name
+            })
 
         },
         updateMe: async ({password, passwordConfirm, ...user}, {context}) => {
@@ -748,6 +796,12 @@ export const userResolver = (db) => ({
         },
         deleteUserRoles: async ({_id}, {context}) => {
             return GenericResolver.deleteEnities(db, context, 'UserRole', {_id})
+        },
+        deleteUserSetting: async ({_id}, {context}) => {
+            return GenericResolver.deleteEnity(db, context, 'UserSetting', {_id})
+        },
+        deleteUserSettings: async ({_id}, {context}) => {
+            return GenericResolver.deleteEnities(db, context, 'UserSetting', {_id})
         }
     }
 })

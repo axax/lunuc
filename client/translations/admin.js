@@ -49,9 +49,11 @@ export const translations = {
         'User.field.requestNewPassword': 'Neues Passwort anfordern (beim nächsten Login)',
         'User.field.meta': 'Meta',
         'User.field.lastLogin': 'Letzte Anmeldung',
+        'User.field.domain': 'Domäne',
         'User.field.role': 'Role',
         'User.field.junior': 'Untergeordnete Benutzer',
         'User.field.group': 'Benutzergruppe',
+        'User.field.setting': 'Eintellungen',
     },
     en: {
         'BaseLayout.editMenu': 'Edit menu',
@@ -106,5 +108,7 @@ export const translations = {
         'User.field.role': 'Role',
         'User.field.junior': 'Junior User',
         'User.field.group': 'User group',
+        'User.field.setting': 'Settings',
+        'User.field.domain': 'Domain',
     }
 }

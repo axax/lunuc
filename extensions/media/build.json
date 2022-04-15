@@ -132,6 +132,21 @@
           "tab": "Optionen",
           "type": "MediaConversion",
           "hideColumnInTypes": true
+        },
+        {
+          "name": "ownerGroup",
+          "hideColumnInTypes": true,
+          "access": {
+            "ui": {
+              "role": "manage_user_group"
+            }
+          },
+          "type": "UserGroup",
+          "multi": true,
+          "fields": [
+            "name"
+          ],
+          "index": 1
         }
       ]
     },
