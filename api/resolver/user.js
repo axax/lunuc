@@ -208,7 +208,7 @@ export const userResolver = (db) => ({
             if (!user) {
                 throw new Error('User doesn\'t exist')
             } else {
-                user.role = Util.getUserRoles(db, user.role)
+                user.role = await Util.getUserRoles(db, user.role)
 
                 if (user.picture) {
                     user.picture = {_id: user.picture}
@@ -584,7 +584,11 @@ export const userResolver = (db) => ({
             }
 
             if (role) {
-                await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)
+                const roleEntry = await Util.getUserRoles(db, role)
+
+                if(['subscriber',context.role].indexOf(roleEntry.name)<0) {
+                    await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)
+                }
                 user.role = ObjectId(role)
             }
             if (junior !== undefined) {
@@ -676,10 +680,11 @@ export const userResolver = (db) => ({
             })
 
         },
-        updateUserSetting: async ({_id, name}, {context}) => {
+        updateUserSetting: async ({_id, name, createdBy}, {context}) => {
             return await GenericResolver.updateEnity(db, context, 'UserSetting', {
                 _id,
-                name
+                name,
+                createdBy:(createdBy?ObjectId(createdBy):createdBy)
             })
 
         },

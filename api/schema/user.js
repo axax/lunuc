@@ -6,6 +6,7 @@ export const userSchemaRaw = `
 		_id: ID!
 		status: String
         name: String!
+        createdBy: UserPublic
     }
     
     type UserSettingResult {
@@ -178,6 +179,7 @@ export const userSchemaRaw = `
 		updateUserSetting (
 		    _id: ID!
 			name: String
+			createdBy: ID
 		): UserSetting
 		
 		

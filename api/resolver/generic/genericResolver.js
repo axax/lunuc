@@ -144,7 +144,9 @@ const createMatchForCurrentUser = async ({typeName, db, context, operation}) => 
         operation='read'
     }
 
-    if (typeName === 'User') {
+    if( typeName === 'UserRole'){
+        match={name:{$in:['subscriber',context.role]}}
+    }else if (typeName === 'User') {
 
         // special handling for type User
 

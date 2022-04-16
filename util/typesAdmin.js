@@ -1,5 +1,5 @@
 import Hook from 'util/hook'
-import {getAllCapabilites} from 'util/capabilities'
+import {CAPABILITY_MANAGE_SAME_GROUP, getAllCapabilites} from 'util/capabilities'
 import {getType, getTypes} from './types'
 import {_t} from 'util/i18n'
 import extensionsPrivate from 'gen/extensions-private'
@@ -296,7 +296,6 @@ Hook.on('Types', ({types}) => {
 
     types.UserSetting = {
         name: 'UserSetting',
-        noUserRelation: true,
         usedBy: ['core'],
         fields: [
             {
@@ -349,16 +348,6 @@ Hook.on('Types', ({types}) => {
                 tab: 'Allgemein'
             },
             {
-                name: 'setting',
-                type: 'UserSetting',
-                reference: true,
-                fields: ['name'],
-                tab: 'Allgemein',
-                multi:true,
-                hideColumnInTypes: true,
-                vagueSearchable:false
-            },
-            {
                 name: 'language',
                 vagueSearchable:false
             },
@@ -397,7 +386,7 @@ Hook.on('Types', ({types}) => {
                 tab: _t('Types.accessControl'),
                 access: {
                     ui: {
-                        role: CAPABILITY_MANAGE_USER_GROUP
+                        role: CAPABILITY_MANAGE_SAME_GROUP
                     }
                 },
                 vagueSearchable:false
@@ -430,6 +419,17 @@ Hook.on('Types', ({types}) => {
                         role: CAPABILITY_MANAGE_USER_GROUP
                     }
                 },
+                vagueSearchable:false
+            },
+            {
+                name: 'setting',
+                type: 'UserSetting',
+                reference: true,
+                fields: ['name'],
+                tab: _t('Types.accessControl'),
+                multi:true,
+                fullWidth:true,
+                hideColumnInTypes: true,
                 vagueSearchable:false
             }
         ]
