@@ -1,6 +1,7 @@
 export const translations = {
     de: {
         'BaseLayout.editMenu': 'Menü bearbeiten',
+        'BaseLayout.resetMenu': 'Menü zurücksetzen',
         'TypesContainer.filter': 'Suche (spezifisches Feld z.B. name=xyz)',
         'TypesContainer.createdAt': 'Erstellungszeit / ID',
         'TypesContainer.actions': 'Aktionen',
@@ -57,6 +58,7 @@ export const translations = {
     },
     en: {
         'BaseLayout.editMenu': 'Edit menu',
+        'BaseLayout.resetMenu': 'Reset menu',
         'TypesContainer.filter': 'Filter expression (for specifc fields use field=term)',
         'TypesContainer.createdAt': 'Created at / id',
         'TypesContainer.actions': 'Actions',

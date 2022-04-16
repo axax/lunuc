@@ -20,7 +20,7 @@ const StyledChips = styled.div`
 const StyledChip = styled(Chip)({
     height: 'auto',
     padding: '2px',
-    margin: '2px 2px'
+    margin: '-2px 2px'
 })
 
 

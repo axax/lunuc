@@ -71,7 +71,7 @@ import {_t, registerTrs} from 'util/i18n'
 import {translations} from '../../translations/admin'
 import {propertyByPath} from '../../util/json'
 import Async from 'client/components/Async'
-import {deepMergeToFirst} from '../../../util/deepMerge'
+import {deepMergeOptional} from '../../../util/deepMerge'
 
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../CodeEditor')}/>
@@ -202,11 +202,20 @@ const BaseLayout = props => {
         }
         setOpenMenuEditor(false)
     }
+
     let settings = {}
-    if(!userKeys.loading && userKeys.data){
+    if(!userKeys.loading && userKeys.data ){
+        const userSettings = userKeys.data.BaseLayoutSettings || {}
+
+        let inheritedSettings = {}
+
         Object.keys(userKeys.data).forEach(k=>{
-            deepMergeToFirst(settings, userKeys.data[k])
+            if(k!=='BaseLayoutSettings') {
+                inheritedSettings = deepMergeOptional({concatArrays: true}, inheritedSettings, userKeys.data[k])
+            }
         })
+
+        settings = deepMergeOptional({concatArrays: false}, inheritedSettings, userSettings)
     }
 
     const menuItems = [
@@ -355,6 +364,16 @@ const BaseLayout = props => {
                                         name: _t('BaseLayout.editMenu'),
                                         onClick: handleOpenMenuEditor,
                                         icon: <EditIcon/>
+                                    },
+                                    {
+                                        name: _t('BaseLayout.resetMenu'),
+                                        onClick: ()=>{
+
+                                            setKeyValue({key: 'BaseLayoutSettings', value: ''}).then(() => {
+                                                location.href = location.href
+                                            })
+                                        },
+                                        icon: <DoneIcon/>
                                     }
                                 ]}/>}
                                 headerRight={headerRight}>
