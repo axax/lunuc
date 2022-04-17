@@ -168,6 +168,12 @@
           "localized": true
         },
         {
+          "name": "contextProps",
+          "uitype": "json",
+          "hideColumnInTypes": true,
+          "localized": false
+        },
+        {
           "tab": "send",
           "name": "batchSize",
           "hideColumnInTypes": true,

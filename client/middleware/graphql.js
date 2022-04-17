@@ -231,61 +231,66 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
             headers: getHeaders(lang),
             body
         }).then(r => {
-            setUpWs()
-
             removeLoader()
-            // x-session is only set when USE_COOKIES is false
-            _app_.session = r.headers.get('x-session')
+            if (r.ok) {
+                setUpWs()
+                // x-session is only set when USE_COOKIES is false
+                _app_.session = r.headers.get('x-session')
 
-            r.json().then(response => {
-                if(!response.isAuth && _app_.user && _app_.user._id){
-                    // if a user is logged in and for some reason user session is not valid anymore update user in client
-                    getStore().dispatch(setUser(null, false))
-                }
-                if (!r.ok || response.errors) {
-                    const rejectData = {...response, loading: false, networkStatus: NetworkStatus.ready}
-                    if (response.errors) {
-                        rejectData.error = response.errors[0]
-                        getStore().dispatch(addError({
-                            key: 'graphql_error',
-                            msg: rejectData.error.message /* + (rejectData.error.path ? ' (in operation ' + rejectData.error.path.join('/') + ')' : '') */
-                        }))
+                r.json().then(response => {
+                    if (!response.isAuth && _app_.user && _app_.user._id) {
+                        // if a user is logged in and for some reason user session is not valid anymore update user in client
+                        getStore().dispatch(setUser(null, false))
                     }
-                    reject(rejectData)
-                } else {
-                    const resolveData = {...response, loading: false, networkStatus: NetworkStatus.ready}
-
-                    if (type === RequestType.query) {
-
-                        resolveData.fetchMore = getFetchMore({
-                            prevData: response.data,
-                            fetchPolicy,
-                            variables,
-                            type,
-                            query
-                        })
-
-                        Hook.call('ApiClientQueryResponse', {response})
-                        resolve(resolveData)
-                        if (fetchPolicy !== 'no-cache') {
-                            client.writeQuery({cacheKey, data: response.data})
+                    if (!r.ok || response.errors) {
+                        const rejectData = {...response, loading: false, networkStatus: NetworkStatus.ready}
+                        if (response.errors) {
+                            rejectData.error = response.errors[0]
+                            getStore().dispatch(addError({
+                                key: 'graphql_error',
+                                msg: rejectData.error.message /* + (rejectData.error.path ? ' (in operation ' + rejectData.error.path.join('/') + ')' : '') */
+                            }))
                         }
+                        reject(rejectData)
                     } else {
-                        resolve(resolveData)
+                        const resolveData = {...response, loading: false, networkStatus: NetworkStatus.ready}
+
+                        if (type === RequestType.query) {
+
+                            resolveData.fetchMore = getFetchMore({
+                                prevData: response.data,
+                                fetchPolicy,
+                                variables,
+                                type,
+                                query
+                            })
+
+                            Hook.call('ApiClientQueryResponse', {response})
+                            resolve(resolveData)
+                            if (fetchPolicy !== 'no-cache') {
+                                client.writeQuery({cacheKey, data: response.data})
+                            }
+                        } else {
+                            resolve(resolveData)
+                        }
+
+
                     }
 
-
-                }
-
-            }).catch(error => {
-                reject({error, loading: false, networkStatus: NetworkStatus.error})
-                getStore().dispatch(addError({
-                    key: 'graphql_error',
-                    msg: error.message + (error.path ? ' (in operation ' + error.path.join('/') + ')' : '')
-                }))
-            })
+                }).catch(error => {
+                    reject({error, loading: false, networkStatus: NetworkStatus.error})
+                    getStore().dispatch(addError({
+                        key: 'graphql_error',
+                        msg: error.message + (error.path ? ' (in operation ' + error.path.join('/') + ')' : '')
+                    }))
+                })
+            } else {
+                reject({error:{message:r.statusText}, loading: false, networkStatus: NetworkStatus.error})
+                getStore().dispatch(addError({key: 'api_error', msg: r.status + ' - ' + r.statusText}))
+            }
 
         }).catch(error => {
+            console.log(error)
             removeLoader()
             reject({error, loading: false, networkStatus: NetworkStatus.error})
             getStore().dispatch(addError({key: 'api_error', msg: error.message}))

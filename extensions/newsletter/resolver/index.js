@@ -115,6 +115,15 @@ export default db => ({
                         }
                     }
                     const body = Object.assign({html: finalHtml},sub)
+
+                    if(mailingData && mailingData.contextProps){
+                        try {
+                            body.props = JSON.parse(mailingData.contextProps)
+                        }catch (e) {
+                            console.log(e)
+                        }
+                    }
+
                     const result = await sendMail(db, Object.assign(req.context, {lang: subLang}), {
                         slug: template,
                         recipient: sub.email,
