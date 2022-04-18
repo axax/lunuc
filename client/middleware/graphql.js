@@ -456,7 +456,7 @@ export const graphql = (query, operationOptions = {}) => {
                               fetchPolicy={options.fetchPolicy}>{(res) => {
 
                     let data = res.data
-                    if (!data && res.loading) {
+                    if (!data && (res.loading || skip)) {
                         data = this.prevRespone.data
                     }
 
