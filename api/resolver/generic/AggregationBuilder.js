@@ -839,7 +839,15 @@ export default class AggregationBuilder {
 
         // add right before the group
         if (this.options.beforeProject) {
-            dataFacetQuery.push(this.options.beforeProject)
+            if (this.options.beforeProject.constructor === Array) {
+                for (let i = this.options.beforeProject.length - 1; i >= 0; i--) {
+                    dataFacetQuery.push(this.options.beforeProject[i])
+                }
+            } else {
+                dataFacetQuery.push(this.options.beforeProject)
+            }
+            console.log(dataFacetQuery)
+
         }
 
         // project
