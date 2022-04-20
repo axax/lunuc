@@ -18,12 +18,12 @@ Hook.on('schema', ({schemas}) => {
 
 // Hook when db is ready
 Hook.on('appready', async ({app, context, db}) => {
-    startListening(db)
+    startListening(db, context)
 })
 
 
 // Hook when the type CronJob has changed
-Hook.on(['typeUpdated_MailClient', 'typeCreated_MailClient', 'typeDeleted_MailClient'], ({db}) => {
-    stopListening(db)
-    startListening(db)
+Hook.on(['typeUpdated_MailClient', 'typeCreated_MailClient', 'typeDeleted_MailClient'], ({db, context}) => {
+    stopListening(db, context)
+    startListening(db, context)
 })

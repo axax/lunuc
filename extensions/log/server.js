@@ -74,6 +74,17 @@ Hook.on('typeLoaded', async ({db, context, result, dataQuery, collectionName, ag
   }
 })
 
+Hook.on('OnMailError', async ({db, context, error}) => {
+
+
+  GenericResolver.createEntity(db, {context}, 'Log', {
+      location: 'mailclient',
+      type: 'mailError',
+      message: error.message,
+      meta: {}
+  })
+})
+
 Hook.on('HookError', async ({entry, error}) => {
     if(mydb) {
         GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {

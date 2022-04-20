@@ -4,7 +4,7 @@ import Util from '../../api/util'
 
 let mailListeners = {}
 
-const startListening = async (db) => {
+const startListening = async (db, context) => {
 
     try {
         const arr = (await db.collection('MailClient').find({active: true}).toArray())
@@ -37,8 +37,9 @@ const startListening = async (db) => {
                         /*attachmentOptions: { directory: "attachments/" }*/ // specify a download directory for attachments
                     })
 
-                    mailListener.on('error', err => {
-                        console.error(err)
+                    mailListener.on('error', error => {
+                        console.error(error)
+                        Hook.call('OnMailError', {db, context, error})
                     })
 
                     mailListener.on('mail', mail => {
