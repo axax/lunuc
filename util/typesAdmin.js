@@ -345,7 +345,12 @@ Hook.on('Types', ({types}) => {
                 required: false,
                 alwaysUpdate: true,
                 hideColumnInTypes: true,
-                tab: 'Allgemein'
+                tab: 'Allgemein',
+                access: {
+                    ui: {
+                        role: CAPABILITY_MANAGE_USER_GROUP
+                    }
+                }
             },
             {
                 name: 'language',

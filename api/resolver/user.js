@@ -128,6 +128,9 @@ const createUser = async ({username, role, junior, group, setting, password, lan
 
     if (domain) {
         dataToInsert.domain = domain
+    } else if(context.domain) {
+        // set domain from current user as default
+        dataToInsert.domain = context.domain
     }
 
 
