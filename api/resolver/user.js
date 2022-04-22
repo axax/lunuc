@@ -54,6 +54,12 @@ const createUser = async ({username, role, junior, group, setting, password, lan
     const userCollection = db.collection('User')
 
     const findMatch = {$or: [{'email': email}, {'username': username}]}
+
+    if(!domain && context.domain) {
+        // set domain from current user as default
+         domain = context.domain
+    }
+
     if (domain) {
         findMatch.domain = domain
     }
@@ -128,9 +134,6 @@ const createUser = async ({username, role, junior, group, setting, password, lan
 
     if (domain) {
         dataToInsert.domain = domain
-    } else if(context.domain) {
-        // set domain from current user as default
-        dataToInsert.domain = context.domain
     }
 
 
