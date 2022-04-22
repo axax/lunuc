@@ -191,7 +191,7 @@ const BaseLayout = props => {
                     return
                 }
 
-                setKeyValue({key: 'BaseLayoutSettings', value: menuEditor.state.data}).then(() => {
+                setKeyValue({key: 'BaseLayoutSettings', value: menuEditor.state.data, clearCache:true}).then(() => {
                     location.href = location.href
                 })
 
@@ -214,7 +214,7 @@ const BaseLayout = props => {
                 inheritedSettings = deepMergeOptional({concatArrays: true}, inheritedSettings, userKeys.data[k])
             }
         })
-
+console.log('xxxx',userSettings)
         settings = deepMergeOptional({concatArrays: false}, inheritedSettings, userSettings)
     }
 
@@ -342,7 +342,7 @@ const BaseLayout = props => {
                                         const oriItem = propertyByPath(item.path, settings.menu)
                                         if (oriItem) {
                                             oriItem.open = open
-                                            setKeyValue({key: 'BaseLayoutSettings', value: settings})
+                                            setKeyValue({key: 'BaseLayoutSettings', value: settings, clearCache:true})
                                         }
                                     }
                                 }}
@@ -369,7 +369,7 @@ const BaseLayout = props => {
                                         name: _t('BaseLayout.resetMenu'),
                                         onClick: ()=>{
 
-                                            setKeyValue({key: 'BaseLayoutSettings', value: ''}).then(() => {
+                                            setKeyValue({key: 'BaseLayoutSettings', value: '', clearCache:true}).then(() => {
                                                 location.href = location.href
                                             })
                                         },

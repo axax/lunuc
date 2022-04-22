@@ -85,12 +85,22 @@ const createUser = async ({username, role, junior, group, setting, password, lan
     const hashedPw = Util.hashPassword(password)
 
     let roleId
-    if (role && await Util.userHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)) {
-        roleId = ObjectId(role)
-    } else {
+    if(role){
+        if (await Util.userHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)) {
+            roleId = ObjectId(role)
+        }else{
+            const roleEntry = await Util.getUserRoles(db, role)
+
+            if(['subscriber',context.role].indexOf(roleEntry.name)>=0) {
+                roleId = ObjectId(role)
+            }
+        }
+    }
+    if(!roleId){
         const userRole = (await db.collection('UserRole').findOne({name: 'subscriber'}))
         roleId = userRole._id
     }
+
     const juniorIds = []
     if (junior && await Util.userHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)) {
         junior.forEach(sup => {

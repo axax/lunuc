@@ -29,20 +29,24 @@ export const useKeyValuesGlobal = (keys, options) => {
     return useKeyValues(keys,options, 'keyValuesGlobals')
 }
 
-export const setKeyValue = ({key, value}) => {
+export const setKeyValue = ({key, value, clearCache}) => {
 
     const variables = {
         key,
         value: value && value.constructor !== String ? JSON.stringify(value) : value
     }
 
-    // if there is a exact match update the value
-    const existingData = client.readQuery({query: QUERY_KEY_VALUES, variables: {keys: [key]}})
-    if (existingData && existingData.keyValues) {
-        const res = existingData.keyValues.results
-        if (res && res.length > 0 && res[0].key == key) {
-            res[0].value = variables.value
-            client.writeQuery({query: QUERY_KEY_VALUES, variables: {keys: [key]}, data: existingData})
+    if(clearCache){
+        client.clearCacheStartsWith(QUERY_KEY_VALUES)
+    }else {
+        // if there is a exact match update the value
+        const existingData = client.readQuery({query: QUERY_KEY_VALUES, variables: {keys: [key]}})
+        if (existingData && existingData.keyValues) {
+            const res = existingData.keyValues.results
+            if (res && res.length > 0 && res[0].key == key) {
+                res[0].value = variables.value
+                client.writeQuery({query: QUERY_KEY_VALUES, variables: {keys: [key]}, data: existingData})
+            }
         }
     }
 

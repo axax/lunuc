@@ -332,6 +332,13 @@ export const client = {
         }
         return res
     },
+    clearCacheStartsWith:(key) => {
+        Object.keys(CACHE_QUERIES).forEach(k=>{
+            if(k.startsWith(key)){
+                delete CACHE_QUERIES[k]
+            }
+        })
+    },
     addQueryWatcher: ({cacheKey, update}) => {
         QUERY_WATCHER[cacheKey] = update
     },
