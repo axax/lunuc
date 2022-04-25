@@ -80,7 +80,7 @@ ${finalHtml}
             currentMailSettings = currentMailSettings.second
         }
         try {
-            const transporter = nodemailer.createTransport({
+            const transporter = {
                 service: currentMailSettings.service,
                 debug: currentMailSettings.debug || false,
                 logger: currentMailSettings.logger || false,
@@ -98,8 +98,12 @@ ${finalHtml}
                 },
                 connectionTimeout: currentMailSettings.connectionTimeout || 30000,
                 socketTimeout: currentMailSettings.socketTimeout || 90000
-            })
-            mailResponse = await transporter.sendMail(message)
+            }
+
+            Hook.call('beforeMailSend', {db, context, slug, message, transporter, req})
+
+            const transporterResult = nodemailer.createTransport(transporter)
+            mailResponse = await transporterResult.sendMail(message)
             break
         } catch (e) {
             console.log('sendMail', e)

@@ -17,7 +17,7 @@ export default () => {
     })
 
     // add entry to main menu
-    Hook.on('MenuMenu', ({menuItems}) => {
+    /*Hook.on('MenuMenu', ({menuItems}) => {
         menuItems.push({name: 'Words', to: ADMIN_BASE_URL + '/word', auth: true, icon: <SubjectIcon/>})
-    })
+    })*/
 }
