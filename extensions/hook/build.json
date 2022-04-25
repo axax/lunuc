@@ -31,7 +31,8 @@
             "NewUserCreated",
             "Frontend",
             "FrontendAdmin",
-            "OnMail"
+            "OnMail",
+            "beforeMailSend"
           ]
         },
         {
