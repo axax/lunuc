@@ -8,7 +8,7 @@ import GenericResolver from 'api/resolver/generic/genericResolver'
 
 /* dependency to media extension */
 import ImageClassifier from '../../media/util/imageClassifierLambda'
-
+import https from 'https'
 
 class Bot {
 
@@ -164,17 +164,19 @@ class Bot {
 
 
     communicate(key, ctx, opts) {
-        if (ctx.message && ctx.message.text) {
+        if (ctx.message) {
             this.archiveMessage(ctx)
-            let command = ctx.message.text.trim().toLowerCase()
+            if( ctx.message.text ) {
+                let command = ctx.message.text.trim().toLowerCase()
 
-            if (command.startsWith('/') && this.commands[command.substring(1)]) {
-                // its a command
-                this.commands[command.substring(1)].bind(this)({api: ctx, bot:this})
-                return
-            } else {
-                if(!opts || opts.createResult!==false) {
-                    this.createResult(ctx.message.text)
+                if (command.startsWith('/') && this.commands[command.substring(1)]) {
+                    // its a command
+                    this.commands[command.substring(1)].bind(this)({api: ctx, bot: this})
+                    return
+                } else {
+                    if (!opts || opts.createResult !== false) {
+                        this.createResult(ctx.message.text)
+                    }
                 }
             }
         }
