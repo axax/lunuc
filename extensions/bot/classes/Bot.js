@@ -496,6 +496,8 @@ class Bot {
                         const getKeyValueGlobal = (key, parse)=>{
                             return this.Util.getKeyValueGlobal(this.db,null,key, parse)
                         }
+                        
+                        const __dirname = this.__dirname
                         const bot = this.bot
                         const on = this.bot.on.bind(this.bot)
                         const addExpression = this.bot.addExpression.bind(this.bot)
@@ -517,6 +519,7 @@ class Bot {
 
                     const result = await tpl.call({
                         bot: this,
+                        __dirname,
                         require,
                         ImageClassifier,
                         GenericResolver,
