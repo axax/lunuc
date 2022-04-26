@@ -73,6 +73,9 @@ const options = {
 
 if (fs.existsSync(path.join(CERT_DIR, './chain.pem'))) {
     options.ca = fs.readFileSync(path.join(CERT_DIR, './chain.pem'))
+    if(hostrules.general && !hostrules.general.certDir){
+        hostrules.general.certDir = path.join(CERT_DIR, './chain.pem')
+    }
 }
 
 process.on('uncaughtException', (error) => {
