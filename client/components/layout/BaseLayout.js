@@ -214,7 +214,6 @@ const BaseLayout = props => {
                 inheritedSettings = deepMergeOptional({concatArrays: true}, inheritedSettings, userKeys.data[k])
             }
         })
-console.log('xxxx',userSettings)
         settings = deepMergeOptional({concatArrays: false}, inheritedSettings, userSettings)
     }
 

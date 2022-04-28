@@ -166,7 +166,7 @@ export default () => {
                                 cursor: 'pointer',
                                 color: '#663366',
                                 textDecoration: 'underline'
-                            }}>Go to CMS Editor</span></Link>
+                            }}>{_t('CmsPageEdit.goToEditor')}</span></Link>
             </Typography>,
                 <GenericForm key="CmsPageForm" autoFocus onRef={ref => {
                     if(ref) {

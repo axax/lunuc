@@ -8,11 +8,23 @@
       "mutationResult": "CmsPage",
       "fields": [
         {
+          "name": "slug",
+          "label": "Slug / Url",
+          "required": false,
+          "clone": "${slug}_copy",
+          "index": 1,
+          "unique": true,
+          "fullWidth": true,
+          "tab": "Allgemein"
+        },
+        {
           "name": "name",
           "clone": "${name}",
           "label": "Name",
           "localized": true,
-          "index": 1
+          "index": 1,
+          "fullWidth": true,
+          "tab": "Allgemein"
         },
         {
           "name": "keyword",
@@ -20,16 +32,9 @@
           "localized": true,
           "uitype": "textarea",
           "index": 1,
+          "fullWidth": true,
           "hideColumnInTypes": true,
-          "Tab": "SEO"
-        },
-        {
-          "name": "slug",
-          "label": "Slug",
-          "required": false,
-          "clone": "${slug}_copy",
-          "index": 1,
-          "unique": true
+          "Tab": "Allgemein"
         },
         {
           "name": "hostRule",
@@ -37,21 +42,36 @@
           "required": false,
           "index": 1,
           "vagueSearchable": false,
-          "hideColumnInTypes": true
+          "hideColumnInTypes": true,
+          "access": {
+            "ui": {
+              "role": "manage_cms_template"
+            }
+          }
         },
         {
           "name": "public",
           "label": "Public",
           "type": "Boolean",
           "hideColumnInTypes": true,
-          "index": 1
+          "index": 1,
+          "access": {
+            "ui": {
+              "role": "manage_cms_template"
+            }
+          }
         },
         {
           "name": "isTemplate",
           "label": "Template",
           "type": "Boolean",
           "hideColumnInTypes": true,
-          "index": 1
+          "index": 1,
+          "access": {
+            "ui": {
+              "role": "manage_cms_template"
+            }
+          }
         },
         {
           "name": "urlSensitiv",
@@ -177,6 +197,21 @@
           "name": "meta",
           "type": "Object",
           "hidden": true
+        },
+        {
+          "name": "ownerGroup",
+          "hideColumnInTypes": true,
+          "access": {
+            "ui": {
+              "role": "manage_user_group"
+            }
+          },
+          "type": "UserGroup",
+          "multi": true,
+          "fields": [
+            "name"
+          ],
+          "index": 1
         }
       ]
     }

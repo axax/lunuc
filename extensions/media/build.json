@@ -165,6 +165,21 @@
           "multi": true,
           "index": 1,
           "tab": "Allgemein"
+        },
+        {
+          "name": "ownerGroup",
+          "hideColumnInTypes": true,
+          "access": {
+            "ui": {
+              "role": "manage_user_group"
+            }
+          },
+          "type": "UserGroup",
+          "multi": true,
+          "fields": [
+            "name"
+          ],
+          "index": 1
         }
       ]
     },

@@ -5,6 +5,7 @@ import Hook from '../../../util/hook'
 import {getFormFieldsByType, addAlwaysUpdateData, referencesToIds} from '../../../util/typesAdmin'
 import {SimpleDialog} from 'ui/admin'
 import {_t} from 'util/i18n'
+import Util from "../../util";
 
 
 const compareDataReferences = (prev, current) => {
@@ -211,8 +212,14 @@ class TypeEdit extends React.Component {
                             if (s1 !== s2) {
                                 editedDataToUpdate[k] = s2
                             }
+                        }else if(fieldDefinition.localized){
+
+                            if(Util.shallowCompare(editedDataWithRefs[k], before)){
+                                editedDataToUpdate[k] = editedDataWithRefs[k]
+                            }
 
                         } else if (editedDataWithRefs[k] !== before) {
+
                             editedDataToUpdate[k] = editedDataWithRefs[k]
                         }
                     }

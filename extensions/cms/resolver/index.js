@@ -40,7 +40,7 @@ export default db => ({
     Query: {
         cmsPages: async ({limit, page, offset, filter, sort, _version}, {headers, context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            const fields = ['public', 'slug', 'hostRule', 'name', 'keyword', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'loadPageOptions', 'ssrStyle', 'publicEdit', 'compress', 'isTemplate']
+            const fields = ['public', 'slug', 'hostRule', 'name', 'keyword', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'loadPageOptions', 'ssrStyle', 'publicEdit', 'compress', 'isTemplate','ownerGroup$[UserGroup]']
 
 
 
@@ -388,7 +388,7 @@ export default db => ({
         }
     },
     Mutation: {
-        createCmsPage: async ({slug, ...rest}, req) => {
+        createCmsPage: async ({slug,ownerGroup, ...rest}, req) => {
             Util.checkIfUserIsLoggedIn(req.context)
             if (!slug) slug = ''
             slug = encodeURI(slug.trim())
@@ -396,13 +396,14 @@ export default db => ({
             return await GenericResolver.createEntity(db, req, 'CmsPage', {
                 slug,
                 ...rest,
+                ownerGroup:(ownerGroup?ownerGroup.reduce((o,id)=>{o.push(ObjectId(id));return o},[]):ownerGroup),
                 dataResolver: DEFAULT_DATA_RESOLVER,
                 template: DEFAULT_TEMPLATE,
                 script: DEFAULT_SCRIPT,
                 style: DEFAULT_STYLE
             })
         },
-        updateCmsPage: async ({_id, slug, realSlug, query, props, createdBy, ...rest}, req) => {
+        updateCmsPage: async ({_id, slug, realSlug, query, props, createdBy, ownerGroup, ...rest}, req) => {
             const {context, headers} = req
 
             Util.checkIfUserIsLoggedIn(context)
@@ -425,6 +426,7 @@ export default db => ({
 
             const result = await GenericResolver.updateEnity(db, context, 'CmsPage', {
                 _id,
+                ownerGroup:(ownerGroup?ownerGroup.reduce((o,id)=>{o.push(ObjectId(id));return o},[]):ownerGroup),
                 createdBy: (createdBy ? ObjectId(createdBy) : createdBy), ...rest
             })
 

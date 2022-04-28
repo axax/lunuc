@@ -1,3 +1,5 @@
+import React from "react";
+
 export const translations = {
     de: {
         'CmsViewEditorContainer.save': 'Speichern',
@@ -17,7 +19,8 @@ export const translations = {
         'CmsViewEditorContainer.logout': 'Abmelden',
         'CmsViewEditorContainer.noOptions': 'Es sind keine Optionen definiert',
         'CmsViewEditorContainer.noRelatedPages':'Keine verwandte Seiten',
-        'CmsMenu.pages': 'Seiten'
+        'CmsMenu.pages': 'Seiten',
+        'CmsPageEdit.goToEditor':'Seite bearbeiten'
     },
     en: {
         'CmsViewEditorContainer.save': 'Speichern',
@@ -37,6 +40,7 @@ export const translations = {
         'CmsViewEditorContainer.logout': 'Logout',
         'CmsViewEditorContainer.noOptions': 'There are no options defined',
         'CmsViewEditorContainer.noRelatedPages':'No related pages',
-        'CmsMenu.pages': 'Pages'
+        'CmsMenu.pages': 'Pages',
+        'CmsPageEdit.goToEditor':'Go to CMS Editor'
     }
 }
