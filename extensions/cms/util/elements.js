@@ -618,42 +618,42 @@ const baseElements = [
             t: {
                 tabPosition: 0,
                 tab: DEFAULT_TAB,
-                label: 'Type',
+                label: 'HTML Tag (SEO relevant)',
                 enum: [
                     {
-                        name: 'H1',
+                        name: 'H1 (Überschrift 1)',
                         value: 'h1'
                     },
                     {
-                        name: 'H2',
+                        name: 'H2 (Überschrift 2)',
                         value: 'h2'
                     },
                     {
-                        name: 'H3',
+                        name: 'H3 (Überschrift 3)',
                         value: 'h3'
                     },
                     {
-                        name: 'H4',
+                        name: 'H4 (Überschrift 4)',
                         value: 'h4'
                     },
                     {
-                        name: 'H5',
+                        name: 'H5 (Überschrift 5)',
                         value: 'h5'
                     },
                     {
-                        name: 'H6',
+                        name: 'H6 (Überschrift 6)',
                         value: 'h6'
                     },
                     {
-                        name: 'p',
+                        name: 'p (Paragraph)',
                         value: 'p'
                     },
                     {
-                        name: 'div',
+                        name: 'div (Block)',
                         value: 'div'
                     },
                     {
-                        name: 'span',
+                        name: 'span (Inline-Element)',
                         value: 'span'
                     }
                 ]

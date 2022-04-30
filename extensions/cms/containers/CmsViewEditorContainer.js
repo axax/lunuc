@@ -128,7 +128,7 @@ class CmsViewEditorContainer extends React.Component {
         if (!dynamic) {
             this._handleWindowClose = this.saveUnsafedChanges.bind(this)
             window.addEventListener('beforeunload', this._handleWindowClose)
-            window.addEventListener('blur', this._handleWindowClose)
+            //window.addEventListener('blur', this._handleWindowClose)
 
             const unblock = history.block((e) => {
                 this.saveUnsafedChanges()
@@ -740,7 +740,7 @@ class CmsViewEditorContainer extends React.Component {
 
                                         <CodeEditor lineNumbers
                                                     type="js"
-                                                    readOnly={true}>{parsedData.script}</CodeEditor>
+                                                    readOnly={true}>{parsedData.serverScript}</CodeEditor>
                                         <a href={'/system/diff?preview=true#value=' + encodeURIComponent(parsedData.serverScript) + '&orig1=' + encodeURIComponent(serverScript)}
                                            target="_blank">Show diff</a>
 
@@ -1207,6 +1207,7 @@ class CmsViewEditorContainer extends React.Component {
     saveUnsafedChanges() {
         // blur on unload to make sure everything gets saved
         const curElement = document.activeElement
+        console.log(curElement)
         curElement.blur()
 
         // clear timeouts

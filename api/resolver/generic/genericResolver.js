@@ -262,7 +262,7 @@ const GenericResolver = {
 
         const finalAggregateOptions = {allowDiskUse: true, ...aggregateOptions}
 
-        if(!finalAggregateOptions.collation && otherOptions.sort && otherOptions.sort.startsWith('$')){
+        if(!finalAggregateOptions.collation && otherOptions.sort && otherOptions.sort.constructor===String && otherOptions.sort.startsWith('$')){
 
             otherOptions.sort = otherOptions.sort.substring(1)
             finalAggregateOptions.collation =  {locale: context.lang}
