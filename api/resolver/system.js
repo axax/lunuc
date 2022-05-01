@@ -75,10 +75,8 @@ export const systemResolver = (db) => ({
             const currentId = id || (context.id + String((new Date()).getTime()))
 
             if (command.indexOf('&') < 0 && command.indexOf('>') < 0 && command.indexOf('..') < 0 && command.indexOf('/.') < 0 && command.indexOf('./') < 0) {
-                for (const c of SKIP_CAPABILITY_CHECK) {
-                    if (command.indexOf(c) === 0) {
-                        performCheck = false
-                    }
+                if (SKIP_CAPABILITY_CHECK.indexOf(c)>= 0) {
+                    performCheck = false
                 }
             }
             if (performCheck) {
