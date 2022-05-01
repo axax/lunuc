@@ -74,12 +74,8 @@ export const systemResolver = (db) => ({
 
             const currentId = id || (context.id + String((new Date()).getTime()))
 
-            if (command.indexOf('&') < 0 && command.indexOf('>') < 0 && command.indexOf('..') < 0 && command.indexOf('/.') < 0 && command.indexOf('./') < 0) {
-                if (SKIP_CAPABILITY_CHECK.indexOf(c)>= 0) {
-                    performCheck = false
-                }
-            }
-            if (performCheck) {
+
+            if (SKIP_CAPABILITY_CHECK.indexOf(command) == 0) {
                 await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
             }
 
