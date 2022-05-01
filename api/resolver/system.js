@@ -21,7 +21,7 @@ const {UPLOAD_DIR} = config
 
 const ABS_UPLOAD_DIR = path.join(__dirname, '../../' + UPLOAD_DIR)
 
-const SKIP_CAPABILITY_CHECK = ['ls -l', 'pwd', 'ls']
+const SKIP_CAPABILITY_CHECK = ['ls -l', 'pwd', 'ls', 'ping lunuc.com']
 const ENDOFCOMMAND = '__ENDOFCOMMAND__\n'
 
 const execs = {}
