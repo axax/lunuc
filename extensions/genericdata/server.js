@@ -439,7 +439,7 @@ Hook.on('AggregationBuilderBeforeQuery', async ({db, type, filters}) => {
             }
         }
         Object.keys(filters.parts).forEach(key => {
-            if (key.indexOf('.') < 0 && key !== 'data' && key !== '_id' && key !== 'definition' && key !== 'createdBy') {
+            if (key.indexOf('.') < 0 && key !== 'data' && key !== '_id' && key !== 'definition' && key !== 'createdBy' && key !== 'ownerGroup') {
                 filters.parts['data.' + key] = filters.parts[key]
                 delete filters.parts[key]
             }
