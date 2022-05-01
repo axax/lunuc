@@ -71,8 +71,7 @@ class FilesContainer extends React.Component {
                     if (error) return `Error! ${error.message}`
                     if (!data.run) return 'No data'
                     const ext = file.slice((file.lastIndexOf('.') - 1 >>> 0) + 2)
-
-                    return <CodeEditor lineNumbers onChange={c => {
+                    return <CodeEditor lineNumbers controlled onChange={c => {
                         this.fileChange(space+dir + '/' + file, c)
                     }} type={ext || 'text' }>{data.run.response}</CodeEditor>
                 }}
