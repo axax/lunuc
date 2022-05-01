@@ -329,8 +329,10 @@ const Util = {
                 if (resize === 'auto' || resize.responsive) {
                     const ww = window.innerWidth
                     if (!w || w > ww) {
-                        if (ww <= 800) {
-                            w = 800
+                        if (ww <= 720) {
+                            w = 720
+                        } else if (ww <= 1024) {
+                            w = 1024
                         } else if (ww <= 1200) {
                             w = 1200
                         } else if (ww <= 1400) {
