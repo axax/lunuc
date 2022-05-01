@@ -21,7 +21,7 @@ const {UPLOAD_DIR} = config
 
 const ABS_UPLOAD_DIR = path.join(__dirname, '../../' + UPLOAD_DIR)
 
-const SKIP_CAPABILITY_CHECK = ['ls -l', 'less ', 'pwd', 'ls', 'ping']
+const SKIP_CAPABILITY_CHECK = ['ls -l', 'pwd', 'ls']
 const ENDOFCOMMAND = '__ENDOFCOMMAND__\n'
 
 const execs = {}
