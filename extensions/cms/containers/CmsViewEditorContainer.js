@@ -1207,7 +1207,6 @@ class CmsViewEditorContainer extends React.Component {
     saveUnsafedChanges() {
         // blur on unload to make sure everything gets saved
         const curElement = document.activeElement
-        console.log(curElement)
         curElement.blur()
 
         // clear timeouts
@@ -1465,18 +1464,21 @@ class CmsViewEditorContainer extends React.Component {
         }
 
         const settingKey = pageSetting ? 'EditorPageOptions' : 'EditorOptions'
+        const stateSettings = this.state[settingKey]
 
-        this.setState({
-            [settingKey]: Object.assign({}, this.state[settingKey], {
-                [key]: value,
-                __isDirty: true
+        if(!stateSettings || Util.shallowCompare(stateSettings[key], value)) {
+            this.setState({
+                [settingKey]: Object.assign({}, stateSettings, {
+                    [key]: value,
+                    __isDirty: true
+                })
+            }, () => {
+                this.saveSettings()
+                if (callback && typeof callback === 'function') {
+                    callback()
+                }
             })
-        }, () => {
-            this.saveSettings()
-            if (callback && typeof callback === 'function') {
-                callback()
-            }
-        })
+        }
     }
 
     saveSettings() {
@@ -1484,7 +1486,6 @@ class CmsViewEditorContainer extends React.Component {
         this._saveSettings = (callback) => {
 
             const {EditorOptions, EditorPageOptions} = this.state
-
             if (EditorOptions.__isDirty) {
                 delete EditorOptions.__isDirty
                 this.props.setKeyValue({

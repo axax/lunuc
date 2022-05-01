@@ -15,11 +15,13 @@ export default () => {
     })
 
     Hook.on('ApiClientWsResponse', ({payload}) => {
-        const data = payload.data.subscribeGenericData
-        if(data){
-            data.data.forEach(item=>{
-                item.data = JSON.parse(item.data)
-            })
+        if(payload && payload.data) {
+            const data = payload.data.subscribeGenericData
+            if (data) {
+                data.data.forEach(item => {
+                    item.data = JSON.parse(item.data)
+                })
+            }
         }
     })
 
