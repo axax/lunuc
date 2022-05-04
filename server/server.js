@@ -544,7 +544,6 @@ function hasHttpsWwwRedirect(host, req, res) {
                     const {browser, version} = parseUserAgent(agent)
 
 
-                    console.log(`${req.connection.remoteAddress}: Redirect to https ${newhost} / user-agent: ${agent} / browser=${browser} / version=${version}`)
 
                     if ((browser === 'safari' && version < 6) ||
                         (browser === 'firefox' && version <= 12) ||
@@ -554,6 +553,8 @@ function hasHttpsWwwRedirect(host, req, res) {
                         (browser === 'msie' && version <= 6)) {
                         // for browser that doesn't support tls 1.2
                     } else {
+                        console.log(`${req.connection.remoteAddress}: Redirect to https ${newhost} / user-agent: ${agent} / browser=${browser} / version=${version}`)
+
                         res.writeHead(301, {'Location': 'https://' + newhost + req.url})
                         res.end()
                         return true

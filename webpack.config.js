@@ -152,11 +152,7 @@ const config = {
     module: {
         rules: [
             {
-                test: /\.js$/,
-                /*resolve: {
-                    fullySpecified: false
-                },*/
-                exclude: excludeFunction,
+                test: /\.(js|jsx|tsx|ts)$/,
                 loader: 'babel-loader'
             },
             {
