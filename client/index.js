@@ -207,13 +207,14 @@ function mainInit() {
 
 if (!window.LUNUC_PREPARSED) {
     const noneBasicEs6 = (() => {
-            if (window.fetch) {
+            if (window.fetch && window.AbortController) {
                 return false
             }
             try {
                 new Function('(a={x:1})=>{const {x}=a;let b=1;return `${a}`}')
                 return false
             } catch (err) {
+                console.log(err)
                 return true
             }
         })(),
