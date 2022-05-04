@@ -9,8 +9,11 @@ export const parseUserAgent = (agent, botregex = /WhatsApp|TelegramBot|AhrefsBot
         const agentParts = agent.toLowerCase().split(' ')
 
         if (agentParts.length > 3) {
-
-            if (agentParts[0].indexOf('opera/') === 0) {
+            const androidPos = agentParts.indexOf('android');
+            if(androidPos>=0 && agentParts[androidPos+1]){
+                browser='android'
+                version=parseFloat(agentParts[androidPos+1])
+            }else if (agentParts[0].indexOf('opera/') === 0) {
                 browser = 'opera'
                 version = parseFloat(agentParts[0].substring(6))
             } else if (agentParts[agentParts.length - 1].endsWith(')')) {
@@ -42,3 +45,7 @@ export const parseUserAgent = (agent, botregex = /WhatsApp|TelegramBot|AhrefsBot
     return {browser, version, isBot}
 
 }
+
+/*console.log(parseUserAgent('Mozilla/5.0 (Linux; Android 4.4.2; SUNSET Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/30.0.0.0 Mobile Safari/537.36'))
+console.log(parseUserAgent('Mozilla/5.0 (Linux; Android 8.0.0; Android SDK built for x86 Build/OSR1.180418.026) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Mobile Safari/537.36'))
+*/

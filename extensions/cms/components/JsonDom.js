@@ -1249,6 +1249,7 @@ class JsonDom extends React.Component {
         } catch (e) {
             this.emitJsonError(e, {loc: 'Template'})
             console.error('Error in renderTemplate', e)
+            console.log(str)
             return str
         }
     }

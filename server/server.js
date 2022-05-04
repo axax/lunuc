@@ -424,7 +424,11 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
     const agent = req.headers['user-agent']
     const {version, browser, isBot} = parseUserAgent(agent, hostrule.botregex || (hostrules.general && hostrules.general.botregex))
 
-    if (isBot || (browser === 'firefox' && version <= 12) || (browser === 'chrome' && version <= 16) || (browser === 'msie' && version <= 6)) {
+    if (isBot ||
+        (browser === 'firefox' && version <= 12) ||
+        (browser === 'chrome' && version <= 16) ||
+        (browser === 'android' && version < 4) ||
+        (browser === 'msie' && version <= 6)) {
 
         if ( req.headers.accept && req.headers.accept.indexOf('text/html') < 0 && req.headers.accept.indexOf('*/*') < 0) {
             console.log('headers not valid', req.headers.accept)
@@ -545,6 +549,7 @@ function hasHttpsWwwRedirect(host, req, res) {
                     if ((browser === 'safari' && version < 6) ||
                         (browser === 'firefox' && version <= 12) ||
                         (browser === 'chrome' && version <= 16) ||
+                        (browser === 'android' && version < 5) ||
                         (browser === 'opera' && version <= 10) ||
                         (browser === 'msie' && version <= 6)) {
                         // for browser that doesn't support tls 1.2
