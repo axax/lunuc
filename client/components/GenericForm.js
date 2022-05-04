@@ -287,7 +287,7 @@ class GenericForm extends React.Component {
                                 timeFormat: "H:i",
                                 defaultDate: null,
                                 altFormat: field.uitype === 'datetime' ? 'd.m.Y H:i' : 'd.m.Y',
-                                dateFormat: "Z"
+                                dateFormat: 'Z'
                             })
                         }
 

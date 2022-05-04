@@ -1138,7 +1138,10 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
                     if (hostrule.redirects) {
 
-                        let redirect = hostrule.redirects[urlPathname]
+                        let redirect = hostrule.redirects[urlPathname+parsedUrl.search]
+                        if(!redirect) {
+                            redirect = hostrule.redirects[urlPathname]
+                        }
                         if (!redirect) {
                             if (urlPathname.endsWith('/')) {
                                 redirect = hostrule.redirects[urlPathname.slice(0, -1)]
