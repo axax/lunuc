@@ -916,7 +916,7 @@ class CmsViewEditorContainer extends React.Component {
             }
             toolbarRight.push(
                 <Button key="buttonBack" size="small" color="inherit" onClick={e => {
-                    this.props.history.push(config.ADMIN_BASE_URL + '/cms' + (_app_._cmsLastSearch ? _app_._cmsLastSearch : ''))
+                    this.props.history.push(config.ADMIN_BASE_URL)
                 }}>Admin</Button>,
                 <Button key="buttonLogout" size="small" color="inherit" onClick={() => {
                     this.props.history.push(`${config.ADMIN_BASE_URL}/logout?forward=${encodeURIComponent('/' + props.slug + '?logout=true')}`)
