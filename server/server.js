@@ -1159,9 +1159,13 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                             redirect = hostrule.redirects['*']
                         }
                         if (redirect) {
-                            res.writeHead(301, {'Location': redirect})
-                            res.end()
-                            return true
+
+                            const agent = req.headers['user-agent']
+                            if( !agent || agent.indexOf('www.letsencrypt.org') < 0 ) {
+                                res.writeHead(301, {'Location': redirect})
+                                res.end()
+                                return true
+                            }
                         }
 
                     }
