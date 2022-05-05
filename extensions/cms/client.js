@@ -48,7 +48,7 @@ export default () => {
             component: (p) => {
                 _app_._cmsLastSearch = decodeURI(p.location.search)
                 return <TypesContainer baseUrl={ADMIN_BASE_URL + "/cms/"} fixType="CmsPage"
-                                       title="Content Management" {...p} />
+                                       title="Inhaltseiten" {...p} />
             }
         })
         routes.push({

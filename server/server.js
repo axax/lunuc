@@ -564,10 +564,14 @@ function hasHttpsWwwRedirect(host, req, res) {
         }
 
         if (newhost != host) {
-            console.log(`${req.connection.remoteAddress}: Redirect to ${newhost} / request url=${req.url}`)
-            res.writeHead(301, {'Location': (this.constructor.name === 'Server' ? 'http' : 'https') + '://' + newhost + req.url})
-            res.end()
-            return true
+            const agent = req.headers['user-agent']
+
+            if( !agent || agent.indexOf('www.letsencrypt.org') < 0 ) {
+                console.log(`${req.connection.remoteAddress}: Redirect to ${newhost} / request url=${req.url}`)
+                res.writeHead(301, {'Location': (this.constructor.name === 'Server' ? 'http' : 'https') + '://' + newhost + req.url})
+                res.end()
+                return true
+            }
         }
     }
     return false

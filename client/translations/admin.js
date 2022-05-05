@@ -2,7 +2,7 @@ export const translations = {
     de: {
         'BaseLayout.editMenu': 'Menü bearbeiten',
         'BaseLayout.resetMenu': 'Menü zurücksetzen',
-        'TypesContainer.filter': 'Suche (spezifisches Feld z.B. name=xyz)',
+        'TypesContainer.filter': 'Suche',
         'TypesContainer.createdAt': 'Erstellungszeit / ID',
         'TypesContainer.actions': 'Aktionen',
         'TypesContainer.user': 'Benutzer',
