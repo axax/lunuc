@@ -100,6 +100,13 @@ class Routes extends React.Component {
             if (o.pathname !== _app_.contextPath && o.pathname.indexOf(_app_.contextPath + '/') < 0) {
                 o.pathname = _app_.contextPath + o.pathname
             }
+
+            if(o.pathname.indexOf('?')>=0 && !o.search){
+                const spl = o.pathname.split('?')
+                o.pathname = spl[0]
+                o.search = '?'+spl[1]
+            }
+
             this.history._replace(o, state)
         }
 
