@@ -76,11 +76,13 @@ class Routes extends React.Component {
             return <ErrorPage />
         }
         const refPath = location.pathname + '/'
+        let hasUnauthorized = false
         for(let i = 0; i < this.routes.length;i++){
             const route = this.routes[i],
                 path = route.path
 
-            if (!isAuthenticated || !path.startsWith(ADMIN_BASE_URL) ||
+            if (!isAuthenticated ||
+                !path.startsWith(ADMIN_BASE_URL) ||
                 path.startsWith(ADMIN_BASE_URL + '/login') ||
                 path.startsWith(ADMIN_BASE_URL + '/profile') ||
                 path.startsWith(ADMIN_BASE_URL + '/types') ||
@@ -124,21 +126,23 @@ class Routes extends React.Component {
                     }
 
                     if(route.render){
-                        return route.render({match, location: newLocation, history: _app_.history})
+                        const comp = route.render({match, location: newLocation, history: _app_.history})
+                        if( comp ){
+                            return comp
+                        }
                     }
-
-                    return <route.component match={match} location={newLocation} history={_app_.history}></route.component>
+                    if(route.component) {
+                        return <route.component match={match} location={newLocation}
+                                                history={_app_.history}></route.component>
+                    }
                 }
-
-
-
             } else {
-                return <UnauthorizedPage />
+                hasUnauthorized = true
             }
-
-
         }
-
+        if(hasUnauthorized) {
+            return <UnauthorizedPage/>
+        }
         return <ErrorPage />
     }
 }

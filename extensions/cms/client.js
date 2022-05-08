@@ -70,7 +70,7 @@ export default () => {
                     return <CmsViewContainer location={location} history={history} slug={slug}/>
                 }
 
-                return <ErrorPage/>
+                return null
             }
         })
     }, 99)
