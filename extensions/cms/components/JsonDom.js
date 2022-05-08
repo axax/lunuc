@@ -1325,7 +1325,7 @@ class JsonDom extends React.Component {
     }
 
 
-    fetchMore = (callback, options) => {
+    fetchMore = (callback, options={}) => {
         const scope = this.getScope(this.props)
         if (scope.fetchingMore || !this._ismounted) {
             return
@@ -1347,13 +1347,18 @@ class JsonDom extends React.Component {
         }
 
         let meta
-        if (options && options.meta) {
+        if (options.meta) {
             meta = options.meta
         }
 
         this.props.onFetchMore({query, meta}, (res) => {
             if (res.cmsPage && res.cmsPage.resolvedData) {
                 const newData = JSON.parse(res.cmsPage.resolvedData)
+                if(options.ignoreKeys){
+                    options.ignoreKeys.forEach(key=>{
+                        delete newData[key]
+                    })
+                }
 
                 this.resolvedDataJson = deepMergeOptional({concatArrays: true}, this.resolvedDataJson, newData)
 

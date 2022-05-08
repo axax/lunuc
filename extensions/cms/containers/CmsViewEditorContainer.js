@@ -20,6 +20,7 @@ import {
     MenuList,
     MenuListItem,
     Button,
+    SimpleSelect,
     SimpleSwitch,
     SimpleDialog,
     SimpleMenu,
@@ -550,7 +551,18 @@ class CmsViewEditorContainer extends React.Component {
                                    value={(cmsPage.name ? cmsPage.name[_app_.lang] : '')}
                                    fullWidth={true}/>
 
-                        {canMangeCmsTemplate && <React.Fragment><SimpleSwitch
+                        {canMangeCmsTemplate && <React.Fragment>
+                            <SimpleSelect
+                                fullWidth={true}
+                                label="Url sensitive (refresh component on url or props change)"
+                                value={this.state.urlSensitiv=='true'?'full':this.state.urlSensitiv}
+                                style={{marginBottom:0,marginTop:0}}
+                                onChange={(e)=>{
+                                    this.handleFlagChange('urlSensitiv',null,e.target.value)
+                                }}
+                                items={[{name: 'None', value: ''}, {name: 'Full', value: 'full'}, {name: 'Client (nothing is sent to the server)', value: 'client'}]}
+                            /><br/>
+                            <SimpleSwitch
                             label="SSR (Server side Rendering)"
                             checked={!!this.state.ssr}
                             onChange={this.handleFlagChange.bind(this, 'ssr')}
@@ -559,11 +571,6 @@ class CmsViewEditorContainer extends React.Component {
                                 label="Public (is visible to everyone)"
                                 checked={!!this.state.public}
                                 onChange={this.handleFlagChange.bind(this, 'public')}
-                            /><br/>
-                            <SimpleSwitch
-                                label="Url sensitive (refresh component on url or props change)"
-                                checked={!!this.state.urlSensitiv}
-                                onChange={this.handleFlagChange.bind(this, 'urlSensitiv')}
                             /><br/>
                             <SimpleSwitch
                                 label="Always load assets (even when component is loaded dynamically)"
@@ -1562,7 +1569,7 @@ CmsViewEditorContainer.propTypes = {
     /* if dynamic is set to true that means it is a child of another CmsViewContainer */
     dynamic: PropTypes.bool,
     /* if true data gets refetched with query on url change*/
-    urlSensitiv: PropTypes.bool,
+    urlSensitiv: PropTypes.any,
     /* actions */
     _cmsActions: PropTypes.object.isRequired,
     /* udate data */
@@ -1573,7 +1580,7 @@ CmsViewEditorContainer.propTypes = {
 
 
 const CmsViewEditorContainerWithGql = compose(
-    graphql(`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$realSlug:String,$name:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:Boolean,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$loadPageOptions:Boolean,$ssrStyle:Boolean,$publicEdit:Boolean,$compress:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,realSlug:$realSlug,name:$name,script:$script,style:$style,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,loadPageOptions:$loadPageOptions,compress:$compress,ssrStyle:$ssrStyle,publicEdit:$publicEdit,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug realSlug name {${config.LANGUAGES.join(' ')}} template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
+    graphql(`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$realSlug:String,$name:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:String,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$loadPageOptions:Boolean,$ssrStyle:Boolean,$publicEdit:Boolean,$compress:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,realSlug:$realSlug,name:$name,script:$script,style:$style,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,loadPageOptions:$loadPageOptions,compress:$compress,ssrStyle:$ssrStyle,publicEdit:$publicEdit,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug realSlug name {${config.LANGUAGES.join(' ')}} template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, realSlug, ...rest}, key, cb) => {
 

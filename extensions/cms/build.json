@@ -76,8 +76,7 @@
         {
           "name": "urlSensitiv",
           "label": "Url sensitiv",
-          "hidden": true,
-          "type": "Boolean"
+          "hidden": true
         },
         {
           "name": "parseResolvedData",

@@ -132,9 +132,10 @@ class CmsViewContainer extends React.Component {
                             query,
                             meta
                         },
-                        updateQuery: (prev, {fetchMoreResult}) => {
-
-                            cb(fetchMoreResult)
+                        updateQuery: (prev, data) => {
+                            if(data) {
+                                cb(data.fetchMoreResult)
+                            }
                         }
                     })
                 }
@@ -484,7 +485,7 @@ CmsViewContainer.propTypes = {
     /* if dynamic is set to true that means it is a child of another CmsViewContainer */
     dynamic: PropTypes.bool,
     /* if true data gets refetched with query on url change*/
-    urlSensitiv: PropTypes.bool,
+    urlSensitiv: PropTypes.any,
     inEditor: PropTypes.bool
 }
 
