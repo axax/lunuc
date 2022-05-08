@@ -294,6 +294,7 @@ class JsonDom extends React.Component {
             }
 
             if (slugChanged) {
+                this.bindings = {}
                 // componentWillUnmount is not triggered for the root JsonDom when it is reused be another component
                 // So if the slug has changed and the component is still mounted we have to call unmount
                 this.triggerUnmountEvent()
