@@ -255,20 +255,10 @@ hr:after {
                 <div className="_2">{message}</div>
                 {code==401 ? <a className='btn' onClick={(e) => {
                     e.preventDefault()
-                    /*if(document.referrer && document.referrer.indexOf(location.origin)===0) {
-                        window.open(document.referrer,'_self')
-                    } else {*/
                     location.href = location.origin+'/admin/login?forward='+location.pathname
-                    //history.go(-1)
-                    /*}*/
                 }} href="#">Mit einem anderen Benutzer anmelden</a>: <a className='btn' onClick={(e) => {
                     e.preventDefault()
-                    /*if(document.referrer && document.referrer.indexOf(location.origin)===0) {
-                        window.open(document.referrer,'_self')
-                    } else {*/
                     location.href = location.origin
-                    //history.go(-1)
-                    /*}*/
                 }} href="#">Back to Home</a>}
 
 

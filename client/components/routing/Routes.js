@@ -1,11 +1,8 @@
 import React from 'react'
 import {connect} from 'react-redux'
 import PropTypes from 'prop-types'
-import {Router, Route, Switch} from 'react-router-dom'
-import PrivateRoute from './PrivateRoute'
 import Hook from 'util/hook'
 import config from 'gen/config-client'
-import {createBrowserHistory} from 'history'
 
 const {ADMIN_BASE_URL} = config
 import LogoutContainer from 'client/containers/LogoutContainer'
@@ -14,6 +11,8 @@ import {
     CAPABILITY_ACCESS_ADMIN_PAGE
 } from 'util/capabilities'
 import {scrollByHash} from '../../../extensions/cms/util/urlUtil'
+import {RouteHistory, Link} from '../../util/route'
+import Util from '../../util'
 
 const LoginContainer = (props) => <Async {...props}
                                          load={import(/* webpackChunkName: "admin" */ '../../containers/LoginContainer')}/>
@@ -34,14 +33,13 @@ const HomeContainer = (props) => <Async {...props}
 const ErrorPage = (props) => <Async {...props}
                                     load={import(/* webpackChunkName: "admin" */ '../../components/layout/ErrorPage')}/>
 
-const UnauthorizedPage = (props) => (
+const UnauthorizedPage = () => (
     <ErrorPage code="401" title="Unauthorized" background="#f4a742"/>
 )
 
 class Routes extends React.Component {
 
     adminBaseUrlPlain = ADMIN_BASE_URL.slice(1)
-    history = createBrowserHistory()
 
     routes = [
         {exact: true, private: true, path: ADMIN_BASE_URL + '/', component: HomeContainer},
@@ -58,92 +56,90 @@ class Routes extends React.Component {
 
     constructor(props) {
         super(props)
-
+        _app_.history = new RouteHistory()
         Hook.call('Routes', {routes: this.routes, container: this})
-        this.history._urlStack = [location.href.substring(location.origin.length)]
-        // override push and replace methode to prepend language code if needed
-        this.history._replace = this.history.replace
-        this.history._push = this.history.push
-        this.history.push = (path, state) => {
-
-            let newPath
-            if (path.constructor === Object)
-                path = path.pathname
-            if (path.indexOf('#') !== 0 && path.split('?')[0].split('#')[0] !== _app_.contextPath && path.indexOf(_app_.contextPath + '/') !== 0) {
-                newPath = _app_.contextPath + path
-            } else {
-                newPath = path
-            }
-
-            if (!this.history._urlStack) {
-                this.history._urlStack = []
-            }
-            const index = this.history._urlStack.indexOf(path)
-            if (index >= 0) {
-                this.history._urlStack.splice(index, 1);
-            }
-
-            this.history._urlStack.unshift(path)
-            if (this.history._urlStack.length > 10) {
-                this.history._urlStack = this.history._urlStack.slice(0, 9)
-            }
-            this.history._last = this.history.location.pathname
-            // encodeURI again as it gets decoded in react routing
-            this.history._push(encodeURI(newPath), state)
-        }
-        this.history.replace = (o, state) => {
-
-            if (o.constructor !== Object) {
-                o = {pathname: o}
-            }
-
-            if (o.pathname !== _app_.contextPath && o.pathname.indexOf(_app_.contextPath + '/') < 0) {
-                o.pathname = _app_.contextPath + o.pathname
-            }
-
-            if(o.pathname.indexOf('?')>=0 && !o.search){
-                const spl = o.pathname.split('?')
-                o.pathname = spl[0]
-                o.search = '?'+spl[1]
-            }
-
-            this.history._replace(o, state)
-        }
-
+        this.routes.sort((a, b) => b.path.length - a.path.length)
         scrollByHash(location.href, {})
+    }
 
+    componentDidMount() {
+        _app_.history.listen(()=>{
+            this.forceUpdate()
+        })
     }
 
     render() {
         const {user: {isAuthenticated, userData}} = this.props
         const capabilities = (userData && userData.role && userData.role.capabilities) || []
-        return <Router history={this.history}>
-            <Switch>
-                {_app_.redirect404 !== location.pathname && this.routes.map((o, i) => {
-                    if (!isAuthenticated || !o.path.startsWith(ADMIN_BASE_URL) ||
-                        o.path.startsWith(ADMIN_BASE_URL + '/login') ||
-                        o.path.startsWith(ADMIN_BASE_URL + '/profile') ||
-                        o.path.startsWith(ADMIN_BASE_URL + '/types') ||
-                        o.path.startsWith(ADMIN_BASE_URL + '/logout') ||
-                        capabilities.indexOf(CAPABILITY_ACCESS_ADMIN_PAGE) >= 0) {
-                        if (o.private) {
-                            return <PrivateRoute key={i} path={_app_.contextPath + o.path}
-                                                 isAuthenticated={isAuthenticated}
-                                                 exact={o.exact}
-                                                 component={o.component}/>
-                        } else {
-                            return <Route key={i} path={_app_.contextPath + o.path} exact={o.exact}
-                                          component={o.component}
-                                          render={o.render}/>
-                        }
-                    } else {
-                        return <Route key={i} path={_app_.contextPath + o.path} exact={o.exact}
-                                      component={UnauthorizedPage}/>
+
+        if(_app_.redirect404 === location.pathname){
+            return <ErrorPage />
+        }
+        const refPath = location.pathname + '/'
+        for(let i = 0; i < this.routes.length;i++){
+            const route = this.routes[i],
+                path = route.path
+
+            if (!isAuthenticated || !path.startsWith(ADMIN_BASE_URL) ||
+                path.startsWith(ADMIN_BASE_URL + '/login') ||
+                path.startsWith(ADMIN_BASE_URL + '/profile') ||
+                path.startsWith(ADMIN_BASE_URL + '/types') ||
+                path.startsWith(ADMIN_BASE_URL + '/logout') ||
+                capabilities.indexOf(CAPABILITY_ACCESS_ADMIN_PAGE) >= 0) {
+
+                const colonPos = path.indexOf(':')
+
+                let startPath=_app_.contextPath, patternPath
+                if (colonPos >= 0) {
+                    startPath += path.substring(0, colonPos)
+                    patternPath = path.substring(colonPos)
+                } else {
+                    startPath += path
+                }
+
+
+                if( refPath.indexOf(startPath)===0 ){
+
+                    if(!patternPath && route.exact && Util.removeTrailingSlash(location.pathname)!==Util.removeTrailingSlash(startPath)){
+                        continue
                     }
-                })}
-                <Route component={ErrorPage}/>
-            </Switch>
-        </Router>
+
+                    const newLocation = Object.assign({},location)
+                    const match = {params:{}}
+                    if(patternPath){
+                        // dirty implementation.... works only for one parameter
+                        const refPatternPath = location.pathname.substring(startPath.length)
+                        patternPath.split('/').forEach(p=>{
+                            p = p.substring(1)
+                            if(p.endsWith('*')){
+                                p = p.substring(0,p.length-1)
+                                match.params[p] = refPatternPath
+                            }
+                        })
+                    }
+
+                    if( route.private && !isAuthenticated){
+                        _app_.history.replace(config.ADMIN_BASE_URL + '/login?forward='+location.pathname)
+                        return null
+                    }
+
+                    if(route.render){
+                        return route.render({match, location: newLocation, history: _app_.history})
+                    }
+
+                    return <route.component match={match} location={newLocation} history={_app_.history}></route.component>
+                }
+
+
+
+            } else {
+                return <UnauthorizedPage />
+            }
+
+
+        }
+
+        return <ErrorPage />
     }
 }
 

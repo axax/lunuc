@@ -6,7 +6,6 @@ import Toolbar from '@mui/material/Toolbar'
 import Button from '@mui/material/Button'
 import config from 'gen/config-client'
 import Typography from '@mui/material/Typography'
-import { useHistory } from 'react-router-dom'
 
 class SimpleHeaderMenu extends React.Component {
 
@@ -21,8 +20,7 @@ class SimpleHeaderMenu extends React.Component {
     }
 
     linkTo(item) {
-        const history = useHistory()
-        history.push(item.to)
+        _app_.history.push(item.to)
     }
 
     isActive(link) {

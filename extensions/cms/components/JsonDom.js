@@ -10,7 +10,8 @@ import {getComponentByKey} from '../util/jsonDomUtil'
 import DomUtil from 'client/util/dom'
 import Async from 'client/components/Async'
 import CmsViewContainer from '../containers/CmsViewContainer'
-import {Link, Redirect} from 'react-router-dom'
+//import {Link, Redirect} from 'react-router-dom'
+import {Redirect, Link} from 'client/util/route'
 import JsonDomInput from './JsonDomInput'
 import {deepMerge, deepMergeOptional} from 'util/deepMerge'
 import {preprocessCss} from '../util/cssPreprocessor'
@@ -895,7 +896,7 @@ class JsonDom extends React.Component {
 
                 } else {
 
-                    const {editMode, location, match, history, children} = this.props
+                    const {editMode, location, history, children} = this.props
                     const key = !editMode && k ? k : rootKey + '.' + aIdx, eleProps = {}
                     let tagName, className
                     if (!t || t.constructor !== String) {
@@ -1020,7 +1021,6 @@ class JsonDom extends React.Component {
                         // that's way we pass it directly to the reactElement as a prop
                         eleProps.location = location
                         eleProps.history = history
-                        eleProps.match = match
                         eleProps._this = this
                         eleProps.inEditor = this.props.inEditor
                     }
@@ -1571,7 +1571,6 @@ JsonDom.propTypes = {
     /* Routing */
     history: PropTypes.object,
     location: PropTypes.object,
-    match: PropTypes.object,
 
     children: PropTypes.any,
     id: PropTypes.string,

@@ -5,7 +5,6 @@ import compose from 'util/compose'
 import {gql} from '@apollo/client'
 import {Button, Typography, Col, Row} from 'ui/admin'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
-import { useHistory } from 'react-router-dom'
 import PrettyResume from '../components/PrettyResume'
 import FileDrop from 'client/components/FileDrop'
 import {_t, registerTrs} from 'util/i18n'
@@ -16,7 +15,7 @@ const withLinkedInCallback = (Container) => {
 
     return (props) => {
 
-        const history = useHistory(), loc = window.location
+        const loc = window.location
 
         const params = new URLSearchParams(loc.search)
         const code = params.get('code'), state = params.get('state')
@@ -24,7 +23,7 @@ const withLinkedInCallback = (Container) => {
             if (state === sessionStorage.getItem('linkedInState')) {
                 sessionStorage.removeItem('linkedInState')
                 sessionStorage.setItem('linkedInCode', code)
-                history.push(loc.pathname)
+                _app_.history.push(loc.pathname)
             }
         }
         return <Container linkedInCode={sessionStorage.getItem('linkedInCode')} {...props} />

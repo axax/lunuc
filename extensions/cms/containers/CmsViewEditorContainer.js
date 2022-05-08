@@ -130,7 +130,7 @@ class CmsViewEditorContainer extends React.Component {
             window.addEventListener('beforeunload', this._handleWindowClose)
             //window.addEventListener('blur', this._handleWindowClose)
 
-            const unblock = history.block((e) => {
+            history.block((e) => {
                 this.saveUnsafedChanges()
                 return true
             })
@@ -253,7 +253,6 @@ class CmsViewEditorContainer extends React.Component {
                 return <NetworkStatusHandler/>
             }
         }
-
         const loadingState = this.props.loading
 
         const isSmallScreen = window.innerWidth < 1000
@@ -1215,7 +1214,7 @@ class CmsViewEditorContainer extends React.Component {
         }
 
         if (this._autoSaveScriptTimeout) {
-            this._autoSaveScript()
+            this._autoSaveScript(true)
         }
 
         if (this._autoSaveStyleTimeout) {
@@ -1277,12 +1276,18 @@ class CmsViewEditorContainer extends React.Component {
             this.setState({script})
         }
 
-        this._autoSaveScript = () => {
+        this._autoSaveScript = (force) => {
             if (this._scriptTimeout) {
-                this._autoSaveScriptTimeout = setTimeout(this._autoSaveScript, 5000)
+                if(force){
+                    this._scriptTimeout = clearTimeout(this._scriptTimeout)
+                    this._autoSaveScriptTimeout = clearTimeout(this._autoSaveScriptTimeout)
+                    this.setState({script})
+                    this.saveCmsPage(script, this.props.cmsPage, 'script')
+                }else {
+                    this._autoSaveScriptTimeout = setTimeout(this._autoSaveScript, 5000)
+                }
             } else {
-                clearTimeout(this._autoSaveScriptTimeout)
-                this._autoSaveScriptTimeout = 0
+                this._autoSaveScriptTimeout = clearTimeout(this._autoSaveScriptTimeout)
                 this.saveCmsPage(this.state.script, this.props.cmsPage, 'script')
                 delete this._autoSaveScript
             }

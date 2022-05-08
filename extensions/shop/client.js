@@ -33,7 +33,7 @@ export default () => {
         }
     })
 
-    Hook.on('CMSSlug', ({match}) => {
+   /* Hook.on('CMSSlug', ({match}) => {
         if (match.params.slug) {
             // this is a product page
             // allow pretty url
@@ -43,5 +43,5 @@ export default () => {
                 match.params.slug = 'shop/detail'
             }
         }
-    })
+    })*/
 }

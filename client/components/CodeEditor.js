@@ -256,7 +256,7 @@ class CodeEditor extends React.Component {
 
 
     render() {
-        const {height, onFileChange, onChange, onBlur, onScroll, error, onError, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, scrollPosition, fileSplit} = this.props
+        const {height, onFileChange, onChange, onBlur, onScroll, error, onError, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, fileSplit} = this.props
         const {stateError, showFileSplit, fileIndex, showContextMenu, editData, data, renderInWindow} = this.state
         const options = {
                 mode: {},
@@ -574,12 +574,7 @@ class CodeEditor extends React.Component {
                 key="editor"
                 editorDidMount={editor => {
                     this._editor = editor
-                    if (scrollPosition) {
-                        editor.scrollTo(scrollPosition.left, scrollPosition.top)
-                    }
-                    if (height) {
-                        editor.setSize(null, height)
-                    }
+                    this.setEditorPosition()
                 }}
                 hasError={hasError}
                 value={value}
@@ -678,8 +673,19 @@ class CodeEditor extends React.Component {
             }}>{comp}</RenderInNewWindow>
 
         }
-
         return comp
+    }
+
+    setEditorPosition(){
+        if(this._editor) {
+            const {scrollPosition, height} = this.props
+            if (scrollPosition) {
+                this._editor.scrollTo(scrollPosition.left, scrollPosition.top)
+            }
+            if (height) {
+                this._editor.setSize(null, height)
+            }
+        }
     }
 }
 

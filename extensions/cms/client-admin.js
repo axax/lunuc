@@ -3,7 +3,7 @@ import Hook from 'util/hook'
 import config from 'gen/config-client'
 const {ADMIN_BASE_URL, PRETTYURL_SEPERATOR} = config
 import CmsViewContainer from './containers/CmsViewContainer'
-import {Link} from 'react-router-dom'
+import {Link} from 'client/util/route'
 import {_t, registerTrs} from '../../util/i18n'
 import {
     Button,

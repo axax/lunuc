@@ -11,7 +11,6 @@ import ListItem from '@mui/material/ListItem'
 import ListItemText from '@mui/material/ListItemText'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import {connect} from 'react-redux'
-import {useHistory} from 'react-router-dom'
 import React, {useState} from 'react'
 import Util from '../../../../../util'
 import ExpandLess from '@mui/icons-material/ExpandLess'
@@ -108,7 +107,6 @@ const findActiveItem = (props) => {
 
 const MenuList = (props) => {
     const {items, isAuthenticated, depth, onMenuChange} = props
-    const history = useHistory()
     const activeItem = findActiveItem(props)
 
     const [open, setOpen] = React.useState({})
@@ -126,7 +124,7 @@ const MenuList = (props) => {
                         setOpen(Object.assign({}, open,{[i]:!isOpen}))
                     }
                     if(item.to) {
-                        history.push(item.to)
+                        _app_.history.push(item.to)
                     }
                 }}
                                   key={i}

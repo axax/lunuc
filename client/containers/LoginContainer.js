@@ -2,8 +2,7 @@ import React from 'react'
 import {bindActionCreators} from 'redux'
 import {connect} from 'react-redux'
 import PropTypes from 'prop-types'
-import {Redirect} from 'react-router-dom'
-import {Link} from 'react-router-dom'
+import {Link, Redirect} from '../util/route'
 import * as UserActions from 'client/actions/UserAction'
 import * as ErrorHandlerAction from 'client/actions/ErrorHandlerAction'
 import {Card, SimpleButton, TextField, Row, Col, Typography} from 'ui/admin'
@@ -79,7 +78,7 @@ class LoginContainer extends React.Component {
 
                     //this.setState({redirectToReferrer: true})
                     // make sure translations are loaded
-                    window.location = this.getFromUrl().pathname
+                    window.location = this.getFromUrl()
 
                 } else {
                     this.setState({error: response.data.login.error})
@@ -92,23 +91,11 @@ class LoginContainer extends React.Component {
     }
 
     getFromUrl(){
-        const {location} = this.props
-        let from
-
-        if (location && location.state) {
-            from = location.state.from
+        const params = Util.extractQueryParams()
+        if (params.forward) {
+            return params.forward
         }
-        if (!from) {
-            const params = Util.extractQueryParams()
-            if (params.forward) {
-                from = {pathname: params.forward}
-            }
-        }
-        if (!from) {
-            from = {pathname: config.ADMIN_BASE_URL}
-        }
-
-        return from
+        return config.ADMIN_BASE_URL
     }
 
     render() {
@@ -130,7 +117,7 @@ class LoginContainer extends React.Component {
                             <form noValidate autoComplete="off">
                                 <Typography variant="h3" gutterBottom>{_t('Login.title')}</Typography>
 
-                                <Typography gutterBottom>{_t('Login.subtitle', from)}</Typography>
+                                <Typography gutterBottom>{_t('Login.subtitle', {pathname:from})}</Typography>
 
 
                                 <TextField label={_t('Login.username')}
@@ -192,7 +179,6 @@ class LoginContainer extends React.Component {
 
 
 LoginContainer.propTypes = {
-    location: PropTypes.object,
     signupLink: PropTypes.string,
     /* UserReducer */
     userActions: PropTypes.object.isRequired,

@@ -4,7 +4,7 @@ import {connect} from 'react-redux'
 import {bindActionCreators} from 'redux'
 import * as Actions from 'client/actions/NotificationAction'
 import {Snackbar, CloseIconButton, theme} from 'ui/admin'
-import {Link} from 'react-router-dom'
+import {Link} from '../../util/route'
 import {client} from '../../middleware/graphql'
 
 class NotificationHandler extends React.Component {

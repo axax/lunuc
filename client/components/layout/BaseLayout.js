@@ -60,8 +60,7 @@ import config from 'gen/config-client'
 import * as UserActions from 'client/actions/UserAction'
 import {UIProvider} from 'ui/admin'
 import 'gen/extensions-client-admin'
-import {useHistory} from 'react-router-dom'
-import {Link} from 'react-router-dom'
+import {Link} from '../../util/route'
 import {useKeyValues, setKeyValue} from '../../util/keyvalue'
 import {CAPABILITY_MANAGE_TYPES} from '../../../util/capabilities'
 
@@ -294,19 +293,17 @@ const BaseLayout = props => {
 
     const username = user.userData ? user.userData.username : ''
 
-    const history = useHistory()
-
     const headerRight = []
 
     if (isAuthenticated) {
         headerRight.push(<Button key="logout" color="inherit" size="small"
                                  onClick={() => {
-                                     history.push(ADMIN_BASE_URL + '/logout')
+                                     _app_.history.push(ADMIN_BASE_URL + '/logout')
                                  }}>Logout {username}</Button>)
     } else {
         headerRight.push(<Button key="login" color="inherit" size="small"
                                  onClick={() => {
-                                     history.push(ADMIN_BASE_URL + '/login')
+                                     _app_.history.push(ADMIN_BASE_URL + '/login')
                                  }}>Login</Button>)
     }
 
@@ -323,7 +320,7 @@ const BaseLayout = props => {
             <IconButton key={'headerAction' + index}
                         onClick={() => {
 
-                            history.push(item.to)
+                            _app_.history.push(item.to)
                         }}
                         color="inherit"><Icon/></IconButton>
         )
@@ -345,13 +342,13 @@ const BaseLayout = props => {
                                         }
                                     }
                                 }}
-                                extra={!userKeys.loading && settings.history !== false && history._urlStack && history._urlStack.length > 0 &&
+                                extra={!userKeys.loading && settings.history !== false && _app_.history._urlStack && _app_.history._urlStack.length > 0 &&
                                 <div style={{
                                     padding: '1rem',
                                     border: '1px solid #f1f1f1',
                                     margin: '1rem',
                                     fontSize: '0.8rem'
-                                }}>{history._urlStack.map((u, i) => {
+                                }}>{_app_.history._urlStack.map((u, i) => {
                                     return <Link key={'urlstack' + i} style={{
                                         display: 'block', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                                         overflow: 'hidden'

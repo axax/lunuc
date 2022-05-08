@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import config from 'gen/config-client'
 import BlankLayout from 'client/components/layout/BlankLayout'
-import {Link} from 'react-router-dom'
+import {Link} from 'client/util/route'
 import {Card, SimpleButton, TextField, Row, Col, Typography} from 'ui/admin'
 import {client} from '../middleware/graphql'
 
