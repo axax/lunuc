@@ -774,12 +774,12 @@ export default class AggregationBuilder {
                 dataQuery.push(...this.options.afterRootMatch)
             }
         }
-
         if (hasResultMatch) {
             dataFacetQuery.push({$match: resultMatch})
-            if(this.options.resultLimit) {
-                dataFacetQuery.push({$limit: this.options.resultLimit})
-            }
+        }
+
+        if(this.options.resultLimit) {
+            dataFacetQuery.push({$limit: this.options.resultLimit})
         }
 
         if (includeCount) {
