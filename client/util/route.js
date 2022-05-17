@@ -57,8 +57,7 @@ export class RouteHistory {
             this._urlStack = this._urlStack.slice(0, 9)
         }
 
-        //this._blocker
-        //this._last = window.location.pathname
+//        this._last = window.location.pathname
 // encodeURI again as it gets decoded in react routing
 //this.history._push(encodeURI(newPath), state)
         if(this._callBlockers(newPath)) {

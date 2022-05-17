@@ -96,13 +96,13 @@ Hook.on('HookError', async ({entry, error}) => {
     }
 })
 
-Hook.on('invalidLogin', async ({context, db, username, ip}) => {
+Hook.on('invalidLogin', async ({context, db, username, ip, domain}) => {
     console.log(username, ip)
     GenericResolver.createEntity(db, {context}, 'Log', {
         location: 'login',
         type: 'invalidLogin',
         message: `invalid login attempt from ${username} with ip ${ip}`,
-        meta: {username, ip}
+        meta: {username, ip, domain}
     })
 })
 

@@ -54,7 +54,7 @@ export default () => {
         routes.push({
             // match everything but paths that start with ADMIN_BASE_URL
             exact: false, path: '/:slug*', render: ({match, location, history}) => {
-                //Hook.call('CMSSlug', {match})
+                Hook.call('CMSSlug', {match})
                 let slug = match.params.slug ? decodeURI(match.params.slug) : ''
 
                 if(slug.endsWith('/')){
