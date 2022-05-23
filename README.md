@@ -131,6 +131,11 @@ https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/
 #### When mongodb doesn't start
 `rm /tmp/mongodb-27017.sock`
 
+#### Update mongodb to latest version
+`sudo service mongod stop`
+`sudo apt-get purge mongodb-org*`
+`sudo apt-get install -y mongodb-org`
+
 #### auto-restart Mongodb
 
 1. Edit your mongod service: `sudo vi /lib/systemd/system/mongod.service`

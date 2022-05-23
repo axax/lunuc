@@ -36,13 +36,14 @@ export const findProjection = (key, projection) => {
             if (pro.constructor === Object) {
 
                 if (Object.keys(pro)[0] === key) {
-                    return pro[key]
+                    return {index:i, data:pro[key]}
                 }
             }else if(pro===key){
-                return key
+                return {index:i, data:key}
             }
         }
     }
+    return {}
 }
 
 export const projectionToQueryString = (projection) => {

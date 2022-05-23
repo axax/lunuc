@@ -85,11 +85,20 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
         if (projection) {
 
             const dataProjection = findProjection('data', projection)
-            if (dataProjection && dataProjection.constructor === Array) {
-                currentProjection = findProjection(field.name, dataProjection)
+            if (dataProjection.data && dataProjection.data.constructor === Array) {
+                const projectionResult = findProjection(field.name, dataProjection.data)
+                currentProjection = projectionResult.data
                 if (!currentProjection) {
                     //console.log(`no lookup for ${field.name} needed`)
                     return
+                }else{
+
+                    if(otherOptions.postLookup){
+                        dataProjection.data.splice(projectionResult.index, 1)
+                        dataProjection.data.push(field.name)
+                        return
+                    }
+
                 }
             }
 
@@ -252,6 +261,97 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions
 }, 99)
 
 
+async function postLookupResult(result, field, db, context) {
+    const itemCache = {}
+
+    for (let j = 0; j < result.results.length; j++) {
+        const item = result.results[j].data[field.name]
+
+        if (item) {
+
+            let tempItem = item
+            if (tempItem.constructor !== Array) {
+                tempItem = [tempItem]
+            }
+
+            const newItems = []
+            for (let k = 0; k < tempItem.length; k++) {
+
+                if (!itemCache[tempItem[k]]) {
+                    const itemResults = await GenericResolver.entities(db, context, 'GenericData', ['_id', {definition: ['_id']}, 'data'],
+                        {
+                            filter: `definition.name==${field.genericType} && _id==${tempItem[k]}`,
+                            limit: 1,
+                            includeCount: false,
+                            meta: field.genericType,
+                            postLookup:true,
+                            lookupLevel:0
+
+                        })
+
+                    itemCache[tempItem[k]] = itemResults.results.length > 0 ? itemResults.results[0] : null
+
+                    if (itemCache[tempItem[k]]) {
+                        itemCache[tempItem[k]].data = JSON.parse(itemCache[tempItem[k]].data)
+                        newItems.push(itemCache[tempItem[k]])
+                    }
+                }else{
+                    newItems.push(itemCache[tempItem[k]])
+                }
+
+            }
+            result.results[j].data[field.name] = newItems
+
+
+
+        }
+    }
+}
+
+async function postCheckResult(def, result, db, context, otherOptions) {
+    for (let i = 0; i < def.structure.fields.length; i++) {
+        const field = def.structure.fields[i]
+
+        // post lookup
+        if (field.genericType) {
+            if (otherOptions.postLookup) {
+
+                await postLookupResult(result, field, db, context)
+            }
+        }
+
+        if (field.dynamic) {
+            if (!field.dynamic.genericType) {
+                console.warn('field.dynamic.genericType is missing')
+            } else {
+
+                for (let j = 0; j < result.results.length; j++) {
+                    const item = result.results[j]
+                    const data = JSON.parse(item.data)
+                    const subData = await GenericResolver.entities(db, context, 'GenericData', ['_id', {definition: ['_id']}, 'data'],
+                        {
+                            filter: `definition.name==${field.dynamic.genericType}${field.dynamic.filter ? ' && ' + ClientUtil.replacePlaceholders(field.dynamic.filter, item) : ''}`,
+                            limit: 1000,
+                            includeCount: false,
+                            meta: field.dynamic.genericType
+                        })
+
+                    subData.results.forEach(subItem => {
+                        subItem.data = JSON.parse(subItem.data)
+                        subItem.__typename = field.type
+                    })
+
+                    data[field.name] = subData.results
+                    item.data = JSON.stringify(data)
+                }
+            }
+
+        }
+    }
+}
+
+
+
 /*
 Return the structure of the dynamic type as meta data
  */
@@ -265,37 +365,9 @@ Hook.on('typeLoaded', async ({type, db, context, result, otherOptions}) => {
 
 
             if (def && def.structure && def.structure.fields) {
-                for (let i = 0; i < def.structure.fields.length; i++) {
-                    const field = def.structure.fields[i]
-                    if (field.dynamic) {
 
-                        if (!field.dynamic.genericType) {
-                            console.warn('field.dynamic.genericType is missing')
-                        } else {
 
-                            for (let j = 0; j < result.results.length; j++) {
-                                const item = result.results[j]
-                                const data = JSON.parse(item.data)
-                                const subData = await GenericResolver.entities(db, context, 'GenericData', ['_id', {definition: ['_id']}, 'data'],
-                                    {
-                                        filter: `definition.name==${field.dynamic.genericType}${field.dynamic.filter ? ' && ' + ClientUtil.replacePlaceholders(field.dynamic.filter, item) : ''}`,
-                                        limit: 1000,
-                                        includeCount: false,
-                                        meta: field.dynamic.genericType
-                                    })
-
-                                subData.results.forEach(subItem => {
-                                    subItem.data = JSON.parse(subItem.data)
-                                    subItem.__typename = field.type
-                                })
-
-                                data[field.name] = subData.results
-                                item.data = JSON.stringify(data)
-                            }
-                        }
-
-                    }
-                }
+                await postCheckResult(def, result, db, context, otherOptions)
 
             }
 

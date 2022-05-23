@@ -142,6 +142,7 @@ class Print extends React.PureComponent {
 
         return <div className={classNames(classes.root, className)}>
             {showButtons !== false && <button className={classes.button}
+                                              id="printPdfButton"
                                               onClick={()=>{
                                                   this.createPdf()
                                               }}>{buttonLabel || 'Create PDF'}</button>}

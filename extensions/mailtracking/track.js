@@ -8,6 +8,7 @@ export const trackMail = async ({db, context, slug, mailResponse, req, message})
         subject: message.subject,
         text: message.text,
         html: message.html,
+        attachments: message.attachments,
         slug,
         response: mailResponse,
         createdBy: await Util.userOrAnonymousId(db, context)
