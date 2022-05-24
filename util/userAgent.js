@@ -1,5 +1,6 @@
-export const parseUserAgent = (agent, botregex = /WhatsApp|TelegramBot|AhrefsBot|bingbot|msnbot|YandexBot|PetalBot|Googlebot|facebookexternalhit|LinkedInBot|Twitterbot|Xing|AdsBot/) => {
 
+// /WhatsApp|TelegramBot|AhrefsBot|Applebot|x28-job-bot|bingbot|msnbot|YandexBot|PetalBot|Googlebot|facebookexternalhit|LinkedInBot|Twitterbot|Xing|AdsBot/
+export const parseUserAgent = (agent, botregex = /bot|crawl|slurp|spider|mediapartners/i) => {
 
     let browser, version, isBot = false
     if (agent) {
@@ -38,7 +39,11 @@ export const parseUserAgent = (agent, botregex = /WhatsApp|TelegramBot|AhrefsBot
                     version = parseFloat(browserPart[1])
                 }
             }
-
+        } else if(agentParts.length > 0){
+            if (agentParts[0].indexOf('mozilla/') === 0) {
+                browser = 'netscape'
+                version = parseFloat(agentParts[0].substring(8))
+            }
         }
     }
 
@@ -48,4 +53,5 @@ export const parseUserAgent = (agent, botregex = /WhatsApp|TelegramBot|AhrefsBot
 
 /*console.log(parseUserAgent('Mozilla/5.0 (Linux; Android 4.4.2; SUNSET Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/30.0.0.0 Mobile Safari/537.36'))
 console.log(parseUserAgent('Mozilla/5.0 (Linux; Android 8.0.0; Android SDK built for x86 Build/OSR1.180418.026) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Mobile Safari/537.36'))
+console.log(parseUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:100.0) Gecko/20100101 Firefox/100.0'))
 */

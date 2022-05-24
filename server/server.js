@@ -425,6 +425,7 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
     const {version, browser, isBot} = parseUserAgent(agent, hostrule.botregex || (hostrules.general && hostrules.general.botregex))
 
     if (isBot ||
+        (browser === 'netscape') ||
         (browser === 'firefox' && version <= 12) ||
         (browser === 'chrome' && version <= 16) ||
         (browser === 'android' && version < 4) ||
@@ -476,6 +477,12 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
 
         const re = new RegExp(baseUrl, 'g')
         pageData.html = pageData.html.replace(re, `https://${host}`)
+
+        if ((browser === 'netscape') ||
+            (browser === 'msie' && version <= 6)) {
+            // remove script tags
+            pageData.html = pageData.html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,'')
+        }
 
 
         if (pageData.statusCode === 500 || pageData.statusCode === 404) {
