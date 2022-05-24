@@ -23,6 +23,11 @@ export const parseUserAgent = (agent, botregex = /bot|crawl|slurp|spider|mediapa
 
                     browser = 'msie'
                     version = parseFloat(agentParts[3])
+                } else if(agentParts[0] === 'microsoft' && agentParts[1] === 'internet' && agentParts[2].indexOf('explorer/') === 0) {
+
+                    browser = 'msie'
+                    version = parseFloat(agentParts[2].substring(9))
+
                 }
             } else {
 
