@@ -475,14 +475,12 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
 
         const pageData = await parseWebsite(urlToFetch, host, agent, isBot, req.connection.remoteAddress)
 
+        // remove script tags
+        pageData.html = pageData.html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,'')
+
+        // replace host
         const re = new RegExp(baseUrl, 'g')
         pageData.html = pageData.html.replace(re, `https://${host}`)
-
-        if ((browser === 'netscape') ||
-            (browser === 'msie' && version <= 6)) {
-            // remove script tags
-            pageData.html = pageData.html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,'')
-        }
 
 
         if (pageData.statusCode === 500 || pageData.statusCode === 404) {
