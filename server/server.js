@@ -550,7 +550,8 @@ function hasHttpsWwwRedirect(host, req, res) {
 
 
 
-                    if ((browser === 'safari' && version < 6) ||
+                    if ((browser === 'netscape') ||
+                        (browser === 'safari' && version < 6) ||
                         (browser === 'firefox' && version <= 12) ||
                         (browser === 'chrome' && version <= 16) ||
                         (browser === 'android' && version < 5) ||
