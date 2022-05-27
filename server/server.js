@@ -550,12 +550,12 @@ function hasHttpsWwwRedirect(host, req, res) {
                     const {browser, version} = parseUserAgent(agent)
 
                     if ((browser === 'netscape') ||
-                        (browser === 'safari' && version < 6) ||
-                        (browser === 'firefox' && version <= 12) ||
-                        (browser === 'chrome' && version <= 16) ||
+                        (browser === 'safari' && version <= 6) ||
+                        (browser === 'firefox' && version <= 26) ||
+                        (browser === 'chrome' && version <= 28) ||
                         (browser === 'android' && version < 5) ||
-                        (browser === 'opera' && version <= 10) ||
-                        (browser === 'msie' && version <= 6)) {
+                        (browser === 'opera' && version <= 15) ||
+                        (browser === 'msie' && version <= 10)) {
                         // for browser that doesn't support tls 1.2
                     } else {
                         console.log(`${req.connection.remoteAddress}: Redirect to https ${newhost} / user-agent: ${agent} / browser=${browser} / version=${version}`)
