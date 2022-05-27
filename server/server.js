@@ -426,6 +426,7 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
 
     if (isBot ||
         (browser === 'netscape') ||
+        (browser === 'safari' && version < 5) ||
         (browser === 'firefox' && version <= 12) ||
         (browser === 'chrome' && version <= 16) ||
         (browser === 'android' && version < 4) ||
@@ -547,8 +548,6 @@ function hasHttpsWwwRedirect(host, req, res) {
                 if( agent && agent.indexOf('www.letsencrypt.org') < 0 ) {
 
                     const {browser, version} = parseUserAgent(agent)
-
-
 
                     if ((browser === 'netscape') ||
                         (browser === 'safari' && version < 6) ||

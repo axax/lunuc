@@ -63,7 +63,11 @@
           "@babel/preset-env",
           {
             "modules": false,
-            "targets": ">0.25%",
+            "targets": {
+              "browsers": [
+                ">0.25%"
+              ]
+            },
             "loose": true
           }
         ],

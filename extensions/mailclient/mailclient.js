@@ -24,8 +24,8 @@ const startListening = async (db, context) => {
                         host: data.host,
                         port: 993, // imap port
                         tls: true,
-                        connTimeout: 10000, // Default by node-imap
-                        authTimeout: 5000, // Default by node-imap,
+                        connTimeout: 30000, // Default by node-imap
+                        authTimeout: 15000, // Default by node-imap,
                         debug: console.log, // Or your custom function with only one incoming argument. Default: null
                         tlsOptions: {rejectUnauthorized: false},
                         mailbox: 'INBOX', // mailbox to monitor
@@ -40,6 +40,10 @@ const startListening = async (db, context) => {
                     mailListener.on('error', error => {
                         console.error(error)
                         Hook.call('OnMailError', {db, context, error})
+                    })
+
+                    mailListener.on('end', () => {
+                        Hook.call('OnMailError', {db, context, error:'mailended'})
                     })
 
                     mailListener.on('mail', mail => {

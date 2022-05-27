@@ -783,9 +783,20 @@ export default class AggregationBuilder {
         }
 
         if (includeCount) {
-            dataFacetQuery.push({$sort: sort})
-            dataFacetQuery.push({$skip: offset})
-            dataFacetQuery.push({$limit: limit})
+            if(this.options.limitCount){
+
+                dataQuery.push({$sort: sort})
+                dataQuery.push({$skip: offset})
+                dataQuery.push({$limit: this.options.limitCount})
+
+                dataFacetQuery.push({$skip: 0})
+                dataFacetQuery.push({$limit: limit})
+
+            }else {
+                dataFacetQuery.push({$sort: sort})
+                dataFacetQuery.push({$skip: offset})
+                dataFacetQuery.push({$limit: limit})
+            }
         } else {
             dataQuery.push({$sort: sort})
             dataQuery.push({$skip: offset})

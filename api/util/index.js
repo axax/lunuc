@@ -11,6 +11,7 @@ import {
 import {ApiError} from '../error'
 import {getType} from '../../util/types'
 import {_t} from '../../util/i18nServer'
+import config from 'gen/config-client'
 
 const PASSWORD_MIN_LENGTH = 8
 
@@ -30,7 +31,7 @@ const Util = {
     userOrAnonymousContext: async (db, context) => {
         if (!context || !context.id) {
             const anonymousContext = await Util.anonymousUserContext(db)
-            anonymousContext.lang = context.lang
+            anonymousContext.lang = context && context.lang? context.lang : config.DEFAULT_LANGUAGE
             return anonymousContext
         } else {
             return context

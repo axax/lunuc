@@ -268,6 +268,8 @@ const GenericResolver = {
             finalAggregateOptions.collation =  {locale: context.lang}
         }
 
+        otherOptions.limitCount= 10000
+
         const aggregationBuilder = new AggregationBuilder(typeName, data, db, {
             match,
             includeCount: (includeCount !== false && !estimateCount),
@@ -304,7 +306,7 @@ const GenericResolver = {
         }
 
         if (result.count && result.count.length > 0) {
-            result.total = result.count[0].count
+            result.total = result.count[0].count + (otherOptions.limitCount?result.offset:0)
             delete result.count
         } else {
             result.total = estimateCount ? await collection.estimatedDocumentCount() : 0
