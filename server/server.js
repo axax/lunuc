@@ -263,8 +263,9 @@ const wasBrowserKilled = async (browser) => {
     const procInfo = await browser.process()
     return !!procInfo.signalCode // null if browser is still running
 }
-const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress) => {
+const parseWebsite = async (urlToFetch, host, agent, isBot, req) => {
 
+    const remoteAddress =  req.connection.remoteAddress
 
     try {
         const startTime = new Date().getTime()
@@ -314,6 +315,15 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress) => {
 
         await page.setDefaultTimeout(5000)
         await page.setRequestInterception(true)
+
+        if(req.headers.cookie) {
+            // pass cookies
+            const cookies = parseCookies(req)
+            if( cookies.session && cookies.auth) {
+                const cookiesToSet = Object.keys(cookies).map(k=>({domain:'localhost',name:k, value:cookies[k]}))
+                await page.setCookie(...cookiesToSet)
+            }
+        }
 
         await page.setExtraHTTPHeaders({'x-host-rule': host})
         page.on('request', (request) => {
@@ -474,7 +484,7 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
             // return isFile
         }
 
-        const pageData = await parseWebsite(urlToFetch, host, agent, isBot, req.connection.remoteAddress)
+        const pageData = await parseWebsite(urlToFetch, host, agent, isBot, req)
 
         // remove script tags
         pageData.html = pageData.html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,'')

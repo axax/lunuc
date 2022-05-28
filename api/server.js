@@ -98,7 +98,7 @@ export const start = (done) => {
 
             const resolvers = resolver(db)
 
-                      // Graphql-Express
+            // Graphql-Express
             const schema = buildASTSchema(schemaString)
             let rootValue = {}
             Object.keys(resolvers).forEach(key => {
@@ -141,6 +141,25 @@ export const start = (done) => {
                     res.end(`{"errors":[{"message":"Error in graphql. Probably there is something wrong with the schema or the resolver: ${e.message}"}]}`)
 
                 })
+            })
+
+
+            /* fallback login for no js browsers */
+            app.use(express.urlencoded({
+                extended: true
+            }))
+            app.use('/graphql/login', async (req, res) => {
+                if(req.body) {
+
+                    const result = await resolvers.Query.login(req.body, req)
+                    if(!result.user){
+                        res.send(`invalid login`)
+                    }else {
+                        res.redirect(req.body.forward || '/')
+                    }
+                }else{
+                    res.send(`Username and Password is missing`)
+                }
             })
 
 

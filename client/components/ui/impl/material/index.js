@@ -11,12 +11,22 @@ import theme from './theme'
 
 export {theme}
 
+import {CacheProvider} from '@emotion/react'
+import createCache from '@emotion/cache'
+
+const emotionCache = createCache({
+    key: 'emotion-cache-no-speedy',
+    speedy: !_app_.ssr && !window._elementWatchForceVisible,
+})
+
 // Theme provider
 export const UIProvider = ({children, ...rest}) => {
     return <ThemeProvider theme={theme} {...rest}>
+        <CacheProvider value={emotionCache}>
             {children}
-            <CssBaseline/>
-        </ThemeProvider>
+        </CacheProvider>
+        <CssBaseline/>
+    </ThemeProvider>
 }
 
 
@@ -135,7 +145,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 
 
 export const ExpansionPanel = ({className, heading, children, ...rest}) => {
-    return <MaterialExpansionPanel className={className && className.constructor === String?className:''} {...rest}>
+    return <MaterialExpansionPanel className={className && className.constructor === String ? className : ''} {...rest}>
         <ExpansionPanelSummary className={className && className.heading} expandIcon={<ExpandMoreIcon/>}>
             {heading}
         </ExpansionPanelSummary>

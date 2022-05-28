@@ -114,11 +114,15 @@ class LoginContainer extends React.Component {
                     <Col xs={1} sm={2} md={4}></Col>
                     <Col xs={10} sm={8} md={4}>
                         <Card>
-                            <form noValidate autoComplete="off">
+                            <form noValidate autoComplete="off" action="/graphql/login" method="post">
                                 <Typography variant="h3" gutterBottom>{_t('Login.title')}</Typography>
 
                                 <Typography gutterBottom>{_t('Login.subtitle', {pathname:from})}</Typography>
 
+
+                                <input value={from}
+                                           type="hidden"
+                                           name="forward"/>
 
                                 <TextField label={_t('Login.username')}
                                            error={!!error}
@@ -162,6 +166,7 @@ class LoginContainer extends React.Component {
                                 <div style={{textAlign: 'right'}}>
                                     <SimpleButton variant="contained" color="primary"
                                                   showProgress={loading}
+                                                  type="submit"
                                                   onClick={this.login.bind(this)}>Login</SimpleButton>
                                 </div>
                                 {showSignupLink && <Typography>Don&apos;t have an account? <Link to={signupLink || config.ADMIN_BASE_URL + '/signup'}>Sign

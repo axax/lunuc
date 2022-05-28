@@ -43,7 +43,7 @@ const startListening = async (db, context) => {
                     })
 
                     mailListener.on('end', () => {
-                        Hook.call('OnMailError', {db, context, error:'mailended'})
+                        Hook.call('OnMailError', {db, context, error:{message:'mailended'}})
                     })
 
                     mailListener.on('mail', mail => {

@@ -365,6 +365,11 @@ const GenericResolver = {
     createEntity: async (db, req, typeName, {_version, ...data}, options) => {
         const {context} = req
 
+        if(!context){
+
+            throw new Error('context is missing')
+        }
+
 
         const typeDefinition = getType(typeName)
 
