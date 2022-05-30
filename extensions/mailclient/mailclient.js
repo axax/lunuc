@@ -61,7 +61,11 @@ const startListening = async (db, context) => {
                                 createdBy: admin._id
                             })
                         }
-                        Hook.call('OnMail', {mail, db})
+                        try {
+                            Hook.call('OnMail', {mail, db, context})
+                        }catch (e) {
+                            console.error('error in OnMail Hook',e)
+                        }
                     }).start()
 
                     mailListeners[data._id] = mailListener
