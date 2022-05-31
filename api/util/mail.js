@@ -10,9 +10,9 @@ import nodemailer from 'nodemailer'
 
 export const sendMail = async (db, context, {settings, recipient, from, fromName, replyTo, subject, body, html, text, slug, headerList, attachments, req}) => {
     let mailSettings
-    if(settings){
+    if (settings) {
         mailSettings = settings
-    }else {
+    } else {
         const values = await Util.keyValueGlobalMap(db, context, ['MailSettings'])
 
         mailSettings = values.MailSettings
@@ -57,7 +57,7 @@ ${finalHtml}
 
     let fromFinal = from || mailSettings.from
 
-    if(fromName && !fromFinal.endsWith('>')){
+    if (fromName && !fromFinal.endsWith('>')) {
         fromFinal = `${fromName} <${fromFinal}>`
     }
 
@@ -75,8 +75,8 @@ ${finalHtml}
     let mailResponse
 
     let currentMailSettings = mailSettings
-    while(true) {
-        if(currentMailSettings.useSecond && currentMailSettings.second){
+    while (true) {
+        if (currentMailSettings.useSecond && currentMailSettings.second) {
             currentMailSettings = currentMailSettings.second
         }
         try {
@@ -100,6 +100,17 @@ ${finalHtml}
                 socketTimeout: currentMailSettings.socketTimeout || 90000
             }
 
+
+
+            if (currentMailSettings.returnPath) {
+                message.envelope = {
+                    from: currentMailSettings.returnPath,
+                    to: recipient
+                }
+            }else{
+                delete message.envelope
+            }
+
             Hook.call('beforeMailSend', {db, context, slug, message, transporter, req})
 
             const transporterResult = nodemailer.createTransport(transporter)
@@ -108,9 +119,9 @@ ${finalHtml}
         } catch (e) {
             console.log('sendMail', e)
             mailResponse = e.message
-            if(currentMailSettings.second){
+            if (currentMailSettings.second) {
                 currentMailSettings = currentMailSettings.second
-            }else{
+            } else {
                 break
             }
         }
