@@ -265,7 +265,7 @@ const wasBrowserKilled = async (browser) => {
 }
 const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cookies) => {
 
-
+    let page
     try {
         const startTime = new Date().getTime()
 
@@ -290,7 +290,7 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cooki
             return {html: 'too busy to process request', statusCode: 500}
         }
 
-        const page = await parseWebsiteBrowser.newPage()
+        page = await parseWebsiteBrowser.newPage()
 
         setTimeout(async () => {
             /* if page is still not closed after 20s something is wrong */
@@ -371,6 +371,9 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cooki
         return {html, statusCode}
     } catch (e) {
         console.warn('parseWebsite error',e)
+        if(page && !page.isClosed()){
+            page.close()
+        }
         return {html: e.message, statusCode: 500}
 
     }
