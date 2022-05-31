@@ -33,6 +33,8 @@ export default db => ({
                 settings = mailingData.mailSettings
             }
 
+            const languageToSend = mailingData.language ? mailingData.language.split(',') : []
+
 
             const subscribers = await db.collection('NewsletterSubscriber').find(
                 {state: 'subscribed', list: {$in: list.map(l => l.constructor===String?ObjectId(l):l)}}
@@ -80,6 +82,11 @@ export default db => ({
                         finalText = text,
                         finalHtml = html,
                         subLang = sub.language || config.DEFAULT_LANGUAGE
+
+                    if(languageToSend.length>0 && languageToSend.indexOf(subLang)<0){
+                        // don't send
+                        continue
+                    }
 
                     if(mailingData){
                         if(mailingData.subject && subject === undefined){

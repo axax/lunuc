@@ -26,6 +26,7 @@ export const translations = {
         'NewsletterMailing.field.active': 'Aktive',
         'NewsletterMailing.field.batchSize': 'Anzahl Emails pro Lauf',
         'NewsletterMailing.field.perHour': 'Max. Emails pro Stunde',
+        'NewsletterMailing.field.language': 'Sprachen (Kommagetrennt)',
         'NewsletterMailing.field.mailSettings': 'Mail-Server Einstellungen',
     },
     en: {
@@ -56,6 +57,7 @@ export const translations = {
         'NewsletterMailing.field.active': 'Active',
         'NewsletterMailing.field.batchSize': 'Batch size',
         'NewsletterMailing.field.perHour': 'Max. emails per hour',
+        'NewsletterMailing.field.language': 'Languages (comma-separated)',
         'NewsletterMailing.field.mailSettings': 'Mail server settings',
     }
 }

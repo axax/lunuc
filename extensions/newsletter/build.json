@@ -186,6 +186,11 @@
           "type": "Float"
         },
         {
+          "tab": "send",
+          "name": "language",
+          "hideColumnInTypes": true
+        },
+        {
           "name": "mailSettings",
           "type": "Object",
           "hideColumnInTypes": true,
