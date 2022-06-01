@@ -21,7 +21,6 @@ import {USE_COOKIES} from '../api/constants'
 import {parseCookies} from '../api/util/parseCookies'
 import puppeteer from 'puppeteer'
 import {decodeToken} from '../api/util/jwt'
-//import heapdump from 'heapdump'
 
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
@@ -1154,7 +1153,7 @@ console.log(urlPathname)
                         sendError(res, 403)
                     }
                 }else if (urlPathname === '/createheapdump') {
-                    /*const context = contextByRequest(req)
+                    const context = contextByRequest(req)
                     if (context.id && context.role === 'administrator') {
 
                         const backup_dir = path.join(__dirname, '../' + BACKUP_DIR+'/heapdump/')
@@ -1162,6 +1161,8 @@ console.log(urlPathname)
                         if (ApiUtil.ensureDirectoryExistence(backup_dir)) {
                             const filename = Date.now() + '.heapsnapshot'
                             const filepath = path.join(backup_dir, filename)
+
+                            const heapdump = require('heapdump')
 
                             heapdump.writeSnapshot(filepath, (e) => {
                                 console.log(e)
@@ -1176,7 +1177,7 @@ console.log(urlPathname)
                     } else {
                         sendError(res, 403)
                     }
-*/
+
 
                 } else if (urlPathname.startsWith(UPLOAD_URL + '/')) {
                     await resolveUploadedFile(urlPathname, parsedUrl, req, res)
