@@ -367,7 +367,7 @@ const GenericResolver = {
 
         if(!context){
 
-            throw new Error('context is missing')
+            throw new Error('context is missing '+typeName)
         }
 
 

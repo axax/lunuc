@@ -21,6 +21,8 @@ import {USE_COOKIES} from '../api/constants'
 import {parseCookies} from '../api/util/parseCookies'
 import puppeteer from 'puppeteer'
 import {decodeToken} from '../api/util/jwt'
+import heapdump from 'heapdump'
+
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
 const ABS_UPLOAD_DIR = path.join(__dirname, '../' + UPLOAD_DIR)
@@ -1114,7 +1116,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 return
             }
 
-
+console.log(urlPathname)
             if (urlPathname.startsWith('/graphql') || urlPathname.startsWith('/' + API_PREFIX)) {
                 // there is also /graphql/upload
                 return proxy.web(req, res, {
@@ -1148,6 +1150,29 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                                 sendError(res, 404)
                             }
                         })
+                    } else {
+                        sendError(res, 403)
+                    }
+                }else if (urlPathname === '/createheapdump') {
+                    const context = contextByRequest(req)
+                    if (context.id && context.role === 'administrator') {
+
+                        const backup_dir = path.join(__dirname, '../' + BACKUP_DIR+'/heapdump/')
+
+                        if (ApiUtil.ensureDirectoryExistence(backup_dir)) {
+                            const filename = Date.now() + '.heapsnapshot'
+                            const filepath = path.join(backup_dir, filename)
+
+                            heapdump.writeSnapshot(filepath, (e) => {
+                                console.log(e)
+                            })
+                            res.writeHead(200, {'Content-Type': 'text/html'})
+                            res.write(`<a download href='${BACKUP_URL}/heapdump/${filename}'>${filename}</a>`)
+                            res.end()
+                        }else{
+                            sendError('cannot create dir', 500)
+                        }
+
                     } else {
                         sendError(res, 403)
                     }

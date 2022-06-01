@@ -25,7 +25,9 @@ import {
     SimpleDialog,
     SimpleMenu,
     Divider,
-    UIProvider
+    UIProvider,
+    Pagination,
+    Stack
 } from 'ui/admin'
 import Drawer from '@mui/material/Drawer'
 
@@ -94,7 +96,10 @@ class CmsViewEditorContainer extends React.Component {
             publicEdit,
             compress,
             addNewSite: null,
-            ignoreStatus: false
+            ignoreStatus: false,
+            historyType:'script',
+            historyPage:1,
+            historyLimit: 10
         }
 
         if (meta) {
@@ -234,6 +239,8 @@ class CmsViewEditorContainer extends React.Component {
             state.EditorOptions !== this.state.EditorOptions ||
             state.EditorPageOptions !== this.state.EditorPageOptions ||
             state.cmsStatusData !== this.state.cmsStatusData  ||
+            state.historyType !== this.state.historyType  ||
+            state.historyPage !== this.state.historyPage  ||
             (props.cmsRender && Util.shallowCompare(props.cmsRender, this.props.cmsRender)) ||
             (
                 props.cmsPage.urlSensitiv && (
@@ -607,17 +614,34 @@ class CmsViewEditorContainer extends React.Component {
                     <Expandable title={_t('CmsViewEditorContainer.revisions')}
                                 onChange={this.handleSettingChange.bind(this, 'revisionsExpanded', true)}
                                 expanded={EditorPageOptions.revisionsExpanded}>
-                        <MenuList>
+
+                        <SimpleSelect
+                            fullWidth={true}
+                            label="Type"
+                            value={this.state.historyType}
+                            style={{marginBottom:0,marginTop:0}}
+                            onChange={(e)=>{
+                                this.setState({historyPage:1,historyType: e.target.value})
+                            }}
+                            items={[{name: 'Script', value: 'script'},
+                                {name: 'Server Script', value: 'serverScript'},
+                                {name: 'Data Resolver', value: 'dataResolver'},
+                                {name: 'Template', value: 'template'},
+                                {name: 'Style', value: 'style'}]}
+                        />
+
+
                             {!loadingState && <Query
-                                query={'query historys($filter:String,$limit:Int){historys(filter:$filter,limit:$limit){results{_id action, meta}}}'}
+                                query={'query historys($filter:String,$limit:Int,$page:Int){historys(filter:$filter,limit:$limit,page:$page){total offset results{_id action, meta}}}'}
                                 fetchPolicy="cache-and-network"
                                 variables={{
-                                    limit: 100,
-                                    filter: `data._id==${cmsPage._id}`
+                                    limit: this.state.historyLimit,
+                                    page:this.state.historyPage,
+                                    filter: `data._id==${cmsPage._id} && meta.keys==${this.state.historyType || 'script'}`
                                 }}>
                                 {({loading, error, data}) => {
-                                    if (loading) return 'Loading...'
-                                    if (error) return `Error! ${error.message}`
+                                    if (loading) return <p>Loading...</p>
+                                    if (error) return <p>Error! {error.message}</p>
 
 
                                     const menuItems = []
@@ -653,11 +677,23 @@ class CmsViewEditorContainer extends React.Component {
                                             }
                                         }
                                     )
-                                    if (data.historys.results === 0) return 'No history entries'
-                                    return menuItems
+                                    if (menuItems.length === 0) return <p>No history entries</p>
+
+                                    return [<MenuList>
+                                        {menuItems}
+                                    </MenuList>,<Stack spacing={2}
+                                                       justifyContent="center"
+                                                       alignItems="center">
+                                        <Pagination size="medium"
+                                                            showFirstButton
+                                                            showLastButton
+                                                            page={this.state.historyPage}
+                                                            onChange={(e, page)=>{
+                                                                this.setState({historyPage:page})
+                                                            }}
+                                                    count={Math.ceil(data.historys.total / this.state.historyLimit)} /></Stack>]
                                 }}
                             </Query>}
-                        </MenuList>
                     </Expandable>
 
 

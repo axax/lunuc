@@ -31,6 +31,8 @@ export const UIProvider = ({children, ...rest}) => {
 
 
 // Export material-ui coponents directly
+export Pagination from '@mui/material/Pagination'
+export Stack from '@mui/material/Stack'
 export Typography from '@mui/material/Typography'
 export AppBar from '@mui/material/AppBar'
 export Toolbar from '@mui/material/Toolbar'
