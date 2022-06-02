@@ -1,3 +1,5 @@
+import DomUtil from '../client/util/dom.mjs'
+
 /*
  Replace placeholder within a string
  */

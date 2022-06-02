@@ -6,8 +6,8 @@ import {
 } from '../util/cmsView'
 import Async from 'client/components/Async'
 import compose from '../../../util/compose'
-import DomUtil from '../../../client/util/dom'
-import {setPropertyByPath} from '../../../client/util/json'
+import DomUtil from '../../../client/util/dom.mjs'
+import {setPropertyByPath} from '../../../client/util/json.mjs'
 import {client, graphql} from '../../../client/middleware/graphql'
 import {
     QUERY_KEY_VALUES_GLOBAL,

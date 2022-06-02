@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import DomUtil from 'client/util/dom'
+import DomUtil from 'client/util/dom.mjs'
 import Util from 'client/util'
 import injectSheet from 'react-jss'
 import {_t, registerTrs} from '../../util/i18n'

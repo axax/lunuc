@@ -68,7 +68,7 @@ const {ADMIN_BASE_URL, APP_NAME} = config
 
 import {_t, registerTrs} from 'util/i18n'
 import {translations} from '../../translations/admin'
-import {propertyByPath} from '../../util/json'
+import {propertyByPath} from '../../util/json.mjs'
 import Async from 'client/components/Async'
 import {deepMergeOptional} from '../../../util/deepMerge'
 

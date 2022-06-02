@@ -5,7 +5,7 @@ import {render} from 'react-dom'
 import App from './components/App'
 import {getStore} from './store/index'
 import config from 'gen/config-client'
-import DomUtil from 'client/util/dom'
+import DomUtil from 'client/util/dom.mjs'
 import Util from 'client/util'
 
 try {

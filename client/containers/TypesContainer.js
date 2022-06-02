@@ -47,7 +47,7 @@ import {
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {getImageTag} from 'client/util/media'
 import {deepMerge} from 'util/deepMerge'
-import DomUtil from 'client/util/dom'
+import DomUtil from 'client/util/dom.mjs'
 import {_t} from 'util/i18n'
 
 const {ADMIN_BASE_URL, LANGUAGES} = config

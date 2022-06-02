@@ -13,7 +13,7 @@ import {
     SimpleMenu
 } from 'ui/admin'
 import {getComponentByKey, addComponent, removeComponent} from '../util/jsonDomUtil'
-import DomUtil from 'client/util/dom'
+import DomUtil from 'client/util/dom.mjs'
 import DomUtilAdmin from 'client/util/domAdmin'
 import {getJsonDomElements} from '../util/elements'
 

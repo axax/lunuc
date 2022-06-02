@@ -12,7 +12,7 @@ import {pubsubDelayed} from '../../../api/subscription'
 import fs from 'fs'
 import config from 'gen/config'
 import path from 'path'
-import {propertyByPath, setPropertyByPath, assignIfObjectOrArray, matchExpr} from '../../../client/util/json'
+import {propertyByPath, setPropertyByPath, assignIfObjectOrArray, matchExpr} from '../../../client/util/json.mjs'
 
 const DEFAULT_PARAM_MAX_LENGTH = 100,
     DEFAULT_PARAM_NOT_ALLOWED_CHARS = ['\\(', '\\)', '\\{', '\\}', ';', '<', '>'],

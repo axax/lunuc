@@ -13,7 +13,7 @@ import {_t, registerTrs} from '../../util/i18n'
 import {performFieldProjection} from '../../util/project'
 
 import {translations} from './translations/admin'
-import {setPropertyByPath} from "../../client/util/json";
+import {setPropertyByPath} from '../../client/util/json.mjs'
 
 import {openWindow} from '../../client/util/window'
 import {deepMergeToFirst} from '../../util/deepMerge'

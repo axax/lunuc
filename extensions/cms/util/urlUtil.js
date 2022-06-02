@@ -1,4 +1,4 @@
-import DomUtil from '../../../client/util/dom'
+import DomUtil from '../../../client/util/dom.mjs'
 
 export const scrollByHash = (url, {scrollStep, scrollOffset, scrollTimeout}) => {
     if (url.indexOf('#') >= 0 && url.length>1) {

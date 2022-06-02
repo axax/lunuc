@@ -1,5 +1,5 @@
 import React from 'react'
-import DomUtil from '../../util/dom'
+import DomUtil from '../../util/dom.mjs'
 
 
 class ErrorPage extends React.Component {

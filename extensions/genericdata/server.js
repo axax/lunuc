@@ -7,7 +7,7 @@ import GenericResolver from '../../api/resolver/generic/genericResolver'
 import Util from '../../api/util'
 import ClientUtil from '../../client/util'
 import {ObjectId} from 'mongodb'
-import {matchExpr} from '../../client/util/json'
+import {matchExpr} from '../../client/util/json.mjs'
 import {findProjection} from '../../util/project'
 import {getGenericTypeDefinitionWithStructure} from './util'
 

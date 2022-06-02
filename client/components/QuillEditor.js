@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import DomUtil from 'client/util/dom'
+import DomUtil from 'client/util/dom.mjs'
 
 //https://github.com/benwinding/quill-html-edit-button
 class QuillEditor extends React.Component {

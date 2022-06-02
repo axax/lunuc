@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import DomUtil from 'client/util/dom'
+import DomUtil from 'client/util/dom.mjs'
 import Util from '../util'
 import config from 'gen/config-client'
 

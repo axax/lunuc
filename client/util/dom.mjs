@@ -1,7 +1,7 @@
 /**
  * Html dom helper methods
  */
-import {propertyByPath} from './json'
+import {propertyByPath} from './json.mjs'
 
 const DomUtil = {
     removeElements(selector, butIds, container = document) {

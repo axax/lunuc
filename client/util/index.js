@@ -1,5 +1,5 @@
 import {getType, getTypes, getTypeQueries} from 'util/types'
-import DomUtil from 'client/util/dom'
+import DomUtil from 'client/util/dom.mjs'
 import config from 'gen/config-client'
 import {replacePlaceholders} from 'util/placeholders.mjs'
 
