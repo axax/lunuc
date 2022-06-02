@@ -1,7 +1,7 @@
 import {getType, getTypes, getTypeQueries} from 'util/types'
 import DomUtil from 'client/util/dom'
 import config from 'gen/config-client'
-import {replacePlaceholders} from 'util/placeholders'
+import {replacePlaceholders} from 'util/placeholders.mjs'
 
 /**
  * Object with general client helper methods. It is also accessible in the CMS Editor
