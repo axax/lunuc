@@ -1,11 +1,10 @@
-'use strict'
-import {HEADER_TIMEOUT} from '../api/constants'
+import {HEADER_TIMEOUT} from '../api/constants/index.mjs'
 
-let net = require('net')
-let http = require('http')
-let http2 = require('http2')
+import net from 'net'
+import http from 'http'
+import http2 from 'http2'
 
-exports.createServer = (opts, handler) => {
+const createServer = (opts, handler) => {
 
     let server = net.createServer(socket => {
         socket.once('data', buffer => {
@@ -70,3 +69,5 @@ exports.createServer = (opts, handler) => {
     })
     return server
 }
+
+export default {createServer}

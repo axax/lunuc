@@ -192,7 +192,7 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
 
 
         let configContent = `${GENSRC_HEADER}export default ${JSON.stringify(config)}\n`
-        fs.writeFile(GENSRC_PATH + "/config.js", configContent, function (err) {
+        fs.writeFile(GENSRC_PATH + "/config.mjs", configContent, function (err) {
             if (err) {
                 return console.log(err)
             }

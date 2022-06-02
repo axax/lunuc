@@ -1,7 +1,5 @@
 import bcrypt from 'bcryptjs'
 import {ObjectId} from 'mongodb'
-import path from 'path'
-import fs from 'fs'
 import Cache from 'util/cache'
 import * as os from 'os'
 import {
@@ -12,6 +10,7 @@ import {ApiError} from '../error'
 import {getType} from '../../util/types'
 import {_t} from '../../util/i18nServer'
 import config from 'gen/config-client'
+import {ensureDirectoryExistence} from '../../util/fileUtil'
 
 const PASSWORD_MIN_LENGTH = 8
 
@@ -382,14 +381,7 @@ const Util = {
 
         return collection
     },
-    ensureDirectoryExistence: (dir) => {
-        if (fs.existsSync(dir)) {
-            return true
-        }
-        Util.ensureDirectoryExistence(path.dirname(dir))
-        fs.mkdirSync(dir)
-        return fs.existsSync(dir)
-    },
+    ensureDirectoryExistence: ensureDirectoryExistence,
     execFilter: (filter) => {
         return Util.matchFilterExpression(filter, Util.systemProperties())
     },

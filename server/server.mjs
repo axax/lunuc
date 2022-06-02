@@ -1,27 +1,33 @@
 import proxy from 'http2-proxy'
-import httpx from './httpx'
+import httpx from './httpx.mjs'
 import http from 'http'
 import url from 'url'
 import path from 'path'
 import net from 'net'
 import fs from 'fs'
 import zlib from 'zlib'
-import config from 'gen/config'
-import MimeType from '../util/mime'
-import {getHostFromHeaders} from 'util/host'
+import config from '../gensrc/config.mjs'
+import MimeType from '../util/mime.mjs'
+import {getHostFromHeaders} from '../util/host.mjs'
 import finalhandler from 'finalhandler'
 import sharp from 'sharp'
-import Util from '../client/util'
-import ApiUtil from '../api/util'
-import {loadAllHostrules} from '../util/hostrules'
+import {replacePlaceholders} from '../util/placeholders.mjs'
+import {ensureDirectoryExistence} from '../util/fileUtil.mjs'
+import {loadAllHostrules} from '../util/hostrules.mjs'
 import {PassThrough} from 'stream'
-import {contextByRequest} from '../api/util/sessionContext'
-import {parseUserAgent} from '../util/userAgent'
-import {USE_COOKIES} from '../api/constants'
-import {parseCookies} from '../api/util/parseCookies'
+import {contextByRequest} from '../api/util/sessionContext.mjs'
+import {parseUserAgent} from '../util/userAgent.mjs'
+import {USE_COOKIES} from '../api/constants/index.mjs'
+import {parseCookies} from '../api/util/parseCookies.mjs'
 import puppeteer from 'puppeteer'
-import {decodeToken} from '../api/util/jwt'
+import {decodeToken} from '../api/util/jwt.mjs'
+import { fileURLToPath } from 'url'
+import ffmpegInstaller from '@ffmpeg-installer/ffmpeg'
+import ffmpeg from 'fluent-ffmpeg'
+import heapdump from 'heapdump'
 
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
 const ABS_UPLOAD_DIR = path.join(__dirname, '../' + UPLOAD_DIR)
@@ -345,6 +351,7 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cooki
 
         await page.evaluateOnNewDocument(() => {
             window._elementWatchForceVisible = true
+            window._disableWsConnection = true
         })
         await page.goto(urlToFetch, {waitUntil: 'networkidle0'})
 
@@ -458,7 +465,7 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
         const cookies = parseCookies(req)
 
         let sentFromCache = false
-        if (!cookies.auth && ApiUtil.ensureDirectoryExistence(cacheFileDir)) {
+        if (!cookies.auth && ensureDirectoryExistence(cacheFileDir)) {
 
 
             let isFile = fs.existsSync(cacheFileName)
@@ -649,10 +656,12 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, filename}) {
     //sudo apt install ffmpeg
     // http://localhost:8080/uploads/5f935f98f5ca78b7cbeaa853/-/test.mpg?ext=mp4&transcode={"audioQuality":2,"fps":24,"size":"720x?","crf":24,"keep":true,"nostream":true}
 
-    const ffprobePath = require('@ffprobe-installer/ffprobe').path,
-        ffmpeg = require('fluent-ffmpeg')
+
+
+    const ffprobePath = ffmpegInstaller.path
 
     console.log(ffmpeg.path, ffmpeg.version)
+    console.log(ffprobePath)
 
     ffmpeg.setFfprobePath(ffprobePath)
 
@@ -1115,7 +1124,6 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 return
             }
 
-console.log(urlPathname)
             if (urlPathname.startsWith('/graphql') || urlPathname.startsWith('/' + API_PREFIX)) {
                 // there is also /graphql/upload
                 return proxy.web(req, res, {
@@ -1158,11 +1166,9 @@ console.log(urlPathname)
 
                         const backup_dir = path.join(__dirname, '../' + BACKUP_DIR+'/heapdump/')
 
-                        if (ApiUtil.ensureDirectoryExistence(backup_dir)) {
+                        if (ensureDirectoryExistence(backup_dir)) {
                             const filename = Date.now() + '.heapsnapshot'
                             const filepath = path.join(backup_dir, filename)
-
-                            const heapdump = require('heapdump')
 
                             heapdump.writeSnapshot(filepath, (e) => {
                                 console.log(e)
@@ -1233,10 +1239,9 @@ console.log(urlPathname)
                                 ...hostrule.headers[urlPathname]
                             }
                             res.writeHead(200, {'Content-Type': 'text/plain'})
-                            res.write(Util.replacePlaceholders(data, {parsedUrl, host, config}))
+                            res.write(replacePlaceholders(data, {parsedUrl, host, config}))
                             res.end()
                         })
-
 
                         return
                     } else {
@@ -1305,12 +1310,14 @@ console.log(urlPathname)
 
 /* this is only used for video conference tool */
 //TODO: Move this to an extension as it doesn't belong here
-let stream = require('./stream')
+import stream from './stream.js'
+import {Server} from 'socket.io'
 
-let ioHttp = require('socket.io')(app.http)
+
+let ioHttp = new Server(app.http)
 ioHttp.on('connection', stream)
 
-let ioHttps = require('socket.io')(app.https)
+let ioHttps = new Server(app.https)
 ioHttps.on('connection', stream)
 
 

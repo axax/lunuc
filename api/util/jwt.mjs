@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken'
-import {AUTH_SCHEME,SECRET_KEY} from '../constants'
+import {AUTH_SCHEME,SECRET_KEY} from '../constants/index.mjs'
 
 
 export const decodeToken = (token) => {

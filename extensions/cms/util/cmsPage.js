@@ -4,7 +4,7 @@ import DomAdminUtil from 'client/util/domAdmin'
 import {getHostFromHeaders} from 'util/host'
 import Cache from 'util/cache'
 import {preprocessCss} from './cssPreprocessor'
-import {loadAllHostrules} from 'util/hostrules'
+import {loadAllHostrules} from 'util/hostrules.mjs'
 
 const hostrules = loadAllHostrules(false)
 

@@ -109,7 +109,7 @@ const removeWsSubscription = (id, subId) => {
 
 let setUpWsWasCalled = false
 const setUpWs = () => {
-    if (!setUpWsWasCalled && !_app_.ssr) {
+    if (!setUpWsWasCalled && !_app_.ssr && !window._disableWsConnection) {
         setUpWsWasCalled = true
         try {
             wsCurrentConnection = new WebSocket(GRAPHQL_WS_URL, ['graphql-ws'])

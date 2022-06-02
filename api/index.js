@@ -1,7 +1,9 @@
 'use strict'
 
 // Use ES6 module syntax with node.js
-require("@babel/register")
+require('@babel/register')({
+    presets: ['@babel/preset-env']
+})
 require('./util/localStorage')
 
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));

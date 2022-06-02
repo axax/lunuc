@@ -6,12 +6,12 @@ import {
     CONTENT_LANGUAGE_HEADER, SECRET_KEY,
     SESSION_HEADER,
     USE_COOKIES
-} from '../constants'
-import {parseCookies} from './parseCookies'
-import {decodeToken} from './jwt'
+} from '../constants/index.mjs'
+import {parseCookies} from './parseCookies.mjs'
+import {decodeToken} from './jwt.mjs'
 import crypto from 'crypto'
-import config from 'gen/config'
-import jwt from "jsonwebtoken";
+import config from '../../gensrc/config.mjs'
+import jwt from 'jsonwebtoken'
 
 const {DEFAULT_LANGUAGE} = config
 

@@ -2,7 +2,7 @@
 import fs from 'fs'
 import path from 'path'
 import tls from 'tls'
-import config from 'gen/config'
+import config from '../gensrc/config.mjs'
 
 const {HOSTRULES_ABSPATH} = config
 
@@ -21,7 +21,7 @@ const certDirs = (domainname) => {
                 return b.time - a.time
             })
     }catch (e) {
-        console.log('error reading cert dir', e)
+        console.log('error reading cert dir', e.message)
     }
     return []
 }
@@ -81,10 +81,10 @@ const loadHostRules = (dir, withCertContext, hostrules) => {
 }
 
 export const loadAllHostrules = (withCertContext, hostrules = {}) => {
-    console.log(`load all host rules`)
-
+    const hostRulePath = path.join(path.resolve(), './hostrules/')
+    console.log(`load all host rules ${hostRulePath}`)
     loadHostRules(HOSTRULES_ABSPATH, withCertContext, hostrules)
-    loadHostRules(path.join(__dirname, '../hostrules/'), withCertContext, hostrules)
+    loadHostRules(hostRulePath, withCertContext, hostrules)
 
 
     return hostrules

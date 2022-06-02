@@ -1,6 +1,7 @@
 import {getType, getTypes, getTypeQueries} from 'util/types'
 import DomUtil from 'client/util/dom'
 import config from 'gen/config-client'
+import {replacePlaceholders} from 'util/placeholders'
 
 /**
  * Object with general client helper methods. It is also accessible in the CMS Editor
@@ -12,6 +13,7 @@ const Util = {
     getType: getType,
     getTypes: getTypes,
     getTypeQueries: getTypeQueries,
+    replacePlaceholders: replacePlaceholders,
     escapeDoubleQuotes: (str) => {
         if (str && str.constructor === String) {
             return str.replace(/"/g, '\\"')
@@ -376,18 +378,6 @@ const Util = {
             return nodeList[0]
         }
         return nodeList
-    },
-    replacePlaceholders(template, context, name) {
-        if (name !== undefined) {
-            const re = new RegExp('\\$\\.' + name + '{', 'g')
-            template = template.replace(re, '${')
-        }
-        try {
-            return new Function(DomUtil.toES5('const {' + Object.keys(context).join(',') + '} = this.context;return `' + template + '`')).call({context})
-        } catch (e) {
-            console.warn(e)
-            return e.message
-        }
     },
     baseUrl(path, query) {
         let url = Util.removeTrailingSlash(location.pathname.split('/'+config.PRETTYURL_SEPERATOR+'/')[0])
