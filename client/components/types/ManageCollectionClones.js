@@ -8,8 +8,8 @@ import {
     SimpleDialog,
     Tooltip
 } from 'ui/admin'
-import Util from 'client/util'
-import {COLLECTIONS_QUERY} from '../../constants'
+import Util from 'client/util/index.mjs'
+import {COLLECTIONS_QUERY} from '../../constants/index.mjs'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {theme} from 'ui/admin'
 import {client, Query} from '../../middleware/graphql'

@@ -1,7 +1,7 @@
 import React from 'react'
 import {connect} from 'react-redux'
 import PropTypes from 'prop-types'
-import Hook from 'util/hook'
+import Hook from 'util/hook.cjs'
 import config from 'gen/config-client'
 
 const {ADMIN_BASE_URL} = config
@@ -9,10 +9,10 @@ import LogoutContainer from 'client/containers/LogoutContainer'
 import Async from 'client/components/Async'
 import {
     CAPABILITY_ACCESS_ADMIN_PAGE
-} from 'util/capabilities'
+} from 'util/capabilities.mjs'
 import {scrollByHash} from '../../../extensions/cms/util/urlUtil'
 import {RouteHistory, Link} from '../../util/route'
-import Util from '../../util'
+import Util from '../../util/index.mjs'
 
 const LoginContainer = (props) => <Async {...props}
                                          load={import(/* webpackChunkName: "admin" */ '../../containers/LoginContainer')}/>

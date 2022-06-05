@@ -1,6 +1,6 @@
 import React from 'react'
 import {connect} from 'react-redux'
-import {getTypeQueries} from 'util/types'
+import {getTypeQueries} from 'util/types.mjs'
 import {client} from '../../middleware/graphql'
 
 

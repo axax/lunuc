@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import Hook from '../../util/hook'
+import Hook from '../../util/hook.cjs'
 
 class Async extends React.Component {
 

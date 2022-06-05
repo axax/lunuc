@@ -12,8 +12,8 @@ import {
     FolderIcon,
     InsertDriveFileIcon
 } from 'ui/admin'
-import Util from 'client/util'
-import {COMMAND_QUERY} from '../constants'
+import Util from 'client/util/index.mjs'
+import {COMMAND_QUERY} from '../constants/index.mjs'
 import PropTypes from 'prop-types'
 import * as NotificationAction from 'client/actions/NotificationAction'
 import config from 'gen/config-client'

@@ -15,7 +15,7 @@ import {
     Divider
 } from 'ui/admin'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
-import Util from 'client/util'
+import Util from 'client/util/index.mjs'
 
 class SearchWhileSpeechContainer extends React.Component {
 

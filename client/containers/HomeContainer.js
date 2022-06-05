@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import {Typography, Card, Divider, Row, Col} from 'ui/admin'
-import Hook from '../../util/hook'
+import Hook from '../../util/hook.cjs'
 
 class HomeContainer extends React.Component {
     render() {

@@ -44,6 +44,7 @@
     "api": {
       "plugins": [
         "@babel/plugin-transform-runtime",
+        "babel-plugin-transform-import-meta",
         "dynamic-import-node",
         [
           "css-modules-transform",

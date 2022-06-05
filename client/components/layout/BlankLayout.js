@@ -4,7 +4,7 @@ import NotificationHandler from './NotificationHandler'
 import NetworkStatusHandler from './NetworkStatusHandler'
 import {UIProvider} from 'ui/admin'
 
-import {registerTrs} from 'util/i18n'
+import {registerTrs} from 'util/i18n.mjs'
 import {translations} from '../../translations/admin'
 registerTrs(translations, 'AdminTranslations')
 

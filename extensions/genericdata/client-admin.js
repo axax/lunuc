@@ -1,22 +1,22 @@
 import React from 'react'
-import Hook from 'util/hook'
+import Hook from 'util/hook.cjs'
 import Async from 'client/components/Async'
 import {
     SimpleSwitch,
     SimpleButton
 } from 'ui/admin'
-import Util from '../../client/util'
-import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../cms/constants'
+import Util from '../../client/util/index.mjs'
+import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../cms/constants/index.mjs'
 import {client} from 'client/middleware/graphql'
 import config from 'gen/config-client'
-import {_t, registerTrs} from '../../util/i18n'
-import {performFieldProjection} from '../../util/project'
+import {_t, registerTrs} from '../../util/i18n.mjs'
+import {performFieldProjection} from '../../util/project.mjs'
 
 import {translations} from './translations/admin'
 import {setPropertyByPath} from '../../client/util/json.mjs'
 
 import {openWindow} from '../../client/util/window'
-import {deepMergeToFirst} from '../../util/deepMerge'
+import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import {parseStyles} from '../../client/util/style'
 
 registerTrs(translations, 'GenericData')

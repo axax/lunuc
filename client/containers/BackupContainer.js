@@ -12,7 +12,7 @@ import {
     Col
 } from 'ui/admin'
 import FileDrop from 'client/components/FileDrop'
-import Util from 'client/util'
+import Util from 'client/util/index.mjs'
 import config from 'gen/config-client'
 import {graphql, client} from '../middleware/graphql'
 

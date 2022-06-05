@@ -3,7 +3,7 @@ import {connect} from 'react-redux'
 import {
     getGqlVariables, CMS_PAGE_QUERY, isEditMode, urlSensitivMap,
     settingKeyPrefix
-} from '../util/cmsView'
+} from '../util/cmsView.mjs'
 import Async from 'client/components/Async'
 import compose from '../../../util/compose'
 import DomUtil from '../../../client/util/dom.mjs'
@@ -17,7 +17,7 @@ import {
     setKeyValueToLS,
     getKeyValueFromLS
 } from '../../../client/util/keyvalue'
-import {NO_SESSION_KEY_VALUES} from '../../../client/constants'
+import {NO_SESSION_KEY_VALUES} from '../../../client/constants/index.mjs'
 
 // admin pack
 const ErrorPage = (props) => <Async {...props}

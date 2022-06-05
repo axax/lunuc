@@ -1,10 +1,10 @@
 import React, {useState, useEffect} from 'react'
-import Util from '../util'
+import Util from '../util/index.mjs'
 import {getStore} from '../store/index'
 import {setNetworkStatus} from '../actions/NetworkStatusAction'
 import {setUser} from '../actions/UserAction'
 import {addError} from '../actions/ErrorHandlerAction'
-import Hook from '../../util/hook'
+import Hook from '../../util/hook.cjs'
 
 
 const NetworkStatus = {
@@ -21,11 +21,25 @@ const RequestType = {
     mutate: 2
 }
 
-const location = window.location
-let GRAPHQL_URL = `${location.protocol}//${location.hostname}:${location.port}/graphql`
-let GRAPHQL_WS_URL = (location.protocol === 'https:' ? 'wss' : 'ws') + `://${location.hostname}:${location.port}/lunucws`
+let GRAPHQL_URL, GRAPHQL_WS_URL
 
 export let SSR_FETCH_CHAIN = {}
+
+const getGraphQlUrl = () =>{
+    if(!GRAPHQL_URL){
+        const location = window.location
+        GRAPHQL_URL = `${location.protocol}//${location.hostname}:${location.port}/graphql`
+    }
+    return GRAPHQL_URL
+}
+
+const getGraphQlWsUrl = () =>{
+    if(!GRAPHQL_WS_URL){
+        const location = window.location
+        GRAPHQL_WS_URL = (location.protocol === 'https:' ? 'wss' : 'ws') + `://${location.hostname}:${location.port}/lunucws`
+    }
+    return GRAPHQL_WS_URL
+}
 
 
 export const setGraphQlOptions = ({url}) => {
@@ -112,7 +126,7 @@ const setUpWs = () => {
     if (!setUpWsWasCalled && !_app_.ssr && !window._disableWsConnection) {
         setUpWsWasCalled = true
         try {
-            wsCurrentConnection = new WebSocket(GRAPHQL_WS_URL, ['graphql-ws'])
+            wsCurrentConnection = new WebSocket(getGraphQlWsUrl(), ['graphql-ws'])
 
             wsCurrentConnection.onopen = () => {
                 wsCurrentConnection.send('{"type":"connection_init","payload":{}}')
@@ -224,7 +238,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
         }
 
         addLoader()
-        fetch(GRAPHQL_URL, {
+        fetch(getGraphQlUrl(), {
             method: 'POST',
             signal,
             credentials: 'include',

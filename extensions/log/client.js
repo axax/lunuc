@@ -1,6 +1,6 @@
 import React from 'react'
-import Hook from 'util/hook'
-import {getTypeQueries} from 'util/types'
+import Hook from 'util/hook.cjs'
+import {getTypeQueries} from 'util/types.mjs'
 import {client} from 'client/middleware/graphql'
 
 export default () => {

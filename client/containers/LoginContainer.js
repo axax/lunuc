@@ -8,10 +8,10 @@ import * as ErrorHandlerAction from 'client/actions/ErrorHandlerAction'
 import {Card, SimpleButton, TextField, Row, Col, Typography} from 'ui/admin'
 import config from 'gen/config-client'
 import BlankLayout from 'client/components/layout/BlankLayout'
-import Util from 'client/util'
+import Util from 'client/util/index.mjs'
 import DomUtil from '../util/dom.mjs'
 import {client} from 'client/middleware/graphql'
-import {_t} from 'util/i18n'
+import {_t} from 'util/i18n.mjs'
 
 class LoginContainer extends React.Component {
     state = {

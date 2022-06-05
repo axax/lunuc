@@ -14,7 +14,7 @@ import {
 } from 'ui/admin'
 import {getComponentByKey, addComponent, removeComponent} from '../util/jsonDomUtil'
 import DomUtil from 'client/util/dom.mjs'
-import DomUtilAdmin from 'client/util/domAdmin'
+import DomUtilAdmin from 'client/util/domAdmin.mjs'
 import {getJsonDomElements} from '../util/elements'
 
 const INDENT = 30

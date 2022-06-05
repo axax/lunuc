@@ -3,7 +3,7 @@ import {bindActionCreators} from 'redux'
 import {connect} from 'react-redux'
 import PropTypes from 'prop-types'
 import * as UserActions from 'client/actions/UserAction'
-import Util from 'client/util'
+import Util from 'client/util/index.mjs'
 import {client} from '../middleware/graphql'
 
 

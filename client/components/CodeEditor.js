@@ -38,7 +38,7 @@ import 'codemirror/addon/fold/markdown-fold'
 import 'codemirror/addon/fold/comment-fold'
 import 'codemirror/addon/fold/foldgutter.css'
 import GenericForm from './GenericForm'
-import Util from '../util'
+import Util from '../util/index.mjs'
 import styled from '@emotion/styled'
 
 const StyledRoot = styled('div')(({ error, inWindow}) => ({

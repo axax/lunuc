@@ -1,5 +1,5 @@
 import React from 'react'
-import Util from 'client/util'
+import Util from 'client/util/index.mjs'
 
 
 class ElementWatch extends React.Component {

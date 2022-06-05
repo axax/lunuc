@@ -55,22 +55,22 @@ import {
 import ErrorHandler from './ErrorHandler'
 import NotificationHandler from './NotificationHandler'
 import NetworkStatusHandler from './NetworkStatusHandler'
-import Hook from 'util/hook'
+import Hook from 'util/hook.cjs'
 import config from 'gen/config-client'
 import * as UserActions from 'client/actions/UserAction'
 import {UIProvider} from 'ui/admin'
 import 'gen/extensions-client-admin'
 import {Link} from '../../util/route'
 import {useKeyValues, setKeyValue} from '../../util/keyvalue'
-import {CAPABILITY_MANAGE_TYPES} from '../../../util/capabilities'
+import {CAPABILITY_MANAGE_TYPES} from '../../../util/capabilities.mjs'
 
 const {ADMIN_BASE_URL, APP_NAME} = config
 
-import {_t, registerTrs} from 'util/i18n'
+import {_t, registerTrs} from 'util/i18n.mjs'
 import {translations} from '../../translations/admin'
 import {propertyByPath} from '../../util/json.mjs'
 import Async from 'client/components/Async'
-import {deepMergeOptional} from '../../../util/deepMerge'
+import {deepMergeOptional} from '../../../util/deepMerge.mjs'
 
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../CodeEditor')}/>

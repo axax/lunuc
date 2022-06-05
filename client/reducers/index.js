@@ -1,5 +1,5 @@
 import {combineReducers} from 'redux'
-import Hook from '../../util/hook'
+import Hook from '../../util/hook.cjs'
 import errorHandler from './ErrorHandlerReducer'
 import notification from './NotificationReducer'
 import networkStatusHandler from './NetworkStatusReducer'

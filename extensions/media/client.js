@@ -2,7 +2,7 @@ import React from 'react'
 import Async from 'client/components/Async'
 import config from 'gen/config-client'
 const {ADMIN_BASE_URL} = config
-import Hook from 'util/hook'
+import Hook from 'util/hook.cjs'
 const TypesContainer = (props) => <Async {...props}
                                          load={import(/* webpackChunkName: "admin" */ '../../client/containers/TypesContainer')}/>
 

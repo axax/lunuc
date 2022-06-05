@@ -1,11 +1,11 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import GenericForm from '../GenericForm'
-import Hook from '../../../util/hook'
-import {getFormFieldsByType, addAlwaysUpdateData, referencesToIds} from '../../../util/typesAdmin'
+import Hook from '../../../util/hook.cjs'
+import {getFormFieldsByType, addAlwaysUpdateData, referencesToIds} from '../../../util/typesAdmin.mjs'
 import {SimpleDialog} from 'ui/admin'
-import {_t} from 'util/i18n'
-import Util from "../../util";
+import {_t} from 'util/i18n.mjs'
+import Util from '../../util/index.mjs'
 
 
 const compareDataReferences = (prev, current) => {

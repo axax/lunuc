@@ -149,10 +149,17 @@ const config = {
         chunkFilename: '[name].bundle.js?v=' + BUILD_NUMBER,
         publicPath: '/'
     },
+    resolve: {
+        extensions: ['.js', '.json', '.wasm', '.cjs', '.mjs'],
+        alias: {
+            'react': 'preact/compat',
+            'react-dom': 'preact/compat'
+        }
+    },
     module: {
         rules: [
             {
-                test: /\.(js|mjs|jsx|tsx|ts)$/,
+                test: /\.(js|mjs|cjs|jsx|tsx|ts)$/,
                 loader: 'babel-loader'
             },
             {
@@ -328,14 +335,6 @@ if (DEV_MODE) {
 
         }
     }
-
-    config.resolve = {
-        alias: {
-            'react': 'preact/compat',
-            'react-dom': 'preact/compat'
-        },
-    }
-
     config.devtool = 'inline-source-map'
 
 } else {
@@ -396,13 +395,6 @@ if (DEV_MODE) {
     config.optimization.minimizer.push(
         new TerserPlugin(terserOptions)
     )
-
-    config.resolve = {
-        alias: {
-            'react': 'preact/compat',
-            'react-dom': 'preact/compat'
-        },
-    }
 
     /*const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
     config.plugins.push(new BundleAnalyzerPlugin())*/

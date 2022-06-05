@@ -1,4 +1,4 @@
-import {NO_SESSION_KEY_VALUES} from 'client/constants'
+import {NO_SESSION_KEY_VALUES} from 'client/constants/index.mjs'
 import {client, useQuery} from '../middleware/graphql'
 
 export const QUERY_KEY_VALUES = 'query keyValues($keys:[String],$global:Boolean){keyValues(keys:$keys,global:$global){limit offset total results{key value status createdBy{_id username}}}}'

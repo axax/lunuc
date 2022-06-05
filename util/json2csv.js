@@ -1,4 +1,4 @@
-import Util from '../client/util'
+import Util from '../client/util/index.mjs'
 
 const json2csv =(items, seperator=';')=>{
 

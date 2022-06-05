@@ -1,5 +1,5 @@
 import React from 'react'
-import Hook from 'util/hook'
+import Hook from 'util/hook.cjs'
 import config from 'gen/config-client'
 
 const {ADMIN_BASE_URL, PRETTYURL_SEPERATOR} = config
@@ -7,7 +7,7 @@ import {
     CAPABILITY_MANAGE_CMS_PAGES,
     CAPABILITY_MANAGE_CMS_TEMPLATE,
     CAPABILITY_MANAGE_CMS_CONTENT
-} from './constants'
+} from './constants/index.mjs'
 import Async from 'client/components/Async'
 import CmsViewContainer from './containers/CmsViewContainer'
 import CmsEditorReducer from './reducers/CmsEditorReducer'

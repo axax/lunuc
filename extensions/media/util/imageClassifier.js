@@ -1,9 +1,8 @@
-
-const mobilenet = require('@tensorflow-models/mobilenet')
-const tf = require('@tensorflow/tfjs-node')
-const fs = require('fs');
-const jpeg = require('jpeg-js')
-const request = require('request')
+import mobilenet from '@tensorflow-models/mobilenet'
+import tf from '@tensorflow/tfjs-node'
+import fs from 'fs'
+import jpeg from 'jpeg-js'
+import request from 'request'
 
 const NUMBER_OF_CHANNELS = 3
 

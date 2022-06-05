@@ -1,9 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import DomUtil from 'client/util/dom.mjs'
-import Util from 'client/util'
+import Util from 'client/util/index.mjs'
 import injectSheet from 'react-jss'
-import {_t, registerTrs} from '../../util/i18n'
+import {_t, registerTrs} from '../../util/i18n.mjs'
 import classNames from 'classnames'
 
 const PAGE_HEIGHT = 1430, PAGE_WIDTH = 1010

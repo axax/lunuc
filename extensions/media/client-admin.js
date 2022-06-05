@@ -1,8 +1,8 @@
 import React, {useState} from 'react'
-import Hook from 'util/hook'
+import Hook from 'util/hook.cjs'
 import Async from 'client/components/Async'
 import config from 'gen/config-client'
-import Util from '../../client/util'
+import Util from '../../client/util/index.mjs'
 import DomUtil from '../../client/util/dom.mjs'
 import {
     Row,
@@ -16,11 +16,11 @@ import {
 } from 'ui/admin'
 
 const {UPLOAD_URL, ADMIN_BASE_URL, PRETTYURL_SEPERATOR} = config
-import {_t, registerTrs} from 'util/i18n'
+import {_t, registerTrs} from 'util/i18n.mjs'
 import UploadUtil from '../../client/util/upload'
 import {client} from 'client/middleware/graphql'
 import {translations} from './translations/translations'
-import {CAPABILITY_MANAGE_OTHER_USERS} from '../cms/constants'
+import {CAPABILITY_MANAGE_OTHER_USERS} from '../cms/constants/index.mjs'
 
 registerTrs(translations, 'MediaTranslations')
 

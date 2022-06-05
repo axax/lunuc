@@ -1,4 +1,4 @@
-import Util from 'api/util'
+import Util from 'api/util/index.mjs'
 import {ObjectId} from 'mongodb'
 import {pubsub} from 'api/subscription'
 import {withFilter} from 'graphql-subscriptions'

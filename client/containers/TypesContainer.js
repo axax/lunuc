@@ -30,28 +30,28 @@ import {
     Paper,
     CloudUploadIcon
 } from 'ui/admin'
-import Util from 'client/util'
+import Util from 'client/util/index.mjs'
 import TypeEdit from 'client/components/types/TypeEdit'
 import config from 'gen/config-client'
-import Hook from 'util/hook'
+import Hook from 'util/hook.cjs'
 import {
     getTypes,
     getTypeQueries,
-} from 'util/types'
+} from 'util/types.mjs'
 import {
     checkFieldType,
     getFormFieldsByType,
     typeDataToLabel,
     addAlwaysUpdateData
-} from 'util/typesAdmin'
+} from 'util/typesAdmin.mjs'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {getImageTag} from 'client/util/media'
-import {deepMerge} from 'util/deepMerge'
+import {deepMerge} from 'util/deepMerge.mjs'
 import DomUtil from 'client/util/dom.mjs'
-import {_t} from 'util/i18n'
+import {_t} from 'util/i18n.mjs'
 
 const {ADMIN_BASE_URL, LANGUAGES} = config
-import {COLLECTIONS_QUERY} from '../constants'
+import {COLLECTIONS_QUERY} from '../constants/index.mjs'
 import GenericForm from '../components/GenericForm'
 import {client, Query} from '../middleware/graphql'
 import json2csv from 'util/json2csv'

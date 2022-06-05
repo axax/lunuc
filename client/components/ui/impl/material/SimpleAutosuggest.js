@@ -4,7 +4,7 @@ import Autosuggest from 'react-autosuggest'
 import TextField from '@mui/material/TextField'
 import Paper from '@mui/material/Paper'
 import MenuItem from '@mui/material/MenuItem'
-import Util from 'client/util'
+import Util from 'client/util/index.mjs'
 
 
 const renderInputComponent = (inputProps) => {

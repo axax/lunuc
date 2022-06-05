@@ -9,7 +9,7 @@ import {
     Typography
 } from 'ui/admin'
 import GenericForm from 'client/components/GenericForm'
-import extensions from 'gen/extensions'
+import extensions from '../../../gensrc/extensions.mjs'
 import compose from 'util/compose'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {graphql} from '../../../client/middleware/graphql'

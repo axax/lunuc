@@ -4,7 +4,7 @@ import compose from 'util/compose'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import {Button, Typography, TextField, DeleteIconButton, Chip, ContentBlock} from 'ui/admin'
 import {graphql} from '../middleware/graphql'
-import {_t} from 'util/i18n'
+import {_t} from 'util/i18n.mjs'
 
 class UserProfileContainer extends React.Component {
 

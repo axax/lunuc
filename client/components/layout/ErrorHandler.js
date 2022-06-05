@@ -4,7 +4,7 @@ import {connect} from 'react-redux'
 import {bindActionCreators} from 'redux'
 import * as Actions from 'client/actions/ErrorHandlerAction'
 import {SimpleDialog, Snackbar} from 'ui/admin'
-import {_t} from 'util/i18n'
+import {_t} from 'util/i18n.mjs'
 
 class ErrorHandler extends React.Component {
 

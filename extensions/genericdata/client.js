@@ -1,5 +1,5 @@
 import React from 'react'
-import Hook from 'util/hook'
+import Hook from 'util/hook.cjs'
 
 
 export default () => {

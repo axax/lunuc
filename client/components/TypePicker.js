@@ -19,19 +19,19 @@ import {
 } from 'ui/admin'
 import {getImageTag, isValidImage, getImageSrc} from 'client/util/media'
 import {convertRawValuesFromPicker} from 'client/util/picker'
-import {queryStatemantForType} from 'util/types'
-import {typeDataToLabel} from 'util/typesAdmin'
+import {queryStatemantForType} from 'util/types.mjs'
+import {typeDataToLabel} from 'util/typesAdmin.mjs'
 import config from 'gen/config-client'
-import {getFormFieldsByFieldList} from '../../util/typesAdmin'
+import {getFormFieldsByFieldList} from '../../util/typesAdmin.mjs'
 
 const {DEFAULT_LANGUAGE} = config
 
 import {client} from '../middleware/graphql'
-import Util from '../util'
-import Hook from '../../util/hook'
+import Util from '../util/index.mjs'
+import Hook from '../../util/hook.cjs'
 import GenericForm from './GenericForm'
 import {openWindow} from '../util/window'
-import {projectionToQueryString} from '../../util/project'
+import {projectionToQueryString} from '../../util/project.mjs'
 import styled from '@emotion/styled'
 
 const StyledForm = styled(FormControl)({

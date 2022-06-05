@@ -1,4 +1,4 @@
-import Util from 'api/util'
+import Util from 'api/util/index.mjs'
 import request from '../../../api/util/request'
 import {ObjectId} from 'mongodb'
 

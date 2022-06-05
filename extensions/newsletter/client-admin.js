@@ -1,9 +1,9 @@
 import React from 'react'
-import Hook from 'util/hook'
+import Hook from 'util/hook.cjs'
 import Async from 'client/components/Async'
 import {client} from 'client/middleware/graphql'
 
-import {registerTrs} from '../../util/i18n'
+import {registerTrs} from '../../util/i18n.mjs'
 import {translations} from './translations/admin'
 registerTrs(translations, 'Newsletter')
 

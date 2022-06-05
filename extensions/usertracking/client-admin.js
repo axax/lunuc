@@ -1,10 +1,10 @@
-import Hook from '../../util/hook'
+import Hook from '../../util/hook.cjs'
 import React from 'react'
 import {
     SimpleSwitch
 } from 'ui/admin'
-import Util from '../../client/util'
-import {_t, registerTrs} from '../../util/i18n'
+import Util from '../../client/util/index.mjs'
+import {_t, registerTrs} from '../../util/i18n.mjs'
 
 export default () => {
     Hook.on('TypeTable', ({type, dataSource, data, container}) => {

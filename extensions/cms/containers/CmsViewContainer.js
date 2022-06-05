@@ -1,16 +1,15 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import JsonDom from '../components/JsonDom'
-//import config from 'gen/config-client'
-import Util from 'client/util'
+import Util from 'client/util/index.mjs'
 import DomUtil from 'client/util/dom.mjs'
-import {getType} from 'util/types'
-import {isEditMode, getSlugVersion, CMS_PAGE_QUERY} from '../util/cmsView'
+import {getType} from 'util/types.mjs'
+import {isEditMode, getSlugVersion, CMS_PAGE_QUERY} from '../util/cmsView.mjs'
 import withCms from './withCms'
 import {client} from '../../../client/middleware/graphql'
-import Hook from "../../../util/hook";
+import Hook from '../../../util/hook.cjs'
 import {connect} from 'react-redux'
-import {deepMerge} from "../../../util/deepMerge";
+import {deepMerge} from '../../../util/deepMerge.mjs'
 
 class CmsViewContainer extends React.Component {
     oriTitle = document.title

@@ -133,8 +133,8 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
                                 clientContent += `import ${file} from '.${EXTENSION_PATH}${file}/client.js'\nstart(${file},'${file}')\n`
                             }
                         }
-                        if (fs.existsSync(EXTENSION_PATH + file + '/server.js')) {
-                            serverContent += `import '.${EXTENSION_PATH}${file}/server.js'\n`
+                        if (fs.existsSync(EXTENSION_PATH + file + '/server.mjs')) {
+                            serverContent += `import '.${EXTENSION_PATH}${file}/server.mjs'\n`
                         }
 
 
@@ -157,7 +157,7 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
         })
         const manifestStr = `${GENSRC_HEADER}const extensions=${JSON.stringify(manifestJson, null, 2)}\nexport default extensions`
 
-        fs.writeFile(GENSRC_PATH + "/extensions.js", manifestStr, function (err) {
+        fs.writeFile(GENSRC_PATH + "/extensions.mjs", manifestStr, function (err) {
             if (err) {
                 return console.log(err)
             }
@@ -165,7 +165,7 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
 
         const manifestPrivateStr = `${GENSRC_HEADER}const extensions=${JSON.stringify(manifestJsonPrivate, null, 2)}\nexport default extensions`
 
-        fs.writeFile(GENSRC_PATH + "/extensions-private.js", manifestPrivateStr, function (err) {
+        fs.writeFile(GENSRC_PATH + "/extensions-private.mjs", manifestPrivateStr, function (err) {
             if (err) {
                 return console.log(err)
             }
@@ -181,7 +181,7 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
                 return console.log(err)
             }
         })
-        fs.writeFile(GENSRC_PATH + "/extensions-server.js", serverContent, function (err) {
+        fs.writeFile(GENSRC_PATH + "/extensions-server.mjs", serverContent, function (err) {
             if (err) {
                 return console.log(err)
             }
@@ -207,7 +207,7 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
         delete config.BACKUP_DIR
         delete config.UPLOAD_DIR
         delete config.UPLOAD_DIR_ABSPATH
-        configContent = `${GENSRC_HEADER}export default ${JSON.stringify(config)}\n`
+        configContent = `${GENSRC_HEADER}const config = ${JSON.stringify(config)}\nmodule.exports = config\n`
 
         fs.writeFile(GENSRC_PATH + "/config-client.js", configContent, function (err) {
             if (err) {
@@ -217,7 +217,7 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
 
         /* create schema */
         let schemaContent = `${GENSRC_HEADER}export default \`type LocalizedString {\n\t${APP_CONFIG.options.LANGUAGES.join(': String\n\t')}: String\n}\n\ninput LocalizedStringInput {\n\t${APP_CONFIG.options.LANGUAGES.join(': String\n\t')}: String\n}\``
-        fs.writeFile(GENSRC_PATH + "/schema.js", schemaContent, function (err) {
+        fs.writeFile(GENSRC_PATH + "/schema.mjs", schemaContent, function (err) {
             if (err) {
                 return console.log(err)
             }
@@ -267,7 +267,7 @@ function gensrcUi() {
 
 
             let uiContentIconsHooks = ''
-            let uiContentIcons = `import React from 'react'\nimport Hook from 'util/hook'\n`
+            let uiContentIcons = `import React from 'react'\nimport Hook from 'util/hook.cjs'\n`
 
 
             //let uiContent = `${GENSRC_HEADER}import(/* webpackChunkName: "admin" */ '${ui.name?'../':''}../../client/components/ui/impl/${ui.impl || 'material'}/index')`
@@ -341,9 +341,9 @@ function gensrcExtension(name, options) {
 
 
         let schema = GENSRC_HEADER + 'export default `\n'
-        let resolver = GENSRC_HEADER + `import Util from 'api/util'\nimport {ObjectId} from 'mongodb'\nimport {pubsubHooked, pubsub} from 'api/subscription'\nimport {withFilter} from 'graphql-subscriptions'\n`
-        resolver += `import Hook from '../../../util/hook'\n`
-        resolver += `import GenericResolver from 'api/resolver/generic/genericResolver'\n\nexport default db => ({\n`
+        let resolver = GENSRC_HEADER + `import Util from '../../../api/util/index.mjs'\nimport {ObjectId} from 'mongodb'\nimport {pubsubHooked, pubsub} from '../../../api/subscription.mjs'\nimport {withFilter} from 'graphql-subscriptions'\n`
+        resolver += `import Hook from '../../../util/hook.cjs'\n`
+        resolver += `import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'\n\nexport default db => ({\n`
         let resolverQuery = '\tQuery:{\n'
         let resolverMutation = '\tMutation:{\n'
         let resolverSubscription = '\tSubscription:{\n'
@@ -531,14 +531,14 @@ function gensrcExtension(name, options) {
                 if (err.code !== 'EEXIST') throw err
             }
             if (hasSchema) {
-                fs.writeFile(gendir + "/schema.js", schema, function (err) {
+                fs.writeFile(gendir + "/schema.mjs", schema, function (err) {
                     if (err) {
                         console.log(err)
                     }
                 })
             }
             if (hasResolver) {
-                fs.writeFile(gendir + "/resolver.js", resolver, function (err) {
+                fs.writeFile(gendir + "/resolver.mjs", resolver, function (err) {
                     if (err) {
                         console.log(err)
                     }

@@ -1,4 +1,4 @@
-import Util from 'client/util'
+import Util from 'client/util/index.mjs'
 
 /**
  * Object with helper methods to handle file upload

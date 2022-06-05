@@ -1,11 +1,11 @@
 import React from 'react'
-import Hook from 'util/hook'
+import Hook from 'util/hook.cjs'
 import config from 'gen/config-client'
 
 const {ADMIN_BASE_URL} = config
 import Async from 'client/components/Async'
-import Util from '../../client/util'
-import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../cms/constants'
+import Util from '../../client/util/index.mjs'
+import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../cms/constants/index.mjs'
 
 const PostRenderer = (props) => <Async readOnly={true} {...props}
                                        load={import(/* webpackChunkName: "post" */ './components/post/PostEditor')}/>

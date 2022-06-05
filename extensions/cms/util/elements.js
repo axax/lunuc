@@ -1,6 +1,6 @@
 import {
     CAPABILITY_MANAGE_CMS_PAGES
-} from '../constants'
+} from '../constants/index.mjs'
 
 const DEFAULT_TAB = 'Allgemein', IMAGE_OPTIMIZATION_TAB = 'Bild Optimierung', MARGIN_TAB = 'Abstände',
     TRANSLATION_TAB = 'Übersetzung',

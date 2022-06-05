@@ -6,7 +6,7 @@ import App from './components/App'
 import {getStore} from './store/index'
 import config from 'gen/config-client'
 import DomUtil from 'client/util/dom.mjs'
-import Util from 'client/util'
+import Util from 'client/util/index.mjs'
 
 try {
     if (typeof localStorage === 'object') {

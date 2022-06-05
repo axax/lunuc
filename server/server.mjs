@@ -21,16 +21,14 @@ import {USE_COOKIES} from '../api/constants/index.mjs'
 import {parseCookies} from '../api/util/parseCookies.mjs'
 import puppeteer from 'puppeteer'
 import {decodeToken} from '../api/util/jwt.mjs'
-import { fileURLToPath } from 'url'
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg'
 import ffmpeg from 'fluent-ffmpeg'
 import heapdump from 'heapdump'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
-const ABS_UPLOAD_DIR = path.join(__dirname, '../' + UPLOAD_DIR)
+const ROOT_DIR = path.resolve(), SERVER_DIR = path.join(ROOT_DIR, './server')
+const ABS_UPLOAD_DIR = path.join(ROOT_DIR, UPLOAD_DIR)
 
 const hostrules = loadAllHostrules(true)
 
@@ -48,10 +46,10 @@ const API_PORT = (process.env.API_PORT || process.env.LUNUC_API_PORT || 3000)
 const LUNUC_SERVER_NODES = process.env.LUNUC_SERVER_NODES || ''
 
 // Build dir
-const BUILD_DIR = path.join(__dirname, '../build')
-const STATIC_DIR = path.join(__dirname, '../' + config.STATIC_DIR)
-const STATIC_TEMPLATE_DIR = path.join(__dirname, '../' + config.STATIC_TEMPLATE_DIR)
-const CERT_DIR = process.env.LUNUC_CERT_DIR || __dirname
+const BUILD_DIR = path.join(ROOT_DIR, './build')
+const STATIC_DIR = path.join(ROOT_DIR, './' + config.STATIC_DIR)
+const STATIC_TEMPLATE_DIR = path.join(ROOT_DIR, './' + config.STATIC_TEMPLATE_DIR)
+const CERT_DIR = process.env.LUNUC_CERT_DIR || SERVER_DIR
 const PKEY_FILE_DIR = path.join(CERT_DIR, './privkey.pem')
 const CERT_FILE_DIR = path.join(CERT_DIR, './cert.pem')
 let pkey, cert
@@ -459,7 +457,7 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
         const baseUrl = `http://localhost:${PORT}`
         const urlToFetch = baseUrl + urlPathname + (parsedUrl.search ? parsedUrl.search : '')
 
-        const cacheFileDir = path.join(__dirname, 'cache', host.replace(/\W/g, ''))
+        const cacheFileDir = path.join(SERVER_DIR, 'cache', host.replace(/\W/g, ''))
         const cacheFileName = cacheFileDir + '/' + urlToFetch.replace(/\W/g, '') + '.html'
 
         const cookies = parseCookies(req)
@@ -1144,7 +1142,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     const context = contextByRequest(req)
                     if (context.id && context.role === 'administrator') {
                         // only allow download if valid jwt token is set
-                        const backup_dir = path.join(__dirname, '../' + BACKUP_DIR)
+                        const backup_dir = path.join(ROOT_DIR, BACKUP_DIR)
                         const filename = path.join(backup_dir, urlPathname.substring(BACKUP_URL.length))
                         fs.exists(filename, (exists) => {
                             if (exists) {
@@ -1164,7 +1162,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     const context = contextByRequest(req)
                     if (context.id && context.role === 'administrator') {
 
-                        const backup_dir = path.join(__dirname, '../' + BACKUP_DIR+'/heapdump/')
+                        const backup_dir = path.join(ROOT_DIR, BACKUP_DIR+'/heapdump/')
 
                         if (ensureDirectoryExistence(backup_dir)) {
                             const filename = Date.now() + '.heapsnapshot'

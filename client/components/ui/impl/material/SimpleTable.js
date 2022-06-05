@@ -16,7 +16,7 @@ import IconButton from '@mui/material/IconButton'
 import DeleteIcon from '@mui/icons-material/Delete'
 import SimpleMenu from './SimpleMenu'
 import theme from './theme'
-import {_t} from 'util/i18n'
+import {_t} from 'util/i18n.mjs'
 import styled from '@emotion/styled'
 
 

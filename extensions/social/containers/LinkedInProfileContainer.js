@@ -7,7 +7,7 @@ import {Button, Typography, Col, Row} from 'ui/admin'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import PrettyResume from '../components/PrettyResume'
 import FileDrop from 'client/components/FileDrop'
-import {_t, registerTrs} from 'util/i18n'
+import {_t, registerTrs} from 'util/i18n.mjs'
 import translations from '../translations/translations'
 
 const withLinkedInCallback = (Container) => {

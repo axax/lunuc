@@ -1,6 +1,6 @@
-import Hook from '../../util/hook'
-import {performFieldProjection} from '../../util/project'
-import Util from './index'
+import Hook from '../../util/hook.cjs'
+import {performFieldProjection} from '../../util/project.mjs'
+import Util from './index.mjs'
 
 const convertRawValuesFromPicker = ({type, fieldsToProject, rawValue, multi}) => {
     Hook.call('TypePickerBeforeHandlePick', {type, fieldsToProject, rawValue})

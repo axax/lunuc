@@ -1,4 +1,3 @@
-'use strict'
 const valuesMap = new Map()
 
 class LocalStorage {

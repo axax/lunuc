@@ -1,8 +1,8 @@
 import React from 'react'
-import extensions from 'gen/extensions'
+import extensions from 'gen/extensions.mjs'
 import BaseLayout from '../components/layout/BaseLayout'
 import {Typography, ExpansionPanel, Button, SimpleSwitch, ContentBlock} from 'ui/admin'
-import Hook from 'util/hook'
+import Hook from 'util/hook.cjs'
 import {client} from '../middleware/graphql'
 import styled from '@emotion/styled'
 

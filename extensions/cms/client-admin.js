@@ -1,10 +1,10 @@
 import React from 'react'
-import Hook from 'util/hook'
+import Hook from 'util/hook.cjs'
 import config from 'gen/config-client'
 const {ADMIN_BASE_URL, PRETTYURL_SEPERATOR} = config
 import CmsViewContainer from './containers/CmsViewContainer'
 import {Link} from 'client/util/route'
-import {_t, registerTrs} from '../../util/i18n'
+import {_t, registerTrs} from '../../util/i18n.mjs'
 import {
     Button,
     Select,

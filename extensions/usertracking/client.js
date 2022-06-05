@@ -1,5 +1,5 @@
-import Hook from '../../util/hook'
-import {getTypeQueries} from 'util/types'
+import Hook from '../../util/hook.cjs'
+import {getTypeQueries} from 'util/types.mjs'
 
 export default () => {
     Hook.on('JsonDomUserEvent', ({event, payload, container}) => {
