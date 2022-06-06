@@ -91,7 +91,7 @@ Hook.on('appready', ({app, db}) => {
             } else {
                 const data = await result.data
 
-                if(data._error){
+                if(data && data._error){
                     res.writeHead(500, {'content-type': 'application/json'})
                     res.end(`{"status":"error","message":"${data._error.message}"}`)
                 }else {
