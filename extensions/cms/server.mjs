@@ -8,7 +8,7 @@ import {
     CAPABILITY_MANAGE_CMS_CONTENT,
     CAPABILITY_MANAGE_CMS_TEMPLATE
 } from './constants/index.mjs'
-//import renderReact from './renderReact.mjs'
+import renderReact from './renderReact.mjs'
 import {getCmsPage} from './util/cmsPage.mjs'
 import {resolveData} from './util/dataResolver.mjs'
 
