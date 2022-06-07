@@ -68,7 +68,6 @@ export class RouteHistory {
                     window.history.pushState({}, '', newPath)
                 }
             }
-            console.log(url)
             this._callListener()
         }
     }

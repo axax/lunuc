@@ -19,7 +19,16 @@
         },
         {
           "name": "host",
-          "index": 1
+          "index": 1,
+          "compoundIndex": [
+            {
+              "unique": true,
+              "fields": {
+                "host": 1,
+                "_id": 1
+              }
+            }
+          ]
         },
         {
           "name": "slug",
@@ -42,12 +51,55 @@
         },
         {
           "name": "event",
-          "index": 1
+          "index": 1,
+          "compoundIndex": [
+            {
+              "unique": false,
+              "fields": {
+                "event": 1,
+                "host": 1
+              }
+            },
+            {
+              "unique": true,
+              "fields": {
+                "event": 1,
+                "host": 1,
+                "_id": 1
+              }
+            }
+          ]
         },
         {
           "name": "isBot",
           "type": "Boolean",
-          "index": 1
+          "index": 1,
+          "compoundIndex": [
+            {
+              "unique": false,
+              "fields": {
+                "host": 1,
+                "isBot": 1
+              }
+            },
+            {
+              "unique": false,
+              "fields": {
+                "event": 1,
+                "host": 1,
+                "isBot": 1
+              }
+            },
+            {
+              "unique": true,
+              "fields": {
+                "event": 1,
+                "host": 1,
+                "isBot": 1,
+                "_id": 1
+              }
+            }
+          ]
         },
         {
           "name": "data",

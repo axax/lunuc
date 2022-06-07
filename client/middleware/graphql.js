@@ -522,10 +522,10 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
     if(_app_.ssr || skip || fetchPolicy === 'cache-first' || fetchPolicy === 'cache-and-network'){
         currentData = client.readQuery({cacheKey})
     }
-
     const initialLoading = _app_.ssr || skip || (fetchPolicy === 'cache-first' && currentData) ? false : true
 
     const initialData = {
+        cacheKey,
         data: currentData,
         networkStatus: 0,
         loading: initialLoading,
@@ -553,7 +553,7 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
 
         const controller = new AbortController()
         if (initialLoading) {
-            const newResponse = {fetchMore: response.fetchMore}
+            const newResponse = {fetchMore: response.fetchMore, cacheKey}
             newResponse.loading = response.networkStatus !== NetworkStatus.error
 
 
@@ -576,6 +576,7 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
                     fetchPolicy,
                     signal: controller.signal
                 }).then(response => {
+                    response.cacheKey = cacheKey
                     setResponse(response)
                 }).catch(error => {
                     if (!controller.signal.aborted) {
@@ -593,5 +594,10 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
     if(!initialLoading){
         return initialData
     }
+
+    if(response.cacheKey && initialData.cacheKey !== response.cacheKey){
+        response.loading=true
+    }
+
     return response
 }
