@@ -73,12 +73,12 @@ export default db => ({
 
             return data
         },
-        cmsPage: async ({slug, query, props, nosession, editmode, dynamic, meta, _version}, req) => {
+        cmsPage: async ({slug, query, props, nosession, editmode, dynamic, inEditor, meta, _version}, req) => {
             const startTime = (new Date()).getTime()
             const {context, headers} = req
 
             let editable = Util.isUserLoggedIn(context)
-            let cmsPages = await getCmsPage({db, context, slug, _version, checkHostrules: !dynamic, headers, editmode})
+            let cmsPages = await getCmsPage({db, context, slug, _version, checkHostrules: !dynamic, inEditor, headers, editmode})
             //console.log(`get cms ${slug} in ${(new Date()).getTime() - startTime}ms`)
             if (!cmsPages.results || cmsPages.results.length === 0) {
 

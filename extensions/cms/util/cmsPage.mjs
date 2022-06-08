@@ -9,7 +9,7 @@ import {loadAllHostrules} from '../../../util/hostrules.mjs'
 const hostrules = loadAllHostrules(false)
 
 
-export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, _version, headers, ignorePublicState}) => {
+export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, inEditor, _version, headers, ignorePublicState}) => {
     let host = headers && headers['x-host-rule'] ? headers['x-host-rule'].split(':')[0] : getHostFromHeaders(headers)
 
     if(!host){
@@ -104,7 +104,10 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, _
                             .replace(/^\s+|\s+$/gm, '') // remove whitespace at beginning of line
                             .replace(/,$\n/gm, ',') // remove line break after ,
                             .replace(/\/\*[\s\S]*?\*\//gm, '') // remove block comments /**/
-                            .replace(/\/\/<\!\!#REMOVE([\s\S]*?)\/\/\!\!#REMOVE>/gm,'') // remove any character between marker
+
+                            if(!inEditor) {
+                                result.style = result.style.replace(/\/\/<\!\!#REMOVE([\s\S]*?)\/\/\!\!#REMOVE>/gm, '') // remove any character between marker
+                            }
 
                     }
                 }

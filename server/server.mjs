@@ -350,6 +350,7 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cooki
         await page.evaluateOnNewDocument(() => {
             window._elementWatchForceVisible = true
             window._disableWsConnection = true
+            window._lunucWebParser = true
         })
         await page.goto(urlToFetch, {waitUntil: 'networkidle0'})
 

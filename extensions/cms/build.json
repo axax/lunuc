@@ -59,7 +59,16 @@
             "ui": {
               "role": "manage_cms_template"
             }
-          }
+          },
+          "compoundIndex": [
+            {
+              "unique": false,
+              "fields": {
+                "public": 1,
+                "slug": 1
+              }
+            }
+          ]
         },
         {
           "name": "isTemplate",
