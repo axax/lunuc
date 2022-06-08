@@ -347,11 +347,13 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cooki
             }
         })
 
-        await page.evaluateOnNewDocument(() => {
+        await page.evaluateOnNewDocument((data) => {
             window._elementWatchForceVisible = true
             window._disableWsConnection = true
-            window._lunucWebParser = true
-        })
+            window._lunucWebParser = data
+        },{host, agent, isBot, remoteAddress})
+
+
         await page.goto(urlToFetch, {waitUntil: 'networkidle0'})
 
         let html = await page.content()
