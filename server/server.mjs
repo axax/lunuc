@@ -1014,7 +1014,7 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
 
 function getFileFromOtherServer(urlPath, filename, baseResponse, req) {
 
-    const remoteAdr = req.connection.remoteAddress
+    const remoteAdr = (req.connection.remoteAddress || '').replace('::ffff:', '')
 
     if(LUNUC_SERVER_NODES && LUNUC_SERVER_NODES.indexOf(remoteAdr)<0){
         const url = LUNUC_SERVER_NODES+urlPath
