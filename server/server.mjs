@@ -1018,8 +1018,8 @@ function getFileFromOtherServer(urlPath, filename, baseResponse, req) {
 
     if(LUNUC_SERVER_NODES && LUNUC_SERVER_NODES.indexOf(remoteAdr)<0){
         const url = LUNUC_SERVER_NODES+urlPath
-        console.log('laod from ' + url)
-        http.get(url, function(response) {
+        console.log('laod from ' + url + ' - '+remoteAdr)
+        /*http.get(url, function(response) {
 
 
             const file = fs.createWriteStream(filename);
@@ -1031,7 +1031,7 @@ function getFileFromOtherServer(urlPath, filename, baseResponse, req) {
         }).on('error', function(err) { // Handle errors
             sendError(res, 404)
         })
-        return true
+        return true*/
     }
 
     return false
