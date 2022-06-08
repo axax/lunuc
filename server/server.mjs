@@ -910,7 +910,7 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
 
 
     if (!fs.existsSync(filename)) {
-        if(getFileFromOtherServer(modUri,baseFilename,res)){
+        if(getFileFromOtherServer(modUri,baseFilename,res, req)){
             return
         }
     }
@@ -1012,10 +1012,11 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
     }
 }
 
-function getFileFromOtherServer(urlPath, filename, baseResponse) {
+function getFileFromOtherServer(urlPath, filename, baseResponse, req) {
 
+    const remoteAdr = req.connection.remoteAddress
 
-    if(LUNUC_SERVER_NODES){
+    if(LUNUC_SERVER_NODES && LUNUC_SERVER_NODES.indexOf(remoteAdr)<0){
         const url = LUNUC_SERVER_NODES+urlPath
         console.log('laod from ' + url)
         http.get(url, function(response) {
