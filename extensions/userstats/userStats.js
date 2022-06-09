@@ -1,13 +1,12 @@
 import {ObjectId} from 'mongodb'
 
+import {clientAddress} from '../../util/host.mjs'
+
+
 export default function (db) {
     let cache = {},
         readyToCommit = [],
         counter = 0,
-        clientAddress = (req) => {
-            return (req.headers['x-forwarded-for'] || '').split(',')[0]
-                || req.connection.remoteAddress
-        },
         commit = async (db, readyToCommit) => {
             if (readyToCommit.length) {
                 const bulk = await db.collection('UserStats').initializeUnorderedBulkOp()

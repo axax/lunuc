@@ -39,8 +39,7 @@ Hook.on('cmsCustomResolver', async ({db, segment, context, req, scope, editmode,
 Hook.on('typeBeforeCreate', ({type, data, req}) => {
     if (type === 'UserTracking') {
         if (!data.ip) {
-            const ip = clientAddress(req)
-            data.ip = ip.replace('::ffff:', '')
+            data.ip = clientAddress(req)
         }
         if (!data.agent) {
             data.agent = req.headers['x-track-user-agent'] || req.headers['user-agent']

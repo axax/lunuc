@@ -7,7 +7,7 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
 
     const ip = clientAddress(req)
 
-    if (ip && (req.headers['x-track-user-agent'] || (ip !== '::1' && ip !== '::ffff:127.0.0.1'))) {
+    if (ip && (req.headers['x-track-user-agent'] || (ip !== '::1' && ip !== '127.0.0.1'))) {
         const host = getHostFromHeaders(req.headers)
 
         let referer
@@ -31,7 +31,7 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
 
         const date = new Date()
         const insertData = {
-            ip: ip.replace('::ffff:', ''),
+            ip: ip,
             agent: req.headers['x-track-user-agent'] || req.headers['user-agent'],
             isBot: req.headers['x-track-is-bot'] === 'true' ? true : false,
             referer,

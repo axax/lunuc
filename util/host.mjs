@@ -33,12 +33,17 @@ export const getHostFromHeaders= (headers) => {
 
 /* returns the IP from a request */
 export const clientAddress = (req) => {
+    let ip = ''
     if(req.headers) {
         if (req.headers['x-track-ip']) {
-            return req.headers['x-track-ip'].split(',')[0]
+            ip = req.headers['x-track-ip'].split(',')[0]
         } else if (req.headers['x-forwarded-for']) {
-            return req.headers['x-forwarded-for'].split(',')[0]
+            ip = req.headers['x-forwarded-for'].split(',')[0]
         }
     }
-    return req.connection.remoteAddress
+    if(!ip) {
+        ip = req.connection.remoteAddress
+    }
+
+    return ip.replace('::ffff:', '')
 }

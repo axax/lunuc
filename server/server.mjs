@@ -24,6 +24,7 @@ import {decodeToken} from '../api/util/jwt.mjs'
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg'
 import ffmpeg from 'fluent-ffmpeg'
 import heapdump from 'heapdump'
+import {clientAddress} from '../util/host.mjs'
 
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
@@ -424,7 +425,7 @@ const doScreenCapture = async (url, filename, options) => {
     await browser.close()
 }
 
-const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl}) => {
+const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, host, parsedUrl}) => {
     const headers = {
         'Cache-Control': 'public, max-age=60',
         'Content-Type': MimeType.detectByExtension('html'),
@@ -493,7 +494,7 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
         }
 
 
-        const pageData = await parseWebsite(urlToFetch, host, agent, isBot, req.connection.remoteAddress, cookies)
+        const pageData = await parseWebsite(urlToFetch, host, agent, isBot, remoteAddress, cookies)
 
         // remove script tags
         pageData.html = pageData.html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,'')
@@ -548,7 +549,7 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
 }
 
 
-function hasHttpsWwwRedirect(host, req, res) {
+function hasHttpsWwwRedirect(host, req, res, remoteAddress) {
     if (host !== 'localhost' && !net.isIP(host)) {
 
         // force www
@@ -579,7 +580,7 @@ function hasHttpsWwwRedirect(host, req, res) {
                         (browser === 'msie' && version <= 10)) {
                         // for browser that doesn't support tls 1.2
                     } else {
-                        console.log(`${req.connection.remoteAddress}: Redirect to https ${newhost} / user-agent: ${agent} / browser=${browser} / version=${version}`)
+                        console.log(`${remoteAddress}: Redirect to https ${newhost} / user-agent: ${agent} / browser=${browser} / version=${version}`)
 
                         res.writeHead(301, {'Location': 'https://' + newhost + req.url})
                         res.end()
@@ -593,7 +594,7 @@ function hasHttpsWwwRedirect(host, req, res) {
             const agent = req.headers['user-agent']
 
             if( !agent || agent.indexOf('www.letsencrypt.org') < 0 ) {
-                console.log(`${req.connection.remoteAddress}: Redirect to ${newhost} / request url=${req.url}`)
+                console.log(`${remoteAddress}: Redirect to ${newhost} / request url=${req.url}`)
                 res.writeHead(301, {'Location': (this.constructor.name === 'Server' ? 'http' : 'https') + '://' + newhost + req.url})
                 res.end()
                 return true
@@ -1014,7 +1015,7 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
 
 function getFileFromOtherServer(urlPath, filename, baseResponse, req) {
 
-    const remoteAdr = (req.connection.remoteAddress || '').replace('::ffff:', '')
+    const remoteAdr = clientAddress(req)
 
     if(LUNUC_SERVER_NODES && LUNUC_SERVER_NODES.indexOf(remoteAdr)<0){
         const url = LUNUC_SERVER_NODES+urlPath
@@ -1052,29 +1053,28 @@ const REQUEST_TIME_IN_MS = 10000,
 const ipMap = {}, blockedIps = {}
 let reqCounter = 0
 
-function isIpBlocked(req){
+function isIpTemporarilyBlocked(req, remoteAddress){
 
-    const remoteAdr = req.connection.remoteAddress
 
-    if(blockedIps[remoteAdr]){
+    if(blockedIps[remoteAddress]){
         // block for 1 min
-        if(Date.now()-blockedIps[remoteAdr].start>REQUEST_BLOCK_IP_FOR_IN_MS){
-            delete blockedIps[remoteAdr]
+        if(Date.now()-blockedIps[remoteAddress].start>REQUEST_BLOCK_IP_FOR_IN_MS){
+            delete blockedIps[remoteAddress]
         }else {
-            console.log(remoteAdr + ' is temporarily blocked due to too many request in a short time')
+            console.log(remoteAddress + ' is temporarily blocked due to too many request in a short time')
             req.connection.destroy()
             return true
         }
     }
 
-    if(!ipMap[remoteAdr] || Date.now()-ipMap[remoteAdr].start>REQUEST_TIME_IN_MS){
-        ipMap[remoteAdr] = {start:Date.now(),count:0}
+    if(!ipMap[remoteAddress] || Date.now()-ipMap[remoteAddress].start>REQUEST_TIME_IN_MS){
+        ipMap[remoteAddress] = {start:Date.now(),count:0}
     }
-    ipMap[remoteAdr].count++
+    ipMap[remoteAddress].count++
 
-    if(ipMap[remoteAdr].count>REQUEST_MAX_PER_TIME){
-        blockedIps[remoteAdr] = {start:Date.now()}
-        delete ipMap[remoteAdr]
+    if(ipMap[remoteAddress].count>REQUEST_MAX_PER_TIME){
+        blockedIps[remoteAddress] = {start:Date.now()}
+        delete ipMap[remoteAddress]
         req.connection.destroy()
         return true
     }
@@ -1098,15 +1098,24 @@ function isIpBlocked(req){
 const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req, res) {
 
     try {
-        if(!isIpBlocked(req)) {
+        const remoteAddress=clientAddress(req)
+        if(!isIpTemporarilyBlocked(req, remoteAddress)) {
             const host = getHostFromHeaders(req.headers)
+
             req.isHttps = req.socket.encrypted || this.constructor.name === 'Server'
 
             // check with and without www
             const hostRuleHost = req.headers['x-host-rule'] ? req.headers['x-host-rule'].split(':')[0] : host
             const hostrule = {...hostrules.general, ...(hostrules[hostRuleHost] || hostrules[hostRuleHost.substring(4)])}
 
-            if (hostrule.certDir && hasHttpsWwwRedirect.call(this, host, req, res)) {
+            if (hostrule.certDir && hasHttpsWwwRedirect.call(this, host, req, res, remoteAddress)) {
+                return
+            }
+
+            //small security check
+            if (hostrule.blockedIps && hostrule.blockedIps.indexOf(remoteAddress)>=0) {
+                console.log(`ip ${remoteAddress} is blocked in hostrule for ${hostRuleHost}`)
+                sendError(res, 403)
                 return
             }
 
@@ -1118,7 +1127,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 urlPathname = decodeURIComponentSafe(parsedUrl.pathname)
             }
 
-            console.log(`${req.connection.remoteAddress}: ${host}${parsedUrl.href} - ${req.headers['user-agent']}`)
+            console.log(`${remoteAddress}: ${host}${parsedUrl.href} - ${req.headers['user-agent']}`)
 
             //small security check
             if (urlPathname.indexOf('../') >= 0) {
@@ -1296,7 +1305,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                                     }
 
                                 } else {
-                                    sendIndexFile({req, res, urlPathname, hostrule, host, parsedUrl})
+                                    sendIndexFile({req, res, remoteAddress, urlPathname, hostrule, host, parsedUrl})
                                 }
                             }
                         }
