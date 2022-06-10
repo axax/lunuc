@@ -1,6 +1,6 @@
 
 // /WhatsApp|TelegramBot|AhrefsBot|Applebot|x28-job-bot|bingbot|msnbot|YandexBot|PetalBot|Googlebot|facebookexternalhit|LinkedInBot|Twitterbot|Xing|AdsBot/
-export const parseUserAgent = (agent, botregex = /bot|crawl|slurp|spider|mediapartners/i) => {
+export const parseUserAgent = (agent, botregex = /bot|crawl|slurp|spider|mediapartners|facebookexternalhit|Xing|WhatsApp/i) => {
 
     let browser, version, isBot = false
     if (agent) {
