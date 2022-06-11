@@ -1289,13 +1289,15 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
                                     try {
                                         const data = JSON.parse(decodedStr)
-                                        if (data.screenshot) {
+                                        const screenShotDir = path.join(ABS_UPLOAD_DIR, 'screenshots')
+
+                                        if (data.screenshot && Util.ensureDirectoryExistence(screenShotDir)) {
                                             //{"screenshot":{"url":"https:/stackoverflow.com/questions/4374822/remove-all-special-characters-with-regexp","options":{"height":300}}}
                                             //console.log(decodeURI(urlPathname.substring(pos+5)))
 
                                             const filename = decodedStr.replace(/[^\w]/gi, '') + '.png'
 
-                                            const absFilename = path.join(ABS_UPLOAD_DIR, 'screenshots', filename)
+                                            const absFilename = path.join(screenShotDir, filename)
 
                                             if (!fs.existsSync(absFilename)) {
                                                 let url = data.screenshot.url
@@ -1339,6 +1341,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 //TODO: Move this to an extension as it doesn't belong here
 import stream from './stream.js'
 import {Server} from 'socket.io'
+import Util from "../api/util/index";
 
 
 let ioHttp = new Server(app.http)
