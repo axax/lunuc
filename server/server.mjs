@@ -1293,7 +1293,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                                             //{"screenshot":{"url":"https:/stackoverflow.com/questions/4374822/remove-all-special-characters-with-regexp","options":{"height":300}}}
                                             //console.log(decodeURI(urlPathname.substring(pos+5)))
 
-                                            const filename = decodedStr.replace(/[^\w\s]/gi, '') + '.png'
+                                            const filename = decodedStr.replace(/[^\w]/gi, '') + '.png'
 
                                             const absFilename = path.join(ABS_UPLOAD_DIR, 'screenshots', filename)
 
