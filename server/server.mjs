@@ -407,11 +407,27 @@ const doScreenCapture = async (url, filename, options) => {
     }
     console.log(options)
     if (options.padding) {
+        let t,l,b,r
+        if(options.padding.constructor==='String') {
+            const parts = options.padding.trim().split(' ')
+            if (parts.length === 4) {
+                t = parseInt(parts[0])
+                r = parseInt(parts[1])
+                b = parseInt(parts[2])
+                l = parseInt(parts[3])
+            } else {
+                t = r = b = l = parseInt(options.padding)
+            }
+        }else{
+            t = r = b = l = options.padding
+        }
+
+
         options.clip = {
-            x: options.padding,
-            y: options.padding,
-            width: options.width - options.padding * 2,
-            height: options.height - options.padding * 2
+            x: l,
+            y: t,
+            width: options.width - (l+r),
+            height: options.height - (t+b)
         }
     }
 
