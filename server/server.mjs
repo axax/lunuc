@@ -1341,7 +1341,6 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 //TODO: Move this to an extension as it doesn't belong here
 import stream from './stream.js'
 import {Server} from 'socket.io'
-import Util from "../api/util/index";
 
 
 let ioHttp = new Server(app.http)
