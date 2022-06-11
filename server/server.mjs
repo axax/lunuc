@@ -1284,7 +1284,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                                             if (!fs.existsSync(absFilename)) {
                                                 let url = data.screenshot.url
                                                 if (url.indexOf('/') === 0) {
-                                                    url = (req.isHttps ? 'https://' : 'http://') + hostRuleHost + url
+                                                    url = /*(req.isHttps ? 'https://' : 'http://') + hostRuleHost*/ 'http://127.0.0.1:'+PORT + url
                                                 }
                                                 await doScreenCapture(url, absFilename, data.screenshot.options)
                                             }
