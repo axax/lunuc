@@ -408,7 +408,7 @@ const doScreenCapture = async (url, filename, options) => {
     console.log(options)
     if (options.padding) {
         let t,l,b,r
-        if(options.padding.constructor==='String') {
+        if(options.padding.constructor===String) {
             const parts = options.padding.trim().split(' ')
             if (parts.length === 4) {
                 t = parseInt(parts[0])
