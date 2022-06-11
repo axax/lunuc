@@ -1291,7 +1291,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                                         const data = JSON.parse(decodedStr)
                                         const screenShotDir = path.join(ABS_UPLOAD_DIR, 'screenshots')
 
-                                        if (data.screenshot && Util.ensureDirectoryExistence(screenShotDir)) {
+                                        if (data.screenshot && ensureDirectoryExistence(screenShotDir)) {
                                             //{"screenshot":{"url":"https:/stackoverflow.com/questions/4374822/remove-all-special-characters-with-regexp","options":{"height":300}}}
                                             //console.log(decodeURI(urlPathname.substring(pos+5)))
 
