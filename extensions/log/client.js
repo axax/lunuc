@@ -18,7 +18,8 @@ export default () => {
                     message: error.type + ': ' + (error.e ? error.e.message + '\n\n' + error.e.stack : error.msg),
                     meta: JSON.stringify({
                         agent: navigator.userAgent,
-                        href: location.href
+                        href: location.href,
+                        parser: window._lunucWebParser
                     })
                 }
             })
@@ -36,7 +37,8 @@ export default () => {
                 message: error.message + '\n\n' + error.stack,
                 meta: JSON.stringify({
                     agent: navigator.userAgent,
-                    href: location.href
+                    href: location.href,
+                    parser: window._lunucWebParser
                 })
             }
         })

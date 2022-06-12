@@ -14,7 +14,7 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
         if (meta) {
             let metaJson
             try {
-                if (meta.constructor !== Object) {
+                if (meta.constructor !== Object && (meta.startsWith('{') || meta.startsWith('['))) {
                     metaJson = JSON.parse(meta)
                 } else {
                     metaJson = meta
