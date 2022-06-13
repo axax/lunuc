@@ -68,7 +68,7 @@ Hook.on('typeLoaded', async ({db, req, context, result, dataQuery, collectionNam
 
       const explanation = await  db.collection(collectionName).aggregate(dataQuery, {allowDiskUse: true}).explain()
 
-      const header =  req.headers || {}
+      const headers =  req.headers || {}
 
       const host = getHostFromHeaders(headers)
 
@@ -81,8 +81,8 @@ Hook.on('typeLoaded', async ({db, req, context, result, dataQuery, collectionNam
               resultCount: result.results.length,
               resultTotal: result.total,
               host,
-              agent: req.headers['x-track-user-agent'] || req.headers['user-agent'] || '',
-              referer: req.headers['referer'],
+              agent: headers['x-track-user-agent'] || headers['user-agent'] || '',
+              referer: headers['referer'],
               query: dataQuery
           }
       })
