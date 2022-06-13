@@ -192,7 +192,17 @@ const createMatchForCurrentUser = async ({typeName, db, context, operation}) => 
 }
 
 const GenericResolver = {
-    entities: async (db, context, typeName, data, options) => {
+    entities: async (db, reqOrContext, typeName, data, options) => {
+        let context, req
+        if(reqOrContext.context && !reqOrContext.session){
+            // it must be a request
+            context = reqOrContext.context
+            req = reqOrContext
+        } else{
+            context = reqOrContext
+            req = {}
+        }
+
         if (!context.lang) {
             throw new Error('lang on context is missing')
         }
@@ -326,6 +336,7 @@ const GenericResolver = {
                     type: typeName,
                     data,
                     db,
+                    req,
                     context,
                     otherOptions,
                     result,

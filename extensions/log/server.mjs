@@ -3,6 +3,7 @@ import schemaGen from './gensrc/schema.mjs'
 import resolverGen from './gensrc/resolver.mjs'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import GenericResolver from '../../api/resolver/generic/genericResolver.mjs'
+import {getHostFromHeaders} from '../../util/host.mjs'
 
 let mydb
 Hook.on('dbready', ({db}) => {
@@ -61,17 +62,29 @@ process.on('unhandledRejection', (error) => {
 
 
 
-Hook.on('typeLoaded', async ({db, context, result, dataQuery, collectionName, aggregateTime}) => {
+Hook.on('typeLoaded', async ({db, req, context, result, dataQuery, collectionName, aggregateTime}) => {
 
   if(aggregateTime > 1000) {
 
       const explanation = await  db.collection(collectionName).aggregate(dataQuery, {allowDiskUse: true}).explain()
 
+      const header =  req.headers || {}
+
+      const host = getHostFromHeaders(headers)
+
       GenericResolver.createEntity(mydb, {context}, 'Log', {
           location: collectionName,
           type: 'slowQuery',
           message: JSON.stringify(explanation, null, 2),
-          meta: {aggregateTime, resultCount: result.results.length, resultTotal: result.total, query: JSON.stringify(dataQuery)}
+          meta: {
+              aggregateTime,
+              resultCount: result.results.length,
+              resultTotal: result.total,
+              host,
+              agent: req.headers['x-track-user-agent'] || req.headers['user-agent'] || '',
+              referer: req.headers['referer'],
+              query: dataQuery
+          }
       })
   }
 })

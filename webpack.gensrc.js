@@ -470,8 +470,8 @@ function gensrcExtension(name, options) {
             } else {
                 hasResolver = true
 
-                resolverQuery += `      ${nameStartLower}s: async ({sort, limit, offset, page, filter${(type.collectionClonable ? ', _version' : '')}${(type.addMetaDataInQuery ? ', meta' : '')}}, {context}) => {
-            return await GenericResolver.entities(db, context, '${type.name}', [${resolverFields}], {limit, offset, page, filter, sort${(type.collectionClonable ? ', _version' : '')}${(type.addMetaDataInQuery ? ', meta' : '')}})
+                resolverQuery += `      ${nameStartLower}s: async ({sort, limit, offset, page, filter${(type.collectionClonable ? ', _version' : '')}${(type.addMetaDataInQuery ? ', meta' : '')}}, req) => {
+            return await GenericResolver.entities(db, req, '${type.name}', [${resolverFields}], {limit, offset, page, filter, sort${(type.collectionClonable ? ', _version' : '')}${(type.addMetaDataInQuery ? ', meta' : '')}})
         },\n`
 
                 resolverMutation += `       create${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}, req, options) => {
