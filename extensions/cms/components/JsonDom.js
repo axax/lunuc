@@ -188,7 +188,9 @@ class JsonDom extends React.Component {
             if (!rest.slug) {
                 return <div>No Slug</div>
             }
+
             return <CmsViewContainer key={rest.id}
+                                     _time={Date.now()}
                                      _props={_props}
                                      _parentRef={_this}
                                      fetchPolicy='cache-first'
@@ -1531,7 +1533,8 @@ class JsonDom extends React.Component {
         setTimeout(()=> {
             this.props.cmsActions.cmsRender(deepMerge({$: {}}, this.scope.props, props), {
                 slug: this.props.slug,
-                id: this.props.id
+                id: this.props.id,
+                time: Date.now()
             })
         },0)
     }

@@ -139,9 +139,8 @@ class CmsViewContainer extends React.Component {
                     })
                 }
             }}
-            _props={cmsRender?cmsRender.props:_props}
+            _props={cmsRender && (!props._time || cmsRender.time>props._time)?cmsRender.props:_props}
             {...props}>{children}</JsonDom>
-
 
         console.info(`render ${this.constructor.name} for ${slug} ${this.props.id}  (loading=${this.props.loading}, change=${!!aboutToChange}) in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime() - _app_.start.getTime()}ms`)
         return content

@@ -13,7 +13,8 @@ import fs from 'fs'
 import config from '../../../gensrc/config.mjs'
 import path from 'path'
 import {propertyByPath, setPropertyByPath, assignIfObjectOrArray, matchExpr} from '../../../client/util/json.mjs'
-import { fileURLToPath } from 'url'
+import {fileURLToPath} from 'url'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const DEFAULT_PARAM_MAX_LENGTH = 100,
@@ -88,7 +89,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         Object.keys(segment.access).forEach(key => {
                             const usernames = segment.access[key].username
                             if (usernames.indexOf(context.username) < 0) {
-                                if(!(segment.access[key].anonymous && !context.id)) {
+                                if (!(segment.access[key].anonymous && !context.id)) {
                                     resolvedData.access[key] = false
                                 }
                             }
@@ -189,7 +190,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         match = {}
                     }
                     debugInfo += ' type=' + type
-                    const result = await GenericResolver.entities(db, context, type, fields, {
+                    const result = await GenericResolver.entities(db, {headers: req.headers, context}, type, fields, {
                         filter: f,
                         resultFilter,
                         limit: l,
@@ -317,7 +318,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
 
                     if (Util.isUserLoggedIn(context)) {
                         const match = {createdBy: ObjectId(context.id), key: {$in: segment.keyValues}}
-                        const result = await GenericResolver.entities(db, context, 'KeyValue', ['key', 'value'], {
+                        const result = await GenericResolver.entities(db, {headers: req.headers, context}, 'KeyValue', ['key', 'value'], {
                             match
                         })
 
