@@ -4,6 +4,7 @@ import resolverGen from './gensrc/resolver.mjs'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import GenericResolver from '../../api/resolver/generic/genericResolver.mjs'
 import {getHostFromHeaders} from '../../util/host.mjs'
+import config from '../../gensrc/config.mjs'
 
 let mydb
 Hook.on('dbready', ({db}) => {
@@ -91,8 +92,14 @@ Hook.on('typeLoaded', async ({db, req, context, result, dataQuery, collectionNam
 
 Hook.on('OnMailError', async ({db, context, error}) => {
 
+    let finalContent
+    if(context){
+        finalContent = context
+    }else{
+        finalContent = {lang: config.DEFAULT_LANGUAGE }
+    }
 
-  GenericResolver.createEntity(db, {context}, 'Log', {
+  GenericResolver.createEntity(db, {context:finalContent}, 'Log', {
       location: 'mailclient',
       type: 'mailError',
       message: error.message,

@@ -81,7 +81,7 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {slug, aboutToChange, cmsPage, children, dynamic, settings, setKeyValue, getKeyValue, updateResolvedData, _props, cmsRender, loaderClass, ...props} = this.props
+        const {slug, aboutToChange, cmsPage, children, dynamic, settings, setKeyValue, getKeyValue, updateResolvedData, _props, _time, cmsRender, loaderClass, ...props} = this.props
         const editMode = isEditMode(this.props)
         if (!cmsPage) {
             // show a loader here
@@ -139,9 +139,12 @@ class CmsViewContainer extends React.Component {
                     })
                 }
             }}
-            _props={cmsRender && (!props._time || cmsRender.time>props._time)?cmsRender.props:_props}
+            _props={cmsRender && (!_time || cmsRender.time>_time)?cmsRender.props:_props}
             {...props}>{children}</JsonDom>
 
+        if(cmsRender){
+            console.log(_time, cmsRender && (!_time || cmsRender.time>_time)?cmsRender.props:_props)
+        }
         console.info(`render ${this.constructor.name} for ${slug} ${this.props.id}  (loading=${this.props.loading}, change=${!!aboutToChange}) in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime() - _app_.start.getTime()}ms`)
         return content
     }
