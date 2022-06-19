@@ -50,7 +50,7 @@
 
     if( !window.Map || !window.Symbol){
         // support even older browser i.e. Android 2.1-4.4
-        document.write('<scr'+'ipt type="text/javascript" src="http://polyfill.io/v3/polyfill.min.js?features=Symbol%2CSet%2CMap"></sc'+'ript>')
+        document.write('<scr'+'ipt type="text/javascript" src="'+location.protocol+'//polyfill.io/v3/polyfill.min.js?features=Symbol%2CSet%2CMap"></sc'+'ript>')
     }
     //document.getElementById('app').innerHTML = window.Map?'':'Browser is not supported';
     var ls = null
