@@ -590,7 +590,7 @@ function hasHttpsWwwRedirect(host, req, res, remoteAddress) {
                     if ((browser === 'netscape') ||
                         (browser === 'safari' && version <= 6) ||
                         (browser === 'firefox' && version <= 26) ||
-                        (browser === 'chrome' && version <= 28) ||
+                        (browser === 'chrome' && version <= 49) ||
                         (browser === 'android' && version < 5) ||
                         (browser === 'opera' && version <= 15) ||
                         (browser === 'msie' && version <= 10)) {

@@ -878,7 +878,6 @@ const baseElements = [
                 label: 'Datei',
                 uitype: 'type_picker',
                 type: 'Media',
-                filter: 'mimeType=pdf',
                 projection: MEDIA_PROJECTION,
                 template: '${_app_.config.UPLOAD_URL}/${_id}/-/${name}',
                 tab: DEFAULT_TAB
