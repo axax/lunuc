@@ -51,7 +51,7 @@ export const getSlugVersion = (slug) => {
 
 
 export const getGqlVariables = props => {
-    const {slug, urlSensitiv, dynamic, user, _props, _time, cmsRender, inEditor} = props,
+    const {slug, urlSensitiv, dynamic, user, _props, cmsRender, inEditor} = props,
         variables = {
             inEditor,
             dynamic: !!dynamic,
@@ -59,8 +59,7 @@ export const getGqlVariables = props => {
         }
     if(cmsRender &&
         cmsRender.props &&
-        cmsRender.props.$ &&
-        (!_time || cmsRender.time>_time)){
+        cmsRender.props.$){
         variables.props = JSON.stringify(cmsRender.props.$)
     }else if (_props && _props.$) {
         variables.props = JSON.stringify(_props.$)
