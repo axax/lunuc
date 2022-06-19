@@ -242,7 +242,7 @@ if (!window.LUNUC_PREPARSED) {
         if (navigator.userAgent.indexOf('PaleMoon') !== -1) {
             ua=navigator.userAgent.replace('Firefox/','')
         }
-        DomUtil.addScript(location.protocol+'//polyfill.io/v3/polyfill.min.js?features=Intl%2CIntl.DateTimeFormat%2Cfetch%2CURL%2Ces6%2CObject.values%2CObject.entries%2CPromise.prototype.finally%2CAbortController%2CEvent%2CNodeList.prototype.forEach'+(ua?'&ua='+ua:''), {
+        DomUtil.addScript(loc.protocol+'//polyfill.io/v3/polyfill.min.js?features=Intl%2CIntl.DateTimeFormat%2Cfetch%2CURL%2Ces6%2CObject.values%2CObject.entries%2CPromise.prototype.finally%2CAbortController%2CEvent%2CNodeList.prototype.forEach'+(ua?'&ua='+ua:''), {
             async: true,
             onload
         })
