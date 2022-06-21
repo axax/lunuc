@@ -207,6 +207,7 @@ export default class AggregationBuilder {
 
                 // filter in an Object without definition
                 for (const partFilterKey in filters.parts) {
+
                     if (partFilterKey.startsWith(filterKey + '.')) {
 
                         filterPart = filters.parts[partFilterKey]
@@ -453,7 +454,7 @@ export default class AggregationBuilder {
     }
 
 
-    getFieldDefinition(fieldData, type) {
+    createFieldDefinition(fieldData, type) {
         const typeFields = getFormFieldsByType(type)
 
         let fieldDefinition = {}
@@ -548,11 +549,13 @@ export default class AggregationBuilder {
             sort = this.getSort(),
             typeFields = getFormFieldsByType(this.type),
             filters = this.getParsedFilter(this.options.filter),
-            resultFilters = this.getParsedFilter(this.options.resultFilter)
+            resultFilters = this.getParsedFilter(this.options.resultFilter),
+            lookupFilters = this.getParsedFilter(this.options.lookupFilter)
 
 
         let match = Object.assign({$and: []}, this.options.match),
             resultMatch = {$and: []},
+            lookupMatch = {$and: []},
             groups = {},
             lookups = [],
             projectResultData = {}
@@ -602,10 +605,11 @@ export default class AggregationBuilder {
             }
         }
 
+        const createdFieldMatches = {}
 
         for (let i = 0; i < fields.length; i++) {
             const field = fields[i]
-            const fieldDefinition = this.getFieldDefinition(field, this.type)
+            const fieldDefinition = this.createFieldDefinition(field, this.type)
             const fieldName = fieldDefinition.name
             if (fieldDefinition.reference) {
 
@@ -623,7 +627,7 @@ export default class AggregationBuilder {
                 if (refFields) {
                     for (const refField of refFields) {
 
-                        const refFieldDefinition = this.getFieldDefinition(refField, fieldDefinition.type)
+                        const refFieldDefinition = this.createFieldDefinition(refField, fieldDefinition.type)
                         const refFieldName = refFieldDefinition.name
 
 
@@ -708,11 +712,13 @@ export default class AggregationBuilder {
 
             } else {
                 // regular field
-                if (fieldName !== '_id') {
+                if (fieldName !== '_id' && !createdFieldMatches[fieldName] ) {
+                    createdFieldMatches[fieldName] = true
                     groups[fieldName] = {'$first': '$' + fieldName}
                     if (typeFields[fieldName]) {
                         await this.createFilterForField(fieldDefinition, match, {filters})
                         await this.createFilterForField(fieldDefinition, resultMatch, {filters: resultFilters})
+                        await this.createFilterForField(fieldDefinition, lookupMatch, {filters: lookupFilters})
                     }
                 }
 
@@ -752,12 +758,13 @@ export default class AggregationBuilder {
 
         // compose result
         let dataQuery = [], dataFacetQuery = []
-
         this.cleanupMatch(match)
         this.cleanupMatch(resultMatch)
+        this.cleanupMatch(lookupMatch)
 
         const hasMatch = Object.keys(match).length > 0,
-            hasResultMatch = Object.keys(resultMatch).length > 0
+            hasResultMatch = Object.keys(resultMatch).length > 0,
+            hasLookupMatch = Object.keys(lookupMatch).length > 0
 
 
         if (hasMatch) {
@@ -814,6 +821,11 @@ export default class AggregationBuilder {
             }
         }
 
+
+        if (hasLookupMatch) {
+            dataFacetQuery.push({$match: lookupMatch})
+        }
+
         // add at the beginning of the query
         if (this.options.before) {
             if (this.options.before.constructor === Array) {
@@ -857,8 +869,6 @@ export default class AggregationBuilder {
             } else {
                 dataFacetQuery.push(this.options.beforeProject)
             }
-            console.log(dataFacetQuery)
-
         }
 
         // project

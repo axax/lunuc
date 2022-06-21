@@ -86,6 +86,9 @@
     },
     "log": {
       "active": true
+    },
+    "ftpserver": {
+      "active": true
     }
   },
   "ui": [

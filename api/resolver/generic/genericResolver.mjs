@@ -289,7 +289,7 @@ const GenericResolver = {
         })
 
         const {dataQuery, countQuery, debugInfo} = await aggregationBuilder.query()
-      /*   if (typeName.indexOf("UserTracking") >= 0) {
+         /*if (typeName.indexOf("GenericData") >= 0) {
              console.log(JSON.stringify(dataQuery, null, 4))
          }*/
               //console.log(options,JSON.stringify(dataQuery, null, 4))
@@ -436,6 +436,8 @@ const GenericResolver = {
             if (fields[k] && fields[k].type === 'Object' && data[k] && data[k].constructor !== Object) {
                 // store as object
                 o[k] = JSON.parse(data[k])
+            } else if(fields[k] && fields[k].hash){
+                o[k] =Util.hashPassword(data[k])
             } else {
                 o[k] = data[k]
             }
@@ -706,7 +708,8 @@ const GenericResolver = {
                 } else if (data[k] && fields[k] && fields[k].type === 'Object') {
                     // store as object
                     o[k] = JSON.parse(data[k])
-
+                } else if(fields[k] && fields[k].hash){
+                    o[k] = Util.hashPassword(data[k])
                 } else {
                     o[k] = data[k]
                 }

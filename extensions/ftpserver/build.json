@@ -1,0 +1,28 @@
+{
+  "types": [
+    {
+      "name": "FtpUser",
+      "entryClonable": true,
+      "fields": [
+        {
+          "unique": true,
+          "name": "username",
+          "index": 1
+        },
+        {
+          "name": "password",
+          "uitype": "password",
+          "hash": true
+        },
+        {
+          "name": "root"
+        },
+        {
+          "name": "active",
+          "type": "Boolean",
+          "index": 1
+        }
+      ]
+    }
+  ]
+}
