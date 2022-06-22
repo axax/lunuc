@@ -22,6 +22,7 @@ import {parseCookies} from '../api/util/parseCookies.mjs'
 import puppeteer from 'puppeteer'
 import {decodeToken} from '../api/util/jwt.mjs'
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg'
+import ffprobeInstaller from '@ffprobe-installer/ffprobe'
 import ffmpeg from 'fluent-ffmpeg'
 import heapdump from 'heapdump'
 import {clientAddress} from '../util/host.mjs'
@@ -675,13 +676,8 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, filename}) {
     // http://localhost:8080/uploads/5f935f98f5ca78b7cbeaa853/-/test.mpg?ext=mp4&transcode={"audioQuality":2,"fps":24,"size":"720x?","crf":24,"keep":true,"nostream":true}
 
 
-
-    const ffprobePath = ffmpegInstaller.path
-
-    console.log(ffmpeg.path, ffmpeg.version)
-    console.log(ffprobePath)
-
-    ffmpeg.setFfprobePath(ffprobePath)
+    ffmpeg.setFfprobePath(ffprobeInstaller.path)
+    ffmpeg.setFfmpegPath( ffmpegInstaller.path)
 
     delete headerExtra['Content-Length']
     res.writeHead(code, {...headerExtra})

@@ -13,8 +13,8 @@ import {ObjectId} from 'mongodb'
 import mediaResolver from './gensrc/resolver.mjs'
 import Util from '../../api/util/index.mjs'
 import {CAPABILITY_RUN_COMMAND} from '../../util/capabilities.mjs'
-
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg'
+import ffprobeInstaller from '@ffprobe-installer/ffprobe'
 import ffmpeg from 'fluent-ffmpeg'
 import {uploadImageToStorage}  from './googleupload.mjs'
 
@@ -181,9 +181,10 @@ const createMediaEntry = async ({db, _id, file, data, context}) => {
     if( file.mimetype.indexOf('audio/')===0 || file.mimetype.indexOf('video/')===0){
 
         try {
-            const ffprobePath = ffmpegInstaller.path
 
-            ffmpeg.setFfprobePath(ffprobePath)
+
+            ffmpeg.setFfprobePath(ffprobeInstaller.path)
+            ffmpeg.setFfmpegPath( ffmpegInstaller.path)
 
 
             const {meta} = await (new Promise((resolve) => {
