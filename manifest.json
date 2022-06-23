@@ -1,6 +1,7 @@
 {
   "short_name": "${APP_NAME}",
   "name": "${APP_NAME}",
+  "start_url": "/",
   "icons": [
     {
       "src": "favicon-192x192.png",

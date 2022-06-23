@@ -1131,6 +1131,7 @@ class JsonDomHelper extends React.Component {
                             mouseX: undefined
                         })
                     }}
+                    avatarIcon={true}
                     mini items={menuItems}/>}
             </StyledToolbarButton>
 

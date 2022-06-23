@@ -121,7 +121,9 @@ class Routes extends React.Component {
                     }
 
                     if( route.private && !isAuthenticated){
+                        console.log('redirect to login page')
                         _app_.history.replace(config.ADMIN_BASE_URL + '/login?forward='+location.pathname)
+                        this.forceUpdate()
                         return null
                     }
 

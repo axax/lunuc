@@ -13,6 +13,8 @@ import Collapse from '@mui/material/Collapse'
 import List from '@mui/material/List'
 import ExpandLess from '@mui/icons-material/ExpandLess'
 import ExpandMore from '@mui/icons-material/ExpandMore'
+import ListItemAvatar from '@mui/material/ListItemAvatar';
+import Avatar from '@mui/material/Avatar';
 
 class SimpleMenu extends React.Component {
     state = {
@@ -97,6 +99,7 @@ class SimpleMenu extends React.Component {
 
     renderMenu(items, intent=0){
         const {collapse} = this.state
+        const {avatarIcon} = this.props
 
         const style = {}
 
@@ -114,10 +117,19 @@ class SimpleMenu extends React.Component {
                         this.handleClose(e)
                     }
                 }} key={'menuitem' + i}>
-                    {item.icon &&
+                    {item.icon && (
+                        avatarIcon ?
+                            <ListItemAvatar>
+                                <Avatar
+                                    sx={{ width: 32, height: 32, bgcolor: '#000' }}>
+                                    {item.icon}
+                                </Avatar>
+                            </ListItemAvatar>
+                            :
                     <ListItemIcon>
                         {item.icon}
                     </ListItemIcon>
+                        )
                     }
                     {item.component}
                     {item.name &&

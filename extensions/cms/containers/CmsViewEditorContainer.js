@@ -297,12 +297,12 @@ class CmsViewEditorContainer extends React.Component {
                         }
 
                         if (cmsEditData.options && cmsEditData.options.clone) {
-                            editDialogProps.initialData = Object.assign({}, data.genericDatas.results[0])
+                            editDialogProps.initialData = Object.assign({}, data.results[0])
                             delete editDialogProps.initialData._id
                         } else if (cmsEditData.options && cmsEditData.options.create) {
                             editDialogProps.initialData = cmsEditData.initialData
                         } else {
-                            editDialogProps.dataToEdit = data.genericDatas.results[0]
+                            editDialogProps.dataToEdit = data.results[0]
                         }
                         if (cmsEditData.resolverKey) {
                             editDialogProps.meta = {data: JSON.stringify({clearCachePrefix: cmsEditData.resolverKey})}
@@ -326,7 +326,15 @@ class CmsViewEditorContainer extends React.Component {
                                 }
 
                                 if (error) return `Error! ${error.message}`
-                                if (data.genericDatas.results.length === 0) {
+
+
+                                const keys = Object.keys(data)
+                                let finalData
+                                if(keys.length>0){
+                                    finalData = data[keys[0]]
+                                }
+
+                                if (!finalData || finalData.results.length === 0) {
 
                                     this.props._cmsActions.editCmsData(null)
                                     this.setState({
@@ -338,7 +346,7 @@ class CmsViewEditorContainer extends React.Component {
                                     return null
                                 }
 
-                                return <OpenTypeEdit data={data}/>
+                                return <OpenTypeEdit data={finalData}/>
                             }}
                         </Query>
                     } else {

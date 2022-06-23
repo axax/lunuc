@@ -314,7 +314,7 @@ export default () => {
     }
 
     const MediaEditorWrapper = ({children, dataToEdit, meta}) => {
-        const mediaSetting = meta.TypeContainer.settings.Media
+        const mediaSetting = meta.TypeContainer ? meta.TypeContainer.settings.Media : {}
 
 
         const [conversion, setConversion] = useState(
