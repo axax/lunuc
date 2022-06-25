@@ -903,7 +903,12 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
         modUri = uri
     }
 
-    const baseFilename = path.join(ABS_UPLOAD_DIR, modUri.substring(UPLOAD_URL.length + 1)) //.replace(/\.\.\//g, ''))
+    const urlWithoutUploadDir = modUri.substring(UPLOAD_URL.length + 1)
+    if(urlWithoutUploadDir.startsWith('private')){
+        sendError(res, 404)
+        return
+    }
+    const baseFilename = path.join(ABS_UPLOAD_DIR, urlWithoutUploadDir) //.replace(/\.\.\//g, ''))
     let filename = baseFilename
 
     if (!fs.existsSync(filename)) {
@@ -917,7 +922,7 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
             //context.session = payload.session
         }
         if (context && context.role === 'administrator') {
-            filename = path.join(ABS_UPLOAD_DIR, 'private' + modUri.substring(UPLOAD_URL.length + 1))
+            filename = path.join(ABS_UPLOAD_DIR, 'private' + urlWithoutUploadDir)
         }
     }
 
@@ -1034,12 +1039,14 @@ function getFileFromOtherServer(urlPath, filename, baseResponse, req) {
         console.log('laod from ' + url + ' - '+remoteAdr)
         http.get(url, function(response) {
 
-
-            const file = fs.createWriteStream(filename);
             const passStream = new PassThrough()
             response.pipe(passStream)
             passStream.pipe(baseResponse)
-            passStream.pipe(file)
+
+            if(response.statusCode == 200) {
+                const file = fs.createWriteStream(filename)
+                passStream.pipe(file)
+            }
 
         }).on('error', function(err) { // Handle errors
             sendError(res, 404)
