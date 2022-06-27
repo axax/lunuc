@@ -245,7 +245,7 @@ if (!window.LUNUC_PREPARSED) {
         })
 
 
-        if(!window.Intl || !Intl.DateTimeFormat){
+        if(!window.Intl || !Intl.DateTimeFormat || !Intl.DateTimeFormat().resolvedOptions().timeZone){
             maxCounter++
             DomUtil.addScript('/polyfill/intl.js', {
                 async: true,

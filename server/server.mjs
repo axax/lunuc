@@ -115,6 +115,9 @@ const webSocket = function (req, socket, head) {
         socket.on('error', (e)=>{
             console.log('ws socket error',e)
         })
+        if(req.headers['upgrade'] && req.headers['upgrade'].startsWith('W')) {
+            req.headers['upgrade'] = req.headers['upgrade'].toLowerCase()
+        }
 
         proxy.ws(req, socket, head, {
             hostname: 'localhost',
