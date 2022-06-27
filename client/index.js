@@ -224,7 +224,7 @@ if (!window.LUNUC_PREPARSED) {
     const onload = () => {
         counter++
         if (counter === maxCounter) {
-            mainInit()
+            setTimeout(mainInit,100)
         }
     }
     if (noneBasicEs6) {
