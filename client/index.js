@@ -237,18 +237,22 @@ if (!window.LUNUC_PREPARSED) {
     }
 
     if (noneObject) {
-        maxCounter++
-        let ua
-        if (navigator.userAgent.indexOf('PaleMoon') !== -1) {
-            ua=navigator.userAgent.replace('Firefox/','')
+        if(!window.Intl || !Intl.DateTimeFormat){
+            maxCounter++
+            DomUtil.addScript('/polyfill/intl.js', {
+                async: true,
+                onload
+            })
         }
-        DomUtil.addScript(location.protocol+'//polyfill.io/v3/polyfill.min.js?features=Intl%2CIntl.DateTimeFormat%2Cfetch%2CURL%2Ces6%2CObject.values%2CObject.entries%2CPromise.prototype.finally%2CAbortController%2CEvent%2CNodeList.prototype.forEach'+(ua?'&ua='+ua:''), {
+
+        maxCounter++
+        DomUtil.addScript('/polyfill/more.js', {
             async: true,
             onload
         })
     }
 
-    if (!window.Intl || !Intl.DateTimeFormat() || !Intl.DateTimeFormat().resolvedOptions().timeZone) {
+    if (!window.Intl || !Intl.DateTimeFormat || !Intl.DateTimeFormat().resolvedOptions().timeZone) {
         maxCounter++
         // timezone support
         DomUtil.addScript('/date-time-format-timezone-min.js', {

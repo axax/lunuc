@@ -103,7 +103,11 @@ const Util = {
 
         if(!DATE_FORMATS[key]){
             // cache formats as Intl.DateTimeFormat has bad performance
-            DATE_FORMATS[key] = new Intl.DateTimeFormat(lang, o)
+            try {
+                DATE_FORMATS[key] = new Intl.DateTimeFormat(lang, o)
+            }catch (e) {
+                console.log(e)
+            }
         }
         return DATE_FORMATS[key]
     },
