@@ -101,6 +101,9 @@ const Util = {
         }, options),
             key = lang + Object.values(o).join('')
 
+        if(o.timeZone==='Europe/Zurich'){
+            o.timeZone='Europe/Oslo'
+        }
         if(!DATE_FORMATS[key]){
             // cache formats as Intl.DateTimeFormat has bad performance
             try {

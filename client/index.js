@@ -237,6 +237,14 @@ if (!window.LUNUC_PREPARSED) {
     }
 
     if (noneObject) {
+
+        maxCounter++
+        DomUtil.addScript('/polyfill/more.js', {
+            async: true,
+            onload
+        })
+
+
         if(!window.Intl || !Intl.DateTimeFormat){
             maxCounter++
             DomUtil.addScript('/polyfill/intl.js', {
@@ -244,21 +252,6 @@ if (!window.LUNUC_PREPARSED) {
                 onload
             })
         }
-
-        maxCounter++
-        DomUtil.addScript('/polyfill/more.js', {
-            async: true,
-            onload
-        })
-    }
-
-    if (!window.Intl || !Intl.DateTimeFormat || !Intl.DateTimeFormat().resolvedOptions().timeZone) {
-        maxCounter++
-        // timezone support
-        DomUtil.addScript('/date-time-format-timezone-min.js', {
-            async: true,
-            onload
-        })
     }
 
     if (maxCounter === 0) {
