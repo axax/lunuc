@@ -224,18 +224,9 @@ if (!window.LUNUC_PREPARSED) {
     const onload = () => {
         counter++
         if (counter === maxCounter) {
-            setTimeout(mainInit,100)
+            mainInit()
         }
     }
-    if (noneBasicEs6) {
-        maxCounter++
-        // Load polyfill and bable to support old browsers
-        DomUtil.addScript('/babel.min.js', {
-            async: true,
-            onload
-        })
-    }
-
     if (noneObject) {
 
         maxCounter++
@@ -252,6 +243,15 @@ if (!window.LUNUC_PREPARSED) {
                 onload
             })
         }
+    }
+
+    if (noneBasicEs6) {
+        maxCounter++
+        // Load polyfill and bable to support old browsers
+        DomUtil.addScript('/babel.min.js', {
+            async: true,
+            onload
+        })
     }
 
     if (maxCounter === 0) {

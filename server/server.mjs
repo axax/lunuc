@@ -466,6 +466,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
         (browser === 'netscape') ||
         (browser === 'safari' && version < 5) ||
         (browser === 'firefox' && version <= 12) ||
+        (browser === 'opera' && version <= 10) ||
         (browser === 'chrome' && version <= 16) ||
         (browser === 'android' && version < 4) ||
         (browser === 'msie' && version <= 6)) {
