@@ -201,8 +201,6 @@ class JsonDom extends React.Component {
         }
     }
 
-    static removeCustomTags = localStorage.getItem('JsonDomIgnoreCustomTags')
-
     // Makes sure that the hook is only called once on the first instantiation of this class
     static callHock = true
 
@@ -339,12 +337,6 @@ class JsonDom extends React.Component {
     }
 
     componentDidCatch(e, info) {
-
-        if(!JsonDom.removeCustomTags && e.message.startsWith('Cannot use \'in\' operator')){
-            localStorage.setItem('JsonDomIgnoreCustomTags',true)
-            location.href = location.href
-        }
-
         console.log(e.message, e.stack)
         this.error = {type: 'unknown', e}
         this.forceUpdate()
@@ -1024,10 +1016,6 @@ class JsonDom extends React.Component {
                     }
 
                     let eleType = JsonDom.components[tagName] || this.extendedComponents[tagName] || tagName
-
-                    if(JsonDom.removeCustomTags && ['header','main','footer','nav','section'].indexOf(eleType)>=0){
-                        eleType = 'div'
-                    }
 
                     eleProps.key = key
                     if (t === 'Cms') {
