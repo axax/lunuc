@@ -70,13 +70,13 @@ export const parseUserAgent = (agent, botregex = /bot|crawl|slurp|spider|mediapa
         }
     }
 
-    if(browser==='opr'){
-        browser='opera'
-    }else if(browser.length > 8 && browser.startsWith('netscape')){
-        browser='netscape'
+    if(browser) {
+        if (browser === 'opr') {
+            browser = 'opera'
+        } else if (browser.length > 8 && browser.startsWith('netscape')) {
+            browser = 'netscape'
+        }
     }
-
-
     return {browser, version, mobile, isBot}
 
 }

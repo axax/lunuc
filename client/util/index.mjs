@@ -132,6 +132,7 @@ const Util = {
         try {
             return Util.getDateTimeFormat(options).format(new Date(d))
         } catch (e) {
+            console.log(e.message)
             return ''
         }
     },
