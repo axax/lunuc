@@ -80,7 +80,7 @@ export const parseUserAgent = (agent, botregex = /bot|crawl|slurp|spider|mediapa
     return {browser, version, mobile, isBot}
 
 }
-
+/*
 console.log(parseUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.53 Safari/537.36\n'))
 console.log(parseUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 15_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 OPT/3.3.0'))
 console.log(parseUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 15_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/98.0.4758.85 Mobile/15E148 Safari/604.1'))
@@ -98,3 +98,4 @@ console.log(parseUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_0) Apple
 console.log(parseUserAgent(' Mozilla/5.0 (iPhone; CPU iPhone OS 15_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.5 Mobile/15E148 Safari/604.1'))
 console.log(parseUserAgent(' Mozilla/5.0 (iPad; CPU OS 10_3_3 like Mac OS X) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.0 Mobile/14G60 Safari/602.1'))
 
+*/
