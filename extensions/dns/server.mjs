@@ -128,8 +128,11 @@ Hook.on('appready', async ({db, context}) => {
             console.log('dns listening')
         })
 
-        server.on('listening', () => {
+        server.on('close', () => {
             console.log('dns close')
+        })
+        server.on('socketError', (e) => {
+            console.log('dns socketError',e)
         })
 
         server.serve(53)
