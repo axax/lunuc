@@ -346,11 +346,13 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cooki
 
         let statusCode = 200
         page.on('response', response => {
-            if (response.status() === 404 && response._request._resourceType === 'document' && response.url().endsWith('/404')) {
+            if (response.status() === 404 && response.request().resourceType() === 'document' && response.url().endsWith('/404')) {
 
                 statusCode = 404
             }
         })
+
+
 
         await page.evaluateOnNewDocument((data) => {
             window._elementWatchForceVisible = true
@@ -364,10 +366,9 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cooki
         let html = await page.content()
         html = html.replace('</head>', '<script>window.LUNUC_PREPARSED=true</script></head>')
 
-        console.log(`url fetched ${urlToFetch} in ${new Date().getTime() - startTime}ms`)
+        console.log(`url fetched ${urlToFetch} (statusCode ${statusCode}} in ${new Date().getTime() - startTime}ms`)
 
         page.close()
-
 
         /*try {
 
