@@ -37,15 +37,14 @@ export const parseUserAgent = (agent, botregex = /bot|crawl|slurp|spider|mediapa
 
                 if(agentParts[agentParts.length-3].startsWith('rv:')){
                     version = parseFloat(agentParts[agentParts.length-3].substring(3))
-                }else if (agentParts[2] === 'msie') {
-
-                    browser = 'msie'
-                    version = parseFloat(agentParts[3])
+                }else if (agentParts[2].startsWith('msie')) {
+                    if(agentParts[2].length>4){
+                        version = parseFloat(agentParts[2].substring(4))
+                    }else {
+                        version = parseFloat(agentParts[3])
+                    }
                 } else if(agentParts[0] === 'microsoft' && agentParts[1] === 'internet' && agentParts[2].indexOf('explorer/') === 0) {
-
-                    browser = 'msie'
                     version = parseFloat(agentParts[2].substring(9))
-
                 }
             } else {
 
@@ -80,6 +79,7 @@ export const parseUserAgent = (agent, botregex = /bot|crawl|slurp|spider|mediapa
     return {browser, version, mobile, isBot}
 
 }
+
 /*
 console.log(parseUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.53 Safari/537.36\n'))
 console.log(parseUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 15_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 OPT/3.3.0'))
@@ -97,5 +97,8 @@ console.log(parseUserAgent('Mozilla/5.0 (Windows; U; Win98; en-US; rv:1.7.5) Gec
 console.log(parseUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.52 Safari/537.36 OPR/15.0.1147.132'))
 console.log(parseUserAgent(' Mozilla/5.0 (iPhone; CPU iPhone OS 15_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.5 Mobile/15E148 Safari/604.1'))
 console.log(parseUserAgent(' Mozilla/5.0 (iPad; CPU OS 10_3_3 like Mac OS X) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.0 Mobile/14G60 Safari/602.1'))
+console.log(parseUserAgent('Mozilla/6.0 (compatible; MSIE7.00; Windows 2009)'))
+console.log(parseUserAgent('Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.2; WOW64; Trident/4.0)'))
 
 */
+

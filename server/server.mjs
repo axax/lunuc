@@ -470,7 +470,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
         (browser === 'opera' && version <= 10) ||
         (browser === 'chrome' && version <= 16) ||
         (browser === 'android' && version < 4) ||
-        (browser === 'msie' && version <= 6)) {
+        (browser === 'msie' && version <= 8)) {
 
         if ( req.headers.accept && req.headers.accept.indexOf('text/html') < 0 && req.headers.accept.indexOf('*/*') < 0) {
             console.log('headers not valid', req.headers.accept)
