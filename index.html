@@ -48,8 +48,7 @@
         alert(message)
     }*/
 
-    if( !window.Map || !window.Symbol){
-        // support even older browser i.e. Android 2.1-4.4
+    if(${BASE_POLYFILL}){
         document.write('<scr'+'ipt type="text/javascript" src="/polyfill/base.js"></sc'+'ript>')
     }
     //document.getElementById('app').innerHTML = window.Map?'':'Browser is not supported';

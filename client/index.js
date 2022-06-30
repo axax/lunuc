@@ -206,10 +206,9 @@ function mainInit() {
 }
 
 if (!window.LUNUC_PREPARSED) {
-    const noneBasicEs6 = (() => {
-            if (window.fetch && window.AbortController) {
-                return false
-            }
+    const
+        morePolyfill = !window.fetch || !window.AbortController || !window.Event,
+        noneBasicEs6 = morePolyfill && (() => {
             try {
                 new Function('(a={x:1})=>{const {x}=a;let b=1;return `${a}`}')
                 return false
@@ -217,8 +216,7 @@ if (!window.LUNUC_PREPARSED) {
                 console.log(err)
                 return true
             }
-        })(),
-        noneObject = !Object.assign || !Object.values || !window.fetch || !window.AbortController || !window.Event || !window.Promise || !Promise.prototype.finally
+        })()
 
     let maxCounter = 0, counter = 0
     const onload = () => {
@@ -227,7 +225,7 @@ if (!window.LUNUC_PREPARSED) {
             mainInit()
         }
     }
-    if (noneObject) {
+    if (morePolyfill) {
 
         maxCounter++
         DomUtil.addScript('/polyfill/more.js', {

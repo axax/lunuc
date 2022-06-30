@@ -50,6 +50,7 @@ const APP_VALUES = {
     APP_DESCRIPTION: PACKAGE_JSON.description,
     APP_COLOR: '#2196f3',
     HTML_HEAD: '',
+    BASE_POLYFILL: '!window.Promise || !Promise.prototype.finally || !window.URL || !Object.values || !Object.assign || !window.Map || !window.Symbol',
     ...APP_CONFIG.options
 }
 

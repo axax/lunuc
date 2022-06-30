@@ -310,6 +310,10 @@ Add this to the file:
 
 `sudo iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 53 -j REDIRECT --to-port 53`
 
+allow only from certain ip
+`sudo ufw allow from 188.154.137.74 to any port 53`
+
+
 ### Disable Apache 2
 `sudo systemctl disable apache2 && sudo systemctl stop apache2`
 `/etc/init.d/apache2 stop`

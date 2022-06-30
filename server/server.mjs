@@ -463,7 +463,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
     const agent = req.headers['user-agent']
     const {version, browser, isBot} = parseUserAgent(agent, hostrule.botregex || (hostrules.general && hostrules.general.botregex))
 
-    //console.log(browser, version)
+    console.log(browser, version)
     if (isBot ||
         (browser === 'netscape') ||
         (browser === 'safari' && version < 5) ||
@@ -471,7 +471,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
         (browser === 'opera' && version <= 10) ||
         (browser === 'chrome' && version <= 16) ||
         (browser === 'android' && version < 4) ||
-        (browser === 'msie' && version <= 8)) {
+        (browser === 'msie' && version <= 10)) {
 
         if ( req.headers.accept && req.headers.accept.indexOf('text/html') < 0 && req.headers.accept.indexOf('*/*') < 0) {
             console.log('headers not valid', req.headers.accept)
