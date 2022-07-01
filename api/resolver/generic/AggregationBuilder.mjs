@@ -303,7 +303,10 @@ export default class AggregationBuilder {
                         if (ObjectId.isValid(id)) {
                             ids.push(ObjectId(id))
                         } else {
-                            this.debugInfo.push('Search for IDs. But at least one ID is not valid')
+                            this.debugInfo.push({
+                                code: 'invalidId',
+                                message: 'Search for IDs. But at least one ID is not valid'
+                            })
                             return false
                         }
                     }
@@ -318,12 +321,12 @@ export default class AggregationBuilder {
                     filterValue = ObjectId(filterValue)
 
                 } else {
-                    this.debugInfo.push('Search for ID. But ID is not valid')
+                    this.debugInfo.push({message: 'Search for ID. But ID is not valid', code: 'invalidId'})
                     return false
                 }
             } else {
 
-                if(comparator === '$ne') {
+                if (comparator === '$ne') {
                     if (!match.$and) {
                         match.$and = []
                     }
@@ -337,7 +340,7 @@ export default class AggregationBuilder {
                         // Check about no Company key
                         [filterKey]: {$ne: null},
                     })
-                }else{
+                } else {
 
                     if (!match.$or) {
                         match.$or = []
@@ -392,7 +395,7 @@ export default class AggregationBuilder {
             } else if (filterValue === '') {
                 matchExpression = {[comparator === '$eq' ? '$in' : '$nin']: [null, ""]}
 
-                if(comparator !== '$eq'){
+                if (comparator !== '$eq') {
                     // array must exist and must not be empty
                     matchExpression.$exists = true
                     matchExpression.$not = {$size: 0}
@@ -427,7 +430,7 @@ export default class AggregationBuilder {
 
         if (subQuery) {
             // execute sub query
-            const ids = (await this.db.collection(subQuery.type).find({[subQuery.name]:matchExpression}).toArray()).map(item => item._id)
+            const ids = (await this.db.collection(subQuery.type).find({[subQuery.name]: matchExpression}).toArray()).map(item => item._id)
             matchExpression = {$in: ids}
         }
 
@@ -589,7 +592,7 @@ export default class AggregationBuilder {
                 } else {
                     idFilters = filters.parts._id
                 }
-                for( const idFilter of idFilters){
+                for (const idFilter of idFilters) {
                     await this.addFilterToMatch({
                         filterKey: '_id',
                         filterValue: idFilter.value,
@@ -712,7 +715,7 @@ export default class AggregationBuilder {
 
             } else {
                 // regular field
-                if (fieldName !== '_id' && !createdFieldMatches[fieldName] ) {
+                if (fieldName !== '_id' && !createdFieldMatches[fieldName]) {
                     createdFieldMatches[fieldName] = true
                     groups[fieldName] = {'$first': '$' + fieldName}
                     if (typeFields[fieldName]) {
@@ -785,12 +788,12 @@ export default class AggregationBuilder {
             dataFacetQuery.push({$match: resultMatch})
         }
 
-        if(this.options.resultLimit) {
+        if (this.options.resultLimit) {
             dataFacetQuery.push({$limit: this.options.resultLimit})
         }
 
         if (includeCount) {
-            if(this.options.limitCount){
+            if (this.options.limitCount) {
 
                 dataQuery.push({$sort: sort})
                 dataQuery.push({$skip: offset})
@@ -799,7 +802,7 @@ export default class AggregationBuilder {
                 dataFacetQuery.push({$skip: 0})
                 dataFacetQuery.push({$limit: limit})
 
-            }else {
+            } else {
                 dataFacetQuery.push({$sort: sort})
                 dataFacetQuery.push({$skip: offset})
                 dataFacetQuery.push({$limit: limit})

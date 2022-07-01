@@ -290,7 +290,7 @@ const GenericResolver = {
 
         const {dataQuery, countQuery, debugInfo} = await aggregationBuilder.query()
          /*if (typeName.indexOf("GenericData") >= 0) {
-             console.log(JSON.stringify(dataQuery, null, 4))
+             console.log(otherOptions,JSON.stringify(dataQuery, null, 4))
          }*/
               //console.log(options,JSON.stringify(dataQuery, null, 4))
         const collection = db.collection(collectionName)

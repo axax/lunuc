@@ -470,7 +470,6 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
         (browser === 'firefox' && version <= 12) ||
         (browser === 'opera' && version <= 10) ||
         (browser === 'chrome' && version <= 16) ||
-        (browser === 'android' && version < 4) ||
         (browser === 'msie' && version <= 10)) {
 
         if ( req.headers.accept && req.headers.accept.indexOf('text/html') < 0 && req.headers.accept.indexOf('*/*') < 0) {
@@ -598,7 +597,6 @@ function hasHttpsWwwRedirect(host, req, res, remoteAddress) {
                         (browser === 'safari' && version <= 6) ||
                         (browser === 'firefox' && version <= 26) ||
                         (browser === 'chrome' && version <= 49) ||
-                        (browser === 'android' && version < 5) ||
                         (browser === 'opera' && version <= 15) ||
                         (browser === 'msie' && version <= 10)) {
                         // for browser that doesn't support tls 1.2
