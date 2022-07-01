@@ -463,7 +463,9 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
     const agent = req.headers['user-agent']
     const {version, browser, isBot} = parseUserAgent(agent, hostrule.botregex || (hostrules.general && hostrules.general.botregex))
 
-    console.log(browser, version)
+    if(!isBot) {
+        console.log(browser, version)
+    }
     if (isBot ||
         (browser === 'netscape') ||
         (browser === 'safari' && version < 5) ||
