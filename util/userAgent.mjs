@@ -43,6 +43,11 @@ export const parseUserAgent = (agent, botregex = /bot|crawl|slurp|spider|mediapa
                 result.browser = 'chrome'
                 result.version = parseFloat(raw.chrome.version)
 
+            } else if (raw.headlesschrome) {
+
+                result.browser = 'chrome'
+                result.version = parseFloat(raw.headlesschrome.version)
+
             } else if (raw.crios) {
 
                 result.browser = 'chrome'
@@ -236,7 +241,9 @@ export const parseUserAgentRaw = (() => {
     };
 })();
 
-/*console.log(parseUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36 OPR/88.0.4412.40'))
+/*console.log(parseUserAgent('Mozilla/5.0 (Linux; Android 7.0;) AppleWebKit/537.36 (KHTML, like Gecko) Mobile Safari/537.36 (compatible; PetalBot;+https://webmaster.petalsearch.com/site/petalbot)'))
+console.log(parseUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/104.0.5109.0 Safari/537.36'))
+console.log(parseUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36 OPR/88.0.4412.40'))
 console.log(parseUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) AppleWebKit/601.4.4 (KHTML, like Gecko) Version/9.0.3 Safari/601.4.4'))
 console.log(parseUserAgent('Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0'))
 console.log(parseUserAgent('Mozilla/5.0 (Linux; Android 6.0.1; SM-G925I Build/MMB29K; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/56.0.2924.87 Mobile Safari/537.36\n'))
