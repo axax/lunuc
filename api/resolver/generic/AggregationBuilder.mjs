@@ -753,8 +753,13 @@ export default class AggregationBuilder {
         if (!projectResult) {
             // also return extra fields
             if (!typeDefinition.noUserRelation && !groups.createdBy) {
-                this.createAndAddLookup({type: 'User', name: 'createdBy', multi: false}, lookups, {})
-                groups.createdBy = this.createGroup({name: 'createdBy', multi: false})
+                if(!this.options.noUserLookup) {
+                    this.createAndAddLookup({type: 'User', name: 'createdBy', multi: false}, lookups, {})
+                    groups.createdBy = this.createGroup({name: 'createdBy', multi: false})
+                }else{
+                    groups.createdBy = {'$first': '$createdBy'}
+                }
+
             }
             groups.modifiedAt = {'$first': '$modifiedAt'}
         }

@@ -42,6 +42,8 @@ const postConvertData = async (data, {typeName, db}) => {
 
                 if (item.createdBy === null) {
                     item.createdBy = {_id: 0, username: 'null reference'}
+                }else if(item.createdBy && item.createdBy.constructor === ObjectId){
+                    item.createdBy = {_id: item.createdBy, username: 'not resolved'}
                 }
 
                 for (let y = 0; y < typeDefinition.fields.length; y++) {

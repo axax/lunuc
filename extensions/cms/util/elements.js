@@ -1780,6 +1780,7 @@ const advancedElements = [
         name: 'Custom',
         defaults: {
             $inlineEditor: {
+                allowDrop: true,
                 elementKey: 'custom'
             },
             p: {
@@ -1787,6 +1788,9 @@ const advancedElements = [
             }
         },
         options: {
+            t: {
+                label: 'Tag'
+            },
             p_style_marginTop: {
                 label: 'Abstand oben'
             },

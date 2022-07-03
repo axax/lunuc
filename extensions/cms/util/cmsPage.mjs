@@ -12,7 +12,7 @@ const hostrules = loadAllHostrules(false)
 export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, inEditor, _version, headers, ignorePublicState}) => {
     let host = headers && headers['x-host-rule'] ? headers['x-host-rule'].split(':')[0] : getHostFromHeaders(headers)
 
-    if(!host){
+    if (!host) {
         host = ''
     }
     if (host && host.startsWith('www.')) {
@@ -22,7 +22,7 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, i
     let slugMatch = {}
     let modSlug
 
-    if(checkHostrules) {
+    if (checkHostrules) {
         const hostArr = host.split('.')
         const hostsChecks = [host]
 
@@ -30,12 +30,12 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, i
             // is subdomain
 
             // add top level domain
-            hostsChecks.push( hostArr[hostArr.length-2]+'.'+hostArr[hostArr.length-1])
+            hostsChecks.push(hostArr[hostArr.length - 2] + '.' + hostArr[hostArr.length - 1])
         }
 
-        for(let i = 0;i < hostsChecks.length; i++) {
+        for (let i = 0; i < hostsChecks.length; i++) {
             const currentHost = hostsChecks[i]
-            if (hostrules[currentHost] && hostrules[currentHost].slugContext && (slug + '/').indexOf(hostrules[currentHost].slugContext+'/')!== 0) {
+            if (hostrules[currentHost] && hostrules[currentHost].slugContext && (slug + '/').indexOf(hostrules[currentHost].slugContext + '/') !== 0) {
                 modSlug = hostrules[currentHost].slugContext + (slug.length > 0 ? '/' : '') + slug
                 if (hostrules[currentHost].slugFallback) {
                     slugMatch = {$or: [{slug: modSlug}, {slug}]}
@@ -48,9 +48,7 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, i
     }
 
 
-
-
-    if(!modSlug){
+    if (!modSlug) {
         modSlug = slug
         slugMatch = {slug}
     }
@@ -77,12 +75,33 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, i
         } else {
             match = slugMatch
         }
-        cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'style', 'serverScript', 'dataResolver', 'resources', 'ssr', 'public', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'loadPageOptions', 'ssrStyle','publicEdit', 'compress'], {
-            match,
-            limit: 1,
-            includeCount: false,
-            _version
-        })
+
+        cmsPages = await GenericResolver.entities(db, context, 'CmsPage',
+            ['slug',
+                'name',
+                'template',
+                'script',
+                'style',
+                'serverScript',
+                'dataResolver',
+                'resources',
+                'ssr',
+                'public',
+                'urlSensitiv',
+                'parseResolvedData',
+                'alwaysLoadAssets',
+                'loadPageOptions',
+                'ssrStyle',
+                'publicEdit',
+                'compress'],
+            {
+                match,
+                limit: 1,
+                includeCount: false,
+                noUserLookup: true,
+                _version
+            })
+
         // minify template if no user is logged in
         if (cmsPages.results && cmsPages.results.length) {
 
@@ -105,9 +124,9 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, i
                             .replace(/,$\n/gm, ',') // remove line break after ,
                             .replace(/\/\*[\s\S]*?\*\//gm, '') // remove block comments /**/
 
-                            if(!inEditor) {
-                                result.style = result.style.replace(/\/\/<\!\!#REMOVE([\s\S]*?)\/\/\!\!#REMOVE>/gm, '') // remove any character between marker
-                            }
+                        if (!inEditor) {
+                            result.style = result.style.replace(/\/\/<\!\!#REMOVE([\s\S]*?)\/\/\!\!#REMOVE>/gm, '') // remove any character between marker
+                        }
 
                     }
                 }
@@ -132,7 +151,7 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, i
 
             //only cache if public
             if (!editmode && cmsPages.results[0].public) {
-                if(slug !== cmsPages.results[0].slug){
+                if (slug !== cmsPages.results[0].slug) {
                     const cacheKeyAlias = 'cmsPage-' + (_version ? _version + '-' : '') + cmsPages.results[0].slug + (host ? '-' + host : '')
                     Cache.setAlias(cacheKeyAlias, cacheKey)
                 }
