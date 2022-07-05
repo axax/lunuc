@@ -633,6 +633,7 @@ function transcodeVideoOptions(parsedUrl, filename) {
         return false
     }
 
+
     //https://www.lunuc.com/uploads/5f676c358ebac32c662cdb02/-/La%20maison%20du%20bonheur-2006.mp4?ext=mp4&transcode={%22audioQuality%22:3,%22videoBitrate%22:800,%22fps%22:25,%22size%22:%22720x?%22,%22crf%22:28}
     // default options
     let options = {
@@ -659,10 +660,23 @@ function transcodeVideoOptions(parsedUrl, filename) {
     }
 
 
+
     let modfilename = filename
-    Object.keys(options).forEach(k => {
+
+    let filnameObject
+    if(options.screenshot){
+        modfilename += '-videoframe'
+        if(options.screenshot.constructor!==Object){
+            options.screenshot = {time: options.screenshot }
+        }
+        filnameObject = options.screenshot
+    }else {
+        filnameObject = options
+    }
+
+    Object.keys(filnameObject).forEach(k => {
         if (k !== 'keep') {
-            const value = String(options[k].constructor === Array ? options[k].join('') : options[k])
+            const value = String(filnameObject[k].constructor === Array ? filnameObject[k].join('') : filnameObject[k])
             modfilename += `-${value.replace(/[^a-zA-Z0-9-_\.]/g, '')}`
         }
     })
@@ -711,6 +725,30 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, filename}) {
     }
 
     let video = ffmpeg(filename)
+
+    if(options.screenshot){
+        video.on('filenames', function(filenames) {
+            console.log('Will generate ' + filenames.join(', '))
+        })
+            .on('end', function() {
+                console.log('Screenshots taken')
+                fs.rename(options.filename + '.png', options.filename, () => {
+                    console.log('transcode ended and file saved as ' + options.filename)
+
+                    const fileStream = fs.createReadStream(options.filename)
+                    fileStream.pipe(res)
+                })
+            })
+            .screenshots({
+                // Will take screens at 20%, 40%, 60% and 80% of the video
+                timestamps: [options.screenshot.time],
+                size: options.screenshot.size || '320x240',
+                count: 1,
+                folder: ABS_UPLOAD_DIR,
+                filename:options.filename.replace(/^.*[\\\/]/, '')
+            })
+        return true
+    }
 
     const inputOptions = [
         '-probesize 100M',

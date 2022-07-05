@@ -237,13 +237,12 @@ const openInBrowser = async (options, scope, resolvedData) => {
                     await page.waitForNavigation(pipe.waitForNavigation)
                 } else if (pipe.waitForSelector) {
                     const keys = Object.keys(pipe.waitForSelector)
-                    console.log(pipe.waitForSelector[keys[0]])
                     await page.waitForSelector(keys[0], pipe.waitForSelector[keys[0]])
                 } else if (pipe.waitFor) {
                     if (pipe.waitFor.constructor === Object) {
-                        await page.waitFor(pipe.waitFor.expr, {timeout: pipe.waitFor.timeout || 10000})
+                        await page.waitForSelector(pipe.waitFor.expr, {timeout: pipe.waitFor.timeout || 10000})
                     } else {
-                        await page.waitFor(pipe.waitFor, {timeout: 10000})
+                        await page.waitForSelector(pipe.waitFor, {timeout: 10000})
                     }
                     /*} else if (pipe.waitForFunction) {
                         await page.waitFor(pipe.waitForFunction.expr, {timeout: pipe.waitForFunction.timeout || 10000});*/

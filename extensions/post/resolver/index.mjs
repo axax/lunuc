@@ -19,13 +19,20 @@ export default db => ({
                 match.$or = [{title: {$regex: query, $options: 'i'}}, {$text: {$search: query}}]
                 sort = {score: {$meta: 'textScore'}}
             }
-            const posts = await GenericResolver.entities(db, context, 'Post', ['title', 'body', 'search', 'searchScore'], {
+            const posts = await GenericResolver.entities(db, context, 'Post', ['title', 'body', 'editor', 'search', 'searchScore'], {
                 match,
                 page,
                 limit,
                 offset,
                 filter,
                 sort
+            })
+
+            posts.results.forEach(post=>{
+                if(!post.title){
+                    post.title = 'no title set'
+                }
+
             })
 
             return posts
@@ -59,7 +66,7 @@ export default db => ({
                 }
             }
         },
-        updatePost: async ({_id, title, body}, {context}) => {
+        updatePost: async ({_id, title, body, editor}, {context}) => {
 
             const userContext = await Util.userOrAnonymousContext(db,context)
 
@@ -70,13 +77,22 @@ export default db => ({
 
             const postCollection = db.collection('Post')
 
-            const search = Util.draftjsRawToFields(body)
+            const $set = {}
+
+            if(title!==undefined){
+                $set.title = title
+            }
+
+            if(body!==undefined){
+                $set.body = body
+            }
+            if(editor!==undefined){
+                $set.editor = editor
+            }
+
+           // const search = Util.draftjsRawToFields(body)
             const result = (await postCollection.findOneAndUpdate({_id: ObjectId(_id)}, {
-                $set: {
-                    title,
-                    body,
-                    search
-                }
+                $set
             }, {returnOriginal: false}))
             if (result.ok !== 1) {
                 throw new ApiError('Post could not be changed')

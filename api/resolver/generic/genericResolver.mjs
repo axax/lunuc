@@ -702,6 +702,24 @@ const GenericResolver = {
             if (k !== '_id' && k !== '_version' && data[k] !== undefined) {
                 if (data[k] && data[k].constructor === Object) {
 
+                   /* "report.$.contratos.URLPDF": {
+                        $cond: {
+                            if: {
+                                $eq: ["$report.$.contratos.NumContrato", `${param[1]}`]
+                            },
+                            then: `${param[2]}`,
+                        else: null
+                        }
+                    }
+                    o[k]
+*/
+                   /*o[k] = {
+                        $ifNull:
+                            [
+                                '$'+k,
+                                {...data[k]}
+                            ]
+                    }*/
                     // rewrite to dot notation for partial update
                     Object.keys(data[k]).forEach(key => {
                         o[k + '.' + key] = data[k][key]
@@ -718,6 +736,7 @@ const GenericResolver = {
             }
             return o
         }, {})
+
         // set timestamp
         dataSet.modifiedAt = new Date().getTime()
         // try with dot notation for partial update
@@ -744,6 +763,8 @@ const GenericResolver = {
             }
             return o
         }, {})
+
+
 
         const returnValue = {
             ...newData,

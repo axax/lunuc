@@ -22,6 +22,7 @@ export default `
         createdBy: UserPublic! # id of user
         title: String!
         body: String
+        editor: String
         status: String
         search: PostSearch
         searchScore: Float
@@ -29,22 +30,24 @@ export default `
     
     type PostResult {
         results: [Post]
-        offset: Int
-        page: Int
-        limit: Int
-        total: Int
+        offset:Int
+        limit:Int
+        total:Int
+        meta:String
     }
+    
         
     type Query {
     	posts(sort: String, limit: Int=10, page: Int, offset: Int=0, query: String, filter: String): PostResult
     }
-    
+
 	type Mutation {
 		createPost (
 			title: String!
 			body: String
+			editor: String
 		): Post
-		updatePost(_id: ID!, title: String, body: String): Post	
+		updatePost(_id: ID!, createdBy:ID, title: String, body: String, editor: String): Post	
 		deletePost(_id: ID!): Post
 	}
 	

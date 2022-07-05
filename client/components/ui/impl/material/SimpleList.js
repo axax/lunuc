@@ -58,8 +58,8 @@ class SimpleList extends React.Component {
                         count={count}
                         rowsPerPage={rowsPerPage}
                         page={page - 1}
-                        onChangePage={(e, page) => onChangePage(page + 1)}
-                        onChangeRowsPerPage={(e) => onChangeRowsPerPage(e.target.value)}
+                        onPageChange={(e, page) => onChangePage(page + 1)}
+                        onRowsPerPageChange={(e) => onChangeRowsPerPage(e.target.value)}
                     />
                 </div> : null
             }

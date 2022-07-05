@@ -348,36 +348,38 @@ const Util = {
             return {}
         }
 
-        const collection = {}
-        for (let {type, text, inlineStyleRanges} of bodyJson.blocks) {
+        if(bodyJson.blocks) {
 
-            if (text.trim() === '')
-                continue
+            const collection = {}
+            for (let {type, text, inlineStyleRanges} of bodyJson.blocks) {
 
-            type = type.replace(/-([a-z])/g, function (g) {
-                return g[1].toUpperCase()
-            })
-            if (collection[type]) {
-                collection[type] += ' '
-            } else {
-                collection[type] = ''
-            }
-            collection[type] += text.trim()
-            for (let {style, offset, length} of inlineStyleRanges) {
-                const name = ('style-' + style.toLowerCase()).replace(/-([a-z])/g, function (g) {
+                if (text.trim() === '')
+                    continue
+
+                type = type.replace(/-([a-z])/g, function (g) {
                     return g[1].toUpperCase()
                 })
-
-                if (collection[name]) {
-                    collection[name] += ' '
+                if (collection[type]) {
+                    collection[type] += ' '
                 } else {
-                    collection[name] = ''
+                    collection[type] = ''
                 }
+                collection[type] += text.trim()
+                for (let {style, offset, length} of inlineStyleRanges) {
+                    const name = ('style-' + style.toLowerCase()).replace(/-([a-z])/g, function (g) {
+                        return g[1].toUpperCase()
+                    })
 
-                collection[name] += text.substr(offset, length).trim()
+                    if (collection[name]) {
+                        collection[name] += ' '
+                    } else {
+                        collection[name] = ''
+                    }
+
+                    collection[name] += text.substr(offset, length).trim()
+                }
             }
         }
-
 
         return collection
     },

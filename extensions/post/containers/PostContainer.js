@@ -15,7 +15,11 @@ import Async from 'client/components/Async'
 const DEFAULT_RESULT_LIMIT = 10
 
 const PostEditor = (props) => <Async {...props}
+                                     load={import(/* webpackChunkName: "post" */ '../components/PostEditor')}/>
+
+const DraftJsPostEditor = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "post" */ '../components/post/PostEditor')}/>
+
 
 class PostContainer extends React.Component {
     constructor(props) {
@@ -48,9 +52,12 @@ class PostContainer extends React.Component {
             console.log('save post')
 
             const {updatePost} = this.props
-            updatePost(
-                Object.assign({}, post, {body: data})
-            )
+            const jsonStr = JSON.stringify(data)
+            if(post.body !== jsonStr) {
+                updatePost(
+                    Object.assign({}, post, {body: jsonStr})
+                )
+            }
 
         }, 2000)
     }
@@ -112,7 +119,7 @@ class PostContainer extends React.Component {
                 selected: post._id === selectedPostId,
                 primary: post.title,
                 onClick: () => {
-                    this.goTo(post._id, posts.page, posts.limit, this.filter)
+                    this.goTo(post._id, posts.offset, posts.limit, this.filter)
                 },
                 secondary: Util.formattedDatetimeFromObjectId(post._id),
                 actions: <DeleteIconButton onClick={this.handlePostDeleteClick.bind(this, post)}/>,
@@ -134,7 +141,7 @@ class PostContainer extends React.Component {
                                     onChangePage={this.handleChangePage.bind(this)}
                                     onChangeRowsPerPage={this.handleChangeRowsPerPage.bind(this)}
                                     count={posts.total}
-                                    page={posts.page}/>
+                                    page={posts.offset/posts.limit+1}/>
 
                         <GenericForm onRef={(e) => {
                             this.addPostForm = e
@@ -147,8 +154,15 @@ class PostContainer extends React.Component {
                             <div>
                                 <h2 onBlur={(e) => this.handleTitleChange.bind(this)(e, selectedPost)}
                                     suppressContentEditableWarning contentEditable>{selectedPost.title}</h2>
-                                <PostEditor onChange={this.handleBodyChange.bind(this, selectedPost)} imageUpload={true}
-                                            post={selectedPost}/>
+
+                                {selectedPost.editor==='lexical' &&
+                                <PostEditor onChange={this.handleBodyChange.bind(this, selectedPost)}
+                                            post={selectedPost}/>}
+
+                                {(!selectedPost.editor || selectedPost.editor==='darftjs') &&
+                                <DraftJsPostEditor onChange={this.handleBodyChange.bind(this, selectedPost)} imageUpload={true}
+                                            post={selectedPost}/>}
+
 
                                 <small>Post ID: {selectedPostId}</small>
                             </div>
@@ -189,7 +203,7 @@ const getVariables = () => {
     }
 }
 
-const gqlQuery = `query posts($limit: Int, $page: Int, $query: String){posts(limit: $limit, page: $page, query: $query){limit page total results{_id title body status createdBy{_id username}}}}`
+const gqlQuery = `query posts($limit: Int, $page: Int, $query: String){posts(limit: $limit, page: $page, query: $query){limit offset total results{_id title body editor status createdBy{_id username}}}}`
 const PostContainerWithGql = compose(
     graphql(gqlQuery, {
         options() {

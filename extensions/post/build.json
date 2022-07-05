@@ -12,6 +12,13 @@
         {
           "name": "body",
           "uitype": "editor"
+        },
+        {
+          "name": "editor",
+          "enum": [
+            "darftjs",
+            "lexical"
+          ]
         }
       ]
     }

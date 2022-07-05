@@ -9,7 +9,7 @@ export const request = (options) => {
     if (finalOptions.url) {
         const parsedUrl = new URL(finalOptions.url)
 
-        finalOptions.hostname = parsedUrl.host
+        finalOptions.hostname = parsedUrl.host.split(':')[0]
         finalOptions.protocol = parsedUrl.protocol
         finalOptions.port = parsedUrl.port || (parsedUrl.protocol === 'https:' ? 443 : 80)
         finalOptions.path = parsedUrl.pathname + parsedUrl.search
