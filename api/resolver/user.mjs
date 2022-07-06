@@ -533,9 +533,13 @@ export const userResolver = (db) => ({
                 email = email.trim()
             }
 
-            const user = {domain: domain ? domain : undefined}
+            const user = {}
             const errors = []
             const userCollection = db.collection('User')
+
+            if (domain !== undefined) {
+                user.domain = domain
+            }
 
             if (language !== undefined) {
                 user.language = language
