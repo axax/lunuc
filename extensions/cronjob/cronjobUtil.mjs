@@ -66,7 +66,10 @@ const cronjobUtil = {
     runJavascript: (script, args) => {
 
         const requireContext = createRequireForScript(import.meta.url)
-        const tpl = new Function(`
+
+        try {
+
+            const tpl = new Function(`
         
         ${requireContext.script}
         (async () => {
@@ -79,7 +82,12 @@ const cronjobUtil = {
         })();
         `)
 
-        tpl.call({require: requireContext.require,...args})
+            tpl.call({require: requireContext.require, ...args})
+        }catch (e) {
+            args.error(e.message)
+            args.end()
+
+        }
 
     },
     runPythonScript: (script, args) => {
