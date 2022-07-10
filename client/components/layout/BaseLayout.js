@@ -158,13 +158,16 @@ const genMenuEntry = (item, path) => {
 }
 
 const BaseLayout = props => {
-    const {children, isAuthenticated, user} = props
+    const {children} = props
+
+    const isAuthenticated = !!_app_.user
+    const user = _app_.user || {}
 
     const keys = []
     let useKeySettings = {}
 
-    if (user.userData && user.userData.setting && user.userData.setting.length > 0) {
-        user.userData.setting.forEach(k => {
+    if (user && user.setting && user.setting.length > 0) {
+        user.setting.forEach(k => {
             keys.push('BaseLayoutSettings-' + k._id)
         })
         useKeySettings.global = true
@@ -239,7 +242,7 @@ const BaseLayout = props => {
     }
 
 
-    Hook.call('MenuMenu', {menuItems, user})
+    Hook.call('MenuMenu', {menuItems})
 
     if (settings.menu) {
 
@@ -291,7 +294,7 @@ const BaseLayout = props => {
         }
     }
 
-    const username = user.userData ? user.userData.username : ''
+    const username = user.username || ''
 
     const headerRight = []
 
@@ -415,39 +418,4 @@ const BaseLayout = props => {
 }
 
 
-BaseLayout.propTypes = {
-    isAuthenticated: PropTypes.bool,
-    user: PropTypes.object,
-    /* User Reducer */
-    userActions: PropTypes.object.isRequired,
-}
-
-
-/**
- * Map the state to props.
- */
-const mapStateToProps = (store) => {
-    const {user} = store
-    return {
-        isAuthenticated: user.isAuthenticated,
-        user
-    }
-}
-
-
-/**
- * Map the actions to props.
- */
-const mapDispatchToProps = (dispatch) => ({
-    userActions: bindActionCreators(UserActions, dispatch)
-})
-
-
-/**
- * Connect the component to
- * the Redux store.
- */
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(BaseLayout)
+export default BaseLayout

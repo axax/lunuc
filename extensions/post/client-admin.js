@@ -15,8 +15,8 @@ const EditIcon = (props) => <Async {...props} expose="EditIcon"
 export default () => {
 
     // add entry to main menu
-    Hook.on('MenuMenu', ({menuItems, user}) => {
-        if(Util.hasCapability(user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
+    Hook.on('MenuMenu', ({menuItems}) => {
+        if(Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
             menuItems.push({name: 'Posts', to: ADMIN_BASE_URL + '/post', auth: true, icon: <EditIcon/>})
         }
     })

@@ -1,6 +1,4 @@
 import React from 'react'
-import {connect} from 'react-redux'
-import PropTypes from 'prop-types'
 import Hook from 'util/hook.cjs'
 import config from 'gen/config-client'
 
@@ -69,8 +67,11 @@ class Routes extends React.Component {
     }
 
     render() {
-        const {user: {isAuthenticated, userData}} = this.props
-        const capabilities = (userData && userData.role && userData.role.capabilities) || []
+
+        const isAuthenticated = !!_app_.user
+        const user = _app_.user || {}
+
+        const capabilities = (user.role && user.role.capabilities) || []
 
         if(_app_.redirect404 === location.pathname){
             return <ErrorPage />
@@ -149,26 +150,4 @@ class Routes extends React.Component {
     }
 }
 
-
-Routes.propTypes = {
-    user: PropTypes.object.isRequired
-}
-
-
-/**
- * Map the state to props.
- */
-const mapStateToProps = (store) => {
-    return {
-        user: store.user
-    }
-}
-
-
-/**
- * Connect the component to
- * the Redux store.
- */
-export default connect(
-    mapStateToProps
-)(Routes)
+export default Routes

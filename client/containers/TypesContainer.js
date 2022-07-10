@@ -1,6 +1,5 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {connect} from 'react-redux'
 import BaseLayout from '../components/layout/BaseLayout'
 import BlankLayout from '../components/layout/BlankLayout'
 import ManageCollectionClones from '../components/types/ManageCollectionClones'
@@ -1199,7 +1198,7 @@ class TypesContainer extends React.Component {
 
     createData(input, optimisticInput) {
         const {type, page, limit, sort, filter, meta, _version} = this.pageParams
-        const {user} = this.props
+        const user = _app_.user || {}
 
         if (type) {
             const queries = getTypeQueries(type, false, {loadAll: false})
@@ -1222,8 +1221,8 @@ class TypesContainer extends React.Component {
                     const freshData = {
                         ...data['create' + type],
                         createdBy: {
-                            _id: user.userData._id,
-                            username: user.userData.username,
+                            _id: user._id,
+                            username: user.username,
                             __typename: 'UserPublic'
                         }, ...optimisticInput
                     }
@@ -1366,7 +1365,7 @@ class TypesContainer extends React.Component {
     cloneData(clonable, optimisticData) {
         const {type, page, limit, sort, filter, meta, _version} = this.pageParams
 
-        const {user} = this.props
+        const user = _app_.user || {}
 
         if (type) {
 
@@ -1384,8 +1383,8 @@ class TypesContainer extends React.Component {
                         _id: clonedData._id,
                         modifiedAt: null,
                         createdBy: {
-                            _id: user.userData._id,
-                            username: user.userData.username
+                            _id: user._id,
+                            username: user.username
                         }
                     }
 
@@ -1761,7 +1760,6 @@ TypesContainer.propTypes = {
     history: PropTypes.object.isRequired,
     location: PropTypes.object.isRequired,
     match: PropTypes.object.isRequired,
-    user: PropTypes.object.isRequired,
     fixType: PropTypes.string,
     noLayout: PropTypes.bool,
     baseUrl: PropTypes.string,
@@ -1774,10 +1772,4 @@ TypesContainer.propTypes = {
     keyValueMap: PropTypes.object
 }
 
-
-const mapStateToProps = (store) => ({user: store.user})
-
-
-export default connect(
-    mapStateToProps
-)(withKeyValues(TypesContainer, ['TypesContainerSettings', 'TypesContainerBulkEdit']))
+export default withKeyValues(TypesContainer, ['TypesContainerSettings', 'TypesContainerBulkEdit'])

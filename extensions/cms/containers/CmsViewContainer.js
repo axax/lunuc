@@ -12,6 +12,7 @@ import {deepMerge} from '../../../util/deepMerge.mjs'
 import * as CmsActions from '../actions/CmsAction'
 import {connect} from 'react-redux'
 import {bindActionCreators} from 'redux'
+import * as ErrorHandlerAction from 'client/actions/ErrorHandlerAction'
 
 class CmsViewContainer extends React.Component {
     oriTitle = document.title
@@ -511,7 +512,10 @@ const mapStateToProps = (store, props) => {
  * Map the actions to props.
  */
 const mapDispatchToProps = (dispatch) => {
-    return {cmsActions: bindActionCreators(CmsActions, dispatch)}
+    return {
+        cmsActions: bindActionCreators(CmsActions, dispatch),
+        errorHandlerAction: bindActionCreators(ErrorHandlerAction, dispatch)
+    }
 }
 
 /**

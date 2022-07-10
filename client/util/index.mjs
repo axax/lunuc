@@ -6,7 +6,7 @@ import {replacePlaceholders} from '../../util/placeholders.mjs'
 /**
  * Object with general client helper methods. It is also accessible in the CMS Editor
  */
-const JSON_ESCAPE_MAP = {'\\':'\\\\','\"':'\\\"','\b':'\\b','\f':'\\f','\n':'\\n','\r':'\\r','\t':'\\t'}
+const JSON_ESCAPE_MAP = {'\\': '\\\\', '\"': '\\\"', '\b': '\\b', '\f': '\\f', '\n': '\\n', '\r': '\\r', '\t': '\\t'}
 const DATE_FORMATS = {}
 
 const Util = {
@@ -24,18 +24,18 @@ const Util = {
         return str ? str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''
     },
     escapeForJson: (str, options) => {
-       // console.log(str)
+        // console.log(str)
         if (str === undefined || str === null) return ''
         if (str.constructor !== String)
             str = JSON.stringify(str)
-        if(options){
+        if (options) {
 
-            if(options.regex){
+            if (options.regex) {
                 str = Util.escapeRegex(str)
             }
         }
 
-        return str.replace(/[\\]|[\"]|[\b]|[\f]|[\n]|[\r]|[\t]/g, (matched)=>{
+        return str.replace(/[\\]|[\"]|[\b]|[\f]|[\n]|[\r]|[\t]/g, (matched) => {
             return JSON_ESCAPE_MAP[matched]
         })
 
@@ -83,32 +83,32 @@ const Util = {
         if (options) {
             lang = options.lang
         }
-        if(!Util._intl) {
+        if (!Util._intl) {
             Util._intl = Intl.DateTimeFormat().resolvedOptions()
         }
-        if(!lang){
+        if (!lang) {
             lang = _app_.lang || Util._intl.locale
         }
         const numeric = 'numeric',
             o = Object.assign({
-            year: numeric,
-            month: numeric,
-            day: numeric,
-            hour: numeric,
-            minute: numeric,
-            second: numeric,
-            timeZone: Util._intl.timeZone || 'UTC'
-        }, options),
+                year: numeric,
+                month: numeric,
+                day: numeric,
+                hour: numeric,
+                minute: numeric,
+                second: numeric,
+                timeZone: Util._intl.timeZone || 'UTC'
+            }, options),
             key = lang + Object.values(o).join('')
 
-        if(o.timeZone==='Europe/Zurich'){
-            o.timeZone='Europe/Oslo'
+        if (o.timeZone === 'Europe/Zurich') {
+            o.timeZone = 'Europe/Oslo'
         }
-        if(!DATE_FORMATS[key]){
+        if (!DATE_FORMATS[key]) {
             // cache formats as Intl.DateTimeFormat has bad performance
             try {
                 DATE_FORMATS[key] = new Intl.DateTimeFormat(lang, o)
-            }catch (e) {
+            } catch (e) {
                 console.log(e)
             }
         }
@@ -204,7 +204,7 @@ const Util = {
             query = window && window.location.search.substring(1)
         }
 
-        const a = (options.decodeURI === false ? query : decodeURI(query)).split('&'),b = {}
+        const a = (options.decodeURI === false ? query : decodeURI(query)).split('&'), b = {}
         for (let i = 0; i < a.length; ++i) {
             const p = a[i].split('=', 2)
             const key = p[0].trim()
@@ -239,7 +239,8 @@ const Util = {
         }, []).join('&')
     },
     hasCapability(user, capa) {
-        const capabilities = (user && user.userData && user.userData.role && user.userData.role.capabilities) || []
+        const userData = user ? user.userData ? user.userData : user : {}
+        const capabilities = (userData.role && userData.role.capabilities) || []
         return capabilities.indexOf(capa) >= 0
     },
     hightlight(text, query, options) {
@@ -247,7 +248,7 @@ const Util = {
         if (!query) return text
 
         let className, style
-        if(options && options.constructor === Object){
+        if (options && options.constructor === Object) {
             className = options.className
             style = options.style
         } else {
@@ -287,7 +288,7 @@ const Util = {
             image = {
                 src: raw
             }
-            if(raw.startsWith('[') || raw.startsWith('{')) {
+            if (raw.startsWith('[') || raw.startsWith('{')) {
                 try {
                     image = JSON.parse(raw)
                     if (!image) {
@@ -388,22 +389,22 @@ const Util = {
         return nodeList
     },
     baseUrl(path, query) {
-        let url = Util.removeTrailingSlash(location.pathname.split('/'+config.PRETTYURL_SEPERATOR+'/')[0])
+        let url = Util.removeTrailingSlash(location.pathname.split('/' + config.PRETTYURL_SEPERATOR + '/')[0])
 
-        if(path){
-            url += '/'+config.PRETTYURL_SEPERATOR+'/'+encodeURI(path)
+        if (path) {
+            url += '/' + config.PRETTYURL_SEPERATOR + '/' + encodeURI(path)
         }
-        if(query){
+        if (query) {
             const queryStr = Util.paramsToQuery(query)
-            if(queryStr) {
-                url += '?'+queryStr
+            if (queryStr) {
+                url += '?' + queryStr
             }
         }
 
         return url
     },
-    removeTrailingSlash (url) {
-        if(url !== '/' && url.substr(-1) === '/') {
+    removeTrailingSlash(url) {
+        if (url !== '/' && url.substr(-1) === '/') {
             return url.substr(0, url.length - 1)
         }
         return url
@@ -443,7 +444,7 @@ const Util = {
     },
     // a simple implementation of the shallowCompare.
     // only compares the first level properties and hence shallow.
-    shallowCompare(newObj, prevObj, options={}) {
+    shallowCompare(newObj, prevObj, options = {}) {
         if (!newObj || newObj.constructor !== Object) {
             return newObj !== prevObj
         }
@@ -451,7 +452,7 @@ const Util = {
             return newObj !== prevObj
         }
         for (const key in newObj) {
-            if ( (!options.ignoreKeys || options.ignoreKeys.indexOf(key)<0) && newObj[key] !== prevObj[key]) {
+            if ((!options.ignoreKeys || options.ignoreKeys.indexOf(key) < 0) && newObj[key] !== prevObj[key]) {
                 return true
             }
         }

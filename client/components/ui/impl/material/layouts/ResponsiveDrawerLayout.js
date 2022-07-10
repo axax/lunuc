@@ -106,14 +106,14 @@ const findActiveItem = (props) => {
 
 
 const MenuList = (props) => {
-    const {items, isAuthenticated, depth, onMenuChange} = props
+    const {items, depth, onMenuChange} = props
     const activeItem = findActiveItem(props)
 
     const [open, setOpen] = React.useState({})
 
     return <List disablePadding={depth > 0} style={{paddingLeft: (depth * 16) + 'px'}}>
         {items.map((item, i) => {
-            if (item.auth && isAuthenticated || !item.auth) {
+            if (item.auth && _app_.user || !item.auth) {
                 if (item.divider) {
                     return <Divider key={i}/>
                 }
@@ -144,7 +144,7 @@ const MenuList = (props) => {
                     {item.items && (isOpen ? <ExpandLess /> : <ExpandMore />)}
                 </ListItem>,
                     item.items && <Collapse in={isOpen} timeout="auto" unmountOnExit>
-                        <MenuList items={item.items} onMenuChange={onMenuChange} depth={depth + 1} isAuthenticated={isAuthenticated}/>
+                        <MenuList items={item.items} onMenuChange={onMenuChange} depth={depth + 1} isAuthenticated={!!_app_.user}/>
                     </Collapse>]
             }
         })}
@@ -159,7 +159,7 @@ const ResponsiveDrawer = React.memo((props) => {
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen)
     }
-    const {onMenuChange, menuItems, isAuthenticated, children, headerLeft, headerRight, title, logo, toolbarStyle, headerStyle, extra} = props
+    const {onMenuChange, menuItems, children, headerLeft, headerRight, title, logo, toolbarStyle, headerStyle, extra} = props
 
     const drawer = (
         <div key="drawer">
@@ -168,7 +168,7 @@ const ResponsiveDrawer = React.memo((props) => {
                 <div style={{marginLeft:'auto'}}>{headerLeft}</div>
             </Toolbar>
             <Divider/>
-            <MenuList key="mainMenu" depth={0} onMenuChange={onMenuChange} items={menuItems} isAuthenticated={isAuthenticated}/>
+            <MenuList key="mainMenu" depth={0} onMenuChange={onMenuChange} items={menuItems} isAuthenticated={!!_app_.user}/>
             <Divider/>
             {extra}
         </div>
@@ -232,29 +232,10 @@ const ResponsiveDrawer = React.memo((props) => {
 
 ResponsiveDrawer.propTypes = {
     menuItems: PropTypes.array.isRequired,
-    isAuthenticated: PropTypes.bool,
     headerRight: PropTypes.any,
     title: PropTypes.string,
     headerStyle: PropTypes.object,
     toolbarStyle: PropTypes.object
 }
 
-
-/**
- * Map the state to props.
- */
-const mapStateToProps = (store) => {
-    const {user} = store
-    return {
-        isAuthenticated: user.isAuthenticated
-    }
-}
-
-
-/**
- * Connect the component to
- * the Redux store.
- */
-export default connect(
-    mapStateToProps
-)(ResponsiveDrawer)
+export default ResponsiveDrawer

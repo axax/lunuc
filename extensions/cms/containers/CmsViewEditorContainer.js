@@ -32,8 +32,6 @@ import {
 import Drawer from '@mui/material/Drawer'
 
 import NetworkStatusHandler from 'client/components/layout/NetworkStatusHandler'
-import * as ErrorHandlerAction from 'client/actions/ErrorHandlerAction'
-
 import {getTypeQueries} from 'util/types.mjs'
 import TypeEdit from '../../../client/components/types/TypeEdit'
 import withType from '../../../client/components/types/withType'
@@ -47,7 +45,6 @@ import {getFormFieldsByType} from '../../../util/typesAdmin.mjs'
 import Hook from '../../../util/hook.cjs'
 import {client, Query, graphql} from '../../../client/middleware/graphql'
 import Async from '../../../client/components/Async'
-import * as types from "../constants/ActionTypes";
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
 
@@ -1253,7 +1250,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     handleCmsError(e, meta) {
-        //this.props.errorHandlerAction.addError({key: 'cmsError', msg: `${meta.loc}: ${e.message} -> ${meta.slug}`})
+        this.props.errorHandlerAction.addError({key: 'cmsError', msg: `${meta.loc}: ${e.message} -> ${meta.slug}`})
     }
 
     saveUnsafedChanges() {

@@ -1,7 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import compose from 'util/compose'
-import {connect} from 'react-redux'
 import NetworkStatusHandler from 'client/components/layout/NetworkStatusHandler'
 import {getKeyValuesFromLS,
     setKeyValueToLS,
@@ -51,9 +50,9 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
 
 
         render() {
-            const {keyValues, keyValueGlobals, kvUser, loading, ...rest} = this.props
+            const {keyValues, keyValueGlobals, loading, ...rest} = this.props
             if (keys) {
-                if (!kvUser.isAuthenticated) {
+                if (!_app_.user) {
                     // fallback: load keyValues from localstore
                     this.keyValueMap = getKeyValuesFromLS()
                 } else if (keyValues) {
@@ -108,7 +107,6 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
     WithKeyValues.propTypes = {
         keyValues: PropTypes.object,
         keyValueGlobals: PropTypes.object,
-        kvUser: PropTypes.object.isRequired,
         loading: PropTypes.bool,
         setKeyValue: PropTypes.func.isRequired,
         setKeyValueGlobal: PropTypes.func.isRequired,
@@ -117,7 +115,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
 
     const WithKeyValuesWithGql = compose(
         graphql(QUERY_KEY_VALUES, {
-            skip: props => !props.kvUser.isAuthenticated || !keys, // skip request if user is not logged in
+            skip: props => !_app_.user || !keys, // skip request if user is not logged in
             options() {
                 const variables = {keys: keys}
                 return {
@@ -132,7 +130,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
             })
         }),
         graphql(QUERY_KEY_VALUES_GLOBAL, {
-            skip: props => !props.kvUser.isAuthenticated || !keysGlobal, // skip request if user is not logged in
+            skip: props => !_app_.user || !keysGlobal, // skip request if user is not logged in
             options() {
 
                 const variables = {keys: keysGlobal}
@@ -151,14 +149,14 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
             props: ({ownProps, mutate}) => ({
                 setKeyValue: ({key, value, server}) => {
                     if (!key) throw Error('Key is missing in setKeyValue')
-                    if (!ownProps.kvUser.isAuthenticated) {
+                    if (!_app_.user) {
                         return new Promise((res) => {
                             setKeyValueToLS({key, value, server})
                             res()
                         })
                     }
                     const valueStr = value.constructor === String ? value : JSON.stringify(value)
-                    const user = ownProps.kvUser.userData
+                    const user = _app_.user || {}
                     return mutate({
                         variables: {key, value: valueStr},
                         optimisticResponse: {
@@ -251,7 +249,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
         graphql(gqlKeyValueDelete, {
             props: ({ownProps, mutate}) => ({
                 deleteKeyValueByKey: ({key}) => {
-                    if (!ownProps.kvUser.isAuthenticated) {
+                    if (!_app_.user) {
                         return new Promise((res) => {
                             setKeyValueToLS({key, value: null})
                             res()
@@ -297,17 +295,5 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
     )(WithKeyValues)
 
 
-    /**
-     * Map the state to props.
-     */
-    const mapStateToProps = (store) => ({kvUser: store.user})
-
-
-    /**
-     * Connect the component to
-     * the Redux store.
-     */
-    return connect(
-        mapStateToProps
-    )(WithKeyValuesWithGql)
+    return WithKeyValuesWithGql
 }

@@ -10,15 +10,11 @@ import {
 } from './constants/index.mjs'
 import Async from 'client/components/Async'
 import CmsViewContainer from './containers/CmsViewContainer'
-import CmsEditorReducer from './reducers/CmsEditorReducer'
 import CmsReducer from './reducers/CmsReducer'
 
 const TypesContainer = (props) => <Async {...props}
                                          load={import(/* webpackChunkName: "admin" */ '../../client/containers/TypesContainer')}/>
 
-
-const ErrorPage = (props) => <Async {...props}
-                                    load={import(/* webpackChunkName: "admin" */ '../../client/components/layout/ErrorPage')}/>
 
 // Extend Util to use in template
 /*Util.xx = () => {
@@ -27,7 +23,6 @@ const ErrorPage = (props) => <Async {...props}
 
 // add redux reducer
 Hook.on('reducer', ({reducers}) => {
-    reducers.cmsEditor = CmsEditorReducer
     reducers.cms = CmsReducer
 })
 
