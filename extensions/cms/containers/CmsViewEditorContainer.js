@@ -33,9 +33,7 @@ import Drawer from '@mui/material/Drawer'
 
 import NetworkStatusHandler from 'client/components/layout/NetworkStatusHandler'
 import * as ErrorHandlerAction from 'client/actions/ErrorHandlerAction'
-import {connect} from 'react-redux'
-import {bindActionCreators} from 'redux'
-import * as CmsActions from '../actions/CmsEditorAction'
+
 import {getTypeQueries} from 'util/types.mjs'
 import TypeEdit from '../../../client/components/types/TypeEdit'
 import withType from '../../../client/components/types/withType'
@@ -49,6 +47,7 @@ import {getFormFieldsByType} from '../../../util/typesAdmin.mjs'
 import Hook from '../../../util/hook.cjs'
 import {client, Query, graphql} from '../../../client/middleware/graphql'
 import Async from '../../../client/components/Async'
+import * as types from "../constants/ActionTypes";
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
 
@@ -212,8 +211,8 @@ class CmsViewEditorContainer extends React.Component {
             props.loading !== this.props.loading ||
             slugChanged ||
             /*props.cmsPage.modifiedAt !== this.props.cmsPage.modifiedAt ||*/
-            props.cmsTemplateEditData !== this.props.cmsTemplateEditData ||
-            props.cmsEditData !== this.props.cmsEditData ||
+            state.cmsTemplateEditData !== this.state.cmsTemplateEditData ||
+            state.cmsEditData !== this.state.cmsEditData ||
             props.cmsPage.resolvedData !== this.props.cmsPage.resolvedData ||
             props.user !== this.props.user ||
             props.children != this.props.children ||
@@ -251,7 +250,8 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     render() {
-        const {WrappedComponent, cmsPage, cmsEditData, cmsTemplateEditData, ...props} = this.props
+        const {WrappedComponent, cmsPage, ...props} = this.props
+        const {cmsEditData, cmsTemplateEditData} = this.state
 
         const {template, resources, script, style, EditorOptions, EditorPageOptions, PageOptionsDefinition, PageOptions, dataResolver, serverScript, simpleDialog, showPageSettings} = this.state
 
@@ -336,8 +336,8 @@ class CmsViewEditorContainer extends React.Component {
 
                                 if (!finalData || finalData.results.length === 0) {
 
-                                    this.props._cmsActions.editCmsData(null)
                                     this.setState({
+                                        cmsEditData: null,
                                         simpleDialog: {
                                             title: "Keine Daten",
                                             text: "Sie haben vermutlich keine Berechtigung diese Daten zu bearbeiten"
@@ -365,7 +365,7 @@ class CmsViewEditorContainer extends React.Component {
                                                      instantSave: true
                                                  })
                                              }
-                                             this.props._cmsActions.editCmsData(null)
+                                             this.editCmsData(null)
                                          }}
                                          actions={[{
                                              key: 'cancel',
@@ -389,6 +389,7 @@ class CmsViewEditorContainer extends React.Component {
             }
             return null
         }
+
         const inner = [
             !loadingState && <WrappedComponent key="cmsView"
                                                cmsEditData={cmsEditData}
@@ -398,6 +399,7 @@ class CmsViewEditorContainer extends React.Component {
                                                onDataResolverPropertyChange={this.handleDataResolverPropertySave.bind(this)}
                                                settings={EditorOptions}
                                                cmsPage={cmsPageWithState}
+                                               cmsEditorActions={{editTemplate: this.editTemplate.bind(this), editCmsData: this.editCmsData.bind(this)}}
                                                {...props} />
             ,
             <ErrorHandler key="errorHandler" snackbar/>,
@@ -436,7 +438,7 @@ class CmsViewEditorContainer extends React.Component {
 
 
                 <Button key="editParent" size="small" variant="contained" color="primary" onClick={e => {
-                    this.props._cmsActions.editTemplate(cmsTemplateEditData.key.substring(0, cmsTemplateEditData.key.lastIndexOf('.')), cmsTemplateEditData.json, cmsTemplateEditData.scope)
+                    this.editTemplate(cmsTemplateEditData.key.substring(0, cmsTemplateEditData.key.lastIndexOf('.')), cmsTemplateEditData.json, cmsTemplateEditData.scope)
                 }}>Edit parent component</Button>
             </SimpleDialog>,
             <DataEditDialog key="dataEditDialog"/>
@@ -1251,7 +1253,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     handleCmsError(e, meta) {
-        this.props.errorHandlerAction.addError({key: 'cmsError', msg: `${meta.loc}: ${e.message} -> ${meta.slug}`})
+        //this.props.errorHandlerAction.addError({key: 'cmsError', msg: `${meta.loc}: ${e.message} -> ${meta.slug}`})
     }
 
     saveUnsafedChanges() {
@@ -1460,14 +1462,15 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     handleComponentEditClose() {
-        const {_cmsActions, cmsTemplateEditData} = this.props
+        const {cmsTemplateEditData} = this.state
         this.saveCmsPage(this.state.template, this.props.cmsPage, 'template')
-        _cmsActions.editTemplate(null, cmsTemplateEditData.component, cmsTemplateEditData.scope)
+
+        this.editTemplate(null, cmsTemplateEditData.component, cmsTemplateEditData.scope)
     }
 
     handleEditDataClose(action, {optimisticData, dataToEdit, type}) {
-        const {_cmsActions, cmsPage, updateResolvedData, cmsEditData} = this.props
-        _cmsActions.editCmsData(null)
+        const {cmsPage, updateResolvedData, cmsEditData} = this.props
+        this.editCmsData(null)
 
         if (optimisticData) {
             if (!dataToEdit) {
@@ -1479,7 +1482,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     findAndUpdateResolvedData(jsonDom, resolverKey, type, optimisticData, dataToEdit) {
-        const {cmsPage, updateResolvedData, cmsEditData} = this.props
+        const {cmsPage, updateResolvedData} = this.props
         const resolvedDataJson = JSON.parse(jsonDom.props.resolvedData),
             resolver = resolvedDataJson[resolverKey]
         if (resolver) {
@@ -1590,6 +1593,15 @@ class CmsViewEditorContainer extends React.Component {
         this.saveSettingsTimeout = setTimeout(this._saveSettings, 5000)
     }
 
+    editTemplate(key, json, scope){
+        this.setState({cmsTemplateEditData: {key, json, scope}})
+    }
+
+    editCmsData(editData){
+        this.setState({cmsEditData:editData})
+    }
+
+
 }
 
 
@@ -1598,8 +1610,6 @@ CmsViewEditorContainer.propTypes = {
     children: PropTypes.any,
     cmsPageVariables: PropTypes.object,
     cmsPage: PropTypes.object,
-    cmsTemplateEditData: PropTypes.object,
-    cmsEditData: PropTypes.object,
     setKeyValue: PropTypes.func.isRequired,
     getKeyValue: PropTypes.func.isRequired,
     slug: PropTypes.string.isRequired,
@@ -1614,8 +1624,6 @@ CmsViewEditorContainer.propTypes = {
     dynamic: PropTypes.bool,
     /* if true data gets refetched with query on url change*/
     urlSensitiv: PropTypes.any,
-    /* actions */
-    _cmsActions: PropTypes.object.isRequired,
     /* udate data */
     updateCmsPage: PropTypes.func.isRequired,
     errorHandlerAction: PropTypes.object.isRequired,
@@ -1684,33 +1692,5 @@ const CmsViewEditorContainerWithGql = compose(
 )(CmsViewEditorContainer)
 
 
-/**
- * Map the state to props.
- */
-const mapStateToProps = (store, props) => {
-    if (props.dynamic) {
-        return null
-    }
-    return {
-        cmsTemplateEditData: store.cmsEditor.edit,
-        cmsEditData: store.cmsEditor.editData
-    }
-}
-
-/**
- * Map the actions to props.
- */
-const mapDispatchToProps = (dispatch) => ({
-    _cmsActions: bindActionCreators(CmsActions, dispatch),
-    errorHandlerAction: bindActionCreators(ErrorHandlerAction, dispatch)
-})
-
-/**
- * Connect the component to
- * the Redux store.
- */
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(CmsViewEditorContainerWithGql)
+export default CmsViewEditorContainerWithGql
 

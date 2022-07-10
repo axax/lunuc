@@ -8,8 +8,10 @@ import {isEditMode, getSlugVersion, CMS_PAGE_QUERY} from '../util/cmsView.mjs'
 import withCms from './withCms'
 import {client} from '../../../client/middleware/graphql'
 import Hook from '../../../util/hook.cjs'
-import {connect} from 'react-redux'
 import {deepMerge} from '../../../util/deepMerge.mjs'
+import * as CmsActions from '../actions/CmsAction'
+import {connect} from 'react-redux'
+import {bindActionCreators} from 'redux'
 
 class CmsViewContainer extends React.Component {
     oriTitle = document.title
@@ -496,12 +498,20 @@ const mapStateToProps = (store, props) => {
 
     const render = store.cms ? store.cms.render : null
 
+    const result = {user: store.user}
+
     if(render && (!render.id || render.id=== props.id) && (!render.slug || render.slug=== props.slug) ) {
-        return {
-            cmsRender: render
-        }
+        result.cmsRender = render
     }
-    return {}
+
+    return result
+}
+
+/**
+ * Map the actions to props.
+ */
+const mapDispatchToProps = (dispatch) => {
+    return {cmsActions: bindActionCreators(CmsActions, dispatch)}
 }
 
 /**
@@ -509,6 +519,7 @@ const mapStateToProps = (store, props) => {
  * the Redux store.
  */
 export default connect(
-    mapStateToProps
+    mapStateToProps,
+    mapDispatchToProps
 )(withCms(CmsViewContainer))
 

@@ -18,9 +18,6 @@ import {preprocessCss} from '../util/cssPreprocessor.mjs'
 import {parseStyles} from 'client/util/style'
 import ElementWatch from './ElementWatch'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants/index.mjs'
-import * as CmsActions from '../actions/CmsAction'
-import {connect} from 'react-redux'
-import {bindActionCreators} from 'redux'
 import {getKeyValuesFromLS} from '../../../client/util/keyvalue'
 
 const JsonDomHelper = (props) => <Async {...props}
@@ -443,6 +440,7 @@ class JsonDom extends React.Component {
 
     render() {
         const {dynamic, template, script, resolvedData, parseResolvedData, _props, _key, loading} = this.props
+
         if (!template) {
             console.warn('Template is missing.', this.props)
             return null
@@ -1055,6 +1053,7 @@ class JsonDom extends React.Component {
                             eleProps._options = $inlineEditor || {}
                             eleProps._WrappedComponent = eleType
                             eleProps._scope = scope
+                            eleProps._cmsActions = this.props.cmsEditorActions
                             eleProps._user = this.props.user
                             eleProps._onTemplateChange = this.onTemplateChange.bind(this)
                             eleProps._onDataResolverPropertyChange = this.props.onDataResolverPropertyChange
@@ -1586,17 +1585,7 @@ JsonDom.propTypes = {
 
 
 /**
- * Map the actions to props.
- */
-const mapDispatchToProps = (dispatch) => {
-    return {cmsActions: bindActionCreators(CmsActions, dispatch)}
-}
-
-/**
  * Connect the component to
  * the Redux store.
  */
-export default connect(
-    null,
-    mapDispatchToProps
-)(JsonDom)
+export default JsonDom

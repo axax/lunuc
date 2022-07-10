@@ -287,22 +287,6 @@ export default function (WrappedComponent) {
     )(Wrapper)
 
 
-    /**
-     * Map the state to props.
-     */
-    const mapStateToProps = (store) => {
-        return {
-            user: store.user
-        }
-    }
-
-
-    /**
-     * Connect the component to
-     * the Redux store.
-     */
-    return connect(
-        mapStateToProps
-    )(withGql)
+    return withGql
 
 }

@@ -1,9 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import PropTypes from 'prop-types'
-import * as CmsActions from '../actions/CmsEditorAction'
-import {bindActionCreators} from 'redux'
-import {connect} from 'react-redux'
 import {
     SimpleSelect,
     SimpleDialog,
@@ -1737,8 +1734,8 @@ class JsonDomHelper extends React.Component {
 
 
 JsonDomHelper.propTypes = {
-    _WrappedComponent: PropTypes.any.isRequired,
     _cmsActions: PropTypes.object.isRequired,
+    _WrappedComponent: PropTypes.any.isRequired,
     _key: PropTypes.string.isRequired,
     _scope: PropTypes.object.isRequired,
     _json: PropTypes.any,
@@ -1748,27 +1745,4 @@ JsonDomHelper.propTypes = {
 }
 
 
-/**
- * Map the state to props.
- */
-const mapStateToProps = () => {
-    return {}
-}
-
-
-/**
- * Map the actions to props.
- */
-const mapDispatchToProps = (dispatch) => ({
-    _cmsActions: bindActionCreators(CmsActions, dispatch)
-})
-
-
-/**
- * Connect the component to
- * the Redux store.
- */
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(JsonDomHelper)
+export default JsonDomHelper
