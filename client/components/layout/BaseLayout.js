@@ -230,7 +230,7 @@ const BaseLayout = props => {
     ]
 
 
-    const capabilities = (user.userData && user.userData.role && user.userData.role.capabilities) || []
+    const capabilities = (user.role && user.role.capabilities) || []
 
     if (capabilities.indexOf(CAPABILITY_MANAGE_TYPES) >= 0) {
 
@@ -399,14 +399,7 @@ const BaseLayout = props => {
                     type: 'primary'
                 }]}
         >
-            <SimpleSelect
-                label="Select action"
-                value=""
-                style={{marginBottom: 0, marginTop: 0}}
-                onChange={() => {
-                }}
-                items={[{name: 'Delete', value: 'delete'}, {name: 'Bulk edit', value: 'edit'}]}
-            />
+
             <CodeEditor lineNumbers type="json" forceJson={true} onForwardRef={(e) => {
                 menuEditor = e
             }}>
