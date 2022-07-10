@@ -46,8 +46,7 @@ class Stemmer {
             finalTokens.hasContext = true
             text = text.replace(/\${/g, Stemmer.CONTEXTSTART).replace(/}/g, Stemmer.CONTEXTEND)
         }
-
-        let tokenizer = new natural.RegexpTokenizer({pattern: new RegExp('[^A-Za-zА-Яа-я0-9_' + Object.keys(this.charsToKeep).join() + ']+')});
+        let tokenizer = new natural.RegexpTokenizer({pattern: new RegExp('[^A-Za-z0-9_\-' + Object.keys(this.charsToKeep).join('') + ']+')});
         let tokens = tokenizer.tokenize(text)
 
 
