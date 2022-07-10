@@ -1,4 +1,3 @@
-import {$getRoot, $getSelection} from 'lexical'
 import {useEffect} from 'react'
 import React from 'react'
 import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin'
