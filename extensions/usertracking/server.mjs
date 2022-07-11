@@ -22,7 +22,7 @@ Hook.on('trackMail', ({req, event, slug, db, context, data, meta}) => {
 })
 
 Hook.on('cmsCustomResolver', async ({db, segment, context, req, scope, editmode, dynamic}) => {
-    if (segment.track && req && !editmode && !dynamic) {
+    if (segment.track && req && (segment.track.force || (!editmode && !dynamic))) {
         trackUser({
             req,
             event: segment.track.event,

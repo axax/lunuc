@@ -1,17 +1,15 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {connect} from 'react-redux'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import {Typography, Card, Divider, Row, Col} from 'ui/admin'
 import Hook from '../../util/hook.cjs'
 
 class HomeContainer extends React.Component {
     render() {
-        const {user} = this.props
 
         let content
 
-        if (user.isAuthenticated) {
+        if (_app_.user) {
             content = [<Row key="mainRow">
                 <Col md={4}>
                     <Card>
@@ -23,7 +21,7 @@ class HomeContainer extends React.Component {
 
                         <Typography variant="h5">
 
-                            User: <span>{user.userData.username}</span>
+                            User: <span>{_app_.user.username}</span>
                         </Typography>
                     </Card>
                 </Col>
@@ -38,28 +36,10 @@ class HomeContainer extends React.Component {
 }
 
 HomeContainer.propTypes = {
-    user: PropTypes.object.isRequired,
     history: PropTypes.object.isRequired,
     location: PropTypes.object.isRequired,
     match: PropTypes.object.isRequired
 }
 
 
-/**
- * Map the state to props.
- */
-const mapStateToProps = (store) => {
-    const {user} = store
-    return {
-        user
-    }
-}
-
-
-/**
- * Connect the component to
- * the Redux store.
- */
-export default connect(
-    mapStateToProps
-)(HomeContainer)
+export default HomeContainer

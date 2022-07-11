@@ -1,7 +1,4 @@
 import React, {useEffect, useMemo} from 'react'
-import PropTypes from 'prop-types'
-import {connect} from 'react-redux'
-import {bindActionCreators} from 'redux'
 import {
     Button,
     ResponsiveDrawerLayout,
@@ -57,7 +54,6 @@ import NotificationHandler from './NotificationHandler'
 import NetworkStatusHandler from './NetworkStatusHandler'
 import Hook from 'util/hook.cjs'
 import config from 'gen/config-client'
-import * as UserActions from 'client/actions/UserAction'
 import {UIProvider} from 'ui/admin'
 import 'gen/extensions-client-admin'
 import {Link} from '../../util/route'

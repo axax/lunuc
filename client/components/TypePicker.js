@@ -238,7 +238,6 @@ class TypePicker extends React.Component {
                         const components = []
 
                         if (isValidImage(singleValue)) {
-                            console.log(singleValue)
                             components.push(<StyledImageChip
                                                  draggable={true}
                                                  data-index={singleValueIndex}

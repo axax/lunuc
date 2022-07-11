@@ -127,7 +127,6 @@
     "soap": "^0.45.0",
     "xml2js": "^0.4.23",
     "ytdl-core": "^4.11.0",
-    "cld": "^2.8.1",
     "draft-js": "^0.11.7",
     "draft-js-drag-n-drop-plugin": "^2.0.4",
     "draft-js-focus-plugin": "^3.0.1",

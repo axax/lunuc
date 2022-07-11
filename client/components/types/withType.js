@@ -1,5 +1,4 @@
 import React from 'react'
-import {connect} from 'react-redux'
 import {getTypeQueries} from 'util/types.mjs'
 import {client} from '../../middleware/graphql'
 
@@ -57,21 +56,6 @@ export default function(WrappedComponent) {
         }
     }
 
-    /**
-     * Map the state to props.
-     */
-    const mapStateToProps = (store) => {
-        return {
-            user: store.user
-        }
-    }
-
-    /**
-     * Connect the component to
-     * the Redux store.
-     */
-    return connect(
-        mapStateToProps
-    )(Wrapper)
+    return Wrapper
 
 }

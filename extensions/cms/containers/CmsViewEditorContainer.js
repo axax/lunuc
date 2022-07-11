@@ -1466,16 +1466,19 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     handleEditDataClose(action, {optimisticData, dataToEdit, type}) {
-        const {cmsPage, updateResolvedData, cmsEditData} = this.props
-        this.editCmsData(null)
+        const {cmsPage, updateResolvedData} = this.props
+        const {cmsEditData} = this.state
 
         if (optimisticData) {
             if (!dataToEdit) {
                 window.location.href = window.location.href
+                return
             } else {
                 this.findAndUpdateResolvedData(cmsEditData._jsonDom.scope.root, cmsEditData.resolverKey || type, type, optimisticData, dataToEdit)
             }
         }
+
+        this.editCmsData(null)
     }
 
     findAndUpdateResolvedData(jsonDom, resolverKey, type, optimisticData, dataToEdit) {
