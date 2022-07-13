@@ -326,12 +326,18 @@ const baseElements = [
             p_src: {
                 fullWidth: true,
                 value: '',
-                label: 'Bild',
+                label: 'Bild auswählen',
                 uitype: 'type_picker',
                 type: 'Media',
                 filter: 'mimeType=image',
                 tab: DEFAULT_TAB,
                 projection: MEDIA_PROJECTION
+            },
+            'p_src@imageSrc': {
+                fullWidth: true,
+                value: '',
+                label: 'Bild Url eingeben',
+                tab: DEFAULT_TAB
             },
             ...marginOptions('p_'),
             'p_style@align': {
@@ -660,6 +666,11 @@ const baseElements = [
             },
             c: {
                 label: 'Text',
+                fullWidth: true,
+                tab: DEFAULT_TAB
+            },
+            $c: {
+                label: 'Text (HTML)',
                 fullWidth: true,
                 tab: DEFAULT_TAB
             },
