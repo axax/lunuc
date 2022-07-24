@@ -204,9 +204,18 @@ const getFetchMore = ({prevData, type, query, variables, fetchPolicy}) => {
     }
 }
 
-export const finalFetch = ({type = RequestType.query, cacheKey, query, variables, hiddenVariables, fetchPolicy = 'cache-first', signal, lang}) => {
+export const finalFetch = ({type = RequestType.query, cacheKey, query, variables, hiddenVariables, fetchPolicy = 'cache-first', lang}) => {
 
-    return new Promise((resolve, reject) => {
+
+    const controller = new AbortController()
+
+    const timeoutId = setTimeout(() => {
+        controller._timeout = true
+        controller.abort()
+    }, 60000)
+
+
+    const promise = new Promise((resolve, reject) => {
 
         if (type === RequestType.query) {
             if (!cacheKey) {
@@ -240,7 +249,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
         addLoader()
         fetch(getGraphQlUrl(), {
             method: 'POST',
-            signal,
+            signal: controller.signal,
             credentials: 'include',
             headers: getHeaders(lang),
             body
@@ -304,13 +313,15 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
             }
 
         }).catch(error => {
-            console.log(error)
             removeLoader()
             reject({error, loading: false, networkStatus: NetworkStatus.error})
-            getStore().dispatch(addError({key: 'api_error', msg: error.message}))
+            getStore().dispatch(addError({key: 'api_error', msg: controller._timeout?'Request timeout reached':error.message}))
 
         })
     })
+    promise._controller = controller
+
+    return promise
 }
 
 let CACHE_QUERIES = {}, CACHE_ITEMS = {}, QUERY_WATCHER = {}, SUB_CACHE = {}
@@ -551,7 +562,8 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
 
     useEffect(() => {
 
-        const controller = new AbortController()
+        let controller
+
         if (initialLoading) {
             const newResponse = {fetchMore: response.fetchMore, cacheKey}
             newResponse.loading = response.networkStatus !== NetworkStatus.error
@@ -568,18 +580,20 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
 
 
             if (newResponse.loading) {
-                finalFetch({
+                const promise = finalFetch({
                     cacheKey,
                     query,
                     variables,
                     hiddenVariables,
-                    fetchPolicy,
-                    signal: controller.signal
-                }).then(response => {
+                    fetchPolicy
+                })
+
+                controller = promise._controller
+                promise.then(response => {
                     response.cacheKey = cacheKey
                     setResponse(response)
                 }).catch(error => {
-                    if (!controller.signal.aborted) {
+                    if (!controller.signal.aborted || controller._timeout) {
                         setResponse(error)
                     }
                 })
@@ -587,7 +601,9 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
         }
 
         return () => {
-            controller.abort()
+            if(controller) {
+                controller.abort()
+            }
         }
     }, [cacheKey])
 

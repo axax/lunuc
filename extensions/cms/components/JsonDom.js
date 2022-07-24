@@ -1580,8 +1580,4 @@ JsonDom.propTypes = {
 }
 
 
-/**
- * Connect the component to
- * the Redux store.
- */
 export default JsonDom

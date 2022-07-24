@@ -1,6 +1,5 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {connect} from 'react-redux'
 import AppBar from '@mui/material/AppBar'
 import Toolbar from '@mui/material/Toolbar'
 import Button from '@mui/material/Button'
@@ -29,7 +28,8 @@ class SimpleHeaderMenu extends React.Component {
     }
 
     render() {
-        const {isAuthenticated, items, title, children, position} = this.props;
+        const {items, title, children, position} = this.props;
+        const isAuthenticated = !!_app_.user
         return (
             <AppBar position={position}>
                 <Toolbar>
@@ -59,26 +59,8 @@ class SimpleHeaderMenu extends React.Component {
 SimpleHeaderMenu.propTypes = {
     title: PropTypes.string,
     position: PropTypes.string,
-    items: PropTypes.array,
-    isAuthenticated: PropTypes.bool,
+    items: PropTypes.array
 }
 
 
-/**
- * Map the state to props.
- */
-const mapStateToProps = (store) => {
-    const {user} = store
-    return {
-        isAuthenticated: user.isAuthenticated
-    }
-}
-
-
-/**
- * Connect the component to
- * the Redux store.
- */
-export default connect(
-    mapStateToProps
-)(SimpleHeaderMenu)
+export default SimpleHeaderMenu
