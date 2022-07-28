@@ -859,18 +859,19 @@ async function resizeImage(parsedUrl, req, filename) {
     let mimeType, exists = false
 
     // resize image file
-    if (parsedUrl.query.width || parsedUrl.query.height || parsedUrl.query.format) {
+    if (parsedUrl.query.width || parsedUrl.query.height || parsedUrl.query.format || parsedUrl.query.flip || parsedUrl.query.flop) {
         const width = parseInt(parsedUrl.query.width),
             height = parseInt(parsedUrl.query.height),
-            fit = parsedUrl.query.fit
+            fit = parsedUrl.query.fit,
+            flip = parsedUrl.query.flip,
+            flop = parsedUrl.query.flop
 
         let format = parsedUrl.query.format
         if (format === 'webp' && req.headers['accept'] && req.headers['accept'].indexOf('image/webp') < 0) {
             format = false
         }
 
-
-        if (!isNaN(width) || !isNaN(height) || format) {
+        if (!isNaN(width) || !isNaN(height) || format || flip || flop) {
 
             const resizeOptions = {fit: fit || sharp.fit.cover}
             if (!isNaN(width)) {
@@ -886,7 +887,7 @@ async function resizeImage(parsedUrl, req, filename) {
                 quality = 80
             }
 
-            let modfilename = `${filename}@${width}x${height}-${quality}${fit ? '-' + fit : ''}${format ? '-' + format : ''}`
+            let modfilename = `${filename}@${width}x${height}-${quality}${fit ? '-' + fit : ''}${format ? '-' + format : ''}${flip ? '-flip' : ''}${flop ? '-flop' : ''}`
 
             if (format) {
                 mimeType = MimeType.detectByExtension(format)
@@ -896,9 +897,14 @@ async function resizeImage(parsedUrl, req, filename) {
 
             if (!fs.existsSync(modfilename)) {
                 console.log(`modify file ${filename} to ${modfilename}`)
-                //resize image
                 try {
-                    const resizedFile = await sharp(filename).resize(resizeOptions)
+                    let resizedFile = await sharp(filename).resize(resizeOptions)
+                    if(flip){
+                        resizedFile = await resizedFile.flip()
+                    }
+                    if(flop){
+                        resizedFile = await resizedFile.flop()
+                    }
 
                     if (format === 'webp') {
                         await resizedFile.webp({

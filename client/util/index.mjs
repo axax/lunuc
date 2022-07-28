@@ -373,6 +373,13 @@ const Util = {
             } else if (options.webp) {
                 params += '&format=webp'
             }
+
+            if (options.flop) {
+                params += '&flop=true'
+            }
+            if (options.flip) {
+                params += '&flip=true'
+            }
             if (params) {
                 data.src += '?' + params.substring(1)
             }

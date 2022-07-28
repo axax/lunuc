@@ -29,6 +29,16 @@ const imageOptions = key => ({
         type: 'Boolean',
         label: 'Auto responsive',
         tab: IMAGE_OPTIMIZATION_TAB
+    },
+    [`${key}options_flip`]: {
+        type: 'Boolean',
+        label: 'Flip (Vertical Y)',
+        tab: IMAGE_OPTIMIZATION_TAB
+    },
+    [`${key}options_flop`]: {
+        type: 'Boolean',
+        label: 'Flop (Horizontal X)',
+        tab: IMAGE_OPTIMIZATION_TAB
     }
 })
 
@@ -1566,7 +1576,7 @@ const baseElements = [
                 type: 'Media',
                 filter: 'mimeType=image',
                 projection: MEDIA_PROJECTION,
-                template: '${_comp.$set.image.options.background?_comp.$set.image.options.background:""}${this.context._id?(_comp.$set.image.options.background?\', \':\'\')+\'url(\\\'\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+encodeURIComponent(name)+\'?format=\'+(_comp.$set.image.options.webp?\'webp\':\'\')+\'&quality=\'+(_comp.$set.image.options.quality || \'\')+\'&width=\'+(_comp.$set.image.options.resize.width || \'\')+\'&height=\'+(_comp.$set.image.options.resize.height || \'\')+\'\\\')\':\'\'}',
+                template: '${_comp.$set.image.options.background?_comp.$set.image.options.background:""}${this.context._id?(_comp.$set.image.options.background?\', \':\'\')+\'url(\\\'\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+encodeURIComponent(name)+\'?format=\'+(_comp.$set.image.options.webp?\'webp\':\'\')+\'&quality=\'+(_comp.$set.image.options.quality || \'\')+\'&width=\'+(_comp.$set.image.options.resize.width || \'\')+\'&height=\'+(_comp.$set.image.options.resize.height || \'\')+\'&flip=\'+(_comp.$set.image.options.flip || \'\')+\'&flop=\'+(_comp.$set.image.options.flop || \'\')+\'\\\')\':\'\'}',
                 tab: DEFAULT_TAB,
                 tabPosition: 0
             },
