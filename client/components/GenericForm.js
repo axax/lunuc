@@ -241,6 +241,12 @@ class GenericForm extends React.Component {
     validate(state = this.state, updateState = true, options) {
 
         const validationState = GenericForm.staticValidate(state, this.props, options)
+
+        if(this._triggerErrors){
+            validationState.fieldErrors = Object.assign({},validationState.fieldErrors,this._triggerErrors)
+            validationState.isValid = false
+        }
+
         if (updateState) {
             this.setState(validationState)
         }
@@ -381,13 +387,14 @@ class GenericForm extends React.Component {
         if (fields[name]) {
             value = checkFieldType(value, fields[name])
         }
-        this.setState((prevState) => {
+        this.setState(async (prevState) => {
             const newState = this.newStateForField(prevState, {
                 name,
                 value,
                 localized: target.dataset && !!target.dataset.language
             })
 
+            let updateState = false
             if(fields[name]) {
                 const fieldTrigger = fields[name].trigger
                 const changeTrigger = []
@@ -402,12 +409,35 @@ class GenericForm extends React.Component {
                 if (changeTrigger.length > 0) {
                     let script = 'const rawValue=this.rawValue,state=this.state,props=this.props;' + changeTrigger.join(';')
                     try {
-                        new Function(script).call({
-                            state: newState,
-                            name,
-                            rawValue: e.rawValue,
-                            props: this.props
+
+                        const promiseResult = await new Promise(resolve => {
+
+                            const result = new Function(`
+                                const data = (async () => {
+                                    try{
+                                        ${script}
+                                    }catch(error){
+                                        this.resolve({error})
+                                    }
+                                })()
+                                this.resolve({data})`).call({
+                                state: newState,
+                                __this:this,
+                                name,
+                                target,
+                                resolve,
+                                prevState,
+                                Util,
+                                rawValue: e.rawValue,
+                                props: this.props
+                            })
+
+                            return result
                         })
+
+                        const finalResult = await promiseResult.data
+
+                        updateState = !!finalResult
                     } catch (e) {
                         console.log('Error in trigger', e)
                     }
@@ -416,7 +446,7 @@ class GenericForm extends React.Component {
             if (this.props.onChange) {
                 this.props.onChange({name, value, target})
             }
-            const formValidation = this.validate(newState, false)
+            const formValidation = this.validate(newState, updateState)
             return Object.assign(newState, formValidation)
         })
     }

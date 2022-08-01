@@ -1600,6 +1600,10 @@ const baseElements = [
                 value: '',
                 label: 'Tag Name'
             },
+            p_href: {
+                value: '',
+                label: 'Href'
+            },
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
             ...marginOptions('p_')

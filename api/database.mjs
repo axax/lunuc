@@ -61,6 +61,7 @@ export const dbConnection = (dburl, cb) => {
             socketTimeoutMS: 480000,
             keepAlive: 300000,
             sslValidate: false,*/
+            compressors:'zlib',
             useUnifiedTopology: true,
             ...urlParams
         }
