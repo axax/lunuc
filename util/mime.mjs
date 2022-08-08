@@ -20,6 +20,8 @@ const MIME_TYPES = {
     'css': 'text/css',
     'mp3': 'audio/mp3',
     'mp4': 'video/mp4',
+    'webm': 'video/webm',
+    'weba': 'video/webm',
     'mov': 'video/quicktime',
     'm4a': 'audio/x-m4a',
     'm4v': 'video/x-m4v',
@@ -31,7 +33,8 @@ const MIME_TYPES = {
     'ttf': 'font/ttf',
     'woff': 'font/woff',
     'woff2': 'font/woff2',
-    'otf': 'font/otf'
+    'otf': 'font/otf',
+    'dmg': 'application/octet-stream'
 }
 
 
