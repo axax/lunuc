@@ -246,7 +246,11 @@ export default function (WrappedComponent) {
     const withGql = compose(
         graphql(CMS_PAGE_QUERY, {
             skip: (props, prevData) => {
-                if (prevData && prevData.cmsPage && prevData.cmsPage.slug === props.slug && (!prevData.cmsPage.urlSensitiv || prevData.cmsPage.urlSensitiv==='client') && !props.cmsRender) {
+                if (prevData &&
+                    prevData.cmsPage &&
+                    prevData.cmsPage.slug === props.slug &&
+                    (!prevData.cmsPage.urlSensitiv || prevData.cmsPage.urlSensitiv==='client') &&
+                    !props.cmsRender) {
                     return true
                 }
                 return false
@@ -284,8 +288,6 @@ export default function (WrappedComponent) {
             }
         })
     )(Wrapper)
-
-
     return withGql
 
 }

@@ -25,16 +25,16 @@ let GRAPHQL_URL, GRAPHQL_WS_URL
 
 export let SSR_FETCH_CHAIN = {}
 
-const getGraphQlUrl = () =>{
-    if(!GRAPHQL_URL){
+const getGraphQlUrl = () => {
+    if (!GRAPHQL_URL) {
         const location = window.location
         GRAPHQL_URL = `${location.protocol}//${location.hostname}:${location.port}/graphql`
     }
     return GRAPHQL_URL
 }
 
-const getGraphQlWsUrl = () =>{
-    if(!GRAPHQL_WS_URL){
+const getGraphQlWsUrl = () => {
+    if (!GRAPHQL_WS_URL) {
         const location = window.location
         GRAPHQL_WS_URL = (location.protocol === 'https:' ? 'wss' : 'ws') + `://${location.hostname}:${location.port}/lunucws`
     }
@@ -291,7 +291,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
                             Hook.call('ApiClientQueryResponse', {response})
                             resolve(resolveData)
                             if (fetchPolicy !== 'no-cache') {
-                                client.writeQuery({cacheKey, data: response.data})
+                                client.writeQuery({cacheKey, query, variables, data: response.data})
                             }
                         } else {
                             resolve(resolveData)
@@ -308,14 +308,17 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
                     }))
                 })
             } else {
-                reject({error:{message:r.statusText}, loading: false, networkStatus: NetworkStatus.error})
+                reject({error: {message: r.statusText}, loading: false, networkStatus: NetworkStatus.error})
                 getStore().dispatch(addError({key: 'api_error', msg: r.status + ' - ' + r.statusText}))
             }
 
         }).catch(error => {
             removeLoader()
             reject({error, loading: false, networkStatus: NetworkStatus.error})
-            getStore().dispatch(addError({key: 'api_error', msg: controller._timeout?'Request timeout reached':error.message}))
+            getStore().dispatch(addError({
+                key: 'api_error',
+                msg: controller._timeout ? 'Request timeout reached' : error.message
+            }))
 
         })
     })
@@ -331,6 +334,18 @@ export const client = {
         return finalFetch({query, variables, fetchPolicy})
     },
     writeQuery: ({query, variables, data, cacheKey}) => {
+        if (data &&
+            query &&
+            variables &&
+            data.cmsPage &&
+            (!data.cmsPage.urlSensitiv || data.cmsPage.urlSensitiv === 'client') &&
+            variables.query) {
+
+            const newVariables = Object.assign({}, variables)
+            delete newVariables.query
+            cacheKey = getCacheKey({query, variables: newVariables})
+        }
+
         if (!cacheKey) {
             cacheKey = getCacheKey({query, variables})
         }
@@ -357,9 +372,9 @@ export const client = {
         }
         return res
     },
-    clearCacheStartsWith:(key) => {
-        Object.keys(CACHE_QUERIES).forEach(k=>{
-            if(k.startsWith(key)){
+    clearCacheStartsWith: (key) => {
+        Object.keys(CACHE_QUERIES).forEach(k => {
+            if (k.startsWith(key)) {
                 delete CACHE_QUERIES[k]
             }
         })
@@ -461,6 +476,7 @@ export const graphql = (query, operationOptions = {}) => {
         class Wrapper extends React.Component {
 
             prevRespone = {}
+
             render() {
                 //this.renderCount++
                 //console.log(this.renderCount,query)
@@ -530,7 +546,7 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
     const cacheKey = getCacheKey({query, variables})
 
     let currentData = null
-    if(_app_.ssr || skip || fetchPolicy === 'cache-first' || fetchPolicy === 'cache-and-network'){
+    if (_app_.ssr || skip || fetchPolicy === 'cache-first' || fetchPolicy === 'cache-and-network') {
         currentData = client.readQuery({cacheKey})
     }
     const initialLoading = _app_.ssr || skip || (fetchPolicy === 'cache-first' && currentData) ? false : true
@@ -578,7 +594,6 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
             })
 
 
-
             if (newResponse.loading) {
                 const promise = finalFetch({
                     cacheKey,
@@ -601,18 +616,18 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
         }
 
         return () => {
-            if(controller) {
+            if (controller) {
                 controller.abort()
             }
         }
     }, [cacheKey])
 
-    if(!initialLoading){
+    if (!initialLoading) {
         return initialData
     }
 
-    if(response.cacheKey && initialData.cacheKey !== response.cacheKey){
-        response.loading=true
+    if (response.cacheKey && initialData.cacheKey !== response.cacheKey) {
+        response.loading = true
     }
 
     return response

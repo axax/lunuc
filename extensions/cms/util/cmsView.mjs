@@ -19,7 +19,7 @@ export const isPreview = () => {
 }
 
 export const isEditMode = (props) => {
-    const {user, dynamic, cmsPage, forceEditMode} = props
+    const {dynamic, cmsPage, forceEditMode} = props
 
     if(forceEditMode===true || forceEditMode === 'true'){
         return true
@@ -32,7 +32,7 @@ export const isEditMode = (props) => {
         }
     }
 
-    return (!dynamic && user.isAuthenticated && Util.hasCapability(user, CAPABILITY_MANAGE_CMS_CONTENT)) && !isPreview() && props.editMode !== false
+    return (!dynamic && Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_CONTENT)) && !isPreview() && props.editMode !== false
 }
 
 export const getSlugVersion = (slug) => {
@@ -51,7 +51,7 @@ export const getSlugVersion = (slug) => {
 
 
 export const getGqlVariables = props => {
-    const {slug, urlSensitiv, dynamic, user, _props, cmsRender, inEditor} = props,
+    const {slug, urlSensitiv, dynamic, _props, cmsRender, inEditor} = props,
         variables = {
             inEditor,
             dynamic: !!dynamic,
@@ -70,7 +70,7 @@ export const getGqlVariables = props => {
     }
 
     // add settings from local storage if user is not logged in
-    if (!user.isAuthenticated) {
+    if (!_app_.user) {
         const kv = !_app_.noStorage && localStorage.getItem(NO_SESSION_KEY_VALUES + '_SERVER')
         if (kv) {
             variables.nosession = kv
