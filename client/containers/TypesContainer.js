@@ -623,6 +623,17 @@ class TypesContainer extends React.Component {
                 }
             })
 
+            const dateField = {
+                label: 'Erstellungszeit von',
+                name: '_idFrom',
+                type: 'Float',
+                uitype: 'datetime'
+            }
+
+            filterFields._idFrom = dateField
+            filterFields._idTo = Object.assign({},dateField,{label: 'Erstellungszeit bis', name: '_idTo'})
+
+
             Hook.call('TypesContainerBeforeFilterDialog', {type, filterFields}, this)
 
 
@@ -1475,9 +1486,14 @@ class TypesContainer extends React.Component {
             if (!fieldKey.startsWith('__operator.data.')) {
                 const value = prettyFilter[fieldKey]
                 if (value) {
+                    if(fieldKey==='_idFrom' || fieldKey==='_idTo'){
 
+                        if (newFilter) {
+                            newFilter += ' && '
+                        }
+                        newFilter += `_id${fieldKey==='_idTo'?'<=':'>='}${Math.floor(value / 1000).toString(16) + '0000000000000000'}`
 
-                    if (value.constructor === Array) {
+                    }else if (value.constructor === Array) {
                         if (value.length > 0) {
 
                             let ids = []
@@ -1511,6 +1527,7 @@ class TypesContainer extends React.Component {
                 }
             }
         })
+        console.log(newFilter)
         return newFilter
     }
 
@@ -1540,22 +1557,29 @@ class TypesContainer extends React.Component {
                     if (newFilter.length > 0) {
                         newFilter.push(<span> und </span>)
                     }
-                    const operator = payload.prettyFilter['__operator.' + fieldKey] || '='
+                    if(fieldKey==='_idFrom' || fieldKey==='_idTo'){
 
-                    newFilter.push(<span>{fieldKey}{operator}</span>)
-                    if (value.constructor === Array) {
-                        if (value.length > 0) {
-                            value.forEach(item => {
-                                newFilter.push(
-                                    <strong>{item.data ? item.data.name || getValues(item.data) : item.name || item.username}</strong>)
-                            })
+                        newFilter.push(<span>Erstellungszeit{fieldKey==='_idTo'?'<=':'>='}</span>)
+
+                        newFilter.push(<strong>{Util.formatDate(value)}</strong>)
+                    }else {
+                        const operator = payload.prettyFilter['__operator.' + fieldKey] || '='
+
+                        newFilter.push(<span>{fieldKey}{operator}</span>)
+                        if (value.constructor === Array) {
+                            if (value.length > 0) {
+                                value.forEach(item => {
+                                    newFilter.push(
+                                        <strong>{item.data ? item.data.name || getValues(item.data) : item.name || item.username}</strong>)
+                                })
+                            }
+                        } else if (value.constructor === Object) {
+
+                            newFilter.push(<strong>{getValues(value)}</strong>)
+                        } else {
+
+                            newFilter.push(<strong>{value}</strong>)
                         }
-                    }else if(value.constructor === Object){
-
-                        newFilter.push(<strong>{getValues(value)}</strong>)
-                    } else {
-
-                        newFilter.push(<strong>{value}</strong>)
                     }
                 }
             }
