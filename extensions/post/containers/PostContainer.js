@@ -52,10 +52,10 @@ class PostContainer extends React.Component {
             console.log('save post')
 
             const {updatePost} = this.props
-            const jsonStr = JSON.stringify(data)
-            if(post.body !== jsonStr) {
+            const finalData = data.constructor === String ? data : JSON.stringify(data)
+            if(post.body !== finalData) {
                 updatePost(
-                    Object.assign({}, post, {body: jsonStr})
+                    Object.assign({}, post, {body: finalData})
                 )
             }
 
