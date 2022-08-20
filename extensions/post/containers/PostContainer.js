@@ -35,7 +35,7 @@ class PostContainer extends React.Component {
 
     handleAddPostClick = (post) => {
         const {createPost} = this.props
-        createPost({body:'',...post}).then(() => {
+        createPost({body:'',editor:'lexical',...post}).then(() => {
             this.addPostForm.reset()
         })
     }
@@ -119,7 +119,7 @@ class PostContainer extends React.Component {
                 selected: post._id === selectedPostId,
                 primary: post.title,
                 onClick: () => {
-                    this.goTo(post._id, posts.offset, posts.limit, this.filter)
+                    this.goTo(post._id, 1+Math.ceil(posts.offset/posts.limit), posts.limit, this.filter)
                 },
                 secondary: Util.formattedDatetimeFromObjectId(post._id),
                 actions: <DeleteIconButton onClick={this.handlePostDeleteClick.bind(this, post)}/>,
@@ -196,6 +196,7 @@ PostContainer.propTypes = {
 
 const getVariables = () => {
     const {p, l, f} = Util.extractQueryParams(window.location.search.substring(1))
+
     return {
         limit: l ? parseInt(l) : DEFAULT_RESULT_LIMIT,
         page: p ? parseInt(p) : 1,
@@ -217,11 +218,11 @@ const PostContainerWithGql = compose(
             loading
         })
     }),
-    graphql(`mutation createPost($title: String!, $body: String){createPost(title:$title,body:$body){_id title body createdBy{_id username} status}}`, {
+    graphql(`mutation createPost($title: String!, $body: String, $editor: String){createPost(title:$title,body:$body,editor:$editor){_id title body createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
-            createPost: ({title, body}) => {
+            createPost: ({title, body, editor}) => {
                 return mutate({
-                    variables: {title, body},
+                    variables: {title, body, editor},
                     optimisticResponse: {
                         __typename: 'Mutation',
                         // Optimistic message
@@ -229,6 +230,7 @@ const PostContainerWithGql = compose(
                             _id: '#' + new Date().getTime(),
                             body,
                             title,
+                            editor,
                             status: 'creating',
                             createdBy: {
                                 _id: ownProps.user.userData._id,
@@ -260,7 +262,7 @@ const PostContainerWithGql = compose(
     }),
     graphql(`mutation updatePost($_id: ID!,$body: String, $title: String){updatePost(_id:$_id,body:$body,title:$title){_id body title createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
-            updatePost: ({_id, body, title}) => {
+            updatePost: ({_id, body, editor, title}) => {
                 return mutate({
                     variables: {_id, body, title},
                     optimisticResponse: {
@@ -270,6 +272,7 @@ const PostContainerWithGql = compose(
                             _id,
                             body,
                             title,
+                            editor,
                             status: 'updating',
                             createdBy: {
                                 _id: ownProps.user.userData._id,

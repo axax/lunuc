@@ -39,7 +39,7 @@ export default db => ({
         }
     },
     Mutation: {
-        createPost: async ({title, body}, {context}) => {
+        createPost: async ({title, body, editor}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
             const postCollection = db.collection('Post')
@@ -49,6 +49,7 @@ export default db => ({
             const insertResult = await postCollection.insertOne({
                 title,
                 body,
+                editor,
                 search,
                 createdBy: ObjectId(context.id)
             })
@@ -58,6 +59,7 @@ export default db => ({
                     _id: insertResult.insertedId,
                     title,
                     body,
+                    editor,
                     createdBy: {
                         _id: ObjectId(context.id),
                         username: context.username

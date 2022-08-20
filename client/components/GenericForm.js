@@ -213,7 +213,6 @@ class GenericForm extends React.Component {
             }
         }
 
-
         return validationState
     }
 
@@ -380,39 +379,39 @@ class GenericForm extends React.Component {
         return newState
     }
 
-    handleInputChange = (e) => {
+    handleInputChange = async (e) => {
         const {fields, trigger} = this.props
         const target = e.target, name = target.name
         let value = target.type === 'checkbox' ? target.checked : target.value
         if (fields[name]) {
             value = checkFieldType(value, fields[name])
         }
-        this.setState(async (prevState) => {
-            const newState = this.newStateForField(prevState, {
-                name,
-                value,
-                localized: target.dataset && !!target.dataset.language
-            })
 
-            let updateState = false
-            if(fields[name]) {
-                const fieldTrigger = fields[name].trigger
-                const changeTrigger = []
+        const newState = this.newStateForField(this.state, {
+            name,
+            value,
+            localized: target.dataset && !!target.dataset.language
+        })
 
-                if (trigger && trigger.change) {
-                    changeTrigger.push(...trigger.change)
-                }
+        let updateState = false
+        if(fields[name]) {
+            const fieldTrigger = fields[name].trigger
+            const changeTrigger = []
 
-                if (fieldTrigger && fieldTrigger.change) {
-                    changeTrigger.push(...fieldTrigger.change)
-                }
-                if (changeTrigger.length > 0) {
-                    let script = 'const rawValue=this.rawValue,state=this.state,props=this.props;' + changeTrigger.join(';')
-                    try {
+            if (trigger && trigger.change) {
+                changeTrigger.push(...trigger.change)
+            }
 
-                        const promiseResult = await new Promise(resolve => {
+            if (fieldTrigger && fieldTrigger.change) {
+                changeTrigger.push(...fieldTrigger.change)
+            }
+            if (changeTrigger.length > 0) {
+                let script = 'const rawValue=this.rawValue,state=this.state,props=this.props;' + changeTrigger.join(';')
+                try {
 
-                            const result = new Function(`
+                    const promiseResult = await new Promise(resolve => {
+
+                        const result = new Function(`
                                 const data = (async () => {
                                     try{
                                         ${script}
@@ -421,34 +420,33 @@ class GenericForm extends React.Component {
                                     }
                                 })()
                                 this.resolve({data})`).call({
-                                state: newState,
-                                __this:this,
-                                name,
-                                target,
-                                resolve,
-                                prevState,
-                                Util,
-                                rawValue: e.rawValue,
-                                props: this.props
-                            })
-
-                            return result
+                            state: newState,
+                            __this:this,
+                            name,
+                            target,
+                            resolve,
+                            prevState,
+                            Util,
+                            rawValue: e.rawValue,
+                            props: this.props
                         })
 
-                        const finalResult = await promiseResult.data
+                        return result
+                    })
 
-                        updateState = !!finalResult
-                    } catch (e) {
-                        console.log('Error in trigger', e)
-                    }
+                    const finalResult = await promiseResult.data
+
+                    updateState = !!finalResult
+                } catch (e) {
+                    console.log('Error in trigger', e)
                 }
             }
-            if (this.props.onChange) {
-                this.props.onChange({name, value, target})
-            }
-            const formValidation = this.validate(newState, updateState)
-            return Object.assign(newState, formValidation)
-        })
+        }
+        if (this.props.onChange) {
+            this.props.onChange({name, value, target})
+        }
+        const formValidation = this.validate(newState, updateState)
+        this.setState(Object.assign(newState, formValidation))
     }
 
 
