@@ -46,9 +46,13 @@ const parser = md => {
             m.substr(1).split("\n").forEach(z => s += "<li>" + z.substr(2) + "</li>")
             return "<ol>" + s + "</ol>"
         }],
-        [/\n\n/gm, "</p><p>"]
+        [/\n\n/gm, "</p><p>"],
+        [/\n/gm, "<br/>"]
     ]
-    return ('<p>'+[mdRules.forEach(mdRule => md = md.replace(mdRule[0], mdRule[1])), md][1]+'</p>').replace(/<p><h([0-6])/g,'<h$1').replace(/<\/h([0-6])><\/p>/g,'</h$1>')
+    return ('<p>'+[mdRules.forEach(mdRule => md = md.replace(mdRule[0], mdRule[1])), md][1]+'</p>').
+    replace(/<p><h([0-6])/g,'<h$1').
+    replace(/<\/h([0-6])><\/p>/g,'</h$1>').
+    replace(/><br\/>/g,'>')
 }
 
 

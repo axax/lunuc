@@ -189,13 +189,47 @@ export const userResolver = (db) => ({
     Query: {
         users: async ({limit, page, offset, filter, sort}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'signupToken', 'language', 'picture', 'email', 'meta', 'domain', 'emailConfirmed', 'requestNewPassword', 'role$UserRole', 'junior$[User]', 'group$[UserGroup]', 'setting$[UserSetting]', 'lastLogin'], {
+            const options = {
                 limit,
                 page,
                 offset,
                 filter,
                 sort
-            })
+            }
+            if(filter && !sort){
+                // boost username
+                options.projectResult = true
+                options.project = {
+                    _id: 1,
+                    customOrder:{
+                        $cond: {
+                            if: {
+                                $regexMatch: {
+                                    input: "$username",
+                                    regex: '^'+filter,
+                                    options: "i"
+                                }
+                            },
+                            then: 20,
+                            else: {
+                                $cond: {
+                                    if: {
+                                        $regexMatch: {
+                                            input: "$username",
+                                            regex: filter,
+                                            options: "i"
+                                        }
+                                    },
+                                    then: 10,
+                                    else: 0
+                                }
+                            }
+                        }
+                    }
+                }
+                options.sort = 'customOrder desc'
+            }
+            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'signupToken', 'language', 'picture', 'email', 'meta', 'domain', 'emailConfirmed', 'requestNewPassword', 'role$UserRole', 'junior$[User]', 'group$[UserGroup]', 'setting$[UserSetting]', 'lastLogin'], options)
         },
         userRoles: async ({limit, page, offset, filter, sort}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)

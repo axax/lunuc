@@ -865,8 +865,6 @@ export default class AggregationBuilder {
             "$count": "count"
         })
 
-        // sort again within the result
-        dataFacetQuery.push({$sort: sort})
 
         // add right before the group
         if (this.options.beforeProject) {
@@ -901,6 +899,9 @@ export default class AggregationBuilder {
             }
             dataFacetQuery.push({$project: projectResultData})
         }
+
+        // sort again within the result
+        dataFacetQuery.push({$sort: sort})
 
         const facet = {
             $facet: {
