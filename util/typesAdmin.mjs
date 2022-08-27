@@ -149,9 +149,8 @@ export const referencesToIds = (data, type) => {
 
     Object.keys(data).map(key => {
         const item = data[key]
-
-        if (item !== undefined) {
-            const fieldDefinition = formFields[key]
+        const fieldDefinition = formFields[key]
+        if (item !== undefined && fieldDefinition) {
 
             if (fieldDefinition.localized) {
                 newData[key] = item

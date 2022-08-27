@@ -1131,7 +1131,7 @@ class TypesContainer extends React.Component {
         const formFields = getFormFieldsByType(this.pageParams.type)
         for (let k in o) {
             if (o[k] && formFields[k] && formFields[k].localized) {
-                o[k] = {...o[k], __typename: 'LocalizedString'}
+                o[k] = {...o[k]/*, __typename: 'LocalizedString'*/}
             }
         }
     }

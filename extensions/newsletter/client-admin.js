@@ -28,23 +28,25 @@ export default () => {
         if (type === 'NewsletterMailing' && action && action.key === 'send') {
 
             const listIds = []
-            createEditForm.state.fields.list.forEach(list=>{
+
+            const fieldsForSend = createEditForm.state.fields
+            fieldsForSend.list.forEach(list=>{
                 listIds.push(list._id)
             })
-            const runOnlyScript = action.key==='run_script'
-            let template = createEditForm.state.fields.template
+            let template = fieldsForSend.template
             if(template.constructor === Array && template.length>0){
                 template = template[0]
             }
+
             client.query({
                 fetchPolicy: 'network-only',
                 query: 'query sendNewsletter($mailing: ID!, $subject: LocalizedStringInput!,$template: String!, $list:[ID], $batchSize: Float, $text: LocalizedStringInput, $html: LocalizedStringInput){sendNewsletter(mailing:$mailing,subject:$subject,template:$template,list:$list,batchSize:$batchSize, text: $text,html:$html){status}}',
                 variables: {
                     mailing: dataToEdit._id,
-                    subject: createEditForm.state.fields.subject,
-                    batchSize: createEditForm.state.fields.batchSize,
-                    text: createEditForm.state.fields.text,
-                    html: createEditForm.state.fields.html,
+                    subject: fieldsForSend.subject,
+                    batchSize: fieldsForSend.batchSize,
+                    text: fieldsForSend.text,
+                    html: fieldsForSend.html,
                     template: template.slug,
                     list: listIds
             }

@@ -47,7 +47,8 @@ import {
     AccessibleIcon,
     AccountBalanceIcon,
     DirectionsBoatIcon,
-    FilterListIcon
+    FilterListIcon,
+    CasinoIcon
 } from 'ui/admin'
 import ErrorHandler from './ErrorHandler'
 import NotificationHandler from './NotificationHandler'
@@ -115,7 +116,8 @@ const iconComponents = {
     accessible: AccessibleIcon,
     politics: AccountBalanceIcon,
     boat: DirectionsBoatIcon,
-    filter: FilterListIcon
+    filter: FilterListIcon,
+    casino: CasinoIcon
 }
 
 const genMenuEntry = (item, path) => {

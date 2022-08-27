@@ -130,7 +130,7 @@ class CmsViewEditorContainer extends React.Component {
         if (!dynamic) {
             this._handleWindowClose = this.saveUnsafedChanges.bind(this)
             window.addEventListener('beforeunload', this._handleWindowClose)
-            //window.addEventListener('blur', this._handleWindowClose)
+            window.addEventListener('blur', this._handleWindowClose)
 
             history.block((e) => {
                 this.saveUnsafedChanges()
@@ -1256,8 +1256,9 @@ class CmsViewEditorContainer extends React.Component {
     saveUnsafedChanges() {
         // blur on unload to make sure everything gets saved
         const curElement = document.activeElement
-        curElement.blur()
-
+        if(curElement) {
+            curElement.blur()
+        }
         // clear timeouts
         if (this._saveSettings) {
             this._saveSettings()
@@ -1282,7 +1283,9 @@ class CmsViewEditorContainer extends React.Component {
         if (this._autoSaveDataResolverTimeout) {
             this._autoSaveDataResolver()
         }
-        curElement.focus()
+        if(curElement) {
+            curElement.focus()
+        }
         return true
     }
 
