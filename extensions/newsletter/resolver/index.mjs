@@ -11,7 +11,7 @@ export default db => ({
     Query: {
         sendNewsletter: async ({mailing, subject, template, text, html, batchSize, list}, req) => {
             await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_SEND_NEWSLETTER)
-            let result
+
             const mailingId = ObjectId(mailing)
 
             if(!batchSize){
