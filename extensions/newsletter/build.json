@@ -187,6 +187,11 @@
         },
         {
           "tab": "send",
+          "name": "host",
+          "hideColumnInTypes": true
+        },
+        {
+          "tab": "send",
           "name": "language",
           "hideColumnInTypes": true
         },

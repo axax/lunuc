@@ -704,7 +704,11 @@ const baseElements = [
             },
             ...marginOptions('p_'),
             ...classTextOptions('p_'),
-            ...classOptions('p_')
+            ...classOptions('p_'),
+            'p_style@raw': {
+                label: 'Style',
+                fullWidth: true
+            },
         }
     },
     {

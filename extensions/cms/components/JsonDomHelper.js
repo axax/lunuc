@@ -1044,7 +1044,7 @@ class JsonDomHelper extends React.Component {
                                 icon: <FlipToBackIcon/>,
                                 onClick: () => {
                                     JsonDomHelper.disableEvents = true
-                                    this.setState({addChildDialog: {selected: false, wrap: true}})
+                                    this.setState({addChildDialog: {json: _json, subJson, selected: false, wrap: true}})
                                 }
                             })
                         }

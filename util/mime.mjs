@@ -24,6 +24,7 @@ const MIME_TYPES = {
     'weba': 'video/webm',
     'mov': 'video/quicktime',
     'm4a': 'audio/x-m4a',
+    'm4b': 'audio/mp4a-latm',
     'm4v': 'video/x-m4v',
     'gz': 'application/gzip',
     'zip': 'application/zip',

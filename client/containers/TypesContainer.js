@@ -1363,6 +1363,10 @@ class TypesContainer extends React.Component {
                             variables,
                             data: {...storeData, [storeKey]: newData}
                         })
+
+                        if(newData && newData.results && newData.results.length === 0){
+                            this.getData(this.pageParams, false)
+                        }
                         this.setState({data: newData})
 
                     }
