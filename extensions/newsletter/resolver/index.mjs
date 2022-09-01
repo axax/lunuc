@@ -14,6 +14,7 @@ export default db => ({
 
             if(host){
                 // override
+                req.headers[':authority'] = host
                 req.headers.host = host
             }
 
