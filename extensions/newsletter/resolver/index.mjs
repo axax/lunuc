@@ -9,8 +9,13 @@ import {CAPABILITY_SEND_NEWSLETTER} from '../constants/index.mjs'
 
 export default db => ({
     Query: {
-        sendNewsletter: async ({mailing, subject, template, text, html, batchSize, list}, req) => {
+        sendNewsletter: async ({mailing, subject, template, text, html, batchSize, host, list}, req) => {
             await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_SEND_NEWSLETTER)
+
+            if(host){
+                // override
+                req.headers.host = host
+            }
 
             const mailingId = ObjectId(mailing)
 
@@ -130,6 +135,7 @@ export default db => ({
                             console.log(e)
                         }
                     }
+
 
                     const result = await sendMail(db, Object.assign(req.context, {lang: subLang}), {
                         slug: template,

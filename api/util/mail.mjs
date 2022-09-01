@@ -61,7 +61,7 @@ ${finalHtml}
         fromFinal = `${fromName} <${fromFinal}>`
     }
 
-    let replyToFinal = replyTo || settings.replyTo
+    let replyToFinal = replyTo || (settings?settings.replyTo:undefined)
 
     const message = {
         replyTo: replyToFinal,
