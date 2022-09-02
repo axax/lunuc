@@ -349,6 +349,11 @@ const baseElements = [
                 label: 'Bild Url eingeben',
                 tab: DEFAULT_TAB
             },
+            p_alt: {
+                fullWidth: true,
+                label: 'Alt text',
+                tab: DEFAULT_TAB
+            },
             ...marginOptions('p_'),
             'p_style@align': {
                 label: 'Ausrichtung',
