@@ -879,11 +879,11 @@ class CmsViewEditorContainer extends React.Component {
                                     if (!o || o.constructor !== Object) {
                                         return
                                     }
-
+                                    const overrideTranslations = false
                                     Object.keys(o).forEach(key => {
                                         if (o[key] && o[key].constructor === String) {
                                             config.LANGUAGES.forEach(lang => {
-                                                if (lang !== config.DEFAULT_LANGUAGE) {
+                                                if ((overrideTranslations || !base[lang] || !base[lang][key]) && lang !== config.DEFAULT_LANGUAGE) {
                                                     const text = o[key].replace(/\\n/g, '\n').replace(/%(\w+)%/g, '@_$1_')
                                                     client.query({
                                                         fetchPolicy: 'no-cache',

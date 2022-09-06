@@ -32,6 +32,6 @@ export const scrollByHash = (url, {scrollStep, scrollOffset, scrollTimeout}) => 
         DomUtil.waitForElement('#' + url.split('#')[1]).then((el) => {
             // check until postion is reached
             checkScroll(el, 0)
-        })
+        }).catch(()=>{})
     }
 }

@@ -718,7 +718,7 @@ class GenericForm extends React.Component {
             if (field.localized) {
                 const showTranslations = this.state.showTranslations[fieldKey]
 
-                const translateButton = <TranslateIconButton key={fieldKey + "translation"}
+                const translateButton = config.LANGUAGES.length > 1 && <TranslateIconButton key={fieldKey + "translation"}
                                                              onClick={() => {
 
                                                                  this.setState({showTranslations: Object.assign({}, this.state.showTranslations, {[fieldKey]: !showTranslations})})
@@ -1008,7 +1008,7 @@ class GenericForm extends React.Component {
                 fullWidth={field.fullWidth}
                 key={fieldKey}
                 name={fieldKey}
-                label={field.label}
+                label={field.label+ (languageCode ? ' [' + languageCode + ']' : '')}
                 readOnly={field.readOnly}
                 genericType={field.genericType}
                 filter={field.filter}
@@ -1020,7 +1020,8 @@ class GenericForm extends React.Component {
                 metaFields={field.metaFields} /* fields that need user input and are returned in addtion */
                 queryFields={field.fields}
                 pickerSort={field.pickerSort}
-                type={field.type} placeholder={field.placeholder}/>)
+                type={field.type}
+                placeholder={field.placeholder}/>)
         } else if (uitype === 'select') {
 
             if (field.filter && field.type && field.path) {
