@@ -1644,7 +1644,6 @@ class JsonDomHelper extends React.Component {
 
                         if (currentOpt.tr && currentOpt.trKey) {
 
-                            setPropertyByPath(`$\{_t('${currentOpt.trKey}'${currentOpt.trContext?','+currentOpt.trContext:''})\}`, key, comp, '_')
                             if (val !== null) {
                                 _onDataResolverPropertyChange({
                                     value: Util.escapeForJson(Util.escapeForJson(val.replace(/\n/g, ''))),
@@ -1652,6 +1651,7 @@ class JsonDomHelper extends React.Component {
                                     instantSave: true
                                 })
                             }
+                            setPropertyByPath(`$\{_t('${currentOpt.trKey}'${currentOpt.trContext?','+currentOpt.trContext:''})\}`, key, comp, '_')
 
                         } else {
                             setPropertyByPath(val, key, comp, '_')

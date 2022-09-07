@@ -130,7 +130,9 @@ class CmsViewEditorContainer extends React.Component {
         if (!dynamic) {
             this._handleWindowClose = this.saveUnsafedChanges.bind(this)
             window.addEventListener('beforeunload', this._handleWindowClose)
-            window.addEventListener('blur', this._handleWindowClose)
+            window.addEventListener('blur', ()=>{
+                this._handleWindowClose(true)
+            })
 
             history.block((e) => {
                 this.saveUnsafedChanges()
@@ -1253,9 +1255,9 @@ class CmsViewEditorContainer extends React.Component {
         this.props.errorHandlerAction.addError({key: 'cmsError', msg: `${meta.loc}: ${e.message} -> ${meta.slug}`})
     }
 
-    saveUnsafedChanges() {
+    saveUnsafedChanges(isBlur) {
         // blur on unload to make sure everything gets saved
-        const curElement = document.activeElement
+        const curElement = isBlur?null:document.activeElement
         if(curElement) {
             curElement.blur()
         }

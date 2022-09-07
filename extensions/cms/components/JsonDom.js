@@ -1359,8 +1359,12 @@ class JsonDom extends React.Component {
 
                 scope.fetchingMore = false
 
-                if (this._ismounted)
+                if (this._ismounted) {
+                    if(options.parseTemplate){
+                        this.json = null
+                    }
                     this.forceUpdate()
+                }
             }
             if (callback && callback.constructor === Function) {
                 callback()
