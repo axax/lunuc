@@ -50,8 +50,12 @@ export const createBackup = type =>{
     }else if(type==='hostrule'){
         result = createHostruleBackup()
     }
-
-    const stats = fs.statSync(result.fullName)
+    let stats = {size:0}
+    try{
+        stats = fs.statSync(result.fullName)
+    }catch (e) {
+        console.log(e)
+    }
 
     return {name: result.name, createdAt: result.date, size: (stats.size / 1000) + 'kb'}
 }
