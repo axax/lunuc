@@ -2,7 +2,7 @@ import path from 'path'
 import Util from '../util/index.mjs'
 import fs from 'fs'
 import config from '../../gensrc/config.mjs'
-import {execSync} from 'child_process'
+import {exec,execSync} from 'child_process'
 import os from 'os'
 import zipper from 'zip-local'
 import {MONGO_URL} from '../database.mjs'
@@ -79,8 +79,8 @@ export const createDbBackup = ()=>{
         name = 'backup.db.' + date + '.gz',
         fullName = path.join(backup_dir, name)
 
-    const response = execSync(`mongodump --uri ${MONGO_URL} -v --archive="${fullName}" --gzip`)
-    console.log('createDbDump', response)
+    exec(`mongodump --uri ${MONGO_URL} -v --archive="${fullName}" --gzip`)
+    console.log('createDbDump')
     return {fullName, name, date}
 
 }
@@ -88,7 +88,7 @@ export const createDbBackup = ()=>{
 
 export const mongoExport = ({type, query}) => {
     const fileName = `${type}-${new Date().getTime()}.json`
-    const response = execSync(`mongoexport --uri "${MONGO_URL}" -c ${type} -q '${query}' -o "${getBackupDir('export')}/${fileName}"`)
+    execSync(`mongoexport --uri "${MONGO_URL}" -c ${type} -q '${query}' -o "${getBackupDir('export')}/${fileName}"`)
     return BACKUP_URL+'/exportdumps/'+fileName
 }
 
