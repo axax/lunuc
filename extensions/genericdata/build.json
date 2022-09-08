@@ -38,6 +38,13 @@
               "unique": false,
               "fields": {
                 "definition": 1,
+                "data.name": 1
+              }
+            },
+            {
+              "unique": false,
+              "fields": {
+                "definition": 1,
                 "data.date": 1
               }
             },

@@ -196,7 +196,7 @@ export const userResolver = (db) => ({
                 filter,
                 sort
             }
-            if(filter && !sort){
+            if(filter && filter.indexOf('=')<0 && !sort){
                 // boost username
                 options.projectResult = true
                 options.project = {
