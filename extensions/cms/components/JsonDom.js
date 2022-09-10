@@ -958,7 +958,11 @@ class JsonDom extends React.Component {
                                         if (cur.constructor === String) {
                                             eleProps[curKey] = cur + p[elKey]
                                         } else if (cur.constructor === Object) {
-                                            eleProps[curKey] = Object.assign(cur, p[elKey])
+                                            if( p[elKey].constructor === Object) {
+                                                eleProps[curKey] = Object.assign(cur, p[elKey])
+                                            }else if(curKey==='style'){
+                                                eleProps[curKey] = Object.assign(cur, parseStyles(p[elKey]))
+                                            }
                                         } else {
                                             eleProps[curKey] = p[elKey]
                                         }

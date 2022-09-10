@@ -1847,6 +1847,9 @@ const advancedElements = [
             },
             $is: {
                 label: 'Bedingung'
+            },
+            ['p_style@custom']: {
+                label: 'Style'
             }
         }
     },
