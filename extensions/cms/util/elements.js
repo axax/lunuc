@@ -1746,6 +1746,14 @@ const advancedElements = [
                     label: 'Überschrift',
                     fullWidth: true
                 },
+                img: {
+                    fullWidth: true,
+                    label: 'Bild',
+                    uitype: 'type_picker',
+                    type: 'Media',
+                    filter: 'mimeType=image',
+                    projection: MEDIA_PROJECTION
+                },
                 html: {
                     tab: 'Einträge',
                     expandable: false,
