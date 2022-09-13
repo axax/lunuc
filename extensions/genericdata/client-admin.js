@@ -59,6 +59,17 @@ export default () => {
                             row.style = parseStyles(styleString)
                         }
                     }
+
+                    if (structure && structure.columns) {
+                        structure.columns.forEach(col=>{
+                            if(col.format==='date'){
+                                row['data_' + col.field] =  Util.formattedDatetime(item.data[col.field],{hour:undefined, minute:undefined, second:undefined})
+                            }else{
+                                row['data_' + col.field] = item.data[col.field]
+                            }
+                        })
+
+                    }
                     if (structure.titleTemplate) {
 
                         row.data = Util.replacePlaceholders(structure.titleTemplate, {Util, ...item})
@@ -127,6 +138,24 @@ export default () => {
         }
     })
 
+    Hook.on('TypeTableColumns', ({type, columns, data}) => {
+        if (type === 'GenericData' && data && data.results.length > 0) {
+            const item = data.results[0],
+                structure = item.definition ? item.definition.structure : {}
+
+            if (structure && structure.columns) {
+                structure.columns.forEach(col=>{
+                    columns.splice(1, 0, {
+                        title: col.label || col.field,
+                        id: 'data_'+col.field,
+                        sortid: 'data.'+col.field,
+                        sortable: true
+                    })
+                })
+
+            }
+        }
+    })
 
     Hook.on('TypeCreateEdit', ({type, props, meta, formFields, dataToEdit, parentRef}) => {
         if (type === 'GenericData') {

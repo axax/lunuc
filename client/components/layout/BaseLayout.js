@@ -139,9 +139,9 @@ const genMenuEntry = (item, path) => {
     if (item.to) {
         to = item.to
     } else if (item.name) {
-        to = `${ADMIN_BASE_URL}/types/GenericData?fixType=GenericData&title=${encodeURIComponent(item.label || item.name)}&meta=${item.name}${item.baseFilter ? '&baseFilter=' + encodeURIComponent(item.baseFilter) : ''}`
+        to = `${ADMIN_BASE_URL}/types/GenericData?fixType=GenericData&title=${encodeURIComponent(item.label || item.name)}${item.sort?'&s='+item.sort:''}&meta=${item.name}${item.baseFilter ? '&baseFilter=' + encodeURIComponent(item.baseFilter) : ''}`
     } else if (item.type) {
-        to = `${ADMIN_BASE_URL}/types/${item.type}?fixType=${item.type}&title=${encodeURIComponent(item.label || item.type)}${item.baseFilter ? '&baseFilter=' + encodeURIComponent(item.baseFilter) : ''}`
+        to = `${ADMIN_BASE_URL}/types/${item.type}?fixType=${item.type}${item.sort?'&s='+item.sort:''}&title=${encodeURIComponent(item.label || item.type)}${item.baseFilter ? '&baseFilter=' + encodeURIComponent(item.baseFilter) : ''}`
     }
 
     return {

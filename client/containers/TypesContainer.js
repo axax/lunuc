@@ -1031,8 +1031,7 @@ class TypesContainer extends React.Component {
         const typeDefinition = this.types[type]
         if (!typeDefinition) return
 
-        const {selectAllRows} = this.state
-
+        const {data} = this.state
         const typeColumns = []
 
         typeColumns.push({
@@ -1076,7 +1075,7 @@ class TypesContainer extends React.Component {
             })
 
         /* HOOK */
-        Hook.call('TypeTableColumns', {type, _version: this.pageParams._version, columns: typeColumns})
+        Hook.call('TypeTableColumns', {type, data, _version: this.pageParams._version, columns: typeColumns})
 
         return typeColumns
     }
