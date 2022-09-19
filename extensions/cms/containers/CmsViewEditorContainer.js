@@ -444,6 +444,9 @@ class CmsViewEditorContainer extends React.Component {
         ]
 
         if (!canManageCmsPages || props.dynamic) {
+            if(cmsPage.publicEdit){
+                return <UIProvider>{inner}</UIProvider>
+            }
             return inner
         } else {
             const {slug, _version} = getSlugVersion(props.slug)

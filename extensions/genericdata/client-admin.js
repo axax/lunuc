@@ -477,6 +477,11 @@ export default () => {
                     this.state.data.results.forEach(res => {
                         items.push({date: Util.formattedDatetimeFromObjectId(res._id), ...res.data})
                     })
+                    const structure = this.state.data.results[0].definition.structure
+                    const fields = structure.fields.reduce((acc, cur, i) => {
+                        acc[cur.name] = cur
+                        return acc
+                    }, {})
                     const header = Object.keys(items[0])
                     let csv = items.map(row => header.map(fieldName => {
 
@@ -495,6 +500,11 @@ export default () => {
 
                         } else {
                             value = ''
+                        }
+                        if(fields[fieldName] && fields[fieldName].csvFormat){
+                            if(fields[fieldName].csvFormat==='date'){
+                                value = Util.formattedDatetime(value,{hour:undefined, minute:undefined, second:undefined})
+                            }
                         }
                         return '"' + Util.escapeForJson(value) + '"'
                     }).join(','))

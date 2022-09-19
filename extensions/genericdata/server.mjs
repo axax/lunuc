@@ -241,6 +241,9 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions
                     const accessMatch = await Util.getAccessFilter(db, context, struct.access.read)
                     if (accessMatch.createdBy) {
                         match.createdBy = accessMatch.createdBy
+                    } else if(struct.access.read.force){
+
+                        delete match.createdBy
                     }
 
                 }
