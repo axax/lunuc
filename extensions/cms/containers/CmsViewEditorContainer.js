@@ -306,6 +306,13 @@ class CmsViewEditorContainer extends React.Component {
                         if (cmsEditData.resolverKey) {
                             editDialogProps.meta = {data: JSON.stringify({clearCachePrefix: cmsEditData.resolverKey})}
                         }
+                        if(cmsEditData.structure) {
+                            if(!editDialogProps.meta){
+                                editDialogProps.meta = {}
+                            }
+                            editDialogProps.meta.structure = cmsEditData.structure
+                        }
+
                         return React.createElement(
                             withType(TypeEdit),
                             editDialogProps,

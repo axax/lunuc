@@ -25,6 +25,8 @@ import {
     IconButton,
     InputBase,
     FilterListIcon,
+    ExpandMoreIcon,
+    SaveIcon,
     Divider,
     Paper,
     CloudUploadIcon
@@ -56,6 +58,7 @@ import {client, Query} from '../middleware/graphql'
 import json2csv from 'util/json2csv'
 import Async from '../components/Async'
 import styled from '@emotion/styled'
+import {setKeyValue} from "../util/keyvalue";
 
 const CodeEditor = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
@@ -725,6 +728,13 @@ class TypesContainer extends React.Component {
         }
         const selectedLength = Object.keys(this.state.selectedRows).length
         const {description} = this.types[type]
+
+        const typeSettings = this.getSettingsForType(type, this.pageParams.meta)
+        let savedQueries = typeSettings.savedQueries
+        if(!savedQueries){
+            savedQueries = []
+        }
+
         const content = [
             !title && !this.pageParams.title ? null :
                 <Typography key="typeTitle" variant="h3"
@@ -759,6 +769,27 @@ class TypesContainer extends React.Component {
                                 sx={{ ml: 1, flex: 1 }}
                                 placeholder={_t('TypesContainer.filter')}
                             />
+                            {(this.state.filter || savedQueries.length>0) && <SimpleMenu key="menu" mini icon={<ExpandMoreIcon />} items={[
+                                (this.state.filter ? {
+                                    name: _t('TypesContainer.saveQuery'),
+                                    onClick: ()=>{
+                                        savedQueries.push({query:this.state.filter})
+                                        this.setSettingsForType(type, {savedQueries})
+                                    },
+                                    icon: <SaveIcon/>
+                                }:null),
+                                ...(savedQueries.map(f=>{
+                                    return {
+                                        name: f.query,
+                                        actions:22,
+                                        onClick: () => {
+                                            this.setState({filter: f.query})
+                                            this.runFilter(f.query)
+                                        }
+                                    }
+                                }))
+                            ]}/>
+                            }
                             <IconButton onClick={() => {
                                 this.setState({filter: ''})
                                 this.handleFilter({value: ''}, true)

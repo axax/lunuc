@@ -88,7 +88,10 @@ export default db => ({
                 'TelegramBot',
                 'Product',
                 'CronJobExecution',
-                'ProductCategory'
+                'ProductCategory',
+                'KeyValueGlobal',
+                'FtpUser',
+                'UserGroup'
             ]
 
             const collectionsToSearchIn = []

@@ -42,7 +42,7 @@ class SimpleMenu extends React.Component {
 
     render() {
         const {anchorEl} = this.state
-        const {style, items, label, mini, color, fab, onClick, className, open, onOpen, noButton, ...rest} = this.props
+        const {style, items, label, mini, color, fab, icon, onClick, className, open, onOpen, noButton, ...rest} = this.props
         return (
             <div className={className} style={style}>
                 {
@@ -55,7 +55,7 @@ class SimpleMenu extends React.Component {
                                  aria-owns={anchorEl ? 'simple-menu' : null}
                                  aria-haspopup="true"
                                  onClick={this.handleClick}>
-                                {label ? label : <MoreVertIcon/>}
+                                {label ? label : (icon || <MoreVertIcon/>)}
                             </Fab>
                             :
                             <Button
@@ -67,7 +67,7 @@ class SimpleMenu extends React.Component {
                                 aria-haspopup="true"
                                 onClick={this.handleClick}
                             >
-                                {label ? label : <MoreVertIcon/>}
+                                {label ? label : (icon || <MoreVertIcon/>)}
 
                             </Button>
                         :
@@ -78,7 +78,7 @@ class SimpleMenu extends React.Component {
                             aria-haspopup="true"
                             onClick={this.handleClick}
                         >
-                            <MoreVertIcon/>
+                            {(icon || <MoreVertIcon/>)}
 
                         </IconButton>
                 }
@@ -108,6 +108,7 @@ class SimpleMenu extends React.Component {
         }
 
         return items.map((item, i) => {
+            if(!item) return
             return [item.divider && <Divider key={'divider' + i} light/>,
                 <MenuItem disabled={item.disabled} style={style} onClick={(e) => {
                     if (item.items) {
