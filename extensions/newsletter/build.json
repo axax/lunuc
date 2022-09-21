@@ -3,10 +3,12 @@
     {
       "name": "NewsletterSubscriber",
       "noUserRelation": true,
+      "entryClonable": true,
       "fields": [
         {
           "name": "email",
           "required": true,
+          "clone": "${email}_copy",
           "tab": "general",
           "index": 1
         },
