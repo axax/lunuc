@@ -451,7 +451,7 @@ class CmsViewEditorContainer extends React.Component {
         ]
 
         if (!canManageCmsPages || props.dynamic) {
-            if(cmsPage.publicEdit){
+            if(cmsPage && cmsPage.publicEdit){
                 return <UIProvider>{inner}</UIProvider>
             }
             return inner
