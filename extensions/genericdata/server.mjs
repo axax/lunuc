@@ -298,14 +298,15 @@ async function postLookupResult(result, field, db, context) {
                         dataResolve = ['data']
                         projectResult=false
                     }
-                    console.log(['_id', {definition: ['_id']}, ...dataResolve])
 
                     const itemResults = await GenericResolver.entities(db, context, 'GenericData', ['_id', {definition: ['_id']}, ...dataResolve],
                         {
-                            filter: `definition.name==${field.genericType} && _id==${tempItem[k]}`,
+                            filter: `_id==${tempItem[k]}`,
                             limit: 1,
                             includeCount: false,
+                            match: {},
                             meta: field.genericType,
+                            genericType:field.genericType,
                             postLookup:true,
                             projectResult,
                             lookupLevel:0
