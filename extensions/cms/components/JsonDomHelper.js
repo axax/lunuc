@@ -516,8 +516,6 @@ class JsonDomHelper extends React.Component {
 
         if (JsonDomHelper.currentDragElement) {
             let sourceKey = JsonDomHelper.currentDragElement.props._key,
-                sourceIndex = parseInt(sourceKey.substring(sourceKey.lastIndexOf('.') + 1)),
-                sourceParentKey = getParentKey(sourceKey),
                 targetKey = e.currentTarget.getAttribute('data-key'),
                 targetIndex = parseInt(e.currentTarget.getAttribute('data-index'))
 

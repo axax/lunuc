@@ -480,7 +480,7 @@ class GenericForm extends React.Component {
         const {fields, primaryButton, caption, subForm} = this.props
 
 
-        const fieldKeys = Object.keys(fields), formFields = [], tabs = []
+        const fieldKeys = Object.keys(fields), formFields = [], tabs = [], formFieldsNoTabs = []
 
 
         let expandableField, expandableData, datePolyfill = false
@@ -538,6 +538,8 @@ class GenericForm extends React.Component {
                 let tab = this.getOrCreateTab(tabs, field)
                 currentFormFields = tab.fields
 
+            } else if(field.noTab) {
+                currentFormFields = formFieldsNoTabs
             }
 
             if (field.autoIncrement) {
@@ -556,9 +558,6 @@ class GenericForm extends React.Component {
                                     value: json.nr
                                 }
                             })
-
-                            //this.setState(newState)
-
                         }
                     })
                 }
@@ -801,7 +800,6 @@ class GenericForm extends React.Component {
         const {tabValue} = this.state
         console.log('render GenericForm')
         const Wrapper = subForm ? 'div' : 'form'
-
         for (let i = tabs.length - 1; i >= 0; i--) {
             if (tabs[i].fields.length == 0) {
                 tabs.splice(i, 1)
@@ -811,6 +809,7 @@ class GenericForm extends React.Component {
         return (
             <Wrapper>
                 {tabs.length === 0 && formFields}
+                {formFieldsNoTabs.length > 0 && formFieldsNoTabs}
                 {tabs.length > 0 && <StyledTabContainer>
                     <SimpleTabs
                         style={{width:'100%'}}
@@ -824,7 +823,7 @@ class GenericForm extends React.Component {
                         )}
 
                         {formFields.length > 0 &&
-                        <SimpleTab key={'tab-' + tabs.length} label="Weitere Einstellungen"/>}
+                        <SimpleTab key={'tab-' + tabs.length} label={_t('GenericForm.moreOptions')}/>}
 
                     </SimpleTabs>
 

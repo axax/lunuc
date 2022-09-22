@@ -19,6 +19,8 @@ import {openWindow} from '../../client/util/window'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import {parseStyles} from '../../client/util/style'
 
+import DomUtil from '../../client/util/dom.mjs'
+
 registerTrs(translations, 'GenericData')
 
 const GenericForm = (props) => <Async {...props}
@@ -229,6 +231,12 @@ export default () => {
                     const structure = meta.structure || dataToEdit.definition.structure,
                         dataObject = dataToEdit.data || {}
 
+                    if(structure.css){
+                        DomUtil.createAndAddTag('style', 'head', {
+                            textContent: structure.css,
+                            id:'cssGenericForm'
+                        })
+                    }
 
                     const newFields = Object.assign({}, formFields)
                     const newDataToEdit = Object.assign({}, dataToEdit)
@@ -351,18 +359,14 @@ export default () => {
                     // override default
                     props.children = <GenericForm autoFocus
                                         onRef={ref => {
-                                         if(ref) {
-                                             parentRef.createEditForm = ref
-                                         }
-                                     }}
-                                     onBlur={event => {
-                                     }}
-                                     onChange={field => {
-                                     }}
-                                     primaryButton={false}
-                                     fields={newFields}
-                                     trigger={structure.trigger}
-                                     values={newDataToEdit}/>
+                                             if(ref) {
+                                                 parentRef.createEditForm = ref
+                                             }
+                                         }}
+                                        primaryButton={false}
+                                        fields={newFields}
+                                        trigger={structure.trigger}
+                                        values={newDataToEdit}/>
                 }
             } else {
 
@@ -389,7 +393,7 @@ export default () => {
         }
     })
 
-    Hook.on('TypeCreateEditBeforeSave', function ({type, editedData, optimisticData, formFields}) {
+    Hook.on('TypeCreateEditBeforeSave', function ({type, editedData, optimisticData}) {
         if (type === 'GenericData' && editedData && editedData.definition) {
             const definition = editedData.definition.constructor === Array ? editedData.definition[0] : editedData.definition,
                 dataObject = {},
