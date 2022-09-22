@@ -336,6 +336,7 @@ const GenericResolver = {
             for (let i = 0; i < Hook.hooks['typeLoaded'].length; ++i) {
                 await Hook.hooks['typeLoaded'][i].callback({
                     type: typeName,
+                    cacheKey,
                     data,
                     db,
                     req,

@@ -94,6 +94,14 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
                 }else{
 
                     if(otherOptions.postLookup){
+                        if(!otherOptions.$addFields){
+                            otherOptions.$addFields = {}
+                        }
+                        if(!otherOptions.$addFields.tempProjection){
+                            otherOptions.$addFields.tempProjection = {}
+                        }
+                        otherOptions.$addFields.tempProjection[field.name]=currentProjection
+
                         dataProjection.data.splice(projectionResult.index, 1)
                         dataProjection.data.push(field.name)
                         return
@@ -281,15 +289,26 @@ async function postLookupResult(result, field, db, context) {
             for (let k = 0; k < tempItem.length; k++) {
 
                 if (!itemCache[tempItem[k]]) {
-                    const itemResults = await GenericResolver.entities(db, context, 'GenericData', ['_id', {definition: ['_id']}, 'data'],
+                    //otherOptions.$addFields[`__project__${field.name}`]=currentProjection
+                    let dataResolve, projectResult
+                    if(result.tempProjection && result.tempProjection[field.name]){
+                        dataResolve = result.tempProjection[field.name]
+                        projectResult=true
+                    }else {
+                        dataResolve = ['data']
+                        projectResult=false
+                    }
+                    console.log(['_id', {definition: ['_id']}, ...dataResolve])
+
+                    const itemResults = await GenericResolver.entities(db, context, 'GenericData', ['_id', {definition: ['_id']}, ...dataResolve],
                         {
                             filter: `definition.name==${field.genericType} && _id==${tempItem[k]}`,
                             limit: 1,
                             includeCount: false,
                             meta: field.genericType,
                             postLookup:true,
+                            projectResult,
                             lookupLevel:0
-
                         })
 
                     itemCache[tempItem[k]] = itemResults.results.length > 0 ? itemResults.results[0] : null
@@ -351,6 +370,8 @@ async function postCheckResult(def, result, db, context, otherOptions) {
 
         }
     }
+
+    delete result.tempProjection
 }
 
 

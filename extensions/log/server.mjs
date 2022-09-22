@@ -63,7 +63,7 @@ process.on('unhandledRejection', (error) => {
 
 
 
-Hook.on('typeLoaded', async ({db, req, context, result, dataQuery, collectionName, aggregateTime}) => {
+Hook.on('typeLoaded', async ({type,cacheKey,db, req, context, result, dataQuery, collectionName, aggregateTime}) => {
 
   if(aggregateTime > 1000) {
 
@@ -72,6 +72,8 @@ Hook.on('typeLoaded', async ({db, req, context, result, dataQuery, collectionNam
       const headers =  req.headers || {}
 
       const host = getHostFromHeaders(headers)
+      //const stackTrace = Error().stack.substring(6).replace(/\n/g,'').split('    at ').filter(n => n.trim())
+
 
       GenericResolver.createEntity(mydb, {context}, 'Log', {
           location: collectionName,
@@ -81,7 +83,9 @@ Hook.on('typeLoaded', async ({db, req, context, result, dataQuery, collectionNam
               aggregateTime,
               resultCount: result.results.length,
               resultTotal: result.total,
+              type,
               host,
+              cacheKey,
               agent: headers['x-track-user-agent'] || headers['user-agent'] || '',
               referer: headers['referer'],
               query: dataQuery
