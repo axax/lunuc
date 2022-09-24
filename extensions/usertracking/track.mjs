@@ -36,6 +36,7 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
             isBot: req.headers['x-track-is-bot'] === 'true' ? true : false,
             referer,
             data,
+            headers: req.headers,
             event,
             host: host,
             slug,

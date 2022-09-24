@@ -108,6 +108,12 @@
           "vagueSearchable": false
         },
         {
+          "name": "headers",
+          "type": "Object",
+          "uitype": "json",
+          "vagueSearchable": false
+        },
+        {
           "name": "referer",
           "index": 1
         },
