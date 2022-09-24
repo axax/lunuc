@@ -464,7 +464,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
     const via = req.headers['via']
     let {version, browser, isBot} = parseUserAgent(agent, hostrule.botregex || (hostrules.general && hostrules.general.botregex))
 
-    if(via && via.indent('archive.org_bot') > 0){
+    if(via && via.indexOf('archive.org_bot') >= 0){
         // https://web.archive.org/
         isBot = true
     }
