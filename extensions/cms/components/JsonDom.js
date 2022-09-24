@@ -1042,7 +1042,7 @@ class JsonDom extends React.Component {
                         eleProps.className = className + (eleProps.className ? ' ' + eleProps.className : '')
                     }
                     if (editMode &&
-                        (($inlineEditor !== false && $inlineEditor && $inlineEditor.if!=='false') || _app_.JsonDom.inlineEditor === true) &&
+                        (($inlineEditor !== false && (!$inlineEditor || $inlineEditor.if!=='false')) || _app_.JsonDom.inlineEditor === true) &&
                         _app_.JsonDom.inlineEditor !== false) {
 
                         if (this.props.inlineEditor || ($inlineEditor && $inlineEditor.mode === 'source')) {

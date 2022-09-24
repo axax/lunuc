@@ -496,7 +496,6 @@ CmsViewContainer.propTypes = {
  * Map the state to props.
  */
 const mapStateToProps = (store, props) => {
-
     const render = store.cms ? store.cms.render : null
 
     const result = {user: store.user}

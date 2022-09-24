@@ -214,7 +214,7 @@ class CmsViewEditorContainer extends React.Component {
             state.cmsEditData !== this.state.cmsEditData ||
             props.cmsPage.resolvedData !== this.props.cmsPage.resolvedData ||
             props.user !== this.props.user ||
-            props.children != this.props.children ||
+            (props.children != this.props.children && !state.cmsEditData) ||
             props._props !== this.props._props ||
             state.template !== this.state.template ||
             state.showPageSettings !== this.state.showPageSettings ||
@@ -332,7 +332,6 @@ class CmsViewEditorContainer extends React.Component {
                                 }
 
                                 if (error) return `Error! ${error.message}`
-
 
                                 const keys = Object.keys(data)
                                 let finalData
@@ -1481,7 +1480,6 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     handleEditDataClose(action, {optimisticData, dataToEdit, type}) {
-        const {cmsPage, updateResolvedData} = this.props
         const {cmsEditData} = this.state
 
         if (optimisticData) {
