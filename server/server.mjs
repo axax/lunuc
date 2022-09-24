@@ -461,11 +461,16 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
     const statusCode = (hostrule.statusCode && hostrule.statusCode[urlPathname] ? hostrule.statusCode[urlPathname] : 200)
 
     const agent = req.headers['user-agent']
-    const {version, browser, isBot} = parseUserAgent(agent, hostrule.botregex || (hostrules.general && hostrules.general.botregex))
+    const via = req.headers['via']
+    let {version, browser, isBot} = parseUserAgent(agent, hostrule.botregex || (hostrules.general && hostrules.general.botregex))
 
-    if(!isBot) {
-        console.log(browser, version)
+    if(via && via.indent('archive.org_bot') > 0){
+        // https://web.archive.org/
+        isBot = true
     }
+    /*if(!isBot) {
+        console.log(browser, version)
+    }*/
     if (isBot ||
         (browser === 'netscape') ||
         (browser === 'safari' && version < 5) ||

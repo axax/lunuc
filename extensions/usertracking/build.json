@@ -11,11 +11,13 @@
       "fields": [
         {
           "name": "ip",
-          "index": 1
+          "index": 1,
+          "tab": "Allgemein"
         },
         {
           "name": "agent",
-          "index": 1
+          "index": 1,
+          "tab": "Allgemein"
         },
         {
           "name": "host",
@@ -28,26 +30,31 @@
                 "_id": 1
               }
             }
-          ]
+          ],
+          "tab": "Allgemein"
         },
         {
           "name": "slug",
-          "index": 1
+          "index": 1,
+          "tab": "Allgemein"
         },
         {
           "name": "day",
           "type": "Int",
-          "index": 1
+          "index": 1,
+          "tab": "Allgemein"
         },
         {
           "name": "month",
           "type": "Int",
-          "index": 1
+          "index": 1,
+          "tab": "Allgemein"
         },
         {
           "name": "year",
           "type": "Int",
-          "index": 1
+          "index": 1,
+          "tab": "Allgemein"
         },
         {
           "name": "event",
@@ -68,7 +75,8 @@
                 "_id": 1
               }
             }
-          ]
+          ],
+          "tab": "Allgemein"
         },
         {
           "name": "isBot",
@@ -99,28 +107,33 @@
                 "_id": 1
               }
             }
-          ]
+          ],
+          "tab": "Allgemein"
         },
         {
           "name": "data",
           "type": "Object",
           "uitype": "json",
-          "vagueSearchable": false
+          "vagueSearchable": false,
+          "tab": "Data"
         },
         {
           "name": "headers",
           "type": "Object",
           "uitype": "json",
-          "vagueSearchable": false
+          "vagueSearchable": false,
+          "tab": "Headers"
         },
         {
           "name": "referer",
-          "index": 1
+          "index": 1,
+          "tab": "Allgemein"
         },
         {
           "name": "geodata",
           "type": "Object",
-          "vagueSearchable": false
+          "vagueSearchable": false,
+          "tab": "Data"
         }
       ]
     }
