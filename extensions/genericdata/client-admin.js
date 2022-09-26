@@ -228,7 +228,7 @@ export default () => {
 
                 } else {
 
-                    const structure = meta.structure || dataToEdit.definition.structure,
+                    const structure = meta && meta.structure? meta.structure : dataToEdit.definition.structure,
                         dataObject = dataToEdit.data || {}
 
                     if(structure.css){
