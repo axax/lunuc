@@ -122,7 +122,7 @@ const Util = {
     },
     formattedDatetime(stamp, options) {
         if (!stamp) return ''
-        if (typeof stamp === 'string') {
+        if (typeof stamp === 'string' && stamp.indexOf('-')<0) {
             stamp = parseFloat(stamp);
         }
 
