@@ -864,7 +864,7 @@ class GenericForm extends React.Component {
                 html = field.html
             }
 
-            currentFormFields.push(<span dangerouslySetInnerHTML={{__html: html}}/>)
+            currentFormFields.push(<span className={field.className} dangerouslySetInnerHTML={{__html: html}}/>)
 
         } else if (uitype === 'wrapper') {
             // do nothing for now
@@ -908,6 +908,7 @@ class GenericForm extends React.Component {
 
 
             currentFormFields.push(<FormControl key={'control' + fieldKey}
+                                                className={field.className}
                                                 sx={getSxProps({fullWidth:true})}>
                 <InputLabel key={'label' + fieldKey}
                             shrink>{field.label + (languageCode ? ' [' + languageCode + ']' : '')}</InputLabel>
@@ -943,7 +944,9 @@ class GenericForm extends React.Component {
             const hasError = !!this.state.fieldErrors[fieldKey]
 
 
-            currentFormFields.push(<FormControl style={{zIndex: 1}} key={'control' + fieldKey}
+            currentFormFields.push(<FormControl style={{zIndex: 1}}
+                                                key={'control' + fieldKey}
+                                                className={field.className}
                                                 sx={getSxProps({fullWidth:true})}>
                 <InputLabel key={'label' + fieldKey}
                             shrink>{field.label + (languageCode ? ' [' + languageCode + ']' : '')}</InputLabel>
@@ -969,6 +972,7 @@ class GenericForm extends React.Component {
         } else if (uitype === 'button') {
 
             currentFormFields.push(<Button key={fieldKey}
+                                           className={field.className}
                                            color="primary"
                                            variant="contained"
                                            style={field.style}
@@ -980,12 +984,13 @@ class GenericForm extends React.Component {
 
         } else if (uitype === 'image') {
 
-            currentFormFields.push(<FileDrop key={fieldKey} value={value}/>)
+            currentFormFields.push(<FileDrop key={fieldKey} className={field.className} value={value}/>)
 
 
         } else if (uitype === 'color_picker') {
 
             currentFormFields.push(<FormControl key={'control' + fieldKey}
+                                                className={field.className}
                                                 sx={getSxProps({fullWidth:true})}>
                 <InputLabel key={'label' + fieldKey} shrink>{field.label}</InputLabel><Input data-colorpicker=""
                                                                                              onChange={this.handleInputChange}
@@ -999,6 +1004,7 @@ class GenericForm extends React.Component {
         } else if (uitype === 'type_picker') {
 
             currentFormFields.push(<TypePicker
+                className={field.className}
                 value={(value ? (value.constructor === Array ? value : [value]) : null)}
                 error={!!this.state.fieldErrors[fieldKey]}
                 helperText={this.state.fieldErrors[fieldKey]}
@@ -1053,6 +1059,7 @@ class GenericForm extends React.Component {
 
                         value = matchObjectValueFromList(value, field, items)
                         return <SimpleSelect
+                            className={field.className}
                             readOnly={field.readOnly}
                             key={fieldKey} name={fieldKey}
                             onChange={this.handleInputChange}
@@ -1081,6 +1088,7 @@ class GenericForm extends React.Component {
 
                 currentFormFields.push(<SimpleSelect
                     readOnly={field.readOnly}
+                    className={field.className}
                     key={fieldKey}
                     name={fieldKey}
                     onChange={this.handleInputChange}
@@ -1102,6 +1110,7 @@ class GenericForm extends React.Component {
                                                  readOnly={field.readOnly}
                                                  label={field.label || field.placeholder}
                                                  name={fieldKey}
+                                                 className={field.className}
                                                  sx={getSxProps(field)}
                                                  onChange={this.handleInputChange}
                                                  checked={value ? true : false}/>)
@@ -1126,6 +1135,7 @@ class GenericForm extends React.Component {
                                               error={!!this.state.fieldErrors[fieldKey]}
                                               key={fieldKey}
                                               id={fieldKey}
+                                              className={field.className}
                                               label={(field.label || field.name) + (languageCode ? ' [' + languageCode + ']' : '')}
                                               sx={getSxProps(field)}
                                               InputLabelProps={{
@@ -1167,7 +1177,7 @@ class GenericForm extends React.Component {
         }
 
         if (field.divider) {
-            currentFormFields.push(<Divider key={'divider' + field.name}/>)
+            currentFormFields.push(<Divider className={field.className} key={'divider' + field.name}/>)
         }
 
         if (!langButtonWasInserted && translateButton && languageCode === _app_.lang) {
