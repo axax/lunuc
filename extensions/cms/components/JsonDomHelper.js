@@ -945,9 +945,7 @@ class JsonDomHelper extends React.Component {
                         })
                     }
 
-
-
-                    if(_dynamic) {
+                    if(_dynamic && _options.menu.edit !== false) {
 
                         const parent = rest._scope.parent
                         const parentJson = parent.getJsonRaw(parent.props, true)

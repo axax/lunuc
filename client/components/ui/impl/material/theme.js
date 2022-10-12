@@ -33,6 +33,13 @@ const defaultTheme = createTheme({
                 }
             }
         },
+        MuiSnackbar: {
+            styleOverrides: {
+                root: {
+                    zIndex: '10000 !important'
+                }
+            }
+        },
         MuiPopover: {
             styleOverrides: {
                 root: {
