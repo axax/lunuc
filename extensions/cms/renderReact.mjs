@@ -1,10 +1,9 @@
 import {renderToString} from '../../api/resolver/graphqlSsr.js'
-import {Provider} from 'react-redux'
 import JsonDom from './components/JsonDom.js'
 import React from 'react'
-import {getStore} from '../../client/store/index.js'
 import {getHostFromHeaders} from '../../util/host.mjs'
 import {setGraphQlOptions} from '../../client/middleware/graphql.js'
+import App from 'client/components/App'
 
 const PORT = (process.env.PORT || 8080)
 
@@ -20,7 +19,7 @@ const renderReact = async ({
                                context
                            }) => {
 
-    const store = getStore()
+   // const store = getStore()
 
     const loc = {pathname: '', search: '', origin: ''}
     if (req) {
@@ -32,9 +31,9 @@ const renderReact = async ({
     window.location = globalThis.location = loc
 
     setGraphQlOptions({url: 'http://localhost:' + PORT + '/graphql'})
-
-    return await renderToString(<Provider store={store}>
-        <JsonDom template={template}
+    return await renderToString(
+        <App>
+            <JsonDom template={template}
                  script={script}
                  style={style}
                  location={loc}
@@ -44,7 +43,7 @@ const renderReact = async ({
                  scope={scope?JSON.stringify(scope):undefined}
                  resolvedData={JSON.stringify(resolvedData)}
                  editMode={false}/>
-    </Provider>, context)
+        </App>, context)
 }
 
 export default renderReact

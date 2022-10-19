@@ -1,23 +1,25 @@
-import React from 'react'
+import React, {useContext} from 'react'
 import PropTypes from 'prop-types'
-import {connect} from 'react-redux'
-import {bindActionCreators} from 'redux'
-import * as Actions from 'client/actions/ErrorHandlerAction'
 import {SimpleDialog, Snackbar} from 'ui/admin'
 import {_t} from 'util/i18n.mjs'
+import {AppContext} from '../AppContext'
 
 class ErrorHandler extends React.Component {
 
     handleDialogClose(key) {
-        this.props.actions.clearError(key)
+        _app_.dispatcher.dispatch({type:'MESSAGE',payload:{remove:key}})
     }
 
     componentWillUnmount() {
-        this.props.actions.clearErrors()
+        _app_.dispatcher.dispatch({type:'MESSAGE',payload:{removeAll:true}})
     }
 
     render() {
-        const {messages, snackbar} = this.props
+        const {snackbar} = this.props
+
+        const globalContext = useContext(AppContext)
+
+        const messages = globalContext.state.messages
         if (!messages || !Object.keys(messages).length)
             return null
         const key = Object.keys(messages)[0], msg = messages[key].msg
@@ -48,36 +50,8 @@ class ErrorHandler extends React.Component {
 
 
 ErrorHandler.propTypes = {
-    messages: PropTypes.object.isRequired,
-    actions: PropTypes.object.isRequired,
     snackbar: PropTypes.bool
 }
 
-
-/**
- * Map the state to props.
- */
-const mapStateToProps = (state) => {
-    const {errorHandler} = state
-    return {
-        messages: errorHandler.messages
-    }
-}
-
-/**
- * Map the actions to props.
- */
-const mapDispatchToProps = (dispatch) => ({
-    actions: bindActionCreators(Actions, dispatch)
-})
-
-
-/**
- * Connect the component to
- * the Redux store.
- */
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(ErrorHandler)
+export default ErrorHandler
 

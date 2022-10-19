@@ -397,8 +397,8 @@ if (DEV_MODE) {
         new TerserPlugin(terserOptions)
     )
 
-    /*const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
-    config.plugins.push(new BundleAnalyzerPlugin())*/
+    const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+    config.plugins.push(new BundleAnalyzerPlugin())
 
 }
 

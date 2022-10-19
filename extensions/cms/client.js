@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {useContext} from 'react'
 import Hook from 'util/hook.cjs'
 import config from 'gen/config-client'
 
@@ -8,9 +8,9 @@ import {
     CAPABILITY_MANAGE_CMS_TEMPLATE,
     CAPABILITY_MANAGE_CMS_CONTENT
 } from './constants/index.mjs'
+import {AppContext} from 'client/components/AppContext'
 import Async from 'client/components/Async'
 import CmsViewContainer from './containers/CmsViewContainer'
-import CmsReducer from './reducers/CmsReducer'
 
 const TypesContainer = (props) => <Async {...props}
                                          load={import(/* webpackChunkName: "admin" */ '../../client/containers/TypesContainer')}/>
@@ -21,10 +21,6 @@ const TypesContainer = (props) => <Async {...props}
     return 'yy'
 }*/
 
-// add redux reducer
-Hook.on('reducer', ({reducers}) => {
-    reducers.cms = CmsReducer
-})
 
 export default () => {
 
@@ -62,7 +58,16 @@ export default () => {
                 }
 
                 if (slug.split('/')[0] !== container.adminBaseUrlPlain) {
-                    return <CmsViewContainer location={location} history={history} slug={slug}/>
+
+                    const globalContext = useContext(AppContext)
+
+                    const {user, cmsRender} = globalContext.state
+
+                    return <CmsViewContainer location={location}
+                                             history={history}
+                                             user={user}
+                                             cmsRender={cmsRender}
+                                             slug={slug}/>
                 }
 
                 return null

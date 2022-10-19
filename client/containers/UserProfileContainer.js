@@ -334,9 +334,4 @@ const UserProfileContainerWithGql = compose(
 )
 (UserProfileContainer)
 
-
-/**
- * Connect the component to
- * the Redux store.
- */
 export default UserProfileContainerWithGql

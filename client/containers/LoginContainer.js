@@ -1,10 +1,6 @@
 import React from 'react'
-import {bindActionCreators} from 'redux'
-import {connect} from 'react-redux'
 import PropTypes from 'prop-types'
 import {Link, Redirect} from '../util/route'
-import * as UserActions from 'client/actions/UserAction'
-import * as ErrorHandlerAction from 'client/actions/ErrorHandlerAction'
 import {Card, SimpleButton, TextField, Row, Col, Typography} from 'ui/admin'
 import config from 'gen/config-client'
 import BlankLayout from 'client/components/layout/BlankLayout'
@@ -40,7 +36,6 @@ class LoginContainer extends React.Component {
     handleInputChange = (e) => {
         const target = e.target
         const value = target.type === 'checkbox' ? target.checked : target.value
-        const name = target.name
 
         this.setState({
             [target.name]: value
@@ -52,7 +47,6 @@ class LoginContainer extends React.Component {
         e.preventDefault()
 
         this.setState({loading: true, error: null})
-        const {userActions, errorHandlerAction} = this.props
 
         client.query({
             fetchPolicy: 'no-cache',
@@ -73,10 +67,8 @@ class LoginContainer extends React.Component {
                         localStorage.setItem('token', response.data.login.token)
                     }
 
-                    userActions.setUser(response.data.login.user, true)
-                    errorHandlerAction.clearErrors()
+                    _app_.dispatcher.setUser(response.data.login.user)
 
-                    //this.setState({redirectToReferrer: true})
                     // make sure translations are loaded
                     window.location = this.getFromUrl()
 
@@ -85,8 +77,8 @@ class LoginContainer extends React.Component {
                 }
             }
         }).catch((response)=>{
+            console.log(response)
             this.setState({loading: false, error: response.error.message})
-
         })
     }
 
@@ -182,35 +174,8 @@ class LoginContainer extends React.Component {
     }
 }
 
-
 LoginContainer.propTypes = {
-    signupLink: PropTypes.string,
-    /* UserReducer */
-    userActions: PropTypes.object.isRequired,
-    errorHandlerAction: PropTypes.object.isRequired
+    signupLink: PropTypes.string
 }
 
-
-/**
- * Map the state to props.
- */
-const mapStateToProps = () => {
-    return {}
-}
-
-/**
- * Map the actions to props.
- */
-const mapDispatchToProps = (dispatch) => ({
-    userActions: bindActionCreators(UserActions, dispatch),
-    errorHandlerAction: bindActionCreators(ErrorHandlerAction, dispatch)
-})
-
-/**
- * Connect the component to
- * the Redux store.
- */
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(LoginContainer)
+export default LoginContainer

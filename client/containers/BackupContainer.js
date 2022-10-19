@@ -359,9 +359,4 @@ const BackupContainerWithGql = compose(
 )
 (BackupContainer)
 
-
-/**
- * Connect the component to
- * the Redux store.
- */
 export default BackupContainerWithGql

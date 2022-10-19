@@ -3,7 +3,6 @@ import 'gen/extensions-client'
 import React from 'react'
 import {render} from 'react-dom'
 import App from './components/App'
-import {getStore} from './store/index'
 import config from 'gen/config-client'
 import DomUtil from 'client/util/dom.mjs'
 import Util from 'client/util/index.mjs'
@@ -33,7 +32,6 @@ function addCanonicalTag(href) {
 }
 
 function mainInit() {
-    const store = getStore()
 
     // translation map
     _app_.tr = {}
@@ -117,7 +115,7 @@ function mainInit() {
     }
 
     render(
-        <App store={store}/>,
+        <App/>,
         document.getElementById('app')
     )
 

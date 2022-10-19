@@ -6,7 +6,6 @@ import ChatMessage from '../components/chat/ChatMessage'
 import CreateChat from '../components/chat/CreateChat'
 import AddChatUser from '../components/chat/AddChatUser'
 import AddChatMessage from '../components/chat/AddChatMessage'
-import {connect} from 'react-redux'
 import Util from 'client/util/index.mjs'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import config from 'gen/config-client'
@@ -302,14 +301,14 @@ const ChatContainerWithGql = compose(
                             status: 'creating',
                             messages: [],
                             createdBy: {
-                                _id: ownProps.user.userData._id,
-                                username: ownProps.user.userData.username,
+                                _id: _app_.user._id,
+                                username: _app_.user.username,
                                 __typename: 'UserPublic'
                             },
                             users: [
                                 {
-                                    _id: ownProps.user.userData._id,
-                                    username: ownProps.user.userData.username,
+                                    _id: _app_.user._id,
+                                    username: _app_.user.username,
                                     __typename: 'UserPublic'
                                 }
                             ],
@@ -449,8 +448,8 @@ const ChatContainerWithGql = compose(
                             status: 'creating',
                             from: {
                                 __typename: 'UserPublic',
-                                _id: ownProps.user.userData._id,
-                                username: ownProps.user.userData.username
+                                _id: _app_.user._id,
+                                username: _app_.user.username
                             },
                             to: {
                                 __typename: 'Chat',
@@ -522,22 +521,5 @@ const ChatContainerWithGql = compose(
 )(ChatContainer)
 
 
-/**
- * Map the state to props.
- */
-const mapStateToProps = (store) => {
-    const {user} = store
-    return {
-        user
-    }
-}
-
-
-/**
- * Connect the component to
- * the Redux store.
- */
-export default connect(
-    mapStateToProps
-)(ChatContainerWithGql)
+export default ChatContainerWithGql
 

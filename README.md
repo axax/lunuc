@@ -9,7 +9,6 @@ For more information and examples, go to https://www.lunuc.com/
 *Here is a list with the main features:*
 * React for UI
 * Declarative routing
-* Redux architecture
 * Babel for ECMAScript 2016 / 2017
 * Webpack bundler
 * Jest for testing
@@ -165,39 +164,12 @@ Now whenever mongod gets killed. It'll get respawned by systemctl.
 └── test
 ```
 
-### Redux architecure
-
-- A single store
-- State being read-only (immutability)
-- Mutations written as pure functions
-
-```text
-+------------+        +------------+        +-------------+
-|            |        |            |        |             |
-|   Action   +------->+  Reducers  +------->+    Store    |
-|            |        |            |        |             |
-+-----+------+        +------------+        +------+------+
-      ^                                            |
-      |                                            |
-      |                                            |
-      |               +------------+               |
-      |   dispatch    |            |    subscribe  |
-      +---------------+    View    +<--------------+
-                      |            |
-                      +------------+
-
-```
-
 ### Debugging
 
 #### Webstorm
 > Run – Edit configurations… – Add – JavaScript Debug
  Paste URL of your app (http://localhost:3000/) into the URL field.
 [read more](https://blog.jetbrains.com/webstorm/2017/01/debugging-react-apps/)
-
-
-> Redux DevTools
-[read more](https://github.com/zalmoxisus/redux-devtools-extension)
 
 ### Testing
 

@@ -1017,12 +1017,19 @@ class JsonDom extends React.Component {
                         }
                     }
 
+                    /*if(/[¶|{]/.test(tagName)){
+                        this.emitJsonError({message:`Invalid character in tag name ${tagName}`}, {loc: "tagname"})
+                        tagName='div'
+                    }*/
+
                     let eleType = JsonDom.components[tagName] || this.extendedComponents[tagName] || tagName
 
                     eleProps.key = key
                     if (t === 'Cms') {
                         // if we have a cms component in another cms component the location props gets not refreshed
                         // that's way we pass it directly to the reactElement as a prop
+                        eleProps.user = this.props.user
+                        eleProps.cmsRender = this.props.cmsRender
                         eleProps.location = location
                         eleProps.history = history
                         eleProps._this = this
@@ -1534,10 +1541,18 @@ class JsonDom extends React.Component {
 
     reload = props => {
         setTimeout(()=> {
-            this.props.cmsActions.cmsRender(deepMerge({$: {}}, this.scope.props, props), {
+            _app_.dispatcher.dispatch({
+                type: 'CMS_RENDER',
+                payload:{
+                    props: deepMerge({$: {}}, this.scope.props, props),
+                    slug: this.props.slug,
+                    id: this.props.id
+                }
+            })
+            /*this.props.cmsActions.cmsRender(deepMerge({$: {}}, this.scope.props, props), {
                 slug: this.props.slug,
                 id: this.props.id
-            })
+            })*/
         },0)
     }
 

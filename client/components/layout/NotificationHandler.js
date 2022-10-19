@@ -1,11 +1,8 @@
-import React from 'react'
-import PropTypes from 'prop-types'
-import {connect} from 'react-redux'
-import {bindActionCreators} from 'redux'
-import * as Actions from 'client/actions/NotificationAction'
+import React, {useContext} from 'react'
 import {Snackbar, CloseIconButton, theme} from 'ui/admin'
 import {Link} from '../../util/route'
 import {client} from '../../middleware/graphql'
+import {AppContext} from '../AppContext'
 
 class NotificationHandler extends React.Component {
 
@@ -13,32 +10,18 @@ class NotificationHandler extends React.Component {
     constructor(props) {
         super(props)
         this.state = {
-            notificationOpen: true,
-            notificationStack: []
+            notificationOpen: true
         }
     }
 
     handleNotificationClose(e, reason) {
         if (reason !== 'clickaway') {
             this.setState({notificationOpen: false})
+            setTimeout(()=>{
+                this.setState({notificationOpen: true})
+                _app_.dispatcher.addNotification()
+            },600)
         }
-    }
-
-    handleNotificationClosed() {
-        const notificationStack = [...this.state.notificationStack]
-        notificationStack.shift()
-
-        this.setState({notificationStack, notificationOpen: true})
-    }
-
-    UNSAFE_componentWillReceiveProps(props) {
-        this.addToNotificationStack(props.notification)
-    }
-
-    shouldComponentUpdate(props, state) {
-        return this.state.notificationOpen !== state.notificationOpen ||
-            this.state.notificationStack !== state.notificationStack ||
-            this.state.notificationStack.length !== state.notificationStack.length
     }
 
     componentDidMount() {
@@ -55,7 +38,7 @@ class NotificationHandler extends React.Component {
   }`
         }).subscribe({
             next:(supscriptionData) =>{
-                this.addToNotificationStack(supscriptionData.data.newNotification)
+                _app_.dispatcher.addNotification(supscriptionData.data.newNotification)
             },
             error(err) {
                 console.error('err', err)
@@ -69,19 +52,16 @@ class NotificationHandler extends React.Component {
         }
     }
 
-    addToNotificationStack(notification) {
-        if(notification){
-            const notificationStack = [...this.state.notificationStack]
-            notificationStack.push(notification)
-            this.setState({notificationStack})
-        }
-    }
-
     render() {
-        const {notificationStack, notificationOpen} = this.state
+        const {notificationOpen} = this.state
 
-        console.log('render NotificationHandler ' + notificationStack.length)
+        const globalContext = useContext(AppContext)
+
+        const notificationStack = globalContext.state.notifications
+
         if (notificationStack.length > 0) {
+            console.log('render NotificationHandler ' + notificationStack.length + ' - '+ notificationOpen)
+
             const notification = notificationStack[0]
             const actions = [
                 <CloseIconButton
@@ -102,9 +82,8 @@ class NotificationHandler extends React.Component {
                     vertical: 'bottom',
                     horizontal: 'left',
                 }}
-                onExited={this.handleNotificationClosed.bind(this)}
                 open={notificationOpen}
-                autoHideDuration={5000}
+                autoHideDuration={7000}
                 onClose={this.handleNotificationClose.bind(this)}
                 ContentProps={{
                     'aria-describedby': 'message-id',
@@ -118,37 +97,4 @@ class NotificationHandler extends React.Component {
     }
 }
 
-
-NotificationHandler.propTypes = {
-    newNotification: PropTypes.object,
-    notification: PropTypes.object
-}
-
-/**
- * Map the state to props.
- */
-const mapStateToProps = (state) => {
-    const {notification} = state
-    // clear notification
-    state.notification = null
-    return {
-        notification: notification
-    }
-}
-
-/**
- * Map the actions to props.
- */
-const mapDispatchToProps = (dispatch) => ({
-    actions: bindActionCreators(Actions, dispatch)
-})
-
-
-/**
- * Connect the component to
- * the Redux store.
- */
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(NotificationHandler)
+export default NotificationHandler

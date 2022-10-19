@@ -200,11 +200,15 @@ class CmsViewEditorContainer extends React.Component {
         if(props.aboutToChange){
             return false
         }
-        /*console.log('children changed', props.children != this.props.children)
+       /* console.log('user changed', props.user != this.props.user)
+        console.log('user changed', props.user != this.props.user)
+        console.log('children changed', props.children != this.props.children)
         console.log('_props changed', props._props !== this.props._props)
         console.log('slug changed', slugChanged)
         console.log('loading changed', props.loading !== this.props.loading)
-        console.log('cmsStatusData changed', state.cmsStatusData !== this.state.cmsStatusData)*/
+        console.log('cmsStatusData changed', state.cmsStatusData !== this.state.cmsStatusData)
+        console.log('cmsRender changed', Util.shallowCompare(props.cmsRender, this.props.cmsRender))
+        console.log('props.cmsPage.urlSensitiv', props.cmsPage.urlSensitiv)*/
         // only update if it is needed
         return noCmsPage ||
             props.loading !== this.props.loading ||
@@ -239,9 +243,9 @@ class CmsViewEditorContainer extends React.Component {
             state.cmsStatusData !== this.state.cmsStatusData  ||
             state.historyType !== this.state.historyType  ||
             state.historyPage !== this.state.historyPage  ||
-            (props.cmsRender && Util.shallowCompare(props.cmsRender, this.props.cmsRender)) ||
+            Util.shallowCompare(props.cmsRender, this.props.cmsRender) ||
             (
-                props.cmsPage.urlSensitiv && (
+                !!props.cmsPage.urlSensitiv && (
                     props.location.search !== this.props.location.search ||
                     props.location.hash !== this.props.location.hash)
             )
@@ -1261,7 +1265,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     handleCmsError(e, meta) {
-        this.props.errorHandlerAction.addError({key: 'cmsError', msg: `${meta.loc}: ${e.message} -> ${meta.slug}`})
+        _app_.dispatcher.addError({key: 'cmsError', msg: `${meta.loc}: ${e.message} -> ${meta.slug}`})
     }
 
     saveUnsafedChanges(isBlur) {
@@ -1639,7 +1643,6 @@ CmsViewEditorContainer.propTypes = {
     urlSensitiv: PropTypes.any,
     /* udate data */
     updateCmsPage: PropTypes.func.isRequired,
-    errorHandlerAction: PropTypes.object.isRequired,
     updateResolvedData: PropTypes.func.isRequired
 }
 

@@ -1,6 +1,4 @@
 import React from 'react'
-import {bindActionCreators} from 'redux'
-import {connect} from 'react-redux'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import {
     Typography,
@@ -15,7 +13,6 @@ import {
 import Util from 'client/util/index.mjs'
 import {COMMAND_QUERY} from '../constants/index.mjs'
 import PropTypes from 'prop-types'
-import * as NotificationAction from 'client/actions/NotificationAction'
 import config from 'gen/config-client'
 import {Query, client} from '../middleware/graphql'
 import FileDrop from '../components/FileDrop'
@@ -232,7 +229,7 @@ class FilesContainer extends React.Component {
                 }
 
             }).then(response => {
-                this.props.notificationAction.addNotification({key: 'fileChange', message: `File "${file}" saved`})
+                _app_.dispatcher.addNotification.addNotification({key: 'fileChange', message: `File "${file}" saved`})
             })
         }, 1500)
     }
@@ -240,33 +237,10 @@ class FilesContainer extends React.Component {
 
 
 FilesContainer.propTypes = {
-    notificationAction: PropTypes.object.isRequired,
     file: PropTypes.string,
     space: PropTypes.string,
     embedded: PropTypes.bool,
     editOnly: PropTypes.bool
 }
 
-
-/**
- * Map the state to props.
- */
-const mapStateToProps = () => {
-    return {}
-}
-
-/**
- * Map the actions to props.
- */
-const mapDispatchToProps = (dispatch) => ({
-    notificationAction: bindActionCreators(NotificationAction, dispatch)
-})
-
-/**
- * Connect the component to
- * the Redux store.
- */
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(FilesContainer)
+export default FilesContainer

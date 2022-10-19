@@ -1,7 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import compose from 'util/compose'
-import {connect} from 'react-redux'
 import Util from 'client/util/index.mjs'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import GenericForm from 'client/components/GenericForm'
@@ -233,8 +232,8 @@ const PostContainerWithGql = compose(
                             editor,
                             status: 'creating',
                             createdBy: {
-                                _id: ownProps.user.userData._id,
-                                username: ownProps.user.userData.username,
+                                _id: _app_.user._id,
+                                username: _app_.user.username,
                                 __typename: 'UserPublic'
                             },
                             __typename: 'Post'
@@ -275,8 +274,8 @@ const PostContainerWithGql = compose(
                             editor,
                             status: 'updating',
                             createdBy: {
-                                _id: ownProps.user.userData._id,
-                                username: ownProps.user.userData.username,
+                                _id: _app_.user._id,
+                                username: _app_.user.username,
                                 __typename: 'UserPublic'
                             },
                             __typename: 'Post'
@@ -351,22 +350,5 @@ const PostContainerWithGql = compose(
 )(PostContainer)
 
 
-/**
- * Map the state to props.
- */
-const mapStateToProps = (store) => {
-    const {user} = store
-    return {
-        user
-    }
-}
-
-
-/**
- * Connect the component to
- * the Redux store.
- */
-export default connect(
-    mapStateToProps
-)(PostContainerWithGql)
+export default PostContainerWithGql
 

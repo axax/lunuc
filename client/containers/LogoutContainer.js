@@ -1,8 +1,4 @@
 import React from 'react'
-import {bindActionCreators} from 'redux'
-import {connect} from 'react-redux'
-import PropTypes from 'prop-types'
-import * as UserActions from 'client/actions/UserAction'
 import Util from 'client/util/index.mjs'
 import {client} from '../middleware/graphql'
 
@@ -11,7 +7,6 @@ class LogoutContainer extends React.Component {
 
     constructor(props) {
         super(props)
-        this.logout()
     }
 
     logout = () => {
@@ -21,8 +16,7 @@ class LogoutContainer extends React.Component {
             query: 'query{logout{status}}'
         }).then(() => {
 
-            const {userActions} = this.props
-            userActions.setUser(null, false)
+            _app_.dispatcher.setUser(null)
 
             // remove token and clear cache with a little delay in case there are componentWillUnmount events
             // clear user data
@@ -47,37 +41,9 @@ class LogoutContainer extends React.Component {
     }
 
     render() {
+        this.logout()
         return null
     }
 }
 
-
-LogoutContainer.propTypes = {
-    /* UserReducer */
-    userActions: PropTypes.object.isRequired,
-}
-
-
-/**
- * Map the state to props.
- */
-const mapStateToProps = () => {
-    return {}
-}
-
-/**
- * Map the actions to props.
- */
-const mapDispatchToProps = (dispatch) => ({
-    userActions: bindActionCreators(UserActions, dispatch),
-})
-
-
-/**
- * Connect the component to
- * the Redux store.
- */
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(LogoutContainer)
+export default LogoutContainer

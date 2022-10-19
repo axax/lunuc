@@ -1,9 +1,5 @@
-import React, {useState, useEffect} from 'react'
+import React, {useState, useEffect, useContext} from 'react'
 import Util from '../util/index.mjs'
-import {getStore} from '../store/index'
-import {setNetworkStatus} from '../actions/NetworkStatusAction'
-import {setUser} from '../actions/UserAction'
-import {addError} from '../actions/ErrorHandlerAction'
 import Hook from '../../util/hook.cjs'
 
 
@@ -52,9 +48,7 @@ let loadingCounter = 0
 function addLoader() {
     loadingCounter++
     if (loadingCounter === 1) {
-        getStore().dispatch(setNetworkStatus({
-            networkStatus: {loading: true}
-        }))
+       _app_.dispatcher.dispatch({type:'NETWORK_STATUS',payload:{loading:true}})
     }
 }
 
@@ -62,9 +56,7 @@ function removeLoader() {
     loadingCounter--
     if (loadingCounter === 0) {
         // send loading false when all request are done
-        getStore().dispatch(setNetworkStatus({
-            networkStatus: {loading: false}
-        }))
+        _app_.dispatcher.dispatch({type:'NETWORK_STATUS',payload:{loading:false}})
     }
 }
 
@@ -198,7 +190,6 @@ const getCacheKey = ({query, variables}) => {
 const getFetchMore = ({prevData, type, query, variables, fetchPolicy}) => {
     return (opt) => {
         finalFetch({type, query, variables: {...variables, ...opt.variables}, fetchPolicy}).then((fetchMoreResult) => {
-
             opt.updateQuery(prevData, {fetchMoreResult: fetchMoreResult.data})
         }).catch(opt.updateQuery)
     }
@@ -263,16 +254,16 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
                 r.json().then(response => {
                     if (!response.isAuth && _app_.user && _app_.user._id) {
                         // if a user is logged in and for some reason user session is not valid anymore update user in client
-                        getStore().dispatch(setUser(null, false))
+                        _app_.dispatcher.setUser(null)
                     }
                     if (!r.ok || response.errors) {
                         const rejectData = {...response, loading: false, networkStatus: NetworkStatus.ready}
                         if (response.errors) {
                             rejectData.error = response.errors[0]
-                            getStore().dispatch(addError({
+                            _app_.dispatcher.addError({
                                 key: 'graphql_error',
                                 msg: rejectData.error.message /* + (rejectData.error.path ? ' (in operation ' + rejectData.error.path.join('/') + ')' : '') */
-                            }))
+                            })
                         }
                         reject(rejectData)
                     } else {
@@ -302,23 +293,23 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
 
                 }).catch(error => {
                     reject({error, loading: false, networkStatus: NetworkStatus.error})
-                    getStore().dispatch(addError({
+                    _app_.dispatcher.addError({
                         key: 'graphql_error',
                         msg: error.message + (error.path ? ' (in operation ' + error.path.join('/') + ')' : '')
-                    }))
+                    })
                 })
             } else {
                 reject({error: {message: r.statusText}, loading: false, networkStatus: NetworkStatus.error})
-                getStore().dispatch(addError({key: 'api_error', msg: r.status + ' - ' + r.statusText}))
+                _app_.dispatcher.addError({key: 'api_error', msg: r.status + ' - ' + r.statusText})
             }
 
         }).catch(error => {
             removeLoader()
             reject({error, loading: false, networkStatus: NetworkStatus.error})
-            getStore().dispatch(addError({
+            _app_.dispatcher.addError({
                 key: 'api_error',
                 msg: controller._timeout ? 'Request timeout reached' : error.message
-            }))
+            })
 
         })
     })
@@ -541,8 +532,6 @@ export const Subscription = props => {
 }*/
 
 export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cache-first', skip}) => {
-
-
     const cacheKey = getCacheKey({query, variables})
 
     let currentData = null

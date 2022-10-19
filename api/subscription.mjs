@@ -39,7 +39,7 @@ const pubsubHooked = {
 /*var counter=0
 setInterval(()=>{
 	counter++
-	pubsub.publish('newNotification', {newNotification: {key: 'test.notification', message: `Notification Nr. ${counter}`}} )
-},5000)*/
-
+	pubsub.publish('newNotification', {userId: '590effdab75b10094f8543b8',newNotification: {key: 'test.notification', message: `Notification Nr. ${counter}`}} )
+},5000)
+*/
 export {pubsub, pubsubDelayed, pubsubHooked}

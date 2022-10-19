@@ -1,5 +1,4 @@
-import {createStore} from 'redux'
-import {getReducers} from '../reducers/index'
+//import {getReducers} from '../reducers/index'
 
 let store
 
@@ -11,7 +10,7 @@ export const getStore = (initialState) => {
 		)
 	))*/
 	if(!store) {
-        store = createStore(getReducers(), initialState)
+   //     store = createStore(getReducers(), initialState)
     }
 
     return store

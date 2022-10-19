@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {useContext} from 'react'
 import PropTypes from 'prop-types'
 import JsonDom from '../components/JsonDom'
 import Util from 'client/util/index.mjs'
@@ -9,10 +9,7 @@ import withCms from './withCms'
 import {client} from '../../../client/middleware/graphql'
 import Hook from '../../../util/hook.cjs'
 import {deepMerge} from '../../../util/deepMerge.mjs'
-import * as CmsActions from '../actions/CmsAction'
-import {connect} from 'react-redux'
-import {bindActionCreators} from 'redux'
-import * as ErrorHandlerAction from 'client/actions/ErrorHandlerAction'
+import {AppContext} from "../../../client/components/AppContext";
 
 class CmsViewContainer extends React.Component {
     oriTitle = document.title
@@ -477,6 +474,7 @@ CmsViewContainer.propTypes = {
     updateResolvedData: PropTypes.func.isRequired,
     slug: PropTypes.string.isRequired,
     user: PropTypes.object.isRequired,
+    cmsRender: PropTypes.object.isRequired,
     /* with Router */
     history: PropTypes.object.isRequired,
     location: PropTypes.object.isRequired,
@@ -490,39 +488,4 @@ CmsViewContainer.propTypes = {
     inEditor: PropTypes.bool
 }
 
-
-
-/**
- * Map the state to props.
- */
-const mapStateToProps = (store, props) => {
-    const render = store.cms ? store.cms.render : null
-
-    const result = {user: store.user}
-
-    if(render && (!render.id || render.id=== props.id) && (!render.slug || render.slug=== props.slug) ) {
-        result.cmsRender = render
-    }
-
-    return result
-}
-
-/**
- * Map the actions to props.
- */
-const mapDispatchToProps = (dispatch) => {
-    return {
-        cmsActions: bindActionCreators(CmsActions, dispatch),
-        errorHandlerAction: bindActionCreators(ErrorHandlerAction, dispatch)
-    }
-}
-
-/**
- * Connect the component to
- * the Redux store.
- */
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(withCms(CmsViewContainer))
-
+export default withCms(CmsViewContainer)

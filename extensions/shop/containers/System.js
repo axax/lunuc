@@ -1,12 +1,8 @@
 import React from 'react'
-import {bindActionCreators} from 'redux'
-import {connect} from 'react-redux'
 import {
     Typography,
     Button
 } from 'ui/admin'
-import PropTypes from 'prop-types'
-import * as NotificationAction from 'client/actions/NotificationAction'
 import {client} from '../../../client/middleware/graphql'
 
 class System extends React.Component {
@@ -32,7 +28,7 @@ class System extends React.Component {
             query: '{shopImportSampleData{status message}}'
 
         }).then(response => {
-            this.props.notificationAction.addNotification({
+            _app_.dispatcher.addNotification.addNotification({
                 key: 'shopDataImportate',
                 message: response.data.shopImportSampleData.message
             })
@@ -40,32 +36,4 @@ class System extends React.Component {
     }
 }
 
-
-System.propTypes = {
-    notificationAction: PropTypes.object.isRequired
-}
-
-
-/**
- * Map the state to props.
- */
-const mapStateToProps = () => {
-    return {}
-}
-
-/**
- * Map the actions to props.
- */
-const mapDispatchToProps = (dispatch) => ({
-    notificationAction: bindActionCreators(NotificationAction, dispatch)
-})
-
-
-/**
- * Connect the component to
- * the Redux store.
- */
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(System)
+export default System

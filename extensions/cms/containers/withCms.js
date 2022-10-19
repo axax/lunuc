@@ -64,7 +64,8 @@ export default function (WrappedComponent) {
                         if (isEditMode(this.props)) {
                             return <CmsViewEditorContainer updateResolvedData={this.updateResolvedData.bind(this)}
                                                            setKeyValue={this.setKeyValue.bind(this)}
-                                                           WrappedComponent={WrappedComponent} {...this.props}
+                                                           WrappedComponent={WrappedComponent}
+                                                           {...this.props}
                                                            cmsPage={{name: {}}}/>
                         } else {
 
@@ -152,7 +153,7 @@ export default function (WrappedComponent) {
          */
         setKeyValue({key, value, server, internal, global, callback}) {
 
-            const {user, cmsPage, slug} = this.props
+            const {cmsPage} = this.props
 
             if (!key || value === undefined || !cmsPage) {
                 return
@@ -176,7 +177,7 @@ export default function (WrappedComponent) {
                 value: value && value.constructor !== String ? JSON.stringify(value) : value
             }
 
-            if (global || user.isAuthenticated) {
+            if (global || _app_.user) {
                 client.mutate({
                     mutation: global ? QUERY_SET_KEY_VALUE_GLOBAL : QUERY_SET_KEY_VALUE,
                     variables,
@@ -258,9 +259,9 @@ export default function (WrappedComponent) {
             options(ownProps) {
                 let hiddenVariables
                 if (!ownProps.dynamic) {
-                    const urlStacK = ownProps.history._urlStack
+                    const urlStack = ownProps.history._urlStack
                     hiddenVariables = {
-                        meta: JSON.stringify({referer: urlStacK && urlStacK.length > 1 ? urlStacK[1] : document.referrer})
+                        meta: JSON.stringify({referer: urlStack && urlStack.length > 1 ? urlStack[1] : document.referrer})
                     }
                 }
                 return {
@@ -288,6 +289,7 @@ export default function (WrappedComponent) {
             }
         })
     )(Wrapper)
+
     return withGql
 
 }
