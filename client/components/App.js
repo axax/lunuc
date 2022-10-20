@@ -15,16 +15,13 @@ export default function App(props) {
         user:{isAuthenticated:false},
         networkStatus:{loading:false},
         messages:{},
-        notifications:[],
-        cmsRender:null
+        notifications:[]
     }
     const reducerFn = (state, action) => {
         const {type, payload} = action
         switch (type) {
             case 'NETWORK_STATUS':
                 return Object.assign({},state,{networkStatus:payload})
-            case 'CMS_RENDER':
-                return Object.assign({},state,{cmsRender:payload})
             case 'MESSAGE':
                 let messages = state.messages
                 if(payload.add){

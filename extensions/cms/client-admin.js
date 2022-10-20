@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {useContext} from 'react'
 import Hook from 'util/hook.cjs'
 import config from 'gen/config-client'
 const {ADMIN_BASE_URL, PRETTYURL_SEPERATOR} = config
@@ -18,6 +18,7 @@ import {translations} from './translations/admin'
 import TypesContainer from 'client/containers/TypesContainer'
 import GenericForm from 'client/components/GenericForm'
 import JsonDom from './components/JsonDom'
+import {AppContext} from 'client/components/AppContext'
 
 registerTrs(translations, 'CmsViewEditorContainer')
 
@@ -59,8 +60,11 @@ export default () => {
     })
 
     Hook.on('HomeContainerRender', ({content, match, location, history}) => {
+        const globalContext = useContext(AppContext)
+        const {user} = globalContext.state
+
         content.splice(0,content.length)
-        content.push(<CmsViewContainer key="widgets" match={match} dynamic={true} urlSensitiv={true} location={location} history={history} slug={'system/widget'}/>)
+        content.push(<CmsViewContainer key="widgets" user={user} match={match} dynamic={true} urlSensitiv={true} location={location} history={history} slug={'system/widget'}/>)
     })
 
     // add entry to main menu

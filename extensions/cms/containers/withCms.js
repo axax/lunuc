@@ -34,6 +34,8 @@ const CmsViewEditorContainer = (props) => <Async {...props}
 // enhance cmsview with editor functionalities if in edit mode
 export default function (WrappedComponent) {
 
+
+
     class Wrapper extends React.Component {
         constructor(props) {
             super(props)
@@ -251,7 +253,7 @@ export default function (WrappedComponent) {
                     prevData.cmsPage &&
                     prevData.cmsPage.slug === props.slug &&
                     (!prevData.cmsPage.urlSensitiv || prevData.cmsPage.urlSensitiv==='client') &&
-                    !props.cmsRender) {
+                    !props.isRefetch) {
                     return true
                 }
                 return false
@@ -270,11 +272,12 @@ export default function (WrappedComponent) {
                     fetchPolicy: ownProps.fetchPolicy || (isEditMode(ownProps) ? 'network-only' : 'cache-and-network') // cache-first
                 }
             },
-            props: ({data: {loading, cmsPage, variables, fetchMore, networkStatus}, ownProps}) => {
+            props: ({data: {loading, cmsPage, variables, fetchMore, refetch, networkStatus}, ownProps}) => {
                 const result = {
                     cmsPageVariables: variables,
                     loading,
                     fetchMore,
+                    refetch,
                     cmsPage,
                     networkStatus
                 }

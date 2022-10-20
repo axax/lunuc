@@ -485,10 +485,16 @@ export const graphql = (query, operationOptions = {}) => {
                     return <WrappedComponent {...props} {...this.props} />
                 }
 
+                let finalProps
 
-                const options = operationOptions.options ? (typeof operationOptions.options === 'function' ? operationOptions.options(this.props) : operationOptions.options) : {},
+                if(this.state.refetchProps){
+                    finalProps = Object.assign({isRefetch:true}, this.props, this.state.refetchProps)
+                } else {
+                    finalProps = this.props
+                }
+                const options = operationOptions.options ? (typeof operationOptions.options === 'function' ? operationOptions.options(finalProps) : operationOptions.options) : {},
                     variables = options.variables,
-                    skip = operationOptions.skip ? (typeof operationOptions.skip === 'function' ? operationOptions.skip(this.props, this.prevRespone.data) : operationOptions.skip) : false
+                    skip = operationOptions.skip ? (typeof operationOptions.skip === 'function' ? operationOptions.skip(finalProps, this.prevRespone.data) : operationOptions.skip) : false
 
                 return <Query skip={skip} query={query} variables={variables}
                               hiddenVariables={options.hiddenVariables}
@@ -505,12 +511,15 @@ export const graphql = (query, operationOptions = {}) => {
                             variables, ...data,
                             loading: res.loading,
                             networkStatus: res.networkStatus,
-                            fetchMore: res.fetchMore
+                            fetchMore: res.fetchMore,
+                            refetch: (props)=>{
+                                this.setState({refetchProps:props})
+                            }
                         },
-                        ownProps: this.props
+                        ownProps: finalProps
                     })
 
-                    return <WrappedComponent {...props} {...this.props} />
+                    return <WrappedComponent {...props} {...finalProps} />
                 }}</Query>
             }
         }

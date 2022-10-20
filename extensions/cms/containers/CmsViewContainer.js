@@ -57,7 +57,6 @@ class CmsViewContainer extends React.Component {
             props.user !== this.props.user ||
             props.children != this.props.children ||
             Util.shallowCompare(props._props, this.props._props) ||
-            (props.cmsRender && Util.shallowCompare(props.cmsRender, this.props.cmsRender)) ||
             /* only if in edit mode */
             (isEditMode(props) && (
                 cmsPage.template !== cmsPageOld.template ||
@@ -81,7 +80,7 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {slug, aboutToChange, cmsPage, children, dynamic, settings, setKeyValue, getKeyValue, updateResolvedData, _props, cmsRender, loaderClass, ...props} = this.props
+        const {slug, aboutToChange, cmsPage, children, dynamic, settings, setKeyValue, getKeyValue, updateResolvedData, _props, loaderClass, ...props} = this.props
         const editMode = isEditMode(this.props)
         if (!cmsPage) {
             // show a loader here
@@ -139,7 +138,7 @@ class CmsViewContainer extends React.Component {
                     })
                 }
             }}
-            _props={cmsRender?cmsRender.props:_props}
+            _props={_props}
             {...props}>{children}</JsonDom>
 
         console.info(`render ${this.constructor.name} for ${slug} ${this.props.id}  (loading=${this.props.loading}, change=${!!aboutToChange}) in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime() - _app_.start.getTime()}ms`)
@@ -474,7 +473,6 @@ CmsViewContainer.propTypes = {
     updateResolvedData: PropTypes.func.isRequired,
     slug: PropTypes.string.isRequired,
     user: PropTypes.object.isRequired,
-    cmsRender: PropTypes.object.isRequired,
     /* with Router */
     history: PropTypes.object.isRequired,
     location: PropTypes.object.isRequired,

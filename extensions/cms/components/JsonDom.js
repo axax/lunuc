@@ -1029,7 +1029,6 @@ class JsonDom extends React.Component {
                         // if we have a cms component in another cms component the location props gets not refreshed
                         // that's way we pass it directly to the reactElement as a prop
                         eleProps.user = this.props.user
-                        eleProps.cmsRender = this.props.cmsRender
                         eleProps.location = location
                         eleProps.history = history
                         eleProps._this = this
@@ -1541,18 +1540,17 @@ class JsonDom extends React.Component {
 
     reload = props => {
         setTimeout(()=> {
-            _app_.dispatcher.dispatch({
+
+            this.props.refetch({_props:deepMerge({$: {}}, this.scope.props, props)})
+           /* _app_.dispatcher.dispatch({
                 type: 'CMS_RENDER',
                 payload:{
                     props: deepMerge({$: {}}, this.scope.props, props),
                     slug: this.props.slug,
                     id: this.props.id
                 }
-            })
-            /*this.props.cmsActions.cmsRender(deepMerge({$: {}}, this.scope.props, props), {
-                slug: this.props.slug,
-                id: this.props.id
             })*/
+
         },0)
     }
 

@@ -207,7 +207,6 @@ class CmsViewEditorContainer extends React.Component {
         console.log('slug changed', slugChanged)
         console.log('loading changed', props.loading !== this.props.loading)
         console.log('cmsStatusData changed', state.cmsStatusData !== this.state.cmsStatusData)
-        console.log('cmsRender changed', Util.shallowCompare(props.cmsRender, this.props.cmsRender))
         console.log('props.cmsPage.urlSensitiv', props.cmsPage.urlSensitiv)*/
         // only update if it is needed
         return noCmsPage ||
@@ -243,7 +242,6 @@ class CmsViewEditorContainer extends React.Component {
             state.cmsStatusData !== this.state.cmsStatusData  ||
             state.historyType !== this.state.historyType  ||
             state.historyPage !== this.state.historyPage  ||
-            Util.shallowCompare(props.cmsRender, this.props.cmsRender) ||
             (
                 !!props.cmsPage.urlSensitiv && (
                     props.location.search !== this.props.location.search ||
