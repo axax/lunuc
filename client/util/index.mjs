@@ -33,6 +33,10 @@ const Util = {
             if (options.regex) {
                 str = Util.escapeRegex(str)
             }
+
+            if (options.removeControlChars) {
+                str = str.replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+            }
         }
 
         return str.replace(/[\\]|[\"]|[\b]|[\f]|[\n]|[\r]|[\t]/g, (matched) => {

@@ -48,7 +48,7 @@ const MarkDown = (props) => <Async {...props}
 class JsonDom extends React.Component {
 
     /* Events that are listened to */
-    static events = ['onMouseOver', 'onMouseOut', 'onMouseEnter', 'onMouseDown', 'onClick', 'onKeyDown', 'onKeyUp', 'onFocus', 'onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput', 'onForwardRef']
+    static events = ['onAnimationEnd','onMouseOver', 'onMouseOut', 'onMouseEnter', 'onMouseDown', 'onClick', 'onKeyDown', 'onKeyUp', 'onFocus', 'onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput', 'onForwardRef']
 
     /*
      * Default components
