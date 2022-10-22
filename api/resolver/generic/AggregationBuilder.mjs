@@ -877,6 +877,9 @@ export default class AggregationBuilder {
             }
         }
 
+        // sort again within the result
+        dataFacetQuery.push({$sort: sort})
+
         // project
         if (projectResult) {
             // also remove id if it is not explicitly set
@@ -899,9 +902,6 @@ export default class AggregationBuilder {
             }
             dataFacetQuery.push({$project: projectResultData})
         }
-
-        // sort again within the result
-        dataFacetQuery.push({$sort: sort})
 
         const facet = {
             $facet: {
