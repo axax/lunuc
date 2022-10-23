@@ -28,9 +28,15 @@ export default function App(props) {
                     messages[payload.add.key] = payload.add
                 }
                 if(payload.remove){
+                    if(!messages[payload.remove]){
+                        return state
+                    }
                     delete messages[payload.remove]
                 }
                 if(payload.removeAll){
+                    if(Object.keys(messages).length===0){
+                        return state
+                    }
                     messages = {}
                 }
                 return Object.assign({},state,{messages})

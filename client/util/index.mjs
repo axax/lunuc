@@ -116,7 +116,7 @@ const Util = {
                 console.log(e)
             }
         }
-        return DATE_FORMATS[key]
+        return DATE_FORMATS[key] || {format:(d)=>d}
     },
     formattedDateFromObjectId: (objectId, options) => {
         return Util.getDateTimeFormat(options).format(Util.dateFromObjectId(objectId, new Date()))

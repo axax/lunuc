@@ -588,7 +588,7 @@ class TypesContainer extends React.Component {
         const {simpleDialog, dataToEdit, createEditDialog, viewSettingDialog, viewFilterDialog, confirmCloneColDialog, manageColDialog, dataToDelete, dataToBulkEdit, confirmDeletionDialog} = this.state
         const {title} = this.props
         const {type, fixType, noLayout} = this.pageParams
-        const formFields = getFormFieldsByType(type), columns = this.getTableColumns(type)
+        const columns = this.getTableColumns(type)
 
         if (!this.types[type]) {
             return <BaseLayout><Typography variant="subtitle1" color="error">Type {type} does not
@@ -1194,14 +1194,14 @@ class TypesContainer extends React.Component {
                         })
                         if (storeData && storeData[storeKey]) {
                             // oh data are available in cache. show them first
-                            setTimeout(() => {
+                            //setTimeout(() => {
                                 const newState = {data: storeData[storeKey]}
 
                                 if (typeChanged) {
                                     newState.filter = filter
                                 }
                                 this.setState(newState)
-                            }, 0)
+                           // }, 0)
                         }
                     } catch (e) {
                     }
