@@ -12,7 +12,7 @@ export default () => {
 
     // add routes for this extension
     Hook.on('Routes', ({routes}) => {
-        routes.push({exact: true, path: ADMIN_BASE_URL + '/translate', component: LiveSpeechTranslaterContainer})
+        routes.push({exact: true, path: ADMIN_BASE_URL + '/translate', layout:'base', component: LiveSpeechTranslaterContainer})
     })
 
     // add entry to main menu

@@ -2,7 +2,6 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import compose from 'util/compose'
 import Util from 'client/util/index.mjs'
-import BaseLayout from 'client/components/layout/BaseLayout'
 import GenericForm from 'client/components/GenericForm'
 import {Row, Col, Typography, SimpleList, DeleteIconButton, SimpleDialog} from 'ui/admin'
 import config from 'gen/config-client'
@@ -107,7 +106,7 @@ class PostContainer extends React.Component {
         const selectedPostId = match.params.id
 
         if (!posts)
-            return <BaseLayout/>
+            return null
 
         let selectedPost = false
         const listItems = (posts.results ? posts.results.reduce((a, post) => {
@@ -128,8 +127,7 @@ class PostContainer extends React.Component {
         }, []) : [])
 
 
-        return (
-            <BaseLayout>
+        return <>
                 <Typography variant="h3" gutterBottom>Posts</Typography>
                 <Row spacing={3}>
                     <Col md={4}>
@@ -175,8 +173,7 @@ class PostContainer extends React.Component {
                     Are you sure you want to delete the post &ldquo;{this.state.dataToDelete.title}&rdquo;?
                 </SimpleDialog>
                 }
-            </BaseLayout>
-        )
+            </>
     }
 }
 

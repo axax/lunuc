@@ -1,7 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import compose from 'util/compose'
-import BaseLayout from 'client/components/layout/BaseLayout'
 import {
     SimpleButton,
     SimpleDialog,
@@ -124,8 +123,7 @@ class BackupContainer extends React.Component {
     render() {
         const {dbDumps, mediaDumps, hostruleDumps} = this.props
         const {creatingDump, creatingMediaDump, creatingHostruleDump, importingMediaDump, importingHostruleDump, importMediaDumpDialog, importDbDumpDialog, importHostruleDumpDialog, importingDbDump} = this.state
-        return (
-            <BaseLayout key="baseLayout">
+        return <>
                 <Typography variant="h3" gutterBottom>Backups</Typography>
 
                 <Row spacing={4}>
@@ -251,9 +249,7 @@ class BackupContainer extends React.Component {
                               label="Drop file here"/>
 
                 </SimpleDialog>
-
-            </BaseLayout>
-        )
+            </>
     }
 }
 

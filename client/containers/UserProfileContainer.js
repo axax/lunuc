@@ -1,7 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import compose from 'util/compose'
-import BaseLayout from 'client/components/layout/BaseLayout'
 import {Button, Typography, TextField, DeleteIconButton, Chip, ContentBlock} from 'ui/admin'
 import {graphql} from '../middleware/graphql'
 import {_t} from 'util/i18n.mjs'
@@ -173,8 +172,7 @@ class UserProfileContainer extends React.Component {
             )
         }
 
-        return (
-            <BaseLayout key="baseLayout">
+        return <>
                 <Typography variant="h3" component="h1" gutterBottom>{_t('Profile.title')}</Typography>
 
 
@@ -217,10 +215,7 @@ class UserProfileContainer extends React.Component {
                     <br/>
                     <Button variant="contained" color="primary" onClick={this.createNote}>{_t('Profile.addNote')}</Button>
                 </ContentBlock>
-
-
-            </BaseLayout>
-        )
+            </>
     }
 }
 

@@ -4,7 +4,6 @@ import {withApollo} from '@apollo/react-hoc'
 import {Query} from '@apollo/react-components'
 import { ApolloClient } from '@apollo/client'
 import {gql} from '@apollo/client'
-import BaseLayout from 'client/components/layout/BaseLayout'
 import {
     TextField,
     Typography,
@@ -178,7 +177,7 @@ class SearchWhileSpeechContainer extends React.Component {
     render() {
         console.log('render SearchWhileSpeechContainer')
 
-        return <BaseLayout>
+        return <>
             <Typography variant="h3" component="h1" gutterBottom>Search</Typography>
             <Typography variant="subtitle1" gutterBottom>
                 Search results are displayed continuously as you speak. At the moment only posts are included in the
@@ -240,7 +239,7 @@ class SearchWhileSpeechContainer extends React.Component {
                             </Typography>])}</Card>
                 )
             }
-        </BaseLayout>
+        </>
     }
 }
 

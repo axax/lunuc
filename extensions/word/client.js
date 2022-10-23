@@ -13,7 +13,7 @@ const SubjectIcon = (props) => <Async {...props} expose="SubjectIcon"
 export default () => {
     // add routes for this extension
     Hook.on('Routes', ({routes}) => {
-        routes.push({exact: true, path: ADMIN_BASE_URL + '/word/:page*', component: WordContainer})
+        routes.push({exact: true, path: ADMIN_BASE_URL + '/word/:page*', layout:'base', component: WordContainer})
     })
 
     // add entry to main menu

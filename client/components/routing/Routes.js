@@ -12,21 +12,35 @@ import {scrollByHash} from '../../../extensions/cms/util/urlUtil'
 import {RouteHistory, Link} from '../../util/route'
 import Util from '../../util/index.mjs'
 
+const BaseLayout = (props) => <Async {...props}
+                                     asyncKey="BaseLayout"
+                                     load={import(/* webpackChunkName: "admin" */ '../../components/layout/BaseLayout')}/>
+
+const BlankLayout = (props) => <Async {...props}
+                                     asyncKey="BlankLayout"
+                                     load={import(/* webpackChunkName: "admin" */ '../../components/layout/BlankLayout')}/>
+
 const LoginContainer = (props) => <Async {...props}
                                          load={import(/* webpackChunkName: "admin" */ '../../containers/LoginContainer')}/>
 const SignUpContainer = (props) => <Async {...props}
                                           load={import(/* webpackChunkName: "admin" */ '../../containers/SignUpContainer')}/>
 const UserProfileContainer = (props) => <Async {...props}
+                                               asyncKey="UserProfileContainer"
                                                load={import(/* webpackChunkName: "admin" */ '../../containers/UserProfileContainer')}/>
 const SystemContainer = (props) => <Async {...props}
+                                          asyncKey="SystemContainer"
                                           load={import(/* webpackChunkName: "admin" */ '../../containers/SystemContainer')}/>
 const BackupContainer = (props) => <Async {...props}
+                                          asyncKey="BackupContainer"
                                           load={import(/* webpackChunkName: "admin" */ '../../containers/BackupContainer')}/>
 const FilesContainer = (props) => <Async {...props}
+                                         asyncKey="FilesContainer"
                                          load={import(/* webpackChunkName: "admin" */ '../../containers/FilesContainer')}/>
 const TypesContainer = (props) => <Async {...props}
+                                         asyncKey="TypesContainer"
                                          load={import(/* webpackChunkName: "admin" */ '../../containers/TypesContainer')}/>
 const HomeContainer = (props) => <Async {...props}
+                                        asyncKey="HomeContainer"
                                         load={import(/* webpackChunkName: "admin" */ '../../containers/HomeContainer')}/>
 const ErrorPage = (props) => <Async {...props}
                                     load={import(/* webpackChunkName: "admin" */ '../../components/layout/ErrorPage')}/>
@@ -40,16 +54,17 @@ class Routes extends React.Component {
     adminBaseUrlPlain = ADMIN_BASE_URL.slice(1)
 
     routes = [
-        {exact: true, private: true, path: ADMIN_BASE_URL + '/', component: HomeContainer},
-        {exact: true, private: true, path: ADMIN_BASE_URL + '/home/:name*', component: HomeContainer},
-        {path: ADMIN_BASE_URL + '/login', component: LoginContainer},
-        {path: ADMIN_BASE_URL + '/logout', component: LogoutContainer},
-        {path: ADMIN_BASE_URL + '/signup', component: SignUpContainer},
-        {exact: true, private: true, path: ADMIN_BASE_URL + '/types/:type*', component: TypesContainer},
-        {private: true, path: ADMIN_BASE_URL + '/profile', component: UserProfileContainer},
-        {private: true, path: ADMIN_BASE_URL + '/system', component: SystemContainer},
-        {private: true, path: ADMIN_BASE_URL + '/backup', component: BackupContainer},
-        {private: true, path: ADMIN_BASE_URL + '/files', component: FilesContainer}
+        {exact: true, private: true, path: ADMIN_BASE_URL + '/', component: HomeContainer, layout: BaseLayout},
+        {exact: true, private: true, path: ADMIN_BASE_URL + '/home/:name*', component: HomeContainer, layout: BaseLayout},
+        {path: ADMIN_BASE_URL + '/login', component: LoginContainer, layout: BlankLayout},
+        {path: ADMIN_BASE_URL + '/logout', component: LogoutContainer, layout: BlankLayout},
+        {path: ADMIN_BASE_URL + '/signup', component: SignUpContainer, layout: BlankLayout},
+        {exact: true, private: true, path: ADMIN_BASE_URL + '/typesblank/:type*', component: TypesContainer, layout: BlankLayout},
+        {exact: true, private: true, path: ADMIN_BASE_URL + '/types/:type*', component: TypesContainer, layout: BaseLayout},
+        {private: true, path: ADMIN_BASE_URL + '/profile', component: UserProfileContainer, layout: BaseLayout},
+        {private: true, path: ADMIN_BASE_URL + '/system', component: SystemContainer, layout: BaseLayout},
+        {private: true, path: ADMIN_BASE_URL + '/backup', component: BackupContainer, layout: BaseLayout},
+        {private: true, path: ADMIN_BASE_URL + '/files', component: FilesContainer, layout: BaseLayout}
     ]
 
     constructor(props) {
@@ -78,6 +93,7 @@ class Routes extends React.Component {
         }
         const refPath = location.pathname + '/'
         let hasUnauthorized = false
+
         for(let i = 0; i < this.routes.length;i++){
             const route = this.routes[i],
                 path = route.path
@@ -128,15 +144,21 @@ class Routes extends React.Component {
                         return null
                     }
 
+                    let comp
                     if(route.render){
-                        const comp = route.render({match, location: newLocation, history: _app_.history})
-                        if( comp ){
-                            return comp
-                        }
+                        comp = route.render({match, location: newLocation, history: _app_.history})
                     }
                     if(route.component) {
-                        return <route.component match={match} location={newLocation}
+                        comp = <route.component match={match} location={newLocation}
                                                 history={_app_.history}></route.component>
+                    }
+
+                    if(comp){
+                        if(route.layout){
+                            let Layout = route.layout === 'base' ? BaseLayout : route.layout
+                            return <Layout>{comp}</Layout>
+                        }
+                        return comp
                     }
                 }
             } else {

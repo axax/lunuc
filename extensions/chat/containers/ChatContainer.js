@@ -7,7 +7,6 @@ import CreateChat from '../components/chat/CreateChat'
 import AddChatUser from '../components/chat/AddChatUser'
 import AddChatMessage from '../components/chat/AddChatMessage'
 import Util from 'client/util/index.mjs'
-import BaseLayout from 'client/components/layout/BaseLayout'
 import config from 'gen/config-client'
 import {graphql} from '../../../client/middleware/graphql'
 
@@ -113,8 +112,7 @@ class ChatContainer extends React.Component {
 
         let selectedChat = false
 
-        return (
-            <BaseLayout>
+        return  <>
                 <h1>Chats</h1>
                 <ul>
                     {chatsWithMessages.slice(0).reverse().map((chat, i) => {
@@ -160,8 +158,7 @@ class ChatContainer extends React.Component {
                         <AddChatMessage onClick={this.handleAddChatMessageClick}/>
                     </div>
                     : ''}
-            </BaseLayout>
-        )
+                </>
     }
 }
 

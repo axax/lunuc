@@ -36,6 +36,7 @@ export default () => {
             private: true,
             exact: true,
             path: ADMIN_BASE_URL + '/cms/:page*',
+            layout:'base',
             component: (p) => {
                 //_app_._cmsLastSearch = decodeURI(p.location.search)
                 return <TypesContainer baseUrl={ADMIN_BASE_URL + "/cms/"} fixType="CmsPage"

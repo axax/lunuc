@@ -142,7 +142,7 @@ class TinyEditor extends React.Component {
                             //callback('movie.mp4', {source2: 'alt.ogg', poster: 'image.jpg'});
                         }
 
-                        const newwindow = openWindow({url:`${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/types/?noLayout=true&fixType=Media&baseFilter=${encodeURIComponent(baseFilter || '')}`})
+                        const newwindow = openWindow({url:`${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/typesblank/?fixType=Media&baseFilter=${encodeURIComponent(baseFilter || '')}`})
 
 
                         setTimeout(() => {

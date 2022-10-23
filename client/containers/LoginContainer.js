@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import {Link, Redirect} from '../util/route'
 import {Card, SimpleButton, TextField, Row, Col, Typography} from 'ui/admin'
 import config from 'gen/config-client'
-import BlankLayout from 'client/components/layout/BlankLayout'
 import Util from 'client/util/index.mjs'
 import DomUtil from '../util/dom.mjs'
 import {client} from 'client/middleware/graphql'
@@ -100,77 +99,72 @@ class LoginContainer extends React.Component {
             return <Redirect to={from} push={true}/>
         }
 
-        return (
-            <BlankLayout style={{marginTop: '5rem'}}>
-                <Row>
-                    <Col xs={1} sm={2} md={4}></Col>
-                    <Col xs={10} sm={8} md={4}>
-                        <Card>
-                            <form noValidate autoComplete="off" action="/graphql/login" method="post">
-                                <Typography variant="h3" gutterBottom>{_t('Login.title')}</Typography>
+        return <Row style={{marginTop: '5rem'}}>
+                <Col xs={1} sm={2} md={4}></Col>
+                <Col xs={10} sm={8} md={4}>
+                    <Card>
+                        <form noValidate autoComplete="off" action="/graphql/login" method="post">
+                            <Typography variant="h3" gutterBottom>{_t('Login.title')}</Typography>
 
-                                <Typography gutterBottom>{_t('Login.subtitle', {pathname:from})}</Typography>
+                            <Typography gutterBottom>{_t('Login.subtitle', {pathname:from})}</Typography>
 
 
-                                <input value={from}
-                                           type="hidden"
-                                           name="forward"/>
+                            <input value={from}
+                                       type="hidden"
+                                       name="forward"/>
 
-                                <TextField label={_t('Login.username')}
-                                           error={!!error}
-                                           disabled={!!loading}
-                                           autoComplete="current-password"
-                                           fullWidth
-                                           autoFocus
-                                           value={username}
-                                           onChange={this.handleInputChange}
-                                           type="text"
-                                           name="username" required/>
-
-
-                                <TextField label={_t('Login.password')}
-                                           error={!!error}
-                                           helperText={error}
-                                           disabled={!!loading}
-                                           fullWidth
-                                           autoComplete="current-password"
-                                           value={password}
-                                           onChange={this.handleInputChange}
-                                           onKeyPress={(ev) => {
-                                               if (ev.key === 'Enter') {
-                                                   this.login(ev)
-                                               }
-                                           }}
-                                           type="password"
-                                           name="password" required/>
+                            <TextField label={_t('Login.username')}
+                                       error={!!error}
+                                       disabled={!!loading}
+                                       autoComplete="current-password"
+                                       fullWidth
+                                       autoFocus
+                                       value={username}
+                                       onChange={this.handleInputChange}
+                                       type="text"
+                                       name="username" required/>
 
 
-                                <TextField label={_t('Login.domain')}
-                                           error={!!error}
-                                           disabled={!!loading}
-                                           fullWidth
-                                           autoFocus
-                                           value={domain}
-                                           onChange={this.handleInputChange}
-                                           type="text"
-                                           name="domain"/>
+                            <TextField label={_t('Login.password')}
+                                       error={!!error}
+                                       helperText={error}
+                                       disabled={!!loading}
+                                       fullWidth
+                                       autoComplete="current-password"
+                                       value={password}
+                                       onChange={this.handleInputChange}
+                                       onKeyPress={(ev) => {
+                                           if (ev.key === 'Enter') {
+                                               this.login(ev)
+                                           }
+                                       }}
+                                       type="password"
+                                       name="password" required/>
 
-                                <div style={{textAlign: 'right'}}>
-                                    <SimpleButton variant="contained" color="primary"
-                                                  showProgress={loading}
-                                                  type="submit"
-                                                  onClick={this.login.bind(this)}>Login</SimpleButton>
-                                </div>
-                                {showSignupLink && <Typography>Don&apos;t have an account? <Link to={signupLink || config.ADMIN_BASE_URL + '/signup'}>Sign
-                                    up</Link></Typography>}
-                            </form>
-                        </Card>
-                    </Col>
-                    <Col xs={1} sm={2} md={4}></Col>
-                </Row>
 
-            </BlankLayout>
-        )
+                            <TextField label={_t('Login.domain')}
+                                       error={!!error}
+                                       disabled={!!loading}
+                                       fullWidth
+                                       autoFocus
+                                       value={domain}
+                                       onChange={this.handleInputChange}
+                                       type="text"
+                                       name="domain"/>
+
+                            <div style={{textAlign: 'right'}}>
+                                <SimpleButton variant="contained" color="primary"
+                                              showProgress={loading}
+                                              type="submit"
+                                              onClick={this.login.bind(this)}>Login</SimpleButton>
+                            </div>
+                            {showSignupLink && <Typography>Don&apos;t have an account? <Link to={signupLink || config.ADMIN_BASE_URL + '/signup'}>Sign
+                                up</Link></Typography>}
+                        </form>
+                    </Card>
+                </Col>
+                <Col xs={1} sm={2} md={4}></Col>
+            </Row>
     }
 }
 

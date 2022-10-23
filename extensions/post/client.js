@@ -18,7 +18,7 @@ export default () => {
 
     // add routes for this extension
     Hook.on('Routes', ({routes}) => {
-        routes.push({exact: true, path: ADMIN_BASE_URL + '/post/:id*', component: PostContainerAsync})
+        routes.push({exact: true, path: ADMIN_BASE_URL + '/post/:id*', layout:'base', component: PostContainerAsync})
     })
 
 }

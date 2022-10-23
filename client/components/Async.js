@@ -4,20 +4,25 @@ import Hook from '../../util/hook.cjs'
 
 class Async extends React.Component {
 
-    static cache = {}
+    static cache = {expose:{}}
 
     componentWillMount = () => {
-        const {load, expose} = this.props
+        const {load, expose, asyncKey} = this.props
 
-        if( expose && Async.cache[expose]){
-            this.Component = Async.cache[expose]
+        if(Async.cache[asyncKey]){
+            this.Component = Async.cache[asyncKey]
+        }else if( expose && Async.cache.expose[expose]){
+            this.Component = Async.cache.expose[expose]
         }else {
             load.then((Component) => {
                 if (expose) {
-                    Async.cache = Component
+                    Async.cache.expose = Component
                     this.Component = Component[expose]
                 } else {
                     this.Component = Component.default
+                    if(asyncKey){
+                        Async.cache[asyncKey] = Component.default
+                    }
                 }
                 this.forceUpdate()
             }).catch(e=>{
@@ -34,7 +39,7 @@ class Async extends React.Component {
     }
 
     render = () => {
-        const { load, expose, onForwardRef, ...rest} = this.props
+        const { load, expose, onForwardRef, asyncKey, ...rest} = this.props
         rest.ref = onForwardRef
         return this.Component ? React.createElement(this.Component, rest) : null
     }

@@ -1,7 +1,5 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import BaseLayout from '../components/layout/BaseLayout'
-import BlankLayout from '../components/layout/BlankLayout'
 import ManageCollectionClones from '../components/types/ManageCollectionClones'
 import {
     FileCopyIcon,
@@ -58,7 +56,6 @@ import {client, Query} from '../middleware/graphql'
 import json2csv from 'util/json2csv'
 import Async from '../components/Async'
 import styled from '@emotion/styled'
-import {setKeyValue} from "../util/keyvalue";
 
 const CodeEditor = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
@@ -221,7 +218,7 @@ class TypesContainer extends React.Component {
             this.state.data !== state.data ||
             this.state.filter !== state.filter ||
             this.state.selectedRows !== state.selectedRows ||
-            this.props.location !== props.location ||
+            this.props.location.href !== props.location.href ||
             this.props.baseFilter !== props.baseFilter ||
             settingsChanged
     }
@@ -335,7 +332,8 @@ class TypesContainer extends React.Component {
 
                                     LANGUAGES.map(lang => {
                                         langVar.push(<StyledTableContentEllipsis key={lang}>
-                                        <Typography mb={0} variant="body2" component="span" color="text.disabled">{lang}:</Typography> <span
+                                            <Typography mb={0} variant="body2" component="span"
+                                                        color="text.disabled">{lang}:</Typography> <span
                                             onBlur={e => this.handleDataChange.bind(this)(e, item, field, lang)}
                                             suppressContentEditableWarning
                                             dangerouslySetInnerHTML={{
@@ -351,11 +349,11 @@ class TypesContainer extends React.Component {
                                     } else {
                                         dynamic[field.name] =
                                             <StyledTableContent
-                                                 onBlur={e => this.handleDataChange.bind(this)(e, item, field)}
-                                                 suppressContentEditableWarning contentEditable
-                                                 dangerouslySetInnerHTML={{
-                                                     __html: fieldValue
-                                                 }}/>
+                                                onBlur={e => this.handleDataChange.bind(this)(e, item, field)}
+                                                suppressContentEditableWarning contentEditable
+                                                dangerouslySetInnerHTML={{
+                                                    __html: fieldValue
+                                                }}/>
                                     }
                                 }
 
@@ -371,7 +369,8 @@ class TypesContainer extends React.Component {
                         dynamic.modifiedAt = (item.modifiedAt ? Util.formattedDatetime(item.modifiedAt) : '')
                     }
                     if (columnsMap['date']) {
-                        dynamic.date = <span><span>{Util.formattedDateFromObjectId(item._id)}</span><br/><small>{item._id}</small></span>
+                        dynamic.date =
+                            <span><span>{Util.formattedDateFromObjectId(item._id)}</span><br/><small>{item._id}</small></span>
                     }
                     if (columnsMap['_action']) {
 
@@ -519,55 +518,55 @@ class TypesContainer extends React.Component {
                                 rowsPerPage={limit} page={page}
                                 orderBy={asort[0]}
                                 header={this.types[type].collectionClonable &&
-                                <Query query={COLLECTIONS_QUERY}
-                                       fetchPolicy="cache-and-network"
-                                       variables={{filter: '^' + type + '_.*'}}>
-                                    {({loading, error, data}) => {
-                                        if (loading) return 'Loading...'
-                                        if (error) return `Error! ${error.message}`
+                                    <Query query={COLLECTIONS_QUERY}
+                                           fetchPolicy="cache-and-network"
+                                           variables={{filter: '^' + type + '_.*'}}>
+                                        {({loading, error, data}) => {
+                                            if (loading) return 'Loading...'
+                                            if (error) return `Error! ${error.message}`
 
-                                        if (!data.collections.results) return null
+                                            if (!data.collections.results) return null
 
-                                        const items = data.collections.results.reduce((a, c) => {
-                                            const value = c.name.substring(c.name.indexOf('_') + 1)
-                                            let date, name = 'no name'
+                                            const items = data.collections.results.reduce((a, c) => {
+                                                const value = c.name.substring(c.name.indexOf('_') + 1)
+                                                let date, name = 'no name'
 
-                                            if (value.indexOf('_') >= 0) {
-                                                date = value.substring(0, value.indexOf('_'))
-                                                name = value.substring(value.indexOf('_') + 1).replace('_', ' ')
-                                            } else {
-                                                date = value
-                                            }
+                                                if (value.indexOf('_') >= 0) {
+                                                    date = value.substring(0, value.indexOf('_'))
+                                                    name = value.substring(value.indexOf('_') + 1).replace('_', ' ')
+                                                } else {
+                                                    date = value
+                                                }
 
-                                            a.push({
-                                                value,
-                                                name: Util.formattedDatetime(date) + (name ? ' - ' + name : '')
-                                            })
-                                            return a
-                                        }, [])
-                                        items.unshift({value: 'default', name: 'Default'})
+                                                a.push({
+                                                    value,
+                                                    name: Util.formattedDatetime(date) + (name ? ' - ' + name : '')
+                                                })
+                                                return a
+                                            }, [])
+                                            items.unshift({value: 'default', name: 'Default'})
 
 
-                                        return <SimpleSelect
-                                            label={_t('TypesContainer.selectVersion')}
-                                            value={_version}
-                                            onChange={(e) => {
-                                                const {type} = this.pageParams
-                                                this.goTo({_version: e.target.value})
-                                                this.setSettingsForType(type, {_version: e.target.value})
-                                            }}
-                                            items={items}
-                                        />
-                                    }}
-                                </Query>
+                                            return <SimpleSelect
+                                                label={_t('TypesContainer.selectVersion')}
+                                                value={_version}
+                                                onChange={(e) => {
+                                                    const {type} = this.pageParams
+                                                    this.goTo({_version: e.target.value})
+                                                    this.setSettingsForType(type, {_version: e.target.value})
+                                                }}
+                                                items={items}
+                                            />
+                                        }}
+                                    </Query>
                                 }
                                 actions={actions}
-                                footer={<div style={{display: 'flex', alignItems: 'center',minHeight:'48px'}}>
+                                footer={<div style={{display: 'flex', alignItems: 'center', minHeight: '48px'}}>
                                     <p style={{marginRight: '2rem'}}>{_t('TypesContainer.selectedRows', {count: selectedLength})}</p>{selectedLength ?
                                     <SimpleSelect
                                         label="Select action"
                                         value=""
-                                        style={{marginBottom:0,marginTop:0}}
+                                        style={{marginBottom: 0, marginTop: 0}}
                                         onChange={this.handleBatchAction.bind(this)}
                                         items={[{name: 'Delete', value: 'delete'}, {name: 'Bulk edit', value: 'edit'}]}
                                     /> : ''}
@@ -585,19 +584,32 @@ class TypesContainer extends React.Component {
 
     render() {
         const startTime = new Date()
-        const {simpleDialog, dataToEdit, createEditDialog, viewSettingDialog, viewFilterDialog, confirmCloneColDialog, manageColDialog, dataToDelete, dataToBulkEdit, confirmDeletionDialog} = this.state
+        const {
+            simpleDialog,
+            dataToEdit,
+            createEditDialog,
+            viewSettingDialog,
+            viewFilterDialog,
+            confirmCloneColDialog,
+            manageColDialog,
+            dataToDelete,
+            dataToBulkEdit,
+            confirmDeletionDialog
+        } = this.state
         const {title} = this.props
-        const {type, fixType, noLayout} = this.pageParams
+        const {type, fixType} = this.pageParams
         const columns = this.getTableColumns(type)
 
         if (!this.types[type]) {
-            return <BaseLayout><Typography variant="subtitle1" color="error">Type {type} does not
-                exist.
-                Types can be specified in an extension. Please select another type.</Typography><SimpleSelect
-                value={type}
-                onChange={this.handleTypeChange}
-                items={this.typesToSelect}
-            /></BaseLayout>
+            return <>
+                <Typography variant="subtitle1" color="error">Type {type} does not
+                    exist.
+                    Types can be specified in an extension. Please select another type.</Typography>
+                <SimpleSelect
+                    value={type}
+                    onChange={this.handleTypeChange}
+                    items={this.typesToSelect}/>
+            </>
         }
 
 
@@ -634,7 +646,7 @@ class TypesContainer extends React.Component {
             }
 
             filterFields._idFrom = dateField
-            filterFields._idTo = Object.assign({},dateField,{label: 'Erstellungszeit bis', name: '_idTo'})
+            filterFields._idTo = Object.assign({}, dateField, {label: 'Erstellungszeit bis', name: '_idTo'})
 
 
             Hook.call('TypesContainerBeforeFilterDialog', {type, filterFields}, this)
@@ -651,7 +663,7 @@ class TypesContainer extends React.Component {
 
                     this.setState({viewFilterDialog: false}, () => {
                         const filter = this.prettyFilterToStringFilter(prettyFilter)
-                        this.goTo({page: 1, prettyFilter: filter?JSON.stringify(prettyFilter):''})
+                        this.goTo({page: 1, prettyFilter: filter ? JSON.stringify(prettyFilter) : ''})
                     })
 
                 },
@@ -684,14 +696,14 @@ class TypesContainer extends React.Component {
                     <Typography variant="subtitle1" component="h2" gutterBottom>Available columns</Typography>
 
                     {columns &&
-                    columns.map(c => {
-                        return <div key={c.id}><SimpleSwitch disabled={!!this.props.settings}
-                                                             label={c.label || c.title} name={c.id}
-                                                             onChange={(e) => {
-                                                                 this.handleViewSettingChange.bind(this)(e, type)
-                                                             }}
-                                                             checked={this.isColumnActive(type, c.id)}/></div>
-                    })
+                        columns.map(c => {
+                            return <div key={c.id}><SimpleSwitch disabled={!!this.props.settings}
+                                                                 label={c.label || c.title} name={c.id}
+                                                                 onChange={(e) => {
+                                                                     this.handleViewSettingChange.bind(this)(e, type)
+                                                                 }}
+                                                                 checked={this.isColumnActive(type, c.id)}/></div>
+                        })
                     }
                 </div>
             }
@@ -731,7 +743,7 @@ class TypesContainer extends React.Component {
 
         const typeSettings = this.getSettingsForType(type, this.pageParams.meta)
         let savedQueries = typeSettings.savedQueries
-        if(!savedQueries){
+        if (!savedQueries) {
             savedQueries = []
         }
 
@@ -744,19 +756,19 @@ class TypesContainer extends React.Component {
             <div key="typeHeader">
                 <Row spacing={2}>
                     {!fixType &&
-                    <Col md={6}>
-                        <SimpleSelect
-                            value={type}
-                            onChange={this.handleTypeChange}
-                            items={this.typesToSelect}
-                        />
-                    </Col>
+                        <Col md={6}>
+                            <SimpleSelect
+                                value={type}
+                                onChange={this.handleTypeChange}
+                                items={this.typesToSelect}
+                            />
+                        </Col>
                     }
                     <Col xs={12} md={(fixType ? 12 : 6)} align="right">
 
                         <Paper elevation={1}
                                component="form"
-                               sx={{ p: '2px 4px', display: 'flex', alignItems: 'center'}}>
+                               sx={{p: '2px 4px', display: 'flex', alignItems: 'center'}}>
                             <InputBase
                                 value={this.state.filter}
                                 onChange={(e) => {
@@ -766,49 +778,50 @@ class TypesContainer extends React.Component {
                                 onKeyDown={(e) => {
                                     this.handelFilterKeyDown(e, e.target.value)
                                 }}
-                                sx={{ ml: 1, flex: 1 }}
+                                sx={{ml: 1, flex: 1}}
                                 placeholder={_t('TypesContainer.filter')}
                             />
-                            {(this.state.filter || savedQueries.length>0) && <SimpleMenu key="menu" mini icon={<ExpandMoreIcon />} items={[
-                                (this.state.filter ? {
-                                    name: _t('TypesContainer.saveQuery'),
-                                    onClick: ()=>{
-                                        savedQueries.push({query:this.state.filter})
-                                        this.setSettingsForType(type, {savedQueries})
-                                    },
-                                    icon: <SaveIcon/>
-                                }:null),
-                                ...(savedQueries.map(f=>{
-                                    return {
-                                        name: f.query,
-                                        actions:22,
+                            {(this.state.filter || savedQueries.length > 0) &&
+                                <SimpleMenu key="menu" mini icon={<ExpandMoreIcon/>} items={[
+                                    (this.state.filter ? {
+                                        name: _t('TypesContainer.saveQuery'),
                                         onClick: () => {
-                                            this.setState({filter: f.query})
-                                            this.runFilter(f.query)
+                                            savedQueries.push({query: this.state.filter})
+                                            this.setSettingsForType(type, {savedQueries})
+                                        },
+                                        icon: <SaveIcon/>
+                                    } : null),
+                                    ...(savedQueries.map(f => {
+                                        return {
+                                            name: f.query,
+                                            actions: 22,
+                                            onClick: () => {
+                                                this.setState({filter: f.query})
+                                                this.runFilter(f.query)
+                                            }
                                         }
-                                    }
-                                }))
-                            ]}/>
+                                    }))
+                                ]}/>
                             }
                             <IconButton onClick={() => {
                                 this.setState({filter: ''})
                                 this.handleFilter({value: ''}, true)
-                            }} sx={{ p: '10px' }}>
+                            }} sx={{p: '10px'}}>
                                 <DeleteIcon/>
                             </IconButton>
-                            <Divider sx={{ height: 28, m: 0.5 }} orientation="vertical"/>
+                            <Divider sx={{height: 28, m: 0.5}} orientation="vertical"/>
                             <IconButton color="primary"
                                         onClick={() => {
                                             this.setState({viewFilterDialog: true})
                                         }}
-                                        sx={{ p: '10px' }}>
+                                        sx={{p: '10px'}}>
                                 <FilterListIcon/>
                             </IconButton>
                         </Paper>
                     </Col>
                 </Row>
                 {
-                    prettyFilter && <div style={{margin:'1rem 0'}}>
+                    prettyFilter && <div style={{margin: '1rem 0'}}>
                         <Typography variant="caption">Filter: </Typography>
                         <Chip
                             label={this.prettyFilterLabel(prettyFilter)}
@@ -940,10 +953,7 @@ class TypesContainer extends React.Component {
 
         console.info(`render ${this.constructor.name} in ${new Date() - startTime}ms`)
 
-        if (noLayout) {
-            return <BlankLayout key="baseLayout">{content}</BlankLayout>
-        }
-        return <BaseLayout key="baseLayout">{content}</BaseLayout>
+        return content
     }
 
     searchHint() {
@@ -1113,11 +1123,23 @@ class TypesContainer extends React.Component {
 
     determinePageParams(props) {
         const {params} = props.match || {}
-        const {p, l, s, f, v, noLayout, fixType, title, baseFilter, prettyFilter, multi, meta, action} = Util.extractQueryParams(window.location.search.substring(1))
+        const {
+            p,
+            l,
+            s,
+            f,
+            v,
+            fixType,
+            title,
+            baseFilter,
+            prettyFilter,
+            multi,
+            meta,
+            action
+        } = Util.extractQueryParams(window.location.search.substring(1))
         const pInt = parseInt(p), lInt = parseInt(l)
 
         const finalFixType = fixType || props.fixType,
-            finalNoLayout = noLayout === 'true' ? true : noLayout === 'false' ? false : props.noLayout,
             finalBaseFilter = baseFilter || props.baseFilter
 
         let type
@@ -1142,7 +1164,6 @@ class TypesContainer extends React.Component {
             meta,
             action,
             fixType: finalFixType,
-            noLayout: finalNoLayout,
             limit: lInt || typeSettings.limit || DEFAULT_RESULT_LIMIT,
             page: pInt || typeSettings.page || 1,
             sort: s || typeSettings.sort || '',
@@ -1194,14 +1215,11 @@ class TypesContainer extends React.Component {
                         })
                         if (storeData && storeData[storeKey]) {
                             // oh data are available in cache. show them first
-                            //setTimeout(() => {
-                                const newState = {data: storeData[storeKey]}
-
-                                if (typeChanged) {
-                                    newState.filter = filter
-                                }
-                                this.setState(newState)
-                           // }, 0)
+                            const newState = {data: Object.assign({}, storeData[storeKey])}
+                            if (typeChanged) {
+                                newState.filter = filter
+                            }
+                            this.setState(newState)
                         }
                     } catch (e) {
                     }
@@ -1251,11 +1269,11 @@ class TypesContainer extends React.Component {
                 },
                 update: (store, {data, error}) => {
 
-                    if(error){
+                    if (error) {
                         return
                     }
 
-                    if(!optimisticInput.createdBy){
+                    if (!optimisticInput.createdBy) {
                         //
                         delete optimisticInput.createdBy
                     }
@@ -1394,7 +1412,7 @@ class TypesContainer extends React.Component {
                             data: {...storeData, [storeKey]: newData}
                         })
 
-                        if(newData && newData.results && newData.results.length === 0){
+                        if (newData && newData.results && newData.results.length === 0) {
                             this.getData(this.pageParams, false)
                         }
                         this.setState({data: newData})
@@ -1496,9 +1514,22 @@ class TypesContainer extends React.Component {
 
     goTo(args) {
         const {baseUrl} = this.props
-        const {type, page, limit, sort, filter, fixType, _version, multi, baseFilter, noLayout, title, meta, prettyFilter} = Object.assign({}, this.pageParams, args)
+        const {
+            type,
+            page,
+            limit,
+            sort,
+            filter,
+            fixType,
+            _version,
+            multi,
+            baseFilter,
+            title,
+            meta,
+            prettyFilter
+        } = Object.assign({}, this.pageParams, args)
 
-        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL + '/types' + (type ? '/' + type : '')}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${fixType ? '&fixType=' + fixType : ''}${noLayout ? '&noLayout=' + noLayout : ''}${title ? '&title=' + encodeURIComponent(title) : ''}${meta ? '&meta=' + meta : ''}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}${prettyFilter ? '&prettyFilter=' + encodeURIComponent(prettyFilter) : ''}`)
+        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL + '/' + (location.pathname.indexOf('/typesblank/') >= 0 ? 'typesblank' : 'types') + (type ? '/' + type : '')}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${fixType ? '&fixType=' + fixType : ''}${title ? '&title=' + encodeURIComponent(title) : ''}${meta ? '&meta=' + meta : ''}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}${prettyFilter ? '&prettyFilter=' + encodeURIComponent(prettyFilter) : ''}`)
     }
 
     getPrettyFilter() {
@@ -1520,14 +1551,14 @@ class TypesContainer extends React.Component {
             if (!fieldKey.startsWith('__operator.data.')) {
                 const value = prettyFilter[fieldKey]
                 if (value) {
-                    if(fieldKey==='_idFrom' || fieldKey==='_idTo'){
+                    if (fieldKey === '_idFrom' || fieldKey === '_idTo') {
 
                         if (newFilter) {
                             newFilter += ' && '
                         }
-                        newFilter += `_id${fieldKey==='_idTo'?'<=':'>='}${Math.floor(value / 1000).toString(16) + '0000000000000000'}`
+                        newFilter += `_id${fieldKey === '_idTo' ? '<=' : '>='}${Math.floor(value / 1000).toString(16) + '0000000000000000'}`
 
-                    }else if (value.constructor === Array) {
+                    } else if (value.constructor === Array) {
                         if (value.length > 0) {
 
                             let ids = []
@@ -1539,10 +1570,10 @@ class TypesContainer extends React.Component {
                             }
                             newFilter += `${fieldKey}==[${ids.join(',')}]`
                         }
-                    }else if (value.constructor === Object) {
+                    } else if (value.constructor === Object) {
 
                         const operator = prettyFilter['__operator.' + fieldKey] || '='
-                        Object.keys(value).forEach(key=>{
+                        Object.keys(value).forEach(key => {
 
                             if (newFilter) {
                                 newFilter += ' && '
@@ -1572,11 +1603,11 @@ class TypesContainer extends React.Component {
 
         Hook.call('TypesContainerBeforeFilterLabel', {type: this.pageParams.type, payload}, this)
 
-        const getValues = (data) =>{
+        const getValues = (data) => {
             let str = ''
             const keys = Object.keys(data)
-            for(let i = 0; i<Math.min(keys.length,3);i++){
-                if(str){
+            for (let i = 0; i < Math.min(keys.length, 3); i++) {
+                if (str) {
                     str += ' '
                 }
                 str += data[keys[i]]
@@ -1591,12 +1622,12 @@ class TypesContainer extends React.Component {
                     if (newFilter.length > 0) {
                         newFilter.push(<span> und </span>)
                     }
-                    if(fieldKey==='_idFrom' || fieldKey==='_idTo'){
+                    if (fieldKey === '_idFrom' || fieldKey === '_idTo') {
 
-                        newFilter.push(<span>Erstellungszeit{fieldKey==='_idTo'?'<=':'>='}</span>)
+                        newFilter.push(<span>Erstellungszeit{fieldKey === '_idTo' ? '<=' : '>='}</span>)
 
                         newFilter.push(<strong>{Util.formatDate(value)}</strong>)
-                    }else {
+                    } else {
                         const operator = payload.prettyFilter['__operator.' + fieldKey] || '='
 
                         newFilter.push(<span>{fieldKey}{operator}</span>)
@@ -1665,7 +1696,7 @@ class TypesContainer extends React.Component {
         const v = event.target.value
         if (v !== this.pageParams.type) {
             this.settings.lastType = v
-            this.props.history.push(`${ADMIN_BASE_URL}/types/${v}`)
+            this.props.history.push(`${ADMIN_BASE_URL}/${location.pathname.indexOf('/typesblank/') >= 0 ? 'typesblank' : 'types'}/${v}`)
         }
     }
 
@@ -1819,7 +1850,6 @@ TypesContainer.propTypes = {
     location: PropTypes.object.isRequired,
     match: PropTypes.object.isRequired,
     fixType: PropTypes.string,
-    noLayout: PropTypes.bool,
     baseUrl: PropTypes.string,
     baseFilter: PropTypes.string,
     settings: PropTypes.object,

@@ -10,7 +10,7 @@ export default () => {
 
     // add routes for this extension
     Hook.on('Routes', ({routes}) => {
-        routes.push({exact: true, path: CHAT_BASE_URL + '/:id*', component: ChatContainer})
+        routes.push({exact: true, path: CHAT_BASE_URL + '/:id*', layout:'base', component: ChatContainer})
     })
 
     // add entry to main menu

@@ -1,5 +1,4 @@
 import React from 'react'
-import BaseLayout from 'client/components/layout/BaseLayout'
 import TypesContainer from 'client/containers/TypesContainer'
 import PropTypes from 'prop-types'
 import {
@@ -54,8 +53,7 @@ class WordContainer extends React.Component {
         wordCategorys && wordCategorys.results.forEach(e => {
             categoryPair.push({value: e._id, name: e.name})
         })
-        const content = (
-            <BaseLayout>
+        const content = <>
                 <Typography variant="h3" component="h1" gutterBottom>Words</Typography>
 
 
@@ -86,13 +84,11 @@ class WordContainer extends React.Component {
                 <TypesContainer onRef={ref => (this.typeContainer = ref)}
                                 baseUrl={location.pathname}
                                 title={false}
-                                noLayout={true}
                                 fixType={ TYPE }
                                 settings={this.settings}
                                 baseFilter={currentCategory && currentCategory !== 'all' ? 'categories:' + currentCategory : ''}
                                 history={history} location={location} match={match}/>
-            </BaseLayout>
-        )
+            </>
 
 
         console.info(`render ${this.constructor.name} in ${(new Date()).getTime() - startTime}ms`)

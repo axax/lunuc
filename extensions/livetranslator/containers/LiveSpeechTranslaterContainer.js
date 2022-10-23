@@ -4,7 +4,6 @@ import {withApollo, graphql} from '@apollo/react-hoc'
 import { ApolloClient } from '@apollo/client'
 import compose from 'util/compose'
 import {gql} from '@apollo/client'
-import BaseLayout from 'client/components/layout/BaseLayout'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {
     Button,
@@ -248,10 +247,10 @@ class LiveSpeechTranslaterContainer extends React.Component {
     render() {
         const {speechLanguages, translateLanguages} = this.props
         if (!speechLanguages && !translateLanguages) {
-            return <BaseLayout><h1>No languages available</h1></BaseLayout>
+            return <h1>No languages available</h1>
         }
 
-        return <BaseLayout>
+        return <>
             <Typography variant="h3" component="h1" gutterBottom>Translate {this.state.speaking && <VolumeUpIcon />}</Typography>
 
 
@@ -324,7 +323,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
                     </Card>
                 )
             }
-        </BaseLayout>
+        </>
     }
 }
 

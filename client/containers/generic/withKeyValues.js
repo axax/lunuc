@@ -178,7 +178,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
 
                             // Read the data from our cache for this query.
                             const storeData = proxy.readQuery({query: QUERY_KEY_VALUES, variables}),
-                                storeKeyValue = Object.assign({}, storeData.keyValues)
+                                storeKeyValue = Object.assign({}, storeData ? storeData.keyValues: null)
 
                             if (!storeKeyValue.results) {
                                 storeKeyValue.results = []
@@ -271,7 +271,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
 
                             // Read the data from our cache for this query.
                             const storeData = proxy.readQuery({query: QUERY_KEY_VALUES, variables}),
-                            storeKeyValue = Object.assign({}, storeData.keyValues)
+                            storeKeyValue = Object.assign({}, storeData ? storeData.keyValues : null)
 
                             if (storeKeyValue.results) {
                                 storeKeyValue.results = [...storeKeyValue.results]

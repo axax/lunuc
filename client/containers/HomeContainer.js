@@ -1,6 +1,5 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import BaseLayout from 'client/components/layout/BaseLayout'
 import {Typography, Card, Divider, Row, Col} from 'ui/admin'
 import Hook from '../../util/hook.cjs'
 
@@ -31,7 +30,7 @@ class HomeContainer extends React.Component {
         }
         Hook.call('HomeContainerRender', {content, ...this.props})
 
-        return <BaseLayout key="baseLayout">{content}</BaseLayout>
+        return content
     }
 }
 

@@ -36,8 +36,7 @@ const addAdminComponents = (components) => {
     components['AdminSwitch'] = Switch
     components['AdminSimpleMenu'] = SimpleMenu
     components['DrawerLayout'] = ResponsiveDrawerLayout
-    components['TypesContainer'] = (props) => <TypesContainer noLayout={true} title={false}
-                                                              baseUrl={location.pathname} {...props}/>
+    components['TypesContainer'] = (props) => <TypesContainer title={false} baseUrl={location.pathname} {...props}/>
 
 }
 

@@ -1,6 +1,5 @@
 import React from 'react'
 import extensions from 'gen/extensions.mjs'
-import BaseLayout from '../components/layout/BaseLayout'
 import {Typography, ExpansionPanel, Button, SimpleSwitch, ContentBlock} from 'ui/admin'
 import Hook from 'util/hook.cjs'
 import {client} from '../middleware/graphql'
@@ -53,7 +52,7 @@ class SystemContainer extends React.Component {
     render() {
         const {extensionStates} = this.state
 
-        return <BaseLayout key="baseLayout">
+        return <>
             <div key="systemHead">
                 <Typography variant="h3" component="h1" gutterBottom>System</Typography>
                 <Typography variant="h4" component="h2" gutterBottom>Extensions</Typography>
@@ -104,7 +103,7 @@ class SystemContainer extends React.Component {
                 client.resetStore()
             }} variant="contained">Clear API cache</Button>
 
-        </BaseLayout>
+        </>
     }
 }
 

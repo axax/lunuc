@@ -13,7 +13,7 @@ export default () => {
 
     // add routes for this extension
     Hook.on('Routes', ({routes}) => {
-        routes.push({exact: true, path: ADMIN_BASE_URL + '/search', component: SearchWhileSpeechContainer})
+        routes.push({exact: true, path: ADMIN_BASE_URL + '/search', layout:'base', component: SearchWhileSpeechContainer})
     })
 
 

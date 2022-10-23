@@ -1,5 +1,4 @@
 import React from 'react'
-import BaseLayout from 'client/components/layout/BaseLayout'
 import {
     Typography,
     TextField,
@@ -196,11 +195,10 @@ class FilesContainer extends React.Component {
             // without layout
             return content
         } else {
-            return <BaseLayout key="baseLayout">
+            return <>
                 <Typography variant="h3" gutterBottom>Files</Typography>
-
                 {content}
-            </BaseLayout>
+            </>
         }
 
     }

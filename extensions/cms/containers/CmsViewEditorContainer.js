@@ -1,4 +1,5 @@
 import React from 'react'
+import 'gen/extensions-client-admin'
 import {
     getSlugVersion,
     getGqlVariables,

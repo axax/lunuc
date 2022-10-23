@@ -12,6 +12,7 @@ Hook.on('Routes', ({routes, container}) => {
         private: true,
         exact: true,
         path: ADMIN_BASE_URL + '/medias/:page*',
+        layout:'base',
         component: (p) => {
             return <TypesContainer baseUrl={ADMIN_BASE_URL + "/medias/"} fixType="Media"
                                    title="Media" {...p} />

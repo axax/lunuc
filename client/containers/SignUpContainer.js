@@ -1,7 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import config from 'gen/config-client'
-import BlankLayout from 'client/components/layout/BlankLayout'
 import {Link} from 'client/util/route'
 import {Card, SimpleButton, TextField, Row, Col, Typography} from 'ui/admin'
 import {client} from '../middleware/graphql'
@@ -89,73 +88,69 @@ class SignUpContainer extends React.Component {
 
         const {signupFinished, email, username, password, loading, usernameError, passwordError, emailError} = this.state
 
-        return (
-            <BlankLayout style={{marginTop: '5rem'}}>
-                <Row>
-                    <Col xs={1} sm={2} md={4}></Col>
-                    <Col xs={10} sm={8} md={4}>
-                        <Card>
-                            <Typography variant="h3" gutterBottom>Sign up</Typography>
+        return <Row style={{marginTop: '5rem'}}>
+                <Col xs={1} sm={2} md={4}></Col>
+                <Col xs={10} sm={8} md={4}>
+                    <Card>
+                        <Typography variant="h3" gutterBottom>Sign up</Typography>
 
-                            {signupFinished ?
-                                <Typography gutterBottom>Thanks for your registration! <Link
-                                    to={config.ADMIN_BASE_URL + '/login'}>Login</Link></Typography> :
-                                <form>
+                        {signupFinished ?
+                            <Typography gutterBottom>Thanks for your registration! <Link
+                                to={config.ADMIN_BASE_URL + '/login'}>Login</Link></Typography> :
+                            <form>
 
-                                    <TextField label="Username"
-                                               error={!!usernameError}
-                                               helperText={usernameError}
-                                               disabled={!!loading}
-                                               autoComplete="username"
-                                               fullWidth
-                                               autoFocus
-                                               value={username}
-                                               onChange={this.handleInputChange}
-                                               type="text"
-                                               placeholder="Enter username"
-                                               name="username" required/>
+                                <TextField label="Username"
+                                           error={!!usernameError}
+                                           helperText={usernameError}
+                                           disabled={!!loading}
+                                           autoComplete="username"
+                                           fullWidth
+                                           autoFocus
+                                           value={username}
+                                           onChange={this.handleInputChange}
+                                           type="text"
+                                           placeholder="Enter username"
+                                           name="username" required/>
 
-                                    <TextField label="Email"
-                                               error={!!emailError}
-                                               helperText={emailError}
-                                               disabled={!!loading}
-                                               autoComplete="email"
-                                               fullWidth
-                                               value={email}
-                                               onChange={this.handleInputChange}
-                                               type="text"
-                                               placeholder="Enter email"
-                                               name="email" required/>
+                                <TextField label="Email"
+                                           error={!!emailError}
+                                           helperText={emailError}
+                                           disabled={!!loading}
+                                           autoComplete="email"
+                                           fullWidth
+                                           value={email}
+                                           onChange={this.handleInputChange}
+                                           type="text"
+                                           placeholder="Enter email"
+                                           name="email" required/>
 
 
-                                    <TextField label="Password"
-                                               error={!!passwordError}
-                                               helperText={passwordError}
-                                               disabled={!!loading}
-                                               fullWidth
-                                               autoComplete="new-password"
-                                               value={password}
-                                               onChange={this.handleInputChange}
-                                               type="password"
-                                               placeholder="Enter Password"
-                                               name="password" required/>
+                                <TextField label="Password"
+                                           error={!!passwordError}
+                                           helperText={passwordError}
+                                           disabled={!!loading}
+                                           fullWidth
+                                           autoComplete="new-password"
+                                           value={password}
+                                           onChange={this.handleInputChange}
+                                           type="password"
+                                           placeholder="Enter Password"
+                                           name="password" required/>
 
-                                    <div style={{textAlign: 'right'}}>
-                                        <SimpleButton variant="contained" color="primary"
-                                                      showProgress={loading} onClick={this.signup.bind(this)}>Sign
-                                            up</SimpleButton>
-                                    </div>
-                                    <Typography gutterBottom> Already have an account? <Link
-                                        to={config.ADMIN_BASE_URL + '/login'}>Login</Link></Typography>
+                                <div style={{textAlign: 'right'}}>
+                                    <SimpleButton variant="contained" color="primary"
+                                                  showProgress={loading} onClick={this.signup.bind(this)}>Sign
+                                        up</SimpleButton>
+                                </div>
+                                <Typography gutterBottom> Already have an account? <Link
+                                    to={config.ADMIN_BASE_URL + '/login'}>Login</Link></Typography>
 
-                                </form>
-                            }
-                        </Card>
-                    </Col>
-                    <Col xs={1} sm={2} md={4}></Col>
-                </Row>
-            </BlankLayout>
-        )
+                            </form>
+                        }
+                    </Card>
+                </Col>
+                <Col xs={1} sm={2} md={4}></Col>
+            </Row>
     }
 }
 
