@@ -185,7 +185,7 @@ const BaseLayout = props => {
         setOpenMenuEditor(true)
     }
 
-    let newSettings, menuEditor
+    let menuEditor
     const handleCloseMenuEditor = (p) => {
         if (p.key === 'save') {
             if (menuEditor) {

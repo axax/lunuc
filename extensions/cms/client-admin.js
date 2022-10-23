@@ -19,8 +19,10 @@ import TypesContainer from 'client/containers/TypesContainer'
 import GenericForm from 'client/components/GenericForm'
 import JsonDom from './components/JsonDom'
 import {AppContext} from 'client/components/AppContext'
+import {translations as adminTranslations} from 'client/translations/admin'
 
 registerTrs(translations, 'CmsViewEditorContainer')
+registerTrs(adminTranslations, 'AdminTranslations')
 
 
 const cmsPageEditorUrl = (slug, _version) => {
