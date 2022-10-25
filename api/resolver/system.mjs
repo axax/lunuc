@@ -285,9 +285,10 @@ export const systemResolver = (db) => ({
             const startTimeAggregate = new Date()
             const explanation = await db.collection(collection).aggregate(jsonParsed, {allowDiskUse: true}).explain()
             let results = await (db.collection(collection).aggregate(jsonParsed, {allowDiskUse: true}).toArray())
-            console.log(`Aggregate time = ${new Date() - startTimeAggregate}ms`)
+            const aggregateTime = new Date() - startTimeAggregate
+            console.log(`Aggregate time = ${aggregateTime}ms`)
 
-            return {result: JSON.stringify({data: results[0], explanation})}
+            return {result: JSON.stringify({aggregateTime, data: results[0], explanation})}
         },
         importCollection: async ({collection, json}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)

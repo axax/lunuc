@@ -398,7 +398,9 @@ export const client = {
                     },
                     writeQuery: ({query, variables, data, cacheKey}) => {
                         const existingData = proxy.readQuery({query, variables, cacheKey})
-                        delete existingData.__optimistic
+                        if(existingData) {
+                            delete existingData.__optimistic
+                        }
 
                         data = {...existingData, __optimistic: data}
                         client.writeQuery({cacheKey, query, variables, data})

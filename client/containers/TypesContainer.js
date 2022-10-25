@@ -1215,11 +1215,13 @@ class TypesContainer extends React.Component {
                         })
                         if (storeData && storeData[storeKey]) {
                             // oh data are available in cache. show them first
-                            const newState = {data: Object.assign({}, storeData[storeKey])}
-                            if (typeChanged) {
-                                newState.filter = filter
-                            }
-                            this.setState(newState)
+                            setTimeout(()=>{
+                                const newState = {data: Object.assign({}, storeData[storeKey])}
+                                if (typeChanged) {
+                                    newState.filter = filter
+                                }
+                                this.setState(newState)
+                            },0)
                         }
                     } catch (e) {
                     }
