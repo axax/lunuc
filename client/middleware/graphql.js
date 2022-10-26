@@ -318,7 +318,9 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
     return promise
 }
 
-let CACHE_QUERIES = {}, CACHE_ITEMS = {}, QUERY_WATCHER = {}, SUB_CACHE = {}
+let CACHE_QUERIES = {}, CACHE_ITEMS = {}, QUERY_WATCHER = {}
+
+//_app_.CACHE_QUERIES = CACHE_QUERIES
 
 export const client = {
     query: ({query, variables, fetchPolicy}) => {
@@ -341,7 +343,6 @@ export const client = {
             cacheKey = getCacheKey({query, variables})
         }
         CACHE_QUERIES[cacheKey] = data
-        window.CACHE_QUERIES = CACHE_QUERIES
         const update = QUERY_WATCHER[cacheKey]
         if (update) {
             if (data.__optimistic) {
@@ -626,9 +627,10 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
         return initialData
     }
 
-    if (response.cacheKey && initialData.cacheKey !== response.cacheKey) {
-        response.loading = true
-    }
+    //if (response.cacheKey && initialData.cacheKey !== response.cacheKey) {
+        //console.log('xxxxxx',response.loading , response.cacheKey)
+       // response.loading = true
+    //}
 
     return response
 }

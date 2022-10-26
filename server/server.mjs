@@ -24,7 +24,7 @@ import {decodeToken} from '../api/util/jwt.mjs'
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg'
 import ffprobeInstaller from '@ffprobe-installer/ffprobe'
 import ffmpeg from 'fluent-ffmpeg'
-import heapdump from 'heapdump'
+//import heapdump from 'heapdump'
 import {clientAddress} from '../util/host.mjs'
 
 
@@ -727,6 +727,9 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, filename}) {
     }
     if (options.hvc1) {
         outputOptions.push('-tag:v hvc1')
+    }
+    if (options.custom) {
+        outputOptions.push(...options.custom)
     }
 
     let video = ffmpeg(filename)

@@ -1338,8 +1338,9 @@ class JsonDom extends React.Component {
             return
         }
         if (!scope.params.page) {
-            scope.params.page = 1
+            scope.params.page = !isNaN(scope.data.page)?scope.data.page:1
         }
+
         scope.params.page = parseInt(scope.params.page) + 1
 
         scope.fetchingMore = true
@@ -1366,8 +1367,7 @@ class JsonDom extends React.Component {
                         delete newData[key]
                     })
                 }
-
-                this.resolvedDataJson = deepMergeOptional({concatArrays: true}, this.resolvedDataJson, newData)
+                this.resolvedDataJson = deepMergeOptional({concatArrays: true, concatKeyProperty:'_id'}, this.resolvedDataJson, newData)
 
                 scope.fetchingMore = false
 
@@ -1375,6 +1375,7 @@ class JsonDom extends React.Component {
                     if(options.parseTemplate){
                         this.json = null
                     }
+                    this.props.updateResolvedData({json: this.resolvedDataJson})
                     this.forceUpdate()
                 }
             }

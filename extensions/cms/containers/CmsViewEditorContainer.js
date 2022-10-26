@@ -1498,7 +1498,6 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     findAndUpdateResolvedData(jsonDom, resolverKey, type, optimisticData, dataToEdit) {
-        const {cmsPage, updateResolvedData} = this.props
         const resolvedDataJson = JSON.parse(jsonDom.props.resolvedData),
             resolver = resolvedDataJson[resolverKey]
         if (resolver) {
