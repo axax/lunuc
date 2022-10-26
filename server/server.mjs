@@ -1315,19 +1315,24 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                         staticFile = path.join(hostrule._basedir, hostrule.fileMapping[urlPathname])
                         console.log('mapped file: ' + staticFile)
                     } else if (urlPathname.length > 1 && fs.existsSync(STATIC_TEMPLATE_DIR + urlPathname)) {
-
+                        console.log(`load ${urlPathname} from template dir`)
                         fs.readFile(STATIC_TEMPLATE_DIR + urlPathname, 'utf8', function (err, data) {
                             const ext = path.extname(urlPathname).split('.')[1]
                             const mimeType = MimeType.detectByExtension(ext)
 
                             const headerExtra = {
-                                'Cache-Control': 'public, max-age=31536000',
+                                'Cache-Control': 'public, max-age=604800',
                                 'Content-Type': mimeType,
                                 'Last-Modified': new Date().toUTCString(),
                                 ...hostrule.headers[urlPathname]
                             }
-                            res.writeHead(200, {'Content-Type': 'text/plain'})
-                            res.write(replacePlaceholders(data, {parsedUrl, host, config}))
+                            res.writeHead(200, headerExtra)
+                            res.write(replacePlaceholders(data, {
+                                headers: req.headers,
+                                parsedUrl,
+                                host,
+                                config,
+                                pathname:urlPathname}))
                             res.end()
                         })
 
