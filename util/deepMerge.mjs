@@ -4,7 +4,7 @@ A function for deep (recursive) merging of objects and arrays
 const isObject = obj => obj && obj.constructor === Object
 
 const _deepMerge = (options, ...objects) => {
-    const {concatArrays, concatKeyProperty, mergeArray, arrayCutToLast} = options
+    const {concatArrays, mergeArray, arrayCutToLast} = options
 
     return objects.reduce((prev, obj) => {
         if (obj) {
@@ -26,7 +26,7 @@ const _deepMerge = (options, ...objects) => {
                         if (mergeArray) {
                             prev[key] = _deepMerge(options, pVal, oVal)
                         } else if (concatArrays) {
-                            if(concatKeyProperty){
+                            /*if(concatKeyProperty){
                                 // remove same key
                                 oVal.forEach(v1=>{
                                     const id = v1[concatKeyProperty]
@@ -37,7 +37,7 @@ const _deepMerge = (options, ...objects) => {
                                         }
                                     }
                                 })
-                            }
+                            }*/
                             prev[key] = pVal.concat(...oVal)
                         } else {
                             prev[key] = oVal

@@ -1367,7 +1367,7 @@ class JsonDom extends React.Component {
                         delete newData[key]
                     })
                 }
-                this.resolvedDataJson = deepMergeOptional({concatArrays: true, concatKeyProperty:'_id'}, this.resolvedDataJson, newData)
+                this.resolvedDataJson = deepMergeOptional({concatArrays: true}, this.resolvedDataJson, newData)
 
                 scope.fetchingMore = false
 
