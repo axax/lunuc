@@ -37,7 +37,7 @@ class CmsViewContainer extends React.Component {
             false
         }
 
-        if (!cmsPage && (props.loading || props.aboutToChange)) {
+        if (!cmsPage && props.loading) {
             // if there is still no cmsPage and it is still loading
             // there is no need to update
             return false
@@ -50,7 +50,7 @@ class CmsViewContainer extends React.Component {
             cmsPage.modifiedAt !== cmsPageOld.modifiedAt ||
             cmsPage.resolvedData !== cmsPageOld.resolvedData ||
             (
-                cmsPage.urlSensitiv && (
+                cmsPage.urlSensitiv && /*cmsPage.urlSensitiv!=='false' &&*/ (
                     props.location.search !== this.props.location.search ||
                     props.location.hash !== this.props.location.hash)
             ) ||
@@ -141,7 +141,7 @@ class CmsViewContainer extends React.Component {
             _props={_props}
             {...props}>{children}</JsonDom>
 
-        console.info(`render ${this.constructor.name} for ${slug} ${this.props.id}  (loading=${this.props.loading}, change=${!!aboutToChange}) in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime() - _app_.start.getTime()}ms`)
+        console.info(`render ${this.constructor.name} for ${slug} (loading=${this.props.loading}, change=${!!aboutToChange}) in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime() - _app_.start.getTime()}ms`)
         return content
     }
 

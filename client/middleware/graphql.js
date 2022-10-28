@@ -581,18 +581,18 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
 
         let controller
 
-        if (initialLoading) {
-            const newResponse = {fetchMore: response.fetchMore, cacheKey}
-            newResponse.loading = response.networkStatus !== NetworkStatus.error
+        const newResponse = {fetchMore: response.fetchMore, cacheKey}
+        newResponse.loading = response.networkStatus !== NetworkStatus.error
 
-
-            client.addQueryWatcher({
-                cacheKey, update: data => {
-                    if (data !== newResponse.data) {
-                        setResponse({...newResponse, loading: false, data})
-                    }
+        client.addQueryWatcher({
+            cacheKey, update: data => {
+                if (data !== newResponse.data) {
+                    setResponse({...newResponse, loading: false, data, xxxx:'xxxx'})
                 }
-            })
+            }
+        })
+
+        if (initialLoading) {
 
 
             if (newResponse.loading) {
@@ -606,8 +606,7 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
 
                 controller = promise._controller
                 promise.then(response => {
-                    response.cacheKey = cacheKey
-                    setResponse(response)
+                    setResponse({...response, cacheKey})
                 }).catch(error => {
                     if (!controller.signal.aborted || controller._timeout) {
                         setResponse(error)
@@ -624,13 +623,16 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
     }, [cacheKey])
 
     if (!initialLoading) {
+        response.data = currentData
         return initialData
     }
 
-    //if (response.cacheKey && initialData.cacheKey !== response.cacheKey) {
-        //console.log('xxxxxx',response.loading , response.cacheKey)
-       // response.loading = true
-    //}
+    if (response.cacheKey && initialData.cacheKey !== response.cacheKey) {
+        if(currentData) {
+            response.data = currentData
+        }
+        response.loading = true
+    }
 
     return response
 }

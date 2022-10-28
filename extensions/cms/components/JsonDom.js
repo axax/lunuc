@@ -1344,6 +1344,9 @@ class JsonDom extends React.Component {
         scope.params.page = parseInt(scope.params.page) + 1
 
         scope.fetchingMore = true
+        if(options.parseTemplate) {
+            this.json = null
+        }
         this.forceUpdate()
 
         let query = ''

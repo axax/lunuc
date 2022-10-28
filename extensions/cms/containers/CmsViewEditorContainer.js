@@ -270,16 +270,15 @@ class CmsViewEditorContainer extends React.Component {
         // extend with value from state because they are more update to date
         const cmsPageWithState = Object.assign({}, cmsPage, {script, style, template, meta: {PageOptions}})
 
-        console.log('render CmsViewEditorContainer (loading=' + loadingState + ')')
+        console.log(`render CmsViewEditorContainer ${this.props.slug} (loading=${loadingState})`)
 
         const canManageCmsPages = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_CONTENT),
             canMangeCmsTemplate = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_TEMPLATE)
 
-        let cmsEditDataProps, cmsEditDataValue
+        let cmsEditDataProps
 
         if (cmsEditData && !cmsEditData.type) {
             cmsEditDataProps = this.getDataResolverProperty(cmsEditData)
-            cmsEditDataValue = cmsEditData.value
         }
 
 
