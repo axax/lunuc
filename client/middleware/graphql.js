@@ -490,7 +490,7 @@ export const graphql = (query, operationOptions = {}) => {
 
                 let finalProps
 
-                if(this.state.refetchProps){
+                if(this.state && this.state.refetchProps){
                     finalProps = Object.assign({isRefetch:true}, this.props, this.state.refetchProps)
                 } else {
                     finalProps = this.props
