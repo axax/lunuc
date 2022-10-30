@@ -123,7 +123,7 @@ class TypesContainer extends React.Component {
         }
 
         // prepare list with types for select box
-        Object.keys(this.types).map((k) => {
+        Object.keys(this.types).sort().map((k) => {
             if (!this.settings[k] || !this.settings[k].hide) {
                 const t = this.types[k]
                 this.typesToSelect.push({value: k, name: k, hint: t.usedBy && 'used by ' + t.usedBy.join(',')})

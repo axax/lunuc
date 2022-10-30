@@ -405,7 +405,7 @@ function gensrcExtension(name, options) {
                     typeSchema += '\t' + field.name + ':' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') + '\n'
                     resolverFields += '\'' + field.name + (isRef ? '$' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') : '') + '\''
                     if (!field.readOnly) {
-                        newInsertField = field.name + ':' + (field.multi ? '[' : '') + (isRef ? 'ID' : type) + (field.required ? '!' : '') + (field.multi ? ']' : '')
+                        newInsertField = field.name + ':' + (field.multi ? '[' : '') + (isRef ? 'ID' : type) + (field.multi ? ']' : '')+ (field.required ? '!' : '')
                         updateFields += field.name + ':' + (field.multi ? '[' : '') + (isRef ? 'ID' : type) + (field.multi ? ']' : '')
                     }
                 }
@@ -450,7 +450,7 @@ function gensrcExtension(name, options) {
             }
             typeSchema += '}\n\n'
 
-            typeSchema += 'type ' + type.name + 'SubscribeResult {\n\tdata:[' + type.name + ']\n\t_meta:String\n\tfilter:String\n\taction:String\n}\n\n'
+            typeSchema += 'type ' + type.name + 'SubscribeResult {\n\tdata:[' + type.name + ']\n\tremovedIds:[ID]\n\t_meta:String\n\tfilter:String\n\taction:String\n}\n\n'
 
 
             typeSchema += 'type Subscription{\n'
@@ -489,11 +489,14 @@ function gensrcExtension(name, options) {
             return result
         },
         delete${type.name}: async ({_id}, {context}) => {
-             ${type.subscription === false ? '//' : ''}pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: [{_id}]}}, db, context)
-            return GenericResolver.deleteEnity(db, context, '${type.name}', {_id})
+            const deletedEntry = await GenericResolver.deleteEnity(db, context, '${type.name}', {_id})
+            if(deletedEntry){
+                ${type.subscription === false ? '//' : ''}pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', removedIds: [_id]}}, db, context)
+            }
+            return deletedEntry
         },
         delete${type.name}s: async ({_id}, {context}) => {
-             ${type.subscription === false ? '//' : ''}pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: _id.map(x => ({_id:x}))}}, db, context)
+            ${type.subscription === false ? '//' : ''}pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', removedIds: _id}}, db, context)
             return GenericResolver.deleteEnities(db, context, '${type.name}', {_id})
         },\n`
                 resolverSubscription += `       subscribe${type.name}: withFilter(() => pubsub.asyncIterator('subscribe${type.name}'),

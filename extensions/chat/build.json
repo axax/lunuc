@@ -1,0 +1,41 @@
+{
+  "types": [
+    {
+      "name": "Chat",
+      "entryClonable": true,
+      "fields": [
+        {
+          "name": "name",
+          "required": true,
+          "index": 1
+        },
+        {
+          "name": "users",
+          "required": true,
+          "multi": true,
+          "type": "User",
+          "fields": [
+            "username"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ChatMessage",
+      "entryClonable": true,
+      "fields": [
+        {
+          "name": "message",
+          "required": true,
+          "index": 1
+        },
+        {
+          "name": "chat",
+          "required": true,
+          "type": "Chat",
+          "index": 1
+        }
+      ]
+    }
+  ]
+}

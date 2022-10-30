@@ -277,7 +277,7 @@ class CmsViewContainer extends React.Component {
                             return
                         }
 
-                        subscriptionQuery = '_meta action filter data{_id'
+                        subscriptionQuery = '_meta action filter removedIds data{_id'
                         type.fields.map(({name, reference, localized}) => {
 
                             if (reference) {
@@ -331,8 +331,9 @@ class CmsViewContainer extends React.Component {
                                 //console.warn('subscription data missing')
                                 return
                             }
-                            const {action, _meta, filter, data} = supscriptionData.data[subscriptionName]
-                            if (data && (!filter || filter === subscription.filter[action])) {
+                            const {action, _meta, filter, data, removedIds} = supscriptionData.data[subscriptionName]
+
+                            if ((data || removedIds) && (!filter || filter === subscription.filter[action])) {
                                 const storedData = client.readQuery({
                                     query: CMS_PAGE_QUERY,
                                     variables: _this.props.cmsPageVariables
@@ -345,7 +346,8 @@ class CmsViewContainer extends React.Component {
                                     if (resolvedDataJson[subscription.autoUpdate] && resolvedDataJson[subscription.autoUpdate].results) {
 
                                         const refResults = resolvedDataJson[subscription.autoUpdate].results
-                                        data.forEach(entry=>{
+                                        const finalData = action==='delete'?removedIds.map(f=>({_id:f})):data
+                                        finalData.forEach(entry=>{
                                             // remove null values from new data
                                             const noNullData = Util.removeNullValues(entry)
                                             Object.keys(noNullData).map(k => {

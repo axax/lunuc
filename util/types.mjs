@@ -147,7 +147,7 @@ export const getTypeQueries = (typeName, queryFields, opts) => {
     result.query = `query ${nameStartLower}s($sort: String,$limit: Int,$page: Int,$filter: String${collectionClonable ? ',$_version: String' : ''}${addMetaDataInQuery ? ',$meta: String' : ''}){${nameStartLower}s(sort:$sort, limit: $limit, page:$page, filter:$filter${selectParamsString}${collectionClonable ? ',_version:$_version' : ''}${addMetaDataInQuery ? ',meta:$meta' : ''}){limit offset total meta results{${query}}}}`
 
 
-    result.create = `mutation create${name}(${collectionClonable ? '$_version:String,' : ''}${insertParams}){create${name}(${collectionClonable ? ',_version:$_version' : ''},${insertUpdateQuery}){${queryMutation}}}`
+    result.create = `mutation create${name}(${collectionClonable ? '$_version:String,' : ''}${insertParams}){create${name}(${collectionClonable ? '_version:$_version,' : ''}${insertUpdateQuery}){${queryMutation}}}`
     result.update = `mutation update${name}($_id:ID!${noUserRelation ? '' : ',$createdBy:ID'}${collectionClonable ? ',$_version:String' : ''}${addMetaDataInQuery ? ',$_meta:String' : ''},${updateParams}){update${name}(_id:$_id${noUserRelation ? '' : ',createdBy:$createdBy'}${addMetaDataInQuery ? ',_meta:$_meta' : ''}${collectionClonable ? ',_version:$_version' : ''},${insertUpdateQuery}){${queryMutation}}}`
     result.delete = `mutation delete${name}($_id:ID!${collectionClonable ? ',$_version:String' : ''}){delete${name}(_id: $_id${collectionClonable ? ',_version:$_version' : ''}){${queryMutation}}}`
     result.deleteMany = `mutation delete${name}s($_id: [ID]${collectionClonable ? ',$_version:String' : ''}){delete${name}s(_id: $_id${collectionClonable ? ',_version:$_version' : ''}){${queryMutation}}}`

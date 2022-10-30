@@ -17,7 +17,7 @@ export default () => {
     Hook.on('ApiClientWsResponse', ({payload}) => {
         if(payload && payload.data) {
             const data = payload.data.subscribeGenericData
-            if (data) {
+            if (data && data.data) {
                 data.data.forEach(item => {
                     item.data = JSON.parse(item.data)
                 })

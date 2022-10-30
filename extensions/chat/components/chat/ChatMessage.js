@@ -4,6 +4,8 @@ import Util from 'client/util/index.mjs'
 
 const ChatMessage = ({message, onClick, onDeleteClick}) => {
 
+
+
 	const statusBackgroundColor = (status) => {
 		if(status==='creating'){
 			return '#90afe5'
@@ -13,13 +15,13 @@ const ChatMessage = ({message, onClick, onDeleteClick}) => {
 		return '#fffcea'
 	}
 
-	if ( message.status=='deleted'){
+	if ( !message || message.status=='deleted'){
 		return null
 	}
 
 	return <div onClick={onClick} style={{padding:20+'px',marginBottom: 20+'px',width: 'auto', backgroundColor: statusBackgroundColor(message.status) }}>
-		<strong><small>{message.from.username}</small></strong><br />
-		{message.text}<br />
+		<strong><small>{message.createdBy.username}</small></strong><br />
+		{message.message}<br />
 		<small><small>{Util.formattedDatetimeFromObjectId(message._id)}</small></small>
 		{message.status!=='deleting' && message.status!=='creating'?
 		<button onClick={onDeleteClick}>Delete</button>:''}

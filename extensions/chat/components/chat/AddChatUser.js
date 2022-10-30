@@ -17,7 +17,7 @@ export default class AddChatUser extends React.Component {
 
 	render() {
 		const {users,selectedUsers} = this.props
-		const selectedUserIds = selectedUsers.map(function(u) {return u._id})
+		const selectedUserIds = selectedUsers.map(function(u) {return u && u._id})
 		const filteredUsers = users.filter((u)=>selectedUserIds.indexOf(u._id)<0)
 
 		return (

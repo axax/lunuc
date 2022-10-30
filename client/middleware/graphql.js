@@ -191,7 +191,10 @@ const getFetchMore = ({prevData, type, query, variables, fetchPolicy}) => {
     return (opt) => {
         finalFetch({type, query, variables: {...variables, ...opt.variables}, fetchPolicy}).then((fetchMoreResult) => {
             opt.updateQuery(prevData, {fetchMoreResult: fetchMoreResult.data})
-        }).catch(opt.updateQuery)
+        }).catch((e)=>{
+            console.log(e)
+            opt.updateQuery(e)
+        })
     }
 }
 
@@ -421,6 +424,7 @@ export const client = {
                 update(proxy, r)
             }).catch((e) => {
                 proxy.writeQuery = client.writeQuery
+                console.log(e)
                 update(proxy, e)
             })
         }
@@ -581,13 +585,13 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
 
         let controller
 
-        const newResponse = {fetchMore: response.fetchMore, cacheKey}
+        const newResponse = {cacheKey, fetchMore: initialData.fetchMore}
         newResponse.loading = response.networkStatus !== NetworkStatus.error
 
         client.addQueryWatcher({
             cacheKey, update: data => {
                 if (data !== newResponse.data) {
-                    setResponse({...newResponse, loading: false, data, xxxx:'xxxx'})
+                    setResponse({...newResponse, loading: false, data})
                 }
             }
         })
