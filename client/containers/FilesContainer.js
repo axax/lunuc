@@ -227,7 +227,7 @@ class FilesContainer extends React.Component {
                 }
 
             }).then(response => {
-                _app_.dispatcher.addNotification.addNotification({key: 'fileChange', message: `File "${file}" saved`})
+                _app_.dispatcher.addNotification({key: 'fileChange', message: `File "${file}" saved`})
             })
         }, 1500)
     }

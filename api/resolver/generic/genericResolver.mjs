@@ -488,7 +488,13 @@ const GenericResolver = {
             }
 
             Hook.call('typeCreated', {type: typeName, data, result:resultData, db, context})
-            Hook.call('typeCreated_' + typeName, {data, db, context, result:resultData})
+
+            const hookName = 'typeCreated_' + typeName
+            if (Hook.hooks[hookName] && Hook.hooks[hookName].length) {
+                for (let i = 0; i < Hook.hooks[hookName].length; ++i) {
+                    await Hook.hooks[hookName][i].callback({data, db, context, result:resultData})
+                }
+            }
 
             return resultData
         }

@@ -336,6 +336,7 @@ const BaseLayout = props => {
     return <UIProvider>
         <ResponsiveDrawerLayout title={settings.title || APP_NAME}
                                 logo={settings.logo}
+                                contentStyle={props.contentStyle}
                                 menuItems={menuItems}
                                 onMenuChange={(item, open) => {
                                     if (item.path) {

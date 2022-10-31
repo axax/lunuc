@@ -353,7 +353,7 @@ function gensrcExtension(name, options) {
             const nameStartLower = type.name.charAt(0).toLowerCase() + type.name.slice(1)
 
             let typeSchema = 'type ' + type.name + '{\n'
-            typeSchema += '\t_id: ID!' + (!type.noUserRelation ? '\n\tcreatedBy:UserPublic!' : '') + '\n\tstatus: String\n\tuserAccess: [UserPublic]\n'
+            typeSchema += '\t_id: ID!' + (!type.noUserRelation ? '\n\tcreatedBy:UserPublic!' : '') + '\n\tstatus: String\n' //+'userAccess: [UserPublic]'
 
             let insertFields = '', cloneFields = '', updateFields = (type.noUserRelation ? '' : 'createdBy: ID'),
                 resolverFields = '', refResolvers = '',

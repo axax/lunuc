@@ -65,6 +65,7 @@ export const userSchemaRaw = `
 	type UserPublic  {
 		_id: ID!
         username: String!
+        picture: ID
     }
 	
 	type Note {

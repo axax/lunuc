@@ -8,6 +8,7 @@ import {getGenericTypeDefinitionWithStructure} from "../genericdata/util/index.m
 import Util from "../../api/util/index.mjs";
 import {ObjectId} from "mongodb";
 import GenericResolver from "../../api/resolver/generic/genericResolver.mjs";
+import {matchExpr} from "../../client/util/json.mjs";
 
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
@@ -18,6 +19,15 @@ Hook.on('resolver', ({db, resolvers}) => {
 Hook.on('schema', ({schemas}) => {
     schemas.push(schemaGen)
     schemas.push(schema)
+})
+
+Hook.on('typeCreated_ChatMessage', async ({result, db}) => {
+    if (result.createdBy) {
+        const user = await Util.userById(db,result.createdBy._id)
+        if(user) {
+            result.createdBy.picture = user.picture
+        }
+    }
 })
 
 Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions}) => {
@@ -39,3 +49,18 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions
 
     }
 }, 99)
+
+
+
+
+Hook.on('ResolverBeforePublishSubscription', async ({context, payload, hookResponse}) => {
+
+    //return payload.userId === context.id
+    if (payload.subscribeChatMessage) {
+        if(!context.id || context.id === payload.userId) {
+            console.log(context, payload)
+            hookResponse.abort = true
+        }
+    }
+
+})

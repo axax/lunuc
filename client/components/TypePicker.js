@@ -162,12 +162,14 @@ class TypePicker extends React.Component {
         const {data, hasFocus, selIdx, value, textValue} = this.state
         console.log(`render TypePicker | hasFocus=${hasFocus} | pickerField=${pickerField}`, data)
         const openTypeWindow = (value) => {
-
             let url
             if (linkTemplate) {
                 url = Util.replacePlaceholders(linkTemplate, value)
             } else {
                 url = `${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/typesblank/?multi=${!!multi}&fixType=${type}${genericType ? '&meta=' + genericType : ''}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}${label ? '&title=' + encodeURIComponent(label) : ''}`
+                if(value && value._id){
+                    url +='&prettyFilter='+JSON.stringify({_id:value._id})
+                }
             }
             const newwindow = openWindow({url})
             if (!readOnly) {
@@ -237,7 +239,7 @@ class TypePicker extends React.Component {
 
                         const components = []
 
-                        if (isValidImage(singleValue)) {
+                        if (isValidImage(singleValue, type)) {
                             components.push(<StyledImageChip
                                                  draggable={true}
                                                  data-index={singleValueIndex}

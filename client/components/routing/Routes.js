@@ -156,7 +156,7 @@ class Routes extends React.Component {
                     if(comp){
                         if(route.layout){
                             let Layout = route.layout === 'base' ? BaseLayout : route.layout
-                            return <Layout>{comp}</Layout>
+                            return <Layout {...route.layoutProps}>{comp}</Layout>
                         }
                         return comp
                     }

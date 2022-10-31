@@ -2,6 +2,11 @@
   "types": [
     {
       "name": "Chat",
+      "access": {
+        "subscribe":  {
+          "role": "access_admin_page"
+        }
+      },
       "entryClonable": true,
       "fields": [
         {
@@ -22,7 +27,13 @@
     },
     {
       "name": "ChatMessage",
+      "access": {
+        "subscribe":  {
+          "role": "access_admin_page"
+        }
+      },
       "entryClonable": true,
+      "createdByQuery": "_id username picture",
       "fields": [
         {
           "name": "message",

@@ -216,7 +216,7 @@ const ResponsiveDrawer = React.memo((props) => {
                     }}>
                     {drawer}
                 </Drawer>
-                <StyledDrawerContent>
+                <StyledDrawerContent style={props.contentStyle}>
                     {children}
                 </StyledDrawerContent>
             </StyledAppFrame>

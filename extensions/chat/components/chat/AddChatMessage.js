@@ -27,12 +27,12 @@ export default class AddChatMessage extends React.Component {
 
 	render() {
 		return (
-			<div>
+			<div className="chat-create-message-wrapper">
 				<textarea ref={(e) => { this.textInput = e }}
 						  onChange={this.onChangeMessage}
 						  onKeyPress={this.handleKeyPress}
 						  value={this.state.message}/>
-				<button onClick={this.onSendCick} disabled={(this.state.message.trim()=='')}>Send</button>
+				<button onClick={this.onSendCick} disabled={(this.state.message.trim()=='')}></button>
 			</div>
 		)
 	}

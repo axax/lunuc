@@ -7,8 +7,8 @@ const getImageSrc = (item) => {
     return item.src ? item.src : UPLOAD_URL + '/' + item._id + (item.name ? '/' + config.PRETTYURL_SEPERATOR + '/' + item.name : '')
 }
 
-const isValidImage = (item) => {
-    return item && item.__typename === 'Media' && item.mimeType && item.mimeType.indexOf('image') === 0
+const isValidImage = (item, type) => {
+    return item && (item.__typename === 'Media' || type==='Media') && item.mimeType && item.mimeType.indexOf('image') === 0
 }
 
 const getImageTag = (item, props) => {

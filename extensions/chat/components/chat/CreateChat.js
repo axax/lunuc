@@ -1,5 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import {_t} from "../../../../util/i18n.mjs";
 
 export default class CreateChat extends React.Component {
 	constructor(props) {
@@ -26,9 +27,14 @@ export default class CreateChat extends React.Component {
 
 	render() {
 		return (
-			<div>
-				<input ref={(e) => { this.textInput = e }} onChange={this.onChangeName} onKeyPress={this.handleKeyPress} value={this.state.name}/>
-				<button onClick={this.onSendCick} disabled={(this.state.name.trim()=='')}>Create new chat</button>
+			<div className="chat-create-group-wrapper">
+
+				<input ref={(e) => { this.textInput = e }}
+					   placeholder={_t('ChatContainer.chatName')}
+					   onChange={this.onChangeName}
+					   onKeyPress={this.handleKeyPress}
+					   value={this.state.name}/>
+				<button onClick={this.onSendCick} disabled={(this.state.name.trim()=='')}>{_t('ChatContainer.createChat')}</button>
 			</div>
 		)
 	}

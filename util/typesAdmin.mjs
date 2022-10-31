@@ -356,7 +356,8 @@ Hook.on('Types', ({types}) => {
                 name: 'picture',
                 type: 'Media',
                 reference: true,
-                fields: ['name'],
+                fields: ['name','mimeType'],
+                filter: 'mimeType=image',
                 vagueSearchable:false
             },
             {

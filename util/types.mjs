@@ -48,7 +48,7 @@ export const getTypeQueries = (typeName, queryFields, opts) => {
     if (!typeName || !types[typeName]) return null
 
 
-    const {name, fields, noUserRelation, selectParams, collectionClonable,addMetaDataInQuery} = types[typeName]
+    const {name, fields, noUserRelation, createdByQuery, selectParams, collectionClonable,addMetaDataInQuery} = types[typeName]
 
     const nameStartLower = name.charAt(0).toLowerCase() + name.slice(1)
     const result = {name: nameStartLower}
@@ -63,11 +63,11 @@ export const getTypeQueries = (typeName, queryFields, opts) => {
 
     let queryMutation = '_id status'
     if (!noUserRelation) {
-
+        const uquery = 'createdBy{'+(createdByQuery?createdByQuery:'_id username')+'} '
         if (!queryFields || queryFields.indexOf('createdBy') >= 0) {
-            query += 'createdBy{_id username} '
+            query += uquery
         }
-        queryMutation += ' createdBy{_id username}'
+        queryMutation += ' ' + uquery
     }
 
     let insertParams = '', cloneParams = '', insertUpdateQuery = '', updateParams = '', cloneQuery = ''

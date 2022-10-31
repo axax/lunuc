@@ -28,7 +28,7 @@ class System extends React.Component {
             query: '{shopImportSampleData{status message}}'
 
         }).then(response => {
-            _app_.dispatcher.addNotification.addNotification({
+            _app_.dispatcher.addNotification({
                 key: 'shopDataImportate',
                 message: response.data.shopImportSampleData.message
             })

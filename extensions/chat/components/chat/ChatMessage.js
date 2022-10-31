@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import Util from 'client/util/index.mjs'
 
-const ChatMessage = ({message, onClick, onDeleteClick}) => {
+const ChatMessage = ({message, onDeleteClick}) => {
 
 
 
@@ -12,19 +12,29 @@ const ChatMessage = ({message, onClick, onDeleteClick}) => {
 		}else if(status==='deleting'){
 			return '#ff0000'
 		}
-		return '#fffcea'
+		return '#fff' // '#fffcea'
 	}
 
 	if ( !message || message.status=='deleted'){
 		return null
 	}
+	const isMe = _app_.user._id === message.createdBy._id
 
-	return <div onClick={onClick} style={{padding:20+'px',marginBottom: 20+'px',width: 'auto', backgroundColor: statusBackgroundColor(message.status) }}>
-		<strong><small>{message.createdBy.username}</small></strong><br />
-		{message.message}<br />
-		<small><small>{Util.formattedDatetimeFromObjectId(message._id)}</small></small>
-		{message.status!=='deleting' && message.status!=='creating'?
-		<button onClick={onDeleteClick}>Delete</button>:''}
+	return <div className="chat-channel-message" style={{backgroundColor: statusBackgroundColor(message.status) }}>
+		<img className="chat-channel-message-image" src={message.createdBy.picture?'/uploads/'+message.createdBy.picture+'?format=jpeg&width=96&height=96':'/placeholder.svg'} />
+
+		<div className="chat-channel-message-content">
+			<div className="chat-channel-message-head">
+				<span className="chat-channel-message-user">{message.createdBy.username}</span> <span className="chat-channel-message-time">{Util.formattedDatetimeFromObjectId(message._id)}</span>
+
+				{false && isMe && message.status!=='deleting' && message.status!=='creating'?
+				<button onClick={onDeleteClick}>Delete</button>:''}
+			</div>
+
+			{message.message}<br />
+
+
+		</div>
 	</div>
 }
 
