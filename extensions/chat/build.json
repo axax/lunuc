@@ -19,8 +19,10 @@
           "required": true,
           "multi": true,
           "type": "User",
+          "schemaType": "UserPublic",
           "fields": [
-            "username"
+            "username",
+            "picture"
           ]
         }
       ]

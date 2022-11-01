@@ -608,147 +608,7 @@ export default class AggregationBuilder {
             }
         }
 
-        const createdFieldMatches = {}
-
-        for (let i = 0; i < fields.length; i++) {
-            const field = fields[i]
-            const fieldDefinition = this.createFieldDefinition(field, this.type)
-            const fieldName = fieldDefinition.name
-            if (fieldDefinition.reference) {
-
-                // search in a ref field
-                let refFields = fieldDefinition.fields, projectPipeline = {}, usePipeline = false
-
-                if (!refFields) {
-                    projectResultData[fieldName] = 1
-                    const refFieldDefinitions = getFormFieldsByType(fieldDefinition.type)
-                    if (refFieldDefinitions) {
-                        refFields = Object.keys(refFieldDefinitions)
-                    }
-                }
-
-                if (refFields) {
-                    for (const refField of refFields) {
-
-                        const refFieldDefinition = this.createFieldDefinition(refField, fieldDefinition.type)
-                        const refFieldName = refFieldDefinition.name
-
-
-                        if (fieldDefinition.fields) {
-                            projectResultData[fieldName + '.' + refFieldName] = 1
-                        }
-
-                        if (refFieldDefinition) {
-
-                            let localProjected = false
-                            if (refFieldDefinition.fields) {
-                                usePipeline = true
-                                for (const subRefField of refFieldDefinition.fields) {
-                                    projectPipeline[refFieldName + '.' + subRefField] = 1
-                                }
-                            } else if (refFieldDefinition.localized && refFieldDefinition.projectLocal) {
-                                usePipeline = true
-                                localProjected = true
-                                // project localized field in current language
-                                projectPipeline[refFieldName] = '$' + refFieldName + '.' + lang
-                            } else {
-                                projectPipeline[refFieldName] = 1
-                            }
-
-                            /* if (refFieldDefinition.type === 'Object') {
-                                 console.log(refFieldDefinition)
-                                 projectPipeline[refFieldName] = {$convert: {input: '$' + refFieldName, to: "string", onError: "error" }}
-                             }*/
-
-
-                            if (!refFieldDefinition.reference) {
-                                // these filters are slow
-                                // probably it is better to do multiple queries instead
-
-                                await this.createFilterForField({
-                                    name: fieldName,
-                                    subQuery: {type: fieldDefinition.type, name: refFieldName},
-                                    reference: false,
-                                    type: refFieldDefinition.type,
-                                    localized: refFieldDefinition.localized && !localProjected
-                                }, match, {exact: true, filters})
-                            }
-                        }
-                    }
-                }
-
-
-                // execute sub query
-                /*  if (Object.keys(subMatch).length > 0) {
-
-                      const ids = (await db.collection(fieldDefinition.type).find(subMatch).toArray()).map(item => item._id)
-                      match.$and.push({[fieldName]: {$in: ids}})
-                  }*/
-
-                if (fieldDefinition.multi) {
-                    // if multi it has to be an array
-                    // this is an anditional filter to remove non array values. it is not needed if database is consistent
-                    // without this filter you might get the error: $in requires an array as a second argument
-                    /*this.addFilterToMatch({
-                     filterKey:fieldName+'.0',
-                     filterValue: { '$exists': true },
-                     match: rootMatch
-                     })*/
-                }
-
-
-                if (refFields && refFields.length === 1 && refFields[0] === '_id') {
-                    // it is only the id lookup doesn't make sense
-                    projectResultData[fieldName + '._id'] = '$' + fieldName
-                    groups[fieldName] = {'$first': '$' + fieldName}
-                } else {
-                    const {lookup} = this.createAndAddLookup(fieldDefinition, lookups, {usePipeline})
-
-                    if (lookup.$lookup.pipeline) {
-                        lookup.$lookup.pipeline.push({$project: projectPipeline})
-                    }
-
-                    groups[fieldName] = this.createGroup(fieldDefinition)
-
-                }
-                await this.createFilterForField(fieldDefinition, match, {filters})
-
-            } else {
-                // regular field
-                if (fieldName !== '_id' && !createdFieldMatches[fieldName]) {
-                    createdFieldMatches[fieldName] = true
-                    groups[fieldName] = {'$first': '$' + fieldName}
-                    if (typeFields[fieldName]) {
-                        await this.createFilterForField(fieldDefinition, match, {filters})
-                        await this.createFilterForField(fieldDefinition, resultMatch, {filters: resultFilters})
-                        await this.createFilterForField(fieldDefinition, lookupMatch, {filters: lookupFilters})
-                    }
-                }
-
-                if (fieldDefinition.fields) {
-                    this.projectByField(fieldName, fieldDefinition.fields, projectResultData)
-                } else {
-
-                    if (fieldDefinition.projectLocal) {
-                        // project localized field in current language
-                        if (fieldDefinition.substr) {
-                            projectResultData[fieldName] = {$substrCP: ['$' + fieldName + (fieldDefinition.localized ? '.' + lang : ''), fieldDefinition.substr[0], fieldDefinition.substr[1]]}
-                        } else if (fieldDefinition.localized) {
-                            projectResultData[fieldName] = '$' + fieldName + '.' + lang
-                        }
-
-                    } else {
-                        projectResultData[fieldName] = 1
-
-                        // mongodb 4 supports convert and toString
-                        // for know we have to do it after the query
-                        /*if (fieldDefinition.type === 'Object') {
-                            projectResultData[fieldName] = {$convert: {input: '$' + fieldName, to: "string", onError: "error" }}
-                        }*/
-                    }
-                }
-            }
-        }
+        await this.createQueriesForFields(fields, projectResultData, lang, match, filters, groups, lookups, typeFields, resultMatch, resultFilters, lookupMatch, lookupFilters);
 
         if (!projectResult) {
             // also return extra fields
@@ -932,6 +792,150 @@ export default class AggregationBuilder {
 
         return {dataQuery, countQuery, debugInfo: this.debugInfo}
 
+    }
+
+    async createQueriesForFields(fields, projectResultData, lang, match, filters, groups, lookups, typeFields, resultMatch, resultFilters, lookupMatch, lookupFilters) {
+        const createdFieldMatches = {}
+        for (let i = 0; i < fields.length; i++) {
+            const field = fields[i]
+            const fieldDefinition = this.createFieldDefinition(field, this.type)
+            const fieldName = fieldDefinition.name
+            if (fieldDefinition.reference) {
+
+                // search in a ref field
+                let refFields = fieldDefinition.fields, projectPipeline = {}, usePipeline = false
+
+                if (!refFields) {
+                    projectResultData[fieldName] = 1
+                    const refFieldDefinitions = getFormFieldsByType(fieldDefinition.type)
+                    if (refFieldDefinitions) {
+                        refFields = Object.keys(refFieldDefinitions)
+                    }
+                }
+
+                if (refFields) {
+                    for (const refField of refFields) {
+
+                        const refFieldDefinition = this.createFieldDefinition(refField, fieldDefinition.type)
+                        const refFieldName = refFieldDefinition.name
+
+
+                        if (fieldDefinition.fields) {
+                            projectResultData[fieldName + '.' + refFieldName] = 1
+                        }
+
+                        if (refFieldDefinition) {
+
+                            let localProjected = false
+
+                            if (refFieldDefinition.fields && !refFieldDefinition.reference) {
+                                usePipeline = true
+                                for (const subRefField of refFieldDefinition.fields) {
+                                    projectPipeline[refFieldName + '.' + subRefField] = 1
+                                }
+                            } else if (refFieldDefinition.localized && refFieldDefinition.projectLocal) {
+                                usePipeline = true
+                                localProjected = true
+                                // project localized field in current language
+                                projectPipeline[refFieldName] = '$' + refFieldName + '.' + lang
+                            } else {
+                                projectPipeline[refFieldName] = 1
+                            }
+
+                            /* if (refFieldDefinition.type === 'Object') {
+                                 console.log(refFieldDefinition)
+                                 projectPipeline[refFieldName] = {$convert: {input: '$' + refFieldName, to: "string", onError: "error" }}
+                             }*/
+
+
+                            if (!refFieldDefinition.reference) {
+                                // these filters are slow
+                                // probably it is better to do multiple queries instead
+
+                                await this.createFilterForField({
+                                    name: fieldName,
+                                    subQuery: {type: fieldDefinition.type, name: refFieldName},
+                                    reference: false,
+                                    type: refFieldDefinition.type,
+                                    localized: refFieldDefinition.localized && !localProjected
+                                }, match, {exact: true, filters})
+                            }
+                        }
+                    }
+                }
+
+
+                // execute sub query
+                /*  if (Object.keys(subMatch).length > 0) {
+
+                      const ids = (await db.collection(fieldDefinition.type).find(subMatch).toArray()).map(item => item._id)
+                      match.$and.push({[fieldName]: {$in: ids}})
+                  }*/
+
+                if (fieldDefinition.multi) {
+                    // if multi it has to be an array
+                    // this is an anditional filter to remove non array values. it is not needed if database is consistent
+                    // without this filter you might get the error: $in requires an array as a second argument
+                    /*this.addFilterToMatch({
+                     filterKey:fieldName+'.0',
+                     filterValue: { '$exists': true },
+                     match: rootMatch
+                     })*/
+                }
+
+
+                if (refFields && refFields.length === 1 && refFields[0] === '_id') {
+                    // it is only the id lookup doesn't make sense
+                    projectResultData[fieldName + '._id'] = '$' + fieldName
+                    groups[fieldName] = {'$first': '$' + fieldName}
+                } else {
+                    const {lookup} = this.createAndAddLookup(fieldDefinition, lookups, {usePipeline})
+
+                    if (lookup.$lookup.pipeline) {
+                        lookup.$lookup.pipeline.push({$project: projectPipeline})
+                    }
+
+                    groups[fieldName] = this.createGroup(fieldDefinition)
+
+                }
+                await this.createFilterForField(fieldDefinition, match, {filters})
+
+            } else {
+                // regular field
+                if (fieldName !== '_id' && !createdFieldMatches[fieldName]) {
+                    createdFieldMatches[fieldName] = true
+                    groups[fieldName] = {'$first': '$' + fieldName}
+                    if (typeFields[fieldName]) {
+                        await this.createFilterForField(fieldDefinition, match, {filters})
+                        await this.createFilterForField(fieldDefinition, resultMatch, {filters: resultFilters})
+                        await this.createFilterForField(fieldDefinition, lookupMatch, {filters: lookupFilters})
+                    }
+                }
+
+                if (fieldDefinition.fields) {
+                    this.projectByField(fieldName, fieldDefinition.fields, projectResultData)
+                } else {
+
+                    if (fieldDefinition.projectLocal) {
+                        // project localized field in current language
+                        if (fieldDefinition.substr) {
+                            projectResultData[fieldName] = {$substrCP: ['$' + fieldName + (fieldDefinition.localized ? '.' + lang : ''), fieldDefinition.substr[0], fieldDefinition.substr[1]]}
+                        } else if (fieldDefinition.localized) {
+                            projectResultData[fieldName] = '$' + fieldName + '.' + lang
+                        }
+
+                    } else {
+                        projectResultData[fieldName] = 1
+
+                        // mongodb 4 supports convert and toString
+                        // for know we have to do it after the query
+                        /*if (fieldDefinition.type === 'Object') {
+                            projectResultData[fieldName] = {$convert: {input: '$' + fieldName, to: "string", onError: "error" }}
+                        }*/
+                    }
+                }
+            }
+        }
     }
 
     cleanupMatch(match) {

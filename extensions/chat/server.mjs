@@ -41,7 +41,7 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions
     } else if (type === 'ChatMessage') {
         if(match.createdBy){
 
-            const chats = await GenericResolver.entities(db, context, 'Chat', [], {limit:100})
+            const chats = await GenericResolver.entities(db, context, 'Chat', [], {limit:100, noUserLookup:true})
             match.chat = {$in:chats.results.map(f=>f._id)}
          //   match.$or = [{createdBy:match.createdBy},{users:match.createdBy}]
             delete match.createdBy
@@ -53,13 +53,20 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions
 
 
 
-Hook.on('ResolverBeforePublishSubscription', async ({context, payload, hookResponse}) => {
+Hook.on('ResolverBeforePublishSubscription', async ({context, db, payload, hookResponse}) => {
 
     //return payload.userId === context.id
     if (payload.subscribeChatMessage) {
         if(!context.id || context.id === payload.userId) {
-            console.log(context, payload)
             hookResponse.abort = true
+
+        }else {
+            const chats = await GenericResolver.entities(db, context, 'Chat', [], {limit:100, noUserLookup:true})
+            //chats.results.map(f=>f._id)
+            const chatId = payload.subscribeChatMessage.data[0].chat._id.toString()
+            if(!chats.results.find(f=>f._id.toString()===chatId)) {
+                 hookResponse.abort = true
+            }
         }
     }
 

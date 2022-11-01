@@ -202,6 +202,7 @@ export const start = (done) => {
                             context = decodeToken(payload.auth)
                             context.session = payload.session
                         }
+                        context.lang = payload.lang
 
                         // now if auth is needed we can check if the context is available
                         context.variables = payload.variables

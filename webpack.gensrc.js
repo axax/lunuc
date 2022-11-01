@@ -402,7 +402,7 @@ function gensrcExtension(name, options) {
                         updateFields += field.name + ': LocalizedStringInput'
                     }
                 } else {
-                    typeSchema += '\t' + field.name + ':' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') + '\n'
+                    typeSchema += '\t' + field.name + ':' + (field.multi ? '[' : '') + (field.schemaType || type) + (field.multi ? ']' : '') + '\n'
                     resolverFields += '\'' + field.name + (isRef ? '$' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') : '') + '\''
                     if (!field.readOnly) {
                         newInsertField = field.name + ':' + (field.multi ? '[' : '') + (isRef ? 'ID' : type) + (field.multi ? ']' : '')+ (field.required ? '!' : '')
@@ -504,8 +504,13 @@ function gensrcExtension(name, options) {
                 if( payload ) {
                     
                     const hookResponse = {}
-                    Hook.call('ResolverBeforePublishSubscription', {payload, context, hookResponse})
-                    
+                    if (Hook.hooks['ResolverBeforePublishSubscription'] && Hook.hooks['ResolverBeforePublishSubscription'].length) {
+                        for (let i = 0; i < Hook.hooks['ResolverBeforePublishSubscription'].length; ++i) {
+                            await Hook.hooks['ResolverBeforePublishSubscription'][i].callback({
+                                db, payload, context, hookResponse
+                            })
+                        }
+                    }
                     
                     if(hookResponse.abort){
                         return false

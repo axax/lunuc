@@ -19,6 +19,7 @@ import {setAuthCookies, removeAuthCookies} from '../util/sessionContext.mjs'
 import {_t} from '../../util/i18nServer.mjs'
 import Hook from '../../util/hook.cjs'
 import {AUTH_EXPIRES_IN_COOKIE, USE_COOKIES, AUTH_SCHEME} from '../constants/index.mjs'
+import {hasQueryField} from '../util/graphql.js'
 
 const LOGIN_ATTEMPTS_MAP = {},
     MAX_LOGIN_ATTEMPTS = 10,
@@ -251,7 +252,7 @@ export const userResolver = (db) => ({
                 sort
             })
         },
-        me: async (data, {context}) => {
+        me: async (data, {context}, {fieldNodes}) => {
             Util.checkIfUserIsLoggedIn(context)
             const user = (await db.collection('User').findOne({_id: ObjectId(context.id)}))
 
@@ -259,10 +260,6 @@ export const userResolver = (db) => ({
                 throw new Error('User doesn\'t exist')
             } else {
                 user.role = await Util.getUserRoles(db, user.role)
-
-                if (user.picture) {
-                    user.picture = {_id: user.picture}
-                }
 
                 if (user.meta) {
                     user.meta = JSON.stringify(user.meta)
@@ -274,11 +271,15 @@ export const userResolver = (db) => ({
                 if (user.setting) {
                     user.setting = user.setting.map(m => ({_id: m}))
                 }
-                /*if( user.picture){
-                    user.picture = await db.collection('Media').findOne({_id: ObjectId(user.picture)})
-                }*/
-                //enhanceUserSettings(user)
 
+                if( user.picture){
+                    if(hasQueryField(fieldNodes,'me.picture.name')) {
+                        // resolve whole picture
+                        user.picture = await db.collection('Media').findOne({_id: ObjectId(user.picture)})
+                    }else{
+                        user.picture = {_id: user.picture}
+                    }
+                }
             }
             return user
         },
@@ -754,7 +755,7 @@ export const userResolver = (db) => ({
 
 
                 if (user.picture !== undefined) {
-                    user.picture = user.picture ? ObjectId(user.picture) : null
+                    user.picture = user.picture && ObjectId.isValid(user.picture) ? ObjectId(user.picture) : null
                 }
 
 

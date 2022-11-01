@@ -450,6 +450,7 @@ export const client = {
                     variables,
                     query,
                     extensions,
+                    lang: _app_.lang,
                     auth: Util.getAuthToken(), // auth is only set when USE_COOKIES is false
                     session: _app_.session // session is only set when USE_COOKIES is false
                 }

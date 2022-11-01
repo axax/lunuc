@@ -167,9 +167,9 @@ class TypePicker extends React.Component {
                 url = Util.replacePlaceholders(linkTemplate, value)
             } else {
                 url = `${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/typesblank/?multi=${!!multi}&fixType=${type}${genericType ? '&meta=' + genericType : ''}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}${label ? '&title=' + encodeURIComponent(label) : ''}`
-                if(value && value._id){
+                /*if(value && value._id){
                     url +='&prettyFilter='+JSON.stringify({_id:value._id})
-                }
+                }*/
             }
             const newwindow = openWindow({url})
             if (!readOnly) {

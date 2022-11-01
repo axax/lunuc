@@ -533,8 +533,7 @@ export default compose(
                             }else if(action==='create') {
                                 const message = data[0]
                                 const variables = {
-                                    filter: 'chat==' + message.chat._id,
-                                    sort: '_id desc'
+                                    filter: 'chat==' + message.chat._id,...queryMessageVariables
                                 }
                                 const storeData = client.readQuery({
                                     query: queriesMessage.query,

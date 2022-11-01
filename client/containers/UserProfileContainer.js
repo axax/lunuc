@@ -4,6 +4,7 @@ import compose from 'util/compose'
 import {Button, Typography, TextField, DeleteIconButton, Chip, ContentBlock} from 'ui/admin'
 import {graphql} from '../middleware/graphql'
 import {_t} from 'util/i18n.mjs'
+import TypePicker from '../components/TypePicker'
 
 class UserProfileContainer extends React.Component {
 
@@ -26,6 +27,7 @@ class UserProfileContainer extends React.Component {
                 me: nextProps.me,
                 username: nextProps.me.username,
                 email: nextProps.me.email,
+                picture: nextProps.me.picture?[nextProps.me.picture]:[],
                 note: nextProps.me.note
             })
         }
@@ -56,7 +58,7 @@ class UserProfileContainer extends React.Component {
         const value = target.type === 'checkbox' ? target.checked : target.value
         const name = target.name
 
-        if (target.name === 'note') {
+        if (name === 'note') {
             let note = this.state.note.map(
                 (o) => {
                     if (target.id === o._id) {
@@ -66,13 +68,13 @@ class UserProfileContainer extends React.Component {
                 }
             )
             this.setState({
-                [target.name]: note
+                [name]: note
             })
             // auto save note after 5s
             this.saveNote(target.id, value, 5000)
         } else {
             this.setState({
-                [target.name]: value
+                [name]: value
             })
         }
     }
@@ -92,8 +94,10 @@ class UserProfileContainer extends React.Component {
         e.preventDefault()
         this.setState({usernameError: '', loading: true})
 
-        this.props.updateMe({username: this.state.username, email: this.state.email})
-            .then(resp => {
+        this.props.updateMe({username: this.state.username,
+            email: this.state.email,
+            picture: this.state.picture.length>0?this.state.picture[0]._id:null
+        }).then(resp => {
                 this.setState({loading: false})
             })
             .catch(res => {
@@ -158,7 +162,7 @@ class UserProfileContainer extends React.Component {
         const {me} = this.props
         if (!me) return null
         console.log('render UserProfileContainer')
-        const {username, email, password, passwordConfirm, passwordError, passwordMessage, usernameError, loading, note} = this.state
+        const {username, email, picture, password, passwordConfirm, passwordError, passwordMessage, usernameError, loading, note} = this.state
         let noteElements = []
         if (note) {
             note.forEach(
@@ -179,6 +183,10 @@ class UserProfileContainer extends React.Component {
                 <ContentBlock style={{maxWidth: '600px'}}>
                     <TextField fullWidth={true} type="text" label="Benutzername" name="username" value={username} onChange={this.handleInputChange}/>
                     <TextField fullWidth={true} type="email" label="Email" name="email" value={email} onChange={this.handleInputChange}/>
+
+                    <TypePicker onChange={this.handleInputChange} filter="mimeType=image" multi={false} value={picture} name="picture" fullWidth={true} placeholder={_t('Profile.picture')}
+                                type="Media"/>
+
                     <Button onClick={this.updateProfile.bind(this)} variant="contained" color="primary">{_t('core.save')}</Button>
                     {usernameError ? <strong>{usernameError}</strong> : ''}
 
@@ -229,9 +237,9 @@ UserProfileContainer.propTypes = {
     loading: PropTypes.bool
 }
 
-const gqlQuery = 'query{me{username email _id note{_id value}role{_id name capabilities}}}'
+const gqlQuery = 'query{me{username email picture{_id name mimeType} _id note{_id value}role{_id name capabilities}}}'
 
-const gqlUpdate = 'mutation updateMe($username:String,$email:String,$password:String,$passwordConfirm:String){updateMe(username:$username,email:$email,password:$password,passwordConfirm:$passwordConfirm){_id username}}'
+const gqlUpdate = 'mutation updateMe($username:String,$email:String,$password:String,$passwordConfirm:String,$picture:ID){updateMe(username:$username,email:$email,password:$password,passwordConfirm:$passwordConfirm,picture:$picture){_id username}}'
 
 const gqlUpdateNote = 'mutation updateNote($id: ID!, $value: String){updateNote(value:$value,_id:$id){_id value}}'
 

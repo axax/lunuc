@@ -323,9 +323,9 @@ const GenericResolver = {
         } else {
             result.total = estimateCount ? await collection.estimatedDocumentCount() : 0
         }
-
-        //console.log(JSON.stringify(result, null, 4))
-
+        /*if (typeName==="Chat") {
+            console.log(JSON.stringify(result, null, 4),JSON.stringify(dataQuery, null, 4))
+        }*/
         const aggregateTime = new Date() - startTimeAggregate
         const totalTime = new Date() - startTime
 
