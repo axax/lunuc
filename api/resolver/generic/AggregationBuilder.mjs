@@ -261,7 +261,6 @@ export default class AggregationBuilder {
 
 
     /**
-     * get a user or gobal value by a key
      *
      * @param {String} filterKey is the name of the collection field
      * @param {String} filterValue is always a string

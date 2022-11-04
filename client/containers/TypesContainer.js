@@ -52,7 +52,7 @@ import {_t} from 'util/i18n.mjs'
 const {ADMIN_BASE_URL, LANGUAGES} = config
 import {COLLECTIONS_QUERY} from '../constants/index.mjs'
 import GenericForm from '../components/GenericForm'
-import {client, Query} from '../middleware/graphql'
+import {client, Query, clearFetchById} from '../middleware/graphql'
 import json2csv from 'util/json2csv'
 import Async from '../components/Async'
 import styled from '@emotion/styled'
@@ -172,6 +172,7 @@ class TypesContainer extends React.Component {
         }, 1)
         window.removeEventListener('beforeunload', this._handleWindowClose)
         window.removeEventListener('popstate', this._urlChanged)
+        clearFetchById('TypesContainer')
     }
 
     handleWindowClose() {
@@ -1229,9 +1230,9 @@ class TypesContainer extends React.Component {
 
                 client.query({
                     fetchPolicy: 'network-only',
-                    forceFetch: true,
                     query: queries.query,
-                    variables
+                    variables,
+                    id:'TypesContainer'
                 }).then(response => {
                     const o = response.data[storeKey]
                     const newState = {data: o}
@@ -1244,13 +1245,11 @@ class TypesContainer extends React.Component {
 
 
                     }
-
-
                     this.setState(newState)
-
-                }).catch(error => {
-                    console.log(error.message)
-                    this.setState({data: null})
+                }).catch(({error}) => {
+                    if(error.code!==20) {
+                        this.setState({data: null})
+                    }
                 })
 
             }
@@ -1761,10 +1760,8 @@ class TypesContainer extends React.Component {
         if (fieldsToLoad.length > 0) {
 
             const queries = getTypeQueries(type, fieldsToLoad)
-
             client.query({
                 fetchPolicy: 'network-only',
-                forceFetch: true,
                 query: queries.query,
                 variables
             }).then(response => {

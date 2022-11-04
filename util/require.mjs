@@ -101,7 +101,7 @@ export const createRequireForScript = (importPath) => {
             }
             
             const require = (filePath)=>{
-                console.log('deprecated method require in ${importPath} - ' + filePath + '  --> use requireAsync instead')               
+                //console.log('deprecated method require in ${importPath} - ' + filePath + '  --> use requireAsync instead')  */             
                 const newFilePath = enhanceFilePath(filePath)
                
                 if(${!!_app_.es6Module}){

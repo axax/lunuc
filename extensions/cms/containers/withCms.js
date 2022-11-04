@@ -119,27 +119,10 @@ export default function (WrappedComponent) {
                 return getKeyValueFromLS(key)
             }
 
-            /*if (global || this.props.user.isAuthenticated) {
-                client.query({
-                    query: global ? QUERY_KEY_VALUES_GLOBAL : QUERY_KEY_VALUES,
-                    variables: {keys: key.constructor!==Array?[key]:key}
-                }).then((res)=>{
-                    let result
-                    if(res.data ){
-                        const data = global ? res.data.keyValueGlobals : res.data.keyValues
-                        if(data){
-                            if(key.constructor!==Array){
-                                result = data.results[0]
-                            }else{
-                                result = data.results
-                            }
-                        }
-                    }
-                    callback(result)
-                }).catch(callback)
-            }else {
-                callback(getKeyValueFromLS(key))
-            }*/
+            client.query({
+                query: QUERY_KEY_VALUES,
+                variables: {keys: key.constructor!==Array?[key]:key}
+            }).then(callback).catch(callback)
         }
 
 

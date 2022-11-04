@@ -198,16 +198,34 @@ const getFetchMore = ({prevData, type, query, variables, fetchPolicy}) => {
     }
 }
 
-export const finalFetch = ({type = RequestType.query, cacheKey, query, variables, hiddenVariables, fetchPolicy = 'cache-first', lang}) => {
+const FETCH_BY_ID = {}
+
+export const clearFetchById = (id) => {
+    if(FETCH_BY_ID[id]){
+        console.log(`abort fetch with id ${id}`)
+        FETCH_BY_ID[id].abort()
+        delete FETCH_BY_ID[id]
+    }
+}
+
+export const finalFetch = ({type = RequestType.query, cacheKey, id,  query, variables, hiddenVariables, fetchPolicy = 'cache-first', lang}) => {
 
 
     const controller = new AbortController()
+
+    if(id){
+        clearFetchById(id)
+        FETCH_BY_ID[id] = controller
+    }
 
     const timeoutId = setTimeout(() => {
         controller._timeout = true
         controller.abort()
     }, 60000)
 
+    const finalizeRequest = () =>{
+        clearTimeout(timeoutId)
+    }
 
     const promise = new Promise((resolve, reject) => {
 
@@ -248,6 +266,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
             headers: getHeaders(lang),
             body
         }).then(r => {
+            finalizeRequest()
             removeLoader()
             if (r.ok) {
                 setUpWs()
@@ -307,6 +326,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
             }
 
         }).catch(error => {
+            finalizeRequest()
             removeLoader()
             reject({error, loading: false, networkStatus: NetworkStatus.error})
             _app_.dispatcher.addError({
@@ -326,8 +346,8 @@ let CACHE_QUERIES = {}, CACHE_ITEMS = {}, QUERY_WATCHER = {}
 //_app_.CACHE_QUERIES = CACHE_QUERIES
 
 export const client = {
-    query: ({query, variables, fetchPolicy}) => {
-        return finalFetch({query, variables, fetchPolicy})
+    query: ({query, variables, fetchPolicy, id}) => {
+        return finalFetch({id, query, variables, fetchPolicy})
     },
     writeQuery: ({query, variables, data, cacheKey}) => {
         if (data &&

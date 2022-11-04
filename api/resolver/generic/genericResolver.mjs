@@ -366,9 +366,6 @@ const GenericResolver = {
             result.meta = JSON.stringify(result.meta)
         }
 
-
-
-
         if (cacheKey) {
             Cache.set(cacheKey, result, cacheTime)
         }
@@ -831,6 +828,7 @@ const GenericResolver = {
         if (insertResult.insertedId) {
 
             const result = {
+                ...clone,
                 _id: insertResult.insertedId,
                 status: 'created',
                 createdBy: {

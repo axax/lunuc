@@ -1204,7 +1204,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 urlPathname = decodeURIComponentSafe(parsedUrl.pathname)
             }
 
-            console.log(`${remoteAddress}: ${host}${parsedUrl.href} - ${req.headers['user-agent']}`)
+            console.log(`${req.method} ${remoteAddress}: ${host}${parsedUrl.href} - ${req.headers['user-agent']}`)
 
             //small security check
             if (urlPathname.indexOf('../') >= 0) {

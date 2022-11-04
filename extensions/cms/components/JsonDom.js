@@ -44,6 +44,8 @@ const CodeEditor = (props) => <Async {...props}
 const MarkDown = (props) => <Async {...props}
                                    load={import(/* webpackChunkName: "markdown" */ '../../../client/components/MarkDown')}/>
 
+const hasNativeLazyLoadSupport = !_app_.ssr && window.HTMLImageElement && 'loading' in HTMLImageElement.prototype
+
 
 class JsonDom extends React.Component {
 
@@ -1079,10 +1081,17 @@ class JsonDom extends React.Component {
 
                     if (_app_.JsonDom.elementWatch != false &&
                         (
-                            ((eleType.name === 'SmartImage' || eleProps.inlineSvg) && eleProps.src && (!$observe || $observe.if !== 'false')) ||
+                            (
+                                ( eleType.name === 'SmartImage' || eleProps.inlineSvg) &&
+                                eleProps.src &&
+                                (!$observe || $observe.if !== 'false')
+                            ) ||
                             ($observe && $observe.if !== 'false')
                         ) &&
+                        !(eleProps.loading==='lazy' && hasNativeLazyLoadSupport) &&
                         (!!window.IntersectionObserver || eleProps.inlineSvg)) {
+
+
 
                         h.push(React.createElement(
                             ElementWatch,
