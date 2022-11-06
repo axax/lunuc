@@ -845,7 +845,11 @@ const GenericResolver = {
                         if (fields[field].reference && result[field].constructor !== Object) {
                             // is a reference
                             // TODO also resolve fields of subtype
-                            result[field] = {_id: result[field]}
+                            if(fields[field].multi) {
+                                result[field] = result[field].map(f=>({_id: f}))
+                            }else{
+                                result[field] = {_id: result[field]}
+                            }
                         } else if (fields[field].type === 'Object' && result[field].constructor === Object) {
                             result[field] = JSON.stringify(result[field])
                         }
