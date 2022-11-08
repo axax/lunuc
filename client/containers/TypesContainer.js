@@ -1083,7 +1083,9 @@ class TypesContainer extends React.Component {
                 checked={this.state.selectAllRows}
                 onChange={this.handleRowSelect.bind(this)}
             />,
-            id: 'check'
+            id: 'check',
+            cellStyle:{position:'sticky', zIndex:1, left:0, backgroundColor:'white', boxShadow:'inset -1px 0 0 rgb(234,234,234)'}
+
         })
 
         typeDefinition.fields.forEach(field => {
@@ -1110,10 +1112,12 @@ class TypesContainer extends React.Component {
                 id: 'date',
                 sortid: '_id',
                 sortable: true
+
             },
             {
                 title: _t('TypesContainer.actions'),
-                id: '_action'
+                id: '_action',
+                cellStyle:{position:'sticky', right:0, backgroundColor:'white', boxShadow:'inset 1px 0 0 rgb(234,234,234)'}
             })
 
         /* HOOK */

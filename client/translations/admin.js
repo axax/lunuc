@@ -4,7 +4,7 @@ export const translations = {
         'BaseLayout.resetMenu': 'Menü zurücksetzen',
         'TypesContainer.filter': 'Suche',
         'TypesContainer.createdAt': 'Erstellungszeit / ID',
-        'TypesContainer.actions': 'Aktionen',
+        'TypesContainer.actions': 'Akt.',
         'TypesContainer.user': 'Benutzer',
         'TypesContainer.deleteEntry': 'Eintrag löschen',
         'TypesContainer.editEntry': 'Eintrag bearbeiten',

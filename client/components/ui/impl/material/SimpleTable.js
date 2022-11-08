@@ -35,6 +35,15 @@ const StyledActions = styled.div`
     position:relative;
 `
 
+const StyledTableRow = styled(TableRow)(() => ({
+    '&.MuiTableRow-hover:hover > .MuiTableCell-root':{
+        backgroundColor:'rgb(244, 244, 244) !important'
+    }
+}))
+
+//cellStyle:{position:'sticky', right:0, backgroundColor:'white'}
+
+
 class SimpleTable extends React.Component {
 
     createSortHandler = property => {
@@ -89,7 +98,7 @@ class SimpleTable extends React.Component {
                     <TableHead>
                         <TableRow>
                             {columns && columns.map(column => {
-                                return !column.hidden && <TableCell sx={{fontWeight:'bold'}} key={column.id}>
+                                return !column.hidden && <TableCell style={column.cellStyle} sx={{fontWeight:'bold'}} key={column.id}>
 
                                         {column.sortable ?
                                             <Tooltip
@@ -115,7 +124,7 @@ class SimpleTable extends React.Component {
                     <TableBody>
                         {dataSource.map((entry, i) => {
                             return (
-                                <TableRow
+                                <StyledTableRow
                                     style={entry.style}
                                     hover onClick={(e) => {
                                     if (onRowClick) {
@@ -125,7 +134,10 @@ class SimpleTable extends React.Component {
                                     { columns ?
                                         // use columns if available to have the same order
                                         columns.map(col => (
-                                            <TableCell key={col.id}>{entry[col.id]}</TableCell>
+                                            <TableCell style={col.cellStyle?
+                                                (entry.style && entry.style.background ?
+                                                    Object.assign({},col.cellStyle,{background: entry.style.background}) :
+                                                    col.cellStyle):null} key={col.id}>{entry[col.id]}</TableCell>
                                         ))
                                         :
                                         // in case there are no columns defined
@@ -133,7 +145,7 @@ class SimpleTable extends React.Component {
                                             <TableCell key={key}>{entry[key]}</TableCell>
                                         ))
                                     }
-                                </TableRow>
+                                </StyledTableRow>
                             )
                         })}
                     </TableBody>
