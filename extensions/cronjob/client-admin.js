@@ -26,6 +26,7 @@ export default () => {
             const runOnlyScript = action.key==='run_script'
             client.query({
                 fetchPolicy: 'network-only',
+                timeout:0,
                 query: `query runCronJob($cronjobId:String,$script:String,$scriptLanguage:String,$sync:Boolean,$noEntry:Boolean){runCronJob(cronjobId:$cronjobId,script:$script,scriptLanguage:$scriptLanguage,sync:$sync,noEntry:$noEntry){status result}}`,
                 variables: {
                     script: createEditForm.state.fields.script,

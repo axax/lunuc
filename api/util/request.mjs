@@ -29,19 +29,24 @@ export const request = (options) => {
             if(finalOptions.followAllRedirects && (res.statusCode === 301 || res.statusCode === 302 || res.statusCode === 307)) {
 
 
-                if(res.headers.location.indexOf('/')===0){
+                if(res.headers.location.indexOf('/')===0) {
                     finalOptions.url = finalOptions.protocol + '//' + finalOptions.hostname + res.headers.location
+                }else if(res.headers.location.indexOf('//')<0){
+                    finalOptions.url = finalOptions.protocol + '//' + finalOptions.hostname + '/'+res.headers.location
                 }else{
                     finalOptions.url = res.headers.location
                 }
-                console.log('redirect '+finalOptions.url)
-
-                request(finalOptions).then(resolve).catch(reject)
-
+                if(!finalOptions.redirectCount){
+                    finalOptions.redirectCount=0
+                }
+                finalOptions.redirectCount++
+                //console.log('redirect '+finalOptions.url)
+                if(finalOptions.redirectCount<10) {
+                    request(finalOptions).then(resolve).catch(reject)
+                }else{
+                    reject({message:'too many redirects'})
+                }
                 return
-                //request()
-
-               // return get(res.headers.location, resolve, reject)
             }
 
 
@@ -52,7 +57,12 @@ export const request = (options) => {
             });
 
             res.on('end', () => {
-                if(finalOptions.json){
+                if(finalOptions.raw){
+                    res.body = data
+                    res.finalUrl = finalOptions.url
+                    res.finalRemoteIp = req.socket.remoteAddress
+                    resolve(res)
+                }else if(finalOptions.json){
                     let json
                     try {
                         json = JSON.parse(data)

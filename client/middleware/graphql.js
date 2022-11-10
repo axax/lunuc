@@ -208,7 +208,7 @@ export const clearFetchById = (id) => {
     }
 }
 
-export const finalFetch = ({type = RequestType.query, cacheKey, id,  query, variables, hiddenVariables, fetchPolicy = 'cache-first', lang}) => {
+export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  query, variables, hiddenVariables, fetchPolicy = 'cache-first', lang}) => {
 
 
     const controller = new AbortController()
@@ -218,10 +218,10 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id,  query, vari
         FETCH_BY_ID[id] = controller
     }
 
-    const timeoutId = setTimeout(() => {
+    const timeoutId = timeout === 0 ? 0 :setTimeout(() => {
         controller._timeout = true
         controller.abort()
-    }, 60000)
+    }, timeout || 60000)
 
     const finalizeRequest = () =>{
         clearTimeout(timeoutId)
@@ -346,8 +346,8 @@ let CACHE_QUERIES = {}, CACHE_ITEMS = {}, QUERY_WATCHER = {}
 //_app_.CACHE_QUERIES = CACHE_QUERIES
 
 export const client = {
-    query: ({query, variables, fetchPolicy, id}) => {
-        return finalFetch({id, query, variables, fetchPolicy})
+    query: ({query, variables, fetchPolicy, timeout, id}) => {
+        return finalFetch({id, timeout, query, variables, fetchPolicy})
     },
     writeQuery: ({query, variables, data, cacheKey}) => {
         if (data &&
