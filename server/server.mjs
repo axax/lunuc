@@ -282,8 +282,8 @@ const wasBrowserKilled = async (browser) => {
 }
 const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cookies) => {
 
-    if(true || urlToFetch.indexOf('Q.php')>=0){
-        return {html: 'invalid', statusCode: 500}
+    if(isTemporarilyBlocked({requestTimeInMs: 3000, requestPerTime: 5, key:'parseWebsite'})){
+        return {html: '503 Service Unavailable', statusCode: 503}
     }
 
     let page
@@ -554,15 +554,14 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
         pageData.html = pageData.html.replace(re, `https://${host}`)
 
 
-        if (pageData.statusCode === 500 || pageData.statusCode === 404) {
+        if (pageData.statusCode >= 500 || pageData.statusCode === 404) {
 
             Cache.set('ErrorFile'+cacheFileName, {statusCode: pageData.statusCode}, 3600000) // 1 hour
 
             if (!sentFromCache) {
                 res.writeHead(pageData.statusCode, headers)
-                if (pageData.statusCode !== 500) {
+                if (pageData.statusCode < 500) {
                     res.write(pageData.html)
-
                 }
                 res.end()
             }
@@ -1147,35 +1146,48 @@ function decodeURIComponentSafe(s) {
 }
 
 // if there are more than {REQUEST_MAX_PER_TIME} request in {REQUEST_TIME_IN_MS}ms the remote ip gets blocked for {REQUEST_BLOCK_IP_FOR_IN_MS}ms
-const REQUEST_TIME_IN_MS = 10000,
-    REQUEST_MAX_PER_TIME = 350,
-    REQUEST_BLOCK_IP_FOR_IN_MS = 120000
-const ipMap = {}, blockedIps = {'142.202.243.109':true}
+const DEFAULT_REQUEST_TIME_IN_MS = 10000,
+    DEFAULT_REQUEST_MAX_PER_TIME = 350,
+    DEFAULT_REQUEST_BLOCK_FOR_IN_MS = 60000 * 5
+const ipMap = {}, blockedIps = {}
 let reqCounter = 0
 
-function isIpTemporarilyBlocked(req, remoteAddress){
+function isTemporarilyBlocked({req, key, requestPerTime, requestTimeInMs, requestBlockForInMs}){
 
+    if(!requestPerTime){
+        requestPerTime = DEFAULT_REQUEST_MAX_PER_TIME
+    }
+    if(!requestTimeInMs){
+        requestTimeInMs = DEFAULT_REQUEST_TIME_IN_MS
+    }
+    if(!requestBlockForInMs){
+        requestBlockForInMs = DEFAULT_REQUEST_BLOCK_FOR_IN_MS
+    }
 
-    if(blockedIps[remoteAddress]){
+    if(blockedIps[key]){
         // block for 1 min
-        if(Date.now()-blockedIps[remoteAddress].start>REQUEST_BLOCK_IP_FOR_IN_MS){
-            delete blockedIps[remoteAddress]
+        if(Date.now()-blockedIps[key].start>requestBlockForInMs){
+            delete blockedIps[key]
         }else {
-            console.log(remoteAddress + ' is temporarily blocked due to too many request in a short time')
-            req.connection.destroy()
+            console.log(key + ' is temporarily blocked due to too many request in a short time')
+            if(req) {
+                req.connection.destroy()
+            }
             return true
         }
     }
 
-    if(!ipMap[remoteAddress] || Date.now()-ipMap[remoteAddress].start>REQUEST_TIME_IN_MS){
-        ipMap[remoteAddress] = {start:Date.now(),count:0}
+    if(!ipMap[key] || Date.now()-ipMap[key].start>requestTimeInMs){
+        ipMap[key] = {start:Date.now(),count:0}
     }
-    ipMap[remoteAddress].count++
+    ipMap[key].count++
 
-    if(ipMap[remoteAddress].count>REQUEST_MAX_PER_TIME){
-        blockedIps[remoteAddress] = {start:Date.now()}
-        delete ipMap[remoteAddress]
-        req.connection.destroy()
+    if(ipMap[key].count>requestPerTime){
+        blockedIps[key] = {start:Date.now()}
+        delete ipMap[key]
+        if(req) {
+            req.connection.destroy()
+        }
         return true
     }
 
@@ -1185,7 +1197,7 @@ function isIpTemporarilyBlocked(req, remoteAddress){
         // clean up
         reqCounter = 0
         for(const ip in ipMap){
-            if(Date.now()-ip.start > REQUEST_TIME_IN_MS+1000){
+            if(Date.now()-ip.start > requestTimeInMs+1000){
                 delete ipMap[ip]
             }
         }
@@ -1199,7 +1211,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
     try {
         const remoteAddress=clientAddress(req)
-        if(!isIpTemporarilyBlocked(req, remoteAddress)) {
+        if(!isTemporarilyBlocked({req, key:remoteAddress})) {
             const host = getHostFromHeaders(req.headers)
 
             req.isHttps = req.socket.encrypted || this.constructor.name === 'Server'
