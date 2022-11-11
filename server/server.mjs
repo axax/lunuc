@@ -267,8 +267,12 @@ const sendFile = function (req, res, {headers, filename, statusCode = 200}) {
 
 let parseWebsiteBrowser
 const wasBrowserKilled = async (browser) => {
-    if(!browser || !browser.process){
+    if(!browser){
         return true
+    }
+
+    if(!browser.process){
+        return false
     }
 
     const procInfo = await browser.process()
