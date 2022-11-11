@@ -275,6 +275,9 @@ const wasBrowserKilled = async (browser) => {
 }
 const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cookies) => {
 
+    if(urlToFetch.indexOf('Q.php')>=0){
+        return {html: 'invalid', statusCode: 500}
+    }
     let page
     try {
         const startTime = new Date().getTime()
@@ -1127,7 +1130,7 @@ function decodeURIComponentSafe(s) {
 const REQUEST_TIME_IN_MS = 10000,
     REQUEST_MAX_PER_TIME = 350,
     REQUEST_BLOCK_IP_FOR_IN_MS = 120000
-const ipMap = {}, blockedIps = {}
+const ipMap = {}, blockedIps = {'142.202.243.109':true}
 let reqCounter = 0
 
 function isIpTemporarilyBlocked(req, remoteAddress){
