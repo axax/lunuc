@@ -282,7 +282,7 @@ const wasBrowserKilled = async (browser) => {
 }
 const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cookies) => {
 
-    if(urlToFetch.indexOf('Q.php')>=0){
+    if(true || urlToFetch.indexOf('Q.php')>=0){
         return {html: 'invalid', statusCode: 500}
     }
 
