@@ -272,6 +272,8 @@ const wasBrowserKilled = async (browser) => {
     }
 
     const procInfo = await browser.process()
+
+    console.log(`wasBrowserKilled ${procInfo.signalCode} ${procInfo.killed}`)
     return !!procInfo.signalCode // null if browser is still running
 }
 const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cookies) => {
