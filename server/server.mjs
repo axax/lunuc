@@ -325,7 +325,7 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cooki
         await page.setDefaultTimeout(5000)
         await page.setRequestInterception(true)
 
-        if( cookies /*&& cookies.session && cookies.auth*/) {
+        if( cookies && cookies.session && cookies.auth) {
             const cookiesToSet = Object.keys(cookies).map(k=>({domain:'localhost',name:k, value:cookies[k]}))
             await page.setCookie(...cookiesToSet)
         }
