@@ -26,7 +26,7 @@ import ffprobeInstaller from '@ffprobe-installer/ffprobe'
 import ffmpeg from 'fluent-ffmpeg'
 //import heapdump from 'heapdump'
 import {clientAddress} from '../util/host.mjs'
-
+import Cache from '../util/cache.mjs'
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
 const ROOT_DIR = path.resolve(), SERVER_DIR = path.join(ROOT_DIR, './server')
@@ -272,14 +272,10 @@ const wasBrowserKilled = async (browser) => {
     }
 
     const procInfo = await browser.process()
-    console.log('wasBrowserKilled',procInfo.signalCode)
     return !!procInfo.signalCode // null if browser is still running
 }
 const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cookies) => {
 
-    if(urlToFetch.indexOf('Q.php')>=0){
-        return {html: 'invalid', statusCode: 500}
-    }
     let page
     try {
         const startTime = new Date().getTime()
@@ -451,6 +447,7 @@ const doScreenCapture = async (url, filename, options) => {
     await browser.close()
 }
 
+
 const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, host, parsedUrl}) => {
     const headers = {
         'Cache-Control': 'public, max-age=60',
@@ -498,6 +495,15 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
         const cacheFileDir = path.join(SERVER_DIR, 'cache', host.replace(/\W/g, ''))
         const cacheFileName = cacheFileDir + '/' + urlToFetch.replace(/\W/g, '') + '.html'
 
+        const errorFile = Cache.get('ErrorFile'+cacheFileName)
+        if(errorFile){
+            console.log(`send from error file cache ${cacheFileName}`)
+            res.writeHead(errorFile.statusCode, headers)
+            res.write('Error '+errorFile.statusCode)
+            res.end()
+
+        }
+
         const cookies = parseCookies(req)
 
         let sentFromCache = false
@@ -539,6 +545,8 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
 
 
         if (pageData.statusCode === 500 || pageData.statusCode === 404) {
+
+            Cache.set('ErrorFile'+cacheFileName, {statusCode: pageData.statusCode}, 3600000) // 1 hour
 
             if (!sentFromCache) {
                 res.writeHead(pageData.statusCode, headers)
@@ -1132,7 +1140,7 @@ function decodeURIComponentSafe(s) {
 const REQUEST_TIME_IN_MS = 10000,
     REQUEST_MAX_PER_TIME = 350,
     REQUEST_BLOCK_IP_FOR_IN_MS = 120000
-const ipMap = {}, blockedIps = {'142.202.243.109':true}
+const ipMap = {}, blockedIps = {}
 let reqCounter = 0
 
 function isIpTemporarilyBlocked(req, remoteAddress){
