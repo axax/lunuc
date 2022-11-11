@@ -270,7 +270,9 @@ const wasBrowserKilled = async (browser) => {
     if(!browser || !browser.process){
         return true
     }
+
     const procInfo = await browser.process()
+    console.log('wasBrowserKilled',procInfo.signalCode)
     return !!procInfo.signalCode // null if browser is still running
 }
 const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cookies) => {
@@ -282,8 +284,11 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cooki
     try {
         const startTime = new Date().getTime()
 
-        console.log(`fetch ${urlToFetch}`)
+        console.log(`parseWebsite fetch ${urlToFetch}`)
         if(await wasBrowserKilled(parseWebsiteBrowser)) {
+
+            console.log(`create new browser instance`)
+
             parseWebsiteBrowser = await puppeteer.launch({
                 devtools: false,
                 /*userDataDir: './server/myUserDataDir',*/
@@ -297,7 +302,6 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cooki
             })
         }
         const pages = await parseWebsiteBrowser.pages()
-
         if( pages.length > 5){
             console.warn('browser too busy to process more requests -> ignore')
             return {html: 'too busy to process request', statusCode: 500}
@@ -311,11 +315,9 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cooki
                 if(!page.isClosed() && !(await wasBrowserKilled(page.browser()))) {
                     //await pages.forEach(async (page) => await page.close())
 
-                    const procInfo = await parseWebsiteBrowser.process()
-                    if (!procInfo.signalCode) {
-                        parseWebsiteBrowser.process().kill('SIGINT')
-                        console.log('browser still running after 20s. kill process')
-                    }
+                    parseWebsiteBrowser.process().kill('SIGINT')
+                    console.log('browser still running after 20s. kill process')
+
                     parseWebsiteBrowser = false
                 }
             }catch (e) {
@@ -328,7 +330,7 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cooki
         await page.setDefaultTimeout(5000)
         await page.setRequestInterception(true)
 
-        if( cookies && cookies.session && cookies.auth) {
+        if( cookies /*&& cookies.session && cookies.auth*/) {
             const cookiesToSet = Object.keys(cookies).map(k=>({domain:'localhost',name:k, value:cookies[k]}))
             await page.setCookie(...cookiesToSet)
         }
