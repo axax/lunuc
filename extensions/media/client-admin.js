@@ -75,8 +75,10 @@ export default () => {
     })
 
     // add some extra data to the table
-    Hook.on('TypeTableAction', function ({type, actions}) {
+    Hook.on('TypeTableAction', function ({type, multiSelectActions, actions}) {
         if (type === 'Media') {
+
+            multiSelectActions.unshift({name: 'Download', value: 'download'})
 
             const userCanManageOtherUser = Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_OTHER_USERS)
 
@@ -138,6 +140,31 @@ export default () => {
         }
     })
 
+
+
+    function downloadAll(files){
+        if(files.length == 0) return
+        const file = files.pop()
+
+
+        downloadAll(files)
+    }
+
+    Hook.on('TypeTableMultiSelectAction', function ({action, data, selectedRows}) {
+        if(action === 'download'){
+            Object.keys(selectedRows).forEach(id=>{
+                const item = data.results.find(f=>f._id===id)
+                if(item) {
+                    const a = document.createElement("a")
+                    a.setAttribute('href', `${UPLOAD_URL}/${item._id}`)
+                    a.setAttribute('download', item.name)
+                    a.setAttribute('target', '_blank')
+                    a.click()
+                }
+            })
+            //downloadAll(files)
+        }
+    })
     // add some extra data to the table
     Hook.on('TypeCreateEdit', function ({type, props, dataToEdit, meta}) {
         if (type === 'Media') {

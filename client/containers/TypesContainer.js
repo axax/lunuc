@@ -507,7 +507,9 @@ class TypesContainer extends React.Component {
                 })
             }
 
-            Hook.call('TypeTableAction', {type, actions, pageParams: this.pageParams}, this)
+            const multiSelectActions = [{name: 'Delete', value: 'delete'}, {name: 'Bulk edit', value: 'edit'}]
+
+            Hook.call('TypeTableAction', {type, actions, multiSelectActions, pageParams: this.pageParams}, this)
 
             return <SimpleTable key="typeTable"
                                 style={{marginBottom: '5rem'}}
@@ -565,11 +567,11 @@ class TypesContainer extends React.Component {
                                 footer={<div style={{display: 'flex', alignItems: 'center', minHeight: '48px'}}>
                                     <p style={{marginRight: '2rem'}}>{_t('TypesContainer.selectedRows', {count: selectedLength})}</p>{selectedLength ?
                                     <SimpleSelect
-                                        label="Select action"
+                                        label={_t('TypesContainer.multiSelectAction')}
                                         value=""
                                         style={{marginBottom: 0, marginTop: 0}}
                                         onChange={this.handleBatchAction.bind(this)}
-                                        items={[{name: 'Delete', value: 'delete'}, {name: 'Bulk edit', value: 'edit'}]}
+                                        items={multiSelectActions}
                                     /> : ''}
                                 </div>}
                                 orderDirection={asort.length > 1 && asort[1] || null}
@@ -1014,20 +1016,24 @@ class TypesContainer extends React.Component {
 
 
     handleBatchAction(e) {
-        const value = e.target.value
-        if (value === 'delete') {
+        const action = e.target.value
+        const {selectedRows, data} = this.state
+        if (action === 'delete') {
             const dataToDelete = []
-            Object.keys(this.state.selectedRows).forEach(_id => {
+            Object.keys(selectedRows).forEach(_id => {
                 dataToDelete.push({_id})
             })
             this.setState({dataToDelete, confirmDeletionDialog: true})
 
-        } else if (value === 'edit') {
+        } else if (action === 'edit') {
             const dataToBulkEdit = []
-            Object.keys(this.state.selectedRows).forEach(_id => {
+            Object.keys(selectedRows).forEach(_id => {
                 dataToBulkEdit.push(_id)
             })
             this.setState({dataToBulkEdit})
+        } else {
+
+            Hook.call('TypeTableMultiSelectAction', {data, action, selectedRows}, this)
         }
     }
 
