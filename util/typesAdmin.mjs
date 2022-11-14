@@ -218,8 +218,10 @@ Hook.on('Types', ({types}) => {
     types.KeyValue = {
         name: 'KeyValue',
         usedBy: ['core'],
+        entryClonable: true,
         fields: [
             {
+                clone: "${key}_copy",
                 name: 'key',
                 required: true
             },

@@ -385,6 +385,10 @@ const GenericResolver = {
             throw error
         }
 
+        if(!await Util.userHasAccessRights(db,context,{typeName, access:'create'})){
+            throw new Error('Benutzer hat keine Berechtigung zum Erstellen von neuen Einträgen')
+        }
+
 
         const typeDefinition = getType(typeName)
 
@@ -504,6 +508,11 @@ const GenericResolver = {
             throw new Error('Id is missing')
         }
 
+
+        if(!await Util.userHasAccessRights(db,context,{typeName, access:'delete'})){
+            throw new Error('Benutzer hat keine Berechtigung zum Löschen')
+        }
+
         const collectionName = await buildCollectionName(db, context, typeName, _version)
 
         let match = {}
@@ -556,6 +565,11 @@ const GenericResolver = {
             throw new Error('Id is missing')
         }
 
+
+        if(!await Util.userHasAccessRights(db,context,{typeName, access:'delete'})){
+            throw new Error('Benutzer hat keine Berechtigung zum Löschen')
+        }
+
         const collectionName = await buildCollectionName(db, context, typeName, _version)
 
 
@@ -606,6 +620,11 @@ const GenericResolver = {
 
 
         Util.checkIfUserIsLoggedIn(context)
+
+
+        if(!await Util.userHasAccessRights(db,context,{typeName, access:'update'})){
+            throw new Error('Benutzer hat keine Berechtigung zum Bearbeiten')
+        }
 
         const payload = {}
 
@@ -803,6 +822,9 @@ const GenericResolver = {
             throw new Error('Id is missing')
         }
 
+        if(!await Util.userHasAccessRights(db,context,{typeName, access:'clone'})){
+            throw new Error('Benutzer hat keine Berechtigung zum Kopieren')
+        }
 
         let match = {_id: ObjectId(_id)}
         if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)) {

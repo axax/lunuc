@@ -470,6 +470,11 @@ export const userResolver = (db) => ({
     Mutation: {
         createUser: async ({username, password, email, language, meta, domain, picture, emailConfirmed, requestNewPassword, role, junior, group, setting}, {context}) => {
 
+
+            if(!await Util.userHasAccessRights(db,context,{typeName:'User', access:'create'})){
+                throw new Error('Benutzer hat keine Berechtigung um neue Benutzer zu erstellen')
+            }
+
             if (email) {
                 email = email.trim()
             }
@@ -563,6 +568,10 @@ export const userResolver = (db) => ({
         },
         updateUser: async ({_id, username, email, password, picture, language, emailConfirmed, requestNewPassword, role, junior, meta, domain, group, setting}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
+
+            if(!await Util.userHasAccessRights(db,context,{typeName:'User', access:'update'})){
+                throw new Error('Benutzer hat keine Berechtigung um Benutzer zu bearbeiten')
+            }
 
             if (email) {
                 email = email.trim()
@@ -746,6 +755,10 @@ export const userResolver = (db) => ({
         updateMe: async ({password, passwordConfirm, ...user}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
+            if(!await Util.userHasAccessRights(db,context,{typeName:'User', access:'update'})){
+                throw new Error('Benutzer hat keine Berechtigung um Benutzer zu beabeiten')
+            }
+
             const userCollection = db.collection('User')
 
             let existingUser = (await userCollection.findOne({$or: [{'username': user.username}, {'email': user.email}]}))
@@ -781,6 +794,10 @@ export const userResolver = (db) => ({
         updateNote: async ({_id, value}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
+            if(!await Util.userHasAccessRights(db,context,{typeName:'User', access:'update'})){
+                throw new Error('Benutzer hat keine Berechtigung um Benutzer zu bearbeiten')
+            }
+
             const userCollection = db.collection('User')
             var result = null
             if (!_id) {
@@ -804,6 +821,10 @@ export const userResolver = (db) => ({
         createNote: async ({value}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
+            if(!await Util.userHasAccessRights(db,context,{typeName:'User', access:'update'})){
+                throw new Error('Benutzer hat keine Berechtigung um Benutzer zu bearbeiten')
+            }
+
             if (!value) value = ''
 
             const userCollection = db.collection('User')
@@ -825,6 +846,10 @@ export const userResolver = (db) => ({
         },
         deleteNote: async ({_id}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
+
+            if(!await Util.userHasAccessRights(db,context,{typeName:'User', access:'update'})){
+                throw new Error('Benutzer hat keine Berechtigung um Benutzer zu bearbeiten')
+            }
 
             const userCollection = db.collection('User')
 

@@ -9,7 +9,7 @@
       "fields": [
         {
           "name": "slug",
-          "label": "Slug / Url",
+          "label": "Url",
           "required": false,
           "clone": "${slug}_copy",
           "index": 1,

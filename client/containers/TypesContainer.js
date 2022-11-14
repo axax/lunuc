@@ -56,6 +56,7 @@ import {client, Query, clearFetchById} from '../middleware/graphql'
 import json2csv from 'util/json2csv'
 import Async from '../components/Async'
 import styled from '@emotion/styled'
+import {CAPABILITY_MANAGE_TYPES} from '../../util/capabilities.mjs'
 
 const CodeEditor = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
@@ -415,6 +416,9 @@ class TypesContainer extends React.Component {
             }
             const asort = sort.split(' ')
 
+            const capaManageTypes = Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_TYPES)
+
+
             /* HOOK */
             Hook.call('TypeTable', {type, dataSource, data, fields, container: this})
 
@@ -507,8 +511,11 @@ class TypesContainer extends React.Component {
                 })
             }
 
-            const multiSelectActions = [{name: 'Delete', value: 'delete'}, {name: 'Bulk edit', value: 'edit'}]
+            const multiSelectActions = [{name: _t('TypesContainer.delete'), value: 'delete'}]
 
+            if(capaManageTypes){
+                multiSelectActions.push( {name: 'Bulk edit', value: 'edit'})
+            }
             Hook.call('TypeTableAction', {type, actions, multiSelectActions, pageParams: this.pageParams}, this)
 
             return <SimpleTable key="typeTable"
@@ -521,6 +528,7 @@ class TypesContainer extends React.Component {
                                 rowsPerPage={limit} page={page}
                                 orderBy={asort[0]}
                                 header={this.types[type].collectionClonable &&
+                                    capaManageTypes &&
                                     <Query query={COLLECTIONS_QUERY}
                                            fetchPolicy="cache-and-network"
                                            variables={{filter: '^' + type + '_.*'}}>

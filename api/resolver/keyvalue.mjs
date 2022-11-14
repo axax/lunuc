@@ -162,6 +162,9 @@ export const keyvalueResolver = (db) => ({
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
             return GenericResolver.deleteEnities(db, context, 'KeyValue', {_id})
         },
+        cloneKeyValue: async (data, {context}) => {
+            return GenericResolver.cloneEntity(db, context, 'KeyValue', data)
+        },
         createKeyValueGlobal: async ({key, value, ispublic}, req) => {
             await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_MANAGE_TYPES)
             return await GenericResolver.createEntity(db, req, 'KeyValueGlobal', {key, value, ispublic})

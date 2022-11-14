@@ -292,6 +292,12 @@ export const systemResolver = (db) => ({
         },
         importCollection: async ({collection, json}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
+
+
+            if(!await Util.userHasAccessRights(db,context,{typeName:collection, access:'create'})){
+                throw new Error('Benutzer hat keine Berechtigung zum Importieren')
+            }
+
             let jsonParsed = JSON.parse(json)
 
             if (jsonParsed.constructor !== Array) {

@@ -631,7 +631,7 @@ class CmsViewEditorContainer extends React.Component {
                             /></React.Fragment>}
                     </Expandable>
 
-                    <Expandable title={_t('CmsViewEditorContainer.revisions')}
+                    {canMangeCmsTemplate && <Expandable title={_t('CmsViewEditorContainer.revisions')}
                                 onChange={this.handleSettingChange.bind(this, 'revisionsExpanded', true)}
                                 expanded={EditorPageOptions.revisionsExpanded}>
 
@@ -714,7 +714,7 @@ class CmsViewEditorContainer extends React.Component {
                                                     count={Math.ceil(data.historys.total / this.state.historyLimit)} /></Stack>]
                                 }}
                             </Query>}
-                    </Expandable>
+                    </Expandable>}
 
 
                     {this.state.showRevision &&
