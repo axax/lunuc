@@ -141,15 +141,6 @@ export default () => {
     })
 
 
-
-    function downloadAll(files){
-        if(files.length == 0) return
-        const file = files.pop()
-
-
-        downloadAll(files)
-    }
-
     Hook.on('TypeTableMultiSelectAction', function ({action, data, selectedRows}) {
         if(action === 'download'){
             Object.keys(selectedRows).forEach(id=>{

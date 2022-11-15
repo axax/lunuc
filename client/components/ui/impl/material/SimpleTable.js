@@ -23,6 +23,14 @@ import styled from '@emotion/styled'
 const StyledScrollArea = styled.div`
     width: 100%;
     overflow-y: hidden;
+    ::-webkit-scrollbar {
+      height:8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      border-radius: 4px;
+      background-color: rgba(0, 0, 0, .5);
+      -webkit-box-shadow: 0 0 1px rgba(255, 255, 255, .5);
+    }
 `
 const StyledSpacer = styled.div`
     flex: 1 1 100%;

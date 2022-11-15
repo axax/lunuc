@@ -27,6 +27,7 @@ import ffmpeg from 'fluent-ffmpeg'
 //import heapdump from 'heapdump'
 import {clientAddress} from '../util/host.mjs'
 import Cache from '../util/cache.mjs'
+import {doScreenCapture} from './util/index.mjs'
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
 const ROOT_DIR = path.resolve(), SERVER_DIR = path.join(ROOT_DIR, './server')
@@ -404,59 +405,6 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cooki
 
     }
 }
-
-
-const doScreenCapture = async (url, filename, options) => {
-
-    console.log(`take screenshot ${url}`)
-
-    const browser = await puppeteer.launch({
-        ignoreHTTPSErrors: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--no-zygote']
-    })
-    const page = await browser.newPage()
-    await page.goto(url, {waitUntil: 'domcontentloaded'})
-
-    await page.setViewport({width: 1280, height: 800, ...options})
-    if (options.delay) {
-        await page.waitForTimeout(options.delay)
-    }
-    console.log(options)
-    if (options.padding) {
-        let t,l,b,r
-        if(options.padding.constructor===String) {
-            const parts = options.padding.trim().split(' ')
-            if (parts.length === 4) {
-                t = parseInt(parts[0])
-                r = parseInt(parts[1])
-                b = parseInt(parts[2])
-                l = parseInt(parts[3])
-            } else {
-                t = r = b = l = parseInt(options.padding)
-            }
-        }else{
-            t = r = b = l = options.padding
-        }
-
-
-        options.clip = {
-            x: l,
-            y: t,
-            width: options.width - (l+r),
-            height: options.height - (t+b)
-        }
-    }
-
-
-    await page.screenshot({
-        fullPage: false,
-        path: filename,
-        ...options
-    })
-    await page.close()
-    await browser.close()
-}
-
 
 const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, host, parsedUrl}) => {
     const headers = {
