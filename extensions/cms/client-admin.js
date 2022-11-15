@@ -86,8 +86,8 @@ export default () => {
                 if (d.slug) {
                     const item = data.results[i]
                     if( item ) {
-                        d.preview =  <Link to={cmsPageEditorUrl(item.slug, container.pageParams._version)}>
-                            <img style={{maxWidth: '6rem', maxHeight: '6rem', objectFit: 'cover'}}
+                        d.preview =  <Link style={{display:'block', lineHeight: '0'}} to={cmsPageEditorUrl(item.slug, container.pageParams._version)}>
+                            <img style={{}} width={120} height={80}
                                          src={`/lunucapi/generate/png?url=/${item.slug}${encodeURI('?preview=true')}&width=1200&height=800&cache=true&cacheExpire=${new Date(item.modifiedAt).getTime()}`}/>
                         </Link>
 
