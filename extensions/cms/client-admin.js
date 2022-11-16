@@ -88,7 +88,7 @@ export default () => {
                     if( item ) {
                         d.preview =  <Link style={{display:'block', lineHeight: '0'}} to={cmsPageEditorUrl(item.slug, container.pageParams._version)}>
                             <img style={{}} width={120} height={80}
-                                         src={`/lunucapi/generate/png?url=/${item.slug}${encodeURI('?preview=true')}&width=1200&height=800&cache=true&cacheExpire=${new Date(item.modifiedAt).getTime()}`}/>
+                                         src={`/lunucapi/generate/png?url=/${item.slug}${encodeURI('?preview=true')}&width=1200&height=800&rwidth=120&rheight=80&cache=true&cacheExpire=${new Date(item.modifiedAt).getTime()}`}/>
                         </Link>
 
                         d.slug = <Link

@@ -385,7 +385,9 @@ const GenericResolver = {
             throw error
         }
 
-        if(!await Util.userHasAccessRights(db,context,{typeName, access:'create'})){
+        const skipCheck = options && options.skipCheck
+
+        if(!skipCheck && !await Util.userHasAccessRights(db,context,{typeName, access:'create'})){
             throw new Error('Benutzer hat keine Berechtigung zum Erstellen von neuen Einträgen')
         }
 
@@ -420,7 +422,7 @@ const GenericResolver = {
 
         let createdBy, username
         if (data.createdBy && data.createdBy !== context.id) {
-            if (!options || !options.skipCheck) {
+            if (!skipCheck) {
                 await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
             }
             createdBy = data.createdBy
