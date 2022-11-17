@@ -425,7 +425,7 @@ class GenericForm extends React.Component {
                             name,
                             target,
                             resolve,
-                            prevState,
+                            prevState: this.state,
                             Util,
                             rawValue: e.rawValue,
                             props: this.props
