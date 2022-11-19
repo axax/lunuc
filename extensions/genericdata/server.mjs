@@ -86,6 +86,8 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
 
             const dataProjection = findProjection('data', projection)
             if (dataProjection.data && dataProjection.data.constructor === Array) {
+
+
                 const projectionResult = findProjection(field.name, dataProjection.data)
                 currentProjection = projectionResult.data
                 if (!currentProjection) {
@@ -94,6 +96,9 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
                 }else{
 
                     if(otherOptions.postLookup){
+                        /**
+                         * @deprecated postLookup mode might be deprecated
+                         */
                         if(!otherOptions.$addFields){
                             otherOptions.$addFields = {}
                         }
@@ -109,7 +114,6 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
 
                 }
             }
-
         }
         if (!currentProjection && field.vagueLookup === false && (!otherOptions.filter || otherOptions.filter.indexOf('_id=') !== 0)) {
             return
@@ -148,10 +152,26 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
                     }
             }
 
-        const deepLookup = otherOptions.lookupLevel > 1
-        let newLookup
+        const subLookup = []
+        if (otherOptions.lookupLevel > 1 || (otherOptions.lookupLevel === undefined && currentProjection && currentProjection.length > 0 )) {
 
-        if(!deepLookup && (otherOptions.simpleLookup || field.simpleLookup)){
+            const def = await getGenericTypeDefinitionWithStructure(db, {name: field.genericType})
+            if (def && def.structure && def.structure.fields) {
+
+                for (const subField of def.structure.fields) {
+                    if (subField.genericType) {
+                        await addGenericTypeLookup(subField, {
+                            lookups: subLookup,
+                            lookupLevel: otherOptions.lookupLevel - 1
+                        }, currentProjection, db)
+                    }
+                }
+
+            }
+        }
+
+        let newLookup
+        if(otherOptions.simpleLookup!==false && field.simpleLookup !== false){
             otherOptions.lookups.push({
                 $addFields: {
                     [`${key}ObjectId`]: id
@@ -162,32 +182,15 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
                         from: 'GenericData',
                         localField: `${key}ObjectId`,
                         foreignField: '_id',
-                        as: `data.${key}`
+                        as: field.metaFields ? `lookupRelation${key}` : `data.${key}`,
+                        pipeline: [],
                     }
                 }
-
-                // TODO: convert back to array or single
-
         } else {
 
-            let subLookup = []
-            if (deepLookup/* && currentProjection && currentProjection.constructor===Array*/) {
-
-                const def = await getGenericTypeDefinitionWithStructure(db, {name: field.genericType})
-                if (def && def.structure && def.structure.fields) {
-
-                    for (const subField of def.structure.fields) {
-                        if (subField.genericType) {
-                            await addGenericTypeLookup(subField, {
-                                lookups: subLookup,
-                                lookupLevel: otherOptions.lookupLevel - 1
-                            }, currentProjection, db)
-                        }
-                    }
-
-                }
-            }
-
+            /**
+             * @deprecated lookup with $match might be deprecated
+             */
             const $match = {
                 $expr: {
                     $cond:
@@ -198,7 +201,6 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
                         }
                 }
             }
-
             newLookup = {
                 $lookup: {
                     from: 'GenericData',
@@ -213,21 +215,22 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
                     as: field.metaFields ? `lookupRelation${key}` : `data.${key}`
                 }
             }
+        }
 
-            if (subLookup.length > 0) {
-                subLookup.forEach(sub => {
-                    newLookup.$lookup.pipeline.push(sub)
-                })
-            }
-
-            newLookup.$lookup.pipeline.push({
-                $project: {
-                    __typename: 'GenericData',
-                    _id: 1,
-                    data: 1
-                }
+        if (subLookup.length > 0) {
+            subLookup.forEach(sub => {
+                newLookup.$lookup.pipeline.push(sub)
             })
         }
+
+        newLookup.$lookup.pipeline.push({
+            $project: {
+                __typename: 'GenericData',
+                _id: 1,
+                data: 1
+            }
+        })
+
 
         otherOptions.lookups.push(newLookup)
         if (field.metaFields) {
@@ -315,10 +318,9 @@ async function postLookupResult(result, field, db, context) {
             for (let k = 0; k < tempItem.length; k++) {
 
                 if (!itemCache[tempItem[k]]) {
-                    //otherOptions.$addFields[`__project__${field.name}`]=currentProjection
                     let dataResolve, projectResult
                     if(result.tempProjection && result.tempProjection[field.name]){
-                        dataResolve = result.tempProjection[field.name]
+                        dataResolve = JSON.parse(JSON.stringify(result.tempProjection[field.name]))
                         projectResult=true
                     }else {
                         dataResolve = ['data']
@@ -334,6 +336,7 @@ async function postLookupResult(result, field, db, context) {
                             meta: field.genericType,
                             genericType:field.genericType,
                             postLookup:true,
+                            postConvert:false,
                             projectResult,
                             lookupLevel:0
                         })
@@ -341,7 +344,6 @@ async function postLookupResult(result, field, db, context) {
                     itemCache[tempItem[k]] = itemResults.results.length > 0 ? itemResults.results[0] : null
 
                     if (itemCache[tempItem[k]]) {
-                        itemCache[tempItem[k]].data = JSON.parse(itemCache[tempItem[k]].data)
                         newItems.push(itemCache[tempItem[k]])
                     }
                 }else{

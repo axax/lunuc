@@ -45,5 +45,5 @@ export const clientAddress = (req) => {
         ip = req.connection.remoteAddress
     }
 
-    return ip.replace('::ffff:', '')
+    return ip?ip.replace('::ffff:', ''):null
 }
