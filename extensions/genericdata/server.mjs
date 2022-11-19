@@ -123,7 +123,7 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
             otherOptions.lookups = []
         }
 
-        let id = {
+        const id = {
                 $cond:
                     {
                         if: {$isArray: `$data.${key}`},
@@ -146,8 +146,49 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
                             }
                         }
                     }
-            },
-            $match = {
+            }
+
+        const deepLookup = otherOptions.lookupLevel > 1
+        let newLookup
+
+        if(!deepLookup && (otherOptions.simpleLookup || field.simpleLookup)){
+            otherOptions.lookups.push({
+                $addFields: {
+                    [`${key}ObjectId`]: id
+                }
+            })
+            newLookup = {
+                    $lookup: {
+                        from: 'GenericData',
+                        localField: `${key}ObjectId`,
+                        foreignField: '_id',
+                        as: `data.${key}`
+                    }
+                }
+
+                // TODO: convert back to array or single
+
+        } else {
+
+            let subLookup = []
+            if (deepLookup/* && currentProjection && currentProjection.constructor===Array*/) {
+
+                const def = await getGenericTypeDefinitionWithStructure(db, {name: field.genericType})
+                if (def && def.structure && def.structure.fields) {
+
+                    for (const subField of def.structure.fields) {
+                        if (subField.genericType) {
+                            await addGenericTypeLookup(subField, {
+                                lookups: subLookup,
+                                lookupLevel: otherOptions.lookupLevel - 1
+                            }, currentProjection, db)
+                        }
+                    }
+
+                }
+            }
+
+            const $match = {
                 $expr: {
                     $cond:
                         {
@@ -157,51 +198,36 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
                         }
                 }
             }
-        let subLookup = []
-        if (otherOptions.lookupLevel > 1/* && currentProjection && currentProjection.constructor===Array*/) {
 
-            const def = await getGenericTypeDefinitionWithStructure(db, {name: field.genericType})
-            if (def && def.structure && def.structure.fields) {
-
-                for (const subField of def.structure.fields) {
-                    if (subField.genericType) {
-                        await addGenericTypeLookup(subField, {
-                            lookups: subLookup,
-                            lookupLevel: otherOptions.lookupLevel - 1
-                        }, currentProjection, db)
-                    }
+            newLookup = {
+                $lookup: {
+                    from: 'GenericData',
+                    let: {
+                        id
+                    },
+                    pipeline: [
+                        {
+                            $match
+                        }
+                    ],
+                    as: field.metaFields ? `lookupRelation${key}` : `data.${key}`
                 }
-
             }
-        }
 
-        const newLookup = {
-            $lookup: {
-                from: 'GenericData',
-                let: {
-                    id
-                },
-                pipeline: [
-                    {
-                        $match
-                    }
-                ],
-                as: field.metaFields ? `lookupRelation${key}` : `data.${key}`
+            if (subLookup.length > 0) {
+                subLookup.forEach(sub => {
+                    newLookup.$lookup.pipeline.push(sub)
+                })
             }
-        }
-        if (subLookup.length > 0) {
-            subLookup.forEach(sub => {
-                newLookup.$lookup.pipeline.push(sub)
+
+            newLookup.$lookup.pipeline.push({
+                $project: {
+                    __typename: 'GenericData',
+                    _id: 1,
+                    data: 1
+                }
             })
         }
-
-        newLookup.$lookup.pipeline.push({
-            $project: {
-                __typename: 'GenericData',
-                _id: 1,
-                data: 1
-            }
-        })
 
         otherOptions.lookups.push(newLookup)
         if (field.metaFields) {
