@@ -70,6 +70,18 @@ const StyledFile = styled('a')(({ active }) => ({
 const snippets = {
     'customJs': [
         {
+            text: `serverMethod('methodName',{data:1},(res)=>{
+    if(res.data.cmsServerMethod.result){          
+        const data = JSON.parse(res.data.cmsServerMethod.result)
+        console.log(data)
+        if(data.success){
+        }else{
+        }
+    }
+})`,
+            displayText: 'serverMethod'
+        },
+        {
             text: "on('beforerender',()=>{\n\t\n})",
             displayText: 'beforerender event'
         },

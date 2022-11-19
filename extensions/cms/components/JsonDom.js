@@ -671,6 +671,8 @@ class JsonDom extends React.Component {
 
 
     emitJsonError(e, meta) {
+        Hook.call('JsonDomError', {error: {type: meta.loc, e}, editMode: this.props.editMode})
+
         const {onError} = this.props
 
         if (!onError)

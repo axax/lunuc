@@ -237,7 +237,7 @@ const GenericResolver = {
         let cacheKey, cacheTime, cachePolicy
         if (cache !== undefined) {
             if (cache.constructor === Object) {
-                if (cache.if !== 'false') {
+                if (cache.if !== 'false' && cache.if !== false) {
                     cacheTime = cache.expires === undefined ? 60000 : cache.expires
                     cacheKey = cache.key
                     cachePolicy = cache.policy
