@@ -146,8 +146,8 @@ import ExpansionPanelDetails from '@mui/material/AccordionDetails'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 
 
-export const ExpansionPanel = ({className, heading, children, ...rest}) => {
-    return <MaterialExpansionPanel className={className && className.constructor === String ? className : ''} {...rest}>
+export const ExpansionPanel = ({className, disableGutters, heading, children, ...rest}) => {
+    return <MaterialExpansionPanel disableGutters={disableGutters} className={className && className.constructor === String ? className : ''} {...rest}>
         <ExpansionPanelSummary className={className && className.heading} expandIcon={<ExpandMoreIcon/>}>
             {heading}
         </ExpansionPanelSummary>

@@ -54,6 +54,13 @@ const defaultTheme = createTheme({
                 }
             }
         },
+        MuiAutocomplete: {
+            styleOverrides: {
+                popper: {
+                    zIndex: '99999 !important'
+                }
+            }
+        },
         MuiChip: {
             styleOverrides: {
                 root: {

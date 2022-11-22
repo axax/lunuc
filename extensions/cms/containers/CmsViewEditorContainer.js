@@ -73,11 +73,13 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     static propsToState(props, state) {
-        const {template, script, style, serverScript, resources, dataResolver, ssr, slug, urlSensitiv, status, parseResolvedData, alwaysLoadAssets, loadPageOptions, ssrStyle, publicEdit, compress, meta} = props.cmsPage || {}
+        const {template, script, style, serverScript, resources, dataResolver, ssr, slug, urlSensitiv, name, keyword, parseResolvedData, alwaysLoadAssets, loadPageOptions, ssrStyle, publicEdit, compress, meta} = props.cmsPage || {}
 
         const result = {
             public: props.cmsPage && props.cmsPage.public,
             slug,
+            name,
+            keyword,
             template,
             resources,
             script,
@@ -233,6 +235,8 @@ class CmsViewEditorContainer extends React.Component {
             state.public !== this.state.public ||
             state.ssr !== this.state.ssr ||
             state.urlSensitiv !== this.state.urlSensitiv ||
+            state.name !== this.state.name ||
+            state.keyword !== this.state.keyword ||
             state.compress !== this.state.compress ||
             state.simpleDialog !== this.state.simpleDialog ||
             state.showRevision !== this.state.showRevision ||
@@ -270,7 +274,7 @@ class CmsViewEditorContainer extends React.Component {
         // extend with value from state because they are more update to date
         const cmsPageWithState = Object.assign({}, cmsPage, {script, style, template, meta: {PageOptions}})
 
-        console.log(`render CmsViewEditorContainer ${this.props.slug} (loading=${loadingState})`)
+        console.log(`render CmsViewEditorContainer ${this.props.slug} (loading=${loadingState})`,cmsPage)
 
         const canManageCmsPages = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_CONTENT),
             canMangeCmsTemplate = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_TEMPLATE)
@@ -458,16 +462,13 @@ class CmsViewEditorContainer extends React.Component {
             return inner
         } else {
             const {slug, _version} = getSlugVersion(props.slug)
-            const sideMenu = [{
-                label: _t('CmsViewEditorContainer.preview'),
-                link: location.pathname + '?preview=true'
-            }]
+            const sideMenu = []
             if (EditorOptions.sideMenu) {
                 sideMenu.push(...EditorOptions.sideMenu)
             }
 
             const sidebar = cmsPage._id && <div>
-                <MenuList>
+                {sideMenu.length > 0 && <MenuList>
                     {
                         sideMenu.map(menu => {
                             return <MenuListItem onClick={e => {
@@ -476,8 +477,8 @@ class CmsViewEditorContainer extends React.Component {
                             }} button primary={menu.label}/>
                         })
                     }
-                </MenuList>
-                <Divider/>
+                </MenuList>}
+                {sideMenu.length > 0 && <Divider/>}
 
                 <div style={{padding: '10px'}}>
 
@@ -573,9 +574,22 @@ class CmsViewEditorContainer extends React.Component {
                                    }}
                                    onBlur={(e) => {
                                        let value = {...cmsPage.name, [_app_.lang]: e.target.value}
-                                       this.saveCmsPage(value, this.props.cmsPage, 'name')
+                                       this.handleFlagChange('name', null, value)
                                    }}
-                                   value={(cmsPage.name ? cmsPage.name[_app_.lang] : '')}
+                                   value={this.state.name?this.state.name[_app_.lang]:''}
+                                   fullWidth={true}/>
+
+                        <TextField key="pageKeywords"
+                                   name="pageKeywords"
+                                   label={_t('CmsViewEditorContainer.pageKeywords')}
+                                   InputLabelProps={{
+                                       shrink: true,
+                                   }}
+                                   onBlur={(e) => {
+                                       let value = {...cmsPage.keyword, [_app_.lang]: e.target.value}
+                                       this.handleFlagChange('keyword', null, value)
+                                   }}
+                                   value={this.state.keyword?this.state.keyword[_app_.lang]:''}
                                    fullWidth={true}/>
 
                         {canMangeCmsTemplate && <React.Fragment>
@@ -964,6 +978,15 @@ class CmsViewEditorContainer extends React.Component {
                 })
             }
 
+            moreMenu.push(
+                {
+                    divider: true,
+                    name: _t('CmsViewEditorContainer.preview'),
+                    onClick: ()=>{
+                        window.open(location.pathname + '?preview=true', '_blank').focus();
+                    }
+                })
+
             const toolbarRight = []
 
             if (!isSmallScreen) {
@@ -1314,7 +1337,7 @@ class CmsViewEditorContainer extends React.Component {
         }
     }
 
-    handleFlagChange = (key, e, flag) => {
+    handleFlagChange = (key, event, flag) => {
         if (this._saveSettings)
             this._saveSettings()
         this.setState({[key]: flag})
@@ -1645,7 +1668,7 @@ CmsViewEditorContainer.propTypes = {
 
 
 const CmsViewEditorContainerWithGql = compose(
-    graphql(`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$realSlug:String,$name:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:String,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$loadPageOptions:Boolean,$ssrStyle:Boolean,$publicEdit:Boolean,$compress:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,realSlug:$realSlug,name:$name,script:$script,style:$style,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,loadPageOptions:$loadPageOptions,compress:$compress,ssrStyle:$ssrStyle,publicEdit:$publicEdit,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug realSlug name {${config.LANGUAGES.join(' ')}} template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
+    graphql(`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$realSlug:String,$name:LocalizedStringInput,$keyword:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:String,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$loadPageOptions:Boolean,$ssrStyle:Boolean,$publicEdit:Boolean,$compress:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,realSlug:$realSlug,name:$name,keyword:$keyword,script:$script,style:$style,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,loadPageOptions:$loadPageOptions,compress:$compress,ssrStyle:$ssrStyle,publicEdit:$publicEdit,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug realSlug name{${config.LANGUAGES.join(' ')}} keyword{${config.LANGUAGES.join(' ')}} template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, realSlug, ...rest}, key, cb) => {
 

@@ -89,7 +89,7 @@ export default db => ({
 
             const {
                 _id, createdBy, template, script, style, resources, dataResolver, parseResolvedData, alwaysLoadAssets, loadPageOptions, ssrStyle, publicEdit, compress,
-                ssr, modifiedAt, urlSensitiv, name, serverScript
+                ssr, modifiedAt, urlSensitiv, name, keyword, serverScript
             } = cmsPages.results[0]
             const scope = {
                 ...createScopeForDataResolver(query, props),
@@ -166,8 +166,7 @@ export default db => ({
                 compress,
                 subscriptions,
                 urlSensitiv,
-                editable,
-                cacheKey: '' // todo: remove
+                editable
             }
 
 
@@ -184,6 +183,7 @@ export default db => ({
             if (editable && editmode) {
                 // return all data if user is loggedin, and in editmode and has the capability to mange cms pages
                 result.name = name
+                result.keyword = keyword
 
                 if (!dynamic) {
                     const pageName = result.realSlug.split('/')[0]

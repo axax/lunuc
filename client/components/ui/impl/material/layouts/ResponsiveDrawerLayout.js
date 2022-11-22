@@ -184,8 +184,7 @@ const ResponsiveDrawer = React.memo((props) => {
                             aria-label="open drawer"
                             onClick={handleDrawerToggle}
                             sx={{display: { xs: 'block', lg: 'none' } }}
-                        >
-                            <MenuIcon/>
+                        ><MenuIcon/>
                         </IconButton>
                         <Typography sx={{display: { flex: 1 } }} variant="h6" color="inherit" noWrap>
                             {title}

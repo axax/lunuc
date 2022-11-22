@@ -670,8 +670,8 @@ class JsonDom extends React.Component {
     }
 
 
-    emitJsonError(e, meta) {
-        Hook.call('JsonDomError', {error: {type: meta.loc, e}, editMode: this.props.editMode})
+    emitJsonError(e, data) {
+        Hook.call('JsonDomError', {error: {type: data.loc, meta: data.meta, e}, editMode: this.props.editMode})
 
         const {onError} = this.props
 
@@ -887,7 +887,7 @@ class JsonDom extends React.Component {
                         })
                     } catch (ex) {
 
-                        this.emitJsonError(ex, {loc: "Loop"})
+                        this.emitJsonError(ex, {loc: "Loop", meta:{slug: this.props.slug, data}})
 
                         console.log('------------- ERROR in ' + this.props.slug)
                         console.log(ex, c)

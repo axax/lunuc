@@ -79,6 +79,7 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, i
         cmsPages = await GenericResolver.entities(db, context, 'CmsPage',
             ['slug',
                 'name',
+                'keyword',
                 'template',
                 'script',
                 'style',

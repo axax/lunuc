@@ -19,7 +19,8 @@ export default () => {
                     meta: JSON.stringify({
                         agent: navigator.userAgent,
                         href: location.href,
-                        parser: window._lunucWebParser
+                        parser: window._lunucWebParser,
+                        ...error.meta
                     })
                 }
             })

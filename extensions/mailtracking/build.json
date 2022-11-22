@@ -8,19 +8,23 @@
       "fields": [
         {
           "name": "slug",
-          "index": 1
+          "index": 1,
+          "tab": "general"
         },
         {
           "name": "from",
-          "index": 1
+          "index": 1,
+          "tab": "general"
         },
         {
           "name": "to",
-          "index": 1
+          "index": 1,
+          "tab": "general"
         },
         {
           "name": "subject",
-          "index": 1
+          "index": 1,
+          "tab": "general"
         },
         {
           "name": "text",
@@ -29,7 +33,8 @@
         {
           "name": "html",
           "uitype": "html",
-          "alwaysLoad": false
+          "alwaysLoad": false,
+          "tab": "general"
         },
         {
           "name": "response",

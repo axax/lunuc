@@ -1,5 +1,6 @@
 import React from 'react'
 import {
+    theme,
     Button,
     ResponsiveDrawerLayout,
     IconButton,
@@ -49,7 +50,10 @@ import {
     FilterListIcon,
     CasinoIcon,
     SaveIcon,
-    BookIcon
+    BookIcon,
+    SearchIcon,
+    InputBase,
+    SimpleAutosuggest
 } from 'ui/admin'
 import ErrorHandler from './ErrorHandler'
 import NotificationHandler from './NotificationHandler'
@@ -69,12 +73,47 @@ import {translations} from '../../translations/admin'
 import {propertyByPath} from '../../util/json.mjs'
 import Async from 'client/components/Async'
 import {deepMergeOptional} from '../../../util/deepMerge.mjs'
+import { alpha } from '@mui/material/styles';
+import styled from '@emotion/styled'
 
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../CodeEditor')}/>
 
 
 registerTrs(translations, 'AdminTranslations')
+
+const SearchWrapper = styled('div')(({ theme }) => ({
+    marginRight: theme.spacing(2),
+    marginLeft: 0,
+    width: '100%',
+    [theme.breakpoints.up('sm')]: {
+        marginLeft: theme.spacing(3),
+        width: 'auto',
+    },
+    '.MuiInputBase-root':{
+        color: 'inherit',
+        paddingBottom: '0 !important',
+        borderRadius: theme.shape.borderRadius,
+        backgroundColor: alpha(theme.palette.common.white, 0.15),
+        '&:hover': {
+            backgroundColor: alpha(theme.palette.common.white, 0.25),
+        },
+        '&:before':{
+            display:'none'
+        },
+        '&:after':{
+            display:'none'
+        },
+        '& .MuiInputBase-input': {
+            padding: `${theme.spacing(1)} !important`,
+            transition: theme.transitions.create('width'),
+            width: '100%',
+            [theme.breakpoints.up('md')]: {
+                width: '20ch',
+            },
+        }
+    }
+}))
 
 const iconComponents = {
     home: HomeIcon,
@@ -120,7 +159,8 @@ const iconComponents = {
     filter: FilterListIcon,
     casino: CasinoIcon,
     book: BookIcon,
-    save: SaveIcon
+    save: SaveIcon,
+    search: SearchIcon
 }
 
 const genMenuEntry = (item, path) => {
@@ -299,6 +339,14 @@ const BaseLayout = props => {
 
     const headerRight = []
 
+    /*headerRight.push(<SearchWrapper><SimpleAutosuggest
+        freeSolo
+        search
+        placeholder="Search" value={''}
+        onChange={(e, v) => {} }
+        onBlur={()=>{}}
+        onClick={()=>{}} options={[{name:'Media'}]}/></SearchWrapper>)*/
+
     if (isAuthenticated) {
         headerRight.push(<Button key="logout" color="inherit" size="small"
                                  onClick={() => {
@@ -329,7 +377,6 @@ const BaseLayout = props => {
                         color="inherit"><Icon/></IconButton>
         )
     })
-
 
     console.log('Render BaseLayout')
 

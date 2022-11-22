@@ -1,166 +1,86 @@
-import React from 'react'
-import PropTypes from 'prop-types'
-import Autosuggest from 'react-autosuggest'
+import * as React from 'react'
 import TextField from '@mui/material/TextField'
-import Paper from '@mui/material/Paper'
-import MenuItem from '@mui/material/MenuItem'
-import Util from 'client/util/index.mjs'
+import Autocomplete from '@mui/material/Autocomplete'
+import CircularProgress from '@mui/material/CircularProgress'
 
+export default function SimpleAutosuggest(props) {
 
-const renderInputComponent = (inputProps) => {
-    const {
-        helperText, inputRef = () => {
-        }, ref, ...other
-    } = inputProps
-    return <TextField
-        fullWidth
-        helperText={helperText}
-        InputProps={{
-            inputRef: node => {
-                ref(node);
-                inputRef(node);
-            }
-        }}
-        {...other}
-    />
-}
+    const [open, setOpen] = React.useState(false)
+    const [options, setOptions] = React.useState(props.options || [])
+    const loading = open && options.length === 0
 
-const getSuggestionValue = (suggestion) => {
-    return suggestion.value
-}
+    React.useEffect(() => {
+        let active = true
 
-
-const getSuggestions = (suggestions, value) => {
-    if (!value) return []
-    const inputValue = value.trim().toLowerCase()
-    const inputLength = inputValue.length
-    let count = 0
-
-    return inputLength === 0
-        ? []
-        : suggestions.filter(suggestion => {
-            const keep =
-                count < 5 && (suggestion.name.toLowerCase().indexOf(inputValue) >= 0 || suggestion.value.toLowerCase().indexOf(inputValue) >= 0)
-            /*suggestion.name.slice(0, inputLength).toLowerCase() === inputValue*/
-
-            if (keep) {
-                count += 1
-            }
-
-            return keep
-        })
-}
-
-
-const styles = theme => ({
-    container: {
-        position: 'relative'
-    },
-    suggestionsContainerOpen: {
-        position: 'absolute',
-        zIndex: 1,
-        marginTop: theme.spacing(1),
-        left: 0,
-        right: 0
-    },
-    suggestion: {
-        display: 'block'
-    },
-    suggestionsList: {
-        margin: 0,
-        padding: 0,
-        listStyleType: 'none'
-    },
-    divider: {
-        height: theme.spacing(2)
-    }
-})
-
-class SimpleAutosuggest extends React.Component {
-
-
-    constructor(props) {
-        super(props)
-
-        this.state = {
-            single: props.value || '',
-            suggestions: []
-        }
-    }
-
-    handleSuggestionsFetchRequested = ({value}) => {
-        this.setState({
-            suggestions: getSuggestions(this.props.items, value)
-        })
-    }
-
-    handleSuggestionsClearRequested = () => {
-        this.setState({
-            suggestions: []
-        })
-    }
-
-    handleChange = name => (event, {newValue}) => {
-        this.setState({
-            [name]: newValue
-        }, () => {
-            const {onChange} = this.props
-            if (onChange) {
-                onChange(event, newValue)
-            }
-        })
-    }
-
-    renderSuggestion = (suggestion, {query, isHighlighted}) => {
-        const pattern = new RegExp(`(${query.replace(/\s/g, '|')})`, 'gi')
-        return <MenuItem selected={isHighlighted} component="div">
-            <span
-                dangerouslySetInnerHTML={{__html: Util.hightlight(`${suggestion.value} (${suggestion.name})`, query, {style: 'backgroundColor: "#FFF59D"'})}}/>
-        </MenuItem>
-    }
-
-    helperText = () => {
-        const a = this.props.items.filter(o => o.value === this.state.single)
-        return a.length > 0 && a[0].name || ''
-    }
-
-    render() {
-        const {placeholder, onClick, onBlur} = this.props;
-        const autosuggestProps = {
-            renderInputComponent,
-            suggestions: this.state.suggestions,
-            onSuggestionsFetchRequested: this.handleSuggestionsFetchRequested,
-            onSuggestionsClearRequested: this.handleSuggestionsClearRequested,
-            getSuggestionValue,
-            renderSuggestion: this.renderSuggestion
+        if (!loading) {
+            return undefined
         }
 
-        return <Autosuggest
-                {...autosuggestProps}
-                inputProps={{
-                    placeholder,
-                    helperText: this.helperText(),
-                    value: this.state.single,
-                    onChange: this.handleChange('single'),
-                    onClick,
-                    onBlur
-                }}
-                renderSuggestionsContainer={options => (
-                    <Paper {...options.containerProps} square>
-                        {options.children}
-                    </Paper>
-                )}
-            />
-    }
-}
+        (async () => {
+            //await sleep(1e3); // For demo purposes.
 
-SimpleAutosuggest.propTypes = {
-    placeholder: PropTypes.string,
-    value: PropTypes.string,
-    items: PropTypes.array.isRequired,
-    onClick: PropTypes.func,
-    onBlur: PropTypes.func,
-    onChange: PropTypes.func
-}
+            if (active) {
+                //setOptions([...topFilms]);
+            }
+        })()
 
-export default SimpleAutosuggest
+        return () => {
+            active = false
+        };
+    }, [loading])
+
+    React.useEffect(() => {
+        if (!open) {
+            //setOptions([])
+        }
+    }, [open])
+
+    return (
+        <Autocomplete
+            sx={props.sx}
+            value={props.value}
+            freeSolo={props.freeSolo}
+            open={open}
+            onOpen={() => {
+                setOpen(true);
+            }}
+            onClose={() => {
+                setOpen(false);
+            }}
+            onBlur={props.onBlur}
+            onChange={props.onChange}
+            onInputChange={props.onInputChange}
+            isOptionEqualToValue={(option, value) => option.name === value.name}
+            getOptionLabel={(option) => {
+                if(option.name){
+                    return option.name
+                }
+                const foundOption = options.find(item=>item.value===option)
+                if(foundOption){
+                    return foundOption.name
+                }
+                return option
+            }
+            }
+            options={options}
+            loading={loading}
+            renderInput={(params) => {
+                console.log(params)
+                return <TextField
+                    onClick={props.onClick}
+                    placeholder={props.placeholder}
+                    {...params}
+                    InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                            <React.Fragment>
+                                {loading ? <CircularProgress color="inherit" size={20}/> : null}
+                                {params.InputProps.endAdornment}
+                            </React.Fragment>
+                        ),
+                    }}
+                />
+            }}
+        />
+    )
+}

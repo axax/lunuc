@@ -151,6 +151,7 @@ class TypesContainer extends React.Component {
     saveSettings() {
         const value = JSON.stringify(this.settings)
         if (value !== JSON.stringify(this.props.keyValueMap.TypesContainerSettings)) {
+            console.log(`save TypesContainerSettings`)
             this.props.setKeyValue({key: 'TypesContainerSettings', value})
         }
     }
@@ -797,8 +798,7 @@ class TypesContainer extends React.Component {
                                     (this.state.filter ? {
                                         name: _t('TypesContainer.saveQuery'),
                                         onClick: () => {
-                                            savedQueries.push({query: this.state.filter})
-                                            this.setSettingsForType(type, {savedQueries})
+                                            this.setSettingsForType(type, {savedQueries: [...savedQueries,{query: this.state.filter}]})
                                         },
                                         icon: <SaveIcon/>
                                     } : null),

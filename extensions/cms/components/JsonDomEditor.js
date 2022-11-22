@@ -228,13 +228,22 @@ class JsonDomEditor extends React.Component {
                 <ListItemText sx={{primary:{fontWeight: 'bold'}}}>
 
                     {specialType ? t :
-                        <SimpleAutosuggest placeholder="Enter component type" value={t}
-                                           onChange={(e, v) => {
-                                               this.setComponentProperty(key, v, 't')
-                                           }
-                                           }
+                        <SimpleAutosuggest placeholder="Enter component type"
+                                           value={t}
+                                           freeSolo
+                                           onInputChange={(inputEvent, value) => {
+                                               if(inputEvent) {
+                                                   const option = getJsonDomElements().find(item=>item.name===value)
+                                                   if(option){
+                                                       this.setComponentProperty(key, option.value, 't')
+                                                   }else{
+                                                       this.setComponentProperty(key, value, 't')
+                                                   }
+                                               }
+                                           }}
                                            onBlur={this.handleBlur.bind(this)}
-                                           onClick={this.stopPropagation} items={getJsonDomElements()}/>}
+                                           onClick={this.stopPropagation}
+                                           options={getJsonDomElements()}/>}
                 </ListItemText>
                 {(json.c !== undefined || props.length > 0) && (!!this.state.open[key] ? <ExpandLessIcon/> :
                     <ExpandMoreIcon/>)}
