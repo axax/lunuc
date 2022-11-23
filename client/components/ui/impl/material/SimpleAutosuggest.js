@@ -16,17 +16,9 @@ export default function SimpleAutosuggest(props) {
             return undefined
         }
 
-        (async () => {
-            //await sleep(1e3); // For demo purposes.
-
-            if (active) {
-                //setOptions([...topFilms]);
-            }
-        })()
-
         return () => {
             active = false
-        };
+        }
     }, [loading])
 
     React.useEffect(() => {
@@ -65,7 +57,6 @@ export default function SimpleAutosuggest(props) {
             options={options}
             loading={loading}
             renderInput={(params) => {
-                console.log(params)
                 return <TextField
                     onClick={props.onClick}
                     placeholder={props.placeholder}

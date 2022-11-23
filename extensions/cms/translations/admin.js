@@ -20,6 +20,10 @@ export const translations = {
         'CmsViewEditorContainer.logout': 'Abmelden',
         'CmsViewEditorContainer.noOptions': 'Es sind keine Optionen definiert',
         'CmsViewEditorContainer.noRelatedPages':'Keine verwandte Seiten',
+        'CmsAddNewSite.cancel':'Abbrechen',
+        'CmsAddNewSite.create':'Erstellen',
+        'CmsAddNewSite.createPageIfNotExist':'Seite "%slug%" exisitert nicht. Möchten Sie die Seite jetzt erstellen?',
+        'CmsAddNewSite.createPage': 'Neue Seite erstellen',
         'CmsMenu.pages': 'Seiten',
         'CmsPageEdit.goToEditor':'Seite bearbeiten'
     },
@@ -42,6 +46,10 @@ export const translations = {
         'CmsViewEditorContainer.logout': 'Logout',
         'CmsViewEditorContainer.noOptions': 'There are no options defined',
         'CmsViewEditorContainer.noRelatedPages':'No related pages',
+        'CmsAddNewSite.cancel':'Cancel',
+        'CmsAddNewSite.create':'Create',
+        'CmsAddNewSite.createPageIfNotExist':'Page "%slug%" doesn\'t exist. Do you want to create it?',
+        'CmsAddNewSite.createPage': 'Create new page',
         'CmsMenu.pages': 'Pages',
         'CmsPageEdit.goToEditor':'Go to CMS Editor'
     }
