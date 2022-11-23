@@ -46,7 +46,7 @@ import {getFormFieldsByType} from '../../../util/typesAdmin.mjs'
 import Hook from '../../../util/hook.cjs'
 import {client, Query, graphql} from '../../../client/middleware/graphql'
 import Async from '../../../client/components/Async'
-
+import CmsRevision from '../components/CmsRevision'
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
 
 const DEFAULT_EDITOR_SETTINGS = {inlineEditor: true, fixedLayout: true, drawerOpen: false, drawerWidth: 500}
@@ -95,10 +95,7 @@ class CmsViewEditorContainer extends React.Component {
             publicEdit,
             compress,
             addNewSite: null,
-            ignoreStatus: false,
-            historyType:'script',
-            historyPage:1,
-            historyLimit: 10
+            ignoreStatus: false
         }
 
         if (meta) {
@@ -245,8 +242,6 @@ class CmsViewEditorContainer extends React.Component {
             state.EditorOptions !== this.state.EditorOptions ||
             state.EditorPageOptions !== this.state.EditorPageOptions ||
             state.cmsStatusData !== this.state.cmsStatusData  ||
-            state.historyType !== this.state.historyType  ||
-            state.historyPage !== this.state.historyPage  ||
             (
                 !!props.cmsPage.urlSensitiv && (
                     props.location.search !== this.props.location.search ||
@@ -649,187 +644,9 @@ class CmsViewEditorContainer extends React.Component {
                                 onChange={this.handleSettingChange.bind(this, 'revisionsExpanded', true)}
                                 expanded={EditorPageOptions.revisionsExpanded}>
 
-                        <SimpleSelect
-                            fullWidth={true}
-                            label="Type"
-                            value={this.state.historyType}
-                            style={{marginBottom:0,marginTop:0}}
-                            onChange={(e)=>{
-                                this.setState({historyPage:1,historyType: e.target.value})
-                            }}
-                            items={[{name: 'Script', value: 'script'},
-                                {name: 'Server Script', value: 'serverScript'},
-                                {name: 'Data Resolver', value: 'dataResolver'},
-                                {name: 'Template', value: 'template'},
-                                {name: 'Style', value: 'style'}]}
-                        />
+                        <CmsRevision historyLimit={10} cmsPage={cmsPage}/>
 
-
-                            {!loadingState && <Query
-                                query={'query historys($filter:String,$limit:Int,$page:Int){historys(filter:$filter,limit:$limit,page:$page){total offset results{_id action, meta}}}'}
-                                fetchPolicy="cache-and-network"
-                                variables={{
-                                    limit: this.state.historyLimit,
-                                    page:this.state.historyPage,
-                                    filter: `data._id==${cmsPage._id} && meta.keys==${this.state.historyType || 'script'}`
-                                }}>
-                                {({loading, error, data}) => {
-                                    if (loading) return <p>Loading...</p>
-                                    if (error) return <p>Error! {error.message}</p>
-
-
-                                    const menuItems = []
-
-                                    data.historys.results.forEach(i => {
-                                            if (i.slug !== props.slug) {
-
-
-                                                const meta = i.meta ? JSON.parse(i.meta) : {keys: []}
-
-
-                                                let secondary
-
-                                                if (meta.keys.indexOf('template') >= 0) {
-                                                    secondary = 'Tempalte wurde geändert'
-                                                } else if (meta.keys.indexOf('style') >= 0) {
-                                                    secondary = 'Style hat geändert'
-                                                } else if (meta.keys.indexOf('dataResolver') >= 0) {
-                                                    secondary = 'Data resolver hat geändert'
-                                                } else if (meta.keys.indexOf('serverScript') >= 0) {
-                                                    secondary = 'Server script hat geändert'
-                                                } else if (meta.keys.indexOf('script') >= 0) {
-                                                    secondary = 'Script hat geändert'
-                                                } else {
-                                                    secondary = 'Änderung'
-                                                }
-
-                                                menuItems.push(<MenuListItem key={'history' + i._id} onClick={e => {
-                                                    this.setState({showRevision: i})
-                                                }} button primary={Util.formattedDateFromObjectId(i._id) + ' - ' + i.action}
-                                                                             secondary={secondary}
-                                                />)
-                                            }
-                                        }
-                                    )
-                                    if (menuItems.length === 0) return <p>No history entries</p>
-
-                                    return [<MenuList>
-                                        {menuItems}
-                                    </MenuList>,<Stack spacing={2}
-                                                       justifyContent="center"
-                                                       alignItems="center">
-                                        <Pagination size="medium"
-                                                            showFirstButton
-                                                            showLastButton
-                                                            page={this.state.historyPage}
-                                                            onChange={(e, page)=>{
-                                                                this.setState({historyPage:page})
-                                                            }}
-                                                    count={Math.ceil(data.historys.total / this.state.historyLimit)} /></Stack>]
-                                }}
-                            </Query>}
                     </Expandable>}
-
-
-                    {this.state.showRevision &&
-                    <SimpleDialog fullWidth={true} maxWidth="md" key="revisionDialog" open={true}
-                                  onClose={({key}) => {
-                                      this.setState({showRevision: false})
-                                  }}
-                                  actions={[{
-                                      key: 'ok',
-                                      label: 'Ok',
-                                      type: 'primary'
-                                  }]}
-                                  title="Revision">
-
-                        <Query
-                            query={'query historys($filter:String){historys(filter:$filter){results{_id action data}}}'}
-                            fetchPolicy="cache-and-network"
-                            variables={{
-                                filter: `_id=${this.state.showRevision._id}`
-                            }}>
-                            {({loading, error, data}) => {
-                                if (loading) return 'Loading...'
-                                if (error) return `Error! ${error.message}`
-
-                                if (data.historys.results === 0) return 'No entry'
-                                const parsedData = JSON.parse(data.historys.results[0].data)
-
-                                if (parsedData.dataResolver) {
-
-                                    return <div>
-                                        <Typography gutterBottom>Data resolver changed</Typography>
-
-                                        <CodeEditor lineNumbers
-                                                    type="json"
-                                                    readOnly={true}>{JSON.stringify(JSON.parse(parsedData.dataResolver), null, 2)}</CodeEditor>
-                                        <a href={'/system/diff?preview=true#value=' + encodeURIComponent(parsedData.dataResolver) + '&orig1=' + encodeURIComponent(dataResolver)}
-                                           target="_blank">Show diff</a>
-
-                                    </div>
-
-                                } else if (parsedData.template) {
-
-                                    return <div>
-                                        <Typography gutterBottom>Template changed</Typography>
-
-                                        {canMangeCmsTemplate && <CodeEditor lineNumbers
-                                                                            type="json"
-                                                                            readOnly={true}>{JSON.stringify(JSON.parse(parsedData.template), null, 2)}</CodeEditor>}
-
-                                        {canMangeCmsTemplate &&
-                                        <a href={'/system/diff?preview=true#value=' + encodeURIComponent(parsedData.template) + '&orig1=' + encodeURIComponent(template)}
-                                           target="_blank">Show diff</a>}
-
-
-                                    </div>
-                                } else if (parsedData.style) {
-
-                                    return <div>
-                                        <Typography gutterBottom>Style changed</Typography>
-
-                                        <CodeEditor lineNumbers
-                                                    type="css"
-                                                    readOnly={true}>{parsedData.style}</CodeEditor>
-                                        <a href={'/system/diff?preview=true#value=' + encodeURIComponent(parsedData.style) + '&orig1=' + encodeURIComponent(style)}
-                                           target="_blank">Show diff</a>
-                                    </div>
-
-                                } else if (parsedData.script) {
-
-                                    return <div>
-                                        <p>Script changed</p>
-
-                                        <CodeEditor lineNumbers
-                                                    type="js"
-                                                    readOnly={true}>{parsedData.script}</CodeEditor>
-                                        <a href={'/system/diff?preview=true#value=' + encodeURIComponent(parsedData.script) + '&orig1=' + encodeURIComponent(script)}
-                                           target="_blank">Show diff</a>
-
-                                    </div>
-
-                                } else if (parsedData.serverScript) {
-
-                                    return <div>
-                                        <p>Server Script changed</p>
-
-                                        <CodeEditor lineNumbers
-                                                    type="js"
-                                                    readOnly={true}>{parsedData.serverScript}</CodeEditor>
-                                        <a href={'/system/diff?preview=true#value=' + encodeURIComponent(parsedData.serverScript) + '&orig1=' + encodeURIComponent(serverScript)}
-                                           target="_blank">Show diff</a>
-
-                                    </div>
-
-                                }
-                                return <pre>{JSON.stringify(parsedData, null, 2)}</pre>
-                            }}
-                        </Query>
-
-                        <div>{this.state.showRevision.slug}</div>
-
-                    </SimpleDialog>}
 
 
                     <Expandable title={_t('CmsViewEditorContainer.pages')}

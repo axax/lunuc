@@ -111,6 +111,16 @@ Hook.on('OnMailError', async ({db, context, error}) => {
   })
 })
 
+Hook.on('ExtensionApiError', async ({db, req, error, slug}) => {
+
+  GenericResolver.createEntity(db, req, 'Log', {
+      location: 'extensionApi',
+      type: 'apiError',
+      message: error.message,
+      meta: {slug}
+  })
+})
+
 Hook.on('HookError', async ({entry, error}) => {
     if(mydb) {
         GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {

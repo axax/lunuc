@@ -17,6 +17,7 @@ import ExpandMore from '@mui/icons-material/ExpandMore'
 import Collapse from '@mui/material/Collapse'
 import styled from '@emotion/styled'
 import theme from '../theme'
+import Box from '@mui/material/Box'
 
 const drawerWidth = 300;
 
@@ -116,6 +117,13 @@ const MenuList = (props) => {
                 if (item.divider) {
                     return <Divider key={i}/>
                 }
+                if(item.subheader){
+                    return <Box sx={{ pl: 3, mb: 1.5, mt: 1.5}}>
+                        <Typography variant="subtitle2" color="textSecondary" align="center">
+                            {item.name}
+                        </Typography>
+                    </Box>
+                }
                 const isOpen = open[i] || (open[i]==undefined && item.open)
                 return [<ListItem onClick={() => {
                     if(item.items){
@@ -141,6 +149,7 @@ const MenuList = (props) => {
 
                     {item.actions}
                     {item.items && (isOpen ? <ExpandLess /> : <ExpandMore />)}
+
                 </ListItem>,
                     item.items && <Collapse in={isOpen} timeout="auto" unmountOnExit>
                         <MenuList items={item.items} onMenuChange={onMenuChange} depth={depth + 1} isAuthenticated={!!_app_.user}/>

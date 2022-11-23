@@ -172,7 +172,7 @@ const genMenuEntry = (item, path) => {
         return item.map((singleItem, index) => genMenuEntry(singleItem, path + '.' + index))
     }
 
-    if (item.divider) {
+    if (item.divider || item.subheader) {
         return item
     }
     const Icon = iconComponents[item.icon] || SettingsIcon

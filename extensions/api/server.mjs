@@ -86,12 +86,15 @@ Hook.on('appready', ({app, db}) => {
             if( result.responseStatus && result.responseStatus.ignore){
 
             }else if (result.error) {
+                Hook.call('ExtensionApiError', {db, req, error: result.error, slug})
+
                 res.writeHead(500, {'content-type': 'application/json'})
                 res.end(`{"status":"error","message":"${result.error.message}"}`)
             } else {
                 const data = await result.data
 
                 if(data && data._error){
+                    Hook.call('ExtensionApiError', {db, req, error: data._error, slug})
                     res.writeHead(500, {'content-type': 'application/json'})
                     res.end(`{"status":"error","message":"${data._error.message}"}`)
                 }else {
