@@ -4,6 +4,7 @@ import {blue} from '@mui/material/colors'
 const defaultTheme = createTheme({
     palette: {
         primary: blue,
+        mode: 'light'
         /* secondary: amber*/
     },
     typography: {

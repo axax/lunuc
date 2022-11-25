@@ -1,6 +1,5 @@
 import React from 'react'
 import {
-    theme,
     Button,
     ResponsiveDrawerLayout,
     IconButton,
@@ -13,48 +12,11 @@ import {
     BackupIcon,
     EditIcon,
     InsertDriveFileIcon,
-    FolderIcon,
-    SubjectIcon,
-    ChatIcon,
-    LaunchIcon,
-    ShoppingCartIcon,
-    WebIcon,
-    ImageIcon,
     DoneIcon,
-    ViewListIcon,
-    ViewModuleIcon,
-    LabelIcon,
-    BusinessIcon,
-    EventIcon,
-    SchoolIcon,
-    ScheduleIcon,
-    ShopIcon,
-    BeachAccessIcon,
-    GroupIcon,
-    ThumbUpIcon,
-    SettingsInputComponentIcon,
-    TrainIcon,
-    TrafficIcon,
-    MailIcon,
-    CardMembershipIcon,
-    MoneyIcon,
-    BarChartIcon,
-    StoreIcon,
-    HouseIcon,
-    WorkIcon,
-    LocalCafeIcon,
-    SportsTennisIcon,
-    AccessibleIcon,
-    AccountBalanceIcon,
-    DirectionsBoatIcon,
-    FilterListIcon,
-    CasinoIcon,
-    SaveIcon,
-    BookIcon,
-    SearchIcon,
     InputBase,
     SimpleAutosuggest
 } from 'ui/admin'
+import {getIconByKey} from '../ui/impl/material/icon'
 import ErrorHandler from './ErrorHandler'
 import NotificationHandler from './NotificationHandler'
 import NetworkStatusHandler from './NetworkStatusHandler'
@@ -115,53 +77,7 @@ const SearchWrapper = styled('div')(({ theme }) => ({
     }
 }))
 
-const iconComponents = {
-    home: HomeIcon,
-    build: BuildIcon,
-    settings: SettingsIcon,
-    account: AccountCircleIcon,
-    edit: EditIcon,
-    drive: InsertDriveFileIcon,
-    folder: FolderIcon,
-    subject: SubjectIcon,
-    chat: ChatIcon,
-    launch: LaunchIcon,
-    web: WebIcon,
-    cart: ShoppingCartIcon,
-    image: ImageIcon,
-    done: DoneIcon,
-    view: ViewListIcon,
-    module: ViewModuleIcon,
-    label: LabelIcon,
-    business: BusinessIcon,
-    event: EventIcon,
-    school: SchoolIcon,
-    schedule: ScheduleIcon,
-    shop: ShopIcon,
-    beach: BeachAccessIcon,
-    group: GroupIcon,
-    thumbup: ThumbUpIcon,
-    component: SettingsInputComponentIcon,
-    train: TrainIcon,
-    traffic: TrafficIcon,
-    mail: MailIcon,
-    member: CardMembershipIcon,
-    money: MoneyIcon,
-    store: StoreIcon,
-    barchart: BarChartIcon,
-    house: HouseIcon,
-    work: WorkIcon,
-    cafe: LocalCafeIcon,
-    sport: SportsTennisIcon,
-    accessible: AccessibleIcon,
-    politics: AccountBalanceIcon,
-    boat: DirectionsBoatIcon,
-    filter: FilterListIcon,
-    casino: CasinoIcon,
-    book: BookIcon,
-    save: SaveIcon,
-    search: SearchIcon
-}
+
 
 const genMenuEntry = (item, path) => {
     if (!item) {
@@ -175,7 +91,7 @@ const genMenuEntry = (item, path) => {
     if (item.divider || item.subheader) {
         return item
     }
-    const Icon = iconComponents[item.icon] || SettingsIcon
+    const Icon = getIconByKey(item.icon, SettingsIcon)
 
     let to
 
@@ -367,7 +283,7 @@ const BaseLayout = props => {
     }
 
     settings.headerActions.forEach((item, index) => {
-        const Icon = iconComponents[item.icon] || SettingsIcon
+        const Icon = getIconByKey(item.icon, SettingsIcon)
         headerRight.push(
             <IconButton key={'headerAction' + index}
                         onClick={() => {

@@ -28,7 +28,7 @@ export default () => {
         }
     })
 
-    Hook.on('CmsViewEditorContainerRender', function ({isSmallScreen, toolbarRight, EditorOptions, inner}) {
+    Hook.on('CmsViewEditorContainerRender', function ({isSmallScreen, toolbarRight, moreMenu, EditorOptions, inner}) {
 
         if(this.state.cmsStatusData ){
             const ut = this.state.cmsStatusData.usertracking
@@ -57,21 +57,24 @@ export default () => {
             }, 'usertracking')
 
 
-            toolbarRight.splice(2, 0, <SimpleSwitch key="usertrackingSwitch" color="default"
-                                                    checked={!!EditorOptions.tracking}
-                                                    onChange={(e) => {
-                                                        this.handleSettingChange('tracking', false, e,() => {
-                                                            if (this._saveSettings) {
-                                                                this._saveSettings(({key}) => {
-                                                                    if (key === 'CmsViewContainerSettings') {
-                                                                        window.location.href = window.location.href
-                                                                    }
-                                                                })
-                                                            }
-                                                        })
-                                                    }}
-                                                        contrast
-                                                        label={_t('CmsViewEditorContainer.usertracking')}/>)
-                                                    }
+            moreMenu.push({
+                component:  <SimpleSwitch key="usertrackingSwitch" color="default"
+                                          checked={!!EditorOptions.tracking}
+                                          onChange={(e) => {
+                                              this.handleSettingChange('tracking', false, e,() => {
+                                                  if (this._saveSettings) {
+                                                      this._saveSettings(({key}) => {
+                                                          if (key === 'CmsViewContainerSettings') {
+                                                              window.location.href = window.location.href
+                                                          }
+                                                      })
+                                                  }
+                                              })
+                                          }}
+                                          contrast
+                                          label={_t('CmsViewEditorContainer.usertracking')}/>
+            })
+            //toolbarRight.splice(2, 0,)
+        }
     })
 }

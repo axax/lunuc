@@ -12,6 +12,7 @@ import InputLabel from '@mui/material/InputLabel';
 import FormControl from '@mui/material/FormControl';
 import FormHelperText from '@mui/material/FormHelperText';
 import styled from '@emotion/styled'
+import {getIconByKey} from './icon'
 
 const StyledChips = styled.div`
     display: flex;
@@ -91,13 +92,14 @@ class SimpleSelect extends React.Component {
                 {
                     items.map(item => {
                         if (item.constructor === Object) {
+                            const Icon = getIconByKey(item.icon, item.icon)
                             return [item.subHeader ? <ListSubheader>{item.subHeader}</ListSubheader> : null,
                                 <MenuItem key={item.value}
                                           value={item.value}>
 
-                                    {item.icon && <ListItemAvatar>
-                                        <Avatar src={item.icon}/>
-                                    </ListItemAvatar>}
+                                    {Icon ? (Icon.constructor===String?<ListItemAvatar>
+                                        <Avatar src={Icon}/>
+                                    </ListItemAvatar>:<Icon />):null}
 
                                     <ListItemText primary={item.name} secondary={item.hint}/>
                                 </MenuItem>]

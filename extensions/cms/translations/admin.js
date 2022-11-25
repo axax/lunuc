@@ -10,7 +10,7 @@ export const translations = {
         'CmsViewEditorContainer.pages': 'Seiten',
         'CmsViewEditorContainer.settings': 'Einstellungen',
         'CmsViewEditorContainer.inlineEditor': 'Bearbeitungsmodus',
-        'CmsViewEditorContainer.fixed': 'Menü fixieren',
+        'CmsViewEditorContainer.fixed': 'Header fixieren',
         'CmsViewEditorContainer.preview': 'Vorschau',
         'CmsViewEditorContainer.addnewpage': 'Neue Seite erstellen',
         'CmsViewEditorContainer.pagesettings': 'Allgemeine Seiteneigenschaften',

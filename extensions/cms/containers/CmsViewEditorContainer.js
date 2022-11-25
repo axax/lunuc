@@ -29,6 +29,12 @@ import {
     UIProvider
 } from 'ui/admin'
 import Drawer from '@mui/material/Drawer'
+import DisplaySettingsIcon from '@mui/icons-material/DisplaySettings'
+import AppsIcon from '@mui/icons-material/Apps'
+import BottomNavigation from '@mui/material/BottomNavigation'
+import BottomNavigationAction from '@mui/material/BottomNavigationAction'
+import Paper from '@mui/material/Paper'
+import Box from '@mui/material/Box'
 import NetworkStatusHandler from 'client/components/layout/NetworkStatusHandler'
 import {getTypeQueries} from 'util/types.mjs'
 import TypeEdit from '../../../client/components/types/TypeEdit'
@@ -45,6 +51,7 @@ import {client, Query, graphql} from '../../../client/middleware/graphql'
 import Async from '../../../client/components/Async'
 import CmsRevision from '../components/CmsRevision'
 import CmsAddNewSite from '../components/CmsAddNewSite'
+import CmsElement from '../components/CmsElement'
 
 const CodeEditor = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
@@ -501,7 +508,7 @@ class CmsViewEditorContainer extends React.Component {
                 sideMenu.push(...EditorOptions.sideMenu)
             }
 
-            const sidebar = cmsPage._id && <div>
+            const sidebar = cmsPage._id && <>
                 {sideMenu.length > 0 && <MenuList>
                     {
                         sideMenu.map(menu => {
@@ -514,7 +521,11 @@ class CmsViewEditorContainer extends React.Component {
                 </MenuList>}
                 {sideMenu.length > 0 && <Divider/>}
 
-                <div style={{padding: '10px'}}>
+                {!(EditorOptions.bottomNavigation>0) && <Box style={{padding: '10px',
+                    display: 'flex',
+                    overflow: 'auto',
+                    flexDirection: 'column',
+                    marginBottom: 'auto'}}>
 
                     {canMangeCmsTemplate && <Expandable title="Data resolver"
                                                         onChange={this.handleSettingChange.bind(this, 'dataResolverExpanded', true)}
@@ -574,7 +585,6 @@ class CmsViewEditorContainer extends React.Component {
                         <CodeEditor showFab
                                     lineNumbers
                                     fileSplit
-                                    height={800}
                                     identifier={slug}
                                     fileIndex={EditorPageOptions.styleFileIndex}
                                     onFileChange={this.handleSettingChange.bind(this, 'styleFileIndex', true)}
@@ -723,9 +733,30 @@ class CmsViewEditorContainer extends React.Component {
                             </Query>
                         </MenuList>
                     </Expandable>
+                </Box>}
+                {EditorOptions.bottomNavigation===1 && <Box style={{padding: '10px',
+                    display: 'flex',
+                    overflow: 'auto',
+                    flexDirection: 'column',
+                    marginBottom: 'auto'}}>
 
-                </div>
-            </div>
+                    <CmsElement advanced={canMangeCmsTemplate}/>
+                </Box>}
+
+                <Box sx={{width: '100%'}}>
+                    <Paper elevation={3}>
+                        <BottomNavigation
+                            showLabels
+                            value={EditorOptions.bottomNavigation}
+                            onChange={(event, newValue) => {
+                                this.handleSettingChange('bottomNavigation', false, newValue)
+                            }}>
+                            <BottomNavigationAction label="Global" icon={<DisplaySettingsIcon />} />
+                            <BottomNavigationAction label="Elements" icon={<AppsIcon />} />
+                        </BottomNavigation>
+                    </Paper>
+                </Box>
+            </>
 
             const moreMenu = [
                 {
@@ -826,6 +857,8 @@ class CmsViewEditorContainer extends React.Component {
                     })
             }
 
+
+            const toolbarRight = []
             if (isSmallScreen) {
                 moreMenu.unshift({
                     component: <SimpleSwitch key="inlineEditorSwitch" color="default"
@@ -833,6 +866,12 @@ class CmsViewEditorContainer extends React.Component {
                                              onChange={this.handleSettingChange.bind(this, 'inlineEditor', false)}
                                              label={_t('CmsViewEditorContainer.inlineEditor')}/>
                 })
+            }else{
+                toolbarRight.push(
+                    <SimpleSwitch key="inlineEditorSwitch" color="default"
+                                  checked={!!EditorOptions.inlineEditor}
+                                  onChange={this.handleSettingChange.bind(this, 'inlineEditor', false)}
+                                  label={_t('CmsViewEditorContainer.inlineEditor')}/>)
             }
 
             moreMenu.push(
@@ -842,20 +881,15 @@ class CmsViewEditorContainer extends React.Component {
                     onClick: () => {
                         window.open(location.pathname + '?preview=true', '_blank').focus();
                     }
+                },
+                {
+                    divider:true,
+                    component:  <SimpleSwitch key="fixedLayoutSwitch" color="default"
+                                              checked={!!EditorOptions.fixedLayout}
+                                              onChange={this.handleSettingChange.bind(this, 'fixedLayout', false)}
+                                              label={_t('CmsViewEditorContainer.fixed')}/>
                 })
 
-            const toolbarRight = []
-
-            if (!isSmallScreen) {
-                toolbarRight.push(<SimpleSwitch key="fixedLayoutSwitch" color="default"
-                                                checked={!!EditorOptions.fixedLayout}
-                                                onChange={this.handleSettingChange.bind(this, 'fixedLayout', false)}
-                                                label={_t('CmsViewEditorContainer.fixed')}/>,
-                    <SimpleSwitch key="inlineEditorSwitch" color="default"
-                                  checked={!!EditorOptions.inlineEditor}
-                                  onChange={this.handleSettingChange.bind(this, 'inlineEditor', false)}
-                                  label={_t('CmsViewEditorContainer.inlineEditor')}/>)
-            }
             toolbarRight.push(
                 <Button key="buttonBack" size="small" color="inherit" onClick={() => {
                     this.props.history.push(config.ADMIN_BASE_URL)
@@ -867,6 +901,7 @@ class CmsViewEditorContainer extends React.Component {
 
 
             Hook.call('CmsViewEditorContainerRender', {
+                moreMenu,
                 isSmallScreen,
                 toolbarRight,
                 EditorOptions,

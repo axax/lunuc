@@ -22,8 +22,9 @@ import DomUtilAdmin from 'client/util/domAdmin.mjs'
 import Util from 'client/util/index.mjs'
 import {propertyByPath, setPropertyByPath} from '../../../client/util/json.mjs'
 import {getComponentByKey, addComponent, removeComponent, getParentKey, isTargetAbove} from '../util/jsonDomUtil'
+import {DROPAREA_ACTIVE, DROPAREA_OVERLAP, DROPAREA_OVER, ALLOW_DROP, ALLOW_DROP_IN, ALLOW_DROP_FROM, JsonDomDraggable, onJsonDomDrag, onJsonDomDragEnd} from '../util/jsonDomDragUtil'
 import config from 'gen/config-client'
-import {getJsonDomElements, MEDIA_PROJECTION} from '../util/elements'
+import {getJsonDomElements, createElementByKeyFromList, MEDIA_PROJECTION} from '../util/elements'
 import {deepMergeOptional, deepMerge} from '../../../util/deepMerge.mjs'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants/index.mjs'
 import {client} from '../../../client/middleware/graphql'
@@ -32,7 +33,7 @@ import {convertRawValuesFromPicker} from '../../../client/util/picker'
 import {showTooltip} from '../../../client/util/tooltip'
 import styled from '@emotion/styled'
 
-const {UPLOAD_URL, DEFAULT_LANGUAGE} = config
+const {DEFAULT_LANGUAGE} = config
 
 
 const StyledHighlighter = styled('span')(({ color }) => ({
@@ -60,9 +61,6 @@ const StyledHighlighter = styled('span')(({ color }) => ({
     }),
 }))
 
-const DROPAREA_ACTIVE = 'jdh-da-active'
-const DROPAREA_OVERLAP = 'jdh-da-overlap'
-const DROPAREA_OVER = 'jdh-da-over'
 const StyledDropArea = styled('span')({
     overflow: 'hidden',
     whiteSpace: 'pre',
@@ -145,10 +143,6 @@ const StyledInfoBox = styled('div')({
 })
 
 
-const ALLOW_DROP = ['div', 'main', 'Col', 'Row', 'section', 'Cms', 'Print', 'td']
-const ALLOW_DROP_IN = {'Col': ['Row'], 'li': ['ul']}
-const ALLOW_DROP_FROM = {'Row': ['Col']}
-
 let aftershockTimeout
 const highlighterHandler = (e, observer, after) => {
     const hightlighter = document.querySelector('[data-highlighter]')
@@ -214,7 +208,6 @@ document.addEventListener('scroll', highlighterHandler)
 
 
 class JsonDomHelper extends React.Component {
-    static currentDragElement
     static disableEvents = false
     static altKeyDown = false
     static mutationObserver = false
@@ -255,7 +248,7 @@ class JsonDomHelper extends React.Component {
     }
 
     shouldComponentUpdate(props, state) {
-        if (JsonDomHelper.currentDragElement && JsonDomHelper.currentDragElement != this) {
+        if (JsonDomDraggable.element && JsonDomDraggable.element != this) {
             return false
         }
         return props.dangerouslySetInnerHTML !== this.props.dangerouslySetInnerHTML ||
@@ -368,120 +361,10 @@ class JsonDomHelper extends React.Component {
         if (JsonDomHelper.disableEvents) {
             return
         }
-        if (!JsonDomHelper.currentDragElement) {
-            JsonDomHelper.currentDragElement = this
+        if (!JsonDomDraggable.element) {
+            JsonDomDraggable.element = this
+            JsonDomDraggable.props = this.props
             this.setState({toolbarHovered: false, hovered: false, dragging: true})
-        }
-    }
-
-    _clientY = 0
-    _clientX = 0
-    _onDragTimeout = 0
-
-    onDrag(e) {
-        e.stopPropagation()
-        if (e.clientY > 0 && Math.abs(e.clientY - this._clientY) > 25) {
-
-            this._clientX = e.clientX
-            this._clientY = e.clientY
-            clearTimeout(this._onDragTimeout)
-
-            const draggable = ReactDOM.findDOMNode(JsonDomHelper.currentDragElement)
-            this._onDragTimeout = setTimeout(() => {
-
-                if (!JsonDomHelper.currentDragElement) {
-                    return
-                }
-
-                /*const elementOnMouseOver = document.elementFromPoint(this._clientX, this._clientY)*/
-
-                const tags = document.querySelectorAll('[data-drop-area="true"]')
-
-                const dragableProps = JsonDomHelper.currentDragElement.props
-
-                const allowDropIn = ALLOW_DROP_IN[dragableProps._tagName]
-
-                const allTags = []
-                for (let i = 0; i < tags.length; ++i) {
-                    const tag = tags[i]
-                    if (draggable === tag.nextSibling ||
-                        draggable === tag.previousSibling ||
-                        (dragableProps._options.leaveParent === false && draggable.parentNode !== tag.parentNode) /*|| !elementOnMouseOver.contains(tag)*/) {
-                        tag.classList.remove(DROPAREA_ACTIVE)
-                        continue
-                    }
-
-                    let node
-
-                    if (tag.nextSibling) {
-                        node = tag.nextSibling
-                    } else if (tag.previousSibling) {
-                        node = tag.previousSibling
-                    } else {
-                        node = tag.parentNode
-                    }
-
-                    if (node.nodeType !== Node.TEXT_NODE && JsonDomHelper.currentDragElement && !draggable.contains(node)) {
-                        const tagName = tag.getAttribute('data-tag-name')
-                        if (!allowDropIn || allowDropIn.indexOf(tagName) >= 0) {
-
-
-                            const allowDropFrom = ALLOW_DROP_FROM[tagName]
-                            if (!allowDropFrom || allowDropFrom.indexOf(dragableProps._tagName) >= 0) {
-                                const pos = DomUtilAdmin.elemOffset(node)
-                                const distanceTop = Math.abs(this._clientY - pos.top)
-                                const distanceMiddle = Math.abs(this._clientY - (pos.top + node.offsetHeight / 2))
-                                const distanceBottom = Math.abs(this._clientY - (pos.top + node.offsetHeight))
-
-
-                                if (distanceTop < 100 || distanceMiddle < 100 || distanceBottom < 100) {
-
-                                    const nodeForWidth = ['DIV'].indexOf(node.tagName) < 0 ? node.parentNode : node
-
-                                    const computedStyle = window.getComputedStyle(nodeForWidth, null)
-
-
-                                    let elementWidth = nodeForWidth.clientWidth
-                                    elementWidth -= parseFloat(computedStyle.paddingLeft) + parseFloat(computedStyle.paddingRight)
-
-
-                                    tag.classList.add(DROPAREA_ACTIVE)
-                                    tag.style.width = (elementWidth) + 'px'
-                                    allTags.push(tag)
-
-                                } else {
-                                    if (distanceTop > 200 && distanceMiddle > 200 && distanceBottom > 200) {
-                                        tag.classList.remove(DROPAREA_ACTIVE)
-                                    } else {
-                                        allTags.push(tag)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-
-                // check for overlapping elements
-                for (let y = 0; y < allTags.length; y++) {
-                    for (let z = 0; z < allTags.length; z++) {
-                        if (allTags[y] !== allTags[z]) {
-                            const rect = allTags[y].getBoundingClientRect()
-                            const rect2 = allTags[z].getBoundingClientRect()
-                            if (!(rect.right < rect2.left ||
-                                rect.left > rect2.right ||
-                                rect.bottom < rect2.top ||
-                                rect.top > rect2.bottom)) {
-
-                                allTags[z].classList.add(DROPAREA_OVERLAP)
-                                allTags[y].classList.add(DROPAREA_OVERLAP)
-                                break
-                            }
-                        }
-                    }
-                }
-
-            }, 100) // prevent flickering
         }
     }
 
@@ -514,8 +397,8 @@ class JsonDomHelper extends React.Component {
         const {_json, _onTemplateChange} = this.props
         e.currentTarget.classList.remove(DROPAREA_OVER)
 
-        if (JsonDomHelper.currentDragElement) {
-            let sourceKey = JsonDomHelper.currentDragElement.props._key,
+        if (JsonDomDraggable.props) {
+            let sourceKey = JsonDomDraggable.props._key,
                 targetKey = e.currentTarget.getAttribute('data-key'),
                 targetIndex = parseInt(e.currentTarget.getAttribute('data-index'))
 
@@ -538,6 +421,13 @@ class JsonDomHelper extends React.Component {
                         removeComponent(sourceKey, _json)
                         _onTemplateChange(_json, true)
                     }
+                } else{
+                    const position = e.currentTarget.getAttribute('data-position')
+                    this.setState({addChildDialog: {
+                            selected: JsonDomDraggable.props.element,
+                            addabove: position==='above',
+                            addbelow: position==='below'
+                    }})
                 }
 
             }
@@ -553,15 +443,7 @@ class JsonDomHelper extends React.Component {
 
     resetDragState() {
 
-        const dropAreas = document.querySelectorAll('[data-drop-area="true"]')
-        for (let i = 0; i < dropAreas.length; ++i) {
-            const dropArea = dropAreas[i]
-            dropArea.classList.remove(DROPAREA_OVERLAP)
-            dropArea.classList.remove(DROPAREA_OVER)
-            dropArea.classList.remove(DROPAREA_ACTIVE)
-        }
-
-        JsonDomHelper.currentDragElement = null
+        onJsonDomDragEnd()
         if (JsonDomHelper.altKeyDown) {
             altKeyReleased()
         }
@@ -711,7 +593,7 @@ class JsonDomHelper extends React.Component {
     }
 
 
-    getDropArea(rest, index) {
+    getDropArea(rest, index, position) {
         return <StyledDropArea
             onMouseOver={(e) => {
                 e.stopPropagation()
@@ -722,6 +604,7 @@ class JsonDomHelper extends React.Component {
             onDrop={this.onDrop.bind(this)}
             data-key={rest._key}
             data-index={index}
+            data-position={position}
             data-drop-area
             data-tag-name={rest._tagName}
             key={`${rest._key}.dropArea.${index}`}>Hier plazieren</StyledDropArea>
@@ -745,7 +628,6 @@ class JsonDomHelper extends React.Component {
                             if (!source.p) {
                                 source.p = {}
                             }
-                            const jsonElement = getJsonDomElements(options.elementKey)
                             const items = convertRawValuesFromPicker({type: picker.type, fieldsToProject: picker.type==='Media'?MEDIA_PROJECTION:[], rawValue: newwindow.resultValue, multi: picker.multi})
                             source.p.src = items
                         }
@@ -790,8 +672,8 @@ class JsonDomHelper extends React.Component {
             isInLoop = rest._key.indexOf('$loop') >= 0,
             isElementActive = !JsonDomHelper.disableEvents && (hovered || toolbarHovered || toolbarMenuOpen)
 
-        let hasJsonToEdit = !!_json, subJson, toolbar, highlighter, dropAreaAbove, dropAreaBelow, editElementEvent,
-            overrideOnChange, overrideOnClick, parsedSource
+        let hasJsonToEdit = !!_json, subJson, toolbar, highlighter,
+            overrideEvents = {}, parsedSource
 
         const events = {
             onContextMenu: (e) => {
@@ -842,12 +724,11 @@ class JsonDomHelper extends React.Component {
                 onChange={onChange}
                 {...rest}>{children}</_WrappedComponent>
         }
-
         const isDraggable = !isInLoop && hasJsonToEdit && _options.allowDrag !== false
         if (isDraggable) {
             events.draggable = 'true'
             events.onDragEnd = this.onDragEnd.bind(this)
-            events.onDrag = this.onDrag.bind(this)
+            events.onDrag = onJsonDomDrag.bind(this)
             events.onDrop = this.onDrop.bind(this)
             events.onMouseDown = (e) => {
                 if (e.target.tagName === 'SELECT') {
@@ -871,7 +752,7 @@ class JsonDomHelper extends React.Component {
 
 
         if (parsedSource && parsedSource.newOnClick) {
-            overrideOnClick = (e) => {
+            overrideEvents.onClick = (e) => {
                 this.handleDataSource(e, {create: true})
             }
         }
@@ -879,221 +760,8 @@ class JsonDomHelper extends React.Component {
 
         if (isElementActive) {
 
-            if (isCms && subJson && subJson.p && subJson.p.slug !== null) {
-                menuItems.push({
-                    name: `Komponente ${subJson.p.id || subJson.p.slug} öffnen`,
-                    icon: <LaunchIcon/>,
-                    onClick: () => {
-                        this.props.history.push('/' + subJson.p.slug)
-                    }
-                })
-            }
-            if (hasJsonToEdit) {
-
-
-                if (parsedSource) {
-
-                    if (_onDataResolverPropertyChange) {
-                        overrideOnChange = (e, ...args) => {
-                            if (e.target === ReactDOM.findDOMNode(this)) {
-                                _onDataResolverPropertyChange({
-                                    value: Util.escapeForJson(e.target.value),
-                                    path: parsedSource._id
-                                })
-                            }
-                            if (onChange) {
-                                onChange(e, ...args)
-                            }
-                        }
-                    }
-
-                    if (parsedSource._id) {
-                        menuItems.push({
-                            name: _options.menuTitle.source || 'Eintrag bearbeiten',
-                            icon: <EditIcon/>,
-                            onClick: this.handleDataSource.bind(this)
-                        })
-                    }
-
-                    if (parsedSource.allowClone) {
-                        menuItems.push({
-                            name: _options.menuTitle.sourceClone || 'Eintrag kopieren',
-                            icon: <FileCopyIcon/>,
-                            onClick: (e) => {
-                                this.handleDataSource(e, {clone: true})
-                            }
-                        })
-                    }
-
-                    if (parsedSource.allowNew) {
-                        menuItems.push({
-                            name: _options.menuTitle.sourceNew || 'Eintrag erstellen',
-                            icon: <AddIcon/>,
-                            onClick: (e) => {
-                                this.handleDataSource(e, {create: true})
-                            }
-                        })
-                    }
-
-                    if (parsedSource.allowRemove) {
-                        menuItems.push({
-                            name: _options.menuTitle.sourceRemove || 'Eintrag löschen',
-                            icon: <DeleteIcon/>,
-                            onClick: (e) => {
-                                this.setState({deleteSourceConfirmDialog: parsedSource})
-                            }
-                        })
-                    }
-
-                    if(_dynamic && _options.menu.edit !== false) {
-
-                        const parent = rest._scope.parent
-                        const parentJson = parent.getJsonRaw(parent.props, true)
-
-                        const parentSubJson = getComponentByKey(rest._rootKey, parentJson)
-
-                        if (parentSubJson) {
-                            menuItems.push({
-                                name: 'Komponenten Einstellungen',
-                                icon: <SettingsInputComponentIcon/>,
-                                onClick: () => {
-                                    this.handleEditElement({jsonElement: getJsonDomElements('Cms'), json: parentJson, subJson: parentSubJson, isCms: true, jsonDom:parent})
-                                }
-                            })
-                        }
-                    }
-
-                }
-
-                if(!_dynamic) {
-                    if (_options.menu.edit !== false && _options.elementKey) {
-                        const jsonElement = getJsonDomElements(_options.elementKey)
-
-                        if (jsonElement && (isCms || jsonElement.options || jsonElement.groupOptions)) {
-
-                            editElementEvent = () => {
-                                this.handleEditElement({jsonElement, subJson, isCms, json: _json})
-                            }
-                            menuItems.push({
-                                name: _options.menuTitle.edit || 'Komponenten Einstellungen',
-                                icon: <SettingsInputComponentIcon/>,
-                                onClick: editElementEvent
-                            })
-                        }
-                    }
-
-                    if (_options.menu.editTemplate !== false && Util.hasCapability(_user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
-                        menuItems.push({
-                            name: 'Template bearbeiten',
-                            icon: <BuildIcon/>,
-                            onClick: this.handleTemplateEditClick.bind(this)
-                        })
-                    }
-
-                    if (_options.menu.clone !== false) {
-                        menuItems.push({
-                            name: 'Element duplizieren',
-                            icon: <FileCopyIcon/>,
-                            onClick: this.handleCopyClick.bind(this)
-                        })
-                    }
-
-                    if (!isInLoop) {
-
-
-                        if (_options.allowDrop && _options.menu.add !== false) {
-                            menuItems.push({
-                                name: 'Element hinzufügen',
-                                icon: <AddIcon/>,
-                                onClick: () => {
-                                    JsonDomHelper.disableEvents = true
-                                    this.setState({addChildDialog: {selected: false}})
-                                }
-                            })
-                        }
-
-                        if (_options.menu.addAbove !== false) {
-
-                            menuItems.push({
-                                name: 'Element oberhalb einfügen',
-                                icon: <PlaylistAddIcon/>,
-                                onClick: () => {
-                                    JsonDomHelper.disableEvents = true
-                                    this.setState({addChildDialog: {selected: false, addabove: true}})
-                                }
-                            })
-                        }
-
-                        if (_options.menu.addBelow !== false) {
-                            menuItems.push({
-                                name: 'Element unterhalb einfügen',
-                                icon: <PlaylistAddIcon/>,
-                                onClick: () => {
-                                    JsonDomHelper.disableEvents = true
-                                    this.setState({addChildDialog: {selected: false, addbelow: true}})
-                                }
-                            })
-                        }
-                        if (_options.menu.wrap !== false) {
-                            menuItems.push({
-                                name: 'Element ausserhalb einfügen',
-                                icon: <FlipToBackIcon/>,
-                                onClick: () => {
-                                    JsonDomHelper.disableEvents = true
-                                    this.setState({addChildDialog: {json: _json, subJson, selected: false, wrap: true}})
-                                }
-                            })
-                        }
-                    }
-
-                    if (_options.menu.remove !== false) {
-                        menuItems.push({
-                            name: 'Element entfernen',
-                            icon: <DeleteIcon/>,
-                            onClick: () => {
-                                JsonDomHelper.disableEvents = true
-                                this.setState({deleteConfirmDialog: true})
-                            }
-                        })
-                    }
-
-                    if (_options.menu.clipboard !== false) {
-                        menuItems.push({
-                            divider: true,
-                            name: 'Element in Zwischenablage kopieren',
-                            icon: <FileCopyIcon/>,
-                            onClick: () => {
-                                navigator.clipboard.writeText(JSON.stringify(subJson, null, 2))
-                            }
-                        })
-
-
-                        menuItems.push({
-                            name: 'Element von Zwischenablage einfügen',
-                            icon: <FileCopyIcon/>,
-                            onClick: () => {
-
-                                navigator.clipboard.readText().then(text => {
-                                    if (text) {
-                                        try {
-                                            const json = JSON.parse(text),
-                                                pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1)) + 1
-
-                                            this.handleAddChildClick(json, pos)
-
-                                        } catch (e) {
-
-                                        }
-                                    }
-                                }).catch(err => {
-                                    console.log('Something went wrong', err)
-                                })
-
-                            }
-                        })
-                    }
-                }
-            }
+            this.createContextMenu({isCms, subJson, menuItems, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange,
+                overrideEvents, onChange, _options, _dynamic, rest, _json, _user, isInLoop})
 
             toolbar = <StyledToolbarButton
                 key={rest._key + '.toolbar'}
@@ -1157,41 +825,14 @@ class JsonDomHelper extends React.Component {
             }
         }
 
-        let kids
-        if ((!children || children.constructor !== String) && hasJsonToEdit && !isInLoop && _options.allowDrop && _options.dropArea !== false) {
-            kids = []
-            if (children && children.length) {
-
-                let index = -1
-                for (let i = 0; i < children.length; i++) {
-                    if (children[i].key) {
-                        index = parseInt(children[i].key.substring(children[i].key.lastIndexOf('.') + 1))
-
-                        if (!_options.excludeDrop || _options.excludeDrop.indexOf(index) < 0) {
-                            kids.push(this.getDropArea(this.props, index))
-                        }
-                    }
-                    kids.push(children[i])
-                }
-                if (index > -1) {
-                    kids.push(this.getDropArea(this.props, index + 1))
-                }
-
-            } else {
-                kids.push(this.getDropArea(this.props, 0))
-            }
-
-        } else {
-            kids = children
-        }
+        let kids = this.addDropAreasToChildren({children, hasJsonToEdit, isInLoop, _options})
 
         let comp
-
         if (isCms) {
             comp = <div _key={rest._key} key={rest._key} {...events}>
                 <_WrappedComponent
-                    onChange={overrideOnChange || onChange}
-                    onClick={overrideOnClick || onClick}
+                    onChange={overrideEvents.onChange || onChange}
+                    onClick={overrideEvents.onClick || onClick}
                     {...rest}
                     children={kids}/>
             </div>
@@ -1203,9 +844,9 @@ class JsonDomHelper extends React.Component {
                 isEmpty = true
             }
             comp = <_WrappedComponent
-                onDoubleClick={editElementEvent}
-                onChange={overrideOnChange || onChange}
-                onClick={overrideOnClick || onClick}
+                onDoubleClick={overrideEvents.onDoubleClick}
+                onChange={overrideEvents.onChange || onChange}
+                onClick={overrideEvents.onClick || onClick}
                 _inlineeditor={_inlineEditor ? _inlineEditor.toString() : ''}
                 data-isempty={isEmpty}
                 key={rest._key}
@@ -1300,46 +941,14 @@ class JsonDomHelper extends React.Component {
                                           }]}
                                       title={`Bearbeitung ${addChildDialog.selected ? '(' + addChildDialog.selected.name + ')' : ''}`}>
 
-                            {!addChildDialog.edit && <SimpleSelect
+                            {addChildDialog.selector && <SimpleSelect
                                 fullWidth={true}
                                 style={{width: 'calc(100% - 16px)'}}
                                 label="Element auswählen"
                                 value={addChildDialog.selected && addChildDialog.selected.defaults && addChildDialog.selected.defaults.$inlineEditor.elementKey}
                                 onChange={(e) => {
                                     const value = e.target.value
-                                    let item
-                                    for (let i = 0; i < availableJsonElements.length; i++) {
-                                        const comp = availableJsonElements[i]
-                                        if (value === comp.defaults.$inlineEditor.elementKey) {
-                                            // replace __uid__ placeholder
-                                            const uid = 'genid_' + Math.random().toString(36).substr(2, 9)
-                                            item = JSON.parse(JSON.stringify(comp).replace(/__uid__/g, uid))
-                                            break
-                                        }
-                                    }
-
-                                    if (item.groupOptions) {
-                                        Object.keys(item.groupOptions).forEach(key => {
-                                            item.options['!' + key + '!add'] = {
-                                                uitype: 'button',
-                                                group: item.groupOptions[key],
-                                                key,
-                                                newLine: true,
-                                                label: 'Hinzufügen',
-                                                tab: 'Slides',
-                                                tabPosition: 0,
-                                                action: 'add',
-                                                style: {marginBottom: '2rem'},
-                                                ...item.groupOptions[key]._addButton
-                                            }
-                                            Object.keys(item.groupOptions[key]).forEach(fieldKey => {
-                                                if (fieldKey !== '_addButton') {
-                                                    item.options['!' + key + '!' + fieldKey + '!0'] = item.groupOptions[key][fieldKey]
-                                                }
-                                            })
-                                        })
-                                    }
-
+                                    const item = createElementByKeyFromList(value, availableJsonElements)
                                     this.setState({
                                         addChildDialog: null
                                     }, () => {
@@ -1437,6 +1046,261 @@ class JsonDomHelper extends React.Component {
 
                         </SimpleDialog></AddToBody>)}</React.Fragment>
         }
+    }
+
+    createContextMenu({isCms, subJson, menuItems, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange, overrideEvents, onChange, _options, _dynamic, rest, _json, _user, isInLoop}) {
+        if (isCms && subJson && subJson.p && subJson.p.slug !== null) {
+            menuItems.push({
+                name: `Komponente ${subJson.p.id || subJson.p.slug} öffnen`,
+                icon: <LaunchIcon/>,
+                onClick: () => {
+                    this.props.history.push('/' + subJson.p.slug)
+                }
+            })
+        }
+        if (hasJsonToEdit) {
+
+
+            if (parsedSource) {
+
+                if (_onDataResolverPropertyChange) {
+                    overrideEvents.onChange = (e, ...args) => {
+                        if (e.target === ReactDOM.findDOMNode(this)) {
+                            _onDataResolverPropertyChange({
+                                value: Util.escapeForJson(e.target.value),
+                                path: parsedSource._id
+                            })
+                        }
+                        if (onChange) {
+                            onChange(e, ...args)
+                        }
+                    }
+                }
+
+                if (parsedSource._id) {
+                    menuItems.push({
+                        name: _options.menuTitle.source || 'Eintrag bearbeiten',
+                        icon: <EditIcon/>,
+                        onClick: this.handleDataSource.bind(this)
+                    })
+                }
+
+                if (parsedSource.allowClone) {
+                    menuItems.push({
+                        name: _options.menuTitle.sourceClone || 'Eintrag kopieren',
+                        icon: <FileCopyIcon/>,
+                        onClick: (e) => {
+                            this.handleDataSource(e, {clone: true})
+                        }
+                    })
+                }
+
+                if (parsedSource.allowNew) {
+                    menuItems.push({
+                        name: _options.menuTitle.sourceNew || 'Eintrag erstellen',
+                        icon: <AddIcon/>,
+                        onClick: (e) => {
+                            this.handleDataSource(e, {create: true})
+                        }
+                    })
+                }
+
+                if (parsedSource.allowRemove) {
+                    menuItems.push({
+                        name: _options.menuTitle.sourceRemove || 'Eintrag löschen',
+                        icon: <DeleteIcon/>,
+                        onClick: (e) => {
+                            this.setState({deleteSourceConfirmDialog: parsedSource})
+                        }
+                    })
+                }
+
+                if (_dynamic && _options.menu.edit !== false) {
+
+                    const parent = rest._scope.parent
+                    const parentJson = parent.getJsonRaw(parent.props, true)
+
+                    const parentSubJson = getComponentByKey(rest._rootKey, parentJson)
+
+                    if (parentSubJson) {
+                        menuItems.push({
+                            name: 'Komponenten Einstellungen',
+                            icon: <SettingsInputComponentIcon/>,
+                            onClick: () => {
+                                this.handleEditElement({
+                                    jsonElement: getJsonDomElements('Cms'),
+                                    json: parentJson,
+                                    subJson: parentSubJson,
+                                    isCms: true,
+                                    jsonDom: parent
+                                })
+                            }
+                        })
+                    }
+                }
+
+            }
+
+            if (!_dynamic) {
+                if (_options.menu.edit !== false && _options.elementKey) {
+                    const jsonElement = getJsonDomElements(_options.elementKey)
+
+                    if (jsonElement && (isCms || jsonElement.options || jsonElement.groupOptions)) {
+
+                        overrideEvents.onDoubleClick = () => {
+                            this.handleEditElement({jsonElement, subJson, isCms, json: _json})
+                        }
+                        menuItems.push({
+                            name: _options.menuTitle.edit || 'Komponenten Einstellungen',
+                            icon: <SettingsInputComponentIcon/>,
+                            onClick: overrideEvents.onDoubleClick
+                        })
+                    }
+                }
+
+                if (_options.menu.editTemplate !== false && Util.hasCapability(_user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
+                    menuItems.push({
+                        name: 'Template bearbeiten',
+                        icon: <BuildIcon/>,
+                        onClick: this.handleTemplateEditClick.bind(this)
+                    })
+                }
+
+                if (_options.menu.clone !== false) {
+                    menuItems.push({
+                        name: 'Element duplizieren',
+                        icon: <FileCopyIcon/>,
+                        onClick: this.handleCopyClick.bind(this)
+                    })
+                }
+
+                if (!isInLoop) {
+
+
+                    if (_options.allowDrop && _options.menu.add !== false) {
+                        menuItems.push({
+                            name: 'Element hinzufügen',
+                            icon: <AddIcon/>,
+                            onClick: () => {
+                                JsonDomHelper.disableEvents = true
+                                this.setState({addChildDialog: {selected: false, selector:true}})
+                            }
+                        })
+                    }
+
+                    if (_options.menu.addAbove !== false) {
+
+                        menuItems.push({
+                            name: 'Element oberhalb einfügen',
+                            icon: <PlaylistAddIcon/>,
+                            onClick: () => {
+                                JsonDomHelper.disableEvents = true
+                                this.setState({addChildDialog: {selected: false, addabove: true, selector:true}})
+                            }
+                        })
+                    }
+
+                    if (_options.menu.addBelow !== false) {
+                        menuItems.push({
+                            name: 'Element unterhalb einfügen',
+                            icon: <PlaylistAddIcon/>,
+                            onClick: () => {
+                                JsonDomHelper.disableEvents = true
+                                this.setState({addChildDialog: {selected: false, addbelow: true, selector:true}})
+                            }
+                        })
+                    }
+                    if (_options.menu.wrap !== false) {
+                        menuItems.push({
+                            name: 'Element ausserhalb einfügen',
+                            icon: <FlipToBackIcon/>,
+                            onClick: () => {
+                                JsonDomHelper.disableEvents = true
+                                this.setState({addChildDialog: {json: _json, subJson, selected: false, wrap: true, selector:true}})
+                            }
+                        })
+                    }
+                }
+
+                if (_options.menu.remove !== false) {
+                    menuItems.push({
+                        name: 'Element entfernen',
+                        icon: <DeleteIcon/>,
+                        onClick: () => {
+                            JsonDomHelper.disableEvents = true
+                            this.setState({deleteConfirmDialog: true})
+                        }
+                    })
+                }
+
+                if (_options.menu.clipboard !== false) {
+                    menuItems.push({
+                        divider: true,
+                        name: 'Element in Zwischenablage kopieren',
+                        icon: <FileCopyIcon/>,
+                        onClick: () => {
+                            navigator.clipboard.writeText(JSON.stringify(subJson, null, 2))
+                        }
+                    })
+
+
+                    menuItems.push({
+                        name: 'Element von Zwischenablage einfügen',
+                        icon: <FileCopyIcon/>,
+                        onClick: () => {
+
+                            navigator.clipboard.readText().then(text => {
+                                if (text) {
+                                    try {
+                                        const json = JSON.parse(text),
+                                            pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1)) + 1
+
+                                        this.handleAddChildClick(json, pos)
+
+                                    } catch (e) {
+
+                                    }
+                                }
+                            }).catch(err => {
+                                console.log('Something went wrong', err)
+                            })
+
+                        }
+                    })
+                }
+            }
+        }
+    }
+
+    addDropAreasToChildren({children, hasJsonToEdit, isInLoop, _options}) {
+        let kids
+        if ((!children || children.constructor !== String) && hasJsonToEdit && !isInLoop && _options.allowDrop && _options.dropArea !== false) {
+            kids = []
+            if (children && children.length) {
+
+                let index = -1
+                for (let i = 0; i < children.length; i++) {
+                    if (children[i].key) {
+                        index = parseInt(children[i].key.substring(children[i].key.lastIndexOf('.') + 1))
+
+                        if (!_options.excludeDrop || _options.excludeDrop.indexOf(index) < 0) {
+                            kids.push(this.getDropArea(this.props, index, 'above'))
+                        }
+                    }
+                    kids.push(children[i])
+                }
+                if (index > -1) {
+                    kids.push(this.getDropArea(this.props, index + 1,'below'))
+                }
+
+            } else {
+                kids.push(this.getDropArea(this.props, 0))
+            }
+
+        } else {
+            return children
+        }
+        return kids
     }
 
     handleEditElement({jsonElement, subJson, isCms, json, jsonDom}) {
@@ -1577,9 +1441,6 @@ class JsonDomHelper extends React.Component {
                             groupIdx = parseInt(parts[3])
 
                         if (!isNaN(groupIdx) && selected.groupOptions[groupKey]) {
-
-
-                            const groupFieldOption = selected.groupOptions[groupKey][groupProp]
 
                             if (selected.groupOptions[groupKey][groupProp]) {
 

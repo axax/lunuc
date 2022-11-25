@@ -321,6 +321,7 @@ const baseElements = [
         subHeader: 'Allgemeine Elemente',
         tagName: 'SmartImage',
         name: 'Bild',
+        icon: 'image',
         xhint: 'Ein Bild von der Mediatheke hinzufügen',
         defaults: {
             $inlineEditor: {
@@ -400,6 +401,7 @@ const baseElements = [
     {
         tagName: 'div',
         name: 'Video',
+        icon: 'video',
         defaults: {
             $observe: {},
             $inlineEditor: {
@@ -458,6 +460,7 @@ const baseElements = [
     {
         tagName: 'Link',
         name: 'Screenshot',
+        icon: 'screenshot',
         xhint: 'Erzeugt ein screenshot einer Webseite',
         defaults: {
             $inlineEditor: {
@@ -578,6 +581,7 @@ const baseElements = [
     {
         tagName: 'div',
         name: 'Bildergalerie',
+        icon: 'collections',
         defaults: {
             $inlineEditor: {
                 elementKey: 'gallery',
@@ -620,6 +624,7 @@ const baseElements = [
     },
     {
         tagName: '', name: 'Überschrift',
+        icon: 'format',
         defaults: {
             $inlineEditor: {
                 elementKey: 'headline',
@@ -718,6 +723,7 @@ const baseElements = [
     },
     {
         tagName: 'div',
+        icon: 'wysiwyg',
         name: 'Texteditor (Rich-Text)',
         defaults: {
             $c: '',
@@ -749,6 +755,7 @@ const baseElements = [
     {
         tagName: 'Link',
         name: 'Link',
+        icon: 'link',
         options: {
             ...trOptions('$inlineEditor_options_c_'),
             c: {
@@ -818,6 +825,7 @@ const baseElements = [
     {
         tagName: 'Link',
         name: 'Link mit Bild',
+        icon: 'datasetLink',
         options: {
             c_0_p_src: {
                 fullWidth: true,
@@ -887,6 +895,7 @@ const baseElements = [
     {
         tagName: 'a',
         name: 'Dokument Link',
+        icon: 'attachment',
         xicon: '/icons/pdf.svg',
         defaults: {
             c: '',
@@ -925,6 +934,7 @@ const baseElements = [
     },
     {
         tagName: 'hr', name: 'Trennlinie',
+        icon: 'horizontalRule',
         defaults: {
             $inlineEditor: {
                 elementKey: 'hr'
@@ -942,6 +952,7 @@ const baseElements = [
     {
         tagName: 'section',
         name: 'Slideshow',
+        icon: 'slideshow',
         defaults: {
             $inlineEditor: {
                 elementKey: 'slider',
@@ -1128,6 +1139,7 @@ const baseElements = [
     },
     {
         tagName: 'p',
+        icon: 'subject',
         name: 'Text block',
         defaults: {
             $c: "Paragraph",
@@ -1158,6 +1170,7 @@ const baseElements = [
     {
         tagName: 'iframe',
         name: 'iFrame',
+        icon: 'webAsset',
         options: {
             p_src: {
                 fullWidth: true,
@@ -1208,6 +1221,7 @@ const baseElements = [
     {
         tagName: 'div',
         name: 'Code block',
+        icon: 'code',
         options: {
             c_0_p_type: {
                 fullWidth: true,
@@ -1288,6 +1302,7 @@ const baseElements = [
     {
         subHeader: 'Layout Elemente',
         tagName: 'Row',
+        icon: 'viewColum',
         name: 'Layout 1/2',
         defaults: {
             $inlineEditor: {
@@ -1321,6 +1336,7 @@ const baseElements = [
     {
         tagName: 'Row',
         name: 'Layout 1/3',
+        icon: 'viewColum',
         defaults: {
             $inlineEditor: {
                 elementKey: 'layout-1-3'
@@ -1358,6 +1374,7 @@ const baseElements = [
     {
         tagName: 'Row',
         name: 'Layout 1/4',
+        icon: 'viewColum',
         defaults: {
             $inlineEditor: {
                 elementKey: 'layout-1-4'
@@ -1400,6 +1417,7 @@ const baseElements = [
     {
         tagName: 'Row',
         name: 'Layout 1/5',
+        icon: 'viewColum',
         defaults: {
             $inlineEditor: {
                 elementKey: 'layout-1-5'
@@ -1471,6 +1489,7 @@ const baseElements = [
     {
         tagName: 'Row',
         name: 'Layout 1/6',
+        icon: 'viewColum',
         defaults: {
             $inlineEditor: {
                 elementKey: 'layout-1-6'
@@ -1552,6 +1571,7 @@ const baseElements = [
     {
         tagName: 'Col',
         name: 'Spalte',
+        icon: 'viewColum',
         conditions: {
             parent: ['layout-1-5']
         },
@@ -1569,6 +1589,7 @@ const baseElements = [
     {
         tagName: 'div',
         name: 'Hintergrund',
+        icon: 'wallpaper',
         options: {
             ...imageOptions('$set_image_'),
             $set_image_options_background: {
@@ -1634,6 +1655,7 @@ const advancedElements = [
         subHeader: 'Advanced components',
         tagName: 'section',
         name: 'Timeline',
+        icon: "timeline",
         defaults: {
             $inlineEditor: {
                 elementKey: 'timeline',
@@ -1708,9 +1730,9 @@ const advancedElements = [
         }
     },
     {
-
         tagName: 'section',
         name: 'Accordion',
+        icon: 'horizontalSplit',
         defaults: {
             $inlineEditor: {
                 elementKey: 'accordion',
@@ -1771,6 +1793,7 @@ const advancedElements = [
     {
         tagName: 'div',
         name: 'Data Container',
+        icon: 'storage',
         defaults: {
             c: 'New container',
             $inlineEditor: {
@@ -1800,6 +1823,7 @@ const advancedElements = [
     {
         tagName: 'Cms',
         name: 'Komponente',
+        icon:'functions',
         defaults: {
             $inlineEditor: {
                 elementKey: 'Cms'
@@ -1820,6 +1844,7 @@ const advancedElements = [
     {
         tagName: 'div',
         name: 'Custom',
+        icon: 'widgets',
         defaults: {
             $inlineEditor: {
                 allowDrop: true,
@@ -1856,6 +1881,7 @@ const advancedElements = [
     {
         tagName: 'div',
         name: 'Query',
+        icon:'search',
         defaults: {
             $inlineEditor: {
                 allowDrop: false,
@@ -1883,6 +1909,7 @@ const advancedElements = [
                 value: {
                     key: '__uid__',
                     t: 'GenericData',
+                    genericData:'DemoType',
                     d: [
                         '_id',
                         'definition',
@@ -1892,7 +1919,7 @@ const advancedElements = [
                             ]
                         },
                     ],
-                    f: 'definition.name=BlogEntry && _id>${ObjectId.createFromTime(Date.now()/1000-60*60*24)}'
+                    f: '_id>${ObjectId.createFromTime(Date.now()/1000-60*60*24*50)}'
                 }
             },
             c_$for_d: {
@@ -1908,6 +1935,7 @@ const advancedElements = [
     },
     {
         tagName: 'QuillEditor',
+        icon: 'textFormat',
         name: 'Rich-Text Inline (Datasource)',
         defaults: {
             c: "${_t('__uid__',null,'...')}",
@@ -1951,4 +1979,39 @@ const getJsonDomElements = (value, options) => {
     return baseElements
 }
 
-export {getJsonDomElements, MEDIA_PROJECTION}
+const createElementByKeyFromList = (key, elementList)=>{
+    let item
+    for (let i = 0; i < elementList.length; i++) {
+        const comp = elementList[i]
+        if (key === comp.defaults.$inlineEditor.elementKey) {
+            // replace __uid__ placeholder
+            const uid = 'genid_' + Math.random().toString(36).substr(2, 9)
+            item = JSON.parse(JSON.stringify(comp).replace(/__uid__/g, uid))
+            break
+        }
+    }
+    if (item && item.groupOptions) {
+        Object.keys(item.groupOptions).forEach(key => {
+            item.options['!' + key + '!add'] = {
+                uitype: 'button',
+                group: item.groupOptions[key],
+                key,
+                newLine: true,
+                label: 'Hinzufügen',
+                tab: 'Slides',
+                tabPosition: 0,
+                action: 'add',
+                style: {marginBottom: '2rem'},
+                ...item.groupOptions[key]._addButton
+            }
+            Object.keys(item.groupOptions[key]).forEach(fieldKey => {
+                if (fieldKey !== '_addButton') {
+                    item.options['!' + key + '!' + fieldKey + '!0'] = item.groupOptions[key][fieldKey]
+                }
+            })
+        })
+    }
+    return item
+}
+
+export {getJsonDomElements, createElementByKeyFromList, MEDIA_PROJECTION}

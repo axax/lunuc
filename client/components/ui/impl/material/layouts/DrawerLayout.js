@@ -52,18 +52,15 @@ const StyledMenuButton = styled(IconButton, {
 
 const StyledDrawer = styled(Drawer, {
     shouldForwardProp: (prop) => prop !== 'fixed',
-})(({ theme, fixed, open }) => ({
+})(({ theme, open }) => ({
     maxWidth: '100%',
-    ...(fixed && {
-        position: 'fixed',
-        top: '0px',
-        bottom: '0px',
-        zIndex: 1201
-    }),
+    height:'100vh',
+    position: 'fixed',
+    top: '0px',
+    bottom: '0px',
+    zIndex: theme.zIndex.drawer,
     '.MuiPaper-root':{
-        display: 'block',
         position: 'relative',
-        height: '100%',
         maxWidth: '100%',
         transition: theme.transitions.create('width', {
             easing: theme.transitions.easing.sharp,
@@ -195,7 +192,13 @@ class DrawerLayout extends React.Component {
     dividerMouseMove = (e) => {
         if (this.mouseDividerPos !== false) {
             const drawerWidth = parseFloat(this.props.drawerWidth || DRAWER_WIDTH_DEFAULT)
-            this.setState({drawerWidth: drawerWidth + (e.pageX - this.mouseDividerPos)})
+
+            const newDrawerWidth = drawerWidth + (e.pageX - this.mouseDividerPos)
+            if(newDrawerWidth<150) {
+                this.handleDrawerClose()
+            }else{
+                this.setState({drawerWidth: newDrawerWidth})
+            }
         }
     }
 
@@ -224,10 +227,10 @@ class DrawerLayout extends React.Component {
 
 
     render() {
-        const {theme, title, sidebar, toolbarRight, children, fixedLayout} = this.props
+        const {title, sidebar, toolbarRight, children, fixedLayout} = this.props
         const {open, drawerWidth, dragEntered} = this.state
         const contentFixed = {}
-        if (fixedLayout && open) {
+        if (open) {
             contentFixed.marginLeft = drawerWidth + 'px'
             contentFixed.width = 'calc(100% - ' + drawerWidth + 'px)'
         }
@@ -247,15 +250,13 @@ class DrawerLayout extends React.Component {
                         }}
                         fixed={fixedLayout}
                         style={style}
-                        id="drawerLayoutHeader"
-                    >
+                        id="drawerLayoutHeader">
                         <Toolbar>
                             <StyledMenuButton
                                 color="inherit"
                                 aria-label="open drawer"
                                 onClick={this.handleDrawerOpen}
-                                hidden={open}
-                            >
+                                hidden={open}>
                                 <MenuIcon/>
                             </StyledMenuButton>
                             <Typography variant="h6" color="inherit" noWrap style={{flex: 1}}>
@@ -267,22 +268,16 @@ class DrawerLayout extends React.Component {
                     </StyledAppBar>
                     <StyledDrawer
                         variant="permanent"
-                        fixed={fixedLayout}
                         open={open}
-                    >
-                        <div style={{
-                            maxWidth: '100%',
-                            position: 'relative',
-                            width: drawerWidth + 'px'}}>
-                            <StyledDrawerHeader>
-                                <IconButton onClick={this.handleDrawerClose}>
-                                    <ChevronLeftIcon/>
-                                </IconButton>
-                            </StyledDrawerHeader>
-                            <Divider/>
-                            {open && sidebar}
-                            <StyledDrawerDivider onMouseDown={this.dividerMouseDown}/>
-                        </div>
+                        style={{width: open ? drawerWidth + 'px' : 0}}>
+                        <StyledDrawerHeader>
+                            <IconButton onClick={this.handleDrawerClose}>
+                                <ChevronLeftIcon/>
+                            </IconButton>
+                        </StyledDrawerHeader>
+                        <Divider/>
+                        {open && sidebar}
+                        <StyledDrawerDivider onMouseDown={this.dividerMouseDown}/>
                     </StyledDrawer>
                     <StyledContent data-layout-content="true" style={contentFixed} fixed={fixedLayout} open={open}>
                         {children}
