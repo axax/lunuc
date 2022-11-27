@@ -144,6 +144,7 @@ class CodeEditor extends React.Component {
         return {
             data,
             isDataJson,
+            scrollPosition: props.scrollPosition,
             stateError: false,
             error: props.error,
             lineNumbers: props.lineNumbers,
@@ -570,8 +571,9 @@ class CodeEditor extends React.Component {
                         <StyledFile key={'file' + i}
                            onClick={() => {
                                //this._editor.clearHistory()
-                               this.setState({fileIndex: i})
-
+                               this.setState({fileIndex: i},()=>{
+                                   this.setEditorPosition()
+                               })
                                if (onFileChange) {
                                    onFileChange(i)
                                }
@@ -594,15 +596,18 @@ class CodeEditor extends React.Component {
                 onContextMenu={((editor, e) => {
                     if (type === 'json') {
                         e.preventDefault()
-
                         this.setState({showContextMenu: {left: e.clientX, top: e.clientY}})
-
                     }
-
                 })}
-                onScroll={(editor, e) => {
+                onScroll={(editor, scrollEvent) => {
                     if (onScroll) {
-                        onScroll(e)
+                        const currentScrollPosition = this.state.scrollPosition
+                        if(!currentScrollPosition || Util.shallowCompare(currentScrollPosition[this.state.fileIndex], scrollEvent)) {
+                            const newScrollPosition = Object.assign({}, currentScrollPosition,
+                                {[this.state.fileIndex]: {left:scrollEvent.left, top: scrollEvent.top}})
+                            this.setState({scrollPosition:newScrollPosition})
+                            onScroll(newScrollPosition)
+                        }
                     }
                 }}
                 onKeyUp={(cm, e) => {
@@ -690,9 +695,12 @@ class CodeEditor extends React.Component {
 
     setEditorPosition(){
         if(this._editor) {
-            const {scrollPosition, height} = this.props
-            if (scrollPosition) {
-                this._editor.scrollTo(scrollPosition.left, scrollPosition.top)
+            const {height} = this.props
+            const {scrollPosition} = this.state
+            if (scrollPosition && scrollPosition[this.state.fileIndex]) {
+                this._editor.scrollTo(scrollPosition[this.state.fileIndex].left, scrollPosition[this.state.fileIndex].top)
+            }else{
+                this._editor.scrollTo(0,0)
             }
             if (height) {
                 this._editor.setSize(null, height)

@@ -837,13 +837,6 @@ const baseElements = [
                 projection: MEDIA_PROJECTION,
                 tab: DEFAULT_TAB
             },
-            c_1_c: {
-                fullWidth: true,
-                value: '',
-                placeholder: 'Text eingeben',
-                label: 'Text',
-                tab: DEFAULT_TAB
-            },
             p_href: {
                 fullWidth: true,
                 value: '',
@@ -856,6 +849,20 @@ const baseElements = [
                 value: '',
                 placeholder: 'Url Titel eingeben',
                 label: 'Url Titel',
+                tab: DEFAULT_TAB
+            },
+            c_1_c: {
+                fullWidth: true,
+                value: '',
+                placeholder: 'Text eingeben',
+                label: 'Text',
+                tab: DEFAULT_TAB
+            },
+            ['p_data-hover-text']: {
+                fullWidth: true,
+                value: '',
+                placeholder: 'Mouseover text',
+                label: 'Text',
                 tab: DEFAULT_TAB
             },
             p_target: {
@@ -1623,6 +1630,21 @@ const baseElements = [
             p_style_backgroundColor: {
                 value: '',
                 label: 'Farbe',
+                tab: DEFAULT_TAB
+            },
+            p_style_backgroundRepeat: {
+                value: '',
+                label: 'Wiederholung',
+                enum: [
+                    {
+                        name: 'Keine',
+                        value: 'no-repeat'
+                    },
+                    {
+                        name: 'Beidseitig',
+                        value: 'repeat'
+                    }
+                ],
                 tab: DEFAULT_TAB
             },
             ...invisibleOptions('p_'),

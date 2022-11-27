@@ -1346,7 +1346,6 @@ class CmsViewEditorContainer extends React.Component {
 
         const settingKey = pageSetting ? 'EditorPageOptions' : 'EditorOptions'
         const stateSettings = this.state[settingKey]
-
         if(!stateSettings || Util.shallowCompare(stateSettings[key], value)) {
             this.setState({
                 [settingKey]: Object.assign({}, stateSettings, {
