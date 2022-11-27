@@ -22,7 +22,7 @@ import DomUtilAdmin from 'client/util/domAdmin.mjs'
 import Util from 'client/util/index.mjs'
 import {propertyByPath, setPropertyByPath} from '../../../client/util/json.mjs'
 import {getComponentByKey, addComponent, removeComponent, getParentKey, isTargetAbove} from '../util/jsonDomUtil'
-import {DROPAREA_ACTIVE, DROPAREA_OVERLAP, DROPAREA_OVER, ALLOW_DROP, ALLOW_DROP_IN, ALLOW_DROP_FROM, JsonDomDraggable, onJsonDomDrag, onJsonDomDragEnd} from '../util/jsonDomDragUtil'
+import {DROPAREA_ACTIVE, DROPAREA_OVERLAP, DROPAREA_OVER, ALLOW_DROP, JsonDomDraggable, onJsonDomDrag, onJsonDomDragEnd} from '../util/jsonDomDragUtil'
 import config from 'gen/config-client'
 import {getJsonDomElements, createElementByKeyFromList, MEDIA_PROJECTION} from '../util/elements'
 import {deepMergeOptional, deepMerge} from '../../../util/deepMerge.mjs'
@@ -422,11 +422,9 @@ class JsonDomHelper extends React.Component {
                         _onTemplateChange(_json, true)
                     }
                 } else{
-                    const position = e.currentTarget.getAttribute('data-position')
                     this.setState({addChildDialog: {
-                            selected: JsonDomDraggable.props.element,
-                            addabove: position==='above',
-                            addbelow: position==='below'
+                            dropIndex: targetIndex,
+                            selected: JsonDomDraggable.props.element
                     }})
                 }
 
@@ -553,7 +551,7 @@ class JsonDomHelper extends React.Component {
         return parsedSource
     }
 
-    handleAddChildClick(component, index) {
+    handleAddChildClick(component, index, dropIndex) {
         const {_key, _json, _onTemplateChange, _onDataResolverPropertyChange} = this.props
 
         let newkey = _key
@@ -561,6 +559,9 @@ class JsonDomHelper extends React.Component {
             newkey = newkey.substring(0, newkey.lastIndexOf('.'))
         } else {
             index = 0
+        }
+        if(dropIndex){
+            index = dropIndex
         }
         if (component.$inlineEditor && component.$inlineEditor.dataResolver) {
             let dataResolver = component.$inlineEditor.dataResolver
@@ -593,7 +594,7 @@ class JsonDomHelper extends React.Component {
     }
 
 
-    getDropArea(rest, index, position) {
+    getDropArea(rest, index) {
         return <StyledDropArea
             onMouseOver={(e) => {
                 e.stopPropagation()
@@ -604,7 +605,6 @@ class JsonDomHelper extends React.Component {
             onDrop={this.onDrop.bind(this)}
             data-key={rest._key}
             data-index={index}
-            data-position={position}
             data-drop-area
             data-tag-name={rest._tagName}
             key={`${rest._key}.dropArea.${index}`}>Hier plazieren</StyledDropArea>
@@ -1284,13 +1284,13 @@ class JsonDomHelper extends React.Component {
                         index = parseInt(children[i].key.substring(children[i].key.lastIndexOf('.') + 1))
 
                         if (!_options.excludeDrop || _options.excludeDrop.indexOf(index) < 0) {
-                            kids.push(this.getDropArea(this.props, index, 'above'))
+                            kids.push(this.getDropArea(this.props, index))
                         }
                     }
                     kids.push(children[i])
                 }
                 if (index > -1) {
-                    kids.push(this.getDropArea(this.props, index + 1,'below'))
+                    kids.push(this.getDropArea(this.props, index + 1))
                 }
 
             } else {
@@ -1580,7 +1580,8 @@ class JsonDomHelper extends React.Component {
                     } else if (addChildDialog.addabove) {
                         pos = parseInt(_key.substring(_key.lastIndexOf('.') + 1))
                     }
-                    this.handleAddChildClick(comp, pos)
+
+                    this.handleAddChildClick(comp, pos, addChildDialog.dropIndex)
                 }
             }
         }

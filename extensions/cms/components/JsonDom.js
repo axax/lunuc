@@ -848,6 +848,7 @@ class JsonDom extends React.Component {
                     try {
                         /* $.loop{ --> ${ */
                         /* "$.loop" --> ${JSON.stringify(this.loop)} the whole loop item */
+
                         const re = new RegExp('\\$\\.' + s + '{', 'g'),
                             re2 = new RegExp('"' + s + '###|###' + s + '"', 'g'),
                             cStr = JSON.stringify(c).replace(re, '${')
@@ -867,7 +868,6 @@ class JsonDom extends React.Component {
                             }
                             // back to json
                             loopChild._index = childIdx
-
 
                             if ($loop) {
                                 tpl = new Function(DomUtil.toES5(`const {${Object.keys(loopChild).join(',')}}=this.${s},Util=this.Util,_i=Util.tryCatch.bind(this),_t=this._t.bind(this.scope.data);return \`${cStr}\``))
