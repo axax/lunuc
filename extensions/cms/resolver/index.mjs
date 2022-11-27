@@ -4,7 +4,7 @@ import Util from '../../../api/util/index.mjs'
 import ClientUtil from '../../../client/util/index.mjs'
 import {getCmsPage} from '../util/cmsPage.mjs'
 import {resolveData} from '../util/dataResolver.mjs'
-import {pubsub} from '../../../api/subscription.mjs'
+import {pubsub, pubsubHooked} from '../../../api/subscription.mjs'
 import {DEFAULT_DATA_RESOLVER, DEFAULT_TEMPLATE, DEFAULT_SCRIPT, DEFAULT_STYLE, CAPABILITY_MANAGE_CMS_PAGES} from '../constants/index.mjs'
 import Cache from '../../../util/cache.mjs'
 import {withFilter} from 'graphql-subscriptions'
@@ -348,7 +348,7 @@ export default db => ({
                 style: DEFAULT_STYLE
             })
         },
-        updateCmsPage: async ({_id, slug, realSlug, query, props, createdBy, ownerGroup, ...rest}, req) => {
+        updateCmsPage: async ({_id, _meta, slug, realSlug, query, props, createdBy, ownerGroup, ...rest}, req, options) => {
             const {context, headers} = req
 
             Util.checkIfUserIsLoggedIn(context)
@@ -399,14 +399,16 @@ export default db => ({
                 result.resolvedData = '{}'
             }
 
-            pubsub.publish('newNotification', {
+            /*pubsub.publish('newNotification', {
                 userId: context.id,
                 newNotification: {
                     key: 'updateCmsPage',
                     message: `CMS Page ${_id} was successfully updated on ${new Date().toLocaleTimeString()}`
                 }
-            })
-
+            })*/
+            if(options && options.publish!==false){
+                pubsubHooked.publish('subscribeCmsPage', {userId:context.id,subscribeCmsPage: {_meta, action: 'update', data: [result]}}, db, context)
+            }
 
             return result
         },
@@ -429,6 +431,26 @@ export default db => ({
         cmsCustomData: withFilter(() => pubsub.asyncIterator('cmsCustomData'),
             (payload, context) => {
                 return payload && payload.session === context.session //payload.userId === context.id
+            }
+        ),
+        subscribeCmsPage: withFilter(() => pubsub.asyncIterator('subscribeCmsPage'),
+            async (payload, context) => {
+                if( payload ) {
+
+                    const hookResponse = {}
+                    if (Hook.hooks['ResolverBeforePublishSubscription'] && Hook.hooks['ResolverBeforePublishSubscription'].length) {
+                        for (let i = 0; i < Hook.hooks['ResolverBeforePublishSubscription'].length; ++i) {
+                            await Hook.hooks['ResolverBeforePublishSubscription'][i].callback({
+                                db, payload, context, hookResponse
+                            })
+                        }
+                    }
+
+                    if(hookResponse.abort){
+                        return false
+                    }
+                    return await Util.userCanSubscribe(db,context,'CmsPage',payload)
+                }
             }
         )
     }
