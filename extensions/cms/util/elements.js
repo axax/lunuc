@@ -171,6 +171,14 @@ const classIconListOptions = key => ({
                 name: 'Keine'
             },
             {
+                value: ' icon-telefon ',
+                name: 'Telefon'
+            },
+            {
+                value: ' icon-email ',
+                name: 'Email'
+            },
+            {
                 value: ' icon-pdf black-icon black ',
                 name: 'PDF (schwarz)'
             },

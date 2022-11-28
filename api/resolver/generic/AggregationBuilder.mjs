@@ -332,7 +332,9 @@ export default class AggregationBuilder {
             if(subField) {
                 if (subField.constructor === Object) {
                     const keys = Object.keys(subField)
-                    this.projectByField(fieldName + '.' + keys[0], subField[keys[0]], projectResultData)
+                    if(keys[0]) {
+                        this.projectByField(fieldName + '.' + keys[0], subField[keys[0]], projectResultData)
+                    }
                 } else {
                     projectResultData[fieldName + '.' + subField] = 1
                 }
@@ -604,6 +606,9 @@ export default class AggregationBuilder {
             const field = fields[i]
             const fieldDefinition = this.createFieldDefinition(field, this.type)
             const fieldName = fieldDefinition.name
+            if(!fieldName){
+                continue
+            }
             if (fieldDefinition.reference) {
 
                 // search in a ref field
@@ -621,6 +626,10 @@ export default class AggregationBuilder {
                     for (const refField of refFields) {
                         const refFieldDefinition = this.createFieldDefinition(refField, fieldDefinition.type)
                         const refFieldName = refFieldDefinition.name
+
+                        if(!refFieldName){
+                            continue
+                        }
 
                         if (fieldDefinition.fields) {
                             projectResultData[fieldName + '.' + refFieldName] = 1
