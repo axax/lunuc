@@ -495,11 +495,11 @@ class CmsViewEditorContainer extends React.Component {
             </SimpleDialog>,
             <DataEditDialog key="dataEditDialog"/>
         ]
-
         if (!canManageCmsPages || props.dynamic) {
-            if (cmsPage && cmsPage.publicEdit) {
+            if ((cmsPage && cmsPage.publicEdit) || props.forceEditMode==='true') {
                 return <UIProvider>{inner}</UIProvider>
             }
+            console.log('xxxxx', props)
             return inner
         } else {
             const {slug, _version} = getSlugVersion(props.slug)

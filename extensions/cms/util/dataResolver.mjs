@@ -214,6 +214,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         const user = await Util.userById(db, context.id)
 
                         if (user) {
+                            //resolvedData.user = Object.assign({}, resolvedData.user)
                             if (segment.user.meta) {
                                 if (segment.user.meta.constructor === Array) {
                                     resolvedData.user.meta = {}
@@ -233,6 +234,9 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
 
                             if (segment.user.roles) {
                                 resolvedData.user.roles = await Util.getUserRoles(db, user.role)
+                            }
+                            if (segment.user.group) {
+                                resolvedData.user.group = user.group ? user.group.map(group=>({id:group.toString()})) : []
                             }
                         }
                     }

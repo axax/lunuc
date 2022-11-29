@@ -171,7 +171,7 @@ const classIconListOptions = key => ({
                 name: 'Keine'
             },
             {
-                value: ' icon-telefon ',
+                value: ' icon-phone ',
                 name: 'Telefon'
             },
             {
@@ -695,11 +695,13 @@ const baseElements = [
             c: {
                 label: 'Text',
                 fullWidth: true,
+                uitype: 'textarea',
                 tab: DEFAULT_TAB
             },
             $c: {
                 label: 'Text (HTML)',
                 fullWidth: true,
+                uitype: 'textarea',
                 tab: DEFAULT_TAB
             },
             p_style_textAlign: {
