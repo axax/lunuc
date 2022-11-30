@@ -177,7 +177,11 @@ class CodeEditor extends React.Component {
     }
 
     shouldComponentUpdate(nextProps, nextState) {
-        return nextState.stateError !== this.state.stateError ||
+
+
+
+
+        const update = nextState.stateError !== this.state.stateError ||
             nextState.stateDate !== this.state.stateDate ||
             nextState.renderInWindow !== this.state.renderInWindow ||
             nextState.identifier !== this.state.identifier ||
@@ -186,6 +190,13 @@ class CodeEditor extends React.Component {
             nextState.showContextMenu !== this.state.showContextMenu ||
             nextState.editData !== this.state.editData ||
             nextState.showFileSplit !== this.state.showFileSplit
+
+        if(update){
+            setTimeout(()=>{
+                this.setEditorPosition()
+            })
+        }
+        return update
     }
 
     autoFormatSelection() {
@@ -396,106 +407,7 @@ class CodeEditor extends React.Component {
                 }
             })
         }
-
-        let contextMenuItems
-
-        if (showContextMenu) {
-            const loc = this._editor.coordsChar(showContextMenu, 'window')
-            this._curLineNr = loc.line
-            this._curLine = this._editor.doc.getLine(loc.line).trim()
-            this._curLineEndsWithComma = this._curLine.endsWith(',')
-
-            let tempJson
-            try {
-                tempJson = JSON.parse('{' + (this._curLineEndsWithComma ? this._curLine.substring(0, this._curLine.length - 1) : this._curLine) + '}')
-            } catch (e) {
-            }
-            if (tempJson) {
-                contextMenuItems = [
-                    {
-                        icon: <EditIcon/>,
-                        name: 'Edit as Text',
-                        onClick: () => {
-                            const keys = Object.keys(tempJson)
-                            if (keys.length > 0) {
-                                this.setState({editData: {uitype: 'textarea', key: keys[0], value: tempJson[keys[0]]}})
-                            }
-                        }
-                    },
-                    {
-                        icon: <CodeIcon/>,
-                        name: 'Edit as HTML',
-                        onClick: () => {
-                            const keys = Object.keys(tempJson)
-                            if (keys.length > 0) {
-                                this.setState({editData: {uitype: 'html', key: keys[0], value: tempJson[keys[0]]}})
-                            }
-                        }
-                    }
-                ]
-                const keys = Object.keys(tempJson)
-                if(keys.length>0 && keys[0]=='slug'){
-                    contextMenuItems.push({
-                        icon: <CodeIcon/>,
-                        name: 'Open Page',
-                        onClick: () => {
-                            location.href = '/'+tempJson.slug
-                        }
-                    })
-                }
-
-                if (this.props.propertyTemplates) {
-                    contextMenuItems.push({
-                        icon: <AddIcon/>,
-                        name: 'Add',
-                        items: this.props.propertyTemplates.map(f => ({
-                            name: f.title,
-                            onClick: () => {
-                                this.changeLine({
-                                    value,
-                                    lineNr: this._curLineNr,
-                                    line: `${this._curLine}${!this._curLine || this._curLineEndsWithComma ? '' : ','}${f.template}${this._curLineEndsWithComma ? ',' : ''}`
-                                })
-                            }
-                        }))
-                    })
-                }
-            } else if (this.props.templates) {
-                let commaAtEnd = this._curLineEndsWithComma, commaAtStart = !this._curLineEndsWithComma
-                if (!commaAtEnd) {
-                    const nextLine = this._editor.doc.getLine(this._curLineNr + 1).trim()
-                    if (nextLine.startsWith('{')) {
-                        commaAtEnd = true
-                    }
-                    if (this._curLine.endsWith('[')) {
-                        commaAtStart = false
-                    }
-                }
-                contextMenuItems = [
-                    {
-                        icon: <AddIcon/>,
-                        name: 'Add',
-                        items: this.props.templates.map(f => ({
-                            name: f.title,
-                            onClick: () => {
-                                if (!this.changeLine({
-                                    value,
-                                    lineNr: this._curLineNr,
-                                    line: `${this._curLine}${commaAtStart ? ',' : ''}${f.template}${commaAtEnd ? ',' : ''}`
-                                })) {
-
-                                    this.changeLine({
-                                        value,
-                                        lineNr: this._curLineNr,
-                                        line: `${this._curLine}${commaAtStart ? ',' : ''}"c":${f.template}${commaAtEnd ? ',' : ''}`
-                                    })
-                                }
-                            }
-                        }))
-                    }
-                ]
-            }
-        }
+        const contextMenuItems = this.generateContextMenu(showContextMenu, value);
         const comp = <StyledRoot
                         error={error || stateError}
                         inWindow={renderInWindow}
@@ -691,6 +603,109 @@ class CodeEditor extends React.Component {
 
         }
         return comp
+    }
+
+    generateContextMenu(showContextMenu, value) {
+        let contextMenuItems
+
+        if (showContextMenu) {
+            const loc = this._editor.coordsChar(showContextMenu, 'window')
+            this._curLineNr = loc.line
+            this._curLine = this._editor.doc.getLine(loc.line).trim()
+            this._curLineEndsWithComma = this._curLine.endsWith(',')
+
+            let tempJson
+            try {
+                tempJson = JSON.parse('{' + (this._curLineEndsWithComma ? this._curLine.substring(0, this._curLine.length - 1) : this._curLine) + '}')
+            } catch (e) {
+            }
+            if (tempJson) {
+                contextMenuItems = [
+                    {
+                        icon: <EditIcon/>,
+                        name: 'Edit as Text',
+                        onClick: () => {
+                            const keys = Object.keys(tempJson)
+                            if (keys.length > 0) {
+                                this.setState({editData: {uitype: 'textarea', key: keys[0], value: tempJson[keys[0]]}})
+                            }
+                        }
+                    },
+                    {
+                        icon: <CodeIcon/>,
+                        name: 'Edit as HTML',
+                        onClick: () => {
+                            const keys = Object.keys(tempJson)
+                            if (keys.length > 0) {
+                                this.setState({editData: {uitype: 'html', key: keys[0], value: tempJson[keys[0]]}})
+                            }
+                        }
+                    }
+                ]
+                const keys = Object.keys(tempJson)
+                if (keys.length > 0 && keys[0] == 'slug') {
+                    contextMenuItems.push({
+                        icon: <CodeIcon/>,
+                        name: 'Open Page',
+                        onClick: () => {
+                            location.href = '/' + tempJson.slug
+                        }
+                    })
+                }
+
+                if (this.props.propertyTemplates) {
+                    contextMenuItems.push({
+                        icon: <AddIcon/>,
+                        name: 'Add',
+                        items: this.props.propertyTemplates.map(f => ({
+                            name: f.title,
+                            onClick: () => {
+                                this.changeLine({
+                                    value,
+                                    lineNr: this._curLineNr,
+                                    line: `${this._curLine}${!this._curLine || this._curLineEndsWithComma ? '' : ','}${f.template}${this._curLineEndsWithComma ? ',' : ''}`
+                                })
+                            }
+                        }))
+                    })
+                }
+            } else if (this.props.templates) {
+                let commaAtEnd = this._curLineEndsWithComma, commaAtStart = !this._curLineEndsWithComma
+                if (!commaAtEnd) {
+                    const nextLine = this._editor.doc.getLine(this._curLineNr + 1).trim()
+                    if (nextLine.startsWith('{')) {
+                        commaAtEnd = true
+                    }
+                    if (this._curLine.endsWith('[')) {
+                        commaAtStart = false
+                    }
+                }
+                contextMenuItems = [
+                    {
+                        icon: <AddIcon/>,
+                        name: 'Add',
+                        items: this.props.templates.map(f => ({
+                            name: f.title,
+                            onClick: () => {
+                                if (!this.changeLine({
+                                    value,
+                                    lineNr: this._curLineNr,
+                                    line: `${this._curLine}${commaAtStart ? ',' : ''}${f.template}${commaAtEnd ? ',' : ''}`
+                                })) {
+
+                                    this.changeLine({
+                                        value,
+                                        lineNr: this._curLineNr,
+                                        line: `${this._curLine}${commaAtStart ? ',' : ''}"c":${f.template}${commaAtEnd ? ',' : ''}`
+                                    })
+                                }
+                            }
+                        }))
+                    }
+                ]
+            }
+        }
+        return contextMenuItems
     }
 
     setEditorPosition(){

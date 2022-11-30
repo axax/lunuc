@@ -441,7 +441,7 @@ class JsonDom extends React.Component {
     }
 
     render() {
-        const {dynamic, template, script, resolvedData, parseResolvedData, _props, _key, loading} = this.props
+        const {template, script, resolvedData, parseResolvedData, _props, _key, loading} = this.props
 
         if (!template) {
             console.warn('Template is missing.', this.props)
@@ -1073,6 +1073,7 @@ class JsonDom extends React.Component {
                             eleProps._user = this.props.user
                             eleProps._onTemplateChange = this.onTemplateChange.bind(this)
                             eleProps._onDataResolverPropertyChange = this.props.onDataResolverPropertyChange
+                            eleProps._findSegmentInDataResolverByKeyOrPath = this.props.findSegmentInDataResolverByKeyOrPath
                             eleType = JsonDomHelper
                         }
 

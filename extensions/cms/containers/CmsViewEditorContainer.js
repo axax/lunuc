@@ -443,6 +443,7 @@ class CmsViewEditorContainer extends React.Component {
             !loadingState && <WrappedComponent key="cmsView"
                                                cmsEditData={cmsEditData}
                                                onTemplateChange={this.handleTemplateChange}
+                                               findSegmentInDataResolverByKeyOrPath={this.findSegmentInDataResolverByKeyOrPath.bind(this)}
                                                inEditor={canManageCmsPages}
                                                onError={this.handleCmsError.bind(this)}
                                                onDataResolverPropertyChange={this.handleDataResolverPropertySave.bind(this)}

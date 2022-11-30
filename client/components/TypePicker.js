@@ -499,6 +499,7 @@ class TypePicker extends React.Component {
             } else if (e.key === 'ArrowUp') {
                 this.setState({selIdx: selIdx <= 0 ? l - 1 : selIdx - 1})
             } else if (e.key === 'Enter') {
+                e.preventDefault()
                 this.handlePick(selIdx)
             }
         }

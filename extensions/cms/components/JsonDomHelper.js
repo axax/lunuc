@@ -583,7 +583,7 @@ class JsonDomHelper extends React.Component {
 
 
     handleDeleteClick(e) {
-        const {_cmsActions, _key, _json, _scope, _onTemplateChange, _onDataResolverPropertyChange} = this.props
+        const {_key, _json, _onTemplateChange, _onDataResolverPropertyChange} = this.props
         const source = getComponentByKey(_key, _json)
 
         if (source && source.$inlineEditor && source.$inlineEditor.dataResolver) {
@@ -1305,7 +1305,6 @@ class JsonDomHelper extends React.Component {
 
     handleEditElement({jsonElement, subJson, isCms, json, jsonDom}) {
         JsonDomHelper.disableEvents = true
-
         //clone
         const newJsonElement = JSON.parse(JSON.stringify(jsonElement))
         delete newJsonElement.defaults
@@ -1313,15 +1312,22 @@ class JsonDomHelper extends React.Component {
         newJsonElement.options = deepMerge({}, newJsonElement.options, subJson.$inlineEditor && subJson.$inlineEditor.options)
         newJsonElement.groupOptions = deepMerge({}, newJsonElement.groupOptions, subJson.$inlineEditor && subJson.$inlineEditor.groupOptions)
 
+
         Object.keys(newJsonElement.options).forEach(key => {
 
             if(!newJsonElement.options[key]){
                 return
             }
+
             let val = propertyByPath('$original_' + key, subJson, '_')
             if (!val) {
                 val = propertyByPath(key, subJson, '_')
             }
+            if(key==='$inlineEditor_dataResolver'){
+               val = this.props._findSegmentInDataResolverByKeyOrPath({key:val}).segment
+            }
+
+
 
             if (newJsonElement.options[key].tr && newJsonElement.options[key].trKey) {
                 if (this.props._scope.data.tr) {
@@ -1525,6 +1531,13 @@ class JsonDomHelper extends React.Component {
             if (addChildDialog.edit) {
 
                 Object.keys(comp).forEach((key) => {
+                    const dataResolver = comp[key].dataResolver
+                    if(dataResolver){
+                        if(dataResolver.constructor === Object){
+                            _onDataResolverPropertyChange({value: dataResolver, key: dataResolver.key, instantSave: true})
+                            comp[key].dataResolver = dataResolver.key
+                        }
+                    }
                     subJson[key] = comp[key]
                 })
 

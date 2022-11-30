@@ -1958,10 +1958,18 @@ const advancedElements = [
                 label: 'Data source',
                 value: 'data.__uid__.results'
             },
-            c_$for_c_$c: {
+            c_$for_c_c: {
                 label: 'Template',
                 uitype: 'editor',
-                value: '$.loop{loop.data.title}'
+                type: 'Object',
+                value: {
+                    t: 'h2',
+                    c:'$.loop{loop.data.title}'
+                }
+            },
+            c_$for_c_$c: {
+                label: 'Template (can be used alternatively)',
+                value: ''
             }
         }
     },
