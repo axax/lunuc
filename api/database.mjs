@@ -65,22 +65,18 @@ export const dbConnection = (dburl, cb) => {
             useUnifiedTopology: true,
             ...urlParams
         }
-        MongoClient.connect(urlParts[0],
-            options,
-            function (err, client) {
-                if (err) {
-                    console.error(err.message, dburl)
-                } else {
-                    console.log(`Connection to db ${dburl} established. 🚀`)
-                    const parts = urlParts[0].split('/')
-                    const db = client.db(parts[parts.length - 1])
+        const client = new MongoClient(urlParts[0], options)
+        client.connect().then( client => {
+                console.log(`Connection to db ${dburl} established. 🚀`)
+                const parts = urlParts[0].split('/')
+                const db = client.db(parts[parts.length - 1])
 
-                    Hook.call('dbready', {db})
-
-                    cb(err, db, client)
-                }
-
+                Hook.call('dbready', {db})
+                cb(null, db, client)
             }
-        )
+        ).catch(err=>{
+            console.error(err.message, dburl)
+            cb(err, db, client)
+        })
     }
 }

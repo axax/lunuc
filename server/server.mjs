@@ -6,6 +6,7 @@ import path from 'path'
 import net from 'net'
 import fs from 'fs'
 import zlib from 'zlib'
+import crypto from 'crypto'
 import config from '../gensrc/config.mjs'
 import MimeType from '../util/mime.mjs'
 import {getHostFromHeaders} from '../util/host.mjs'
@@ -169,10 +170,13 @@ const sendFileFromDir = async (req, res, filePath, headers, parsedUrl) => {
             const ext = path.extname(modImage.filename).substring(1).trim().toLowerCase().split('@')[0]
             mimeType = MimeType.detectByExtension(ext)
         }
+        const hash = crypto.createHash('md5').update(filePath).digest('hex');
+        console.log(hash, filePath)
         const headerExtra = {
             'Cache-Control': 'public, max-age=604800', /* a week */
             'Content-Type': mimeType,
             'Last-Modified': stats.mtime.toUTCString(),
+            'ETag': `"${hash + stats.mtime.getTime().toString(16)}"`,
             ...headers
         }
         sendFile(req, res, {headers: headerExtra, filename: modImage.filename})
@@ -680,7 +684,7 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, filename}) {
     const outputOptions = []
 
     if (!options.nostream) {
-        outputOptions.push('-movflags isml+frag_keyframe+empty_moov+faststart')
+        outputOptions.push('-movflags faststart')
     }
     if (options.crf) {
         outputOptions.push('-crf ' + options.crf)

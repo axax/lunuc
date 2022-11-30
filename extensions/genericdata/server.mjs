@@ -44,9 +44,24 @@ Hook.on('beforePubSub', async ({triggerName, payload, db, context}) => {
                                 }
                                 const ids = jsonData[field.name]
                                 if (ids) {
+                                    const idsStr = []
+                                    if(ids.constructor === Array) {
+                                        ids.forEach(id => {
+                                            if (id) {
+                                                if (id.constructor === Object) {
+                                                    idsStr.push(id._id)
+                                                } else {
+                                                    idsStr.push(id)
+                                                }
+                                            }
+                                        })
+                                    }else{
+                                        idsStr.push(ids)
+                                    }
+                                    console.log(`Resolve ids ${idsStr.join(',')}`)
                                     const subData = await GenericResolver.entities(db, context, 'GenericData', ['_id', {definition: ['_id']}, 'data'],
                                         {
-                                            filter: `_id==${ids.constructor === Array ? '[' + ids.join(',') + ']' : ids}`,
+                                            filter: `_id==[${idsStr.join(',')}]`,
                                             limit: 1000,
                                             includeCount: false,
                                             projectResult: true
@@ -603,3 +618,9 @@ Hook.on('ResolverBeforePublishSubscription', async ({context, payload, hookRespo
 
 
 
+
+Hook.on(['ExtensionHistoryBeforeCreate'], async ({data, type}) => {
+    if(type==='GenericData'){
+        data.data = JSON.parse(data.data)
+    }
+})

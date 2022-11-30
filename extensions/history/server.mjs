@@ -21,6 +21,8 @@ Hook.on('typeUpdated', async ({db, data, type, context}) => {
 
     if (!TYPES_TO_IGNORE.includes(type)) {
         const meta = {keys: Object.keys(data)}
+        Hook.call('ExtensionHistoryBeforeCreate', {type, data, meta})
+
         db.collection('History').insertOne({
             type,
             action: 'update',
