@@ -250,27 +250,87 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
         otherOptions.lookups.push(newLookup)
         if (field.metaFields) {
 
+            let input
+            //TODO make it optional
+            if(true){
+                // filter references that doesn't exist
+                input = {
+                    $filter: {
+                        input: `$data.${key}`,
+                        as: 'relfiltered',
+                        cond: {
+                            $gt: [
+                                {
+                                    $indexOfArray: [
+                                        `$lookupRelation${key}._id`,
+                                        {
+                                            $toObjectId: '$$relfiltered._id'
+                                        }
+                                    ]
+                                },
+                                -1
+                            ]
+                        }
+                    }
+                }
+            }else{
+                input = `$data.${key}`
+            }
+
+
             // merge lookup result with original object which contains the metaValues
             otherOptions.lookups.push({
                 $addFields: {
                     [`data.${key}`]: {
                         $map: {
-                            input: `$data.${key}`,
+                            input,
                             as: 'rel',
                             in: {
-                                $mergeObjects: [
-                                    {__typename: 'GenericData'},
-                                    '$$rel',
-                                    {data: {$arrayElemAt: [`$lookupRelation${key}.data`, {$indexOfArray: [`$lookupRelation${key}._id`, {$toObjectId: '$$rel._id'}]}]}}
-                                ]
+                                $let: {
+                                    vars: {
+                                        indexInArray: {
+                                            $indexOfArray: [
+                                                `$lookupRelation${key}._id`,
+                                                {
+                                                    $toObjectId: '$$rel._id'
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    in: {
+                                        $mergeObjects: [
+                                            {
+                                                __typename: 'GenericData'
+                                            },
+                                            '$$rel',
+                                            {
+                                                data: {
+                                                    $cond: {
+                                                        if: {
+                                                            $gt: [
+                                                                '$$indexInArray',
+                                                                -1
+                                                            ]
+                                                        },
+                                                        then: {
+                                                            $arrayElemAt: [
+                                                                `$lookupRelation${key}.data`,
+                                                                '$$indexInArray'
+                                                            ]
+                                                        },
+                                                        else: { /* empty data */}
+                                                    }
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
                             }
                         }
                     }
                 }
             })
         }
-
-
     }
 }
 
@@ -619,8 +679,8 @@ Hook.on('ResolverBeforePublishSubscription', async ({context, payload, hookRespo
 
 
 
-Hook.on(['ExtensionHistoryBeforeCreate'], async ({data, type}) => {
-    if(type==='GenericData'){
-        data.data = JSON.parse(data.data)
+Hook.on(['ExtensionHistoryBeforeCreate'], async ({historyEntry}) => {
+    if(historyEntry.type==='GenericData'){
+        historyEntry.data = Object.assign({},historyEntry.data,{data:JSON.parse(historyEntry.data.data)})
     }
 })

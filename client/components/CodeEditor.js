@@ -191,7 +191,7 @@ class CodeEditor extends React.Component {
             nextState.editData !== this.state.editData ||
             nextState.showFileSplit !== this.state.showFileSplit
 
-        if(update){
+        if(update && !nextState.error){
             setTimeout(()=>{
                 this.setEditorPosition()
             })

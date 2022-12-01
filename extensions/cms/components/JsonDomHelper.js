@@ -1531,14 +1531,20 @@ class JsonDomHelper extends React.Component {
             if (addChildDialog.edit) {
 
                 Object.keys(comp).forEach((key) => {
-                    const dataResolver = comp[key].dataResolver
-                    if(dataResolver){
-                        if(dataResolver.constructor === Object){
-                            _onDataResolverPropertyChange({value: dataResolver, key: dataResolver.key, instantSave: true})
-                            comp[key].dataResolver = dataResolver.key
+                    if(comp[key]) {
+                        const dataResolver = comp[key].dataResolver
+                        if (dataResolver) {
+                            if (dataResolver.constructor === Object) {
+                                _onDataResolverPropertyChange({
+                                    value: dataResolver,
+                                    key: dataResolver.key,
+                                    instantSave: true
+                                })
+                                comp[key].dataResolver = dataResolver.key
+                            }
                         }
+                        subJson[key] = comp[key]
                     }
-                    subJson[key] = comp[key]
                 })
 
                 Util.removeNullValues(subJson, {

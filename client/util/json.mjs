@@ -148,3 +148,33 @@ export function setPropertyByPath(value, path, obj, separator = '.') {
 
     }
 }
+
+
+export const findSegmentByKeyOrPath = ({json, key, path}) => {
+
+    let firstOfPath
+    if (path) {
+        if (path.indexOf('.') < 0) {
+            firstOfPath = path
+        } else {
+            firstOfPath = path.substring(0, path.indexOf('.'))
+
+        }
+    }
+    let segment, index = -1
+    for (let i = 0; i < json.length; i++) {
+        const subJson = json[i]
+        if (key) {
+            if (subJson.key === key) {
+                index = i
+                segment = subJson
+                break
+            }
+        } else if (subJson[firstOfPath]) {
+            index = i
+            segment = subJson
+            break
+        }
+    }
+    return {segment, index}
+}

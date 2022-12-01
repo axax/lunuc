@@ -512,6 +512,7 @@ class TypePicker extends React.Component {
             const nameStartLower = type.charAt(0).toLowerCase() + type.slice(1) + 's'
             let queryString
 
+            console.log(this.props)
 
             if (queryFields || pickerField) {
 

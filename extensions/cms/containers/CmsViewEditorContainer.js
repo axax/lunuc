@@ -41,7 +41,7 @@ import TypeEdit from '../../../client/components/types/TypeEdit'
 import withType from '../../../client/components/types/withType'
 import Util from '../../../client/util/index.mjs'
 import {CAPABILITY_MANAGE_CMS_CONTENT, CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants/index.mjs'
-import {propertyByPath, setPropertyByPath} from '../../../client/util/json.mjs'
+import {propertyByPath, setPropertyByPath, findSegmentByKeyOrPath} from '../../../client/util/json.mjs'
 import GenericForm from '../../../client/components/GenericForm'
 import {_t} from '../../../util/i18n.mjs'
 import config from 'gen/config-client'
@@ -1034,30 +1034,8 @@ class CmsViewEditorContainer extends React.Component {
             }
         }
 
-        let firstOfPath
-        if (path) {
-            if (path.indexOf('.') < 0) {
-                firstOfPath = path
-            } else {
-                firstOfPath = path.substring(0, path.indexOf('.'))
+        let {segment, index} = findSegmentByKeyOrPath({json:this._tmpDataResolver, key, path})
 
-            }
-        }
-        let segment, index = -1
-        for (let i = 0; i < this._tmpDataResolver.length; i++) {
-            const json = this._tmpDataResolver[i]
-            if (key) {
-                if (json.key === key) {
-                    index = i
-                    segment = json
-                    break
-                }
-            } else if (json[firstOfPath]) {
-                index = i
-                segment = json
-                break
-            }
-        }
         if (!segment) {
             if (key) {
                 segment = {key}
