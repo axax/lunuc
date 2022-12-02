@@ -53,9 +53,9 @@ self.addEventListener('activate', event => {
 // from the network before returning it to the page.
 self.addEventListener('fetch', event => {
 
-    if (event.request.cache === 'only-if-cached' && event.request.mode !== 'same-origin') {
+    /*if (event.request.cache === 'only-if-cached' && event.request.mode !== 'same-origin') {
         return
-    }
+    }*/
 
     if (event.request.url.indexOf('/uploads/') >= 0 || event.request.url.indexOf('/lunucapi/') >= 0) {
         return
