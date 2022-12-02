@@ -179,6 +179,18 @@ const classIconListOptions = key => ({
                 name: 'Email'
             },
             {
+                value: ' icon-pdf ',
+                name: 'PDF'
+            },
+            {
+                value: ' icon-click ',
+                name: 'Click'
+            },
+            {
+                value: ' icon-home ',
+                name: 'Home'
+            },
+            {
                 value: ' icon-pdf black-icon black ',
                 name: 'PDF (schwarz)'
             },
