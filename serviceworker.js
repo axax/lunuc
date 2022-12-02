@@ -68,14 +68,20 @@ self.addEventListener('fetch', event => {
 
 
         event.respondWith(
-            caches.match(event.request).then((resp) => {
-                return resp || fetch(event.request).then((response) => {
-                    let responseClone = response.clone()
-                    caches.open(RUNTIME).then((cache) => {
-                        cache.put(event.request, responseClone)
+            caches.open(RUNTIME).then(cache => {
+                return cache.match(event.request).then(resp => {
+                    // Request found in current cache, or fetch the file
+                    return resp || fetch(event.request).then(response => {
+                        // Cache the newly fetched file for next time
+                        cache.put(event.request, response.clone())
+                        return response
+                        // Fetch failed, user is offline
+                    }).catch(() => {
+                        // Look in the whole cache to load a fallback version of the file
+                        return caches.match(event.request).then(fallback => {
+                            return fallback
+                        })
                     })
-
-                    return response
                 })
             })
         )

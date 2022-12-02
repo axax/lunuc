@@ -29,6 +29,7 @@ import ffmpeg from 'fluent-ffmpeg'
 import {clientAddress} from '../util/host.mjs'
 import Cache from '../util/cache.mjs'
 import {doScreenCapture} from './util/index.mjs'
+import {createSimpleEtag} from './util/etag.mjs'
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
 const ROOT_DIR = path.resolve(), SERVER_DIR = path.join(ROOT_DIR, './server')
@@ -170,13 +171,11 @@ const sendFileFromDir = async (req, res, filePath, headers, parsedUrl) => {
             const ext = path.extname(modImage.filename).substring(1).trim().toLowerCase().split('@')[0]
             mimeType = MimeType.detectByExtension(ext)
         }
-        const hash = crypto.createHash('md5').update(filePath).digest('hex');
-        console.log(hash, filePath)
         const headerExtra = {
             'Cache-Control': 'public, max-age=604800', /* a week */
             'Content-Type': mimeType,
             'Last-Modified': stats.mtime.toUTCString(),
-            'ETag': `"${hash + stats.mtime.getTime().toString(16)}"`,
+            'ETag': `"${createSimpleEtag({content: filePath, stats})}"`,
             ...headers
         }
         sendFile(req, res, {headers: headerExtra, filename: modImage.filename})
@@ -1305,24 +1304,35 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                         console.log('mapped file: ' + staticFile)
                     } else if (urlPathname.length > 1 && fs.existsSync(STATIC_TEMPLATE_DIR + urlPathname)) {
                         console.log(`load ${urlPathname} from template dir`)
-                        fs.readFile(STATIC_TEMPLATE_DIR + urlPathname, 'utf8', function (err, data) {
-                            const ext = path.extname(urlPathname).split('.')[1]
-                            const mimeType = MimeType.detectByExtension(ext)
 
-                            const headerExtra = {
-                                'Cache-Control': 'public, max-age=604800',
-                                'Content-Type': mimeType,
-                                'Last-Modified': new Date().toUTCString(),
-                                ...hostrule.headers[urlPathname]
+                        // fetch file details
+                        fs.stat(STATIC_TEMPLATE_DIR + urlPathname, (err, stats) => {
+                            if (err) {
+                                throw err
                             }
-                            res.writeHead(200, headerExtra)
-                            res.write(replacePlaceholders(data, {
-                                headers: req.headers,
-                                parsedUrl,
-                                host,
-                                config,
-                                pathname:urlPathname}))
-                            res.end()
+
+                            fs.readFile(STATIC_TEMPLATE_DIR + urlPathname, 'utf8', function (err, data) {
+                                const ext = path.extname(urlPathname).split('.')[1]
+                                const mimeType = MimeType.detectByExtension(ext)
+
+                                const content = replacePlaceholders(data, {
+                                    headers: req.headers,
+                                    parsedUrl,
+                                    host,
+                                    config,
+                                    pathname:urlPathname})
+
+                                const headerExtra = {
+                                    'Cache-Control': 'public, max-age=604800',
+                                    'Content-Type': mimeType,
+                                    'Last-Modified': stats.mtime.toUTCString(),
+                                    'ETag': `"${createSimpleEtag({content})}"`,
+                                    ...hostrule.headers[urlPathname]
+                                }
+                                res.writeHead(200, headerExtra)
+                                res.write(content)
+                                res.end()
+                            })
                         })
 
                         return
