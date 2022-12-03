@@ -26,7 +26,7 @@ self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(PRECACHE)
             .then(cache => cache.addAll(PRECACHE_URLS))
-            /*.then(self.skipWaiting())*/
+            .then(self.skipWaiting())
     )
 })
 
@@ -54,7 +54,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
 
     if (event.request.cache === 'only-if-cached' && event.request.mode !== 'same-origin') {
-        return
+       // return
     }
 
     if (event.request.url.indexOf('/uploads/') >= 0 || event.request.url.indexOf('/lunucapi/') >= 0) {
