@@ -34,16 +34,41 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
     const expectedCaches = [PRECACHE, RUNTIME];
 
+    
     // delete any caches that aren't in expectedCaches
     event.waitUntil(
-        caches.keys().then(keys => Promise.all(
-            keys.map(key => {
-                if (!expectedCaches.includes(key)) {
-                    return caches.delete(key)
-                }
+        caches.keys().then(keys => {
+            keys.forEach(key => {
+                caches.open(key).then(cache => {
+                    cache.keys().then((requests) => {
+
+                        if(key.startsWith('runtime-')) {
+                            requests.forEach(async request => {
+                                // the cache option set to reload will force the browser to
+                                // request any of these resources via the network,
+                                // which avoids caching older files again
+                                const req = new Request(request.url, {cache: 'reload'})
+                                console.log('fetch ' + request.url)
+                                fetch(req).then(res => {
+                                    if (res && res.status === 200) {
+                                        caches.open(RUNTIME).then((cache) => {
+
+                                            console.log('cache ' + request.url)
+                                            cache.put(req, res.clone())
+                                        })
+                                    }
+                                })
+                            })
+                        }
+
+                        if (!expectedCaches.includes(key)) {
+                            caches.delete(key).then(()=>{
+                                console.log('cache key '+key+' deleted')
+                            })
+                        }
+                    })
+                })
             })
-        )).then(() => {
-            console.log('${BUILD_NUMBER} now ready to handle fetches!')
         })
     )
 })
@@ -54,7 +79,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
 
     if (event.request.cache === 'only-if-cached' && event.request.mode !== 'same-origin') {
-       // return
+        return
     }
 
     if (event.request.url.indexOf('/uploads/') >= 0 || event.request.url.indexOf('/lunucapi/') >= 0) {
@@ -68,20 +93,14 @@ self.addEventListener('fetch', event => {
 
 
         event.respondWith(
-            caches.open(RUNTIME).then(cache => {
-                return cache.match(event.request).then(resp => {
-                    // Request found in current cache, or fetch the file
-                    return resp || fetch(event.request).then(response => {
-                        // Cache the newly fetched file for next time
-                        cache.put(event.request, response.clone())
-                        return response
-                        // Fetch failed, user is offline
-                    }).catch(() => {
-                        // Look in the whole cache to load a fallback version of the file
-                        return caches.match(event.request).then(fallback => {
-                            return fallback
-                        })
+            caches.match(event.request).then((resp) => {
+                return resp || fetch(event.request).then((response) => {
+                    let responseClone = response.clone()
+                    caches.open(RUNTIME).then((cache) => {
+                        cache.put(event.request, responseClone)
                     })
+
+                    return response
                 })
             })
         )
