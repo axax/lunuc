@@ -876,21 +876,40 @@ const GenericResolver = {
             const fields = getFormFieldsByType(typeName)
 
             if (fields) {
-                Object.keys(result).forEach(field => {
+                const fieldKeys = Object.keys(result)
+                for(const field of fieldKeys){
+                    console.log(field)
                     if (fields[field] && result[field]) {
                         if (fields[field].reference && result[field].constructor !== Object) {
                             // is a reference
-                            // TODO also resolve fields of subtype
                             if(fields[field].multi) {
-                                result[field] = result[field].map(f=>({_id: f}))
+
+                                const newResultList = []
+                                for(const objectId of result[field]){
+                                    const subEntry = (await db.collection(fields[field].type).findOne({_id: objectId}))
+
+                                    if(subEntry){
+                                        newResultList.push(subEntry)
+                                    }else {
+                                        newResultList.push({_id: f})
+                                    }
+                                }
+                                result[field] = newResultList
                             }else{
-                                result[field] = {_id: result[field]}
+
+                                const subEntry = (await db.collection(fields[field].type).findOne({_id: result[field]}))
+
+                                if(subEntry){
+                                    result[field] = subEntry
+                                }else {
+                                    result[field] = {_id: result[field]}
+                                }
                             }
                         } else if (fields[field].type === 'Object' && result[field].constructor === Object) {
                             result[field] = JSON.stringify(result[field])
                         }
                     }
-                })
+                }
             }
             Hook.call('typeCloned', {type: typeName, db, context})
             Hook.call('typeCloned_' + typeName, {db, context, result})
