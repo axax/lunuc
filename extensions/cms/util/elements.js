@@ -123,6 +123,10 @@ const colClasses = [
     {
         short: 'md',
         long: 'Desktop'
+    },
+    {
+        short: 'lg',
+        long: 'Large Desktop'
     }
 ]
 const classLayoutColumnOptions = (count, options) => {
@@ -143,7 +147,7 @@ const classLayoutColumnOptions = (count, options) => {
             }
 
             obj[`c_${i-1}_p_className@${col.short}`] = {
-                thirdWidth: true,
+                fourthWidth: true,
                 label: `Spalte ${i}: ${col.long}`,
                 value: ` col-${col.short}-${options[col.short]} `,
                 tab: DEFAULT_TAB,
@@ -1331,7 +1335,7 @@ const baseElements = [
     {
         subHeader: 'Layout Elemente',
         tagName: 'Row',
-        icon: 'viewColum',
+        icon: 'pause',
         name: 'Layout 1/2',
         defaults: {
             $inlineEditor: {
@@ -1354,7 +1358,7 @@ const baseElements = [
             ]
         },
         options: {
-            ...classLayoutColumnOptions(2,{md:6, sm:6, xs:12}),
+            ...classLayoutColumnOptions(2,{lg: 6, md:6, sm:6, xs:12}),
             ...marginOptions('p_'),
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),

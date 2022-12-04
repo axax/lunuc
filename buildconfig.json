@@ -176,7 +176,8 @@
         "Storage",
         "Widgets",
         "Functions",
-        "TextFormat"
+        "TextFormat",
+        "Pause"
       ],
       "theme":{
         "colors":{

@@ -66,7 +66,8 @@ import {
     StorageIcon,
     WidgetsIcon,
     FunctionsIcon,
-    TextFormatIcon
+    TextFormatIcon,
+    PauseIcon
 } from 'gensrc/ui/admin/icons'
 
 const iconComponents = {
@@ -136,7 +137,8 @@ const iconComponents = {
     storage:StorageIcon,
     widgets:WidgetsIcon,
     functions:FunctionsIcon,
-    textFormat:TextFormatIcon
+    textFormat:TextFormatIcon,
+    pause:PauseIcon
 }
 
 export const getIconByKey = (key, defaultIcon) => {

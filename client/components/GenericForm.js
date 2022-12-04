@@ -48,7 +48,7 @@ const getSxProps = field => ({
     width: 'calc(100% - ' + theme.spacing(2) + ')',
     ...(!field.fullWidth && {
         [theme.breakpoints.up('md')]: {
-            width: `calc(${field.twoThirdWidth?'66.66':field.thirdWidth?'33.33':'50'}% - ${theme.spacing(2)})`
+            width: `calc(${field.twoThirdWidth?'66.66':field.fourthWidth?'25':field.thirdWidth?'33.33':'50'}% - ${theme.spacing(2)})`
         }
     })
 })
