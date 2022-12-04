@@ -1396,7 +1396,7 @@ const baseElements = [
             ]
         },
         options: {
-            ...classLayoutColumnOptions(3, {md:4, sm:4, xs:12}),
+            ...classLayoutColumnOptions(3, {lg:4, md:4, sm:4, xs:12}),
             ...marginOptions('p_'),
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
@@ -1439,7 +1439,7 @@ const baseElements = [
             ]
         },
         options: {
-            ...classLayoutColumnOptions(4, {md:3, sm:3, xs:6}),
+            ...classLayoutColumnOptions(4, {lg:3, md:3, sm:3, xs:6}),
             ...marginOptions('p_'),
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
@@ -1911,6 +1911,28 @@ const advancedElements = [
             },
             p_style_marginBottom: {
                 label: 'Abstand unten'
+            },
+            [`${key}className@style`]: {
+                label: 'Style',
+                tab: DEFAULT_TAB,
+                enum: [
+                    {
+                        value: '',
+                        name: 'Keine'
+                    },
+                    {
+                        value: ' indented ',
+                        name: 'Eingerückt (mittel)'
+                    },
+                    {
+                        value: ' indented-small ',
+                        name: 'Eingerückt (klein)'
+                    },
+                    {
+                        value: ' indented-large ',
+                        name: 'Eingerückt (gross)'
+                    }
+                ]
             },
             p_className: {
                 label: 'Klassname'
