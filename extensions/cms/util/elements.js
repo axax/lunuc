@@ -898,6 +898,13 @@ const baseElements = [
                 label: 'Target',
                 tab: DEFAULT_TAB
             },
+            p_gotop: {
+                fullWidth: true,
+                defaultValue: true,
+                type: 'Boolean',
+                label: 'Scroll top',
+                tab: DEFAULT_TAB
+            },
             ...invisibleOptions('p_'),
             ...marginOptions('p_'),
             ...classOptions('p_'),
@@ -1865,7 +1872,9 @@ const advancedElements = [
             },
             $inlineEditor_picker_baseFilter: {
                 label: 'Filter'
-            }
+            },
+            ...marginOptions('p_'),
+            ...classOptions('p_')
         }
     },
     {
@@ -1886,7 +1895,9 @@ const advancedElements = [
             },
             p_id: {
                 label: 'Id'
-            }
+            },
+            ...marginOptions('p_'),
+            ...classOptions('p_')
         }
     },
     {
@@ -1905,12 +1916,6 @@ const advancedElements = [
         options: {
             t: {
                 label: 'Tag'
-            },
-            p_style_marginTop: {
-                label: 'Abstand oben'
-            },
-            p_style_marginBottom: {
-                label: 'Abstand unten'
             },
             [`p_className@style`]: {
                 label: 'Style',
@@ -1934,9 +1939,6 @@ const advancedElements = [
                     }
                 ]
             },
-            p_className: {
-                label: 'Klassname'
-            },
             p_id: {
                 label: 'Element ID'
             },
@@ -1945,7 +1947,9 @@ const advancedElements = [
             },
             ['p_style@custom']: {
                 label: 'Style'
-            }
+            },
+            ...marginOptions('p_'),
+            ...classOptions('p_')
         }
     },
     {
@@ -2008,7 +2012,9 @@ const advancedElements = [
             c_$for_c_$c: {
                 label: 'Template (can be used alternatively)',
                 value: ''
-            }
+            },
+            ...marginOptions('p_'),
+            ...classOptions('p_')
         }
     },
     {

@@ -126,11 +126,7 @@ export function setPropertyByPath(value, path, obj, separator = '.') {
         }
 
         if (i === n - 1) {
-            if (value && value.constructor === String) {
-                obj[finalPath] = value //Util.escapeForJson(value) //.replace(/"/g, '\\\\\\\"')
-            } else {
-                obj[finalPath] = value
-            }
+            obj[finalPath] = value
         } else {
             if (obj[finalPath] == undefined) {
                 if (!isNaN(finalPath)) {

@@ -1531,7 +1531,7 @@ class JsonDomHelper extends React.Component {
             if (addChildDialog.edit) {
 
                 Object.keys(comp).forEach((key) => {
-                    if(comp[key]) {
+                    if(comp[key]!==undefined && comp[key]!==null) {
                         const dataResolver = comp[key].dataResolver
                         if (dataResolver) {
                             if (dataResolver.constructor === Object) {
