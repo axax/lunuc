@@ -52,6 +52,7 @@ import Async from '../../../client/components/Async'
 import CmsRevision from '../components/CmsRevision'
 import CmsAddNewSite from '../components/CmsAddNewSite'
 import CmsElement from '../components/CmsElement'
+import JsonDomHelper from '../components/JsonDomHelper'
 
 const CodeEditor = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
@@ -220,6 +221,7 @@ class CmsViewEditorContainer extends React.Component {
             slugChanged = noCmsPage || props.cmsPage.slug !== this.props.cmsPage.slug
 
         if (slugChanged) {
+            JsonDomHelper.disableEvents = false
             this.watchCmsPageStatus(true)
         }
 
@@ -267,7 +269,8 @@ class CmsViewEditorContainer extends React.Component {
             state.addNewSite !== this.state.addNewSite ||
             state.serverScript !== this.state.serverScript ||
             state.EditorOptions !== this.state.EditorOptions ||
-           /* state.EditorPageOptions !== this.state.EditorPageOptions ||*/
+            Util.shallowCompare(state.EditorPageOptions, this.state.EditorPageOptions,
+                {ignoreKeys:['styleScroll','dataResolverScroll','serverScriptScroll','templateScroll','scriptScroll']}) ||
             state.cmsStatusData !== this.state.cmsStatusData ||
             (
                 !!props.cmsPage.urlSensitiv && (

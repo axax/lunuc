@@ -1953,7 +1953,7 @@ const advancedElements = [
                 value: {
                     key: '__uid__',
                     t: 'GenericData',
-                    genericData:'DemoType',
+                    genericType:'DemoType',
                     d: [
                         '_id',
                         'definition',
