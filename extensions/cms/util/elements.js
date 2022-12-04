@@ -1912,7 +1912,7 @@ const advancedElements = [
             p_style_marginBottom: {
                 label: 'Abstand unten'
             },
-            [`${key}className@style`]: {
+            [`p_className@style`]: {
                 label: 'Style',
                 tab: DEFAULT_TAB,
                 enum: [
