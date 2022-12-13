@@ -683,7 +683,7 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, filename}) {
     const outputOptions = []
 
     if (!options.nostream) {
-        outputOptions.push('-movflags faststart')
+        outputOptions.push('-movflags empty_moov+faststart')
     }
     if (options.crf) {
         outputOptions.push('-crf ' + options.crf)

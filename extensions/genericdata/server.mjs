@@ -681,6 +681,8 @@ Hook.on('ResolverBeforePublishSubscription', async ({context, payload, hookRespo
 
 Hook.on(['ExtensionHistoryBeforeCreate'], async ({historyEntry}) => {
     if(historyEntry.type==='GenericData'){
-        historyEntry.data = Object.assign({},historyEntry.data,{data:JSON.parse(historyEntry.data.data)})
+        try {
+            historyEntry.data = Object.assign({}, historyEntry.data, {data: JSON.parse(historyEntry.data.data)})
+        }catch (e){}
     }
 })

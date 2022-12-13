@@ -8,22 +8,42 @@ import {
     SimpleSelect,
     SimpleDialog,
     Pagination,
-    Stack
+    Stack,
+    SimpleTab,
+    SimpleTabPanel,
+    SimpleTabs
 } from 'ui/admin'
 import Async from '../../../client/components/Async'
+import {_t} from '../../../util/i18n.mjs'
+import JsonDomIFrame from './JsonDomIFrame'
+
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
 
 function CmsRevisionDialog(props){
-    const {onClose, cmsPage, _id} = props
+    const {onClose, cmsPage, _id, canMangeCmsTemplate, ...rest} = props
 
-    return <SimpleDialog fullWidth={true} maxWidth="md" key="revisionDialog" open={true}
-                         onClose={onClose}
-                         actions={[{
+    let parsedData
+
+    return <SimpleDialog fullWidth={true}
+                         maxWidth="lg"
+                         fullScreen={true}
+                         key="revisionDialog"
+                         open={true}
+                         onClose={(action)=>{
+                             onClose(action, parsedData)
+                         }}
+                         actions={[
+                             {
+                                 key: 'restore',
+                                 label: _t('CmsRevisionDialog.restore'),
+                                 type: 'secondary'
+                             },
+                             {
                              key: 'ok',
-                             label: 'Ok',
+                                 label: _t('CmsRevisionDialog.close'),
                              type: 'primary'
                          }]}
-                         title="Revision">
+                         title={_t('CmsRevisionDialog.title',{date: Util.formattedDateFromObjectId(_id)})}>
 
         <Query
             query={'query historys($filter:String){historys(filter:$filter){results{_id action data}}}'}
@@ -36,7 +56,7 @@ function CmsRevisionDialog(props){
                 if (error) return `Error! ${error.message}`
 
                 if (data.historys.results === 0) return 'No entry'
-                const parsedData = JSON.parse(data.historys.results[0].data)
+                parsedData = JSON.parse(data.historys.results[0].data)
 
                 if (parsedData.dataResolver) {
 
@@ -52,17 +72,50 @@ function CmsRevisionDialog(props){
                     </div>
 
                 } else if (parsedData.template) {
+                    const [tabValue, setTabValue] = React.useState(0)
+                    return <>
+                        <SimpleTabs
+                            style={{width:'100%'}}
+                            value={tabValue}
+                            onChange={(e, newValue) => {
+                                setTabValue(newValue)
+                            }}
+                        >
+                            <SimpleTab key="tabView" label={_t('CmsRevision.view')}/>
+                            {canMangeCmsTemplate && <SimpleTab key="tabCode" label="Code"/>}
+                        </SimpleTabs>
 
-                    return <div>
-                        <Typography gutterBottom>Template changed</Typography>
+                        <SimpleTabPanel key="tabPanelView" value={tabValue} index={0}>
+                            <JsonDomIFrame style={{border:0,width:'100%',height:'calc(100vh - 16.5rem)'}}
+                            jsonDom={{
+                                history:{
+                                    listen: ()=>{},
+                                    push: ()=>{}
+                                },
+                                location:{},
+                                template:parsedData.template,
+                                script:cmsPage.script,
+                                style:cmsPage.style,
+                                ssrStyle:cmsPage.ssrStyle,
+                                resolvedData:cmsPage.resolvedData,
+                                parseResolvedData:cmsPage.parseResolvedData,
+                                resources:cmsPage.resources,
+                                title:cmsPage.name,
+                                dynamic:true,
+                                editMode:false,
+                                inEditor:false,
+                                ...rest
+                            }}>
+                            </JsonDomIFrame>
+                        </SimpleTabPanel>
 
-                        <CodeEditor lineNumbers type="json" readOnly={true}>{JSON.stringify(JSON.parse(parsedData.template), null, 2)}</CodeEditor>
+                        <SimpleTabPanel key="tabPanelCode" value={tabValue} index={1}>
+                            <CodeEditor lineNumbers type="json" readOnly={true}>{JSON.stringify(JSON.parse(parsedData.template), null, 2)}</CodeEditor>
 
-                        <a href={'/system/diff?preview=true#value=' + encodeURIComponent(parsedData.template) + '&orig1=' + encodeURIComponent(cmsPage.template)}
+                            <a href={'/system/diff?preview=true#value=' + encodeURIComponent(parsedData.template) + '&orig1=' + encodeURIComponent(cmsPage.template)}
                                target="_blank">Show diff</a>
-
-
-                    </div>
+                        </SimpleTabPanel>
+                    </>
                 } else if (parsedData.style) {
 
                     return <div>
@@ -109,7 +162,7 @@ function CmsRevisionDialog(props){
 }
 
 export default function CmsRevision(props){
-    const {historyLimit, cmsPage} = props
+    const {historyLimit, cmsPage, canMangeCmsTemplate, onTemplateChange, ...rest} = props
 
     if(!cmsPage){
         return null
@@ -120,7 +173,7 @@ export default function CmsRevision(props){
     const [historyPage, setHistoryPage] = React.useState(1)
 
     return <>
-        <SimpleSelect
+        {canMangeCmsTemplate && <SimpleSelect
             fullWidth={true}
             label="Type"
             value={historyType}
@@ -134,7 +187,7 @@ export default function CmsRevision(props){
                 {name: 'Data Resolver', value: 'dataResolver'},
                 {name: 'Template', value: 'template'},
                 {name: 'Style', value: 'style'}]}
-        />
+        /> }
         <Query
             query={'query historys($filter:String,$limit:Int,$page:Int){historys(filter:$filter,limit:$limit,page:$page){total offset results{_id action, meta}}}'}
             fetchPolicy="cache-and-network"
@@ -151,10 +204,15 @@ export default function CmsRevision(props){
 
                 data.historys.results.forEach(revision => {
                     const meta = revision.meta ? JSON.parse(revision.meta) : {keys: []}
+
+                    if(!canMangeCmsTemplate && meta.keys.indexOf('template')<0){
+                        return
+                    }
+
                     let secondary
 
                     if (meta.keys.indexOf('template') >= 0) {
-                        secondary = 'Tempalte wurde geändert'
+                        secondary = _t('CmsRevision.templateChanged')
                     } else if (meta.keys.indexOf('style') >= 0) {
                         secondary = 'Style hat geändert'
                     } else if (meta.keys.indexOf('dataResolver') >= 0) {
@@ -169,7 +227,7 @@ export default function CmsRevision(props){
 
                     menuItems.push(<MenuListItem key={'history' + revision._id} onClick={() => {
                         setShowRevision(revision)
-                    }} button primary={Util.formattedDateFromObjectId(revision._id) + ' - ' + revision.action} secondary={secondary}
+                    }} button primary={Util.formattedDateFromObjectId(revision._id)} secondary={secondary}
                     />)
                 })
                 if (menuItems.length === 0) return <p>No history entries</p>
@@ -190,8 +248,14 @@ export default function CmsRevision(props){
                     </Stack>]
             }}
         </Query>
-        {showRevision ? <CmsRevisionDialog _id={showRevision._id} cmsPage={cmsPage} onClose={()=>{
+        {showRevision ? <CmsRevisionDialog _id={showRevision._id} canMangeCmsTemplate={canMangeCmsTemplate}
+                                           cmsPage={cmsPage} onClose={(action, cmsPageHistory)=>{
+            if(action.key==='restore'){
+                if(cmsPageHistory.template) {
+                    onTemplateChange(cmsPageHistory.template,true)
+                }
+            }
             setShowRevision(null)
-        }} /> : null}
+        }} {...rest} /> : null}
     </>
 }

@@ -11,6 +11,8 @@ import {
 import {AppContext} from 'client/components/AppContext'
 import Async from 'client/components/Async'
 import CmsViewContainer from './containers/CmsViewContainer'
+import JsonDom from './components/JsonDom'
+import {render} from 'react-dom'
 
 const TypesContainer = (props) => <Async {...props}
                                          load={import(/* webpackChunkName: "admin" */ '../../client/containers/TypesContainer')}/>
@@ -24,6 +26,14 @@ const TypesContainer = (props) => <Async {...props}
 
 export default () => {
 
+    _app_.JsonDom = {
+        render: (props) =>{
+            render(
+                <JsonDom {...props}/>,
+                document.body
+            )
+        }
+    }
 
     // Hook to add user capabilities
     Hook.on('userCapabilities', ({capabilities}) => {

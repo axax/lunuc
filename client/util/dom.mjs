@@ -40,12 +40,13 @@ const DomUtil = {
             //TODO: implmentation for server side rendering
             return
         }
+        const doc = opts && opts.document ? opts.document : document
         let tag
         if (attrs.id) {
-            tag = document.getElementById(attrs.id)
+            tag = doc.getElementById(attrs.id)
         }
         if (!tag) {
-            tag = document.createElement(name)
+            tag = doc.createElement(name)
         } else if (opts && opts.ignoreIfExist) {
             if (attrs.onload) {
                 attrs.onload()
@@ -71,7 +72,7 @@ const DomUtil = {
                 }
             }
         }
-        document[target].appendChild(tag)
+        doc[target].appendChild(tag)
         return tag
     },
     styleObjectToString(style) {

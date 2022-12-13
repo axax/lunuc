@@ -1,3 +1,5 @@
+import GenericForm from "../components/GenericForm";
+
 export const translations = {
     de: {
         'BaseLayout.editMenu': 'Menü bearbeiten',
@@ -60,6 +62,8 @@ export const translations = {
         'User.field.junior': 'Untergeordnete Benutzer',
         'User.field.group': 'Benutzergruppe',
         'User.field.setting': 'Eintellungen',
+        'GenericForm.delete': 'Löschen',
+        'GenericForm.clone': 'Duplizieren',
     },
     en: {
         'BaseLayout.editMenu': 'Edit menu',
@@ -122,5 +126,7 @@ export const translations = {
         'User.field.group': 'User group',
         'User.field.setting': 'Settings',
         'User.field.domain': 'Domain',
+        'GenericForm.delete': 'Delete',
+        'GenericForm.clone': 'Duplicate',
     }
 }

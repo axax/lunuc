@@ -37,8 +37,6 @@ import Paper from '@mui/material/Paper'
 import Box from '@mui/material/Box'
 import NetworkStatusHandler from 'client/components/layout/NetworkStatusHandler'
 import {getTypeQueries} from 'util/types.mjs'
-import TypeEdit from '../../../client/components/types/TypeEdit'
-import withType from '../../../client/components/types/withType'
 import Util from '../../../client/util/index.mjs'
 import {CAPABILITY_MANAGE_CMS_CONTENT, CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants/index.mjs'
 import {propertyByPath, setPropertyByPath, findSegmentByKeyOrPath} from '../../../client/util/json.mjs'
@@ -50,6 +48,7 @@ import Hook from '../../../util/hook.cjs'
 import {client, Query, graphql} from '../../../client/middleware/graphql'
 import Async from '../../../client/components/Async'
 import CmsRevision from '../components/CmsRevision'
+import OpenTypeEdit from '../components/OpenTypeEdit'
 import CmsAddNewSite from '../components/CmsAddNewSite'
 import CmsElement from '../components/CmsElement'
 import JsonDomHelper from '../components/JsonDomHelper'
@@ -156,12 +155,17 @@ class CmsViewEditorContainer extends React.Component {
 
         if (!dynamic) {
             this._handleWindowClose = this.saveUnsafedChanges.bind(this)
-            window.addEventListener('beforeunload', this._handleWindowClose)
-            window.addEventListener('blur', () => {
-                this._handleWindowClose(true)
+            window.addEventListener('beforeunload', ()=>{
+                console.log('beforeunload')
+                this._handleWindowClose()
             })
+            /*window.addEventListener('blur', () => {
+                console.log('blur')
+                this._handleWindowClose(true)
+            })*/
 
             history.block(() => {
+                console.log('block')
                 this.saveUnsafedChanges()
                 return true
             })
@@ -325,44 +329,8 @@ class CmsViewEditorContainer extends React.Component {
 
 
         const DataEditDialog = () => {
-
             if (cmsEditData) {
                 if (cmsEditData.type) {
-
-                    const OpenTypeEdit = ({data}) => {
-
-                        const editDialogProps = {
-                            type: cmsEditData.type,
-                            title: cmsEditData.type,
-                            open: !!cmsEditData,
-                            onClose: this.handleEditDataClose.bind(this),
-                            parentRef: this
-                        }
-
-                        if (cmsEditData.options && cmsEditData.options.clone) {
-                            editDialogProps.initialData = Object.assign({}, data.results[0])
-                            delete editDialogProps.initialData._id
-                        } else if (cmsEditData.options && cmsEditData.options.create) {
-                            editDialogProps.initialData = cmsEditData.initialData
-                        } else {
-                            editDialogProps.dataToEdit = data.results[0]
-                        }
-                        if (cmsEditData.resolverKey) {
-                            editDialogProps.meta = {data: JSON.stringify({clearCachePrefix: cmsEditData.resolverKey})}
-                        }
-                        if (cmsEditData.structure) {
-                            if (!editDialogProps.meta) {
-                                editDialogProps.meta = {}
-                            }
-                            editDialogProps.meta.structure = cmsEditData.structure
-                        }
-
-                        return React.createElement(
-                            withType(TypeEdit),
-                            editDialogProps,
-                            null
-                        )
-                    }
 
                     if (cmsEditData._id) {
                         return <Query key="dataEditor"
@@ -398,11 +366,16 @@ class CmsViewEditorContainer extends React.Component {
                                     return null
                                 }
 
-                                return <OpenTypeEdit data={finalData}/>
+                                return <OpenTypeEdit
+                                    onClose={this.handleEditDataClose.bind(this)}
+                                    cmsEditData={cmsEditData}
+                                    data={finalData}/>
                             }}
                         </Query>
                     } else {
-                        return <OpenTypeEdit/>
+                        return <OpenTypeEdit
+                            onClose={this.handleEditDataClose.bind(this)}
+                            cmsEditData={cmsEditData}/>
                     }
                 } else {
 
@@ -503,7 +476,6 @@ class CmsViewEditorContainer extends React.Component {
             if ((cmsPage && cmsPage.publicEdit) || props.forceEditMode==='true') {
                 return <UIProvider>{inner}</UIProvider>
             }
-            console.log('xxxxx', props)
             return inner
         } else {
             const {slug, _version} = getSlugVersion(props.slug)
@@ -695,11 +667,16 @@ class CmsViewEditorContainer extends React.Component {
                             /></React.Fragment>}
                     </Expandable>
 
-                    {!loadingState && canMangeCmsTemplate && <Expandable title={_t('CmsViewEditorContainer.revisions')}
+                    {!loadingState && <Expandable title={_t('CmsViewEditorContainer.revisions')}
                                                                          onChange={this.handleSettingChange.bind(this, 'revisionsExpanded', true)}
                                                                          expanded={EditorPageOptions.revisionsExpanded}>
 
-                        <CmsRevision historyLimit={10} cmsPage={cmsPage}/>
+                        <CmsRevision historyLimit={10}
+                                     cmsPage={cmsPage}
+                                     canMangeCmsTemplate={canMangeCmsTemplate}
+                                     slug={slug}
+                                     user={props.user}
+                                     onTemplateChange={this.handleTemplateChange.bind(this)}/>
 
                     </Expandable>}
 
@@ -1042,8 +1019,6 @@ class CmsViewEditorContainer extends React.Component {
         if (!segment) {
             if (key) {
                 segment = {key}
-            } else {
-                segment = {[firstOfPath]: {}}
             }
             this._tmpDataResolver.push(segment)
         }
@@ -1056,6 +1031,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     saveUnsafedChanges(isBlur) {
+        console.log(`safe unsafed changes for ${this.props.slug}`)
         // blur on unload to make sure everything gets saved
         const curElement = isBlur ? null : document.activeElement
         if (curElement) {
@@ -1236,8 +1212,8 @@ class CmsViewEditorContainer extends React.Component {
                     clearTimeout(this._autoSaveTemplateTimeout)
                     this._autoSaveTemplateTimeout = 0
                     this._autoSaveTemplate = null
+                    console.log(JSON.stringify(this.props.cmsPage))
                     this.saveCmsPage(str, this.props.cmsPage, 'template')
-
                 }
 
                 clearTimeout(this._autoSaveTemplateTimeout)

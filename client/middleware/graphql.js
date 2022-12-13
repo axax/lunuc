@@ -21,18 +21,26 @@ let GRAPHQL_URL, GRAPHQL_WS_URL
 
 export let SSR_FETCH_CHAIN = {}
 
-const getGraphQlUrl = () => {
+export const getGraphQlUrl = () => {
     if (!GRAPHQL_URL) {
-        const location = window.location
-        GRAPHQL_URL = `${location.protocol}//${location.hostname}:${location.port}/graphql`
+        if(_app_.graphqlOptions){
+            GRAPHQL_URL = _app_.graphqlOptions.url
+        }else {
+            const location = window.location
+            GRAPHQL_URL = `${location.protocol}//${location.hostname}:${location.port}/graphql`
+        }
     }
     return GRAPHQL_URL
 }
 
-const getGraphQlWsUrl = () => {
+export const getGraphQlWsUrl = () => {
     if (!GRAPHQL_WS_URL) {
-        const location = window.location
-        GRAPHQL_WS_URL = (location.protocol === 'https:' ? 'wss' : 'ws') + `://${location.hostname}:${location.port}/lunucws`
+        if(_app_.graphqlOptions){
+            GRAPHQL_WS_URL = _app_.graphqlOptions.wsUrl
+        }else {
+            const location = window.location
+            GRAPHQL_WS_URL = (location.protocol === 'https:' ? 'wss' : 'ws') + `://${location.hostname}:${location.port}/lunucws`
+        }
     }
     return GRAPHQL_WS_URL
 }
@@ -47,14 +55,14 @@ let loadingCounter = 0
 
 function addLoader() {
     loadingCounter++
-    if (loadingCounter === 1) {
+    if (loadingCounter === 1 && _app_.dispatcher) {
        _app_.dispatcher.dispatch({type:'NETWORK_STATUS',payload:{loading:true}})
     }
 }
 
 function removeLoader() {
     loadingCounter--
-    if (loadingCounter === 0) {
+    if (loadingCounter === 0 && _app_.dispatcher) {
         // send loading false when all request are done
         _app_.dispatcher.dispatch({type:'NETWORK_STATUS',payload:{loading:false}})
     }
@@ -209,7 +217,6 @@ export const clearFetchById = (id) => {
 }
 
 export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  query, variables, hiddenVariables, fetchPolicy = 'cache-first', lang}) => {
-
 
     const controller = new AbortController()
 

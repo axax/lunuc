@@ -35,7 +35,6 @@ function mainInit() {
 
     // translation map
     _app_.tr = {}
-    _app_.JsonDom = {}
 
     // override config
     if (_app_.languages) {
@@ -64,7 +63,8 @@ function mainInit() {
 
     // context language
     // we expect the first part of the path to be the language when its length is 2
-    contextLanguage = loc.pathname.split('/')[1].toLowerCase()
+    const parts = loc.pathname.split('/')
+    contextLanguage = parts.length>1?parts[1].toLowerCase():''
 
     if (contextLanguage && LANGUAGES.indexOf(contextLanguage) >= 0) {
         _app_.contextPath = '/' + contextLanguage
@@ -114,10 +114,12 @@ function mainInit() {
         _app_.lang = DEFAULT_LANGUAGE
     }
 
-    render(
-        <App/>,
-        document.getElementById('app')
-    )
+    if(_app_.renderApp !== false) {
+        render(
+            <App/>,
+            document.getElementById('app')
+        )
+    }
 
 
     document.documentElement.setAttribute('lang', _app_.lang)
@@ -167,7 +169,7 @@ function mainInit() {
      });*/
 
     /* Register serviceworker only on production. only works with https */
-    if ('serviceWorker' in navigator) {
+    if (_app_.installServiceWorker !== false && 'serviceWorker' in navigator) {
         console.log('Service Worker is supported')
 
         if ('PushManager' in window) {

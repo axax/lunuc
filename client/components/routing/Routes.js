@@ -9,7 +9,7 @@ import {
     CAPABILITY_ACCESS_ADMIN_PAGE
 } from 'util/capabilities.mjs'
 import {scrollByHash} from '../../../extensions/cms/util/urlUtil'
-import {RouteHistory, Link} from '../../util/route'
+import {RouteHistory} from '../../util/route'
 import Util from '../../util/index.mjs'
 
 const BaseLayout = (props) => <Async {...props}
@@ -149,7 +149,8 @@ class Routes extends React.Component {
                         comp = route.render({match, location: newLocation, history: _app_.history})
                     }
                     if(route.component) {
-                        comp = <route.component match={match} location={newLocation}
+                        comp = <route.component match={match}
+                                                location={newLocation}
                                                 history={_app_.history}></route.component>
                     }
 

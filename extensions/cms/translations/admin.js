@@ -25,7 +25,12 @@ export const translations = {
         'CmsAddNewSite.createPageIfNotExist':'Seite "%slug%" exisitert nicht. Möchten Sie die Seite jetzt erstellen?',
         'CmsAddNewSite.createPage': 'Neue Seite erstellen',
         'CmsMenu.pages': 'Seiten',
-        'CmsPageEdit.goToEditor':'Seite bearbeiten'
+        'CmsPageEdit.goToEditor':'Seite bearbeiten',
+        'CmsRevisionDialog.title':'Revision %date%',
+        'CmsRevisionDialog.close':'Schliessen',
+        'CmsRevisionDialog.restore':'Diese Version wiederherstellen',
+        'CmsRevision.view': 'Voransicht',
+        'CmsRevision.templateChanged': 'Inhalt wurde geändert'
     },
     en: {
         'CmsViewEditorContainer.save': 'Speichern',
@@ -51,6 +56,11 @@ export const translations = {
         'CmsAddNewSite.createPageIfNotExist':'Page "%slug%" doesn\'t exist. Do you want to create it?',
         'CmsAddNewSite.createPage': 'Create new page',
         'CmsMenu.pages': 'Pages',
-        'CmsPageEdit.goToEditor':'Go to CMS Editor'
+        'CmsPageEdit.goToEditor':'Go to CMS Editor',
+        'CmsRevisionDialog.title':'Revision',
+        'CmsRevisionDialog.close':'Close',
+        'CmsRevisionDialog.restore':'Restore',
+        'CmsRevision.view': 'Preview',
+        'CmsRevision.templateChanged': 'Content has changed'
     }
 }

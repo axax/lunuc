@@ -463,7 +463,7 @@ const baseElements = [
                 filter: 'mimeType=video',
                 projection: MEDIA_PROJECTION,
                 tab: DEFAULT_TAB,
-                template: '${this.context._id?\'<video controls poster="\'+_comp.$set.poster+\'"><source src="\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+name+(_comp.$set.transcode?\'?transcode=\'+encodeURIComponent(_comp.$set.transcode):\'\')+\'" type="\'+mimeType+\'"/></video>\':\'\'}',
+                template: '${this.context._id?\'<video controls style="\'+_comp.$set.style+\'" preload="\'+_comp.$set.preload+\'" poster="\'+_comp.$set.poster+\'"><source src="\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+name+(_comp.$set.transcode?\'?transcode=\'+encodeURIComponent(_comp.$set.transcode):\'\')+\'" type="\'+mimeType+\'"/></video>\':\'\'}',
             },
             $set_yt: {
                 fullWidth: true,
@@ -471,6 +471,33 @@ const baseElements = [
                 label: 'Youtube',
                 tab: DEFAULT_TAB,
                 template: '${this.context.data?\'<iframe src="https://www.youtube-nocookie.com/embed/\'+data.match(/^(https?:\\/\\/)?((www\\.)?(youtube(-nocookie)?|youtube.googleapis)\\.com.*(v\\/|v=|vi=|vi\\/|e\\/|embed\\/|user\\/.*\\/u\\/\\d+\\/)|youtu\\.be\\/)([_0-9a-z-]+)/i)[7]+\'" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreencontrols></iframe>\':\'\'}'
+            },
+            $set_preload: {
+                fullWidth: true,
+                value: '',
+                label: 'Vorladen',
+                enum:[
+                    {
+                        name: 'Keine',
+                        value: 'none'
+                    },
+                    {
+                        name: 'Automatisch',
+                        value: 'auto'
+                    },
+                    {
+                        name: 'Metadata',
+                        value: 'metadata'
+                    }
+                ],
+                projection: MEDIA_PROJECTION,
+                tab: DEFAULT_TAB
+            },
+            $set_style: {
+                fullWidth: true,
+                value: '',
+                label: 'Style',
+                tab: DEFAULT_TAB
             },
             $c: {
                 template: '${_comp.$set.url?_comp.$set.url:_comp.$set.yt}',
@@ -1949,7 +1976,8 @@ const advancedElements = [
                 label: 'Style'
             },
             ...marginOptions('p_'),
-            ...classOptions('p_')
+            ...classOptions('p_'),
+            ...invisibleOptions('p_')
         }
     },
     {
@@ -1978,6 +2006,7 @@ const advancedElements = [
         },
         options: {
             $inlineEditor_dataResolver: {
+                tab:'Data',
                 label: 'Data Resolver',
                 uitype: 'json',
                 value: {
@@ -1997,10 +2026,12 @@ const advancedElements = [
                 }
             },
             c_$for_d: {
+                tab:'Data',
                 label: 'Data source',
                 value: 'data.__uid__.results'
             },
             c_$for_c_c: {
+                tab:'Data',
                 label: 'Template',
                 uitype: 'editor',
                 type: 'Object',
@@ -2010,6 +2041,7 @@ const advancedElements = [
                 }
             },
             c_$for_c_$c: {
+                tab:'Data',
                 label: 'Template (can be used alternatively)',
                 value: ''
             },

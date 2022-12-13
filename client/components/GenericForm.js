@@ -14,6 +14,7 @@ import {
     SimpleTabs,
     InputAdornment,
     Input,
+    DeleteIcon,
     ExpandLessIconButton,
     ExpandMoreIconButton,
     TranslateIconButton
@@ -35,6 +36,7 @@ import {getTypeQueries} from 'util/types.mjs'
 import Async from './Async'
 import styled from '@emotion/styled'
 import theme from './ui/impl/material/theme'
+import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ './CodeEditor')}/>
 
@@ -621,8 +623,9 @@ class GenericForm extends React.Component {
                                 }} primaryButton={false} values={values} updateOnValueChange={true} key={valueFieldKey} subForm={true}
                                              fields={subFields}/>
                                 <Button key={'delete' + valueFieldKey}
-                                        color="secondary"
+                                        color="error"
                                         size="small"
+                                        startIcon={<DeleteIcon />}
                                         onClick={() => {
                                             subFieldValues.splice(index, 1)
                                             this.handleInputChange({
@@ -632,7 +635,22 @@ class GenericForm extends React.Component {
                                                 }
                                             })
                                         }}
-                                        variant="contained">Löschen</Button>
+                                        variant="contained">{_t('GenericForm.delete')}</Button>
+                                <Button key={'clone' + valueFieldKey}
+                                        color="secondary"
+                                        startIcon={<ContentCopyIcon />}
+                                        size="small"
+                                        onClick={() => {
+                                            const clone = Object.assign({},subFieldValues[index])
+                                            subFieldValues.push(clone)
+                                            this.handleInputChange({
+                                                target: {
+                                                    name: fieldKey,
+                                                    value: subFieldValues
+                                                }
+                                            })
+                                        }}
+                                        variant="contained">{_t('GenericForm.clone')}</Button>
 
                             </Expandable>)
                     })

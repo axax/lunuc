@@ -145,27 +145,29 @@ const StyledInfoBox = styled('div')({
 
 let aftershockTimeout
 const highlighterHandler = (e, observer, after) => {
-    const hightlighter = document.querySelector('[data-highlighter]')
-    if (hightlighter) {
-        const key = hightlighter.getAttribute('data-highlighter')
-        const node = document.querySelector('[_key="' + key + '"]')
+    const hightlighters = document.querySelectorAll('[data-highlighter]')
+    if (hightlighters && hightlighters.length > 0) {
+        hightlighters.forEach(hightlighter => {
+            const key = hightlighter.getAttribute('data-highlighter')
+            const node = document.querySelector('[_key="' + key + '"]')
 
-        if (node) {
-            const offset = DomUtilAdmin.elemOffset(node)
-            hightlighter.style.top = offset.top + 'px'
-            hightlighter.style.left = offset.left + 'px'
-            hightlighter.style.width = node.offsetWidth + 'px'
-            hightlighter.style.height = node.offsetHeight + 'px'
+            if (node) {
+                const offset = DomUtilAdmin.elemOffset(node)
+                hightlighter.style.top = offset.top + 'px'
+                hightlighter.style.left = offset.left + 'px'
+                hightlighter.style.width = node.offsetWidth + 'px'
+                hightlighter.style.height = node.offsetHeight + 'px'
 
 
-            const toolbar = document.querySelector('[data-toolbar="' + key + '"]')
-            if (toolbar) {
-                toolbar.style.top = offset.top + 'px'
-                toolbar.style.left = offset.left + 'px'
-                toolbar.style.height = node.offsetHeight + 'px'
+                const toolbar = document.querySelector('[data-toolbar="' + key + '"]')
+                if (toolbar) {
+                    toolbar.style.top = offset.top + 'px'
+                    toolbar.style.left = offset.left + 'px'
+                    toolbar.style.height = node.offsetHeight + 'px'
+                }
+
             }
-
-        }
+        })
     }
     if (!after) {
         clearTimeout(aftershockTimeout)
@@ -275,7 +277,6 @@ class JsonDomHelper extends React.Component {
             return
         e.stopPropagation()
         const {hovered, dragging} = this.state
-
         // take this node instead of e.target becuase it might be a child of it
         const node = ReactDOM.findDOMNode(this)
         if (dragging) {
@@ -301,14 +302,13 @@ class JsonDomHelper extends React.Component {
 
         const {hovered, dragging} = this.state
 
-
         if (hovered || dragging) {
             e.stopPropagation()
         }
         if (JsonDomHelper.altKeyDown) {
             setTimeout(() => {
                 this.onHelperMouseOut()
-            }, 100)
+            }, 80)
             return
         }
 
@@ -319,7 +319,7 @@ class JsonDomHelper extends React.Component {
         if (hovered) {
             this.helperTimeoutOut = setTimeout(() => {
                 this.setState({hovered: false})
-            }, 100)
+            }, 80)
         } else {
             clearTimeout(this.helperTimeoutIn)
         }

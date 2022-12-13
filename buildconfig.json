@@ -177,7 +177,8 @@
         "Widgets",
         "Functions",
         "TextFormat",
-        "Pause"
+        "Pause",
+        "ContentCopy"
       ],
       "theme":{
         "colors":{
