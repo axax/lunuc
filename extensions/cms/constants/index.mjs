@@ -12,28 +12,113 @@ export const DEFAULT_DATA_RESOLVER = `[
 ]`
 
 
-export const DEFAULT_TEMPLATE = `[
-  {
-    "t": "div.page",
-    "c": [
-      {
-        "t": "h1",
-        "$inlineEditor": {
-          "elementKey": "headline",
-          "options": {
-            "c": {
-              "trKey": "genid_40yjkwyge"
+export const DEFAULT_TEMPLATE = `{
+  "$inlineEditor": {
+    "allowDrop": true,
+    "elementKey": "custom"
+  },
+  "p": {
+    "data-element-key": "custom",
+    "id": "page",
+    "className": "page",
+    "data-is-invisible": false
+  },
+  "c": [
+    {
+      "$inlineEditor": {
+        "allowDrop": true,
+        "elementKey": "custom"
+      },
+      "p": {
+        "data-element-key": "custom",
+        "data-is-invisible": false,
+        "id": "header",
+        "className": "header"
+      },
+      "t": "header",
+      "c": [
+        {
+          "$inlineEditor": {
+            "elementKey": "headline",
+            "options": {
+              "c": {
+                "trKey": "genid_kyu4em8cw",
+                "trContext": ""
+              }
             }
-          }
-        },
-        "p": {
-          "data-element-key": "headline"
-        },
-        "c": "Page"
-      }
-    ]
-  }
-]`
+          },
+          "p": {
+            "data-element-key": "headline"
+          },
+          "c": "Header",
+          "t": "h1"
+        }
+      ]
+    },
+    {
+      "$inlineEditor": {
+        "allowDrop": true,
+        "elementKey": "custom"
+      },
+      "p": {
+        "data-element-key": "custom",
+        "data-is-invisible": false,
+        "id": "main",
+        "className": "main"
+      },
+      "t": "main",
+      "c": [
+        {
+          "t": "h1",
+          "$inlineEditor": {
+            "elementKey": "headline",
+            "options": {
+              "c": {
+                "trKey": "genid_9axq0t4lu",
+                "trContext": ""
+              }
+            }
+          },
+          "p": {
+            "data-element-key": "headline"
+          },
+          "c": "Main"
+        }
+      ]
+    },
+    {
+      "$inlineEditor": {
+        "allowDrop": true,
+        "elementKey": "custom"
+      },
+      "p": {
+        "data-element-key": "custom",
+        "data-is-invisible": false,
+        "id": "footer",
+        "className": "footer"
+      },
+      "t": "footer",
+      "c": [
+        {
+          "t": "h1",
+          "$inlineEditor": {
+            "elementKey": "headline",
+            "options": {
+              "c": {
+                "trKey": "genid_zd5sg75qs",
+                "trContext": ""
+              }
+            }
+          },
+          "p": {
+            "data-element-key": "headline"
+          },
+          "c": "Footer"
+        }
+      ]
+    }
+  ]
+}`
 
 export const DEFAULT_SCRIPT = `// 1. access scope data
 // scope.page.slug
@@ -79,29 +164,15 @@ export const DEFAULT_STYLE = `//!#Basic
 \tflex: 0 1 auto;
 \tflex-direction: row;
 \tmargin-right: -0.5rem;
-\tmargin-left: -0.5rem;
-\t
-\t
-\t&.vcenter{
-\t\talign-items: center;
-\t}\t
-  
-\t&.row-reverse{
-\t\tflex-direction: row-reverse;
-\t}
-
-\t&.equal-height-mobile{
+\tmargin-left: -0.5rem;\t
+  &.vcenter{
+    align-items: center;
+  }\t
+\t&.eh{
 \t\t.col{
-\t\t\tline-height:0;
-\t\t\theight:100%;\t\t\t\t
-\t\t}
-\t\timg{
-\t\t\theight: 100%;
-\t\t\twidth: 100%;
-\t\t\tobject-fit: cover;
+\t\t\talign-self: stretch;\t\t\t\t
 \t\t}
 \t}
-
 \t&.flex-end{
 \t\talign-items: flex-end;
 \t}
@@ -113,8 +184,7 @@ export const DEFAULT_STYLE = `//!#Basic
 \t\t\tpadding-right: 1.5rem;
 \t\t\tpadding-left: 1.5rem;
 \t\t}
-\t}
-\t
+\t}\t
 \t&.row-space-4{\t
 \t\tmargin-left: -2rem;
 \t\tmargin-right: -2rem;
@@ -122,8 +192,16 @@ export const DEFAULT_STYLE = `//!#Basic
 \t\t\tpadding-right: 2rem;
 \t\t\tpadding-left: 2rem;
 \t\t}
+\t} 
+\t&.row-space-6{\t
+\t\tmargin-left: -1.5rem;
+\t\tmargin-right: -1.5rem;
+\t\t> .col{
+\t\t\tpadding-right: 1.5rem;
+\t\t\tpadding-left: 1.5rem;
+\t\t}
 \t}
-\t.col {
+\t.col {    
     box-sizing: border-box;
     flex: 0 0 auto;
     padding-right: 0.5rem;
@@ -135,10 +213,8 @@ export const DEFAULT_STYLE = `//!#Basic
 \t\t\tpadding-bottom: 0;
 \t\t}
 \t}
-\t
-\t
+\t\t
 \t&.grid{
-
 \t\tposition:relative;
 \t\t&:after,&:before{
 \t\t\tcontent: ' ';
@@ -168,7 +244,7 @@ export const DEFAULT_STYLE = `//!#Basic
 \t}
 }
 
-@media (min-width: 23.4375rem) {
+@media (min-width: 25.813rem) {
 \t.row{
 \t\t.col{
 \t\t\t&.col-xs-1 {
@@ -225,6 +301,14 @@ export const DEFAULT_STYLE = `//!#Basic
 
 @media (min-width: 48rem) {
 \t.row{\t
+    &.row-space-6{\t
+      margin-left: -1.5rem;
+      margin-right: -1.5rem;
+      > .col{
+        padding-right: 1.5rem;
+        padding-left: 1.5rem;
+      }
+    }
 \t\t&.equal-height{
 \t\t\t.col{
 \t\t\t\tline-height:0;
@@ -306,13 +390,20 @@ export const DEFAULT_STYLE = `//!#Basic
         flex: 0 0 0%;
 \t\t\t\tmargin-left: auto;
 \t\t\t}
-\t\t}
-\t\t
+\t\t}\t\t
 \t}
 }
 
 @media (min-width: 62rem) {
 \t.row{
+    &.row-space-6{\t
+      margin-left: -2rem;
+      margin-right: -2rem;
+      > .col{
+        padding-right: 2rem;
+        padding-left: 2rem;
+      }
+    }
 \t\t.col{
 \t\t\t&.col-md-1 {
         max-width: 8.3333333333%;
@@ -374,8 +465,16 @@ export const DEFAULT_STYLE = `//!#Basic
 \t}
 }
 
-@media (min-width: 75rem) {
+@media (min-width: 84rem) {
 \t.row{
+    &.row-space-6{\t
+      margin-left: -2.6rem;
+      margin-right: -2.6rem;
+      > .col{
+        padding-right: 2.6rem;
+        padding-left: 2.6rem;
+      }
+    }
 \t\t.col{
 \t\t\t&.col-lg-1 {
         max-width: 8.3333333333%;
@@ -428,66 +527,12 @@ export const DEFAULT_STYLE = `//!#Basic
 \t\t}
 \t}
 }
-
-@media (min-width: 93.75rem) {
-\t.row{
-\t\t.col{
-\t\t\t&.col-xl-1 {
-        max-width: 8.3333333333%;
-        flex: 0 0 8.3333333333%;
-    \t}
-\t\t\t&.col-xl-2 {
-        max-width: 16.6666666667%;
-        flex: 0 0 16.6666666667%;
-    \t}
-\t\t\t&.col-xl-3 {
-        max-width: 25%;
-        flex: 0 0 25%;
-    \t}
-\t\t\t&.col-xl-4 {
-        max-width: 33.3333333333%;
-        flex: 0 0 33.3333333333%;
-    \t}
-\t\t\t&.col-xl-5 {
-        max-width: 41.6666666667%;
-        flex: 0 0 41.6666666667%;
-   \t\t}
-\t\t\t&.col-xl-6 {
-        max-width: 50%;
-        flex: 0 0 50%;
-   \t \t}
-\t\t\t&.col-xl-7 {
-        max-width: 58.3333333333%;
-        flex: 0 0 58.3333333333%;
-    \t}
-\t\t\t&.col-xl-8 {
-        max-width: 66.6666666667%;
-        flex: 0 0 66.6666666667%;
-    \t}
-\t\t\t&.col-xl-9 {
-        max-width: 75%;
-        flex: 0 0 75%;
-    \t}
-\t\t\t&.col-xl-10 {
-        max-width: 83.3333333333%;
-        flex: 0 0 83.3333333333%;
-    \t}
-\t\t\t&.col-xl-11 {
-        max-width: 91.6666666667%;
-        flex: 0 0 91.6666666667%;
-    \t}
-\t\t\t&.col-xl-12 {
-        max-width: 100%;
-        flex: 0 0 100%;
-    \t}
-\t\t}
-\t}
-}
 //!#Editor
 //<!!#REMOVE
 main[data-layout-content=true]{
-  background-color:#fff;
+\tbackground-color:#fff;
 }
+
 h1[data-isempty=true],
 h2[data-isempty=true],
 h3[data-isempty=true],
@@ -499,45 +544,55 @@ p[data-isempty=true],
 a[data-isempty=true],
 section[data-isempty=true],
 div[data-isempty=true]{
-  min-height:1rem;
-  display:block;
-  content:'empty';
-  background: rgba(255,0,0,0.2);
+\tmin-height:1rem;
+\tdisplay:block;
+\tcontent:'empty';
+\tbackground: rgba(255,0,0,0.2);
 }
+
 [_inlineeditor=true]{\t
-  &.row,&[data-element-key="container"],
-  &[data-element-key="background"],
-  &[data-element-key="query"],
+  &.row,
+\t&[data-element-key="container"],
+\t&[data-element-key="background"],
+\t&[data-element-key="query"],
+\t&[data-element-key="custom"]{
+\t\tpadding:0.5rem !important;
+\t\tbackground: rgba(0,0,0,0.02);
+\t\t> .col[_inlineeditor=true]{
+\t\t\tborder:dashed 1px rgba(0,0,0,0.1);
+\t\t}
+\t}
   &[data-element-key="custom"]{
-    padding:0.5rem !important;
-    background: rgba(0,0,0,0.02);
-    > .col[_inlineeditor=true]{
-      border:dashed 1px rgba(0,0,0,0.1);
-    }
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(255, 0, 0,0.05),
+      rgba(255, 0, 0,0.05) 10px,
+      transparent 10px,
+      transparent 20px
+    );
   }
-  [data-is-invisible="true"]{
-    background: yellow;
+  &[data-element-key="query"]{
+  \tbackground: repeating-linear-gradient(
+      45deg,
+      rgba(0, 0, 0,0.1),
+      rgba(0, 0, 0,0.1) 10px,
+      transparent 10px,
+      transparent 20px
+    );
+  }
+  
+  &[data-is-invisible="true"]{
+    background-color: yellow;
   }
 }
+
 img[_inlineeditor=true]{
-  min-width:1rem;
-  min-height:1rem;
+\tmin-width:1rem;
+\tmin-height:1rem;
 }
-[data-wait-visible="1"]{
-  flex:auto;
-}
-[contenteditable] {
-  -webkit-user-select: text;
-  user-select: text;
-}
-[data-element-key="screenshot"]{
-  display:block; 
-}
+//!!#REMOVE>
+
 [data-is-invisible="true"]:not([_inlineeditor=true]){
   display:none !important; 
 }
-[data-element-key="imageLink"]{
-  margin-bottom: 1rem;
-}
-//!!#REMOVE>
 `

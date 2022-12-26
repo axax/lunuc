@@ -94,6 +94,26 @@ const invisibleOptions = key => ({
     },
 })
 
+const observeOptions = () => ({
+    '$observe_waitVisible': {
+        fullWidth: true,
+        type: 'Boolean',
+        value: false,
+        label: 'Sichtbarkeit überwachen',
+        tab: 'Animation'
+    },
+    '$observe_initialClass': {
+        fullWidth: true,
+        label: 'Initial Klasse',
+        tab: 'Animation'
+    },
+    '$observe_visibleClass': {
+        fullWidth: true,
+        label: 'Sichtbar Klasse',
+        tab: 'Animation'
+    }
+})
+
 const classLinkStylingOptions = key => ({
     [`${key}className@linkstyling`]: {
         label: 'Link Styling',
@@ -772,6 +792,7 @@ const baseElements = [
                 label: 'Style',
                 fullWidth: true
             },
+            ...observeOptions()
         }
     },
     {
@@ -1397,7 +1418,8 @@ const baseElements = [
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
-            ...invisibleOptions('p_')
+            ...invisibleOptions('p_'),
+            ...observeOptions()
         }
     },
     {
@@ -1478,7 +1500,8 @@ const baseElements = [
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
-            ...invisibleOptions('p_')
+            ...invisibleOptions('p_'),
+            ...observeOptions()
         }
     },
     {
@@ -1550,7 +1573,8 @@ const baseElements = [
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
-            ...invisibleOptions('p_')
+            ...invisibleOptions('p_'),
+            ...observeOptions()
         }
     },
     {
@@ -1632,7 +1656,8 @@ const baseElements = [
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
-            ...invisibleOptions('p_')
+            ...invisibleOptions('p_'),
+            ...observeOptions()
         }
     },
     {
@@ -1650,7 +1675,8 @@ const baseElements = [
         options: {
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
-            ...classOptions('p_')
+            ...classOptions('p_'),
+            ...observeOptions()
         }
     },
     {
@@ -1977,7 +2003,8 @@ const advancedElements = [
             },
             ...marginOptions('p_'),
             ...classOptions('p_'),
-            ...invisibleOptions('p_')
+            ...invisibleOptions('p_'),
+            ...observeOptions()
         }
     },
     {

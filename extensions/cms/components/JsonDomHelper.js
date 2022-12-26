@@ -112,6 +112,9 @@ const StyledDropArea = styled('span')({
         '&:after': {
             borderTopColor: 'red'
         }
+    },
+    [`*`]:{
+        pointerEvents: 'none'
     }
 })
 
@@ -595,6 +598,16 @@ class JsonDomHelper extends React.Component {
 
 
     getDropArea(rest, index) {
+        let label = ''
+        if(rest['data-element-key']){
+            label +=rest['data-element-key']
+        }
+        if(rest['id']){
+            label+='#'+rest['id']
+        }else if(rest['className']){
+            label+='.'+rest['className']
+        }
+
         return <StyledDropArea
             onMouseOver={(e) => {
                 e.stopPropagation()
@@ -607,7 +620,7 @@ class JsonDomHelper extends React.Component {
             data-index={index}
             data-drop-area
             data-tag-name={rest._tagName}
-            key={`${rest._key}.dropArea.${index}`}>Hier plazieren</StyledDropArea>
+            key={`${rest._key}.dropArea.${index}`}>Hier plazieren <small>{label?'('+label+')':''}</small></StyledDropArea>
     }
 
     openPicker(options) {

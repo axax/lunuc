@@ -159,10 +159,10 @@ class CmsViewEditorContainer extends React.Component {
                 console.log('beforeunload')
                 this._handleWindowClose()
             })
-            /*window.addEventListener('blur', () => {
+            window.addEventListener('blur', () => {
                 console.log('blur')
                 this._handleWindowClose(true)
-            })*/
+            })
 
             history.block(() => {
                 console.log('block')
