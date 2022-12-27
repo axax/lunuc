@@ -1944,9 +1944,11 @@ const advancedElements = [
         },
         options: {
             p_slug: {
+                tab: DEFAULT_TAB,
                 label: 'Slug'
             },
             p_id: {
+                tab: DEFAULT_TAB,
                 label: 'Id'
             },
             ...marginOptions('p_'),

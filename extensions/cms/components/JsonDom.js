@@ -172,7 +172,7 @@ class JsonDom extends React.Component {
                 }} to={url} {...rest}/>
             }
         },
-        'Cms': ({props, _this, ...rest}) => {
+        'Cms': ({props, _this, style, ...rest}) => {
             if (!rest.id) {
                 console.warn(`There is no id set for included Cms Component ${rest.slug}`, props)
             }
@@ -187,12 +187,16 @@ class JsonDom extends React.Component {
             if (!rest.slug) {
                 return <div>No Slug</div>
             }
+            const cvc = <CmsViewContainer key={rest.id}
+                                          _props={_props}
+                                          _parentRef={_this}
+                                          fetchPolicy='cache-first'
+                                          dynamic={true} {...rest}/>
+            if(style){
+                return <div style={style}>{cvc}</div>
+            }
 
-            return <CmsViewContainer key={rest.id}
-                                     _props={_props}
-                                     _parentRef={_this}
-                                     fetchPolicy='cache-first'
-                                     dynamic={true} {...rest}/>
+            return cvc
         },
         'ContentEditable': ({_this, onChange, ...props}) => {
             return <ContentEditable key={props._key}

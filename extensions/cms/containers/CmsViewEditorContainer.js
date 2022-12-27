@@ -1212,7 +1212,6 @@ class CmsViewEditorContainer extends React.Component {
                     clearTimeout(this._autoSaveTemplateTimeout)
                     this._autoSaveTemplateTimeout = 0
                     this._autoSaveTemplate = null
-                    console.log(JSON.stringify(this.props.cmsPage))
                     this.saveCmsPage(str, this.props.cmsPage, 'template')
                 }
 
