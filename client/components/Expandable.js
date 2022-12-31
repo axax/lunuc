@@ -23,9 +23,9 @@ class Expandable extends React.Component {
 
 
     render() {
-        const {title, children} = this.props
+        const {title, children, disableGutters} = this.props
 
-        return <ExpansionPanel expanded={this.state.expanded} onChange={this.handleExpansion.bind(this)}
+        return <ExpansionPanel disableGutters={disableGutters} expanded={this.state.expanded} onChange={this.handleExpansion.bind(this)}
                                heading={<Typography variant="h6">{title}</Typography>}>
             {this.state.expanded ? <div style={{width: '100%'}}>
                 {children}

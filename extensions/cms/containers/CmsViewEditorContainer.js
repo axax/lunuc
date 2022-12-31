@@ -52,6 +52,7 @@ import OpenTypeEdit from '../components/OpenTypeEdit'
 import CmsAddNewSite from '../components/CmsAddNewSite'
 import CmsElement from '../components/CmsElement'
 import JsonDomHelper from '../components/JsonDomHelper'
+import CmsRelatedPages from '../components/CmsRelatedPages'
 
 const CodeEditor = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
@@ -497,13 +498,14 @@ class CmsViewEditorContainer extends React.Component {
                 </MenuList>}
                 {sideMenu.length > 0 && <Divider/>}
 
-                {!(EditorOptions.bottomNavigation>0) && <Box style={{padding: '10px',
+                {!(EditorOptions.bottomNavigation>0) && <Box style={{
                     display: 'flex',
                     overflow: 'auto',
                     flexDirection: 'column',
                     marginBottom: 'auto'}}>
 
                     {canMangeCmsTemplate && <Expandable title="Data resolver"
+                                                        disableGutters
                                                         onChange={this.handleSettingChange.bind(this, 'dataResolverExpanded', true)}
                                                         expanded={EditorPageOptions.dataResolverExpanded}>
                         <DataResolverEditor onScroll={this.handleSettingChange.bind(this, 'dataResolverScroll', true)}
@@ -515,6 +517,7 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>}
 
                     {canMangeCmsTemplate && <Expandable title="Server Script"
+                                                        disableGutters
                                                         onChange={this.handleSettingChange.bind(this, 'serverScriptExpanded', true)}
                                                         expanded={EditorPageOptions.serverScriptExpanded}>
                         <ScriptEditor
@@ -529,6 +532,7 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>}
 
                     {canMangeCmsTemplate && <Expandable title="Template"
+                                                        disableGutters
                                                         onChange={this.handleSettingChange.bind(this, 'templateExpanded', true)}
                                                         expanded={EditorPageOptions.templateExpanded}>
                         <TemplateEditor
@@ -545,6 +549,7 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>}
 
                     {canMangeCmsTemplate && <Expandable title="Script"
+                                                        disableGutters
                                                         onChange={this.handleSettingChange.bind(this, 'scriptExpanded', true)}
                                                         expanded={EditorPageOptions.scriptExpanded}>
                         <ScriptEditor
@@ -555,6 +560,7 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>}
 
                     {canMangeCmsTemplate && <Expandable title="Style"
+                                                        disableGutters
                                                         onChange={this.handleSettingChange.bind(this, 'styleExpanded', true)}
                                                         expanded={EditorPageOptions.styleExpanded}>
 
@@ -573,6 +579,7 @@ class CmsViewEditorContainer extends React.Component {
 
 
                     {canMangeCmsTemplate && <Expandable title="Static assets"
+                                                        disableGutters
                                                         onChange={this.handleSettingChange.bind(this, 'resourceExpanded', true)}
                                                         expanded={EditorPageOptions.resourceExpanded}>
 
@@ -582,6 +589,7 @@ class CmsViewEditorContainer extends React.Component {
 
 
                     <Expandable title={_t('CmsViewEditorContainer.settings')}
+                                disableGutters
                                 onChange={this.handleSettingChange.bind(this, 'settingsExpanded', true)}
                                 expanded={EditorPageOptions.settingsExpanded}>
 
@@ -668,8 +676,9 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>
 
                     {!loadingState && <Expandable title={_t('CmsViewEditorContainer.revisions')}
-                                                                         onChange={this.handleSettingChange.bind(this, 'revisionsExpanded', true)}
-                                                                         expanded={EditorPageOptions.revisionsExpanded}>
+                                                  disableGutters
+                                                  onChange={this.handleSettingChange.bind(this, 'revisionsExpanded', true)}
+                                                  expanded={EditorPageOptions.revisionsExpanded}>
 
                         <CmsRevision historyLimit={10}
                                      cmsPage={cmsPage}
@@ -682,37 +691,10 @@ class CmsViewEditorContainer extends React.Component {
 
 
                     <Expandable title={_t('CmsViewEditorContainer.pages')}
+                                disableGutters
                                 onChange={this.handleSettingChange.bind(this, 'relatedPagesExpanded', true)}
                                 expanded={EditorPageOptions.relatedPagesExpanded}>
-                        <MenuList>
-                            <Query
-                                query={'query cmsPages($filter:String,$limit:Int,$_version:String){cmsPages(filter:$filter,limit:$limit,_version:$_version){results{slug}}}'}
-                                fetchPolicy="cache-and-network"
-                                variables={{
-                                    _version,
-                                    limit: 99,
-                                    filter: `slug=^${cmsPage.realSlug.split('/')[0]}$ slug=^${cmsPage.realSlug.split('/')[0]}/`
-                                }}>
-                                {({loading, error, data}) => {
-                                    if (loading) return 'Loading...'
-                                    if (error) return `Error! ${error.message}`
-
-
-                                    const menuItems = []
-
-                                    data.cmsPages.results.forEach(i => {
-                                            if (i.slug !== props.slug) {
-                                                menuItems.push(<MenuListItem key={i.slug} onClick={e => {
-                                                    props.history.push('/' + i.slug)
-                                                }} button primary={i.slug}/>)
-                                            }
-                                        }
-                                    )
-                                    if (menuItems.length === 0) return _t('CmsViewEditorContainer.noRelatedPages')
-                                    return menuItems
-                                }}
-                            </Query>
-                        </MenuList>
+                        <CmsRelatedPages _version={_version} slug={slug} history={props.history} cmsPage={cmsPage}/>
                     </Expandable>
                 </Box>}
                 {EditorOptions.bottomNavigation===1 && <Box style={{padding: '10px',
