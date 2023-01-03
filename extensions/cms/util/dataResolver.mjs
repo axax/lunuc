@@ -663,7 +663,9 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                             if (getKey === null || getKey === undefined) {
                                 getKey = sget
                             }
-                            aValue.push(value[getKey])
+                            if(!re.ignoreNull || value[getKey] != null){
+                                aValue.push(value[getKey])
+                            }
                         })
                         rootData[re.key] = aValue
                     } else {

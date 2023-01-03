@@ -116,7 +116,7 @@ const Util = {
                 console.log(e)
             }
         }
-        return DATE_FORMATS[key] || {format:(d)=>d}
+        return DATE_FORMATS[key] || {format: (d) => d}
     },
     formattedDateFromObjectId: (objectId, options) => {
         return Util.getDateTimeFormat(options).format(Util.dateFromObjectId(objectId, new Date()))
@@ -126,7 +126,7 @@ const Util = {
     },
     formattedDatetime(stamp, options) {
         if (!stamp) return ''
-        if (typeof stamp === 'string' && stamp.indexOf('-')<0) {
+        if (typeof stamp === 'string' && stamp.indexOf('-') < 0) {
             stamp = parseFloat(stamp);
         }
 
@@ -383,6 +383,9 @@ const Util = {
             }
             if (options.flip) {
                 params += '&flip=true'
+            }
+            if (options.position) {
+                params += '&position=' + options.position
             }
             if (params) {
                 data.src += '?' + params.substring(1)

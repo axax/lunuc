@@ -19,6 +19,26 @@ const imageOptions = key => ({
         label: 'Höhe in Pixel',
         tab: IMAGE_OPTIMIZATION_TAB
     },
+    [`${key}options_position`]: {
+        label: 'Position',
+        tab: IMAGE_OPTIMIZATION_TAB,
+        enum: [
+            {
+                value: '',
+                name: 'Keine'
+            },
+            'center',
+            'north',
+            'northeast',
+            'east',
+            'southeast',
+            'south',
+            'southwest',
+            'west',
+            'northwest',
+            'entropy'
+        ]
+    },
     [`${key}options_webp`]: {
         type: 'Boolean',
         newLine: true,
@@ -1703,7 +1723,7 @@ const baseElements = [
                 type: 'Media',
                 filter: 'mimeType=image',
                 projection: MEDIA_PROJECTION,
-                template: '${_comp.$set.image.options.background?_comp.$set.image.options.background:""}${this.context._id?(_comp.$set.image.options.background?\', \':\'\')+\'url(\\\'\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+encodeURIComponent(name)+\'?format=\'+(_comp.$set.image.options.webp?\'webp\':\'\')+\'&quality=\'+(_comp.$set.image.options.quality || \'\')+\'&width=\'+(_comp.$set.image.options.resize.width || \'\')+\'&height=\'+(_comp.$set.image.options.resize.height || \'\')+\'&flip=\'+(_comp.$set.image.options.flip || \'\')+\'&flop=\'+(_comp.$set.image.options.flop || \'\')+\'\\\')\':\'\'}',
+                template: '${_comp.$set.image.options.background?_comp.$set.image.options.background:""}${this.context._id?(_comp.$set.image.options.background?\', \':\'\')+\'url(\\\'\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+encodeURIComponent(name)+\'?format=\'+(_comp.$set.image.options.webp?\'webp\':\'\')+\'&quality=\'+(_comp.$set.image.options.quality || \'\')+\'&width=\'+(_comp.$set.image.options.resize.width || \'\')+\'&height=\'+(_comp.$set.image.options.resize.height || \'\')+(_comp.$set.image.options.flip?\'&flip=\'+_comp.$set.image.options.flip: \'\')+(_comp.$set.image.options.flop?\'&flop=\'+_comp.$set.image.options.flop: \'\')+(_comp.$set.image.options.position?\'&position=\'+_comp.$set.image.options.position: \'\')+\'\\\')\':\'\'}',
                 tab: DEFAULT_TAB,
                 tabPosition: 0
             },

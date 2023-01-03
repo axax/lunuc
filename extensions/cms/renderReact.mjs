@@ -39,6 +39,7 @@ const renderReact = async ({
                  location={loc}
                  history={{location: loc}}
                  slug={slug}
+                 user={{isAuthenticated:!!context.id, userData:{}}}
                  _props={mailContext?{context: mailContext}:undefined}
                  scope={scope?JSON.stringify(scope):undefined}
                  resolvedData={JSON.stringify(resolvedData)}
