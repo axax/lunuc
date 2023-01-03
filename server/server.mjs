@@ -846,7 +846,8 @@ async function resizeImage(parsedUrl, req, filename) {
             fit = parsedUrl.query.fit,
             flip = parsedUrl.query.flip,
             flop = parsedUrl.query.flop,
-            position = parsedUrl.query.position
+            position = parsedUrl.query.position,
+            withoutEnlargement = parsedUrl.query.noenlarge
 
         let format = parsedUrl.query.format
         if (format === 'webp' && req.headers['accept'] && req.headers['accept'].indexOf('image/webp') < 0) {
@@ -863,6 +864,10 @@ async function resizeImage(parsedUrl, req, filename) {
                 resizeOptions.position = position
             }
 
+            if(withoutEnlargement){
+                resizeOptions.withoutEnlargement = withoutEnlargement=='true'
+            }
+
             if (!isNaN(height)) {
                 resizeOptions.height = height
             }
@@ -872,7 +877,7 @@ async function resizeImage(parsedUrl, req, filename) {
                 quality = 80
             }
 
-            let modfilename = `${filename}@${width}x${height}-${quality}${fit ? '-' + fit : ''}${position ? '-' + position : ''}${format ? '-' + format : ''}${flip ? '-flip' : ''}${flop ? '-flop' : ''}`
+            let modfilename = `${filename}@${width}x${height}-${quality}${fit ? '-' + fit : ''}${position ? '-' + position : ''}${format ? '-' + format : ''}${flip ? '-flip' : ''}${flop ? '-flop' : ''}${withoutEnlargement ? '-noenlarge' : ''}`
 
             if (format) {
                 mimeType = MimeType.detectByExtension(format)

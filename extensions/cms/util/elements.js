@@ -59,6 +59,11 @@ const imageOptions = key => ({
         type: 'Boolean',
         label: 'Flop (Horizontal X)',
         tab: IMAGE_OPTIMIZATION_TAB
+    },
+    [`${key}options_noenlarge`]: {
+        type: 'Boolean',
+        label: 'Keine Bildvergrösserung',
+        tab: IMAGE_OPTIMIZATION_TAB
     }
 })
 
@@ -1753,6 +1758,7 @@ const baseElements = [
                     '+\'&height=\'+(_comp.$set.image.options.resize.height || \'\')' +
                     '+(_comp.$set.image.options.flip?\'&flip=\'+_comp.$set.image.options.flip: \'\')' +
                     '+(_comp.$set.image.options.flop?\'&flop=\'+_comp.$set.image.options.flop: \'\')' +
+                    '+(_comp.$set.image.options.noenlarge?\'&noenlarge=true\': \'\')' +
                     '+(_comp.$set.image.options.position?\'&position=\'+_comp.$set.image.options.position: \'\')+\'\\\')\':\'\'}',
                 tab: DEFAULT_TAB,
                 tabPosition: 0

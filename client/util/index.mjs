@@ -387,6 +387,9 @@ const Util = {
             if (options.position) {
                 params += '&position=' + options.position
             }
+            if (options.noenlarge) {
+                params += '&noenlarge=' + options.noenlarge
+            }
             if (params) {
                 data.src += '?' + params.substring(1)
             }
