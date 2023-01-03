@@ -1515,7 +1515,6 @@ class JsonDomHelper extends React.Component {
                         if (currentOpt.template && val !== undefined && val !== null) {
                             setPropertyByPath(val, '$original_' + key, comp, '_')
                             val = Util.replacePlaceholders(currentOpt.template, {_comp: comp, ...(val.constructor === String ? {data: val} : val[0])})
-
                         }
 
                         if (currentOpt.tr && currentOpt.trKey) {

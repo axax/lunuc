@@ -20,7 +20,7 @@ const imageOptions = key => ({
         tab: IMAGE_OPTIMIZATION_TAB
     },
     [`${key}options_position`]: {
-        label: 'Position',
+        label: 'Position (wenn Bild geschnitten wird)',
         tab: IMAGE_OPTIMIZATION_TAB,
         enum: [
             {
@@ -1708,6 +1708,27 @@ const baseElements = [
         name: 'Hintergrund',
         icon: 'wallpaper',
         options: {
+            t: {
+                value: '',
+                label: 'Tag Name'
+            },
+            p_href: {
+                value: '',
+                label: 'Href'
+            },
+            $set_image_mobileImage: {
+                fullWidth: true,
+                value: '',
+                label: 'Hintergrundbild Mobile (optional)',
+                uitype: 'type_picker',
+                type: 'Media',
+                filter: 'mimeType=image',
+                projection: MEDIA_PROJECTION
+            },
+            $set_image_mobileBreak: {
+                value: '',
+                label: 'Mobile Breakpoint in Pixel'
+            },
             ...imageOptions('$set_image_'),
             $set_image_options_background: {
                 newLine: true,
@@ -1723,7 +1744,16 @@ const baseElements = [
                 type: 'Media',
                 filter: 'mimeType=image',
                 projection: MEDIA_PROJECTION,
-                template: '${_comp.$set.image.options.background?_comp.$set.image.options.background:""}${this.context._id?(_comp.$set.image.options.background?\', \':\'\')+\'url(\\\'\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+encodeURIComponent(name)+\'?format=\'+(_comp.$set.image.options.webp?\'webp\':\'\')+\'&quality=\'+(_comp.$set.image.options.quality || \'\')+\'&width=\'+(_comp.$set.image.options.resize.width || \'\')+\'&height=\'+(_comp.$set.image.options.resize.height || \'\')+(_comp.$set.image.options.flip?\'&flip=\'+_comp.$set.image.options.flip: \'\')+(_comp.$set.image.options.flop?\'&flop=\'+_comp.$set.image.options.flop: \'\')+(_comp.$set.image.options.position?\'&position=\'+_comp.$set.image.options.position: \'\')+\'\\\')\':\'\'}',
+                template: '${_comp.$set.image.options.background?_comp.$set.image.options.background:""}' +
+                    '${this.context._id?' +
+                    '(_comp.$set.image.options.background?\', \':\'\')' +
+                    '+\'url(\\\'\'+_app_.config.UPLOAD_URL+\'/${window.innerWidth>\'+(_comp.$set.image.mobileBreak || 1000)+\'?\\\'\'+_id+\'\\\':\\\'\'+(_comp.$set.image.mobileImage?_comp.$set.image.mobileImage[0]._id:_id)+\'\\\'}/-/\'+encodeURIComponent(name)+\'?format=\'+(_comp.$set.image.options.webp?\'webp\':\'\')' +
+                    '+\'&quality=\'+(_comp.$set.image.options.quality || \'\')' +
+                    '+\'&width=\'+(_comp.$set.image.options.resize.width || \'\')' +
+                    '+\'&height=\'+(_comp.$set.image.options.resize.height || \'\')' +
+                    '+(_comp.$set.image.options.flip?\'&flip=\'+_comp.$set.image.options.flip: \'\')' +
+                    '+(_comp.$set.image.options.flop?\'&flop=\'+_comp.$set.image.options.flop: \'\')' +
+                    '+(_comp.$set.image.options.position?\'&position=\'+_comp.$set.image.options.position: \'\')+\'\\\')\':\'\'}',
                 tab: DEFAULT_TAB,
                 tabPosition: 0
             },
@@ -1758,14 +1788,6 @@ const baseElements = [
                 tab: DEFAULT_TAB
             },
             ...invisibleOptions('p_'),
-            t: {
-                value: '',
-                label: 'Tag Name'
-            },
-            p_href: {
-                value: '',
-                label: 'Href'
-            },
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
             ...marginOptions('p_')
