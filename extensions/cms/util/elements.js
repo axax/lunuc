@@ -1752,7 +1752,7 @@ const baseElements = [
                 template: '${_comp.$set.image.options.background?_comp.$set.image.options.background:""}' +
                     '${this.context._id?' +
                     '(_comp.$set.image.options.background?\', \':\'\')' +
-                    '+\'url(\\\'\'+_app_.config.UPLOAD_URL+\'/${window.innerWidth>\'+(_comp.$set.image.mobileBreak || 1000)+\'?\\\'\'+_id+\'\\\':\\\'\'+(_comp.$set.image.mobileImage?_comp.$set.image.mobileImage[0]._id:_id)+\'\\\'}/-/\'+encodeURIComponent(name)+\'?format=\'+(_comp.$set.image.options.webp?\'webp\':\'\')' +
+                    '+\'url(\\\'\'+_app_.config.UPLOAD_URL+\'/${window.innerWidth>\'+(_comp.$set.image.mobileBreak || 767)+\'?\\\'\'+_id+\'\\\':\\\'\'+(_comp.$set.image.mobileImage?_comp.$set.image.mobileImage[0]._id:_id)+\'\\\'}/-/\'+encodeURIComponent(name)+\'?format=\'+(_comp.$set.image.options.webp?\'webp\':\'\')' +
                     '+\'&quality=\'+(_comp.$set.image.options.quality || \'\')' +
                     '+\'&width=\'+(_comp.$set.image.options.resize.width || \'\')' +
                     '+\'&height=\'+(_comp.$set.image.options.resize.height || \'\')' +

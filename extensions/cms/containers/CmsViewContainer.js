@@ -9,7 +9,6 @@ import withCms from './withCms'
 import {client} from '../../../client/middleware/graphql'
 import Hook from '../../../util/hook.cjs'
 import {deepMerge} from '../../../util/deepMerge.mjs'
-import {AppContext} from "../../../client/components/AppContext";
 
 class CmsViewContainer extends React.Component {
     oriTitle = document.title

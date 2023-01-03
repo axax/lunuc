@@ -11,7 +11,8 @@ class ErrorPage extends React.Component {
             code: props.code || '404',
             title: props.title || 'Page not found',
             message: props.message || (props.code==='401'?_app_.user.username + ' ist nicht berechtigt diese Seite zu öffnen':'WE ARE SORRY'),
-            background: props.background || '#33cc99'
+            background: props.background || '#33cc99',
+            hideBackButton: props.hideBackButton
         }
 
     }
@@ -237,7 +238,7 @@ hr:after {
 
     render() {
 
-        const {code, title, message} = this.getErrorStatus(this.props)
+        const {code, title, message, hideBackButton} = this.getErrorStatus(this.props)
 
         return <div>
             <div id="clouds">
@@ -256,7 +257,7 @@ hr:after {
                 {code==401 ? <a className='btn' onClick={(e) => {
                     e.preventDefault()
                     location.href = location.origin+'/admin/login?forward='+location.pathname
-                }} href="#">Mit einem anderen Benutzer anmelden</a>: <a className='btn' onClick={(e) => {
+                }} href="#">Mit einem anderen Benutzer anmelden</a>: !hideBackButton && <a className='btn' onClick={(e) => {
                     e.preventDefault()
                     location.href = location.origin
                 }} href="#">Back to Home</a>}

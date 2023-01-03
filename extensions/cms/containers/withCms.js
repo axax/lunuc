@@ -1,7 +1,6 @@
 import React from 'react'
 import {
     getGqlVariables, CMS_PAGE_QUERY, isEditMode, urlSensitivMap,
-    settingKeyPrefix
 } from '../util/cmsView.mjs'
 import Async from 'client/components/Async'
 import compose from '../../../util/compose'
@@ -9,7 +8,6 @@ import DomUtil from '../../../client/util/dom.mjs'
 import {setPropertyByPath} from '../../../client/util/json.mjs'
 import {client, graphql} from '../../../client/middleware/graphql'
 import {
-    QUERY_KEY_VALUES_GLOBAL,
     QUERY_KEY_VALUES,
     QUERY_SET_KEY_VALUE,
     QUERY_SET_KEY_VALUE_GLOBAL,
@@ -17,6 +15,8 @@ import {
     getKeyValueFromLS
 } from '../../../client/util/keyvalue'
 import {NO_SESSION_KEY_VALUES} from '../../../client/constants/index.mjs'
+import {_t, registerTrs} from '../../../util/i18n.mjs'
+
 
 // admin pack
 const ErrorPage = (props) => <Async {...props}
@@ -39,6 +39,18 @@ export default function (WrappedComponent) {
     class Wrapper extends React.Component {
         constructor(props) {
             super(props)
+
+            registerTrs({
+                de:{
+                    'ErrorPage.title.504':'Wartungsarbeiten',
+                    'ErrorPage.message.504':'Bitte haben Sie einen kurzen Moment Geduld. Wir sind gleich zurück.'
+                },
+                en:{
+                    'ErrorPage.title.504':'Maintenance',
+                    'ErrorPage.message.504':'We are sorry. Please try again in a moment'
+                }
+            }, 'ErrorPage')
+
         }
 
         render() {
@@ -60,8 +72,9 @@ export default function (WrappedComponent) {
                             setTimeout(() => {
                                 window.location.href = window.location.href
                             }, 10000)
-                            return <ErrorPage code="504" message="We are sorry. Please try again in a moment"
-                                              title="Maintenance" background="#f4a742"/>
+                            return <ErrorPage code="504" message={_t('ErrorPage.message.504')}
+                                              hideBackButton={true}
+                                              title={_t('ErrorPage.title.504')} background="#f4a742"/>
                         }
                         if (isEditMode(this.props)) {
                             return <CmsViewEditorContainer updateResolvedData={this.updateResolvedData.bind(this)}
