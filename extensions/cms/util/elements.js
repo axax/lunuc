@@ -103,7 +103,11 @@ const trOptions = key => ({
 
 const classOptions = key => ({
     [`${key}className`]: {
-        label: 'Klassname',
+        label: 'CSS Klassname',
+        tab: DEFAULT_TAB
+    },
+    [`${key}style@custom`]: {
+        label: 'CSS Style',
         tab: DEFAULT_TAB
     }
 })
@@ -817,10 +821,6 @@ const baseElements = [
             ...marginOptions('p_'),
             ...classTextOptions('p_'),
             ...classOptions('p_'),
-            'p_style@raw': {
-                label: 'Style',
-                fullWidth: true
-            },
             ...observeOptions()
         }
     },
@@ -2051,9 +2051,6 @@ const advancedElements = [
             },
             $is: {
                 label: 'Bedingung'
-            },
-            ['p_style@custom']: {
-                label: 'Style'
             },
             ...marginOptions('p_'),
             ...classOptions('p_'),
