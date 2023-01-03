@@ -152,6 +152,7 @@
     },
     {
       "name": "MediaGroup",
+      "entryClonable": true,
       "fields": [
         {
           "name": "name",
@@ -185,6 +186,7 @@
     },
     {
       "name": "MediaConversion",
+      "entryClonable": true,
       "access":{"read":"manage_cms_content","create": "manage_cms_content", "update": "manage_cms_content"},
       "description": "Here you can define how you want to convert the medias.",
       "fields": [

@@ -68,7 +68,7 @@ class JsonDom extends React.Component {
         /* Other components */
         FileDrop,
         MarkDown,
-        'SmartImage': ({src, options, caption, wrapper, inlineSvg, svgData, tagName, figureStyle, figureClassName, figureProps, ...props}) => {
+        'SmartImage': ({src, options, caption, wrapper, inlineSvg, svgData, tagName, figureStyle, figureClassName, figureCaptionClassName, figureProps, ...props}) => {
             const imgTag = () => {
                 let imageData = Util.getImageObject(src, options)
                 imageData['data-smartimage'] = true
@@ -85,7 +85,7 @@ class JsonDom extends React.Component {
             if (caption || wrapper) {
                 return <figure style={figureStyle} className={figureClassName} {...figureProps}>
                     {imgTag()}
-                    {caption && <figcaption dangerouslySetInnerHTML={{__html: caption}}/>}
+                    {caption && <figcaption className={figureCaptionClassName} dangerouslySetInnerHTML={{__html: caption}}/>}
                 </figure>
             }
             return imgTag()

@@ -270,6 +270,10 @@ const classTextOptions = key => ({
             {
                 value: ' strong ',
                 name: 'Fett'
+            },
+            {
+                value: ' small ',
+                name: 'Klein'
             }
         ]
     }
