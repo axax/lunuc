@@ -723,7 +723,6 @@ const GenericResolver = {
 
         // clone object but without _id, _version and undefined property
         // null is when a refrence has been removed
-        const updateStages = []
         const dataSet = Object.keys(data).reduce((o, k) => {
             if (k !== '_id' && k !== '_version' && data[k] !== undefined) {
                 if (data[k] && data[k].constructor === Object) {
@@ -771,7 +770,6 @@ const GenericResolver = {
             }
             return o
         }, {})
-
         // set timestamp
         dataSet.modifiedAt = new Date().getTime()
         // try with dot notation for partial update
@@ -781,11 +779,9 @@ const GenericResolver = {
             updateOptions.upsert = true
         }
 
-        updateStages.push({
+        let result = (await collection.updateOne(params, {
             $set: dataSet
-        })
-
-        let result = (await collection.updateOne(params, updateStages, updateOptions))
+        }, updateOptions))
 
         if (result.modifiedCount !== 1 && result.upsertedCount !== 1) {
             throw new Error(_t('core.update.permission.error', context.lang, {name: collectionName}))
