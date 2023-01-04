@@ -185,7 +185,9 @@ class ElementWatch extends React.Component {
         const {tagSrc} = this.state
         const {$observe, eleProps, tagName} = this.props
         if (this.state.initialVisible) {
-            ele.classList.add($observe.visibleClass)
+            if($observe.visibleClass) {
+                ele.classList.add($observe.visibleClass)
+            }
         } else {
             ele.setAttribute('data-loading', true)
             if (tagName === 'SmartImage') {

@@ -150,6 +150,12 @@
           "vagueSearchable": true
         },
         {
+          "name": "uniqueStyle",
+          "label": "Unique style",
+          "hidden": true,
+          "type": "Boolean"
+        },
+        {
           "name": "ssr",
           "hidden": true,
           "type": "Boolean"

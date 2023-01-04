@@ -215,9 +215,17 @@ export const clearFetchById = (id) => {
         delete FETCH_BY_ID[id]
     }
 }
-
+const FETCHING_BY_CACHEKEY = {}
 export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  query, variables, hiddenVariables, fetchPolicy = 'cache-first', lang}) => {
 
+    if (!cacheKey && type === RequestType.query) {
+        cacheKey = getCacheKey({query, variables})
+    }
+    if(cacheKey && FETCHING_BY_CACHEKEY[cacheKey]){
+        // exact same query is running
+        // prevent duplicate queries
+        return FETCHING_BY_CACHEKEY[cacheKey]
+    }
     const controller = new AbortController()
 
     if(id){
@@ -232,29 +240,26 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  qu
 
     const finalizeRequest = () =>{
         clearTimeout(timeoutId)
+        if(cacheKey){
+            delete FETCHING_BY_CACHEKEY[cacheKey]
+        }
     }
 
     const promise = new Promise((resolve, reject) => {
 
-        if (type === RequestType.query) {
-            if (!cacheKey) {
-                cacheKey = getCacheKey({query, variables})
-            }
-
-            if (fetchPolicy === 'cache-first') {
-                const fromCache = client.readQuery({cacheKey})
-                if (fromCache) {
-                    const resolveData = {
-                        data: fromCache,
-                        loading: false,
-                        networkStatus: NetworkStatus.ready,
-                        fetchMore: getFetchMore({prevData: fromCache, fetchPolicy, variables, type, query})
-                    }
-
-                    resolve(resolveData)
-
-                    return
+        if (type === RequestType.query && fetchPolicy === 'cache-first') {
+            const fromCache = client.readQuery({cacheKey})
+            if (fromCache) {
+                const resolveData = {
+                    data: fromCache,
+                    loading: false,
+                    networkStatus: NetworkStatus.ready,
+                    fetchMore: getFetchMore({prevData: fromCache, fetchPolicy, variables, type, query})
                 }
+
+                resolve(resolveData)
+
+                return
             }
         }
 
@@ -344,7 +349,9 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  qu
         })
     })
     promise._controller = controller
-
+    if(cacheKey){
+        FETCHING_BY_CACHEKEY[cacheKey] = promise
+    }
     return promise
 }
 
@@ -596,7 +603,6 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
             query
         })
     }
-
 
     if (_app_.ssr) {
 

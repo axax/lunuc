@@ -85,6 +85,7 @@ class CmsViewEditorContainer extends React.Component {
             template,
             script,
             style,
+            uniqueStyle,
             serverScript,
             resources,
             dataResolver,
@@ -111,6 +112,7 @@ class CmsViewEditorContainer extends React.Component {
             resources,
             script,
             style,
+            uniqueStyle,
             serverScript,
             dataResolver,
             ssr,
@@ -259,6 +261,7 @@ class CmsViewEditorContainer extends React.Component {
             state.script !== this.state.script ||
             state.dataResolver !== this.state.dataResolver ||
             state.style !== this.state.style ||
+            state.uniqueStyle !== this.state.uniqueStyle ||
             state.parseResolvedData !== this.state.parseResolvedData ||
             state.alwaysLoadAssets !== this.state.alwaysLoadAssets ||
             state.loadPageOptions !== this.state.loadPageOptions ||
@@ -574,6 +577,12 @@ class CmsViewEditorContainer extends React.Component {
                                     onScroll={this.handleSettingChange.bind(this, 'styleScroll', true)}
                                     scrollPosition={EditorPageOptions.styleScroll}
                                     onChange={this.handleStyleChange.bind(this)}>{style}</CodeEditor>
+
+                        <SimpleSwitch
+                            label="Unique Style"
+                            checked={!!this.state.uniqueStyle}
+                            onChange={this.handleFlagChange.bind(this, 'uniqueStyle')}
+                        />
 
                     </Expandable>}
 
@@ -1392,7 +1401,7 @@ CmsViewEditorContainer.propTypes = {
 
 
 const CmsViewEditorContainerWithGql = compose(
-    graphql(`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$realSlug:String,$name:LocalizedStringInput,$keyword:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:String,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$loadPageOptions:Boolean,$ssrStyle:Boolean,$publicEdit:Boolean,$compress:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,realSlug:$realSlug,name:$name,keyword:$keyword,script:$script,style:$style,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,loadPageOptions:$loadPageOptions,compress:$compress,ssrStyle:$ssrStyle,publicEdit:$publicEdit,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug realSlug name{${config.LANGUAGES.join(' ')}} keyword{${config.LANGUAGES.join(' ')}} template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
+    graphql(`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$realSlug:String,$name:LocalizedStringInput,$keyword:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:String,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$loadPageOptions:Boolean,$ssrStyle:Boolean,$uniqueStyle:Boolean,$publicEdit:Boolean,$compress:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,realSlug:$realSlug,name:$name,keyword:$keyword,script:$script,style:$style,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,loadPageOptions:$loadPageOptions,compress:$compress,ssrStyle:$ssrStyle,uniqueStyle:$uniqueStyle,publicEdit:$publicEdit,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug realSlug name{${config.LANGUAGES.join(' ')}} keyword{${config.LANGUAGES.join(' ')}} template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, realSlug, ...rest}, key, cb) => {
 

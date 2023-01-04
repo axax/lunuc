@@ -334,7 +334,7 @@ class JsonDom extends React.Component {
 
             return true
         } else if (props.editMode && this.props.style !== props.style) {
-            this.addStyle(props.style)
+            this.addStyle(props)
         }
         return false
     }
@@ -346,7 +346,7 @@ class JsonDom extends React.Component {
     }
 
     componentDidMount() {
-        this.addStyle(this.props.style)
+        this.addStyle(this.props)
         this.triggerMountEvent()
 
         let pr = this.props._parentRef
@@ -387,7 +387,7 @@ class JsonDom extends React.Component {
     // is called after render
     componentDidUpdate(prevProps, prevState) {
         if (this.props.style !== prevProps.style) {
-            this.addStyle(this.props.style)
+            this.addStyle(this.props)
         }
         this.triggerMountEvent()
         this.runJsEvent('update', true)
@@ -548,11 +548,29 @@ class JsonDom extends React.Component {
         }
     }
 
-    addStyle(style) {
-        const id = 'jsondomstyle' + this.instanceId
+    getMainStyleId({uniqueStyle, slug, style}){
+        let id = 'jsondomstyle', isUniqueStyle = false, needParsing = style && style.indexOf('${')>=0
+
+        if(uniqueStyle || !needParsing){
+            isUniqueStyle = true
+            id+=slug
+        }else{
+            id+=this.instanceId
+        }
+        return {id, isUniqueStyle, needParsing}
+    }
+
+    addStyle(props) {
+        let {id, isUniqueStyle, needParsing} = this.getMainStyleId(props)
+        if(isUniqueStyle && document.getElementById(id)){
+            // style already added
+            return
+        }
+        const {style} = props
+
         if (style) {
             let parsedStyle
-            if (style.indexOf('${') > -1) {
+            if (needParsing) {
                 try {
                     parsedStyle = new Function(DomUtil.toES5(`const {scope,Util}=this;return \`${style}\``)).call({
                         scope: this.scope,
@@ -626,7 +644,7 @@ class JsonDom extends React.Component {
     removeAddedDomElements(notMainStyle) {
         let butIds
         if (notMainStyle) {
-            butIds = ['jsondomstyle' + this.instanceId]
+            butIds = [this.getMainStyleId(this.props).id]
         }
         DomUtil.removeElements(`[data-json-dom-id="${this.instanceId}"]`, butIds)
     }
@@ -1583,6 +1601,7 @@ JsonDom.propTypes = {
     resources: PropTypes.string,
     script: PropTypes.string,
     style: PropTypes.string,
+    unqiueStyle: PropTypes.bool,
 
     slug: PropTypes.string,
     user: PropTypes.object,

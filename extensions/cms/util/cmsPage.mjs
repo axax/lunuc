@@ -93,6 +93,7 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, i
                 'alwaysLoadAssets',
                 'loadPageOptions',
                 'ssrStyle',
+                'uniqueStyle',
                 'publicEdit',
                 'compress'],
             {
