@@ -317,7 +317,7 @@ class JsonDom extends React.Component {
                 this.json = null
             }
             if (slugChanged || scriptChanged || this.runScript) {
-                this.removeAddedDomElements(true)
+                this.removeAddedDomElements(!slugChanged)
                 this.scriptResult = null
                 this.runScript = true
                 this.jsOnStack = {}

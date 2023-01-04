@@ -101,14 +101,18 @@ const trOptions = key => ({
     }
 })
 
-const classOptions = key => ({
+const classOptions = (key, tab) => ({
+    [`${key}id`]: {
+        label: 'ID',
+        tab: tab || DEFAULT_TAB
+    },
     [`${key}className`]: {
         label: 'CSS Klassname',
-        tab: DEFAULT_TAB
+        tab: tab || DEFAULT_TAB
     },
     [`${key}style@custom`]: {
         label: 'CSS Style',
-        tab: DEFAULT_TAB
+        tab: tab || DEFAULT_TAB
     }
 })
 
@@ -785,6 +789,14 @@ const baseElements = [
                     {
                         name: 'span (Inline-Element)',
                         value: 'span'
+                    },
+                    {
+                        name: 'strong',
+                        value: 'strong'
+                    },
+                    {
+                        name: 'small',
+                        value: 'small'
                     }
                 ]
             },
@@ -1999,10 +2011,6 @@ const advancedElements = [
                 tab: DEFAULT_TAB,
                 label: 'Slug'
             },
-            p_id: {
-                tab: DEFAULT_TAB,
-                label: 'Id'
-            },
             ...marginOptions('p_'),
             ...classOptions('p_')
         }
@@ -2045,9 +2053,6 @@ const advancedElements = [
                         name: 'Eingerückt (gross)'
                     }
                 ]
-            },
-            p_id: {
-                label: 'Element ID'
             },
             $is: {
                 label: 'Bedingung'
