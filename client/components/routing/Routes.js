@@ -72,7 +72,7 @@ class Routes extends React.Component {
         _app_.history = new RouteHistory()
         Hook.call('Routes', {routes: this.routes, container: this})
         this.routes.sort((a, b) => b.path.length - a.path.length)
-        scrollByHash(location.href, {})
+        scrollByHash(location.href, {scrollStep:100000})
     }
 
     componentDidMount() {

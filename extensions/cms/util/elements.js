@@ -132,18 +132,18 @@ const observeOptions = () => ({
         fullWidth: true,
         type: 'Boolean',
         value: false,
-        label: 'Sichtbarkeit überwachen',
-        tab: 'Animation'
+        label: 'Sichtbarkeit überwachen (Rendering wenn in Viewport)',
+        tab: 'Sichtbarkeit'
     },
     '$observe_initialClass': {
         fullWidth: true,
         label: 'Initial Klasse',
-        tab: 'Animation'
+        tab: 'Sichtbarkeit'
     },
     '$observe_visibleClass': {
         fullWidth: true,
         label: 'Sichtbar Klasse',
-        tab: 'Animation'
+        tab: 'Sichtbarkeit'
     }
 })
 
@@ -2012,7 +2012,8 @@ const advancedElements = [
                 label: 'Slug'
             },
             ...marginOptions('p_'),
-            ...classOptions('p_')
+            ...classOptions('p_'),
+            ...observeOptions()
         }
     },
     {
