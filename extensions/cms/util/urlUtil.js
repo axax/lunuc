@@ -2,28 +2,40 @@ import DomUtil from '../../../client/util/dom.mjs'
 
 export const scrollByHash = (url, {scrollStep, scrollOffset, scrollTimeout}) => {
     if (url.indexOf('#') >= 0 && url.length>1) {
-        const checkScroll = (el, c) => {
+         const checkScroll = (el) => {
             if (el) {
-                let w = window, de = w.document.documentElement, mt = parseInt(w.getComputedStyle(el).marginTop)
+                const win = window,
+                    scrollY = win.scrollY,
+                    docEl = win.document.documentElement
+                let mt = parseInt(win.getComputedStyle(el).marginTop)
 
                 if(isNaN(mt)){
                     mt = 0
                 }
 
-                let y = Math.floor(el.getBoundingClientRect().top + w.pageYOffset + (scrollOffset || -mt))
-                if (y > de.scrollHeight - w.innerHeight) {
-                    y = de.scrollHeight - w.innerHeight
+                let y = Math.floor(el.getBoundingClientRect().top + win.pageYOffset + (scrollOffset || -mt))
+                if (y > docEl.scrollHeight - win.innerHeight) {
+                    y = docEl.scrollHeight - win.innerHeight
                 }
 
-                if ( Math.abs(w.scrollY - y) > 2 || c < 3) {
-                    let step = y - w.scrollY
-                    if (step > (scrollStep || 50)) {
-                        step = scrollStep || 50
+                let step = Math.abs(y - scrollY)
+                if ( step > 2) {
+                    if(!scrollStep){
+                        scrollStep = Math.ceil(step / 20)
                     }
-                    w.scrollTo(0, w.scrollY + step)
-                    if (c < 5000) {
+                    if (step > scrollStep) {
+                        step = scrollStep
+                    }
+                    let newY = scrollY
+                    if(y > scrollY){
+                        newY += step
+                    }else{
+                        newY -=step
+                    }
+                    win.scrollTo(0, newY)
+                    if (scrollY !== win.scrollY) {
                         setTimeout(() => {
-                            checkScroll(el, c + 1)
+                            checkScroll(el)
                         }, scrollTimeout || 10)
                     }
                 }
@@ -31,7 +43,7 @@ export const scrollByHash = (url, {scrollStep, scrollOffset, scrollTimeout}) => 
         }
         DomUtil.waitForElement('#' + url.split('#')[1]).then((el) => {
             // check until postion is reached
-            checkScroll(el, 0)
+            checkScroll(el)
         }).catch(()=>{})
     }
 }
