@@ -882,13 +882,21 @@ async function resizeImage(parsedUrl, req, filename) {
             if (format) {
                 mimeType = MimeType.detectByExtension(format)
             }
-
             exists = true
 
             if (!fs.existsSync(modfilename)) {
                 console.log(`modify file ${filename} to ${modfilename}`)
                 try {
-                    let resizedFile = await sharp(filename).resize(resizeOptions)
+                    const sharpOptions = {}
+                    let ext = path.extname(parsedUrl.pathname)
+                    if(ext && ext.length > 1){
+                        ext = ext.substring(1).trim().toLowerCase()
+                        if(ext==='gif'){
+                            // might be animated
+                            sharpOptions.animated = true
+                        }
+                    }
+                    let resizedFile = await sharp(filename,sharpOptions).resize(resizeOptions)
                     if(flip){
                         resizedFile = await resizedFile.flip()
                     }
