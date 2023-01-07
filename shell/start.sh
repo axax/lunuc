@@ -10,6 +10,10 @@ done
 cd "$(dirname "$0")"
 cd ..
 
+git pull
+npm install --legacy-peer-deps
+npm run build
+
 echo "restart "$restart
 
 if [ $restart = "all" ]
