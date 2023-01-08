@@ -54,7 +54,7 @@ export const resolveFrom = async ({segment, db, context, resolvedData, scope, no
                                     resolvedData.data = {}
                                 }
                                 Object.keys(data.data).forEach(key=>{
-                                    resolvedData.data[key] = Object.assign({}, data.data[key], resolvedData.data[key])
+                                    resolvedData[key] = Object.assign({}, data.data[key], resolvedData[key])
                                 })
                             }
                         })
