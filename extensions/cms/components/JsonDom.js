@@ -334,7 +334,7 @@ class JsonDom extends React.Component {
 
             return true
         } else if (props.editMode && this.props.style !== props.style) {
-            this.addStyle(props)
+            this.addStyle(props, true)
         }
         return false
     }
@@ -560,9 +560,9 @@ class JsonDom extends React.Component {
         return {id, isUniqueStyle, needParsing}
     }
 
-    addStyle(props) {
+    addStyle(props, styleEdited) {
         let {id, isUniqueStyle, needParsing} = this.getMainStyleId(props)
-        if(isUniqueStyle && document.getElementById(id)){
+        if(isUniqueStyle && !styleEdited && document.getElementById(id)){
             // style already added
             return
         }

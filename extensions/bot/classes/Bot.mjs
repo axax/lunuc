@@ -295,7 +295,6 @@ class Bot {
 
     matchExpressionWithContext(exprTokens, textTokens, options) {
         let result = {accuracy: 0, context: {}}
-
         if (textTokens.stemmed.length >= exprTokens.stemmed.length) {
             let tmpContext = {}, totalAccuracy = 0, count = 0, currentKey, exprIdx = -1
             for (let i = 0; i < textTokens.stemmed.length; i++) {
@@ -313,7 +312,7 @@ class Bot {
                     }
                     pushit = true
                 } else {
-                    const accuracy = natural.JaroWinklerDistance(textTokens.stemmed[i], exprTokens.stemmed[exprIdx])
+                    const accuracy = natural.JaroWinklerDistance(textTokens.stemmed[i], exprTokens.stemmed[exprIdx],{ignoreCase:true})
 
                     if (accuracy < 0.65 && currentKey) {
                         // it is probably a part of the context

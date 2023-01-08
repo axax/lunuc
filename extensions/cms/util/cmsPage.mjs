@@ -160,7 +160,8 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, i
                 Cache.set(cacheKey, cmsPages, 6000000) // cache expires in 1h40min
             }
         }
-
+    }else{
+        //console.log(`load cmsPage from cache ${slug}`)
     }
     return cmsPages
 }

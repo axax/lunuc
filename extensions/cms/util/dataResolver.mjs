@@ -15,6 +15,7 @@ import path from 'path'
 import {propertyByPath, setPropertyByPath, assignIfObjectOrArray, matchExpr} from '../../../client/util/json.mjs'
 import {fileURLToPath} from 'url'
 import {typeResolver} from './resolver/typeResolver.mjs'
+import {resolveFrom} from './resolver/resolveFrom.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -98,34 +99,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                 } else if (segment._data) {
                     resolvedData._data = segment._data
                 } else if (segment.resolveFrom) {
-                    if (segment.resolveFrom.KeyValueGlobal) {
-                        let dataFromKey = await Util.getKeyValueGlobal(db, context, segment.resolveFrom.KeyValueGlobal, !!segment.resolveFrom.path)
-
-                        if (segment.resolveFrom.parse === false) {
-                            if (segment.resolveFrom.path) {
-                                dataFromKey = propertyByPath(segment.resolveFrom.path, dataFromKey)
-                            }
-                            resolvedData[segment.resolveFrom.path] = dataFromKey
-                        } else {
-                            if (segment.resolveFrom.path) {
-                                dataFromKey = JSON.stringify(propertyByPath(segment.resolveFrom.path, dataFromKey))
-                            }
-                            const resolvedFromKey = await resolveData({
-                                db,
-                                context,
-                                dataResolver: dataFromKey,
-                                scope,
-                                nosession,
-                                req,
-                                editmode,
-                                dynamic
-                            })
-
-                            Object.keys(resolvedFromKey.resolvedData).forEach(k => {
-                                resolvedData[k] = resolvedFromKey.resolvedData[k]
-                            })
-                        }
-                    }
+                    await resolveFrom({segment, db, context, resolvedData, scope, nosession, req, editmode, dynamic})
                 } else if (segment.data) {
                     Object.keys(segment.data).forEach(k => {
                         resolvedData[k] = segment.data[k]
