@@ -83,3 +83,5 @@ uploads
 backups
 static
 static_private
+static_template
+local_tmp
