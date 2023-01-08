@@ -11,23 +11,29 @@ const {UPLOAD_DIR} = config
 
 export default db => ({
     Query: {
-        cleanUpMedia: async ({}, {context}) => {
+        cleanUpMedia: async ({ids}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
 
-            const ids = await db.collection('Media').distinct("_id", {})
+            const idsAll = await db.collection('Media').distinct("_id", {})
 
-            const idMap = ids.reduce((map, obj) => {
+            const idMap = idsAll.reduce((map, obj) => {
                 map[obj.toString()] = true
                 return map
             }, {})
             const uploadPath = path.join(__dirname, '../../../' + UPLOAD_DIR)
-
             const idsRemoved = []
             if (fs.existsSync(uploadPath)) {
                 fs.readdirSync(uploadPath).forEach(function (file, index) {
                     const filePath = uploadPath + "/" + file
                     const stat = fs.lstatSync(filePath)
                     if (!stat.isDirectory()) {
+
+                        if(ids){
+                            if(!ids.find(id => file.indexOf(id)>=0)){
+                                return
+                            }
+                        }
+
                         let id
                         if (file.indexOf('private') === 0) {
                             id = file.substring(7)

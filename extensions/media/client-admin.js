@@ -115,7 +115,7 @@ export default () => {
                         }
                     },
                     {
-                        name: 'CleanUp Medias', onClick: () => {
+                        name: _t('Media.cleanupMedia'), onClick: () => {
                             client.query({
                                 fetchPolicy: 'network-only',
                                 forceFetch: true,
@@ -156,9 +156,35 @@ export default () => {
             //downloadAll(files)
         }
     })
+
+
+    Hook.on('TypeCreateEditAction', function ({type, action, dataToEdit, meta}) {
+        console.log(dataToEdit)
+        if (type === 'Media' && action && action.key === 'clearConversions' && dataToEdit) {
+            client.query({
+                fetchPolicy: 'network-only',
+                forceFetch: true,
+                variables:{ids:[dataToEdit._id]},
+                query: 'query cleanUpMedia($ids:[String]){cleanUpMedia(ids:$ids){status}}'
+            }).then(response => {
+                if (response.data && response.data.cleanUpMedia) {
+                    if( meta && meta.TypeContainer) {
+                        meta.TypeContainer.setState({simpleDialog: {children: response.data.cleanUpMedia.status}})
+                    }
+                }
+            })
+        }
+    })
+
+
     // add some extra data to the table
     Hook.on('TypeCreateEdit', function ({type, props, dataToEdit, meta}) {
         if (type === 'Media') {
+
+            if (dataToEdit && dataToEdit._id) {
+                props.actions.unshift({key: 'clearConversions', label: 'Varianten Löschen'})
+            }
+
             fileToUpload = false
 
             // access data from TypeContainer

@@ -8,7 +8,8 @@ export const translations = {
         'Media.field.conversion': 'Konvertierung',
         'Media.selectConversion': 'Wählen Sie eine Konvertierung',
         'Media.field.size': 'Dateigrösse',
-        'Media.field.group': 'Gruppe'
+        'Media.field.group': 'Gruppe',
+        'Media.cleanupMedia': 'Media Varianten löschen'
     },
     en: {
         'Media.uploadMedia': 'Upload medias',
@@ -19,6 +20,7 @@ export const translations = {
         'Media.field.mimeType': 'Format',
         'Media.field.conversion': 'Conversion',
         'Media.field.size': 'Size',
-        'Media.field.group': 'group'
+        'Media.field.group': 'group',
+        'Media.cleanupMedia': 'CleanUp Medias'
     }
 }
