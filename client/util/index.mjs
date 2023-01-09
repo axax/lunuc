@@ -406,10 +406,11 @@ const Util = {
         return nodeList
     },
     baseUrl(path, query) {
-        let url = Util.removeTrailingSlash(location.pathname.split('/' + config.PRETTYURL_SEPERATOR + '/')[0])
+        const seperator = config.PRETTYURL_SEPERATOR
+        let url = Util.removeTrailingSlash(location.pathname.split('/' + seperator + '/')[0])
 
         if (path) {
-            url += '/' + config.PRETTYURL_SEPERATOR + '/' + encodeURI(path)
+            url += '/' + seperator + '/' + encodeURI(path)
         }
         if (query) {
             const queryStr = Util.paramsToQuery(query)
@@ -427,7 +428,7 @@ const Util = {
         return url
     },
     translateUrl(lang) {
-        const path = window.location.pathname
+        const loc = window.location, path = loc.pathname
         if (lang === _app_.lang) return path
         const p = path.split('/')
         if (p[1].length === 2 && p[1] !== lang) {
@@ -440,7 +441,7 @@ const Util = {
         } else {
             p.splice(1, 0, lang)
         }
-        return p.join('/') + window.location.search + window.location.hash
+        return p.join('/') + loc.search + loc.hash
     },
     createWorker(fn) {
         const blob = new Blob([`self.onmessage = (args)=>{

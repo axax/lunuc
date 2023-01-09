@@ -317,7 +317,9 @@ class JsonDom extends React.Component {
                 this.json = null
             }
             if (slugChanged || scriptChanged || this.runScript) {
-                this.removeAddedDomElements(!slugChanged)
+                if(!props.loading) {
+                    this.removeAddedDomElements(!slugChanged)
+                }
                 this.scriptResult = null
                 this.runScript = true
                 this.jsOnStack = {}
@@ -879,7 +881,7 @@ class JsonDom extends React.Component {
 
                         let tpl
                         if ($for) {
-                            tpl = new Function(DomUtil.toES5(`const ${s}=this.${s},Util =this.Util,_i=Util.tryCatch.bind(this),_t=this._t.bind(this.scope.data);${loopOrFor.eval ? loopOrFor.eval : ''};return \`${cStr}\``))
+                            tpl = new Function(DomUtil.toES5(`const ${s}=this.${s},Util =this.Util,_e=Util.escapeForJson,_i=Util.tryCatch.bind(this),_t=this._t.bind(this.scope.data);${loopOrFor.eval ? loopOrFor.eval : ''};return \`${cStr}\``))
                         }
                         data.forEach((loopChild, childIdx) => {
                             if (loopOrFor.convert === 'String') {
