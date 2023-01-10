@@ -184,6 +184,7 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
 
             }
         }
+        otherOptions.simpleLookup=false
 
         let newLookup
         if(otherOptions.simpleLookup!==false && field.simpleLookup !== false){
