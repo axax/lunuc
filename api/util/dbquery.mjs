@@ -116,8 +116,7 @@ export const addFilterToMatch = async ({db, debugInfo, filterKey, filterValue, t
         }
     } else if (type === 'Float') {
         filterValue = parseFloat(filterValue)
-    } else if (type === 'Object' && filterValue) {
-
+    } else if (type === 'Object' && filterValue && db && db._versionInt >= 5) {
         filterValue = {
             body: `function(data) {return data && Object.keys(data).some(
                 key => /${filterValue}/i.test( data[key] && (data[key].constructor===Object || data[key].constructor===Array)?JSON.stringify(data[key]):data[key])

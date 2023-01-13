@@ -67,11 +67,17 @@ export const dbConnection = (dburl, cb) => {
         }
         const client = new MongoClient(urlParts[0], options)
         client.connect().then( client => {
-                console.log(`Connection to db ${dburl} (version ${client.options.metadata.driver.version}) established. 🚀`)
+                console.log(`Connection to db ${dburl} (driver version ${client.options.metadata.driver.version}) established. 🚀`)
                 const parts = urlParts[0].split('/')
                 const db = client.db(parts[parts.length - 1])
-
                 db._metadata = client.options.metadata
+
+                const adminDb = db.admin()
+                adminDb.serverStatus((err, info) => {
+                    db._version = info.version
+                    db._versionInt = parseInt(info.version)
+                    console.log(`mongodb version is ${db._version}`)
+                })
 
                 Hook.call('dbready', {db})
                 cb(null, db, client)
