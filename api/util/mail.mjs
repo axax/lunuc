@@ -105,8 +105,8 @@ ${finalHtml}
                     // do not fail on invalid certs
                     rejectUnauthorized: false
                 },
-                connectionTimeout: currentMailSettings.connectionTimeout || 30000,
-                socketTimeout: currentMailSettings.socketTimeout || 90000
+                connectionTimeout: currentMailSettings.connectionTimeout || 120000,
+                socketTimeout: currentMailSettings.socketTimeout || 1220000
             }
 
 
