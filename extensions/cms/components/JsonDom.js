@@ -1512,7 +1512,7 @@ class JsonDom extends React.Component {
         return null
     }
 
-    setStyle = (style, preprocess, id, inworker) => {
+    setStyle = (style, preprocess, id) => {
         const addTag = (css) => {
             DomUtil.createAndAddTag('style', 'head', {
                 textContent: css,
@@ -1522,14 +1522,14 @@ class JsonDom extends React.Component {
         }
         if (preprocess) {
 
-            if (inworker) {
+           /* if (inworker) {
                 // process in web worker
                 Util.createWorker(preprocessCss).run(style).then(e => {
                     addTag(e.data)
                 })
-            } else {
+            } else {*/
                 addTag(preprocessCss(style))
-            }
+           /* }*/
 
         } else {
             addTag(style)

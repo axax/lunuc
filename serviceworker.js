@@ -37,10 +37,18 @@ self.addEventListener('activate', event => {
     
     // delete any caches that aren't in expectedCaches
     event.waitUntil(
-        caches.keys().then(keys => {
+        // clear all caches
+        caches.keys().then(function(names) {
+            for (let name of names)
+                caches.delete(name)
+        })
+
+        // update caches
+        /*caches.keys().then(keys => {
             keys.forEach(key => {
                 caches.open(key).then(cache => {
                     cache.keys().then((requests) => {
+
 
                         if(key.startsWith('runtime-')) {
                             requests.forEach(async request => {
@@ -69,7 +77,7 @@ self.addEventListener('activate', event => {
                     })
                 })
             })
-        })
+        })*/
     )
 })
 

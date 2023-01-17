@@ -443,7 +443,7 @@ const Util = {
         }
         return p.join('/') + loc.search + loc.hash
     },
-    createWorker(fn) {
+    /*createWorker(fn) {
         const blob = new Blob([`self.onmessage = (args)=>{
                 ${fn.toString()}
                 self.postMessage(${fn.name}(args))
@@ -459,7 +459,7 @@ const Util = {
                 }
             )
         }
-    },
+    },*/
     // a simple implementation of the shallowCompare.
     // only compares the first level properties and hence shallow.
     shallowCompare(newObj, prevObj, options = {}) {
