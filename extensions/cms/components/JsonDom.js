@@ -46,6 +46,7 @@ const MarkDown = (props) => <Async {...props}
 
 const hasNativeLazyLoadSupport = !_app_.ssr && window.HTMLImageElement && 'loading' in HTMLImageElement.prototype
 
+const SCRIPT_UTIL_PART = ',Util=this.Util,_e=Util.escapeForJson,_i=Util.tryCatch.bind(this),_t=this._t.bind('
 
 class JsonDom extends React.Component {
 
@@ -881,7 +882,7 @@ class JsonDom extends React.Component {
 
                         let tpl
                         if ($for) {
-                            tpl = new Function(DomUtil.toES5(`const ${s}=this.${s},Util =this.Util,_e=Util.escapeForJson,_i=Util.tryCatch.bind(this),_t=this._t.bind(this.scope.data);${loopOrFor.eval ? loopOrFor.eval : ''};return \`${cStr}\``))
+                            tpl = new Function(DomUtil.toES5(`const ${s}=this.${s}${SCRIPT_UTIL_PART}this.scope.data);${loopOrFor.eval ? loopOrFor.eval : ''};return \`${cStr}\``))
                         }
                         data.forEach((loopChild, childIdx) => {
                             if (loopOrFor.convert === 'String') {
@@ -894,7 +895,7 @@ class JsonDom extends React.Component {
                             loopChild._index = childIdx
 
                             if ($loop) {
-                                tpl = new Function(DomUtil.toES5(`const {${Object.keys(loopChild).join(',')}}=this.${s},Util=this.Util,_i=Util.tryCatch.bind(this),_t=this._t.bind(this.scope.data);return \`${cStr}\``))
+                                tpl = new Function(DomUtil.toES5(`const {${Object.keys(loopChild).join(',')}}=this.${s}${SCRIPT_UTIL_PART}this.scope.data);return \`${cStr}\``))
                             }
                             // remove tabs and parse
                             const json = JSON.parse(tpl.call({
@@ -1280,7 +1281,7 @@ class JsonDom extends React.Component {
         }
         try {
             // Scope properties get destructed so they can be accessed directly by property name
-            return new Function(DomUtil.toES5(`const {${Object.keys(scope).join(',')}}=this.scope,Util=this.Util,_i=Util.tryCatch.bind(this),_r=this.renderIntoHtml,_t=this._t.bind(data);return \`${str}\``)).call({
+            return new Function(DomUtil.toES5(`const {${Object.keys(scope).join(',')}}=this.scope${SCRIPT_UTIL_PART}data),_r=this.renderIntoHtml;return \`${str}\``)).call({
                 scope,
                 parent: this.props._parentRef,
                 Util,
