@@ -19,7 +19,37 @@
           "index": {
             "slug": 1,
             "_id": 1
-          }
+          },
+          "compoundIndex": [
+            {
+              "unique": false,
+              "fields": {
+                "data._id": 1
+              }
+            },
+            {
+              "unique": true,
+              "fields": {
+                "data._id": 1,
+                "_id": 1
+              }
+            },
+            {
+              "unique": false,
+              "fields": {
+                "meta.keys": 1,
+                "data._id": 1
+              }
+            },
+            {
+              "unique": true,
+              "fields": {
+                "meta.keys": 1,
+                "data._id": 1,
+                "_id": 1
+              }
+            }
+          ]
         },
         {
           "tab": "Meta",
