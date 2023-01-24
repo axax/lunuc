@@ -10,6 +10,7 @@ import {
     InsertDriveFileIcon
 } from 'ui/admin'
 import Util from 'client/util/index.mjs'
+import {formatBytes} from 'client/util/format.mjs'
 import {COMMAND_QUERY} from '../constants/index.mjs'
 import PropTypes from 'prop-types'
 import config from 'gen/config-client'
@@ -37,15 +38,6 @@ class FilesContainer extends React.Component {
         }
     }
 
-
-    formatBytes(bytes, decimals) {
-        if (bytes == 0) return '0 Bytes';
-        const k = 1024,
-            dm = decimals || 2,
-            sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
-            i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-    }
 
     render() {
         const {embedded, editOnly} = this.props
@@ -152,7 +144,7 @@ class FilesContainer extends React.Component {
                                                     this.setState({file: b[8]})
                                                 }
                                             },
-                                            secondary: this.formatBytes(b[4])/*,
+                                            secondary: formatBytes(b[4])/*,
                                              actions: <DeleteIconButton onClick={this.handlePostDeleteClick.bind(this, post)}/>,
                                              disabled: ['creating', 'deleting'].indexOf(post.status) > -1*/
                                         })

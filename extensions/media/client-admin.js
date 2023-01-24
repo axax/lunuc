@@ -21,6 +21,7 @@ import UploadUtil from '../../client/util/upload'
 import {client} from 'client/middleware/graphql'
 import {translations} from './translations/translations'
 import {CAPABILITY_MANAGE_OTHER_USERS} from '../cms/constants/index.mjs'
+import {formatBytes} from "../../client/util/format.mjs";
 
 registerTrs(translations, 'MediaTranslations')
 
@@ -49,6 +50,10 @@ export default () => {
             dataSource.forEach((d, i) => {
                 const item = data.results[i]
                 if (item) {
+                    if(d.size && item.size){
+
+                        d.size = formatBytes(item.size)
+                    }
                     const mimeType = item.mimeType ? item.mimeType.split('/') : ['file'],
                         image =
                             (mimeType[0] === 'image' ?

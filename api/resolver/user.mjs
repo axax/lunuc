@@ -7,9 +7,7 @@ import Cache from '../../util/cache.mjs'
 import {
     CAPABILITY_MANAGE_USER_ROLE,
     CAPABILITY_MANAGE_OTHER_USERS,
-    CAPABILITY_MANAGE_COLLECTION,
     CAPABILITY_MANAGE_USER_GROUP,
-    CAPABILITY_MANAGE_TYPES,
     CAPABILITY_MANAGE_SAME_GROUP
 } from '../../util/capabilities.mjs'
 import {sendMail} from '../util/mail.mjs'
@@ -18,7 +16,7 @@ import {clientAddress} from '../../util/host.mjs'
 import {setAuthCookies, removeAuthCookies} from '../util/sessionContext.mjs'
 import {_t} from '../../util/i18nServer.mjs'
 import Hook from '../../util/hook.cjs'
-import {AUTH_EXPIRES_IN_COOKIE, USE_COOKIES, AUTH_SCHEME} from '../constants/index.mjs'
+import {USE_COOKIES} from '../constants/index.mjs'
 import {hasQueryField} from '../util/graphql.js'
 
 const LOGIN_ATTEMPTS_MAP = {},
@@ -188,7 +186,7 @@ const validateAndHashPassword = ({password, passwordConfirm, context}) => {
 
 export const userResolver = (db) => ({
     Query: {
-        users: async ({limit, page, offset, filter, sort}, {context}) => {
+        users: async ({limit, page, offset, filter, sort}, {context, res}) => {
             Util.checkIfUserIsLoggedIn(context)
             const options = {
                 limit,
@@ -199,7 +197,7 @@ export const userResolver = (db) => ({
             }
             if(filter && filter.indexOf('=')<0 && !sort){
                 // boost username
-                options.projectResult = true
+                options.projectResult = res.req.body.query.indexOf('role{_id')<0
                 options.project = {
                     _id: 1,
                     customOrder:{
