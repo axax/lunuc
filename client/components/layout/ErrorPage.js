@@ -1,5 +1,6 @@
 import React from 'react'
 import DomUtil from '../../util/dom.mjs'
+import {_t, registerTrs} from '../../../util/i18n.mjs'
 
 
 class ErrorPage extends React.Component {
@@ -9,8 +10,8 @@ class ErrorPage extends React.Component {
 
         return {
             code: props.code || '404',
-            title: props.title || 'Page not found',
-            message: props.message || (props.code==='401'?_app_.user.username + ' ist nicht berechtigt diese Seite zu öffnen':'WE ARE SORRY'),
+            title: props.title || _t('ErrorPage.title.404'),
+            message: props.message || (props.code==='401'?_app_.user.username + ' ist nicht berechtigt diese Seite zu öffnen':_t('ErrorPage.message.404')),
             background: props.background || '#33cc99',
             hideBackButton: props.hideBackButton
         }
@@ -19,9 +20,25 @@ class ErrorPage extends React.Component {
 
     constructor(props) {
         super(props)
+
+        registerTrs({
+            de:{
+                'ErrorPage.title.404':'Seite nicht gefunden',
+                'ErrorPage.message.404':'Bitte entschuldigen Sie - der gesuchte Seite existiert nicht mehr.',
+                'ErrorPage.backButton':'Zurück zur Startseite'
+            },
+            en:{
+                'ErrorPage.title.404':'Page not found',
+                'ErrorPage.message.404':'We are sorry.',
+                'ErrorPage.backButton': 'Back to Home'
+            }
+        }, 'ErrorPage')
+
+
         const {code, title, message, background} = this.getErrorStatus(props)
         this.titleOri = document.title
         document.title = `${code} ${title}`
+
 
         if (!document.getElementById('errorPageNoindex')) {
             DomUtil.createAndAddTag('meta', 'head', {
@@ -260,7 +277,7 @@ hr:after {
                 }} href="#">Mit einem anderen Benutzer anmelden</a>: !hideBackButton && <a className='btn' onClick={(e) => {
                     e.preventDefault()
                     location.href = location.origin
-                }} href="#">Back to Home</a>}
+                }} href="#">{_t('ErrorPage.backButton')}</a>}
 
 
 
