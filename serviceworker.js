@@ -38,13 +38,13 @@ self.addEventListener('activate', event => {
     // delete any caches that aren't in expectedCaches
     event.waitUntil(
         // clear all caches
-        caches.keys().then(function(names) {
+        /*caches.keys().then(function(names) {
             for (let name of names)
                 caches.delete(name)
-        })
+        })*/
 
         // update caches
-        /*caches.keys().then(keys => {
+        caches.keys().then(keys => {
             keys.forEach(key => {
                 caches.open(key).then(cache => {
                     cache.keys().then((requests) => {
@@ -77,7 +77,7 @@ self.addEventListener('activate', event => {
                     })
                 })
             })
-        })*/
+        })
     )
 })
 
