@@ -3,7 +3,7 @@ import Util from '../../../client/util/index.mjs'
 
 export const scrollByHash = (url, options) => {
     if (url.indexOf('#') >= 0 && url.length>1) {
-         const checkScroll = (el) => {
+         const checkScroll = (el, tries) => {
             if (el) {
                 let {scrollStep, scrollOffset, scrollTimeout} = options
                 const win = window,
@@ -35,9 +35,9 @@ export const scrollByHash = (url, options) => {
                         newY -=step
                     }
                     win.scrollTo(0, newY)
-                    if (scrollY !== win.scrollY) {
+                    if (scrollY !== win.scrollY || tries < 5 ) {
                         setTimeout(() => {
-                            checkScroll(el)
+                            checkScroll(el,tries+1)
                         }, scrollTimeout || 10)
                     }
                 }
@@ -46,7 +46,8 @@ export const scrollByHash = (url, options) => {
         DomUtil.waitForElement('#' + decodeURI(url.split('#')[1])).then((el) => {
             // check until postion is reached
             options = Object.assign({},_app_.scrollOptions,Util.removeNullValues(options,{removeUndefined:true}))
-            checkScroll(el)
+            checkScroll(el,0)
+
         }).catch(()=>{})
     }
 }

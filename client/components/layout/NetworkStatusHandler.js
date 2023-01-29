@@ -4,7 +4,7 @@ import {useContext} from 'react'
 import {AppContext} from '../../components/AppContext'
 
 // loading indicator is shown if api requests take more than 500 ms
-const LOADER_DELAY = 500
+const LOADER_DELAY = 900
 
 class NetworkStatusHandler extends React.Component {
     delayTimer = null

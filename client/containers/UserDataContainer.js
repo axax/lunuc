@@ -43,7 +43,7 @@ class UserDataContainer extends React.PureComponent {
     }
 
     render() {
-        console.log('Render UserDataContainer')
+        console.log(`Render UserDataContainer ${this.state.hasAuth}`)
         if (this.state.loading && this.state.hasAuth) {
             this.getUserData()
             return null
