@@ -2,52 +2,72 @@ import DomUtil from '../../../client/util/dom.mjs'
 import Util from '../../../client/util/index.mjs'
 
 export const scrollByHash = (url, options) => {
-    if (url.indexOf('#') >= 0 && url.length>1) {
-         const checkScroll = (el, tries) => {
+    if (url.indexOf('#') >= 0 && url.length > 1) {
+        const win = window,
+            docEl = win.document.documentElement
+
+        let scrollY = win.scrollY
+
+        const checkScroll = (el, tries) => {
             if (el) {
-                let {scrollStep, scrollOffset, scrollTimeout} = options
-                const win = window,
-                    scrollY = win.scrollY,
-                    docEl = win.document.documentElement
-                let mt = parseInt(win.getComputedStyle(el).marginTop)
+                if(scrollY != win.scrollY){
+                    scrollY = win.scrollY
+                    //is scrolling
+                    setTimeout(()=>{
+                        checkScroll(el,tries)
+                    },10)
+                }else {
+                    let {scrollStep, scrollOffset, scrollTimeout} = options
+                    let mt = parseInt(win.getComputedStyle(el).marginTop),
+                        scrollY = win.scrollY
 
-                if(isNaN(mt)){
-                    mt = 0
-                }
+                    if (isNaN(mt)) {
+                        mt = 0
+                    }
+                    let y = Math.floor(el.getBoundingClientRect().top + win.pageYOffset + (scrollOffset || -mt)),
+                        z = docEl.scrollHeight - win.innerHeight
 
-                let y = Math.floor(el.getBoundingClientRect().top + win.pageYOffset + (scrollOffset || -mt))
-                if (y > docEl.scrollHeight - win.innerHeight) {
-                    y = docEl.scrollHeight - win.innerHeight
-                }
+                    if (y > z) {
+                        y = z
+                    }
 
-                let step = Math.abs(y - scrollY)
-                if ( step > 2) {
-                    if(!scrollStep){
+                    let step = Math.abs(y - scrollY)
+                    if (!scrollStep) {
                         scrollStep = Math.ceil(step / 20)
                     }
                     if (step > scrollStep) {
                         step = scrollStep
                     }
                     let newY = scrollY
-                    if(y > scrollY){
+                    if (y > scrollY) {
                         newY += step
-                    }else{
-                        newY -=step
+                    } else {
+                        newY -= step
                     }
                     win.scrollTo(0, newY)
-                    if (scrollY !== win.scrollY || tries < 5 ) {
+                    let tout = 0
+                    if (scrollY !== win.scrollY) {
+                        tout = scrollTimeout || 10
+                    } else if (tries < 30) {
+                        tout = 100
+                    }
+                    if (tout) {
+                        scrollY = win.scrollY
                         setTimeout(() => {
-                            checkScroll(el,tries+1)
-                        }, scrollTimeout || 10)
+                            if(scrollY === win.scrollY) {
+                                checkScroll(el, tries+1)
+                            }
+                        }, tout)
                     }
                 }
             }
         }
         DomUtil.waitForElement('#' + decodeURI(url.split('#')[1])).then((el) => {
             // check until postion is reached
-            options = Object.assign({},_app_.scrollOptions,Util.removeNullValues(options,{removeUndefined:true}))
-            checkScroll(el,0)
+            options = Object.assign({}, _app_.scrollOptions, Util.removeNullValues(options, {removeUndefined: true}))
+            checkScroll(el, 0)
 
-        }).catch(()=>{})
+        }).catch(() => {
+        })
     }
 }
