@@ -9,13 +9,15 @@ const manualScrollEvent = ()=>{
 }
 const addScrollEvent = ()=>{
     if(manualScroll===undefined) {
-        window.addEventListener('mousewheel', manualScrollEvent)
-        window.addEventListener('DOMMouseScroll', manualScrollEvent)
-        window.addEventListener('touchmove', manualScrollEvent)
+        const ael = window.addEventListener
+        ael('mousewheel', manualScrollEvent)
+        ael('DOMMouseScroll', manualScrollEvent)
+        ael('touchmove', manualScrollEvent)
     }
     manualScroll = false
 }
 const checkScroll = (el, options, tries) => {
+    // only check if element exist and user has not scrolled manually
     if (el && !manualScroll) {
         const win = window,
             docEl = win.document.documentElement
@@ -48,15 +50,18 @@ const checkScroll = (el, options, tries) => {
             newY -= step
         }
         win.scrollTo(0, newY)
-
+        let tout
         if (scrollY !== win.scrollY) {
+            tout = scrollTimeout || 10
+        } else if (tries < 30) {
+            // try to scroll a few times more in case elements are lazy loaded
+            tries++
+            tout = 50
+        }
+        if(tout) {
             setTimeout(() => {
                 checkScroll(el, options, tries)
-            }, scrollTimeout || 10)
-        } else if (tries < 30) {
-            setTimeout(() => {
-                checkScroll(el, options,tries + 1)
-            }, 50)
+            }, tout)
         }
     }
 }

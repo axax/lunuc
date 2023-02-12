@@ -54,15 +54,15 @@ const LUNUC_SERVER_NODES = process.env.LUNUC_SERVER_NODES || ''
 const BUILD_DIR = path.join(ROOT_DIR, './build')
 const STATIC_DIR = path.join(ROOT_DIR, './' + config.STATIC_DIR)
 const STATIC_TEMPLATE_DIR = path.join(ROOT_DIR, './' + config.STATIC_TEMPLATE_DIR)
-const CERT_DIR = process.env.LUNUC_CERT_DIR || SERVER_DIR
-const PKEY_FILE_DIR = path.join(CERT_DIR, './privkey.pem')
-const CERT_FILE_DIR = path.join(CERT_DIR, './cert.pem')
+const DEFAULT_CERT_DIR = process.env.LUNUC_CERT_DIR || SERVER_DIR
+const DEFAULT_PKEY_FILE_DIR = path.join(DEFAULT_CERT_DIR, './privkey.pem')
+const DEFAULT_CERT_FILE_DIR = path.join(DEFAULT_CERT_DIR, './cert.pem')
 let pkey, cert
-if (fs.existsSync(PKEY_FILE_DIR)) {
-    pkey = fs.readFileSync(PKEY_FILE_DIR)
+if (fs.existsSync(DEFAULT_PKEY_FILE_DIR)) {
+    pkey = fs.readFileSync(DEFAULT_PKEY_FILE_DIR)
 }
-if (fs.existsSync(CERT_FILE_DIR)) {
-    cert = fs.readFileSync(CERT_FILE_DIR)
+if (fs.existsSync(DEFAULT_CERT_FILE_DIR)) {
+    cert = fs.readFileSync(DEFAULT_CERT_FILE_DIR)
 }
 
 const options = {
@@ -81,10 +81,10 @@ const options = {
     }
 }
 
-if (fs.existsSync(path.join(CERT_DIR, './chain.pem'))) {
-    options.ca = fs.readFileSync(path.join(CERT_DIR, './chain.pem'))
+if (fs.existsSync(path.join(DEFAULT_CERT_DIR, './chain.pem'))) {
+    options.ca = fs.readFileSync(path.join(DEFAULT_CERT_DIR, './chain.pem'))
     if(hostrules.general && !hostrules.general.certDir){
-        hostrules.general.certDir = path.join(CERT_DIR, './chain.pem')
+        hostrules.general.certDir = path.join(DEFAULT_CERT_DIR, './chain.pem')
     }
 }
 

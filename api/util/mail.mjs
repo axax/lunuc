@@ -9,6 +9,11 @@ import nodemailer from 'nodemailer'
 
 
 export const sendMail = async (db, context, {settings, recipient, from, fromName, replyTo, subject, body, html, text, slug, headerList, attachments, req}) => {
+
+    if (!recipient || !Util.validateEmail(recipient)) {
+        return {error: `Recipient ${recipient} is not valid`}
+    }
+
     let mailSettings
     if (settings) {
         mailSettings = settings

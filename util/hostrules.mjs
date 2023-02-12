@@ -27,6 +27,30 @@ const certDirs = (domainname) => {
 }
 
 
+export const extendHostruelWithCert = (hostrule, domainname) => {
+    if (!hostrule.certDir) {
+        const dirs = certDirs(domainname)
+        if (dirs.length > 0) {
+            hostrule.certDir = CERT_BASE_DIR + dirs[0].name
+            console.log(` found newest certs for ${domainname} in ${hostrule.certDir}`)
+        }
+        // hostrule.certDir = '/etc/letsencrypt/live/' + domainname
+    }
+
+    if (hostrule.certDir) {
+
+
+        try {
+            hostrule.certContext = tls.createSecureContext({
+                key: fs.readFileSync(path.join(hostrule.certDir, './privkey.pem')),
+                cert: fs.readFileSync(path.join(hostrule.certDir, './fullchain.pem'))
+            })
+        } catch (e) {
+            console.warn(e.message)
+        }
+    }
+}
+
 const loadHostRules = (dir, withCertContext, hostrules) => {
 
     if (fs.existsSync(dir)) {
@@ -51,27 +75,7 @@ const loadHostRules = (dir, withCertContext, hostrules) => {
                     }
 
                     if (withCertContext) {
-                        if (!hostrule.certDir) {
-                            const dirs = certDirs(domainname)
-                            if(dirs.length>0){
-                                hostrule.certDir = CERT_BASE_DIR + dirs[0].name
-                                console.log(` found newest certs for ${domainname} in ${hostrule.certDir}`)
-                            }
-                           // hostrule.certDir = '/etc/letsencrypt/live/' + domainname
-                        }
-
-                        if (hostrule.certDir) {
-
-
-                            try {
-                                hostrule.certContext = tls.createSecureContext({
-                                    key: fs.readFileSync(path.join(hostrule.certDir, './privkey.pem')),
-                                    cert: fs.readFileSync(path.join(hostrule.certDir, './fullchain.pem'))
-                                })
-                            } catch (e) {
-                                console.warn(e.message)
-                            }
-                        }
+                        extendHostruelWithCert(hostrule, domainname)
                     }
                 }
             }
