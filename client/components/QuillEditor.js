@@ -87,7 +87,6 @@ class QuillEditor extends React.Component {
                 ]
                 this.quill = new Quill('#quilleditor' + this.instanceId, {
                     modules: {
-                        table: true,
                         toolbar: {
                             container: toolbar,
                             handlers: {
@@ -144,7 +143,7 @@ class QuillEditor extends React.Component {
 
             if (!window.Quill) {
                 DomUtil.addScript('/quill.min.js', {
-                    onload: () => quillIsReady
+                    onload: quillIsReady
                 })
 
 
