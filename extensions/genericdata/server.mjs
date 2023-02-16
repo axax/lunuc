@@ -360,7 +360,7 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions
 
                 }
 
-                match.definition = {$eq: ObjectId(def._id)}
+                match.definition = {$eq: new ObjectId(def._id)}
                 if (struct.fields) {
 
                     for (let i = 0; i < struct.fields.length; i++) {
@@ -544,7 +544,7 @@ Hook.on('typeBeforeCreate', async ({db, type, data}) => {
                     const field = struct.fields[i]
                     if (field.autoinc) {
 
-                        const last = await db.collection('GenericData').find({definition: ObjectId(data.definition)}).sort({_id: -1}).limit(1).toArray()
+                        const last = await db.collection('GenericData').find({definition: new ObjectId(data.definition)}).sort({_id: -1}).limit(1).toArray()
                         if (last && last.length) {
                             try {
                                 const nr = parseFloat(last[0].data[field.name])
@@ -575,7 +575,7 @@ Hook.on('typeBeforeCreate', async ({db, type, data}) => {
                     if (dvalue && !data[key]) {
 
                         if( dvalue.constructor === Array){
-                            data[key] = dvalue.map(f=>ObjectId(f))
+                            data[key] = dvalue.map(f=>new ObjectId(f))
                         }else {
 
                             data[key] = dvalue

@@ -219,7 +219,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     const map = {}
 
                     if (Util.isUserLoggedIn(context)) {
-                        const match = {createdBy: ObjectId(context.id), key: {$in: segment.keyValues}}
+                        const match = {createdBy: new ObjectId(context.id), key: {$in: segment.keyValues}}
                         const result = await GenericResolver.entities(db, {headers: req.headers, context}, 'KeyValue', ['key', 'value'], {
                             match
                         })

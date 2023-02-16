@@ -18,9 +18,9 @@ const updateKeyValueGlobal = async ({_id, key, value, ispublic, createdBy}, {con
         }
 
         if (createdBy) {
-            dataToUpdate.createdBy = ObjectId(createdBy)
+            dataToUpdate.createdBy = new ObjectId(createdBy)
         } else if (!_id) {
-            dataToUpdate.createdBy = ObjectId(context.id)
+            dataToUpdate.createdBy = new ObjectId(context.id)
             dataToUpdate.ispublic = false
         }
 
@@ -57,7 +57,7 @@ export const keyvalueResolver = (db) => ({
             const match = {}
 
             if (!all || !await Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)) {
-                match.createdBy = ObjectId(context.id)
+                match.createdBy = new ObjectId(context.id)
             }
             if (keys && keys.length > 0) {
                 match.key = {$in: keys}
@@ -130,7 +130,7 @@ export const keyvalueResolver = (db) => ({
         keyValue: async ({key}, {context}) => {
             const keyValues = await GenericResolver.entities(db, context, 'KeyValue', ['key', 'value'], {
                 match: {
-                    createdBy: ObjectId(context.id),
+                    createdBy: new ObjectId(context.id),
                     key
                 }
             })
@@ -151,7 +151,7 @@ export const keyvalueResolver = (db) => ({
                 _id,
                 key,
                 value,
-                createdBy: (createdBy ? ObjectId(createdBy) : createdBy)
+                createdBy: (createdBy ? new ObjectId(createdBy) : createdBy)
             })
         },
         deleteKeyValue: async ({_id}, {context}) => {
@@ -191,7 +191,7 @@ export const keyvalueResolver = (db) => ({
                     value,
                     status: 'created',
                     createdBy: {
-                        _id: ObjectId(context.id),
+                        _id: new ObjectId(context.id),
                         username: context.username
                     },
                 }
@@ -218,7 +218,7 @@ export const keyvalueResolver = (db) => ({
                     value,
                     status: 'created',
                     createdBy: {
-                        _id: ObjectId(context.id),
+                        _id: new ObjectId(context.id),
                         username: context.username
                     }
                 }
@@ -229,13 +229,13 @@ export const keyvalueResolver = (db) => ({
 
             const collection = db.collection('KeyValue')
 
-            const deletedResult = await collection.deleteOne({createdBy: ObjectId(context.id), key})
+            const deletedResult = await collection.deleteOne({createdBy: new ObjectId(context.id), key})
 
             if (deletedResult.deletedCount) {
                 return {
                     key,
                     createdBy: {
-                        _id: ObjectId(context.id),
+                        _id: new ObjectId(context.id),
                         username: context.username
                     },
                     status: 'deleted'
@@ -244,7 +244,7 @@ export const keyvalueResolver = (db) => ({
                 return {
                     key,
                     createdBy: {
-                        _id: ObjectId(context.id),
+                        _id: new ObjectId(context.id),
                         username: context.username
                     },
                     status: 'error'

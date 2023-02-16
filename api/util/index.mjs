@@ -22,9 +22,9 @@ const Util = {
     userOrAnonymousId: async (db, context) => {
         if (!context || !context.id) {
             const anonymousContext = await Util.anonymousUserContext(db)
-            return ObjectId(anonymousContext.id)
+            return new ObjectId(anonymousContext.id)
         } else {
-            return ObjectId(context.id)
+            return new ObjectId(context.id)
         }
     },
     userOrAnonymousContext: async (db, context) => {
@@ -56,9 +56,9 @@ const Util = {
             Cache.clearStartWith('KeyValue_' + context.id + '_' + key)
 
             return db.collection('KeyValue').updateOne({
-                createdBy: ObjectId(context.id),
+                createdBy: new ObjectId(context.id),
                 key
-            }, {$set: {createdBy: ObjectId(context.id), key, value}}, {upsert: true})
+            }, {$set: {createdBy: new ObjectId(context.id), key, value}}, {upsert: true})
         }
     },
     setKeyValueGlobal: async (db, context, key, value, options) => {
@@ -116,7 +116,7 @@ const Util = {
         }
 
         const keyvalues = (await db.collection('KeyValue').find({
-            createdBy: ObjectId(context.id),
+            createdBy: new ObjectId(context.id),
             key: {$in: keys}
         }).toArray())
 
@@ -241,7 +241,7 @@ const Util = {
         const cacheKeyUser = 'User' + id
         let user = Cache.get(cacheKeyUser)
         if (!user) {
-            user = (await db.collection('User').findOne({_id: ObjectId(id)}))
+            user = (await db.collection('User').findOne({_id: new ObjectId(id)}))
             Cache.set(cacheKeyUser, user, 86400000) // cache expires in 1 day
         }
         return user
@@ -256,10 +256,10 @@ const Util = {
         }
 
         const ids = []
-        ids.push(ObjectId(id))
+        ids.push(new ObjectId(id))
         if (user && user.junior) {
             user.junior.forEach(jun => {
-                ids.push(ObjectId(jun))
+                ids.push(new ObjectId(jun))
             })
         }
         return ids
@@ -337,7 +337,7 @@ const Util = {
 
         if (!userRole) {
             if (id) {
-                userRole = (await db.collection('UserRole').findOne({_id: ObjectId(id)}))
+                userRole = (await db.collection('UserRole').findOne({_id: new ObjectId(id)}))
             }
             // fallback to minimal user role
             if (userRole === null) {

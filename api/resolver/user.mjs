@@ -86,12 +86,12 @@ const createUser = async ({username, role, junior, group, setting, password, lan
     let roleId
     if(role){
         if (await Util.userHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)) {
-            roleId = ObjectId(role)
+            roleId = new ObjectId(role)
         }else{
             const roleEntry = await Util.getUserRoles(db, role)
 
             if(['subscriber',context.role].indexOf(roleEntry.name)>=0) {
-                roleId = ObjectId(role)
+                roleId = new ObjectId(role)
             }
         }
     }
@@ -103,25 +103,25 @@ const createUser = async ({username, role, junior, group, setting, password, lan
     const juniorIds = []
     if (junior && await Util.userHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)) {
         junior.forEach(sup => {
-            juniorIds.push(ObjectId(sup))
+            juniorIds.push(new ObjectId(sup))
         })
     }
     const groupIds = []
     if (group && (opts.skipCheck || await Util.userHasCapability(db, context, CAPABILITY_MANAGE_USER_GROUP))) {
         group.forEach(sup => {
-            groupIds.push(ObjectId(sup))
+            groupIds.push(new ObjectId(sup))
         })
     } else if (context.group && await Util.userHasCapability(db, context, CAPABILITY_MANAGE_SAME_GROUP)) {
         // copy group of current user
         context.group.forEach(g => {
-            groupIds.push(ObjectId(g))
+            groupIds.push(new ObjectId(g))
         })
     }
 
     const settingsIds = []
     if (setting) {
         setting.forEach(s => {
-            settingsIds.push(ObjectId(s))
+            settingsIds.push(new ObjectId(s))
         })
     }
 
@@ -256,7 +256,7 @@ export const userResolver = (db) => ({
             }
 
             Util.checkIfUserIsLoggedIn(context)
-            const user = (await db.collection('User').findOne({_id: ObjectId(context.id)}))
+            const user = (await db.collection('User').findOne({_id: new ObjectId(context.id)}))
             if (!user) {
                 throw new Error('User doesn\'t exist')
             } else {
@@ -276,7 +276,7 @@ export const userResolver = (db) => ({
                 if( user.picture){
                     if(hasQueryField(fieldNodes,'me.picture.name')) {
                         // resolve whole picture
-                        user.picture = await db.collection('Media').findOne({_id: ObjectId(user.picture)})
+                        user.picture = await db.collection('Media').findOne({_id: new ObjectId(user.picture)})
                     }else{
                         user.picture = {_id: user.picture}
                     }
@@ -293,7 +293,7 @@ export const userResolver = (db) => ({
             let users = (await userCollection.aggregate([
                 /*{
                  $match: {
-                 users: {$in: [ObjectId(context.id)]}
+                 users: {$in: [new ObjectId(context.id)]}
                  }
                  },*/
                 {
@@ -360,7 +360,7 @@ export const userResolver = (db) => ({
                 if (result.user.requestNewPassword) {
                     // generate reset token
                     const resetToken = crypto.randomBytes(16).toString("hex")
-                    await db.collection('User').findOneAndUpdate({_id: ObjectId(result.user._id)}, {
+                    await db.collection('User').findOneAndUpdate({_id: new ObjectId(result.user._id)}, {
                         $set: {
                             passwordReset: new Date().getTime(),
                             resetToken
@@ -597,7 +597,7 @@ export const userResolver = (db) => ({
                 user.requestNewPassword = requestNewPassword
             }
             if (picture !== undefined) {
-                user.picture = picture ? ObjectId(picture) : null
+                user.picture = picture ? new ObjectId(picture) : null
             }
 
             if (username) {
@@ -654,14 +654,14 @@ export const userResolver = (db) => ({
                 if(['subscriber',context.role].indexOf(roleEntry.name)<0) {
                     await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)
                 }
-                user.role = ObjectId(role)
+                user.role = new ObjectId(role)
             }
             if (junior !== undefined) {
                 await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)
                 user.junior = []
                 if (junior) {
                     junior.forEach(sup => {
-                        user.junior.push(ObjectId(sup))
+                        user.junior.push(new ObjectId(sup))
                     })
                 }
             }
@@ -669,7 +669,7 @@ export const userResolver = (db) => ({
                 user.setting = []
                 if (setting) {
                     setting.forEach(s => {
-                        user.setting.push(ObjectId(s))
+                        user.setting.push(new ObjectId(s))
                     })
                 }
             }
@@ -679,7 +679,7 @@ export const userResolver = (db) => ({
                 user.group = []
                 if (group) {
                     group.forEach(sup => {
-                        user.group.push(ObjectId(sup))
+                        user.group.push(new ObjectId(sup))
                     })
                 }
             }
@@ -687,14 +687,14 @@ export const userResolver = (db) => ({
             const userCanManageOthers = await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
 
 
-            const match = {_id: ObjectId(_id)}
+            const match = {_id: new ObjectId(_id)}
 
             if (!userCanManageOthers && _id !== context.id) {
 
                 const userCanManageSameGroup = await Util.userHasCapability(db, context, CAPABILITY_MANAGE_SAME_GROUP)
 
                 if (userCanManageSameGroup) {
-                    match.group = {$in: context.group.map(f => ObjectId(f))}
+                    match.group = {$in: context.group.map(f => new ObjectId(f))}
                 } else {
                     throw new ApiError('User can not change other users')
                 }
@@ -749,7 +749,7 @@ export const userResolver = (db) => ({
             return await GenericResolver.updateEnity(db, context, 'UserSetting', {
                 _id,
                 name,
-                createdBy:(createdBy?ObjectId(createdBy):createdBy)
+                createdBy:(createdBy?new ObjectId(createdBy):createdBy)
             })
 
         },
@@ -769,7 +769,7 @@ export const userResolver = (db) => ({
 
 
                 if (user.picture !== undefined) {
-                    user.picture = user.picture && ObjectId.isValid(user.picture) ? ObjectId(user.picture) : null
+                    user.picture = user.picture && ObjectId.isValid(user.picture) ? new ObjectId(user.picture) : null
                 }
 
 

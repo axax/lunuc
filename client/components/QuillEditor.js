@@ -57,13 +57,9 @@ class QuillEditor extends React.Component {
 
             const quillIsReady = () => {
 
-                if (!window.Quill || !window.quillTableUI) return
+                if (!window.Quill) return
 
                 this.isInit = true
-
-                Quill.register({
-                    'modules/tableUI': quillTableUI.default
-                }, true)
 
 
                 const toolbar = this.props.toolbar || [
@@ -92,14 +88,9 @@ class QuillEditor extends React.Component {
                 this.quill = new Quill('#quilleditor' + this.instanceId, {
                     modules: {
                         table: true,
-                        tableUI: true,
                         toolbar: {
                             container: toolbar,
                             handlers: {
-                                bettertable: () => {
-                                    let tableModule = this.quill.getModule('table')
-                                    tableModule.insertTable(3, 3)
-                                },
                                 showhtml: () => {
                                     if (this.txtArea.style.display === '') {
                                         const html = this.txtArea.value
@@ -152,12 +143,8 @@ class QuillEditor extends React.Component {
             }
 
             if (!window.Quill) {
-                DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/quill/2.0.0-dev.3/quill.min.js', {
-                    onload: () => {
-                        DomUtil.addScript('https://unpkg.com/quill-table-ui@1.0.5/dist/umd/index.js', {
-                            onload: quillIsReady
-                        })
-                    }
+                DomUtil.addScript('/quill.min.js', {
+                    onload: () => quillIsReady
                 })
 
 
@@ -166,8 +153,7 @@ class QuillEditor extends React.Component {
             }
         }
         if (QuillEditor.loadedStyles.indexOf(theme) < 0) {
-            DomUtil.addStyle(`https://cdnjs.cloudflare.com/ajax/libs/quill/2.0.0-dev.3/quill.${theme}.min.css`, {id: 'editor' + theme})
-            DomUtil.addStyle('https://unpkg.com/quill-table-ui@1.0.5/dist/index.css', {id: 'editor-better-table'})
+            DomUtil.addStyle(`/quill.${theme}.css`, {id: 'editor' + theme})
             QuillEditor.loadedStyles.push(theme)
         }
 

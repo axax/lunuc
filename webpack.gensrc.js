@@ -380,10 +380,10 @@ function gensrcExtension(name, options) {
                     if (refResolversObjectId !== '') refResolversObjectId += ','
                     refResolvers += field.name
                     if (field.multi) {
-                        refResolversObjectId += field.name + ':' + '(' + field.name + '?' + field.name + '.reduce((o,id)=>{o.push(ObjectId(id));return o},[]):' + field.name + ')'
+                        refResolversObjectId += field.name + ':' + '(' + field.name + '?' + field.name + '.reduce((o,id)=>{o.push(new ObjectId(id));return o},[]):' + field.name + ')'
 
                     } else {
-                        refResolversObjectId += field.name + ':' + '(' + field.name + '?' + 'ObjectId(' + field.name + '):' + field.name + ')'
+                        refResolversObjectId += field.name + ':' + '(' + field.name + '?' + 'new ObjectId(' + field.name + '):' + field.name + ')'
                     }
                 }
 
@@ -482,7 +482,7 @@ function gensrcExtension(name, options) {
             return result
         },
         update${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}${type.noUserRelation ? '' : 'createdBy,'}_meta,...rest}, {context}, options) => {
-            const result =  await GenericResolver.updateEnity(db, context, '${type.name}', {...rest,_meta,${type.noUserRelation ? '' : 'createdBy:(createdBy?ObjectId(createdBy):createdBy),'}${refResolversObjectId}}, options)
+            const result =  await GenericResolver.updateEnity(db, context, '${type.name}', {...rest,_meta,${type.noUserRelation ? '' : 'createdBy:(createdBy?new ObjectId(createdBy):createdBy),'}${refResolversObjectId}}, options)
             if(options && options.publish!==false){
                 ${type.subscription === false ? '//' : ''}pubsubHooked.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {_meta, action: 'update', data: [result]}}, db, context)
             }

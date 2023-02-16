@@ -342,7 +342,7 @@ export default db => ({
             return await GenericResolver.createEntity(db, req, 'CmsPage', {
                 slug,
                 ...rest,
-                ownerGroup:(ownerGroup?ownerGroup.reduce((o,id)=>{o.push(ObjectId(id));return o},[]):ownerGroup),
+                ownerGroup:(ownerGroup?ownerGroup.reduce((o,id)=>{o.push(new ObjectId(id));return o},[]):ownerGroup),
                 dataResolver: DEFAULT_DATA_RESOLVER,
                 template: DEFAULT_TEMPLATE,
                 script: DEFAULT_SCRIPT,
@@ -372,8 +372,8 @@ export default db => ({
 
             const result = await GenericResolver.updateEnity(db, context, 'CmsPage', {
                 _id,
-                ownerGroup:(ownerGroup?ownerGroup.reduce((o,id)=>{o.push(ObjectId(id));return o},[]):ownerGroup),
-                createdBy: (createdBy ? ObjectId(createdBy) : createdBy), ...rest
+                ownerGroup:(ownerGroup?ownerGroup.reduce((o,id)=>{o.push(new ObjectId(id));return o},[]):ownerGroup),
+                createdBy: (createdBy ? new ObjectId(createdBy) : createdBy), ...rest
             })
 
             result.slug = slug
