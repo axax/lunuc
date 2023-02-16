@@ -389,9 +389,7 @@ class JsonDom extends React.Component {
 
     // is called after render
     componentDidUpdate(prevProps, prevState) {
-        if (this.props.style !== prevProps.style) {
-            this.addStyle(this.props)
-        }
+        this.addStyle(this.props, false, this.props.style === prevProps.style)
         this.triggerMountEvent()
         this.runJsEvent('update', true)
         this.moveInHtmlComponents()
@@ -563,8 +561,11 @@ class JsonDom extends React.Component {
         return {id, isUniqueStyle, needParsing}
     }
 
-    addStyle(props, styleEdited) {
+    addStyle(props, styleEdited, styleIsSame) {
         let {id, isUniqueStyle, needParsing} = this.getMainStyleId(props)
+        if(styleIsSame && (!isUniqueStyle || styleEdited)){
+            return
+        }
         if(isUniqueStyle && !styleEdited && document.getElementById(id)){
             // style already added
             return
