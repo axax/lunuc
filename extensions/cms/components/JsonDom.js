@@ -389,7 +389,10 @@ class JsonDom extends React.Component {
 
     // is called after render
     componentDidUpdate(prevProps, prevState) {
-        this.addStyle(this.props, false, this.props.style === prevProps.style)
+        if (this.props.style !== prevProps.style) {
+            this.addStyle(this.props)
+        }
+
         this.triggerMountEvent()
         this.runJsEvent('update', true)
         this.moveInHtmlComponents()
@@ -561,17 +564,23 @@ class JsonDom extends React.Component {
         return {id, isUniqueStyle, needParsing}
     }
 
-    addStyle(props, styleEdited, styleIsSame) {
+    addStyle(props, styleEdited) {
         let {id, isUniqueStyle, needParsing} = this.getMainStyleId(props)
-        if(styleIsSame && (!isUniqueStyle || styleEdited)){
-            return
-        }
-        if(isUniqueStyle && !styleEdited && document.getElementById(id)){
-            // style already added
-            return
+        if(isUniqueStyle && !styleEdited){
+            let styleDom = document.getElementById(id)
+            if(styleDom) {
+
+                // add instanceId to data attribute
+                const dset = styleDom.dataset
+                const ids = dset.jsonDomId.split(' ')
+                if (ids.indexOf(this.instanceId+'') < 0) {
+                    dset.jsonDomId += ` ${this.instanceId}`
+                }
+                // style already added
+                return
+            }
         }
         const {style} = props
-
         if (style) {
             let parsedStyle
             if (needParsing) {
@@ -651,6 +660,18 @@ class JsonDom extends React.Component {
             butIds = [this.getMainStyleId(this.props).id]
         }
         DomUtil.removeElements(`[data-json-dom-id="${this.instanceId}"]`, butIds)
+
+        // remove instanceId from data attribute
+        const els = document.querySelectorAll(`[data-json-dom-id~="${this.instanceId}"]`)
+        els.forEach(el=>{
+            const ids = el.dataset.jsonDomId.split(' ')
+            const index = ids.indexOf(this.instanceId+'')
+            if (index !== -1) {
+                ids.splice(index, 1)
+            }
+            el.dataset.jsonDomId = ids.join(' ')
+        })
+
     }
 
     handleBindingChange(cb, event, value) {
