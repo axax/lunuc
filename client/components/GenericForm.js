@@ -1024,6 +1024,9 @@ class GenericForm extends React.Component {
             currentFormFields.push(<TypePicker
                 className={field.className}
                 value={(value ? (value.constructor === Array ? value : [value]) : null)}
+                dataset={{
+                    'language': languageCode
+                }}
                 error={!!this.state.fieldErrors[fieldKey]}
                 helperText={this.state.fieldErrors[fieldKey]}
                 onChange={this.handleInputChange}

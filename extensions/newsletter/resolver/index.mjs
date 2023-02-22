@@ -6,6 +6,7 @@ import {getHostFromHeaders} from '../../../util/host.mjs'
 import config from '../../../gensrc/config.mjs'
 import Hook from '../../../util/hook.cjs'
 import {CAPABILITY_SEND_NEWSLETTER} from '../constants/index.mjs'
+import path from 'path'
 
 export default db => ({
     Query: {
@@ -88,6 +89,7 @@ export default db => ({
                     let finalSubject = subject,
                         finalText = text,
                         finalHtml = html,
+                        finalAttachments,
                         subLang = sub.language || config.DEFAULT_LANGUAGE
 
                     if(languageToSend.length>0 && languageToSend.indexOf(subLang)<0){
@@ -104,6 +106,19 @@ export default db => ({
                         }
                         if(mailingData.html && html === undefined){
                             finalHtml = mailingData.html
+                        }
+                        if(mailingData.attachment && mailingData.attachment[subLang]){
+                            finalAttachments = []
+                            const upload_dir = path.join(path.resolve(), config.UPLOAD_DIR)
+                            for(const id of mailingData.attachment[subLang]){
+                                const media = await db.collection('Media').findOne({_id: id})
+                                if(media){
+                                    finalAttachments.push({
+                                        path: path.join(upload_dir, './' + media._id),
+                                        filename: media.name
+                                    })
+                                }
+                            }
                         }
                     }
 
@@ -143,6 +158,7 @@ export default db => ({
                         slug: template,
                         recipient: sub.email,
                         subject: finalSubject,
+                        attachments: finalAttachments,
                         body,
                         text: finalText,
                         headerList,

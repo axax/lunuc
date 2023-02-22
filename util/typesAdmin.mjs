@@ -153,9 +153,16 @@ export const referencesToIds = (data, type) => {
         if (item !== undefined && fieldDefinition) {
 
             if (fieldDefinition.localized) {
-                newData[key] = item
-                if (item) {
-                    delete newData[key].__typename //= 'LocalizedStringInput'
+                if(fieldDefinition.reference){
+                    newData[key] = Object.keys(item).reduce((acc,key)=>{
+                        acc[key]=item[key].map(it=>it._id)
+                        return acc
+                    },{})
+                }else {
+                    newData[key] = item
+                    if (item) {
+                        delete newData[key].__typename //= 'LocalizedStringInput'
+                    }
                 }
             } else if (item && !fieldDefinition.enum && item.constructor === Array) {
 

@@ -7,34 +7,41 @@
         {
           "name": "name",
           "required": true,
-          "clone": "${name} (copy)"
+          "clone": "${name} (copy)",
+          "index": 1
         },
         {
           "name": "script",
-          "uitype": "jseditor"
+          "uitype": "jseditor",
+          "alwaysLoad": false
         },
         {
           "name": "scriptLanguage",
           "enum": [
             "Javascript",
             "Python"
-          ]
+          ],
+          "index": 1
         },
         {
           "name": "expression",
-          "label": "Cron expression"
+          "label": "Cron expression",
+          "index": 1
         },
         {
           "name": "execfilter",
-          "label": "Execution filter"
+          "label": "Execution filter",
+          "index": 1
         },
         {
           "name": "active",
-          "type": "Boolean"
+          "type": "Boolean",
+          "index": 1
         },
         {
           "name": "noEntry",
-          "type": "Boolean"
+          "type": "Boolean",
+          "index": 1
         }
       ]
     },

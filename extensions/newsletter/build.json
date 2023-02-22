@@ -170,6 +170,19 @@
           "localized": true
         },
         {
+          "tab": "attachment",
+          "name": "attachment",
+          "type": "Media",
+          "localized": true,
+          "hideColumnInTypes": true,
+          "fields": [
+            "name",
+            "mimeType",
+            "src"
+          ],
+          "index": 1
+        },
+        {
           "name": "contextProps",
           "uitype": "json",
           "hideColumnInTypes": true,

@@ -7,7 +7,8 @@
         {
           "name": "name",
           "required": true,
-          "clone": "${name} (copy)"
+          "clone": "${name} (copy)",
+          "index": 1
         },
         {
           "name": "hook",
@@ -33,7 +34,8 @@
             "FrontendAdmin",
             "OnMail",
             "beforeMailSend"
-          ]
+          ],
+          "index": 1
         },
         {
           "name": "script",
@@ -41,11 +43,13 @@
         },
         {
           "name": "execfilter",
-          "label": "Execution filter"
+          "label": "Execution filter",
+          "index": 1
         },
         {
           "name": "active",
-          "type": "Boolean"
+          "type": "Boolean",
+          "index": 1
         }
       ]
     }

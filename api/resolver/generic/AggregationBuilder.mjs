@@ -77,8 +77,14 @@ export default class AggregationBuilder {
 
 
     // Mongodb joins
-    createAndAddLookup({type, name, multi}, lookups, {usePipeline}) {
+    createAndAddLookup({type, name, multi, localized}, lookups, {usePipeline, language}) {
 
+        if(localized) {
+            for (const lang of config.LANGUAGES) {
+                this.createAndAddLookup({type,name,multi}, lookups, {usePipeline, language: lang})
+            }
+            return {}
+        }
 
         let lookup
 
@@ -121,9 +127,9 @@ export default class AggregationBuilder {
             lookup = {
                 $lookup: {
                     from: type,
-                    localField: name,
+                    localField: language?`${name}.${language}`:name,
                     foreignField: '_id',
-                    as: name
+                    as: language?`${name}_${language}`:name
                 }
             }
         }
@@ -132,7 +138,15 @@ export default class AggregationBuilder {
         return {lookup}
     }
 
-    createGroup({name, multi}) {
+    createGroup({name, multi, localized, reference}) {
+        if(reference && localized){
+            const group = {'$first': {}}
+            for (const lang of config.LANGUAGES) {
+                group.$first[lang] = '$' + name+'_'+lang
+            }
+            return group
+        }
+
         return {'$first': multi ? '$' + name : {$arrayElemAt: ['$' + name, 0]}}
     }
 
@@ -354,6 +368,7 @@ export default class AggregationBuilder {
             offset = this.getOffset(),
             page = this.getPage(),
             sort = this.getSort(),
+            facetSort = sort._id ? sort : Object.assign({}, sort, {_id:-1}),
             typeFields = getFormFieldsByType(this.type),
             filters = this.getParsedFilter(this.options.filter),
             resultFilters = this.getParsedFilter(this.options.resultFilter),
@@ -474,7 +489,7 @@ export default class AggregationBuilder {
                 dataFacetQuery.push({$limit: limit})
 
             } else {
-                dataFacetQuery.push({$sort: sort})
+                dataFacetQuery.push({$sort: facetSort})
                 dataFacetQuery.push({$skip: offset})
                 dataFacetQuery.push({$limit: limit})
             }
@@ -544,7 +559,7 @@ export default class AggregationBuilder {
         }
 
         // sort again within the result
-        dataFacetQuery.push({$sort: sort})
+        dataFacetQuery.push({$sort: facetSort})
 
         // project
         if (projectResult) {
@@ -702,9 +717,10 @@ export default class AggregationBuilder {
                 } else {
                     const {lookup} = this.createAndAddLookup(fieldDefinition, lookups, {usePipeline})
 
-                    if (lookup.$lookup.pipeline) {
+                    if (lookup && lookup.$lookup.pipeline) {
                         lookup.$lookup.pipeline.push({$project: projectPipeline})
                     }
+
 
                     groups[fieldName] = this.createGroup(fieldDefinition)
 

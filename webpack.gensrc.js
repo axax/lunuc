@@ -216,7 +216,15 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
         })
 
         /* create schema */
-        let schemaContent = `${GENSRC_HEADER}export default \`type LocalizedString {\n\t${APP_CONFIG.options.LANGUAGES.join(': String\n\t')}: String\n}\n\ninput LocalizedStringInput {\n\t${APP_CONFIG.options.LANGUAGES.join(': String\n\t')}: String\n}\``
+        let schemaContent = `${GENSRC_HEADER}export default \`type LocalizedString {
+    ${APP_CONFIG.options.LANGUAGES.join(': String\n\t')}: String
+}
+input LocalizedStringInput {
+    ${APP_CONFIG.options.LANGUAGES.join(': String\n\t')}: String
+}
+input LocalizedRefInput {
+    ${APP_CONFIG.options.LANGUAGES.join(': [ID]\n\t')}: [ID]
+}\``
         fs.writeFile(GENSRC_PATH + "/schema.mjs", schemaContent, function (err) {
             if (err) {
                 return console.log(err)
@@ -379,9 +387,10 @@ function gensrcExtension(name, options) {
                     if (refResolvers !== '') refResolvers += ','
                     if (refResolversObjectId !== '') refResolversObjectId += ','
                     refResolvers += field.name
-                    if (field.multi) {
+                    if(field.localized){
+                        refResolversObjectId += field.name + ':' + '(' + field.name + '?Object.keys(' + field.name + ').reduce((acc,key)=>{acc[key]='+field.name+'[key].map(id=>new ObjectId(id)); return acc},{}):' + field.name + ')'
+                    } else if (field.multi) {
                         refResolversObjectId += field.name + ':' + '(' + field.name + '?' + field.name + '.reduce((o,id)=>{o.push(new ObjectId(id));return o},[]):' + field.name + ')'
-
                     } else {
                         refResolversObjectId += field.name + ':' + '(' + field.name + '?' + 'new ObjectId(' + field.name + '):' + field.name + ')'
                     }
@@ -394,7 +403,14 @@ function gensrcExtension(name, options) {
                 if (resolverFields !== '') resolverFields += ','
 
                 let newInsertField = ''
-                if (field.localized && !field.multi) { // no support for multi yet
+                if (field.localized && field.type) {
+                    typeSchema += '\t' + field.name + ': Localized'+field.type+'\n'
+                    resolverFields += '\'' + field.name + '\''
+                    if (!field.readOnly) {
+                        newInsertField = field.name + ': LocalizedRefInput' + (field.required ? '!' : '')
+                        updateFields += field.name + ': LocalizedRefInput'
+                    }
+                }else if (field.localized && !field.multi) { // no support for multi yet
                     typeSchema += '\t' + field.name + ': LocalizedString\n'
                     resolverFields += '\'' + field.name + '\''
                     if (!field.readOnly) {

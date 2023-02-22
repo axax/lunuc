@@ -158,7 +158,7 @@ class TypePicker extends React.Component {
     }
 
     render() {
-        const {placeholder, multi, error, helperText, className, sx, fullWidth, linkTemplate, pickerField, metaFields, type, filter, label, genericType, readOnly} = this.props
+        const {inputProps, placeholder, multi, error, helperText, className, sx, fullWidth, linkTemplate, pickerField, metaFields, type, filter, label, genericType, readOnly} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
         console.log(`render TypePicker | hasFocus=${hasFocus} | pickerField=${pickerField}`, data)
         const openTypeWindow = (value) => {
@@ -182,6 +182,7 @@ class TypePicker extends React.Component {
                 }, 500)
             }
         }
+        console.log(inputProps)
         return <StyledForm fullWidth={fullWidth} className={className} sx={sx}>
             {(!value.length || multi) && !readOnly ?
                 <TextField error={error}
@@ -199,6 +200,7 @@ class TypePicker extends React.Component {
                                shrink: true,
 
                            }}
+                           inputProps={inputProps}
                            InputProps={{
                                endAdornment: (
                                    <InputAdornment position="end">
@@ -211,7 +213,7 @@ class TypePicker extends React.Component {
                                            <SearchIcon/>
                                        </IconButton>
                                    </InputAdornment>
-                               ),
+                               )
                            }}
                 /> : <InputLabel shrink>{label}</InputLabel>}
 
@@ -301,7 +303,8 @@ class TypePicker extends React.Component {
                                                          this.props.onChange({
                                                              target: {
                                                                  value: newValue,
-                                                                 name: this.props.name
+                                                                 name: this.props.name,
+                                                                 dataset:this.props.dataset
                                                              }
                                                          })
                                                          this.setState({
@@ -359,7 +362,7 @@ class TypePicker extends React.Component {
                                                  newValue.splice(targetIndex > sourceIndex ? targetIndex - 1 : targetIndex, 0, element)
 
                                                  this.setState({value: newValue})
-                                                 this.props.onChange({target: {value: newValue, name: this.props.name}})
+                                                 this.props.onChange({target: {value: newValue, name: this.props.name, dataset:this.props.dataset}})
 
                                              }}
                                              onDragOver={(e) => {
@@ -385,7 +388,7 @@ class TypePicker extends React.Component {
         value.splice(idx, 1)
 
         this.setState({value})
-        this.props.onChange({target: {value, name: this.props.name}})
+        this.props.onChange({target: {value, name: this.props.name, dataset:this.props.dataset}})
 
     }
 
@@ -434,7 +437,7 @@ class TypePicker extends React.Component {
                 value = [...this.state.value,...value]
             }
 
-            onChange({target: {value, name: name}, rawValue})
+            onChange({target: {value, name: name,dataset:this.props.dataset}, rawValue})
 
 
             this.setState({value, textValue: '', hastFocus: false, data: null})

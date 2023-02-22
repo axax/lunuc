@@ -1,5 +1,10 @@
 export default `
-
+    type LocalizedMedia {
+        de: [Media]
+        en: [Media]
+        fr: [Media]
+        it: [Media]
+    }
 
     type CleanUpMediaResult{
         status: String

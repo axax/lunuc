@@ -8,7 +8,7 @@ import {_t} from 'util/i18n.mjs'
 import Util from '../../util/index.mjs'
 
 
-const compareDataReferences = (prev, current) => {
+const compareDataReferences = (prev, current, fieldDefinition) => {
 
     if (!prev || !current) {
         // an empty array is same as null
@@ -17,6 +17,17 @@ const compareDataReferences = (prev, current) => {
         }
 
         return prev !== current
+    }
+    if(fieldDefinition && fieldDefinition.reference && fieldDefinition.localized){
+        const langs = Object.keys(prev)
+        for(const lang of langs){
+            if(compareDataReferences(prev[lang],current[lang])){
+                return true
+            }
+        }
+
+        return false
+
     }
 
     const prevStr = prev.constructor === String ? prev : (prev.constructor === Array ? prev.map(f => f._id ? f._id : f).join('') : prev._id)
@@ -142,7 +153,6 @@ class TypeEdit extends React.Component {
                 }
             })
 
-
             // we need another object with the already resolved references for the ui
             const optimisticData = Object.assign({}, editedData)
 
@@ -199,9 +209,8 @@ class TypeEdit extends React.Component {
                         const before = dataToEdit[k]
                         const fieldDefinition = formFields[k]
                         if (fieldDefinition.reference) {
-                            //console.log(before, editedDataWithRefs[k])
-
-                            if (compareDataReferences(before, editedDataWithRefs[k])) {
+                            if (compareDataReferences(before, editedDataWithRefs[k], fieldDefinition)) {
+                                console.log(editedDataWithRefs[k])
                                 editedDataToUpdate[k] = editedDataWithRefs[k]
                             }
                         } else if (fieldDefinition.type === 'Object') {
