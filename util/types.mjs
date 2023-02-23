@@ -23,7 +23,6 @@ export const getTypes = () => {
                     }
                     type.fields.forEach(field => {
                         if (field.enum === '$TYPES') {
-                            console.log(type)
                             field.enum = allTypes
                         }
                     })

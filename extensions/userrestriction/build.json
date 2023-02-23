@@ -1,0 +1,48 @@
+{
+  "types": [
+    {
+      "name": "UserRestriction",
+      "fields": [
+        {
+          "name": "name"
+        },
+        {
+          "name": "active",
+          "type": "Boolean",
+          "index": 1
+        },
+        {
+          "name": "user",
+          "type": "User",
+          "fields": [
+            "username"
+          ],
+          "multi": true
+        },
+        {
+          "name": "userGroup",
+          "type": "UserGroup",
+          "fields": [
+            "name"
+          ],
+          "multi": true
+        },
+        {
+          "name": "type",
+          "enum": "$TYPES",
+          "multi": true
+        },
+        {
+          "name": "mode",
+          "enum": ["extend"]
+        },
+        {
+          "name": "filter",
+          "label": "Filter",
+          "uitype": "json",
+          "type": "Object"
+        }
+      ]
+    }
+  ]
+}

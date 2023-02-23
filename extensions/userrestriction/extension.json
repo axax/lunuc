@@ -1,0 +1,5 @@
+{
+  "name": "User restriction",
+  "description": "Create item-based restriction for users or user groups",
+  "author": "Simon Schärer"
+}
