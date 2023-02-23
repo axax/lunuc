@@ -3,9 +3,6 @@
     {
       "name": "Comment",
       "creation": "allow",
-      "access": {
-        "create": "user"
-      },
       "fields": [
         {
           "name": "key",

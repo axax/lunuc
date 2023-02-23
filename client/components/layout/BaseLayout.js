@@ -342,7 +342,7 @@ const BaseLayout = props => {
                                 ]}/>}
                                 headerRight={headerRight}>
 
-            {!userKeys.loading && <ErrorHandler/>}
+            {<ErrorHandler/>}
             {!userKeys.loading && <NotificationHandler/>}
             {!userKeys.loading && <NetworkStatusHandler/>}
             {children}

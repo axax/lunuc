@@ -1,6 +1,11 @@
 {
   "types": [
     {
+      "access":{
+        "read":"manage_other_users",
+        "create": "manage_other_users",
+        "update": "manage_other_users"
+      },
       "name": "UserRestriction",
       "fields": [
         {

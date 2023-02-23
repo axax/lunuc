@@ -4,6 +4,7 @@
       "name": "NewsletterSubscriber",
       "noUserRelation": true,
       "entryClonable": true,
+      "access":{"read":{"role":"send_newsletter","type": "roleAndUser"}},
       "fields": [
         {
           "name": "email",

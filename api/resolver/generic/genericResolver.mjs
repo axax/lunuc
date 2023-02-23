@@ -123,16 +123,23 @@ const postConvertData = async (data, {typeName, db}) => {
     return data
 }
 
-const extendWithOwnerGroupMatch = (typeDefinition, context, match) => {
-    if (typeDefinition && context.role !== 'subscriber' && context.group && context.group.length > 0) {
+const extendWithOwnerGroupMatch = (typeDefinition, context, match, userFilter) => {
+    if (typeDefinition && context.role !== 'subscriber') {
         // check for same ownerGroup
         const ownerGroup = typeDefinition.fields.find(f => f.name === 'ownerGroup')
         if (ownerGroup) {
-            const ownerMatch = {ownerGroup: {$in: context.group.map(f => ObjectId(f))}}
-            if (match) {
-                match = {$or: [match, ownerMatch]}
-            } else {
-                match = ownerMatch
+            if(context.group && context.group.length > 0) {
+                const ownerMatch = {ownerGroup: {$in: context.group.map(f => new ObjectId(f))}}
+                if (match && Object.keys(match).length>0) {
+                    match = {$or: [match, ownerMatch]}
+                } else {
+                    match = ownerMatch
+                }
+            }else if(!userFilter){
+                if(!match) {
+                    match = {}
+                }
+                match.ownerGroup= {}
             }
         }
     }
@@ -151,7 +158,6 @@ const createMatchForCurrentUser = async ({typeName, db, context, operation}) => 
     }else if (typeName === 'User') {
 
         // special handling for type User
-
         match = {_id: {$in: await Util.userAndJuniorIds(db, context.id)}}
 
         if (context.group && context.group.length > 0) {
@@ -160,7 +166,7 @@ const createMatchForCurrentUser = async ({typeName, db, context, operation}) => 
             const userCanManageSameGroup = await Util.userHasCapability(db, context, CAPABILITY_MANAGE_SAME_GROUP)
 
             if (userCanManageSameGroup) {
-                match = {$or: [match, {group: {$in: context.group.map(f => ObjectId(f))}}]}
+                match = {$or: [match, {group: {$in: context.group.map(f => new ObjectId(f))}}]}
             }
         }
 
@@ -173,10 +179,17 @@ const createMatchForCurrentUser = async ({typeName, db, context, operation}) => 
             }
             if (typeDefinition.access && typeDefinition.access[operation]) {
                 if (await Util.userHasCapability(db, context, typeDefinition.access[operation])) {
-                    // user can read everything
-                    return {}
-                } else if (typeDefinition.noUserRelation) {
-                    // user has no permission
+                    match = {}
+                    if(typeDefinition.access[operation].type==='roleAndUser'){
+                        if (userFilter) {
+                            match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
+                        }
+                        match = extendWithOwnerGroupMatch(typeDefinition, context, match, userFilter)
+                    }
+                    // user has general rights to access type
+                    return match
+                } else/* if (typeDefinition.noUserRelation)*/ {
+                    // user has no permission to access type
                     return
                 }
             }
@@ -186,7 +199,7 @@ const createMatchForCurrentUser = async ({typeName, db, context, operation}) => 
             match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
         }
 
-        match = extendWithOwnerGroupMatch(typeDefinition, context, match)
+        match = extendWithOwnerGroupMatch(typeDefinition, context, match, userFilter)
 
     }
 

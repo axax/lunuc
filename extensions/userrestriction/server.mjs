@@ -44,7 +44,12 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions
             if(rule.filter && (rule.user.indexOf(context.id)>=0 || hasGroupMatch(rule.userGroup, context.group))){
                 if(rule.mode==='extend'){
                     Object.keys(rule.filter).forEach(key=>{
-                        match[key] = rule.filter[key]
+                        if(rule.filter[key].$remove){
+                            // remove operator
+                            delete match[key]
+                        }else {
+                            match[key] = rule.filter[key]
+                        }
                     })
                 }
             }
