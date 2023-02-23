@@ -289,6 +289,13 @@ const GenericResolver = {
             includeUserFilter: userCanManageTypes,
             ...otherOptions
         })
+        console.log({
+            match,
+            includeCount: (includeCount !== false && !estimateCount),
+            lang: context.lang,
+            includeUserFilter: userCanManageTypes,
+            ...otherOptions
+        })
 
         const {dataQuery, countQuery, debugInfo} = await aggregationBuilder.query()
          /*if (typeName.indexOf("GenericData") >= 0) {
