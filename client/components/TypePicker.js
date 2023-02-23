@@ -182,7 +182,6 @@ class TypePicker extends React.Component {
                 }, 500)
             }
         }
-        console.log(inputProps)
         return <StyledForm fullWidth={fullWidth} className={className} sx={sx}>
             {(!value.length || multi) && !readOnly ?
                 <TextField error={error}

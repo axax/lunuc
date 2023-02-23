@@ -286,8 +286,8 @@ const GenericResolver = {
             match,
             includeCount: (includeCount !== false && !estimateCount),
             lang: context.lang,
-            ...otherOptions,
-            includeUserFilter: userCanManageTypes
+            includeUserFilter: userCanManageTypes,
+            ...otherOptions
         })
 
         const {dataQuery, countQuery, debugInfo} = await aggregationBuilder.query()
