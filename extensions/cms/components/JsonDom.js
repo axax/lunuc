@@ -299,12 +299,15 @@ class JsonDom extends React.Component {
             }
 
             if (slugChanged) {
+                this.removeAddedDomElements(props.loading)
                 this.bindings = {}
                 // componentWillUnmount is not triggered for the root JsonDom when it is reused be another component
                 // So if the slug has changed and the component is still mounted we have to call unmount
                 this.triggerUnmountEvent()
             }
-
+            if(!props.loading) {
+                this.removeAddedDomElements(false,true)
+            }
             if (slugChanged || locationChanged || templateChanged || propsChanged || scriptChanged) {
                 this.json = this.jsonRaw = null
                 this.updateScope = true
@@ -318,16 +321,13 @@ class JsonDom extends React.Component {
                 this.json = null
             }
             if (slugChanged || scriptChanged || this.runScript) {
-                if(!props.loading) {
-                    this.removeAddedDomElements(!slugChanged)
-                }
+
                 this.scriptResult = null
                 this.runScript = true
                 this.jsOnStack = {}
             } else if (propsChanged) {
                 this.runJsEvent('propschanged', true, {props: props._props})
             }
-
             if (resourcesChanged) {
                 this.checkResources()
             }
@@ -375,6 +375,7 @@ class JsonDom extends React.Component {
     }
 
     componentWillUnmount() {
+        console.log(`unmount ${this.props.slug}`)
         if (this._historyUnlisten) {
             this._historyUnlisten()
         }
@@ -654,22 +655,31 @@ class JsonDom extends React.Component {
         }
     }
 
-    removeAddedDomElements(notMainStyle) {
-        let butIds
+    removeAddedDomElements(isLoading, removeMarked) {
+       /* let butIds
         if (notMainStyle) {
             butIds = [this.getMainStyleId(this.props).id]
-        }
-        DomUtil.removeElements(`[data-json-dom-id="${this.instanceId}"]`, butIds)
+        }*/
+        console.log(`remove dom elements for ${this.props.slug}`)
+        //DomUtil.removeElements(`[data-json-dom-id="${this.instanceId}"]`)
 
         // remove instanceId from data attribute
-        const els = document.querySelectorAll(`[data-json-dom-id~="${this.instanceId}"]`)
+        const els = document.querySelectorAll(`[data-json-dom-id${removeMarked?'-delete':'~'}="${this.instanceId}"]`)
         els.forEach(el=>{
-            const ids = el.dataset.jsonDomId.split(' ')
-            const index = ids.indexOf(this.instanceId+'')
-            if (index !== -1) {
-                ids.splice(index, 1)
+            if(isLoading){
+                // mark only for deletion
+                el.dataset.jsonDomIdDelete=this.instanceId
+            }else {
+                const ids = el.dataset.jsonDomId.split(' ')
+                const index = ids.indexOf(this.instanceId + '')
+                if (index !== -1) {
+                    ids.splice(index, 1)
+                }
+                el.dataset.jsonDomId = ids.join(' ')
+                if (ids.length === 0) {
+                    el.parentNode.removeChild(el)
+                }
             }
-            el.dataset.jsonDomId = ids.join(' ')
         })
 
     }
@@ -1535,6 +1545,7 @@ class JsonDom extends React.Component {
     }
 
     setStyle = (style, preprocess, id) => {
+        console.log(`remove add ${id}`)
         const addTag = (css) => {
             DomUtil.createAndAddTag('style', 'head', {
                 textContent: css,

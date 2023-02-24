@@ -107,7 +107,8 @@ const DomUtil = {
 
             try {
                 const isAll = options && options.all
-                const fn = isAll ? document.querySelectorAll.bind(document) : document.querySelector.bind(document)
+                const doc = options && options.document ? options.document : document
+                const fn = isAll ? doc.querySelectorAll.bind(doc) : doc.querySelector.bind(doc)
                 const el = fn(selector)
                 if (el && (!isAll || el.length>0)) {
                     return resolve(el)
@@ -128,7 +129,7 @@ const DomUtil = {
                     }
                 })
 
-                observer.observe(document.body, {
+                observer.observe(doc, {
                     childList: true,
                     subtree: true
                 })
