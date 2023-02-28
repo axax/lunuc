@@ -4,6 +4,7 @@ import config from '../../../gensrc/config.mjs'
 import path from 'path'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
+import {ObjectId} from 'mongodb'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const {UPLOAD_DIR} = config
@@ -49,7 +50,7 @@ export default db => ({
             }
             return {status: `${idsRemoved.length} ${idsRemoved.length > 1 ? 'files' : 'file'} removed`}
         },
-        findReferencesForMedia: async ({limit}, {context}) => {
+        findReferencesForMedia: async ({limit, ids}, {context}) => {
 
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
 
@@ -97,7 +98,9 @@ export default db => ({
                 'ProductCategory',
                 'KeyValueGlobal',
                 'FtpUser',
-                'UserGroup'
+                'UserGroup',
+                'UserRestriction',
+                'UserSetting'
             ]
 
             const collectionsToSearchIn = []
@@ -107,15 +110,18 @@ export default db => ({
                 }
             }
 
-            const ids = await db.collection('Media').find(
-                {},
-                {'_id':1})
-                .sort({'references.lastChecked':1}).limit(limit || 10).toArray()
+            if(!ids){
+                const mediaIds = await db.collection('Media').find(
+                    {},
+                    {'_id':1})
+                    .sort({'references.lastChecked':1}).limit(limit || 10).toArray()
+                ids = mediaIds.map(f=>f._id.toString())
+            }
 
 
-            let allcount = 0
+            let checkedItems = {}
             for (let i = 0; i < ids.length; i++) {
-                const _id = ids[i]._id
+                const _id = ids[i]
                 let count = 0
                 const locations = []
                 const $where = `function() { 
@@ -134,12 +140,12 @@ export default db => ({
                     }
                 }
 
-                allcount += count
-
-                db.collection('Media').updateOne({_id}, {$set: {references: {count, locations, lastChecked: new Date().getTime()}}})
+                const $set = {references: {count, locations, lastChecked: new Date().getTime()}}
+                checkedItems[_id] = $set
+                db.collection('Media').updateOne({_id: new ObjectId(_id)}, {$set})
 
             }
-            return {status: `${allcount} references found`}
+            return {status: `{"items":${JSON.stringify(checkedItems)}}`}
         }
     }
 })

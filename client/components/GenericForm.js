@@ -1141,7 +1141,7 @@ class GenericForm extends React.Component {
 
             const result = {}
 
-            Hook.call('GenericFormField', {field, result, value}, this)
+            Hook.call('GenericFormField', {field, fieldKey, result, value, languageCode}, this)
 
             if (result.component) {
                 currentFormFields.push(result.component)

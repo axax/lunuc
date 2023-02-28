@@ -21,7 +21,7 @@ import UploadUtil from '../../client/util/upload'
 import {client} from 'client/middleware/graphql'
 import {translations} from './translations/translations'
 import {CAPABILITY_MANAGE_OTHER_USERS} from '../cms/constants/index.mjs'
-import {formatBytes} from "../../client/util/format.mjs";
+import {formatBytes} from '../../client/util/format.mjs'
 
 registerTrs(translations, 'MediaTranslations')
 
@@ -107,19 +107,6 @@ export default () => {
                         }
                     },
                     {
-                        name: 'Find references for all medias', onClick: () => {
-                            client.query({
-                                fetchPolicy: 'network-only',
-                                forceFetch: true,
-                                query: '{findReferencesForMedia{status}}'
-                            }).then(response => {
-                                if (response.data && response.data.findReferencesForMedia) {
-                                    this.setState({simpleDialog: {children: response.data.findReferencesForMedia.status}})
-                                }
-                            })
-                        }
-                    },
-                    {
                         name: _t('Media.cleanupMedia'), onClick: () => {
                             client.query({
                                 fetchPolicy: 'network-only',
@@ -164,23 +151,57 @@ export default () => {
 
 
     Hook.on('TypeCreateEditAction', function ({type, action, dataToEdit, meta}) {
-        console.log(dataToEdit)
-        if (type === 'Media' && action && action.key === 'clearConversions' && dataToEdit) {
-            client.query({
-                fetchPolicy: 'network-only',
-                forceFetch: true,
-                variables:{ids:[dataToEdit._id]},
-                query: 'query cleanUpMedia($ids:[String]){cleanUpMedia(ids:$ids){status}}'
-            }).then(response => {
-                if (response.data && response.data.cleanUpMedia) {
-                    if( meta && meta.TypeContainer) {
-                        meta.TypeContainer.setState({simpleDialog: {children: response.data.cleanUpMedia.status}})
+        if (type === 'Media' && action && dataToEdit) {
+            if(action.key === 'clearConversions') {
+                client.query({
+                    fetchPolicy: 'network-only',
+                    forceFetch: true,
+                    variables: {ids: [dataToEdit._id]},
+                    query: 'query cleanUpMedia($ids:[String]){cleanUpMedia(ids:$ids){status}}'
+                }).then(response => {
+                    if (response.data && response.data.cleanUpMedia) {
+                        if (meta && meta.TypeContainer) {
+                            meta.TypeContainer.setState({simpleDialog: {children: response.data.cleanUpMedia.status}})
+                        }
                     }
-                }
-            })
+                })
+            }
         }
     })
 
+
+    Hook.on('GenericFormField', function ({field, value, result}) {
+        if (field.uitype === 'mediaReferences') {
+            const btn = <Button color="secondary" onClick={() => {
+                client.query({
+                    fetchPolicy: 'network-only',
+                    forceFetch: true,
+                    variables: {ids: [this.state.valuesOri._id]},
+                    query: 'query findReferencesForMedia($ids:[ID]){findReferencesForMedia(ids:$ids){status}}'
+                }).then(response => {
+                    if (response.data && response.data.findReferencesForMedia) {
+                        const json = JSON.parse(response.data.findReferencesForMedia.status)
+                        this.handleInputChange({target: {name: field.name, value: JSON.stringify(json.items[this.state.valuesOri._id].references)}})
+                    }
+                })
+            }} variant="contained">Verwendung prüfen</Button>
+            if(value) {
+                const json = JSON.parse(value)
+                result.component = <div>
+                    <p><span>Letzte Überprüfung:</span> <strong>{Util.formatDate(json.lastChecked)}</strong></p>
+                    {
+                        json.locations.length===0?<p>Media wird nicht verwendet</p>:
+                        json.locations.map(item => <p><span>Media ist in Verwendung:</span> <a target="_blank"
+                                                                                               href={'/admin/types/' + item.location + '?open=' + item._id}>{item.location}/{item._id}</a>
+                        </p>)
+                    }
+                    {btn}
+                </div>
+            }else{
+                result.component = <div><p>Wurde noch nicht geprüft.</p>{btn}</div>
+            }
+        }
+    })
 
     // add some extra data to the table
     Hook.on('TypeCreateEdit', function ({type, props, dataToEdit, meta}) {

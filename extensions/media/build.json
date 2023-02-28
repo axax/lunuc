@@ -75,7 +75,7 @@
         {
           "name": "references",
           "type": "Object",
-          "uitype": "json",
+          "uitype": "mediaReferences",
           "hideColumnInTypes": true,
           "vagueSearchable": false,
           "tab": "Refrenzen",

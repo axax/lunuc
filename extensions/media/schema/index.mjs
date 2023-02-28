@@ -17,7 +17,7 @@ export default `
 
     type Query {
     	cleanUpMedia(ids:[String]): CleanUpMediaResult
-    	findReferencesForMedia(limit: String): FindReferencesForMediaResult
+    	findReferencesForMedia(limit: String, ids:[ID]): FindReferencesForMediaResult
     }
     
 `

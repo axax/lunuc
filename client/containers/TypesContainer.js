@@ -166,6 +166,20 @@ class TypesContainer extends React.Component {
         this._urlChanged = this.urlChanged.bind(this)
         window.addEventListener('beforeunload', this._handleWindowClose)
         window.addEventListener('popstate', this._urlChanged)
+        if(this.pageParams.open){
+            const queries = getTypeQueries(this.pageParams.type)
+            client.query({
+                fetchPolicy: 'network-only',
+                query: queries.query,
+                variables: {filter: `_id==${this.pageParams.open}`}
+            }).then(response => {
+                const storeKey = this.getStoreKey(this.pageParams.type)
+                this.setState({createEditDialog: true, dataToEdit: response.data[storeKey].results[0]})
+
+            }).catch(error => {
+                console.log(error.message)
+            })
+        }
     }
 
     componentWillUnmount() {
@@ -1155,7 +1169,8 @@ class TypesContainer extends React.Component {
             prettyFilter,
             multi,
             meta,
-            action
+            action,
+            open
         } = Util.extractQueryParams(window.location.search.substring(1))
         const pInt = parseInt(p), lInt = parseInt(l)
 
@@ -1184,6 +1199,7 @@ class TypesContainer extends React.Component {
             meta,
             action,
             fixType: finalFixType,
+            open,
             limit: lInt || typeSettings.limit || DEFAULT_RESULT_LIMIT,
             page: pInt || typeSettings.page || 1,
             sort: s || typeSettings.sort || '',
@@ -1261,8 +1277,6 @@ class TypesContainer extends React.Component {
                     }
                     if (this.pageParams.action === 'new') {
                         newState.createEditDialog = true
-
-
                     }
                     this.setState(newState)
                 }).catch(({error}) => {

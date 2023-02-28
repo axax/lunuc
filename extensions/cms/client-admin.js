@@ -86,9 +86,15 @@ export default () => {
                 if (d.slug) {
                     const item = data.results[i]
                     if( item ) {
+                        let src
+                        if(item.public){
+                            src = `/lunucapi/generate/png?url=/${item.slug}${encodeURI('?preview=true')}&width=1200&height=800&rwidth=120&rheight=80&cache=true&cacheExpire=${new Date(item.modifiedAt).getTime()}`
+                        }else{
+                            src = `/lunucapi/system/genimage?width=120&height=80&text=Kein Bild&fontsize=1em`
+                        }
                         d.preview =  <Link style={{display:'block', lineHeight: '0'}} to={cmsPageEditorUrl(item.slug, container.pageParams._version)}>
                             <img style={{}} width={120} height={80}
-                                         src={`/lunucapi/generate/png?url=/${item.slug}${encodeURI('?preview=true')}&width=1200&height=800&rwidth=120&rheight=80&cache=true&cacheExpire=${new Date(item.modifiedAt).getTime()}`}/>
+                                         src={src}/>
                         </Link>
 
                         d.slug = <Link

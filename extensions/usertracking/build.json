@@ -54,7 +54,24 @@
           "name": "year",
           "type": "Int",
           "index": 1,
-          "tab": "Allgemein"
+          "tab": "Allgemein",
+          "compoundIndex": [
+            {
+              "unique": false,
+              "fields": {
+                "year": 1,
+                "month": 1
+              }
+            },
+            {
+              "unique": false,
+              "fields": {
+                "year": 1,
+                "month": 1,
+                "day": 1
+              }
+            }
+          ]
         },
         {
           "name": "event",
