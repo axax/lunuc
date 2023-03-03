@@ -6,7 +6,7 @@ import {client} from 'client/middleware/graphql'
 export default () => {
 
     // add routes for this extension
-    Hook.on('JsonDomError', ({error, editMode}) => {
+    Hook.on('JsonDomError', ({error, editMode, slug}) => {
 
         if (!editMode && error) {
             const queries = getTypeQueries('Log')
@@ -20,6 +20,7 @@ export default () => {
                         agent: navigator.userAgent,
                         href: location.href,
                         parser: window._lunucWebParser,
+                        slug: slug,
                         ...error.meta
                     })
                 }

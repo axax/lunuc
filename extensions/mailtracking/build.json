@@ -31,6 +31,11 @@
           "uitype": "editor"
         },
         {
+          "name": "attachments",
+          "type": "Object",
+          "uitype": "json"
+        },
+        {
           "name": "html",
           "uitype": "html",
           "alwaysLoad": false,

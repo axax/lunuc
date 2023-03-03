@@ -163,7 +163,6 @@ class CmsViewEditorContainer extends React.Component {
                 this._handleWindowClose()
             })
             window.addEventListener('blur', () => {
-                console.log('blur')
                 this._handleWindowClose(true)
             })
 

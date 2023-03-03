@@ -544,7 +544,7 @@ class JsonDom extends React.Component {
         console.log(`render ${this.constructor.name} for ${scope.page.slug} in ${((new Date()).getTime() - startTime)}ms`)
 
         if (this.error) {
-            Hook.call('JsonDomError', {error: this.error, editMode: this.props.editMode})
+            Hook.call('JsonDomError', {error: this.error, slug: scope.page.slug, editMode: this.props.editMode})
 
             return <div>Error in <strong>{this.error.type}</strong>. See details in console
                 log: <PrettyErrorMessage {...this.error}/></div>
@@ -728,7 +728,7 @@ class JsonDom extends React.Component {
 
 
     emitJsonError(e, data) {
-        Hook.call('JsonDomError', {error: {type: data.loc, meta: data.meta, e}, editMode: this.props.editMode})
+        Hook.call('JsonDomError', {error: {type: data.loc, meta: data.meta, e}, slug: this.props.slug, editMode: this.props.editMode})
 
         const {onError} = this.props
 

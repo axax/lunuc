@@ -20,7 +20,7 @@ const cronjobUtil = {
         if( !noEntry ) {
             dbResult = await GenericResolver.createEntity(db, {context}, 'CronJobExecution', {
                 state: 'running',
-                cronjob: ObjectId(cronjobId)
+                cronjob: new ObjectId(cronjobId)
             })
 
             result._id = dbResult._id
@@ -52,10 +52,15 @@ const cronjobUtil = {
             await GenericResolver.entities(db, context, collection, fields, filter)
         }
         try {
+            const finalArgs = {log, debug, end, error, select, ...props}
+
+            if(!finalArgs.meta){
+                finalArgs.meta = {}
+            }
             if (scriptLanguage === 'Python') {
-                cronjobUtil.runPythonScript(script, {log, debug, end, error, select, ...props})
+                cronjobUtil.runPythonScript(script, finalArgs)
             } else {
-                cronjobUtil.runJavascript(script, {log, debug, end, error, select, ...props})
+                cronjobUtil.runJavascript(script, finalArgs)
             }
         }catch (e) {
             console.log('Error in runCronJob', e)
