@@ -15,7 +15,7 @@ class LoginContainer extends React.Component {
         error: null,
         username: '',
         password: '',
-        domain:''
+        domain: _app_.login ? _app_.login.defaultDomain : ''
     }
 
     constructor(props) {
@@ -55,14 +55,14 @@ class LoginContainer extends React.Component {
                 password: this.state.password,
                 domain: this.state.domain
             }
-        }).then( response => {
+        }).then(response => {
             this.setState({loading: false})
             if (response.data && response.data.login) {
 
                 if (!response.data.login.error) {
                     // clear cache completely
                     client.resetStore()
-                    if(response.data.login.token) {
+                    if (response.data.login.token) {
                         localStorage.setItem('token', response.data.login.token)
                     }
 
@@ -75,13 +75,13 @@ class LoginContainer extends React.Component {
                     this.setState({error: response.data.login.error})
                 }
             }
-        }).catch((response)=>{
+        }).catch((response) => {
             console.log(response)
             this.setState({loading: false, error: response.error.message})
         })
     }
 
-    getFromUrl(){
+    getFromUrl() {
         const params = Util.extractQueryParams()
         if (params.forward) {
             return params.forward
@@ -100,71 +100,72 @@ class LoginContainer extends React.Component {
         }
 
         return <Row style={{marginTop: '5rem'}}>
-                <Col xs={1} sm={2} md={4}></Col>
-                <Col xs={10} sm={8} md={4}>
-                    <Card>
-                        <form noValidate autoComplete="off" action="/graphql/login" method="post">
-                            <Typography variant="h3" gutterBottom>{_t('Login.title')}</Typography>
+            <Col xs={1} sm={2} md={4}></Col>
+            <Col xs={10} sm={8} md={4}>
+                <Card>
+                    <form noValidate autoComplete="off" action="/graphql/login" method="post">
+                        <Typography variant="h3" gutterBottom>{_t('Login.title')}</Typography>
 
-                            <Typography gutterBottom>{_t('Login.subtitle', {pathname:from})}</Typography>
-
-
-                            <input value={from}
-                                       type="hidden"
-                                       name="forward"/>
-
-                            <TextField label={_t('Login.username')}
-                                       error={!!error}
-                                       disabled={!!loading}
-                                       autoComplete="current-password"
-                                       fullWidth
-                                       autoFocus
-                                       value={username}
-                                       onChange={this.handleInputChange}
-                                       type="text"
-                                       name="username" required/>
+                        <Typography gutterBottom>{_t('Login.subtitle', {pathname: from})}</Typography>
 
 
-                            <TextField label={_t('Login.password')}
-                                       error={!!error}
-                                       helperText={error}
-                                       disabled={!!loading}
-                                       fullWidth
-                                       autoComplete="current-password"
-                                       value={password}
-                                       onChange={this.handleInputChange}
-                                       onKeyPress={(ev) => {
-                                           if (ev.key === 'Enter') {
-                                               this.login(ev)
-                                           }
-                                       }}
-                                       type="password"
-                                       name="password" required/>
+                        <input value={from}
+                               type="hidden"
+                               name="forward"/>
+
+                        <TextField label={_t('Login.username')}
+                                   error={!!error}
+                                   disabled={!!loading}
+                                   autoComplete="current-password"
+                                   fullWidth
+                                   autoFocus
+                                   value={username}
+                                   onChange={this.handleInputChange}
+                                   type="text"
+                                   name="username" required/>
 
 
-                            <TextField label={_t('Login.domain')}
-                                       error={!!error}
-                                       disabled={!!loading}
-                                       fullWidth
-                                       autoFocus
-                                       value={domain}
-                                       onChange={this.handleInputChange}
-                                       type="text"
-                                       name="domain"/>
+                        <TextField label={_t('Login.password')}
+                                   error={!!error}
+                                   helperText={error}
+                                   disabled={!!loading}
+                                   fullWidth
+                                   autoComplete="current-password"
+                                   value={password}
+                                   onChange={this.handleInputChange}
+                                   onKeyPress={(ev) => {
+                                       if (ev.key === 'Enter') {
+                                           this.login(ev)
+                                       }
+                                   }}
+                                   type="password"
+                                   name="password" required/>
 
-                            <div style={{textAlign: 'right'}}>
-                                <SimpleButton variant="contained" color="primary"
-                                              showProgress={loading}
-                                              type="submit"
-                                              onClick={this.login.bind(this)}>Login</SimpleButton>
-                            </div>
-                            {showSignupLink && <Typography>Don&apos;t have an account? <Link to={signupLink || config.ADMIN_BASE_URL + '/signup'}>Sign
-                                up</Link></Typography>}
-                        </form>
-                    </Card>
-                </Col>
-                <Col xs={1} sm={2} md={4}></Col>
-            </Row>
+                        {!_app_.login && !_app_.login.hideDomain &&
+                        <TextField label={_t('Login.domain')}
+                                   error={!!error}
+                                   disabled={!!loading}
+                                   fullWidth
+                                   autoFocus
+                                   value={domain}
+                                   onChange={this.handleInputChange}
+                                   type="text"
+                                   name="domain"/>}
+
+                        <div style={{textAlign: 'right'}}>
+                            <SimpleButton variant="contained" color="primary"
+                                          showProgress={loading}
+                                          type="submit"
+                                          onClick={this.login.bind(this)}>Login</SimpleButton>
+                        </div>
+                        {showSignupLink && <Typography>Don&apos;t have an account? <Link
+                            to={signupLink || config.ADMIN_BASE_URL + '/signup'}>Sign
+                            up</Link></Typography>}
+                    </form>
+                </Card>
+            </Col>
+            <Col xs={1} sm={2} md={4}></Col>
+        </Row>
     }
 }
 

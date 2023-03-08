@@ -23,7 +23,7 @@
     if(${BASE_POLYFILL}){
         document.write('<scr'+'ipt type="text/javascript" src="/polyfill/base.js"></sc'+'ript>')
     }
-    _app_ = {redirect404:'/404',start: new Date(),detectLang:true,slugContext:'${this.hostrule && this.hostrule.slugContext?this.hostrule.slugContext:''}'}
+    _app_ = {redirect404:'/404',start: new Date(),detectLang:true,slugContext:'${this.hostrule && this.hostrule.slugContext?this.hostrule.slugContext:''}', login:{hideDomain:false, defaultDomain:''}}
 </script>
 <script async src="/main.bundle.js?v=${BUILD_NUMBER}"></script>
 </body>

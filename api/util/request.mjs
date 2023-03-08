@@ -3,7 +3,7 @@ import http from 'http'
 
 export const request = (options) => {
 
-    const finalOptions = Object.assign({timeout: 60000}, options)
+    const finalOptions = Object.assign({timeout: 60000, headers: {}}, options)
 
     let httpx = https
     if (finalOptions.url) {
