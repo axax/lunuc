@@ -7,6 +7,10 @@ import Async from 'client/components/Async'
 import Util from '../../client/util/index.mjs'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../cms/constants/index.mjs'
 
+import {registerTrs} from '../../util/i18n.mjs'
+import {translations} from './translations/admin'
+registerTrs(translations, 'Post')
+
 const PostRenderer = (props) => <Async readOnly={true} {...props}
                                        load={import(/* webpackChunkName: "post" */ './components/post/PostEditor')}/>
 const EditIcon = (props) => <Async {...props} expose="EditIcon"

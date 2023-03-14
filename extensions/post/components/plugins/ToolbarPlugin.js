@@ -17,7 +17,7 @@ import {
 import { $isLinkNode, TOGGLE_LINK_COMMAND } from "@lexical/link";
 import {
     $isParentElementRTL,
-    $wrapLeafNodesInElements,
+    $wrapNodes,
     $isAtNodeEnd
 } from "@lexical/selection";
 import { $getNearestNodeOfType, mergeRegister } from "@lexical/utils";
@@ -49,9 +49,6 @@ const supportedBlockTypes = new Set([
     "code",
     "h1",
     "h2",
-    "h3",
-    "h4",
-    "h5",
     "ul",
     "ol"
 ]);
@@ -82,8 +79,8 @@ function positionEditorElement(editor, rect) {
         editor.style.opacity = "1";
         editor.style.top = `${rect.top + rect.height + window.pageYOffset + 10}px`;
         editor.style.left = `${
-        rect.left + window.pageXOffset - editor.offsetWidth / 2 + rect.width / 2
-            }px`;
+            rect.left + window.pageXOffset - editor.offsetWidth / 2 + rect.width / 2
+        }px`;
     }
 }
 
@@ -301,7 +298,7 @@ function BlockOptionsDropdownList({
                 const selection = $getSelection();
 
                 if ($isRangeSelection(selection)) {
-                    $wrapLeafNodesInElements(selection, () => $createParagraphNode());
+                    $wrapNodes(selection, () => $createParagraphNode());
                 }
             });
         }
@@ -314,7 +311,7 @@ function BlockOptionsDropdownList({
                 const selection = $getSelection();
 
                 if ($isRangeSelection(selection)) {
-                    $wrapLeafNodesInElements(selection, () => $createHeadingNode("h1"));
+                    $wrapNodes(selection, () => $createHeadingNode("h1"));
                 }
             });
         }
@@ -327,7 +324,7 @@ function BlockOptionsDropdownList({
                 const selection = $getSelection();
 
                 if ($isRangeSelection(selection)) {
-                    $wrapLeafNodesInElements(selection, () => $createHeadingNode("h2"));
+                    $wrapNodes(selection, () => $createHeadingNode("h2"));
                 }
             });
         }
@@ -358,7 +355,7 @@ function BlockOptionsDropdownList({
                 const selection = $getSelection();
 
                 if ($isRangeSelection(selection)) {
-                    $wrapLeafNodesInElements(selection, () => $createQuoteNode());
+                    $wrapNodes(selection, () => $createQuoteNode());
                 }
             });
         }
@@ -371,7 +368,7 @@ function BlockOptionsDropdownList({
                 const selection = $getSelection();
 
                 if ($isRangeSelection(selection)) {
-                    $wrapLeafNodesInElements(selection, () => $createCodeNode());
+                    $wrapNodes(selection, () => $createCodeNode());
                 }
             });
         }
@@ -577,15 +574,15 @@ export default function ToolbarPlugin() {
                         <i className="chevron-down" />
                     </button>
                     {showBlockOptionsDropDown &&
-                    createPortal(
-                        <BlockOptionsDropdownList
-                            editor={editor}
-                            blockType={blockType}
-                            toolbarRef={toolbarRef}
-                            setShowBlockOptionsDropDown={setShowBlockOptionsDropDown}
-                        />,
-                        document.body
-                    )}
+                        createPortal(
+                            <BlockOptionsDropdownList
+                                editor={editor}
+                                blockType={blockType}
+                                toolbarRef={toolbarRef}
+                                setShowBlockOptionsDropDown={setShowBlockOptionsDropDown}
+                            />,
+                            document.body
+                        )}
                     <Divider />
                 </>
             )}
@@ -656,7 +653,7 @@ export default function ToolbarPlugin() {
                         <i className="format link" />
                     </button>
                     {isLink &&
-                    createPortal(<FloatingLinkEditor editor={editor} />, document.body)}
+                        createPortal(<FloatingLinkEditor editor={editor} />, document.body)}
                     <Divider />
                     <button
                         onClick={() => {

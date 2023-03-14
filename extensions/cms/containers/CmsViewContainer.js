@@ -340,7 +340,7 @@ class CmsViewContainer extends React.Component {
                                 })
 
                                 // upadate data in resolvedData string
-                                if (storedData.cmsPage && storedData.cmsPage.resolvedData) {
+                                if (storedData && storedData.cmsPage && storedData.cmsPage.resolvedData) {
                                     const resolvedDataJson = JSON.parse(storedData.cmsPage.resolvedData)
 
                                     if (resolvedDataJson[subscription.autoUpdate] && resolvedDataJson[subscription.autoUpdate].results) {

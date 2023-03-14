@@ -54,13 +54,11 @@ const editorConfig = {
     ]
 }
 
-function RestorPlugin({ post, readOnly }){
+function RestorePlugin({ post, readOnly }){
     const [editor] = useLexicalComposerContext()
-
     useEffect(() => {
         if (post && editor ) {
             const initialEditorState = editor.parseEditorState(JSON.parse(post.body))
-            console.log(initialEditorState)
             editor.setEditorState(initialEditorState)
         }
     }, [post, editor, readOnly])
@@ -70,30 +68,35 @@ function RestorPlugin({ post, readOnly }){
 
 export default React.memo((props) => {
 
-    const {post, onChange} = props
+    const {post, onChange, debug} = props
     return (
-        <LexicalComposer initialConfig={editorConfig}>
+        <LexicalComposer ref={(ref)=>{
+            /*const node = ReactDOM.findDOMNode(ref)
+            node.ref = ref*/
+        }} initialConfig={editorConfig}>
             <div className="editor-container">
                 <ToolbarPlugin />
                 <div className="editor-inner">
+                    <RestorePlugin post={post} readOnly={false} />
                     <RichTextPlugin
 
                         contentEditable={<ContentEditable className="editor-input" />}
                         placeholder={<Placeholder />}
                     />
                     <HistoryPlugin />
-                    <TreeViewPlugin />
+                    {debug && <TreeViewPlugin />}
                     <AutoFocusPlugin />
                     <CodeHighlightPlugin />
-                    <OnChangePlugin onChange={(editorState)=>{
-                        onChange(editorState.toJSON())
-                    }} />
-                    <RestorPlugin post={post} readOnly={true} />
                     <ListPlugin />
                     <LinkPlugin />
                     <AutoLinkPlugin />
                     <ListMaxIndentLevelPlugin maxDepth={7} />
                     <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
+                    <OnChangePlugin ignoreSelectionChange={true} ignoreHistoryMergeTagChange={true} onChange={(editorState, x)=>{
+
+                        //  console.log(JSON.stringify(editorState.toJSON()), post.body)
+                        onChange(editorState.toJSON())
+                    }} />
                 </div>
             </div>
         </LexicalComposer>

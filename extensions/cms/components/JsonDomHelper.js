@@ -289,10 +289,20 @@ class JsonDomHelper extends React.Component {
         clearTimeout(this.helperTimeoutIn)
 
         if (!hovered) {
+            let height = node.offsetHeight, width=node.offsetWidth
+            node.childNodes.forEach(childNode=>{
+                if(childNode.style) {
+                    const style = window.getComputedStyle(childNode)
+                    if(style.position==='fixed' && style.display !== 'none' && style.opacity > 0){
+                        width = Math.max(childNode.offsetWidth, width)
+                        height = Math.max(childNode.offsetHeight, height)
+                    }
+                }
+            })
             const stat = {
                 hovered: true,
-                height: node.offsetHeight,
-                width: node.offsetWidth, ...DomUtilAdmin.elemOffset(node)
+                height,
+                width, ...DomUtilAdmin.elemOffset(node)
             }
             this.helperTimeoutIn = setTimeout(() => {
                 this.setState(stat)

@@ -52,8 +52,11 @@ export default `
 	}
 	
 type PostSubscribeResult {
-	data:Post
+	data:[Post]
 	action:String
+	filter:String
+	removedIds:[ID]
+	_meta:String
 }
 
 type Subscription{

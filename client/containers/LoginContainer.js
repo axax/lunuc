@@ -141,7 +141,7 @@ class LoginContainer extends React.Component {
                                    type="password"
                                    name="password" required/>
 
-                        {!_app_.login && !_app_.login.hideDomain &&
+                        {(!_app_.login || !_app_.login.hideDomain) ?
                         <TextField label={_t('Login.domain')}
                                    error={!!error}
                                    disabled={!!loading}
@@ -150,7 +150,7 @@ class LoginContainer extends React.Component {
                                    value={domain}
                                    onChange={this.handleInputChange}
                                    type="text"
-                                   name="domain"/>}
+                                   name="domain"/>:''}
 
                         <div style={{textAlign: 'right'}}>
                             <SimpleButton variant="contained" color="primary"

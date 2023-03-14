@@ -9,6 +9,7 @@ import {graphql} from '../../../client/middleware/graphql'
 
 const {ADMIN_BASE_URL} = config
 import Async from 'client/components/Async'
+import {_t} from 'util/i18n.mjs'
 
 const DEFAULT_RESULT_LIMIT = 10
 
@@ -142,7 +143,9 @@ class PostContainer extends React.Component {
 
                         <GenericForm onRef={(e) => {
                             this.addPostForm = e
-                        }} fields={{title: {value: '', placeholder: 'Enter a titel',label:'Title'}}}
+                        }} fields={{title: {value: '', placeholder: _t('Post.enterTitle'),label:'Title'}}}
+                                     caption={_t('Post.addPost')}
+                                     style={{marginTop:'2rem'}}
                                      onValidate={this.handleAddPostValidate} onClick={this.handleAddPostClick}/>
 
                     </Col>

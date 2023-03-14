@@ -4,9 +4,15 @@ import config from 'gen/config-client'
 
 const {ADMIN_BASE_URL} = config
 import Async from 'client/components/Async'
+import {
+    CAPABILITY_MANAGE_SAME_GROUP,
+    CAPABILITY_MANAGE_USER_GROUP,
+    getAllCapabilites
+} from "../../util/capabilities.mjs";
+import {_t} from "../../util/i18n.mjs";
 
 const PostRenderer = (props) => <Async readOnly={true} {...props}
-                                       load={import(/* webpackChunkName: "post" */ './components/post/PostEditor')}/>
+                                       load={import(/* webpackChunkName: "post" */ './components/PostEditor')}/>
 const PostContainerAsync = (props) => <Async {...props}
                                              load={import(/* webpackChunkName: "admin" */ './containers/PostContainer')}/>
 
@@ -21,4 +27,24 @@ export default () => {
         routes.push({exact: true, path: ADMIN_BASE_URL + '/post/:id*', layout:'base', component: PostContainerAsync})
     })
 
+
+    Hook.on('Types', ({types}) => {
+
+        types.Post = {
+            name: 'Post',
+            usedBy: ['post'],
+            fields: [
+                {
+                    name: 'title',
+                    required: true
+                },
+                {
+                    name: 'body'
+                },
+                {
+                    name: 'editor'
+                }
+            ]
+        }
+    })
 }

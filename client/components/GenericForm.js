@@ -825,7 +825,7 @@ class GenericForm extends React.Component {
         }
 
         return (
-            <Wrapper>
+            <Wrapper style={this.props.style}>
                 {tabs.length === 0 && formFields}
                 {formFieldsNoTabs.length > 0 && formFieldsNoTabs}
                 {tabs.length > 0 && <StyledTabContainer>

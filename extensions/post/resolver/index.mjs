@@ -73,7 +73,7 @@ export default db => ({
             const userContext = await Util.userOrAnonymousContext(db,context)
 
             // TODO premission management
-            if( _id !== '5d499dfdd80222b7a0556c1c') {
+            if( _id !== '640c372b0cbdad6ff37fd400') {
                 Util.checkIfUserIsLoggedIn(context)
             }
 
@@ -100,7 +100,7 @@ export default db => ({
                 throw new ApiError('Post could not be changed')
             }
 
-            pubsub.publish('subscribePost', {userId:userContext.id,subscribePost: {action: 'update', data: {_id,body, title}}})
+            pubsub.publish('subscribePost', {userId:userContext.id,subscribePost: {action: 'update', data: [{_id,body, title}]}})
 
 
             return {
