@@ -877,7 +877,7 @@ class GenericForm extends React.Component {
         if (uitype === 'htmlParser') {
             let html
             if(field.replacePlaceholders){
-                html =  Util.replacePlaceholders(field.html, {data:this.state.fields})
+                html =  Util.replacePlaceholders(field.html, {data:this.state.fields, Util})
             }else{
                 html = field.html
             }
