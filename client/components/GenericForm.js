@@ -107,7 +107,20 @@ class GenericForm extends React.Component {
                         fieldValue = Object.assign({}, props.values[fieldKey])
                     }
                 } else {
-                    fieldValue = null
+                    if(field.value && field.localizedFallback) {
+                        if (!fieldValue) {
+                            fieldValue = {_localized:true}
+                        }
+                        if(field.value._localized){
+                            config.LANGUAGES.forEach(lang => {
+                                fieldValue[lang] = field.value[lang]
+                            })
+                        }else{
+                            fieldValue[_app_.lang] = field.value
+                        }
+                    }else{
+                        fieldValue = null
+                    }
                 }
             } else {
                 if (props.values) {
@@ -368,12 +381,25 @@ class GenericForm extends React.Component {
 
         // for localization --> name.de / name.en
         if (localized) {
-            const path = name.split('.')
-
-            if (!newState.fields[path[0]]) {
+            const path = name.split('.'),
+                field = prevState.fieldsOri[path[0]]
+            if (!newState.fields[path[0]] || newState.fields[path[0]].constructor !== Object) {
                 newState.fields[path[0]] = {}
             }
             newState.fields[path[0]][path[1]] = value
+            if(field.localizedFallback){
+                const localizedField = Object.assign({}, newState.fields[path[0]])
+                delete localizedField._localized
+                const values = Object.values(localizedField)
+                const allEqual = values.length<=1 || values.every( v => !v ||
+                    (v.constructor===Array && v.length===0) ||
+                    JSON.stringify(v) === JSON.stringify(values[0]))
+                if(allEqual){
+                    newState.fields[path[0]] = values.length>0?values[0]:null
+                }else{
+                    newState.fields[path[0]]._localized = true
+                }
+            }
 
         } else {
             newState.fields[name] = value

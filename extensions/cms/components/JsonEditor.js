@@ -186,12 +186,10 @@ class JsonDomEditor extends React.Component {
                 </Collapse>
             ]
         } else {
-            return <ListItem style={{paddingLeft: INDENT * level + 65}} key={key + '.c'}><ListItemText>
-                <TextField placeholder="Enter some content" fullWidth value={json} onChange={e => {
-                    this.updateJson(key, e.target.value, 'c')
-                }
-                } onBlur={this.handleBlur.bind(this)}/>
-            </ListItemText></ListItem>
+           /* return <ListItem style={{paddingLeft: INDENT * level + 65}} key={key + '.c'}><ListItemText>
+                <TextField placeholder="Enter some content" fullWidth value={json}
+                           onChange={e => {this.updateJson(key, e.target.value, 'c')}}/>
+            </ListItemText></ListItem>*/
         }
     }
 
@@ -207,19 +205,10 @@ class JsonDomEditor extends React.Component {
         return false
     }
 
-
-    handleBlur() {
-        const {onChange} = this.props
-        if (onChange) {
-            onChange(JSON.stringify(this.state.json, null, 2), true)
-        }
-    }
-
-
     addComponent(key) {
         const json = addComponent({key, json: this.state.json})
         if (json) {
-            this.props.onChange(JSON.stringify(this.state.json, null, 2), true)
+            this.updateJson(this.state.json)
             this.setState({open: Object.assign({}, this.state.open, {[key]: true})});
         }
     }
@@ -227,7 +216,7 @@ class JsonDomEditor extends React.Component {
 
     removeComponent(key) {
         if (removeComponent(key, this.state.json)) {
-            this.props.onChange(JSON.stringify(this.state.json, null, 2), true)
+            this.updateJson(this.state.json)
             this.setState({open: Object.assign({}, this.state.open, {[key]: true})});
         }
     }

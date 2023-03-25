@@ -307,11 +307,14 @@ const Util = {
         } else {
             image = raw
         }
+        if(image._localized){
+            image = image[_app_.lang] || image[config.DEFAULT_LANGUAGE]
+        }
         if (Array.isArray(image)) {
             image = image[0]
-            if (!image) {
-                return {}
-            }
+        }
+        if (!image) {
+            return {}
         }
         const data = {}
         if (image.name) {

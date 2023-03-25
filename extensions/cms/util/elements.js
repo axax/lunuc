@@ -421,6 +421,8 @@ const baseElements = [
                 label: 'Bild auswählen',
                 uitype: 'type_picker',
                 type: 'Media',
+                localized: true,
+                localizedFallback:true,
                 filter: 'mimeType=image',
                 tab: DEFAULT_TAB,
                 projection: MEDIA_PROJECTION
