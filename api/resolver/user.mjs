@@ -378,14 +378,20 @@ export const userResolver = (db) => ({
 
             return {status: 'done'}
         },
-        forgotPassword: async ({username, url, subject, fromEmail, fromName}, req) => {
+        forgotPassword: async ({username, url, subject, fromEmail, fromName, domain}, req) => {
 
-            const {context, headers} = req
+            const {context} = req
             const userCollection = db.collection('User')
 
             const resetToken = crypto.randomBytes(16).toString("hex")
 
-            const result = await userCollection.findOneAndUpdate({$or: [{'email': username}, {'username': username}]}, {
+            const findMatch = {$or: [{'email': username}, {'username': username}]}
+
+            if (domain) {
+                findMatch.domain = domain
+            }
+
+            const result = await userCollection.findOneAndUpdate(findMatch, {
                 $set: {
                     passwordReset: new Date().getTime(),
                     resetToken
@@ -403,11 +409,17 @@ export const userResolver = (db) => ({
                     body: `{"url":"${url}?token=${resetToken}","name":"${user.username}"}`,
                     req
                 })
-
-                return {status: 'ok'}
             } else {
-                throw new ApiError(`User ${username} does not exist`, 'no.user')
+                const ip = clientAddress(req)
+
+                GenericResolver.createEntity(db, {context}, 'Log', {
+                    location: 'forgotPassword',
+                    type: 'invalidUser',
+                    message: `User ${username} does not exist`,
+                    meta: {username, ip, domain}
+                })
             }
+            return {status: 'ok'}
         },
         newPassword: async ({token, password, passwordConfirm}, {context}) => {
 

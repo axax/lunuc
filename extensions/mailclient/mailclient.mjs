@@ -56,7 +56,10 @@ const startListeningSingle = (data, db, context, admin) => {
             Hook.call('OnMailError', {db, context, error: {message: 'mailended for ' + data.username}})
 
             // start again
-            startListeningSingle(data, db, context, admin)
+            setTimeout(()=>{
+                startListeningSingle(data, db, context, admin)
+            },1000)
+            
         })
 
         mailListener.on('mail', mail => {
