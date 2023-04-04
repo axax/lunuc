@@ -3,7 +3,7 @@ import {getType} from '../../../util/types.mjs'
 import {getFormFieldsByType} from '../../../util/typesAdmin.mjs'
 import config from '../../../gensrc/config.mjs'
 import Hook from '../../../util/hook.cjs'
-import {addFilterToMatch} from '../../util/dbquery.mjs'
+import {addFilterToMatch, addSearchStringToMatch} from '../../util/dbquery.mjs'
 
 
 export default class AggregationBuilder {
@@ -138,18 +138,19 @@ export default class AggregationBuilder {
         return {lookup}
     }
 
-    createGroup({name, multi, localized, reference}) {
-        if(reference && localized){
-            const group = {'$first': {}}
+    createGroup({ name, multi, localized, reference }) {
+        if (reference && localized) {
+            const group = { $first: {} }
             for (const lang of config.LANGUAGES) {
-                group.$first[lang] = '$' + name+'_'+lang
+                const fieldName = `${name}_${lang}`
+                group.$first[lang] = `$${fieldName}`
             }
             return group
+        } else {
+            const fieldName = multi ? `$${name}` : { $arrayElemAt: [`$${name}`, 0] }
+            return { $first: fieldName }
         }
-
-        return {'$first': multi ? '$' + name : {$arrayElemAt: ['$' + name, 0]}}
     }
-
 
     // filter where clause
     async createFilterForField({name, subQuery, reference, type, multi, localized, searchable, vagueSearchable}, match, {exact, filters}) {
@@ -341,6 +342,10 @@ export default class AggregationBuilder {
     }
 
 
+    /*
+    This is a JavaScript function that takes three arguments - fieldName, fields, and projectResultData -
+    and recursively processes the fields object to construct a MongoDB projection object that includes only the specified fields.
+     */
     projectByField(fieldName, fields, projectResultData) {
         for (const subField of fields) {
             if(subField) {
@@ -373,14 +378,16 @@ export default class AggregationBuilder {
             filters = this.getParsedFilter(this.options.filter),
             resultFilters = this.getParsedFilter(this.options.resultFilter),
             lookupFilters = this.getParsedFilter(this.options.lookupFilter)
-
-
         let match = Object.assign({$and: []}, this.options.match),
             resultMatch = {$and: []},
             lookupMatch = {$and: []},
             groups = {},
             lookups = [],
             projectResultData = {}
+
+        if(this.options.search){
+            addSearchStringToMatch(this.options.search, match)
+        }
 
         if (match) {
             // all the passed matches must be and

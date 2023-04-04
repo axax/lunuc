@@ -844,6 +844,7 @@ async function resizeImage(parsedUrl, req, filename) {
         const width = parseInt(parsedUrl.query.width),
             height = parseInt(parsedUrl.query.height),
             fit = parsedUrl.query.fit,
+            bg = parsedUrl.query.bg,
             flip = parsedUrl.query.flip,
             flop = parsedUrl.query.flop,
             position = parsedUrl.query.position,
@@ -856,7 +857,7 @@ async function resizeImage(parsedUrl, req, filename) {
 
         if (!isNaN(width) || !isNaN(height) || format || flip || flop) {
 
-            const resizeOptions = {fit: fit || sharp.fit.cover}
+            const resizeOptions = {fit: fit || sharp.fit.cover, background: bg || { r: 0, g: 0, b: 0, alpha: 0 }}
             if (!isNaN(width)) {
                 resizeOptions.width = width
             }
@@ -877,7 +878,7 @@ async function resizeImage(parsedUrl, req, filename) {
                 quality = 80
             }
 
-            let modfilename = `${filename}@${width}x${height}-${quality}${fit ? '-' + fit : ''}${position ? '-' + position : ''}${format ? '-' + format : ''}${flip ? '-flip' : ''}${flop ? '-flop' : ''}${withoutEnlargement ? '-noenlarge' : ''}`
+            let modfilename = `${filename}@${width}x${height}-${quality}${fit ? '-' + fit : ''}${position ? '-' + position : ''}${format ? '-' + format : ''}${flip ? '-flip' : ''}${flop ? '-flop' : ''}${withoutEnlargement ? '-noenlarge' : ''}${bg ? '-' + bg : ''}`
 
             if (format) {
                 mimeType = MimeType.detectByExtension(format)

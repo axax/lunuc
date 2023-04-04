@@ -342,6 +342,10 @@ const classLayoutOptions = key => ({
             {
                 value: ' vcenter ',
                 name: 'Vertikal zentriert'
+            },
+            {
+                value: ' vend ',
+                name: 'Vertikal end'
             }
         ]
     },

@@ -676,7 +676,7 @@ class CodeEditor extends React.Component {
                     if (nextLine.startsWith('{')) {
                         commaAtEnd = true
                     }
-                    if (this._curLine.endsWith('[')) {
+                    if (this._curLine.endsWith('[') || this._curLine.endsWith('{')) {
                         commaAtStart = false
                     }
                 }

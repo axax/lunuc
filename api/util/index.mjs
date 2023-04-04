@@ -259,7 +259,11 @@ const Util = {
         ids.push(new ObjectId(id))
         if (user && user.junior) {
             user.junior.forEach(jun => {
-                ids.push(new ObjectId(jun))
+                if(jun.constructor===ObjectId){
+                    ids.push(jun)
+                }else{
+                    ids.push(new ObjectId(jun))
+                }
             })
         }
         return ids

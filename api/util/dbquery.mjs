@@ -192,3 +192,97 @@ export const addFilterToMatch = async ({db, debugInfo, filterKey, filterValue, t
     }
     return true
 }
+
+/*
+This JavaScript code parses a search input string and converts it into a MongoDB query.
+The search input string is expected to have a specific format, where each condition is separated by "&&" and each group of conditions is enclosed in parentheses,
+with conditions within the group separated by "||". Each condition is in the format "field=value".
+ */
+const OPERATOR_MAP = {'||':'$or', '&&':'$and'}
+const COMPERATOR_MAP = {'>':'$gt', '>=':'$gte', '<':'$lt', '<=':'$lte','=':'$regex','!=':'$regex','==':'$eq','!==':'$ne'}
+export const addSearchStringToMatch = (inputString, query) => {
+    let subQuery = query, inQuote = false, currTerm = '', comperator = '', operator ='', currField = '', parenthesisLevel = 0, parenthesisParents = {}, parenthesisOperator = {}
+
+    const addToQuery =(mQuery = {})=>{
+        const mOperator = OPERATOR_MAP[operator] || '$ukn'
+
+        if(!subQuery[mOperator]){
+            subQuery[mOperator] = []
+        }
+        if(mOperator !== '$ukn' && subQuery.$ukn){
+            subQuery[mOperator].push(...subQuery.$ukn)
+            delete subQuery.$ukn
+        }
+        subQuery[mOperator].push(mQuery)
+
+        return mQuery
+    }
+
+    const pushCurrTerm = () => {
+        if(!currField || !currTerm || !comperator){
+            return
+        }
+        const comp = COMPERATOR_MAP[comperator] || '$eq'
+        if(comp.startsWith('$lt')|| comp.startsWith('$gt')){
+            currTerm = parseFloat(currTerm)
+        }
+        const mQuery = {[currField]:{[comp]:currTerm}}
+        if(comp==='$regex'){
+            // AND
+            mQuery[currField][comp] = `^${mQuery[currField][comp].split(/\s/).map(f=>`(?=.*${f}.*)`).join('')}.*$`
+            // OR
+            //mQuery[currField][comp] = mQuery[currField][comp].replace(/\s/g, '|');
+            mQuery[currField].$options = 'i'
+        }
+        addToQuery(mQuery)
+
+        comperator= currField = currTerm = operator = ''
+    }
+
+    for (let i = 0; i < inputString.length; i++) {
+        const char = inputString[i]
+        if(char==='"'){
+            inQuote = !inQuote
+        }else if(!inQuote){
+            if(char==='('){
+                parenthesisOperator[parenthesisLevel] = operator
+                parenthesisParents[parenthesisLevel] = subQuery
+                parenthesisLevel++
+                operator = ''
+                subQuery = addToQuery()
+            }else if(char===')'){
+                pushCurrTerm()
+                parenthesisLevel--
+                operator = parenthesisOperator[parenthesisLevel]
+                subQuery = parenthesisParents[parenthesisLevel]
+                delete parenthesisParents[parenthesisLevel]
+                delete parenthesisOperator[parenthesisLevel]
+            }else if(['|','&'].indexOf(char)>=0){
+                operator += char
+            }else if(['=','<','>','!'].indexOf(char)>=0){
+                comperator += char
+            }else if(char==' '){
+                pushCurrTerm()
+            }else{
+                if(comperator){
+                    currTerm+=char
+                }else{
+                    currField+=char
+                }
+            }
+        }else{
+            currTerm+=char
+        }
+    }
+    pushCurrTerm()
+    if(query.$ukn){
+        if(!query.$and){
+            query.$and = []
+        }
+        query.$and.push(...query.$ukn)
+        delete query.$ukn
+    }
+
+    return query
+}
+
