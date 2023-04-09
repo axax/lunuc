@@ -400,7 +400,7 @@ export const userResolver = (db) => ({
 
             const user = result.value
             if (user) {
-                await sendMail(db, context, {
+                sendMail(db, context, {
                     from: fromEmail,
                     fromName,
                     slug: 'core/forgot-password/mail',

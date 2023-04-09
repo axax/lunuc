@@ -208,8 +208,11 @@ function isFileNotNewer(filename, statsMainFile) {
 const sendFile = function (req, res, {headers, filename, statusCode = 200}) {
     let acceptEncoding = req.headers['accept-encoding'], neverCompress = false
 
-    // TODO make it configurable
-    if (headers['Content-Type'] && (headers['Content-Type'].indexOf('image/') === 0 || headers['Content-Type'].indexOf('video/') === 0)) {
+
+    const isVideo = headers['Content-Type'] && headers['Content-Type'].indexOf('video/') === 0,
+        isImage = headers['Content-Type'] && headers['Content-Type'].indexOf('image/') === 0
+    if (isImage || isVideo) {
+        // TODO make it configurable
         neverCompress = true
     }
 
@@ -256,9 +259,21 @@ const sendFile = function (req, res, {headers, filename, statusCode = 200}) {
             const fileStream = fs.createReadStream(filename)
             fileStream.pipe(zlib.createDeflate()).pipe(res)
         } else {
+
+            let streamOption
+
+            if(isVideo){
+
+                streamOption = extendHeaderWithRange(headers, req, statsMainFile)
+
+                if(streamOption){
+                    statusCode = 206
+                }
+            }
+
             res.writeHead(statusCode, {...headers})
 
-            const fileStream = fs.createReadStream(filename)
+            const fileStream = fs.createReadStream(filename, streamOption)
             fileStream.pipe(res)
         }
     } catch (err) {
@@ -550,6 +565,41 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
     }
 }
 
+
+const sendFileFromTemplateDir = (req, res, urlPathname, headers, parsedUrl, host) => {
+    console.log(`load ${urlPathname} from template dir`)
+
+    // fetch file details
+    fs.stat(STATIC_TEMPLATE_DIR + urlPathname, (err, stats) => {
+        if (err) {
+            throw err
+        }
+
+        fs.readFile(STATIC_TEMPLATE_DIR + urlPathname, 'utf8', function (err, data) {
+            const ext = path.extname(urlPathname).split('.')[1]
+            const mimeType = MimeType.detectByExtension(ext)
+
+            const content = replacePlaceholders(data, {
+                headers: req.headers,
+                parsedUrl,
+                host,
+                config,
+                pathname: urlPathname
+            })
+
+            const headerExtra = {
+                'Cache-Control': 'public, max-age=604800',
+                'Content-Type': mimeType,
+                'Last-Modified': stats.mtime.toUTCString(),
+                'ETag': `"${createSimpleEtag({content})}"`,
+                ...headers
+            }
+            res.writeHead(200, headerExtra)
+            res.write(content)
+            res.end()
+        })
+    })
+}
 
 function hasHttpsWwwRedirect(host, req, res, remoteAddress) {
     if (host !== 'localhost' && !net.isIP(host)) {
@@ -941,6 +991,27 @@ async function resizeImage(parsedUrl, req, filename) {
     return {filename, exists, mimeType}
 }
 
+const extendHeaderWithRange = (headerExtra, req, stat)=>{
+
+    headerExtra['Accept-Ranges'] = 'bytes'
+
+    const range = req.headers.range
+
+    if (range) {
+        //delete headerExtra['Cache-Control']
+        const parts = range.replace(/bytes=/, '').split('-'),
+            partialstart = parts[0],
+            partialend = parts[1],
+            start = parseInt(partialstart, 10),
+            end = partialend ? parseInt(partialend, 10) : stat.size - 1,
+            chunksize = (end - start) + 1
+
+        headerExtra['Content-Range'] = 'bytes ' + start + '-' + end + '/' + stat.size
+        headerExtra['Content-Length'] = chunksize
+        return {start, end}
+    }
+}
+
 async function resolveUploadedFile(uri, parsedUrl, req, res) {
 
     // remove pretty url part
@@ -1039,24 +1110,10 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
 
                     if (!transcodeOptions || transcodeOptions.exists) {
 
-                        headerExtra['Accept-Ranges'] = 'bytes'
+                        streamOption = extendHeaderWithRange(headerExtra, req, stat)
 
-                        const range = req.headers.range
-
-                        if (req.headers.range) {
-                            //delete headerExtra['Cache-Control']
-                            const parts = range.replace(/bytes=/, '').split('-'),
-                                partialstart = parts[0],
-                                partialend = parts[1],
-                                start = parseInt(partialstart, 10),
-                                end = partialend ? parseInt(partialend, 10) : stat.size - 1,
-                                chunksize = (end - start) + 1
-
+                        if(streamOption){
                             code = 206
-                            streamOption = {start, end}
-                            headerExtra['Content-Range'] = 'bytes ' + start + '-' + end + '/' + stat.size
-                            headerExtra['Content-Length'] = chunksize
-
                         }
                     }
                 }
@@ -1312,104 +1369,71 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                         }
 
                     }
-
                     hostrule.headers = {...hostrules.general.headers, ...hostrule.headers}
-
-                    let staticFile
-
+                    const headers = {...hostrule.headers.common,...hostrule.headers[urlPathname]}
                     if (hostrule.fileMapping && hostrule.fileMapping[urlPathname]) {
-                        staticFile = path.join(hostrule._basedir, hostrule.fileMapping[urlPathname])
-                        console.log('mapped file: ' + staticFile)
-                    } else if (urlPathname.length > 1 && fs.existsSync(STATIC_TEMPLATE_DIR + urlPathname)) {
-                        console.log(`load ${urlPathname} from template dir`)
+                        const mappedFile = path.join(hostrule._basedir, hostrule.fileMapping[urlPathname])
+                        console.log('mapped file: ' + mappedFile)
 
-                        // fetch file details
-                        fs.stat(STATIC_TEMPLATE_DIR + urlPathname, (err, stats) => {
-                            if (err) {
-                                throw err
-                            }
-
-                            fs.readFile(STATIC_TEMPLATE_DIR + urlPathname, 'utf8', function (err, data) {
-                                const ext = path.extname(urlPathname).split('.')[1]
-                                const mimeType = MimeType.detectByExtension(ext)
-
-                                const content = replacePlaceholders(data, {
-                                    headers: req.headers,
-                                    parsedUrl,
-                                    host,
-                                    config,
-                                    pathname:urlPathname})
-
-                                const headerExtra = {
-                                    'Cache-Control': 'public, max-age=604800',
-                                    'Content-Type': mimeType,
-                                    'Last-Modified': stats.mtime.toUTCString(),
-                                    'ETag': `"${createSimpleEtag({content})}"`,
-                                    ...hostrule.headers[urlPathname]
-                                }
-                                res.writeHead(200, headerExtra)
-                                res.write(content)
-                                res.end()
-                            })
-                        })
-
-                        return
-                    } else {
-                        staticFile = path.join(STATIC_DIR, urlPathname)
-                    }
-                    const headers = hostrule.headers[urlPathname]
-
-                    if (!await sendFileFromDir(req, res, staticFile, headers, parsedUrl)) {
-
-                        if (!await sendFileFromDir(req, res, WEBROOT_ABSPATH + urlPathname, headers, parsedUrl)) {
-                            if (!await sendFileFromDir(req, res, BUILD_DIR + urlPathname, headers, parsedUrl)) {
-
-
-                                // special url
-                                const pos = urlPathname.indexOf('/' + config.PRETTYURL_SEPERATOR + '/' + config.PRETTYURL_SEPERATOR + '/')
-                                if (pos >= 0) {
-                                    const decodedStr = decodeURIComponent(urlPathname.substring(pos + 5))
-
-                                    try {
-                                        const data = JSON.parse(decodedStr)
-                                        const screenShotDir = path.join(ABS_UPLOAD_DIR, 'screenshots')
-
-                                        if (data.screenshot && ensureDirectoryExistence(screenShotDir)) {
-                                            //{"screenshot":{"url":"https:/stackoverflow.com/questions/4374822/remove-all-special-characters-with-regexp","options":{"height":300}}}
-                                            //console.log(decodeURI(urlPathname.substring(pos+5)))
-
-                                            const filename = decodedStr.replace(/[^\w]/gi, '') + '.png'
-
-                                            const absFilename = path.join(screenShotDir, filename)
-
-                                            if (!fs.existsSync(absFilename)) {
-                                                let url = data.screenshot.url
-                                                if (url.indexOf('/') === 0) {
-                                                    url = /*(req.isHttps ? 'https://' : 'http://') + hostRuleHost*/ 'http://127.0.0.1:'+PORT + url
-                                                }
-                                                await doScreenCapture(url, absFilename, data.screenshot.options)
-                                            }
-
-                                            await resolveUploadedFile(`${UPLOAD_URL}/screenshots/${filename}`, parsedUrl, req, res)
-
-
-                                        } else {
-                                            sendError(res, 404)
-                                        }
-
-                                    } catch (e) {
-                                        console.log(decodedStr)
-
-
-                                        console.error(e)
-                                        sendError(res, 500)
-                                    }
-
-                                } else {
-                                    sendIndexFile({req, res, remoteAddress, urlPathname, hostrule, host, parsedUrl})
-                                }
-                            }
+                        if (await sendFileFromDir(req, res, mappedFile, headers, parsedUrl)) {
+                            return
                         }
+                    } else if (urlPathname.length > 1 && fs.existsSync(STATIC_TEMPLATE_DIR + urlPathname)) {
+                        sendFileFromTemplateDir(req, res, urlPathname, headers, parsedUrl, host )
+                        return
+                    }
+
+
+                    const pathsToCheck = [...hostrule.paths, STATIC_DIR, WEBROOT_ABSPATH, BUILD_DIR]
+
+                    for(const curPath of pathsToCheck){
+                        if (await sendFileFromDir(req, res, path.join(curPath, urlPathname), headers, parsedUrl)) {
+                            return
+                        }
+                    }
+
+                    // special url
+                    const pos = urlPathname.indexOf('/' + config.PRETTYURL_SEPERATOR + '/' + config.PRETTYURL_SEPERATOR + '/')
+                    if (pos >= 0) {
+                        const decodedStr = decodeURIComponent(urlPathname.substring(pos + 5))
+
+                        try {
+                            const data = JSON.parse(decodedStr)
+                            const screenShotDir = path.join(ABS_UPLOAD_DIR, 'screenshots')
+
+                            if (data.screenshot && ensureDirectoryExistence(screenShotDir)) {
+                                //{"screenshot":{"url":"https:/stackoverflow.com/questions/4374822/remove-all-special-characters-with-regexp","options":{"height":300}}}
+                                //console.log(decodeURI(urlPathname.substring(pos+5)))
+
+                                const filename = decodedStr.replace(/[^\w]/gi, '') + '.png'
+
+                                const absFilename = path.join(screenShotDir, filename)
+
+                                if (!fs.existsSync(absFilename)) {
+                                    let url = data.screenshot.url
+                                    if (url.indexOf('/') === 0) {
+                                        url = /*(req.isHttps ? 'https://' : 'http://') + hostRuleHost*/ 'http://127.0.0.1:'+PORT + url
+                                    }
+                                    await doScreenCapture(url, absFilename, data.screenshot.options)
+                                }
+
+                                await resolveUploadedFile(`${UPLOAD_URL}/screenshots/${filename}`, parsedUrl, req, res)
+
+
+                            } else {
+                                sendError(res, 404)
+                            }
+
+                        } catch (e) {
+                            console.log(decodedStr)
+
+
+                            console.error(e)
+                            sendError(res, 500)
+                        }
+
+                    } else {
+                        sendIndexFile({req, res, remoteAddress, urlPathname, hostrule, host, parsedUrl})
                     }
                 }
             }

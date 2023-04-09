@@ -1009,6 +1009,9 @@ class CmsViewEditorContainer extends React.Component {
         if (!segment) {
             if (key) {
                 segment = {key}
+            }else if(path){
+                segment = {}
+                setPropertyByPath({},path,segment)
             }
             this._tmpDataResolver.push(segment)
         }

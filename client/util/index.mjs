@@ -434,6 +434,10 @@ const Util = {
         const loc = window.location, path = loc.pathname
         if (lang === _app_.lang) return path
         const p = path.split('/')
+        if(p.length===1){
+            //about:blank
+            return p
+        }
         if (p[1].length === 2 && p[1] !== lang) {
             if (lang === '' || lang === config.DEFAULT_LANGUAGE) {
                 //default language
