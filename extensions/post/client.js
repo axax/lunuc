@@ -13,13 +13,19 @@ import {_t} from "../../util/i18n.mjs";
 
 const PostRenderer = (props) => <Async readOnly={true} {...props}
                                        load={import(/* webpackChunkName: "post" */ './components/PostEditor')}/>
+
+const PostRendererDraftJs = (props) => <Async readOnly={true} {...props}
+                                       load={import(/* webpackChunkName: "post" */ './components/post/PostEditor')}/>
+
 const PostContainerAsync = (props) => <Async {...props}
                                              load={import(/* webpackChunkName: "admin" */ './containers/PostContainer')}/>
 
 export default () => {
 
     Hook.on('JsonDom', ({components}) => {
+
         components['PostRenderer'] = PostRenderer
+        components['PostRendererDraftJs'] = PostRendererDraftJs
     })
 
     // add routes for this extension

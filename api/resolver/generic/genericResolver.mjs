@@ -227,11 +227,11 @@ const GenericResolver = {
 
         const collectionName = await buildCollectionName(db, context, typeName, _version)
 
-        const userCanManageTypes = await Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
+        const userCanManageOtherUsers = await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
 
         // Default match
         if (!match) {
-            if (userCanManageTypes) {
+            if (userCanManageOtherUsers) {
                 // the user has the right to read everything
                 match = {}
             } else {
@@ -294,12 +294,11 @@ const GenericResolver = {
         }
 
         otherOptions.limitCount= 10000
-
         const aggregationBuilder = new AggregationBuilder(typeName, data, db, {
             match,
             includeCount: (includeCount !== false && !estimateCount),
             lang: context.lang,
-            includeUserFilter: userCanManageTypes,
+            includeUserFilter: userCanManageOtherUsers,
             ...otherOptions
         })
 
