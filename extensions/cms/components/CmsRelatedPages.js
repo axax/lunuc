@@ -16,7 +16,7 @@ export default function CmsRelatedPages(props){
 
     return <MenuList>
         <Query
-            query={'query cmsPages($filter:String,$limit:Int,$_version:String){cmsPages(filter:$filter,limit:$limit,_version:$_version){results{slug}}}'}
+            query={`query cmsPages($filter:String,$limit:Int,$_version:String){cmsPages(filter:$filter,limit:$limit,_version:$_version){results{slug public modifiedAt name{${_app_.lang}}}}}`}
             fetchPolicy="cache-and-network"
             variables={{
                 _version,
@@ -32,9 +32,17 @@ export default function CmsRelatedPages(props){
 
                 data.cmsPages.results.forEach(i => {
                         if (i.slug !== slug) {
+                            let src
+                            console.log(i)
+                            if(i.public){
+                                src = `/lunucapi/generate/png?url=/${i.slug}${encodeURI('?preview=true')}&width=1200&height=800&rwidth=120&rheight=80&cache=true&cacheExpire=${new Date(i.modifiedAt).getTime()}`
+                            }else{
+                                src = `/lunucapi/system/genimage?width=120&height=80&text=Kein Bild&fontsize=1em`
+                            }
                             menuItems.push(<MenuListItem key={i.slug} onClick={e => {
                                 history.push('/' + i.slug)
-                            }} button primary={i.slug}/>)
+                            }} button image={<img width={60} height={40}
+                                                  src={src}/>} primary={i.name[_app_.lang]} secondary={i.slug}/>)
                         }
                     }
                 )

@@ -104,8 +104,11 @@ import ListItemText from '@mui/material/ListItemText'
 export List from '@mui/material/List'
 export ListItem from '@mui/material/ListItem'
 export ListItemText from '@mui/material/ListItemText'
+import ListItemAvatar from '@mui/material/ListItemAvatar'
+import Avatar from '@mui/material/Avatar'
+export Collapse from '@mui/material/Collapse'
 export ListItemSecondaryAction from '@mui/material/ListItemSecondaryAction'
-export Collapse from '@mui/material/Collapse';
+
 
 export const MenuList = ({children, ...rest}) => {
     return <List {...rest}>
@@ -113,8 +116,13 @@ export const MenuList = ({children, ...rest}) => {
     </List>
 }
 
-export const MenuListItem = ({primary, secondary, ...rest}) => {
+export const MenuListItem = ({primary, secondary, image, ...rest}) => {
     return <ListItem {...rest}>
+        {image?
+            <ListItemAvatar sx={{ marginRight: 2}}>
+                {image}
+            </ListItemAvatar>:null
+        }
         <ListItemText
             primary={primary}
             secondary={secondary}

@@ -30,7 +30,8 @@ export const translations = {
         'CmsRevisionDialog.close':'Schliessen',
         'CmsRevisionDialog.restore':'Diese Version wiederherstellen',
         'CmsRevision.view': 'Voransicht',
-        'CmsRevision.templateChanged': 'Inhalt wurde geändert'
+        'CmsRevision.templateChanged': 'Inhalt wurde geändert',
+        'CmsRevision.noRevisionEntries': 'Keine Einträge'
     },
     en: {
         'CmsViewEditorContainer.save': 'Speichern',
@@ -61,6 +62,7 @@ export const translations = {
         'CmsRevisionDialog.close':'Close',
         'CmsRevisionDialog.restore':'Restore',
         'CmsRevision.view': 'Preview',
-        'CmsRevision.templateChanged': 'Content has changed'
+        'CmsRevision.templateChanged': 'Content has changed',
+        'CmsRevision.noRevisionEntries': 'No history entries'
     }
 }

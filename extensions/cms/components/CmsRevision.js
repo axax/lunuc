@@ -230,7 +230,7 @@ export default function CmsRevision(props){
                     }} button primary={Util.formattedDateFromObjectId(revision._id)} secondary={secondary}
                     />)
                 })
-                if (menuItems.length === 0) return <p>No history entries</p>
+                if (menuItems.length === 0) return <p>{_t('CmsRevision.noRevisionEntries')}</p>
 
                 return [
                     <MenuList>
