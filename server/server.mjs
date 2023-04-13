@@ -265,13 +265,14 @@ const sendFile = function (req, res, {headers, filename, statusCode = 200}) {
             if(isVideo){
 
                 streamOption = extendHeaderWithRange(headers, req, statsMainFile)
-
+                delete headers.ETag
+                delete headers['Cache-Control']
                 if(streamOption){
                     statusCode = 206
                 }
             }
 
-            res.writeHead(statusCode, {...headers})
+            res.writeHead(statusCode, {'Content-Length':statsMainFile.size,...headers})
 
             const fileStream = fs.createReadStream(filename, streamOption)
             fileStream.pipe(res)

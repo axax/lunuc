@@ -1,20 +1,18 @@
-import AWS from 'aws-sdk'
+import { Lambda } from '@aws-sdk/client-lambda'
 
 const ImageClassifier = {
 
 
     classifyByUrl: (url) => {
 
-        AWS.config.region = 'us-east-1'
-
-        // you shouldn't hardcode your keys in production! See http://docs.aws.amazon.com/AWSJavaScriptSDK/guide/node-configuring.html
-        AWS.config.update({accessKeyId: process.env.AWS_KEY, secretAccessKey: process.env.AWS_SECRET})
-
-
-
         return new Promise((resolve, reject) => {
 
-                var lambda = new AWS.Lambda()
+                var lambda = new Lambda({
+                    credentials: {
+                        accessKeyId: process.env.AWS_KEY,
+                        secretAccessKey: process.env.AWS_SECRET
+                    },
+                    region: 'us-east-1' })
                 var params = {
                     FunctionName: 'imageClassifier',
                     Payload: `{"options": {"url": "${url}"}}`
@@ -30,7 +28,7 @@ const ImageClassifier = {
                 })
 
             }
-        )
+        );
     }
 }
 

@@ -1,16 +1,21 @@
-import AWS from 'aws-sdk'
+import { Lambda } from '@aws-sdk/client-lambda'
 
 
-AWS.config.region = 'us-east-1'
-var lambda = new AWS.Lambda()
+const lambda = new Lambda({
+	credentials: {
+		accessKeyId: process.env.AWS_KEY,
+		secretAccessKey: process.env.AWS_SECRET
+	},
+	region: 'us-east-1' })
 
 exports.handler = function(event, context) {
-	var params = {
+	const params = {
 		FunctionName: 'Lambda_TEST', // the lambda function we are going to invoke
 		InvocationType: 'RequestResponse',
 		LogType: 'Tail',
 		Payload: '{ "name" : "Arpit" }'
 	}
+
 
 	lambda.invoke(params, function(err, data) {
 		if (err) {

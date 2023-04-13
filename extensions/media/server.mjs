@@ -8,16 +8,11 @@ import fs from 'fs'
 import path from 'path'
 import config from '../../gensrc/config.mjs'
 import React from 'react'
-import ImageClassfier from './util/imageClassifierLambda.mjs'
 import {ObjectId} from 'mongodb'
-import mediaResolver from './gensrc/resolver.mjs'
 import Util from '../../api/util/index.mjs'
 import {CAPABILITY_RUN_COMMAND} from '../../util/capabilities.mjs'
-import ffmpegInstaller from '@ffmpeg-installer/ffmpeg'
-import ffprobeInstaller from '@ffprobe-installer/ffprobe'
-import ffmpeg from 'fluent-ffmpeg'
 import {uploadImageToStorage}  from './googleupload.mjs'
-
+import {createMediaEntry} from './util/index.mjs'
 import { fileURLToPath } from 'url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -83,7 +78,7 @@ const addFilePrefix = (result) => {
 // Hook when db is ready
 Hook.on('FileUpload', async ({db, context, file, data, response}) => {
 
-    const _id = data._id ? ObjectId(data._id): ObjectId()
+    const _id = data._id ? new ObjectId(data._id): new ObjectId()
 
     // obsolete
     if( !response.fileIds){
@@ -145,82 +140,3 @@ Hook.on('FileUpload', async ({db, context, file, data, response}) => {
     }
 
 })
-
-
-
-const removeInvalidProperties = function (obj) {
-    for (const i in obj) {
-        if(i.indexOf('.')>=0){
-            delete obj[i]
-        }else {
-            const v = obj[i]
-            if (v) {
-                if (v.constructor === Array) {
-                    v.forEach((x) => {
-                        if (x.constructor === Object) {
-                            removeInvalidProperties(x)
-                        }
-                    })
-                } else if (v.constructor === Object) {
-                    removeInvalidProperties(v)
-                }
-            }
-        }
-    }
-    return null
-}
-
-
-const createMediaEntry = async ({db, _id, file, data, context}) => {
-    // const mimeType = MimeType.detectByFileName(file.name)
-    // call image classifier if requested
-    if (data.classifyImage) {
-        data.meta = JSON.stringify(await ImageClassfier.classifyByUrl(data.url || ('http://www.lunuc.com' + UPLOAD_URL + '/' + _id.toString()) )) //)
-    }
-
-    if( file.mimetype.indexOf('audio/')===0 || file.mimetype.indexOf('video/')===0){
-
-        try {
-
-
-            ffmpeg.setFfprobePath(ffprobeInstaller.path)
-            ffmpeg.setFfmpegPath( ffmpegInstaller.path)
-
-
-            const {meta} = await (new Promise((resolve) => {
-                ffmpeg.ffprobe(file.filepath, function (error, meta) {
-                    if (error) {
-                        console.warn(error)
-                    }
-                    resolve({error, meta})
-                })
-            }))
-            removeInvalidProperties(meta)
-            data.info = meta
-        }catch (e) {
-            console.warn('error in ffprobe', e)
-        }
-    }
-
-
-
-
-    const media = {
-        name: file.originalFilename,
-        size: file.size,
-        mimeType: file.mimetype || 'application/octet-stream',
-        ...data
-    }
-
-    if (_id) {
-        media._id = _id
-    }
-
-    if(!data._id) {
-        // save to db
-        mediaResolver(db).Mutation.createMedia(media, {context})
-    }else{
-        // update media
-        mediaResolver(db).Mutation.updateMedia(media, {context})
-    }
-}
