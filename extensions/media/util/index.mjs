@@ -7,7 +7,8 @@ import {ObjectId} from 'mongodb'
 import path from 'path'
 import fs from 'fs'
 import https from 'https'
-import config from "../../../gensrc/config.mjs";
+import http from 'http'
+import config from '../../../gensrc/config.mjs'
 
 
 
@@ -118,7 +119,13 @@ export const downloadFile = async (url, fileName)=>{
         }else{
             const file = fs.createWriteStream(fileName)
             console.log(`download: ${url}`)
-            const request = https.get(url, (res) => {
+            let httpx = https
+            const parsedUrl = new URL(url)
+            if (parsedUrl.protocol === 'http:') {
+                httpx = http
+            }
+
+            const request = httpx.get(url, (res) => {
 
                 if(res.statusCode=== 200){
                     res.pipe(file)
