@@ -101,12 +101,16 @@ export const createMediaEntryFromUrl = ({db,url,data,context}) => {
 
     const uploadFile = path.join(ABS_UPLOAD_DIR, _id.toString())
     downloadFile(url,uploadFile).then((res)=>{
-        const stats = fs.statSync(uploadFile)
-        createMediaEntry({db, file:{
-                originalFilename: fileName,
-                size: stats.size,
-                mimetype:res.headers['content-type']
-            }, data, context, _id})
+        if(res) {
+            const stats = fs.statSync(uploadFile)
+            createMediaEntry({
+                db, file: {
+                    originalFilename: fileName,
+                    size: stats.size,
+                    mimetype: res.headers ? res.headers['content-type'] : ''
+                }, data, context, _id
+            })
+        }
     })
 
     return {_id}
