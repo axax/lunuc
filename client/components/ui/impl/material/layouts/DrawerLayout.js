@@ -227,7 +227,7 @@ class DrawerLayout extends React.Component {
 
 
     render() {
-        const {title, sidebar, toolbarRight, children, fixedLayout} = this.props
+        const {title, sidebar, toolbarLeft, toolbarRight, children, fixedLayout} = this.props
         const {open, drawerWidth, dragEntered} = this.state
         const contentFixed = {}
         if (open) {
@@ -259,6 +259,7 @@ class DrawerLayout extends React.Component {
                                 hidden={open}>
                                 <MenuIcon/>
                             </StyledMenuButton>
+                            {toolbarLeft}
                             <Typography variant="h6" color="inherit" noWrap style={{flex: 1}}>
                                 {title}
                             </Typography>

@@ -805,7 +805,7 @@ class JsonDomHelper extends React.Component {
                 onMouseOut={this.onToolbarMouseOut.bind(this)}
                 style={{top: this.state.top, left: this.state.left, height: this.state.height}}>
 
-                <StyledInfoBox>{rest['data-element-key']?rest['data-element-key']:''}</StyledInfoBox>
+                <StyledInfoBox>{rest['data-element-key'] || rest.id || rest.slug}</StyledInfoBox>
 
                 {menuItems.length > 0 && <StyledToolbarMenu
                     anchorReference={this.state.mouseY ? "anchorPosition" : "anchorEl"}

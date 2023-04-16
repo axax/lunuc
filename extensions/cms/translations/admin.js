@@ -31,7 +31,10 @@ export const translations = {
         'CmsRevisionDialog.restore':'Diese Version wiederherstellen',
         'CmsRevision.view': 'Voransicht',
         'CmsRevision.templateChanged': 'Inhalt wurde geändert',
-        'CmsRevision.noRevisionEntries': 'Keine Einträge'
+        'CmsRevision.noRevisionEntries': 'Keine Einträge',
+        'JsonEditor.addEntry': 'Neuer Eintrag erstellen',
+        'JsonEditor.addProperty': 'Attribut hinzufügen',
+        'JsonEditor.remove': 'Eintrag löschen'
     },
     en: {
         'CmsViewEditorContainer.save': 'Speichern',
@@ -63,6 +66,9 @@ export const translations = {
         'CmsRevisionDialog.restore':'Restore',
         'CmsRevision.view': 'Preview',
         'CmsRevision.templateChanged': 'Content has changed',
-        'CmsRevision.noRevisionEntries': 'No history entries'
+        'CmsRevision.noRevisionEntries': 'No history entries',
+        'JsonEditor.addEntry': 'Add new entry',
+        'JsonEditor.addProperty': 'Add property',
+        'JsonEditor.remove': 'Remove'
     }
 }

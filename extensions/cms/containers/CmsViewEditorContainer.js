@@ -21,6 +21,7 @@ import {
     MenuList,
     MenuListItem,
     Button,
+    IconButton,
     SimpleSelect,
     SimpleSwitch,
     SimpleDialog,
@@ -31,6 +32,7 @@ import {
 import Drawer from '@mui/material/Drawer'
 import DisplaySettingsIcon from '@mui/icons-material/DisplaySettings'
 import AppsIcon from '@mui/icons-material/Apps'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import BottomNavigation from '@mui/material/BottomNavigation'
 import BottomNavigationAction from '@mui/material/BottomNavigationAction'
 import Paper from '@mui/material/Paper'
@@ -854,6 +856,13 @@ class CmsViewEditorContainer extends React.Component {
                     }
                 },
                 {
+                    divider: true,
+                    name: _t('CmsViewEditorContainer.logout'),
+                    onClick: () => {
+                        this.props.history.push(`${config.ADMIN_BASE_URL}/logout?forward=${encodeURIComponent('/' + props.slug + '?logout=true')}`)
+                    }
+                },
+                {
                     divider:true,
                     component:  <SimpleSwitch key="fixedLayoutSwitch" color="default"
                                               checked={!!EditorOptions.fixedLayout}
@@ -865,9 +874,6 @@ class CmsViewEditorContainer extends React.Component {
                 <Button key="buttonBack" size="small" color="inherit" onClick={() => {
                     this.props.history.push(config.ADMIN_BASE_URL)
                 }}>Admin</Button>,
-                <Button key="buttonLogout" size="small" color="inherit" onClick={() => {
-                    this.props.history.push(`${config.ADMIN_BASE_URL}/logout?forward=${encodeURIComponent('/' + props.slug + '?logout=true')}`)
-                }}>{_t('CmsViewEditorContainer.logout')}</Button>,
                 <SimpleMenu key="moreMenu" color="inherit" items={moreMenu}/>)
 
 
@@ -922,6 +928,12 @@ class CmsViewEditorContainer extends React.Component {
                               drawerWidth={EditorOptions.drawerWidth}
                               onDrawerOpenClose={this.drawerOpenClose}
                               onDrawerWidthChange={this.drawerWidthChange}
+                              toolbarLeft={<IconButton
+                                  onClick={()=>{
+                                      this.props.history.push(config.ADMIN_BASE_URL + '/cms' + (_app_._cmsLastSearch ? _app_._cmsLastSearch : ''))
+
+                                  }}
+                                  color="inherit"><ArrowBackIcon/></IconButton>}
                               toolbarRight={toolbarRight}
                               title={`${_t('CmsViewEditorContainer.editPage')} "${props.slug}" - ${cmsPage.online ? 'Online' : 'Online'}`}>
                     {inner}

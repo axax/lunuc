@@ -7,18 +7,34 @@ import {
     Collapse,
     ExpandLessIcon,
     ExpandMoreIcon,
-    TextField,
     ClearIconButton,
-    SimpleAutosuggest,
     SimpleMenu
 } from 'ui/admin'
 import {getComponentByKey, addComponent, removeComponent} from '../util/jsonDomUtil'
-import DomUtil from 'client/util/dom.mjs'
-import DomUtilAdmin from 'client/util/domAdmin.mjs'
-import {getJsonDomElements} from '../util/elements'
+import {_t} from '../../../util/i18n.mjs'
+import styled from '@emotion/styled'
 
 const INDENT = 30
 
+
+const StyledDropArea = styled('div')(({theme}) => ({
+    textAlign: 'center',
+    padding: '0.2rem',
+    width: '100%',
+    margin: '0 0 -' + theme.spacing(1) + ' 0',
+    opacity: '0',
+    fontSize: '0.8rem',
+    backgroundColor: 'rgba(255,0,0,0.3)'
+}))
+
+
+const getIndexOfKey = (key)=> {
+    const keyParts = key.split('.')
+    return parseInt(keyParts[keyParts.length - 1])
+}
+const getParentKeyOfKey = (key)=> {
+    return key.split('.').splice(-1).join('.')
+}
 
 class JsonDomEditor extends React.Component {
 
@@ -58,7 +74,7 @@ class JsonDomEditor extends React.Component {
             try {
                 return {
                     dataOri: nextProps.children,
-                    json: nextProps.children && nextProps.children.constructor===String ? JSON.parse(nextProps.children) : nextProps.children
+                    json: nextProps.children && nextProps.children.constructor === String ? JSON.parse(nextProps.children) : nextProps.children
                 }
             } catch (e) {
                 console.log(e, nextProps.children)
@@ -84,41 +100,32 @@ class JsonDomEditor extends React.Component {
             })
             return <List component="nav">
                 <SimpleMenu mini color="secondary" items={[{
-                    name: 'Add Entry', onClick: e => {
+                    name: _t('JsonEditor.addEntry'), onClick: e => {
                         this.addComponent(key)
                         return this.stopPropagation(e)
                     }
                 }]}/>{acc}</List>
         } else if (json.constructor === Object) {
 
-            let newkey = key, newlevel = level
-
-
             const actions = [
-                   /* {
-                        name: 'Add child component', onClick: e => {
-                            this.addComponent(key)
-                            return this.stopPropagation(e)
-                        }
-                    },*/
-                    {
-                        name: 'Add property', onClick: e => {
-                            const comp = getComponentByKey(key, this.state.json)
-                            comp['newProperty'] = 'Property value'
-                            this.updateJson(this.state.json)
-                            return this.stopPropagation(e)
-                        }
-                    },
-                    {
-                        name: 'Remove', onClick: e => {
-                            this.removeComponent(key)
-                            return this.stopPropagation(e)
-                        }
+                {
+                    name: _t('JsonEditor.addProperty'), onClick: e => {
+                        const comp = getComponentByKey(key, this.state.json)
+                        comp['newProperty'] = 'Property value'
+                        this.updateJson(this.state.json)
+                        return this.stopPropagation(e)
                     }
-                ]
+                },
+                {
+                    name: _t('JsonEditor.remove'), onClick: e => {
+                        this.removeComponent(key)
+                        return this.stopPropagation(e)
+                    }
+                }
+            ]
 
 
-            let itemLabel =''
+            let itemLabel = ''
             const props = []
             Object.keys(json).forEach(k => {
                 let value = json[k], valueOri = json[k]
@@ -126,7 +133,7 @@ class JsonDomEditor extends React.Component {
                 if (value && value.constructor !== String) {
                     value = JSON.stringify(value, null, 2)
 
-                }else if(!itemLabel){
+                } else if (!itemLabel) {
                     itemLabel += value
                 }
                 props.push(<tr key={key + '.' + k}>
@@ -155,47 +162,92 @@ class JsonDomEditor extends React.Component {
                     <td><ClearIconButton onClick={() => {
                         const comp = getComponentByKey(key, this.state.json)
                         delete comp[k]
-                        this.updateJson( this.state.json)
+                        this.updateJson(this.state.json)
                     }}/></td>
                 </tr>)
             })
 
-            return [<ListItem dense
-                              draggable
-                              disableRipple
-                              key={key} style={{paddingLeft: INDENT * level}} button
-                              onClick={this.handleClick.bind(this, key)}>
+            const DropArea = ({position})=>{
+                return <StyledDropArea key={`drop${key}${position}`}
+                                data-key={key}
+                                onDrop={(e) => {
+                                    e.target.style.opacity = 0
 
-                {actions && <SimpleMenu mini color="secondary" items={actions}/>}
-                <ListItemText style={{fontWeight: 'bold'}}>
-                    {itemLabel}
-                </ListItemText>
-                {(json.c !== undefined || props.length > 0) && (!!this.state.open[key] ? <ExpandLessIcon/> :
-                    <ExpandMoreIcon/>)}
-            </ListItem>,
+                                    const targetKey = e.currentTarget.getAttribute('data-key'),
+                                        sourceKey = e.dataTransfer.getData("text"),
+                                        targetIndex = getIndexOfKey(targetKey) + (position==='after'?1:0),
+                                        sourceIndex = getIndexOfKey(sourceKey)
+
+                                    const targetComp = getComponentByKey(getParentKeyOfKey(targetKey), this.state.json),
+                                        sourceComp = getComponentByKey(getParentKeyOfKey(sourceKey), this.state.json)
+
+                                    if(targetComp == sourceComp){
+                                        const element = sourceComp.splice(sourceIndex, 1) [0]
+                                        sourceComp.splice(targetIndex > sourceIndex ? targetIndex - 1 : targetIndex, 0, element)
+                                        this.updateJson(this.state.json)
+
+                                    }else{
+                                        alert('action not supported')
+                                    }
+
+                                }}
+                                onDragOver={(e) => {
+                                    e.preventDefault()
+                                    e.dataTransfer.dropEffect = 'copy'
+                                    e.target.style.opacity = 1
+                                }}
+                                onDragLeave={(e) => {
+                                    e.target.style.opacity = 0
+                                }}>Hier einfügen</StyledDropArea>
+            }
+
+
+            return [
+                getIndexOfKey(key)===0?<DropArea />:null,
+                <ListItem dense
+                          draggable
+                          disableRipple
+                          draggable={true}
+                          data-key={key}
+                          onDragStart={(e) => {
+                              e.dataTransfer.setData('text', e.target.getAttribute('data-key'));
+                          }}
+                          key={key}
+                          style={{paddingLeft: INDENT * level}}
+                          button
+                          onClick={this.handleClick.bind(this, key)}>
+
+                    {actions && <SimpleMenu mini color="secondary" items={actions}/>}
+                    <ListItemText style={{fontWeight: 'bold'}}>
+                        {itemLabel}
+                    </ListItemText>
+                    {(json.c !== undefined || props.length > 0) && (!!this.state.open[key] ? <ExpandLessIcon/> :
+                        <ExpandMoreIcon/>)}
+                </ListItem>,
                 <Collapse key={key + '.colapse'} in={!!this.state.open[key]} timeout="auto" unmountOnExit>
                     <div style={{paddingLeft: INDENT * level + 65}}>
                         <table colspstyle={{width: '100%', fontSize: '0.9em'}}>
                             <tbody>{props}</tbody>
                         </table>
                     </div>
-                    {['input', 'textarea'].indexOf(itemLabel) < 0 || json.c ? this.renderJsonRec(json.c, newkey, newlevel) :
-                        <ListItem style={{paddingLeft: INDENT * newlevel + 65}}
+                    {['input', 'textarea'].indexOf(itemLabel) < 0 || json.c ? this.renderJsonRec(json.c, key, level) :
+                        <ListItem style={{paddingLeft: INDENT * level + 65}}
                                   key={key + '.c'}>Type {itemLabel} can not have
                             children</ListItem>}
-                </Collapse>
+                </Collapse>,
+                <DropArea position="after"/>
             ]
         } else {
-           /* return <ListItem style={{paddingLeft: INDENT * level + 65}} key={key + '.c'}><ListItemText>
-                <TextField placeholder="Enter some content" fullWidth value={json}
-                           onChange={e => {this.updateJson(key, e.target.value, 'c')}}/>
-            </ListItemText></ListItem>*/
+            /* return <ListItem style={{paddingLeft: INDENT * level + 65}} key={key + '.c'}><ListItemText>
+                 <TextField placeholder="Enter some content" fullWidth value={json}
+                            onChange={e => {this.updateJson(key, e.target.value, 'c')}}/>
+             </ListItemText></ListItem>*/
         }
     }
 
     updateJson(json, dontUpdate) {
         this.props.onChange(json)
-        if (!dontUpdate){
+        if (!dontUpdate) {
             this.forceUpdate()
         }
     }
@@ -206,7 +258,7 @@ class JsonDomEditor extends React.Component {
     }
 
     addComponent(key) {
-        const json = addComponent({key, json: this.state.json})
+        const json = addComponent({key, json: this.state.json, component: this.props.componentTemplate})
         if (json) {
             this.updateJson(this.state.json)
             this.setState({open: Object.assign({}, this.state.open, {[key]: true})});

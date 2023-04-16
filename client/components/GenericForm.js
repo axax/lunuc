@@ -950,7 +950,6 @@ class GenericForm extends React.Component {
                 }
             }
 
-
             currentFormFields.push(<FormControl key={'control' + fieldKey}
                                                 className={field.className}
                                                 sx={getSxProps({fullWidth:true})}>
@@ -965,7 +964,7 @@ class GenericForm extends React.Component {
                             name: fieldKey,
                             value: newValue
                         }
-                    })}>{value}</JsonEditor> :
+                    })} componentTemplate={field.componentTemplate}>{value}</JsonEditor> :
 
                     <CodeEditor
                         style={{border: '1px solid #eeeeee',margin: '24px 0'}}

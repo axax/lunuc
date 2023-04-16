@@ -864,7 +864,7 @@ const GenericResolver = {
             throw new Error('entry with id ' + _id + ' does not exist')
         }
 
-        const clone = Object.assign({}, entry, {modifiedAt: null, createdBy: ObjectId(context.id)}, rest)
+        const clone = Object.assign({}, entry, {modifiedAt: null, createdBy: new ObjectId(context.id)}, rest)
 
         delete clone._id
 
@@ -876,7 +876,7 @@ const GenericResolver = {
                 _id: insertResult.insertedId,
                 status: 'created',
                 createdBy: {
-                    _id: ObjectId(context.id),
+                    _id: new ObjectId(context.id),
                     username: context.username
                 }
             }
@@ -886,14 +886,14 @@ const GenericResolver = {
             if (fields) {
                 const fieldKeys = Object.keys(result)
                 for(const field of fieldKeys){
-                    console.log(field)
                     if (fields[field] && result[field]) {
                         if (fields[field].reference && result[field].constructor !== Object) {
                             // is a reference
                             if(fields[field].multi) {
 
                                 const newResultList = []
-                                for(const objectId of result[field]){
+                                const list = result[field].constructor === Array ? result[field] : [result[field]]
+                                for(const objectId of list){
                                     const subEntry = (await db.collection(fields[field].type).findOne({_id: objectId}))
 
                                     if(subEntry){
