@@ -724,8 +724,8 @@ class CmsViewEditorContainer extends React.Component {
                             onChange={(event, newValue) => {
                                 this.handleSettingChange('bottomNavigation', false, newValue)
                             }}>
-                            <BottomNavigationAction label="Global" icon={<DisplaySettingsIcon />} />
-                            <BottomNavigationAction label="Elements" icon={<AppsIcon />} />
+                            <BottomNavigationAction label={_t('CmsViewEditorContainer.pageOptions')} icon={<DisplaySettingsIcon />} />
+                            <BottomNavigationAction label={_t('CmsViewEditorContainer.pageElements')} icon={<AppsIcon />} />
                         </BottomNavigation>
                     </Paper>
                 </Box>

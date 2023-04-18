@@ -11,7 +11,8 @@ import {
     Stack,
     SimpleTab,
     SimpleTabPanel,
-    SimpleTabs
+    SimpleTabs,
+    Slider
 } from 'ui/admin'
 import Async from '../../../client/components/Async'
 import {_t} from '../../../util/i18n.mjs'
@@ -20,7 +21,7 @@ import JsonDomIFrame from './JsonDomIFrame'
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
 
 function CmsRevisionDialog(props){
-    const {onClose, cmsPage, _id, canMangeCmsTemplate, ...rest} = props
+    const {onClose, onChange, cmsPage, _id, canMangeCmsTemplate, ...rest} = props
 
     let parsedData
 
@@ -46,7 +47,7 @@ function CmsRevisionDialog(props){
                          title={_t('CmsRevisionDialog.title',{date: Util.formattedDateFromObjectId(_id)})}>
 
         <Query
-            query={'query historys($filter:String){historys(filter:$filter){results{_id action data}}}'}
+            query={`query historys($filter:String){historys(filter:$filter){results{_id action data}}}`}
             fetchPolicy="cache-and-network"
             variables={{
                 filter: `_id=${_id}`
@@ -74,6 +75,7 @@ function CmsRevisionDialog(props){
                 } else if (parsedData.template) {
                     const [tabValue, setTabValue] = React.useState(0)
                     return <>
+
                         <SimpleTabs
                             style={{width:'100%'}}
                             value={tabValue}
@@ -85,8 +87,8 @@ function CmsRevisionDialog(props){
                             {canMangeCmsTemplate && <SimpleTab key="tabCode" label="Code"/>}
                         </SimpleTabs>
 
-                        <SimpleTabPanel key="tabPanelView" value={tabValue} index={0}>
-                            <JsonDomIFrame style={{border:0,width:'100%',height:'calc(100vh - 16.5rem)'}}
+                        <SimpleTabPanel style={{border:'solid 1px rgba(234,234,234)'}} key="tabPanelView" value={tabValue} index={0}>
+                            <JsonDomIFrame style={{border: 0,width:'100%',height:'calc(100vh - 19.8rem)'}}
                             jsonDom={{
                                 history:{
                                     listen: ()=>{},
@@ -115,6 +117,74 @@ function CmsRevisionDialog(props){
                             <a href={'/system/diff?preview=true#value=' + encodeURIComponent(parsedData.template) + '&orig1=' + encodeURIComponent(cmsPage.template)}
                                target="_blank">Show diff</a>
                         </SimpleTabPanel>
+
+                        <Query
+                            query={`query historys($limit:Int,$filter:String){historys(limit:$limit,filter:$filter){results{_id}}}`}
+                            fetchPolicy="cache-and-network"
+                            variables={{
+                                limit: 999,
+                                filter: `data._id==${cmsPage._id} && meta.keys==template`
+                            }}>
+                            {({loading, error, data}) => {
+                                if (error) return `Error! ${error.message}`
+
+                                const defaultValue = Util.dateFromObjectId(_id, new Date()).getTime()
+                                let year
+                                const getLabel = (f)=>{
+                                    const d = Util.dateFromObjectId(f._id, new Date())
+                                    if(year!==d.getFullYear()){
+                                        year=d.getFullYear()
+                                        console.log(year)
+                                        return Util.formattedDateFromObjectId(f._id,{day: undefined, month: undefined, hour:undefined, minute: undefined, second: undefined})
+                                    }
+                                    return ''
+                                }
+
+                                function valuetext(value) {
+                                    return marks.findIndex((mark) => mark.value === value) + 1
+                                }
+
+                                function valueLabelFormat(value) {
+                                    return Util.formattedDatetime(value)
+                                }
+
+                                if (!data) {
+                                    return <Slider
+                                        defaultValue={defaultValue}
+                                        valueLabelFormat={valueLabelFormat}
+                                        valuetext={valuetext}
+                                        step={null}
+                                        disabled={true}
+                                        valueLabelDisplay="auto"
+                                        marks={[{value: defaultValue, label: 'loading'}]}
+                                    />
+                                }
+                                const max = Util.dateFromObjectId(data.historys.results[0]._id, new Date()).getTime()
+                                const min = Util.dateFromObjectId(data.historys.results[data.historys.results.length-1]._id, new Date()).getTime()
+
+                                const marks = data.historys.results.map(f=>({
+                                    _id:f._id,
+                                    value:Util.dateFromObjectId(f._id, new Date()).getTime(),
+                                    label: getLabel(f)}))
+
+
+
+                                return <Slider
+                                    defaultValue={defaultValue}
+                                    valueLabelFormat={valueLabelFormat}
+                                    valuetext={valuetext}
+                                    onChangeCommitted={(e, newValue)=>{
+                                        const mark = marks.find((mark) => mark.value === newValue)
+                                        onChange(mark)
+                                    }}
+                                    step={null}
+                                    max={max}
+                                    min={min}
+                                    valueLabelDisplay="auto"
+                                    marks={marks}
+                                />
+                            }}
+                        </Query>
                     </>
                 } else if (parsedData.style) {
 
@@ -201,7 +271,6 @@ export default function CmsRevision(props){
                 if (error) return <p>Error! {error.message}</p>
 
                 const menuItems = []
-
                 data.historys.results.forEach(revision => {
                     const meta = revision.meta ? JSON.parse(revision.meta) : {keys: []}
 
@@ -248,14 +317,19 @@ export default function CmsRevision(props){
                     </Stack>]
             }}
         </Query>
-        {showRevision ? <CmsRevisionDialog _id={showRevision._id} canMangeCmsTemplate={canMangeCmsTemplate}
-                                           cmsPage={cmsPage} onClose={(action, cmsPageHistory)=>{
-            if(action.key==='restore'){
-                if(cmsPageHistory.template) {
-                    onTemplateChange(cmsPageHistory.template,true)
-                }
-            }
-            setShowRevision(null)
-        }} {...rest} /> : null}
+        {showRevision ? <CmsRevisionDialog _id={showRevision._id}
+                                           canMangeCmsTemplate={canMangeCmsTemplate}
+                                           cmsPage={cmsPage}
+                                           onChange={(mark)=>{
+                                               setShowRevision(mark)
+                                           }}
+                                           onClose={(action, cmsPageHistory)=>{
+                                                if(action.key==='restore'){
+                                                    if(cmsPageHistory.template) {
+                                                        onTemplateChange(cmsPageHistory.template,true)
+                                                    }
+                                                }
+                                                setShowRevision(null)
+                                            }} {...rest} /> : null}
     </>
 }

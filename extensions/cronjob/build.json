@@ -5,17 +5,32 @@
       "entryClonable": true,
       "fields": [
         {
+          "tab": "Allgemein",
           "name": "name",
           "required": true,
           "clone": "${name} (copy)",
           "index": 1
         },
         {
-          "name": "script",
-          "uitype": "jseditor",
-          "alwaysLoad": false
+          "tab": "Allgemein",
+          "name": "active",
+          "type": "Boolean",
+          "index": 1
         },
         {
+          "tab": "Allgemein",
+          "name": "expression",
+          "label": "Cron expression",
+          "index": 1
+        },
+        {
+          "tab": "Allgemein",
+          "name": "execfilter",
+          "label": "Execution filter",
+          "index": 1
+        },
+        {
+          "tab": "Script",
           "name": "scriptLanguage",
           "enum": [
             "Javascript",
@@ -24,21 +39,13 @@
           "index": 1
         },
         {
-          "name": "expression",
-          "label": "Cron expression",
-          "index": 1
+          "tab": "Script",
+          "name": "script",
+          "uitype": "jseditor",
+          "alwaysLoad": false
         },
         {
-          "name": "execfilter",
-          "label": "Execution filter",
-          "index": 1
-        },
-        {
-          "name": "active",
-          "type": "Boolean",
-          "index": 1
-        },
-        {
+          "tab": "Script",
           "name": "noEntry",
           "type": "Boolean",
           "index": 1

@@ -345,21 +345,25 @@ class TypesContainer extends React.Component {
                                 dynamic[field.name] = '••••••'
                             } else {
                                 if (field.localized) {
-                                    const langVar = []
+                                    if(this.settings.showTranslations) {
+                                        const langVar = []
 
-                                    LANGUAGES.map(lang => {
-                                        langVar.push(<StyledTableContentEllipsis key={lang}>
-                                            <Typography mb={0} variant="body2" component="span"
-                                                        color="text.disabled">{lang}:</Typography> <span
-                                            onBlur={e => this.handleDataChange.bind(this)(e, item, field, lang)}
-                                            suppressContentEditableWarning
-                                            dangerouslySetInnerHTML={{
-                                                __html: fieldValue && fieldValue[lang]
-                                            }}
-                                            contentEditable/>
-                                        </StyledTableContentEllipsis>)
-                                    })
-                                    dynamic[field.name] = langVar
+                                        LANGUAGES.map(lang => {
+                                            langVar.push(<StyledTableContentEllipsis key={lang}>
+                                                <Typography mb={0} variant="body2" component="span"
+                                                            color="text.disabled">{lang}:</Typography> <span
+                                                onBlur={e => this.handleDataChange.bind(this)(e, item, field, lang)}
+                                                suppressContentEditableWarning
+                                                dangerouslySetInnerHTML={{
+                                                    __html: fieldValue && fieldValue[lang]
+                                                }}
+                                                contentEditable/>
+                                            </StyledTableContentEllipsis>)
+                                        })
+                                        dynamic[field.name] = langVar
+                                    }else{
+                                        dynamic[field.name] = fieldValue && fieldValue[_app_.lang]
+                                    }
                                 } else {
                                     if (fieldValue && fieldValue.constructor === Array) {
                                         dynamic[field.name] = fieldValue.map(e => <Chip key={e} label={e}/>)
@@ -710,7 +714,9 @@ class TypesContainer extends React.Component {
 
         if (viewSettingDialog !== undefined) {
             viewSettingDialogProps = {
-                title: 'View settings',
+                title: _t('TypeContainer.viewSettings'),
+                maxWidth: 'md',
+                fullWidth: true,
                 open: this.state.viewSettingDialog,
                 onClose: this.handleViewSettingClose,
                 actions: [{
@@ -719,8 +725,7 @@ class TypesContainer extends React.Component {
                     type: 'primary'
                 }],
                 children: <div>
-                    <Typography variant="subtitle1" component="h2" gutterBottom>Available columns</Typography>
-
+                    <Typography variant="subtitle1" component="h2" gutterBottom>{_t('TypeContainer.availableColumns')}</Typography>
                     {columns &&
                         columns.map(c => {
                             return <div key={c.id}><SimpleSwitch disabled={!!this.props.settings}
@@ -731,6 +736,14 @@ class TypesContainer extends React.Component {
                                                                  checked={this.isColumnActive(type, c.id)}/></div>
                         })
                     }
+                    <Divider sx={{ mt: 2, mb: 2 }}></Divider>
+                    <SimpleSwitch label={_t('TypeContainer.showTranslations')}
+                                  name="translations"
+                                  onChange={() => {
+                                      this.settings.showTranslations = !this.settings.showTranslations
+                                      this.forceUpdate()
+                                  }}
+                                  checked={this.settings.showTranslations}/>
                 </div>
             }
         }
@@ -1001,8 +1014,8 @@ class TypesContainer extends React.Component {
             s = this.getSettingsForType(type, this.pageParams.meta)
         }
 
-        if (s && s.columns) {
-            return s.columns[id] === undefined || s.columns[id]
+        if (s && s.columns && s.columns[id] !== undefined) {
+            return s.columns[id]
         }
 
         // check if field is hidden by default
@@ -1092,6 +1105,7 @@ class TypesContainer extends React.Component {
 
     handleViewSettingChange(e, type) {
         const target = e.target, value = target.checked, name = target.name
+
         this.settings = deepMerge(this.settings, {[type]: {columns: {[name]: value}}})
         // force rerendering
         this.forceUpdate()

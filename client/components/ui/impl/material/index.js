@@ -95,6 +95,9 @@ export const Col = ({...rest}) => {
 export DrawerLayout from './layouts/DrawerLayout'
 export ResponsiveDrawerLayout from './layouts/ResponsiveDrawerLayout'
 
+// Slider
+export Slider from '@mui/material/Slider'
+
 
 // list
 import List from '@mui/material/List'

@@ -15,6 +15,7 @@ import {ObjectId} from 'mongodb'
 import {sendMail} from '../util/mail.mjs'
 import {getType} from '../../util/types.mjs'
 import {listBackups, createBackup, removeBackup, mongoExport} from './backups.mjs'
+import {getCollections} from "../util/collection.mjs";
 
 const {UPLOAD_DIR} = config
 
@@ -267,15 +268,7 @@ export const systemResolver = (db) => ({
         collections: async ({filter}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
-            const cacheKey = 'system-collections-' + filter
-
-            let collections = Cache.get(cacheKey)
-            if (!collections) {
-                collections = await db.listCollections({name: {$regex: new RegExp(filter), $options: 'i'}}).toArray()
-                Cache.set(cacheKey, collections, 86400000) // cache expires in 1 day
-            }
-
-            return {results: collections}
+            return {results: await getCollections({db, filter})}
         },
         collectionAggregate: async ({collection, json}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
