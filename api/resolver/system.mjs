@@ -434,6 +434,29 @@ export const systemResolver = (db) => ({
 
             return {status: 'success', collection: {name: newName}}
         },
+        syncCollectionEntries: async ({fromVersion,toVersion,type,ids},{context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
+
+            const getCollectionName = (name) =>{
+                return `${type}${name!=='default'?'_'+name:''}`
+            }
+
+            const fromCollection = db.collection(getCollectionName(fromVersion))
+            const toCollection = db.collection(getCollectionName(toVersion))
+
+            if(fromCollection && toCollection){
+
+                for(const id of ids){
+                    const entry = await fromCollection.findOne({_id:new ObjectId(id)})
+                    if(entry) {
+                        await toCollection.updateOne({_id: new ObjectId(id)}, {$set: entry}, {upsert: true})
+                    }
+                }
+
+            }
+
+            return {result: 'synced'}
+        },
         deleteCollection: async ({name}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
 

@@ -11,12 +11,20 @@ import {getIconByKey} from '../../../client/components/ui/impl/material/icon'
 import {JsonDomDraggable, onJsonDomDrag, onJsonDomDragEnd} from '../util/jsonDomDragUtil'
 
 
-const StyledPaper = styled(Paper)(({ theme }) => ({
+const StyledPaper = styled(Paper)(({ theme, disabled }) => ({
     textAlign: 'center',
     color: theme.palette.text.secondary,
     height: 60,
     padding: theme.spacing(2),
-    cursor: 'grab'
+    ...(!disabled && {
+        cursor: 'grab',
+        '&:hover': {
+            backgroundColor: 'rgba(244,244,244,1)',
+        }
+    }),
+    ...(disabled && {
+        color: 'rgba(0,0,0,0.3)'
+    }),
 }))
 
 export default function CmsElement(props){
@@ -28,6 +36,7 @@ export default function CmsElement(props){
         const Icon = getIconByKey(element.icon, SettingsIcon)
         uiElements.push(
             <StyledPaper
+                disabled={props.disabled}
                 onDrag={onJsonDomDrag}
                 onDragStart={(e) => {
                         e.stopPropagation()
@@ -40,7 +49,7 @@ export default function CmsElement(props){
                     }
                 }
                 onDragEnd={onJsonDomDragEnd}
-                draggable={true}>
+                draggable={!props.disabled}>
                 <Icon sx={{ fontSize: 30 }} />
                 <Typography variant="subtitle1">{element.name}</Typography>
             </StyledPaper>)

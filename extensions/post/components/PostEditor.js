@@ -69,6 +69,8 @@ function RestorePlugin({ post, readOnly }){
 export default React.memo((props) => {
 
     const {post, onChange, debug} = props
+    console.log(`render post editor for ${post._id}`)
+
     return (
         <LexicalComposer ref={(ref)=>{
             /*const node = ReactDOM.findDOMNode(ref)
@@ -103,5 +105,5 @@ export default React.memo((props) => {
     )
 }, (prevProps, nextProps) => {
 
-    return prevProps.post.id === nextProps.post.id
+    return prevProps.post._id === nextProps.post._id
 })

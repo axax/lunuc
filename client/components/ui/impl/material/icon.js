@@ -67,10 +67,16 @@ import {
     WidgetsIcon,
     FunctionsIcon,
     TextFormatIcon,
-    PauseIcon
+    PauseIcon,
+    LogoutIcon,
+    PreviewIcon,
+    SyncIcon
 } from 'gensrc/ui/admin/icons'
 
 const iconComponents = {
+    sync: SyncIcon,
+    preview: PreviewIcon,
+    logout: LogoutIcon,
     home: HomeIcon,
     build: BuildIcon,
     settings: SettingsIcon,

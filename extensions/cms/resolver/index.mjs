@@ -16,7 +16,6 @@ import {
 } from '../util/cmsView.mjs'
 //import renderReact from '../renderReact.mjs'
 import {createRequireForScript} from '../../../util/require.mjs'
-import {getCollections} from "../../../api/util/collection.mjs";
 
 const PORT = (process.env.PORT || 3000)
 
@@ -34,8 +33,6 @@ export default db => ({
         cmsPages: async ({limit, page, offset, filter, sort, _version}, {headers, context}) => {
             Util.checkIfUserIsLoggedIn(context)
             const fields = ['public', 'slug', 'hostRule', 'name', 'keyword', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'loadPageOptions', 'ssrStyle', 'uniqueStyle', 'publicEdit', 'compress', 'isTemplate','ownerGroup$[UserGroup]']
-
-
 
             if (filter) {
 
@@ -186,10 +183,6 @@ export default db => ({
                 // return all data if user is loggedin, and in editmode and has the capability to mange cms pages
                 result.name = name
                 result.keyword = keyword
-
-                const collections = await getCollections({db, filter:'^CmsPage_.*'})
-
-                console.log(collections)
 
                 if (!dynamic) {
                     const pageName = result.realSlug.split('/')[0]

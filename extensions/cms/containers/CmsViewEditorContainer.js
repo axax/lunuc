@@ -29,6 +29,9 @@ import {
     Divider,
     UIProvider
 } from 'ui/admin'
+import {
+    LogoutIcon, PreviewIcon
+} from 'gensrc/ui/admin/icons'
 import Drawer from '@mui/material/Drawer'
 import DisplaySettingsIcon from '@mui/icons-material/DisplaySettings'
 import AppsIcon from '@mui/icons-material/Apps'
@@ -713,7 +716,7 @@ class CmsViewEditorContainer extends React.Component {
                     flexDirection: 'column',
                     marginBottom: 'auto'}}>
 
-                    <CmsElement advanced={canMangeCmsTemplate}/>
+                    <CmsElement disabled={!EditorOptions.inlineEditor} advanced={canMangeCmsTemplate}/>
                 </Box>}
 
                 <Box sx={{width: '100%'}}>
@@ -851,12 +854,14 @@ class CmsViewEditorContainer extends React.Component {
                 {
                     divider: true,
                     name: _t('CmsViewEditorContainer.preview'),
+                    icon: <PreviewIcon/>,
                     onClick: () => {
                         window.open(location.pathname + '?preview=true', '_blank').focus();
                     }
                 },
                 {
                     divider: true,
+                    icon: <LogoutIcon />,
                     name: _t('CmsViewEditorContainer.logout'),
                     onClick: () => {
                         this.props.history.push(`${config.ADMIN_BASE_URL}/logout?forward=${encodeURIComponent('/' + props.slug + '?logout=true')}`)

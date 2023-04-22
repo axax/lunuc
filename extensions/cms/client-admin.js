@@ -116,7 +116,8 @@ export default () => {
     Hook.on('TypeTableEntryAction', ({type, actions, item, container}) => {
         if (type === 'CmsPage') {
             actions.push({
-                name: 'View cms page',
+                divider:true,
+                name: _t('CmsMenu.viewCmsPage'),
                 onClick: () => {
                     container.props.history.push(cmsPageEditorUrl(item.slug, container.pageParams._version))
                 },

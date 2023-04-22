@@ -60,6 +60,10 @@ export const systemSchemaRaw = `
     type CollectionAggregateResult {
         result: String
     }
+       
+    type CollectionSyncResult {
+        result: String
+    }
         
     type ImportCollectionResult {
         result: String
@@ -103,6 +107,7 @@ export const systemSchemaRaw = `
     	removeBackup(type: String!, name: String!): RemoveBackupResult   
     	cloneCollection(type: String!, name: String): CloneCollectionResult
     	deleteCollection(name: String!): DeleteCollectionResult
+    	syncCollectionEntries(fromVersion:String!,toVersion:String!,type:String!,ids:[ID]!): CollectionSyncResult
     }
     
     type Subscription{

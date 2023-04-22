@@ -13,6 +13,7 @@ import {COLLECTIONS_QUERY} from '../../constants/index.mjs'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {theme} from 'ui/admin'
 import {client, Query} from '../../middleware/graphql'
+import {_t} from 'util/i18n.mjs'
 
 class ManageCollectionClones extends React.PureComponent {
 
@@ -87,7 +88,7 @@ class ManageCollectionClones extends React.PureComponent {
                     actions: <Tooltip title="Set collection as active" key="select"><DoneIconButton
                         onClick={this.handleSelectClick.bind(this, {name: "default"})}/></Tooltip>,
                     primary: 'Default',
-                    secondary: 'Can not be deleted'
+                    secondary: _t('ManageCollectionClones.canNotBeDeleted')
                 })
 
 

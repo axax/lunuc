@@ -181,7 +181,10 @@
         "Functions",
         "TextFormat",
         "Pause",
-        "ContentCopy"
+        "ContentCopy",
+        "Logout",
+        "Preview",
+        "Sync"
       ],
       "theme":{
         "colors":{

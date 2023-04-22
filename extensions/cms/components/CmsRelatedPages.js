@@ -40,9 +40,9 @@ export default function CmsRelatedPages(props){
                                 src = `/lunucapi/system/genimage?width=120&height=80&text=Kein Bild&fontsize=1em`
                             }
                             menuItems.push(<MenuListItem key={i.slug} onClick={e => {
-                                history.push('/' + i.slug)
+                                history.push(`/${i.slug}`)
                             }} button image={<img width={60} height={40}
-                                                  src={src}/>} primary={i.name[_app_.lang]} secondary={i.slug}/>)
+                                                  src={src}/>} primary={i.name ? i.name[_app_.lang] : ''} secondary={i.slug}/>)
                         }
                     }
                 )

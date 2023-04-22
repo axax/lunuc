@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import ManageCollectionClones from '../components/types/ManageCollectionClones'
+import SyncCollectionDialog from '../components/types/SyncCollectionDialog'
 import {
     FileCopyIcon,
     DeleteIcon,
@@ -27,7 +28,8 @@ import {
     SaveIcon,
     Divider,
     Paper,
-    CloudUploadIcon
+    CloudUploadIcon,
+    SyncIcon
 } from 'ui/admin'
 import Util from 'client/util/index.mjs'
 import TypeEdit from 'client/components/types/TypeEdit'
@@ -57,6 +59,7 @@ import json2csv from 'util/json2csv'
 import Async from '../components/Async'
 import styled from '@emotion/styled'
 import {CAPABILITY_MANAGE_TYPES} from '../../util/capabilities.mjs'
+import SelectCollection from '../components/types/SelectCollection'
 
 const CodeEditor = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
@@ -109,6 +112,7 @@ class TypesContainer extends React.Component {
             selectedRows: {},
             confirmDeletionDialog: true,
             viewSettingDialog: undefined,
+            viewSyncDialog: undefined,
             viewFilterDialog: undefined,
             manageColDialog: undefined,
             confirmCloneColDialog: undefined,
@@ -411,13 +415,6 @@ class TypesContainer extends React.Component {
                                     icon: <FileCopyIcon/>
                                 })
                         }
-                        entryActions.push(
-                            {
-                                name: _t('TypesContainer.exportEntry'),
-                                disabled: (item.status == 'deleting' || item.status == 'updating'),
-                                onClick: this.handleExportClick.bind(this, item, fields),
-                                icon: <CloudUploadIcon/>
-                            })
 
                         entryActions.push({
                             name: _t('TypesContainer.deleteEntry'),
@@ -425,6 +422,27 @@ class TypesContainer extends React.Component {
                             onClick: this.handleDeleteDataClick.bind(this, item),
                             icon: <DeleteIcon/>
                         })
+
+
+                        entryActions.push(
+                            {
+                                divider:true,
+                                name: _t('TypesContainer.exportEntry'),
+                                disabled: (item.status == 'deleting' || item.status == 'updating'),
+                                onClick: this.handleExportClick.bind(this, item, fields),
+                                icon: <CloudUploadIcon/>
+                            })
+
+                        if (this.types[type].collectionClonable && this.types[type].entryClonable) {
+                            entryActions.push(
+                                {
+                                    divider:true,
+                                    name: _t('TypesContainer.syncEntry'),
+                                    disabled: (item.status == 'deleting' || item.status == 'updating'),
+                                    onClick: this.handleSyncClick.bind(this, item),
+                                    icon: <SyncIcon/>
+                                })
+                        }
                         Hook.call('TypeTableEntryAction', {type, actions: entryActions, item, container: this})
 
                         dynamic._action = <SimpleMenu mini items={entryActions}/>
@@ -519,12 +537,14 @@ class TypesContainer extends React.Component {
 
             if (this.types[type].collectionClonable) {
                 actions.push({
-                    name: 'Create new version', onClick: () => {
+
+                    divider:true,
+                    name: _t('TypesContainer.createNewVersion'), onClick: () => {
                         this.setState({confirmCloneColDialog: true})
                     }
                 })
                 actions.push({
-                    name: 'Manage versions', onClick: () => {
+                    name: _t('TypesContainer.manageVersion'), onClick: () => {
                         this.setState({manageColDialog: true})
                     }
                 })
@@ -548,47 +568,12 @@ class TypesContainer extends React.Component {
                                 orderBy={asort[0]}
                                 header={this.types[type].collectionClonable &&
                                     capaManageTypes &&
-                                    <Query query={COLLECTIONS_QUERY}
-                                           fetchPolicy="cache-and-network"
-                                           variables={{filter: '^' + type + '_.*'}}>
-                                        {({loading, error, data}) => {
-                                            if (loading) return 'Loading...'
-                                            if (error) return `Error! ${error.message}`
-
-                                            if (!data.collections.results) return null
-
-                                            const items = data.collections.results.reduce((a, c) => {
-                                                const value = c.name.substring(c.name.indexOf('_') + 1)
-                                                let date, name = 'no name'
-
-                                                if (value.indexOf('_') >= 0) {
-                                                    date = value.substring(0, value.indexOf('_'))
-                                                    name = value.substring(value.indexOf('_') + 1).replace('_', ' ')
-                                                } else {
-                                                    date = value
-                                                }
-
-                                                a.push({
-                                                    value,
-                                                    name: Util.formattedDatetime(date) + (name ? ' - ' + name : '')
-                                                })
-                                                return a
-                                            }, [])
-                                            items.unshift({value: 'default', name: 'Default'})
-
-
-                                            return <SimpleSelect
-                                                label={_t('TypesContainer.selectVersion')}
-                                                value={_version}
-                                                onChange={(e) => {
-                                                    const {type} = this.pageParams
-                                                    this.goTo({_version: e.target.value})
-                                                    this.setSettingsForType(type, {_version: e.target.value})
-                                                }}
-                                                items={items}
-                                            />
-                                        }}
-                                    </Query>
+                                    <SelectCollection type={type}
+                                                      onChange={(e) => {
+                                                          this.goTo({_version: e.target.value})
+                                                          this.setSettingsForType(type, {_version: e.target.value})
+                                                      }}
+                                                      _version={_version} />
                                 }
                                 actions={actions}
                                 footer={<div style={{display: 'flex', alignItems: 'center', minHeight: '48px'}}>
@@ -620,6 +605,8 @@ class TypesContainer extends React.Component {
             createEditDialog,
             viewSettingDialog,
             viewFilterDialog,
+            viewSyncDialog,
+            dataToSync,
             confirmCloneColDialog,
             manageColDialog,
             dataToDelete,
@@ -765,7 +752,7 @@ class TypesContainer extends React.Component {
 
         if (manageColDialog !== undefined) {
             manageColDialogProps = {
-                title: 'Manage versions',
+                title: _t('TypesContainer.manageVersion'),
                 fullScreen: true,
                 open: this.state.manageColDialog,
                 onClose: this.handleViewCollectionClose,
@@ -936,15 +923,15 @@ class TypesContainer extends React.Component {
             </SimpleDialog>,
             confirmCloneColDialog !== undefined &&
             <SimpleDialog key="confirmClonCol" open={confirmCloneColDialog} onClose={this.handleCloneClollection}
-                          actions={[{key: 'cancel', label: 'Cancel'}, {
+                          actions={[{key: 'cancel', label: _t('core.cancel')}, {
                               key: 'create',
-                              label: 'Create',
+                              label: _t('TypesContainer.create'),
                               type: 'primary'
                           }]}
-                          title={'Create new version: ' + type}>
+                          title={_t('TypesContainer.createNewVersion')}>
                 <TextField value={this.state.collectionName} onChange={(e) => {
                     this.setState({collectionName: e.target.value})
-                }} placeholder="Enter a name (optional)"/>
+                }} placeholder={_t('TypesContainer.enterVersionName')}/>
             </SimpleDialog>,
             simpleDialog &&
             <SimpleDialog key="simpleDialog" open={!!simpleDialog} onClose={simpleDialog.onClose || (() => {
@@ -958,6 +945,9 @@ class TypesContainer extends React.Component {
             viewSettingDialog !== undefined && <SimpleDialog key="settingDialog" {...viewSettingDialogProps}/>,
             viewFilterDialog !== undefined && <SimpleDialog key="settingDialog" {...viewFilterDialogProps}/>,
             manageColDialog !== undefined && <SimpleDialog key="collectionDialog" {...manageColDialogProps}/>,
+            viewSyncDialog !== undefined && <SyncCollectionDialog entries={dataToSync} open={viewSyncDialog} onClose={()=>{
+                this.setState({viewSyncDialog:false})
+            }} _version={this.pageParams._version} type={type}/>,
             window.opener && selectedLength > 0 &&
             <AppBar key="appbar" position="fixed" color="primary" style={{
                 top: 'auto',
@@ -1785,6 +1775,10 @@ class TypesContainer extends React.Component {
 
     handleDeleteDataClick = (data) => {
         this.setState({confirmDeletionDialog: true, dataToDelete: [data]})
+    }
+
+    handleSyncClick = (data) => {
+        this.setState({viewSyncDialog: true, dataToSync: [data]})
     }
 
     handleEditDataClick = (data) => {
