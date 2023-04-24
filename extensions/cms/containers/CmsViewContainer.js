@@ -192,6 +192,7 @@ class CmsViewContainer extends React.Component {
                         }*/
                         const finalAttrs = {
                             data: {cmsView: true},
+                            id: resource.replace(/[^A-Za-z0-9]/g, '-'),
                             ...attrs
                         }
 

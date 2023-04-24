@@ -16,7 +16,7 @@ const DomUtil = {
         }
     },
     addStyle(href, attrs, opts) {
-        const style = DomUtil.createAndAddTag('link', 'head', {
+        DomUtil.createAndAddTag('link', 'head', {
             type: 'text/css',
             rel: 'stylesheet',
             href, ...attrs

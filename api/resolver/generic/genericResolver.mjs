@@ -206,6 +206,49 @@ const createMatchForCurrentUser = async ({typeName, db, context, operation}) => 
     return match
 }
 
+async function resolveReferences(typeName, result, db) {
+
+    //check if this field is a reference
+    const fields = getFormFieldsByType(typeName)
+
+    if (fields) {
+        const fieldKeys = Object.keys(result)
+        for (const field of fieldKeys) {
+            if (fields[field] && result[field]) {
+                if (fields[field].reference && result[field].constructor !== Object) {
+                    // is a reference
+                    if (fields[field].multi) {
+
+                        const newResultList = []
+                        const list = result[field].constructor === Array ? result[field] : [result[field]]
+                        for (const objectId of list) {
+                            const subEntry = (await db.collection(fields[field].type).findOne({_id: objectId}))
+
+                            if (subEntry) {
+                                newResultList.push( resolveReferences(fields[field].type, subEntry , db))
+                            } else {
+                                newResultList.push({_id: f})
+                            }
+                        }
+                        result[field] = newResultList
+                    } else {
+
+                        const subEntry = (await db.collection(fields[field].type).findOne({_id: result[field]}))
+
+                        if (subEntry) {
+                            result[field] = resolveReferences(fields[field].type, subEntry , db)
+                        } else {
+                            result[field] = {_id: result[field]}
+                        }
+                    }
+                } else if (fields[field].type === 'Object' && result[field].constructor === Object) {
+                    result[field] = JSON.stringify(result[field])
+                }
+            }
+        }
+    }
+}
+
 const GenericResolver = {
     entities: async (db, reqOrContext, typeName, data, options) => {
         let context, req
@@ -880,45 +923,9 @@ const GenericResolver = {
                     username: context.username
                 }
             }
-            //check if this field is a reference
-            const fields = getFormFieldsByType(typeName)
 
-            if (fields) {
-                const fieldKeys = Object.keys(result)
-                for(const field of fieldKeys){
-                    if (fields[field] && result[field]) {
-                        if (fields[field].reference && result[field].constructor !== Object) {
-                            // is a reference
-                            if(fields[field].multi) {
+            await resolveReferences(typeName, result, db)
 
-                                const newResultList = []
-                                const list = result[field].constructor === Array ? result[field] : [result[field]]
-                                for(const objectId of list){
-                                    const subEntry = (await db.collection(fields[field].type).findOne({_id: objectId}))
-
-                                    if(subEntry){
-                                        newResultList.push(subEntry)
-                                    }else {
-                                        newResultList.push({_id: f})
-                                    }
-                                }
-                                result[field] = newResultList
-                            }else{
-
-                                const subEntry = (await db.collection(fields[field].type).findOne({_id: result[field]}))
-
-                                if(subEntry){
-                                    result[field] = subEntry
-                                }else {
-                                    result[field] = {_id: result[field]}
-                                }
-                            }
-                        } else if (fields[field].type === 'Object' && result[field].constructor === Object) {
-                            result[field] = JSON.stringify(result[field])
-                        }
-                    }
-                }
-            }
             Hook.call('typeCloned', {type: typeName, db, context})
             Hook.call('typeCloned_' + typeName, {db, context, result})
 
