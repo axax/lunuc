@@ -225,7 +225,7 @@ async function resolveReferences(typeName, result, db) {
                             const subEntry = (await db.collection(fields[field].type).findOne({_id: objectId}))
 
                             if (subEntry) {
-                                newResultList.push( resolveReferences(fields[field].type, subEntry , db))
+                                newResultList.push( await resolveReferences(fields[field].type, subEntry , db))
                             } else {
                                 newResultList.push({_id: f})
                             }
@@ -236,7 +236,7 @@ async function resolveReferences(typeName, result, db) {
                         const subEntry = (await db.collection(fields[field].type).findOne({_id: result[field]}))
 
                         if (subEntry) {
-                            result[field] = resolveReferences(fields[field].type, subEntry , db)
+                            result[field] = await resolveReferences(fields[field].type, subEntry , db)
                         } else {
                             result[field] = {_id: result[field]}
                         }
