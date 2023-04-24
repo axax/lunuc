@@ -206,37 +206,55 @@ const createMatchForCurrentUser = async ({typeName, db, context, operation}) => 
     return match
 }
 
-async function resolveReferences(typeName, result, db) {
+async function resolveReferences(typeName, result, db, context) {
 
     //check if this field is a reference
     const fields = getFormFieldsByType(typeName)
-
     if (fields) {
         const fieldKeys = Object.keys(result)
         for (const field of fieldKeys) {
             if (fields[field] && result[field]) {
                 if (fields[field].reference && result[field].constructor !== Object) {
+
+                    let subFields = fields[field].fields
+                    if(!subFields){
+                        subFields = getFormFieldsByType(fields[field].type)
+                        if(!subFields){
+                            subFields = []
+                        }else{
+                            subFields = Object.keys(subFields)
+                        }
+                    }
+
                     // is a reference
                     if (fields[field].multi) {
 
                         const newResultList = []
                         const list = result[field].constructor === Array ? result[field] : [result[field]]
-                        for (const objectId of list) {
-                            const subEntry = (await db.collection(fields[field].type).findOne({_id: objectId}))
 
-                            if (subEntry) {
-                                newResultList.push( await resolveReferences(fields[field].type, subEntry , db))
+                        for (const objectId of list) {
+                            const subEntries = await GenericResolver.entities(db, context, fields[field].type, subFields, {
+                                limit:1,
+                                includeCount:false,
+                                match: {_id: objectId}
+                            })
+
+                            if (subEntries.results.length>0) {
+                                newResultList.push(subEntries.results[0])
                             } else {
                                 newResultList.push({_id: f})
                             }
                         }
                         result[field] = newResultList
                     } else {
+                        const subEntries = await GenericResolver.entities(db, context, fields[field].type, subFields, {
+                            limit:1,
+                            includeCount:false,
+                            match: {_id: result[field]}
+                        })
 
-                        const subEntry = (await db.collection(fields[field].type).findOne({_id: result[field]}))
-
-                        if (subEntry) {
-                            result[field] = await resolveReferences(fields[field].type, subEntry , db)
+                        if (subEntries.results.length>0) {
+                            result[field] = subEntries.results[0]
                         } else {
                             result[field] = {_id: result[field]}
                         }
@@ -924,7 +942,7 @@ const GenericResolver = {
                 }
             }
 
-            await resolveReferences(typeName, result, db)
+            await resolveReferences(typeName, result, db, context)
 
             Hook.call('typeCloned', {type: typeName, db, context})
             Hook.call('typeCloned_' + typeName, {db, context, result})

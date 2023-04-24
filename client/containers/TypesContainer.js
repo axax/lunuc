@@ -1096,7 +1096,9 @@ class TypesContainer extends React.Component {
     handleViewSettingChange(e, type) {
         const target = e.target, value = target.checked, name = target.name
 
-        this.settings = deepMerge(this.settings, {[type]: {columns: {[name]: value}}})
+        const key = type + (this.pageParams.meta ? '-' + this.pageParams.meta : '')
+
+        this.settings = deepMerge(this.settings, {[key]: {columns: {[name]: value}}})
         // force rerendering
         this.forceUpdate()
     }
