@@ -48,11 +48,16 @@ const StyledHighlighter = styled('span')(({ color }) => ({
     pointerEvents: 'none',
     justifyContent: 'center',
     alignItems: 'center',
-    boxShadow: '0px 0px 6px 2px rgba(0,0,0,0.4), 0px 0px 5px 0px rgba(235,252,0,1)',
     ...(color==='yellow' && {
-        background: 'rgba(245, 245, 66,0.05)'
+        background: 'rgba(245, 245, 66,0.05)',
+        boxShadow: '0px 0px 6px 2px rgba(0,0,0,0.4), 0px 0px 5px 0px rgba(235,252,0,1)'
+    }),
+    ...(color==='red' && {
+        background: 'rgba(245, 66, 66,0.1)',
+        boxShadow: '0px 0px 6px 2px rgba(0,0,0,0.2), 0px 0px 5px 0px rgba(245, 66, 66,1)'
     }),
     ...(color==='blue' && {
+        boxShadow: '0px 0px 6px 2px rgba(0,0,0,0.4), 0px 0px 5px 0px rgba(84, 66, 245,1)',
         background: 'rgba(84, 66, 245,0.1)',
         color: 'black',
         fontWeight: 'bold',
@@ -832,7 +837,10 @@ class JsonDomHelper extends React.Component {
             </StyledToolbarButton>
 
             if (_options.highlight !== false) {
-                const highligherColor = isCms || _options.picker ? 'blue' : 'yellow'
+                const highligherColor = _dynamic ? 'red' : isCms || _options.picker ? 'blue' : 'yellow'
+
+
+
                 highlighter = <StyledHighlighter
                     key={rest._key + '.highlighter'}
                     data-highlighter={rest._key}

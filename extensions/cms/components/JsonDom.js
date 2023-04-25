@@ -929,6 +929,7 @@ class JsonDom extends React.Component {
                             if ($loop) {
                                 tpl = new Function(DomUtil.toES5(`const {${Object.keys(loopChild).join(',')}}=this.${s}${SCRIPT_UTIL_PART}this.scope.data);return \`${cStr}\``))
                             }
+
                             // remove tabs and parse
                             const json = JSON.parse(tpl.call({
                                 [s]: loopChild,
@@ -940,6 +941,10 @@ class JsonDom extends React.Component {
                             const key = rootKey + '.' + aIdx + '.$loop.' + childIdx
                             scope[s] = loopChild
                             const com = this.parseRec(json, key, scope)
+
+                            // remove _index
+                            delete loopChild._index
+
                             h.push(com && com.length === 1 ? com[0] : com)
                         })
                     } catch (ex) {
