@@ -58,7 +58,7 @@ import {client, Query, clearFetchById} from '../middleware/graphql'
 import json2csv from 'util/json2csv'
 import Async from '../components/Async'
 import styled from '@emotion/styled'
-import {CAPABILITY_MANAGE_TYPES} from '../../util/capabilities.mjs'
+import {CAPABILITY_BULK_EDIT, CAPABILITY_MANAGE_COLLECTION} from '../../util/capabilities.mjs'
 import SelectCollection from '../components/types/SelectCollection'
 
 const CodeEditor = (props) => <Async {...props}
@@ -453,7 +453,7 @@ class TypesContainer extends React.Component {
             }
             const asort = sort.split(' ')
 
-            const capaManageTypes = Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_TYPES)
+            const capaManageCollections = Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_COLLECTION)
 
 
             /* HOOK */
@@ -462,6 +462,7 @@ class TypesContainer extends React.Component {
             const selectedLength = Object.keys(this.state.selectedRows).length
             const actions = [
                 {
+                    icon: 'add',
                     name: _t('TypesContainer.addNew', {type}), onClick: () => {
                         setTimeout(() => {
                             this.setState({createEditDialog: true})
@@ -470,6 +471,7 @@ class TypesContainer extends React.Component {
                     }
                 },
                 {
+                    divider:true,
                     key: 'export_csv',
                     name: 'Export CSV', onClick: () => {
                         this.setState({
@@ -525,6 +527,7 @@ class TypesContainer extends React.Component {
                     }
                 },
                 {
+                    divider:true,
                     name: _t('TypesContainer.tableSettings'), onClick: () => {
                         this.setState({viewSettingDialog: true})
                     }
@@ -552,8 +555,8 @@ class TypesContainer extends React.Component {
 
             const multiSelectActions = [{name: _t('TypesContainer.delete'), value: 'delete'}]
 
-            if(capaManageTypes){
-                multiSelectActions.push( {name: 'Bulk edit', value: 'edit'})
+            if(Util.hasCapability({userData: _app_.user}, CAPABILITY_BULK_EDIT)){
+                multiSelectActions.push( {name: _t('TypesContainer.bulkEdit'), value: 'edit'})
             }
             Hook.call('TypeTableAction', {type, actions, multiSelectActions, pageParams: this.pageParams}, this)
 
@@ -567,7 +570,7 @@ class TypesContainer extends React.Component {
                                 rowsPerPage={limit} page={page}
                                 orderBy={asort[0]}
                                 header={this.types[type].collectionClonable &&
-                                    capaManageTypes &&
+                                    capaManageCollections &&
                                     <SelectCollection type={type}
                                                       onChange={(e) => {
                                                           this.goTo({_version: e.target.value})

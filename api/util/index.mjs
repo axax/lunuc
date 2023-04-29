@@ -234,7 +234,7 @@ const Util = {
     checkIfUserHasCapability: async (db, context, capability) => {
         const hasCapability = await Util.userHasCapability(db, context, capability)
         if (!hasCapability) {
-            throw new Error(`User has not given premission for this operation. Missing capability "${capability}"`)
+            throw new Error(_t('core.user.missing.permission',context.language,{capability}))
         }
     },
     userById: async (db, id) => {

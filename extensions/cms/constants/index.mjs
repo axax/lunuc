@@ -152,7 +152,9 @@ on('beforerunscript',()=>{
 
 export const DEFAULT_STYLE = `//!#Basic
 .page{
-  
+    img{
+        max-width: 100%;
+    }
 }
 
 
@@ -562,6 +564,7 @@ div[data-isempty=true]{
 \t\t\tborder:dashed 1px rgba(0,0,0,0.1);
 \t\t}
 \t}
+  &[data-element-key="customElement"],
   &[data-element-key="custom"]{
     background: repeating-linear-gradient(
       135deg,

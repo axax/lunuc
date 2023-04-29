@@ -14,6 +14,7 @@ import {withFilter} from 'graphql-subscriptions'
 import {ObjectId} from 'mongodb'
 import {sendMail} from '../util/mail.mjs'
 import {getType} from '../../util/types.mjs'
+import {findAndReplaceObjectIds} from '../util/graphql.js'
 import {listBackups, createBackup, removeBackup, mongoExport} from './backups.mjs'
 import {getCollections} from "../util/collection.mjs";
 
@@ -35,33 +36,6 @@ const killExec = (id) => {
         }
         delete execs[id]
     }
-}
-
-const findAndReplaceObjectIds = function (obj) {
-    for (var i in obj) {
-        if (obj.hasOwnProperty(i)) {
-            const v = obj[i]
-            if (v)
-                if (v.constructor === Array) {
-                    v.forEach((x, j) => {
-                        if (x.constructor === String) {
-                            if (i === '$in' && ObjectId.isValid(x)) {
-                                v[j] = ObjectId(x)
-                            }
-                        } else {
-                            findAndReplaceObjectIds(x)
-                        }
-                    })
-                } else if (v.constructor === String) {
-                    if (v.indexOf('.') < 0 && ObjectId.isValid(v)) {
-                        obj[i] = ObjectId(v)
-                    }
-                } else {
-                    findAndReplaceObjectIds(v)
-                }
-        }
-    }
-    return null
 }
 
 export const systemResolver = (db) => ({
@@ -218,7 +192,7 @@ export const systemResolver = (db) => ({
         },
         bulkEdit: async ({collection, _id, script}, {context}) => {
 
-            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_BULK_EDIT)
 
             const $in = []
             _id.forEach(id => {

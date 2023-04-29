@@ -33,7 +33,6 @@ export default function CmsRelatedPages(props){
                 data.cmsPages.results.forEach(i => {
                         if (i.slug !== slug) {
                             let src
-                            console.log(i)
                             if(i.public){
                                 src = `/lunucapi/generate/png?url=/${i.slug}${encodeURI('?preview=true')}&width=1200&height=800&rwidth=120&rheight=80&cache=true&cacheExpire=${new Date(i.modifiedAt).getTime()}`
                             }else{

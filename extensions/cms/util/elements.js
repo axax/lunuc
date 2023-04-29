@@ -202,8 +202,8 @@ const classLayoutColumnOptions = (count, options) => {
             obj[`c_${i-1}_p_className@${col.short}`] = {
                 fourthWidth: true,
                 label: `Spalte ${i}: ${col.long}`,
-                value: ` col-${col.short}-${options[col.short]} `,
-                tab: DEFAULT_TAB,
+                value: options[col.short]?` col-${col.short}-${options[col.short]} `:' ',
+                tab: 'Responsive',
                 enum: enumA
             }
         }
@@ -1460,8 +1460,8 @@ const baseElements = [
             ]
         },
         options: {
-            ...classLayoutColumnOptions(2,{lg: 6, md:6, sm:6, xs:12}),
             ...marginOptions('p_'),
+            ...classLayoutColumnOptions(2,{lg: 6, md:6, sm:6, xs:12}),
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
@@ -1499,8 +1499,8 @@ const baseElements = [
             ]
         },
         options: {
-            ...classLayoutColumnOptions(3, {lg:4, md:4, sm:4, xs:12}),
             ...marginOptions('p_'),
+            ...classLayoutColumnOptions(3, {lg:4, md:4, sm:4, xs:12}),
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
@@ -1542,8 +1542,8 @@ const baseElements = [
             ]
         },
         options: {
-            ...classLayoutColumnOptions(4, {lg:3, md:3, sm:3, xs:6}),
             ...marginOptions('p_'),
+            ...classLayoutColumnOptions(4, {lg:3, md:3, sm:3, xs:6}),
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
@@ -1551,7 +1551,7 @@ const baseElements = [
             ...observeOptions()
         }
     },
-    {
+    /*{
         tagName: 'Row',
         name: 'Layout 1/5',
         icon: 'viewColum',
@@ -1591,39 +1591,15 @@ const baseElements = [
             ]
         },
         options: {
-            c_0_p_className: {
-                label: 'Spalte 1',
-                value: 'col-md-1-5 col-sm-4 col-xs-6',
-                tab: DEFAULT_TAB
-            },
-            c_1_p_className: {
-                label: 'Spalte 2',
-                value: 'col-md-1-5 col-sm-4 col-xs-6',
-                tab: DEFAULT_TAB
-            },
-            c_2_p_className: {
-                label: 'Spalte 3',
-                value: 'col-md-1-5 col-sm-4 col-xs-6',
-                tab: DEFAULT_TAB
-            },
-            c_3_p_className: {
-                label: 'Spalte 4',
-                value: 'col-md-1-5 col-sm-4 col-xs-6',
-                tab: DEFAULT_TAB
-            },
-            c_4_p_className: {
-                label: 'Spalte 5',
-                value: 'col-md-1-5 col-sm-4 col-xs-6',
-                tab: DEFAULT_TAB
-            },
             ...marginOptions('p_'),
+            ...classLayoutColumnOptions(5, {md:'1-5', sm:4, xs:6}),
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
             ...invisibleOptions('p_'),
             ...observeOptions()
         }
-    },
+    },*/
     {
         tagName: 'Row',
         name: 'Layout 1/6',
@@ -1669,37 +1645,8 @@ const baseElements = [
             ]
         },
         options: {
-            c_0_p_className: {
-                label: 'Spalte 1',
-                value: 'col-md-2 col-sm-3 col-xs-6',
-                tab: DEFAULT_TAB
-            },
-            c_1_p_className: {
-                label: 'Spalte 2',
-                value: 'col-md-2 col-sm-3 col-xs-6',
-                tab: DEFAULT_TAB
-            },
-            c_2_p_className: {
-                label: 'Spalte 3',
-                value: 'col-md-2 col-sm-3 col-xs-6',
-                tab: DEFAULT_TAB
-            },
-            c_3_p_className: {
-                label: 'Spalte 4',
-                value: 'col-md-2 col-sm-3 col-xs-6',
-                tab: DEFAULT_TAB
-            },
-            c_4_p_className: {
-                label: 'Spalte 5',
-                value: 'col-md-2 col-sm-3 col-xs-6',
-                tab: DEFAULT_TAB
-            },
-            c_5_p_className: {
-                label: 'Spalte 6',
-                value: 'col-md-2 col-sm-3 col-xs-6',
-                tab: DEFAULT_TAB
-            },
             ...marginOptions('p_'),
+            ...classLayoutColumnOptions(6, {md:2, sm:3, xs:6}),
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
@@ -1827,9 +1774,7 @@ const baseElements = [
     }
 ]
 const advancedElements = [
-
     {
-
         subHeader: 'Advanced components',
         tagName: 'section',
         name: 'Timeline',
@@ -2162,6 +2107,9 @@ const advancedElements = [
 let elementsMap, elementsMapAdvanced
 
 const getJsonDomElements = (value, options) => {
+    if(value==='customElement'){
+        return {}
+    }
     if (!elementsMap) {
         elementsMap = {}
         baseElements.forEach(element => {

@@ -22,6 +22,7 @@ export const translations = {
         'CmsViewEditorContainer.noRelatedPages':'Keine verwandte Seiten',
         'CmsViewEditorContainer.pageOptions': 'Seite',
         'CmsViewEditorContainer.pageElements': 'Elemente',
+        'CmsViewEditorContainer.staticAssets':'Externe Scripts',
         'CmsAddNewSite.cancel':'Abbrechen',
         'CmsAddNewSite.create':'Erstellen',
         'CmsAddNewSite.createPageIfNotExist':'Seite "%slug%" exisitert nicht. Möchten Sie die Seite jetzt erstellen?',
@@ -37,7 +38,8 @@ export const translations = {
         'CmsRevision.noRevisionEntries': 'Keine Einträge',
         'JsonEditor.addEntry': 'Neuer Eintrag erstellen',
         'JsonEditor.addProperty': 'Attribut hinzufügen',
-        'JsonEditor.remove': 'Eintrag löschen'
+        'JsonEditor.remove': 'Eintrag löschen',
+        'CmsElement.customTypes': 'Eigene Elemente'
     },
     en: {
         'CmsViewEditorContainer.save': 'Speichern',
@@ -60,6 +62,7 @@ export const translations = {
         'CmsViewEditorContainer.noRelatedPages':'No related pages',
         'CmsViewEditorContainer.pageOptions': 'Page',
         'CmsViewEditorContainer.pageElements': 'Elements',
+        'CmsViewEditorContainer.staticAssets':'External Scripts',
         'CmsAddNewSite.cancel':'Cancel',
         'CmsAddNewSite.create':'Create',
         'CmsAddNewSite.createPageIfNotExist':'Page "%slug%" doesn\'t exist. Do you want to create it?',
@@ -75,6 +78,7 @@ export const translations = {
         'CmsRevision.noRevisionEntries': 'No history entries',
         'JsonEditor.addEntry': 'Add new entry',
         'JsonEditor.addProperty': 'Add property',
-        'JsonEditor.remove': 'Remove'
+        'JsonEditor.remove': 'Remove',
+        'CmsElement.customTypes': 'Custom elements'
     }
 }

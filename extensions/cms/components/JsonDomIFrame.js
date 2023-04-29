@@ -25,11 +25,13 @@ const JsonDomIFrame = ({
         DomUtil.addScript(`/main.bundle.js?v=${config.BUILD_NUMBER}`, {
             id: 'main',
             onload: () => {
-                win._app_.JsonDom.render(jsonDom)
-                win.document.addEventListener('click',(e)=>{
-                    e.stopPropagation()
-                    e.preventDefault()
-                })
+                if(win._app_.JsonDom) {
+                    win._app_.JsonDom.render(jsonDom)
+                    win.document.addEventListener('click', (e) => {
+                        e.stopPropagation()
+                        e.preventDefault()
+                    })
+                }
             }
         }, {ignoreIfExist: true, document: win.document})
 

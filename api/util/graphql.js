@@ -1,3 +1,4 @@
+import {ObjectId} from 'mongodb'
 
 export const hasQueryField = (fieldNodes, path)=> {
     if(!path){
@@ -15,4 +16,31 @@ export const hasQueryField = (fieldNodes, path)=> {
         }
     }
     return false
+}
+
+export const findAndReplaceObjectIds = function (obj) {
+    for (var i in obj) {
+        if (obj.hasOwnProperty(i)) {
+            const v = obj[i]
+            if (v)
+                if (v.constructor === Array) {
+                    v.forEach((x, j) => {
+                        if (x.constructor === String) {
+                            if (i === '$in' && ObjectId.isValid(x)) {
+                                v[j] = new ObjectId(x)
+                            }
+                        } else {
+                            findAndReplaceObjectIds(x)
+                        }
+                    })
+                } else if (v.constructor === String) {
+                    if (v.indexOf('.') < 0 && ObjectId.isValid(v)) {
+                        obj[i] = new ObjectId(v)
+                    }
+                } else {
+                    findAndReplaceObjectIds(v)
+                }
+        }
+    }
+    return null
 }

@@ -2,6 +2,7 @@ import schema from './gensrc/schema'
 import resolver from './gensrc/resolver'
 import Hook from '../../util/hook.cjs'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
+import {findAndReplaceObjectIds} from '../../api/util/graphql.js'
 
 
 let userRestrictions = {}
@@ -10,6 +11,7 @@ const register = async (db) => {
     userRestrictions = {}
     const results = (await db.collection('UserRestriction').find({active: true}).toArray())
     for(const result of results){
+        findAndReplaceObjectIds(result.filter)
         for(const type of result.type){
             if(!userRestrictions[type]){
                 userRestrictions[type] = []
@@ -47,10 +49,30 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions
                         if(rule.filter[key].$remove || rule.filter[key]['#remove']){
                             // remove operator
                             delete match[key]
-                        }else {
+                        }else if(key=='ownerGroup'){
+                            if(!match.ownerGroup && !match.createdBy){
+                                return
+                            }
+                            if(!match.$or){
+                                match.$or= []
+                            }
+                            if(match.ownerGroup){
+                                match.ownerGroup.$in.push(...rule.filter[key].$in)
+                                match.$or.push({ownerGroup:match.ownerGroup})
+                                delete match.ownerGroup
+                            }else{
+                                match.$or.push({ownerGroup:rule.filter[key]})
+                            }
+                            if(match.createdBy){
+                                match.$or.push({createdBy:match.createdBy})
+                                delete match.createdBy
+                            }
+                        }else{
                             match[key] = rule.filter[key]
                         }
+
                     })
+                    console.log(JSON.stringify(match))
                 }
             }
         }

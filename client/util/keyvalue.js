@@ -26,32 +26,40 @@ export const useKeyValues = (keys, options, keyName = 'keyValues') => {
 }
 
 export const useKeyValuesGlobal = (keys, options) => {
-    return useKeyValues(keys,options, 'keyValuesGlobals')
+    return useKeyValues(keys,options, 'keyValueGlobals')
 }
 
-export const setKeyValue = ({key, value, clearCache}) => {
+export const setKeyValue = ({key, value, clearCache, global}) => {
 
     const variables = {
         key,
         value: value && value.constructor !== String ? JSON.stringify(value) : value
     }
 
+    const query = global?QUERY_KEY_VALUES_GLOBAL:QUERY_KEY_VALUES
+    const keyName = global?'keyValueGlobals':'keyValues'
+
     if(clearCache){
-        client.clearCacheStartsWith(QUERY_KEY_VALUES)
+        client.clearCacheStartsWith(query)
     }else {
         // if there is a exact match update the value
-        const existingData = client.readQuery({query: QUERY_KEY_VALUES, variables: {keys: [key]}})
-        if (existingData && existingData.keyValues) {
-            const res = existingData.keyValues.results
-            if (res && res.length > 0 && res[0].key == key) {
-                res[0].value = variables.value
-                client.writeQuery({query: QUERY_KEY_VALUES, variables: {keys: [key]}, data: existingData})
+        const existingData = client.readQuery({query, variables: {keys: [key]}})
+        if (existingData && existingData[keyName] && existingData[keyName].results) {
+            let results = existingData[keyName].results
+            const resultItem = results.find(item=>item.key==key)
+            if(resultItem){
+                resultItem.value = variables.value
+            }else{
+                results.push({key,value:variables.value})
             }
+            existingData[keyName].results = results
+            client.writeQuery({query, variables: {keys: [key]}, data: existingData})
+
         }
     }
 
     return client.mutate({
-        mutation: QUERY_SET_KEY_VALUE,
+        mutation: global?QUERY_SET_KEY_VALUE_GLOBAL:QUERY_SET_KEY_VALUE,
         variables
     })
 }

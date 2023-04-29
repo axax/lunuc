@@ -13,8 +13,9 @@ import Collapse from '@mui/material/Collapse'
 import List from '@mui/material/List'
 import ExpandLess from '@mui/icons-material/ExpandLess'
 import ExpandMore from '@mui/icons-material/ExpandMore'
-import ListItemAvatar from '@mui/material/ListItemAvatar';
-import Avatar from '@mui/material/Avatar';
+import ListItemAvatar from '@mui/material/ListItemAvatar'
+import Avatar from '@mui/material/Avatar'
+import {getIconByKey} from './icon'
 
 class SimpleMenu extends React.Component {
     state = {
@@ -106,9 +107,19 @@ class SimpleMenu extends React.Component {
         if(intent>0){
             style.paddingLeft = (intent*2.5)+'rem'
         }
-
         return items.map((item, i) => {
             if(!item) return
+            let icon = getIconByKey(item.icon)
+            if(item.icon) {
+                if (typeof item.icon === 'string') {
+                    const Icon = getIconByKey(item.icon)
+                    if(Icon) {
+                        icon = <Icon></Icon>
+                    }
+                }else{
+                    icon = item.icon
+                }
+            }
             return [item.divider && <Divider key={'divider' + i} light/>,
                 <MenuItem disabled={item.disabled} style={style} onClick={(e) => {
                     if (item.items) {
@@ -118,17 +129,17 @@ class SimpleMenu extends React.Component {
                         this.handleClose(e)
                     }
                 }} key={'menuitem' + i}>
-                    {item.icon && (
+                    {icon && (
                         avatarIcon ?
                             <ListItemAvatar>
                                 <Avatar
                                     sx={{ width: 32, height: 32, bgcolor: '#000' }}>
-                                    {item.icon}
+                                    {icon}
                                 </Avatar>
                             </ListItemAvatar>
                             :
                     <ListItemIcon>
-                        {item.icon}
+                        {icon}
                     </ListItemIcon>
                         )
                     }

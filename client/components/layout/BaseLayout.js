@@ -26,7 +26,11 @@ import {UIProvider} from 'ui/admin'
 import 'gen/extensions-client-admin'
 import {Link} from '../../util/route'
 import {useKeyValues, setKeyValue} from '../../util/keyvalue'
-import {CAPABILITY_MANAGE_TYPES} from '../../../util/capabilities.mjs'
+import {
+    CAPABILITY_MANAGE_TYPES,
+    CAPABILITY_MANAGE_BACKUPS,
+    CAPABILITY_RUN_COMMAND
+} from '../../../util/capabilities.mjs'
 
 const {ADMIN_BASE_URL, APP_NAME} = config
 
@@ -193,11 +197,17 @@ const BaseLayout = props => {
 
         menuItems.push(
             {name: 'System', to: ADMIN_BASE_URL + '/system', auth: true, icon: <SettingsIcon/>},
-            {name: 'Files', to: ADMIN_BASE_URL + '/files', auth: true, icon: <InsertDriveFileIcon/>},
-            {name: 'Backup', to: ADMIN_BASE_URL + '/backup', auth: true, icon: <BackupIcon/>},
             {name: 'Types', to: ADMIN_BASE_URL + '/types', auth: true, icon: <BuildIcon/>})
     }
 
+
+    if (capabilities.indexOf(CAPABILITY_RUN_COMMAND) >= 0) {
+        menuItems.push({name: 'Files', to: ADMIN_BASE_URL + '/files', auth: true, icon: <InsertDriveFileIcon/>})
+    }
+
+    if (capabilities.indexOf(CAPABILITY_MANAGE_BACKUPS) >= 0) {
+        menuItems.push({name: 'Backup', to:ADMIN_BASE_URL + '/backup', auth: true, icon: <BackupIcon/>})
+    }
 
     Hook.call('MenuMenu', {menuItems})
 

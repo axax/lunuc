@@ -70,10 +70,21 @@ import {
     PauseIcon,
     LogoutIcon,
     PreviewIcon,
-    SyncIcon
+    SyncIcon,
+    AddIcon,
+    DisplaySettingsIcon,
+    TranslateIcon,
+    AutoFixHighIcon,
+    CssIcon,
+    JavascriptIcon,
+    HistoryIcon
 } from 'gensrc/ui/admin/icons'
 
 const iconComponents = {
+    magic:AutoFixHighIcon,
+    translate: TranslateIcon,
+    displaySetting:DisplaySettingsIcon,
+    add: AddIcon,
     sync: SyncIcon,
     preview: PreviewIcon,
     logout: LogoutIcon,
@@ -144,7 +155,11 @@ const iconComponents = {
     widgets:WidgetsIcon,
     functions:FunctionsIcon,
     textFormat:TextFormatIcon,
-    pause:PauseIcon
+    pause:PauseIcon,
+    css: CssIcon,
+    js: JavascriptIcon,
+    history: HistoryIcon
+
 }
 
 export const getIconByKey = (key, defaultIcon) => {

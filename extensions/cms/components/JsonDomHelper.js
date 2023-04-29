@@ -982,7 +982,7 @@ class JsonDomHelper extends React.Component {
                                               label: 'Speichern',
                                               type: 'primary'
                                           }]}
-                                      title={`Bearbeitung ${addChildDialog.selected ? '(' + addChildDialog.selected.name + ')' : ''}`}>
+                                      title={`Bearbeitung ${addChildDialog.selected && addChildDialog.selected.name? '(' + addChildDialog.selected.name + ')' : ''}`}>
 
                             {addChildDialog.selector && <SimpleSelect
                                 fullWidth={true}
@@ -1188,7 +1188,7 @@ class JsonDomHelper extends React.Component {
                 if (_options.menu.edit !== false && _options.elementKey) {
                     const jsonElement = getJsonDomElements(_options.elementKey)
 
-                    if (jsonElement && (isCms || jsonElement.options || jsonElement.groupOptions)) {
+                    if (jsonElement && (isCms || jsonElement.options || jsonElement.groupOptions || (subJson && subJson.$inlineEditor && subJson.$inlineEditor.options))) {
 
                         overrideEvents.onDoubleClick = () => {
                             this.handleEditElement({jsonElement, subJson, isCms, json: _json})

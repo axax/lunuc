@@ -184,7 +184,12 @@
         "ContentCopy",
         "Logout",
         "Preview",
-        "Sync"
+        "Sync",
+        "DisplaySettings",
+        "AutoFixHigh",
+        "Css",
+        "Javascript",
+        "History"
       ],
       "theme":{
         "colors":{

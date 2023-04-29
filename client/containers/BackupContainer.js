@@ -41,6 +41,8 @@ class BackupContainer extends React.Component {
         this.setState({creatingDump: true})
         this.props.createBackup({type:'db'}).then(e => {
             this.setState({creatingDump: false})
+        }).catch(()=>{
+            this.setState({creatingDump: false})
         })
 
     }
@@ -49,12 +51,16 @@ class BackupContainer extends React.Component {
         this.setState({creatingMediaDump: true})
         this.props.createBackup({type:'media'}).then(e => {
             this.setState({creatingMediaDump: false})
+        }).catch(()=>{
+            this.setState({creatingMediaDump: false})
         })
     }
 
     createHostruleDump() {
         this.setState({creatingHostruleDump: true})
         this.props.createBackup({type:'hostrule'}).then(e => {
+            this.setState({creatingHostruleDump: false})
+        }).catch(()=>{
             this.setState({creatingHostruleDump: false})
         })
     }
