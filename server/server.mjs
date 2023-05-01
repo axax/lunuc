@@ -1362,7 +1362,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                         }
                         if (redirect) {
 
-                            redirect = redirect.replace(/%pathname%/g, parsedUrl.pathname).replace(/%search%/g, parsedUrl.search)
+                            redirect = redirect.replace(/%pathname%/g, parsedUrl.pathname || '/').replace(/%search%/g, parsedUrl.search || '')
 
                             const agent = req.headers['user-agent']
                             if( !agent || agent.indexOf('www.letsencrypt.org') < 0 ) {
