@@ -10,8 +10,6 @@ export default db => ({
         posts: async ({limit, page, offset, filter, query}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
-            const pipe = []
-
             let sort = {_id: 1},
                 match = {createdBy: ObjectId(context.id)}
 

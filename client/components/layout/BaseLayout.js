@@ -220,6 +220,12 @@ const BaseLayout = props => {
                 if (item.key) {
                     const existingItems = menuItems.filter(m => m.key === item.key)
                     if (existingItems.length > 0) {
+                        if(item.remove){
+                            existingItems.forEach(existingItem=>{
+                                menuItems.splice(menuItems.indexOf(existingItem), 1)
+                            })
+                            return
+                        }
                         existingItem = existingItems[0]
                         existingItem.path = 'items.' + i
                         existingItem.open = item.open

@@ -1,0 +1,1 @@
+export const CAPABILITY_MEDIA_REFERENCES = 'media_references'

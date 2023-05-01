@@ -431,7 +431,11 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
         'X-Frame-Options': 'SAMEORIGIN',
         'X-Content-Type-Options': 'nosniff',
         'Strict-Transport-Security': 'max-age=31536000',
-        /*'Content-Security-Policy': "default-src 'self' 'unsafe-inline' 'unsafe-eval'",*/
+        /*'Content-Security-Policy': "default-src 'self';" +
+            "font-src 'self' fonts.gstatic.com;" +
+            "img-src 'self' data: en.gravatar.com;" +
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval';" +
+            "style-src 'self' 'unsafe-inline' fonts.googleapis.com",*/
         ...hostrule.headers.common,
         ...hostrule.headers[urlPathname]
     }
@@ -1358,7 +1362,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                         }
                         if (redirect) {
 
-                            redirect = redirect.replace(/%search%/g, parsedUrl.search)
+                            redirect = redirect.replace(/%pathname%/g, parsedUrl.pathname).replace(/%search%/g, parsedUrl.search)
 
                             const agent = req.headers['user-agent']
                             if( !agent || agent.indexOf('www.letsencrypt.org') < 0 ) {

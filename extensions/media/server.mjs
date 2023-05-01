@@ -14,6 +14,9 @@ import {CAPABILITY_RUN_COMMAND} from '../../util/capabilities.mjs'
 import {uploadImageToStorage}  from './googleupload.mjs'
 import {createMediaEntry} from './util/index.mjs'
 import { fileURLToPath } from 'url'
+import {
+    CAPABILITY_MEDIA_REFERENCES
+} from './constants/index.mjs'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const {UPLOAD_DIR, UPLOAD_URL} = config
@@ -29,6 +32,15 @@ Hook.on('schema', ({schemas}) => {
     schemas.push(schema)
 })
 
+// Hook to add or modify user roles
+Hook.on('createUserRoles', ({userRoles}) => {
+    userRoles.forEach(userRole => {
+        if (['administrator', 'editor'].indexOf(userRole.name) >= 0) {
+            console.log(`Add capabilities "${CAPABILITY_MEDIA_REFERENCES}" for user role "${userRole.name}"`)
+            userRole.capabilities.push(CAPABILITY_MEDIA_REFERENCES)
+        }
+    })
+})
 
 // Hook when an entry of the type Media was deleted
 Hook.on('typeDeleted_Media', ({ids}) => {

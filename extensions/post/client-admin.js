@@ -21,7 +21,7 @@ export default () => {
     // add entry to main menu
     Hook.on('MenuMenu', ({menuItems}) => {
         if(Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
-            menuItems.push({name: 'Posts', to: ADMIN_BASE_URL + '/post', auth: true, icon: <EditIcon/>})
+            menuItems.push({name: 'Posts', key:'posts', to: ADMIN_BASE_URL + '/post', auth: true, icon: <EditIcon/>})
         }
     })
 

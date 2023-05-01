@@ -55,103 +55,100 @@ const authContextOrError = async (db, res, req, capability) => {
 }
 
 export const handleUpload = db => async (req, res) => {
+    // make sure upload dir exists
+    const upload_dir = path.join(__dirname, '..' + UPLOAD_DIR)
+    if (beforeUpload(res, req, upload_dir)) {
 
-        // make sure upload dir exists
-        const upload_dir = path.join(__dirname, '..' + UPLOAD_DIR)
-        if (beforeUpload(res, req, upload_dir)) {
+        let context = contextByRequest(req)
 
-            let context = contextByRequest(req)
-
-            if (!context.id) {
-                // use anonymouse user
-                const anonymousUser = await Util.userByName(db, 'anonymous')
-                context = {username: anonymousUser.username, id: anonymousUser._id.toString()}
-            }
-
-
-            if (context.id) {
-
-                if (!context.lang) {
-                    context.lang = DEFAULT_LANGUAGE
-                }
-
-                /* Process the uploads */
-                const form =  formidable({maxFileSize:10 * 1024 * 1024 * 1024})  // 10GB
-
-
-                const fileIds = []
-
-                // specify that we want to allow the user to upload multiple files in a single request
-                //form.multiples = true
-
-                // send header
-                res.writeHead(200, {'content-type': 'application/json'})
-
-                // create map with parameters
-                const data = {}
-                form.on('field', function (key, value) {
-                    try {
-                        data[key] = JSON.parse(value)
-                    } catch (e) {
-                        console.warn(e, value)
-                        data[key] = value
-                    }
-                })
-
-                let endReached = false
-
-                let response = {status: 'success'}, count = 0
-
-                // every time a file has been uploaded successfully,
-                // rename it to it's orignal name
-                let hasError
-                form.on('file', async (field, file) => {
-                    if( hasError ){
-                        return
-                    }
-                    count++
-                    try {
-                        if (Hook.hooks['FileUpload'] && Hook.hooks['FileUpload'].length) {
-                            for (let i = 0; i < Hook.hooks['FileUpload'].length; ++i) {
-                                await Hook.hooks['FileUpload'][i].callback({db, context, file, response, data})
-                            }
-                        }
-                    }catch (e) {
-                        hasError = true
-                        res.end(JSON.stringify({status: 'aborted', message: e.message}))
-                        return
-                    }
-                    count--
-                    if (endReached && count === 0) {
-                        res.end(JSON.stringify(response))
-                    }
-                })
-
-                // log any errors that occur
-                form.on('error', function (err) {
-                    console.log(err)
-                    res.end('{"status":"error","message":"' + err.message + '"}')
-                })
-                form.on('aborted', function (err) {
-                    console.log(err)
-                    res.end('{"status":"aborted","message":"Upload was aborted"}')
-                })
-
-                /*form.on('progress', function (bytesReceived, bytesExpected) {
-                    const percent = (bytesReceived / bytesExpected * 100) | 0
-                    console.log('Uploading: ' + percent + '%')
-                })*/
-
-
-                // once all the files have been uploaded, send a response to the client
-                form.on('end', () => {
-                    endReached = true
-                })
-
-                // parse the incoming request containing the form data
-                form.parse(req)
-            }
+        if (!context.id) {
+            // use anonymouse user
+            const anonymousUser = await Util.userByName(db, 'anonymous')
+            context = {username: anonymousUser.username, id: anonymousUser._id.toString()}
         }
+
+
+        if (context.id) {
+
+            if (!context.lang) {
+                context.lang = DEFAULT_LANGUAGE
+            }
+
+            /* Process the uploads */
+            const form =  formidable({maxFileSize:10 * 1024 * 1024 * 1024})  // 10GB
+
+
+            // specify that we want to allow the user to upload multiple files in a single request
+            //form.multiples = true
+
+            // send header
+            res.writeHead(200, {'content-type': 'application/json'})
+
+            // create map with parameters
+            const data = {}
+            form.on('field', function (key, value) {
+                try {
+                    data[key] = JSON.parse(value)
+                } catch (e) {
+                    console.warn(e, value)
+                    data[key] = value
+                }
+            })
+
+            let endReached = false
+
+            let response = {status: 'success'}, count = 0
+
+            // every time a file has been uploaded successfully,
+            // rename it to it's orignal name
+            let hasError
+            form.on('file', async (field, file) => {
+                if( hasError ){
+                    return
+                }
+                count++
+                try {
+                    if (Hook.hooks['FileUpload'] && Hook.hooks['FileUpload'].length) {
+                        for (let i = 0; i < Hook.hooks['FileUpload'].length; ++i) {
+                            await Hook.hooks['FileUpload'][i].callback({db, context, file, response, data})
+                        }
+                    }
+                }catch (e) {
+                    hasError = true
+                    res.end(JSON.stringify({status: 'aborted', message: e.message}))
+                    return
+                }
+                count--
+                if (endReached && count === 0) {
+                    res.end(JSON.stringify(response))
+                }
+            })
+
+            // log any errors that occur
+            form.on('error', function (err) {
+                console.log(err)
+                res.end('{"status":"error","message":"' + err.message + '"}')
+            })
+            form.on('aborted', function (err) {
+                console.log(err)
+                res.end('{"status":"aborted","message":"Upload was aborted"}')
+            })
+
+            /*form.on('progress', function (bytesReceived, bytesExpected) {
+                const percent = (bytesReceived / bytesExpected * 100) | 0
+                console.log('Uploading: ' + percent + '%')
+            })*/
+
+
+            // once all the files have been uploaded, send a response to the client
+            form.on('end', () => {
+                endReached = true
+            })
+
+            // parse the incoming request containing the form data
+            form.parse(req)
+        }
+    }
 }
 
 export const handleMediaDumpUpload = db => async (req, res) => {

@@ -3,6 +3,7 @@ import Async from 'client/components/Async'
 import config from 'gen/config-client'
 const {ADMIN_BASE_URL} = config
 import Hook from 'util/hook.cjs'
+import {CAPABILITY_MEDIA_REFERENCES} from "./constants/index.mjs";
 const TypesContainer = (props) => <Async {...props}
                                          load={import(/* webpackChunkName: "admin" */ '../../client/containers/TypesContainer')}/>
 
@@ -19,6 +20,12 @@ Hook.on('Routes', ({routes, container}) => {
         }
     })
 }, 99)
+
+
+// Hook to add user capabilities
+Hook.on('userCapabilities', ({capabilities}) => {
+    capabilities.push(CAPABILITY_MEDIA_REFERENCES)
+})
 
 export default () => {
 

@@ -41,7 +41,7 @@ export const addFilterToMatch = async ({db, debugInfo, filterKey, filterValue, t
                 const ids = []
                 for (const id of filterValue) {
                     if (ObjectId.isValid(id)) {
-                        ids.push(ObjectId(id))
+                        ids.push(new ObjectId(id))
                     } else {
                         if(debugInfo) {
                             debugInfo.push({

@@ -28,7 +28,7 @@ Hook.on('schema', ({schemas}) => {
 // Hook to add or modify user roles
 Hook.on('createUserRoles', ({userRoles}) => {
     userRoles.forEach(userRole => {
-        if (['administrator', 'editor', 'demo'].indexOf(userRole.name) >= 0) {
+        if (['administrator', 'editor'].indexOf(userRole.name) >= 0) {
             console.log(`Add capabilities "${CAPABILITY_MANAGE_CMS_PAGES}",${CAPABILITY_MANAGE_CMS_TEMPLATE} and ${CAPABILITY_MANAGE_CMS_CONTENT} for user role "${userRole.name}"`)
             userRole.capabilities.push(CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_CONTENT, CAPABILITY_MANAGE_CMS_TEMPLATE)
         }else if( userRole.name === 'author'){

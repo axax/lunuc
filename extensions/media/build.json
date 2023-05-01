@@ -81,7 +81,7 @@
           "tab": "Refrenzen",
           "access": {
             "ui": {
-              "role": "manage_types"
+              "role": "media_references"
             }
           }
         },

@@ -20,13 +20,15 @@ export const setAuthCookies = (userData, res) => {
     res.cookie('auth', AUTH_SCHEME + ' ' + userData.token, {
         httpOnly: true,
         expires: true,
-        maxAge: AUTH_EXPIRES_IN_COOKIE
+        maxAge: AUTH_EXPIRES_IN_COOKIE,
+        sameSite:'Strict'
     })
     if (userData.user) {
         res.cookie('authRole', userData.user.role.name, {
             httpOnly: false,
             expires: true,
-            maxAge: AUTH_EXPIRES_IN_COOKIE
+            maxAge: AUTH_EXPIRES_IN_COOKIE,
+            sameSite:'Strict'
         })
     }
 }
@@ -35,12 +37,14 @@ export const removeAuthCookies = (res) => {
     res.cookie('auth', null, {
         httpOnly: true,
         expires: new Date(0),
-        maxAge: 0
+        maxAge: 0,
+        sameSite:'Strict'
     })
     res.cookie('authRole', null, {
         httpOnly: true,
         expires: new Date(0),
-        maxAge: 0
+        maxAge: 0,
+        sameSite:'Strict'
     })
 }
 
