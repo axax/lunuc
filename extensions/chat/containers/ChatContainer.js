@@ -123,12 +123,25 @@ class ChatContainer extends React.Component {
                     padding: 1rem;
                     display:flex;
                 }
+                .chat-channel-message-content{
+                    width: 100%;
+                }
+                .chat-channel-message-head{
+                    display:flex;
+                }
                 .chat-channel-message-user{
                     font-size:1rem;
                     font-weight:bold;
                     line-height:1;
                 }
                 .chat-channel-message-time{
+                    margin-left:0.2rem;
+                    font-size:0.7rem;
+                    color:rgb(97,96,97);
+                    font-weight:normal;
+                }
+                .chat-channel-message-readby{
+                    margin-left:auto;
                     font-size:0.7rem;
                     color:rgb(97,96,97);
                     font-weight:normal;
@@ -303,7 +316,7 @@ class ChatContainer extends React.Component {
                     <div className="chat-channel-body" id="chatChannelBody">
                         {messages && messages.results.slice(0).reverse().map((message, i) => {
 
-                            return <ChatMessage key={i} message={message}
+                            return <ChatMessage key={i} message={message} chat={selectedChat}
                                                 onDeleteClick={this.handleMessageDeleteClick.bind(this, message)}/>
                         })}
                     </div>
@@ -539,7 +552,7 @@ export default compose(
                                     query: queriesMessage.query,
                                     variables
                                 })
-                                const newResults = [...storeData.chatMessages.results]
+                                const newResults = storeData.chatMessages?[...storeData.chatMessages.results]:[]
                                 newResults.unshift(message)
                                 const newChats = Object.assign({}, storeData.chatMessages, {results: newResults})
                                 client.writeQuery({
@@ -559,24 +572,26 @@ export default compose(
         props: ({mutate, ownProps}) => ({
             createMessage: ({chat, message}) => {
                 const oid = '#' + new Date().getTime()
+                const createdBy = {
+                    __typename: 'UserPublic',
+                    _id: _app_.user._id,
+                    username: _app_.user.username,
+                    picture: _app_.user.picture ? _app_.user.picture._id : false
+                }
                 return mutate({
-                    variables: {chat, message},
+                    variables: {chat, message, readBy: [_app_.user._id]},
                     optimisticResponse: {
                         __typename: 'Mutation',
                         // Optimistic message
                         createChatMessage: {
                             _id: oid,
                             status: 'creating',
-                            createdBy: {
-                                __typename: 'UserPublic',
-                                _id: _app_.user._id,
-                                username: _app_.user.username,
-                                picture: _app_.user.picture ? _app_.user.picture._id : false
-                            },
+                            createdBy,
                             chat: {
                                 __typename: 'Chat',
                                 _id: chat
                             },
+                            readBy:[createdBy],
                             message,
                             __typename: 'Message'
                         }

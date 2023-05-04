@@ -998,7 +998,6 @@ class TypesContainer extends React.Component {
         const {data} = this.state
         if (data && data.meta) {
             const meta = JSON.parse(data.meta)
-            console.log(meta)
             return `Abfragezeit ${meta.aggregateTime}ms / ${meta.totalTime}ms${meta.debugInfo && meta.debugInfo.length > 0 ? ' - ' + meta.debugInfo.map(f=>f.message).join(' | ') : ''}`
         }
         return ' '

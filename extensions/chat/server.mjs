@@ -29,6 +29,20 @@ Hook.on('typeCreated_ChatMessage', async ({result, db}) => {
         }
     }
 })
+Hook.on('typeLoaded', async ({result, context, type, db}) => {
+    if(type==='ChatMessage') {
+        const userId = new ObjectId(context.id)
+        for(const entry of result.results){
+            if(entry.readBy.findIndex(u=>u._id.toString()===context.id)<0){
+               entry.readBy.push({_id:userId, username: context.username})
+                db.collection('ChatMessage').updateOne(
+                    { _id: entry._id },
+                    { $push: { readBy: userId } }
+                )
+            }
+        }
+    }
+})
 
 Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions}) => {
 

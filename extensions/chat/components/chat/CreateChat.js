@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {_t} from "../../../../util/i18n.mjs";
+import {_t} from '../../../../util/i18n.mjs'
 
 export default class CreateChat extends React.Component {
 	constructor(props) {

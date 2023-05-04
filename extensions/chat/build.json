@@ -23,6 +23,9 @@
           "fields": [
             "username",
             "picture"
+          ],
+          "queryFields": [
+            "username"
           ]
         }
       ]
@@ -47,6 +50,19 @@
           "required": true,
           "type": "Chat",
           "index": 1
+        },
+        {
+          "name": "readBy",
+          "multi": true,
+          "type": "User",
+          "schemaType": "UserPublic",
+          "fields": [
+            "username",
+            "picture"
+          ],
+          "queryFields": [
+            "username"
+          ]
         }
       ]
     }

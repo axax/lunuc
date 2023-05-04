@@ -37,6 +37,7 @@ export const userSchemaRaw = `
 		status: String
         modifiedAt: Float
         lastLogin: Float
+        lastActive: Float
         username: String!
         password: String!
         email: String!

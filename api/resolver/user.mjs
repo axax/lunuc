@@ -228,7 +228,7 @@ export const userResolver = (db) => ({
                 }
                 options.sort = 'customOrder desc'
             }
-            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'signupToken', 'language', 'picture', 'email', 'meta', 'domain', 'emailConfirmed', 'requestNewPassword', 'role$UserRole', 'junior$[User]', 'group$[UserGroup]', 'setting$[UserSetting]', 'lastLogin'], options)
+            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'signupToken', 'language', 'picture', 'email', 'meta', 'domain', 'emailConfirmed', 'requestNewPassword', 'role$UserRole', 'junior$[User]', 'group$[UserGroup]', 'setting$[UserSetting]', 'lastLogin', 'lastActive'], options)
         },
         userRoles: async ({limit, page, offset, filter, sort}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
@@ -256,7 +256,7 @@ export const userResolver = (db) => ({
             }
 
             Util.checkIfUserIsLoggedIn(context)
-            const user = (await db.collection('User').findOne({_id: new ObjectId(context.id)}))
+            const user = (await db.collection('User').findOneAndUpdate({_id: new ObjectId(context.id)}, {$set: {lastActive: new Date().getTime()}})).value
             if (!user) {
                 throw new Error('User doesn\'t exist')
             } else {

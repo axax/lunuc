@@ -19,8 +19,10 @@ registerTrs({
 export default () => {
 
     // add entry to main menu
-    Hook.on('MenuMenu', ({menuItems}) => {
-        menuItems.push({name: _t('chat.title'), to: CHAT_BASE_URL, auth: true, icon: <ChatIcon />})
+    Hook.on('UserMenu', ({menuItems}) => {
+        menuItems.unshift({name: _t('chat.title'), onClick: ()=> {
+                _app_.history.push(CHAT_BASE_URL)
+            }, icon: <ChatIcon />})
     })
 
 }

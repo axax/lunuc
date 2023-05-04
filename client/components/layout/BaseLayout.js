@@ -190,7 +190,7 @@ const BaseLayout = props => {
             to: ADMIN_BASE_URL + '/',
             icon: <HomeIcon/>
         },
-        {name: 'Profile', to: ADMIN_BASE_URL + '/profile', auth: true, icon: <AccountCircleIcon/>}
+        /*{name: 'Profile', to: ADMIN_BASE_URL + '/profile', auth: true, icon: <AccountCircleIcon/>}*/
     ]
 
 
@@ -303,20 +303,27 @@ const BaseLayout = props => {
     })
 
     if (isAuthenticated) {
+
+        const menuItems= [{
+            name: `Profile`,
+            icon: 'account',
+            onClick: e => {
+                _app_.history.push(ADMIN_BASE_URL + '/profile')
+            }
+        },{
+            name: `Logout ${username}`,
+            icon:'logout',
+            onClick: e => {
+                _app_.history.push(ADMIN_BASE_URL + '/logout')
+            }
+        }]
+
+        Hook.call('UserMenu', {menuItems})
+
         headerRight.push(<Box sx={{ flexGrow: 0 }}>
             <SimpleMenu
                 icon={<Avatar alt={username} src={user.picture?getImageSrc(user.picture)+'?width=48&height=48&webp=true':''} />}
-                items={[{
-                    name: `Profile`,
-                    onClick: e => {
-                        _app_.history.push(ADMIN_BASE_URL + '/profile')
-                    }
-                },{
-                    name: `Logout ${username}`,
-                    onClick: e => {
-                        _app_.history.push(ADMIN_BASE_URL + '/logout')
-                    }
-                }]}/>
+                items={menuItems}/>
 
         </Box>)
         /*headerRight.push(<Button key="logout" color="inherit" size="small"

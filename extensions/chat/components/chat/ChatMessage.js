@@ -1,8 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import Util from 'client/util/index.mjs'
+import {_t} from '../../../../util/i18n.mjs'
 
-const ChatMessage = ({message, onDeleteClick}) => {
+const ChatMessage = ({message, chat, onDeleteClick}) => {
 
 
 
@@ -19,13 +20,14 @@ const ChatMessage = ({message, onDeleteClick}) => {
 		return null
 	}
 	const isMe = _app_.user._id === message.createdBy._id
-
 	return <div className="chat-channel-message" style={{backgroundColor: statusBackgroundColor(message.status) }}>
 		<img className="chat-channel-message-image" src={message.createdBy.picture?'/uploads/'+message.createdBy.picture+'?format=jpeg&width=96&height=96':'/placeholder.svg'} />
 
 		<div className="chat-channel-message-content">
 			<div className="chat-channel-message-head">
-				<span className="chat-channel-message-user">{message.createdBy.username}</span> <span className="chat-channel-message-time">{Util.formattedDatetimeFromObjectId(message._id)}</span>
+				<span className="chat-channel-message-user">{message.createdBy.username}</span>
+				<span className="chat-channel-message-time">{Util.formattedDatetimeFromObjectId(message._id)}</span>
+				<span className="chat-channel-message-readby">{_t('ChatContainer.readBy',{count:message.readBy?message.readBy.length:0,total: chat.users.length})}</span>
 
 				{false && isMe && message.status!=='deleting' && message.status!=='creating'?
 				<button onClick={onDeleteClick}>Delete</button>:''}

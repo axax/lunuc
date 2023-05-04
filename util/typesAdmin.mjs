@@ -390,6 +390,13 @@ Hook.on('Types', ({types}) => {
                 vagueSearchable:false
             },
             {
+                name: 'lastActive',
+                uitype: 'datetime',
+                readOnly: true,
+                vagueSearchable:false,
+                hideColumnInTypes: true
+            },
+            {
                 name: 'role',
                 type: 'UserRole',
                 reference: true,
