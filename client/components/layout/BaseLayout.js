@@ -1,5 +1,7 @@
 import React from 'react'
 import {
+    Box,
+    Avatar,
     Button,
     ResponsiveDrawerLayout,
     IconButton,
@@ -41,6 +43,7 @@ import Async from 'client/components/Async'
 import {deepMergeOptional} from '../../../util/deepMerge.mjs'
 import { alpha } from '@mui/material/styles';
 import styled from '@emotion/styled'
+import {getImageSrc} from "../../util/media";
 
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../CodeEditor')}/>
@@ -279,17 +282,6 @@ const BaseLayout = props => {
         onBlur={()=>{}}
         onClick={()=>{}} options={[{name:'Media'}]}/></SearchWrapper>)*/
 
-    if (isAuthenticated) {
-        headerRight.push(<Button key="logout" color="inherit" size="small"
-                                 onClick={() => {
-                                     _app_.history.push(ADMIN_BASE_URL + '/logout')
-                                 }}>Logout {username}</Button>)
-    } else {
-        headerRight.push(<Button key="login" color="inherit" size="small"
-                                 onClick={() => {
-                                     _app_.history.push(ADMIN_BASE_URL + '/login')
-                                 }}>Login</Button>)
-    }
 
     if (!settings.headerActions) {
         settings.headerActions = [{
@@ -309,6 +301,34 @@ const BaseLayout = props => {
                         color="inherit"><Icon/></IconButton>
         )
     })
+
+    if (isAuthenticated) {
+        headerRight.push(<Box sx={{ flexGrow: 0 }}>
+            <SimpleMenu
+                icon={<Avatar alt={username} src={user.picture?getImageSrc(user.picture)+'?width=48&height=48&webp=true':''} />}
+                items={[{
+                    name: `Profile`,
+                    onClick: e => {
+                        _app_.history.push(ADMIN_BASE_URL + '/profile')
+                    }
+                },{
+                    name: `Logout ${username}`,
+                    onClick: e => {
+                        _app_.history.push(ADMIN_BASE_URL + '/logout')
+                    }
+                }]}/>
+
+        </Box>)
+        /*headerRight.push(<Button key="logout" color="inherit" size="small"
+                                 onClick={() => {
+                                     _app_.history.push(ADMIN_BASE_URL + '/logout')
+                                 }}>Logout {username}</Button>)*/
+    } else {
+        headerRight.push(<Button key="login" color="inherit" size="small"
+                                 onClick={() => {
+                                     _app_.history.push(ADMIN_BASE_URL + '/login')
+                                 }}>Login</Button>)
+    }
 
     console.log('Render BaseLayout')
 

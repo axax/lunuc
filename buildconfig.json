@@ -189,7 +189,8 @@
         "AutoFixHigh",
         "Css",
         "Javascript",
-        "History"
+        "History",
+        "Notifications"
       ],
       "theme":{
         "colors":{

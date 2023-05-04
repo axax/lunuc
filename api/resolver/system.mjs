@@ -369,7 +369,7 @@ export const systemResolver = (db) => ({
 
             return removeBackup(type, name)
         },
-        cloneCollection: async ({type, name}, {context}) => {
+        cloneCollection: async ({type, name, empty}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
 
             let customName
@@ -387,9 +387,11 @@ export const systemResolver = (db) => ({
             // this is not the best way to copy a collection
             // better do it with aggregate function or mongodumb
             // but for now it is the only solution that worked
-            const result = await oldCollection.find().forEach((x) => {
-                newCollection.insert(x)
-            })
+            if(!empty) {
+                const result = await oldCollection.find().forEach((x) => {
+                    newCollection.insert(x)
+                })
+            }
             //const result = await oldCollection.aggregate([{$out: newName}])
 
             //copy indexes

@@ -77,7 +77,8 @@ import {
     AutoFixHighIcon,
     CssIcon,
     JavascriptIcon,
-    HistoryIcon
+    HistoryIcon,
+    NotificationsIcon
 } from 'gensrc/ui/admin/icons'
 
 const iconComponents = {
@@ -158,8 +159,8 @@ const iconComponents = {
     pause:PauseIcon,
     css: CssIcon,
     js: JavascriptIcon,
-    history: HistoryIcon
-
+    history: HistoryIcon,
+    notification: NotificationsIcon
 }
 
 export const getIconByKey = (key, defaultIcon) => {

@@ -109,7 +109,7 @@ class SimpleSelect extends React.Component {
                     })
                 }
             </Select>
-            {hint && <FormHelperText>{hint}</FormHelperText>}
+            {hint && <FormHelperText sx={{ml:0}}>{hint}</FormHelperText>}
         </FormControl>
     }
 }

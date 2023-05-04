@@ -4,7 +4,7 @@ import {
 
 const DEFAULT_TAB = 'Allgemein', IMAGE_OPTIMIZATION_TAB = 'Bild Optimierung', MARGIN_TAB = 'Abstände',
     TRANSLATION_TAB = 'Übersetzung',
-    MEDIA_PROJECTION = ['_id','size','name','group','src','mimeType']
+    MEDIA_PROJECTION = ['_id', 'size', 'name', 'group', 'src', 'mimeType']
 const imageOptions = key => ({
     [`${key}options_quality`]: {
         type: 'number',
@@ -199,17 +199,17 @@ const classLayoutColumnOptions = (count, options) => {
                 })
             }
 
-            obj[`c_${i-1}_p_className@${col.short}`] = {
+            obj[`c_${i - 1}_p_className@${col.short}`] = {
                 fourthWidth: true,
                 label: `Spalte ${i}: ${col.long}`,
-                value: options[col.short]?` col-${col.short}-${options[col.short]} `:' ',
+                value: options[col.short] ? ` col-${col.short}-${options[col.short]} ` : ' ',
                 tab: 'Responsive',
                 enum: enumA
             }
         }
 
 
-        obj[`c_${i-1}_p_className`] = {
+        obj[`c_${i - 1}_p_className`] = {
             fullWidth: true,
             label: 'Klasse Spalte ' + i,
             value: ''
@@ -316,6 +316,7 @@ const classLayoutOptions = key => ({
     [`${key}className@space`]: {
         label: 'Abstand zwischen Spalten',
         tab: DEFAULT_TAB,
+        tabPosition: 0,
         enum: [
             {
                 value: ' row-space-2 ',
@@ -426,7 +427,7 @@ const baseElements = [
                 uitype: 'type_picker',
                 type: 'Media',
                 localized: true,
-                localizedFallback:true,
+                localizedFallback: true,
                 filter: 'mimeType=image',
                 tab: DEFAULT_TAB,
                 projection: MEDIA_PROJECTION
@@ -539,7 +540,7 @@ const baseElements = [
                 fullWidth: true,
                 value: '',
                 label: 'Vorladen',
-                enum:[
+                enum: [
                     {
                         name: 'Keine',
                         value: 'none'
@@ -1461,7 +1462,7 @@ const baseElements = [
         },
         options: {
             ...marginOptions('p_'),
-            ...classLayoutColumnOptions(2,{lg: 6, md:6, sm:6, xs:12}),
+            ...classLayoutColumnOptions(2, {lg: 6, md: 6, sm: 6, xs: 12}),
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
@@ -1500,7 +1501,7 @@ const baseElements = [
         },
         options: {
             ...marginOptions('p_'),
-            ...classLayoutColumnOptions(3, {lg:4, md:4, sm:4, xs:12}),
+            ...classLayoutColumnOptions(3, {lg: 4, md: 4, sm: 4, xs: 12}),
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
@@ -1543,7 +1544,7 @@ const baseElements = [
         },
         options: {
             ...marginOptions('p_'),
-            ...classLayoutColumnOptions(4, {lg:3, md:3, sm:3, xs:6}),
+            ...classLayoutColumnOptions(4, {lg: 3, md: 3, sm: 3, xs: 6}),
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
@@ -1646,7 +1647,7 @@ const baseElements = [
         },
         options: {
             ...marginOptions('p_'),
-            ...classLayoutColumnOptions(6, {md:2, sm:3, xs:6}),
+            ...classLayoutColumnOptions(6, {md: 2, sm: 3, xs: 6}),
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
@@ -1948,12 +1949,13 @@ const advancedElements = [
     {
         tagName: 'Cms',
         name: 'Komponente',
-        icon:'functions',
+        icon: 'functions',
         defaults: {
             $inlineEditor: {
                 elementKey: 'Cms'
             },
             p: {
+                forceEditMode: '${editMode}',
                 ['data-element-key']: 'cms'
             }
         },
@@ -2018,7 +2020,7 @@ const advancedElements = [
     {
         tagName: 'div',
         name: 'Query',
-        icon:'search',
+        icon: 'search',
         defaults: {
             $inlineEditor: {
                 allowDrop: false,
@@ -2041,42 +2043,127 @@ const advancedElements = [
         },
         options: {
             $inlineEditor_dataResolver: {
-                tab:'Data',
+                tab: 'Data',
                 label: 'Data Resolver',
                 uitype: 'json',
                 value: {
                     key: '__uid__',
                     t: 'GenericData',
-                    genericType:'DemoType',
+                    genericType: 'DemoType',
                     d: [
                         '_id',
-                        'definition',
+                        {'definition': ['name']},
                         {
                             data: [
-                                'title'
+                                'title',
+                                'description',
+                                'state',
+                                'date',
+                                'location',
+                                'image'
                             ]
                         },
                     ],
-                    f: '_id>${ObjectId.createFromTime(Date.now()/1000-60*60*24*50)}'
+                    f: '_id>${ObjectId.createFromTime(Date.now()/1000-60*60*24*50)}',
+                    returnMeta: false,
+                    removeDefinition: false
                 }
             },
             c_$for_d: {
-                tab:'Data',
+                tab: 'Data',
                 label: 'Data source',
                 value: 'data.__uid__.results'
             },
             c_$for_c_c: {
-                tab:'Data',
+                tab: 'Template',
                 label: 'Template',
                 uitype: 'editor',
                 type: 'Object',
                 value: {
-                    t: 'h2',
-                    c:'$.loop{loop.data.title}'
+                    t: 'Row.row-space-4.entry',
+                    '$inlineEditor': {
+                        mode: 'source',
+                        menuTitle: {
+                            source: '$.loop{loop.definition.name} bearbeiten',
+                            sourceClone: '$.loop{loop.definition.name} kopieren',
+                            sourceRemove: '$.loop{loop.definition.name} löschen'
+                        },
+                        menu: {
+                            remove: false,
+                            clone: false,
+                            clipboard: false,
+                            addBelow: false
+                        },
+                        source: {
+                            allowClone: true,
+                            allowRemove: true,
+                            type: 'GenericData',
+                            genericType: '$.loop{loop.definition.name}',
+                            _id: '$.loop{loop._id}',
+                            resolverKey: '__uid__'
+                        }
+                    },
+                    c: [
+                        {
+                            $inlineEditor: false,
+                            t: 'Col',
+                            p: {
+                                className: 'col-xs-12 col-sm-6 col-md-8 col-lg-8'
+                            },
+                            c: [
+                                {
+                                    t: 'h2',
+                                    '$inlineEditor': false,
+                                    c: '$.loop{loop.data.title}'
+                                },
+                                {
+                                    t: 'p',
+                                    '$inlineEditor': false,
+                                    c: '$.loop{Util.formatDate(loop.data.date,{hour:undefined, minute:undefined, second:undefined})} - $.loop{loop.data.state || \'\'} in $.loop{loop.data.location || \'\'}'
+                                },
+                                {
+                                    t: 'div',
+                                    '$inlineEditor': false,
+                                    $c: '$.loop{loop.data.description || \'\'}'
+                                }
+                            ]
+                        },
+                        {
+                            $inlineEditor: false,
+                            t: 'Col',
+                            p: {
+                                className: 'col-xs-12 col-sm-6 col-md-4 col-lg-4'
+                            },
+                            c: [
+                                {
+                                    $for: {
+                                        d: 'loop.data.image',
+                                        s: 'img',
+                                        c: {
+                                            t: 'SmartImage',
+                                            '$inlineEditor': false,
+                                            p: {
+                                                src: '$.img{Util.getImageObject(img).src}',
+                                                options: {
+                                                    quality: "90",
+                                                    resize: {
+                                                        width: 600,
+                                                        height: 500
+                                                    },
+                                                    webp: true
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+
                 }
             },
             c_$for_c_$c: {
-                tab:'Data',
+                tab: 'Template',
                 label: 'Template (can be used alternatively)',
                 value: ''
             },
@@ -2107,7 +2194,7 @@ const advancedElements = [
 let elementsMap, elementsMapAdvanced
 
 const getJsonDomElements = (value, options) => {
-    if(value==='customElement'){
+    if (value === 'customElement') {
         return {}
     }
     if (!elementsMap) {
@@ -2133,7 +2220,7 @@ const getJsonDomElements = (value, options) => {
     return baseElements
 }
 
-const createElementByKeyFromList = (key, elementList)=>{
+const createElementByKeyFromList = (key, elementList) => {
     let item
     for (let i = 0; i < elementList.length; i++) {
         const comp = elementList[i]

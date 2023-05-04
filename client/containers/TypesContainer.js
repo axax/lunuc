@@ -123,6 +123,7 @@ class TypesContainer extends React.Component {
             dataToEdit: null,
             data: null,
             collectionName: '',
+            collectionEmpty: false,
             simpleDialog: false,
             filter: this.pageParams.filter
         }
@@ -932,9 +933,15 @@ class TypesContainer extends React.Component {
                               type: 'primary'
                           }]}
                           title={_t('TypesContainer.createNewVersion')}>
-                <TextField value={this.state.collectionName} onChange={(e) => {
+                <TextField fullWidth={true} value={this.state.collectionName} onChange={(e) => {
                     this.setState({collectionName: e.target.value})
                 }} placeholder={_t('TypesContainer.enterVersionName')}/>
+
+                <SimpleSwitch label={_t('TypesContainer.createEmptyVersion')}
+                              onChange={(e) => {
+                                  this.setState({collectionEmpty: e.target.checked})
+                              }}
+                              checked={this.state.collectionEmpty}/>
             </SimpleDialog>,
             simpleDialog &&
             <SimpleDialog key="simpleDialog" open={!!simpleDialog} onClose={simpleDialog.onClose || (() => {
@@ -1523,11 +1530,11 @@ class TypesContainer extends React.Component {
         }
     }
 
-    cloneCollection({type, name}) {
+    cloneCollection({type, name, empty}) {
         if (type) {
             client.mutate({
-                mutation: `mutation cloneCollection($type:String!,$name:String){cloneCollection(type:$type,name:$name){collection{name}}}`,
-                variables: {name, type},
+                mutation: `mutation cloneCollection($type:String!,$name:String,$empty:Boolean){cloneCollection(type:$type,name:$name,empty:$empty){collection{name}}}`,
+                variables: {name, type, empty},
                 update: (store, {data}) => {
 
                     if (data.cloneCollection && data.cloneCollection.collection) {
@@ -1871,7 +1878,7 @@ class TypesContainer extends React.Component {
     handleCloneClollection = (action) => {
         if (action && action.key === 'create') {
             const {type} = this.pageParams
-            this.cloneCollection({type, name: this.state.collectionName})
+            this.cloneCollection({type, name: this.state.collectionName, empty: this.state.collectionEmpty})
         }
         this.setState({confirmCloneColDialog: false, collectionName: ''})
     }

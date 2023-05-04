@@ -281,11 +281,11 @@ const Util = {
     },
     userHasAccessRights: async (db, context, {type}) =>{
         if (context && context.id) {
-            const user = await Util.userById(db, context.id)
+            //const user = await Util.userById(db, context.id)
             // TODO: implement access control
-            if(user && user.group && user.group.find(g=>g.toString()==='63723958684020f249395c56')){
+            /*if(user && user.group && user.group.find(g=>g.toString()==='63723958684020f249395c56')){
                 return false
-            }
+            }*/
         }
         return true
     },

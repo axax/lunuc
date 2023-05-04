@@ -505,9 +505,11 @@ Hook.on('typeLoaded', async ({type, db, context, result, otherOptions}) => {
             }
 
             // remove definition on entries
-            result.results.forEach(item => {
-                delete item.definition
-            })
+            if(otherOptions.removeDefinition !== false) {
+                result.results.forEach(item => {
+                    delete item.definition
+                })
+            }
         }
     }
 })

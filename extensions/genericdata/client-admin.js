@@ -20,6 +20,7 @@ import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import {parseStyles} from '../../client/util/style'
 
 import DomUtil from '../../client/util/dom.mjs'
+import {CAPABILITY_EXTRA_OPTIONS} from "../../util/capabilities.mjs";
 
 registerTrs(translations, 'GenericData')
 
@@ -63,7 +64,7 @@ export default () => {
                     }
 
                     if (structure && structure.columns) {
-                        structure.columns.forEach(col=>{
+                        structure.columns.reverse().forEach(col=>{
                             if(col.format==='date'){
                                 row['data_' + col.field] =  Util.formattedDatetime(item.data[col.field],{hour:undefined, minute:undefined, second:undefined})
                             }else{
@@ -146,7 +147,7 @@ export default () => {
                 structure = item.definition ? item.definition.structure : {}
 
             if (structure && structure.columns) {
-                structure.columns.forEach(col=>{
+                structure.columns.reverse().forEach(col=>{
                     columns.splice(1, 0, {
                         title: col.label || col.field,
                         id: 'data_'+col.field,
@@ -246,7 +247,7 @@ export default () => {
 
 
                     let overrideTranslations = false, translateTimeout = 0
-                    const userHasCapa = Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_CMS_TEMPLATE)
+                    const userHasCapa = Util.hasCapability({userData: _app_.user}, CAPABILITY_EXTRA_OPTIONS)
 
                     const actions = structure.actions
                     if (actions) {

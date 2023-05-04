@@ -100,8 +100,8 @@ class ManageCollectionClones extends React.PureComponent {
             dataToDelete &&
             <SimpleDialog key="deleteDialog" open={showConfirmDeletion} onClose={this.handleConfirmDeletion.bind(this)}
                           actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
-                          title="Confirm deletion">
-                Are you sure you want to delete this version?
+                          title={_t('TypesContainer.deleteConfirmTitle')}>
+                {_t('ManageCollectionClones.areYouSureToDelete')}
             </SimpleDialog>]
     }
 

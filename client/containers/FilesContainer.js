@@ -169,7 +169,7 @@ class FilesContainer extends React.Component {
                         }}
                     </Query>
 
-                    <FileDrop maxSize={10000000} style={{width: '15rem', height: '10rem'}}
+                    <FileDrop maxSize={10000000} style={{width: '100%', height: '10rem', marginTop:'2rem'}}
                               accept="*/*"
                               uploadTo="/graphql/upload"
                               data={{keepFileName: true, createMediaEntry: false, uploadDir:space+dir}}

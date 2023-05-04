@@ -1323,14 +1323,16 @@ class JsonDomHelper extends React.Component {
 
                 let index = -1
                 for (let i = 0; i < children.length; i++) {
-                    if (children[i].key) {
-                        index = parseInt(children[i].key.substring(children[i].key.lastIndexOf('.') + 1))
+                    if(children[i]) {
+                        if (children[i].key) {
+                            index = parseInt(children[i].key.substring(children[i].key.lastIndexOf('.') + 1))
 
-                        if (!_options.excludeDrop || _options.excludeDrop.indexOf(index) < 0) {
-                            kids.push(this.getDropArea(this.props, index))
+                            if (!_options.excludeDrop || _options.excludeDrop.indexOf(index) < 0) {
+                                kids.push(this.getDropArea(this.props, index))
+                            }
                         }
+                        kids.push(children[i])
                     }
-                    kids.push(children[i])
                 }
                 if (index > -1) {
                     kids.push(this.getDropArea(this.props, index + 1))

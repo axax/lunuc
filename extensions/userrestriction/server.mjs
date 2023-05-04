@@ -40,7 +40,7 @@ const hasGroupMatch = (group1, group2) => {
    return false
 }
 
-Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions}) => {
+Hook.on('enhanceTypeMatch', async ({type, context, match}) => {
     if(userRestrictions[type]){
         for(const rule of userRestrictions[type]){
             if(rule.filter && (rule.user.indexOf(context.id)>=0 || hasGroupMatch(rule.userGroup, context.group))){
@@ -49,23 +49,25 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions
                         if(rule.filter[key].$remove || rule.filter[key]['#remove']){
                             // remove operator
                             delete match[key]
-                        }else if(key=='ownerGroup'){
+                        }else if(key=='ownerGroup' || key=='createdBy'){
                             if(!match.ownerGroup && !match.createdBy){
                                 return
                             }
                             if(!match.$or){
                                 match.$or= []
                             }
-                            if(match.ownerGroup){
-                                match.ownerGroup.$in.push(...rule.filter[key].$in)
-                                match.$or.push({ownerGroup:match.ownerGroup})
-                                delete match.ownerGroup
-                            }else{
-                                match.$or.push({ownerGroup:rule.filter[key]})
+                            if(match[key]){
+                                match.$or.push({[key]:match[key]})
+                                delete match[key]
                             }
-                            if(match.createdBy){
-                                match.$or.push({createdBy:match.createdBy})
-                                delete match.createdBy
+
+                            let subMatch = match.$or.find(f=>Object.keys(f).find(k=>k==key))
+
+                            if(!subMatch){
+                                subMatch = {[key]: rule.filter[key]}
+                                match.$or.push(subMatch)
+                            }else{
+                                subMatch[key].$in.push(...rule.filter[key].$in)
                             }
                         }else{
                             match[key] = rule.filter[key]

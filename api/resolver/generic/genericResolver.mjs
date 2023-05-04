@@ -301,11 +301,13 @@ const GenericResolver = {
 
             }
 
+            if(!match){
+                throw new Error(`no permission to read data for type ${typeName}`)
+            }
         }
 
-        if(!match){
-            throw new Error(`no permission to read data for type ${typeName}`)
-        }
+        Hook.call('enhanceTypeMatch', {type: typeName, context, match})
+
         //console.log(`1 time ${new Date() - startTime}ms`)
 
         let cacheKey, cacheTime, cachePolicy
@@ -510,7 +512,6 @@ const GenericResolver = {
         //check if this field is a reference
         const fields = getFormFieldsByType(typeName)
 
-
         const dataSet = Object.keys(data).reduce((o, k) => {
             if (fields[k] && fields[k].type === 'Object' && data[k] && data[k].constructor !== Object) {
                 // store as object
@@ -522,6 +523,13 @@ const GenericResolver = {
             }
             return o
         }, {})
+
+        for (const [fieldName, field] of Object.entries(fields)) {
+            if(field.localized && !dataSet[fieldName]){
+                dataSet[fieldName] = {}
+            }
+        }
+
 
         if( fields.ownerGroup && !dataSet.ownerGroup && context.role !== 'administrator' && userContext.group && userContext.group.length > 0 ){
             // set ownerGroup from current user if it is not specified
@@ -811,13 +819,14 @@ const GenericResolver = {
                     }
                     o[k]
 */
-                   /*o[k] = {
+                  /* o[k] = {
                         $ifNull:
                             [
                                 '$'+k,
-                                {...data[k]}
+                                {...data[k]},
+                                { $mergeObjects: [ '$'+k, {...data[k]} ] }
                             ]
-                    }*/
+                    }*
 
                     /*updateStages.push({ $set: { [k]: {
                                 $ifNull:
@@ -831,6 +840,14 @@ const GenericResolver = {
                     Object.keys(data[k]).forEach(key => {
                         o[k + '.' + key] = data[k][key]
                     })
+
+                   /* o[k] = {
+                        $mergeObjects: [
+                            `$${k}`,
+                            data[k]
+                        ]
+                    }*/
+
 
                 } else if (data[k] && fields[k] && fields[k].type === 'Object') {
                     // store as object
@@ -919,13 +936,15 @@ const GenericResolver = {
             }
         }
 
+        Hook.call('enhanceTypeMatch', {type: typeName, context, match})
+
         const entry = await collection.findOne(match)
 
         if (!entry) {
             throw new Error('entry with id ' + _id + ' does not exist')
         }
 
-        const clone = Object.assign({}, entry, {modifiedAt: null, createdBy: new ObjectId(context.id)}, rest)
+        const clone = Object.assign({}, entry, {modifiedAt: null, _id:null, createdBy: new ObjectId(context.id)}, rest)
 
         delete clone._id
 
