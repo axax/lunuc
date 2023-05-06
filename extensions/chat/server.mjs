@@ -4,11 +4,9 @@ import resolver from './resolver/'
 import schemaGen from './gensrc/schema.mjs'
 import resolverGen from './gensrc/resolver.mjs'
 import {deepMergeToFirst} from 'util/deepMerge.mjs'
-import {getGenericTypeDefinitionWithStructure} from "../genericdata/util/index.mjs";
 import Util from "../../api/util/index.mjs";
 import {ObjectId} from "mongodb";
 import GenericResolver from "../../api/resolver/generic/genericResolver.mjs";
-import {matchExpr} from "../../client/util/json.mjs";
 
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {

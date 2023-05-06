@@ -60,7 +60,7 @@ export default db => ({
                 }
             }
 
-            const data = await GenericResolver.entities(db, context, 'CmsPage', fields, {
+            const data = await GenericResolver.entities(db, {context, headers}, 'CmsPage', fields, {
                 limit,
                 page,
                 offset,

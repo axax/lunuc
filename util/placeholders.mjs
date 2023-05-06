@@ -12,7 +12,7 @@ export const replacePlaceholders = (template, context, name) => {
     try {
         return new Function(DomUtil.toES5('const {' + Object.keys(context).join(',') + '} = this.context;return `' + template + '`')).call({context})
     } catch (e) {
-        console.warn(e)
+        console.warn(e, template, context)
         return e.message
     }
 }
