@@ -140,12 +140,7 @@ class JsonDom extends React.Component {
                 }
                 } {...rest}/>
             } else {
-                if (_app_.slugContext && url.startsWith('/' + _app_.slugContext)) {
-                    url = url.substring(_app_.slugContext.length + 1)
-                    if (!url) {
-                        url = '/'
-                    }
-                }
+                url = Util.removeSlugContext(url)
 
                 /*if(url.indexOf(_app_.contextPath + '/') !== 0){
                     url=_app_.contextPath+url

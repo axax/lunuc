@@ -408,6 +408,15 @@ const Util = {
         }
         return nodeList
     },
+    removeSlugContext(url) {
+        if (_app_.slugContext && url.startsWith('/' + _app_.slugContext)) {
+            url = url.substring(_app_.slugContext.length + 1)
+            if (!url) {
+                url = '/'
+            }
+        }
+        return url
+    },
     baseUrl(path, query) {
         const seperator = config.PRETTYURL_SEPERATOR
         let url = Util.removeTrailingSlash(location.pathname.split('/' + seperator + '/')[0])
