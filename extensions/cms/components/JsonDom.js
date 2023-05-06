@@ -109,7 +109,7 @@ class JsonDom extends React.Component {
                 _this.emitJsonError({message: 'Redirect prevented for user'}, {loc: 'Redirect'})
                 return null
             } else {
-                return <Redirect to={{pathname: to}} push={push}/>
+                return <Redirect to={{pathname: Util.removeSlugContext(to)}} push={push}/>
             }
         },
         'Link': ({to, href, target, gotop, native, onClick, tracking, scrollOffset, scrollStep, scrollTimeout, ...rest}) => {
