@@ -1,6 +1,7 @@
 import React from 'react'
 import {
     Box,
+    Badge,
     Avatar,
     Button,
     ResponsiveDrawerLayout,
@@ -114,7 +115,9 @@ const genMenuEntry = (item, path) => {
         name: item.label || item.type,
         to,
         auth: true,
-        icon: <Icon/>,
+        icon: item.badge?<Badge badgeContent={item.badge.count} color="error">
+            <Icon/>
+        </Badge>:<Icon />,
         items: genMenuEntry(item.items, path + '.items'),
         path,
         open: item.open
@@ -252,7 +255,7 @@ const BaseLayout = props => {
             })
         }
 
-        if (settings.menu.genericTypes) {
+        if (settings.menu.genericTypes && settings.menu.genericTypes.length>0) {
             menuItems.push({divider: true, auth: true})
 
             settings.menu.genericTypes.forEach((item, i) => {

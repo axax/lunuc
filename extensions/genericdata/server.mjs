@@ -514,9 +514,23 @@ Hook.on('typeLoaded', async ({type, db, context, result, otherOptions}) => {
     }
 })
 
-Hook.on('typeBeforeUpdate', async ({type, data, _meta, db, context}) => {
+Hook.on('typeBeforeUpdate', async ({type, data, params, _meta, db, context}) => {
 
     if (type === 'GenericData' && data.definition) {
+
+
+        const def = await getGenericTypeDefinitionWithStructure(db, {id: data.definition})
+
+        if (def && def.structure) {
+            const accessMatch = await Util.getAccessFilter(db, context, def.structure?.access?.update)
+            if(accessMatch){
+                if (accessMatch.createdBy) {
+                    params.createdBy = accessMatch.createdBy
+                } else if(def.structure.access.update.force){
+                    delete params.createdBy
+                }
+            }
+        }
 
         if (_meta) {
 

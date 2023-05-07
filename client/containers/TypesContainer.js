@@ -1389,7 +1389,7 @@ class TypesContainer extends React.Component {
                         variables
                     })
 
-                    if (storeData && storeData[storeKey]) {
+                    if (storeData && storeData[storeKey] && responseItem) {
                         // find entry in result list
                         const newData = {...storeData[storeKey], results: [...storeData[storeKey].results]}
                         const refResults = newData.results

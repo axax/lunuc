@@ -709,11 +709,6 @@ const GenericResolver = {
             throw new Error('Benutzer hat keine Berechtigung zum Bearbeiten')
         }
 
-        const payload = {}
-
-        await HookAsync.call('typeBeforeUpdate', {type: typeName, _version, _meta, data, db, context, payload})
-
-
         if (!options) {
             options = {}
         }
@@ -727,7 +722,7 @@ const GenericResolver = {
                 if (!data[pk]) {
                     throw new Error(`primary key ${pk} is missing`)
                 }
-                params[pk] = ObjectId.isValid(data[pk])?ObjectId(data[pk]):data[pk]
+                params[pk] = ObjectId.isValid(data[pk])?new ObjectId(data[pk]):data[pk]
             })
 
         }else {
@@ -735,7 +730,7 @@ const GenericResolver = {
             if (!data[primaryKey]) {
                 throw new Error(`primary key ${primaryKey} is missing`)
             }
-            params[primaryKey] = ObjectId.isValid(data[primaryKey])?ObjectId(data[primaryKey]):data[primaryKey]
+            params[primaryKey] = ObjectId.isValid(data[primaryKey])?new ObjectId(data[primaryKey]):data[primaryKey]
         }
 
 
@@ -796,6 +791,7 @@ const GenericResolver = {
                 delete data.ownerGroup
             }
         }
+
 
         const collection = db.collection(collectionName)
 
@@ -868,6 +864,9 @@ const GenericResolver = {
         if (options.upsert) {
             updateOptions.upsert = true
         }
+
+        const payload = {}
+        await HookAsync.call('typeBeforeUpdate', {type: typeName, _version, params, _meta, data, db, context, payload})
 
         let result = (await collection.updateOne(params, {
             $set: dataSet

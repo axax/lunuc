@@ -65,6 +65,7 @@ export Avatar from '@mui/material/Avatar'
 export Tabs from '@mui/material/Tabs'
 export Tab from '@mui/material/Tab'
 export Box from '@mui/material/Box'
+export Badge from '@mui/material/Badge'
 
 // simple components are extended componente with features easy to use
 export SimpleHeaderMenu from './SimpleHeaderMenu'

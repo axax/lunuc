@@ -78,7 +78,8 @@ import {
     CssIcon,
     JavascriptIcon,
     HistoryIcon,
-    NotificationsIcon
+    NotificationsIcon,
+    SupportIcon
 } from 'gensrc/ui/admin/icons'
 
 const iconComponents = {
@@ -160,7 +161,8 @@ const iconComponents = {
     css: CssIcon,
     js: JavascriptIcon,
     history: HistoryIcon,
-    notification: NotificationsIcon
+    notification: NotificationsIcon,
+    support: SupportIcon
 }
 
 export const getIconByKey = (key, defaultIcon) => {
