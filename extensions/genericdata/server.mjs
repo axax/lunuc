@@ -526,7 +526,7 @@ Hook.on('typeBeforeUpdate', async ({type, data, params, _meta, db, context}) => 
             if(accessMatch){
                 if (accessMatch.createdBy) {
                     params.createdBy = accessMatch.createdBy
-                } else if(def.structure.access.update.force){
+                } else if(def?.structure?.access?.update?.force){
                     delete params.createdBy
                 }
             }
