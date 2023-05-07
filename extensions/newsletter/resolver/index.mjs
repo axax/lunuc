@@ -20,7 +20,7 @@ export default db => ({
                 req.headers.host = host
             }
 
-            const mailingId = ObjectId(mailing)
+            const mailingId = new ObjectId(mailing)
 
             if(!batchSize){
                 batchSize = 10
@@ -45,7 +45,7 @@ export default db => ({
 
 
             const subscribers = await db.collection('NewsletterSubscriber').find(
-                {state: 'subscribed', list: {$in: list.map(l => l.constructor===String?ObjectId(l):l)}}
+                {state: 'subscribed', list: {$in: list.map(l => l.constructor===String?new ObjectId(l):l)}}
             ).toArray()
 
             const emails = []
@@ -65,12 +65,12 @@ export default db => ({
                 if (!sent) {
 
                     sub.account = await db.collection('User').findOne(
-                        {_id: ObjectId(sub.account)}
+                        {_id: new ObjectId(sub.account)}
                     )
                     if (!sub.token) {
                         sub.token = crypto.randomBytes(32).toString("hex")
 
-                        await db.collection('NewsletterSubscriber').updateOne({_id: ObjectId(sub._id)}, {$set: {token: sub.token}})
+                        await db.collection('NewsletterSubscriber').updateOne({_id: new ObjectId(sub._id)}, {$set: {token: sub.token}})
 
                     }
                     sub.mailing = mailing
@@ -170,7 +170,7 @@ export default db => ({
                     db.collection('NewsletterSent').insertOne(
                         {
                             subscriber: sub._id,
-                            mailing: ObjectId(mailing),
+                            mailing: new ObjectId(mailing),
                             mailResponse: result
                         }
                     )
@@ -211,7 +211,7 @@ export default db => ({
                 data.$addToSet = {
                     list: {
                         $each: (list ? list.reduce((o, id) => {
-                            o.push(ObjectId(id));
+                            o.push(new ObjectId(id));
                             return o
                         }, []) : list)
                     }
@@ -295,7 +295,7 @@ export default db => ({
                 state: 'unsubscribed'
             }
             if(mailing !== undefined){
-                $set.unsubscribeMailing = mailing?ObjectId(mailing):null
+                $set.unsubscribeMailing = mailing?new ObjectId(mailing):null
             }
 
             let result = (await collection.findOneAndUpdate({email, token}, {

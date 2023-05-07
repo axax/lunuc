@@ -11,7 +11,7 @@ export default db => ({
             Util.checkIfUserIsLoggedIn(context)
 
             let sort = {_id: 1},
-                match = {createdBy: ObjectId(context.id)}
+                match = {createdBy: new ObjectId(context.id)}
 
             if (query) {
                 match.$or = [{title: {$regex: query, $options: 'i'}}, {$text: {$search: query}}]
@@ -49,7 +49,7 @@ export default db => ({
                 body,
                 editor,
                 search,
-                createdBy: ObjectId(context.id)
+                createdBy: new ObjectId(context.id)
             })
 
             if (insertResult.insertedId) {
@@ -59,7 +59,7 @@ export default db => ({
                     body,
                     editor,
                     createdBy: {
-                        _id: ObjectId(context.id),
+                        _id: new ObjectId(context.id),
                         username: context.username
                     },
                     status: 'created'
@@ -91,7 +91,7 @@ export default db => ({
             }
 
            // const search = Util.draftjsRawToFields(body)
-            const result = (await postCollection.findOneAndUpdate({_id: ObjectId(_id)}, {
+            const result = (await postCollection.findOneAndUpdate({_id: new ObjectId(_id)}, {
                 $set
             }, {returnOriginal: false}))
             if (result.ok !== 1) {
@@ -106,7 +106,7 @@ export default db => ({
                 title,
                 body,
                 createdBy: {
-                    _id: ObjectId(userContext.id),
+                    _id: new ObjectId(userContext.id),
                     username: userContext.username
                 },
                 status: 'updated'
@@ -122,7 +122,7 @@ export default db => ({
             }
 
             const deletedResult = await postCollection.deleteOne({
-                _id: ObjectId(_id)
+                _id: new ObjectId(_id)
             })
 
             if (deletedResult.deletedCount) {

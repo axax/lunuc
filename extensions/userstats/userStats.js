@@ -33,7 +33,7 @@ export default function (db) {
 
             if (context) {
                 const {id} = context
-                userData.user = ObjectId(id)
+                userData.user = new ObjectId(id)
             }
 
             req.userStatsId = counter

@@ -60,7 +60,7 @@ export const addFilterToMatch = async ({db, debugInfo, filterKey, filterValue, t
                 }
             } else if (ObjectId.isValid(filterValue)) {
                 // match by id
-                filterValue = ObjectId(filterValue)
+                filterValue = new ObjectId(filterValue)
 
             } else {
                 if(debugInfo) {

@@ -24,7 +24,7 @@ Hook.on('typeUpdated_PreProcessor', async ({db, result}) => {
 
     delete preProcessorsCache[result._id]
 
-    const staticFiles = await db.collection('StaticFile').find({active:true,preprocessor: ObjectId(result._id)}).toArray()
+    const staticFiles = await db.collection('StaticFile').find({active:true,preprocessor: new ObjectId(result._id)}).toArray()
 
     if(staticFiles){
         staticFiles.forEach(async staticFile => {

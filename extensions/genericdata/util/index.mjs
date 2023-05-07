@@ -12,7 +12,7 @@ export const getGenericTypeDefinitionWithStructure = async (db, {name, id}) => {
 
     let definition = Cache.get(cacheKey)
     if (definition === undefined) {
-        definition = await db.collection('GenericDataDefinition').findOne({$or: [{_id: id && ObjectId(id)}, {name}]})
+        definition = await db.collection('GenericDataDefinition').findOne({$or: [{_id: id && new ObjectId(id)}, {name}]})
 
         console.log(`load GenericDataDefinition by id=${id} or by name=${name} -> ${definition}`)
 

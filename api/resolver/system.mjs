@@ -196,7 +196,7 @@ export const systemResolver = (db) => ({
 
             const $in = []
             _id.forEach(id => {
-                $in.push(ObjectId(id))
+                $in.push(new ObjectId(id))
             })
 
             const options = {
@@ -270,7 +270,6 @@ export const systemResolver = (db) => ({
             if (jsonParsed.constructor !== Array) {
                 jsonParsed = [jsonParsed]
             }
-
             const col = db.collection(collection)
             const typeDefinition = getType(collection)
             if (typeDefinition) {
@@ -282,7 +281,7 @@ export const systemResolver = (db) => ({
                     // convert to proper ObjectId
                     Object.keys(entry).forEach(k => {
                         if (entry[k] && entry[k].constructor === String && ObjectId.isValid(entry[k])) {
-                            entry[k] = ObjectId(entry[k])
+                            entry[k] = new ObjectId(entry[k])
                         }
                     })
 
@@ -290,17 +289,17 @@ export const systemResolver = (db) => ({
                         if (entry._id.$oid) {
                             entry._id = entry._id.$oid
                         }
-                        match._id = entry._id && entry._id.constructor === String ? ObjectId(entry._id) : entry._id
+                        match._id = entry._id && entry._id.constructor === String ?new ObjectId(entry._id) : entry._id
                     }
 
                     if (entry.createdBy && entry.createdBy.$oid) {
-                        entry.createdBy = ObjectId(entry.createdBy.$oid)
+                        entry.createdBy =new ObjectId(entry.createdBy.$oid)
                     }
 
                     typeDefinition.fields.forEach(field => {
 
                         if(entry[field.name] && entry[field.name].$oid){
-                            entry[field.name] = ObjectId(entry[field.name].$oid)
+                            entry[field.name] = new ObjectId(entry[field.name].$oid)
                         }
 
                         if (field.unique) {
@@ -309,6 +308,7 @@ export const systemResolver = (db) => ({
                             set[field.name] = entry[field.name]
                         }
                     })
+                    set.createdBy = entry.createdBy
                     if(Object.keys(match).length===0){
                         col.insertOne(set)
                     }else {

@@ -121,7 +121,7 @@ export default db => ({
                                     id: currentId,
                                     username: registeredBots[botId].data.name,
                                     user_id: context.id,
-                                    message_id: ObjectId().toString(),
+                                    message_id: new ObjectId().toString(),
                                     event: 'userData',
                                     meta
                                 }
@@ -150,7 +150,7 @@ export default db => ({
                                 username: user.username,
                                 user_id: context.id,
                                 user_image: user && user.picture,
-                                message_id: ObjectId().toString(),
+                                message_id: new ObjectId().toString(),
                                 event: command,
                                 meta
                             }
@@ -165,7 +165,7 @@ export default db => ({
                                     sessionId,
                                     username: user.username,
                                     user_id: context.id,
-                                    message_id: ObjectId().toString(),
+                                    message_id: new ObjectId().toString(),
                                     event: 'removeSession'
                                 }
                             })
@@ -179,7 +179,7 @@ export default db => ({
                                         sessionId,
                                         username: user.username,
                                         user_id: context.id,
-                                        message_id: ObjectId().toString(),
+                                        message_id: new ObjectId().toString(),
                                         event: 'removeConnection'
                                     }
                                 })
@@ -214,7 +214,7 @@ export default db => ({
                             user_id: context.id,
                             user_image: user && user.picture,
                             response: message,
-                            message_id: ObjectId().toString(),
+                            message_id: new ObjectId().toString(),
                             event: 'newMessage'
                         }
                     })

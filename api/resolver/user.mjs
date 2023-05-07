@@ -793,7 +793,7 @@ export const userResolver = (db) => ({
                     user.password = validateAndHashPassword({password, passwordConfirm, context})
                 }
 
-                const result = (await userCollection.findOneAndUpdate({_id: ObjectId(context.id)}, {$set: user}))
+                const result = (await userCollection.findOneAndUpdate({_id: new ObjectId(context.id)}, {$set: user}))
                 if (result.ok !== 1) {
                     throw new ApiError('User could not be changed')
                 }
@@ -817,8 +817,8 @@ export const userResolver = (db) => ({
                 throw new Error('Note id is missing')
             } else {
                 result = (await userCollection.updateOne({
-                    _id: ObjectId(context.id),
-                    'note._id': ObjectId(_id)
+                    _id: new ObjectId(context.id),
+                    'note._id': new ObjectId(_id)
                 }, {$set: {'note.$.value': value}}))
                 if (result.matchedCount === 1) {
                     if (result.modifiedCount !== 1) {
@@ -841,8 +841,8 @@ export const userResolver = (db) => ({
             if (!value) value = ''
 
             const userCollection = db.collection('User')
-            const _id = ObjectId()
-            let result = (await userCollection.updateOne({_id: ObjectId(context.id)}, {
+            const _id = new ObjectId()
+            let result = (await userCollection.updateOne({_id: new ObjectId(context.id)}, {
                 $push: {
                     note: {
                         value: value,
@@ -870,7 +870,7 @@ export const userResolver = (db) => ({
             if (!_id) {
                 throw new Error('Note id is missing')
             } else {
-                result = (await userCollection.updateOne({_id: ObjectId(context.id)}, {$pull: {note: {_id: ObjectId(_id)}}}))
+                result = (await userCollection.updateOne({_id: new ObjectId(context.id)}, {$pull: {note: {_id: new ObjectId(_id)}}}))
 
                 if (result.matchedCount === 1) {
                     if (result.modifiedCount !== 1) {

@@ -8,7 +8,7 @@ export default (db) => ({
 
             // check if user exists
             const userCollection = db.collection('User')
-            const user = (await userCollection.findOne({_id: ObjectId(userId)}))
+            const user = (await userCollection.findOne({_id: new ObjectId(userId)}))
 
             if (!user) {
                 throw new Error('User doesnt exist')
@@ -17,10 +17,10 @@ export default (db) => ({
             // add user to chat
             const chatCollection = db.collection('Chat')
             const result = await chatCollection.updateOne({
-                    _id: ObjectId(chatId)
+                    _id: new ObjectId(chatId)
                 },
                 {
-                    $addToSet: {users: ObjectId(userId)}
+                    $addToSet: {users: new ObjectId(userId)}
                 })
 
 
@@ -39,10 +39,10 @@ export default (db) => ({
             const chatCollection = db.collection('Chat')
 
             const result = await chatCollection.updateOne({
-                    _id: ObjectId(chatId)
+                    _id: new ObjectId(chatId)
                 },
                 {
-                    $pull: {users: ObjectId(userId)}
+                    $pull: {users: new ObjectId(userId)}
                 })
 
 

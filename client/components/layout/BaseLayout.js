@@ -308,8 +308,13 @@ const BaseLayout = props => {
     if (isAuthenticated) {
 
         const menuItems= [{
+            name: username,
+            disabled:true
+        },
+        {
             name: `Profile`,
             icon: 'account',
+            divider:true,
             onClick: e => {
                 _app_.history.push(ADMIN_BASE_URL + '/profile')
             }

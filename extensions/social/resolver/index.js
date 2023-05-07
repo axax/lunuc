@@ -52,12 +52,12 @@ export default (db) => ({
                 if (!keyvalueMap.linkedInAccessTokenExpiresAt || Math.floor(Date.now() / 1000) > keyvalueMap.linkedInAccessTokenExpiresAt) {
                     //expired
                     // delete all related keys
-                    await db.collection('KeyValue').deleteMany({createdBy: ObjectId(context.id), key: {$in: keys}})
+                    await db.collection('KeyValue').deleteMany({createdBy: new ObjectId(context.id), key: {$in: keys}})
                 } else {
                     const response = authRequest()
                     if( !response){
                         // there is something wrong. Remove stored values in order to renew the token
-                        await db.collection('KeyValue').deleteMany({createdBy: ObjectId(context.id), key: {$in: keys}})
+                        await db.collection('KeyValue').deleteMany({createdBy: new ObjectId(context.id), key: {$in: keys}})
                     }
                 }
 

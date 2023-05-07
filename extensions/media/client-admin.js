@@ -203,7 +203,6 @@ export default () => {
         }
     })
 
-    // add some extra data to the table
     Hook.on('TypeCreateEdit', function ({type, props, dataToEdit, meta}) {
         if (type === 'Media') {
 

@@ -702,3 +702,12 @@ Hook.on(['ExtensionHistoryBeforeCreate'], async ({historyEntry}) => {
         }catch (e){}
     }
 })
+
+Hook.on(['ExtensionHistoryBeforeDelete'], async ({db, historyEntry}) => {
+    if(historyEntry.type==='GenericData' && historyEntry.data.definition){
+        const def = await getGenericTypeDefinitionWithStructure(db, {id: historyEntry.data.definition})
+        if (def && def?.structure?.title) {
+            historyEntry.meta.name = def.structure.title
+        }
+    }
+})

@@ -42,12 +42,21 @@ Hook.on('typeDeleted', async ({db, type, deletedDocuments, context, ids}) => {
 
     if (!TYPES_TO_IGNORE.includes(type)) {
         for (const data of deletedDocuments) {
-            db.collection('History').insertOne({
+            const historyEntry = {
+                meta: {},
                 type,
                 action: 'delete',
                 data: data,
                 createdBy: await Util.userOrAnonymousId(db, context)
-            })
+            }
+
+            const aggHook = Hook.hooks['ExtensionHistoryBeforeDelete']
+            if (aggHook && aggHook.length) {
+                for (let i = 0; i < aggHook.length; ++i) {
+                    await aggHook[i].callback({db, historyEntry})
+                }
+            }
+            db.collection('History').insertOne(historyEntry)
         }
     }
 

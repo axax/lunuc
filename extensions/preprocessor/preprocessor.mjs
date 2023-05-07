@@ -6,7 +6,7 @@ export const preProcessorsCache = {}
 export const processById = async (id, content, context) => {
     let preProcessor = preProcessorsCache[id]
     if (!preProcessor) {
-        preProcessor = await context.db.collection('PreProcessor').findOne({_id: ObjectId(id)})
+        preProcessor = await context.db.collection('PreProcessor').findOne({_id: new ObjectId(id)})
         preProcessorsCache[id] = preProcessor
     }
 

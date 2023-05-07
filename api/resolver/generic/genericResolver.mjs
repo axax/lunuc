@@ -533,14 +533,14 @@ const GenericResolver = {
 
         if( fields.ownerGroup && !dataSet.ownerGroup && context.role !== 'administrator' && userContext.group && userContext.group.length > 0 ){
             // set ownerGroup from current user if it is not specified
-            dataSet.ownerGroup = userContext.group.map(g => ObjectId(g))
+            dataSet.ownerGroup = userContext.group.map(g => new ObjectId(g))
         }
 
         const collection = db.collection(collectionName)
 
         const insertResult = await collection.insertOne({
             ...dataSet,
-            createdBy: ObjectId(createdBy)
+            createdBy: new ObjectId(createdBy)
         })
 
         if (insertResult.insertedId) {
@@ -565,7 +565,7 @@ const GenericResolver = {
                 _id: insertResult.insertedId,
                 status: 'created',
                 createdBy: {
-                    _id: ObjectId(createdBy),
+                    _id: new ObjectId(createdBy),
                     username
                 },
                 ...newData
@@ -607,7 +607,7 @@ const GenericResolver = {
             throw new Error(`no permission to delete data for type ${typeName}`)
         }
 
-        match._id= ObjectId(data._id)
+        match._id= new ObjectId(data._id)
 
         const collection = db.collection(collectionName)
 
@@ -632,7 +632,7 @@ const GenericResolver = {
                 _id: data._id,
                 status: 'deleted',
                 createdBy: {
-                    _id: ObjectId(context.id),
+                    _id: new ObjectId(context.id),
                     username: context.username
                 }
             }
@@ -659,12 +659,12 @@ const GenericResolver = {
         const $in = []
         const result = []
         data._id.forEach(id => {
-            $in.push(ObjectId(id))
+            $in.push(new ObjectId(id))
             result.push({
                 _id: id,
                 status: 'deleted',
                 createdBy: {
-                    _id: ObjectId(context.id),
+                    _id: new ObjectId(context.id),
                     username: context.username
                 }
             })
@@ -892,7 +892,7 @@ const GenericResolver = {
             ...newData,
             modifiedAt: dataSet.modifiedAt,
             createdBy: {
-                _id: ObjectId(context.id),
+                _id: new ObjectId(context.id),
                 username: context.username
             },
             status: 'updated'
@@ -925,7 +925,7 @@ const GenericResolver = {
             throw new Error('Benutzer hat keine Berechtigung zum Kopieren')
         }
 
-        let match = {_id: ObjectId(_id)}
+        let match = {_id: new ObjectId(_id)}
         if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)) {
             if (typeName === 'User') {
                 throw new Error('Error cloning entry. You might not have premissions to manage other users')

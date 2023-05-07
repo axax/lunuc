@@ -20,7 +20,7 @@ export default () => {
 
     // add entry to main menu
     Hook.on('UserMenu', ({menuItems}) => {
-        menuItems.unshift({name: _t('chat.title'), onClick: ()=> {
+        menuItems.splice(2, 0, {name: _t('chat.title'), onClick: ()=> {
                 _app_.history.push(CHAT_BASE_URL)
             }, icon: <ChatIcon />})
     })

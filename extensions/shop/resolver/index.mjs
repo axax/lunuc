@@ -22,7 +22,7 @@ const readCsv = async (db, context) => {
 
     const categoriesLevelMap = {}
     let countProducts = 0, countCategories = 0
-    const categoriesToInsert = {}, productsToInsert = [], createdBy = ObjectId(context.id)
+    const categoriesToInsert = {}, productsToInsert = [], createdBy = new ObjectId(context.id)
     for (const row of json) {
 
         const cats = JSON.parse(row.product_category_tree)[0].split('>>')

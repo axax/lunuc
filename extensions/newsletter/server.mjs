@@ -37,7 +37,7 @@ Hook.on('NewUserCreated', async ({meta, email, insertResult, db, language}) => {
             // insert or update
             const data = {
                 email, list: (meta.newsletterList ? meta.newsletterList.reduce((o, id) => {
-                    o.push(ObjectId(id));
+                    o.push(new ObjectId(id));
                     return o
                 }, []) : []), confirmed: false, state: 'optin'
             }
