@@ -20,7 +20,7 @@ import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import {parseStyles} from '../../client/util/style'
 
 import DomUtil from '../../client/util/dom.mjs'
-import {CAPABILITY_EXTRA_OPTIONS} from "../../util/capabilities.mjs";
+import {CAPABILITY_ADMIN_OPTIONS} from "../../util/capabilities.mjs";
 
 registerTrs(translations, 'GenericData')
 
@@ -247,7 +247,7 @@ export default () => {
 
 
                     let overrideTranslations = false, translateTimeout = 0
-                    const userHasCapa = Util.hasCapability({userData: _app_.user}, CAPABILITY_EXTRA_OPTIONS)
+                    const userHasCapa = Util.hasCapability({userData: _app_.user}, CAPABILITY_ADMIN_OPTIONS)
 
                     const actions = structure.actions
                     if (actions) {
