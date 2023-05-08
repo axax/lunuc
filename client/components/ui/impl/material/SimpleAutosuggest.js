@@ -6,10 +6,10 @@ import CircularProgress from '@mui/material/CircularProgress'
 export default function SimpleAutosuggest(props) {
 
     const [open, setOpen] = React.useState(false)
+    const [loading, setLoading] = React.useState(false)
     const [options, setOptions] = React.useState(props.options || [])
-    const loading = open && options.length === 0
 
-    React.useEffect(() => {
+   /* React.useEffect(() => {
         let active = true
 
         if (!loading) {
@@ -19,19 +19,66 @@ export default function SimpleAutosuggest(props) {
         return () => {
             active = false
         }
-    }, [loading])
+    }, [loading])*/
 
-    React.useEffect(() => {
+    /*React.useEffect(() => {
         if (!open) {
             //setOptions([])
         }
-    }, [open])
+    }, [open])*/
+    const getData = (text)=>{
+
+        if(!props.apiUrl) {
+            return
+        }
+        const textTrimmed = text.trim()
+        setLoading(textTrimmed?true:false)
+
+        if(textTrimmed){
+
+            const abortController = new AbortController()
+            fetch(`${props.apiUrl.replaceAll('%search%',text)}`,
+                {signal:abortController.signal})
+            .then(response => {
+
+                if (response.status === 200) {
+                    response.json().then(json=>{
+
+                        const allData = []
+                        Object.keys(json).forEach(key=> {
+                            if (key !== 'total') {
+                                json[key].forEach(item=>{
+                                    let name = item.name
+                                    if(item.name && item.name[_app_.lang]){
+                                        name = item.name[_app_.lang]
+                                    }
+                                    allData.push({...item, name: `${key}: ${name}`, __type: key})
+                                })
+                            }
+                        })
+                        setOptions(allData)
+                    }).catch(error=>{
+                    })
+                }
+                setLoading(false)
+            }).catch(error => {
+                setLoading(false)
+            })
+
+        }else{
+            setOptions([])
+        }
+
+
+    }
 
     return (
         <Autocomplete
+            fullWidth={props.fullWidth}
             sx={props.sx}
             value={props.value}
             freeSolo={props.freeSolo}
+            clearOnEscape={true}
             open={open}
             onOpen={() => {
                 setOpen(true);
@@ -41,7 +88,12 @@ export default function SimpleAutosuggest(props) {
             }}
             onBlur={props.onBlur}
             onChange={props.onChange}
-            onInputChange={props.onInputChange}
+            onInputChange={(event, text)=>{
+                getData(text)
+                if(props.onInputChange){
+                    props.onInputChange(event, text)
+                }
+            }}
             isOptionEqualToValue={(option, value) => option.name === value.name}
             getOptionLabel={(option) => {
                 if(option.name){

@@ -9,15 +9,12 @@ import {
     HomeIcon,
     BuildIcon,
     SettingsIcon,
-    AccountCircleIcon,
     SimpleDialog,
     SimpleMenu,
     BackupIcon,
     EditIcon,
     InsertDriveFileIcon,
-    DoneIcon,
-    InputBase,
-    SimpleAutosuggest
+    DoneIcon
 } from 'ui/admin'
 import {getIconByKey} from '../ui/impl/material/icon'
 import ErrorHandler from './ErrorHandler'
@@ -32,7 +29,7 @@ import {useKeyValues, setKeyValue} from '../../util/keyvalue'
 import {
     CAPABILITY_MANAGE_TYPES,
     CAPABILITY_MANAGE_BACKUPS,
-    CAPABILITY_RUN_COMMAND
+    CAPABILITY_RUN_COMMAND, CAPABILITY_EXTRA_OPTIONS
 } from '../../../util/capabilities.mjs'
 
 const {ADMIN_BASE_URL, APP_NAME} = config
@@ -42,49 +39,14 @@ import {translations} from '../../translations/admin'
 import {propertyByPath} from '../../util/json.mjs'
 import Async from 'client/components/Async'
 import {deepMergeOptional} from '../../../util/deepMerge.mjs'
-import { alpha } from '@mui/material/styles';
-import styled from '@emotion/styled'
-import {getImageSrc} from "../../util/media";
-
+import {getImageSrc} from '../../util/media'
+import GlobalSearch from './GlobalSearch'
+import Util from "../../util/index.mjs";
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../CodeEditor')}/>
 
 
 registerTrs(translations, 'AdminTranslations')
-
-const SearchWrapper = styled('div')(({ theme }) => ({
-    marginRight: theme.spacing(2),
-    marginLeft: 0,
-    width: '100%',
-    [theme.breakpoints.up('sm')]: {
-        marginLeft: theme.spacing(3),
-        width: 'auto',
-    },
-    '.MuiInputBase-root':{
-        color: 'inherit',
-        paddingBottom: '0 !important',
-        borderRadius: theme.shape.borderRadius,
-        backgroundColor: alpha(theme.palette.common.white, 0.15),
-        '&:hover': {
-            backgroundColor: alpha(theme.palette.common.white, 0.25),
-        },
-        '&:before':{
-            display:'none'
-        },
-        '&:after':{
-            display:'none'
-        },
-        '& .MuiInputBase-input': {
-            padding: `${theme.spacing(1)} !important`,
-            transition: theme.transitions.create('width'),
-            width: '100%',
-            [theme.breakpoints.up('md')]: {
-                width: '20ch',
-            },
-        }
-    }
-}))
-
 
 
 const genMenuEntry = (item, path) => {
@@ -277,13 +239,10 @@ const BaseLayout = props => {
 
     const headerRight = []
 
-    /*headerRight.push(<SearchWrapper><SimpleAutosuggest
-        freeSolo
-        search
-        placeholder="Search" value={''}
-        onChange={(e, v) => {} }
-        onBlur={()=>{}}
-        onClick={()=>{}} options={[{name:'Media'}]}/></SearchWrapper>)*/
+    if(Util.hasCapability({userData: _app_.user}, CAPABILITY_EXTRA_OPTIONS)) {
+
+        headerRight.push(<GlobalSearch/>)
+    }
 
 
     if (!settings.headerActions) {

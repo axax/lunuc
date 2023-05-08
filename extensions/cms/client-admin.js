@@ -64,8 +64,13 @@ export default () => {
         const globalContext = useContext(AppContext)
         const {user} = globalContext.state
 
-        content.splice(0,content.length)
-        content.push(<CmsViewContainer key="widgets" user={user} match={match} dynamic={true} urlSensitiv={true} location={location} history={history} slug={'system/widget'}/>)
+        if(content) {
+            if(content.length>0) {
+                content.splice(0, content.length)
+            }
+            content.push(<CmsViewContainer key="widgets" user={user} match={match} dynamic={true} urlSensitiv={true}
+                                           location={location} history={history} slug={'system/widget'}/>)
+        }
     })
 
     // add entry to main menu
