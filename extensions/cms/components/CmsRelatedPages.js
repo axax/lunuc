@@ -3,6 +3,8 @@ import React from 'react'
 import {
     MenuList,
     MenuListItem,
+    Pagination,
+    Stack
 } from 'ui/admin'
 import {_t} from '../../../util/i18n.mjs'
 
@@ -10,26 +12,28 @@ import {_t} from '../../../util/i18n.mjs'
 export default function CmsRelatedPages(props){
     const {_version, cmsPage, slug, history} = props
 
+    const limit = 10
+    const [page, setPage] = React.useState(1)
     if(!cmsPage){
         return null
     }
 
-    return <MenuList>
-        <Query
-            query={`query cmsPages($filter:String,$limit:Int,$_version:String){cmsPages(filter:$filter,limit:$limit,_version:$_version){results{slug public modifiedAt name{${_app_.lang}}}}}`}
+
+    return <Query
+            query={`query cmsPages($filter:String,$limit:Int,$page:Int,$_version:String){cmsPages(filter:$filter,limit:$limit,page:$page,_version:$_version){total results{slug public modifiedAt name{${_app_.lang}}}}}`}
             fetchPolicy="cache-and-network"
             variables={{
                 _version,
-                limit: 99,
+                limit,
+                page,
                 filter: `slug=^${cmsPage.realSlug.split('/')[0]}$ slug=^${cmsPage.realSlug.split('/')[0]}/`
             }}>
             {({loading, error, data}) => {
-                if (loading) return 'Loading...'
+                if (loading) return <p>Loading...</p>
                 if (error) return `Error! ${error.message}`
 
 
                 const menuItems = []
-
                 data.cmsPages.results.forEach(i => {
                         if (i.slug !== slug) {
                             let src
@@ -46,8 +50,19 @@ export default function CmsRelatedPages(props){
                     }
                 )
                 if (menuItems.length === 0) return _t('CmsViewEditorContainer.noRelatedPages')
-                return menuItems
+                return [
+                    <MenuList>
+                        {menuItems}
+                    </MenuList>,
+                    <Stack spacing={2} justifyContent="center" alignItems="center">
+                        <Pagination size="medium"
+                                    showFirstButton
+                                    showLastButton
+                                    page={page}
+                                    onChange={(e, page)=>{
+                                        setPage(page)
+                                    }}
+                                    count={Math.ceil(data.cmsPages.total / limit)} /></Stack>]
             }}
         </Query>
-    </MenuList>
 }

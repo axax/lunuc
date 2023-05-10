@@ -68,7 +68,6 @@ export default db => ({
                 sort,
                 _version
             })
-
             return data
         },
         cmsPage: async ({slug, query, props, nosession, editmode, dynamic, inEditor, meta, _version}, req) => {
@@ -147,7 +146,7 @@ export default db => ({
                 createdBy,
                 ssr,
                 public: ispublic,
-                online: _version === 'default',
+                online: !_version || _version === 'default',
                 slug,
                 realSlug: cmsPages.results[0].slug,
                 template,

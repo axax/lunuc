@@ -954,7 +954,7 @@ class CmsViewEditorContainer extends React.Component {
                                   }}
                                   color="inherit"><ArrowBackIcon/></IconButton>}
                               toolbarRight={toolbarRight}
-                              title={`${_t('CmsViewEditorContainer.editPage')} "${props.slug}" - ${cmsPage.online ? 'Online' : 'Online'}`}>
+                              title={`${_t('CmsViewEditorContainer.editPage')} "${props.slug}"${cmsPage.online ? ' - Online' : ''}`}>
                     {inner}
                     {!loadingState && this.state.addNewSite && <CmsAddNewSite onClose={() => {
                         this.setState({addNewSite: false})
