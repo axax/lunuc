@@ -3,6 +3,7 @@ import resolver from './gensrc/resolver'
 import Hook from '../../util/hook.cjs'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import {findAndReplaceObjectIds} from '../../api/util/graphql.js'
+import {getType} from '../../util/types.mjs'
 
 
 let userRestrictions = {}
@@ -45,12 +46,16 @@ Hook.on('enhanceTypeMatch', async ({type, context, match}) => {
         for(const rule of userRestrictions[type]){
             if(rule.filter && (rule.user.indexOf(context.id)>=0 || hasGroupMatch(rule.userGroup, context.group))){
                 if(rule.mode==='extend'){
+                    const typeDefinition = getType(type)
                     Object.keys(rule.filter).forEach(key=>{
                         if(rule.filter[key].$remove || rule.filter[key]['#remove']){
                             // remove operator
                             delete match[key]
                         }else if(key=='ownerGroup' || key=='createdBy'){
                             if(!match.ownerGroup && !match.createdBy){
+                                return
+                            }
+                            if(typeDefinition && !typeDefinition.fields.find(field=>field.name==='ownerGroup')){
                                 return
                             }
                             if(!match.$or){
