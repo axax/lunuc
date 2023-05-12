@@ -15,7 +15,7 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, i
     if (!host) {
         host = ''
     }
-    if (host && host.startsWith('www.')) {
+    if (host.startsWith('www.')) {
         host = host.substring(4)
     }
 
@@ -159,6 +159,8 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, i
                 }
                 Cache.set(cacheKey, cmsPages, 6000000) // cache expires in 1h40min
             }
+        }else{
+            console.warn(`CmsPage not found ${slug}. host=${host} match=${JSON.stringify(match)}`)
         }
     }else{
         //console.log(`load cmsPage from cache ${slug}`)
