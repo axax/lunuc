@@ -32,6 +32,7 @@ import {openWindow} from '../../../client/util/window'
 import {convertRawValuesFromPicker} from '../../../client/util/picker'
 import {showTooltip} from '../../../client/util/tooltip'
 import styled from '@emotion/styled'
+import {CAPABILITY_ADMIN_OPTIONS} from '../../../util/capabilities.mjs'
 
 const {DEFAULT_LANGUAGE} = config
 
@@ -626,13 +627,15 @@ class JsonDomHelper extends React.Component {
 
     getDropArea(rest, index) {
         let label = ''
-        if(rest['data-element-key']){
-            label +=rest['data-element-key']
-        }
-        if(rest['id']){
-            label+='#'+rest['id']
-        }else if(rest['className']){
-            label+='.'+rest['className']
+        if(Util.hasCapability(_app_.user, CAPABILITY_ADMIN_OPTIONS)) {
+            if (rest['data-element-key']) {
+                label += rest['data-element-key']
+            }
+            if (rest['id']) {
+                label += '#' + rest['id']
+            } else if (rest['className']) {
+                label += '.' + rest['className']
+            }
         }
 
         return <StyledDropArea

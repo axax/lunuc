@@ -945,6 +945,11 @@ const GenericResolver = {
 
         const clone = Object.assign({}, entry, {modifiedAt: null, _id:null, createdBy: new ObjectId(context.id)}, rest)
 
+        if(clone.ownerGroup){
+            // replace with current user ownerGroup
+            clone.ownerGroup = context.group && context.group.length>0?context.group.map(g => new ObjectId(g)):null
+        }
+
         delete clone._id
 
         const insertResult = await collection.insertOne(clone)

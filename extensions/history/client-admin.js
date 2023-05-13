@@ -1,8 +1,10 @@
 import React, {useState} from 'react'
 import Hook from 'util/hook.cjs'
-import {formatBytes} from "../../client/util/format.mjs";
 import {client} from "../../client/middleware/graphql";
+import {translations} from './translations/translations'
+import {registerTrs} from 'util/i18n.mjs'
 
+registerTrs(translations, 'HistoryTranslations')
 
 export default () => {
 

@@ -82,7 +82,7 @@ Hook.on('enhanceTypeMatch', async ({type, context, match}) => {
                         }
 
                     })
-                    console.log(JSON.stringify(match))
+                    //console.log(JSON.stringify(match))
                 }
             }
         }
