@@ -4,7 +4,7 @@ import DomAdminUtil from '../../../client/util/domAdmin.mjs'
 import {getHostFromHeaders} from '../../../util/host.mjs'
 import Cache from '../../../util/cache.mjs'
 import {preprocessCss} from './cssPreprocessor.mjs'
-import {loadAllHostrules} from '../../../util/hostrules.mjs'
+import {loadAllHostrules, hostListFromString} from '../../../util/hostrules.mjs'
 
 const hostrules = loadAllHostrules(false)
 
@@ -23,15 +23,8 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, i
     let modSlug
 
     if (checkHostrules) {
-        const hostArr = host.split('.')
-        const hostsChecks = [host]
 
-        if (hostArr.length > 2) {
-            // is subdomain
-
-            // add top level domain
-            hostsChecks.push(hostArr[hostArr.length - 2] + '.' + hostArr[hostArr.length - 1])
-        }
+        const hostsChecks = hostListFromString(host)
 
         for (let i = 0; i < hostsChecks.length; i++) {
             const currentHost = hostsChecks[i]

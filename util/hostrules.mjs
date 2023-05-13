@@ -26,13 +26,31 @@ const certDirs = (domainname) => {
     return []
 }
 
+export const hostListFromString = (host) =>{
+
+    const hostList = [host]
+    const hostArr = host.split('.')
+
+    while (hostArr.length > 2) {
+        hostArr.shift()
+        hostList.push(hostArr.join('.'))
+    }
+
+    return hostList
+}
 
 export const extendHostruelWithCert = (hostrule, domainname) => {
     if (!hostrule.certDir) {
-        const dirs = certDirs(domainname)
-        if (dirs.length > 0) {
-            hostrule.certDir = CERT_BASE_DIR + dirs[0].name
-            console.log(` found newest certs for ${domainname} in ${hostrule.certDir}`)
+
+        const hostsChecks = hostListFromString(domainname)
+
+        for(const host of hostsChecks ) {
+            const dirs = certDirs(host)
+            if (dirs.length > 0) {
+                hostrule.certDir = CERT_BASE_DIR + dirs[0].name
+                console.log(` found newest certs for ${host} in ${hostrule.certDir}`)
+                break
+            }
         }
         // hostrule.certDir = '/etc/letsencrypt/live/' + domainname
     }
