@@ -35,14 +35,20 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, i
 
         for (let i = 0; i < hostsChecks.length; i++) {
             const currentHost = hostsChecks[i]
-            if (hostrules[currentHost] && hostrules[currentHost].slugContext && (slug + '/').indexOf(hostrules[currentHost].slugContext + '/') !== 0) {
-                modSlug = hostrules[currentHost].slugContext + (slug.length > 0 ? '/' : '') + slug
-                if (hostrules[currentHost].slugFallback) {
-                    slugMatch = {$or: [{slug: modSlug}, {slug}]}
-                } else {
-                    slugMatch = {slug: modSlug}
+            const hostrule = hostrules[currentHost]
+            if (hostrule){
+                if(hostrule.slugContext && (slug + '/').indexOf(hostrule.slugContext + '/') !== 0)
+                {
+                    modSlug = hostrule.slugContext + (slug.length > 0 ? '/' : '') + slug
+                    if (hostrule.slugFallback) {
+                        slugMatch = {$or: [{slug: modSlug}, {slug}]}
+                    } else {
+                        slugMatch = {slug: modSlug}
+                    }
+                    break
+                }else if(hostrule.ignoreTopDomain){
+                    break
                 }
-                break
             }
         }
     }
