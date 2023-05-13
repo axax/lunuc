@@ -45,8 +45,7 @@ Hook.on('enhanceTypeMatch', async ({type, context, match}) => {
     if(userRestrictions[type]){
         for(const rule of userRestrictions[type]){
             if(rule.filter && (rule.user.indexOf(context.id)>=0 || hasGroupMatch(rule.userGroup, context.group))){
-                if(rule.mode==='extend'){
-                    const typeDefinition = getType(type)
+                if(rule.mode=='extend'){
                     Object.keys(rule.filter).forEach(key=>{
                         if(rule.filter[key].$remove || rule.filter[key]['#remove']){
                             // remove operator
@@ -55,8 +54,12 @@ Hook.on('enhanceTypeMatch', async ({type, context, match}) => {
                             if(!match.ownerGroup && !match.createdBy){
                                 return
                             }
-                            if(typeDefinition && !typeDefinition.fields.find(field=>field.name==='ownerGroup')){
-                                return
+                            if(key=='ownerGroup'){
+
+                                const typeDefinition = getType(type)
+                                if(typeDefinition && !typeDefinition.fields.find(field=>field.name==='ownerGroup')) {
+                                    return
+                                }
                             }
                             if(!match.$or){
                                 match.$or= []
