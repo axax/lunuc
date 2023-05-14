@@ -23,38 +23,7 @@ export const DEFAULT_TEMPLATE = `{
     "className": "page",
     "data-is-invisible": false
   },
-  "c": [
-    {
-      "$inlineEditor": {
-        "allowDrop": true,
-        "elementKey": "custom"
-      },
-      "p": {
-        "data-element-key": "custom",
-        "data-is-invisible": false,
-        "id": "header",
-        "className": "header"
-      },
-      "t": "header",
-      "c": [
-        {
-          "$inlineEditor": {
-            "elementKey": "headline",
-            "options": {
-              "c": {
-                "trKey": "genid_kyu4em8cw",
-                "trContext": ""
-              }
-            }
-          },
-          "p": {
-            "data-element-key": "headline"
-          },
-          "c": "Header",
-          "t": "h1"
-        }
-      ]
-    },
+  "c": [    
     {
       "$inlineEditor": {
         "allowDrop": true,
@@ -66,7 +35,7 @@ export const DEFAULT_TEMPLATE = `{
         "id": "main",
         "className": "main"
       },
-      "t": "main",
+      "t": "div",
       "c": [
         {
           "t": "h1",
@@ -82,41 +51,10 @@ export const DEFAULT_TEMPLATE = `{
           "p": {
             "data-element-key": "headline"
           },
-          "c": "Main"
+          "c": "Neue Seite"
         }
       ]
-    },
-    {
-      "$inlineEditor": {
-        "allowDrop": true,
-        "elementKey": "custom"
-      },
-      "p": {
-        "data-element-key": "custom",
-        "data-is-invisible": false,
-        "id": "footer",
-        "className": "footer"
-      },
-      "t": "footer",
-      "c": [
-        {
-          "t": "h1",
-          "$inlineEditor": {
-            "elementKey": "headline",
-            "options": {
-              "c": {
-                "trKey": "genid_zd5sg75qs",
-                "trContext": ""
-              }
-            }
-          },
-          "p": {
-            "data-element-key": "headline"
-          },
-          "c": "Footer"
-        }
-      ]
-    }
+    }    
   ]
 }`
 

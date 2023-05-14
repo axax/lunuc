@@ -394,10 +394,11 @@ const GenericResolver = {
 
         if (result.count && result.count.length > 0) {
             result.total = result.count[0].count + (otherOptions.limitCount?result.offset:0)
-            delete result.count
         } else {
             result.total = estimateCount ? await collection.estimatedDocumentCount() : 0
         }
+        delete result.count
+
         /*if (typeName==="Chat") {
             console.log(JSON.stringify(result, null, 4),JSON.stringify(dataQuery, null, 4))
         }*/

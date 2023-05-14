@@ -2064,6 +2064,7 @@ const advancedElements = [
                             ]
                         },
                     ],
+                    l:1000,
                     f: '_id>${ObjectId.createFromTime(Date.now()/1000-60*60*24*50)}',
                     returnMeta: false,
                     removeDefinition: false
