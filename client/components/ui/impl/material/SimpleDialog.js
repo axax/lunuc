@@ -23,7 +23,7 @@ export const SimpleDialog = ({children, onClose, actions, title, fullScreen, ful
         {...rest}>
         <DialogTitle id="responsive-dialog-title">{title}</DialogTitle>
         <DialogContent sx={{overflow: 'visible'}}>
-            {children.constructor === String ?
+            {children && children.constructor === String ?
                 <DialogContentText>
                     {children}
                 </DialogContentText>

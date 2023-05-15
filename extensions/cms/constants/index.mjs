@@ -93,6 +93,11 @@ export const DEFAULT_STYLE = `//!#Basic
     img{
         max-width: 100%;
     }
+    .entry{
+        border-bottom: solid 1px #c1c1c1;
+        padding-bottom:1rem;
+        margin-bottom:2rem;
+    }
 }
 
 

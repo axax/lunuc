@@ -166,5 +166,8 @@ const iconComponents = {
 }
 
 export const getIconByKey = (key, defaultIcon) => {
+    if(key && key.constructor !== String){
+        return defaultIcon || key
+    }
     return iconComponents[key] || defaultIcon
 }

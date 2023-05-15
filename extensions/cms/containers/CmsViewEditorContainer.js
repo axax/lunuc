@@ -858,7 +858,7 @@ class CmsViewEditorContainer extends React.Component {
                 })
             }else{
                 toolbarRight.push(
-                    <SimpleSwitch key="inlineEditorSwitch" color="default"
+                    <SimpleSwitch key="inlineEditorSwitch" dark={true}
                                   checked={!!EditorOptions.inlineEditor}
                                   onChange={this.handleSettingChange.bind(this, 'inlineEditor', false)}
                                   label={_t('CmsViewEditorContainer.inlineEditor')}/>)

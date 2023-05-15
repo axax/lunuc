@@ -51,7 +51,7 @@ const SCRIPT_UTIL_PART = ',Util=this.Util,_e=Util.escapeForJson,_i=Util.tryCatch
 class JsonDom extends React.Component {
 
     /* Events that are listened to */
-    static events = ['onAnimationEnd','onMouseOver', 'onMouseOut', 'onMouseEnter', 'onMouseDown', 'onClick', 'onKeyDown', 'onKeyUp', 'onFocus', 'onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput', 'onForwardRef']
+    static events = ['onClose','onRef','onAnimationEnd','onMouseOver', 'onMouseOut', 'onMouseEnter', 'onMouseDown', 'onClick', 'onKeyDown', 'onKeyUp', 'onFocus', 'onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput', 'onForwardRef']
 
     /*
      * Default components

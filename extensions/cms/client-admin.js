@@ -6,9 +6,10 @@ import CmsViewContainer from './containers/CmsViewContainer'
 import {Link} from 'client/util/route'
 import {_t, registerTrs} from '../../util/i18n.mjs'
 import {
-    Button,
     Select,
+    SimpleButton,
     SimpleMenu,
+    SimpleDialog,
     Switch,
     ResponsiveDrawerLayout,
     Typography,
@@ -17,7 +18,6 @@ import {
 import {translations} from './translations/admin'
 import TypesContainer from 'client/containers/TypesContainer'
 import GenericForm from 'client/components/GenericForm'
-import JsonDom from './components/JsonDom'
 import {AppContext} from 'client/components/AppContext'
 import {translations as adminTranslations} from 'client/translations/admin'
 
@@ -33,9 +33,11 @@ const cmsPageEditorUrl = (slug, _version) => {
 
 const addAdminComponents = (components) => {
     /* Admin Elements */
-    components['AdminButton'] = Button
+    components['AdminButton'] = SimpleButton
+    components['AdminDialog'] = SimpleDialog
     components['AdminSelect'] = Select
     components['AdminSwitch'] = Switch
+    components['AdminForm'] = GenericForm
     components['AdminSimpleMenu'] = SimpleMenu
     components['DrawerLayout'] = ResponsiveDrawerLayout
     components['TypesContainer'] = (props) => <TypesContainer title={false} baseUrl={location.pathname} {...props}/>
