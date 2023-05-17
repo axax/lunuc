@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import DomUtil from 'client/util/dom.mjs'
 import Util from '../util/index.mjs'
 import config from 'gen/config-client'
-
+import {addLoremipsumPlugin} from './tinymce/loremipsum'
 import {openWindow} from '../util/window'
 const {DEFAULT_LANGUAGE} = config
 
@@ -48,9 +48,14 @@ class TinyEditor extends React.Component {
 
                 if (!window.tinymce) return
                 this.isInit = true
+
+                addLoremipsumPlugin()
+
                 tinymce.init({
                     selector: '#TinyEditor' + this.instanceId,
                     height: 450,
+                    language:'de',
+                    language_url: '/lang/tinymce/de.js',
                     relative_urls: false,
                     remove_script_host: false,
                     convert_urls: false,
@@ -110,7 +115,7 @@ class TinyEditor extends React.Component {
                     plugins: [
                         'advlist autolink link image lists charmap print preview hr anchor pagebreak spellchecker',
                         'searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking',
-                        'table emoticons template paste help',
+                        'table emoticons template paste help loremipsum',
                         /*'quickbars'*/
                     ],
                     quickbars_selection_toolbar: 'bold italic | formatselect | quicklink blockquote',
@@ -120,7 +125,7 @@ class TinyEditor extends React.Component {
                         'bullist numlist outdent indent | link image | print preview media fullpage | ' +
                         'forecolor backcolor emoticons | help',
                     menu: {
-                        favs: {title: 'Tools', items: 'code visualaid | searchreplace | spellchecker | emoticons'}
+                        favs: {title: 'Favoriten', items: 'code visualaid | searchreplace | emoticons | loremipsum'}
                     },
                     menubar: 'favs file edit view insert format tools table help',
                     file_picker_callback: function (callback, value, meta) {
@@ -198,6 +203,7 @@ class TinyEditor extends React.Component {
                     },
                     content_css: "/css/tinymce.css"
                 })
+
 
             }
             if (!window.tinymce) {
