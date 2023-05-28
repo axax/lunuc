@@ -393,7 +393,7 @@ const Util = {
             if (options.noenlarge) {
                 params += '&noenlarge=' + options.noenlarge
             }
-            if (params) {
+            if (params && options.addParams!==false) {
                 data.src += '?' + params.substring(1)
             }
         }
