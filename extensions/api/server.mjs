@@ -76,33 +76,39 @@ Hook.on('appready', ({app, db}) => {
 
         console.log(`Api request: ${slug}`)
 
-        const api = await getApi({slug, db})
+        try {
+            const api = await getApi({slug, db})
 
-        if (!api) {
-            res.writeHead(404, {'content-type': 'application/json'})
-            res.end(`{"status":"notfound","message":"Api for '${slug}' not found"}`)
-        } else {
-            const result = await runApiScript({api, db, req, res})
-            if( result.responseStatus && result.responseStatus.ignore){
-
-            }else if (result.error) {
-                Hook.call('ExtensionApiError', {db, req, error: result.error, slug})
-
-                res.writeHead(500, {'content-type': 'application/json'})
-                res.end(`{"status":"error","message":"${result.error.message}"}`)
+            if (!api) {
+                res.writeHead(404, {'content-type': 'application/json'})
+                res.end(`{"status":"notfound","message":"Api for '${slug}' not found"}`)
             } else {
-                const data = await result.data
+                const result = await runApiScript({api, db, req, res})
 
-                if(data && data._error){
-                    Hook.call('ExtensionApiError', {db, req, error: data._error, slug})
+                if (result.responseStatus && result.responseStatus.ignore) {
+
+                } else if (result.error) {
+                    Hook.call('ExtensionApiError', {db, req, error: result.error, slug})
+
                     res.writeHead(500, {'content-type': 'application/json'})
-                    res.end(`{"status":"error","message":"${data._error.message}"}`)
-                }else {
-                    res.writeHead(res.responseCode || 200, {'content-type': api.mimeType || 'application/json'})
-                    res.end(data ? data.toString() : data)
+                    res.end(`{"status":"error","message":"${result.error.message}"}`)
+                } else {
+                    const data = await result.data
+
+                    if (data && data._error) {
+                        Hook.call('ExtensionApiError', {db, req, error: data._error, slug})
+                        res.writeHead(500, {'content-type': 'application/json'})
+                        res.end(`{"status":"error","message":"${data._error.message}"}`)
+                    } else {
+                        res.writeHead(res.responseCode || 200, {'content-type': api.mimeType || 'application/json'})
+                        res.end(data ? data.toString() : data)
+                    }
                 }
+
             }
 
+        }catch (e){
+            console.log(e)
         }
 
     })
