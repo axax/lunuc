@@ -65,7 +65,7 @@ class ElementWatch extends React.Component {
 
 
     render() {
-        const {initialVisible, madeVisible, tagImg, tagSrc, key} = this.state
+        const {initialVisible, madeVisible, hasError, tagImg, tagSrc, key} = this.state
         const {$observe, eleProps, eleType, jsonDom, c, $c, scope, tagName, _key} = this.props
 
         if (!initialVisible && !madeVisible && (!tagSrc || !ElementWatch.hasLoaded[tagSrc])) {
@@ -100,6 +100,7 @@ class ElementWatch extends React.Component {
                             src: tmpSrc,
                             alt: (tagImg.alt || eleProps.alt),
                             key: key + 'watch',
+                            'data-has-error': hasError,
                             'data-element-watch-key': key,
                             _key
                         },
@@ -202,13 +203,19 @@ class ElementWatch extends React.Component {
                         this.setState({madeVisible: true})
                     }, 20000)
 
-                    img.onerror = img.onload = () => {
+                    const onEnd = () => {
                         clearTimeout(timeout)
                         if (!$observe.waitVisible) {
                             ElementWatch.hasLoaded[tagSrc] = true
                         }
                         this.setState({madeVisible: true})
                     }
+
+                    img.onerror = ()=>{
+                        this.setState({hasError: true})
+                        onEnd()
+                    }
+                    img.onload = onEnd
 
                     img.src = tagSrc
                 }
