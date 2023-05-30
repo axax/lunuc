@@ -115,6 +115,7 @@ class ElementWatch extends React.Component {
             if (eleProps.inlineSvg && ElementWatch.loadedSvgData[tagSrc]) {
                 eleProps.svgData = ElementWatch.loadedSvgData[tagSrc].data
             }
+            eleProps['data-has-error'] = hasError
             eleProps['data-element-watch'] = true
             if ($observe.initialClass || $observe.visibleClass) {
                 eleProps['data-element-watch-key'] = key
