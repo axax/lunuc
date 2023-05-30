@@ -8,7 +8,6 @@ const startListening = async (db, context) => {
 
     try {
         const arr = (await db.collection('MailClient').find({active: true}).toArray())
-
         const admin = await Util.userByName(db, 'admin')
 
         for (const data of arr){
@@ -21,7 +20,7 @@ const startListening = async (db, context) => {
     }
 }
 
-
+let errorTimeout
 const startListeningSingle = (data, db, context, admin) => {
     if (!data.execfilter || Util.execFilter(data.execfilter)) {
         console.log(`register MailClient ${data.username}`)
@@ -55,12 +54,21 @@ const startListeningSingle = (data, db, context, admin) => {
 
             Hook.call('OnMailError', {db, context, error: {message: 'mailended for ' + data.username}})
 
-            // start again
-            setTimeout(()=>{
-                startListeningSingle(data, db, context, admin)
-            },1000)
+            // try to start again --> if active=false it is not started
+            clearTimeout(errorTimeout)
+            errorTimeout = setTimeout(()=>{
+                console.log('restart email listening')
+                stopListening()
+                startListening(db, context)
+            },5000)
             
         })
+
+
+        mailListener.on('close', (err) => {
+            Hook.call('OnMailError', {db, context, error: {message: 'closed for ' + data.username, err}})
+        })
+
 
         mailListener.on('mail', mail => {
             if (data.archive) {
@@ -88,9 +96,11 @@ const startListeningSingle = (data, db, context, admin) => {
     }
 }
 
-const stopListening = (db) => {
+const stopListening = () => {
     Object.keys(mailListeners).forEach(id => {
         mailListeners[id].stop()
+        mailListeners[id].imap.end()
+        //console.log( mailListeners[id].imap)
         delete mailListeners[id]
     })
 
