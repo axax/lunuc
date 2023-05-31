@@ -1,9 +1,10 @@
 import Hook from './hook.cjs'
 import {CAPABILITY_MANAGE_SAME_GROUP, CAPABILITY_MANAGE_USER_GROUP, getAllCapabilites} from './capabilities.mjs'
-import {getType, getTypes} from './types.mjs'
+import {getTypes} from './types.mjs'
 import {_t} from './i18n.mjs'
 import extensionsPrivate from '../gensrc/extensions-private.mjs'
 import extensions from '../gensrc/extensions.mjs'
+import Util from '../api/util/index.mjs'
 
 console.log(`merge extension defintion`)
 
@@ -215,6 +216,75 @@ export const checkFieldType = (value, field) => {
     }
 
     return value
+}
+
+
+
+export const prepareDataForUpdate = (typeName, data) => {
+    //check if this field is a reference
+    const fields = getFormFieldsByType(typeName)
+
+    // clone object but without _id, _version and undefined property
+    // null is when a refrence has been removed
+    const dataSet = Object.keys(data).reduce((o, k) => {
+        if (k !== '_id' && k !== '_version' && data[k] !== undefined) {
+            if (data[k] && data[k].constructor === Object) {
+
+                /* "report.$.contratos.URLPDF": {
+                     $cond: {
+                         if: {
+                             $eq: ["$report.$.contratos.NumContrato", `${param[1]}`]
+                         },
+                         then: `${param[2]}`,
+                     else: null
+                     }
+                 }
+                 o[k]
+*/
+                /* o[k] = {
+                      $ifNull:
+                          [
+                              '$'+k,
+                              {...data[k]},
+                              { $mergeObjects: [ '$'+k, {...data[k]} ] }
+                          ]
+                  }*
+
+                  /*updateStages.push({ $set: { [k]: {
+                              $ifNull:
+                                  [
+                                      '$'+k,
+                                      {}
+                                  ]
+                          } } })*/
+
+                // rewrite to dot notation for partial update
+                Object.keys(data[k]).forEach(key => {
+                    o[k + '.' + key] = data[k][key]
+                })
+
+                /* o[k] = {
+                     $mergeObjects: [
+                         `$${k}`,
+                         data[k]
+                     ]
+                 }*/
+
+
+            } else if (data[k] && fields[k] && fields[k].type === 'Object') {
+                // store as object
+                o[k] = JSON.parse(data[k])
+            } else if (fields[k] && fields[k].hash) {
+                o[k] = Util.hashPassword(data[k])
+            } else {
+                o[k] = data[k]
+            }
+        }
+        return o
+    }, {})
+    // set timestamp
+    dataSet.modifiedAt = new Date().getTime()
+    return dataSet
 }
 
 
