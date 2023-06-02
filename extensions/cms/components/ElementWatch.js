@@ -34,8 +34,9 @@ class ElementWatch extends React.Component {
             oriSrc: eleProps.src,
             tagSrc,
             tagImg,
+            hasError:false,
             key: jsonDom.instanceId + '_' + _key,
-            madeVisible: state && state.madeVisible ? true : ElementWatch.hasLoaded[tagSrc],
+            madeVisible: /*state && state.madeVisible ? true : */ElementWatch.hasLoaded[tagSrc],
             initialVisible: tagName === 'SmartImage' ? false : ($observe.initialClass && !$observe.waitVisible) || !$observe.waitVisible
         }
     }
