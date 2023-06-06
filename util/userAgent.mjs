@@ -4,7 +4,7 @@ export const parseUserAgent = (agent, botregex = /bot|crawl|slurp|spider|mediapa
     let result = {}
     if (agent) {
         const agentLower = agent.toLowerCase().trim()
-        result.isBot = botregex.test(agentLower)
+        result.isBot = !agentLower.startsWith('spiderweb/') && botregex.test(agentLower)
 
         if (!result.isBot) {
             const raw = parseUserAgentRaw(agentLower)
@@ -81,8 +81,10 @@ export const parseUserAgent = (agent, botregex = /bot|crawl|slurp|spider|mediapa
                 if (raw.version) {
                     result.version = parseFloat(raw.version.version)
                 }
+            } else if (raw.spiderweb) {
 
-
+                result.browser = 'spiderweb'
+                result.version = parseFloat(raw.spiderweb.version)
             } else if (raw.mozilla) {
 
                 const allKeys = Object.keys(raw)

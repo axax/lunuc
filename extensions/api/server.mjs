@@ -29,7 +29,7 @@ const getApi = async ({slug, db}) => {
     return null
 }
 
-const runApiScript = ({api, db, req, res}) => {
+const runApiScript = ({api, db, req, res, startTime}) => {
     return new Promise(resolve => {
 
         try {
@@ -48,7 +48,7 @@ const runApiScript = ({api, db, req, res}) => {
                 }
             })()
             this.resolve({data, responseStatus: this.responseStatus})`)
-            tpl.call({resolve, require: requireContext.require, db, context: req.context, req, res})
+            tpl.call({resolve, require: requireContext.require, db, context: req.context, req, res, startTime})
         } catch (error) {
             resolve({error})
         }
@@ -72,6 +72,7 @@ Hook.on('appready', ({app, db}) => {
 
     app.use('/' + config.API_PREFIX, async (req, res) => {
 
+        const startTime = new Date().getTime()
         const slug = url.parse(req.url).pathname.substring(1)
 
         console.log(`Api request: ${slug}`)
@@ -83,7 +84,7 @@ Hook.on('appready', ({app, db}) => {
                 res.writeHead(404, {'content-type': 'application/json'})
                 res.end(`{"status":"notfound","message":"Api for '${slug}' not found"}`)
             } else {
-                const result = await runApiScript({api, db, req, res})
+                const result = await runApiScript({api, db, req, res, startTime})
 
                 if (result.responseStatus && result.responseStatus.ignore) {
 
