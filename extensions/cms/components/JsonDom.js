@@ -316,7 +316,6 @@ class JsonDom extends React.Component {
                 this.json = null
             }
             if (slugChanged || scriptChanged || this.runScript) {
-
                 this.scriptResult = null
                 this.runScript = true
                 this.jsOnStack = {}
@@ -487,7 +486,9 @@ class JsonDom extends React.Component {
             }
             if (!this.error) {
                 scope.data = this.resolvedDataJson
-                scope.props = _props
+                if(_props) {
+                    scope.props = _props
+                }
                 scope.dataState = {loading, isNew}
 
 
