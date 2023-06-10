@@ -7,7 +7,7 @@ import Util from '../../api/util/index.mjs'
 let server = null
 let database = null
 let hosts = {}
-let dbBuffer = []
+let dbBuffer = {}
 
 
 // Hook to add mongodb resolver
@@ -79,7 +79,7 @@ Hook.on('appready', async ({db, context}) => {
                 res.send()
             } else {
 
-                console.log(`DNS: resolve host ${hostname} ${req.question[0]}`)
+                console.log(`DNS: resolve host ${hostname}`)
                 const dnsRequest = dns.Request({
                     question: req.question[0],
                     server: {address: '1.1.1.1', port: 53, type: 'udp'},
@@ -91,8 +91,11 @@ Hook.on('appready', async ({db, context}) => {
                 })
 
                 dnsRequest.on('message', (err, answer) => {
-                    res.answer.push(...answer.answer)
-                     console.log('DNS: answer', JSON.stringify(answer))
+                    res.answer = answer.answer
+                    res.authority = answer.authority
+                    res.additional = answer.additional
+                    res.edns_options = answer.edns_options
+                     console.log('DNS: answer', answer.answer.map(a=>a.address).join(' '))
                 })
 
                 dnsRequest.on('end', () => {
@@ -101,7 +104,7 @@ Hook.on('appready', async ({db, context}) => {
 
                 dnsRequest.send()
             }
-            dbBuffer.push({
+            dbBuffer[hostname] = {
                 updateOne: {
                     filter: { name: hostname },
                     update: {
@@ -114,15 +117,19 @@ Hook.on('appready', async ({db, context}) => {
                     },
                     upsert: true
                 }
-            })
+            }
 
-            if( dbBuffer.length > 100) {
+            if( Object.keys(dbBuffer).length > 20) {
                 insertBuffer()
             }
         })
 
         server.on('error', (err, buff, req, res) => {
-            console.log(`DNS:`,err.stack)
+            console.log(`DNS: error`,err.stack)
+        })
+
+        server.on('socketError', (err) => {
+            console.log(`DNS: socketError`,err)
         })
 
 
@@ -170,8 +177,9 @@ const readHosts = async (db) => {
 const insertBuffer= async () => {
     if (database) {
         console.log('insert buffer')
-        await database.collection('DnsHost').bulkWrite(dbBuffer, { ordered: false })
-        dbBuffer = []
+
+        await database.collection('DnsHost').bulkWrite(Object.values(dbBuffer), { ordered: false })
+        dbBuffer = {}
     }
 }
 
