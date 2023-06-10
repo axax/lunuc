@@ -44,6 +44,7 @@ Url to access the mongo database:
 
 #### Troubleshooting
 `sudo npm install puppeteer --unsafe-perm=true`
+`npm dedupe --force`
 
 ### Development
 * `npm run dev`

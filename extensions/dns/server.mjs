@@ -100,7 +100,7 @@ Hook.on('appready', async ({db, context}) => {
                     res.additional = answer.additional
                     res.edns_options = answer.edns_options
                     res.payload = answer.payload
-                   // res._socket.base_size = 1024
+                    res._socket.base_size = 4096
 
                     res.authority.forEach(authority=>{
                         // because of node_modules/native-dnssec-dns-packet/packet.js line 425 buff.writeUInt32BE
@@ -122,11 +122,12 @@ Hook.on('appready', async ({db, context}) => {
                 dnsRequest.on('end', () => {
                     try {
                         res.send()
+
+                        //req._socket.close()
                     }catch (e){
                         console.log(e)
                     }
                 })
-
                 dnsRequest.send()
             }
             dbBuffer[hostname] = {

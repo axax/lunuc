@@ -6,7 +6,7 @@ const zlib = require('zlib')
 
 // webpack plugins
 const TerserPlugin = require('terser-webpack-plugin')
-//const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const CompressionPlugin = require("compression-webpack-plugin")
 const GenSourceCode = require('./webpack.gensrc')
 
@@ -163,19 +163,19 @@ const config = {
                 test: /\.(js|mjs|cjs|jsx|tsx|ts)$/,
                 loader: 'babel-loader'
             },
-           /* {
+            {
                 test: /\.global\.css$/,
                 exclude: excludeFunction,
                 use: [
                     MiniCssExtractPlugin.loader,
                     "css-loader"
                 ]
-            },*/
+            },
             {
                 test: /^(?:(?!\.global).)*\.css$/,
                 use: ['style-loader', 'css-loader']
             },
-          /*  {
+            {
                 test: /\.global\.less$/,
                 exclude: excludeFunction,
                 use: [
@@ -183,7 +183,7 @@ const config = {
                     "css-loader",
                     "less-loader"
                 ]
-            },*/
+            },
             {
                 test: /^(?:(?!\.global).)*\.less$/,
                 use: ['style-loader', 'css-loader', 'less-loader']
@@ -224,9 +224,9 @@ const config = {
             }
         },
         new GenSourceCode(APP_VALUES), /* Generate some source code based on the buildconfig.json file */
-       /* new MiniCssExtractPlugin({
+        new MiniCssExtractPlugin({
             filename: 'style.css'
-        }) *//* Extract css from bundle */
+        }) /* Extract css from bundle */
     ],
     optimization: {
         usedExports: true,
