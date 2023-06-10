@@ -1,5 +1,6 @@
 import Hook from '../../util/hook.cjs'
-import dns from 'native-dns'
+import dns from 'native-dnssec-dns'
+import {consts} from 'native-dnssec-dns-packet'
 import schemaGen from './gensrc/schema'
 import resolverGen from './gensrc/resolver'
 import {deepMergeToFirst} from 'util/deepMerge.mjs'
@@ -39,9 +40,9 @@ Hook.on('appready', async ({db, context}) => {
         console.log('DNS: create dns server')
         server = dns.createServer()
 
-
         server.on('request', (req, res) => {
-            const hostname = req.question[0].name
+            const hostname = req.question[0].name,
+                type = req.question[0].type
 
             if (hosts[hostname] === undefined) {
                 hosts[hostname] = {block: false, subdomains:false}
@@ -70,7 +71,7 @@ Hook.on('appready', async ({db, context}) => {
 
 
             if (block && !dnsSettings.disabled) {
-                console.log(`DNS: block host ${hostname}`)
+                console.log(`DNS: block host ${hostname} type ${consts.qtypeToName(type)}`)
                 res.answer.push(dns.A({
                     name: hostname,
                     address: '0.0.0.0',
@@ -79,7 +80,7 @@ Hook.on('appready', async ({db, context}) => {
                 res.send()
             } else {
 
-                console.log(`DNS: resolve host ${hostname}`)
+                console.log(`DNS: resolve host ${hostname} type ${consts.qtypeToName(type)}`)
                 const dnsRequest = dns.Request({
                     question: req.question[0],
                     server: {address: '1.1.1.1', port: 53, type: 'udp'},
@@ -91,15 +92,38 @@ Hook.on('appready', async ({db, context}) => {
                 })
 
                 dnsRequest.on('message', (err, answer) => {
+                    res.header = Object.assign({},answer.header,{id:res.header.id})
+                    res.question = answer.question
                     res.answer = answer.answer
                     res.authority = answer.authority
                     res.additional = answer.additional
                     res.edns_options = answer.edns_options
-                     console.log('DNS: answer', answer.answer.map(a=>a.address).join(' '))
+                    res.payload = answer.payload
+                   // res._socket.base_size = 1024
+
+                    res.authority.forEach(authority=>{
+                        // because of node_modules/native-dnssec-dns-packet/packet.js line 425 buff.writeUInt32BE
+                        if(authority.serial>2147483647) {
+                            authority.serial = 999
+                        }
+                    })
+                    if(answer.answer.length>0){
+                        console.log('DNS: answer', answer.answer.map(a=>a.address || a.name).join(' '))
+                    }
+                    /*if(answer.authority.length>0){
+                        console.log('DNS: authority', answer.authority.map(a=>a.name).join(' '))
+                    }
+                    if(answer.additional.length>0){
+                        console.log('DNS: additional', answer.additional.map(a=>a.name).join(' '))
+                    }*/
                 })
 
                 dnsRequest.on('end', () => {
-                    res.send()
+                    try {
+                        res.send()
+                    }catch (e){
+                        console.log(e)
+                    }
                 })
 
                 dnsRequest.send()
@@ -176,7 +200,7 @@ const readHosts = async (db) => {
 
 const insertBuffer= async () => {
     if (database) {
-        console.log('insert buffer')
+        console.log('DNS: insert buffer')
 
         await database.collection('DnsHost').bulkWrite(Object.values(dbBuffer), { ordered: false })
         dbBuffer = {}
