@@ -110,6 +110,12 @@ Hook.on('appready', async ({db, context}) => {
                     if(answer.answer.length>0){
                         console.log('DNS: answer', answer.answer.map(a=>a.address || a.name).join(' '))
                     }
+
+                    try {
+                        res.send()
+                    }catch (e){
+                        console.log(e)
+                    }
                     /*if(answer.authority.length>0){
                         console.log('DNS: authority', answer.authority.map(a=>a.name).join(' '))
                     }
@@ -119,11 +125,7 @@ Hook.on('appready', async ({db, context}) => {
                 })
 
                 dnsRequest.on('end', () => {
-                    try {
-                        res.send()
-                    }catch (e){
-                        console.log(e)
-                    }
+
                 })
 
                 dnsRequest.send()
