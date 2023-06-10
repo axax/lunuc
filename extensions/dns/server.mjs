@@ -32,13 +32,13 @@ Hook.on('appready', async ({db, context}) => {
         readHosts(db)
 
 
-        console.log('create dns server')
+        console.log('DNS: create dns server')
         server = dns.createServer()
 
 
         server.on('request', (req, res) => {
             const hostname = req.question[0].name
-
+console.log('DNS:', JSON.stringify(req.question))
 
             if (hosts[hostname] === undefined) {
                 hosts[hostname] = {block: false, subdomains:false}
@@ -67,7 +67,7 @@ Hook.on('appready', async ({db, context}) => {
 
 
             if (block) {
-                console.log(`block host ${hostname}`)
+                console.log(`DNS: block host ${hostname}`)
                 res.answer.push(dns.A({
                     name: hostname,
                     address: '0.0.0.0',
@@ -76,7 +76,7 @@ Hook.on('appready', async ({db, context}) => {
                 res.send()
             } else {
 
-                console.log(`resolve host ${hostname}`)
+                console.log(`DNS: resolve host ${hostname}`)
                 const dnsRequest = dns.Request({
                     question: req.question[0],
                     server: {address: '1.1.1.1', port: 53, type: 'udp'},
