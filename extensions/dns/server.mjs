@@ -41,7 +41,7 @@ Hook.on('appready', async ({db, context}) => {
         server = dns.createServer()
 
         server.on('request', (req, res) => {
-            const hostname = req.question[0].name,
+            const hostname = req.question[0].name.slice(0, -1),
                 type = req.question[0].type
 
             if (hosts[hostname] === undefined) {
