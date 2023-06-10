@@ -54,7 +54,7 @@ Hook.on('appready', async ({db, context}) => {
 
             let block = hosts[hostname].block === true
 
-            if (!block && !dnsSettings.disable) {
+            if (!block) {
                 //check subdomains
                 let subname = hostname
                 let pos = subname.indexOf('.')
@@ -69,7 +69,7 @@ Hook.on('appready', async ({db, context}) => {
             }
 
 
-            if (block) {
+            if (block && !dnsSettings.disabled) {
                 console.log(`DNS: block host ${hostname}`)
                 res.answer.push(dns.A({
                     name: hostname,
@@ -79,7 +79,7 @@ Hook.on('appready', async ({db, context}) => {
                 res.send()
             } else {
 
-                console.log(`DNS: resolve host ${hostname}`)
+                console.log(`DNS: resolve host ${hostname} ${req.question[0]}`)
                 const dnsRequest = dns.Request({
                     question: req.question[0],
                     server: {address: '1.1.1.1', port: 53, type: 'udp'},
@@ -92,7 +92,7 @@ Hook.on('appready', async ({db, context}) => {
 
                 dnsRequest.on('message', (err, answer) => {
                     answer.answer.forEach((a) => {
-                        console.log('DNS: answer', a)
+                        console.log('DNS: answer', JSON.stringify(a))
                         res.answer.push(a)
                     })
                 })
