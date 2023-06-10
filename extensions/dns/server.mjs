@@ -4,6 +4,7 @@ import schemaGen from './gensrc/schema'
 import resolverGen from './gensrc/resolver'
 import {deepMergeToFirst} from 'util/deepMerge.mjs'
 import Util from '../../api/util/index.mjs'
+import {DNSCache} from "lighthouse/core/lib/dependency-graph/simulator/dns-cache";
 
 let server = null
 let database = null
@@ -38,7 +39,6 @@ Hook.on('appready', async ({db, context}) => {
 
         server.on('request', (req, res) => {
             const hostname = req.question[0].name
-console.log('DNS:', JSON.stringify(req.question))
 
             if (hosts[hostname] === undefined) {
                 hosts[hostname] = {block: false, subdomains:false}
@@ -80,15 +80,16 @@ console.log('DNS:', JSON.stringify(req.question))
                 const dnsRequest = dns.Request({
                     question: req.question[0],
                     server: {address: '1.1.1.1', port: 53, type: 'udp'},
-                    timeout: 1000
+                    timeout: 3000
                 })
 
                 dnsRequest.on('timeout', () => {
-                    console.log('Timeout in making request')
+                    console.log('DNS: Timeout in making request')
                 })
 
                 dnsRequest.on('message', (err, answer) => {
                     answer.answer.forEach((a) => {
+                        console.log('DNS: answer', a)
                         res.answer.push(a)
                     })
                 })
@@ -120,19 +121,19 @@ console.log('DNS:', JSON.stringify(req.question))
         })
 
         server.on('error', (err, buff, req, res) => {
-            console.log(err.stack)
+            console.log(`DNS:`,err.stack)
         })
 
 
         server.on('listening', () => {
-            console.log('dns listening')
+            console.log('DNS: listening')
         })
 
         server.on('close', () => {
-            console.log('dns close')
+            console.log('DNS: close')
         })
         server.on('socketError', (e) => {
-            console.log('dns socketError',e)
+            console.log('DNS: socketError',e)
         })
 
         server.serve(53)
