@@ -91,10 +91,8 @@ Hook.on('appready', async ({db, context}) => {
                 })
 
                 dnsRequest.on('message', (err, answer) => {
-                    answer.answer.forEach((a) => {
-                        console.log('DNS: answer', JSON.stringify(a))
-                        res.answer.push(a)
-                    })
+                    res.answer.push(...answer.answer)
+                     console.log('DNS: answer', JSON.stringify(answer))
                 })
 
                 dnsRequest.on('end', () => {
