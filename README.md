@@ -80,6 +80,7 @@ http://localhost:49160/
 ##### Update nodejs
 `sudo n stable`
 `sudo node -v`
+`nvm install 18.16.0`
 
 ##### Install nvm
 `apt install curl`
@@ -286,6 +287,8 @@ Add this to the file:
 
 allow only from certain ip
 `sudo ufw allow from 188.154.137.74 to any port 53`
+`sudo ufw allow from 89.217.57.0/24 to any port 53`
+
 
 
 ### Disable Apache 2

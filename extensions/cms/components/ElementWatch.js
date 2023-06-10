@@ -227,7 +227,14 @@ class ElementWatch extends React.Component {
                 if (tagSrc && !$observe.waitVisible) {
                     ElementWatch.hasLoaded[tagSrc] = true
                 }
-                this.setState({madeVisible: true})
+                if($observe.delay){
+                    setTimeout(()=>{
+                        this.setState({madeVisible: true})
+                    }, $observe.delay)
+                }else{
+                    this.setState({madeVisible: true})
+                }
+
             }
         }
     }

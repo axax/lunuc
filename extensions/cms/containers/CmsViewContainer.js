@@ -98,7 +98,6 @@ class CmsViewContainer extends React.Component {
             // it was already rendered on the server side
             return <span dangerouslySetInnerHTML={{__html: cmsPage.html}}/>
         }
-        console.log(cmsPage)
         const startTime = new Date()
         const content = <JsonDom
             clientQuery={this.clientQuery.bind(this)}
