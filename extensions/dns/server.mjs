@@ -27,7 +27,7 @@ Hook.on('appready', async ({db, context}) => {
     let dnsSettings = (await Util.getKeyValueGlobal(db, context, "DnsSettings", true)) || {}
 
     console.log("DnsSettings", dnsSettings)
-    if (!dnsSettings.execfilter || Util.execFilter(dnsSettings.execfilter)) {
+    if (true || !dnsSettings.execfilter || Util.execFilter(dnsSettings.execfilter)) {
 
         setInterval(async ()=>{
             dnsSettings =  (await Util.getKeyValueGlobal(db, context, "DnsSettings", true)) || {}
@@ -42,7 +42,8 @@ Hook.on('appready', async ({db, context}) => {
 
         server.on('request', (req, res) => {
             const hostname = req.question[0].name.slice(0, -1),
-                type = req.question[0].type
+                type = req.question[0].type,
+                startTime = new Date().getTime()
 
             if (hosts[hostname] === undefined) {
                 hosts[hostname] = {block: false, subdomains:false}
@@ -80,11 +81,11 @@ Hook.on('appready', async ({db, context}) => {
                 res.send()
             } else {
 
-                console.log(`DNS: resolve host ${hostname} type ${consts.qtypeToName(type)}`)
+                console.log(`DNS: ${req._socket._remote.address}:${req._socket._remote.port} resolve host ${hostname} type ${consts.qtypeToName(type)}`)
                 const dnsRequest = dns.Request({
                     question: req.question[0],
                     server: {address: '1.1.1.1', port: 53, type: 'udp'},
-                    timeout: 3000
+                    timeout: 1500
                 })
 
                 dnsRequest.on('timeout', () => {
@@ -107,15 +108,9 @@ Hook.on('appready', async ({db, context}) => {
                             authority.serial = 999
                         }
                     })
-                    if(answer.answer.length>0){
-                        console.log('DNS: answer', answer.answer.map(a=>a.address || a.name).join(' '))
-                    }
+                    console.log(`DNS: answer after ${new Date().getTime() - startTime}ms`, answer.answer.map(a=>a.address || a.name).join(' '))
 
-                    try {
-                        res.send()
-                    }catch (e){
-                        console.log(e)
-                    }
+
                     /*if(answer.authority.length>0){
                         console.log('DNS: authority', answer.authority.map(a=>a.name).join(' '))
                     }
@@ -125,7 +120,11 @@ Hook.on('appready', async ({db, context}) => {
                 })
 
                 dnsRequest.on('end', () => {
-
+                    try {
+                        res.send()
+                    }catch (e){
+                        console.log(e)
+                    }
                 })
 
                 dnsRequest.send()
