@@ -4,8 +4,6 @@ import schemaGen from './gensrc/schema'
 import resolverGen from './gensrc/resolver'
 import {deepMergeToFirst} from 'util/deepMerge.mjs'
 import Util from '../../api/util/index.mjs'
-import {DNSCache} from "lighthouse/core/lib/dependency-graph/simulator/dns-cache";
-
 let server = null
 let database = null
 let hosts = {}
@@ -25,9 +23,14 @@ Hook.on('schema', ({schemas}) => {
 // Hook when db is ready
 Hook.on('appready', async ({db, context}) => {
 
-    const dnsSettings = (await Util.getKeyValueGlobal(db, context, "DnsSettings", true)) || {}
+    let dnsSettings = (await Util.getKeyValueGlobal(db, context, "DnsSettings", true)) || {}
+
     console.log("DnsSettings", dnsSettings)
     if (!dnsSettings.execfilter || Util.execFilter(dnsSettings.execfilter)) {
+
+        setInterval(async ()=>{
+            dnsSettings =  (await Util.getKeyValueGlobal(db, context, "DnsSettings", true)) || {}
+        }, 1000 * 60)
 
         database = db
         readHosts(db)
@@ -51,7 +54,7 @@ Hook.on('appready', async ({db, context}) => {
 
             let block = hosts[hostname].block === true
 
-            if (!block) {
+            if (!block && !dnsSettings.disable) {
                 //check subdomains
                 let subname = hostname
                 let pos = subname.indexOf('.')
