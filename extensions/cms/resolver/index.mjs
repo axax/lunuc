@@ -324,7 +324,7 @@ export default db => ({
                     }
                 }
             } catch (error) {
-                Hook.call('ServerScriptError', {slug, methodName, args, error: script.error})
+                Hook.call('ServerScriptError', {slug, methodName, args, error})
                 result = {error: error.message}
             }
 
