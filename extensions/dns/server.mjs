@@ -161,11 +161,13 @@ Hook.on('typeUpdated_DnsHost', ({result}) => {
         }
     }
 })
-Hook.on('typeUpdated_DnsHostGroup', ({result}) => {
-    if (dnsServerContext.hostsGroup[result._id]) {
-        dnsServerContext.hostsGroup[result._id].block = result.block
+Hook.on(['typeUpdated_DnsHostGroup','typeCreated_DnsHostGroup'], ({result}) => {
+    if (!dnsServerContext.hostsGroup[result._id]) {
+        dnsServerContext.hostsGroup[result._id] = result
     }
+    dnsServerContext.hostsGroup[result._id].block = result.block
 })
+
 Hook.on('appexit', async () => {
     await insertBuffer()
 })
