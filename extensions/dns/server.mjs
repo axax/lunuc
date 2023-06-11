@@ -35,7 +35,7 @@ Hook.on('appready', async ({db, context}) => {
 
     dnsServerContext.settings = (await Util.getKeyValueGlobal(db, context, "DnsSettings", true)) || {}
 
-    if (true || !dnsServerContext.settings.execfilter || Util.execFilter(dnsServerContext.settings.execfilter)) {
+    if (!dnsServerContext.settings.execfilter || Util.execFilter(dnsServerContext.settings.execfilter)) {
 
 
         // refresh settings every minute
