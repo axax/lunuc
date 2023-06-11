@@ -116,12 +116,12 @@
     "lighthouse": "^10.2.0",
     "mail-notifier": "^0.5.0",
     "mssql": "^9.1.1",
-    "native-dnssec-dns": "^0.7.1",
     "nodemon": "^2.0.22",
     "openai": "^3.2.1",
     "puppeteer": "^20.5.0",
     "xml2js": "^0.6.0",
-    "ytdl-core": "^4.11.4"
+    "ytdl-core": "^4.11.4",
+    "dns2": "^2.1.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.21.5",
