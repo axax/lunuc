@@ -481,7 +481,7 @@ class Bot {
                 db.collection('BotCommand').find({bot: { $in: [this.data._id]}, active: true}).sort({order: 1}).toArray()
         )
 
-        botCommands.forEach(async botCommand => {
+        for (const botCommand of botCommands) {
             if (botCommand.script) {
                 try {
 
@@ -514,6 +514,7 @@ class Bot {
                         ${botCommand.script}
                     } catch(e) {
                         console.log('Error in ${botCommand.name}', e)
+                        this.error(e)
                     }
                 })();
                 `)
@@ -521,17 +522,23 @@ class Bot {
                     const result = await tpl.call({
                         bot: this,
                         require: requireContext.require,
+                        error: (err)=>{
+                            Hook.call('BotError', {db,entry: botCommand, error: err})
+                        },
                         ImageClassifier,
                         GenericResolver,
                         Util,
                         db,
                         Hook
                     })
-                }catch (e) {
-                    console.error(botCommand.name,e)
+                }catch (err) {
+
+                    Hook.call('BotError', {db,entry: botCommand, error: err})
+
+                    console.error(botCommand.name,err)
                 }
             }
-        })
+        }
     }
 
     hasManager(id){

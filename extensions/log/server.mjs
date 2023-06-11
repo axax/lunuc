@@ -121,15 +121,22 @@ Hook.on('ExtensionApiError', async ({db, req, error, slug}) => {
   })
 })
 
-Hook.on('HookError', async ({entry, error}) => {
-    if(mydb) {
-        GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {
-            location: entry.name,
-            type: 'hookError',
-            message: error.message ? error.message + '\n\n' + error.stack : JSON.stringify(error),
-            meta: {hook: entry.hook}
-        })
-    }
+Hook.on('HookError', async ({db, entry, error}) => {
+    GenericResolver.createEntity(db, {context: {lang: 'en'}}, 'Log', {
+        location: entry.name,
+        type: 'hookError',
+        message: error.message ? error.message + '\n\n' + error.stack : JSON.stringify(error),
+        meta: {hook: entry.hook}
+    })
+})
+
+Hook.on('BotError', async ({db, entry, error}) => {
+    GenericResolver.createEntity(db, {context: {lang: 'en'}}, 'Log', {
+        location: entry.name,
+        type: 'botError',
+        message: error.message ? error.message + '\n\n' + error.stack : JSON.stringify(error),
+        meta: {}
+    })
 })
 
 Hook.on('ServerScriptError', async ({slug, methodName, args, error}) => {

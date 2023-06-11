@@ -52,7 +52,7 @@ const register = async (db) => {
                         })
                         if(result.error){
                             console.error(result.error)
-                            Hook.call('HookError', {entry, error: result.error})
+                            Hook.call('HookError', {db, entry, error: result.error})
                         }else if(result.data && result.data.constructor === Promise){
                             // if result is a promise wait for it be finished
                             await result.data
@@ -64,7 +64,7 @@ const register = async (db) => {
                     registeredHook.push({name, key, fun})
                 } catch (e) {
                     console.error(e)
-                    Hook.call('HookError', {entry, error: e})
+                    Hook.call('HookError', {db, entry, error: e})
                 }
             }
 
