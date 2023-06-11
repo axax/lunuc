@@ -10,7 +10,6 @@ import config from '../gensrc/config.mjs'
 import MimeType from '../util/mime.mjs'
 import {getHostFromHeaders} from '../util/host.mjs'
 import finalhandler from 'finalhandler'
-import sharp from 'sharp'
 import {replacePlaceholders} from '../util/placeholders.mjs'
 import {ensureDirectoryExistence} from '../util/fileUtil.mjs'
 import {loadAllHostrules} from '../util/hostrules.mjs'
@@ -29,6 +28,7 @@ import {clientAddress} from '../util/host.mjs'
 import Cache from '../util/cache.mjs'
 import {doScreenCapture} from './util/index.mjs'
 import {createSimpleEtag} from './util/etag.mjs'
+import {resizeImage} from './util/resizeImage.mjs'
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
 const ROOT_DIR = path.resolve(), SERVER_DIR = path.join(ROOT_DIR, './server')
@@ -890,110 +890,6 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, filename}) {
     return true
 }
 
-async function resizeImage(parsedUrl, req, filename) {
-    let mimeType, exists = false
-
-    // resize image file
-    if (parsedUrl.query.width || parsedUrl.query.height || parsedUrl.query.format || parsedUrl.query.flip || parsedUrl.query.flop) {
-        const width = parseInt(parsedUrl.query.width),
-            height = parseInt(parsedUrl.query.height),
-            fit = parsedUrl.query.fit,
-            bg = parsedUrl.query.bg,
-            flip = parsedUrl.query.flip,
-            flop = parsedUrl.query.flop,
-            position = parsedUrl.query.position,
-            withoutEnlargement = parsedUrl.query.noenlarge
-
-        let format = parsedUrl.query.format
-        if (format === 'webp' && req.headers['accept'] && req.headers['accept'].indexOf('image/webp') < 0) {
-            format = false
-        }
-
-        if (!isNaN(width) || !isNaN(height) || format || flip || flop) {
-
-            const resizeOptions = {fit: fit || sharp.fit.cover, background: bg || { r: 0, g: 0, b: 0, alpha: 0 }}
-            if (!isNaN(width)) {
-                resizeOptions.width = width
-            }
-            if(position){
-                resizeOptions.position = position
-            }
-
-            if(withoutEnlargement){
-                resizeOptions.withoutEnlargement = withoutEnlargement=='true'
-            }
-
-            if (!isNaN(height)) {
-                resizeOptions.height = height
-            }
-
-            let quality = parseInt(parsedUrl.query.quality)
-            if (isNaN(quality)) {
-                quality = 80
-            }
-
-            let modfilename = `${filename}@${width}x${height}-${quality}${fit ? '-' + fit : ''}${position ? '-' + position : ''}${format ? '-' + format : ''}${flip ? '-flip' : ''}${flop ? '-flop' : ''}${withoutEnlargement ? '-noenlarge' : ''}${bg ? '-' + bg : ''}`
-
-            if (format) {
-                mimeType = MimeType.detectByExtension(format)
-            }
-            exists = true
-
-            if (!fs.existsSync(modfilename)) {
-                console.log(`modify file ${filename} to ${modfilename}`)
-                try {
-                    const sharpOptions = {}
-                    let ext = path.extname(parsedUrl.pathname)
-                    if(ext && ext.length > 1){
-                        ext = ext.substring(1).trim().toLowerCase()
-                        if(ext==='gif'){
-                            // might be animated
-                            sharpOptions.animated = true
-                        }
-                    }
-                    let resizedFile = await sharp(filename,sharpOptions).resize(resizeOptions)
-                    if(flip){
-                        resizedFile = await resizedFile.flip()
-                    }
-                    if(flop){
-                        resizedFile = await resizedFile.flop()
-                    }
-
-                    if (format === 'webp') {
-                        await resizedFile.webp({
-                            quality,
-                            alphaQuality: quality,
-                            lossless: false,
-                            force: true
-                        }).toFile(modfilename)
-                    } else if (format === 'png') {
-                        await resizedFile.png({
-                            quality,
-                            force: true
-                        }).toFile(modfilename)
-                    } else if (format === 'jpg' || format === 'jpeg') {
-                        await resizedFile.jpeg({
-                            quality,
-                            force: true
-                        }).toFile(modfilename)
-                    } else {
-                        await resizedFile.jpeg({
-                            quality,
-                            chromaSubsampling: '4:2:0',
-                            force: false
-                        }).toFile(modfilename)
-                    }
-                    filename = modfilename
-                } catch (e) {
-                    console.error(e)
-                }
-            } else {
-                filename = modfilename
-            }
-        }
-    }
-    return {filename, exists, mimeType}
-}
 
 const extendHeaderWithRange = (headerExtra, req, stat)=>{
 

@@ -58,7 +58,7 @@ export default () => {
                         image =
                             (mimeType[0] === 'image' ?
                                     <img style={{maxWidth: '6rem', maxHeight: '6rem', objectFit: 'cover'}}
-                                         src={item.src || (UPLOAD_URL + '/' + item._id + '?width=96')}/>
+                                         src={item.src || `${UPLOAD_URL}/${item._id}/${PRETTYURL_SEPERATOR}/${item.name}?width=96`}/>
                                     :
                                     <div className="file-icon"
                                          data-type={mimeType.length > 1 ? mimeType[1] : 'doc'}></div>
@@ -70,7 +70,7 @@ export default () => {
                             <a target="_blank" onDoubleClick={(e) => {
                                 e.preventDefault()
                             }} rel="noopener noreferrer"
-                               href={item.src || (UPLOAD_URL + '/' + item._id + '/' + PRETTYURL_SEPERATOR + '/' + item.name)}>
+                               href={item.src || `${UPLOAD_URL}/${item._id}/${PRETTYURL_SEPERATOR}/${item.name}`}>
                                 {image}
                             </a>
                     }
@@ -479,7 +479,7 @@ export default () => {
                 }}>
                     <SimpleTab key="tab0" label="Einstellungen"/>
                     <SimpleTab key="tab1" label="Voransicht"/>
-                    <SimpleTab key="tab2" label="Upload"/>}
+                    <SimpleTab key="tab2" label="Upload"/>
 
                 </SimpleTabs>
                 <SimpleTabPanel style={{flexGrow:1,marginTop:'-24px'}} key="tabPanel0" value={tabValue} index={0}>

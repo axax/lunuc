@@ -142,7 +142,7 @@ class ElementWatch extends React.Component {
 
 
     fetchSvg() {
-        const {tagImg, tagSrc} = this.state
+        const {tagSrc} = this.state
 
         if (!tagSrc) {
             return
@@ -189,7 +189,9 @@ class ElementWatch extends React.Component {
         const {$observe, eleProps, tagName} = this.props
         if (this.state.initialVisible) {
             if($observe.visibleClass) {
-                ele.classList.add($observe.visibleClass)
+                setTimeout(()=>{
+                    ele.classList.add(...$observe.visibleClass.split(' '))
+                }, $observe.delay || 0)
             }
         } else {
             ele.setAttribute('data-loading', true)
@@ -227,13 +229,9 @@ class ElementWatch extends React.Component {
                 if (tagSrc && !$observe.waitVisible) {
                     ElementWatch.hasLoaded[tagSrc] = true
                 }
-                if($observe.delay){
-                    setTimeout(()=>{
-                        this.setState({madeVisible: true})
-                    }, $observe.delay)
-                }else{
+                setTimeout(()=>{
                     this.setState({madeVisible: true})
-                }
+                }, $observe.delay || 0)
 
             }
         }
