@@ -11,6 +11,7 @@ const dnsServerContext = {
     server: false,
     database: false,
     hosts: {},
+    hostsGroup:{},
     dbBuffer: {},
     settings: {},
     typeMap: Object.keys(dns2.Packet.TYPE).reduce((a,k)=>{a[dns2.Packet.TYPE[k]]=k;return a},{})
@@ -34,7 +35,7 @@ Hook.on('appready', async ({db, context}) => {
 
     dnsServerContext.settings = (await Util.getKeyValueGlobal(db, context, "DnsSettings", true)) || {}
 
-    if (!dnsServerContext.settings.execfilter || Util.execFilter(dnsServerContext.settings.execfilter)) {
+    if (true || !dnsServerContext.settings.execfilter || Util.execFilter(dnsServerContext.settings.execfilter)) {
 
 
         // refresh settings every minute
@@ -96,7 +97,7 @@ Hook.on('appready', async ({db, context}) => {
                             $set: {
                                 lastIp: rinfo.address,
                                 lastUsed: new Date().getTime(),
-                                name: name,
+                                name,
                                 count: dnsServerContext.hosts[name].count
                             }
                         },
@@ -149,6 +150,9 @@ Hook.on('appready', async ({db, context}) => {
 // Hook when the type CronJob has changed
 Hook.on('typeUpdated_DnsHost', ({result}) => {
     if (result.name && dnsServerContext.hosts[result.name]) {
+
+        dnsServerContext.hosts[result.name].group = result.group
+
         if( result.block !== undefined) {
             dnsServerContext.hosts[result.name].block = result.block
         }
@@ -157,7 +161,11 @@ Hook.on('typeUpdated_DnsHost', ({result}) => {
         }
     }
 })
-
+Hook.on('typeUpdated_DnsHostGroup', ({result}) => {
+    if (dnsServerContext.hostsGroup[result._id]) {
+        dnsServerContext.hostsGroup[result._id].block = result.block
+    }
+})
 Hook.on('appexit', async () => {
     await insertBuffer()
 })
@@ -174,26 +182,56 @@ const resolveDnsQuestion = async (question) => {
 }
 
 const readHosts = async (db) => {
-    (await db.collection('DnsHost').find().forEach(o => {
-        dnsServerContext.hosts[o.name] = {block: o.block, subdomains: o.subdomains, count: o.count}
-    }))
+    await db.collection('DnsHost').find().forEach(o => {
+        dnsServerContext.hosts[o.name] = {block: o.block, subdomains: o.subdomains, count: o.count, group: o.group}
+    })
+
+    await db.collection('DnsHostGroup').find().forEach(o => {
+        dnsServerContext.hostsGroup[o._id] = {block: o.block}
+    })
 }
 
+
+const isHostGroupBlocked = (hostname) => {
+    let block = false
+    const groups = dnsServerContext.hosts[hostname].group || []
+    for (const group of groups) {
+        const hostGroup = dnsServerContext.hostsGroup[group.toString()]
+        if (hostGroup.block) {
+            block = true
+            break
+        }
+    }
+    return block
+}
 
 const isHostBlocked = (hostname) => {
     let block = dnsServerContext.hosts[hostname].block === true
 
+    if(!block){
+        // check group blocking
+        block = isHostGroupBlocked(hostname)
+    }
+
     if (!block) {
         //check subdomains
-        let subname = hostname
-        let pos = subname.indexOf('.')
+        let subHostname = hostname
+        let pos = subHostname.indexOf('.')
         while (pos >= 0) {
-            subname = subname.substring(pos + 1)
-            if (dnsServerContext.hosts[subname] && dnsServerContext.hosts[subname].block === true && dnsServerContext.hosts[subname].subdomains === true) {
-                block = true
-                break
+            subHostname = subHostname.substring(pos + 1)
+            if (dnsServerContext.hosts[subHostname] && dnsServerContext.hosts[subHostname].subdomains === true) {
+
+                if(dnsServerContext.hosts[subHostname].block === true) {
+                    block = true
+                    break
+                }else{
+                    block = isHostGroupBlocked(subHostname)
+                    if(block){
+                        break
+                    }
+                }
             }
-            pos = subname.indexOf('.')
+            pos = subHostname.indexOf('.')
         }
     }
     return block

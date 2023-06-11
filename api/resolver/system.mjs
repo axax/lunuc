@@ -5,7 +5,8 @@ import config from '../../gensrc/config.mjs'
 import {
     CAPABILITY_MANAGE_BACKUPS,
     CAPABILITY_MANAGE_COLLECTION,
-    CAPABILITY_RUN_COMMAND
+    CAPABILITY_RUN_COMMAND,
+    CAPABILITY_BULK_EDIT
 } from '../../util/capabilities.mjs'
 import Cache from '../../util/cache.mjs'
 import {pubsub} from '../subscription.mjs'

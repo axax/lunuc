@@ -18,7 +18,7 @@ const register = async (db) => {
     const results = (await db.collection('Hook').find({active: true}).toArray())
     let frontEndHooks = '/* this file is generated */\nimport Hook from \'../../../util/hook.cjs\'\n\n'
     let frontEndAdminHooks = frontEndHooks
-    results.forEach(async entry => {
+    for (const entry of results) {
         if (!entry.execfilter || Util.execFilter(entry.execfilter)) {
             console.log(`register hook ${entry.name} (${entry.hook})`)
 
@@ -69,7 +69,7 @@ const register = async (db) => {
             }
 
         }
-    })
+    }
     fs.writeFile(GENSRC_PATH + '/frontendhook.js', frontEndHooks, function (err) {
         if (err) {
             return console.log(err)

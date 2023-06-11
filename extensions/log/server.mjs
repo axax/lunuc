@@ -132,6 +132,26 @@ Hook.on('HookError', async ({entry, error}) => {
     }
 })
 
+Hook.on('ServerScriptError', async ({slug, methodName, args, error}) => {
+    if(mydb) {
+        GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {
+            location: slug,
+            type: 'serverScriptError',
+            message: error.message ? error.message + '\n\n' + error.stack : JSON.stringify(error),
+            meta: {methodName, args}
+        })
+    }
+})
+Hook.on('CronJobError', async ({db, context, scriptLanguage, script, cronjobId, error}) => {
+    GenericResolver.createEntity(db, {context: context}, 'Log', {
+        location: cronjobId,
+        type: 'cronJobError',
+        message: error.message ? error.message : JSON.stringify(error),
+        meta: {scriptLanguage, script}
+    })
+
+})
+
 Hook.on('invalidLogin', async ({context, db, username, ip, domain}) => {
     console.log(username, ip)
     GenericResolver.createEntity(db, {context}, 'Log', {

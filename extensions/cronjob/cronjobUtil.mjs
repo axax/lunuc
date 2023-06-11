@@ -7,6 +7,7 @@ import { spawn } from 'child_process'
 import path from 'path'
 import {createRequireForScript} from '../../util/require.mjs'
 import { fileURLToPath } from 'url'
+import Hook from "../../util/hook.cjs";
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const cronjobUtil = {
@@ -31,6 +32,7 @@ const cronjobUtil = {
         }, debug = (msg) => {
             result.scriptDebug += msg
         }, error = (msg) => {
+            Hook.call('CronJobError', {db, context, cronjobId, scriptLanguage, script, error: {message:msg}})
             result.scriptError += msg
         }
 

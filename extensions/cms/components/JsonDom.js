@@ -445,7 +445,6 @@ class JsonDom extends React.Component {
 
     render() {
         const {template, script, resolvedData, parseResolvedData, _props, _key, loading} = this.props
-
         if (!template) {
             console.warn('Template is missing.', this.props)
             return null

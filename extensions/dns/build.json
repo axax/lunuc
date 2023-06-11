@@ -1,6 +1,22 @@
 {
   "types": [
     {
+      "name": "DnsHostGroup",
+      "fields": [
+        {
+          "name": "name",
+          "required": true,
+          "unique": true,
+          "index": 1,
+          "alwaysUpdate": true
+        },
+        {
+          "name": "block",
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
       "name": "DnsHost",
       "noUserRelation": true,
       "fields": [
@@ -10,6 +26,11 @@
           "unique": true,
           "index": 1,
           "alwaysUpdate": true
+        },
+        {
+          "name": "group",
+          "type": "DnsHostGroup",
+          "multi": true
         },
         {
           "name": "block",

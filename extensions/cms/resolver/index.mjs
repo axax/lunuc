@@ -314,12 +314,17 @@ export default db => ({
                 })
                 if (script.error) {
                     result = {error: script.error}
+                    Hook.call('ServerScriptError', {slug, methodName, args, error: script.error})
                     console.log(script.error)
                 } else {
                     result = await script.result
+                    if(result.error){
+                        Hook.call('ServerScriptError', {slug, methodName, args, error: result.error})
+                        console.log(result.error)
+                    }
                 }
             } catch (error) {
-                console.log(error)
+                Hook.call('ServerScriptError', {slug, methodName, args, error: script.error})
                 result = {error: error.message}
             }
 
