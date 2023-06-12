@@ -569,7 +569,8 @@ const baseElements = [
                 value: ''
             },
             ...marginOptions('p_'),
-            ...classOptions('p_')
+            ...classOptions('p_'),
+            ...observeOptions()
         }
     },
     {

@@ -492,13 +492,17 @@ export default class AggregationBuilder {
                 dataQuery.push({$skip: offset})
                 dataQuery.push({$limit: this.options.limitCount})
 
-                dataFacetQuery.push({$skip: 0})
-                dataFacetQuery.push({$limit: limit})
+                if(!lookupFilters) {
+                    dataFacetQuery.push({$skip: 0})
+                    dataFacetQuery.push({$limit: limit})
+                }
 
             } else {
                 dataFacetQuery.push({$sort: facetSort})
-                dataFacetQuery.push({$skip: offset})
-                dataFacetQuery.push({$limit: limit})
+                if(!lookupFilters) {
+                    dataFacetQuery.push({$skip: offset})
+                    dataFacetQuery.push({$limit: limit})
+                }
             }
         } else {
             dataQuery.push({$sort: sort})
@@ -613,9 +617,14 @@ export default class AggregationBuilder {
         dataQuery.push(facet)
 
         // return offset and limit
-        dataQuery.push({
+        const addFields = {
             $addFields: {limit, offset, page, ...this.options.$addFields}
-        })
+        }
+        if(lookupFilters){
+            addFields.$addFields.total = {$size:'$results'}
+            addFields.$addFields.results = { $slice: ['$results', offset, limit ] }
+        }
+        dataQuery.push(addFields)
 
 
         return {dataQuery, countQuery, debugInfo: this.debugInfo}

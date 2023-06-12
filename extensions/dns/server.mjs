@@ -69,7 +69,8 @@ Hook.on('appready', async ({db, context}) => {
                 const hostBlocked = isHostBlocked(name)
 
                 if(hostBlocked && !dnsServerContext.settings.disabled){
-                    console.log(`DNS: block ${name}`)
+                    debugMessage(`DNS: block ${name}`)
+
                     response.answers.push({
                         name,
                         type: question.type,
@@ -87,7 +88,7 @@ Hook.on('appready', async ({db, context}) => {
                     response.additionals = resolvedQuestion.additionals
                     send(response)
 
-                    console.log(`DNS: resolved ${name} after ${new Date().getTime()-startTime}ms`)
+                    debugMessage(`DNS: resolved ${name} after ${new Date().getTime()-startTime}ms`)
                 }
 
                 dnsServerContext.dbBuffer[name] = {
@@ -172,6 +173,11 @@ Hook.on('appexit', async () => {
     await insertBuffer()
 })
 
+const debugMessage = (msg)=>{
+    if(dnsServerContext.settings.debug) {
+        console.log(msg)
+    }
+}
 
 const resolveDnsQuestion = async (question) => {
     const dns = new dns2({
