@@ -1186,6 +1186,7 @@ class GenericForm extends React.Component {
                                               sx={getSxProps(field)}
                                               InputLabelProps={{
                                                   shrink: true,
+                                                  'data-tooltip':(field.label ? field.name : '')
                                               }}
                                               inputProps={{
                                                   step: field.step || '',

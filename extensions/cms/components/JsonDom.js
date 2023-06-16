@@ -931,7 +931,7 @@ class JsonDom extends React.Component {
                                 scope,
                                 Util: Util,
                                 _t
-                            }).replace(/\t/g, '\\t'))
+                            }).replace(/\t/g, '\\t').replace(/\n/g, '\\n').replace(/\r/g, '\\r'))
 
                             const key = rootKey + '.' + aIdx + '.$loop.' + childIdx
                             scope[s] = loopChild

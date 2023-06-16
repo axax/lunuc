@@ -10,6 +10,7 @@ import {ObjectId} from 'mongodb'
 import {matchExpr} from '../../client/util/json.mjs'
 import {findProjection} from '../../util/project.mjs'
 import {getGenericTypeDefinitionWithStructure} from './util/index.mjs'
+import {getType} from "../../util/types.mjs";
 
 
 // Hook to add mongodb resolver
@@ -91,6 +92,34 @@ Hook.on('beforePubSub', async ({triggerName, payload, db, context}) => {
 })
 
 
+function getConditionalIdResolver(key) {
+    const id = {
+        $cond:
+            {
+                if: {$isArray: `$data.${key}`},
+                then: {
+                    $map: {
+                        input: `$data.${key}`, in: {
+                            $convert: {
+                                input: '$$this', to: 'objectId', onError: {
+                                    $convert: {input: '$$this._id', to: 'objectId'}
+                                }
+                            }
+                        }
+                    }
+                },
+                else: {
+                    $convert: {
+                        input: `$data.${key}`, to: 'objectId', onError: {
+                            $convert: {input: `$data.${key}._id`, to: 'objectId'}
+                        }
+                    }
+                }
+            }
+    }
+    return id;
+}
+
 async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
 
     if (field.genericType) {
@@ -142,30 +171,7 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
             otherOptions.lookups = []
         }
 
-        const id = {
-                $cond:
-                    {
-                        if: {$isArray: `$data.${key}`},
-                        then: {
-                            $map: {
-                                input: `$data.${key}`, in: {
-                                    $convert: {
-                                        input: '$$this', to: 'objectId', onError: {
-                                            $convert: {input: '$$this._id', to: 'objectId'}
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        else: {
-                            $convert: {
-                                input: `$data.${key}`, to: 'objectId', onError: {
-                                    $convert: {input: `$data.${key}._id`, to: 'objectId'}
-                                }
-                            }
-                        }
-                    }
-            }
+        const id = getConditionalIdResolver(key)
 
         const subLookup = []
         if (otherOptions.lookupLevel > 1 || (otherOptions.lookupLevel === undefined && currentProjection && currentProjection.length > 0 )) {
@@ -331,6 +337,32 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
                 }
             })
         }
+    }else if(field.lookup && field.type){
+        const typeDef = getType(field.type)
+        if(typeDef){
+        }
+        if (!otherOptions.lookups) {
+            otherOptions.lookups = []
+        }
+
+        const id = getConditionalIdResolver(field.name)
+        otherOptions.lookups.push({
+            $addFields: {
+                [`${field.name}ObjectId`]: id
+            }
+        })
+
+        otherOptions.lookups.push({
+            $lookup: {
+                from: field.type,
+                localField: `${field.name}ObjectId`,
+                foreignField: '_id',
+                as: `data.${field.name}`,
+                pipeline: [],
+            }
+        })
+
+        console.log('todo',otherOptions)
     }
 }
 
@@ -597,15 +629,10 @@ Hook.on('typeBeforeCreate', async ({db, type, data}) => {
                             data[key] = dvalue
                         }
                     }
-
                 })
             }
-
         }
-
-
     }
-
 })
 
 
