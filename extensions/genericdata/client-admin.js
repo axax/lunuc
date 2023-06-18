@@ -407,8 +407,7 @@ export default () => {
 
             // Combine data attributes to the data object
             definition.structure.fields.forEach(field => {
-
-                if (field.genericType) {
+                if (field.genericType || field.lookup) {
                     // only keep reference _id
                     const fieldData = editedData['data_' + field.name]
                     if (fieldData && fieldData.constructor === Array && fieldData.length > 0 && fieldData[0]._id) {

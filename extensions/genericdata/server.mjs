@@ -361,8 +361,6 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
                 pipeline: [],
             }
         })
-
-        console.log('todo',otherOptions)
     }
 }
 
