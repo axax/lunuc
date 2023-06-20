@@ -110,8 +110,18 @@ class ElementWatch extends React.Component {
                 }
 
             }
+
+            const propsToPass = {}
+            if($observe.passProps) {
+                Object.keys(eleProps).forEach(key => {
+                    if (key.startsWith('data') || key === 'className') {
+                        propsToPass[key] = eleProps[key]
+                    }
+                })
+            }
+
             return <div data-element-watch-key={key} data-wait-visible={jsonDom.instanceId}
-                        style={{minHeight: '1rem', minWidth: '1rem'}}></div>
+                        style={{minHeight: '1rem', minWidth: '1rem'}} {...propsToPass}></div>
         } else {
             if (eleProps.inlineSvg && ElementWatch.loadedSvgData[tagSrc]) {
                 eleProps.svgData = ElementWatch.loadedSvgData[tagSrc].data
