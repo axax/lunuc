@@ -305,7 +305,7 @@ class JsonDom extends React.Component {
             }
             if (slugChanged || locationChanged || templateChanged || propsChanged || scriptChanged) {
                 this.json = this.jsonRaw = null
-                this.updateScope = true
+                this.updateScope = {locationChanged}
             } else if (userChanged) {
                 // set new user to scope
                 this.scope.user = props.user
@@ -1184,6 +1184,9 @@ class JsonDom extends React.Component {
 
     getScope(props) {
         if (this.updateScope) {
+            if(this.updateScope.locationChanged){
+                delete this.scope.props
+            }
             this.updateScope = false
             this.scope.page = {slug: props.slug, lang: _app_.lang, title: props.title ? props.title[_app_.lang] : ''}
             this.scope.user = props.user

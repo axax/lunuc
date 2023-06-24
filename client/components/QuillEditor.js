@@ -87,6 +87,19 @@ class QuillEditor extends React.Component {
                 ]
                 this.quill = new Quill('#quilleditor' + this.instanceId, {
                     modules: {
+                        keyboard: {
+                            bindings: {
+                                linebreak: {
+                                    key: 13,
+                                    shiftKey: true,
+                                    handler: function(range) {
+                                        this.quill.insertEmbed(range.index, 'breaker', true, Quill.sources.USER);
+                                        this.quill.setSelection(range.index + 1, Quill.sources.SILENT);
+                                        return false;
+                                    }
+                                }
+                            }
+                        },
                         toolbar: {
                             container: toolbar,
                             handlers: {
@@ -110,6 +123,14 @@ class QuillEditor extends React.Component {
                     },
                     theme
                 })
+
+                let Embed = Quill.import('blots/embed')
+                class Breaker extends Embed {
+                    static tagName = 'br';
+                    static blotName = 'breaker';
+                }
+
+                Quill.register(Breaker)
 
                 this.txtArea = document.createElement("textarea")
                 this.txtArea.style.cssText =
