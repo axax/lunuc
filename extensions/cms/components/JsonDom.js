@@ -246,7 +246,7 @@ class JsonDom extends React.Component {
 
     shouldComponentUpdate(props, state) {
         const resolvedDataChanged = this.props.resolvedData !== props.resolvedData
-        const locationChanged = this.props.location.search !== props.location.search ||
+        const searchChanged = this.props.location.search !== props.location.search ||
             this.props.location.hash !== props.location.hash
 
         const scriptChanged = (this.props.script !== props.script)
@@ -258,7 +258,7 @@ class JsonDom extends React.Component {
             userChanged = this.props.user !== props.user
 
         const updateIsNeeded = resolvedDataChanged ||
-            locationChanged ||
+            searchChanged ||
             scriptChanged ||
             templateChanged ||
             resourcesChanged ||
@@ -303,9 +303,10 @@ class JsonDom extends React.Component {
             if(!props.loading) {
                 this.removeAddedDomElements(false,true)
             }
-            if (slugChanged || locationChanged || templateChanged || propsChanged || scriptChanged) {
+            if (slugChanged || searchChanged || templateChanged || propsChanged || scriptChanged) {
                 this.json = this.jsonRaw = null
-                this.updateScope = {locationChanged}
+              //  console.log(props.slug, slugChanged,searchChanged, templateChanged,scriptChanged, props.location.href, this.props.location.href)
+                this.updateScope = {renewProps: propsChanged}
             } else if (userChanged) {
                 // set new user to scope
                 this.scope.user = props.user
@@ -1184,7 +1185,7 @@ class JsonDom extends React.Component {
 
     getScope(props) {
         if (this.updateScope) {
-            if(this.updateScope.locationChanged){
+            if(this.updateScope.renewProps){
                 delete this.scope.props
             }
             this.updateScope = false
