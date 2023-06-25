@@ -4,8 +4,6 @@ import schemaGen from './gensrc/schema'
 import resolverGen from './gensrc/resolver'
 import {deepMergeToFirst} from 'util/deepMerge.mjs'
 import Util from '../../api/util/index.mjs'
-
-
 dns2.Packet.TYPE['HTTPS'] = 65
 const dnsServerContext = {
     server: false,
@@ -41,6 +39,20 @@ Hook.on('appready', async ({db, context}) => {
         // refresh settings every minute
         setInterval(async ()=>{
             dnsServerContext.settings =  (await Util.getKeyValueGlobal(db, context, "DnsSettings", true)) || {}
+
+            Object.keys(dnsServerContext.hostsGroup).forEach(key=>{
+                const hostGroup = dnsServerContext.hostsGroup[key]
+
+                if(!hostGroup.block && hostGroup.blockRule){
+
+                    const tpl = new Function(hostGroup.blockRule)
+                    hostGroup._block = tpl.call({})
+
+                }
+
+            })
+
+
         }, 1000 * 60)
 
         dnsServerContext.database = db
@@ -167,6 +179,7 @@ Hook.on(['typeUpdated_DnsHostGroup','typeCreated_DnsHostGroup'], ({result}) => {
         dnsServerContext.hostsGroup[result._id] = result
     }
     dnsServerContext.hostsGroup[result._id].block = result.block
+    dnsServerContext.hostsGroup[result._id].blockRule = result.blockRule?result.blockRule.trim():''
 })
 
 Hook.on('appexit', async () => {
@@ -195,7 +208,7 @@ const readHosts = async (db) => {
     })
 
     await db.collection('DnsHostGroup').find().forEach(o => {
-        dnsServerContext.hostsGroup[o._id] = {block: o.block}
+        dnsServerContext.hostsGroup[o._id] = {block: o.block, blockRule: o.blockRule?o.blockRule.trim():''}
     })
 }
 
@@ -214,7 +227,7 @@ const isHostGroupBlocked = (hostname) => {
 }
 
 const isHostBlocked = (hostname) => {
-    let block = dnsServerContext.hosts[hostname].block === true
+    let block = dnsServerContext.hosts[hostname].block === true || dnsServerContext.hosts[hostname]._block === true
 
     if(!block){
         // check group blocking

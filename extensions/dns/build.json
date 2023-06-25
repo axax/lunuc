@@ -13,6 +13,11 @@
         {
           "name": "block",
           "type": "Boolean"
+        },
+        {
+          "name": "blockRule",
+          "uitype": "jseditor",
+          "alwaysLoad": false
         }
       ]
     },
