@@ -11,6 +11,7 @@ const ROOT_DIR = path.resolve()
 const STATIC_PRIVAT_ABS = path.join(ROOT_DIR, STATIC_PRIVATE_DIR)
 const STATIC_ABS = path.join(ROOT_DIR, STATIC_DIR)
 const API_ABS = path.join(ROOT_DIR, './api')
+const SERVER_ABS = path.join(ROOT_DIR, './server')
 const CLIENT_ABS = path.join(ROOT_DIR, './client')
 const EXTENSION_ABS = path.join(ROOT_DIR, './extensions')
 const GENSRC_ABS = path.join(ROOT_DIR, './gensrc')
@@ -43,6 +44,10 @@ export const createRequireForScript = (importPath) => {
                 {
                     name: 'api',
                     path: '${API_ABS}'
+                },
+                {
+                    name: 'server',
+                    path: '${SERVER_ABS}'
                 },
                 {
                     name: 'client',
