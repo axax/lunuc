@@ -233,6 +233,7 @@ Hook.on('Types', ({types}) => {
                 required: true
             },
             {
+                type:'String',
                 name: 'value',
                 uitype: 'editor'
             }

@@ -278,7 +278,9 @@ const Util = {
         let image
         if (!raw) {
             let src
-            if (options && options.resize && options.resize.height && options.resize.width) {
+            if(options.placeholder){
+                src = options.placeholder
+            }else if (options && options.resize && options.resize.height && options.resize.width) {
                 src = Util.createDummySvg(options.resize.width, options.resize.height)
             } else {
                 src = '/placeholder.svg'

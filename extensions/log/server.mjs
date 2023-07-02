@@ -153,7 +153,7 @@ Hook.on('CronJobError', async ({db, context, scriptLanguage, script, cronjobId, 
     GenericResolver.createEntity(db, {context: context}, 'Log', {
         location: cronjobId,
         type: 'cronJobError',
-        message: error.message ? error.message : JSON.stringify(error),
+        message: error.message ? JSON.stringify(error.message) : JSON.stringify(error),
         meta: {scriptLanguage, script}
     })
 

@@ -8,6 +8,7 @@
       },
       "fields": [
         {
+          "type": "String",
           "name": "message",
           "uitype": "editor"
         },

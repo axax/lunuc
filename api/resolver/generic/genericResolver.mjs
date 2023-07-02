@@ -51,7 +51,12 @@ const postConvertData = async (data, {typeName, db}) => {
                     // convert type Object to String
                     // item[field.name] = JSON.stringify(item[field.name])
                     if (field) {
-                        if (field.type === 'Object') {
+                        if(field.type==='String'){
+                            if (item[field.name] && item[field.name].constructor !== String) {
+                                //console.log(`convert ${typeName}.${field.name} to string`)
+                                item[field.name] = JSON.stringify(item[field.name])
+                            }
+                        }else if (field.type === 'Object') {
                             hasField = true
                             // TODO: with mongodb 4 this can be removed as convert and toString is supported
                             if (item[field.name] && (item[field.name].constructor === Object || item[field.name].constructor === Array)) {

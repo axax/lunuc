@@ -26,7 +26,7 @@ import ffmpeg from 'fluent-ffmpeg'
 //import heapdump from 'heapdump'
 import {clientAddress} from '../util/host.mjs'
 import Cache from '../util/cache.mjs'
-import {doScreenCapture} from './util/index.mjs'
+import {doScreenCapture, extendHeaderWithRange} from './util/index.mjs'
 import {createSimpleEtag} from './util/etag.mjs'
 import {resizeImage} from './util/resizeImage.mjs'
 
@@ -891,26 +891,6 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, filename}) {
 }
 
 
-const extendHeaderWithRange = (headerExtra, req, stat)=>{
-
-    headerExtra['Accept-Ranges'] = 'bytes'
-
-    const range = req.headers.range
-
-    if (range) {
-        //delete headerExtra['Cache-Control']
-        const parts = range.replace(/bytes=/, '').split('-'),
-            partialstart = parts[0],
-            partialend = parts[1],
-            start = parseInt(partialstart, 10),
-            end = partialend ? parseInt(partialend, 10) : stat.size - 1,
-            chunksize = (end - start) + 1
-
-        headerExtra['Content-Range'] = 'bytes ' + start + '-' + end + '/' + stat.size
-        headerExtra['Content-Length'] = chunksize
-        return {start, end}
-    }
-}
 
 async function resolveUploadedFile(uri, parsedUrl, req, res) {
 
