@@ -14,7 +14,7 @@ export const heicConvert = ({source, target, quality})=>{
         const convert = ChildProcess.spawn('heif-convert', tags)
 
         convert.on('error', (err) => {
-            resolve({error: 'Fatal Error: Unable to load exiftool. ' + err})
+            resolve({error: err})
         })
 
         // Read the binary data back
