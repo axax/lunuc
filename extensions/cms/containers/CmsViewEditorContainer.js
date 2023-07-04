@@ -639,7 +639,7 @@ class CmsViewEditorContainer extends React.Component {
                                    value={this.state.keyword ? this.state.keyword[_app_.lang] : ''}
                                    fullWidth={true}/>
 
-                        {canMangeCmsTemplate && <React.Fragment>
+                        {canMangeCmsTemplate ? <React.Fragment>
                             <SimpleSelect
                                 fullWidth={true}
                                 label="Url sensitive (refresh component on url or props change)"
@@ -659,7 +659,7 @@ class CmsViewEditorContainer extends React.Component {
                                 onChange={this.handleFlagChange.bind(this, 'ssr')}
                             /><br/>
                             <SimpleSwitch
-                                label="Public (is visible to everyone)"
+                                label={_t('CmsViewEditorContainer.public')}
                                 checked={!!this.state.public}
                                 onChange={this.handleFlagChange.bind(this, 'public')}
                             /><br/>
@@ -692,7 +692,16 @@ class CmsViewEditorContainer extends React.Component {
                                 label="Parse resolvedData in frontend (replace placeholders)"
                                 checked={!!this.state.parseResolvedData}
                                 onChange={this.handleFlagChange.bind(this, 'parseResolvedData')}
-                            /></React.Fragment>}
+                            /></React.Fragment>:
+                            <React.Fragment>
+
+                                <SimpleSwitch
+                                    label={_t('CmsViewEditorContainer.public')}
+                                    checked={!!this.state.public}
+                                    onChange={this.handleFlagChange.bind(this, 'public')}
+                                /><br/>
+
+                            </React.Fragment>}
                     </Expandable>
 
                     {!loadingState && <Expandable title={_t('CmsViewEditorContainer.revisions')}
