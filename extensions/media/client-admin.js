@@ -58,7 +58,7 @@ export default () => {
                         image =
                             (mimeType[0] === 'image' ?
                                     <img style={{maxWidth: '6rem', maxHeight: '6rem', objectFit: 'cover'}}
-                                         src={item.src || `${UPLOAD_URL}/${item._id}/${PRETTYURL_SEPERATOR}/${item.name}?width=96&format=jpg`}/>
+                                         src={item.src || `${UPLOAD_URL}/${item._id}/${PRETTYURL_SEPERATOR}/${item.name}?width=96`}/>
                                     :
                                     <div className="file-icon"
                                          data-type={mimeType.length > 1 ? mimeType[1] : 'doc'}></div>
