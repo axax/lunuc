@@ -77,7 +77,6 @@
     "graphql": "^16.6.0",
     "graphql-subscriptions": "^2.0.0",
     "graphql-tools": "^9.0.0",
-    "heic-convert": "^1.2.4",
     "http2-proxy": "^5.0.53",
     "jsonwebtoken": "^9.0.0",
     "mongodb": "^5.6.0",

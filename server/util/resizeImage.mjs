@@ -1,6 +1,5 @@
 import sharp from 'sharp'
-import heicConvert from 'heic-convert'
-import { promisify } from 'util'
+import {heicConvert} from './heicConvert.mjs'
 import MimeType from '../../util/mime.mjs'
 import fs from 'fs'
 import path from 'path'
@@ -58,16 +57,20 @@ export const resizeImage = async (parsedUrl, req, filename) => {
 
                     let ext = path.extname(parsedUrl.pathname).toLowerCase()
 
-                    let imageBuffer
                     if(ext==='.heic'){
-
-                        const inputBuffer = await promisify(fs.readFile)(filename)
-                        imageBuffer = await heicConvert({
-                            buffer: inputBuffer, // the HEIC file buffer
-                            format: 'JPEG',      // output format
-                            quality: 0.5           // the jpeg compression quality, between 0 and 1
-                        })
-
+                        const heicTarget = `${filename}@${quality}.jpg`
+                        if (!fs.existsSync(heicTarget)) {
+                            const response = await heicConvert({
+                                source: filename,
+                                target: heicTarget,
+                                quality: quality
+                            })
+                            if (response.error) {
+                                console.warn(response)
+                                return {filename, exists, mimeType}
+                            }
+                        }
+                        filename = heicTarget
                     }
                     const sharpOptions = {}
                     if (ext === '.gif') {
@@ -75,7 +78,8 @@ export const resizeImage = async (parsedUrl, req, filename) => {
                         sharpOptions.animated = true
                     }
 
-                    let resizedFile = await sharp(imageBuffer || filename, sharpOptions).resize(resizeOptions)
+                    let resizedFile = await sharp(filename, sharpOptions).resize(resizeOptions)/*.withMetadata()*/
+
                     if (flip) {
                         resizedFile = await resizedFile.flip()
                     }
