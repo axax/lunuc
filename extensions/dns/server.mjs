@@ -48,6 +48,8 @@ Hook.on('appready', async ({db, context}) => {
                     const tpl = new Function(hostGroup.blockRule)
                     hostGroup._block = tpl.call({})
 
+                }else{
+                    hostGroup._block = false
                 }
 
             })
@@ -218,7 +220,7 @@ const isHostGroupBlocked = (hostname) => {
     const groups = dnsServerContext.hosts[hostname].group || []
     for (const group of groups) {
         const hostGroup = dnsServerContext.hostsGroup[group.toString()]
-        if (hostGroup.block) {
+        if (hostGroup.block || hostGroup._block) {
             block = true
             break
         }
@@ -227,7 +229,7 @@ const isHostGroupBlocked = (hostname) => {
 }
 
 const isHostBlocked = (hostname) => {
-    let block = dnsServerContext.hosts[hostname].block === true || dnsServerContext.hosts[hostname]._block === true
+    let block = dnsServerContext.hosts[hostname].block === true
 
     if(!block){
         // check group blocking
