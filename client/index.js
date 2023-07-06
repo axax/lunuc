@@ -61,11 +61,6 @@ function mainInit() {
         return
     }
 
-    const manifestLink = document.querySelector('link[rel=manifest]')
-    if(manifestLink){
-        manifestLink.setAttribute('href',`${manifestLink.href}&start_url=${cleanPathname}`)
-    }
-
     // context language
     // we expect the first part of the path to be the language when its length is 2
     const parts = loc.pathname.split('/')

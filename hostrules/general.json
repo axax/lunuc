@@ -3,6 +3,9 @@
     "/serviceworker.js": {
       "Cache-Control": "max-age=0, no-cache, no-store, must-revalidate"
     },
+    "/manifest.json": {
+      "Cache-Control": "max-age=0, no-cache, no-store, must-revalidate"
+    },
     "common": {
       "Access-Control-Allow-Origin": "https://www.lunuc.com",
       "Access-Control-Allow-Credentials": "true",

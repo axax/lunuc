@@ -397,6 +397,7 @@ class JsonDom extends React.Component {
     triggerMountEvent() {
         if (!this._ismounted && !this.props.loading) {
             this._ismounted = true
+            this.addDynamicManifest()
             setTimeout(() => {
                 this.node = ReactDOM.findDOMNode(this)
                 this.runJsEvent('mount')
@@ -410,6 +411,36 @@ class JsonDom extends React.Component {
             this._ismounted = false
             this.runJsEvent('unmount')
         }
+    }
+
+    addDynamicManifest(){
+        if (this.props.dynamic || this.props.editMode || document.querySelector('link[rel=manifest]')) {
+            return
+        }
+        const loc = window.location, ori = loc.origin, host = loc.host.replace(/^www./,'')
+        const manifest = {
+            short_name: `${host.replace(/.[a-z]{2,3}$/,'')}`,
+            name: `${host} app`,
+            description: `This is the app version of ${host}`,
+            display: 'standalone',
+            theme_color: '#f9f9fb',
+            background_color: '#f9f9fb',
+            orientation: 'any',
+            scope: '/',
+            icons: [
+                { src: `${ori}/favicon-192x192.png`, sizes: '192x192', type: 'image/png' },
+                { src: `${ori}/favicon-512x512.png`, sizes: '512x512', type: 'image/png' },
+                { src: `${ori}/favicon-maskable.png`, sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+            ],
+            start_url: loc.href
+        }
+        this.runJsEvent('manifest', false, {manifest})
+
+        DomUtil.createAndAddTag('link', 'head', {
+            rel: 'manifest',
+            jsonDomId: this.instanceId,
+            href: `data:application/json;base64,${btoa(JSON.stringify(manifest))}`
+        })
     }
 
     checkMetaTags(props) {
