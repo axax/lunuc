@@ -414,13 +414,13 @@ class JsonDom extends React.Component {
     }
 
     addDynamicManifest(){
-        if (this.props.dynamic || this.props.editMode || document.querySelector('link[rel=manifest]')) {
+        if (_app_.ssr || this.props.dynamic || this.props.editMode || document.querySelector('link[rel=manifest]')) {
             return
         }
         const loc = window.location, ori = loc.origin, host = loc.host.replace(/^www./,'')
         const manifest = {
             short_name: `${host.replace(/.[a-z]{2,3}$/,'')}`,
-            name: `${host} app`,
+            name: document.title,
             description: `This is the app version of ${host}`,
             display: 'standalone',
             theme_color: '#f9f9fb',
@@ -439,7 +439,7 @@ class JsonDom extends React.Component {
         DomUtil.createAndAddTag('link', 'head', {
             rel: 'manifest',
             jsonDomId: this.instanceId,
-            href: `data:application/json;base64,${btoa(JSON.stringify(manifest))}`
+            href: `data:application/json;base64,${btoa(JSON.stringify(manifest,null,4))}`
         })
     }
 
