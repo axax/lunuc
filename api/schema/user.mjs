@@ -42,6 +42,7 @@ export const userSchemaRaw = `
         password: String!
         email: String!
         emailConfirmed: Boolean!
+        blocked: Boolean
         requestNewPassword: Boolean
         picture: Media
         note: [Note]
@@ -133,6 +134,7 @@ export const userSchemaRaw = `
 			password: String!
 			picture: ID
 			emailConfirmed: Boolean
+			blocked: Boolean
 			requestNewPassword: Boolean
             role: ID
             meta: String
@@ -162,6 +164,7 @@ export const userSchemaRaw = `
 			password: String
             language: String
 			emailConfirmed: Boolean
+			blocked: Boolean
 			requestNewPassword: Boolean
             role: ID
             meta: String

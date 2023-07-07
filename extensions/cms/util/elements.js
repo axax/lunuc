@@ -6,8 +6,15 @@ const DEFAULT_TAB = 'Allgemein', IMAGE_OPTIMIZATION_TAB = 'Bild Optimierung', MA
     TRANSLATION_TAB = 'Übersetzung',
     MEDIA_PROJECTION = ['_id', 'size', 'name', 'group', 'src', 'mimeType']
 const imageOptions = key => ({
+    [`${key}options_hint`]: {
+        uitype: 'htmlParser',
+        html: `<i style="display:block;margin-bottom:1rem;font-size: 0.8rem;padding: 0.5rem;background-color: #fbfce1;">
+Nicht empfolen für SVG Bilder, da diese dabei in PNG umgewandelt werden. Im Tab ${MARGIN_TAB} kann die Anzeigegrösse gesetzt werden.</i>`,
+        tab: IMAGE_OPTIMIZATION_TAB
+    },
     [`${key}options_quality`]: {
         type: 'number',
+        newLine:true,
         label: 'Qualität (Wert zwischen 1 und 100)',
         tab: IMAGE_OPTIMIZATION_TAB
     },
@@ -449,7 +456,7 @@ const baseElements = [
                 enum: [
                     {
                         name: 'Keine',
-                        value: 'none'
+                        value: {float: ''}
                     },
                     {
                         name: 'Rechts',

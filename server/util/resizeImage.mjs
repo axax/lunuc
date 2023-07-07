@@ -45,6 +45,12 @@ export const resizeImage = async (parsedUrl, req, filename) => {
                 quality = 80
             }
 
+            let ext = path.extname(parsedUrl.pathname).toLowerCase()
+            if(ext==='.svg' && !format){
+                // convert svg to png by default
+                format = 'png'
+            }
+
             let modfilename = `${filename}@${width}x${height}-${quality}${fit ? '-' + fit : ''}${position ? '-' + position : ''}${format ? '-' + format : ''}${flip ? '-flip' : ''}${flop ? '-flop' : ''}${withoutEnlargement ? '-noenlarge' : ''}${bg ? '-' + bg : ''}`
             if (format) {
                 mimeType = MimeType.detectByExtension(format)
@@ -54,8 +60,6 @@ export const resizeImage = async (parsedUrl, req, filename) => {
             if (!fs.existsSync(modfilename)) {
                 console.log(`modify file ${filename} to ${modfilename}`)
                 try {
-
-                    let ext = path.extname(parsedUrl.pathname).toLowerCase()
 
                     if(ext==='.heic'){
                         const heicTarget = `${filename}@${quality}.jpg`

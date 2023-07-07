@@ -23,7 +23,7 @@ const LOGIN_ATTEMPTS_MAP = {},
     MAX_LOGIN_ATTEMPTS = 10,
     LOGIN_DELAY_IN_SEC = 180
 
-const createUser = async ({username, role, junior, group, setting, password, language, email, emailConfirmed, requestNewPassword, meta, domain, picture, db, context}, opts) => {
+const createUser = async ({username, role, junior, group, setting, password, language, email, emailConfirmed, blocked, requestNewPassword, meta, domain, picture, db, context}, opts) => {
 
     if (!opts) {
         opts = {override: false, skipCheck: false}
@@ -131,6 +131,7 @@ const createUser = async ({username, role, junior, group, setting, password, lan
         setting: settingsIds,
         junior: juniorIds,
         emailConfirmed: !!emailConfirmed,
+        blocked: !!blocked,
         requestNewPassword: !!requestNewPassword,
         email: email,
         username: username,
@@ -228,7 +229,7 @@ export const userResolver = (db) => ({
                 }
                 options.sort = 'customOrder desc'
             }
-            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'signupToken', 'language', 'picture', 'email', 'meta', 'domain', 'emailConfirmed', 'requestNewPassword', 'role$UserRole', 'junior$[User]', 'group$[UserGroup]', 'setting$[UserSetting]', 'lastLogin', 'lastActive'], options)
+            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'signupToken', 'language', 'picture', 'email', 'meta', 'domain', 'emailConfirmed', 'blocked', 'requestNewPassword', 'role$UserRole', 'junior$[User]', 'group$[UserGroup]', 'setting$[UserSetting]', 'lastLogin', 'lastActive'], options)
         },
         userRoles: async ({limit, page, offset, filter, sort}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
@@ -259,6 +260,8 @@ export const userResolver = (db) => ({
             const user = (await db.collection('User').findOneAndUpdate({_id: new ObjectId(context.id)}, {$set: {lastActive: new Date().getTime()}})).value
             if (!user) {
                 throw new Error('User doesn\'t exist')
+            }else if(user.blocked){
+                throw new Error(_t('core.login.blocked', context.lang))
             } else {
                 user.role = await Util.getUserRoles(db, user.role)
 
@@ -321,7 +324,7 @@ export const userResolver = (db) => ({
                 const time = new Date().getTime()
 
                 if (time - LOGIN_ATTEMPTS_MAP[ip].lasttry < LOGIN_DELAY_IN_SEC * 1000) {
-                    return {error: _t('core.login.blocked', context.lang), token: null, user: null}
+                    return {error: _t('core.login.blocked.temporarily', context.lang), token: null, user: null}
                 } else {
                     delete LOGIN_ATTEMPTS_MAP[ip]
                 }
@@ -481,7 +484,7 @@ export const userResolver = (db) => ({
         }
     },
     Mutation: {
-        createUser: async ({username, password, email, language, meta, domain, picture, emailConfirmed, requestNewPassword, role, junior, group, setting}, {context}) => {
+        createUser: async ({username, password, email, language, meta, domain, picture, emailConfirmed, blocked, requestNewPassword, role, junior, group, setting}, {context}) => {
 
 
             if(!await Util.userHasAccessRights(db,context,{typeName:'User', access:'create'})){
@@ -501,6 +504,7 @@ export const userResolver = (db) => ({
                 domain,
                 email,
                 emailConfirmed,
+                blocked,
                 requestNewPassword,
                 password,
                 role,
@@ -579,7 +583,7 @@ export const userResolver = (db) => ({
                 return result
             }
         },
-        updateUser: async ({_id, username, email, password, picture, language, emailConfirmed, requestNewPassword, role, junior, meta, domain, group, setting}, {context}) => {
+        updateUser: async ({_id, username, email, password, picture, language, emailConfirmed, blocked, requestNewPassword, role, junior, meta, domain, group, setting}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
             if(!await Util.userHasAccessRights(db,context,{typeName:'User', access:'update'})){
@@ -604,6 +608,9 @@ export const userResolver = (db) => ({
 
             if (emailConfirmed !== undefined) {
                 user.emailConfirmed = emailConfirmed
+            }
+            if (blocked !== undefined) {
+                user.blocked = blocked
             }
             if (requestNewPassword !== undefined) {
                 user.requestNewPassword = requestNewPassword

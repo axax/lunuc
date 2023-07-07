@@ -14,6 +14,8 @@ export const auth = {
 
         if (!user) {
             return {error: _t('core.login.invalid', context.lang), token: null, user: null}
+        }else if(user.blocked){
+            return {error: _t('core.login.blocked', context.lang), token: null, user: null}
         } else if (Util.compareWithHashedPassword(password, user.password)) {
             user.role = await Util.getUserRoles(db, user.role)
 

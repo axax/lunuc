@@ -377,6 +377,11 @@ Hook.on('Types', ({types}) => {
                 vagueSearchable:false
             },
             {
+                name: 'blocked',
+                type: 'Boolean',
+                vagueSearchable:false
+            },
+            {
                 name: 'meta',
                 type: 'Object',
                 uitype: 'json',
