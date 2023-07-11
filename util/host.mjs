@@ -24,7 +24,6 @@ export const getHostFromHeaders= (headers) => {
             if (headers.host) {
                 host = headers.host.split(':')[0]
             } else {
-                console.log(headers)
                 host = ''
             }
         }

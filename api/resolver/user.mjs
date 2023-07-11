@@ -642,7 +642,6 @@ export const userResolver = (db) => ({
                         domain: domain ? domain : undefined,
                         $or: [{email}]
                     }))
-                    console.log(existingUser)
                     if (existingUser != null && existingUser._id.toString() !== _id) {
                         throw new ApiError(`Email ${email} already taken`, 'email.taken')
                     } else {

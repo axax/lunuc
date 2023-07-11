@@ -160,7 +160,6 @@ Hook.on('CronJobError', async ({db, context, scriptLanguage, script, cronjobId, 
 })
 
 Hook.on('invalidLogin', async ({context, db, username, ip, domain}) => {
-    console.log(username, ip)
     GenericResolver.createEntity(db, {context}, 'Log', {
         location: 'login',
         type: 'invalidLogin',

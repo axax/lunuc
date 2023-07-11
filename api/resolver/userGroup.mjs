@@ -7,9 +7,9 @@ import {
 
 export const userGroupResolver = (db) => ({
     Query: {
-        userGroups: async ({limit, page, offset, filter, sort}, {context}) => {
-            Util.checkIfUserIsLoggedIn(context)
-            return await GenericResolver.entities(db, context, 'UserGroup', ['name'], {
+        userGroups: async ({limit, page, offset, filter, sort}, req) => {
+            Util.checkIfUserIsLoggedIn(req.context)
+            return await GenericResolver.entities(db, req, 'UserGroup', ['name'], {
                 limit,
                 page,
                 offset,
