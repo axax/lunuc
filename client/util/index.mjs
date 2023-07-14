@@ -2,6 +2,7 @@ import {getType, getTypes, getTypeQueries} from '../../util/types.mjs'
 import DomUtil from './dom.mjs'
 import config from '../../gensrc/config-client.js'
 import {replacePlaceholders} from '../../util/placeholders.mjs'
+import {propertyByPath} from './json.mjs'
 
 /**
  * Object with general client helper methods. It is also accessible in the CMS Editor
@@ -12,6 +13,7 @@ const DATE_FORMATS = {}
 const Util = {
     getType: getType,
     getTypes: getTypes,
+    propertyByPath: propertyByPath,
     getTypeQueries: getTypeQueries,
     replacePlaceholders: replacePlaceholders,
     escapeDoubleQuotes: (str) => {
