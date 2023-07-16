@@ -1566,8 +1566,10 @@ class JsonDom extends React.Component {
             }
             return data
         }
-
-        return jsGetComponentRec(this.getRootComponent(), {})
+        const root = this.getRootComponent()
+        const data = {root:{comp:root,id:root.instanceId}}
+        jsGetComponentRec(root, data)
+        return data
     }
     getComponent = (id) => {
         if (id) {
