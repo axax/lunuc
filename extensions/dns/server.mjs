@@ -177,11 +177,12 @@ Hook.on('typeUpdated_DnsHost', ({result}) => {
     }
 })
 Hook.on(['typeUpdated_DnsHostGroup','typeCreated_DnsHostGroup'], ({result}) => {
-    if (!dnsServerContext.hostsGroup[result._id]) {
-        dnsServerContext.hostsGroup[result._id] = result
+    const id = result._id.toString()
+    if (!dnsServerContext.hostsGroup[id]) {
+        dnsServerContext.hostsGroup[id] = result
     }
-    dnsServerContext.hostsGroup[result._id].block = result.block
-    dnsServerContext.hostsGroup[result._id].blockRule = result.blockRule?result.blockRule.trim():''
+    dnsServerContext.hostsGroup[id].block = result.block
+    dnsServerContext.hostsGroup[id].blockRule = result.blockRule?result.blockRule.trim():''
 })
 
 Hook.on('appexit', async () => {
@@ -210,7 +211,7 @@ const readHosts = async (db) => {
     })
 
     await db.collection('DnsHostGroup').find().forEach(o => {
-        dnsServerContext.hostsGroup[o._id] = {block: o.block, blockRule: o.blockRule?o.blockRule.trim():''}
+        dnsServerContext.hostsGroup[o._id.toString()] = {block: o.block, blockRule: o.blockRule?o.blockRule.trim():''}
     })
 }
 
