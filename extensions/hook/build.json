@@ -33,7 +33,8 @@
             "Frontend",
             "FrontendAdmin",
             "OnMail",
-            "beforeMailSend"
+            "beforeMailSend",
+            "beforeCmsPage"
           ],
           "index": 1
         },

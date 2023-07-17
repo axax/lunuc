@@ -5,11 +5,22 @@ import {getHostFromHeaders} from '../../../util/host.mjs'
 import Cache from '../../../util/cache.mjs'
 import {preprocessCss} from './cssPreprocessor.mjs'
 import {loadAllHostrules, hostListFromString} from '../../../util/hostrules.mjs'
+import Hook from "../../../util/hook.cjs";
 
 const hostrules = loadAllHostrules(false)
 
 
-export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, inEditor, _version, headers, ignorePublicState}) => {
+export const getCmsPage = async (params) => {
+
+
+    if (Hook.hooks['beforeCmsPage'] && Hook.hooks['beforeCmsPage'].length) {
+        for (let i = 0; i < Hook.hooks['beforeCmsPage'].length; ++i) {
+            await Hook.hooks['beforeCmsPage'][i].callback(params)
+        }
+    }
+
+    const {db, context, slug, editmode, checkHostrules, inEditor, _version, headers, ignorePublicState} = params
+
     let host = headers && headers['x-host-rule'] ? headers['x-host-rule'].split(':')[0] : getHostFromHeaders(headers)
 
     if (!host) {
