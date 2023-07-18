@@ -10,16 +10,16 @@ import Hook from "../../../util/hook.cjs";
 const hostrules = loadAllHostrules(false)
 
 
-export const getCmsPage = async (params) => {
+export const getCmsPage = async ({db, context, headers, params}) => {
 
 
     if (Hook.hooks['beforeCmsPage'] && Hook.hooks['beforeCmsPage'].length) {
         for (let i = 0; i < Hook.hooks['beforeCmsPage'].length; ++i) {
-            await Hook.hooks['beforeCmsPage'][i].callback(params)
+            await Hook.hooks['beforeCmsPage'][i].callback({db, context, headers, params})
         }
     }
 
-    const {db, context, slug, editmode, checkHostrules, inEditor, _version, headers, ignorePublicState} = params
+    const {slug, editmode, checkHostrules, inEditor, _version, ignorePublicState} = params
 
     let host = headers && headers['x-host-rule'] ? headers['x-host-rule'].split(':')[0] : getHostFromHeaders(headers)
 
