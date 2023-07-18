@@ -10,7 +10,7 @@ import Hook from "../../../util/hook.cjs";
 const hostrules = loadAllHostrules(false)
 
 
-export const getCmsPage = async ({db, context, headers, params}) => {
+export const getCmsPage = async ({db, context, headers, ...params}) => {
 
 
     if (Hook.hooks['beforeCmsPage'] && Hook.hooks['beforeCmsPage'].length) {
