@@ -629,10 +629,24 @@ class GenericForm extends React.Component {
                             })
                         }
 
-
                         currentFormFields.push(
                             <Expandable title={title}
+                                        draggable={true}
+                                        index={index}
                                         key={"expandable" + fieldKey}
+                                        onPositionChange={(sourceIndex,targetIndex)=>{
+                                            const newValue = subFieldValues.slice(0),
+                                                element = newValue.splice(sourceIndex, 1) [0]
+
+                                            newValue.splice(targetIndex, 0, element)
+
+                                            this.handleInputChange({
+                                                target: {
+                                                    name: fieldKey,
+                                                    value: newValue
+                                                }
+                                            })
+                                        }}
                                         onChange={(e) => {
                                             this.setState({expanded: valueFieldKey})
                                         }}

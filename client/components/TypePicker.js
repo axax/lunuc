@@ -70,10 +70,13 @@ const StyledChip = styled(Chip)(({ theme, isMulti }) => ({
 }))
 
 const StyledDropArea = styled('div')(({ theme }) => ({
-    textAlign: 'center',
-    padding: '0.2rem',
+    padding: '0',
+    display:'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex:9999,
     writingMode: 'vertical-rl',
-    width: '1.6%',
+    width: 'max(20px,1.6%)',
     margin: '0 0 -' + theme.spacing(2) + ' 0',
     opacity: '0',
     fontSize: '0.8rem',
@@ -331,7 +334,7 @@ class TypePicker extends React.Component {
                                 components.push(<StyledChip draggable={true}
                                                       data-index={singleValueIndex}
                                                       onDragStart={(e) => {
-                                                          e.dataTransfer.setData('text', e.target.getAttribute('data-index'));
+                                                          e.dataTransfer.setData('text', e.target.getAttribute('data-index'))
                                                       }}
                                                       key={singleValueIndex}
                                                       label={typeDataToLabel(singleValue, pickerField)}
