@@ -46,7 +46,7 @@ Hook.on('beforePubSub', async ({triggerName, payload, db, context}) => {
                                 const ids = jsonData[field.name]
                                 if (ids) {
                                     const idsStr = []
-                                    if(ids.constructor === Array) {
+                                    if (ids.constructor === Array) {
                                         ids.forEach(id => {
                                             if (id) {
                                                 if (id.constructor === Object) {
@@ -56,7 +56,7 @@ Hook.on('beforePubSub', async ({triggerName, payload, db, context}) => {
                                                 }
                                             }
                                         })
-                                    }else{
+                                    } else {
                                         idsStr.push(ids)
                                     }
                                     console.log(`Resolve ids ${idsStr.join(',')}`)
@@ -137,19 +137,19 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
                 if (!currentProjection) {
                     //console.log(`no lookup for ${field.name} needed`)
                     return
-                }else{
+                } else {
 
-                    if(otherOptions.postLookup){
+                    if (otherOptions.postLookup) {
                         /**
                          * @deprecated postLookup mode might be deprecated
                          */
-                        if(!otherOptions.$addFields){
+                        if (!otherOptions.$addFields) {
                             otherOptions.$addFields = {}
                         }
-                        if(!otherOptions.$addFields.tempProjection){
+                        if (!otherOptions.$addFields.tempProjection) {
                             otherOptions.$addFields.tempProjection = {}
                         }
-                        otherOptions.$addFields.tempProjection[field.name]=currentProjection
+                        otherOptions.$addFields.tempProjection[field.name] = currentProjection
 
                         dataProjection.data.splice(projectionResult.index, 1)
                         dataProjection.data.push(field.name)
@@ -174,7 +174,7 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
         const id = getConditionalIdResolver(key)
 
         const subLookup = []
-        if (otherOptions.lookupLevel > 1 || (otherOptions.lookupLevel === undefined && currentProjection && currentProjection.length > 0 )) {
+        if (otherOptions.lookupLevel > 1 || (otherOptions.lookupLevel === undefined && currentProjection && currentProjection.length > 0)) {
 
             const def = await getGenericTypeDefinitionWithStructure(db, {name: field.genericType})
             if (def && def.structure && def.structure.fields) {
@@ -192,21 +192,21 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
         }
 
         let newLookup
-        if(otherOptions.simpleLookup!==false && field.simpleLookup !== false){
+        if (otherOptions.simpleLookup !== false && field.simpleLookup !== false) {
             otherOptions.lookups.push({
                 $addFields: {
                     [`${key}ObjectId`]: id
                 }
             })
             newLookup = {
-                    $lookup: {
-                        from: 'GenericData',
-                        localField: `${key}ObjectId`,
-                        foreignField: '_id',
-                        as: field.metaFields ? `lookupRelation${key}` : `data.${key}`,
-                        pipeline: [],
-                    }
+                $lookup: {
+                    from: 'GenericData',
+                    localField: `${key}ObjectId`,
+                    foreignField: '_id',
+                    as: field.metaFields ? `lookupRelation${key}` : `data.${key}`,
+                    pipeline: [],
                 }
+            }
         } else {
 
             /**
@@ -258,7 +258,7 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
 
             let input
             //TODO make it optional
-            if(true){
+            if (true) {
                 // filter references that doesn't exist
                 input = {
                     $filter: {
@@ -279,7 +279,7 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
                         }
                     }
                 }
-            }else{
+            } else {
                 input = `$data.${key}`
             }
 
@@ -337,9 +337,9 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
                 }
             })
         }
-    }else if(field.lookup && field.type){
+    } else if (field.lookup && field.type) {
         const typeDef = getType(field.type)
-        if(typeDef){
+        if (typeDef) {
         }
         if (!otherOptions.lookups) {
             otherOptions.lookups = []
@@ -352,15 +352,46 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
             }
         })
 
-        otherOptions.lookups.push({
-            $lookup: {
-                from: field.type,
-                localField: `${field.name}ObjectId`,
-                foreignField: '_id',
-                as: `data.${field.name}`,
-                pipeline: [],
-            }
-        })
+
+        if (field.keepOrder /* field.multi  might be better */ ) {
+            // keep order in array
+            otherOptions.lookups.push({
+                $lookup: {
+                    from: field.type,
+                    let: {
+                        [`${field.name}ObjectId`]: `$${field.name}ObjectId`
+                    },
+                    as: `data.${field.name}`,
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {$in: ['$_id', `$$${field.name}ObjectId`]}
+                            }
+                        },
+                        {
+                            $addFields: {
+                                sort: {
+                                    $indexOfArray: [`$$${field.name}ObjectId`, '$_id']
+                                }
+                            }
+                        },
+                        {$sort: {sort: 1}},
+                        {$addFields: {sort: '$$REMOVE'}}
+                    ],
+                }
+            })
+
+        } else {
+            otherOptions.lookups.push({
+                $lookup: {
+                    from: field.type,
+                    localField: `${field.name}ObjectId`,
+                    foreignField: '_id',
+                    as: `data.${field.name}`,
+                    pipeline: [],
+                }
+            })
+        }
     }
 }
 
@@ -383,7 +414,7 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions
                     const accessMatch = await Util.getAccessFilter(db, context, struct.access.read)
                     if (accessMatch.createdBy) {
                         match.createdBy = accessMatch.createdBy
-                    } else if(struct.access.read.force){
+                    } else if (struct.access.read.force) {
 
                         delete match.createdBy
                     }
@@ -424,12 +455,12 @@ async function postLookupResult(result, field, db, context) {
 
                 if (!itemCache[tempItem[k]]) {
                     let dataResolve, projectResult
-                    if(result.tempProjection && result.tempProjection[field.name]){
+                    if (result.tempProjection && result.tempProjection[field.name]) {
                         dataResolve = JSON.parse(JSON.stringify(result.tempProjection[field.name]))
-                        projectResult=true
-                    }else {
+                        projectResult = true
+                    } else {
                         dataResolve = ['data']
-                        projectResult=false
+                        projectResult = false
                     }
 
                     const itemResults = await GenericResolver.entities(db, context, 'GenericData', ['_id', {definition: ['_id']}, ...dataResolve],
@@ -439,11 +470,11 @@ async function postLookupResult(result, field, db, context) {
                             includeCount: false,
                             match: {},
                             meta: field.genericType,
-                            genericType:field.genericType,
-                            postLookup:true,
-                            postConvert:false,
+                            genericType: field.genericType,
+                            postLookup: true,
+                            postConvert: false,
                             projectResult,
-                            lookupLevel:0
+                            lookupLevel: 0
                         })
 
                     itemCache[tempItem[k]] = itemResults.results.length > 0 ? itemResults.results[0] : null
@@ -451,13 +482,12 @@ async function postLookupResult(result, field, db, context) {
                     if (itemCache[tempItem[k]]) {
                         newItems.push(itemCache[tempItem[k]])
                     }
-                }else{
+                } else {
                     newItems.push(itemCache[tempItem[k]])
                 }
 
             }
             result.results[j].data[field.name] = newItems
-
 
 
         }
@@ -509,7 +539,6 @@ async function postCheckResult(def, result, db, context, otherOptions) {
 }
 
 
-
 /*
 Return the structure of the dynamic type as meta data
  */
@@ -535,7 +564,7 @@ Hook.on('typeLoaded', async ({type, db, context, result, otherOptions}) => {
             }
 
             // remove definition on entries
-            if(otherOptions.removeDefinition !== false) {
+            if (otherOptions.removeDefinition !== false) {
                 result.results.forEach(item => {
                     delete item.definition
                 })
@@ -553,10 +582,10 @@ Hook.on('typeBeforeUpdate', async ({type, data, params, _meta, db, context}) => 
 
         if (def && def.structure) {
             const accessMatch = await Util.getAccessFilter(db, context, def.structure?.access?.update)
-            if(accessMatch){
+            if (accessMatch) {
                 if (accessMatch.createdBy) {
                     params.createdBy = accessMatch.createdBy
-                } else if(def?.structure?.access?.update?.force){
+                } else if (def?.structure?.access?.update?.force) {
                     delete params.createdBy
                 }
             }
@@ -620,9 +649,9 @@ Hook.on('typeBeforeCreate', async ({db, type, data}) => {
                     const dvalue = struct.extendFields[key].defaultValue
                     if (dvalue && !data[key]) {
 
-                        if( dvalue.constructor === Array){
-                            data[key] = dvalue.map(f=>new ObjectId(f))
-                        }else {
+                        if (dvalue.constructor === Array) {
+                            data[key] = dvalue.map(f => new ObjectId(f))
+                        } else {
 
                             data[key] = dvalue
                         }
@@ -640,7 +669,7 @@ Hook.on('typeUpdated_GenericDataDefinition', ({db, result}) => {
 })
 
 // Clear cache when the type GenericData has changed
-Hook.on(['typeUpdated_GenericData','typeCreated_GenericData'], async ({db, result}) => {
+Hook.on(['typeUpdated_GenericData', 'typeCreated_GenericData'], async ({db, result}) => {
     if (result.definition && result.definition._id) {
         const def = await getGenericTypeDefinitionWithStructure(db, {id: result.definition._id})
         if (def) {
@@ -650,7 +679,7 @@ Hook.on(['typeUpdated_GenericData','typeCreated_GenericData'], async ({db, resul
 })
 
 Hook.on(['typeDeleted_GenericData'], async ({db, deletedDocuments}) => {
-    for(const deltedDoc of deletedDocuments){
+    for (const deltedDoc of deletedDocuments) {
         if (deltedDoc.definition) {
             const def = await getGenericTypeDefinitionWithStructure(db, {id: deltedDoc.definition})
             if (def) {
@@ -718,18 +747,17 @@ Hook.on('ResolverBeforePublishSubscription', async ({context, payload, hookRespo
 })
 
 
-
-
 Hook.on(['ExtensionHistoryBeforeCreate'], async ({historyEntry}) => {
-    if(historyEntry.type==='GenericData'){
+    if (historyEntry.type === 'GenericData') {
         try {
             historyEntry.data = Object.assign({}, historyEntry.data, {data: JSON.parse(historyEntry.data.data)})
-        }catch (e){}
+        } catch (e) {
+        }
     }
 })
 
 Hook.on(['ExtensionHistoryBeforeDelete'], async ({db, historyEntry}) => {
-    if(historyEntry.type==='GenericData' && historyEntry.data.definition){
+    if (historyEntry.type === 'GenericData' && historyEntry.data.definition) {
         const def = await getGenericTypeDefinitionWithStructure(db, {id: historyEntry.data.definition})
         if (def && def?.structure?.title) {
             historyEntry.meta.name = def.structure.title
