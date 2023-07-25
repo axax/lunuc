@@ -81,7 +81,7 @@ class Expandable extends React.Component {
                 }}
                 onDragLeave={(e) => {
                     e.target.style.opacity = 0
-                }}>Hier plazieren</StyledDropArea>
+                }}>Drop</StyledDropArea>
 
             return [
                 index===0?DropArea:null,

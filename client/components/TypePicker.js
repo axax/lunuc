@@ -57,10 +57,10 @@ const StyledChips = styled('div')(({ theme }) => ({
 }))
 
 const StyledChip = styled(Chip)(({ theme, isMulti }) => ({
-    margin: theme.spacing(2) + ' 0px 0px ' + theme.spacing(1),
-    '&:first-of-type': {
+    margin: theme.spacing(2) + ' 0px 0px 0px',
+   /* '&:first-of-type': {
         marginLeft: 0
-    },
+    },*/
     position: 'relative',
     ...(isMulti && {
         margin: theme.spacing(1) + ' 0',
@@ -76,9 +76,9 @@ const StyledDropArea = styled('div')(({ theme }) => ({
     alignItems: 'center',
     zIndex:9999,
     writingMode: 'vertical-rl',
-    width: 'max(20px,1.6%)',
+    width: `${theme.spacing(2)}`,
     margin: '0 0 -' + theme.spacing(2) + ' 0',
-    opacity: '0',
+    opacity: 0,
     fontSize: '0.8rem',
     backgroundColor: 'rgba(255,0,0,0.3)'
 }))
@@ -331,13 +331,14 @@ class TypePicker extends React.Component {
                                 </Card>)
 
                             } else {
-                                components.push(<StyledChip draggable={true}
+                                components.push(<StyledChip
+                                                      draggable={true}
                                                       data-index={singleValueIndex}
                                                       onDragStart={(e) => {
                                                           e.dataTransfer.setData('text', e.target.getAttribute('data-index'))
                                                       }}
                                                       key={singleValueIndex}
-                                                      label={typeDataToLabel(singleValue, pickerField)}
+                                                      label={(singleValueIndex+1) + '. ' +typeDataToLabel(singleValue, pickerField)}
                                                       onDelete={!readOnly && this.handleRemovePick.bind(this, singleValueIndex)}
                                                       onClick={() => {
                                                           if (singleValue.type === 'Media' || singleValue.__typename === 'Media') {
@@ -374,7 +375,7 @@ class TypePicker extends React.Component {
                                              }}
                                              onDragLeave={(e) => {
                                                  e.target.style.opacity = 0
-                                             }}>Hier einfügen</StyledDropArea>)
+                                             }}>Drop</StyledDropArea>)
 
                         return components
 

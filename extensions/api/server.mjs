@@ -73,7 +73,7 @@ Hook.on('appready', ({app, db}) => {
     app.use('/' + config.API_PREFIX, async (req, res) => {
 
         const startTime = new Date().getTime()
-        const slug = url.parse(req.url).pathname.substring(1)
+        const slug = url.parse(req.url).pathname.substring(1).split(config.PRETTYURL_SEPERATOR)[0]
 
         console.log(`Api request: ${slug}`)
 

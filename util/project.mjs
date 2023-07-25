@@ -1,7 +1,8 @@
-export const performFieldProjection = (projection, data, newData)=>{
+export const performFieldProjection = (projection, data)=>{
     if(!data){
         return
     }
+    let newData
     if(Array.isArray(data)){
         newData = []
     }else{
