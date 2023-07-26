@@ -58,6 +58,7 @@ const StyledDrawer = styled(Drawer, {
     position: 'fixed',
     top: '0px',
     bottom: '0px',
+    ...(!open && {left:'-1px'}),
     zIndex: theme.zIndex.drawer,
     '.MuiPaper-root':{
         position: 'relative',

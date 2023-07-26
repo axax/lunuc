@@ -338,7 +338,7 @@ class TypePicker extends React.Component {
                                                           e.dataTransfer.setData('text', e.target.getAttribute('data-index'))
                                                       }}
                                                       key={singleValueIndex}
-                                                      label={(singleValueIndex+1) + '. ' +typeDataToLabel(singleValue, pickerField)}
+                                                      label={(multi && value.length > 1?(singleValueIndex+1) + '. ':'') +typeDataToLabel(singleValue, pickerField)}
                                                       onDelete={!readOnly && this.handleRemovePick.bind(this, singleValueIndex)}
                                                       onClick={() => {
                                                           if (singleValue.type === 'Media' || singleValue.__typename === 'Media') {

@@ -359,10 +359,7 @@ Hook.on('Types', ({types}) => {
                 }
             },
             {
-                name: 'language',
-                vagueSearchable:false
-            },
-            {
+                fullWidth: true,
                 name: 'picture',
                 type: 'Media',
                 reference: true,
@@ -379,6 +376,10 @@ Hook.on('Types', ({types}) => {
             {
                 name: 'blocked',
                 type: 'Boolean',
+                vagueSearchable:false
+            },
+            {
+                name: 'language',
                 vagueSearchable:false
             },
             {
