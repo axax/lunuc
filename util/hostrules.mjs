@@ -102,7 +102,7 @@ const loadHostRules = (dir, withCertContext, hostrules, isDefault) => {
     }
 }
 
-export const loadAllHostrules = (withCertContext, hostrules = {}, refresh) => {
+export const loadAllHostrules = (withCertContext, hostrules = {}, refresh = false) => {
     console.log(`load all host rules from ${HOSTRULES_ABSPATH}`)
     loadHostRules(HOSTRULES_ABSPATH, withCertContext, hostrules)
     if(!refresh) {
