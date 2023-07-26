@@ -88,6 +88,10 @@ const loadHostRules = (dir, withCertContext, hostrules, isDefault) => {
                     hostrule._basedir = dir
                     hostrule._lastModified = stats.mtime
 
+                    if(!hostrule.paths){
+                        hostrule.paths = []
+                    }
+
                     if (hostrule.botregex) {
                         hostrule.botregex = new RegExp(hostrule.botregex)
                     }
