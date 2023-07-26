@@ -38,7 +38,7 @@ const hostrules = loadAllHostrules(true)
 
 setInterval(()=>{
     // update changes
-    loadAllHostrules(true, hostrules)
+    loadAllHostrules(true, hostrules, true)
 },60000)
 
 // Use Httpx

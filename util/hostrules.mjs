@@ -102,12 +102,14 @@ const loadHostRules = (dir, withCertContext, hostrules) => {
     }
 }
 
-export const loadAllHostrules = (withCertContext, hostrules = {}) => {
-    const hostRulePath = path.join(path.resolve(), './hostrules/')
-    console.log(`load all host rules ${hostRulePath}`)
+export const loadAllHostrules = (withCertContext, hostrules = {}, refresh) => {
+    console.log(`load all host rules from ${HOSTRULES_ABSPATH}`)
     loadHostRules(HOSTRULES_ABSPATH, withCertContext, hostrules)
-    loadHostRules(hostRulePath, withCertContext, hostrules)
-
+    if(!refresh) {
+        const hostRulePath = path.join(path.resolve(), './hostrules/')
+        console.log(`load all host rules from ${hostRulePath}`)
+        loadHostRules(hostRulePath, withCertContext, hostrules)
+    }
 
     return hostrules
 }
