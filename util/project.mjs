@@ -22,7 +22,14 @@ export const performFieldProjection = (projection, data)=>{
 
                 })
             }else {
-                newData[project] = data[project]
+                const dotIndex = project.indexOf('.')
+
+                if(dotIndex>=0){
+                    const newKey = project.substring(0,dotIndex)
+                    newData[newKey] = performFieldProjection([project.substring(dotIndex+1)], data[newKey])
+                }else {
+                    newData[project] = data[project]
+                }
             }
         }
     }
@@ -55,7 +62,12 @@ export const projectionToQueryString = (projection) => {
             queryString += ' '
         }
         if (field.constructor === String) {
-            queryString += field
+            const dotIndex = field.indexOf('.')
+            if(dotIndex>=0){
+                queryString += field.substring(0,dotIndex)
+            }else {
+                queryString += field
+            }
         } else {
             Object.keys(field).forEach(key => {
                 queryString += key + '{'

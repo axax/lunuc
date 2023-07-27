@@ -106,6 +106,7 @@ class TypesContainer extends React.Component {
 
         // initial state
         this.state = {
+            opener: this.pageParams.opener,
             type: this.pageParams.type,
             meta: this.pageParams.meta,
             selectAllRows: false,
@@ -958,7 +959,7 @@ class TypesContainer extends React.Component {
             viewSyncDialog !== undefined && <SyncCollectionDialog entries={dataToSync} open={viewSyncDialog} onClose={()=>{
                 this.setState({viewSyncDialog:false})
             }} _version={this.pageParams._version} type={type}/>,
-            window.opener && selectedLength > 0 &&
+            window.opener && this.pageParams.opener && selectedLength > 0 &&
             <AppBar key="appbar" position="fixed" color="primary" style={{
                 top: 'auto',
                 bottom: 0
@@ -1036,7 +1037,7 @@ class TypesContainer extends React.Component {
             event.preventDefault()
             event.stopPropagation()
             // it was a double click
-            if (window.opener) {
+            if (window.opener && this.pageParams.opener) {
                 window.resultValue = item
                 window.close()
             } else {
@@ -1184,6 +1185,7 @@ class TypesContainer extends React.Component {
             prettyFilter,
             multi,
             meta,
+            opener,
             action,
             open
         } = Util.extractQueryParams(window.location.search.substring(1))
@@ -1212,6 +1214,7 @@ class TypesContainer extends React.Component {
             multi,
             title,
             meta,
+            opener,
             action,
             fixType: finalFixType,
             open,
@@ -1575,10 +1578,11 @@ class TypesContainer extends React.Component {
             baseFilter,
             title,
             meta,
+            opener,
             prettyFilter
         } = Object.assign({}, this.pageParams, args)
 
-        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL + '/' + (location.pathname.indexOf('/typesblank/') >= 0 ? 'typesblank' : 'types') + (type ? '/' + type : '')}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${fixType ? '&fixType=' + fixType : ''}${title ? '&title=' + encodeURIComponent(title) : ''}${meta ? '&meta=' + meta : ''}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}${prettyFilter ? '&prettyFilter=' + encodeURIComponent(prettyFilter) : ''}`)
+        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL + '/' + (location.pathname.indexOf('/typesblank/') >= 0 ? 'typesblank' : 'types') + (type ? '/' + type : '')}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${fixType ? '&fixType=' + fixType : ''}${title ? '&title=' + encodeURIComponent(title) : ''}${meta ? '&meta=' + meta : ''}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}${prettyFilter ? '&prettyFilter=' + encodeURIComponent(prettyFilter) : ''}${opener?'&opener=true':''}`)
     }
 
     getPrettyFilter() {

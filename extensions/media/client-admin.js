@@ -192,7 +192,7 @@ export default () => {
                     {
                         json.locations.length===0?<p>Media wird nicht verwendet</p>:
                         json.locations.map(item => <p><span>Media ist in Verwendung:</span> <a target="_blank"
-                                                                                               href={'/admin/types/' + item.location + '?open=' + item._id}>{item.location}/{item._id}</a>
+                                                                                               href={`/admin/types/${item.location}?open=${item._id}`}>{item.location}/{item._id}</a>
                         </p>)
                     }
                     {btn}

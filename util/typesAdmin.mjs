@@ -4,6 +4,7 @@ import {getTypes} from './types.mjs'
 import {_t} from './i18n.mjs'
 import extensionsPrivate from '../gensrc/extensions-private.mjs'
 import extensions from '../gensrc/extensions.mjs'
+import {propertyByPath} from '../client/util/json.mjs'
 
 console.log(`merge extension defintion`)
 
@@ -21,10 +22,7 @@ export const typeDataToLabel = (item, pickerField) => {
     }
     const context = {item, pickerField}
 
-
-
     Hook.call('typeDataToLabel', context)
-
 
     let pickers = []
     if (context.pickerField) {
@@ -46,12 +44,12 @@ export const typeDataToLabel = (item, pickerField) => {
     }
 
     pickers.forEach(key => {
-        if (context.item[key]) {
-
-            if (context.item[key] && context.item[key][_app_.lang]) {
-                label.push(context.item[key][_app_.lang])
+        const value = propertyByPath(key,context.item)
+        if (value) {
+            if (value[_app_.lang]) {
+                label.push(value[_app_.lang])
             } else {
-                label.push(context.item[key])
+                label.push(value)
             }
         }
     })
@@ -460,4 +458,15 @@ Hook.on('Types', ({types}) => {
         ]
     }
 
+})
+
+Hook.on('ApiClientQueryResponse', ({response}) => {
+
+    const data = response && response.data && response.data.users
+
+    if (data && data.results) {
+        data.results.forEach(item=>{
+            item.meta = JSON.parse(item.meta)
+        })
+    }
 })

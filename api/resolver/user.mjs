@@ -23,7 +23,7 @@ const LOGIN_ATTEMPTS_MAP = {},
     MAX_LOGIN_ATTEMPTS = 10,
     LOGIN_DELAY_IN_SEC = 180
 
-const createUser = async ({username, role, junior, group, setting, password, language, email, emailConfirmed, blocked, requestNewPassword, meta, domain, picture, db, context}, opts) => {
+export const createUser = async ({username, role, junior, group, setting, password, language, email, emailConfirmed, blocked, requestNewPassword, meta, domain, picture, db, context}, opts) => {
 
     if (!opts) {
         opts = {override: false, skipCheck: false}

@@ -78,6 +78,7 @@ export const translations = {
         'User.field.setting': 'Eintellungen',
         'GenericForm.delete': 'Löschen',
         'GenericForm.clone': 'Duplizieren',
+        'TypePicker.editEntry':'Eintrag bearbeiten'
     },
     en: {
         'BaseLayout.editMenu': 'Edit menu',
@@ -156,5 +157,6 @@ export const translations = {
         'User.field.domain': 'Domain',
         'GenericForm.delete': 'Delete',
         'GenericForm.clone': 'Duplicate',
+        'TypePicker.editEntry':'Edit entry'
     }
 }

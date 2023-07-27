@@ -25,7 +25,7 @@ import config from 'gen/config-client'
 import {getFormFieldsByFieldList} from '../../util/typesAdmin.mjs'
 
 const {DEFAULT_LANGUAGE} = config
-
+import {SimpleMenu, EditIcon} from 'ui/admin'
 import {client} from '../middleware/graphql'
 import Util from '../util/index.mjs'
 import Hook from '../../util/hook.cjs'
@@ -33,6 +33,7 @@ import GenericForm from './GenericForm'
 import {openWindow} from '../util/window'
 import {projectionToQueryString} from '../../util/project.mjs'
 import styled from '@emotion/styled'
+import {_t} from '../../util/i18n.mjs'
 
 const StyledForm = styled(FormControl)({
     position: 'relative',
@@ -156,20 +157,21 @@ class TypePicker extends React.Component {
         return state.textValue !== this.state.textValue ||
             state.value !== this.state.value ||
             state.data !== this.state.data ||
+            state.showContextMenu !== this.state.showContextMenu ||
             props.error !== this.props.error ||
             state.selIdx !== this.state.selIdx
     }
 
     render() {
         const {inputProps, placeholder, multi, error, helperText, className, sx, fullWidth, linkTemplate, pickerField, metaFields, type, filter, label, genericType, readOnly} = this.props
-        const {data, hasFocus, selIdx, value, textValue} = this.state
+        const {data, hasFocus, selIdx, value, textValue, showContextMenu} = this.state
         console.log(`render TypePicker | hasFocus=${hasFocus} | pickerField=${pickerField}`, data)
         const openTypeWindow = (value) => {
             let url
             if (linkTemplate) {
                 url = Util.replacePlaceholders(linkTemplate, value)
             } else {
-                url = `${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/typesblank/?multi=${!!multi}&fixType=${type}${genericType ? '&meta=' + genericType : ''}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}${label ? '&title=' + encodeURIComponent(label) : ''}`
+                url = `${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/typesblank/?opener=true&multi=${!!multi}&fixType=${type}${genericType ? '&meta=' + genericType : ''}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}${label ? '&title=' + encodeURIComponent(label) : ''}`
                 /*if(value && value._id){
                     url +='&prettyFilter='+JSON.stringify({_id:value._id})
                 }*/
@@ -209,7 +211,6 @@ class TypePicker extends React.Component {
                                        <IconButton
                                            edge="end"
                                            onClick={() => {
-
                                                openTypeWindow()
                                            }}>
                                            <SearchIcon/>
@@ -250,6 +251,10 @@ class TypePicker extends React.Component {
                                                  onDragStart={(e) => {
                                                      e.dataTransfer.setData('text', e.target.getAttribute('data-index'));
                                                  }}
+                                                 onContextMenu={(e) => {
+                                                     e.preventDefault()
+                                                     this.setState({showContextMenu: {singleValue, left: e.clientX, top: e.clientY}})
+                                                 }}
                                                  isMulti={multi}
                                                  key={singleValueIndex}>
 
@@ -265,8 +270,7 @@ class TypePicker extends React.Component {
                                 <StyledDummyButton sx={{left:'40px'}} edge="end"
                                             onClick={() => {
                                                 window.open(getImageSrc(singleValue), '_blank').focus()
-                                            }}
-                                >
+                                            }}>
                                     <LaunchIcon/>
                                 </StyledDummyButton>
 
@@ -347,6 +351,10 @@ class TypePicker extends React.Component {
                                                               openTypeWindow(singleValue)
                                                           }
                                                       }}
+                                                      onContextMenu={(e) => {
+                                                          e.preventDefault()
+                                                          this.setState({showContextMenu: {singleValue, left: e.clientX, top: e.clientY}})
+                                                      }}
                                                       avatar={isValidImage(singleValue) ?
                                                           <Avatar src={getImageSrc(singleValue, {height: 30})}/> : null}/>)
                             }
@@ -383,6 +391,23 @@ class TypePicker extends React.Component {
                 )
                 }
             </StyledChips>
+            {showContextMenu && <SimpleMenu open={showContextMenu}
+                        anchorReference={"anchorPosition"}
+                        anchorPosition={showContextMenu}
+                        onClose={() => {
+                            this.setState({
+                                showContextMenu: false
+                            })
+                        }}
+                        key="menu" noButton items={[
+                {
+                    name: _t('BaseLayout.editEntry'),
+                    onClick: ()=>{
+                        window.open(`/admin/types/${type}?open=${showContextMenu.singleValue._id}`)
+                    },
+                    icon: <EditIcon />
+                }
+            ]}/>}
         </StyledForm>
     }
 
@@ -517,8 +542,6 @@ class TypePicker extends React.Component {
 
             const nameStartLower = type.charAt(0).toLowerCase() + type.slice(1) + 's'
             let queryString
-
-            console.log(this.props)
 
             if (queryFields || pickerField) {
 

@@ -73,6 +73,7 @@ export const dbConnection = (dburl, cb) => {
                 db._metadata = client.options.metadata
 
                 const adminDb = db.admin()
+                db._versionInt = parseInt(client.options.metadata.driver.version)
                 adminDb.serverStatus((err, info) => {
                     db._version = info.version
                     db._versionInt = parseInt(info.version)
