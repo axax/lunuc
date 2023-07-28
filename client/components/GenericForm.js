@@ -124,7 +124,11 @@ class GenericForm extends React.Component {
                 }
             } else {
                 if (props.values) {
-                    fieldValue = props.values[fieldKey]
+                    if(field.type==='Object' && props.values[fieldKey] && props.values[fieldKey].constructor===Object){
+                        fieldValue = Object.assign({},props.values[fieldKey])
+                    }else{
+                        fieldValue = props.values[fieldKey]
+                    }
                 } else {
                     // value must be null instead of undefined
                     fieldValue = field.value === undefined ? null : field.value
