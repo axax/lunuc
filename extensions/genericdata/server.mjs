@@ -359,7 +359,14 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
                 $lookup: {
                     from: field.type,
                     let: {
-                        [`${field.name}ObjectId`]: `$${field.name}ObjectId`
+                        [`${field.name}ObjectId`]: {
+                            $ifNull:
+                                [
+                                    `$${field.name}ObjectId`,
+                                    [],
+                                    `$${field.name}ObjectId`
+                                ]
+                        }
                     },
                     as: `data.${field.name}`,
                     pipeline: [
