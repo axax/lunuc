@@ -1,32 +1,35 @@
-export const performFieldProjection = (projection, data)=>{
+import {deepMergeOptional} from './deepMerge.mjs'
+
+export const performFieldProjection = (projection, data, level = 0)=>{
     if(!data){
         return
     }
     let newData
-    if(Array.isArray(data)){
+    if(Array.isArray(data) && level === 0){
         newData = []
+        data.forEach((d, i) => {
+            if (newData.length - 1 < i) {
+                newData.push({})
+            }
+            newData[i] = performFieldProjection(projection, d, level+1)
+        })
     }else{
         newData = {}
-    }
-    for (const project of projection) {
-        if(project.constructor===Object){
-            const key = Object.keys(project)[0]
-            newData[key] = performFieldProjection(project[key], data[key])
-        }else {
-            if(Array.isArray(data)){
-                data.forEach((d,i)=>{
-                    if(newData.length-1<i){
-                        newData.push({})
-                    }
-                    newData[i][project] = d[project]
 
-                })
+        for (const project of projection) {
+            if(project.constructor===Object){
+                const key = Object.keys(project)[0]
+                newData[key] = performFieldProjection(project[key], data[key], level+1)
             }else {
                 const dotIndex = project.indexOf('.')
-
                 if(dotIndex>=0){
                     const newKey = project.substring(0,dotIndex)
-                    newData[newKey] = performFieldProjection([project.substring(dotIndex+1)], data[newKey])
+                    const tmp = performFieldProjection([project.substring(dotIndex+1)], data[newKey], level+1)
+                    if(newData[newKey]){
+                        newData[newKey] = deepMergeOptional({mergeArray:true, concatArrays: false}, newData[newKey] , tmp)
+                    }else {
+                        newData[newKey] = tmp
+                    }
                 }else {
                     newData[project] = data[project]
                 }

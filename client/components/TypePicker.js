@@ -28,12 +28,14 @@ const {DEFAULT_LANGUAGE} = config
 import {SimpleMenu, EditIcon} from 'ui/admin'
 import {client} from '../middleware/graphql'
 import Util from '../util/index.mjs'
+import {csv2json} from '../../api/util/csv.mjs'
 import Hook from '../../util/hook.cjs'
 import GenericForm from './GenericForm'
 import {openWindow} from '../util/window'
 import {projectionToQueryString} from '../../util/project.mjs'
 import styled from '@emotion/styled'
 import {_t} from '../../util/i18n.mjs'
+import FileDrop from './FileDrop'
 
 const StyledForm = styled(FormControl)({
     position: 'relative',
@@ -163,7 +165,7 @@ class TypePicker extends React.Component {
     }
 
     render() {
-        const {inputProps, placeholder, multi, error, helperText, className, sx, fullWidth, linkTemplate, pickerField, metaFields, type, filter, label, genericType, readOnly} = this.props
+        const {inputProps, placeholder, multi, fileImport, error, helperText, className, sx, fullWidth, linkTemplate, pickerField, metaFields, type, filter, label, genericType, readOnly} = this.props
         const {data, hasFocus, selIdx, value, textValue, showContextMenu} = this.state
         console.log(`render TypePicker | hasFocus=${hasFocus} | pickerField=${pickerField}`, data)
         const openTypeWindow = (value) => {
@@ -239,6 +241,31 @@ class TypePicker extends React.Component {
 
 
             </StyledSuggestions>
+
+            {fileImport && <FileDrop key="fileDrop"
+                      multi={false}
+                      style={{marginTop:'1rem'}}
+                      accept={fileImport.accept || '*/*'}
+                      maxSize={10000}
+                      imagePreview={false}
+                      onFileContent={(file,content) => {
+                          console.log(file,content)
+                          try {
+                              const jsonRaw = csv2json(content)
+
+                              this.getData(`meta.virtualId==[${jsonRaw.map(f=>f.id).join(',')}]`,({data,error})=>{
+                                  if(data){
+                                      this.selectValue(data.results)
+                                  }
+
+                              })
+                          }catch (e){
+                              console.log(e)
+                          }
+                          /*const form = parentRef.createEditForm
+                          form.setState({fields: {...form.state.fields, content:dataUrl}})*/
+                      }}
+                      label={fileImport.label || 'Drop file here'} />}
             <StyledChips>
                 {value.map((singleValue, singleValueIndex) => {
 
@@ -460,7 +487,6 @@ class TypePicker extends React.Component {
 
             let value = convertRawValuesFromPicker({type, fieldsToProject, rawValue, multi})
 
-
             if (multi && this.state.value) {
                 value = [...this.state.value,...value]
             }
@@ -536,7 +562,7 @@ class TypePicker extends React.Component {
         }
     }
 
-    getData(filter) {
+    getData(filter, callback) {
         const {type, queryFields, pickerField, pickerSort} = this.props
         if (type) {
 
@@ -567,13 +593,15 @@ class TypePicker extends React.Component {
             if(pickerSort){
                 variables.sort = pickerSort
             }
-            const storeData = client.readQuery({
-                query: gqlQuery,
-                variables
-            })
-            if (storeData && storeData[nameStartLower]) {
-                // oh data are available in cache. show them first
-                this.setState({selIdx: 0, data: storeData[nameStartLower]})
+            if(!callback) {
+                const storeData = client.readQuery({
+                    query: gqlQuery,
+                    variables
+                })
+                if (storeData && storeData[nameStartLower]) {
+                    // oh data are available in cache. show them first
+                    this.setState({selIdx: 0, data: storeData[nameStartLower]})
+                }
             }
 
             client.query({
@@ -581,12 +609,20 @@ class TypePicker extends React.Component {
                 query: gqlQuery,
                 variables
             }).then(response => {
-                if (this.pickTimeout === 0) {
-                    this.setState({hasFocus: true, selIdx: 0, data: response.data[nameStartLower]})
+                if(callback){
+                    callback({data:response.data[nameStartLower]})
+                }else {
+                    if (this.pickTimeout === 0) {
+                        this.setState({hasFocus: true, selIdx: 0, data: response.data[nameStartLower]})
+                    }
                 }
             }).catch(error => {
-                console.log(error.message)
-                this.setState({selIdx: 0, data: null})
+                if(callback){
+                    callback({error})
+                }else {
+                    console.log(error.message)
+                    this.setState({selIdx: 0, data: null})
+                }
             })
         }
     }

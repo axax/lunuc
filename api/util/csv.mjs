@@ -66,7 +66,9 @@ export const csv2json = (strData, strDelimiter) => {
                 var key = arrData[0][k].trim()
                 objArray[c - 1][key] = arrData[i][k]
             }
-            objArray[c - 1]["id"] = c - 1
+            if(!objArray[c - 1]["id"]) {
+                objArray[c - 1]["id"] = c - 1
+            }
         }
     }
 

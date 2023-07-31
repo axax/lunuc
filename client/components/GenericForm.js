@@ -1075,6 +1075,7 @@ class GenericForm extends React.Component {
                 onChange={this.handleInputChange}
                 sx={getSxProps(field)}
                 fullWidth={field.fullWidth}
+                fileImport={field.fileImport}
                 key={fieldKey}
                 name={fieldKey}
                 label={field.label+ (languageCode ? ' [' + languageCode + ']' : '')}
