@@ -623,7 +623,7 @@ class GenericForm extends React.Component {
                         const valueFieldKey = fieldKey + '-' + index
                         let title = ''
                         if (field.titleTemplate) {
-                            title = Util.replacePlaceholders(field.titleTemplate, values)
+                            title = Util.replacePlaceholders(field.titleTemplate, {_index:index,...values})
                         } else {
                             Object.keys(values).map(k => {
                                 if (title && values[k]) {
