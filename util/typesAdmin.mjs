@@ -466,7 +466,9 @@ Hook.on('ApiClientQueryResponse', ({response}) => {
 
     if (data && data.results) {
         data.results.forEach(item=>{
-            item.meta = JSON.parse(item.meta)
+            if(item.meta) {
+                item.meta = JSON.parse(item.meta)
+            }
         })
     }
 })

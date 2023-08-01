@@ -36,6 +36,7 @@ import {projectionToQueryString} from '../../util/project.mjs'
 import styled from '@emotion/styled'
 import {_t} from '../../util/i18n.mjs'
 import FileDrop from './FileDrop'
+import {propertyByPath} from "../util/json.mjs";
 
 const StyledForm = styled(FormControl)({
     position: 'relative',
@@ -242,20 +243,27 @@ class TypePicker extends React.Component {
 
             </StyledSuggestions>
 
-            {fileImport && <FileDrop key="fileDrop"
+            {fileImport && fileImport.key && <FileDrop key="fileDrop"
                       multi={false}
                       style={{marginTop:'1rem'}}
                       accept={fileImport.accept || '*/*'}
                       maxSize={10000}
                       imagePreview={false}
                       onFileContent={(file,content) => {
-                          console.log(file,content)
                           try {
                               const jsonRaw = csv2json(content)
 
-                              this.getData(`meta.virtualId==[${jsonRaw.map(f=>f.id).join(',')}]`,({data,error})=>{
+                              this.getData(`${fileImport.key}==[${jsonRaw.map(f=>f.id).join(',')}]`,({data,error})=>{
                                   if(data){
-                                      this.selectValue(data.results)
+                                      const newValues = []
+                                      jsonRaw.forEach(csvRow=>{
+                                          const entry = data.results.find(f=>csvRow.id===propertyByPath(fileImport.key,f))
+                                          if(entry) {
+                                              delete csvRow.id
+                                              newValues.push(Object.assign({}, entry, {metaValues: csvRow}))
+                                          }
+                                      })
+                                      this.selectValue(newValues, true)
                                   }
 
                               })
@@ -452,10 +460,10 @@ class TypePicker extends React.Component {
     }
 
 
-    selectValue(rawValue) {
+    selectValue(rawValue, replaceValue) {
         if (rawValue) {
 
-            const {type, pickerField, name, queryFields, projection, onChange, multi} = this.props
+            const {type, pickerField, name, queryFields, projection, onChange, multi, metaFields} = this.props
 
             let fieldsToProject
 
@@ -484,10 +492,12 @@ class TypePicker extends React.Component {
             } else if (!Array.isArray(fieldsToProject)) {
                 fieldsToProject = [fieldsToProject]
             }
-
+            if(metaFields) {
+                fieldsToProject.push('metaValues')
+            }
             let value = convertRawValuesFromPicker({type, fieldsToProject, rawValue, multi})
 
-            if (multi && this.state.value) {
+            if (multi && this.state.value && !replaceValue) {
                 value = [...this.state.value,...value]
             }
 

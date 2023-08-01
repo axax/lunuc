@@ -120,6 +120,41 @@ function getConditionalIdResolver(key) {
     return id;
 }
 
+function createLookupKeepSorting({name, as, type}) {
+    return {
+        $lookup: {
+            from: type,
+                let: {
+                [`${name}ObjectId`]: {
+                    $ifNull:
+                        [
+                            `$${name}ObjectId`,
+                            [],
+                            `$${name}ObjectId`
+                        ]
+                }
+            },
+            as: as || `data.${name}`,
+                pipeline: [
+                {
+                    $match: {
+                        $expr: {$in: ['$_id', `$$${name}ObjectId`]}
+                    }
+                },
+                {
+                    $addFields: {
+                        sort: {
+                            $indexOfArray: [`$$${name}ObjectId`, '$_id']
+                        }
+                    }
+                },
+                {$sort: {sort: 1}},
+                {$addFields: {sort: '$$REMOVE'}}
+            ],
+        }
+    }
+}
+
 async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
 
     if (field.genericType) {
@@ -346,48 +381,15 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
         }
 
         const id = getConditionalIdResolver(field.name)
-        otherOptions.lookups.push({
-            $addFields: {
-                [`${field.name}ObjectId`]: id
-            }
-        })
+        otherOptions.lookups.push({$addFields: {[`${field.name}ObjectId`]: id}})
 
+        if (field.metaFields) {
+            otherOptions.lookups.push({ $addFields: {[`data.${field.name}_Original`]: `$data.${field.name}`}})
+        }
 
         if (field.keepOrder /* field.multi  might be better */ ) {
             // keep order in array
-            otherOptions.lookups.push({
-                $lookup: {
-                    from: field.type,
-                    let: {
-                        [`${field.name}ObjectId`]: {
-                            $ifNull:
-                                [
-                                    `$${field.name}ObjectId`,
-                                    [],
-                                    `$${field.name}ObjectId`
-                                ]
-                        }
-                    },
-                    as: `data.${field.name}`,
-                    pipeline: [
-                        {
-                            $match: {
-                                $expr: {$in: ['$_id', `$$${field.name}ObjectId`]}
-                            }
-                        },
-                        {
-                            $addFields: {
-                                sort: {
-                                    $indexOfArray: [`$$${field.name}ObjectId`, '$_id']
-                                }
-                            }
-                        },
-                        {$sort: {sort: 1}},
-                        {$addFields: {sort: '$$REMOVE'}}
-                    ],
-                }
-            })
-
+            otherOptions.lookups.push(createLookupKeepSorting({name:field.name,type:field.type}))
         } else {
             otherOptions.lookups.push({
                 $lookup: {
@@ -398,6 +400,102 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
                     pipeline: [],
                 }
             })
+        }
+
+        if (field.metaFields) {
+            otherOptions.lookups.push({
+                $addFields: {
+                    [`data.${field.name}`]: {
+                        $map: {
+                            input:`$data.${field.name}`,
+                            as: 'rel',
+                            in: {
+                                $let: {
+                                    vars: {
+                                        indexInArray: {
+                                            $indexOfArray: [
+                                                `$${field.name}ObjectId`,
+                                                '$$rel._id'
+                                            ]
+                                        }
+                                    },
+                                    in: {
+                                        $mergeObjects: [
+                                            '$$rel',
+                                            {
+                                                $cond: {
+                                                    if: {
+                                                        $gt: [
+                                                            '$$indexInArray',
+                                                            -1
+                                                        ]
+                                                    },
+                                                    then: {
+                                                        $arrayElemAt: [
+                                                            `$data.${field.name}_Original`,
+                                                            '$$indexInArray'
+                                                        ]
+                                                    },
+                                                    else: { /* empty data */}
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+
+            otherOptions.lookups.push({
+                $unset: `data.${field.name}_Original`
+            })
+        }
+
+    }else if(field.uitype==='wrapper' && field.subFields){
+
+        // wrapper element with lookup functionality
+        //TODO: check if this part is working --> as of now it's not being used anywhere
+        for(const subField of field.subFields){
+
+            if(subField.lookup){
+
+                otherOptions.lookups.push({$unwind : `$data.${field.name}` })
+                const id = getConditionalIdResolver(`${field.name}.${subField.name}`)
+                otherOptions.lookups.push({
+                    $addFields: {
+                        [`${field.name}${subField.name}ObjectId`]: id
+                    }
+                })
+                // keep order in array
+                otherOptions.lookups.push(createLookupKeepSorting({name:field.name+subField.name,as:`data.${field.name}.${subField.name}`,type:subField.type}))
+
+                if(!otherOptions.group){
+                    otherOptions.group = {}
+                }
+
+                const tmpGroupName = `tmp_${field.name}${subField.name}`
+                otherOptions.group[tmpGroupName] = {
+                    $push: `$data.${field.name}`
+                }
+
+                if(!otherOptions.beforeProject){
+                    otherOptions.beforeProject = []
+                }
+                if(otherOptions.beforeProject.constructor !== Array){
+                    otherOptions.beforeProject = [otherOptions.beforeProject]
+                }
+                otherOptions.beforeProject.push({
+                    $unset: tmpGroupName
+                })
+                otherOptions.beforeProject.push({
+                    $addFields: {
+                        [`data.${field.name}`]: `$${tmpGroupName}`
+                    }
+                })
+
+            }
         }
     }
 }
