@@ -142,6 +142,13 @@ const observeOptions = () => ({
         label: 'Sichtbarkeit überwachen (Rendering wenn in Viewport)',
         tab: 'Sichtbarkeit'
     },
+    '$observe_backgroundImage': {
+        fullWidth: true,
+        type: 'Boolean',
+        value: false,
+        label: 'Nur Hintergrundbild',
+        tab: 'Sichtbarkeit'
+    },
     '$observe_initialClass': {
         fullWidth: true,
         label: 'Initial Klasse',
@@ -1770,7 +1777,8 @@ const baseElements = [
             ...invisibleOptions('p_'),
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
-            ...marginOptions('p_')
+            ...marginOptions('p_'),
+            ...observeOptions()
         },
         defaults: {
             $inlineEditor: {

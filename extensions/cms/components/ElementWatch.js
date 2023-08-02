@@ -68,9 +68,9 @@ class ElementWatch extends React.Component {
     render() {
         const {initialVisible, madeVisible, hasError, tagImg, tagSrc, key} = this.state
         const {$observe, eleProps, eleType, jsonDom, c, $c, scope, tagName, _key} = this.props
+        const observeBgImage = $observe.backgroundImage
 
-        if (!initialVisible && !madeVisible && (!tagSrc || !ElementWatch.hasLoaded[tagSrc])) {
-
+        if (!initialVisible && !madeVisible && !observeBgImage && (!tagSrc || !ElementWatch.hasLoaded[tagSrc])) {
 
             if (tagName === 'SmartImage' && eleProps) {
 
@@ -140,6 +140,16 @@ class ElementWatch extends React.Component {
                 }
                 if ($observe.initialClass) {
                     eleProps.className += ' ' + $observe.initialClass
+                }
+            }
+            if(observeBgImage){
+                // set background image when element gets visible
+                if(madeVisible){
+                    eleProps.style = this._backupStyle
+                }else {
+                    this._backupStyle = eleProps.style
+                    eleProps.style = {backgroundImage:''}
+                    eleProps['data-element-watch-key'] = key
                 }
             }
             return React.createElement(
