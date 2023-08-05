@@ -6,7 +6,7 @@ import {
     CAPABILITY_MANAGE_BACKUPS,
     CAPABILITY_MANAGE_COLLECTION,
     CAPABILITY_RUN_COMMAND,
-    CAPABILITY_BULK_EDIT
+    CAPABILITY_BULK_EDIT, CAPABILITY_BULK_EDIT_SCRIPT, CAPABILITY_MANAGE_TYPES
 } from '../../util/capabilities.mjs'
 import Cache from '../../util/cache.mjs'
 import {pubsub} from '../subscription.mjs'
@@ -18,6 +18,7 @@ import {getType} from '../../util/types.mjs'
 import {findAndReplaceObjectIds} from '../util/graphql.js'
 import {listBackups, createBackup, removeBackup, mongoExport} from './backups.mjs'
 import {getCollections} from "../util/collection.mjs";
+import {resolver} from './index.mjs'
 
 const {UPLOAD_DIR} = config
 
@@ -191,9 +192,11 @@ export const systemResolver = (db) => ({
 
             throw new Error('Not implmented yet.')
         },
-        bulkEdit: async ({collection, _id, script}, {context}) => {
+        bulkEdit: async ({collection, _id, action, data}, {context}) => {
 
-            await Util.checkIfUserHasCapability(db, context, CAPABILITY_BULK_EDIT)
+            const isScript = action === 'editScript'
+
+            await Util.checkIfUserHasCapability(db, context, isScript ? CAPABILITY_BULK_EDIT_SCRIPT : CAPABILITY_BULK_EDIT)
 
             const $in = []
             _id.forEach(id => {
@@ -210,22 +213,34 @@ export const systemResolver = (db) => ({
             const save = (entry) => {
                 db.collection(collection).updateOne({_id: entry._id}, {$set: entry})
             }
-
-
-            const tpl = new Function(`  
+            if(isScript) {
+                const tpl = new Function(`  
                       
-            this.entries.forEach(entry=>{
-                ${script}            
-            })`)
+                this.entries.forEach(entry=>{
+                    ${data}            
+                })`)
 
-            try {
-                tpl.call({entries, save, ObjectId, Util, require, __dirname, db, context})
-                return {result: `Successful executed`}
-            } catch (e) {
+                try {
+                    tpl.call({entries, save, ObjectId, Util, require, __dirname, db, context})
+                    return {result: `Successful executed`}
+                } catch (e) {
 
-                return {result: `Failed executed: ${e.message}`}
+                    return {result: `Failed executed: ${e.message}`}
+                }
+            }else{
+                const json = JSON.parse(data)
+
+                const updater = resolver(db).Mutation[`update${collection}`]
+                if(updater){
+                    for(const entry of entries){
+                        await updater(Object.assign({_id:entry._id}, json), {context})
+                    }
+                    return {result: `Successful executed`}
+                }else{
+                    return {result: `Updater for type ${collection} doesn't exist`}
+                }
+
             }
-
         },
         backups: async ({type}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)

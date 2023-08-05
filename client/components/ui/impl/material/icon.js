@@ -8,6 +8,7 @@ import {
     InsertDriveFileIcon,
     FolderIcon,
     SubjectIcon,
+    CloudUploadIcon,
     ChatIcon,
     LaunchIcon,
     ShoppingCartIcon,
@@ -164,7 +165,8 @@ const iconComponents = {
     history: HistoryIcon,
     notification: NotificationsIcon,
     support: SupportIcon,
-    devices: DevicesIcon
+    devices: DevicesIcon,
+    upload: CloudUploadIcon
 }
 
 export const getIconByKey = (key, defaultIcon) => {

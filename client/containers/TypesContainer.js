@@ -43,7 +43,7 @@ import {
     checkFieldType,
     getFormFieldsByType,
     typeDataToLabel,
-    addAlwaysUpdateData
+    addAlwaysUpdateData, hasFieldsForBulkEdit, getFieldsForBulkEdit, referencesToIds
 } from 'util/typesAdmin.mjs'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {getImageTag} from 'client/util/media'
@@ -58,7 +58,11 @@ import {client, Query, clearFetchById} from '../middleware/graphql'
 import json2csv from 'util/json2csv'
 import Async from '../components/Async'
 import styled from '@emotion/styled'
-import {CAPABILITY_BULK_EDIT, CAPABILITY_MANAGE_COLLECTION} from '../../util/capabilities.mjs'
+import {
+    CAPABILITY_BULK_EDIT,
+    CAPABILITY_BULK_EDIT_SCRIPT,
+    CAPABILITY_MANAGE_COLLECTION
+} from '../../util/capabilities.mjs'
 import SelectCollection from '../components/types/SelectCollection'
 
 const CodeEditor = (props) => <Async {...props}
@@ -557,8 +561,12 @@ class TypesContainer extends React.Component {
 
             const multiSelectActions = [{name: _t('TypesContainer.delete'), value: 'delete'}]
 
-            if(Util.hasCapability({userData: _app_.user}, CAPABILITY_BULK_EDIT)){
+            if(Util.hasCapability({userData: _app_.user}, CAPABILITY_BULK_EDIT) && hasFieldsForBulkEdit(type)){
                 multiSelectActions.push( {name: _t('TypesContainer.bulkEdit'), value: 'edit'})
+            }
+
+            if(Util.hasCapability({userData: _app_.user}, CAPABILITY_BULK_EDIT_SCRIPT)){
+                multiSelectActions.push( {name: _t('TypesContainer.bulkEditScript'), value: 'editScript'})
             }
             Hook.call('TypeTableAction', {type, actions, multiSelectActions, pageParams: this.pageParams}, this)
 
@@ -889,16 +897,23 @@ class TypesContainer extends React.Component {
                           onClose={(action) => {
                               if (action.key === 'execute') {
 
-                                  const script = this.state.bulkEditScript || this.props.keyValueMap.TypesContainerBulkEdit
-                                  this.props.setKeyValue({key: 'TypesContainerBulkEdit', value: script})
+                                  let data
+                                  if(dataToBulkEdit.action==='editScript') {
+                                      data = this.state.bulkEditScript || this.props.keyValueMap.TypesContainerBulkEdit
+                                      this.props.setKeyValue({key: 'TypesContainerBulkEdit', value: data})
+                                  }else {
+                                      const editedDataWithRefs = referencesToIds(dataToBulkEdit.form.state.fields, type)
+                                      data = JSON.stringify(editedDataWithRefs)
+                                  }
 
                                   client.query({
                                       fetchPolicy: 'network-only',
-                                      query: `query bulkEdit($collection:String!,$_id:[ID]!,$script:String!){bulkEdit(collection:$collection,_id:$_id,script:$script){result}}`,
+                                      query: `query bulkEdit($collection:String!,$_id:[ID]!,$data:String!,$action:String){bulkEdit(collection:$collection,_id:$_id,data:$data,action:$action){result}}`,
                                       variables: {
                                           collection: type,
-                                          _id: dataToBulkEdit,
-                                          script
+                                          _id: dataToBulkEdit.items,
+                                          action: dataToBulkEdit.action,
+                                          data:data
                                       }
                                   }).then(response => {
                                       if (response.data.bulkEdit) {
@@ -911,19 +926,23 @@ class TypesContainer extends React.Component {
                                   this.setState({dataToBulkEdit: false})
                               }
                           }}
-                          actions={[{key: 'execute', label: 'Execute'}, {
+                          actions={[{key: 'execute', label: _t('TypesContainer.bulkEditExecute')}, {
                               key: 'cancel',
-                              label: 'Cancel',
+                              label: _t('core.cancel'),
                               type: 'primary'
                           }]}
-                          title="Bulk edit">
+                          title={_t('TypesContainer.bulkEdit')}>
 
-                <CodeEditor lineNumbers
+                {dataToBulkEdit.action==='editScript' ? <CodeEditor lineNumbers
                             type="js"
                             onBlur={(e, bulkEditScript) => {
-                                console.log(bulkEditScript)
                                 this.setState({bulkEditScript})
-                            }}>{this.props.keyValueMap.TypesContainerBulkEdit}</CodeEditor>
+                            }}>{this.props.keyValueMap.TypesContainerBulkEdit}</CodeEditor> :
+                    <GenericForm key="genericForm" autoFocus onRef={ref => {
+                        if(ref) {
+                            dataToBulkEdit.form = ref
+                        }
+                    }} primaryButton={false} fields={getFieldsForBulkEdit(type)}/>}
 
             </SimpleDialog>,
             confirmCloneColDialog !== undefined &&
@@ -1061,12 +1080,12 @@ class TypesContainer extends React.Component {
             })
             this.setState({dataToDelete, confirmDeletionDialog: true})
 
-        } else if (action === 'edit') {
-            const dataToBulkEdit = []
+        } else if (action === 'edit' || action === 'editScript') {
+            const items = []
             Object.keys(selectedRows).forEach(_id => {
-                dataToBulkEdit.push(_id)
+                items.push(_id)
             })
-            this.setState({dataToBulkEdit})
+            this.setState({dataToBulkEdit:{items,action:action}})
         } else {
 
             Hook.call('TypeTableMultiSelectAction', {data, action, selectedRows}, this)

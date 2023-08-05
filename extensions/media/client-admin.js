@@ -123,6 +123,7 @@ export default () => {
 
             actions.unshift(
                 {
+                    icon:'upload',
                     name: _t('Media.uploadMedia'), onClick: () => {
                         setTimeout(() => {
                             this.setState({createEditDialog: true, createEditDialogOption: 'upload'})

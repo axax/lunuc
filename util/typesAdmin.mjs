@@ -88,25 +88,55 @@ export const getFormFieldsByType = (type) => {
     }
     types[type].fields.map(field => {
         if (field.name !== 'modifiedAt') {
-            let uitype = field.uitype, placeholder = '', label = ''
-            // if uitype is not defined and if it is a reference to another type use type_picker
-            if (!uitype && field.reference) {
-                uitype = 'type_picker'
-                placeholder = _t('Types.selectType', field)
-                label = _t(`${type}.field.${field.name}`, null, `${field.name} -> ${field.type}`)
-            } else {
-                label = _t(`${type}.field.${field.name}`, null, field.label || field.name)
-                placeholder = _t('Types.enterField', field)
-            }
-            const newField = {label, placeholder, uitype}
-            if(field.tab){
-                newField.tab = _t(`${type}.tab.${field.tab}`,null, field.tab)
-            }
-            typeFormFields[type][field.name] = Object.assign({}, field, newField)
-
+            typeFormFields[type][field.name] = enhanceField(field, type)
         }
     })
     return typeFormFields[type]
+}
+
+const enhanceField = (field, type) => {
+    let uitype = field.uitype, placeholder = '', label = ''
+    // if uitype is not defined and if it is a reference to another type use type_picker
+    if (!uitype && field.reference) {
+        uitype = 'type_picker'
+        placeholder = _t('Types.selectType', field)
+        label = _t(`${type}.field.${field.name}`, null, `${field.name} -> ${field.type}`)
+    } else {
+        label = _t(`${type}.field.${field.name}`, null, field.label || field.name)
+        placeholder = _t('Types.enterField', field)
+    }
+    const newField = {label, placeholder, uitype}
+    if(field.tab){
+        newField.tab = _t(`${type}.tab.${field.tab}`,null, field.tab)
+    }
+
+    return Object.assign({}, field, newField)
+}
+
+export const hasFieldsForBulkEdit = (type) => {
+    const types = getTypes()
+    if (!types[type]) {
+        return false
+    }
+    for(const field of types[type].fields){
+        if(field.bulkEditable){
+            return true
+        }
+    }
+    return false
+}
+
+export const getFieldsForBulkEdit = (type) => {
+    const types = getTypes()
+    const fields = {}
+    if (types[type]) {
+        for (const field of types[type].fields) {
+            if (field.bulkEditable) {
+                fields[field.name] = enhanceField(field, type)
+            }
+        }
+    }
+    return fields
 }
 
 export const getFormFieldsByFieldList = (fieldList) => {
