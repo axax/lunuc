@@ -16,9 +16,9 @@ const addScrollEvent = ()=>{
     }
     manualScroll = false
 }
-const checkScroll = (el, options, tries, winHash) => {
+const scrollToElement = (el, options, tries = 0, winHash) => {
     // only check if element exist and user has not scrolled manually
-    if (el && !manualScroll && winHash === window.location.hash) {
+    if (el && !manualScroll && (!winHash || winHash === window.location.hash)) {
         const win = window,
             docEl = win.document.documentElement
 
@@ -60,11 +60,14 @@ const checkScroll = (el, options, tries, winHash) => {
         }
         if(tout) {
             setTimeout(() => {
-                checkScroll(el, options, tries, winHash)
+                scrollToElement(el, options, tries, winHash)
             }, tout)
         }
     }
 }
+
+// expose to global Util
+Util.scrollToElement = scrollToElement
 
 export const scrollByHash = (url, options) => {
     if (url.indexOf('#') >= 0 && url.length > 1) {
@@ -72,7 +75,7 @@ export const scrollByHash = (url, options) => {
 
         DomUtil.waitForElement('#' + decodeURI(url.split('#')[1])).then((el) => {
             // check until postion is reached
-            checkScroll(el, Object.assign({}, _app_.scrollOptions, Util.removeNullValues(options, {removeUndefined: true})), 0, window.location.hash)
+            scrollToElement(el, Object.assign({}, _app_.scrollOptions, Util.removeNullValues(options, {removeUndefined: true})), 0, window.location.hash)
         }).catch(() => {})
     }
 }
