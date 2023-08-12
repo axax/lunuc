@@ -20,7 +20,7 @@ import {_t, registerTrs} from 'util/i18n.mjs'
 import UploadUtil from '../../client/util/upload'
 import {client} from 'client/middleware/graphql'
 import {translations} from './translations/translations'
-import {CAPABILITY_MANAGE_OTHER_USERS} from '../cms/constants/index.mjs'
+import {CAPABILITY_MANAGE_OTHER_USERS} from '../../util/capabilities.mjs'
 import {formatBytes} from '../../client/util/format.mjs'
 
 registerTrs(translations, 'MediaTranslations')

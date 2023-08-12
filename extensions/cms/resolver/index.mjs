@@ -5,7 +5,7 @@ import ClientUtil from '../../../client/util/index.mjs'
 import {getCmsPage} from '../util/cmsPage.mjs'
 import {resolveData} from '../util/dataResolver.mjs'
 import {pubsub, pubsubHooked} from '../../../api/subscription.mjs'
-import {DEFAULT_DATA_RESOLVER, DEFAULT_TEMPLATE, DEFAULT_SCRIPT, DEFAULT_STYLE, CAPABILITY_MANAGE_CMS_PAGES} from '../constants/index.mjs'
+import {DEFAULT_DATA_RESOLVER, DEFAULT_TEMPLATE, DEFAULT_SCRIPT, DEFAULT_STYLE, CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_CONTENT} from '../constants/index.mjs'
 import Cache from '../../../util/cache.mjs'
 import {withFilter} from 'graphql-subscriptions'
 import {getHostFromHeaders} from '../../../util/host.mjs'
@@ -337,7 +337,8 @@ export default db => ({
     },
     Mutation: {
         createCmsPage: async ({slug,ownerGroup, ...rest}, req) => {
-            Util.checkIfUserIsLoggedIn(req.context)
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_CMS_CONTENT)
+
             if (!slug) slug = ''
             slug = encodeURI(slug.trim())
 
@@ -354,7 +355,8 @@ export default db => ({
         updateCmsPage: async ({_id, _meta, slug, realSlug, query, props, createdBy, ownerGroup, ...rest}, req, options) => {
             const {context, headers} = req
 
-            Util.checkIfUserIsLoggedIn(context)
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_CMS_CONTENT)
+
 
             const {_version} = rest
 

@@ -9,6 +9,7 @@ export const translations = {
         'Media.selectConversion': 'Wählen Sie eine Konvertierung',
         'Media.field.size': 'Dateigrösse',
         'Media.field.group': 'Gruppe',
+        'Media.field.ownerGroup': 'Besitzergruppe',
         'Media.cleanupMedia': 'Media Varianten löschen'
     },
     en: {
@@ -21,6 +22,7 @@ export const translations = {
         'Media.field.conversion': 'Conversion',
         'Media.field.size': 'Size',
         'Media.field.group': 'group',
+        'Media.field.ownerGroup': 'Owner group',
         'Media.cleanupMedia': 'CleanUp Medias'
     }
 }

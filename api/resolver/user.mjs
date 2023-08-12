@@ -233,7 +233,7 @@ export const userResolver = (db) => ({
         },
         userRoles: async ({limit, page, offset, filter, sort}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            return await GenericResolver.entities(db, context, 'UserRole', ['name', 'capabilities'], {
+            return await GenericResolver.entities(db, context, 'UserRole', ['name', 'prettyName', 'ownerGroup', 'capabilities'], {
                 limit,
                 page,
                 offset,
@@ -740,11 +740,13 @@ export const userResolver = (db) => ({
             return result.value
 
         },
-        createUserRole: async ({name, capabilities}, req) => {
-            await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_MANAGE_OTHER_USERS)
+        createUserRole: async ({name, prettyName, ownerGroup, capabilities}, req) => {
+            await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_MANAGE_USER_ROLE)
 
             return await GenericResolver.createEntity(db, req, 'UserRole', {
                 name,
+                prettyName,
+                ownerGroup:(ownerGroup?ownerGroup.reduce((o,id)=>{o.push(new ObjectId(id));return o},[]):ownerGroup),
                 capabilities
             })
         },
@@ -753,13 +755,14 @@ export const userResolver = (db) => ({
                 name
             })
         },
-        updateUserRole: async ({_id, name, capabilities}, {context}) => {
-            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
-
+        updateUserRole: async ({_id, name, prettyName, ownerGroup, capabilities}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)
             return await GenericResolver.updateEnity(db, context, 'UserRole', {
                 _id,
                 name,
-                capabilities
+                prettyName,
+                capabilities,
+                ownerGroup:(ownerGroup?ownerGroup.reduce((o,id)=>{o.push(new ObjectId(id));return o},[]):ownerGroup)
             })
 
         },

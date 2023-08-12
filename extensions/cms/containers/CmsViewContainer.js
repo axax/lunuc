@@ -9,6 +9,7 @@ import withCms from './withCms'
 import {client} from '../../../client/middleware/graphql'
 import Hook from '../../../util/hook.cjs'
 import {deepMerge} from '../../../util/deepMerge.mjs'
+import {CAPABILITY_MANAGE_CMS_CONTENT} from '../constants/index.mjs'
 
 class CmsViewContainer extends React.Component {
     oriTitle = document.title
@@ -115,7 +116,7 @@ class CmsViewContainer extends React.Component {
             parseResolvedData={cmsPage.parseResolvedData}
             resources={cmsPage.resources}
             editMode={editMode}
-            inlineEditor={settings && !!settings.inlineEditor}
+            inlineEditor={Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_CONTENT) && settings && !!settings.inlineEditor}
             slug={cmsPage.realSlug}
             title={cmsPage.name}
             publicEdit={cmsPage.publicEdit}

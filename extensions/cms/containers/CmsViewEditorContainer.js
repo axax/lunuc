@@ -43,7 +43,11 @@ import Box from '@mui/material/Box'
 import NetworkStatusHandler from 'client/components/layout/NetworkStatusHandler'
 import {getTypeQueries} from 'util/types.mjs'
 import Util from '../../../client/util/index.mjs'
-import {CAPABILITY_MANAGE_CMS_CONTENT, CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants/index.mjs'
+import {
+    CAPABILITY_MANAGE_CMS_CONTENT,
+    CAPABILITY_MANAGE_CMS_TEMPLATE,
+    CAPABILITY_VIEW_CMS_EDITOR
+} from '../constants/index.mjs'
 import {propertyByPath, setPropertyByPath, findSegmentByKeyOrPath} from '../../../client/util/json.mjs'
 import GenericForm from '../../../client/components/GenericForm'
 import {_t} from '../../../util/i18n.mjs'
@@ -326,7 +330,8 @@ class CmsViewEditorContainer extends React.Component {
 
         console.log(`render CmsViewEditorContainer ${this.props.slug} (loading=${loadingState})`, cmsPage)
 
-        const canManageCmsPages = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_CONTENT),
+        const canViewCmsEditor = Util.hasCapability(props.user, CAPABILITY_VIEW_CMS_EDITOR),
+            canMangeCmsContent = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_CONTENT),
             canMangeCmsTemplate = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_TEMPLATE)
 
         let cmsEditDataProps
@@ -428,7 +433,7 @@ class CmsViewEditorContainer extends React.Component {
                                                cmsEditData={cmsEditData}
                                                onTemplateChange={this.handleTemplateChange}
                                                findSegmentInDataResolverByKeyOrPath={this.findSegmentInDataResolverByKeyOrPath.bind(this)}
-                                               inEditor={canManageCmsPages}
+                                               inEditor={canViewCmsEditor}
                                                onError={this.handleCmsError.bind(this)}
                                                onDataResolverPropertyChange={this.handleDataResolverPropertySave.bind(this)}
                                                settings={EditorOptions}
@@ -480,7 +485,7 @@ class CmsViewEditorContainer extends React.Component {
             </SimpleDialog>,
             <DataEditDialog key="dataEditDialog"/>
         ]
-        if (!canManageCmsPages || props.dynamic) {
+        if (!canViewCmsEditor || props.dynamic) {
             if ((cmsPage && cmsPage.publicEdit) || props.forceEditMode==='true') {
                 return <UIProvider>{inner}</UIProvider>
             }
@@ -607,7 +612,7 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>}
 
 
-                    <Expandable title={_t('CmsViewEditorContainer.settings')}
+                    {canMangeCmsContent && <Expandable title={_t('CmsViewEditorContainer.settings')}
                                 disableGutters
                                 icon="displaySetting"
                                 onChange={this.handleSettingChange.bind(this, 'settingsExpanded', true)}
@@ -702,9 +707,9 @@ class CmsViewEditorContainer extends React.Component {
                                 /><br/>
 
                             </React.Fragment>}
-                    </Expandable>
+                    </Expandable>}
 
-                    {!loadingState && <Expandable title={_t('CmsViewEditorContainer.revisions')}
+                    {canMangeCmsContent && !loadingState && <Expandable title={_t('CmsViewEditorContainer.revisions')}
                                                   disableGutters
                                                   icon="history"
                                                   onChange={this.handleSettingChange.bind(this, 'revisionsExpanded', true)}
@@ -738,7 +743,7 @@ class CmsViewEditorContainer extends React.Component {
                                 advanced={canMangeCmsTemplate}/>
                 </Box>}
 
-                <Box sx={{width: '100%'}}>
+                {canMangeCmsContent && <Box sx={{width: '100%'}}>
                     <Paper elevation={3}>
                         <BottomNavigation
                             showLabels
@@ -750,88 +755,33 @@ class CmsViewEditorContainer extends React.Component {
                             <BottomNavigationAction label={_t('CmsViewEditorContainer.pageElements')} icon={<AppsIcon />} />
                         </BottomNavigation>
                     </Paper>
-                </Box>
+                </Box>}
             </>
 
-            const moreMenu = [
-                {
-                    divider: true,
-                    icon: 'add',
-                    name: _t('CmsViewEditorContainer.addnewpage'), onClick: () => {
-                        this.setState({addNewSite: {}})
-
-                    }
-                },
-                {
-                    icon:'displaySetting',
-                    name: _t('CmsViewEditorContainer.pagesettings'), onClick: () => {
-                        this.setState({showPageSettings: true})
-                    }
-                }
-            ]
-            if (config.LANGUAGES.length > 1) {
-                moreMenu.push(
-                    {
-                        icon:'translate',
+            const moreMenu = []
+            if(canMangeCmsContent){
+                moreMenu.push({
                         divider: true,
-                        name: _t('CmsViewEditorContainer.languages'),
-                        items: []
-                    },
-                    {
-                        divider: true,
-                        icon:'magic',
-                        name: _t('CmsViewEditorContainer.autotranslate'), onClick: () => {
-                            const {segment, dataResolver} = this.findSegmentInDataResolverByKeyOrPath({path: 'tr'})
-                            if (segment.tr && segment.tr[config.DEFAULT_LANGUAGE]) {
-                                let timeout
-                                const saveResolver = () => {
-                                    clearTimeout(timeout)
-                                    timeout = setTimeout(() => {
-                                        this.handleDataResolverChange(JSON.stringify(dataResolver, null, 2), true)
-                                    }, 100)
-                                }
-                                const transRec = (o, base, path) => {
-                                    if (!o || o.constructor !== Object) {
-                                        return
-                                    }
-                                    const overrideTranslations = false
-                                    Object.keys(o).forEach(key => {
-                                        if (o[key] && o[key].constructor === String) {
-                                            config.LANGUAGES.forEach(lang => {
-                                                if ((overrideTranslations || !base[lang] || !base[lang][key]) && lang !== config.DEFAULT_LANGUAGE) {
-                                                    const text = o[key].replace(/\\n/g, '\n').replace(/%(\w+)%/g, '@_$1_')
-                                                    client.query({
-                                                        fetchPolicy: 'no-cache',
-                                                        query: 'query translate($text: String!, $toIso: String!){translate(text: $text, toIso: $toIso){text toIso}}',
-                                                        variables: {
-                                                            text,
-                                                            toIso: lang,
-                                                            fromIso: config.DEFAULT_LANGUAGE
-                                                        },
-                                                    }).then((res) => {
-                                                        // double escape
-                                                        const newText = Util.escapeForJson(Util.escapeForJson(res.data.translate.text.replace(/@_(\w+)_/g, '%$1%').replace(/\\/g, '')))
-                                                        setPropertyByPath(newText, lang + path + '.' + key.replace(/\./g, '\\\.'), base)
-                                                        saveResolver()
-
-                                                    })
-
-                                                }
-                                            })
-                                        }
-                                    })
-                                }
-                                transRec(segment.tr[config.DEFAULT_LANGUAGE], segment.tr, '')
-
-
-                            }
+                        icon: 'add',
+                        name: _t('CmsViewEditorContainer.addnewpage'), onClick: () => {
+                            this.setState({addNewSite: {}})
 
                         }
-                    }
-                )
+                    },
+                    {
+                        icon:'displaySetting',
+                        name: _t('CmsViewEditorContainer.pagesettings'), onClick: () => {
+                            this.setState({showPageSettings: true})
+                        }
+                    })
+            }
+
+            if (config.LANGUAGES.length > 1) {
+
+                const langItems = []
                 config.LANGUAGES.forEach(lang => {
                     if (lang !== _app_.lang) {
-                        moreMenu[2].items.push({
+                        langItems.push({
                             name: lang, onClick: () => {
                                 window.location.href = Util.translateUrl(lang)
 
@@ -839,6 +789,68 @@ class CmsViewEditorContainer extends React.Component {
                         })
                     }
                 })
+
+                moreMenu.push(
+                    {
+                        icon:'translate',
+                        divider: canMangeCmsContent,
+                        name: _t('CmsViewEditorContainer.languages'),
+                        items: langItems
+                    })
+                if(canMangeCmsContent) {
+                    moreMenu.push({
+                            divider: true,
+                            icon: 'magic',
+                            name: _t('CmsViewEditorContainer.autotranslate'), onClick: () => {
+                                const {segment, dataResolver} = this.findSegmentInDataResolverByKeyOrPath({path: 'tr'})
+                                if (segment.tr && segment.tr[config.DEFAULT_LANGUAGE]) {
+                                    let timeout
+                                    const saveResolver = () => {
+                                        clearTimeout(timeout)
+                                        timeout = setTimeout(() => {
+                                            this.handleDataResolverChange(JSON.stringify(dataResolver, null, 2), true)
+                                        }, 100)
+                                    }
+                                    const transRec = (o, base, path) => {
+                                        if (!o || o.constructor !== Object) {
+                                            return
+                                        }
+                                        const overrideTranslations = false
+                                        Object.keys(o).forEach(key => {
+                                            if (o[key] && o[key].constructor === String) {
+                                                config.LANGUAGES.forEach(lang => {
+                                                    if ((overrideTranslations || !base[lang] || !base[lang][key]) && lang !== config.DEFAULT_LANGUAGE) {
+                                                        const text = o[key].replace(/\\n/g, '\n').replace(/%(\w+)%/g, '@_$1_')
+                                                        client.query({
+                                                            fetchPolicy: 'no-cache',
+                                                            query: 'query translate($text: String!, $toIso: String!){translate(text: $text, toIso: $toIso){text toIso}}',
+                                                            variables: {
+                                                                text,
+                                                                toIso: lang,
+                                                                fromIso: config.DEFAULT_LANGUAGE
+                                                            },
+                                                        }).then((res) => {
+                                                            // double escape
+                                                            const newText = Util.escapeForJson(Util.escapeForJson(res.data.translate.text.replace(/@_(\w+)_/g, '%$1%').replace(/\\/g, '')))
+                                                            setPropertyByPath(newText, lang + path + '.' + key.replace(/\./g, '\\\.'), base)
+                                                            saveResolver()
+
+                                                        })
+
+                                                    }
+                                                })
+                                            }
+                                        })
+                                    }
+                                    transRec(segment.tr[config.DEFAULT_LANGUAGE], segment.tr, '')
+
+
+                                }
+
+                            }
+                        }
+                    )
+                }
             }
 
 
@@ -858,21 +870,23 @@ class CmsViewEditorContainer extends React.Component {
 
 
             const toolbarRight = []
-            if (isSmallScreen) {
-                moreMenu.unshift({
-                    component: <SimpleSwitch key="inlineEditorSwitch" color="default"
-                                             checked={!!EditorOptions.inlineEditor}
-                                             onChange={this.handleSettingChange.bind(this, 'inlineEditor', false)}
-                                             label={_t('CmsViewEditorContainer.inlineEditor')}/>
-                })
-            }else{
-                toolbarRight.push(
-                    <SimpleSwitch key="inlineEditorSwitch" dark={true}
-                                  checked={!!EditorOptions.inlineEditor}
-                                  onChange={this.handleSettingChange.bind(this, 'inlineEditor', false)}
-                                  label={_t('CmsViewEditorContainer.inlineEditor')}/>)
-            }
 
+            if(canMangeCmsContent) {
+                if (isSmallScreen) {
+                    moreMenu.unshift({
+                        component: <SimpleSwitch key="inlineEditorSwitch" color="default"
+                                                 checked={!!EditorOptions.inlineEditor}
+                                                 onChange={this.handleSettingChange.bind(this, 'inlineEditor', false)}
+                                                 label={_t('CmsViewEditorContainer.inlineEditor')}/>
+                    })
+                } else {
+                    toolbarRight.push(
+                        <SimpleSwitch key="inlineEditorSwitch" dark={true}
+                                      checked={!!EditorOptions.inlineEditor}
+                                      onChange={this.handleSettingChange.bind(this, 'inlineEditor', false)}
+                                      label={_t('CmsViewEditorContainer.inlineEditor')}/>)
+                }
+            }
             moreMenu.push(
                 {
                     divider: true,

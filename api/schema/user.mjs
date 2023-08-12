@@ -21,7 +21,9 @@ export const userSchemaRaw = `
 		_id: ID!
 		status: String
         name: String!
+        prettyName: LocalizedString
         capabilities: [String]!
+        ownerGroup:[UserGroup]
     }
     
     type UserRoleResult {
@@ -148,7 +150,9 @@ export const userSchemaRaw = `
 		
 		createUserRole (
 			name: String
-			capabilities: [String]
+			prettyName: LocalizedStringInput,
+			capabilities: [String],
+			ownerGroup:[ID]
 		): UserRole
 		
 		
@@ -177,7 +181,9 @@ export const userSchemaRaw = `
 		updateUserRole (
 		    _id: ID!
 			name: String
+			prettyName: LocalizedStringInput,
 			capabilities: [String]
+			ownerGroup:[ID]
 		): UserRole
 		
 		

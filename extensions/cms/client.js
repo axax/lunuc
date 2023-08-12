@@ -4,6 +4,7 @@ import config from 'gen/config-client'
 
 const {ADMIN_BASE_URL, PRETTYURL_SEPERATOR} = config
 import {
+    CAPABILITY_VIEW_CMS_EDITOR,
     CAPABILITY_MANAGE_CMS_PAGES,
     CAPABILITY_MANAGE_CMS_TEMPLATE,
     CAPABILITY_MANAGE_CMS_CONTENT
@@ -37,7 +38,7 @@ export default () => {
 
     // Hook to add user capabilities
     Hook.on('userCapabilities', ({capabilities}) => {
-        capabilities.push(CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_TEMPLATE, CAPABILITY_MANAGE_CMS_CONTENT)
+        capabilities.push(CAPABILITY_VIEW_CMS_EDITOR, CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_TEMPLATE, CAPABILITY_MANAGE_CMS_CONTENT)
     })
 
     // add routes

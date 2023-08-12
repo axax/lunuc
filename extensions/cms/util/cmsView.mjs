@@ -1,5 +1,5 @@
 import Util from '../../../client/util/index.mjs'
-import {CAPABILITY_MANAGE_CMS_CONTENT} from '../constants/index.mjs'
+import {CAPABILITY_VIEW_CMS_EDITOR} from '../constants/index.mjs'
 import {NO_SESSION_KEY_VALUES} from '../../../client/constants/index.mjs'
 import config from '../../../gensrc/config-client.js'
 
@@ -31,7 +31,7 @@ export const isEditMode = (props) => {
         }
     }
 
-    return (!dynamic && Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_CONTENT)) && !isPreview() && props.editMode !== false
+    return (!dynamic && Util.hasCapability(_app_.user, CAPABILITY_VIEW_CMS_EDITOR)) && !isPreview() && props.editMode !== false
 }
 
 export const getSlugVersion = (slug) => {

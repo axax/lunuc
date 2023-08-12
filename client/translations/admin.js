@@ -2,6 +2,7 @@ import GenericForm from "../components/GenericForm";
 
 export const translations = {
     de: {
+        'BaseLayout.editEntry': 'Eintrag bearbeiten',
         'BaseLayout.editMenu': 'Menü bearbeiten',
         'BaseLayout.resetMenu': 'Menü zurücksetzen',
         'TypesContainer.filter': 'Suche',
@@ -78,11 +79,16 @@ export const translations = {
         'User.field.junior': 'Untergeordnete Benutzer',
         'User.field.group': 'Benutzergruppe',
         'User.field.setting': 'Eintellungen',
+        'UserRole.field.name': 'Technischer Name',
+        'UserRole.field.prettyName': 'Name',
+        'UserRole.field.capabilities': 'Fähigkeiten',
+        'UserRole.field.ownerGroup': 'Besitzergruppe',
         'GenericForm.delete': 'Löschen',
         'GenericForm.clone': 'Duplizieren',
         'TypePicker.editEntry':'Eintrag bearbeiten'
     },
     en: {
+        'BaseLayout.editEntry': 'Edit entry',
         'BaseLayout.editMenu': 'Edit menu',
         'BaseLayout.resetMenu': 'Reset menu',
         'TypesContainer.filter': 'Filter expression (for specifc fields use field=term)',
@@ -159,6 +165,10 @@ export const translations = {
         'User.field.group': 'User group',
         'User.field.setting': 'Settings',
         'User.field.domain': 'Domain',
+        'UserRole.field.name': 'Technical name',
+        'UserRole.field.prettyName': 'Name',
+        'UserRole.field.capabilities': 'Capabilities',
+        'UserRole.field.ownerGroup': 'Owner group',
         'GenericForm.delete': 'Delete',
         'GenericForm.clone': 'Duplicate',
         'TypePicker.editEntry':'Edit entry'

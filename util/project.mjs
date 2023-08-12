@@ -67,7 +67,12 @@ export const projectionToQueryString = (projection) => {
         if (field.constructor === String) {
             const dotIndex = field.indexOf('.')
             if(dotIndex>=0){
-                queryString += field.substring(0,dotIndex)
+                const parts = field.split('.')
+                let tmpStr = ''
+                for(let i = parts.length-1;i>=0;i--){
+                    tmpStr = `{${parts[i]}${tmpStr}}`
+                }
+                queryString += tmpStr.substring(1,tmpStr.length-1)
             }else {
                 queryString += field
             }

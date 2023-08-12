@@ -1,5 +1,10 @@
 import Hook from './hook.cjs'
-import {CAPABILITY_MANAGE_SAME_GROUP, CAPABILITY_MANAGE_USER_GROUP, getAllCapabilites} from './capabilities.mjs'
+import {
+    CAPABILITY_MANAGE_SAME_GROUP,
+    CAPABILITY_MANAGE_USER_GROUP,
+    CAPABILITY_MANAGE_USER_ROLE,
+    getAllCapabilites
+} from './capabilities.mjs'
 import {getTypes} from './types.mjs'
 import {_t} from './i18n.mjs'
 import extensionsPrivate from '../gensrc/extensions-private.mjs'
@@ -298,19 +303,43 @@ Hook.on('Types', ({types}) => {
 
 
     types.UserRole = {
+        access:{read:CAPABILITY_MANAGE_USER_ROLE,create: CAPABILITY_MANAGE_USER_ROLE, update:CAPABILITY_MANAGE_USER_ROLE},
         name: 'UserRole',
         noUserRelation: true,
         usedBy: ['core'],
         fields: [
             {
                 name: 'name',
-                required: true
+                required: true,
+                unique:true,
+
+            },
+            {
+                name: 'prettyName',
+                required: false,
+                localized:true
             },
             {
                 name: 'capabilities',
                 required: true,
                 multi: true,
                 enum: getAllCapabilites()
+            },
+            {
+                name: 'ownerGroup',
+                hideColumnInTypes: false,
+                access: {
+                    ui: {
+                        role: 'manage_user_group'
+                    }
+                },
+                type: 'UserGroup',
+                multi: true,
+                fields: [
+                    'name'
+                ],
+                index: 1,
+                reference: true
             }
         ]
     }
@@ -435,7 +464,7 @@ Hook.on('Types', ({types}) => {
                 name: 'role',
                 type: 'UserRole',
                 reference: true,
-                fields: ['name'],
+                pickerField:['prettyName.de'],
                 tab: _t('Types.accessControl'),
                 access: {
                     ui: {

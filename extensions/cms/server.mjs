@@ -4,6 +4,7 @@ import resolver from './resolver/index.mjs'
 import Hook from '../../util/hook.cjs'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import {
+    CAPABILITY_VIEW_CMS_EDITOR,
     CAPABILITY_MANAGE_CMS_PAGES,
     CAPABILITY_MANAGE_CMS_CONTENT,
     CAPABILITY_MANAGE_CMS_TEMPLATE
@@ -29,14 +30,14 @@ Hook.on('schema', ({schemas}) => {
 Hook.on('createUserRoles', ({userRoles}) => {
     userRoles.forEach(userRole => {
         if (['administrator', 'editor'].indexOf(userRole.name) >= 0) {
-            console.log(`Add capabilities "${CAPABILITY_MANAGE_CMS_PAGES}",${CAPABILITY_MANAGE_CMS_TEMPLATE} and ${CAPABILITY_MANAGE_CMS_CONTENT} for user role "${userRole.name}"`)
-            userRole.capabilities.push(CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_CONTENT, CAPABILITY_MANAGE_CMS_TEMPLATE)
+            console.log(`Add capabilities ${CAPABILITY_VIEW_CMS_EDITOR}, ${CAPABILITY_MANAGE_CMS_PAGES},${CAPABILITY_MANAGE_CMS_TEMPLATE} and ${CAPABILITY_MANAGE_CMS_CONTENT} for user role "${userRole.name}"`)
+            userRole.capabilities.push(CAPABILITY_VIEW_CMS_EDITOR, CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_CONTENT, CAPABILITY_MANAGE_CMS_TEMPLATE)
         }else if( userRole.name === 'author'){
-            console.log(`Add capability ${CAPABILITY_MANAGE_CMS_CONTENT} and ${CAPABILITY_MANAGE_CMS_PAGES} for user role "${userRole.name}"`)
-            userRole.capabilities.push(CAPABILITY_MANAGE_CMS_CONTENT, CAPABILITY_MANAGE_CMS_PAGES)
+            console.log(`Add capability ${CAPABILITY_VIEW_CMS_EDITOR}, ${CAPABILITY_MANAGE_CMS_CONTENT} and ${CAPABILITY_MANAGE_CMS_PAGES} for user role "${userRole.name}"`)
+            userRole.capabilities.push(CAPABILITY_VIEW_CMS_EDITOR, CAPABILITY_MANAGE_CMS_CONTENT, CAPABILITY_MANAGE_CMS_PAGES)
         }else if( userRole.name === 'contributor'){
-            console.log(`Add capability ${CAPABILITY_MANAGE_CMS_CONTENT} for user role "${userRole.name}"`)
-            userRole.capabilities.push(CAPABILITY_MANAGE_CMS_CONTENT)
+            console.log(`Add capability ${CAPABILITY_VIEW_CMS_EDITOR}, ${CAPABILITY_MANAGE_CMS_CONTENT} for user role "${userRole.name}"`)
+            userRole.capabilities.push(CAPABILITY_VIEW_CMS_EDITOR, CAPABILITY_MANAGE_CMS_CONTENT)
         }
     })
 })

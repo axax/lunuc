@@ -78,6 +78,7 @@ export const createUploads = () => {
 export const createUserRoles = async (db) => {
     const userRoles = [
         {
+            prettyName: {de: 'Administrator', en: 'Administrator'},
             name: 'administrator',
             capabilities: [CAPABILITY_VIEW_APP, CAPABILITY_MANAGE_USER_ROLE, CAPABILITY_MANAGE_USER_GROUP,
                 CAPABILITY_ACCESS_ADMIN_PAGE, CAPABILITY_MANAGE_TYPES, CAPABILITY_MANAGE_SAME_GROUP,
@@ -87,18 +88,22 @@ export const createUserRoles = async (db) => {
                 CAPABILITY_MANAGE_BACKUPS, CAPABILITY_RUN_COMMAND, CAPABILITY_RUN_SCRIPT, CAPABILITY_EXTRA_OPTIONS, CAPABILITY_ADMIN_OPTIONS]
         },
         {
+            prettyName: {de: 'Editor', en: 'Editor'},
             name: 'editor',
             capabilities: [CAPABILITY_BULK_EDIT, CAPABILITY_VIEW_APP, CAPABILITY_ACCESS_ADMIN_PAGE, CAPABILITY_MANAGE_COLLECTION, CAPABILITY_MANAGE_SAME_GROUP, CAPABILITY_EXTRA_OPTIONS]
         },
         {
+            prettyName: {de: 'Author', en: 'Author'},
             name: 'author',
             capabilities: [CAPABILITY_BULK_EDIT, CAPABILITY_VIEW_APP, CAPABILITY_ACCESS_ADMIN_PAGE, CAPABILITY_MANAGE_SAME_GROUP]
         },
         {
+            prettyName: {de: 'Contributor', en: 'Contributor'},
             name: 'contributor',
             capabilities: [CAPABILITY_VIEW_APP]
         },
         {
+            prettyName: {de: 'Abonnent', en: 'Subscriber'},
             name: 'subscriber',
             capabilities: [CAPABILITY_VIEW_APP]
         }
@@ -112,6 +117,7 @@ export const createUserRoles = async (db) => {
         await userRoleCollection.updateOne(
             {name: userRole.name},
             {
+                $set: {prettyName: userRole.prettyName},
                 $addToSet: {
                     capabilities: {
                         $each: userRole.capabilities

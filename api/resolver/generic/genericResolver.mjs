@@ -2,18 +2,15 @@ import Util from '../../util/index.mjs'
 import {ObjectId} from 'mongodb'
 import {getType} from '../../../util/types.mjs'
 import {getFormFieldsByType} from '../../../util/typesAdmin.mjs'
-import config from '../../../gensrc/config.mjs'
 import {
     CAPABILITY_MANAGE_TYPES, CAPABILITY_MANAGE_SAME_GROUP,
-    CAPABILITY_MANAGE_OTHER_USERS, CAPABILITY_MANAGE_KEYVALUES, CAPABILITY_MANAGE_COLLECTION
+    CAPABILITY_MANAGE_OTHER_USERS
 } from '../../../util/capabilities.mjs'
 import Hook from '../../../util/hook.cjs'
 import HookAsync from '../../../util/hookAsync.mjs'
 import AggregationBuilder from './AggregationBuilder.mjs'
 import Cache from '../../../util/cache.mjs'
 import {_t} from '../../../util/i18nServer.mjs'
-
-const {DEFAULT_LANGUAGE} = config
 
 const buildCollectionName = async (db, context, typeName, _version) => {
 
@@ -551,6 +548,8 @@ const GenericResolver = {
         if (typeDefinition && typeDefinition.access && typeDefinition.access.create) {
             if (await Util.userHasCapability(db, context, typeDefinition.access.create)) {
                 userContext = await Util.userOrAnonymousContext(db, context)
+            }else {
+                throw new Error('Benutzerrole ist nicht befähigt zum Erstellen von neuen Einträgen')
             }
         }
 
