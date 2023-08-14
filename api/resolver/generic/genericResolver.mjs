@@ -157,6 +157,8 @@ const createMatchForCurrentUser = async ({typeName, db, context, operation}) => 
 
     if( typeName === 'UserRole'){
         match={name:{$in:['subscriber',context.role]}}
+        const typeDefinition = getType(typeName)
+        match = extendWithOwnerGroupMatch(typeDefinition, context, match, true)
     }else if (typeName === 'User') {
 
         // special handling for type User
