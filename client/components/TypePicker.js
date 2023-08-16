@@ -592,7 +592,7 @@ class TypePicker extends React.Component {
 
                 Hook.call('TypePickerBeforeQueryString', {type, finalFields})
 
-                queryString = projectionToQueryString(finalFields)
+                queryString = projectionToQueryString(finalFields, type)
 
             } else {
                 queryString = queryStatemantForType(type)

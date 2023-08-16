@@ -670,7 +670,7 @@ export const userResolver = (db) => ({
                 const roleEntry = await Util.getUserRoles(db, role)
 
                 if(['subscriber',context.role].indexOf(roleEntry.name)<0) {
-                    await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)
+                    await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_SAME_GROUP)
                 }
                 user.role = new ObjectId(role)
             }

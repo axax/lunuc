@@ -1,4 +1,6 @@
 import {deepMergeOptional} from './deepMerge.mjs'
+import {getFieldOfType} from "./types.mjs";
+import config from '../gensrc/config.mjs'
 
 export const performFieldProjection = (projection, data, level = 0)=>{
     if(!data){
@@ -57,7 +59,7 @@ export const findProjection = (key, projection) => {
     return {}
 }
 
-export const projectionToQueryString = (projection) => {
+export const projectionToQueryString = (projection, type) => {
     let queryString = ''
 
     projection.forEach(field => {
@@ -68,11 +70,13 @@ export const projectionToQueryString = (projection) => {
             const dotIndex = field.indexOf('.')
             if(dotIndex>=0){
                 const parts = field.split('.')
-                let tmpStr = ''
-                for(let i = parts.length-1;i>=0;i--){
-                    tmpStr = `{${parts[i]}${tmpStr}}`
+                const fieldDefinition = getFieldOfType(type, parts[0])
+                if(fieldDefinition && fieldDefinition.localized){
+                    queryString += `${parts[0]}{${config.LANGUAGES.join(' ')}}`
+                }else {
+                    queryString += parts[0]
                 }
-                queryString += tmpStr.substring(1,tmpStr.length-1)
+
             }else {
                 queryString += field
             }
