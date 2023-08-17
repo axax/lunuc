@@ -605,16 +605,13 @@ const sendFileFromTemplateDir = (req, res, urlPathname, headers, parsedUrl, host
     })
 }
 
-function hasHttpsWwwRedirect(host, req, res, remoteAddress) {
+function hasHttpsWwwRedirect({parsedUrl, hostrule, host, req, res, remoteAddress}) {
     if (host !== 'localhost' && !net.isIP(host)) {
 
         // force www
         let newhost = host
-        if (!newhost.startsWith('www.')) {
-            const hostrule = hostrules[host] || hostrules.general
-            if (hostrule && hostrule.forceWWW) {
-                newhost = 'www.' + newhost
-            }
+        if (!newhost.startsWith('www.') && hostrule.forceWWW) {
+            newhost = 'www.' + newhost
         }
 
         if (!config.DEV_MODE && this.constructor.name === 'Server') {
@@ -627,7 +624,8 @@ function hasHttpsWwwRedirect(host, req, res, remoteAddress) {
 
                     const {browser, version} = parseUserAgent(agent)
 
-                    if ((browser === 'netscape') ||
+                    if ((hostrule.allowInsecure && hostrule.allowInsecure[parsedUrl.pathname]) ||
+                        (browser === 'netscape') ||
                         (browser === 'safari' && version <= 6) ||
                         (browser === 'firefox' && version <= 26) ||
                         (browser === 'chrome' && version <= 49) ||
@@ -1125,8 +1123,9 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             // check with and without www
             const hostRuleHost = req.headers['x-host-rule'] ? req.headers['x-host-rule'].split(':')[0] : host
             const hostrule = {...hostrules.general, ...(hostrules[hostRuleHost] || hostrules[hostRuleHost.substring(4)])}
+            const parsedUrl = url.parse(req.url, true)
 
-            if (hostrule.certDir && hasHttpsWwwRedirect.call(this, host, req, res, remoteAddress)) {
+            if (hostrule.certDir && hasHttpsWwwRedirect.call(this, {parsedUrl, hostrule, host, req, res, remoteAddress})) {
                 return
             }
 
@@ -1137,7 +1136,6 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 return
             }
 
-            const parsedUrl = url.parse(req.url, true)
             let urlPathname
             try {
                 urlPathname = decodeURIComponent(parsedUrl.pathname)

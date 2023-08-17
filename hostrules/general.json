@@ -13,6 +13,9 @@
       "Access-Control-Allow-Headers": "*"
     }
   },
+  "allowInsecure": {
+    "/some/pathname": true
+  },
   "statusCode": {
     "/404": 404
   },
