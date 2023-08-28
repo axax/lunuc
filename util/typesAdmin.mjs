@@ -1,5 +1,6 @@
 import Hook from './hook.cjs'
 import {
+    CAPABILITY_MANAGE_OTHER_USERS,
     CAPABILITY_MANAGE_SAME_GROUP,
     CAPABILITY_MANAGE_USER_GROUP,
     CAPABILITY_MANAGE_USER_ROLE,
@@ -10,6 +11,7 @@ import {_t} from './i18n.mjs'
 import extensionsPrivate from '../gensrc/extensions-private.mjs'
 import extensions from '../gensrc/extensions.mjs'
 import {propertyByPath} from '../client/util/json.mjs'
+import Util from '../client/util/index.mjs'
 
 console.log(`merge extension defintion`)
 
@@ -61,7 +63,18 @@ export const typeDataToLabel = (item, pickerField) => {
     return label.join(' ')
 }
 
-//
+const getCreatedByField = (options= {})=>{
+    return {
+        label: _t('Types.createdBy'),
+        uitype: 'type_picker',
+        pickerField: 'username',
+        type: 'User',
+        required: true,
+        reference: true,
+        name: 'createdBy',
+        ...options
+    }
+}
 
 /**
  * returns a map with informations about the form field of a type
@@ -81,15 +94,7 @@ export const getFormFieldsByType = (type) => {
     typeFormFields[type] = {}
     if (!types[type].noUserRelation /*&& Util.hasCapability({userData: _app_.user}, 'manage_other_users')*/) {
         // add field so the createdBy User can be changed
-        typeFormFields[type].createdBy = {
-            label: _t('Types.createdBy'),
-            uitype: 'type_picker',
-            pickerField: 'username',
-            type: 'User',
-            required: true,
-            reference: true,
-            name: 'createdBy'
-        }
+        typeFormFields[type].createdBy = getCreatedByField()
     }
     types[type].fields.map(field => {
         if (field.name !== 'modifiedAt') {
@@ -138,8 +143,12 @@ export const getFieldsForBulkEdit = (type) => {
         for (const field of types[type].fields) {
             if (field.bulkEditable) {
                 fields[field.name] = enhanceField(field, type)
+                delete fields[field.name].tab
             }
         }
+    }
+    if(Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_OTHER_USERS)) {
+        fields.createdBy = getCreatedByField({required: true})
     }
     return fields
 }

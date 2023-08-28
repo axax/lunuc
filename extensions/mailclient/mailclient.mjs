@@ -48,6 +48,15 @@ const startListeningSingle = (data, db, context, admin) => {
         mailListener.on('error', error => {
             console.error(error)
             Hook.call('OnMailError', {db, context, error})
+
+            if(error && error.message && error.message.indexOf('ETIMEDOUT')){
+                clearTimeout(errorTimeout)
+                errorTimeout = setTimeout(()=>{
+                    console.log('restart email listening')
+                    stopListening()
+                    startListening(db, context)
+                },5000)
+            }
         })
 
         mailListener.on('end', () => {

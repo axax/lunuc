@@ -75,6 +75,11 @@ export const request = (options) => {
                 }
             })
 
+            if(finalOptions.headerOnly){
+                resolve(res)
+                req.abort()
+            }
+
         }).on('error', error => {
             reject(error)
         })
