@@ -99,6 +99,9 @@ export const userSchemaRaw = `
 	type LogoutResult {
 		status: String
 	}
+	type SetInitialPasswordResult {
+		status: String
+	}
     type Query {
         users(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String): UserResult
         userRoles(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String): UserRoleResult      
@@ -111,6 +114,7 @@ export const userSchemaRaw = `
         newPassword(token:String!, password:String!, passwordConfirm:String): NewPasswordResult
         confirmEmail(token:String!): ConfirmEmailResult
         sendConformationEmail(mailTemplate: String!, mailSubject: String!, mailUrl: String!,fromEmail: String,fromName: String,replyTo: String): ConfirmEmailResult
+        setInitalPassword(ids:[ID],url:String,fromName:String): SetInitialPasswordResult
     }
 		
 	type Mutation {

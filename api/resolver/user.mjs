@@ -8,7 +8,8 @@ import {
     CAPABILITY_MANAGE_USER_ROLE,
     CAPABILITY_MANAGE_OTHER_USERS,
     CAPABILITY_MANAGE_USER_GROUP,
-    CAPABILITY_MANAGE_SAME_GROUP
+    CAPABILITY_MANAGE_SAME_GROUP,
+    CAPABILITY_SET_INITIAL_PASSWORD
 } from '../../util/capabilities.mjs'
 import {sendMail} from '../util/mail.mjs'
 import crypto from 'crypto'
@@ -18,6 +19,7 @@ import {_t} from '../../util/i18nServer.mjs'
 import Hook from '../../util/hook.cjs'
 import {USE_COOKIES} from '../constants/index.mjs'
 import {hasQueryField} from '../util/graphql.js'
+import {generatePassword} from '../../util/password.mjs'
 
 const LOGIN_ATTEMPTS_MAP = {},
     MAX_LOGIN_ATTEMPTS = 10,
@@ -517,6 +519,38 @@ export const userResolver = (db) => ({
                 const doc = insertResult.ops[0]
                 return doc
             }
+        },
+        setInitalPassword: async ({ids, url, fromName},req) =>{
+            const {context} = req
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_SET_INITIAL_PASSWORD)
+
+
+            for (const id of ids) {
+                const user = await Util.userById(db,id)
+                if(user){
+
+                    console.log(user.group, context.group, )
+
+                    if (await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS) || (
+                        await Util.userHasCapability(db, context, CAPABILITY_MANAGE_SAME_GROUP) &&
+                            user.group && context.group && user.group.some(item => context.group.includes(item))
+                    )) {
+                        const password = generatePassword()
+                        const hashedPw = Util.hashPassword(password)
+                        const result = (await db.collection('User').findOneAndUpdate({_id:new ObjectId(id)}, {$set: {requestNewPassword:true, password: hashedPw}}, {returnOriginal: false}))
+                        sendMail(db, context, {
+                            fromName,
+                            slug: 'core/new-password/mail',
+                            recipient: user.email,
+                            subject: _t('core.user.new.password.subject'),
+                            body: JSON.stringify({password, url, name: user.username, fromName}),
+                            req
+                        })
+                    }
+                }
+
+            }
+            return {status:'ok'}
         },
         signUp: async ({password, username, domain, email, mailTemplate, mailSubject, mailUrl, meta, fromEmail, fromName, replyTo}, req) => {
 

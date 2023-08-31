@@ -12,6 +12,7 @@ import extensionsPrivate from '../gensrc/extensions-private.mjs'
 import extensions from '../gensrc/extensions.mjs'
 import {propertyByPath} from '../client/util/json.mjs'
 import Util from '../client/util/index.mjs'
+import {client} from '../client/middleware/graphql.js'
 
 console.log(`merge extension defintion`)
 
@@ -525,7 +526,37 @@ Hook.on('Types', ({types}) => {
             }
         ]
     }
+})
 
+Hook.on('TypeCreateEdit', function ({type, props, dataToEdit}) {
+    if (type === 'User' && dataToEdit && dataToEdit._id) {
+        props.actions.unshift({key: 'setNewPassword', label: _t('user.send.new.password')})
+    }
+})
+Hook.on('TypeCreateEditAction', function ({type, action, dataToEdit, meta}) {
+    if (type === 'User' && action.key === 'setNewPassword') {
+        meta.TypeContainer.setState({simpleDialog:{title: _t('user.send.new.password'),
+                actions: [{key: 'cancel', label: _t('core.cancel')},{key: 'yes', label: _t('core.yes')}],
+                onClose: (action) => {
+                    if(action.key==='yes'){
+                        client.query({
+                            fetchPolicy: 'network-only',
+                            forceFetch: true,
+                            variables: {ids: [dataToEdit._id], fromName:_app_.user.domain || '',url:`${location.origin}/${_app_.user.domain || ''}`},
+                            query: 'query setInitalPassword($ids:[ID],$url:String,$fromName:String){setInitalPassword(ids:$ids,url:$url,fromName:$fromName){status}}'
+                        }).then(response => {
+                            if (response.data && response.data.setInitalPassword) {
+                                if (meta && meta.TypeContainer) {
+                                    meta.TypeContainer.setState({simpleDialog: {children: response.data.setInitalPassword.status}})
+                                }
+                            }
+                        }).catch((error)=>{
+                        })
+                    }
+                    meta.TypeContainer.setState({simpleDialog: false})
+                },
+                children: _t('user.send.new.password.question')}})
+    }
 })
 
 Hook.on('ApiClientQueryResponse', ({response}) => {
