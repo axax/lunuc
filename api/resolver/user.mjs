@@ -533,7 +533,7 @@ export const userResolver = (db) => ({
 
                     if (await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS) || (
                         await Util.userHasCapability(db, context, CAPABILITY_MANAGE_SAME_GROUP) &&
-                            user.group && context.group && user.group.some(item => context.group.includes(item))
+                            user.group && context.group && user.group.some(item => context.group.includes(item.toString()))
                     )) {
                         const password = generatePassword()
                         const hashedPw = Util.hashPassword(password)
