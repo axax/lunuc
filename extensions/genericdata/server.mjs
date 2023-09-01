@@ -456,9 +456,14 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
     }else if(field.uitype==='wrapper' && field.subFields){
 
         // wrapper element with lookup functionality
-        //TODO: check if this part is working --> as of now it's not being used anywhere
-        for(const subField of field.subFields){
-
+        //TODO: check if this part is working --> it is used in name=AudioforumBestellung
+        let subFields
+        if(field.subFields.constructor === Object){
+            subFields = Object.values(field.subFields)
+        }else{
+            subFields = field.subFields
+        }
+        for(const subField of subFields){
             if(subField.lookup){
 
                 otherOptions.lookups.push({$unwind : `$data.${field.name}` })
@@ -511,7 +516,6 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions
 
         if (genericType) {
             const def = await getGenericTypeDefinitionWithStructure(db, {name: genericType})
-
             if (def && def.structure) {
                 const struct = def.structure
 
