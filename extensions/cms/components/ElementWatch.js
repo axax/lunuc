@@ -121,7 +121,7 @@ class ElementWatch extends React.Component {
             }
 
             return <div data-element-watch-key={key} data-wait-visible={jsonDom.instanceId}
-                        style={{minHeight: '1rem', minWidth: '1rem'}} {...propsToPass}></div>
+                        style={{minHeight: eleProps.style && eleProps.style.minHeight ? eleProps.style.minHeight:'1rem', minWidth: '1rem'}} {...propsToPass}></div>
         } else {
             if (eleProps.inlineSvg && ElementWatch.loadedSvgData[tagSrc]) {
                 eleProps.svgData = ElementWatch.loadedSvgData[tagSrc].data
