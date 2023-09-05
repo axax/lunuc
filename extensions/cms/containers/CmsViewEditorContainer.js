@@ -939,7 +939,8 @@ class CmsViewEditorContainer extends React.Component {
                         sx={{
                             zIndex: 1300,
                             '& .MuiDrawer-paper': {
-                                maxWidth: '50%'
+                                maxWidth: '100vw',
+                                minWidth: '5wrapper0vw'
                             },
                         }}
                         disableEnforceFocus={true} open={showPageSettings}
