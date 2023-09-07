@@ -689,7 +689,7 @@ const GenericResolver = {
 
         const collection = db.collection(collectionName)
 
-        const deletedResult = await collection.findOneAndDelete(match)
+        const deletedResult = await collection.findOneAndDelete(match,{ includeResultMetadata: true })
 
         if (deletedResult.ok && deletedResult.value) {
             Hook.call('typeDeleted', {

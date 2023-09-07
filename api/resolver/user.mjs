@@ -259,7 +259,7 @@ export const userResolver = (db) => ({
             }
 
             Util.checkIfUserIsLoggedIn(context)
-            const user = (await db.collection('User').findOneAndUpdate({_id: new ObjectId(context.id)}, {$set: {lastActive: new Date().getTime()}})).value
+            const user = (await db.collection('User').findOneAndUpdate({_id: new ObjectId(context.id)}, {$set: {lastActive: new Date().getTime()}}))
             if (!user) {
                 throw new Error('User doesn\'t exist')
             }else if(user.blocked){
@@ -396,14 +396,13 @@ export const userResolver = (db) => ({
                 findMatch.domain = domain
             }
 
-            const result = await userCollection.findOneAndUpdate(findMatch, {
+            const user = await userCollection.findOneAndUpdate(findMatch, {
                 $set: {
                     passwordReset: new Date().getTime(),
                     resetToken
                 }
             })
 
-            const user = result.value
             if (user) {
                 sendMail(db, context, {
                     from: fromEmail,
@@ -433,15 +432,13 @@ export const userResolver = (db) => ({
 
             const hashedPassword = validateAndHashPassword({password, passwordConfirm, context})
 
-            const result = await userCollection.findOneAndUpdate({$and: [{'resetToken': token}, {passwordReset: {$gte: (new Date().getTime()) - 3600000}}]}, {
+            const user = await userCollection.findOneAndUpdate({$and: [{'resetToken': token}, {passwordReset: {$gte: (new Date().getTime()) - 3600000}}]}, {
                 $set: {
                     password: hashedPassword,
                     requestNewPassword: false,
                     resetToken: null
                 }
             })
-
-            const user = result.value
 
             Hook.call('newPassword', {context, db, user})
 
@@ -454,10 +451,7 @@ export const userResolver = (db) => ({
         confirmEmail: async ({token}, {context}) => {
 
             const userCollection = db.collection('User')
-
-
-            const result = await userCollection.findOneAndUpdate({'signupToken': token}, {$set: {emailConfirmed: true}})
-            const user = result.value
+            const user = await userCollection.findOneAndUpdate({'signupToken': token}, {$set: {emailConfirmed: true}})
             if (user) {
                 Hook.call('UserConfirmed', {context, db, user})
                 return {status: 'ok'}
@@ -537,7 +531,9 @@ export const userResolver = (db) => ({
                     )) {
                         const password = generatePassword()
                         const hashedPw = Util.hashPassword(password)
-                        const result = (await db.collection('User').findOneAndUpdate({_id:new ObjectId(id)}, {$set: {requestNewPassword:true, password: hashedPw}}, {returnOriginal: false}))
+
+                        (await db.collection('User').findOneAndUpdate({_id:new ObjectId(id)}, {$set: {requestNewPassword:true, password: hashedPw}}, {returnOriginal: false}))
+
                         sendMail(db, context, {
                             fromName,
                             slug: 'core/new-password/mail',
@@ -761,7 +757,7 @@ export const userResolver = (db) => ({
                 }
             }
 
-            const result = (await userCollection.findOneAndUpdate(match, {$set: user}, {returnOriginal: false}))
+            const result = (await userCollection.findOneAndUpdate(match, {$set: user}, {returnOriginal: false, includeResultMetadata: true}))
             if (result.ok !== 1) {
                 throw new ApiError('User could not be changed')
             }
@@ -836,7 +832,7 @@ export const userResolver = (db) => ({
                     user.password = validateAndHashPassword({password, passwordConfirm, context})
                 }
 
-                const result = (await userCollection.findOneAndUpdate({_id: new ObjectId(context.id)}, {$set: user}))
+                const result = (await userCollection.findOneAndUpdate({_id: new ObjectId(context.id)}, {$set: user}, { includeResultMetadata: true }))
                 if (result.ok !== 1) {
                     throw new ApiError('User could not be changed')
                 }

@@ -158,7 +158,14 @@ const observeOptions = () => ({
         fullWidth: true,
         label: 'Sichtbar Klasse',
         tab: 'Sichtbarkeit'
-    }
+    },
+    '$observe_flipMode': {
+        fullWidth: true,
+        type: 'Boolean',
+        value: false,
+        label: 'Ein-/Ausblenden',
+        tab: 'Sichtbarkeit'
+    },
 })
 
 const classLinkStylingOptions = key => ({

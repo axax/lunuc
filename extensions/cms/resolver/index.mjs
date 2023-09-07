@@ -14,7 +14,7 @@ import {ObjectId} from 'mongodb'
 import {
     settingKeyPrefix
 } from '../util/cmsView.mjs'
-//import renderReact from '../renderReact.mjs'
+import renderReact from '../renderReact.mjs'
 import {createRequireForScript} from '../../../util/require.mjs'
 
 const PORT = (process.env.PORT || 3000)

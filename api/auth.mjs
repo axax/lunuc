@@ -8,9 +8,8 @@ export const auth = {
     createToken: async ({username, password, domain, db, context}) => {
 
         const userCollection = db.collection('User')
-        const result = await userCollection.findOneAndUpdate({domain: domain?{ $in: [ domain, "$ALL" ] }:{ $in: [ null, "", "$ALL" ] }, $or: [{'email': username}, {'username': username}]}, {$set: {lastLogin: new Date().getTime()}})
+        const user = await userCollection.findOneAndUpdate({domain: domain?{ $in: [ domain, "$ALL" ] }:{ $in: [ null, "", "$ALL" ] }, $or: [{'email': username}, {'username': username}]}, {$set: {lastLogin: new Date().getTime()}})
 
-        const user = result.value
 
         if (!user) {
             return {error: _t('core.login.invalid', context.lang), token: null, user: null}

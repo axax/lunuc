@@ -93,7 +93,7 @@ export default db => ({
            // const search = Util.draftjsRawToFields(body)
             const result = (await postCollection.findOneAndUpdate({_id: new ObjectId(_id)}, {
                 $set
-            }, {returnOriginal: false}))
+            }, {returnOriginal: false, includeResultMetadata: true}))
             if (result.ok !== 1) {
                 throw new ApiError('Post could not be changed')
             }

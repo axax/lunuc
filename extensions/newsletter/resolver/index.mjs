@@ -281,7 +281,7 @@ export default db => ({
 
             let result = (await db.collection('NewsletterSubscriber').findOneAndUpdate(selector, {
                 $set
-            }, {returnOriginal: false}))
+            }, {returnOriginal: false, includeResultMetadata: true}))
 
             if (result.ok) {
                 return {status: 'ok'}
@@ -300,7 +300,7 @@ export default db => ({
 
             let result = (await collection.findOneAndUpdate({email, token}, {
                 $set
-            }, {returnOriginal: false}))
+            }, {returnOriginal: false, includeResultMetadata: true }))
 
             if (result.ok) {
                 return {status: 'ok'}

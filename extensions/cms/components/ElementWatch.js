@@ -34,6 +34,8 @@ class ElementWatch extends React.Component {
             oriSrc: eleProps.src,
             tagSrc,
             tagImg,
+            inViewport:false,
+            inFlipMode:false,
             hasError:false,
             key: jsonDom.instanceId + '_' + _key,
             madeVisible: state && state.madeVisible && tagName !== 'SmartImage'? true : ElementWatch.hasLoaded[tagSrc],
@@ -42,7 +44,8 @@ class ElementWatch extends React.Component {
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
-        if (prevState.tagSrc !== this.state.tagSrc) {
+        if (prevState.tagSrc !== this.state.tagSrc ||
+            (prevProps.$observe.flipMode && this.state.madeVisible && !this.state.inFlipMode)) {
             this.initObserver()
         }
     }
@@ -66,7 +69,7 @@ class ElementWatch extends React.Component {
 
 
     render() {
-        const {initialVisible, madeVisible, hasError, tagImg, tagSrc, key} = this.state
+        const {initialVisible, madeVisible, inFlipMode, inViewport, hasError, tagImg, tagSrc, key} = this.state
         const {$observe, eleProps, eleType, jsonDom, c, $c, scope, tagName, _key} = this.props
         const observeBgImage = $observe.backgroundImage
 
@@ -123,38 +126,34 @@ class ElementWatch extends React.Component {
             return <div data-element-watch-key={key} data-wait-visible={jsonDom.instanceId}
                         style={{minHeight: eleProps.style && eleProps.style.minHeight ? eleProps.style.minHeight:'1rem', minWidth: '1rem'}} {...propsToPass}></div>
         } else {
-            if (eleProps.inlineSvg && ElementWatch.loadedSvgData[tagSrc]) {
-                eleProps.svgData = ElementWatch.loadedSvgData[tagSrc].data
-            }
-            eleProps['data-has-error'] = hasError
-            eleProps['data-element-watch'] = true
-            if ($observe.initialClass || $observe.visibleClass) {
-                eleProps['data-element-watch-key'] = key
+            const newEleProps = Object.assign({},eleProps, {
+                'data-has-error': hasError,
+                'data-element-watch':true})
 
-                // we change props here so components get updated
-                if (!eleProps.className) {
-                    eleProps.className = ''
+            if (newEleProps.inlineSvg && ElementWatch.loadedSvgData[tagSrc]) {
+                newEleProps.svgData = ElementWatch.loadedSvgData[tagSrc].data
+            }
+            if ($observe.initialClass || $observe.visibleClass) {
+                newEleProps['data-element-watch-key'] = key
+                if(!newEleProps.className){
+                    newEleProps.className = ''
                 }
-                if (madeVisible && $observe.visibleClass) {
-                    eleProps.className += ' ' + $observe.visibleClass
+                // we change props here so components get updated
+                if (madeVisible && $observe.visibleClass && (!inFlipMode || inViewport)) {
+                    newEleProps.className += ' ' + $observe.visibleClass
                 }
                 if ($observe.initialClass) {
-                    eleProps.className += ' ' + $observe.initialClass
+                    newEleProps.className += ' ' + $observe.initialClass
                 }
             }
-            if(observeBgImage){
+            if(observeBgImage && madeVisible){
                 // set background image when element gets visible
-                if(madeVisible){
-                    eleProps.style = this._backupStyle
-                }else {
-                    this._backupStyle = eleProps.style
-                    eleProps.style = {backgroundImage:''}
-                    eleProps['data-element-watch-key'] = key
-                }
+                newEleProps.style = {backgroundImage:''}
+                newEleProps['data-element-watch-key'] = key
             }
             return React.createElement(
                 eleType,
-                eleProps,
+                newEleProps,
                 ($c ? null : jsonDom.parseRec(c, _key, scope))
             )
         }
@@ -258,7 +257,7 @@ class ElementWatch extends React.Component {
     }
 
     addIntersectionObserver() {
-        const {key} = this.state
+        const {key, madeVisible} = this.state
         const {$observe} = this.props
 
         const ele = document.querySelector(`[data-element-watch-key='${key}']`)
@@ -268,10 +267,11 @@ class ElementWatch extends React.Component {
             } else {
                 let observer = new IntersectionObserver((entries, observer) => {
                     entries.forEach(entry => {
-                        //console.log(key, entry.intersectionRatio)
-                        if (entry.isIntersecting) {
-                            observer.unobserve(entry.target)
 
+                        if($observe.flipMode && madeVisible) {
+                            this.setState({inFlipMode:true, inViewport:entry.isIntersecting})
+                        }else if (entry.isIntersecting) {
+                            observer.unobserve(entry.target)
                             this.makeVisible(ele)
                         }
                     })
