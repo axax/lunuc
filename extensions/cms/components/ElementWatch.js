@@ -128,6 +128,7 @@ class ElementWatch extends React.Component {
         } else {
             const newEleProps = Object.assign({},eleProps, {
                 'data-has-error': hasError,
+                'data-made-visible': madeVisible,
                 'data-element-watch':true})
 
             if (newEleProps.inlineSvg && ElementWatch.loadedSvgData[tagSrc]) {
@@ -146,7 +147,7 @@ class ElementWatch extends React.Component {
                     newEleProps.className += ' ' + $observe.initialClass
                 }
             }
-            if(observeBgImage && madeVisible){
+            if(observeBgImage && !madeVisible){
                 // set background image when element gets visible
                 newEleProps.style = {backgroundImage:''}
                 newEleProps['data-element-watch-key'] = key

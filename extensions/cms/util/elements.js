@@ -159,6 +159,12 @@ const observeOptions = () => ({
         label: 'Sichtbar Klasse',
         tab: 'Sichtbarkeit'
     },
+    '$observe_threshold': {
+        fullWidth: true,
+        label: 'Threshold',
+        type:'Float',
+        tab: 'Sichtbarkeit'
+    },
     '$observe_flipMode': {
         fullWidth: true,
         type: 'Boolean',

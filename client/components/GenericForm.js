@@ -84,6 +84,7 @@ class GenericForm extends React.Component {
         const initalState = {
             fieldsOri: props.fields,
             fields: {},
+            fieldsTmp: {},
             valuesOri: props.values,
             showTranslations: {},
             tabValue: prevState.tabValue ? prevState.tabValue : 0
@@ -380,7 +381,7 @@ class GenericForm extends React.Component {
         }
     }
 
-    newStateForField(prevState, {name, value, localized}) {
+    newStateForField(prevState, {name, value, originalValue, localized}) {
         const newState = Object.assign({}, {fields: {}}, prevState)
 
         // for localization --> name.de / name.en
@@ -407,6 +408,9 @@ class GenericForm extends React.Component {
 
         } else {
             newState.fields[name] = value
+            if(value !== originalValue){
+                newState.fieldsTmp[name] = originalValue
+            }
         }
         return newState
     }
@@ -414,14 +418,16 @@ class GenericForm extends React.Component {
     handleInputChange = async (e) => {
         const {fields, trigger} = this.props
         const target = e.target, name = target.name
-        let value = target.type === 'checkbox' ? target.checked : target.value
+        const originalValue = target.type === 'checkbox' ? target.checked : target.value
+        let value = originalValue
         if (fields[name]) {
-            value = checkFieldType(value, fields[name])
+            value = checkFieldType(originalValue, fields[name])
         }
 
         const newState = this.newStateForField(this.state, {
             name,
             value,
+            originalValue,
             localized: target.dataset && !!target.dataset.language
         })
 
@@ -536,7 +542,7 @@ class GenericForm extends React.Component {
                 continue
             }
 
-            let value = this.state.fields[fieldKey]
+            let value = this.state.fieldsTmp[fieldKey] || this.state.fields[fieldKey]
             if (field.replaceBreaks && value) {
                 value = value.replace(/<br>/g, '\n')
             }
@@ -1223,7 +1229,7 @@ class GenericForm extends React.Component {
                                               type={isDateOrTime?'text':uitype}
                                               multiline={uitype === 'textarea'}
                                               placeholder={field.placeholder}
-                                              value={value || field.defaultValue || ''}
+                                              value={value===0 && field.type==='Float'?0:value || field.defaultValue || ''}
                                               name={fieldKey}
                                               onKeyDown={(e) => {
                                                   onKeyDown && onKeyDown(e, value)
