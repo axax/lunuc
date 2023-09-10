@@ -117,7 +117,7 @@ class ElementWatch extends React.Component {
             const propsToPass = {}
             if($observe.passProps) {
                 Object.keys(eleProps).forEach(key => {
-                    if (key.startsWith('data') || key === 'className') {
+                    if (key.startsWith('data') || key === 'className' || key=='style') {
                         propsToPass[key] = eleProps[key]
                     }
                 })

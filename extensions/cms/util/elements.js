@@ -149,6 +149,13 @@ const observeOptions = () => ({
         label: 'Nur Hintergrundbild',
         tab: 'Sichtbarkeit'
     },
+    '$observe_passProps': {
+        fullWidth: true,
+        type: 'Boolean',
+        value: false,
+        label: 'Attribute beibehalten',
+        tab: 'Sichtbarkeit'
+    },
     '$observe_initialClass': {
         fullWidth: true,
         label: 'Initial Klasse',
@@ -554,7 +561,7 @@ const baseElements = [
                 filter: 'mimeType=video',
                 projection: MEDIA_PROJECTION,
                 tab: DEFAULT_TAB,
-                template: '${this.context._id?\'<video controls style="\'+_comp.$set.style+\'" preload="\'+_comp.$set.preload+\'" poster="\'+_comp.$set.poster+\'"><source src="\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+name+(_comp.$set.transcode?\'?transcode=\'+encodeURIComponent(_comp.$set.transcode):\'\')+\'" type="\'+mimeType+\'"/></video>\':\'\'}',
+                template: '${this.context._id?\'<video \'+(_comp.$set.muted?\'muted \':\'\')+(_comp.$set.controls?\'controls \':\'\')+(_comp.$set.autoplay?\'autoplay \':\'\')+(_comp.$set.loop?\'loop \':\'\')+\'style="\'+_comp.$set.style+\'" preload="\'+_comp.$set.preload+\'" poster="\'+_comp.$set.poster+\'"><source src="\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+name+(_comp.$set.transcode?\'?transcode=\'+encodeURIComponent(_comp.$set.transcode):\'\')+\'" type="\'+mimeType+\'"/></video>\':\'\'}',
             },
             $set_yt: {
                 fullWidth: true,
@@ -562,6 +569,34 @@ const baseElements = [
                 label: 'Youtube',
                 tab: DEFAULT_TAB,
                 template: '${this.context.data?\'<iframe src="https://www.youtube-nocookie.com/embed/\'+data.match(/^(https?:\\/\\/)?((www\\.)?(youtube(-nocookie)?|youtube.googleapis)\\.com.*(v\\/|v=|vi=|vi\\/|e\\/|embed\\/|user\\/.*\\/u\\/\\d+\\/)|youtu\\.be\\/)([_0-9a-z-]+)/i)[7]+\'" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreencontrols></iframe>\':\'\'}'
+            },
+            $set_controls: {
+                type: 'Boolean',
+                newLine: true,
+                label: 'Videosteuerung',
+                value: true,
+                tab: DEFAULT_TAB
+            },
+            $set_autoplay: {
+                type: 'Boolean',
+                newLine: true,
+                label: 'Automatisch Wiedergabe',
+                value: true,
+                tab: DEFAULT_TAB
+            },
+            $set_loop: {
+                type: 'Boolean',
+                newLine: true,
+                label: 'Endlose Schleife',
+                value: true,
+                tab: DEFAULT_TAB
+            },
+            $set_muted: {
+                type: 'Boolean',
+                newLine: true,
+                label: 'Stummgeschaltet',
+                value: true,
+                tab: DEFAULT_TAB
             },
             $set_preload: {
                 fullWidth: true,
