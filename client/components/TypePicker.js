@@ -253,7 +253,7 @@ class TypePicker extends React.Component {
                           try {
                               const jsonRaw = csv2json(content)
 
-                              this.getData(`${fileImport.key}==[${jsonRaw.map(f=>f.id).join(',')}]`,({data,error})=>{
+                              this.getData(`${fileImport.key}==[${jsonRaw.map(f=>f.id).join(',')}]`,{callback:({data,error})=>{
                                   if(data){
                                       const newValues = []
                                       jsonRaw.forEach(csvRow=>{
@@ -266,7 +266,8 @@ class TypePicker extends React.Component {
                                       this.selectValue(newValues, true)
                                   }
 
-                              })
+                              },
+                              limit:999})
                           }catch (e){
                               console.log(e)
                           }
@@ -545,7 +546,7 @@ class TypePicker extends React.Component {
                 }
 
                 this.pickTimeout = 0
-                this.getData(filter + (this.props.filter ? ' && ' + this.props.filter : ''))
+                this.getData(filter + (this.props.filter ? ' && ' + this.props.filter : ''), {})
             }, 250)
         }
     }
@@ -572,7 +573,8 @@ class TypePicker extends React.Component {
         }
     }
 
-    getData(filter, callback) {
+    getData(filter, {callback, limit}) {
+
         const {type, queryFields, pickerField, pickerSort} = this.props
         if (type) {
 
@@ -597,7 +599,7 @@ class TypePicker extends React.Component {
             } else {
                 queryString = queryStatemantForType(type)
             }
-            const variables = {filter, limit: 20},
+            const variables = {filter, limit: limit || 20},
                 gqlQuery = `query ${nameStartLower}($sort: String,$limit: Int,$page: Int,$filter: String){${nameStartLower}(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results{_id __typename ${queryString}}}}`
 
             if(pickerSort){
