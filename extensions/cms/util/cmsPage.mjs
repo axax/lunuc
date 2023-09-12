@@ -9,6 +9,11 @@ import Hook from "../../../util/hook.cjs";
 
 const hostrules = loadAllHostrules(false)
 
+setInterval(()=>{
+    // update changes
+    loadAllHostrules(false, hostrules, true)
+},60000)
+
 
 export const getCmsPage = async ({db, context, headers, ...params}) => {
 
