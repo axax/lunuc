@@ -278,21 +278,24 @@ const Util = {
         return src ? src : (media.src ? media.src : _app_.config.UPLOAD_URL + '/' + media._id)
     },
     getImageObject(raw, options) {
+        if(!options){
+            options = {}
+        }
         let image
-        if (!raw) {
-            let src
-            if(options && options.placeholder){
-                src = options.placeholder
-            }else if (options && options.resize && options.resize.height && options.resize.width) {
-                src = Util.createDummySvg(options.resize.width, options.resize.height)
-            } else {
-                src = '/placeholder.svg'
-            }
+        const data = {}, resize = options.resize
 
-            return {
-                src,
-                alt: 'Placeholder'
+        if (!raw) {
+            if(options.placeholder){
+                data.src = options.placeholder
+            }else if (resize && resize.height && resize.width) {
+                data.width = resize.width
+                data.height = resize.height
+                data.src = Util.createDummySvg(resize.width, resize.height)
+            } else {
+                data.src = '/placeholder.svg'
             }
+            data.alt = 'Placeholder'
+            return data
         } else if (raw.constructor === String) {
             image = {
                 src: raw
@@ -319,9 +322,8 @@ const Util = {
             image = image[0]
         }
         if (!image) {
-            return {}
+            return data
         }
-        const data = {}
         if (image.name) {
             data.alt = image.name
         }
@@ -329,6 +331,10 @@ const Util = {
             data.src = _app_.config.UPLOAD_URL + '/' + image._id + '/' + config.PRETTYURL_SEPERATOR + '/' + image.name
         } else {
             data.src = image.src
+        }
+        if(image.info){
+            data.width = image.info.width
+            data.height = image.info.height
         }
 
         if (_app_.ssr && !data.src.startsWith('https://') && !data.src.startsWith('http://')) {
@@ -339,68 +345,74 @@ const Util = {
             }
         }
 
-        if (options) {
-            let resize = options.resize, h, w, params = ''
-            if (resize) {
+        let h, w, params = ''
+        if (resize) {
 
-                if (resize.width) {
-                    w = resize.width
-                }
-                if (resize.height) {
-                    h = resize.height
-                }
-                if (resize === 'auto' || resize.responsive) {
-                    const ww = window.innerWidth
-                    if (!w || w > ww) {
-                        if (ww <= 720) {
-                            w = 720
-                        } else if (ww <= 1024) {
-                            w = 1024
-                        } else if (ww <= 1200) {
-                            w = 1200
-                        } else if (ww <= 1400) {
-                            w = 1400
-                        } else {
-                            w = 1600
-                        }
+            if (resize.width) {
+                w = resize.width
+            }
+            if (resize.height) {
+                h = resize.height
+            }
+            if (resize === 'auto' || resize.responsive) {
+                const ww = window.innerWidth
+                if (!w || w > ww) {
+                    if (ww <= 720) {
+                        w = 720
+                    } else if (ww <= 1024) {
+                        w = 1024
+                    } else if (ww <= 1200) {
+                        w = 1200
+                    } else if (ww <= 1400) {
+                        w = 1400
+                    } else {
+                        w = 1600
+                    }
 
-                        if (h) {
-                            h = Math.ceil((w / resize.width) * h)
-                        }
+                    if (h) {
+                        h = Math.ceil((w / resize.width) * h)
                     }
                 }
-                if (w) {
-                    params += `&width=${w}`
+            }
+            if (w) {
+                if(!h && data.height && data.width){
+                    data.height = Math.ceil((w / data.width) * data.height)
                 }
-                if (h) {
-                    params += `&height=${h}`
+                data.width = w
+                params += `&width=${w}`
+            }
+            if (h) {
+                if(!w && data.height && data.width){
+                    data.width = Math.ceil((h / data.height) * data.width)
                 }
+                data.height = h
+                params += `&height=${h}`
             }
-            if (options.quality) {
-                params += `&quality=${options.quality}`
-            }
+        }
+        if (options.quality) {
+            params += `&quality=${options.quality}`
+        }
 
-            if (options.format) {
-                params += '&format=' + options.format
-            } else if (options.webp) {
-                params += '&format=webp'
-            }
+        if (options.format) {
+            params += '&format=' + options.format
+        } else if (options.webp) {
+            params += '&format=webp'
+        }
 
-            if (options.flop) {
-                params += '&flop=true'
-            }
-            if (options.flip) {
-                params += '&flip=true'
-            }
-            if (options.position) {
-                params += '&position=' + options.position
-            }
-            if (options.noenlarge) {
-                params += '&noenlarge=' + options.noenlarge
-            }
-            if (params && options.addParams!==false) {
-                data.src += '?' + params.substring(1)
-            }
+        if (options.flop) {
+            params += '&flop=true'
+        }
+        if (options.flip) {
+            params += '&flip=true'
+        }
+        if (options.position) {
+            params += '&position=' + options.position
+        }
+        if (options.noenlarge) {
+            params += '&noenlarge=' + options.noenlarge
+        }
+        if (params && options.addParams!==false) {
+            data.src += '?' + params.substring(1)
         }
 
         return data

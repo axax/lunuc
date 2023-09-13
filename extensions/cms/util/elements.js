@@ -4,7 +4,7 @@ import {
 
 const DEFAULT_TAB = 'Allgemein', IMAGE_OPTIMIZATION_TAB = 'Bild Optimierung', MARGIN_TAB = 'Abstände',
     TRANSLATION_TAB = 'Übersetzung',
-    MEDIA_PROJECTION = ['_id', 'size', 'name', 'group', 'src', 'mimeType']
+    MEDIA_PROJECTION = ['_id', 'size', 'name', 'group', 'src', 'mimeType',{'info':['width','height']}]
 const imageOptions = key => ({
     [`${key}options_hint`]: {
         uitype: 'htmlParser',
@@ -425,11 +425,11 @@ const marginOptions = key => ({
 })
 
 const sizeOptions = key => ({
-    [`${key}style_width`]: {
+    [`${key}width`]: {
         label: 'Breite',
         tab: MARGIN_TAB
     },
-    [`${key}style_height`]: {
+    [`${key}height`]: {
         label: 'Höhe',
         tab: MARGIN_TAB
     }
@@ -500,9 +500,6 @@ const baseElements = [
                 ],
                 tab: DEFAULT_TAB
             },
-            p_className: {
-                label: 'Bild Klassenname'
-            },
             p_figureClassName: {
                 label: 'Figure Klassenname'
             },
@@ -515,6 +512,7 @@ const baseElements = [
                 uitype: 'html',
                 fullWidth: true
             },
+            ...classOptions('_p'),
             ...imageOptions('p_'),
             ...sizeOptions('p_'),
             ...lazyImageOptions('$observe_')
@@ -1145,7 +1143,7 @@ const baseElements = [
         options: {
             ...marginOptions('p_'),
             ...classOptions('p_'),
-            ...sizeOptions('p_')
+            ...sizeOptions('p_style_')
         }
     },
     {

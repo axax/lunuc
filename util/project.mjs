@@ -2,6 +2,14 @@ import {deepMergeOptional} from './deepMerge.mjs'
 import {getFieldOfType} from "./types.mjs";
 import config from '../gensrc/config.mjs'
 
+const toObject = (any) => {
+    if(any && any.constructor === String){
+        try{
+            return JSON.parse(any)
+        }catch (e){}
+    }
+    return any
+}
 export const performFieldProjection = (projection, data, level = 0)=>{
     if(!data){
         return
@@ -21,7 +29,7 @@ export const performFieldProjection = (projection, data, level = 0)=>{
         for (const project of projection) {
             if(project.constructor===Object){
                 const key = Object.keys(project)[0]
-                newData[key] = performFieldProjection(project[key], data[key], level+1)
+                newData[key] = performFieldProjection(project[key], toObject(data[key]), level+1)
             }else {
                 const dotIndex = project.indexOf('.')
                 if(dotIndex>=0){

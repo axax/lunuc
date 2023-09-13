@@ -9,8 +9,8 @@ import fs from 'fs'
 import https from 'https'
 import http from 'http'
 import config from '../../../gensrc/config.mjs'
-
-
+import sharp from 'sharp'
+import exif from 'exif-reader'
 
 export const removeInvalidProperties = function (obj) {
     for (const i in obj) {
@@ -42,27 +42,37 @@ export const createMediaEntry = async ({db, _id, file, data, context}) => {
         data.meta = JSON.stringify(await ImageClassfier.classifyByUrl(data.url || ('http://www.lunuc.com' + UPLOAD_URL + '/' + _id.toString()) )) //)
     }
 
-    if( file.mimetype && (file.mimetype.indexOf('audio/')===0 || file.mimetype.indexOf('video/')===0)){
+    if(file.mimetype) {
+        if (file.mimetype.indexOf('audio/') === 0 || file.mimetype.indexOf('video/') === 0) {
 
-        try {
-
-
-            ffmpeg.setFfprobePath(ffprobeInstaller.path)
-            ffmpeg.setFfmpegPath( ffmpegInstaller.path)
-
-
-            const {meta} = await (new Promise((resolve) => {
-                ffmpeg.ffprobe(file.filepath, function (error, meta) {
-                    if (error) {
-                        console.warn(error)
-                    }
-                    resolve({error, meta})
-                })
-            }))
-            removeInvalidProperties(meta)
-            data.info = meta
-        }catch (e) {
-            console.warn('error in ffprobe', e)
+            try {
+                ffmpeg.setFfprobePath(ffprobeInstaller.path)
+                ffmpeg.setFfmpegPath(ffmpegInstaller.path)
+                const {meta} = await (new Promise((resolve) => {
+                    ffmpeg.ffprobe(file.filepath, function (error, meta) {
+                        if (error) {
+                            console.warn(error)
+                        }
+                        resolve({error, meta})
+                    })
+                }))
+                removeInvalidProperties(meta)
+                data.info = meta
+            } catch (e) {
+                console.warn('error in ffprobe', e)
+            }
+        }else if (file.mimetype.indexOf('image/') === 0){
+            // detect image dimension
+            try {
+                const image = await sharp(file.filepath)
+                data.info = await image.metadata()
+                delete data.info.icc
+                if(data.info.exif){
+                    data.info.exif = exif(data.info.exif)
+                }
+            }catch (e){
+                console.log('error getting metadata of image', file.originalFilename, e.message)
+            }
         }
     }
 

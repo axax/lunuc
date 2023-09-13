@@ -402,6 +402,8 @@ Hook.on('Types', ({types}) => {
                 uitype: 'password',
                 tab: 'Allgemein',
                 hideColumnInTypes: true,
+                alwaysLoad:false,
+                vagueSearchable:false,
                 searchable:false
             },
             {
