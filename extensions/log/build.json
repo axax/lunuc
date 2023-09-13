@@ -6,11 +6,13 @@
       "access": {
         "create": "anonymous"
       },
+      "addMetaDataInQuery": false,
       "fields": [
         {
           "type": "String",
           "name": "message",
-          "uitype": "editor"
+          "uitype": "editor",
+          "alwaysLoad": false
         },
         {
           "name": "type",
@@ -24,7 +26,8 @@
           "name": "meta",
           "type": "Object",
           "uitype": "json",
-          "hideColumnInTypes": true
+          "hideColumnInTypes": true,
+          "alwaysLoad": false
         }
       ]
     }

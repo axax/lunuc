@@ -165,7 +165,7 @@ export const createUser = async ({username, role, junior, group, setting, passwo
     }
     insertResult.ops = [dataToInsert]
 
-    Hook.call('NewUserCreated', {insertResult, meta, email, db, language: dataToInsert.language})
+    Hook.call('NewUserCreated', {insertResult, meta, domain, email, db, language: dataToInsert.language})
 
     return insertResult
 
