@@ -11,7 +11,7 @@ export const auth = {
         const user = await userCollection.findOneAndUpdate({domain: domain?{ $in: [ domain, "$ALL" ] }:{ $in: [ null, "", "$ALL" ] }, $or: [{'email': username}, {'username': username}]}, {$set: {lastLogin: new Date().getTime()}})
 
 
-        if (!user) {
+        if (!user || !password) {
             return {error: _t('core.login.invalid', context.lang), token: null, user: null}
         }else if(user.blocked){
             return {error: _t('core.login.blocked', context.lang), token: null, user: null}

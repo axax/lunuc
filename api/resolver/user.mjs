@@ -259,7 +259,7 @@ export const userResolver = (db) => ({
             }
 
             Util.checkIfUserIsLoggedIn(context)
-            const user = (await db.collection('User').findOneAndUpdate({_id: new ObjectId(context.id)}, {$set: {lastActive: new Date().getTime()}}))
+            const user = await db.collection('User').findOneAndUpdate({_id: new ObjectId(context.id)}, {$set: {lastActive: new Date().getTime()}})
             if (!user) {
                 throw new Error('User doesn\'t exist')
             }else if(user.blocked){
@@ -523,7 +523,6 @@ export const userResolver = (db) => ({
                 const user = await Util.userById(db,id)
                 if(user){
 
-                    console.log(user.group, context.group, )
 
                     if (await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS) || (
                         await Util.userHasCapability(db, context, CAPABILITY_MANAGE_SAME_GROUP) &&
@@ -531,8 +530,7 @@ export const userResolver = (db) => ({
                     )) {
                         const password = generatePassword()
                         const hashedPw = Util.hashPassword(password)
-
-                        (await db.collection('User').findOneAndUpdate({_id:new ObjectId(id)}, {$set: {requestNewPassword:true, password: hashedPw}}, {returnOriginal: false}))
+                        await db.collection('User').findOneAndUpdate({_id:new ObjectId(id)}, {$set: {requestNewPassword:true, password: hashedPw}}, {returnOriginal: false})
 
                         sendMail(db, context, {
                             fromName,
@@ -757,7 +755,7 @@ export const userResolver = (db) => ({
                 }
             }
 
-            const result = (await userCollection.findOneAndUpdate(match, {$set: user}, {returnOriginal: false, includeResultMetadata: true}))
+            const result = await userCollection.findOneAndUpdate(match, {$set: user}, {returnOriginal: false, includeResultMetadata: true})
             if (result.ok !== 1) {
                 throw new ApiError('User could not be changed')
             }
@@ -832,7 +830,7 @@ export const userResolver = (db) => ({
                     user.password = validateAndHashPassword({password, passwordConfirm, context})
                 }
 
-                const result = (await userCollection.findOneAndUpdate({_id: new ObjectId(context.id)}, {$set: user}, { includeResultMetadata: true }))
+                const result = await userCollection.findOneAndUpdate({_id: new ObjectId(context.id)}, {$set: user}, { includeResultMetadata: true })
                 if (result.ok !== 1) {
                     throw new ApiError('User could not be changed')
                 }

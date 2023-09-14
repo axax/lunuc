@@ -41,7 +41,7 @@ export const userSchemaRaw = `
         lastLogin: Float
         lastActive: Float
         username: String!
-        password: String!
+        password: String
         email: String!
         emailConfirmed: Boolean!
         blocked: Boolean

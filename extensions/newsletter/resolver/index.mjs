@@ -279,9 +279,9 @@ export default db => ({
                 state: 'subscribed'
             }
 
-            let result = (await db.collection('NewsletterSubscriber').findOneAndUpdate(selector, {
+            let result = await db.collection('NewsletterSubscriber').findOneAndUpdate(selector, {
                 $set
-            }, {returnOriginal: false, includeResultMetadata: true}))
+            }, {returnOriginal: false, includeResultMetadata: true})
 
             if (result.ok) {
                 return {status: 'ok'}
@@ -298,9 +298,9 @@ export default db => ({
                 $set.unsubscribeMailing = mailing?new ObjectId(mailing):null
             }
 
-            let result = (await collection.findOneAndUpdate({email, token}, {
+            let result = await collection.findOneAndUpdate({email, token}, {
                 $set
-            }, {returnOriginal: false, includeResultMetadata: true }))
+            }, {returnOriginal: false, includeResultMetadata: true })
 
             if (result.ok) {
                 return {status: 'ok'}

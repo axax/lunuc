@@ -1215,42 +1215,43 @@ class JsonDom extends React.Component {
     }
 
     getScope(props) {
+        const scope = this.scope
         if (this.updateScope) {
             if(this.updateScope.renewProps){
-                delete this.scope.props
+                delete scope.props
             }
             this.updateScope = false
-            this.scope.page = {slug: props.slug, lang: _app_.lang, title: props.title ? props.title[_app_.lang] : ''}
-            this.scope.user = props.user
-            this.scope.editMode = props.editMode
-            this.scope.inEditor = props.inEditor
-            this.scope.inlineEditor = props.inlineEditor
-            this.scope.dynamic = props.dynamic
+            scope.page = {slug: props.slug, lang: _app_.lang, title: props.title ? props.title[_app_.lang] : ''}
+            scope.user = props.user
+            scope.editMode = props.editMode
+            scope.inEditor = props.inEditor
+            scope.inlineEditor = props.inlineEditor
+            scope.dynamic = props.dynamic
 
             if (props.meta) {
                 if (props.meta.constructor === String) {
                     const metaJson = JSON.parse(props.meta)
-                    this.scope.PageOptions = metaJson.PageOptions
+                    scope.PageOptions = metaJson.PageOptions
                 } else {
-                    this.scope.PageOptions = props.meta.PageOptions
+                    scope.PageOptions = props.meta.PageOptions
                 }
             }
-            if (!this.scope.PageOptions) {
-                this.scope.PageOptions = {}
+            if (!scope.PageOptions) {
+                scope.PageOptions = {}
             }
             // set default scope values
-            this.scope.fetchingMore = false
+            scope.fetchingMore = false
 
             // add a refrence to the global app object
-            this.scope._app_ = _app_
+            scope._app_ = _app_
 
             // add a reference of the bindings object
-            this.scope.bindings = this.bindings
+            scope.bindings = this.bindings
 
             this.addLocationToScope()
 
         }
-        return this.scope
+        return scope
     }
 
     addLocationToScope() {

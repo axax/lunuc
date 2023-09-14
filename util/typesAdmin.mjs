@@ -398,7 +398,6 @@ Hook.on('Types', ({types}) => {
             {
                 name: 'password',
                 fullWidth: false,
-                required: true,
                 uitype: 'password',
                 tab: 'Allgemein',
                 hideColumnInTypes: true,
@@ -456,6 +455,7 @@ Hook.on('Types', ({types}) => {
                 type: 'Object',
                 uitype: 'json',
                 tab: 'Meta',
+                alwaysLoad: false,
                 vagueSearchable: true,
                 hideColumnInTypes: true
             },
