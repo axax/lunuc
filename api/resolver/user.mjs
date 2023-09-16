@@ -180,7 +180,7 @@ const validateAndHashPassword = ({password, passwordConfirm, context}) => {
     // Validate Password
     const err = Util.validatePassword(password, context)
     if (err.length > 0) {
-        throw new ApiError('Invalid Password: \n' + err.join('\n'), 'password.invalid')
+        throw new ApiError(err.join('\n'), 'password.invalid')
     }
 
 
@@ -427,16 +427,13 @@ export const userResolver = (db) => ({
         },
         newPassword: async ({token, password, passwordConfirm}, {context}) => {
 
-            const userCollection = db.collection('User')
-
-
             const hashedPassword = validateAndHashPassword({password, passwordConfirm, context})
-
-            const user = await userCollection.findOneAndUpdate({$and: [{'resetToken': token}, {passwordReset: {$gte: (new Date().getTime()) - 3600000}}]}, {
+            const user = await  db.collection('User').findOneAndUpdate({$and: [{'resetToken': token}, {passwordReset: {$gte: (new Date().getTime()) - 3600000}}]}, {
                 $set: {
                     password: hashedPassword,
                     requestNewPassword: false,
-                    resetToken: null
+                    resetToken: null,
+                    passwordReset:0
                 }
             })
 

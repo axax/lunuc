@@ -27,7 +27,8 @@
         },
         {
           "name": "script",
-          "uitype": "jseditor"
+          "uitype": "jseditor",
+          "alwaysLoad": false
         }
       ]
     }

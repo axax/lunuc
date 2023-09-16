@@ -70,7 +70,7 @@
       "active": false
     },
     "dns": {
-      "active": true
+      "active": false
     },
     "history": {
       "active": true
@@ -88,9 +88,12 @@
       "active": true
     },
     "ftpserver": {
-      "active": true
+      "active": false
     },
     "userrestriction": {
+      "active": true
+    },
+    "sms": {
       "active": true
     }
   },

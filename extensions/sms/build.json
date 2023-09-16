@@ -1,0 +1,38 @@
+{
+  "types": [
+    {
+      "name": "SmsLog",
+      "subscription": false,
+      "access": {
+        "create": "anonymous"
+      },
+      "addMetaDataInQuery": false,
+      "fields": [
+        {
+          "type": "String",
+          "name": "content",
+          "uitype": "editor",
+          "alwaysLoad": false
+        },
+        {
+          "name": "sender",
+          "index": 1
+        },
+        {
+          "name": "recipient",
+          "index": 1
+        },
+        {
+          "name": "domain",
+          "index": 1
+        },
+        {
+          "name": "response",
+          "type": "Object",
+          "uitype": "json",
+          "alwaysLoad": false
+        }
+      ]
+    }
+  ]
+}
