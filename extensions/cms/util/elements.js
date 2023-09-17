@@ -547,54 +547,43 @@ const baseElements = [
                 type: 'Media',
                 filter: 'mimeType=image',
                 projection: MEDIA_PROJECTION,
-                tab: DEFAULT_TAB,
+                tabPosition:1,
+                tab: 'Videooptionen',
                 template: '${this.context._id?_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+name:\'\'}',
             },
-            $set_url: {
+            $set_posterSrc: {
                 fullWidth: true,
                 value: '',
-                label: 'Video',
-                uitype: 'type_picker',
-                type: 'Media',
-                filter: 'mimeType=video',
-                projection: MEDIA_PROJECTION,
-                tab: DEFAULT_TAB,
-                template: '${this.context._id?\'<video \'+(_comp.$set.muted?\'muted \':\'\')+(_comp.$set.controls?\'controls \':\'\')+(_comp.$set.autoplay?\'autoplay \':\'\')+(_comp.$set.loop?\'loop \':\'\')+\'style="\'+_comp.$set.style+\'" preload="\'+_comp.$set.preload+\'" poster="\'+_comp.$set.poster+\'"><source src="\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+name+(_comp.$set.transcode?\'?transcode=\'+encodeURIComponent(_comp.$set.transcode):\'\')+\'" type="\'+mimeType+\'"/></video>\':\'\'}',
-            },
-            $set_yt: {
-                fullWidth: true,
-                value: '',
-                label: 'Youtube',
-                tab: DEFAULT_TAB,
-                template: '${this.context.data?\'<iframe src="https://www.youtube-nocookie.com/embed/\'+data.match(/^(https?:\\/\\/)?((www\\.)?(youtube(-nocookie)?|youtube.googleapis)\\.com.*(v\\/|v=|vi=|vi\\/|e\\/|embed\\/|user\\/.*\\/u\\/\\d+\\/)|youtu\\.be\\/)([_0-9a-z-]+)/i)[7]+\'" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreencontrols></iframe>\':\'\'}'
+                label: 'Standbild Url',
+                tab: 'Videooptionen',
             },
             $set_controls: {
                 type: 'Boolean',
                 newLine: true,
                 label: 'Videosteuerung',
                 value: true,
-                tab: DEFAULT_TAB
+                tab: 'Videooptionen'
             },
             $set_autoplay: {
                 type: 'Boolean',
                 newLine: true,
                 label: 'Automatisch Wiedergabe',
                 value: true,
-                tab: DEFAULT_TAB
+                tab: 'Videooptionen'
             },
             $set_loop: {
                 type: 'Boolean',
                 newLine: true,
                 label: 'Endlose Schleife',
                 value: true,
-                tab: DEFAULT_TAB
+                tab: 'Videooptionen'
             },
             $set_muted: {
                 type: 'Boolean',
                 newLine: true,
                 label: 'Stummgeschaltet',
                 value: true,
-                tab: DEFAULT_TAB
+                tab: 'Videooptionen'
             },
             $set_preload: {
                 fullWidth: true,
@@ -615,7 +604,26 @@ const baseElements = [
                     }
                 ],
                 projection: MEDIA_PROJECTION,
-                tab: DEFAULT_TAB
+                tab: 'Videooptionen'
+            },
+            $set_url: {
+                fullWidth: true,
+                value: '',
+                label: 'Video',
+                uitype: 'type_picker',
+                type: 'Media',
+                filter: 'mimeType=video',
+                projection: MEDIA_PROJECTION,
+                tabPosition:0,
+                tab: DEFAULT_TAB,
+                template: '${this.context._id?\'<video \'+(_comp.$set.muted?\'muted \':\'\')+(_comp.$set.controls?\'controls \':\'\')+(_comp.$set.autoplay?\'autoplay \':\'\')+(_comp.$set.loop?\'loop \':\'\')+\'style="\'+_comp.$set.style+\'" preload="\'+_comp.$set.preload+\'" poster="\'+(_comp.$set.poster || \'\')+(_comp.$set.posterSrc || \'\')+\'"><source src="\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+name+(_comp.$set.transcode?\'?transcode=\'+encodeURIComponent(_comp.$set.transcode):\'\')+\'" type="\'+mimeType+\'"/></video>\':\'\'}',
+            },
+            $set_yt: {
+                fullWidth: true,
+                value: '',
+                label: 'Youtube',
+                tab: DEFAULT_TAB,
+                template: '${this.context.data?\'<iframe src="https://www.youtube-nocookie.com/embed/\'+data.match(/^(https?:\\/\\/)?((www\\.)?(youtube(-nocookie)?|youtube.googleapis)\\.com.*(v\\/|v=|vi=|vi\\/|e\\/|embed\\/|user\\/.*\\/u\\/\\d+\\/)|youtu\\.be\\/)([_0-9a-z-]+)/i)[7]+\'" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreencontrols></iframe>\':\'\'}'
             },
             $set_style: {
                 fullWidth: true,
@@ -1066,6 +1074,7 @@ const baseElements = [
             ...marginOptions('p_'),
             ...classOptions('p_'),
             ...imageOptions('c_0_p_'),
+            ...sizeOptions('c_0_p_'),
             ...lazyImageOptions('c_0_$observe_')
         },
         defaults: {
@@ -1566,7 +1575,8 @@ const baseElements = [
             ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
-            ...invisibleOptions('p_')
+            ...invisibleOptions('p_'),
+            ...observeOptions()
         }
     },
     {
