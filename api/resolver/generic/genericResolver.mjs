@@ -11,6 +11,7 @@ import HookAsync from '../../../util/hookAsync.mjs'
 import AggregationBuilder from './AggregationBuilder.mjs'
 import Cache from '../../../util/cache.mjs'
 import {_t} from '../../../util/i18nServer.mjs'
+import {extendWithOwnerGroupMatch} from '../../util/dbquery.mjs'
 
 const buildCollectionName = async (db, context, typeName, _version) => {
 
@@ -123,29 +124,6 @@ const postConvertData = async (data, {typeName, db}) => {
         }
     }
     return data
-}
-
-const extendWithOwnerGroupMatch = (typeDefinition, context, match, userFilter) => {
-    if (typeDefinition && context.role !== 'subscriber') {
-        // check for same ownerGroup
-        const ownerGroup = typeDefinition.fields.find(f => f.name === 'ownerGroup')
-        if (ownerGroup) {
-            if(context.group && context.group.length > 0) {
-                const ownerMatch = {ownerGroup: {$in: context.group.map(f => new ObjectId(f))}}
-                if (match && Object.keys(match).length>0) {
-                    match = {$or: [match, ownerMatch]}
-                } else {
-                    match = ownerMatch
-                }
-            }else if(!userFilter){
-                if(!match) {
-                    match = {}
-                }
-                match.ownerGroup= {}
-            }
-        }
-    }
-    return match
 }
 
 const createMatchForCurrentUser = async ({typeName, db, context, operation}) => {

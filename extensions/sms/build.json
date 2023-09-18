@@ -24,6 +24,7 @@
         },
         {
           "name": "domain",
+          "hideColumnInTypes": true,
           "index": 1
         },
         {
@@ -31,6 +32,16 @@
           "type": "Object",
           "uitype": "json",
           "alwaysLoad": false
+        },
+        {
+          "name": "ownerGroup",
+          "hideColumnInTypes": true,
+          "type": "UserGroup",
+          "multi": true,
+          "fields": [
+            "name"
+          ],
+          "index": 1
         }
       ]
     }

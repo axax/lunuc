@@ -808,6 +808,7 @@ export const userResolver = (db) => ({
 
             const userCollection = db.collection('User')
 
+            // TODO add domain check
             let existingUser = (await userCollection.findOne({$or: [{'username': user.username}, {'email': user.email}]}))
             if (existingUser != null && existingUser._id.toString() !== context.id) {
                 throw new ApiError(`Username or Email already taken`, 'username.taken', {x: 'sss'})
