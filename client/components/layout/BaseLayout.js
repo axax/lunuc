@@ -289,7 +289,7 @@ const BaseLayout = props => {
 
         headerRight.push(<Box sx={{ flexGrow: 0 }}>
             <SimpleMenu
-                icon={<Avatar alt={username} src={user.picture?getImageSrc(user.picture)+'?width=48&height=48&webp=true':''} />}
+                icon={<Avatar alt={username} src={user.picture?getImageSrc(user.picture,'avatar'):''} />}
                 items={menuItems}/>
 
         </Box>)

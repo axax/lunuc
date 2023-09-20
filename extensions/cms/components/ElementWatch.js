@@ -90,7 +90,6 @@ class ElementWatch extends React.Component {
                         },
                         webp: true
                     })
-
                 } else if (o && o.resize && o.resize.width && o.resize.height) {
                     tmpSrc = Util.createDummySvg(o.resize.width, o.resize.height)
                 }

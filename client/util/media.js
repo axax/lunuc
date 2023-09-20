@@ -3,16 +3,26 @@ import config from 'gen/config-client'
 
 const {UPLOAD_URL} = config
 
-const getImageSrc = (item) => {
-    return item.src ? item.src : UPLOAD_URL + '/' + item._id + (item.name ? '/' + config.PRETTYURL_SEPERATOR + '/' + item.name : '')
+const getImageSrc = (item, size = 'thumbnail') => {
+    let src = item.src ? item.src : UPLOAD_URL + '/' + item._id + (item.name ? '/' + config.PRETTYURL_SEPERATOR + '/' + item.name : '')
+
+    if(size && (!item.mimeType || item.mimeType.indexOf('svg')<0)) {
+        if(size=='thumbnail') {
+            src += '?webp=true&quality=50&width=96'
+        }else if(size=='avatar'){
+            src += '?webp=true&quality=50&width=40&height=40'
+        }
+    }
+
+    return src
 }
 
 const isValidImage = (item, type) => {
     return item && (item.__typename === 'Media' || type==='Media') && item.mimeType && item.mimeType.indexOf('image') === 0
 }
 
-const getImageTag = (item, props) => {
-    return <img src={getImageSrc(item)} {...props}/>
+const getImageTag = (item, {size,...props}) => {
+    return <img src={getImageSrc(item,size)} {...props}/>
 }
 
 

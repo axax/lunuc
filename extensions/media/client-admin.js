@@ -58,7 +58,7 @@ export default () => {
                         image =
                             (mimeType[0] === 'image' ?
                                     <img style={{maxWidth: '6rem', maxHeight: '6rem', objectFit: 'cover'}}
-                                         src={item.src || `${UPLOAD_URL}/${item._id}/${PRETTYURL_SEPERATOR}/${item.name}${item.mimeType.indexOf('svg')<0?'width=96':''}`}/>
+                                         src={item.src || `${UPLOAD_URL}/${item._id}/${PRETTYURL_SEPERATOR}/${item.name}${item.mimeType.indexOf('svg')<0?'?webp=true&quality=50&width=96':''}`}/>
                                     :
                                     <div className="file-icon"
                                          data-type={mimeType.length > 1 ? mimeType[1] : 'doc'}></div>

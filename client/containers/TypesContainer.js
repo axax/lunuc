@@ -291,7 +291,7 @@ class TypesContainer extends React.Component {
                                     if (fieldValue.constructor === Array) {
                                         if (field.type === 'Media') {
                                             dynamic[field.name] = fieldValue.reduce((s, i) => {
-                                                s.push(getImageTag(i, {key: i._id, height: 40}))
+                                                s.push(getImageTag(i, {size:'avatar',key: i._id, height: 40}))
                                                 return s
                                             }, [])
                                         } else {
@@ -307,7 +307,7 @@ class TypesContainer extends React.Component {
 
                                     } else {
                                         if (field.type === 'Media') {
-                                            dynamic[field.name] = getImageTag(fieldValue, {height: 40})
+                                            dynamic[field.name] = getImageTag(fieldValue, {size:'avatar',height: 40})
                                         } else {
                                             if (field.fields) {
                                                 let str = ''

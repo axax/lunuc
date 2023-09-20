@@ -235,7 +235,7 @@ class TypePicker extends React.Component {
                             fontWeight: selIdx === idx ? 500 : 400,
                         }}
                     >
-                        {isValidImage(item) ? getImageTag(item, {height: 30}) : ''}
+                        {isValidImage(item) ? getImageTag(item, {size:'avatar',style:'margin-right:5px',height: 40}) : ''}
                         {typeDataToLabel(item, pickerField)}
                     </MenuItem>
                 )}
@@ -295,7 +295,7 @@ class TypePicker extends React.Component {
                                                  key={singleValueIndex}>
 
                                 <StyledDummyImage isMulti={multi}
-                                     src={getImageSrc(singleValue)}/>
+                                     src={getImageSrc(singleValue,'thumbnail')}/>
                                 <StyledDummyImageText>{typeDataToLabel(singleValue, pickerField)}</StyledDummyImageText>
 
                                 {!readOnly && <StyledDummyButton sx={{left:'4px'}} edge="end"
@@ -305,7 +305,7 @@ class TypePicker extends React.Component {
 
                                 <StyledDummyButton sx={{left:'40px'}} edge="end"
                                             onClick={() => {
-                                                window.open(getImageSrc(singleValue), '_blank').focus()
+                                                window.open(getImageSrc(singleValue,'full'), '_blank').focus()
                                             }}>
                                     <LaunchIcon/>
                                 </StyledDummyButton>
@@ -382,7 +382,7 @@ class TypePicker extends React.Component {
                                                       onDelete={!readOnly && this.handleRemovePick.bind(this, singleValueIndex)}
                                                       onClick={() => {
                                                           if (singleValue.type === 'Media' || singleValue.__typename === 'Media') {
-                                                              window.open(getImageSrc(singleValue), '_blank').focus()
+                                                              window.open(getImageSrc(singleValue,'full'), '_blank').focus()
                                                           } else {
                                                               openTypeWindow(singleValue)
                                                           }
@@ -392,7 +392,7 @@ class TypePicker extends React.Component {
                                                           this.setState({showContextMenu: {singleValue, left: e.clientX, top: e.clientY}})
                                                       }}
                                                       avatar={isValidImage(singleValue) ?
-                                                          <Avatar src={getImageSrc(singleValue, {height: 30})}/> : null}/>)
+                                                          <Avatar src={getImageSrc(singleValue, 'avatar')}/> : null}/>)
                             }
                         }
 
