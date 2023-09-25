@@ -1,6 +1,7 @@
 import Util from './index.mjs'
 import Hook from '../../util/hook.cjs'
 import nodemailer from 'nodemailer'
+import {replacePlaceholders} from '../../util/placeholders.mjs'
 
 /*
  A very basic implementation for sending emails
@@ -56,6 +57,8 @@ ${finalHtml}
 
     } else if (html) {
         finalHtml = html
+    } else if (body && body.html) {
+        finalHtml = replacePlaceholders(body.html, body)
     } else if (body) {
         finalHtml = body
     }
