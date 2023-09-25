@@ -42,7 +42,7 @@ export const hostListFromString = (host) =>{
 export const extendHostruelWithCert = (hostrule, domainname) => {
     if (!hostrule.certDir) {
 
-        const hostsChecks = hostListFromString(domainname)
+        const hostsChecks = hostListFromString(hostrule.certDomain || domainname)
 
         for(const host of hostsChecks ) {
             const dirs = certDirs(host)
