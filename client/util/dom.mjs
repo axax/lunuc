@@ -56,11 +56,16 @@ const DomUtil = {
         for (const key of Object.keys(attrs)) {
             if (key === 'data') {
                 for (const dataKey of Object.keys(attrs[key])) {
-                    if (tag.dataset) {
-                        tag.dataset[dataKey] = attrs[key][dataKey]
-                    } else {
-                        tag.setAttribute('data-' + dataKey.replace(/([A-Z])/g, "-$1").toLowerCase(), attrs[key][dataKey])
+                    const value = attrs[key][dataKey]
+                    //if (tag.dataset) {
+                    if(value===undefined){
+                        delete tag.dataset[dataKey]
+                    }else {
+                        tag.dataset[dataKey] = value
                     }
+                    /*} else {
+                        tag.setAttribute('data-' + dataKey.replace(/([A-Z])/g, "-$1").toLowerCase(), attrs[key][dataKey])
+                    }*/
                 }
             } else if (key === 'style' && attrs[key].constructor === Object) {
                 tag[key] = DomUtil.styleObjectToString(attrs[key])

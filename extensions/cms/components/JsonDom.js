@@ -687,7 +687,10 @@ class JsonDom extends React.Component {
         if (notMainStyle) {
             butIds = [this.getMainStyleId(this.props).id]
         }*/
-        console.log(`remove dom elements for ${this.props.slug}`)
+        if(removeMarked && isLoading){
+            return
+        }
+        console.log(`remove dom elements for ${this.props.slug} ${this.instanceId}`, removeMarked, isLoading)
         //DomUtil.removeElements(`[data-json-dom-id="${this.instanceId}"]`)
 
         // remove instanceId from data attribute
@@ -1584,11 +1587,10 @@ class JsonDom extends React.Component {
     }
 
     setStyle = (style, preprocess, id) => {
-        console.log(`remove add ${id}`)
         const addTag = (css) => {
             DomUtil.createAndAddTag('style', 'head', {
                 textContent: css,
-                data: {jsonDomId: this.instanceId},
+                data: {jsonDomId: this.instanceId, jsonDomIdDelete: undefined},
                 id
             })
         }
