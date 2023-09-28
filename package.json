@@ -62,9 +62,9 @@
   "dependencies": {
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
-    "@mui/icons-material": "^5.14.9",
-    "@mui/material": "^5.14.10",
-    "@mui/styles": "^5.14.10",
+    "@mui/icons-material": "^5.14.11",
+    "@mui/material": "^5.14.11",
+    "@mui/styles": "^5.14.11",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.2",
     "cheerio": "^1.0.0-rc.12",
@@ -105,7 +105,7 @@
     "@google-cloud/storage": "^7.1.0",
     "@google-cloud/translate": "^8.0.2",
     "@lexical/react": "^0.12.2",
-    "axios": "^1.5.0",
+    "axios": "^1.5.1",
     "cld": "^2.9.0",
     "dns2": "^2.1.0",
     "draft-js": "^0.11.7",
@@ -122,7 +122,7 @@
     "mssql": "^10.0.1",
     "nodemon": "^3.0.1",
     "openai": "^4.10.0",
-    "puppeteer": "^21.3.4",
+    "puppeteer": "^21.3.5",
     "xml2js": "^0.6.2",
     "ytdl-core": "^4.11.5"
   },
@@ -167,6 +167,6 @@
   "overrides": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "graphql": "^16.8.0"
+    "graphql": "^16.8.1"
   }
 }

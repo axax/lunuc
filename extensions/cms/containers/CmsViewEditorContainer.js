@@ -27,10 +27,11 @@ import {
     SimpleDialog,
     SimpleMenu,
     Divider,
-    UIProvider
+    UIProvider,
+    Checkbox
 } from 'ui/admin'
 import {
-    LogoutIcon, PreviewIcon
+    LogoutIcon, PreviewIcon, SettingsIcon, SaveIcon
 } from 'gensrc/ui/admin/icons'
 import Drawer from '@mui/material/Drawer'
 import DisplaySettingsIcon from '@mui/icons-material/DisplaySettings'
@@ -266,6 +267,7 @@ class CmsViewEditorContainer extends React.Component {
             props._props !== this.props._props ||
             state.template !== this.state.template ||
             state.showPageSettings !== this.state.showPageSettings ||
+            state.showPageSettingsConfig !== this.state.showPageSettingsConfig ||
             state.script !== this.state.script ||
             state.dataResolver !== this.state.dataResolver ||
             state.style !== this.state.style ||
@@ -312,7 +314,8 @@ class CmsViewEditorContainer extends React.Component {
             dataResolver,
             serverScript,
             simpleDialog,
-            showPageSettings
+            showPageSettings,
+            showPageSettingsConfig,
         } = this.state
 
         if (!cmsPage) {
@@ -925,6 +928,7 @@ class CmsViewEditorContainer extends React.Component {
                 }}>Admin</Button>,
                 <SimpleMenu key="moreMenu" color="inherit" items={moreMenu}/>)
 
+            const pageName = cmsPage.realSlug.split('/')[0]
 
             Hook.call('CmsViewEditorContainerRender', {
                 moreMenu,
@@ -950,12 +954,38 @@ class CmsViewEditorContainer extends React.Component {
                             }
                             this.setState({showPageSettings: false})
                         }}> {showPageSettings && <div style={{padding: '1rem'}}>
-                    {PageOptionsDefinition ? [
-                        <Typography key="pageOptionTitle"
-                                    variant="subtitle1">{_t('CmsViewEditorContainer.pagesettings')}</Typography>,
+                    <Typography key="pageOptionTitle" mb={2}
+                                variant="subtitle1">{_t('CmsViewEditorContainer.pagesettings')}</Typography>
+                    {canMangeCmsTemplate && <Checkbox
+                        sx={{position:'absolute', right: 0, top:0}}
+                        onChange={(e)=>{
+                            this.setState({showPageSettingsConfig: e.target.checked})
+                        }}
+                        icon={<SettingsIcon />}
+                        checkedIcon={<SettingsIcon />}
+                    />}
+
+                    {showPageSettingsConfig?
+                        <CodeEditor lineNumbers
+                                    type="json"
+                                    onChange={(json)=>{
+                                        clearTimeout(this._pageOptionDefTimeout)
+                                        this._pageOptionDefTimeout=setTimeout(()=>{
+                                            this.setState({PageOptionsDefinition:json})
+
+                                            this.props.setKeyValue({
+                                                key: 'PageOptionsDefinition-' + pageName,
+                                                value: json,
+                                                global: true
+                                            })
+
+                                        },1000)
+                                    }}>{PageOptionsDefinition || []}</CodeEditor>
+
+                        :
+                        PageOptionsDefinition ?
                         <GenericForm key="pageOptionForm" primaryButton={true}
                                      caption={_t('CmsViewEditorContainer.save')} onClick={(formData) => {
-                            const pageName = cmsPage.realSlug.split('/')[0]
                             this.setState({PageOptions: formData})
 
 
@@ -970,7 +1000,7 @@ class CmsViewEditorContainer extends React.Component {
 
                         }} fields={PageOptionsDefinition.reduce((obj, item) => {
                             return {...obj, [item.name]: item}
-                        }, {})} values={PageOptions || {}}/>] : _t('CmsViewEditorContainer.noOptions')}</div>}
+                        }, {})} values={PageOptions || {}}/> : _t('CmsViewEditorContainer.noOptions')}</div>}
                 </Drawer>
                 <DrawerLayout sidebar={!loadingState && sidebar}
                               open={EditorOptions.drawerOpen}

@@ -19,6 +19,7 @@ import {findAndReplaceObjectIds} from '../util/graphql.js'
 import {listBackups, createBackup, removeBackup, mongoExport} from './backups.mjs'
 import {getCollections} from "../util/collection.mjs";
 import {resolver} from './index.mjs'
+import {createRequireForScript} from "../../util/require.mjs";
 
 const {UPLOAD_DIR} = config
 
@@ -214,8 +215,10 @@ export const systemResolver = (db) => ({
                 db.collection(collection).updateOne({_id: entry._id}, {$set: entry})
             }
             if(isScript) {
+                const requireContext = createRequireForScript(import.meta.url)
+
                 const tpl = new Function(`  
-                      
+                      ${requireContext.script}
                 this.entries.forEach(entry=>{
                     ${data}            
                 })`)
@@ -224,7 +227,7 @@ export const systemResolver = (db) => ({
                     tpl.call({entries, save, ObjectId, Util, require, __dirname, db, context})
                     return {result: `Successful executed`}
                 } catch (e) {
-
+                    console.log(e)
                     return {result: `Failed executed: ${e.message}`}
                 }
             }else{

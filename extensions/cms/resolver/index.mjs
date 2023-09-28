@@ -337,7 +337,7 @@ export default db => ({
     },
     Mutation: {
         createCmsPage: async ({slug,ownerGroup, ...rest}, req) => {
-            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_CMS_CONTENT)
+            await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_MANAGE_CMS_CONTENT)
 
             if (!slug) slug = ''
             slug = encodeURI(slug.trim())
