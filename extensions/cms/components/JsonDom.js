@@ -417,7 +417,10 @@ class JsonDom extends React.Component {
         if (_app_.ssr || this.props.dynamic || this.props.editMode || document.querySelector('link[rel=manifest]')) {
             return
         }
-        const loc = window.location, ori = loc.origin, host = loc.host.replace(/^www./,'')
+        const loc = window.location,
+            ori = loc.origin,
+            host = loc.host.replace(/^www./,''),
+            type = 'image/png'
         const manifest = {
             short_name: `${host.replace(/.[a-z]{2,3}$/,'')}`,
             name: document.title,
@@ -428,9 +431,9 @@ class JsonDom extends React.Component {
             orientation: 'any',
             scope: '/',
             icons: [
-                { src: `${ori}/favicon-192x192.png`, sizes: '192x192', type: 'image/png' },
-                { src: `${ori}/favicon-512x512.png`, sizes: '512x512', type: 'image/png' },
-                { src: `${ori}/favicon-maskable.png`, sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+                { src: `${ori}/favicon-192x192.png`, sizes: '192x192', type },
+                { src: `${ori}/favicon-512x512.png`, sizes: '512x512', type },
+                { src: `${ori}/favicon-maskable.png`, sizes: '512x512', type, purpose: 'maskable' }
             ],
             start_url: loc.href
         }
@@ -1258,9 +1261,10 @@ class JsonDom extends React.Component {
     }
 
     addLocationToScope() {
-        this.scope.pathname = window.location.pathname
+        const loc = window.location
+        this.scope.pathname = loc.pathname
         this.scope.params = Util.extractQueryParams()
-        this.scope.hashParams = (window.location.hash ? Util.extractQueryParams(window.location.hash.substring(1), {decodeURI: false}) : {})
+        this.scope.hashParams = (loc.hash ? Util.extractQueryParams(loc.hash.substring(1), {decodeURI: false}) : {})
     }
 
     getJson(props) {
