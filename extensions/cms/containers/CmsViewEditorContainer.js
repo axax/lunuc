@@ -928,7 +928,7 @@ class CmsViewEditorContainer extends React.Component {
                 }}>Admin</Button>,
                 <SimpleMenu key="moreMenu" color="inherit" items={moreMenu}/>)
 
-            const pageName = cmsPage.realSlug.split('/')[0]
+            const pageName = cmsPage.realSlug?cmsPage.realSlug.split('/')[0]:''
 
             Hook.call('CmsViewEditorContainerRender', {
                 moreMenu,
