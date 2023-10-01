@@ -137,7 +137,7 @@ export const userSchemaRaw = `
 		createUser (
 			email: String!
 			username: String!
-			password: String!
+			password: String
 			picture: ID
 			emailConfirmed: Boolean
 			blocked: Boolean

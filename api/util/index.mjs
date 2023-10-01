@@ -213,7 +213,7 @@ const Util = {
     validatePassword: (pw, {lang}) => {
         const err = []
 
-        if (pw.length < PASSWORD_MIN_LENGTH) {
+        if (!pw || pw.length < PASSWORD_MIN_LENGTH) {
             err.push(_t('core.password.too.short', lang, {minlength: PASSWORD_MIN_LENGTH}))
         }
 
