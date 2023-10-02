@@ -143,10 +143,10 @@ const Util = {
             return ''
         }
     },
-    textFromHtml: str => {
+    /*textFromHtml: str => {
         if (str.constructor !== String) return str
         return str.replace(/<[^>]+>/g, ' ').replace(/\s/g, ' ')
-    },
+    },*/
     /*escapeHtml: (str) => {
         const entityMap = {
             '&': '&amp;',
@@ -266,14 +266,14 @@ const Util = {
 
         return text.replace(pattern, match => `<span style='${style || ''}' class='${className || ''}'>${match}</span>`);
     },
-    getProfileImage(userAny) {
+    /*getProfileImage(userAny) {
         const user = userAny && userAny.userData ? userAny.userData : userAny
         if (user && user.picture) {
 
             return _app_.config.UPLOAD_URL + '/' + (user.picture._id ? user.picture._id : user.picture)
         }
         return '/placeholder.svg'
-    },
+    },*/
     getMediaSrc(media, src) {
         return src ? src : (media.src ? media.src : _app_.config.UPLOAD_URL + '/' + media._id)
     },

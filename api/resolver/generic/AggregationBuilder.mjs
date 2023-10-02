@@ -633,13 +633,16 @@ export default class AggregationBuilder {
 
     async createQueriesForFields(fields, projectResultData, lang, match, filters, groups, lookups, typeFields, resultMatch, resultFilters, lookupMatch, lookupFilters) {
         const createdFieldMatches = {}
+        const processedFieldNames = []
         for (let i = 0; i < fields.length; i++) {
             const field = fields[i]
             const fieldDefinition = this.createFieldDefinition(field, this.type)
             const fieldName = fieldDefinition.name
-            if(!fieldName){
+
+            if(!fieldName || processedFieldNames.indexOf(fieldName)>=0){
                 continue
             }
+            processedFieldNames.push(fieldName)
             if (fieldDefinition.reference) {
 
                 // search in a ref field

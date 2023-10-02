@@ -28,7 +28,6 @@ export const resolveFrom = async ({segment, db, context, resolvedData, scope, no
                 editmode,
                 dynamic
             })
-            console.log(dataFromKey)
             Object.keys(resolvedFromKey.resolvedData).forEach(k => {
                 resolvedData[k] = resolvedFromKey.resolvedData[k]
             })
