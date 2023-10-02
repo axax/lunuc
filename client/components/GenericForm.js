@@ -363,7 +363,7 @@ class GenericForm extends React.Component {
                     })
 
                     let timeout
-                    this.pickr.on('change', (color, instance) => {
+                    this.pickr.on('change', (color, type, instance) => {
                         const inp = instance._root.button
                         clearTimeout(timeout)
                         timeout = setTimeout(() => {

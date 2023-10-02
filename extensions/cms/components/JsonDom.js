@@ -253,7 +253,7 @@ class JsonDom extends React.Component {
         const resourcesChanged = (this.props.resources !== props.resources)
         const templateChanged = !props.template || (this.props.template !== props.template)
 
-        const propsChanged = this.props._props !== props._props || this.props.inlineEditor !== props.inlineEditor,
+        const propsChanged = this.props.inlineEditor !== props.inlineEditor || Util.shallowCompare(props._props, this.props._props, {compareArray:true}),
             slugChanged = this.props.slug !== props.slug,
             userChanged = this.props.user !== props.user
 
@@ -273,7 +273,7 @@ class JsonDom extends React.Component {
             /*   console.log(`
            for ${props.slug}
                resolvedDataChanged=${resolvedDataChanged}
-               locationChanged=${locationChanged}
+               searchChanged=${searchChanged}
                scriptChanged=${scriptChanged}
                resourcesChanged=${resourcesChanged}
                templateChanged=${templateChanged}
@@ -1124,7 +1124,7 @@ class JsonDom extends React.Component {
 
                     let eleType = JsonDom.components[tagName] || this.extendedComponents[tagName] || tagName
 
-                    eleProps.key = key
+                    eleProps.key = this.props.slug+key
                     if (t === 'Cms') {
                         // if we have a cms component in another cms component the location props gets not refreshed
                         // that's way we pass it directly to the reactElement as a prop

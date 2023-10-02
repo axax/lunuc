@@ -122,7 +122,8 @@ class TemplateEditor extends React.Component {
         const {component, fabButtonStyle, onScroll, scrollPosition} = this.props
         const {tab, data, type, error} = this.state
         const currentTab = (!component && this.state.tab === 2 ? 0 : this.state.tab) || 0
-        return <div>
+
+        return <>
             <StyledTabs
                 value={currentTab}
                 onChange={this.handleTabChange.bind(this)}
@@ -172,7 +173,7 @@ class TemplateEditor extends React.Component {
                 </CodeEditor>
             </TabContainer>}
 
-        </div>
+        </>
     }
 
     handleChange(str, instantSave) {

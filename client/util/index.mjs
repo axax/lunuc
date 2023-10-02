@@ -503,7 +503,17 @@ const Util = {
             return newObj !== prevObj
         }
         for (const key in newObj) {
-            if ((!options.ignoreKeys || options.ignoreKeys.indexOf(key) < 0) && newObj[key] !== prevObj[key]) {
+            const v1 = newObj[key], v2 = prevObj[key]
+
+            if ((!options.ignoreKeys || options.ignoreKeys.indexOf(key) < 0) && v1 !== v2) {
+                if(options.compareArray && v1 && v1.constructor===Array && v2 && v2.constructor === Array && v1.length === v2.length){
+                    for(let i = 0;i<v1.length;i++){
+                        if(this.shallowCompare(v1[i],v2[i],options)){
+                            return true
+                        }
+                    }
+                    return false
+                }
                 return true
             }
         }
@@ -541,4 +551,6 @@ const Util = {
     }
 }
 export default Util
-
+/*console.log('xxxxx',
+Util.shallowCompare({"icons":[{"name":"facebook","url":"https://www.facebook.com/pokerhelden.ch"},{"name":"instagram","url":"https://www.instagram.com/pokerhelden.ch"},{"url":"https://www.twitch.tv/pokerhelden","name":"twitch"},{"name":"youtube","url":"https://www.youtube.com/channel/UCBGIo7_PqA8vKVzWO5TP-JA"}]},
+{"icons":[{"name":"facebook","url":"https://www.facebook.com/pokerhelden.ch"},{"name":"instagram","url":"https://www.instagram.com/pokerhelden.ch"},{"url":"https://www.twitch.tv/pokerhelden","name":"twitch"},{"name":"youtube","url":"https://www.youtube.com/channel/UCBGIo7_PqA8vKVzWO5TP-JA"}]}))*/
