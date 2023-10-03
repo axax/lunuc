@@ -20,10 +20,11 @@ export const isPreview = () => {
 export const isEditMode = (props) => {
     const {dynamic, cmsPage, forceEditMode} = props
 
-    if(forceEditMode===true || forceEditMode === 'true'){
-        return true
-    }
+
     if(cmsPage) {
+        if(forceEditMode===true || forceEditMode === 'true'){
+            return true
+        }
         if (cmsPage.publicEdit) {
             return true
         } else if (!cmsPage.editable) {

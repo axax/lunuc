@@ -489,7 +489,7 @@ class CmsViewEditorContainer extends React.Component {
         </>
 
         if (!canViewCmsEditor || props.dynamic) {
-            if ((cmsPage && cmsPage.publicEdit) || props.forceEditMode==='true') {
+            if ((cmsPage && cmsPage.publicEdit) || props.forceEditMode===true || props.forceEditMode==='true') {
                 return <UIProvider>{inner}</UIProvider>
             }
             return inner
@@ -1146,9 +1146,6 @@ class CmsViewEditorContainer extends React.Component {
         }
         if (this._autoSaveDataResolverTimeout) {
             this._autoSaveDataResolver()
-        }
-        if (curElement) {
-            curElement.focus()
         }
         return true
     }
