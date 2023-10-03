@@ -54,7 +54,7 @@ export const typeResolver = async ({segment, resolvedData, scope, db, req, conte
     // restriction = if it is set to 'user' only entries that belongs to the user are returned
     if (segment.restriction) {
         const restriction = segment.restriction.constructor === String ? {type: segment.restriction} : segment.restriction
-        match = await Util.getAccessFilter(db, context, restriction)
+        match = await Util.getAccessFilter(db, context, restriction, {type:t})
     } else {
         match = {}
     }

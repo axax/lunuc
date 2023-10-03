@@ -321,10 +321,13 @@ const Util = {
         return false
 
     },
-    getAccessFilter: async (db, context, access) => {
+    getAccessFilter: async (db, context, access, details) => {
         if (!access) {
             // do nothing
         } else if (access.type === 'group') {
+            if(details && details.type === 'User'){
+                return {group: {$in: context.group.map(f => new ObjectId(f))}}
+            }
             return {ownerGroup: {$in: context.group.map(f => new ObjectId(f))}}
         } else if (access.type === 'user') {
             return {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
