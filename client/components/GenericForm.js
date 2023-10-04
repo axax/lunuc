@@ -247,8 +247,11 @@ class GenericForm extends React.Component {
 
 
     componentWillUnmount() {
-        if (this.pickr) {
-            this.pickr.destroy()
+        if (this._colorPickers) {
+            Object.keys(this._colorPickers).forEach(key=>{
+                this._colorPickers[key].destroy()
+                delete this._colorPickers[key]
+            })
         }
     }
 
@@ -326,59 +329,67 @@ class GenericForm extends React.Component {
 
     }
 
-    loadColorpicker() {
-        DomUtil.addScript('https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js', {
-            id: 'colorpicker',
-            onload: () => {
-                this.initColorpicker()
-            }
-        }, {ignoreIfExist: true})
+    loadColorpicker(id) {
+        if(!this._colorPickerLoaded) {
+            this._colorPickerLoaded = true
+            DomUtil.addScript('https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js', {
+                id: 'colorpicker',
+                onload: () => {
+                    this.initColorpicker(id)
+                }
+            }, {ignoreIfExist: true})
 
-        DomUtil.addStyle('https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css', {id: 'colorpickerstyle'}, {ignoreIfExist: true})
+            DomUtil.addStyle('https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css', {id: 'colorpickerstyle'}, {ignoreIfExist: true})
+        }else{
+            this.initColorpicker(id)
+        }
     }
 
-    initColorpicker() {
-        if (window.Pickr && !this.pickr) {
-            setTimeout(() => {
-                try {
-                    this.pickr = new Pickr({
-                        el: '[data-colorpicker] > input',
-                        useAsButton: true,
-                        defaultRepresentation: 'HEX',
-                        components: {
-                            palette: true,
-                            preview: true,
-                            opacity: true,
-                            hue: true,
-                            interaction: {
-                                hex: false,
-                                rgba: false,
-                                hsla: false,
-                                hsva: false,
-                                cmyk: false,
-                                input: false,
-                                save: false
-                            },
-                        }
-                    })
-
-                    let timeout
-                    this.pickr.on('change', (color, type, instance) => {
-                        const inp = instance._root.button
-                        clearTimeout(timeout)
-                        timeout = setTimeout(() => {
-                            this.handleInputChange({target: {name: inp.name, value: color.toHEXA().toString()}})
-                        }, 300)
-                    }).on('show', (color, instance) => {
-                        const inp = instance._root.button
-                        this.pickr.setColor(inp.value)
-                    })
-                } catch (e) {
-                    console.log(e)
-                }
-            }, 500)
-
+    initColorpicker(id) {
+        if(!this._colorPickers){
+            this._colorPickers = {}
         }
+
+        if(this._colorPickers[id]){
+            return
+        }
+
+        DomUtil.waitForVariable('Pickr').then(()=>{
+
+            this._colorPickers[id] = new Pickr({
+                el: `input#${id}`,
+                useAsButton: true,
+                defaultRepresentation: 'HEX',
+                components: {
+                    palette: true,
+                    preview: true,
+                    opacity: true,
+                    hue: true,
+                    interaction: {
+                        hex: false,
+                        rgba: false,
+                        hsla: false,
+                        hsva: false,
+                        cmyk: false,
+                        input: false,
+                        save: false
+                    },
+                }
+            })
+
+            let timeout
+            this._colorPickers[id].on('change', (color, type, instance) => {
+                const inp = instance._root.button
+                clearTimeout(timeout)
+                timeout = setTimeout(() => {
+                    this.handleInputChange({target: {name: inp.name, value: color.toHEXA().toString()}})
+                }, 300)
+            }).on('show', (color, instance) => {
+                const inp = instance._root.button
+                this._colorPickers[id].setColor(inp.value)
+            })
+
+        })
     }
 
     newStateForField(prevState, {name, value, originalValue, localized}) {
@@ -1063,9 +1074,10 @@ class GenericForm extends React.Component {
                                                                                              onChange={this.handleInputChange}
                                                                                              name={fieldKey}
                                                                                              key={fieldKey}
+                                                                                             id={fieldKey}
                                                                                              value={value}/></FormControl>)
 
-            this.loadColorpicker()
+            this.loadColorpicker(fieldKey)
 
 
         } else if (uitype === 'type_picker') {
