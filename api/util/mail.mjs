@@ -9,7 +9,7 @@ import {replacePlaceholders} from '../../util/placeholders.mjs'
  */
 
 
-export const sendMail = async (db, context, {settings, recipient, from, fromName, replyTo, subject, body, html, text, slug, headerList, attachments, req}) => {
+export const sendMail = async (db, context, {settings, recipient, from, fromName, replyTo, subject, body, html, text, slug, headerList, headers, attachments, req}) => {
 
     if (!recipient || !Util.validateEmail(recipient)) {
         return {error: `Recipient ${recipient} is not valid`}
@@ -86,6 +86,7 @@ ${finalHtml}
         text, //'Plaintext version of the message'
         html: finalHtml,
         attachments,
+        headers,
         list: headerList
     }
 

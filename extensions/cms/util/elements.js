@@ -512,7 +512,7 @@ const baseElements = [
                 uitype: 'html',
                 fullWidth: true
             },
-            ...classOptions('_p'),
+            ...classOptions('p_'),
             ...imageOptions('p_'),
             ...sizeOptions('p_'),
             ...lazyImageOptions('$observe_')

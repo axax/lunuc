@@ -75,15 +75,20 @@ export default db => ({
                     }
                     sub.mailing = mailing
 
-                    const headerList = {
+                    const listHeader = {
                         // List-Help: <mailto:admin@example.com?subject=help>
                         //help: 'admin@example.com?subject=help',
                         // List-Unsubscribe: <http://example.com> (Comment)
                         unsubscribe: {
                             url: `${(req.isHttps ? 'https://' : 'http://')}${getHostFromHeaders(req.headers)}/core/unsubscribe-newsletter?email=${sub.email}&token=${sub.token}&mailing=${sub.mailing}`,
                             comment: 'Unsubscribe'
-                        }
+                        },
+
                     }
+                    /*const headers = {
+                        'List-Unsubscribe': `<${(req.isHttps ? 'https://' : 'http://')}${getHostFromHeaders(req.headers)}/core/unsubscribe-newsletter?email=${sub.email}&token=${sub.token}&mailing=${sub.mailing}>, <mailto:info@onyou.ch>`,
+                        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+                    }*/
 
 
                     let finalSubject = subject,
@@ -161,7 +166,8 @@ export default db => ({
                         attachments: finalAttachments,
                         body,
                         text: finalText,
-                        headerList,
+                        headers,
+                        headerList: listHeader,
                         req,
                         settings
                     })

@@ -893,7 +893,7 @@ const GenericResolver = {
         }
 
         if (_meta) {
-            const meta = JSON.parse(_meta)
+            const meta = _meta.constructor===Object?_meta:JSON.parse(_meta)
             if (meta.clearCachePrefix) {
                 Cache.clearStartWith(meta.clearCachePrefix)
             }
