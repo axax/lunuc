@@ -166,7 +166,6 @@ export default db => ({
                         attachments: finalAttachments,
                         body,
                         text: finalText,
-                        headers,
                         headerList: listHeader,
                         req,
                         settings
