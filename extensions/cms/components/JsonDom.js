@@ -1150,10 +1150,7 @@ class JsonDom extends React.Component {
                         _app_.JsonDom.inlineEditor !== false) {
 
                         if (this.props.inlineEditor || ($inlineEditor && $inlineEditor.mode === 'source')) {
-                            const rawJson = this.getJsonRaw(this.props, true)
-                            if (rawJson) {
-                                eleProps._json = rawJson
-                            }
+                            eleProps._json = this.getJsonRaw(this.props, true)
                         }
 
                         if (eleProps._json) {

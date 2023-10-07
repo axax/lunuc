@@ -116,7 +116,7 @@ class CmsViewContainer extends React.Component {
             parseResolvedData={cmsPage.parseResolvedData}
             resources={cmsPage.resources}
             editMode={editMode}
-            inlineEditor={Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_CONTENT) && settings && !!settings.inlineEditor}
+            inlineEditor={(cmsPage.publicEdit || Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_CONTENT)) && settings && !!settings.inlineEditor}
             slug={cmsPage.realSlug}
             title={cmsPage.name}
             publicEdit={cmsPage.publicEdit}
