@@ -100,7 +100,8 @@ export default db => ({
                 'FtpUser',
                 'UserGroup',
                 'UserRestriction',
-                'UserSetting'
+                'UserSetting',
+                'SmsLog'
             ]
 
             const collectionsToSearchIn = []

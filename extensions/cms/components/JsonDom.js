@@ -781,7 +781,7 @@ class JsonDom extends React.Component {
 
                 if (!item) return
 
-                const {t, k, p, c, x, $c, $if, $is, $ifexist, $observe, $for, $loop, $inlineEditor, $set} = item
+                const {t, k, p, c, x, $c, $toHtml, $if, $is, $ifexist, $observe, $for, $loop, $inlineEditor, $set} = item
                 /*
                  t = type
                  k = key
@@ -1169,8 +1169,8 @@ class JsonDom extends React.Component {
                         }
 
                     }
-                    if ($c) {
-                        eleProps.dangerouslySetInnerHTML = {__html: $c}
+                    if ($c || $toHtml) {
+                        eleProps.dangerouslySetInnerHTML = {__html: $c || c.replace(/(?:\r\n|\r|\n)/g, '<br>')}
                     }
 
                     if (_app_.JsonDom.elementWatch != false &&

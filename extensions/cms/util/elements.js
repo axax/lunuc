@@ -882,11 +882,17 @@ const baseElements = [
                 uitype: 'textarea',
                 tab: DEFAULT_TAB
             },
+            $toHtml:{
+                label: 'Zeilenumbrüche behalten',
+                fullWidth: true,
+                type: 'Boolean',
+                tab: DEFAULT_TAB
+            },
             $c: {
                 label: 'Text (HTML)',
                 fullWidth: true,
                 uitype: 'textarea',
-                tab: DEFAULT_TAB
+                tab: 'Erweitert'
             },
             p_style_textAlign: {
                 label: 'Ausrichtung',
