@@ -14,13 +14,27 @@ export const parseStyles = (styles) => {
     }
     return styles
         .split(';')
-        .filter(style => style.split(':')[0] && style.split(':')[1])
-        .map(style => [
-            style.split(':')[0].trim().replace(/-./g, c => c.substr(1).toUpperCase()),
-            style.split(':')[1].trim()
-        ])
-        .reduce((styleObj, style) => ({
-            ...styleObj,
-            [style[0]]: style[1],
-        }), {})
+        .map(style => {
+            const parts = style.split(':')
+            if(parts.length<2){
+                return
+            }
+            const key = parts[0].trim()
+            return [
+                key.startsWith('--')?key:key.replace(/-./g, c => c.substr(1).toUpperCase()),
+                parts[1].trim()
+            ]
+        })
+        .reduce((styleObj, style) => {
+            if(style){
+                styleObj[style[0]] = style[1]
+            }
+            return styleObj
+        }, {})
 }
+
+/*const st = new Date().getTime()
+for(let i = 0; i< 1000000; i++) {
+    parseStyles('color:green; --red:2; all:2323;background-color:blue;width:100px')
+}
+console.log((new Date().getTime() - st) + 'ms')*/
