@@ -426,8 +426,9 @@ const Util = {
         return nodeList
     },
     removeSlugContext(url) {
-        if (_app_.slugContext && url && url.startsWith('/' + _app_.slugContext)) {
-            url = url.substring(_app_.slugContext.length + 1)
+        const sc = _app_.slugContext
+        if (sc && url && url.startsWith('/' + sc)) {
+            url = url.substring(sc.length + 1)
             if (!url) {
                 url = '/'
             }
