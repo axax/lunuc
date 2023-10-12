@@ -81,7 +81,8 @@ import {
     HistoryIcon,
     NotificationsIcon,
     SupportIcon,
-    DevicesIcon
+    DevicesIcon,
+    GridOnIcon
 } from 'gensrc/ui/admin/icons'
 
 const iconComponents = {
@@ -166,7 +167,8 @@ const iconComponents = {
     notification: NotificationsIcon,
     support: SupportIcon,
     devices: DevicesIcon,
-    upload: CloudUploadIcon
+    upload: CloudUploadIcon,
+    grid: GridOnIcon
 }
 
 export const getIconByKey = (key, defaultIcon) => {

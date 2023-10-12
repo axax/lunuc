@@ -1513,6 +1513,49 @@ const baseElements = [
     },
     {
         subHeader: 'Layout Elemente',
+        tagName: 'div',
+        icon: 'grid',
+        name: 'Grid',
+        defaults: {
+            allowDrop: true,
+            $inlineEditor: {
+                elementKey: 'grid'
+            },
+            p: {
+                ['data-element-key']: 'grid'
+            },
+            c: [
+            ]
+        },
+        options: {
+            'p_style@xs_--grid-template-columns-xs': {
+                value: 'repeat(1, 1fr)',
+                label: 'Grid Template Columns (xs)',
+                tab: DEFAULT_TAB
+            },
+            'p_style@sm_--grid-template-columns-sm': {
+                value: 'repeat(2, 1fr)',
+                label: 'Grid Template Columns (sm)',
+                tab: DEFAULT_TAB
+            },
+            'p_style@md_--grid-template-columns-md': {
+                value: 'repeat(4, 1fr)',
+                label: 'Grid Template Columns (md)',
+                tab: DEFAULT_TAB
+            },
+            'p_style@lg_--grid-template-columns-lg': {
+                value: 'repeat(5, 1fr)',
+                label: 'Grid Template Columns (lg)',
+                tab: DEFAULT_TAB
+            },
+            ...marginOptions('p_'),
+            ...classLinkStylingOptions('p_'),
+            ...classOptions('p_'),
+            ...invisibleOptions('p_'),
+            ...observeOptions()
+        }
+    },
+    {
         tagName: 'Row',
         icon: 'pause',
         name: 'Layout 1/2',

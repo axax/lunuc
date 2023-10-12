@@ -102,6 +102,15 @@ export const DEFAULT_STYLE = `//!#Basic
 
 
 //!#Grid
+[data-element-key="grid"]{
+\tdisplay:grid; 
+  column-gap: 1rem;
+  row-gap: 1rem;
+  grid-template-columns: var(--grid-template-columns-xs);
+}
+
+
+
 .row {
 \tdisplay: flex;
 \tbox-sizing: border-box;
@@ -157,94 +166,65 @@ export const DEFAULT_STYLE = `//!#Basic
 \t\t&:empty{
 \t\t\tpadding-bottom: 0;
 \t\t}
-\t}
-\t\t
-\t&.grid{
-\t\tposition:relative;
-\t\t&:after,&:before{
-\t\t\tcontent: ' ';
-\t\t\tposition:absolute;
-\t\t\tbackground:white;
-\t\t\tdisplay:block;
-\t\t\tz-index:1;
-\t\t}
-\t\t&:after{
-\t\t\tright:0;
-\t\t\ttop:0;
-\t\t\tbottom:0;
-\t\t\twidth:3px;\t\t\t\t
-\t\t}
-\t\t&:before{
-\t\t\tright:0;
-\t\t\tleft:0;
-\t\t\tbottom:0;
-\t\t\theight:3px;\t\t\t\t
-\t\t}
-\t\t.col {
-\t\t\tborder-bottom:solid 1px black;
-\t\t\tpadding-top: 2rem;
-\t\t\tborder-right:solid 1px black;\t\t\t
-\t\t}
-\t\t
-\t}
-}
-
-@media (min-width: 25.813rem) {
-\t.row{
-\t\t.col{
-\t\t\t&.col-xs-1 {
-        max-width: 8.3333333333%;
-        flex: 0 0 8.3333333333%;
-    \t}
-\t\t\t&.col-xs-2 {
-        max-width: 16.6666666667%;
-        flex: 0 0 16.6666666667%;
-    \t}
-\t\t\t&.col-xs-3 {
-        max-width: 25%;
-        flex: 0 0 25%;
-    \t}
-\t\t\t&.col-xs-4 {
-        max-width: 33.3333333333%;
-        flex: 0 0 33.3333333333%;
-    \t}
-\t\t\t&.col-xs-5 {
-        max-width: 41.6666666667%;
-        flex: 0 0 41.6666666667%;
-   \t\t}
-\t\t\t&.col-xs-6 {
-        max-width: 50%;
-        flex: 0 0 50%;
-   \t \t}
-\t\t\t&.col-xs-7 {
-        max-width: 58.3333333333%;
-        flex: 0 0 58.3333333333%;
-    \t}
-\t\t\t&.col-xs-8 {
-        max-width: 66.6666666667%;
-        flex: 0 0 66.6666666667%;
-    \t}
-\t\t\t&.col-xs-9 {
-        max-width: 75%;
-        flex: 0 0 75%;
-    \t}
-\t\t\t&.col-xs-10 {
-        max-width: 83.3333333333%;
-        flex: 0 0 83.3333333333%;
-    \t}
-\t\t\t&.col-xs-11 {
-        max-width: 91.6666666667%;
-        flex: 0 0 91.6666666667%;
-    \t}
-\t\t\t&.col-xs-12 {
-        max-width: 100%;
-        flex: 0 0 100%;
-    \t}
-\t\t}
+    &.col-xs-1 {
+      max-width: 8.3333333333%;
+      flex: 0 0 8.3333333333%;
+    }
+    &.col-xs-2 {
+      max-width: 16.6666666667%;
+      flex: 0 0 16.6666666667%;
+    }
+    &.col-xs-3 {
+      max-width: 25%;
+      flex: 0 0 25%;
+    }
+    &.col-xs-4 {
+      max-width: 33.3333333333%;
+      flex: 0 0 33.3333333333%;
+    }
+    &.col-xs-5 {
+      max-width: 41.6666666667%;
+      flex: 0 0 41.6666666667%;
+    }
+    &.col-xs-6 {
+      max-width: 50%;
+      flex: 0 0 50%;
+    }
+    &.col-xs-7 {
+      max-width: 58.3333333333%;
+      flex: 0 0 58.3333333333%;
+    }
+    &.col-xs-8 {
+      max-width: 66.6666666667%;
+      flex: 0 0 66.6666666667%;
+    }
+    &.col-xs-9 {
+      max-width: 75%;
+      flex: 0 0 75%;
+    }
+    &.col-xs-10 {
+      max-width: 83.3333333333%;
+      flex: 0 0 83.3333333333%;
+    }
+    &.col-xs-11 {
+      max-width: 91.6666666667%;
+      flex: 0 0 91.6666666667%;
+    }
+    &.col-xs-12 {
+      max-width: 100%;
+      flex: 0 0 100%;
+    }
+    &.col-x{
+      max-width: var(--width-xs);
+      flex: 0 0 var(--width-xs);
+    }
 \t}
 }
 
-@media (min-width: 48rem) {
+@media (min-width: \${scope.PageOptions && scope.PageOptions.breakpointMobile ? scope.PageOptions.breakpointMobile + 'px' : '25.813rem'}) {
+  [data-element-key="grid"]{
+    grid-template-columns: var(--grid-template-columns-sm);
+  }
 \t.row{\t
     &.row-space-6{\t
       margin-left: -1.5rem;
@@ -254,29 +234,6 @@ export const DEFAULT_STYLE = `//!#Basic
         padding-left: 1.5rem;
       }
     }
-\t\t&.equal-height{
-\t\t\t.col{
-\t\t\t\tline-height:0;
-\t\t\t\theight:100%;\t\t\t\t
-\t\t\t}
-\t\t\timg{
-\t\t\t\theight: 100%;
-\t\t\t\twidth: 100%;
-\t\t\t\tobject-fit: cover;
-\t\t\t}
-\t\t\t&.h25{\t\t\t
-\t\t\t\theight:25rem;
-\t\t\t}
-\t\t\t&.h30{\t\t\t
-\t\t\t\theight:30rem;
-\t\t\t}
-\t\t\t&.h35{\t\t\t
-\t\t\t\theight:35rem;
-\t\t\t}
-\t\t\t&.h40{\t\t\t
-\t\t\t\theight:40rem;
-\t\t\t}
-\t\t}
 \t\t&.row-sm-reverse{
 \t\t\tflex-direction: row-reverse;
 \t\t}
@@ -335,11 +292,18 @@ export const DEFAULT_STYLE = `//!#Basic
         flex: 0 0 0%;
 \t\t\t\tmargin-left: auto;
 \t\t\t}
+      &.col-x{
+        max-width: var(--width-sm);
+        flex: 0 0 var(--width-sm);
+      }
 \t\t}\t\t
 \t}
 }
 
-@media (min-width: 62rem) {
+@media (min-width: \${scope.PageOptions && scope.PageOptions.breakpointTablet ? scope.PageOptions.breakpointTablet + 'px' : '48rem'}) {
+  [data-element-key="grid"]{
+    grid-template-columns: var(--grid-template-columns-md);
+  }
 \t.row{
     &.row-space-6{\t
       margin-left: -2rem;
@@ -406,11 +370,18 @@ export const DEFAULT_STYLE = `//!#Basic
         max-width: 100%;
         flex: 0 0 100%;
     \t}
+      &.col-x{
+        max-width: var(--width-md);
+        flex: 0 0 var(--width-md);
+      }
 \t\t}
 \t}
 }
 
-@media (min-width: 84rem) {
+@media (min-width: \${scope.PageOptions && scope.PageOptions.breakpointDesktop ? scope.PageOptions.breakpointDesktop + 'px' : '62rem'}) {
+  [data-element-key="grid"]{
+    grid-template-columns: var(--grid-template-columns-lg);
+  }
 \t.row{
     &.row-space-6{\t
       margin-left: -2.6rem;
@@ -469,6 +440,10 @@ export const DEFAULT_STYLE = `//!#Basic
         max-width: 100%;
         flex: 0 0 100%;
     \t}
+      &.col-x{
+        max-width: var(--width-lg);
+        flex: 0 0 var(--width-lg);
+      }
 \t\t}
 \t}
 }
@@ -500,6 +475,7 @@ div[data-isempty=true]{
 \t&[data-element-key="container"],
 \t&[data-element-key="background"],
 \t&[data-element-key="query"],
+\t&[data-element-key="grid"],
 \t&[data-element-key="custom"]{
 \t\tpadding:0.5rem !important;
 \t\tbackground: rgba(0,0,0,0.02);
