@@ -129,6 +129,8 @@ class FileDrop extends React.Component {
             if( value.constructor === Object){
                 if( value._id ){
                     images.push(UPLOAD_URL+'/'+value._id.toString())
+                }else if(value.fileIds && value.fileIds.length>0){
+                    images.push(UPLOAD_URL+'/'+value.fileIds[0])
                 }
             }else {
                 images.push(value)
