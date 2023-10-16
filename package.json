@@ -82,7 +82,7 @@
     "http2-proxy": "^5.0.53",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.1.0",
-    "natural": "^6.7.2",
+    "natural": "^6.8.0",
     "node-cron": "^3.0.2",
     "node-fetch": "^3.3.2",
     "nodemailer": "^6.9.6",
@@ -99,10 +99,10 @@
     "zip-local": "^0.3.5"
   },
   "optionalDependencies": {
-    "@aws-sdk/client-lambda": "^3.427.0",
+    "@aws-sdk/client-lambda": "^3.428.0",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@ffprobe-installer/ffprobe": "^2.1.2",
-    "@google-cloud/storage": "^7.2.0",
+    "@google-cloud/storage": "^7.3.0",
     "@google-cloud/translate": "^8.0.2",
     "@lexical/react": "^0.12.2",
     "axios": "^1.5.1",
@@ -121,14 +121,14 @@
     "mail-notifier": "^0.5.0",
     "mssql": "^10.0.1",
     "nodemon": "^3.0.1",
-    "openai": "^4.12.0",
+    "openai": "^4.12.1",
     "puppeteer": "^21.3.8",
     "xml2js": "^0.6.2",
     "ytdl-core": "^4.11.5"
   },
   "devDependencies": {
     "@babel/cli": "^7.23.0",
-    "@babel/core": "^7.23.0",
+    "@babel/core": "^7.23.2",
     "@babel/plugin-proposal-class-properties": "^7.18.6",
     "@babel/plugin-proposal-export-default-from": "^7.22.17",
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
@@ -159,7 +159,7 @@
     "react-test-renderer": "^18.2.0",
     "style-loader": "^3.3.3",
     "terser-webpack-plugin": "^5.3.9",
-    "webpack": "^5.88.2",
+    "webpack": "^5.89.0",
     "webpack-bundle-analyzer": "^4.9.1",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^4.15.1"

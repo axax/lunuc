@@ -571,7 +571,7 @@ class CodeEditor extends React.Component {
 
                     this.setState({stateError: false, data: newDataAsString}, () => {
                         if (onChange) {
-                            const sTop = this._editor.doc.scrollTop
+                            /*const sTop = this._editor.doc.scrollTop*/
                             if (this.state.isDataJson) {
                                 // if input was Object output is an Object to
                                 onChange(newDataAsJson)
@@ -579,14 +579,14 @@ class CodeEditor extends React.Component {
                                 onChange(newDataAsString)
                             }
 
-                            if (this._editor.hasFocus()) {
+                           // if (this._editor.hasFocus()) {
 
                                 // restore focus
-                                setTimeout(() => {
+                                /*setTimeout(() => {
                                     this._editor.scrollTo(0,sTop)
                                     this._editor.focus()
-                                }, 350)
-                            }
+                                }, 350)*/
+                           // }
                         }
                     })
 

@@ -7,6 +7,8 @@ import DialogTitle from '@mui/material/DialogTitle'
 import Button from '@mui/material/Button'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import theme from './theme'
+import { FocusTrap } from '@mui/base/FocusTrap'
+
 
 
 export const SimpleDialog = ({children, onClose, actions, title, fullScreen, fullScreenMobile, ...rest}) => {
@@ -23,11 +25,12 @@ export const SimpleDialog = ({children, onClose, actions, title, fullScreen, ful
         {...rest}>
         <DialogTitle id="responsive-dialog-title">{title}</DialogTitle>
         <DialogContent sx={{overflow: 'visible'}}>
-            {children && children.constructor === String ?
+            <FocusTrap>{children && children.constructor === String ?
                 <DialogContentText>
                     {children}
                 </DialogContentText>
                 : children}
+            </FocusTrap>
         </DialogContent>
         {actions ?
             <DialogActions>

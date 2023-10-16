@@ -116,7 +116,7 @@ class LoginContainer extends React.Component {
                         <TextField label={_t('Login.username')}
                                    error={!!error}
                                    disabled={!!loading}
-                                   autoComplete="current-password"
+                                   autoComplete="username"
                                    fullWidth
                                    autoFocus
                                    value={username}

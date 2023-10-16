@@ -465,7 +465,9 @@ class CmsViewEditorContainer extends React.Component {
                 {simpleDialog.text}
             </SimpleDialog>}
             {cmsTemplateEditData && cmsTemplateEditData.key &&
-            <SimpleDialog fullWidth={true} maxWidth="lg" key="templateEditor" open={true}
+            <SimpleDialog fullWidth={true}
+                          maxWidth="lg"
+                          open={true}
                           onClose={this.handleComponentEditClose.bind(this)}
                           actions={[{
                               key: 'ok',
