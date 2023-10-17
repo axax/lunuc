@@ -873,3 +873,14 @@ Hook.on(['ExtensionHistoryBeforeDelete'], async ({db, historyEntry}) => {
         }
     }
 })
+
+Hook.on('SystemBeforeCollectionImport', async ({set, match, collection, meta, db, context}) => {
+
+    if (collection === 'GenericData' && meta) {
+
+        const def = await getGenericTypeDefinitionWithStructure(db, {name: meta})
+        if (def && def?.structure?.title) {
+            set.definition = def._id
+        }
+    }
+})

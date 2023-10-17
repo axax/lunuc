@@ -96,7 +96,7 @@ export const systemSchemaRaw = `
     	ping: PingResult
     	collections (filter: String): CollectionResult
     	collectionAggregate (collection: String!, json: String!): CollectionAggregateResult
-    	importCollection (collection: String!, json: String!): ImportCollectionResult
+    	importCollection (collection: String!, json: String!, meta: String): ImportCollectionResult
     	bulkEdit (collection: String!, _id: [ID]!, data: String!, action: String): BulkEditResult,
     	exportQuery (type: String!, query: String): ExportQueryResult
     }

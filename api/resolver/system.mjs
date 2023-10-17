@@ -20,6 +20,9 @@ import {listBackups, createBackup, removeBackup, mongoExport} from './backups.mj
 import {getCollections} from "../util/collection.mjs";
 import {resolver} from './index.mjs'
 import {createRequireForScript} from "../../util/require.mjs";
+import {csv2json} from "../util/csv.mjs";
+import {setPropertyByPath} from "../../client/util/json.mjs";
+import Hook from "../../util/hook.cjs";
 
 const {UPLOAD_DIR} = config
 
@@ -276,7 +279,7 @@ export const systemResolver = (db) => ({
 
             return {result: JSON.stringify({aggregateTime, data: results[0], explanation})}
         },
-        importCollection: async ({collection, json}, {context}) => {
+        importCollection: async ({collection,json,meta}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
 
 
@@ -284,23 +287,46 @@ export const systemResolver = (db) => ({
                 throw new Error('Benutzer hat keine Berechtigung zum Importieren')
             }
 
-            let jsonParsed = JSON.parse(json)
-
-            if (jsonParsed.constructor !== Array) {
-                jsonParsed = [jsonParsed]
-            }
-            const col = db.collection(collection)
             const typeDefinition = getType(collection)
             if (typeDefinition) {
+                let jsonParsed
+                try {
+                    jsonParsed = JSON.parse(json)
+                }catch (e){
+                    console.log('import data is not json', e)
+                    const csv = csv2json(json,';'),
+                        csv1 = csv2json(json,'\t')
 
-                jsonParsed.forEach(entry => {
+                    if(csv.length>0){
+                        if(Object.keys(csv[0]).length >= Object.keys(csv1[0]).length){
+                            jsonParsed = csv
+                        }else{
+                            jsonParsed = csv1
+                        }
+                    }
+                }
 
-                    const match = {}, set = {}
+                if(!jsonParsed){
+                    return  {result: 'No valid data to import'}
+                }
+
+                if (jsonParsed.constructor !== Array) {
+                    jsonParsed = [jsonParsed]
+                }
+
+                for(let i = 0; i<jsonParsed.length; i++){
+
+                    const entry = jsonParsed[i],
+                        match = {},
+                        set = {}
 
                     // convert to proper ObjectId
                     Object.keys(entry).forEach(k => {
                         if (entry[k] && entry[k].constructor === String && ObjectId.isValid(entry[k])) {
                             entry[k] = new ObjectId(entry[k])
+                        }else if(k.indexOf('.')>=0){
+                            //dot notation
+                            setPropertyByPath(entry[k], k, entry)
                         }
                     })
 
@@ -327,14 +353,24 @@ export const systemResolver = (db) => ({
                             set[field.name] = entry[field.name]
                         }
                     })
-                    set.createdBy = entry.createdBy
+
+                    set.createdBy = entry.createdBy || new ObjectId(context.id)
+
+                    const aggHook = Hook.hooks['SystemBeforeCollectionImport']
+                    if (aggHook && aggHook.length) {
+                        for (let i = 0; i < aggHook.length; ++i) {
+                            await aggHook[i].callback({set, match, collection, meta, db,context})
+                        }
+                    }
+
+                    const col = db.collection(collection)
                     if(Object.keys(match).length===0){
                         col.insertOne(set)
                     }else {
                         col.updateOne(match, {$set: set}, {upsert: true})
                     }
 
-                })
+                }
             }
             /*findAndReplaceObjectIds(jsonParsed)
              const startTimeAggregate = new Date()

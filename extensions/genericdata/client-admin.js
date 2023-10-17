@@ -54,7 +54,7 @@ export default () => {
                 const item = data.results[i],
                     structure = item.definition ? item.definition.structure : {}
 
-                if (structure) {
+                if (structure && item.data) {
                     if(structure.rowStyle){
                         const styleString = Util.replacePlaceholders(structure.rowStyle, {Util, ...item})
 

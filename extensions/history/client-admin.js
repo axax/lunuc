@@ -40,7 +40,7 @@ export default () => {
 
                 client.query({
                     fetchPolicy: 'network-only',
-                    query: `query importCollection($collection: String!, $json: String!){importCollection(collection:$collection,json:$json){result}}`,
+                    query: `query importCollection($collection: String!, $json: String!, $meta: String){importCollection(collection:$collection,json:$json,meta:$meta){result}}`,
                     variables: {
                         collection: dataToEdit.type,
                         json: dataToEdit.data

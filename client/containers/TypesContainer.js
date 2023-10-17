@@ -505,19 +505,22 @@ class TypesContainer extends React.Component {
                     }
                 },
                 {
-                    name: 'Import JSON', onClick: () => {
+                    name: 'Import', onClick: () => {
                         this.setState({
                             simpleDialog: {
-                                title: 'Import',
+                                maxWidth:'lg',
+                                fullWidth:true,
+                                title: 'Import (JSON, CSV)',
                                 actions: [{key: 'import', label: 'Import'}],
                                 onClose: (e) => {
                                     if (e.key === 'import') {
                                         client.query({
                                             fetchPolicy: 'network-only',
-                                            query: `query importCollection($collection: String!, $json: String!){importCollection(collection:$collection,json:$json){result}}`,
+                                            query: `query importCollection($collection: String!, $json: String!, $meta: String){importCollection(collection:$collection,json:$json,meta:$meta){result}}`,
                                             variables: {
                                                 collection: type,
-                                                json: document.getElementById('importData').value
+                                                json: document.getElementById('importData').value,
+                                                meta:this.pageParams.meta
                                             }
                                         }).then(response => {
                                             this.setState({simpleDialog: {children: JSON.stringify(response.data.importCollection)}})
@@ -527,7 +530,7 @@ class TypesContainer extends React.Component {
                                     }
                                 },
                                 children: <textarea id="importData"
-                                                    style={{width: '30rem', height: '30rem'}}></textarea>
+                                                    style={{width: '100%', height: '30rem'}}></textarea>
                             }
                         })
                     }
@@ -964,7 +967,7 @@ class TypesContainer extends React.Component {
                               checked={this.state.collectionEmpty}/>
             </SimpleDialog>,
             simpleDialog &&
-            <SimpleDialog key="simpleDialog" open={!!simpleDialog} onClose={simpleDialog.onClose || (() => {
+            <SimpleDialog key="simpleDialog" fullWidth={simpleDialog.fullWidth} maxWidth={simpleDialog.maxWidth} open={!!simpleDialog} onClose={simpleDialog.onClose || (() => {
                 this.setState({simpleDialog: false})
             })}
                           actions={simpleDialog.actions || [{key: 'ok', label: 'OK'}]}

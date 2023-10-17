@@ -129,6 +129,11 @@ export const hasFieldsForBulkEdit = (type) => {
     if (!types[type]) {
         return false
     }
+
+    if(!types[type].noUserRelation && Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_OTHER_USERS)){
+        return true
+    }
+
     for(const field of types[type].fields){
         if(field.bulkEditable){
             return true
