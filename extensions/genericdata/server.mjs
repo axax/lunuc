@@ -120,7 +120,26 @@ function getConditionalIdResolver(key) {
     return id;
 }
 
-function createLookupKeepSorting({name, as, type}) {
+function createLookupKeepSorting({name, as, type,$project}) {
+    const pipeline = [
+        {
+            $match: {
+                $expr: {$in: ['$_id', `$$${name}ObjectId`]}
+            }
+        },
+        {
+            $addFields: {
+                sort: {
+                    $indexOfArray: [`$$${name}ObjectId`, '$_id']
+                }
+            }
+        },
+        {$sort: {sort: 1}},
+        {$addFields: {sort: '$$REMOVE'}}
+    ]
+    if($project){
+        pipeline.push({$project})
+    }
     return {
         $lookup: {
             from: type,
@@ -135,22 +154,7 @@ function createLookupKeepSorting({name, as, type}) {
                 }
             },
             as: as || `data.${name}`,
-                pipeline: [
-                {
-                    $match: {
-                        $expr: {$in: ['$_id', `$$${name}ObjectId`]}
-                    }
-                },
-                {
-                    $addFields: {
-                        sort: {
-                            $indexOfArray: [`$$${name}ObjectId`, '$_id']
-                        }
-                    }
-                },
-                {$sort: {sort: 1}},
-                {$addFields: {sort: '$$REMOVE'}}
-            ],
+            pipeline
         }
     }
 }
@@ -279,12 +283,24 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
             })
         }
 
+
+        const $project = {
+            __typename: 'GenericData',
+            _id: 1
+        }
+
+        if(field.projection){
+
+            field.projection.forEach(key=>{
+                $project[`data.${key}`]=1
+            })
+        }else{
+            $project.data = 1
+        }
+
+
         newLookup.$lookup.pipeline.push({
-            $project: {
-                __typename: 'GenericData',
-                _id: 1,
-                data: 1
-            }
+            $project
         })
 
 
@@ -387,17 +403,29 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
             otherOptions.lookups.push({ $addFields: {[`data.${field.name}_Original`]: `$data.${field.name}`}})
         }
 
+        let $project
+        if(field.projection){
+            $project = {}
+            field.projection.forEach(key=>{
+                $project[key]=1
+            })
+        }
+
         if (field.keepOrder /* field.multi  might be better */ ) {
             // keep order in array
-            otherOptions.lookups.push(createLookupKeepSorting({name:field.name,type:field.type}))
+            otherOptions.lookups.push(createLookupKeepSorting({name:field.name,type:field.type, $project}))
         } else {
+            const pipeline = []
+            if($project){
+                pipeline.push({$project})
+            }
             otherOptions.lookups.push({
                 $lookup: {
                     from: field.type,
                     localField: `${field.name}ObjectId`,
                     foreignField: '_id',
                     as: `data.${field.name}`,
-                    pipeline: [],
+                    pipeline,
                 }
             })
         }
@@ -425,9 +453,26 @@ async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
                                             {
                                                 $cond: {
                                                     if: {
-                                                        $gt: [
-                                                            '$$indexInArray',
-                                                            -1
+                                                        $and:[
+                                                            {
+                                                                $gt: [
+                                                                    '$$indexInArray',
+                                                                    -1
+                                                                ]
+                                                            },
+                                                            {
+                                                                $eq: [
+                                                                    {
+                                                                        $type:{
+                                                                            $arrayElemAt: [
+                                                                                `$data.${field.name}_Original`,
+                                                                                '$$indexInArray'
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    'object'
+                                                                ]
+                                                            }
                                                         ]
                                                     },
                                                     then: {
