@@ -1468,13 +1468,15 @@ class TypesContainer extends React.Component {
                         const items = ids.length > 1 ? data['delete' + type + 's'] : [data['delete' + type]]
                         if (items) {
                             items.forEach(result => {
-                                const idx = refResults.findIndex(x => x._id === result._id)
-                                if (idx > -1) {
-                                    if (result.status === 'deleting') {
-                                        refResults[idx] = {...refResults[idx], status: 'deleting'}
-                                    } else {
-                                        refResults.splice(idx, 1)
-                                        newData.total -= 1
+                                if(result) {
+                                    const idx = refResults.findIndex(x => x._id === result._id)
+                                    if (idx > -1) {
+                                        if (result.status === 'deleting') {
+                                            refResults[idx] = {...refResults[idx], status: 'deleting'}
+                                        } else {
+                                            refResults.splice(idx, 1)
+                                            newData.total -= 1
+                                        }
                                     }
                                 }
                             })

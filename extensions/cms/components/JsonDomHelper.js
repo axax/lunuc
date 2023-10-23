@@ -1380,7 +1380,7 @@ class JsonDomHelper extends React.Component {
             if (newJsonElement.options[key].tr && newJsonElement.options[key].trKey) {
                 if (this.props._scope.data.tr) {
                     const trEl = this.props._scope.data.tr[newJsonElement.options[key].trKey]
-                    newJsonElement.options[key].value = trEl ? trEl.replace(/\\"/g, '"') : ''
+                    newJsonElement.options[key].value = trEl ? trEl.replace(/\\"/g, '"').replace(/\\n/g, '\n') : ''
                 }
             } else {
                 newJsonElement.options[key].value = val
@@ -1553,10 +1553,14 @@ class JsonDomHelper extends React.Component {
                         }
 
                         if (currentOpt.tr && currentOpt.trKey) {
-
                             if (val !== null) {
+
+                                if(!fields.$toHtml){
+                                    val = val.replace(/\n/g, '')
+                                }
+
                                 _onDataResolverPropertyChange({
-                                    value: Util.escapeForJson(Util.escapeForJson(val.replace(/\n/g, ''))),
+                                    value: Util.escapeForJson(Util.escapeForJson(val)),
                                     path: 'tr.' + _app_.lang + '.' + currentOpt.trKey,
                                     instantSave: true
                                 })
