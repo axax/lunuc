@@ -26,6 +26,10 @@ const scrollToElement = (el, options, tries = 0, winHash) => {
         let mt = parseInt(win.getComputedStyle(el).marginTop),
             scrollY = win.scrollY
 
+        if(el.dataset.scrollOffset){
+            scrollOffset = parseInt(el.dataset.scrollOffset)
+        }
+
         if (isNaN(mt)) {
             mt = 0
         }
