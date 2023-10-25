@@ -410,16 +410,19 @@ export default () => {
                 if(field.uitype==='wrapper' && field.subFields){
 
                     const fieldData = editedData['data_' + field.name]
-                    const newFieldData = JSON.parse(JSON.stringify(fieldData))
-                    field.subFields.forEach(subField=>{
-                        if(subField.lookup){
-                            newFieldData.forEach(data=>{
-                                if(data[subField.name]){
-                                    data[subField.name] = data[subField.name].map(f=>f._id || f)
-                                }
-                            })
-                        }
-                    })
+                    let newFieldData
+                    if(fieldData) {
+                        newFieldData = JSON.parse(JSON.stringify(fieldData))
+                        field.subFields.forEach(subField => {
+                            if (subField.lookup) {
+                                newFieldData.forEach(data => {
+                                    if (data[subField.name]) {
+                                        data[subField.name] = data[subField.name].map(f => f._id || f)
+                                    }
+                                })
+                            }
+                        })
+                    }
                     optimisticDataObject[field.name] = fieldData
                     dataObject[field.name] = newFieldData
                 }else if (field.genericType || field.lookup) {

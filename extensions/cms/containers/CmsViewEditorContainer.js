@@ -1152,16 +1152,19 @@ class CmsViewEditorContainer extends React.Component {
         return true
     }
 
-    saveCmsPage = (value, data, key) => {
-        if (value !== data[key]) {
+    _keyValueMap = {}
+    _saveCmsPageTimeout = 0
 
-            console.log('save cms', key)
-
-            const {updateCmsPage} = this.props
-            updateCmsPage(
-                Object.assign({}, data, {[key]: value}), key, () => {
-                }
-            )
+    saveCmsPage = (value, key) => {
+        const {updateCmsPage, cmsPage} = this.props
+        if (value !== cmsPage[key]) {
+            this._keyValueMap[key] = value
+            clearTimeout(this._saveCmsPageTimeout)
+            this._saveCmsPageTimeout = setTimeout(()=>{
+                console.log('save cms', key)
+                updateCmsPage({_id:cmsPage._id, slug: cmsPage.slug, realSlug: cmsPage.realSlug, ...this._keyValueMap}, () => {})
+                this._keyValueMap = {}
+            },50)
         }
     }
 
@@ -1169,7 +1172,7 @@ class CmsViewEditorContainer extends React.Component {
         if (this._saveSettings)
             this._saveSettings()
         this.setState({[key]: flag})
-        this.saveCmsPage(flag, this.props.cmsPage, key)
+        this.saveCmsPage(flag, key)
     }
 
 
@@ -1199,13 +1202,13 @@ class CmsViewEditorContainer extends React.Component {
                     this._scriptTimeout = clearTimeout(this._scriptTimeout)
                     this._autoSaveScriptTimeout = clearTimeout(this._autoSaveScriptTimeout)
                     this.setState({script})
-                    this.saveCmsPage(script, this.props.cmsPage, 'script')
+                    this.saveCmsPage(script, 'script')
                 } else {
                     this._autoSaveScriptTimeout = setTimeout(this._autoSaveScript, 5000)
                 }
             } else {
                 this._autoSaveScriptTimeout = clearTimeout(this._autoSaveScriptTimeout)
-                this.saveCmsPage(this.state.script, this.props.cmsPage, 'script')
+                this.saveCmsPage(this.state.script, 'script')
                 delete this._autoSaveScript
             }
         }
@@ -1226,7 +1229,7 @@ class CmsViewEditorContainer extends React.Component {
         this._autoSaveStyle = () => {
             clearTimeout(this._autoSaveStyleTimeout)
             this._autoSaveStyleTimeout = 0
-            this.saveCmsPage(style, this.props.cmsPage, 'style')
+            this.saveCmsPage(style, 'style')
         }
 
         clearTimeout(this._autoSaveStyleTimeout)
@@ -1241,7 +1244,7 @@ class CmsViewEditorContainer extends React.Component {
         this._autoSaveServerScript = () => {
             clearTimeout(this._autoSaveServerScriptTimeout)
             this._autoSaveServerScriptTimeout = 0
-            this.saveCmsPage(serverScript, this.props.cmsPage, 'serverScript')
+            this.saveCmsPage(serverScript, 'serverScript')
         }
 
         clearTimeout(this._autoSaveServerScriptTimeout)
@@ -1262,7 +1265,7 @@ class CmsViewEditorContainer extends React.Component {
         this._autoSaveDataResolver = () => {
             clearTimeout(this._autoSaveDataResolverTimeout)
             this._autoSaveDataResolverTimeout = 0
-            this.saveCmsPage(str, this.props.cmsPage, 'dataResolver')
+            this.saveCmsPage(str, 'dataResolver')
         }
         clearTimeout(this._autoSaveDataResolverTimeout)
         if (instantSave === true) {
@@ -1297,7 +1300,7 @@ class CmsViewEditorContainer extends React.Component {
                     clearTimeout(this._autoSaveTemplateTimeout)
                     this._autoSaveTemplateTimeout = 0
                     this._autoSaveTemplate = null
-                    this.saveCmsPage(str, this.props.cmsPage, 'template')
+                    this.saveCmsPage(str, 'template')
                 }
 
                 clearTimeout(this._autoSaveTemplateTimeout)
@@ -1313,7 +1316,7 @@ class CmsViewEditorContainer extends React.Component {
 
     handleResourceChange = (str) => {
         this.setState({resources: str})
-        this.saveCmsPage(str, this.props.cmsPage, 'resources')
+        this.saveCmsPage(str,'resources')
     }
 
     drawerWidthChange = (newWidth) => {
@@ -1326,7 +1329,7 @@ class CmsViewEditorContainer extends React.Component {
 
     handleComponentEditClose() {
         const {cmsTemplateEditData} = this.state
-        this.saveCmsPage(this.state.template, this.props.cmsPage, 'template')
+        this.saveCmsPage(this.state.template, 'template')
 
         this.editTemplate(null, cmsTemplateEditData.component, cmsTemplateEditData.scope)
     }
@@ -1497,7 +1500,7 @@ CmsViewEditorContainer.propTypes = {
 const CmsViewEditorContainerWithGql = compose(
     graphql(`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$realSlug:String,$name:LocalizedStringInput,$keyword:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:String,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$loadPageOptions:Boolean,$ssrStyle:Boolean,$uniqueStyle:Boolean,$publicEdit:Boolean,$compress:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,realSlug:$realSlug,name:$name,keyword:$keyword,script:$script,style:$style,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,loadPageOptions:$loadPageOptions,compress:$compress,ssrStyle:$ssrStyle,uniqueStyle:$uniqueStyle,publicEdit:$publicEdit,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug realSlug name{${config.LANGUAGES.join(' ')}} keyword{${config.LANGUAGES.join(' ')}} template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
-            updateCmsPage: ({_id, realSlug, ...rest}, key, cb) => {
+            updateCmsPage: ({_id, realSlug, ...rest}, cb) => {
 
                 const variables = getGqlVariables(ownProps)
 
@@ -1505,17 +1508,18 @@ const CmsViewEditorContainerWithGql = compose(
                     console.warn(`slug changed from ${rest.slug} to ${variables.slug}`)
                     return
                 }
-                const variablesWithNewValue = {...variables, _id, [key]: rest[key]}
+                const variablesWithNewValue = {...variables, _id, ...rest}
 
-
-                if (rest[key].constructor === Object) {
-                    variablesWithNewValue[key] = Object.assign({}, rest[key])
-                    delete variablesWithNewValue[key].__typename
-                }
+                Object.values(variablesWithNewValue).forEach(value=>{
+                    if (value && value.constructor === Object) {
+                        delete value.__typename
+                    }
+                })
 
                 if (realSlug) {
                     variablesWithNewValue.realSlug = realSlug
                 }
+
                 return mutate({
                     variables: variablesWithNewValue,
                     update: (store, respons) => {
@@ -1532,7 +1536,9 @@ const CmsViewEditorContainerWithGql = compose(
                             const newData = {
                                 _id,
                                 realSlug,
-                                [key]: updateCmsPage[key], ...rest,
+                                ...data.cmsPage,
+                                /*[key]: updateCmsPage[key],*/
+                                ...rest,
                                 modifiedAt: updateCmsPage.modifiedAt,
                                 status: updateCmsPage.status
                             }

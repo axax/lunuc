@@ -4,7 +4,9 @@
       "name": "SmsLog",
       "subscription": false,
       "access": {
-        "create": "anonymous"
+        "create": "anonymous",
+        "delete": "manage_other_users",
+        "update": {"role":"manage_other_users"}
       },
       "addMetaDataInQuery": false,
       "fields": [

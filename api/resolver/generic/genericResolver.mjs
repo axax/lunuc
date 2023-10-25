@@ -833,9 +833,8 @@ const GenericResolver = {
 
                 if (userFilter) {
                     match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
+                    match = extendWithOwnerGroupMatch(typeDefinition, context, match, userFilter)
                 }
-
-                match = extendWithOwnerGroupMatch(typeDefinition, context, match, userFilter)
 
                 if(match){
                     Object.keys(match).forEach(k=>{
