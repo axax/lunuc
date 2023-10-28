@@ -162,7 +162,7 @@ const createMatchForCurrentUser = async ({typeName, db, context, operation}) => 
             if (typeDefinition.access && typeDefinition.access[operation]) {
                 if (await Util.userHasCapability(db, context, typeDefinition.access[operation])) {
                     match = {}
-                    if(typeDefinition.access[operation].type==='roleAndUser'){
+                    if (typeDefinition.access[operation].type === 'roleAndUser') {
                         if (userFilter) {
                             match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
                         }
@@ -820,27 +820,29 @@ const GenericResolver = {
 
             } else {
 
-                const typeDefinition = getType(typeName)
+                const updateMatch = await createMatchForCurrentUser({typeName, db, context, operation:'update'})
+
+                if(!updateMatch){
+                    throw new Error(_t('core.update.permission.error', context.lang, {name: collectionName}))
+                }
+
+
+                /*const typeDefinition = getType(typeName)
                 let userFilter = true
                 let match
-                if (typeDefinition) {
-                    if (typeDefinition.access && typeDefinition.access.update) {
-                        if (await Util.userHasCapability(db, context, typeDefinition.access.update)) {
-                            userFilter = false
-                        }
-                    }
+                if (typeDefinition && typeDefinition?.access?.update &&
+                    await Util.userHasCapability(db, context, typeDefinition.access.update)) {
+                    userFilter = false
                 }
 
                 if (userFilter) {
                     match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
-                    match = extendWithOwnerGroupMatch(typeDefinition, context, match, userFilter)
                 }
+                match = extendWithOwnerGroupMatch(typeDefinition, context, match, userFilter)*/
 
-                if(match){
-                    Object.keys(match).forEach(k=>{
-                        params[k] = match[k]
-                    })
-                }
+                Object.keys(updateMatch).forEach(k=>{
+                    params[k] = updateMatch[k]
+                })
 
                 // use
                 delete data.ownerGroup
