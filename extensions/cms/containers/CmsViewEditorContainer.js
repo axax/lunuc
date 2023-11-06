@@ -432,7 +432,7 @@ class CmsViewEditorContainer extends React.Component {
         }
 
         const inner = [
-            loadingState && <WrappedComponent key="cmsView"
+            !loadingState && <WrappedComponent key="cmsView"
                                                cmsEditData={cmsEditData}
                                                onTemplateChange={this.handleTemplateChange}
                                                findSegmentInDataResolverByKeyOrPath={this.findSegmentInDataResolverByKeyOrPath.bind(this)}
