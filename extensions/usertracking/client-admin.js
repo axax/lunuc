@@ -32,7 +32,7 @@ export default () => {
 
         if(this.state.cmsStatusData ){
             const ut = this.state.cmsStatusData.usertracking
-            if( ut && ut.lastEntry ) {
+            if( ut && ut.lastEntry && inner ) {
                 inner.push(<div key="usertrackingBox" style={{
                     position: 'fixed',
                     zIndex: 9999, right: '2rem', top: '5rem',
