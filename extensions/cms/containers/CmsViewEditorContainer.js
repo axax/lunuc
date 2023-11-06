@@ -431,8 +431,8 @@ class CmsViewEditorContainer extends React.Component {
             return null
         }
 
-        const inner = <>
-            {!loadingState && <WrappedComponent key="cmsView"
+        const inner = [
+            loadingState && <WrappedComponent key="cmsView"
                                                cmsEditData={cmsEditData}
                                                onTemplateChange={this.handleTemplateChange}
                                                findSegmentInDataResolverByKeyOrPath={this.findSegmentInDataResolverByKeyOrPath.bind(this)}
@@ -445,10 +445,10 @@ class CmsViewEditorContainer extends React.Component {
                                                    editTemplate: this.editTemplate.bind(this),
                                                    editCmsData: this.editCmsData.bind(this)
                                                }}
-                                               {...props} />}
-            <ErrorHandler key="errorHandler" snackbar/>
-            <NetworkStatusHandler key="networkStatus"/>
-            {simpleDialog && <SimpleDialog open={true}
+                                               {...props} />,
+            <ErrorHandler key="errorHandler" snackbar/>,
+            <NetworkStatusHandler key="networkStatus"/>,
+            simpleDialog && <SimpleDialog open={true}
                                           onClose={(action) => {
                                               if (simpleDialog.onClose) {
                                                   simpleDialog.onClose(action)
@@ -463,8 +463,8 @@ class CmsViewEditorContainer extends React.Component {
                                               }]}
                                           title={simpleDialog.title}>
                 {simpleDialog.text}
-            </SimpleDialog>}
-            {cmsTemplateEditData && cmsTemplateEditData.key &&
+            </SimpleDialog>,
+            cmsTemplateEditData && cmsTemplateEditData.key &&
             <SimpleDialog fullWidth={true}
                           maxWidth="lg"
                           open={true}
@@ -474,21 +474,18 @@ class CmsViewEditorContainer extends React.Component {
                               label: 'Ok',
                               type: 'primary'
                           }]}
-                          title="Edit Component">
+                          title="Edit Component">,
                 <TemplateEditor
                     fabButtonStyle={{bottom: '3rem', right: '1rem'}}
                     component={cmsTemplateEditData}
                     tab={EditorPageOptions.templateTab}
                     onTabChange={this.handleSettingChange.bind(this, 'templateTab', true)}
                     onChange={this.handleTemplateChange.bind(this)}/>
-
-
                 <Button key="editParent" size="small" variant="contained" color="primary" onClick={e => {
                     this.editTemplate(cmsTemplateEditData.key.substring(0, cmsTemplateEditData.key.lastIndexOf('.')), cmsTemplateEditData.json, cmsTemplateEditData.scope)
                 }}>Edit parent component</Button>
-            </SimpleDialog>}
-            <DataEditDialog key="dataEditDialog"/>
-        </>
+            </SimpleDialog>,
+            <DataEditDialog key="dataEditDialog"/>]
 
         if (!canViewCmsEditor || props.dynamic) {
             if ((cmsPage && cmsPage.publicEdit) || props.forceEditMode===true || props.forceEditMode==='true') {
