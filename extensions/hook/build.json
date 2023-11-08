@@ -34,7 +34,8 @@
             "FrontendAdmin",
             "OnMail",
             "beforeMailSend",
-            "beforeCmsPage"
+            "beforeCmsPage",
+            "enhanceTypeMatch"
           ],
           "index": 1
         },

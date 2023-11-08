@@ -132,19 +132,8 @@
           "name": "subject",
           "required": true,
           "tab": "general",
-          "localized": true
-        },
-        {
-          "tab": "general",
-          "name": "active",
-          "type": "Boolean",
-          "index": 1
-        },
-        {
-          "tab": "general",
-          "name": "unsubscribeHeader",
-          "type": "Boolean",
-          "index": 1
+          "localized": true,
+          "fullWidth": true
         },
         {
           "name": "list",
@@ -159,6 +148,7 @@
         {
           "name": "users",
           "type": "User",
+          "fullWidth": true,
           "multi": true,
           "fields": [
             "username"
@@ -166,8 +156,16 @@
           "tab": "general"
         },
         {
+          "tab": "general",
+          "name": "active",
+          "description": "Wenn aktiv wird der Versand im Hintergrund ausgeführt",
+          "type": "Boolean",
+          "index": 1
+        },
+        {
           "tab": "content",
           "name": "template",
+          "description": "Es besteht die Möglichkeit, entweder ein Seitentemplate auszuwählen oder den Inhalt direkt an dieser Stelle einzugeben.",
           "type": "CmsPage",
           "hideColumnInTypes": true
         },
@@ -203,6 +201,11 @@
           "uitype": "json",
           "hideColumnInTypes": true,
           "localized": false
+        },
+        {
+          "name": "unsubscribeHeader",
+          "type": "Boolean",
+          "index": 1
         },
         {
           "tab": "send",

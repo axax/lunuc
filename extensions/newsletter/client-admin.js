@@ -30,9 +30,11 @@ export default () => {
             const listIds = []
 
             const fieldsForSend = createEditForm.state.fields
-            fieldsForSend.list.forEach(list=>{
-                listIds.push(list._id)
-            })
+            if(fieldsForSend.list) {
+                fieldsForSend.list.forEach(list => {
+                    listIds.push(list._id)
+                })
+            }
 
             const usersIds = []
 
