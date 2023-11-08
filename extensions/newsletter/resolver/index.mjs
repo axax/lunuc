@@ -61,7 +61,7 @@ export default db => ({
                     subscribers.push({account: user, userAccountOnly: true})
                 })
             }
-
+console.log(subscribers)
             const emails = []
 
             for (let i = 0; i < subscribers.length; i++) {
@@ -76,7 +76,7 @@ export default db => ({
 
                 const sent = await db.collection('NewsletterSent').findOne(
                     {
-                        $or: [{subscriber: sub._id}, {userAccount: sub.account}],
+                        $or: [{$and:[{subscriber: {$ne: null}}, {subscriber: sub._id}]}, {$and:[{userAccount: {$ne: null}},{userAccount: sub.account}]}],
                         mailing: mailingId
                     }
                 )
