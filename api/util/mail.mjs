@@ -78,12 +78,17 @@ ${finalHtml}
         replyToFinal = mailSettings.replyTo
     }
 
+    let finalText = text?text.trim():''
+    if(!finalText){
+        finalText = finalHtml.replace(/<[^>]*>/g, ' ').replace(/\s\s+/g, ' ')
+    }
+
     const message = {
         replyTo: replyToFinal,
         from: fromFinal,
         to: recipient,
         subject: subject,
-        text, //'Plaintext version of the message'
+        text: finalText, //'Plaintext version of the message'
         html: finalHtml,
         attachments,
         headers,

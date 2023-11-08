@@ -10,7 +10,7 @@ import path from 'path'
 
 export default db => ({
     Query: {
-        sendNewsletter: async ({mailing, subject, template, text, html, batchSize, host, list}, req) => {
+        sendNewsletter: async ({mailing, subject, template, text, html, batchSize, host, list, unsubscribeHeader, users}, req) => {
             await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_SEND_NEWSLETTER)
 
             if(host){
@@ -39,6 +39,14 @@ export default db => ({
                 }
 
                 settings = mailingData.mailSettings
+
+                if( users === undefined){
+                    users = mailingData.users
+                }
+
+                if(unsubscribeHeader === undefined){
+                    unsubscribeHeader = mailingData.unsubscribeHeader
+                }
             }
 
             const languageToSend = mailingData.language ? mailingData.language.split(',') : []
@@ -48,6 +56,12 @@ export default db => ({
                 {state: 'subscribed', list: {$in: list.map(l => l.constructor===String?new ObjectId(l):l)}}
             ).toArray()
 
+            if(users){
+                users.forEach(user=>{
+                    subscribers.push({account: user, userAccountOnly: true})
+                })
+            }
+
             const emails = []
 
             for (let i = 0; i < subscribers.length; i++) {
@@ -56,18 +70,27 @@ export default db => ({
                 }
                 const sub = subscribers[i]
 
+                if(sub.account && sub.account.constructor === String){
+                    sub.account = new ObjectId(sub.account)
+                }
+
                 const sent = await db.collection('NewsletterSent').findOne(
                     {
-                        subscriber: sub._id,
+                        $or: [{subscriber: sub._id}, {userAccount: sub.account}],
                         mailing: mailingId
                     }
                 )
                 if (!sent) {
 
                     sub.account = await db.collection('User').findOne(
-                        {_id: new ObjectId(sub.account)}
+                        {_id: sub.account}
                     )
-                    if (!sub.token) {
+
+                    if(sub.userAccountOnly){
+                        sub.email = sub.account.email
+                    }
+
+                    if (!sub.token && !sub.userAccountOnly) {
                         sub.token = crypto.randomBytes(32).toString("hex")
 
                         await db.collection('NewsletterSubscriber').updateOne({_id: new ObjectId(sub._id)}, {$set: {token: sub.token}})
@@ -75,16 +98,18 @@ export default db => ({
                     }
                     sub.mailing = mailing
 
-                    const listHeader = {
+                    const listHeader = {}
+
+                    if(unsubscribeHeader){
                         // List-Help: <mailto:admin@example.com?subject=help>
                         //help: 'admin@example.com?subject=help',
                         // List-Unsubscribe: <http://example.com> (Comment)
-                        unsubscribe: {
+                        listHeader.unsubscribe = {
                             url: `${(req.isHttps ? 'https://' : 'http://')}${getHostFromHeaders(req.headers)}/core/unsubscribe-newsletter?email=${sub.email}&token=${sub.token}&mailing=${sub.mailing}`,
                             comment: 'Unsubscribe'
-                        },
-
+                        }
                     }
+                    console.log(listHeader)
                     /*const headers = {
                         'List-Unsubscribe': `<${(req.isHttps ? 'https://' : 'http://')}${getHostFromHeaders(req.headers)}/core/unsubscribe-newsletter?email=${sub.email}&token=${sub.token}&mailing=${sub.mailing}>, <mailto:info@onyou.ch>`,
                         'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
@@ -175,6 +200,7 @@ export default db => ({
                     db.collection('NewsletterSent').insertOne(
                         {
                             subscriber: sub._id,
+                            userAccount: sub.account ? sub.account._id : undefined,
                             mailing: new ObjectId(mailing),
                             mailResponse: result
                         }

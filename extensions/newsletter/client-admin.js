@@ -33,6 +33,16 @@ export default () => {
             fieldsForSend.list.forEach(list=>{
                 listIds.push(list._id)
             })
+
+            const usersIds = []
+
+            if(fieldsForSend.users) {
+                fieldsForSend.users.forEach(user => {
+                    usersIds.push(user._id)
+                })
+            }
+
+
             let template = fieldsForSend.template
             if(template && template.constructor === Array && template.length>0){
                 template = template[0]
@@ -40,7 +50,7 @@ export default () => {
 
             client.query({
                 fetchPolicy: 'network-only',
-                query: 'query sendNewsletter($mailing: ID!, $subject: LocalizedStringInput!,$template: String, $list:[ID], $batchSize: Float, $host: String, $text: LocalizedStringInput, $html: LocalizedStringInput){sendNewsletter(mailing:$mailing,subject:$subject,template:$template,list:$list,batchSize:$batchSize,host:$host,text:$text,html:$html){status}}',
+                query: 'query sendNewsletter($mailing: ID!, $subject: LocalizedStringInput!,$template: String, $list:[ID],$users:[ID],$unsubscribeHeader:Boolean,$batchSize: Float, $host: String, $text: LocalizedStringInput, $html: LocalizedStringInput){sendNewsletter(mailing:$mailing,subject:$subject,template:$template,list:$list,users:$users,unsubscribeHeader:$unsubscribeHeader,batchSize:$batchSize,host:$host,text:$text,html:$html){status}}',
                 variables: {
                     mailing: dataToEdit._id,
                     subject: fieldsForSend.subject,
@@ -49,7 +59,9 @@ export default () => {
                     text: fieldsForSend.text,
                     html: fieldsForSend.html,
                     template: template?template.slug: undefined,
-                    list: listIds
+                    list: listIds,
+                    users: usersIds,
+                    unsubscribeHeader: fieldsForSend.unsubscribeHeader
             }
             }).then(response => {
 

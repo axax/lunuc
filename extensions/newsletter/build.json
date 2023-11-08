@@ -141,12 +141,27 @@
           "index": 1
         },
         {
+          "tab": "general",
+          "name": "unsubscribeHeader",
+          "type": "Boolean",
+          "index": 1
+        },
+        {
           "name": "list",
           "multi": true,
           "fullWidth": true,
           "type": "NewsletterList",
           "fields": [
             "name"
+          ],
+          "tab": "general"
+        },
+        {
+          "name": "users",
+          "type": "User",
+          "multi": true,
+          "fields": [
+            "username"
           ],
           "tab": "general"
         },
@@ -230,6 +245,14 @@
           "index": 1,
           "fields": [
             "email"
+          ]
+        },
+        {
+          "name": "userAccount",
+          "type": "User",
+          "index": 1,
+          "fields": [
+            "username"
           ]
         },
         {
