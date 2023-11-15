@@ -61,7 +61,7 @@ export default db => ({
                     subscribers.push({account: user, userAccountOnly: true})
                 })
             }
-console.log(subscribers)
+
             const emails = []
 
             for (let i = 0; i < subscribers.length; i++) {
@@ -70,24 +70,38 @@ console.log(subscribers)
                 }
                 const sub = subscribers[i]
 
-                if(sub.account && sub.account.constructor === String){
-                    sub.account = new ObjectId(sub.account)
+                let userAccountId
+                if(sub.account){
+                    if(sub.account.constructor === String) {
+                        userAccountId = new ObjectId(sub.account)
+                    }else if(sub.account.constructor === Object){
+                        userAccountId = sub.account._id
+                    }else{
+                        userAccountId = sub.account
+                    }
                 }
 
                 const sent = await db.collection('NewsletterSent').findOne(
                     {
-                        $or: [{$and:[{subscriber: {$ne: null}}, {subscriber: sub._id}]}, {$and:[{userAccount: {$ne: null}},{userAccount: sub.account}]}],
+                        $or: [{$and:[{subscriber: {$ne: null}}, {subscriber: sub._id}]}, {$and:[{userAccount: {$ne: null}},{userAccount: userAccountId}]}],
                         mailing: mailingId
                     }
                 )
                 if (!sent) {
 
-                    sub.account = await db.collection('User').findOne(
-                        {_id: sub.account}
-                    )
+                    if(userAccountId && (!sub.account || sub.account.constructor !== Object)) {
+                        sub.account = await db.collection('User').findOne(
+                            {_id: userAccountId}
+                        )
+                    }
 
                     if(sub.userAccountOnly){
-                        sub.email = sub.account.email
+                        if(sub.account) {
+                            sub.email = sub.account.email
+                        }else{
+                            console.warn('account not found')
+                            continue
+                        }
                     }
 
                     if (!sub.token && !sub.userAccountOnly) {
@@ -200,7 +214,7 @@ console.log(subscribers)
                     db.collection('NewsletterSent').insertOne(
                         {
                             subscriber: sub._id,
-                            userAccount: sub.account ? sub.account._id : undefined,
+                            userAccount: userAccountId,
                             mailing: new ObjectId(mailing),
                             mailResponse: result
                         }

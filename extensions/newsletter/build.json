@@ -148,6 +148,7 @@
         {
           "name": "users",
           "type": "User",
+          "hideColumnInTypes": true,
           "fullWidth": true,
           "multi": true,
           "fields": [
