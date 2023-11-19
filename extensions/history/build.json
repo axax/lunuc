@@ -2,7 +2,6 @@
   "types": [
     {
       "name": "History",
-      "onlyRequestedFields": false,
       "fields": [
         {
           "tab": "Data",
@@ -16,6 +15,7 @@
         },
         {
           "hideColumnInTypes": true,
+          "alwaysLoad": false,
           "tab": "Data",
           "name": "data",
           "type": "Object",

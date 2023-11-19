@@ -21,10 +21,9 @@ import JsonDomIFrame from './JsonDomIFrame'
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
 
 function CmsRevisionDialog(props){
-    const {onClose, onChange, cmsPage, _id, canMangeCmsTemplate, ...rest} = props
+    const {onClose, onChange, cmsPage, revision, canMangeCmsTemplate, ...rest} = props
 
     let parsedData
-
     return <SimpleDialog fullWidth={true}
                          maxWidth="lg"
                          fullScreen={true}
@@ -44,13 +43,13 @@ function CmsRevisionDialog(props){
                                  label: _t('CmsRevisionDialog.close'),
                              type: 'primary'
                          }]}
-                         title={_t('CmsRevisionDialog.title',{date: Util.formattedDateFromObjectId(_id)})}>
+                         title={_t('CmsRevisionDialog.title',{username: revision.createdBy.username, date: Util.formattedDateFromObjectId(revision._id)})}>
 
         <Query
             query={`query historys($filter:String){historys(filter:$filter){results{_id action data}}}`}
             fetchPolicy="cache-and-network"
             variables={{
-                filter: `_id=${_id}`
+                filter: `_id==${revision._id}`
             }}>
             {({loading, error, data}) => {
                 if (loading) return 'Loading...'
@@ -128,13 +127,12 @@ function CmsRevisionDialog(props){
                             {({loading, error, data}) => {
                                 if (error) return `Error! ${error.message}`
 
-                                const defaultValue = Util.dateFromObjectId(_id, new Date()).getTime()
+                                const defaultValue = Util.dateFromObjectId(revision._id, new Date()).getTime()
                                 let year
                                 const getLabel = (f)=>{
                                     const d = Util.dateFromObjectId(f._id, new Date())
                                     if(year!==d.getFullYear()){
                                         year=d.getFullYear()
-                                        console.log(year)
                                         return Util.formattedDateFromObjectId(f._id,{day: undefined, month: undefined, hour:undefined, minute: undefined, second: undefined})
                                     }
                                     return ''
@@ -259,7 +257,7 @@ export default function CmsRevision(props){
                 {name: 'Style', value: 'style'}]}
         /> }
         <Query
-            query={'query historys($filter:String,$limit:Int,$page:Int){historys(filter:$filter,limit:$limit,page:$page){total offset results{_id action, meta}}}'}
+            query={'query historys($filter:String,$limit:Int,$page:Int){historys(filter:$filter,limit:$limit,page:$page){total offset results{_id action meta createdBy{username}}}}'}
             fetchPolicy="cache-and-network"
             variables={{
                 limit: historyLimit,
@@ -317,7 +315,7 @@ export default function CmsRevision(props){
                     </Stack>]
             }}
         </Query>
-        {showRevision ? <CmsRevisionDialog _id={showRevision._id}
+        {showRevision ? <CmsRevisionDialog revision={showRevision}
                                            canMangeCmsTemplate={canMangeCmsTemplate}
                                            cmsPage={cmsPage}
                                            onChange={(mark)=>{

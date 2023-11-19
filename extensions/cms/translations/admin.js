@@ -32,7 +32,7 @@ export const translations = {
         'CmsMenu.pages': 'Seiten',
         'CmsMenu.viewCmsPage': 'Seite öffnen',
         'CmsPageEdit.goToEditor':'Seite bearbeiten',
-        'CmsRevisionDialog.title':'Revision %date%',
+        'CmsRevisionDialog.title':'Revision %date% von %username%',
         'CmsRevisionDialog.close':'Schliessen',
         'CmsRevisionDialog.restore':'Diese Version wiederherstellen',
         'CmsRevision.view': 'Voransicht',
