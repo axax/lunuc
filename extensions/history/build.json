@@ -2,7 +2,7 @@
   "types": [
     {
       "name": "History",
-      "onlyRequestedFields": true,
+      "onlyRequestedFields": false,
       "fields": [
         {
           "tab": "Data",
