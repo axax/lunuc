@@ -1,4 +1,4 @@
-import {Storage} from '@google-cloud/storage/build/src/index.js'
+import {Storage} from '@google-cloud/storage'
 import fs from 'fs'
 import path from 'path'
 import config from '../../gensrc/config.mjs'

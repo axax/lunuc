@@ -12,6 +12,7 @@ import AggregationBuilder from './AggregationBuilder.mjs'
 import Cache from '../../../util/cache.mjs'
 import {_t} from '../../../util/i18nServer.mjs'
 import {extendWithOwnerGroupMatch} from '../../util/dbquery.mjs'
+import {getFieldsFromGraphqlInfoSelectionSet} from '../../util/graphql.js'
 
 const buildCollectionName = async (db, context, typeName, _version) => {
 
@@ -25,18 +26,17 @@ const buildCollectionName = async (db, context, typeName, _version) => {
     return typeName + (_version && _version !== 'default' ? '_' + _version : '')
 }
 
-const postConvertData = async (data, {typeName, db}) => {
+const postConvertData = async (response, {typeName, db, graphqlInfo}) => {
 
     // here is a good place to handle: Cannot return null for non-nullable
     const repairMode = true
-
-    if (data.results) {
+    if (response.results) {
         const typeDefinition = getType(typeName) || {}
         if (typeDefinition.fields) {
             let hasField = false
 
-            for (let i = 0; i < data.results.length; i++) {
-                const item = data.results[i]
+            for (let i = 0; i < response.results.length; i++) {
+                const item = response.results[i]
 
                 if (item.createdBy === null) {
                     item.createdBy = {_id: 0, username: 'null reference'}
@@ -81,6 +81,17 @@ const postConvertData = async (data, {typeName, db}) => {
                         const dyn = field.dynamic
 
                         if (dyn) {
+
+                            if(graphqlInfo) {
+
+                                // is field requested
+                                const fields = getFieldsFromGraphqlInfoSelectionSet(graphqlInfo.fieldNodes[0].selectionSet.selections)
+                                if(!fields || !fields.results || !fields.results[field.name]){
+                                    console.log(`dynamic field ${field.name} is not calculated as it is not requested`)
+                                    continue
+                                }
+                            }
+
                             hasField = true
 
                             if (dyn.action === 'count') {
@@ -96,9 +107,11 @@ const postConvertData = async (data, {typeName, db}) => {
                                         }
                                     })
                                 }
+                                //console.log(dyn.type, query)
+                                //let d = new Date().getTime()
                                 item[field.name] = await db.collection(dyn.type).count(query)
+                                //console.log(`time ${new Date().getTime()-d}ms`)
                             }
-
                         }
                     }
 
@@ -123,7 +136,7 @@ const postConvertData = async (data, {typeName, db}) => {
             }
         }
     }
-    return data
+    return response
 }
 
 const createMatchForCurrentUser = async ({typeName, db, context, operation}) => {
@@ -335,7 +348,7 @@ const GenericResolver = {
         }
         const startTime = new Date()
 
-        let {match, _version, cache, includeCount, postConvert, aggregateOptions, ...otherOptions} = options
+        let {match, _version, cache, includeCount, postConvert, aggregateOptions, graphqlInfo, ...otherOptions} = options
 
         const collectionName = await buildCollectionName(db, context, typeName, _version)
 
@@ -401,7 +414,8 @@ const GenericResolver = {
 
         const finalAggregateOptions = {allowDiskUse: true, ...aggregateOptions}
 
-        if(!finalAggregateOptions.collation && otherOptions.sort && otherOptions.sort.constructor===String && otherOptions.sort.startsWith('$')){
+        if(!finalAggregateOptions.collation &&
+            otherOptions?.sort?.startsWith('$')){
 
             otherOptions.sort = otherOptions.sort.substring(1)
             finalAggregateOptions.collation =  {locale: context.lang}
@@ -439,7 +453,7 @@ const GenericResolver = {
             if (postConvert === false) {
                 result = results[0]
             } else {
-                result = await postConvertData(results[0], {typeName, db, context})
+                result = await postConvertData(results[0], {typeName, db, context, graphqlInfo})
             }
         }
 

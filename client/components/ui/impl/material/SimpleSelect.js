@@ -54,7 +54,7 @@ class SimpleSelect extends React.Component {
     }
 
     render() {
-        const {onChange, items, label, className, multi, disabled, hint, fullWidth, error, style, sx} = this.props
+        const {onChange, InputLabelProps, items, label, className, multi, disabled, hint, fullWidth, error, style, sx} = this.props
         const name = this.props.name || ('name_' + Math.random())
         let value = this.props.value
         if (value) {
@@ -70,7 +70,7 @@ class SimpleSelect extends React.Component {
                             fullWidth={fullWidth}
                             style={style}
                             error={error}>
-            {label && <InputLabel htmlFor={name}>{label}</InputLabel>}
+            {label && <InputLabel htmlFor={name} {...InputLabelProps}>{label}</InputLabel>}
             <Select
                 multiple={multi}
                 value={value}

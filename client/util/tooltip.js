@@ -6,11 +6,16 @@ export const showTooltip = (msg, opt) => {
     if (!tooltip) {
         tooltip = document.createElement('div')
         tooltip.dataset.tooltip = true
-        tooltip.style.cssText += 'background: rgba(245, 245, 66,0.4);z-index:9999;position:fixed;padding:1rem;visibility:hidden;opacity:0;transition: visibility 0.3s linear,opacity 0.3s linear'
-
+        tooltip.style.cssText += 'font-size:0.7rem;border-radius:0.3rem;color:#fff;background:rgba(0, 0, 0,0.6);z-index:99999;position:fixed;padding:0.05rem 0.4rem;visibility:hidden;opacity:0;transition: visibility 0.3s linear,opacity 0.3s linear'
 
         document.body.appendChild(tooltip)
+    }
 
+    if(opt.target){
+
+        const rect = opt.target.getBoundingClientRect()
+        opt.left = rect.left
+        opt.top = rect.top - 20
     }
 
     tooltip.style.visibility = 'visible'
@@ -29,5 +34,12 @@ export const showTooltip = (msg, opt) => {
                 }
             }, 300)
         }, opt.closeIn)
+    }
+}
+export const hideTooltip = () => {
+    let tooltip = document.querySelector('[data-tooltip="true"]')
+    if(tooltip){
+        tooltip.style.visibility = 'hidden'
+        tooltip.style.opacity = 0
     }
 }

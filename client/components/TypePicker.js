@@ -166,7 +166,7 @@ class TypePicker extends React.Component {
     }
 
     render() {
-        const {inputProps, placeholder, multi, fileImport, error, helperText, className, sx, fullWidth, linkTemplate, pickerField, metaFields, type, filter, label, genericType, readOnly} = this.props
+        const {inputProps, InputLabelProps, placeholder, multi, fileImport, error, helperText, className, sx, fullWidth, linkTemplate, pickerField, metaFields, type, filter, label, genericType, readOnly} = this.props
         const {data, hasFocus, selIdx, value, textValue, showContextMenu} = this.state
         console.log(`render TypePicker | hasFocus=${hasFocus} | pickerField=${pickerField}`, data)
         const openTypeWindow = (value) => {
@@ -205,7 +205,7 @@ class TypePicker extends React.Component {
                            label={label}
                            InputLabelProps={{
                                shrink: true,
-
+                               ...InputLabelProps
                            }}
                            inputProps={inputProps}
                            InputProps={{
@@ -221,7 +221,9 @@ class TypePicker extends React.Component {
                                    </InputAdornment>
                                )
                            }}
-                /> : <InputLabel shrink>{label}</InputLabel>}
+                /> : <InputLabel shrink
+                                 onMouseEnter={InputLabelProps && InputLabelProps.onMouseEnter}
+                                 onMouseLeave={InputLabelProps && InputLabelProps.onMouseLeave}>{label}</InputLabel>}
 
             <StyledSuggestions square>
 

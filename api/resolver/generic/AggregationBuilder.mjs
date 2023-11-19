@@ -331,7 +331,13 @@ export default class AggregationBuilder {
 
         // extend it with default definition
         if (typeFields[fieldDefinition.name]) {
-            fieldDefinition = {...typeFields[fieldDefinition.name], ...fieldDefinition}
+
+            Object.keys(typeFields[fieldDefinition.name]).forEach(key=>{
+                if(fieldDefinition[key]===undefined){
+                    fieldDefinition[key] = typeFields[fieldDefinition.name][key]
+                }
+            })
+
         } else if (fieldDefinition.name === 'createdBy') {
             fieldDefinition.reference = true
             fieldDefinition.type = 'User'

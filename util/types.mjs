@@ -84,7 +84,6 @@ export const getTypeQueries = (typeName, queryFields, opts) => {
     }
 
     let insertParams = '', cloneParams = '', insertUpdateQuery = '', updateParams = '', cloneQuery = ''
-
     if (fields) {
         fields.map(({clone, name, type, required, multi, reference, localized, readOnly, hidden, alwaysLoad, ...rest}) => {
 
@@ -97,13 +96,12 @@ export const getTypeQueries = (typeName, queryFields, opts) => {
                 insertUpdateQuery += ', '
             }
 
-            let t = localized ? 'LocalizedStringInput' : (type && type !== 'Object' ? type : 'String')
-
+            const queryType = reference ?
+                (multi ? '[' : '') + (localized?'LocalizedRefInput':'ID') + (multi ? ']' : '') :
+                (localized ? 'LocalizedStringInput' : (type && type !== 'Object' ? type : 'String'))
 
             if (!excludeSelect && (!queryFields || queryFields.indexOf(name) >= 0)) {
                 if (reference) {
-                    t = (multi ? '[' : '') + (localized?'LocalizedRefInput':'ID') + (multi ? ']' : '')
-
                     if (name !== 'createdBy') {
 
                         let subquery = ''
@@ -152,11 +150,11 @@ export const getTypeQueries = (typeName, queryFields, opts) => {
             }
 
             if (!readOnly) {
-                insertParams += '$' + name + ': ' + (multi && !reference ? '[' + t + ']' : t) + (required ? '!' : '')
-                updateParams += '$' + name + ': ' + (multi && !reference ? '[' + t + ']' : t)
+                insertParams += '$' + name + ': ' + (multi && !reference ? '[' + queryType + ']' : queryType) + (required ? '!' : '')
+                updateParams += '$' + name + ': ' + (multi && !reference ? '[' + queryType + ']' : queryType)
                 insertUpdateQuery += name + ': ' + '$' + name
                 if (clone) {
-                    cloneParams += ', $' + name + ': ' + (multi && !reference ? '[' + t + ']' : t) + (required ? '!' : '')
+                    cloneParams += ', $' + name + ': ' + (multi && !reference ? '[' + queryType + ']' : queryType) + (required ? '!' : '')
                     cloneQuery += ',' + name + ': ' + '$' + name
                 }
             }

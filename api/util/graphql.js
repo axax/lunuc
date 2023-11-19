@@ -18,6 +18,22 @@ export const hasQueryField = (fieldNodes, path)=> {
     return false
 }
 
+
+export const getFieldsFromGraphqlInfoSelectionSet = (selections, maxLevel=2, level=0)=>{
+    if(!selections || level>=maxLevel){
+        return true
+    }
+    const map ={}
+    selections.forEach(selection=>{
+        if(selection.selectionSet) {
+            map[selection.name.value] = getFieldsFromGraphqlInfoSelectionSet(selection.selectionSet.selections, maxLevel, level+1)
+        }else{
+            map[selection.name.value] = true
+        }
+    })
+    return map
+}
+
 export const findAndReplaceObjectIds = function (obj) {
     for (var i in obj) {
         if (obj.hasOwnProperty(i)) {

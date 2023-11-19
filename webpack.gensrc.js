@@ -351,6 +351,7 @@ function gensrcExtension(name, options) {
         let schema = GENSRC_HEADER + 'export default `\n'
         let resolver = GENSRC_HEADER + `import Util from '../../../api/util/index.mjs'\nimport {ObjectId} from 'mongodb'\nimport {pubsubHooked, pubsub} from '../../../api/subscription.mjs'\nimport {withFilter} from 'graphql-subscriptions'\n`
         resolver += `import Hook from '../../../util/hook.cjs'\n`
+        resolver += `import {getFieldsFromGraphqlInfoSelectionSet} from '../../../api/util/graphql.js'\n`
         resolver += `import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'\n\nexport default db => ({\n`
         let resolverQuery = '\tQuery:{\n'
         let resolverMutation = '\tMutation:{\n'
@@ -486,8 +487,9 @@ function gensrcExtension(name, options) {
             } else {
                 hasResolver = true
 
-                resolverQuery += `      ${nameStartLower}s: async ({sort, limit, offset, page, filter${(type.collectionClonable ? ', _version' : '')}${(type.addMetaDataInQuery ? ', meta' : '')}}, req, info) => {
-            return await GenericResolver.entities(db, req, '${type.name}', [${resolverFields}], {limit, offset, page, filter, sort${(type.collectionClonable ? ', _version' : '')}${(type.addMetaDataInQuery ? ', meta' : '')}})
+                resolverQuery += `      ${nameStartLower}s: async ({sort, limit, offset, page, filter${(type.collectionClonable ? ', _version' : '')}${(type.addMetaDataInQuery ? ', meta' : '')}}, req, graphqlInfo) => {
+            const fields = ${type.onlyRequestedFields?`Object.keys(getFieldsFromGraphqlInfoSelectionSet(graphqlInfo.fieldNodes[0].selectionSet.selections).results)`:`[${resolverFields}]`}
+            return await GenericResolver.entities(db, req, '${type.name}', fields, {graphqlInfo, limit, offset, page, filter, sort${(type.collectionClonable ? ', _version' : '')}${(type.addMetaDataInQuery ? ', meta' : '')}})
         },\n`
 
                 resolverMutation += `       create${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}, req, options) => {

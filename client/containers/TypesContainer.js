@@ -1277,9 +1277,38 @@ class TypesContainer extends React.Component {
         return finalFilter
     }
 
+    getFieldsActiveOrInactive(type, active){
+        const columns = this.getTableColumns(type),
+            columnsFiltered = []
+        // filter: Show only the cols that are marked as active
+        columns.forEach((col) => {
+            if (col.id !== 'check' && col.id !== '_action' && this.isColumnActive(type, col.id) === active) {
+                if (col.id === 'date') {
+                    columnsFiltered.push('_id')
+                } else if (col.id === '_user') {
+                    columnsFiltered.push('createdBy')
+                } else {
+                    columnsFiltered.push(col.id)
+                }
+            }
+        })
+        return columnsFiltered
+    }
+
+    getTypeQueriesFiltered(type, opts = {}){
+        const typeDefinition = this.types[type]
+        let columnsFiltered = false
+
+        if(typeDefinition.onlyRequestedFields) {
+            columnsFiltered = this.getFieldsActiveOrInactive(type, true)
+        }
+
+        return getTypeQueries(type, columnsFiltered, opts)
+    }
+
     getData({type, page, limit, sort, filter, meta, _version}, cacheFirst, typeChanged) {
         if (type) {
-            const queries = getTypeQueries(type, false, {loadAll: false})
+            const queries = this.getTypeQueriesFiltered(type, {loadAll: false})
             if (queries) {
                 const storeKey = this.getStoreKey(type),
                     variables = {limit, page, sort, meta, _version, filter: this.extendFilter(filter)}
@@ -1334,7 +1363,7 @@ class TypesContainer extends React.Component {
         const user = _app_.user || {}
 
         if (type) {
-            const queries = getTypeQueries(type, false, {loadAll: false})
+            const queries = this.getTypeQueriesFiltered(type,  {loadAll: false})
             return client.mutate({
                 mutation: queries.create,
                 variables: {
@@ -1397,7 +1426,7 @@ class TypesContainer extends React.Component {
         const {type, page, limit, sort, filter, meta, _version} = this.pageParams
 
         if (type) {
-            const queries = getTypeQueries(type, false, {loadAll: false})
+            const queries = this.getTypeQueriesFiltered(type,  {loadAll: false})
             return client.mutate({
                 mutation: queries.update,
                 /* only send what has changed*/
@@ -1443,7 +1472,7 @@ class TypesContainer extends React.Component {
     deleteData({type, page, limit, sort, filter, meta, _version}, ids) {
         if (type && ids.length > 0) {
 
-            const queries = getTypeQueries(type, false, {loadAll: false}),
+            const queries = this.getTypeQueriesFiltered(type, {loadAll: false}),
                 storeKey = this.getStoreKey(type)
             client.mutate({
                 mutation: (ids.length > 1 ? queries.deleteMany : queries.delete),
@@ -1508,7 +1537,7 @@ class TypesContainer extends React.Component {
 
         if (type) {
 
-            const queries = getTypeQueries(type, false, {loadAll: false}),
+            const queries = this.getTypeQueriesFiltered(type, {loadAll: false}),
                 storeKey = this.getStoreKey(type)
 
             client.mutate({
@@ -1825,13 +1854,20 @@ class TypesContainer extends React.Component {
         //load missing data if needed
         const {type, _version} = this.pageParams
 
+        const typeDefinition = this.types[type]
         const typeData = this.types[type]
-        const fieldsToLoad = []
+        let fieldsToLoad = []
+
+        if(typeDefinition.onlyRequestedFields){
+            fieldsToLoad= this.getFieldsActiveOrInactive(type,false)
+        }
+
         typeData.fields.forEach(field => {
-            if (field.alwaysLoad === false) {
+            if (field.alwaysLoad === false && fieldsToLoad.indexOf(field.name)<0) {
                 fieldsToLoad.push(field.name)
             }
         })
+
 
         const variables = {_version, filter: '_id=' + data._id}
 
@@ -1917,6 +1953,11 @@ class TypesContainer extends React.Component {
 
     handleViewSettingClose = (action) => {
         this.setState({viewSettingDialog: false})
+        const {type} = this.pageParams
+        const typeDefinition = this.types[type]
+        if(typeDefinition.onlyRequestedFields) {
+            this.getData(this.pageParams, true)
+        }
     }
 
     handleViewCollectionClose = (action) => {

@@ -127,6 +127,7 @@
     {
       "name": "NewsletterMailing",
       "entryClonable": true,
+      "onlyRequestedFields": true,
       "fields": [
         {
           "name": "subject",
@@ -174,6 +175,7 @@
           "tab": "plainContent",
           "name": "text",
           "uitype": "editor",
+          "alwaysLoad": false,
           "hideColumnInTypes": true,
           "localized": true
         },
@@ -181,6 +183,7 @@
           "tab": "content",
           "name": "html",
           "uitype": "html",
+          "alwaysLoad": false,
           "hideColumnInTypes": true,
           "localized": true
         },
@@ -233,9 +236,23 @@
         {
           "name": "mailSettings",
           "type": "Object",
+          "alwaysLoad": false,
           "hideColumnInTypes": true,
           "uitype": "json",
           "tab": "Optional"
+        },
+        {
+          "tab": "general",
+          "name": "mailCount",
+          "readOnly": true,
+          "hideColumnInTypes": true,
+          "dynamic": {
+            "type": "NewsletterSent",
+            "action": "count",
+            "query": {
+              "mailing": "_id"
+            }
+          }
         }
       ]
     },
@@ -269,7 +286,9 @@
         },
         {
           "name": "mailResponse",
-          "type": "Object"
+          "type": "Object",
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
         },
         {
           "name": "openedAt",

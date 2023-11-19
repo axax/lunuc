@@ -37,6 +37,7 @@ import Async from './Async'
 import styled from '@emotion/styled'
 import theme from './ui/impl/material/theme'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import {showTooltip, hideTooltip} from '../util/tooltip'
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ './CodeEditor')}/>
 
@@ -989,6 +990,14 @@ class GenericForm extends React.Component {
                                                 className={field.className}
                                                 sx={getSxProps({fullWidth:true})}>
                 <InputLabel key={'label' + fieldKey}
+                            onMouseEnter={(e)=>{
+                                if(field.label && field.label !== field.name) {
+                                    showTooltip(field.name, e)
+                                }
+                            }}
+                            onMouseLeave={()=>{
+                                hideTooltip()
+                            }}
                             shrink>{field.label + (languageCode ? ' [' + languageCode + ']' : '')}</InputLabel>
 
                 {uitype == 'jsonEditor' ? <JsonEditor onChange={(newValue) => this.handleInputChange({
@@ -1027,6 +1036,14 @@ class GenericForm extends React.Component {
                                                 className={field.className}
                                                 sx={getSxProps({fullWidth:true})}>
                 <InputLabel key={'label' + fieldKey}
+                            onMouseEnter={(e)=>{
+                                if(field.label && field.label !== field.name) {
+                                    showTooltip(field.name, e)
+                                }
+                            }}
+                            onMouseLeave={()=>{
+                                hideTooltip()
+                            }}
                             shrink>{field.label + (languageCode ? ' [' + languageCode + ']' : '')}</InputLabel>
                 <TinyEditor key={fieldKey} id={fieldKey} error={hasError} style={{marginTop: '1.5rem'}}
 
@@ -1087,6 +1104,17 @@ class GenericForm extends React.Component {
                 value={(value ? (value.constructor === Array ? value : [value]) : null)}
                 dataset={{
                     'language': languageCode
+                }}
+                InputLabelProps={{
+                    shrink: true,
+                    onMouseEnter:e=>{
+                        if(field.label && field.label !== field.name) {
+                            showTooltip(field.name, e)
+                        }
+                    },
+                    onMouseLeave:()=>{
+                        hideTooltip()
+                    }
                 }}
                 error={!!this.state.fieldErrors[fieldKey]}
                 helperText={this.state.fieldErrors[fieldKey]}
@@ -1154,6 +1182,14 @@ class GenericForm extends React.Component {
                             sx={getSxProps(field)}
                             InputLabelProps={{
                                 shrink: true,
+                                onMouseEnter:e=>{
+                                    if(field.label && field.label !== field.name) {
+                                        showTooltip(field.name, e)
+                                    }
+                                },
+                                onMouseLeave:()=>{
+                                    hideTooltip()
+                                }
                             }}
                             value={value}/>
                     }}
@@ -1183,6 +1219,14 @@ class GenericForm extends React.Component {
                     sx={getSxProps(field)}
                     InputLabelProps={{
                         shrink: true,
+                        onMouseEnter:e=>{
+                            if(field.label && field.label !== field.name) {
+                                showTooltip(field.name, e)
+                            }
+                        },
+                        onMouseLeave:()=>{
+                            hideTooltip()
+                        }
                     }}
                     value={value}/>)
             }
@@ -1214,7 +1258,6 @@ class GenericForm extends React.Component {
 
             langButtonWasInserted = true
             currentFormFields.push(<TextField autoFocus={autoFocus && fieldIndex === 0}
-                                              readOnly={field.readOnly}
                                               error={!!this.state.fieldErrors[fieldKey]}
                                               key={fieldKey}
                                               id={fieldKey}
@@ -1223,9 +1266,17 @@ class GenericForm extends React.Component {
                                               sx={getSxProps(field)}
                                               InputLabelProps={{
                                                   shrink: true,
-                                                  'data-tooltip':(field.label ? field.name : '')
+                                                  onMouseEnter:e=>{
+                                                      if(field.label && field.label !== field.name) {
+                                                          showTooltip(field.name, e)
+                                                      }
+                                                  },
+                                                  onMouseLeave:()=>{
+                                                      hideTooltip()
+                                                  }
                                               }}
                                               inputProps={{
+                                                  readOnly: field.readOnly,
                                                   step: field.step || '',
                                                   'data-language': languageCode,
                                                   'data-datetime-field': isDateOrTime
