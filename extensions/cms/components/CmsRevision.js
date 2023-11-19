@@ -46,7 +46,7 @@ function CmsRevisionDialog(props){
                          title={_t('CmsRevisionDialog.title',{username: revision.createdBy?revision.createdBy.username:'???', date: Util.formattedDateFromObjectId(revision._id)})}>
 
         <Query
-            query={`query historys($filter:String){historys(filter:$filter){results{_id action data createdBy{username}}}}`}
+            query={`query historys($filter:String){historys(filter:$filter){results{_id action data}}}`}
             fetchPolicy="cache-and-network"
             variables={{
                 filter: `_id==${revision._id}`
@@ -118,7 +118,7 @@ function CmsRevisionDialog(props){
                         </SimpleTabPanel>
 
                         <Query
-                            query={`query historys($limit:Int,$filter:String){historys(limit:$limit,filter:$filter){results{_id}}}`}
+                            query={`query historys($limit:Int,$filter:String){historys(limit:$limit,filter:$filter){results{_id createdBy{username}}}}`}
                             fetchPolicy="cache-and-network"
                             variables={{
                                 limit: 999,
