@@ -488,7 +488,8 @@ function gensrcExtension(name, options) {
                 hasResolver = true
 
                 resolverQuery += `      ${nameStartLower}s: async ({sort, limit, offset, page, filter${(type.collectionClonable ? ', _version' : '')}${(type.addMetaDataInQuery ? ', meta' : '')}}, req, graphqlInfo) => {
-            const fields = ${type.onlyRequestedFields?`Object.keys(getFieldsFromGraphqlInfoSelectionSet(graphqlInfo.fieldNodes[0].selectionSet.selections).results)`:`[${resolverFields}]`}
+            const onlyRequestedFields = ${!!type.onlyRequestedFields}
+            const fields = onlyRequestedFields && graphqlInfo && graphqlInfo.fieldNodes && graphqlInfo.fieldNodes.length>0?Object.keys(getFieldsFromGraphqlInfoSelectionSet(graphqlInfo.fieldNodes[0].selectionSet.selections).results):[${resolverFields}]
             return await GenericResolver.entities(db, req, '${type.name}', fields, {graphqlInfo, limit, offset, page, filter, sort${(type.collectionClonable ? ', _version' : '')}${(type.addMetaDataInQuery ? ', meta' : '')}})
         },\n`
 

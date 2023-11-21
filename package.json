@@ -104,7 +104,7 @@
     "@google-cloud/storage": "^7.6.0",
     "@google-cloud/translate": "^8.0.2",
     "@lexical/react": "^0.12.2",
-    "axios": "^1.6.2",
+    "axios": "^1.5.1",
     "cld": "^2.9.1",
     "dns2": "^2.1.0",
     "draft-js": "^0.11.7",

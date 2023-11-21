@@ -82,7 +82,7 @@ const postConvertData = async (response, {typeName, db, graphqlInfo}) => {
 
                         if (dyn) {
 
-                            if(graphqlInfo) {
+                            if(graphqlInfo && graphqlInfo.fieldNodes && graphqlInfo.fieldNodes.length>0) {
 
                                 // is field requested
                                 const fields = getFieldsFromGraphqlInfoSelectionSet(graphqlInfo.fieldNodes[0].selectionSet.selections)
