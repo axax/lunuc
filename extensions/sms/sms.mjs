@@ -1,6 +1,7 @@
 import Util from '../../api/util/index.mjs'
 import GenericResolver from '../../api/resolver/generic/genericResolver.mjs'
-import axios from 'axios'
+import request from '../../api/util/request.mjs'
+
 export const sendSms = async ({db, req, sender, recipient, domain, content}) => {
 
     if(!content){
@@ -34,11 +35,12 @@ export const sendSms = async ({db, req, sender, recipient, domain, content}) => 
 
     const config = {
         ...smsProviderSettings,
-        data : data
+        json: true,
+        body : data
     }
 
     return new Promise(async (resolve, reject) => {
-        axios(config).then( (response) => {
+        request(config).then( (response) => {
             GenericResolver.createEntity(db, req, 'SmsLog', {
                 domain: domain || 'lunuc',
                 sender: sender || 'lunuc',
