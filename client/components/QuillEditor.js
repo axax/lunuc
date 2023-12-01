@@ -153,6 +153,8 @@ class QuillEditor extends React.Component {
                         if (html === '<p><br></p>') {
                             html = ''
                         }
+                        html = html.replace(/<p[^>]*>(&nbsp;|\s+|<br\s*\/?>)*<\/p>/g,'<p style="margin: 0;">&nbsp;</p>')
+
                         if (name) {
                             onChange({target: {name, value: html}})
                         } else {
