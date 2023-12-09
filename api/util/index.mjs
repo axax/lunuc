@@ -447,57 +447,73 @@ const Util = {
         let restString = ''
         if (filter) {
             let operator = 'or'
-
+            const matches = filter.match(/(?:[^\s"]+|"[^"]*")+/g)
             /* 'group==5ed25740fa5ea8681ef58a99 && mimeType=audio && info.format.tags.artist=="Globi"' */
-            filter.match(/(?:[^\s"]+|"[^"]*")+/g).forEach(item => {
-                if (item === '') {
-                    //ignore
-                } else if (item === '||') {
-                    operator = 'or'
-                } else if (item === '&&') {
-                    operator = 'and'
-                } else {
-                    const comparator = item.match(/==|>=|<=|!==|!=|=|>|<|:/)
-                    if (comparator) {
-
-                        let parenthesesOpen = item.startsWith('(')
-
-                        let key = item.substring(parenthesesOpen?1:0, comparator.index)
-                        let value = item.substring(comparator.index + comparator[0].length)
-                        let parenthesesClose = value.endsWith(')')
-                        if(parenthesesClose){
-                            value = value.slice(0, -1)
-                        }
-                        let inDoubleQuotes = false
-
-                        if (value.length > 1 && value.endsWith('"') && value.startsWith('"')) {
-                            value = value.substring(1, value.length - 1)
-                            inDoubleQuotes=true
-                        }else if(value==='true'){
-                            value = true
-                        }else if(value==='false'){
-                            value = false
-                        }
-                        if (parts[key]) {
-                            if (parts[key].constructor !== Array) {
-                                parts[key] = [parts[key]]
-                            }
-                            parts[key].push({value, operator, comparator: comparator[0], inDoubleQuotes, parenthesesOpen, parenthesesClose})
-                        } else {
-                            parts[key] = {value, operator, comparator: comparator[0], inDoubleQuotes, parenthesesOpen, parenthesesClose}
-                        }
-
+            if(matches) {
+                matches.forEach(item => {
+                    if (item === '') {
+                        //ignore
+                    } else if (item === '||') {
+                        operator = 'or'
+                    } else if (item === '&&') {
+                        operator = 'and'
                     } else {
-                        if (item.length > 1 && item.endsWith('"') && item.startsWith('"')) {
-                            item = item.substring(1, item.length - 1)
+                        const comparator = item.match(/==|>=|<=|!==|!=|=|>|<|:/)
+                        if (comparator) {
+
+                            let parenthesesOpen = item.startsWith('(')
+
+                            let key = item.substring(parenthesesOpen ? 1 : 0, comparator.index)
+                            let value = item.substring(comparator.index + comparator[0].length)
+                            let parenthesesClose = value.endsWith(')')
+                            if (parenthesesClose) {
+                                value = value.slice(0, -1)
+                            }
+                            let inDoubleQuotes = false
+
+                            if (value.length > 1 && value.endsWith('"') && value.startsWith('"')) {
+                                value = value.substring(1, value.length - 1)
+                                inDoubleQuotes = true
+                            } else if (value === 'true') {
+                                value = true
+                            } else if (value === 'false') {
+                                value = false
+                            }
+                            if (parts[key]) {
+                                if (parts[key].constructor !== Array) {
+                                    parts[key] = [parts[key]]
+                                }
+                                parts[key].push({
+                                    value,
+                                    operator,
+                                    comparator: comparator[0],
+                                    inDoubleQuotes,
+                                    parenthesesOpen,
+                                    parenthesesClose
+                                })
+                            } else {
+                                parts[key] = {
+                                    value,
+                                    operator,
+                                    comparator: comparator[0],
+                                    inDoubleQuotes,
+                                    parenthesesOpen,
+                                    parenthesesClose
+                                }
+                            }
+
+                        } else {
+                            if (item.length > 1 && item.endsWith('"') && item.startsWith('"')) {
+                                item = item.substring(1, item.length - 1)
+                            }
+                            rest.push({value: item, operator, comparator: '='})
+                            if (restString !== '') restString += ' '
+                            restString += (operator === 'and' ? ' and ' : '') + item
                         }
-                        rest.push({value: item, operator, comparator: '='})
-                        if (restString !== '') restString += ' '
-                        restString += (operator === 'and' ? ' and ' : '') + item
+                        operator = 'or'
                     }
-                    operator = 'or'
-                }
-            })
+                })
+            }
         }
         return {parts, rest, restString}
     }

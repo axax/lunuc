@@ -1126,7 +1126,6 @@ class CmsViewEditorContainer extends React.Component {
         if (this._saveSettings) {
             this._saveSettings()
         }
-
         if (this._autoSaveScriptTimeout) {
             this._autoSaveScript(true)
         }
@@ -1152,7 +1151,7 @@ class CmsViewEditorContainer extends React.Component {
     _keyValueMap = {}
     _saveCmsPageTimeout = 0
 
-    saveCmsPage = (value, key) => {
+    saveCmsPage = (value, key, force) => {
         const {updateCmsPage, cmsPage} = this.props
         if (value !== cmsPage[key]) {
             this._keyValueMap[key] = value
@@ -1161,7 +1160,7 @@ class CmsViewEditorContainer extends React.Component {
                 console.log('save cms', key)
                 updateCmsPage({_id:cmsPage._id, slug: cmsPage.slug, realSlug: cmsPage.realSlug, ...this._keyValueMap}, () => {})
                 this._keyValueMap = {}
-            },50)
+            },force?0:50)
         }
     }
 
@@ -1198,14 +1197,14 @@ class CmsViewEditorContainer extends React.Component {
                 if (force) {
                     this._scriptTimeout = clearTimeout(this._scriptTimeout)
                     this._autoSaveScriptTimeout = clearTimeout(this._autoSaveScriptTimeout)
+                    this.saveCmsPage(script, 'script', force)
                     this.setState({script})
-                    this.saveCmsPage(script, 'script')
                 } else {
                     this._autoSaveScriptTimeout = setTimeout(this._autoSaveScript, 5000)
                 }
             } else {
                 this._autoSaveScriptTimeout = clearTimeout(this._autoSaveScriptTimeout)
-                this.saveCmsPage(this.state.script, 'script')
+                this.saveCmsPage(this.state.script, 'script', force)
                 delete this._autoSaveScript
             }
         }

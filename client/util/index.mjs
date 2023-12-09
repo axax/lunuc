@@ -23,6 +23,9 @@ const Util = {
         }
         return str
     },
+    safeStr: (str, defaultStr) =>{
+        return str ? str.replace(/[\W_]+/g,''): defaultStr
+    },
     safeTags: str => {
         return str ? str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''
     },

@@ -106,6 +106,8 @@ http://localhost:49160/
 
 `sudo vi /etc/systemd/system/lunuc-client.service`
 
+`sudo systemctl daemon-reload`
+
 #### Start
 `sudo chmod +x /opt/lunuc/shell/start.sh`
 

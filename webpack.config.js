@@ -157,6 +157,9 @@ const config = {
             'react-dom': 'preact/compat'
         }
     },
+    externals: {
+        'sharp': 'commonjs sharp'
+    },
     module: {
         rules: [
             {

@@ -5,8 +5,8 @@ export const DROPAREA_ACTIVE = 'jdh-da-active'
 export const DROPAREA_OVERLAP = 'jdh-da-overlap'
 export const DROPAREA_OVER = 'jdh-da-over'
 
-export const ALLOW_DROP = ['div', 'main', 'Col', 'Row', 'section', 'Cms', 'Print', 'td']
-export const ALLOW_DROP_IN = {'Col': ['Row'], 'li': ['ul']}
+export const ALLOW_DROP = ['div', 'main', 'Col', 'Row', 'section', 'Cms', 'Print', 'td', 'table']
+export const ALLOW_DROP_IN = {'Col': ['Row'], 'li': ['ul'], 'tr': ['tbody','thead','tfood','table']}
 export const ALLOW_DROP_FROM = {'Row': ['Col']}
 
 export const JsonDomDraggable = {
