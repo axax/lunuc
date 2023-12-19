@@ -49,6 +49,7 @@ import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {getImageTag} from 'client/util/media'
 import {deepMerge} from 'util/deepMerge.mjs'
 import DomUtil from 'client/util/dom.mjs'
+import {downloadAs} from 'client/util/download.js'
 import {_t} from 'util/i18n.mjs'
 
 const {ADMIN_BASE_URL, LANGUAGES} = config
@@ -483,6 +484,15 @@ class TypesContainer extends React.Component {
                         this.setState({
                             simpleDialog: {
                                 title: 'Export CSV',
+                                actions: [{key: 'close', label: 'Ok'}, {key: 'download', label: 'Download'}],
+                                onClose: (e) => {
+                                    if (e.key === 'download') {
+                                        downloadAs(json2csv(this.state.data.results), 'export.csv')
+                                        this.setState({simpleDialog: false})
+                                    } else {
+                                        this.setState({simpleDialog: false})
+                                    }
+                                },
                                 children: <textarea style={{
                                     width: '30rem',
                                     height: '30rem'
@@ -496,6 +506,15 @@ class TypesContainer extends React.Component {
                         this.setState({
                             simpleDialog: {
                                 title: 'Export',
+                                actions: [{key: 'close', label: 'Ok'}, {key: 'download', label: 'Download'}],
+                                onClose: (e) => {
+                                    if (e.key === 'download') {
+                                        downloadAs(JSON.stringify(this.state.data.results, null, 2), 'export.json')
+                                        this.setState({simpleDialog: false})
+                                    } else {
+                                        this.setState({simpleDialog: false})
+                                    }
+                                },
                                 children: <textarea style={{
                                     width: '30rem',
                                     height: '30rem'
