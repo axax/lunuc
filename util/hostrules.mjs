@@ -40,31 +40,36 @@ export const hostListFromString = (host) =>{
 }
 
 export const extendHostruelWithCert = (hostrule, domainname) => {
-    if (!hostrule.certDir) {
 
-        const hostsChecks = hostListFromString(hostrule.certDomain || domainname)
+    let certDir
+    const hostsChecks = hostListFromString(hostrule.certDomain || domainname)
 
-        for(const host of hostsChecks ) {
-            const dirs = certDirs(host)
-            if (dirs.length > 0) {
-                hostrule.certDir = CERT_BASE_DIR + dirs[0].name
-                console.log(` found newest certs for ${host} in ${hostrule.certDir}`)
-                break
-            }
+    for(const host of hostsChecks ) {
+        const dirs = certDirs(host)
+        if (dirs.length > 0) {
+            certDir = CERT_BASE_DIR + dirs[0].name
+            break
         }
-        // hostrule.certDir = '/etc/letsencrypt/live/' + domainname
     }
 
-    if (hostrule.certDir) {
+    if (certDir) {
+        hostrule.certDir = certDir
 
+        const stats = fs.statSync(path.join(hostrule.certDir, './privkey.pem'))
 
-        try {
-            hostrule.certContext = tls.createSecureContext({
-                key: fs.readFileSync(path.join(hostrule.certDir, './privkey.pem')),
-                cert: fs.readFileSync(path.join(hostrule.certDir, './fullchain.pem'))
-            })
-        } catch (e) {
-            console.warn(e.message)
+        if(!hostrule.certContext || stats.mtime > hostrule._certLastModified) {
+
+            console.log(`found newest certs for ${hostrule.certDir}`)
+
+            hostrule._certLastModified = stats.mtime
+            try {
+                hostrule.certContext = tls.createSecureContext({
+                    key: fs.readFileSync(path.join(hostrule.certDir, './privkey.pem')),
+                    cert: fs.readFileSync(path.join(hostrule.certDir, './fullchain.pem'))
+                })
+            } catch (e) {
+                console.warn(e.message)
+            }
         }
     }
 }
@@ -95,10 +100,10 @@ const loadHostRules = (dir, withCertContext, hostrules, isDefault) => {
                     if (hostrule.botregex) {
                         hostrule.botregex = new RegExp(hostrule.botregex)
                     }
+                }
 
-                    if (withCertContext) {
-                        extendHostruelWithCert(hostrule, domainname)
-                    }
+                if (withCertContext) {
+                    extendHostruelWithCert(hostrules[domainname], domainname)
                 }
             }
         })
