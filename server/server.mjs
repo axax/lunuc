@@ -844,20 +844,21 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, filename}) {
         console.log('Processing: ' + progress.timemark + '% done')
     }).on('start', console.log).on('end', () => {
 
-        if (options.keep) {
+        /*if (options.keep) {
             // rename
             fs.rename(options.filename + '.temp', options.filename, () => {
                 console.log('transcode ended and file saved as ' + options.filename)
             })
 
         }else{
-            console.log('transcode ended')
-        }
+
+        }*/
+        console.log(`transcode ended: ${filename}`)
 
     }).on('error', (e)=>{
         console.error(e)
         try{
-            fs.unlinkSync(options.filename + '.temp')
+            fs.unlinkSync(options.filename)
         }catch (e2){
             console.log(e2)
         }
@@ -866,17 +867,16 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, filename}) {
 
     if (options.keep) {
 
-        if (fs.existsSync(options.filename + '.temp')) {
+        if (fs.existsSync(options.filename)) {
             video.pipe(res, {end: true})
             // it is transcoding right now
         } else {
             console.log(`save video as ${options.filename}`)
 
             if (options.nostream) {
-                video.output(options.filename + '.temp').run()
+                video.output(options.filename).run()
             } else {
-                const writeStream = writeStreamFile(options.filename + '.temp')
-
+                const writeStream = writeStreamFile(options.filename)
                 const passStream = new PassThrough()
 
                 passStream.pipe(res)
