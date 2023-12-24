@@ -670,9 +670,12 @@ class CodeEditor extends React.Component {
             } else if (this.props.templates) {
                 let commaAtEnd = this._curLineEndsWithComma, commaAtStart = !this._curLineEndsWithComma
                 if (!commaAtEnd) {
-                    const nextLine = this._editor.doc.getLine(this._curLineNr + 1).trim()
-                    if (nextLine.startsWith('{')) {
-                        commaAtEnd = true
+                    const nextLine = this._editor.doc.getLine(this._curLineNr + 1)
+                    if(nextLine) {
+                        const nextLineTrimmed = nextLine.trim()
+                        if (nextLineTrimmed.startsWith('{')) {
+                            commaAtEnd = true
+                        }
                     }
                     if (this._curLine.endsWith('[') || this._curLine.endsWith('{')) {
                         commaAtStart = false

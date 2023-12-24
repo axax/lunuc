@@ -1123,6 +1123,7 @@ const baseElements = [
             }
         },
         options: {
+            ...trOptions('$inlineEditor_options_c_'),
             p_href: {
                 fullWidth: true,
                 value: '',
@@ -1131,7 +1132,8 @@ const baseElements = [
                 type: 'Media',
                 projection: MEDIA_PROJECTION,
                 template: '${_app_.config.UPLOAD_URL}/${_id}/-/${name}',
-                tab: DEFAULT_TAB
+                tab: DEFAULT_TAB,
+                tabPosition: 0
             },
             c: {
                 fullWidth: true,
