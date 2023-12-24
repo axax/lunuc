@@ -735,7 +735,7 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, filename}) {
     const outputOptions = []
 
     if (!options.nostream) {
-        outputOptions.push('-movflags faststart')
+        outputOptions.push('-movflags empty_moov+faststart')
     }
     if (options.crf) {
         outputOptions.push('-crf ' + options.crf)
@@ -854,7 +854,14 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, filename}) {
             console.log('transcode ended')
         }
 
-    }).on('error', console.error)
+    }).on('error', (e)=>{
+        console.error(e)
+        try{
+            fs.unlinkSync(options.filename + '.temp')
+        }catch (e2){
+            console.log(e2)
+        }
+    })
 
 
     if (options.keep) {
