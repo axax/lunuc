@@ -7,7 +7,7 @@ import path from 'path'
 export const resizeImage = async (parsedUrl, req, filename) => {
     let mimeType, exists = false
     // resize image file
-    if (parsedUrl.query.width || parsedUrl.query.height || parsedUrl.query.format || parsedUrl.query.flip || parsedUrl.query.flop) {
+    if (parsedUrl && (parsedUrl.query.width || parsedUrl.query.height || parsedUrl.query.format || parsedUrl.query.flip || parsedUrl.query.flop)) {
         const width = parseInt(parsedUrl.query.width),
             height = parseInt(parsedUrl.query.height),
             fit = parsedUrl.query.fit,

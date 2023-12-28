@@ -173,6 +173,7 @@ const sendFileFromDir = async (req, res, filePath, headers, parsedUrl) => {
         const headerExtra = {
             'Cache-Control': 'public, max-age=604800', /* a week */
             'Content-Type': mimeType,
+            'Content-Length': stats.size,
             'Last-Modified': stats.mtime.toUTCString(),
             'ETag': `"${createSimpleEtag({content: filePath, stats})}"`,
             ...headers
@@ -719,23 +720,52 @@ function transcodeVideoOptions(parsedUrl, filename) {
 
 }
 
-function transcodeAndStreamVideo({options, headerExtra, res, code, filename}) {
+function transcodeAndStreamVideo({options, headerExtra, req, res, code, filename}) {
     // make sure ffmpeg is install on your device
     // brew install ffmpeg
     //sudo apt install ffmpeg
     // http://localhost:8080/uploads/5f935f98f5ca78b7cbeaa853/-/test.mpg?ext=mp4&transcode={"audioQuality":2,"fps":24,"size":"720x?","crf":24,"keep":true,"nostream":true}
 
+    delete headerExtra['Content-Length']
+
+    if(options.keep && !options.nostream && fs.existsSync(options.filename+ '.temp'))
+    {
+
+        sendFileFromDir(req,res,SERVER_DIR+'/loading.mp4',headerExtra)
+        return true
+    }
 
     ffmpeg.setFfprobePath(ffprobeInstaller.path)
     ffmpeg.setFfmpegPath( ffmpegInstaller.path)
 
-    delete headerExtra['Content-Length']
-    res.writeHead(code, {...headerExtra})
+    const video = ffmpeg(filename)
+
+    if(options.screenshot){
+        video.on('filenames', (filenames) => {
+            console.log('Will generate ' + filenames.join(', '))
+        }).on('end', function() {
+            console.log('Screenshots taken')
+            fs.rename(options.filename + '.png', options.filename, () => {
+                console.log('transcode ended and file saved as ' + options.filename)
+                sendFileFromDir(req,res,options.filename, headerExtra)
+            })
+        }).screenshots({
+            // Will take screens at 20%, 40%, 60% and 80% of the video
+            timestamps: [options.screenshot.time],
+            size: options.screenshot.size || '320x240',
+            count: 1,
+            folder: ABS_UPLOAD_DIR,
+            filename:options.filename.replace(/^.*[\\\/]/, '')
+        })
+        return true
+    }
+
 
     const outputOptions = []
 
     if (!options.nostream) {
-        outputOptions.push('-movflags empty_moov+faststart')
+        outputOptions.push('-movflags frag_keyframe+empty_moov+faststart')
+        outputOptions.push('-frag_duration 3600')
     }
     if (options.crf) {
         outputOptions.push('-crf ' + options.crf)
@@ -755,32 +785,6 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, filename}) {
     }
     if (options.custom) {
         outputOptions.push(...options.custom)
-    }
-
-    let video = ffmpeg(filename)
-
-    if(options.screenshot){
-        video.on('filenames', function(filenames) {
-            console.log('Will generate ' + filenames.join(', '))
-        })
-            .on('end', function() {
-                console.log('Screenshots taken')
-                fs.rename(options.filename + '.png', options.filename, () => {
-                    console.log('transcode ended and file saved as ' + options.filename)
-
-                    const fileStream = fs.createReadStream(options.filename)
-                    fileStream.pipe(res)
-                })
-            })
-            .screenshots({
-                // Will take screens at 20%, 40%, 60% and 80% of the video
-                timestamps: [options.screenshot.time],
-                size: options.screenshot.size || '320x240',
-                count: 1,
-                folder: ABS_UPLOAD_DIR,
-                filename:options.filename.replace(/^.*[\\\/]/, '')
-            })
-        return true
     }
 
     const inputOptions = [
@@ -820,6 +824,7 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, filename}) {
     if (options.speed) {
         vFilter.push(`setpts=${1 / options.speed}*PTS`)
     }
+    //vFilter.push(`scale=iw*min(1,min(640/iw,360/ih)):-1`)
     if(options.videoFilters){
         vFilter.push(...options.videoFilters)
     }
@@ -841,54 +846,70 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, filename}) {
 
 
     video.on('progress', (progress) => {
-        console.log('Processing: ' + progress.timemark + '% done')
+        console.log('Processing: ' + progress.timemark + ' done')
     }).on('start', console.log).on('end', () => {
 
-        /*if (options.keep) {
+        if (options.keep) {
             // rename
             fs.rename(options.filename + '.temp', options.filename, () => {
                 console.log('transcode ended and file saved as ' + options.filename)
             })
 
-        }else{
-
-        }*/
+        }
         console.log(`transcode ended: ${filename}`)
 
     }).on('error', (e)=>{
-        console.error(e)
-        try{
-            fs.unlinkSync(options.filename)
-        }catch (e2){
-            console.log(e2)
+        //console.error('video error',e)
+        if(options.keep) {
+            try {
+                fs.unlinkSync(options.filename+ '.temp')
+            } catch (e2) {
+                console.log(e2)
+            }
         }
     })
 
 
     if (options.keep) {
 
-        if (fs.existsSync(options.filename)) {
-            video.pipe(res, {end: true})
-            // it is transcoding right now
-        } else {
-            console.log(`save video as ${options.filename}`)
+        console.log(`save video as ${options.filename}`)
+        video.output(options.filename+ '.temp').run()
+        /*const videoDummy = ffmpeg(SERVER_DIR+'/loading.mp4')
+        res.writeHead(200, {'Content-Type': 'video/mp4', 'Connection': 'keep-alive'});
+        videoDummy.size('640x?')
+            .inputOptions([
+                '-probesize 100M',
+                '-analyzeduration 100M'
+            ])
+            .outputOptions([
+                '-preset ultrafast',
+                '-crf 35',
+                '-movflags frag_keyframe+empty_moov+faststart',
+                '-frag_duration 3600'
+            ])
+            .videoFilter([
+                {filter: 'drawtext',
+                    options: {
+                    fontfile: '/Users/simonscharer/Downloads/open-sans/OpenSans-Bold.ttf',
+                        text: 'Video wird vorbereitet',
+                        fontsize: 40,
+                        fontcolor: 'white',
+                        x: 250,
+                        y: 330
+                }},
+                { filter: 'scale', options: [640, -1] },
+                'fade=in:0:5'
+            ]).videoCodec('libx264').noAudio()
+            .inputFPS(15).fps(5).format('mp4')
+            .pipe(res, {end: true})*/
 
-            if (options.nostream) {
-                video.output(options.filename).run()
-            } else {
-                const writeStream = writeStreamFile(options.filename)
-                const passStream = new PassThrough()
 
-                passStream.pipe(res)
-                passStream.pipe(writeStream)
-
-                video.output(passStream, {end: true})
-
-                video.run()
-            }
-        }
+        sendFileFromDir(req,res,SERVER_DIR+'/loading.mp4',headerExtra)
 
     } else {
+        headerExtra['Transfer-Encoding'] = 'chunked'
+        headerExtra['Accept-Ranges'] = 'bytes'
+        res.writeHead(code, {...headerExtra})
         video.pipe(res, {end: true})
     }
 
@@ -1007,7 +1028,7 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
 
 
         if (transcodeOptions && !transcodeOptions.exists) {
-            transcodeAndStreamVideo({options: transcodeOptions, headerExtra, res, code, filename})
+            transcodeAndStreamVideo({options: transcodeOptions, headerExtra, req, res, code, filename})
         } else {
 
             const fileStream = fs.createReadStream(filename, streamOption)
