@@ -47,7 +47,7 @@ const updateKeyValueGlobal = async ({_id, key, value, ispublic, createdBy}, {con
         Cache.clearStartWith('dataresolver_keyValueGlobals')
 
         if(res && res.ispublic){
-            pubsubHooked.publish('subscribeKeyValueGlobal', {userId:context.id,subscribeKeyValueGlobal: {_meta:'', action: 'update', data: [res]}}, db, context)
+           pubsubHooked.publish('subscribeKeyValueGlobal', {userId:context.id,subscribeKeyValueGlobal: {action: 'update', data: [res]}}, db, context)
         }
 
 
@@ -265,6 +265,7 @@ export const keyvalueResolver = (db) => ({
     Subscription:{
         subscribeKeyValueGlobal: withFilter(() => pubsub.asyncIterator('subscribeKeyValueGlobal'),
             async (payload, context) => {
+            console.log(payload,context)
                 if( payload &&
                     context?.variables?.keys &&
                     payload?.subscribeKeyValueGlobal?.data) {
