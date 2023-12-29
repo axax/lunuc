@@ -179,6 +179,14 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
 
                     resolvedData[dataKey] = map
 
+                    if(segment.subscribe) {
+                        subscriptions.push({query: 'action keys data{_id key value}',
+                            variables:{'keys':JSON.stringify(segment.keyValueGlobals)},
+                            autoUpdate:true,
+                            updateMap: [{toKey:'keyValueGlobals.${fromKey}',fromKey:'key', fromValueKey: 'value', parse:true}],
+                            callback: false, name: 'subscribeKeyValueGlobal'})
+                    }
+
                 } else if (segment.session) {
                     resolvedData.session = {id: context.session}
                 } else if (segment.user) {

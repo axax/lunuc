@@ -40,7 +40,16 @@ export const keyvalueSchemaRaw = `
     	keyValueGlobals(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String, keys: [String]): KeyValueGlobalResult
     }
     
-		
+    type KeyValueGlobalSubscribeResult {
+        data:[KeyValueGlobal]
+        keys:String
+        action:String
+    }
+    
+    type Subscription{
+        subscribeKeyValueGlobal(keys:String): KeyValueGlobalSubscribeResult
+    }
+    
 	type Mutation {
 		createKeyValue(key: String!, value: String, createdBy: ID): KeyValue	
 		updateKeyValue(_id: ID!, key: String, value: String, createdBy: ID): KeyValue

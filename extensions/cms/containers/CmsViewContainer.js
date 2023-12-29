@@ -10,6 +10,7 @@ import {client} from '../../../client/middleware/graphql'
 import Hook from '../../../util/hook.cjs'
 import {deepMerge} from '../../../util/deepMerge.mjs'
 import {CAPABILITY_MANAGE_CMS_CONTENT} from '../constants/index.mjs'
+import {setPropertyByPath} from '../../../client/util/json.mjs'
 
 class CmsViewContainer extends React.Component {
     oriTitle = document.title
@@ -345,7 +346,17 @@ class CmsViewContainer extends React.Component {
                                 if (storedData && storedData.cmsPage && storedData.cmsPage.resolvedData) {
                                     const resolvedDataJson = JSON.parse(storedData.cmsPage.resolvedData)
 
-                                    if (resolvedDataJson[subscription.autoUpdate] && resolvedDataJson[subscription.autoUpdate].results) {
+                                    if(subscription.updateMap){
+                                        data.forEach(dataEntry =>{
+                                            subscription.updateMap.forEach(map=>{
+                                                const fromValue = dataEntry[map.fromValueKey],
+                                                    fromKey = dataEntry[map.fromKey],
+                                                    toKey = Util.replacePlaceholders(map.toKey,{fromKey})
+                                                setPropertyByPath(map.parse?JSON.parse(fromValue):fromValue,toKey, resolvedDataJson)
+                                            })
+                                        })
+                                        _this.updateStoredData({subscription, storedData, resolvedDataJson})
+                                    }else if (resolvedDataJson[subscription.autoUpdate] && resolvedDataJson[subscription.autoUpdate].results) {
 
                                         const refResults = resolvedDataJson[subscription.autoUpdate].results
                                         const finalData = action==='delete'?removedIds.map(f=>({_id:f})):data
@@ -395,28 +406,11 @@ class CmsViewContainer extends React.Component {
                                                 refResults.unshift(noNullData)
                                             }
                                         })
-
-                                        Hook.call('CmsViewContainerSubscription', {subscription, storedData, resolvedDataJson})
-
-
-                                        // back to string data
-                                        const newStoreData = Object.assign({}, storedData)
-                                        newStoreData.cmsPage = Object.assign({}, storedData.cmsPage)
-                                        newStoreData.cmsPage.resolvedData = JSON.stringify(resolvedDataJson)
-
-                                        // save new data
-                                        client.writeQuery({
-                                            query: CMS_PAGE_QUERY,
-                                            variables: _this.props.cmsPageVariables,
-                                            data: newStoreData
-                                        })
+                                        _this.updateStoredData({subscription, storedData, resolvedDataJson})
                                     }
                                 }
                             }
-
                         }
-
-
                     },
                     error(err) {
                         console.error('err', err)
@@ -427,6 +421,20 @@ class CmsViewContainer extends React.Component {
         })
     }
 
+
+    updateStoredData({subscription, storedData, resolvedDataJson}) {
+        Hook.call('CmsViewContainerSubscription', {subscription, storedData, resolvedDataJson})
+        // back to string data
+        const newStoreData = Object.assign({}, storedData)
+        newStoreData.cmsPage = Object.assign({}, storedData.cmsPage)
+        newStoreData.cmsPage.resolvedData = JSON.stringify(resolvedDataJson)
+        // save new data
+        client.writeQuery({
+            query: CMS_PAGE_QUERY,
+            variables: this.props.cmsPageVariables,
+            data: newStoreData
+        })
+    }
 
     clientQuery(query, options = {}) {
         if (!query || query.constructor !== String) return

@@ -878,25 +878,37 @@ const GenericResolver = {
             updateOptions.upsert = true
         }
 
-        let result = (await collection.updateOne(params, {
-            $set: dataSet
-        }, updateOptions))
+        let newData
 
-        if (result.modifiedCount !== 1 && result.upsertedCount !== 1) {
-            throw new Error(_t('core.update.permission.error', context.lang, {name: collectionName}))
-        }
+        if(options.returnDocument){
+            updateOptions.returnDocument = options.returnDocument
 
-        const newData = Object.keys(data).reduce((o, k) => {
-            const item = data[k]
-            if (k !== '_id' && item && item.constructor === ObjectId) {
-                o[k] = {_id: item}
-            } else {
-                o[k] = item
+            const result = (await collection.findOneAndUpdate(params, {
+                    $set: dataSet
+                }, updateOptions))
+            if(!result){
+                throw new Error(_t('core.update.permission.error', context.lang, {name: collectionName}))
             }
-            return o
-        }, {})
+            newData = result
+        }else{
+            const result = (await collection.updateOne(params, {
+                    $set: dataSet
+                }, updateOptions))
 
+            if (result.modifiedCount !== 1 && result.upsertedCount !== 1) {
+                throw new Error(_t('core.update.permission.error', context.lang, {name: collectionName}))
+            }
 
+            newData = Object.keys(data).reduce((o, k) => {
+                const item = data[k]
+                if (k !== '_id' && item && item.constructor === ObjectId) {
+                    o[k] = {_id: item}
+                } else {
+                    o[k] = item
+                }
+                return o
+            }, {})
+        }
 
         const returnValue = {
             ...newData,

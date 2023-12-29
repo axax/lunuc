@@ -6,6 +6,9 @@ import {
     CAPABILITY_MANAGE_KEYVALUES
 } from '../../util/capabilities.mjs'
 import Cache from '../../util/cache.mjs'
+import {withFilter} from "graphql-subscriptions";
+import {pubsub, pubsubHooked} from "../subscription.mjs";
+import Hook from "../../util/hook.cjs";
 
 const updateKeyValueGlobal = async ({_id, key, value, ispublic, createdBy}, {context}, db) => {
 
@@ -32,9 +35,9 @@ const updateKeyValueGlobal = async ({_id, key, value, ispublic, createdBy}, {con
         res = await GenericResolver.updateEnity(db, context, 'KeyValueGlobal', dataToUpdate, {
             capability: CAPABILITY_MANAGE_TYPES,
             primaryKey: _id ? '_id' : 'key',
+            returnDocument:'after',
             upsert: await Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
         })
-
 
         // TODO: we don't have the key here (sometimes we only have the id)
         // so let clear all KeyValueGlobal
@@ -42,6 +45,10 @@ const updateKeyValueGlobal = async ({_id, key, value, ispublic, createdBy}, {con
 
         // clear caches from dataResolver --> see method createCacheKey
         Cache.clearStartWith('dataresolver_keyValueGlobals')
+
+        if(res && res.ispublic){
+            pubsubHooked.publish('subscribeKeyValueGlobal', {userId:context.id,subscribeKeyValueGlobal: {_meta:'', action: 'update', data: [res]}}, db, context)
+        }
 
 
     } catch (e) {
@@ -254,5 +261,37 @@ export const keyvalueResolver = (db) => ({
         cloneKeyValueGlobal: async (data, {context}) => {
             return GenericResolver.cloneEntity(db, context, 'KeyValueGlobal', data)
         }
+    },
+    Subscription:{
+        subscribeKeyValueGlobal: withFilter(() => pubsub.asyncIterator('subscribeKeyValueGlobal'),
+            async (payload, context) => {
+                if( payload &&
+                    context?.variables?.keys &&
+                    payload?.subscribeKeyValueGlobal?.data) {
+
+                    const keys = JSON.parse(context.variables.keys)
+                    if(keys.length>0) {
+                        payload.subscribeKeyValueGlobal.data = payload.subscribeKeyValueGlobal.data.filter(data=>keys.indexOf(data.key)>=0)
+                        if(payload.subscribeKeyValueGlobal.data.length>0) {
+                            const hookResponse = {}
+                            if (Hook.hooks['ResolverBeforePublishSubscription'] && Hook.hooks['ResolverBeforePublishSubscription'].length) {
+                                for (let i = 0; i < Hook.hooks['ResolverBeforePublishSubscription'].length; ++i) {
+                                    await Hook.hooks['ResolverBeforePublishSubscription'][i].callback({
+                                        db, payload, context, hookResponse
+                                    })
+                                }
+                            }
+
+                            if (hookResponse.abort) {
+                                return false
+                            }
+                            return true
+                            //return await Util.userCanSubscribe(db, context, 'KeyValueGlobal', payload)
+                        }
+                    }
+                }
+                return false
+            }
+        )
     }
 })

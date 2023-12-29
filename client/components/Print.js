@@ -434,7 +434,9 @@ class Print extends React.PureComponent {
 
                 let pos = newOffsetTop - offsetTop + this.outerHeight(childNode)
 
-                if (pos > innerPageHeight) {
+                const dif = pos - innerPageHeight
+
+                if (dif >= 20) {
 
                     let noBreak = false
                     noBreakClassName.forEach(cn=>{
