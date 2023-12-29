@@ -416,7 +416,7 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cooki
 
         return {html, statusCode}
     } catch (e) {
-        console.warn('parseWebsite error',e)
+        console.warn('parseWebsite error ' + urlToFetch,e)
         if(page && !page.isClosed()){
             page.close()
         }
@@ -482,7 +482,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
             res.writeHead(errorFile.statusCode, headers)
             res.write('Error '+errorFile.statusCode)
             res.end()
-
+            return
         }
 
         const cookies = parseCookies(req)
