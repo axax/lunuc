@@ -528,9 +528,9 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
 
         if (pageData.statusCode >= 500 || pageData.statusCode === 404) {
 
-            Cache.set('ErrorFile'+cacheFileName, {statusCode: pageData.statusCode}, 3600000) // 1 hour
-
             if (!sentFromCache) {
+                Cache.set('ErrorFile'+cacheFileName, {statusCode: pageData.statusCode}, 360000) // 5 min
+
                 res.writeHead(pageData.statusCode, headers)
                 if (pageData.statusCode < 500) {
                     res.write(pageData.html)
