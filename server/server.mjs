@@ -302,7 +302,7 @@ const wasBrowserKilled = async (browser) => {
 }
 const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cookies) => {
 
-    if(isTemporarilyBlocked({requestTimeInMs: 3000, requestPerTime: 5, key:'parseWebsite'})){
+    if(isTemporarilyBlocked({requestTimeInMs: 3000, requestPerTime: 8, key:'parseWebsite'})){
         return {html: '503 Service Unavailable', statusCode: 503}
     }
 
