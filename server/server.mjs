@@ -353,7 +353,7 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cooki
         }, 20000)
 
 
-        await page.setDefaultTimeout(5000)
+        await page.setDefaultTimeout(3000)
         await page.setRequestInterception(true)
 
         if( cookies /*&& cookies.session && cookies.auth*/) {
@@ -392,7 +392,7 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cooki
         },{host, agent, isBot, remoteAddress})
 
 
-        await page.goto(urlToFetch, {waitUntil: 'networkidle0'})
+        await page.goto(urlToFetch, {waitUntil: 'networkidle2'})
 
         let html = await page.content()
         html = html.replace('</head>', '<script>window.LUNUC_PREPARSED=true</script></head>')
