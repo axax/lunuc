@@ -225,13 +225,16 @@ const sendFile = function (req, res, {headers, filename, statusCode = 200}) {
         statsMainFile = fs.statSync(filename)
 
         if (!neverCompress && acceptEncoding.match(/\bbr\b/)) {
-            res.writeHead(statusCode, {...headers, 'content-encoding': 'br'})
 
             if (isFileNotNewer(filename + '.br', statsMainFile)) {
                 // if br version is available send this instead
+                const statsFile = fs.statSync(filename + '.br')
+                res.writeHead(statusCode, {...headers, 'Content-Length': statsFile.size, 'Content-Encoding': 'br'})
                 const fileStream = fs.createReadStream(filename + '.br')
                 fileStream.pipe(res)
             } else {
+                delete headers['Content-Length']
+                res.writeHead(statusCode, {...headers, 'Content-Encoding': 'br'})
                 const fileStream = fs.createReadStream(filename)
                 const fileStreamCom = fileStream.pipe(zlib.createBrotliCompress())
 
@@ -240,13 +243,16 @@ const sendFile = function (req, res, {headers, filename, statusCode = 200}) {
             }
 
         } else if (!neverCompress && acceptEncoding.match(/\bgzip\b/)) {
-            res.writeHead(statusCode, {...headers, 'content-encoding': 'gzip'})
 
             if (isFileNotNewer(filename + '.gz', statsMainFile)) {
                 // if gz version is available send this instead
+                const statsFile = fs.statSync(filename + '.gz')
+                res.writeHead(statusCode, {...headers, 'Content-Length': statsFile.size, 'Content-Encoding': 'gzip'})
                 const fileStream = fs.createReadStream(filename + '.gz')
                 fileStream.pipe(res)
             } else {
+                delete headers['Content-Length']
+                res.writeHead(statusCode, {...headers, 'Content-Encoding': 'gzip'})
                 const fileStream = fs.createReadStream(filename)
                 const fileStreamCom = fileStream.pipe(zlib.createGzip())
                 fileStreamCom.pipe(res)
@@ -254,8 +260,7 @@ const sendFile = function (req, res, {headers, filename, statusCode = 200}) {
             }
 
         } else if (!neverCompress && acceptEncoding.match(/\bdeflate\b/)) {
-            res.writeHead(statusCode, {...headers, 'content-encoding': 'deflate'})
-
+            res.writeHead(statusCode, {...headers, 'Content-Encoding': 'deflate'})
             const fileStream = fs.createReadStream(filename)
             fileStream.pipe(zlib.createDeflate()).pipe(res)
         } else {
