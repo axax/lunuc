@@ -271,24 +271,23 @@ export const keyvalueResolver = (db) => ({
                     payload?.subscribeKeyValueGlobal?.data) {
 
                     const keys = JSON.parse(context.variables.keys)
-                    if(keys.length>0) {
-                        payload.subscribeKeyValueGlobal.data = payload.subscribeKeyValueGlobal.data.filter(data=>keys.indexOf(data.key)>=0)
-                        if(payload.subscribeKeyValueGlobal.data.length>0) {
-                            const hookResponse = {}
-                            if (Hook.hooks['ResolverBeforePublishSubscription'] && Hook.hooks['ResolverBeforePublishSubscription'].length) {
-                                for (let i = 0; i < Hook.hooks['ResolverBeforePublishSubscription'].length; ++i) {
-                                    await Hook.hooks['ResolverBeforePublishSubscription'][i].callback({
-                                        db, payload, context, hookResponse
-                                    })
-                                }
-                            }
+                    if(keys.length>0 && payload.subscribeKeyValueGlobal.data.some(data=>keys.indexOf(data.key)>=0)) {
 
-                            if (hookResponse.abort) {
-                                return false
+                        const hookResponse = {}
+                        if (Hook.hooks['ResolverBeforePublishSubscription'] && Hook.hooks['ResolverBeforePublishSubscription'].length) {
+                            for (let i = 0; i < Hook.hooks['ResolverBeforePublishSubscription'].length; ++i) {
+                                await Hook.hooks['ResolverBeforePublishSubscription'][i].callback({
+                                    db, payload, context, hookResponse
+                                })
                             }
-                            return true
-                            //return await Util.userCanSubscribe(db, context, 'KeyValueGlobal', payload)
                         }
+
+                        if (hookResponse.abort) {
+                            return false
+                        }
+                        return true
+                        //return await Util.userCanSubscribe(db, context, 'KeyValueGlobal', payload)
+
                     }
                 }
                 return false
