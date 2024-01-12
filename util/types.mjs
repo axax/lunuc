@@ -167,7 +167,7 @@ export const getTypeQueries = (typeName, queryFields, opts) => {
             selectParamsString += `,${item.name}:${item.defaultValue}`
         })
     }
-    result.query = `query ${nameStartLower}s($sort: String,$limit: Int,$page: Int,$filter: String${collectionClonable ? ',$_version: String' : ''}${addMetaDataInQuery ? ',$meta: String' : ''}){${nameStartLower}s(sort:$sort, limit: $limit, page:$page, filter:$filter${selectParamsString}${collectionClonable ? ',_version:$_version' : ''}${addMetaDataInQuery ? ',meta:$meta' : ''}){limit offset total meta results{${query}}}}`
+    result.query = `query ${nameStartLower}s($sort:String,$limit:Int,$page:Int,$filter:String${collectionClonable ? ',$_version:String' : ''}${addMetaDataInQuery ? ',$meta:String' : ''}){${nameStartLower}s(sort:$sort,limit:$limit,page:$page,filter:$filter${selectParamsString}${collectionClonable ? ',_version:$_version' : ''}${addMetaDataInQuery ? ',meta:$meta' : ''}){limit offset total meta results{${query}}}}`
 
 
     result.create = `mutation create${name}(${collectionClonable ? '$_version:String,' : ''}${insertParams}){create${name}(${collectionClonable ? '_version:$_version,' : ''}${insertUpdateQuery}){${queryMutation}}}`

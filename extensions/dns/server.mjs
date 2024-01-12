@@ -68,60 +68,65 @@ Hook.on('appready', async ({db, context}) => {
             handle: async (request, send, rinfo) => {
                 const response = dns2.Packet.createResponseFromRequest(request)
                 const [ question ] = request.questions
-                const { name } = question
-                const startTime = new Date().getTime()
 
-                if (dnsServerContext.hosts[name] === undefined) {
-                    dnsServerContext.hosts[name] = {block: false, subdomains:false}
-                }
+                if(question) {
+                    const {name} = question
+                    const startTime = new Date().getTime()
 
-                if(!dnsServerContext.hosts[name].count){
-                    dnsServerContext.hosts[name].count=0
-                }
-                dnsServerContext.hosts[name].count++
-
-                const hostBlocked = isHostBlocked(name)
-
-                if(hostBlocked && !dnsServerContext.settings.disabled){
-                    debugMessage(`DNS: block ${name}`)
-
-                    response.answers.push({
-                        name,
-                        type: question.type,
-                        class: question.class,
-                        ttl: 300,
-                        address: '0.0.0.0'
-                    })
-                    send(response)
-
-                }else {
-                    const resolvedQuestion = await resolveDnsQuestion(question)
-                    response.header = Object.assign({}, resolvedQuestion.header, {id: response.header.id})
-                    response.authorities = resolvedQuestion.authorities
-                    response.answers = resolvedQuestion.answers
-                    response.additionals = resolvedQuestion.additionals
-                    send(response)
-
-                    debugMessage(`DNS: resolved ${name} after ${new Date().getTime()-startTime}ms`)
-                }
-
-                dnsServerContext.dbBuffer[name] = {
-                    updateOne: {
-                        filter: { name },
-                        update: {
-                            $set: {
-                                lastIp: rinfo.address,
-                                lastUsed: new Date().getTime(),
-                                name,
-                                count: dnsServerContext.hosts[name].count
-                            }
-                        },
-                        upsert: true
+                    if (dnsServerContext.hosts[name] === undefined) {
+                        dnsServerContext.hosts[name] = {block: false, subdomains: false}
                     }
-                }
 
-                if( Object.keys(dnsServerContext.dbBuffer).length > 20) {
-                    insertBuffer()
+                    if (!dnsServerContext.hosts[name].count) {
+                        dnsServerContext.hosts[name].count = 0
+                    }
+                    dnsServerContext.hosts[name].count++
+
+                    const hostBlocked = isHostBlocked(name)
+
+                    if (hostBlocked && !dnsServerContext.settings.disabled) {
+                        debugMessage(`DNS: block ${name}`)
+
+                        response.answers.push({
+                            name,
+                            type: question.type,
+                            class: question.class,
+                            ttl: 300,
+                            address: '0.0.0.0'
+                        })
+                        send(response)
+
+                    } else {
+                        const resolvedQuestion = await resolveDnsQuestion(question)
+                        response.header = Object.assign({}, resolvedQuestion.header, {id: response.header.id})
+                        response.authorities = resolvedQuestion.authorities
+                        response.answers = resolvedQuestion.answers
+                        response.additionals = resolvedQuestion.additionals
+                        send(response)
+
+                        debugMessage(`DNS: resolved ${name} after ${new Date().getTime() - startTime}ms`)
+                    }
+
+                    dnsServerContext.dbBuffer[name] = {
+                        updateOne: {
+                            filter: {name},
+                            update: {
+                                $set: {
+                                    lastIp: rinfo.address,
+                                    lastUsed: new Date().getTime(),
+                                    name,
+                                    count: dnsServerContext.hosts[name].count
+                                }
+                            },
+                            upsert: true
+                        }
+                    }
+
+                    if (Object.keys(dnsServerContext.dbBuffer).length > 20) {
+                        insertBuffer()
+                    }
+                }else{
+                    send(response)
                 }
             }
         })

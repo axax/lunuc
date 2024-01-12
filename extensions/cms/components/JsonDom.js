@@ -51,7 +51,7 @@ const SCRIPT_UTIL_PART = ',Util=this.Util,_e=Util.escapeForJson,_i=Util.tryCatch
 class JsonDom extends React.Component {
 
     /* Events that are listened to */
-    static events = ['onDragStart', 'onError','onClose','onRef','onAnimationEnd','onMouseOver', 'onMouseOut', 'onMouseEnter', 'onMouseLeave', 'onMouseDown', 'onMouseUp', 'onClick', 'onKeyDown', 'onKeyUp', 'onFocus', 'onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput', 'onForwardRef']
+    static events = ['onDragEnd', 'onDragStart', 'onError','onClose','onRef','onAnimationEnd','onMouseOver', 'onMouseOut', 'onMouseEnter', 'onMouseLeave', 'onMouseDown', 'onMouseUp', 'onClick', 'onKeyDown', 'onKeyUp', 'onFocus', 'onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput', 'onForwardRef']
 
     /*
      * Default components
@@ -418,7 +418,7 @@ class JsonDom extends React.Component {
             return
         }
         const loc = window.location,
-            ori = loc.origin,
+            ori = loc.origin+'/favicon-',
             host = loc.host.replace(/^www./,''),
             type = 'image/png'
         const manifest = {
@@ -431,9 +431,9 @@ class JsonDom extends React.Component {
             orientation: 'any',
             scope: '/',
             icons: [
-                { src: `${ori}/favicon-192x192.png`, sizes: '192x192', type },
-                { src: `${ori}/favicon-512x512.png`, sizes: '512x512', type },
-                { src: `${ori}/favicon-maskable.png`, sizes: '512x512', type, purpose: 'maskable' }
+                { src: `${ori}192x192.png`, sizes: '192x192', type },
+                { src: `${ori}512x512.png`, sizes: '512x512', type },
+                { src: `${ori}maskable.png`, sizes: '512x512', type, purpose: 'maskable' }
             ],
             start_url: loc.href
         }
@@ -1384,7 +1384,7 @@ class JsonDom extends React.Component {
             t = [() => {
             }]
         }
-
+        const results = []
         if (t && t.length && !this.error) {
             for (let i = 0; i < t.length; i++) {
                 const cb = t[i]
@@ -1397,7 +1397,7 @@ class JsonDom extends React.Component {
                             }, 0)
                         } else {
                             try {
-                                cb(...args)
+                                results.push(cb(...args))
                             } catch (e) {
                                 console.log(e)
                                 this.error = {type: `script event ${name}`, e, code: this.props.script, offset: 9}
@@ -1419,7 +1419,7 @@ class JsonDom extends React.Component {
         }
         // pass event to components
         if (finalArgs._passEvent) {
-
+            const parentRef = this.props._parentRef
             if (finalArgs._passEvent == 'all') {
                 // to all components
                 const comps = this.getAllComponents()
@@ -1429,14 +1429,15 @@ class JsonDom extends React.Component {
                 for (let i = 0; i < keys.length; i++) {
                     const o = comps[keys[i]]
                     if (o.comp !== this) {
-                        o.comp.runJsEvent(name, async, ...newArgs)
+                        results.push(...o.comp.runJsEvent(name, async, ...newArgs))
                     }
                 }
-            } else if (this.props._parentRef) {
+            } else if (parentRef) {
                 // to parents only
-                this.props._parentRef.runJsEvent(name, async, ...args)
+                results.push(...parentRef.runJsEvent(name, async, ...args))
             }
         }
+        return results
     }
 
 

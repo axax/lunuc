@@ -25,7 +25,7 @@ class QuillEditor extends React.Component {
     }
 
     static propsToState(props) {
-        return {value: props.children || props.value}
+        return {value: props.children || props.value || ''}
     }
 
     shouldComponentUpdate(props, state) {
@@ -35,6 +35,7 @@ class QuillEditor extends React.Component {
         if (readOnlyChanged) {
             this.isInit = false
         } else if (this.state.value !== state.value) {
+            console.log('xxxxxx', this.state.value, state.value)
             setTimeout(() => {
                 const sY = window.scrollY, sX = window.scrollX
                 this.quill.setContents([])
@@ -199,7 +200,9 @@ class QuillEditor extends React.Component {
     }
 
     componentWillUnmount() {
-        document.body.removeChild(this.css)
+        if(this.css) {
+            document.body.removeChild(this.css)
+        }
     }
 
     componentDidUpdate() {

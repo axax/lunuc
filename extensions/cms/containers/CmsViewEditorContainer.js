@@ -1131,7 +1131,7 @@ class CmsViewEditorContainer extends React.Component {
         }
 
         if (this._autoSaveStyleTimeout) {
-            this._autoSaveStyle()
+            this._autoSaveStyle(true)
         }
 
         if (this._autoSaveServerScriptTimeout) {
@@ -1222,10 +1222,10 @@ class CmsViewEditorContainer extends React.Component {
             this.setState({style})
         }, 1000)
 
-        this._autoSaveStyle = () => {
+        this._autoSaveStyle = (force) => {
             clearTimeout(this._autoSaveStyleTimeout)
             this._autoSaveStyleTimeout = 0
-            this.saveCmsPage(style, 'style')
+            this.saveCmsPage(style, 'style', force)
         }
 
         clearTimeout(this._autoSaveStyleTimeout)

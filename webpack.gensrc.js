@@ -146,14 +146,33 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
         const manifestJsonPrivate = {}
 
         Object.keys(manifestJson).forEach(key => {
+            manifestJsonPrivate[key] = JSON.parse(JSON.stringify(manifestJson[key]))
             if (manifestJson[key].public) {
                 delete manifestJson[key].description
                 delete manifestJson[key].author
+                delete manifestJson[key].dependencies
+                delete manifestJson[key].name
+                delete manifestJson[key].public
+                for(const type of manifestJson[key].options.types){
+                    delete type.description
+                    delete type.access
+                    delete type.entryClonable
+                    delete type.genResolver
+                    delete type.mutationResult
+                    for(const field of type.fields){
+                        delete field.index
+                        delete field.tab
+                        delete field.hideColumnInTypes
+                        delete field.vagueSearchable
+                        delete field.vagueSearchable
+                        delete field.access
+                        delete field.bulkEditable
+                        delete field.compoundIndex
+                    }
+                }
             } else {
-                manifestJsonPrivate[key] = manifestJson[key]
                 delete manifestJson[key]
             }
-
         })
         const manifestStr = `${GENSRC_HEADER}const extensions=${JSON.stringify(manifestJson, null, 2)}\nexport default extensions`
 
