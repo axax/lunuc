@@ -112,11 +112,11 @@ const loadHostRules = (dir, withCertContext, hostrules, isDefault) => {
 }
 
 export const loadAllHostrules = (withCertContext, hostrules = {}, refresh = false) => {
-    console.log(`load all host rules from ${HOSTRULES_ABSPATH} ${new Date() - _app_.start}ms`)
+    console.log(`load all host rules from ${HOSTRULES_ABSPATH}`)
     loadHostRules(HOSTRULES_ABSPATH, withCertContext, hostrules)
     if(!refresh) {
         const hostRulePath = path.join(path.resolve(), './hostrules/')
-        console.log(`load all host rules from default ${hostRulePath} ${new Date() - _app_.start}ms`)
+        console.log(`load all host rules from default ${hostRulePath}`)
         loadHostRules(hostRulePath, withCertContext, hostrules, true)
     }
 
