@@ -18,7 +18,7 @@ import {pubsub} from './subscription.mjs'
 import {decodeToken} from './util/jwt.mjs'
 import {HEADER_TIMEOUT, SESSION_HEADER, USE_COOKIES} from './constants/index.mjs'
 import {parseCookies} from './util/parseCookies.mjs'
-import {createUserRoles, createUsers} from './data/initialData.mjs'
+import {createUsers} from './data/initialData.mjs'
 
 
 const PORT = (process.env.PORT || 3000)
@@ -219,7 +219,6 @@ export const start = (done) => {
 
     if (BACKUP_MONGO_URL) {
         dbConnection(BACKUP_MONGO_URL, async (err, db, client) => {
-            await createUserRoles(db)
             await createUsers(db)
             _app_.backupDb = db
 

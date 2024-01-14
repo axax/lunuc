@@ -34,11 +34,13 @@ ObjectId.prototype.valueOf = function () {
 }
 
 export const createAllInitialData = async (db) => {
-    console.log('Inserting data...')
+    console.log(`Inserting initial data if necessary... ${new Date() - _app_.start}ms`)
 
-    const allCollections = await db.listCollections().toArray()
+    //const stats = await db.stats()
+    const collectionNames = await db.listCollections({}, { nameOnly: true }).toArray()
+    console.log(`Number of collections in db ${collectionNames.length} ${new Date() - _app_.start}ms`)
 
-    if (allCollections.length === 0) {
+    if (collectionNames.length === 0) {
         console.log('Db is completely empty...')
 
         const dbFile = path.join(path.resolve(), './api/data/initialDb.gz')
@@ -49,7 +51,6 @@ export const createAllInitialData = async (db) => {
     }
 
 
-    await createUserRoles(db)
     await createUsers(db)
 
     createUploads()
@@ -77,6 +78,8 @@ export const createUploads = () => {
 
 
 export const createUserRoles = async (db) => {
+    console.log(`Creating or updating user roles... ${new Date() - _app_.start}ms`)
+
     const userRoles = [
         {
             prettyName: {de: 'Administrator', en: 'Administrator'},
@@ -137,9 +140,11 @@ export const createUsers = async (db) => {
 
     const userCollection = db.collection('User')
 
-    if (await userCollection.countDocuments() === 0) {
+    if (await userCollection.estimatedDocumentCount() === 0) {
 
-        console.log('Create users...')
+        await createUserRoles(db)
+
+        console.log(`Create users... ${new Date() - _app_.start}ms`)
 
         /* insert admin user */
         await userCollection.updateOne({
@@ -168,5 +173,8 @@ export const createUsers = async (db) => {
                 password: Util.hashPassword('password')
             }
         }, {upsert: true})
+    }else{
+        // without await
+        createUserRoles(db)
     }
 }

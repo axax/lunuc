@@ -1399,7 +1399,7 @@ class JsonDom extends React.Component {
                             try {
                                 results.push(cb(...args))
                             } catch (e) {
-                                console.log(e)
+                                console.log(e, cb)
                                 this.error = {type: `script event ${name}`, e, code: this.props.script, offset: 9}
                                 if (async) {
                                     this.forceUpdate()

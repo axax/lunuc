@@ -14,7 +14,7 @@ import {propertyByPath} from '../client/util/json.mjs'
 import Util from '../client/util/index.mjs'
 import {client} from '../client/middleware/graphql.js'
 
-console.log(`replace / merge extension definition with extended version`)
+console.log(`replace / merge extension definition with extended version ${new Date() - _app_.start}ms`)
 Object.keys(extensionsPrivate).forEach(key => {
     extensions[key] = extensionsPrivate[key]
 })

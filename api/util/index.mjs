@@ -176,7 +176,7 @@ const Util = {
 
         const keyvalues = (await db.collection('KeyValueGlobal').find(match).toArray())
 
-        console.log(`load KeyValueGlobal "${keys.join(',')}"`)
+        console.log(`load KeyValueGlobal "${keys.join(',')}" ${new Date() - _app_.start}ms`)
         return keyvalues.reduce((map, obj) => {
             let v
             if (allOptions.parse && obj.value && obj.value.constructor === String) {

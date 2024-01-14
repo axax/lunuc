@@ -30,12 +30,15 @@ export const dbPreparation = async (db, cb) => {
 
         await createAllInitialData(db)
 
+        Hook.call('dbready', {db})
+
         await createAllIndexes(db)
 
         console.log('load global translations from key/value store')
         const globalTranslations = (await Util.getKeyValueGlobal(db, null, "GlobalTranslations", true)) || {}
 
         registerTrs(globalTranslations)
+
 
     }
 
@@ -62,12 +65,14 @@ export const dbConnection = (dburl, cb) => {
             keepAlive: 300000,
             sslValidate: false,*/
             compressors:'zlib',
-            useUnifiedTopology: true,
+            /*useUnifiedTopology: true,*/
             ...urlParams
         }
         const client = new MongoClient(urlParts[0], options)
+        console.log(`Start connecting to db ${dburl}... ${new Date() - _app_.start}ms`)
+
         client.connect().then( client => {
-                console.log(`Connection to db ${dburl} (driver version ${client.options.metadata.driver.version}) established. 🚀`)
+                console.log(`Connection to db ${dburl} (driver version ${client.options.metadata.driver.version}) established. 🚀 ${new Date() - _app_.start}ms`)
                 const parts = urlParts[0].split('/')
                 const db = client.db(parts[parts.length - 1])
                 db._metadata = client.options.metadata
@@ -80,7 +85,7 @@ export const dbConnection = (dburl, cb) => {
                     console.log(`mongodb version is ${db._version}`)
                 })
 
-                Hook.call('dbready', {db})
+                Hook.call('dbconnected', {db})
                 cb(null, db, client)
             }
         ).catch(err=>{
