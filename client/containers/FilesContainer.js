@@ -29,20 +29,19 @@ class FilesContainer extends React.Component {
         ]
     constructor(props) {
         super(props)
-
+        const params = Util.extractQueryParams()
         this.state = {
             file: props.file,
-            dir: '',
+            dir: params.dir || '',
             searchText: '',
-            space: props.space || './'
+            space: props.space || params.space || './'
         }
     }
 
 
     render() {
-        const {embedded, editOnly} = this.props
+        const {embedded, editOnly, history} = this.props
         const {file, dir, searchText, space} = this.state
-
         let command = 'ls -l ' + space + dir
 
         if (searchText) {
@@ -79,6 +78,7 @@ class FilesContainer extends React.Component {
                         value={space}
                         onChange={(e, v) => {
                             this.setState({space:e.target.value})
+                            history.push(`${location.origin+location.pathname}?space=${e.target.value}&dir=${this.state.dir}`)
                         }}
                         items={FilesContainer.spaces}
                     />
@@ -140,6 +140,7 @@ class FilesContainer extends React.Component {
                                                 if (b[0].indexOf('d') === 0) {
                                                     //change dir
                                                     this.setState({file:null, dir: dir + '/' + b[8]})
+                                                    history.push(`${location.origin+location.pathname}?space=${this.state.space}&dir=${dir + '/' + b[8]}`)
                                                 } else {
                                                     this.setState({file: b[8]})
                                                 }
@@ -158,7 +159,9 @@ class FilesContainer extends React.Component {
                                         selected: false,
                                         primary: '..',
                                         onClick: () => {
-                                            this.setState({file:null, dir: dir.substring(0, dir.lastIndexOf('/'))})
+                                            const newDir = dir.substring(0, dir.lastIndexOf('/'))
+                                            this.setState({file:null, dir: newDir})
+                                            history.push(`${location.origin+location.pathname}?space=${this.state.space}&dir=${newDir}`)
                                         }
                                     })
                                 }

@@ -309,7 +309,7 @@ class CodeEditor extends React.Component {
             },
             hasError = (error || stateError)
 
-        if (['js', 'javascript', 'json'].indexOf(type) >= 0) {
+        if (['js', 'javascript', 'json', 'mjs','cjs'].indexOf(type) >= 0) {
             options.mode.name = 'javascript'
         } else if (type === 'html') {
             options.mode.name = 'htmlmixed'

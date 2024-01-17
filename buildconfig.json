@@ -95,6 +95,9 @@
     },
     "sms": {
       "active": true
+    },
+    "mailserver": {
+      "active": true
     }
   },
   "ui": [

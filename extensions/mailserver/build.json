@@ -1,0 +1,27 @@
+{
+  "types": [
+    {
+      "name": "MailAccounts",
+      "fields": [
+        {
+          "name": "username",
+          "required": true,
+          "unique": true,
+          "index": 1
+        },
+        {
+          "name": "password",
+          "required": true
+        },
+        {
+          "name": "host",
+          "required": true
+        },
+        {
+          "name": "active",
+          "type": "Boolean"
+        }
+      ]
+    }
+  ]
+}
