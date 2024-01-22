@@ -141,6 +141,14 @@ https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/
 `sudo apt-get purge mongodb-org*`
 `sudo apt-get install -y mongodb-org`
 
+#### Check mongo logs
+`journalctl -lf -u mongod`
+`sudo  tail -1000 /var/log/mongodb/mongod.log`
+
+#### remove mongodb
+`sudo apt purge mongodb-*`
+`sudo apt purge mongo-tools`
+
 #### auto-restart Mongodb
 
 1. Edit your mongod service: `sudo vi /lib/systemd/system/mongod.service`

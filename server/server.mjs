@@ -163,7 +163,7 @@ const sendFileFromDir = async (req, res, filePath, headers, parsedUrl) => {
 
     if (stats.isFile()) {
         const modImage = await resizeImage(parsedUrl, req, filePath)
-
+        const statsMod = modImage.exists ? fs.statSync(modImage.filename) : stats
         // static file
         let mimeType = modImage.mimeType
         if (!mimeType) {
@@ -173,9 +173,9 @@ const sendFileFromDir = async (req, res, filePath, headers, parsedUrl) => {
         const headerExtra = {
             'Cache-Control': 'public, max-age=604800', /* a week */
             'Content-Type': mimeType,
-            'Content-Length': stats.size,
-            'Last-Modified': stats.mtime.toUTCString(),
-            'ETag': `"${createSimpleEtag({content: filePath, stats})}"`,
+            'Content-Length': statsMod.size,
+            'Last-Modified': statsMod.mtime.toUTCString(),
+            'ETag': `"${createSimpleEtag({content: filePath, stats: statsMod})}"`,
             ...headers
         }
         sendFile(req, res, {headers: headerExtra, filename: modImage.filename})
