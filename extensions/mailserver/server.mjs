@@ -1,4 +1,4 @@
-import {startListening} from './mailserver.mjs'
+//import {startListening} from './mailserver.mjs'
 import Hook from '../../util/hook.cjs'
 import schemaGen from './gensrc/schema.mjs'
 import resolverGen from './gensrc/resolver.mjs'
@@ -18,5 +18,5 @@ Hook.on('schema', ({schemas}) => {
 
 // Hook when db is ready
 Hook.on('appready', async ({app, context, db}) => {
-    startListening(db, context)
+  //  startListening(db, context)
 })
