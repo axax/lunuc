@@ -4,15 +4,8 @@ import DomAdminUtil from '../../../client/util/domAdmin.mjs'
 import {getHostFromHeaders} from '../../../util/host.mjs'
 import Cache from '../../../util/cache.mjs'
 import {preprocessCss} from './cssPreprocessor.mjs'
-import {loadAllHostrules, hostListFromString} from '../../../util/hostrules.mjs'
+import {getHostRules, hostListFromString} from '../../../util/hostrules.mjs'
 import Hook from "../../../util/hook.cjs";
-
-const hostrules = loadAllHostrules(false)
-
-setInterval(()=>{
-    // update changes
-    loadAllHostrules(false, hostrules, true)
-},60000)
 
 
 export const getCmsPage = async ({db, context, headers, ...params}) => {
@@ -41,6 +34,7 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
     if (checkHostrules) {
 
         const hostsChecks = hostListFromString(host)
+        const hostrules = getHostRules(false)
 
         for (let i = 0; i < hostsChecks.length; i++) {
             const currentHost = hostsChecks[i]

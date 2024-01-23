@@ -122,3 +122,23 @@ export const loadAllHostrules = (withCertContext, hostrules = {}, refresh = fals
 
     return hostrules
 }
+
+let _loadedHostRules = {},
+    _loadedHostRulesTime = 0,
+    _loadedHostRulesWithCertContext = false
+export const getHostRules =(withCertContext)=>{
+    if(_loadedHostRulesTime > 0 &&
+        (new Date().getTime() - _loadedHostRulesTime < 60000) &&
+        (!withCertContext || _loadedHostRulesWithCertContext)){
+        return _loadedHostRules
+    }
+    loadAllHostrules(_loadedHostRulesWithCertContext || withCertContext, _loadedHostRules,_loadedHostRulesTime > 0 )
+
+
+    if(withCertContext){
+        _loadedHostRulesWithCertContext = true
+    }
+    _loadedHostRulesTime = new Date().getTime()
+
+    return _loadedHostRules
+}

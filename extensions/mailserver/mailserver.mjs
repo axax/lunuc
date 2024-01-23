@@ -1,9 +1,7 @@
 import Hook from '../../util/hook.cjs'
 import Util from '../../api/util/index.mjs'
 import {SMTPServer} from 'smtp-server'
-import {loadAllHostrules} from '../../util/hostrules.mjs'
-
-const hostrules = loadAllHostrules(true)
+import {getHostRules} from '../../util/hostrules.mjs'
 
 let server
 const startListening = (db, context) => {
@@ -14,6 +12,7 @@ const startListening = (db, context) => {
             if (domain.startsWith('www.')) {
                 domain = domain.substring(4)
             }
+            const hostrules = getHostRules(true)
             if (hostrules[domain] && hostrules[domain].certContext) {
                 cb(null, hostrules[domain].certContext)
             } else {
