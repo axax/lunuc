@@ -13,6 +13,8 @@ const startListening = (db, context) => {
                 domain = domain.substring(4)
             }
             const hostrules = getHostRules(true)
+
+            console.log('SNICallback',domain,hostrules[domain])
             if (hostrules[domain] && hostrules[domain].certContext) {
                 cb(null, hostrules[domain].certContext)
             } else {
