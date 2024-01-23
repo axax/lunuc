@@ -8,6 +8,7 @@
           "name": "name",
           "required": true,
           "index": 1,
+          "unique": true,
           "clone": "${name} (copy)",
           "tab": "Allgemein"
         },

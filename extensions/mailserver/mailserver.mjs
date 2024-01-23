@@ -4,13 +4,22 @@ import {SMTPServer} from 'smtp-server'
 import {loadAllHostrules} from '../../util/hostrules.mjs'
 
 const hostrules = loadAllHostrules(true)
-console.log(hostrules)
 
 let server
-const startListening = async (db, context) => {
+const startListening = (db, context) => {
     console.log(`Start SMTP Server`)
     server = new SMTPServer({
         secure: true,
+        SNICallback: (domain, cb) => {
+            if (domain.startsWith('www.')) {
+                domain = domain.substring(4)
+            }
+            if (hostrules[domain] && hostrules[domain].certContext) {
+                cb(null, hostrules[domain].certContext)
+            } else {
+                cb()
+            }
+        },
         /*needsUpgrade:true,*/
         /*key: fs.readFileSync("private.key"),
         cert: fs.readFileSync("server.crt"),*/
