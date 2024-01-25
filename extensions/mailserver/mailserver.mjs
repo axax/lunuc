@@ -27,6 +27,7 @@ const startListening = (db, context) => {
         hidePIPELINING: true,
         useXForward: true,
         size: 10 * 1024 * 1024,
+        authOptional: true,
         SNICallback: (domain, cb) => {
             if (domain.startsWith('www.')) {
                 domain = domain.substring(4)
