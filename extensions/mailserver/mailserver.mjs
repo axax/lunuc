@@ -7,7 +7,14 @@ let server
 const startListening = (db, context) => {
     console.log(`Start SMTP Server`)
     server = new SMTPServer({
+        logger: true,
         secure: true,
+        banner: 'Welcome to Lunuc SMTP Server',
+        authMethods: ['PLAIN', 'LOGIN', 'CRAM-MD5','XOAUTH2'],
+        useXClient: true,
+        hidePIPELINING: true,
+        useXForward: true,
+        size: 10 * 1024 * 1024,
         SNICallback: (domain, cb) => {
             if (domain.startsWith('www.')) {
                 domain = domain.substring(4)
@@ -68,7 +75,6 @@ const startListening = (db, context) => {
             }
             return callback(); // Accept the address
         },
-        size: 1024, // allow messages up to 1 kb
         onRcptTo(address, session, callback) {
             console.log('onRcptTo',address, session)
             // do not accept messages larger than 100 bytes to specific recipients
@@ -95,7 +101,7 @@ const startListening = (db, context) => {
         },
     })
     server.on("error", (err) => {
-        console.log("Error %s", err.message)
+        console.log("SMTP Error", err)
     })
     server.listen(25)
 }
