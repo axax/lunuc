@@ -125,11 +125,7 @@ const BaseLayout = props => {
                 setKeyValue({key: 'BaseLayoutSettings', value: menuEditor.state.data, clearCache:true}).then(() => {
                     location.href = location.href
                 })
-
-
             }
-
-
         }
         setOpenMenuEditor(false)
     }

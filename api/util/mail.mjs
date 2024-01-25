@@ -2,12 +2,13 @@ import Util from './index.mjs'
 import Hook from '../../util/hook.cjs'
 import nodemailer from 'nodemailer'
 import {replacePlaceholders} from '../../util/placeholders.mjs'
+import nodemailerDirectTransport from 'nodemailer-direct-transport'
+
 
 /*
  A very basic implementation for sending emails
  it uses the mail settings from the global key value store
  */
-
 
 export const sendMail = async (db, context, {settings, recipient, from, fromName, replyTo, subject, body, html, text, slug, headerList, headers, attachments, req}) => {
 
@@ -103,26 +104,30 @@ ${finalHtml}
             currentMailSettings = currentMailSettings.second
         }
         try {
-            const transporter = {
-                service: currentMailSettings.service,
-                debug: currentMailSettings.debug || false,
-                logger: currentMailSettings.logger || false,
-                host: currentMailSettings.host,
-                port: currentMailSettings.port,
-                secure: !!currentMailSettings.secure,
-                auth: {
-                    user: currentMailSettings.user,
-                    pass: currentMailSettings.password
-                },
-                dkim: currentMailSettings.dkim,
-                tls: {
-                    // do not fail on invalid certs
-                    rejectUnauthorized: false
-                },
-                connectionTimeout: currentMailSettings.connectionTimeout || 120000,
-                socketTimeout: currentMailSettings.socketTimeout || 1220000
+            let transporter
+            if(currentMailSettings.directTransport){
+                transporter = nodemailerDirectTransport({})
+            }else {
+                transporter = {
+                    service: currentMailSettings.service,
+                    debug: currentMailSettings.debug || false,
+                    logger: currentMailSettings.logger || false,
+                    host: currentMailSettings.host,
+                    port: currentMailSettings.port,
+                    secure: !!currentMailSettings.secure,
+                    auth: {
+                        user: currentMailSettings.user,
+                        pass: currentMailSettings.password
+                    },
+                    dkim: currentMailSettings.dkim,
+                    tls: {
+                        // do not fail on invalid certs
+                        rejectUnauthorized: false
+                    },
+                    connectionTimeout: currentMailSettings.connectionTimeout || 120000,
+                    socketTimeout: currentMailSettings.socketTimeout || 1220000
+                }
             }
-
 
 
             if (currentMailSettings.returnPath) {
