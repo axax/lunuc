@@ -8,7 +8,7 @@ const startListening = (db, context) => {
     console.log(`Start SMTP Server`)
     server = new SMTPServer({
         logger: true,
-        secure: true,
+        secure: false,
         banner: 'Welcome to Lunuc SMTP Server',
         authMethods: ['PLAIN', 'LOGIN', 'CRAM-MD5','XOAUTH2'],
         useXClient: true,
@@ -23,6 +23,7 @@ const startListening = (db, context) => {
 
             console.log('SNICallback',domain,hostrules[domain])
             if (hostrules[domain] && hostrules[domain].certContext) {
+                console.log(`smtp server certContext for ${domain}`)
                 cb(null, hostrules[domain].certContext)
             } else {
                 cb()
