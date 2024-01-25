@@ -1,7 +1,19 @@
 import Hook from '../../util/hook.cjs'
 import Util from '../../api/util/index.mjs'
 import {SMTPServer} from 'smtp-server'
-import {getHostRules} from '../../util/hostrules.mjs'
+import {getHostRules, hostListFromString} from '../../util/hostrules.mjs'
+
+/*
+// open port 25 on your server
+sudo ufw allow 25
+
+// add dns records
+
+mail.domain.xx	IN	A	144.91.119.30
+domain.xx	IN	MX	10  mail.domain.xx
+domain.xx	IN	TXT	"v=spf1 ip4:144.91.119.30 -all"
+
+ */
 
 let server
 const startListening = (db, context) => {
@@ -19,15 +31,19 @@ const startListening = (db, context) => {
             if (domain.startsWith('www.')) {
                 domain = domain.substring(4)
             }
+            const hostsChecks = hostListFromString(domain)
             const hostrules = getHostRules(true)
 
-            console.log('SNICallback',domain,hostrules[domain])
-            if (hostrules[domain] && hostrules[domain].certContext) {
-                console.log(`smtp server certContext for ${domain}`)
-                cb(null, hostrules[domain].certContext)
-            } else {
-                cb()
+            for (let i = 0; i < hostsChecks.length; i++) {
+                const currentHost = hostsChecks[i]
+                const hostrule = hostrules[currentHost]
+                if (hostrule && hostrule.certContext) {
+                    console.log(`smtp server certContext for ${currentHost}`)
+                    cb(null, hostrule.certContext)
+                    return
+                }
             }
+            cb()
         },
         /*needsUpgrade:true,*/
         /*key: fs.readFileSync("private.key"),
