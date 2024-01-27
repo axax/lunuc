@@ -86,14 +86,18 @@ const startListening = (db, context) => {
 
             return callback(); // Accept the address
         },
-        onRcptTo: async (address, session, callback) => {
-            console.log('onRcptTo',address, session)
-
-            const addressParts = address.address.split('@'),
+        getMailAccountByEmail: async (address)=> {
+            const addressParts = address.split('@'),
                 username = addressParts[0],
                 host = addressParts[1]
 
-            const mailAccount = await db.collection('MailAccount').findOne({username, host, active:true})
+            const mailAccount = await db.collection('MailAccount').findOne({username, host, active: true})
+            return mailAccount;
+        },
+        onRcptTo: async (address, session, callback) => {
+            console.log('onRcptTo',address, session)
+
+            const mailAccount = await this.getMailAccountByEmail(address.address)
 
             if (!mailAccount) {
                 return callback(new Error(`Mail account ${address.address} doesen't exist`))
@@ -121,14 +125,18 @@ const startListening = (db, context) => {
                 callback(null, "Message queued as abcdef");
             });
 
-            simpleParser(stream, {}, (err, parsed) => {
+            simpleParser(stream, {}, async (err, parsed) => {
                 console.log(err, parsed)
                 if (err){
                     console.log("Error:" , err)
                 } else {
                     const {from, to, cc, date, subject, html, text, messageId, ...meta} = parsed
-
-                    mailserverResolver(db).Mutation.createMailAccountMessage({from, to, cc, date, subject,
+                    const mailAccount = await this.getMailAccountByEmail(to)
+                    let mailAccountId
+                    if(mailAccount){
+                        mailAccountId = mailAccount._id
+                    }
+                    mailserverResolver(db).Mutation.createMailAccountMessage({mailAccount: mailAccountId,from, to, cc, date, subject,
                         html, text, messageId,meta}, {context}, false)
                 }
             })

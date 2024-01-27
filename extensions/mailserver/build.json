@@ -38,7 +38,7 @@
       "name": "MailAccountMessage",
       "fields": [
         {
-          "name": "account",
+          "name": "mailAccount",
           "type": "MailAccount",
           "multi": false,
           "index": 1
