@@ -17,6 +17,16 @@ domain.xx	IN	TXT	"v=spf1 ip4:144.91.119.30 -all"
 
  */
 
+const getMailAccountByEmail = async (db, address)=> {
+    const addressParts = address.split('@'),
+        username = addressParts[0],
+        host = addressParts[1]
+
+    const mailAccount = await db.collection('MailAccount').findOne({username, host, active: true})
+    return mailAccount
+}
+
+
 let server
 const startListening = (db, context) => {
     console.log(`Start SMTP Server`)
@@ -86,18 +96,10 @@ const startListening = (db, context) => {
 
             return callback(); // Accept the address
         },
-        getMailAccountByEmail: async (address)=> {
-            const addressParts = address.split('@'),
-                username = addressParts[0],
-                host = addressParts[1]
-
-            const mailAccount = await db.collection('MailAccount').findOne({username, host, active: true})
-            return mailAccount;
-        },
         onRcptTo: async (address, session, callback) => {
             console.log('onRcptTo',address, session)
 
-            const mailAccount = await this.getMailAccountByEmail(address.address)
+            const mailAccount = await getMailAccountByEmail(db, address.address)
 
             if (!mailAccount) {
                 return callback(new Error(`Mail account ${address.address} doesen't exist`))
@@ -131,7 +133,7 @@ const startListening = (db, context) => {
                     console.log("Error:" , err)
                 } else {
                     const {from, to, cc, date, subject, html, text, messageId, ...meta} = parsed
-                    const mailAccount = await this.getMailAccountByEmail(to)
+                    const mailAccount = await getMailAccountByEmail(db, to)
                     let mailAccountId
                     if(mailAccount){
                         mailAccountId = mailAccount._id
