@@ -29,7 +29,7 @@ const startListening = (db, context) => {
         hidePIPELINING: true,
         useXForward: true,
         size: 10 * 1024 * 1024,
-        authOptional: false,
+        authOptional: true,
         /*needsUpgrade:true,*/
         SNICallback: (domain, cb) => {
             if (domain.startsWith('www.')) {
