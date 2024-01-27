@@ -3,7 +3,7 @@ import Util from '../../api/util/index.mjs'
 import {SMTPServer} from 'smtp-server'
 import {getHostRules, hostListFromString} from '../../util/hostrules.mjs'
 import {simpleParser} from 'mailparser'
-import mailserverResolver from '/gensrc/resolver.mjs'
+import mailserverResolver from './gensrc/resolver.mjs'
 
 /*
 // open port 25 on your server
