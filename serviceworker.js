@@ -90,7 +90,7 @@ self.addEventListener('fetch', event => {
         return
     }
 
-    if (event.request.url.indexOf('/uploads/') >= 0 || event.request.url.indexOf('/lunucapi/') >= 0) {
+    if (event.request.url==='/graphql' || event.request.url.indexOf('/uploads/') >= 0 || event.request.url.indexOf('/lunucapi/') >= 0) {
         return
     }
 

@@ -1,8 +1,23 @@
 {
   "types": [
     {
-      "name": "MailAccounts",
+      "name": "MailAccount",
       "fields": [
+        {
+          "name": "host",
+          "required": true,
+          "index": 1,
+          "compoundIndex": [
+            {
+              "unique": true,
+              "fields": {
+                "username": 1,
+                "host": 1,
+                "active": 1
+              }
+            }
+          ]
+        },
         {
           "name": "username",
           "required": true,
@@ -14,12 +29,58 @@
           "required": true
         },
         {
-          "name": "host",
-          "required": true
-        },
-        {
           "name": "active",
           "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "MailAccountMessage",
+      "fields": [
+        {
+          "name": "account",
+          "type": "MailAccount",
+          "multi": false,
+          "index": 1
+        },
+        {
+          "name": "messageId",
+          "label": "messageId",
+          "unique": true
+        },
+        {
+          "name": "from",
+          "label": "From"
+        },
+        {
+          "name": "to",
+          "label": "To"
+        },
+        {
+          "name": "cc",
+          "label": "CC"
+        },
+        {
+          "name": "subject",
+          "label": "Subject"
+        },
+        {
+          "name": "text",
+          "label": "Text",
+          "uitype": "editor",
+          "alwaysLoad": false
+        },
+        {
+          "name": "html",
+          "label": "Html",
+          "uitype": "html",
+          "alwaysLoad": false
+        },
+        {
+          "name": "meta",
+          "type": "Object",
+          "hidden": true,
+          "alwaysLoad": false
         }
       ]
     }

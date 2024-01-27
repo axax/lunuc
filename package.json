@@ -80,6 +80,7 @@
     "graphql-tools": "^9.0.0",
     "http2-proxy": "^5.0.53",
     "jsonwebtoken": "^9.0.2",
+    "mailparser": "^3.6.6",
     "mongodb": "^6.3.0",
     "natural": "^6.10.4",
     "node-cron": "^3.0.3",

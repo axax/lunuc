@@ -2,6 +2,8 @@ import Hook from '../../util/hook.cjs'
 import Util from '../../api/util/index.mjs'
 import {SMTPServer} from 'smtp-server'
 import {getHostRules, hostListFromString} from '../../util/hostrules.mjs'
+import {simpleParser} from 'mailparser'
+import mailserverResolver from '/gensrc/resolver.mjs'
 
 /*
 // open port 25 on your server
@@ -27,7 +29,8 @@ const startListening = (db, context) => {
         hidePIPELINING: true,
         useXForward: true,
         size: 10 * 1024 * 1024,
-        authOptional: true,
+        authOptional: false,
+        /*needsUpgrade:true,*/
         SNICallback: (domain, cb) => {
             if (domain.startsWith('www.')) {
                 domain = domain.substring(4)
@@ -46,17 +49,9 @@ const startListening = (db, context) => {
             }
             cb()
         },
-        /*needsUpgrade:true,*/
-        /*key: fs.readFileSync("private.key"),
-        cert: fs.readFileSync("server.crt"),*/
-        /*authMethods: ["XOAUTH2"], */// XOAUTH2 is not enabled by default
-        /*SNICallback(servername, cb) {
-            console.log('xxxxxxxxxxxxx',servername)
-            cb(null, this.secureContext.get(servername));
-        },*/
         onAuth(auth, session, callback) {
 
-            console.log('onAuth',session)
+            console.log('onAuth',auth,session)
          /*   if (auth.method !== "XOAUTH2") {
                 // should never occur in this case as only XOAUTH2 is allowed
                 return callback(new Error("Expecting XOAUTH2"));
@@ -86,18 +81,27 @@ const startListening = (db, context) => {
             }
             return callback(); // Accept the connection
         },
-        onMailFrom(address, session, callback) {
+        onMailFrom: async (address, session, callback) => {
             console.log('onMailFrom',address, session)
-            if (address.address !== "allowed@example.com") {
-                //return callback(new Error("Only allowed@example.com is allowed to send mail"));
-            }
+
             return callback(); // Accept the address
         },
-        onRcptTo(address, session, callback) {
+        onRcptTo: async (address, session, callback) => {
             console.log('onRcptTo',address, session)
-            // do not accept messages larger than 100 bytes to specific recipients
+
+            const addressParts = address.address.split('@'),
+                username = addressParts[0],
+                host = addressParts[1]
+
+            const mailAccount = await db.collection('MailAccount').findOne({username, host, active:true})
+
+            if (!mailAccount) {
+                return callback(new Error(`Mail account ${address.address} doesen't exist`))
+            }
+
+            // do not accept messages larger than 1000 bytes to specific recipients
             let expectedSize = Number(session.envelope.mailFrom.args.SIZE) || 0;
-            if (address.address === "almost-full@example.com" && expectedSize > 100) {
+            if (expectedSize > 1000) {
                 err = new Error("Insufficient channel storage: " + address.address);
                 err.responseCode = 452;
                 return callback(err);
@@ -105,8 +109,8 @@ const startListening = (db, context) => {
             callback();
         },
         onData(stream, session, callback) {
-            console.log('onData',session)
-            stream.pipe(process.stdout); // print message to console
+            //console.log('onData',session)
+            //stream.pipe(process.stdout); // print message to console
             stream.on("end", () => {
                 let err;
                 if (stream.sizeExceeded) {
@@ -116,6 +120,19 @@ const startListening = (db, context) => {
                 }
                 callback(null, "Message queued as abcdef");
             });
+
+            simpleParser(stream, {}, (err, parsed) => {
+                console.log(err, parsed)
+                if (err){
+                    console.log("Error:" , err)
+                } else {
+                    const {from, to, cc, date, subject, html, text, messageId, ...meta} = parsed
+
+                    mailserverResolver(db).Mutation.createMailAccountMessage({from, to, cc, date, subject,
+                        html, text, messageId,meta}, {context}, false)
+                }
+            })
+
         },
     })
     server.on("error", (err) => {
