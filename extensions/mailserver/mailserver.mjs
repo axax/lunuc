@@ -112,7 +112,7 @@ const startListening = (db, context) => {
             }
             callback();
         },
-        onData(stream, session, callback) {
+        onData: (stream, session, callback) => {
             //console.log('onData',session)
             //stream.pipe(process.stdout); // print message to console
             stream.on("end", () => {
