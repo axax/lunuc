@@ -36,6 +36,9 @@
     },
     {
       "name": "MailAccountMessage",
+      "access": {
+        "create": "anonymous"
+      },
       "fields": [
         {
           "name": "mailAccount",

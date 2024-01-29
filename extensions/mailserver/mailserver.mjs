@@ -50,7 +50,7 @@ const getMailAcountFromMailData = async (db, data) => {
 
 let server
 const startListening = async (db, context) => {
-    console.log(`Start SMTP Server`)
+    console.log(`Start SMTP Server`, context)
 
     server = new SMTPServer({
         logger: true,

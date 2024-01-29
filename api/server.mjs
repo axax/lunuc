@@ -83,7 +83,7 @@ export const start = (done) => {
             auth.initialize(app, db)
 
             // order is important
-            Hook.call('appready', {db, app})
+            Hook.call('appready', {db, app, context: {lang:_app_.lang}})
 
             // upload db dump
             app.use('/graphql/upload/dbdump', handleDbDumpUpload(db, client))
