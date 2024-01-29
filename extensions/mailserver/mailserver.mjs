@@ -21,15 +21,37 @@ const getMailAccountByEmail = async (db, address)=> {
     const addressParts = address.split('@'),
         username = addressParts[0],
         host = addressParts[1]
-
     const mailAccount = await db.collection('MailAccount').findOne({username, host, active: true})
     return mailAccount
 }
 
+/*
+ const testData = {to: {
+            value: [ {address:'info@simra.ch'} ]
+        }}
+    console.log(await getMailAcountFromMailData(db, testData))
+ */
+const getMailAcountFromMailData = async (db, data) => {
+    let mailAccount
+    if (data?.to?.value && data.to.value.length > 0) {
+        for (const mailValue of data.to.value) {
+            if (mailValue && mailValue.address) {
+                mailAccount = await getMailAccountByEmail(db, mailValue.address)
+                if(mailAccount){
+                    break
+                }
+            }
+        }
+    }
+    return mailAccount
+}
+
+
 
 let server
-const startListening = (db, context) => {
+const startListening = async (db, context) => {
     console.log(`Start SMTP Server`)
+
     server = new SMTPServer({
         logger: true,
         secure: false,
@@ -128,18 +150,24 @@ const startListening = (db, context) => {
             });
 
             simpleParser(stream, {}, async (err, parsed) => {
-                console.log(err, parsed)
                 if (err){
                     console.log("Error:" , err)
                 } else {
-                    const {from, to, cc, date, subject, html, text, messageId, ...meta} = parsed
-                    const mailAccount = await getMailAccountByEmail(db, to)
-                    let mailAccountId
-                    if(mailAccount){
-                        mailAccountId = mailAccount._id
+                    let mailAccount = await getMailAcountFromMailData(db, parsed)
+                    if(mailAccount) {
+                        const {date, subject, html, text, messageId, ...meta} = parsed
+
+                        mailserverResolver(db).Mutation.createMailAccountMessage({
+                            mailAccount: mailAccount._id,
+                            from: meta.to.text,
+                            to: meta.to.text,
+                            date: new Date(date).getTime(),
+                            subject,
+                            html, text, messageId, meta
+                        }, {context}, false)
+                    }else{
+                        console.warn(`no mail account for ${parsed.to.text}`, parsed)
                     }
-                    mailserverResolver(db).Mutation.createMailAccountMessage({mailAccount: mailAccountId,from, to, cc, date, subject,
-                        html, text, messageId,meta}, {context}, false)
                 }
             })
 

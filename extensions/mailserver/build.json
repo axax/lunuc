@@ -57,8 +57,11 @@
           "label": "To"
         },
         {
-          "name": "cc",
-          "label": "CC"
+          "name": "date",
+          "label": "Date",
+          "type": "Float",
+          "uitype": "datetime",
+          "index": 1
         },
         {
           "name": "subject",
