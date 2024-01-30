@@ -28,8 +28,7 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
         host = host.substring(4)
     }
 
-    let slugMatch = {}
-    let modSlug
+    let slugMatch = {slug}
 
     if (checkHostrules) {
 
@@ -42,7 +41,7 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
             if (hostrule){
                 if(hostrule.slugContext && (slug + '/').indexOf(hostrule.slugContext + '/') !== 0)
                 {
-                    modSlug = hostrule.slugContext + (slug.length > 0 ? '/' : '') + slug
+                    const modSlug = hostrule.slugContext + (slug.length > 0 ? '/' : '') + slug
                     if (hostrule.slugFallback) {
                         slugMatch = {$or: [{slug: modSlug}, {slug}]}
                     } else {
@@ -54,12 +53,6 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
                 }
             }
         }
-    }
-
-
-    if (!modSlug) {
-        modSlug = slug
-        slugMatch = {slug}
     }
 
     const cacheKey = 'cmsPage-' + (_version ? _version + '-' : '') + slug + (host ? '-' + host : '') + (inEditor ? '-inEditor': '')
@@ -171,8 +164,6 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
         }else{
             console.warn(`CmsPage not found ${slug}. host=${host} match=${JSON.stringify(match)}`)
         }
-    }else{
-        //console.log(`load cmsPage from cache ${slug}`)
     }
     return cmsPages
 }

@@ -16,7 +16,7 @@ export const createAllIndexes = async (db) => {
     db.collection('User').createIndex({email: 1, domain: 1}, {unique: true})
     db.collection('User').createIndex({username: 1}, {unique: true})
 
-    //db.collection('StaticFile').dropIndex( 'name_1')
+    db.collection('StaticFile').dropIndex( 'name_1')
 
 
     //await db.collection('NewsletterSubscriber').dropIndex( 'email_1_location_1')

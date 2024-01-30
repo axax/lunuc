@@ -205,13 +205,13 @@ class GenericForm extends React.Component {
             validationState = {isValid: false, fieldErrors}
         } else if (onValidate) {
             validationState = onValidate(state.fields)
-            if (!validationState.fieldErrors) {
+            if (validationState && !validationState.fieldErrors) {
                 validationState.fieldErrors = {}
             }
         } else {
             validationState = {isValid: true, fieldErrors}
         }
-        if (!validationState.isValid && tabs.length > 0 && options.changeTab) {
+        if (validationState && !validationState.isValid && tabs.length > 0 && options.changeTab) {
             // check tabs
             let foundTab = false, relevantTabs = []
             for (const key in validationState.fieldErrors) {
@@ -234,7 +234,7 @@ class GenericForm extends React.Component {
             }
         }
 
-        return validationState
+        return validationState || {isValid: false, fieldErrors}
     }
 
     reset() {
@@ -435,7 +435,7 @@ class GenericForm extends React.Component {
         if (fields[name]) {
             value = checkFieldType(originalValue, fields[name])
         }
-
+console.log(name,value)
         const newState = this.newStateForField(this.state, {
             name,
             value,
@@ -620,16 +620,18 @@ class GenericForm extends React.Component {
 
 
             if (field.subFields) {
+                let subFields = field.subFields
+
+                if (subFields.constructor === Array) {
+                    subFields = subFields.reduce((acc, cur, i) => {
+                        acc[cur.name] = cur
+                        return acc
+                    }, {})
+                }
+
                 if (field.multi) {
 
-                    let subFields = field.subFields
 
-                    if (subFields.constructor === Array) {
-                        subFields = subFields.reduce((acc, cur, i) => {
-                            acc[cur.name] = cur
-                            return acc
-                        }, {})
-                    }
                     let subFieldValues = []
                     if (value && value.constructor === Array) {
 
@@ -785,7 +787,7 @@ class GenericForm extends React.Component {
                         })
 
                     }} primaryButton={false} values={values} updateOnValueChange={true} key={fieldKey} subForm={true}
-                                                        fields={field.subFields}/>)
+                                                        fields={subFields}/>)
 
                 }
 

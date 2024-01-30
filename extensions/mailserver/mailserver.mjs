@@ -163,7 +163,7 @@ const startListening = async (db, context) => {
                             to: meta.to.text,
                             date: new Date(date).getTime(),
                             subject,
-                            html, text, messageId, meta
+                            html: html || '', text: text || '', messageId, meta
                         }, {context}, false)
                     }else{
                         console.warn(`no mail account for ${parsed.to.text}`, parsed)

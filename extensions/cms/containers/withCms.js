@@ -1,6 +1,6 @@
 import React from 'react'
 import {
-    getGqlVariables, CMS_PAGE_QUERY, isEditMode, urlSensitivMap,
+    getGqlVariables, getCmsPageQuery, isEditMode, urlSensitivMap,
 } from '../util/cmsView.mjs'
 import Async from 'client/components/Async'
 import compose from '../../../util/compose'
@@ -26,15 +26,8 @@ const ErrorPage = (props) => <Async {...props}
 const CmsViewEditorContainer = (props) => <Async {...props}
                                                  load={import(/* webpackChunkName: "admin" */ './CmsViewEditorContainer')}/>
 
-/*const AdminComponents = (props) => <Async {...props} expose="AdminComponents"
-                                          load={import( webpackChunkName: "admin" '../client-admin')}/>*/
-
-
-
 // enhance cmsview with editor functionalities if in edit mode
 export default function (WrappedComponent) {
-
-
 
     class Wrapper extends React.Component {
         constructor(props) {
@@ -216,7 +209,7 @@ export default function (WrappedComponent) {
         updateResolvedData({json, path, value}) {
             const {cmsPageVariables, cmsPage} = this.props
             const storeData = client.readQuery({
-                query: CMS_PAGE_QUERY,
+                query: getCmsPageQuery(this.props),
                 variables: cmsPageVariables
             })
 
@@ -233,7 +226,7 @@ export default function (WrappedComponent) {
                 }
 
                 client.writeQuery({
-                    query: CMS_PAGE_QUERY,
+                    query: getCmsPageQuery(this.props),
                     variables: cmsPageVariables,
                     data: {...storeData, cmsPage: newData}
                 })
@@ -243,7 +236,7 @@ export default function (WrappedComponent) {
     }
 
     const withGql = compose(
-        graphql(CMS_PAGE_QUERY, {
+        graphql(getCmsPageQuery, {
             skip: (props, prevData) => {
                 if (prevData &&
                     prevData.cmsPage &&

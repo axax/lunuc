@@ -3,6 +3,7 @@
     {
       "name": "StaticFile",
       "entryClonable": true,
+      "onlyRequestedFields": true,
       "fields": [
         {
           "name": "name",

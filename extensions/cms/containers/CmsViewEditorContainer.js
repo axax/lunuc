@@ -4,7 +4,7 @@ import {
     getSlugVersion,
     getGqlVariables,
     settingKeyPrefix,
-    CMS_PAGE_QUERY
+    getCmsPageQuery
 } from '../util/cmsView.mjs'
 import PropTypes from 'prop-types'
 import compose from 'util/compose'
@@ -15,14 +15,12 @@ import TemplateEditor from '../components/TemplateEditor'
 import ScriptEditor from '../components/ScriptEditor'
 import ResourceEditor from '../components/ResourceEditor'
 import {
-    TextField,
     Typography,
     DrawerLayout,
     MenuList,
     MenuListItem,
     Button,
     IconButton,
-    SimpleSelect,
     SimpleSwitch,
     SimpleDialog,
     SimpleMenu,
@@ -63,6 +61,7 @@ import CmsAddNewSite from '../components/CmsAddNewSite'
 import CmsElement from '../components/CmsElement'
 import JsonDomHelper from '../components/JsonDomHelper'
 import CmsRelatedPages from '../components/CmsRelatedPages'
+import CmsPageOptions from '../components/CmsPageOptions'
 
 const CodeEditor = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
@@ -620,95 +619,10 @@ class CmsViewEditorContainer extends React.Component {
                                 onChange={this.handleSettingChange.bind(this, 'settingsExpanded', true)}
                                 expanded={EditorPageOptions.settingsExpanded}>
 
-                        <TextField key="pageTitle"
-                                   name="pageTitle"
-                                   label={_t('CmsViewEditorContainer.pageTitle')}
-                                   InputLabelProps={{
-                                       shrink: true,
-                                   }}
-                                   onBlur={(e) => {
-                                       let value = {...cmsPage.name, [_app_.lang]: e.target.value}
-                                       this.handleFlagChange('name', null, value)
-                                   }}
-                                   value={this.state.name ? this.state.name[_app_.lang] : ''}
-                                   fullWidth={true}/>
-
-                        <TextField key="pageKeywords"
-                                   name="pageKeywords"
-                                   label={_t('CmsViewEditorContainer.pageKeywords')}
-                                   InputLabelProps={{
-                                       shrink: true,
-                                   }}
-                                   onBlur={(e) => {
-                                       let value = {...cmsPage.keyword, [_app_.lang]: e.target.value}
-                                       this.handleFlagChange('keyword', null, value)
-                                   }}
-                                   value={this.state.keyword ? this.state.keyword[_app_.lang] : ''}
-                                   fullWidth={true}/>
-
-                        {canMangeCmsTemplate ? <React.Fragment>
-                            <SimpleSelect
-                                fullWidth={true}
-                                label="Url sensitive (refresh component on url or props change)"
-                                value={this.state.urlSensitiv == 'true' ? 'full' : this.state.urlSensitiv}
-                                style={{marginBottom: 0, marginTop: 0}}
-                                onChange={(e) => {
-                                    this.handleFlagChange('urlSensitiv', null, e.target.value)
-                                }}
-                                items={[{name: 'None', value: ''}, {
-                                    name: 'Full',
-                                    value: 'full'
-                                }, {name: 'Client (nothing is sent to the server)', value: 'client'}]}
-                            /><br/>
-                            <SimpleSwitch
-                                label="SSR (Server side Rendering)"
-                                checked={!!this.state.ssr}
-                                onChange={this.handleFlagChange.bind(this, 'ssr')}
-                            /><br/>
-                            <SimpleSwitch
-                                label={_t('CmsViewEditorContainer.public')}
-                                checked={!!this.state.public}
-                                onChange={this.handleFlagChange.bind(this, 'public')}
-                            /><br/>
-                            <SimpleSwitch
-                                label="Always load assets (even when component is loaded dynamically)"
-                                checked={!!this.state.alwaysLoadAssets}
-                                onChange={this.handleFlagChange.bind(this, 'alwaysLoadAssets')}
-                            /><br/>
-                            <SimpleSwitch
-                                label="Load page options"
-                                checked={!!this.state.loadPageOptions}
-                                onChange={this.handleFlagChange.bind(this, 'loadPageOptions')}
-                            /><br/>
-                            <SimpleSwitch
-                                label="Compress response"
-                                checked={!!this.state.compress}
-                                onChange={this.handleFlagChange.bind(this, 'compress')}
-                            /><br/>
-                            <SimpleSwitch
-                                label="Server side style rendering"
-                                checked={!!this.state.ssrStyle}
-                                onChange={this.handleFlagChange.bind(this, 'ssrStyle')}
-                            /><br/>
-                            <SimpleSwitch
-                                label="Page is publicly editable"
-                                checked={!!this.state.publicEdit}
-                                onChange={this.handleFlagChange.bind(this, 'publicEdit')}
-                            /><br/>
-                            <SimpleSwitch
-                                label="Parse resolvedData in frontend (replace placeholders)"
-                                checked={!!this.state.parseResolvedData}
-                                onChange={this.handleFlagChange.bind(this, 'parseResolvedData')}
-                            /></React.Fragment>:
-                            <React.Fragment>
-
-                                <SimpleSwitch
-                                    label={_t('CmsViewEditorContainer.public')}
-                                    checked={!!this.state.public}
-                                    onChange={this.handleFlagChange.bind(this, 'public')}
-                                /><br/>
-
-                            </React.Fragment>}
+                        <CmsPageOptions cmsPage={cmsPage}
+                                        values={this.state}
+                                        onChange={this.handleFlagChange}
+                                        canMangeCmsTemplate={canMangeCmsTemplate} />
                     </Expandable>}
 
                     {canMangeCmsContent && !loadingState && <Expandable title={_t('CmsViewEditorContainer.revisions')}
@@ -722,6 +636,7 @@ class CmsViewEditorContainer extends React.Component {
                                      canMangeCmsTemplate={canMangeCmsTemplate}
                                      slug={slug}
                                      user={props.user}
+                                     onDataResolverChange={this.handleDataResolverChange.bind(this)}
                                      onTemplateChange={this.handleTemplateChange.bind(this)}/>
 
                     </Expandable>}
@@ -1430,7 +1345,7 @@ class CmsViewEditorContainer extends React.Component {
 
             // update cache
             const data = client.readQuery({
-                query: CMS_PAGE_QUERY,
+                query: getCmsPageQuery(this.props),
                 variables: getGqlVariables(this.props)
             })
             if (data && data.cmsPage) {
@@ -1440,7 +1355,7 @@ class CmsViewEditorContainer extends React.Component {
 
                 data.cmsPage.meta = JSON.stringify(metaJson)
                 client.writeQuery({
-                    query: CMS_PAGE_QUERY,
+                    query: getCmsPageQuery(this.props),
                     variables: getGqlVariables(this.props),
                     data
                 })
@@ -1521,7 +1436,7 @@ const CmsViewEditorContainerWithGql = compose(
                     update: (store, respons) => {
 
                         const data = client.readQuery({
-                            query: CMS_PAGE_QUERY,
+                            query: getCmsPageQuery(ownProps),
                             variables
                         })
                         if (data && data.cmsPage && respons.data && respons.data.updateCmsPage) {
@@ -1544,7 +1459,7 @@ const CmsViewEditorContainerWithGql = compose(
                                 newData.resolvedData = updateCmsPage.resolvedData
                                 newData.subscriptions = updateCmsPage.subscriptions
                             }
-                            client.writeQuery({query: CMS_PAGE_QUERY, variables, data: {...data, cmsPage: newData}})
+                            client.writeQuery({query: getCmsPageQuery(ownProps), variables, data: {...data, cmsPage: newData}})
                         }
                         if (cb) {
                             cb()

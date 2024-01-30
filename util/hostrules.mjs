@@ -26,20 +26,8 @@ const certDirs = (domainname) => {
     return []
 }
 
-export const hostListFromString = (host) =>{
 
-    const hostList = [host]
-    const hostArr = host.split('.')
-
-    while (hostArr.length > 2) {
-        hostArr.shift()
-        hostList.push(hostArr.join('.'))
-    }
-
-    return hostList
-}
-
-export const extendHostruelWithCert = (hostrule, domainname) => {
+const extendHostrulesWithCert = (hostrule, domainname) => {
 
     let certDir
     const hostsChecks = hostListFromString(hostrule.certDomain || domainname)
@@ -103,7 +91,7 @@ const loadHostRules = (dir, withCertContext, hostrules, isDefault) => {
                 }
 
                 if (withCertContext) {
-                    extendHostruelWithCert(hostrules[domainname], domainname)
+                    extendHostrulesWithCert(hostrules[domainname], domainname)
                 }
             }
         })
@@ -111,7 +99,7 @@ const loadHostRules = (dir, withCertContext, hostrules, isDefault) => {
     }
 }
 
-export const loadAllHostrules = (withCertContext, hostrules = {}, refresh = false) => {
+const loadAllHostrules = (withCertContext, hostrules = {}, refresh = false) => {
     console.log(`load all host rules from ${HOSTRULES_ABSPATH}`)
     loadHostRules(HOSTRULES_ABSPATH, withCertContext, hostrules)
     if(!refresh) {
@@ -141,4 +129,18 @@ export const getHostRules =(withCertContext)=>{
     _loadedHostRulesTime = new Date().getTime()
 
     return _loadedHostRules
+}
+
+
+export const hostListFromString = (host) =>{
+
+    const hostList = [host]
+    const hostArr = host.split('.')
+
+    while (hostArr.length > 2) {
+        hostArr.shift()
+        hostList.push(hostArr.join('.'))
+    }
+
+    return hostList
 }

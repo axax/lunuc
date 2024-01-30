@@ -230,7 +230,7 @@ function CmsRevisionDialog(props){
 }
 
 export default function CmsRevision(props){
-    const {historyLimit, cmsPage, canMangeCmsTemplate, onTemplateChange, ...rest} = props
+    const {historyLimit, cmsPage, canMangeCmsTemplate, onTemplateChange, onDataResolverChange, ...rest} = props
 
     if(!cmsPage){
         return null
@@ -323,8 +323,11 @@ export default function CmsRevision(props){
                                            }}
                                            onClose={(action, cmsPageHistory)=>{
                                                 if(action.key==='restore'){
+
                                                     if(cmsPageHistory.template) {
                                                         onTemplateChange(cmsPageHistory.template,true)
+                                                    } else if( cmsPageHistory.dataResolver){
+                                                        onDataResolverChange(cmsPageHistory.dataResolver,true)
                                                     }
                                                 }
                                                 setShowRevision(null)

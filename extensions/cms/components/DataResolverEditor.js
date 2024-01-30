@@ -1,21 +1,132 @@
 import React from 'react'
-import {BuildIcon} from 'ui/admin'
+import {AutoFixHighIcon, SimpleDialog} from 'ui/admin'
 import {jsonPropertyTemplates, jsonTemplates} from './templates/dataResolver'
 import Async from '../../../client/components/Async'
+import {_t} from '../../../util/i18n.mjs'
+import GenericForm from '../../../client/components/GenericForm'
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
 
 class DataResolverEditor extends React.Component {
 
+    onWizardClose(action) {
+        if(action.key==='save') {
+            let json
+            try {
+                json = JSON.parse(this.props.children)
+            }catch (e){
+                json = []
+            }
+            if(this.wizardForm.state.fields.resolverType==='track') {
+                json.push(
+                    {
+                        track: {
+                            event: 'visit'
+                        }
+                    })
+            }else if(this.wizardForm.state.fields.resolverType==='genericType'){
+                const genericType = this.wizardForm.state.fields.genericType
+                const structure = JSON.parse(genericType.name[0].structure)
+                json.push(
+                    {
+                        key: genericType.name[0].name,
+                        genericType: genericType.name[0].name,
+                        cache: {
+                            key: genericType.name[0].name,
+                            policy: "${this.editmode?'cache-only':''}",
+                            expires: 86400000
+                        },
+                        t: 'GenericData',
+                        d: [
+                            {
+                                data:structure.fields.map(f=>f.name)
+                            },
+                            '_id',
+                            {
+                                definition: [
+                                    'name'
+                                ]
+                            }
+                        ],
+                        l: genericType.limit || 10,
+                        s: '_id desc'
+                    })
+            }
+
+            this.props.onChange(JSON.stringify(json,null,2))
+        }
+    }
+
     render() {
-        return <CodeEditor showFab
-                           templates={jsonTemplates}
-                           propertyTemplates={jsonPropertyTemplates}
-                           actions={[{
-                               name: 'Create example',
-                               icon: <BuildIcon/>,
-                               onClick: this.createExample.bind(this)
-                           }]} lineNumbers controlled type="json" {...this.props}/>
+        const [showWizard, setShowWizard] = React.useState(false)
+        return <>
+            <SimpleDialog fullWidth={true} maxWidth="sm" open={showWizard}
+                onClose={(action)=>{
+                    this.onWizardClose(action)
+                    setShowWizard(false)
+                }}
+                actions={[{key: 'cancel', label: _t('core.cancel')}, {
+                  key: 'save',
+                  label: _t('core.save'),
+                  variant: 'contained'
+                }]}
+                title={_t('DataResolverEditor.newDataResolverType')}>
+
+                <GenericForm primaryButton={false} onRef={(e) => { this.wizardForm =e}} fields={
+                    {
+                        resolverType:{
+                            name: 'resolverType',
+                            label: 'Resolver Type',
+                            enum: [{value:'genericType', name:'Generic Type'},{value:'track', name:'Tracking'}],
+                            fullWidth: true,
+                            value:'genericType'
+                        },
+                        genericType:{
+                            uistate: {
+                                visible: 'resolverType==genericType'
+                            },
+                            uitype:'wrapper',
+                            label:'Add type',
+                            name:'genericType',
+                            multi:false,
+                            titleTemplate: 'Generic Type ${this.context ? this.context.type || "": ""}',
+                            subFields:[
+                                {
+                                    name: 'name',
+                                    label: 'Name',
+                                    uitype: 'type_picker',
+                                    type: 'GenericDataDefinition',
+                                    fullWidth: true
+                                },
+                                {
+                                    name: 'limit',
+                                    label: 'Limit',
+                                    type: 'Float',
+                                    defaultValue:10,
+                                    uitype:'number',
+                                    fullWidth: true
+                                }
+                            ]
+                        }
+                    }
+                } onClick={()=>{}}/>
+            </SimpleDialog>
+            <CodeEditor showFab
+                       templates={jsonTemplates}
+                       propertyTemplates={jsonPropertyTemplates}
+                       actions={[
+                           {
+                               divider:true
+                           },
+                           {
+                               name: _t('DataResolverEditor.wizard'),
+                               icon: <AutoFixHighIcon/>,
+                               onClick: ()=>{
+                                   setShowWizard(true)
+                               }
+                           }
+                       ]} lineNumbers controlled type="json" {...this.props}/>
+        </>
     }
 
     createExample() {
@@ -34,6 +145,7 @@ class DataResolverEditor extends React.Component {
             }
         ], null, 2), true)
     }
+
 }
 
 

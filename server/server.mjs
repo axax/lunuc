@@ -6,13 +6,12 @@ import path from 'path'
 import net from 'net'
 import fs from 'fs'
 import zlib from 'zlib'
-import config from '../gensrc/config.mjs'
 import MimeType from '../util/mime.mjs'
 import {getHostFromHeaders} from '../util/host.mjs'
 import finalhandler from 'finalhandler'
 import {replacePlaceholders} from '../util/placeholders.mjs'
-import {ensureDirectoryExistence} from '../util/fileUtil.mjs'
-import {loadAllHostrules} from '../util/hostrules.mjs'
+import {ensureDirectoryExistence, isFileNotNewer} from '../util/fileUtil.mjs'
+import {getHostRules} from '../util/hostrules.mjs'
 import {PassThrough} from 'stream'
 import {contextByRequest} from '../api/util/sessionContext.mjs'
 import {parseUserAgent} from '../util/userAgent.mjs'
@@ -29,17 +28,13 @@ import Cache from '../util/cache.mjs'
 import {doScreenCapture, extendHeaderWithRange} from './util/index.mjs'
 import {createSimpleEtag} from './util/etag.mjs'
 import {resizeImage} from './util/resizeImage.mjs'
+import {getDynamicConfig} from '../util/config.mjs'
+
+const config = getDynamicConfig()
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
 const ROOT_DIR = path.resolve(), SERVER_DIR = path.join(ROOT_DIR, './server')
 const ABS_UPLOAD_DIR = path.join(ROOT_DIR, UPLOAD_DIR)
-
-const hostrules = loadAllHostrules(true)
-
-setInterval(()=>{
-    // update changes
-    loadAllHostrules(true, hostrules, true)
-},60000)
 
 // Use Httpx
 const USE_HTTPX = process.env.LUNUC_HTTPX === 'false' ? false : true
@@ -53,6 +48,7 @@ const LUNUC_SERVER_NODES = process.env.LUNUC_SERVER_NODES || ''
 const BUILD_DIR = path.join(ROOT_DIR, './build')
 const STATIC_DIR = path.join(ROOT_DIR, './' + config.STATIC_DIR)
 const STATIC_TEMPLATE_DIR = path.join(ROOT_DIR, './' + config.STATIC_TEMPLATE_DIR)
+
 const DEFAULT_CERT_DIR = process.env.LUNUC_CERT_DIR || SERVER_DIR
 const DEFAULT_PKEY_FILE_DIR = path.join(DEFAULT_CERT_DIR, './privkey.pem')
 const DEFAULT_CERT_FILE_DIR = path.join(DEFAULT_CERT_DIR, './cert.pem')
@@ -72,6 +68,8 @@ const options = {
         if (domain.startsWith('www.')) {
             domain = domain.substring(4)
         }
+        const hostrules = getHostRules(true)
+
         if (hostrules[domain] && hostrules[domain].certContext) {
             cb(null, hostrules[domain].certContext)
         } else {
@@ -81,7 +79,9 @@ const options = {
 }
 
 if (fs.existsSync(path.join(DEFAULT_CERT_DIR, './chain.pem'))) {
+    // Certificate authority
     options.ca = fs.readFileSync(path.join(DEFAULT_CERT_DIR, './chain.pem'))
+    const hostrules = getHostRules(true)
     if(hostrules.general && !hostrules.general.certDir){
         hostrules.general.certDir = path.join(DEFAULT_CERT_DIR, './chain.pem')
     }
@@ -183,25 +183,6 @@ const sendFileFromDir = async (req, res, filePath, headers, parsedUrl) => {
     return false
 }
 
-const writeStreamFile = function (fileName) {
-    const writeStream = fs.createWriteStream(fileName)
-    return writeStream
-}
-
-function isFileNotNewer(filename, statsMainFile) {
-    let isFile = fs.existsSync(filename)
-
-    if (isFile) {
-        const statsFile = fs.statSync(filename)
-
-        // compare date
-        if (statsMainFile.mtime > statsFile.mtime) {
-            isFile = false
-            console.log(filename + ' is older')
-        }
-    }
-    return isFile
-}
 
 const sendFile = function (req, res, {headers, filename, statusCode = 200}) {
     let acceptEncoding = req.headers['accept-encoding'], neverCompress = false
@@ -237,7 +218,7 @@ const sendFile = function (req, res, {headers, filename, statusCode = 200}) {
                 const fileStreamCom = fileStream.pipe(zlib.createBrotliCompress())
 
                 fileStreamCom.pipe(res)
-                fileStreamCom.pipe(writeStreamFile(filename + '.br'))
+                fileStreamCom.pipe(fs.createWriteStream(filename + '.br'))
             }
 
         } else if (!neverCompress && acceptEncoding.match(/\bgzip\b/)) {
@@ -254,7 +235,7 @@ const sendFile = function (req, res, {headers, filename, statusCode = 200}) {
                 const fileStream = fs.createReadStream(filename)
                 const fileStreamCom = fileStream.pipe(zlib.createGzip())
                 fileStreamCom.pipe(res)
-                fileStreamCom.pipe(writeStreamFile(filename + '.gz'))
+                fileStreamCom.pipe(fs.createWriteStream(filename + '.gz'))
             }
 
         } else if (!neverCompress && acceptEncoding.match(/\bdeflate\b/)) {
@@ -449,7 +430,14 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
 
     const agent = req.headers['user-agent']
     const via = req.headers['via']
-    let {version, browser, isBot} = parseUserAgent(agent, hostrule.botregex || (hostrules.general && hostrules.general.botregex))
+    let botregex
+    if(hostrule.botregex){
+        botregex = hostrule.botregex
+    }else {
+        const hostrules = getHostRules(true)
+        botregex = (hostrules.general && hostrules.general.botregex)
+    }
+    let {version, browser, isBot} = parseUserAgent(agent, botregex)
 
     if(via && via.indexOf('archive.org_bot') >= 0){
         // https://web.archive.org/
@@ -1154,6 +1142,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
             // check with and without www
             const hostRuleHost = req.headers['x-host-rule'] ? req.headers['x-host-rule'].split(':')[0] : host
+            const hostrules = getHostRules(true)
             const hostrule = {...hostrules.general, ...(hostrules[hostRuleHost] || hostrules[hostRuleHost.substring(4)])}
             const parsedUrl = url.parse(req.url, true)
 

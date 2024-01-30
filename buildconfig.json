@@ -209,6 +209,7 @@
     }
   ],
   "options": {
+    "CONFIG_ABSPATH": "/etc/lunuc",
     "HOSTRULES_ABSPATH": "/etc/lunuc/hostrules",
     "WEBROOT_ABSPATH": "/srv/lunuc",
     "DEBUG": true,

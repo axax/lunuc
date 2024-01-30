@@ -4,7 +4,7 @@ import JsonDom from '../components/JsonDom'
 import Util from 'client/util/index.mjs'
 import DomUtil from 'client/util/dom.mjs'
 import {getType} from 'util/types.mjs'
-import {isEditMode, getSlugVersion, CMS_PAGE_QUERY} from '../util/cmsView.mjs'
+import {isEditMode, getSlugVersion, getCmsPageQuery} from '../util/cmsView.mjs'
 import withCms from './withCms'
 import {client} from '../../../client/middleware/graphql'
 import Hook from '../../../util/hook.cjs'
@@ -338,7 +338,7 @@ class CmsViewContainer extends React.Component {
 
                             if ((data || removedIds) && (!filter || filter === subscription.filter[action])) {
                                 const storedData = client.readQuery({
-                                    query: CMS_PAGE_QUERY,
+                                    query: getCmsPageQuery(_this.props),
                                     variables: _this.props.cmsPageVariables
                                 })
 
@@ -430,7 +430,7 @@ class CmsViewContainer extends React.Component {
         newStoreData.cmsPage.resolvedData = JSON.stringify(resolvedDataJson)
         // save new data
         client.writeQuery({
-            query: CMS_PAGE_QUERY,
+            query: getCmsPageQuery(this.props),
             variables: this.props.cmsPageVariables,
             data: newStoreData
         })

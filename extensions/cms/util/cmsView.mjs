@@ -10,7 +10,15 @@ export const urlSensitivMap = {}
 export const settingKeyPrefix = 'CmsViewContainerSettings'
 
 // the graphql query is also need to access and update the cache when data arrive from a subscription
-export const CMS_PAGE_QUERY = `query cmsPage($slug:String!,$query:String,$meta:String,$props:String,$nosession:String,$editmode:Boolean,$inEditor:Boolean,$dynamic:Boolean,$_version:String){cmsPage(slug:$slug,query:$query,meta:$meta,props:$props,nosession:$nosession,inEditor:$inEditor,editmode:$editmode,dynamic:$dynamic,_version:$_version){slug realSlug keyword{__typename ${config.LANGUAGES.join(' ')}} name{__typename ${config.LANGUAGES.join(' ')}} urlSensitiv template script serverScript resources dataResolver ssr public online resolvedData style parseResolvedData alwaysLoadAssets loadPageOptions ssrStyle uniqueStyle publicEdit compress html meta subscriptions editable _id modifiedAt createdBy{_id username} status}}`
+const CMS_PAGE_QUERY = `query cmsPage($slug:String!,$query:String,$meta:String,$props:String,$nosession:String,$editmode:Boolean,$inEditor:Boolean,$dynamic:Boolean,$_version:String){
+cmsPage(slug:$slug,query:$query,meta:$meta,props:$props,nosession:$nosession,inEditor:$inEditor,editmode:$editmode,dynamic:$dynamic,_version:$_version){
+slug realSlug urlSensitiv template script resources resolvedData style html meta subscriptions publicEdit ssrStyle uniqueStyle alwaysLoadAssets parseResolvedData}}`
+const CMS_PAGE_QUERY_FULL = `${CMS_PAGE_QUERY.substring(0,CMS_PAGE_QUERY.length-2)} editable keyword{__typename ${config.LANGUAGES.join(' ')}} name{__typename ${config.LANGUAGES.join(' ')}} serverScript dataResolver ssr public online loadPageOptions compress _id modifiedAt createdBy{_id username} status}}`
+
+
+export const getCmsPageQuery = (props)=>{
+    return props.dynamic?CMS_PAGE_QUERY:CMS_PAGE_QUERY_FULL
+}
 
 export const isPreview = () => {
     const params = new URLSearchParams(window.location.search)

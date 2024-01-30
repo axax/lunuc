@@ -25,9 +25,9 @@ export const SimpleDialog = ({children, onClose, actions, title, fullScreen, ful
         {...rest}>
         <DialogTitle id="responsive-dialog-title">{title}</DialogTitle>
         <DialogContent sx={{overflow: 'visible'}}>
-            <FocusTrap>{children && children.constructor === String ?
+            <FocusTrap>{!children || children.constructor === String ?
                 <DialogContentText>
-                    {children}
+                    {children || 'Content missing'}
                 </DialogContentText>
                 : children}
             </FocusTrap>
@@ -38,7 +38,7 @@ export const SimpleDialog = ({children, onClose, actions, title, fullScreen, ful
                     return (
                         <Button autoFocus={action.autoFocus} key={i} onClick={() => {
                             onClose(action)
-                        }} color={action.type}>
+                        }} color={action.type} variant={action.variant} size={action.size}>
                             {action.label}
                         </Button>
                     )

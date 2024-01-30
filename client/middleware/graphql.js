@@ -502,7 +502,8 @@ export const client = {
 }
 
 export const graphql = (query, operationOptions = {}) => {
-    query = query.trim()
+
+    let finalQuery  = query.constructor === String?query.trim():null
 
     return (WrappedComponent) => {
 
@@ -511,15 +512,14 @@ export const graphql = (query, operationOptions = {}) => {
             prevRespone = {}
 
             render() {
-                //this.renderCount++
-                //console.log(this.renderCount,query)
-                if (query.startsWith('mutation')) {
+                if(query.constructor === Function) {
+                    finalQuery = query(this.props)
+                }
 
-
+                if (finalQuery.startsWith('mutation')) {
                     const props = operationOptions.props({
                         mutate: (props) => {
-
-                            return client.mutate({mutation: query, ...props}, this)
+                            return client.mutate({mutation: finalQuery, ...props}, this)
                         },
                         ownProps: this.props
                     })
@@ -538,7 +538,7 @@ export const graphql = (query, operationOptions = {}) => {
                     variables = options.variables,
                     skip = operationOptions.skip ? (typeof operationOptions.skip === 'function' ? operationOptions.skip(finalProps, this.prevRespone.data) : operationOptions.skip) : false
 
-                return <Query skip={skip} query={query} variables={variables}
+                return <Query skip={skip} query={finalQuery} variables={variables}
                               hiddenVariables={options.hiddenVariables}
                               fetchPolicy={options.fetchPolicy}>{(res) => {
 

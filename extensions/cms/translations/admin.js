@@ -41,7 +41,9 @@ export const translations = {
         'JsonEditor.addEntry': 'Neuer Eintrag erstellen',
         'JsonEditor.addProperty': 'Attribut hinzufügen',
         'JsonEditor.remove': 'Eintrag löschen',
-        'CmsElement.customTypes': 'Eigene Elemente'
+        'CmsElement.customTypes': 'Eigene Elemente',
+        'DataResolverEditor.wizard': 'Assistent starten',
+        'DataResolverEditor.newDataResolverType': 'Neuer Daten-Resolver erstellen'
     },
     en: {
         'CmsViewEditorContainer.save': 'Speichern',
@@ -83,6 +85,8 @@ export const translations = {
         'JsonEditor.addEntry': 'Add new entry',
         'JsonEditor.addProperty': 'Add property',
         'JsonEditor.remove': 'Remove',
-        'CmsElement.customTypes': 'Custom elements'
+        'CmsElement.customTypes': 'Custom elements',
+        'DataResolverEditor.wizard': 'Start wizard',
+        'DataResolverEditor.newDataResolverType': 'Create new data resolver'
     }
 }
