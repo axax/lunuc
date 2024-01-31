@@ -34,7 +34,7 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
             ip: ip,
             agent: req.headers['x-track-user-agent'] || req.headers['user-agent'],
             isBot: req.headers['x-track-is-bot'] === 'true' ? true : false,
-            referer,
+            referer: req.headers['x-referer'] || referer,
             data,
             /*headers: req.headers,*/
             event,
