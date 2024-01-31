@@ -17,7 +17,8 @@ import {contextByRequest} from '../api/util/sessionContext.mjs'
 import {parseUserAgent} from '../util/userAgent.mjs'
 import {USE_COOKIES} from '../api/constants/index.mjs'
 import {parseCookies} from '../api/util/parseCookies.mjs'
-import puppeteer from 'puppeteer'
+import {isTemporarilyBlocked} from './util/requestBlocker.mjs'
+import {parseWebsite} from './util/web2html.mjs'
 import {decodeToken} from '../api/util/jwt.mjs'
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg'
 import ffprobeInstaller from '@ffprobe-installer/ffprobe'
@@ -269,147 +270,6 @@ const sendFile = function (req, res, {headers, filename, statusCode = 200}) {
 }
 
 
-let parseWebsiteBrowser
-const wasBrowserKilled = async (browser) => {
-    if(!browser){
-        return true
-    }
-
-    if(!browser.process){
-        return false
-    }
-
-    const procInfo = await browser.process()
-
-    console.log(`wasBrowserKilled ${procInfo.signalCode} ${procInfo.killed}`)
-    return !!procInfo.signalCode // null if browser is still running
-}
-const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress, cookies) => {
-
-    if(isTemporarilyBlocked({requestTimeInMs: 3000, requestPerTime: 8, key:'parseWebsite'})){
-        return {html: '503 Service Unavailable', statusCode: 503}
-    }
-
-    let page
-    try {
-        const startTime = new Date().getTime()
-
-        console.log(`parseWebsite fetch ${urlToFetch}`)
-        if(await wasBrowserKilled(parseWebsiteBrowser)) {
-
-            console.log(`create new browser instance`)
-
-            parseWebsiteBrowser = await puppeteer.launch({
-                headless:'new',
-                devtools: false,
-                /*userDataDir: './server/myUserDataDir',*/
-                ignoreHTTPSErrors: true,
-                args: [
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--no-zygote' /* Disables the use of a zygote process for forking child processes. Instead, child processes will be forked and exec'd directly.*/
-                ]
-            })
-        }
-        const pages = await parseWebsiteBrowser.pages()
-        if( pages.length > 6){
-            console.warn('browser too busy to process more requests -> ignore')
-            return {html: 'too busy to process request', statusCode: 500}
-        }
-
-        page = await parseWebsiteBrowser.newPage()
-
-        setTimeout(async () => {
-            /* if page is still not closed after 20s something is wrong */
-            try {
-                if(!page.isClosed() && !(await wasBrowserKilled(page.browser()))) {
-                    //await pages.forEach(async (page) => await page.close())
-
-                    parseWebsiteBrowser.process().kill('SIGINT')
-                    console.log('browser still running after 20s. kill process')
-
-                    parseWebsiteBrowser = false
-                }
-            }catch (e) {
-                console.warn("error termination process",e)
-            }
-
-        }, 20000)
-
-
-        await page.setDefaultTimeout(15000)
-        await page.setRequestInterception(true)
-
-        if( cookies /*&& cookies.session && cookies.auth*/) {
-            const cookiesToSet = Object.keys(cookies).map(k=>({domain:'localhost',name:k, value:cookies[k]}))
-            await page.setCookie(...cookiesToSet)
-        }
-
-        await page.setExtraHTTPHeaders({'x-host-rule': host})
-        page.on('request', (request) => {
-            if (['image', 'stylesheet', 'font'].indexOf(request.resourceType()) !== -1) {
-                request.abort()
-            } else {
-                const headers = request.headers()
-                headers['x-track-ip'] = remoteAddress
-                headers['x-track-host'] = host
-                headers['x-track-is-bot'] = isBot
-                headers['x-track-user-agent'] = agent
-                request.continue({headers})
-            }
-        })
-
-        let statusCode = 200
-        page.on('response', response => {
-            if (response.status() === 404 && response.request().resourceType() === 'document' && response.url().endsWith('/404')) {
-
-                statusCode = 404
-            }
-        })
-
-
-
-        await page.evaluateOnNewDocument((data) => {
-            window._elementWatchForceVisible = true
-            window._disableWsConnection = true
-            window._lunucWebParser = data
-        },{host, agent, isBot, remoteAddress})
-
-
-        await page.goto(urlToFetch, {waitUntil: 'networkidle0'})
-
-        let html = await page.content()
-        html = html.replace('</head>', '<script>window.LUNUC_PREPARSED=true</script></head>')
-
-        console.log(`url fetched ${urlToFetch} (statusCode ${statusCode}} in ${new Date().getTime() - startTime}ms`)
-
-        page.close()
-
-        /*try {
-
-
-            const pages = await parseWebsiteBrowser.pages()
-            await pages.forEach(async (page) => await page.close())
-
-        }catch (e) {
-            console.error(e)
-        }*/
-        //console.log(`Step 7 ${new Date().getTime() - startTime}ms`)
-
-        //await browser.close()
-
-        return {html, statusCode}
-    } catch (e) {
-        console.warn('parseWebsite error ' + urlToFetch,e)
-        if(page && !page.isClosed()){
-            page.close()
-        }
-        return {html: e.message, statusCode: 500}
-
-    }
-}
-
 const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, host, parsedUrl}) => {
     const headers = {
         'Cache-Control': 'public, max-age=60',
@@ -499,15 +359,13 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
                     modeTime = new Date(statsFile.mtime).getTime() + 300000; // a day in miliseconds = 86400000
 
                 if (modeTime > now) {
-
                     return
                 }
             }
             // return isFile
         }
 
-
-        const pageData = await parseWebsite(urlToFetch, host, agent, isBot, remoteAddress, cookies)
+        const pageData = await parseWebsite(urlToFetch, {host, agent, referer: req.headers.referer, isBot, remoteAddress, cookies})
 
         // remove script tags
         pageData.html = pageData.html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,'')
@@ -538,7 +396,6 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
                 }
                 res.end()
             }
-
             if(!cookies.auth) {
                 console.log(`update cache for ${cacheFileName}`)
                 fs.writeFile(cacheFileName, pageData.html, (err) => {
@@ -1069,66 +926,6 @@ function decodeURIComponentSafe(s) {
     return decodeURIComponent(s.replace(/%(?![0-9][0-9a-fA-F]+)/g, '%25'))
 }
 
-// if there are more than {REQUEST_MAX_PER_TIME} request in {REQUEST_TIME_IN_MS}ms the remote ip gets blocked for {REQUEST_BLOCK_IP_FOR_IN_MS}ms
-const DEFAULT_REQUEST_TIME_IN_MS = 10000, /* 10s */
-    DEFAULT_REQUEST_MAX_PER_TIME = 2000,
-    DEFAULT_REQUEST_BLOCK_FOR_IN_MS = 60000 * 5
-const ipMap = {}, blockedIps = {}
-let reqCounter = 0
-
-function isTemporarilyBlocked({req, key, requestPerTime, requestTimeInMs, requestBlockForInMs}){
-
-    if(!requestPerTime){
-        requestPerTime = DEFAULT_REQUEST_MAX_PER_TIME
-    }
-    if(!requestTimeInMs){
-        requestTimeInMs = DEFAULT_REQUEST_TIME_IN_MS
-    }
-    if(!requestBlockForInMs){
-        requestBlockForInMs = DEFAULT_REQUEST_BLOCK_FOR_IN_MS
-    }
-
-    if(blockedIps[key]){
-        // block for 1 min
-        if(Date.now()-blockedIps[key].start>requestBlockForInMs){
-            delete blockedIps[key]
-        }else {
-            console.log(key + ' is temporarily blocked due to too many request in a short time')
-            if(req) {
-                req.connection.destroy()
-            }
-            return true
-        }
-    }
-
-    if(!ipMap[key] || Date.now()-ipMap[key].start>requestTimeInMs){
-        ipMap[key] = {start:Date.now(),count:0}
-    }
-    ipMap[key].count++
-
-    if(ipMap[key].count>requestPerTime){
-        blockedIps[key] = {start:Date.now()}
-        delete ipMap[key]
-        if(req) {
-            req.connection.destroy()
-        }
-        return true
-    }
-
-    reqCounter++
-
-    if(reqCounter>100){
-        // clean up
-        reqCounter = 0
-        for(const ip in ipMap){
-            if(Date.now()-ip.start > requestTimeInMs+1000){
-                delete ipMap[ip]
-            }
-        }
-    }
-
-    return false
-}
 
 // Initialize http api
 const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req, res) {

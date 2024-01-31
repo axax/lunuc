@@ -5,8 +5,8 @@
   "main": "index.js",
   "repository": "git://github.com/axax/lunuc.git",
   "engines": {
-    "node": "18.x",
-    "npm": "9.x"
+    "node": "21.x",
+    "npm": "10.x"
   },
   "jest": {
     "moduleNameMapper": {
