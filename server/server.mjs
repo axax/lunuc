@@ -327,7 +327,7 @@ const hasHttpsWwwRedirect = ({parsedUrl, hostrule, host, req, res, remoteAddress
             newhost = 'www.' + newhost
         }
 
-        if (!config.DEV_MODE && this.constructor.name === 'Server') {
+        if (!config.DEV_MODE) {
             if (process.env.LUNUC_FORCE_HTTPS === 'true' && !req.headers['x-track-ip']) {
 
                 const agent = req.headers['user-agent']
