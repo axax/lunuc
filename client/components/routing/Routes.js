@@ -43,7 +43,7 @@ const HomeContainer = (props) => <Async {...props}
                                         asyncKey="HomeContainer"
                                         load={import(/* webpackChunkName: "admin" */ '../../containers/HomeContainer')}/>
 const ErrorPage = (props) => <Async {...props}
-                                    load={import(/* webpackChunkName: "admin" */ '../../components/layout/ErrorPage')}/>
+                                    load={import(/* webpackChunkName: "errorPage" */ '../../components/layout/ErrorPage')}/>
 
 const UnauthorizedPage = () => (
     <ErrorPage code="401" title="Unauthorized" background="#f4a742"/>

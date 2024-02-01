@@ -5,14 +5,12 @@ import url from 'url'
 import path from 'path'
 import net from 'net'
 import fs from 'fs'
-import zlib from 'zlib'
 import MimeType from '../util/mime.mjs'
 import {getHostFromHeaders} from '../util/host.mjs'
 import finalhandler from 'finalhandler'
 import {replacePlaceholders} from '../util/placeholders.mjs'
-import {ensureDirectoryExistence, isFileNotNewer} from '../util/fileUtil.mjs'
+import {ensureDirectoryExistence} from '../util/fileUtil.mjs'
 import {getHostRules} from '../util/hostrules.mjs'
-import {PassThrough} from 'stream'
 import {contextByRequest} from '../api/util/sessionContext.mjs'
 import {parseUserAgent} from '../util/userAgent.mjs'
 import {USE_COOKIES} from '../api/constants/index.mjs'
@@ -30,6 +28,8 @@ import {doScreenCapture, extendHeaderWithRange} from './util/index.mjs'
 import {createSimpleEtag} from './util/etag.mjs'
 import {resizeImage} from './util/resizeImage.mjs'
 import {getDynamicConfig} from '../util/config.mjs'
+import {getFileFromOtherServer, sendError, sendFile, sendFileFromDir} from './util/file.mjs'
+import {transcodeAndStreamVideo, transcodeVideoOptions} from './util/transcodeVideo.mjs'
 
 const config = getDynamicConfig()
 
@@ -43,7 +43,6 @@ const USE_HTTPX = process.env.LUNUC_HTTPX === 'false' ? false : true
 // Port to listen to
 const PORT = (process.env.PORT || process.env.LUNUC_PORT || 8080)
 const API_PORT = (process.env.API_PORT || process.env.LUNUC_API_PORT || 3000)
-const LUNUC_SERVER_NODES = process.env.LUNUC_SERVER_NODES || ''
 
 // Build dir
 const BUILD_DIR = path.join(ROOT_DIR, './build')
@@ -132,143 +131,6 @@ const webSocket = function (req, socket, head) {
     }
 }
 
-const sendError = (res, code) => {
-    let msg = ''
-    if (code === 404) {
-        msg = 'Not Found'
-    } else if (code === 403) {
-        msg = 'Not Allowed'
-    }
-
-
-    try {
-        res.writeHead(code, {'Content-Type': 'text/plain'})
-        res.write(`${code} ${msg}\n`)
-        res.end()
-    } catch (e) {
-        console.error(`Error sending error: ${e.message}`)
-    }
-}
-
-
-const sendFileFromDir = async (req, res, filePath, headers, parsedUrl) => {
-
-    let stats
-
-    try {
-        stats = fs.statSync(filePath)
-    } catch (e) {
-        return false
-    }
-
-
-    if (stats.isFile()) {
-        const modImage = await resizeImage(parsedUrl, req, filePath)
-        // static file
-        let mimeType = modImage.mimeType
-        if (!mimeType) {
-            const ext = path.extname(modImage.filename).substring(1).trim().toLowerCase().split('@')[0]
-            mimeType = MimeType.detectByExtension(ext)
-        }
-        const headerExtra = {
-            'Cache-Control': 'public, max-age=604800', /* a week */
-            'Content-Type': mimeType,
-            'Last-Modified': stats.mtime.toUTCString(),
-            'ETag': `"${createSimpleEtag({content: filePath, stats})}"`,
-            ...headers
-        }
-        sendFile(req, res, {headers: headerExtra, filename: modImage.filename})
-
-        return true
-    }
-    return false
-}
-
-
-const sendFile = function (req, res, {headers, filename, statusCode = 200}) {
-    let acceptEncoding = req.headers['accept-encoding'], neverCompress = false
-
-
-    const isVideo = headers['Content-Type'] && headers['Content-Type'].indexOf('video/') === 0,
-        isImage = headers['Content-Type'] && headers['Content-Type'].indexOf('image/') === 0
-    if (isImage || isVideo) {
-        // TODO make it configurable
-        neverCompress = true
-    }
-
-    if (!acceptEncoding) {
-        acceptEncoding = ''
-    }
-
-    let statsMainFile
-    try {
-        statsMainFile = fs.statSync(filename)
-
-        if (!neverCompress && acceptEncoding.match(/\bbr\b/)) {
-
-            if (isFileNotNewer(filename + '.br', statsMainFile)) {
-                // if br version is available send this instead
-                const statsFile = fs.statSync(filename + '.br')
-                res.writeHead(statusCode, {...headers, 'Content-Length': statsFile.size, 'Content-Encoding': 'br'})
-                const fileStream = fs.createReadStream(filename + '.br')
-                fileStream.pipe(res)
-            } else {
-                delete headers['Content-Length']
-                res.writeHead(statusCode, {...headers, 'Content-Encoding': 'br'})
-                const fileStream = fs.createReadStream(filename)
-                const fileStreamCom = fileStream.pipe(zlib.createBrotliCompress())
-
-                fileStreamCom.pipe(res)
-                fileStreamCom.pipe(fs.createWriteStream(filename + '.br'))
-            }
-
-        } else if (!neverCompress && acceptEncoding.match(/\bgzip\b/)) {
-
-            if (isFileNotNewer(filename + '.gz', statsMainFile)) {
-                // if gz version is available send this instead
-                const statsFile = fs.statSync(filename + '.gz')
-                res.writeHead(statusCode, {...headers, 'Content-Length': statsFile.size, 'Content-Encoding': 'gzip'})
-                const fileStream = fs.createReadStream(filename + '.gz')
-                fileStream.pipe(res)
-            } else {
-                delete headers['Content-Length']
-                res.writeHead(statusCode, {...headers, 'Content-Encoding': 'gzip'})
-                const fileStream = fs.createReadStream(filename)
-                const fileStreamCom = fileStream.pipe(zlib.createGzip())
-                fileStreamCom.pipe(res)
-                fileStreamCom.pipe(fs.createWriteStream(filename + '.gz'))
-            }
-
-        } else if (!neverCompress && acceptEncoding.match(/\bdeflate\b/)) {
-            res.writeHead(statusCode, {...headers, 'Content-Encoding': 'deflate'})
-            const fileStream = fs.createReadStream(filename)
-            fileStream.pipe(zlib.createDeflate()).pipe(res)
-        } else {
-
-            let streamOption
-
-            if(isVideo){
-
-                streamOption = extendHeaderWithRange(headers, req, statsMainFile)
-                delete headers.ETag
-                delete headers['Cache-Control']
-                if(streamOption){
-                    statusCode = 206
-                }
-            }
-
-            res.writeHead(statusCode, {'Content-Length':statsMainFile.size,...headers})
-
-            const fileStream = fs.createReadStream(filename, streamOption)
-            fileStream.pipe(res)
-        }
-    } catch (err) {
-        console.error(err)
-        console.log(filename + ' does not exist')
-        sendError(res, 404)
-    }
-}
-
 
 const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, host, parsedUrl}) => {
     const headers = {
@@ -320,8 +182,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
             res.end()
             return
         }
-        // return rentered html for bing as they are not able to render js properly
-        //const html = await parseWebsite(`${req.secure ? 'https' : 'http'}://${host}${host === 'localhost' ? ':' + PORT : ''}${urlPathname}`)
+        // return rendered html for bing as they are not able to render js properly
         const baseUrl = `http://localhost:${PORT}`
         const urlToFetch = baseUrl + urlPathname + (parsedUrl.search ? parsedUrl.search : '')
 
@@ -356,9 +217,11 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
                 // only update cache if file is old enough
                 const statsFile = fs.statSync(cacheFileName)
                 const now = new Date().getTime(),
-                    modeTime = new Date(statsFile.mtime).getTime() + 120000; // a day in miliseconds = 86400000
+                    modeTime = new Date(statsFile.mtime).getTime() + 60000; // a day in miliseconds = 86400000
 
                 if (modeTime > now) {
+                    // TODO request is not tracked
+                    console.log(`cache is not updated for ${cacheFileName}`)
                     return
                 }
             }
@@ -455,7 +318,7 @@ const sendFileFromTemplateDir = (req, res, urlPathname, headers, parsedUrl, host
     })
 }
 
-function hasHttpsWwwRedirect({parsedUrl, hostrule, host, req, res, remoteAddress}) {
+const hasHttpsWwwRedirect = ({parsedUrl, hostrule, host, req, res, remoteAddress}) => {
     if (host !== 'localhost' && !net.isIP(host)) {
 
         // force www
@@ -506,266 +369,6 @@ function hasHttpsWwwRedirect({parsedUrl, hostrule, host, req, res, remoteAddress
     }
     return false
 }
-
-function transcodeVideoOptions(parsedUrl, filename) {
-
-    if (!parsedUrl.query.transcode) {
-        return false
-    }
-
-
-    //https://www.lunuc.com/uploads/5f676c358ebac32c662cdb02/-/La%20maison%20du%20bonheur-2006.mp4?ext=mp4&transcode={%22audioQuality%22:3,%22videoBitrate%22:800,%22fps%22:25,%22size%22:%22720x?%22,%22crf%22:28}
-    // default options
-    let options = {
-        noAudio: false,
-        /*"audioVolume": 1,*/
-        /*"audioQuality": 0,*/
-        /*"fps": 24,*/
-        /*"size": "720x?",*/
-        crf: 22,
-        /*"speed": 1,*/
-        /*"preset": "slow",*/
-        keep: false,
-        format: 'mp4',
-        hvc1: false, /* for libx265 */
-        audioBitrate: '160k',
-        /*videoFilters: ['format=yuv420p']*/
-    }
-
-    try {
-        Object.assign(options, JSON.parse(parsedUrl.query.transcode))
-    } catch (e) {
-        console.log(e)
-        return false
-    }
-
-
-
-    let modfilename = filename
-
-    let filnameObject
-    if(options.screenshot){
-        modfilename += '-videoframe'
-        if(options.screenshot.constructor!==Object){
-            options.screenshot = {time: options.screenshot }
-        }
-        filnameObject = options.screenshot
-    }else {
-        filnameObject = options
-    }
-
-    Object.keys(filnameObject).forEach(k => {
-        if (k !== 'keep') {
-            const value = String(filnameObject[k].constructor === Array ? filnameObject[k].join('') : filnameObject[k])
-            modfilename += `-${value.replace(/[^a-zA-Z0-9-_\.]/g, '')}`
-        }
-    })
-
-    options.filename = modfilename
-
-    options.exists = fs.existsSync(modfilename)
-
-    return options
-
-}
-
-function transcodeAndStreamVideo({options, headerExtra, req, res, code, filename}) {
-    // make sure ffmpeg is install on your device
-    // brew install ffmpeg
-    //sudo apt install ffmpeg
-    // http://localhost:8080/uploads/5f935f98f5ca78b7cbeaa853/-/test.mpg?ext=mp4&transcode={"audioQuality":2,"fps":24,"size":"720x?","crf":24,"keep":true,"nostream":true}
-
-    delete headerExtra['Content-Length']
-
-    if(options.keep && !options.nostream && fs.existsSync(options.filename+ '.temp'))
-    {
-
-        sendFileFromDir(req,res,SERVER_DIR+'/loading.mp4',headerExtra)
-        return true
-    }
-
-    ffmpeg.setFfprobePath(ffprobeInstaller.path)
-    ffmpeg.setFfmpegPath( ffmpegInstaller.path)
-
-    const video = ffmpeg(filename)
-
-    if(options.screenshot){
-        video.on('filenames', (filenames) => {
-            console.log('Will generate ' + filenames.join(', '))
-        }).on('end', function() {
-            console.log('Screenshots taken')
-            fs.rename(options.filename + '.png', options.filename, () => {
-                console.log('transcode ended and file saved as ' + options.filename)
-                sendFileFromDir(req,res,options.filename, headerExtra)
-            })
-        }).screenshots({
-            // Will take screens at 20%, 40%, 60% and 80% of the video
-            timestamps: [options.screenshot.time],
-            size: options.screenshot.size || '320x240',
-            count: 1,
-            folder: ABS_UPLOAD_DIR,
-            filename:options.filename.replace(/^.*[\\\/]/, '')
-        })
-        return true
-    }
-
-
-    const outputOptions = []
-
-    if (!options.nostream) {
-        outputOptions.push('-movflags frag_keyframe+empty_moov+faststart')
-        outputOptions.push('-frag_duration 3600')
-    }
-    if (options.crf) {
-        outputOptions.push('-crf ' + options.crf)
-    }
-    if (options.preset) {
-        outputOptions.push('-preset ' + options.preset)
-    }
-
-    if (options.pass) {
-        outputOptions.push('-pass ' + options.pass)
-    }
-    if (options.duration) {
-        outputOptions.push('-t ' + options.duration)
-    }
-    if (options.hvc1) {
-        outputOptions.push('-tag:v hvc1')
-    }
-    if (options.custom) {
-        outputOptions.push(...options.custom)
-    }
-
-    const inputOptions = [
-        '-probesize 100M',
-        '-analyzeduration 100M'
-    ]
-
-    if (options.inputOptions) {
-        inputOptions.push(options.inputOptions)
-    }
-
-    video.inputOptions(inputOptions)
-
-    if (options.noAudio) {
-        console.log('no audio was set')
-        video.noAudio()
-    } else {
-        const aFilter = []
-
-        if (options.audioVolume) {
-            aFilter.push('volume=' + options.audioVolume)
-        }
-        if (options.speed) {
-            aFilter.push('atempo=' + options.speed)
-        }
-
-        video.audioCodec('aac').audioFilters(aFilter)//.audioBitrate(options.audioBitrate || '160k')
-
-        if (options.audioQuality) {
-            video.audioQuality(options.audioQuality)
-        }
-
-    }
-
-    const vFilter = []
-
-    if (options.speed) {
-        vFilter.push(`setpts=${1 / options.speed}*PTS`)
-    }
-    //vFilter.push(`scale=iw*min(1,min(640/iw,360/ih)):-1`)
-    if(options.videoFilters){
-        vFilter.push(...options.videoFilters)
-    }
-
-    video.videoCodec(options.codec || 'libx264')
-        .videoFilter(vFilter)
-        .outputOptions(outputOptions)
-        .format(options.format)
-
-    if (options.videoBitrate) {
-        video.videoBitrate(options.videoBitrate)
-    }
-    if (options.fps) {
-        video.fps(options.fps)
-    }
-    if (options.size) {
-        video.size(options.size)
-    }
-
-
-    video.on('progress', (progress) => {
-        console.log('Processing: ' + progress.timemark + ' done')
-    }).on('start', console.log).on('end', () => {
-
-        if (options.keep) {
-            // rename
-            fs.rename(options.filename + '.temp', options.filename, () => {
-                console.log('transcode ended and file saved as ' + options.filename)
-            })
-
-        }
-        console.log(`transcode ended: ${filename}`)
-
-    }).on('error', (e)=>{
-        //console.error('video error',e)
-        if(options.keep) {
-            try {
-                fs.unlinkSync(options.filename+ '.temp')
-            } catch (e2) {
-                console.log(e2)
-            }
-        }
-    })
-
-
-    if (options.keep) {
-
-        console.log(`save video as ${options.filename}`)
-        video.output(options.filename+ '.temp').run()
-        /*const videoDummy = ffmpeg(SERVER_DIR+'/loading.mp4')
-        res.writeHead(200, {'Content-Type': 'video/mp4', 'Connection': 'keep-alive'});
-        videoDummy.size('640x?')
-            .inputOptions([
-                '-probesize 100M',
-                '-analyzeduration 100M'
-            ])
-            .outputOptions([
-                '-preset ultrafast',
-                '-crf 35',
-                '-movflags frag_keyframe+empty_moov+faststart',
-                '-frag_duration 3600'
-            ])
-            .videoFilter([
-                {filter: 'drawtext',
-                    options: {
-                    fontfile: '/Users/simonscharer/Downloads/open-sans/OpenSans-Bold.ttf',
-                        text: 'Video wird vorbereitet',
-                        fontsize: 40,
-                        fontcolor: 'white',
-                        x: 250,
-                        y: 330
-                }},
-                { filter: 'scale', options: [640, -1] },
-                'fade=in:0:5'
-            ]).videoCodec('libx264').noAudio()
-            .inputFPS(15).fps(5).format('mp4')
-            .pipe(res, {end: true})*/
-
-
-        sendFileFromDir(req,res,SERVER_DIR+'/loading.mp4',headerExtra)
-
-    } else {
-        headerExtra['Transfer-Encoding'] = 'chunked'
-        headerExtra['Accept-Ranges'] = 'bytes'
-        res.writeHead(code, {...headerExtra})
-        video.pipe(res, {end: true})
-    }
-
-    return true
-}
-
-
 
 async function resolveUploadedFile(uri, parsedUrl, req, res) {
 
@@ -821,7 +424,6 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
         const transcodeOptions = transcodeVideoOptions(parsedUrl, filename)
         if (transcodeOptions && transcodeOptions.exists) {
             console.log(`stream from modified file ${transcodeOptions.filename}`)
-
             filename = transcodeOptions.filename
         }
 
@@ -891,32 +493,6 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
     }
 }
 
-function getFileFromOtherServer(urlPath, filename, baseResponse, req) {
-
-    const remoteAdr = clientAddress(req)
-
-    if(LUNUC_SERVER_NODES && LUNUC_SERVER_NODES.indexOf(remoteAdr)<0){
-        const url = LUNUC_SERVER_NODES+urlPath
-        console.log('laod from ' + url + ' - '+remoteAdr)
-        http.get(url, function(response) {
-
-            const passStream = new PassThrough()
-            response.pipe(passStream)
-            passStream.pipe(baseResponse)
-
-            if(response.statusCode == 200) {
-                const file = fs.createWriteStream(filename)
-                passStream.pipe(file)
-            }
-
-        }).on('error', function(err) { // Handle errors
-            sendError(res, 404)
-        })
-        return true
-    }
-
-    return false
-}
 
 
 function decodeURIComponentSafe(s) {
@@ -943,7 +519,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             const hostrule = {...hostrules.general, ...(hostrules[hostRuleHost] || hostrules[hostRuleHost.substring(4)])}
             const parsedUrl = url.parse(req.url, true)
 
-            if (hostrule.certDir && hasHttpsWwwRedirect.call(this, {parsedUrl, hostrule, host, req, res, remoteAddress})) {
+            if (hostrule.certDir && hasHttpsWwwRedirect( {parsedUrl, hostrule, host, req, res, remoteAddress})) {
                 return
             }
 
@@ -1144,7 +720,6 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 //TODO: Move this to an extension as it doesn't belong here
 import stream from './stream.js'
 import {Server} from 'socket.io'
-import Util from "../client/util/index.mjs";
 
 
 let ioHttp = new Server(app.http)

@@ -19,6 +19,7 @@ import {parseStyles} from 'client/util/style'
 import ElementWatch from './ElementWatch'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants/index.mjs'
 import {getKeyValuesFromLS} from '../../../client/util/keyvalue'
+import {createManifest} from '../util/manifest.mjs'
 
 const JsonDomHelper = (props) => <Async {...props}
                                         load={import(/* webpackChunkName: "jsondom" */ './JsonDomHelper')}/>
@@ -224,6 +225,7 @@ class JsonDom extends React.Component {
     componentRefs = {} // this is the object with references to elements with identifier
     jsOnStack = {}
     styles = {}
+    stopRendering = false
 
     constructor(props) {
         super(props)
@@ -417,26 +419,7 @@ class JsonDom extends React.Component {
         if (_app_.ssr || this.props.dynamic || this.props.editMode || document.querySelector('link[rel=manifest]')) {
             return
         }
-        const loc = window.location,
-            ori = loc.origin+'/favicon-',
-            host = loc.host.replace(/^www./,''),
-            type = 'image/png'
-        const manifest = {
-            short_name: `${host.replace(/.[a-z]{2,3}$/,'')}`,
-            name: document.title,
-            description: `This is the app version of ${host}`,
-            display: 'standalone',
-            theme_color: '#f9f9fb',
-            background_color: '#f9f9fb',
-            orientation: 'any',
-            scope: '/',
-            icons: [
-                { src: `${ori}192x192.png`, sizes: '192x192', type },
-                { src: `${ori}512x512.png`, sizes: '512x512', type },
-                { src: `${ori}maskable.png`, sizes: '512x512', type, purpose: 'maskable' }
-            ],
-            start_url: loc.href
-        }
+        const manifest = createManifest()
         this.runJsEvent('manifest', false, {manifest})
 
         DomUtil.createAndAddTag('link', 'head', {
@@ -562,6 +545,10 @@ class JsonDom extends React.Component {
                         scope.script = this.scriptResult || {}
                     }
                     this.runJsEvent('beforerender', false, scope)
+                    if(this.stopRendering){
+                        console.log(`stop rendering ${scope.page.slug}`)
+                        return
+                    }
                 } else {
                     this.jsOnStack = {}
                 }
@@ -1240,11 +1227,8 @@ class JsonDom extends React.Component {
             if (!scope.PageOptions) {
                 scope.PageOptions = {}
             }
-            // set default scope values
-            scope.fetchingMore = false
 
-            // add a refrence to the global app object
-            scope._app_ = _app_
+            scope.fetchingMore = false
 
             // add a reference of the bindings object
             scope.bindings = this.bindings
@@ -1667,6 +1651,11 @@ class JsonDom extends React.Component {
             })*/
 
         },0)
+    }
+
+    show404 = () =>{
+        this.stopRendering = true
+        window.location.href = _app_.redirect404
     }
 
 }

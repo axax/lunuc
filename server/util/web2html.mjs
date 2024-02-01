@@ -1,6 +1,8 @@
 import puppeteer from 'puppeteer'
 import {isTemporarilyBlocked} from './requestBlocker.mjs'
 
+const MAX_PAGES_IN_PUPPETEER = 8
+
 let parseWebsiteBrowser
 const wasBrowserKilled = async (browser) => {
     if(!browser){
@@ -13,7 +15,6 @@ const wasBrowserKilled = async (browser) => {
 
     const procInfo = await browser.process()
 
-    console.log(`wasBrowserKilled ${procInfo.signalCode} ${procInfo.killed}`)
     return !!procInfo.signalCode // null if browser is still running
 }
 
@@ -46,7 +47,7 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
             })
         }
         const pages = await parseWebsiteBrowser.pages()
-        if( pages.length > 6){
+        if( pages.length > MAX_PAGES_IN_PUPPETEER){
             console.warn('browser too busy to process more requests -> ignore')
             return {html: 'too busy to process request', statusCode: 500}
         }
@@ -76,18 +77,19 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
 
 
 
+        // always clear auth cookie
+        await page.setCookie({domain:'localhost',name:'auth', value:''})
+
         if( cookies && Object.keys(cookies).length>0 && !isBot/*&& cookies.session && cookies.auth*/) {
             console.log(`Taking over the session can be dangerous. ${urlToFetch}`, Object.keys(cookies))
             const cookiesToSet = Object.keys(cookies).map(k=>({domain:'localhost',name:k, value:cookies[k]}))
             await page.setCookie(...cookiesToSet)
-        }else{
-            // clear cookies
-            await page.setCookie({domain:'localhost',name:'auth', value:''})
         }
 
         await page.setExtraHTTPHeaders({'x-host-rule': host})
         page.on('request', (request) => {
-            if (['image', 'stylesheet', 'font'].indexOf(request.resourceType()) !== -1) {
+            if (['image', 'stylesheet', 'font', 'manifest', 'other'].indexOf(request.resourceType()) !== -1 ||
+                request.frame().url() !== page.mainFrame().url() /* in iframe */) {
                 request.abort()
             } else {
                 const headers = request.headers()
