@@ -327,7 +327,7 @@ const hasHttpsWwwRedirect = ({parsedUrl, hostrule, host, req, res, remoteAddress
             newhost = 'www.' + newhost
         }
 
-        if (!config.DEV_MODE && this.constructor.name === 'Server') {
+        if (!config.DEV_MODE && !req.isHttps) {
             if (process.env.LUNUC_FORCE_HTTPS === 'true' && !req.headers['x-track-ip']) {
 
                 const agent = req.headers['user-agent']
@@ -519,7 +519,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             const hostrule = {...hostrules.general, ...(hostrules[hostRuleHost] || hostrules[hostRuleHost.substring(4)])}
             const parsedUrl = url.parse(req.url, true)
 
-            if (hostrule.certDir && hasHttpsWwwRedirect.call(this, {parsedUrl, hostrule, host, req, res, remoteAddress})) {
+            if (hostrule.certDir && hasHttpsWwwRedirect( {parsedUrl, hostrule, host, req, res, remoteAddress})) {
                 return
             }
 
