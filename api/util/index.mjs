@@ -458,7 +458,7 @@ const Util = {
                     } else if (item === '&&') {
                         operator = 'and'
                     } else {
-                        const comparator = item.match(/==|>=|<=|!==|!=|=|>|<|:/)
+                        const comparator = item.match(/==|>=|<=|!==|!=|=~|!~|=|>|<|:/)
                         if (comparator) {
 
                             let parenthesesOpen = item.startsWith('(')

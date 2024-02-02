@@ -11,6 +11,7 @@ import DomUtil from 'client/util/dom.mjs'
 import Async from 'client/components/Async'
 import CmsViewContainer from '../containers/CmsViewContainer'
 //import {Link, Redirect} from 'react-router-dom'
+import {render} from 'react-dom'
 import {Redirect, Link} from 'client/util/route'
 import JsonDomInput from './JsonDomInput'
 import {deepMerge, deepMergeOptional} from 'util/deepMerge.mjs'
@@ -216,7 +217,7 @@ class JsonDom extends React.Component {
     extendedComponents = {}
     json = null
     jsonRaw = null
-    _inHtmlComponents = []
+    postRender = []
     scope = {}
     updateScope = true
     error = null
@@ -367,7 +368,7 @@ class JsonDom extends React.Component {
             this.runJsEvent('urlchange', false, before)
         })
 
-        this.moveInHtmlComponents()
+        this.renderPostRender()
         this.checkMetaTags(this.props)
     }
 
@@ -393,7 +394,7 @@ class JsonDom extends React.Component {
 
         this.triggerMountEvent()
         this.runJsEvent('update', true)
-        this.moveInHtmlComponents()
+        this.renderPostRender()
     }
 
     triggerMountEvent() {
@@ -553,9 +554,6 @@ class JsonDom extends React.Component {
                     this.jsOnStack = {}
                 }
                 content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope)
-                if (content && this._inHtmlComponents.length > 0) {
-                    content = [content, <div key={content.key + '_inHtmlComponents'}>{this._inHtmlComponents}</div>]
-                }
             }
         }
         console.log(`render ${this.constructor.name} for ${scope.page.slug} in ${((new Date()).getTime() - startTime)}ms`)
@@ -1250,7 +1248,7 @@ class JsonDom extends React.Component {
         if (this.json) return this.json
         const {template} = props
         const scope = this.getScope(props)
-        this._inHtmlComponents = []
+        this.postRender = []
         const renderedTemplate = this.renderTemplate(template, scope)
         try {
             /*
@@ -1293,23 +1291,16 @@ class JsonDom extends React.Component {
     }
 
 
-    moveInHtmlComponents() {
+    renderPostRender() {
         // move elements to right place
-        for (let i = 0; i < this._inHtmlComponents.length; i++) {
-            const key = this._inHtmlComponents[i][0].key
-            const ele = Util.$('[_key="' + key + '-0.0"]')
-            if (!ele || ele.length === 0) {
-                //try again
-                console.log('not ready try again')
-                setTimeout(() => {
-                    this.moveInHtmlComponents()
-                }, 100)
-                return
-            }
-            ele.oriParent = ele.parentNode
-            const container = Util.$('#' + key.substr(0, key.length - 2))
-            if (container.appendChild) {
-                container.appendChild(ele)
+        for (let i = 0; i < this.postRender.length; i++) {
+            const item = this.postRender[i]
+            const domElement = document.getElementById(item.id)
+            if(domElement){
+                render(
+                    this.parseRec(item.component, item.id, this.scope),
+                    domElement
+                )
             }
         }
     }
@@ -1336,13 +1327,13 @@ class JsonDom extends React.Component {
         }
         try {
             // Scope properties get destructed so they can be accessed directly by property name
-            return new Function(DomUtil.toES5(`const {${Object.keys(scope).join(',')}}=this.scope${SCRIPT_UTIL_PART}data),_r=this.renderIntoHtml;return \`${str}\``)).call({
+            return new Function(DomUtil.toES5(`const {${Object.keys(scope).join(',')}}=this.scope${SCRIPT_UTIL_PART}data),_r=this.addToPostRender;return \`${str}\``)).call({
                 scope,
                 parent: this.props._parentRef,
                 Util,
                 _t,
                 // expose some attributes
-                renderIntoHtml: this.renderIntoHtml,
+                addToPostRender: this.addToPostRender,
                 serverMethod: this.serverMethod,
                 props: this.props
             }).replace(/\t/g, '\\t')
@@ -1495,13 +1486,10 @@ class JsonDom extends React.Component {
     }
 
 
-    renderIntoHtml = (c) => {
-
-        JsonDom.instanceCounter++
-        const key = 'inHtmlComponent' + JsonDom.instanceCounter
-        this._inHtmlComponents.push(this.parseRec(c, key, this.scope))
-
-        return '<div id=' + key + '></div>'
+    addToPostRender = (component) => {
+        const id = 'inHtmlComponent' + this.postRender.length
+        this.postRender.push({component, id})
+        return `<div id='${id}'></div>`
     }
 
     on = (keys, cb) => {

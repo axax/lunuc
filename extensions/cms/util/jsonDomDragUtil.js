@@ -7,7 +7,7 @@ export const DROPAREA_OVER = 'jdh-da-over'
 
 export const ALLOW_DROP = ['div', 'main', 'Col', 'Row', 'section', 'Cms', 'Print', 'td', 'table']
 export const ALLOW_DROP_IN = {'Col': ['Row'], 'li': ['ul'], 'tr': ['tbody','thead','tfood','table']}
-export const ALLOW_DROP_FROM = {'Row': ['Col']}
+export const ALLOW_DROP_FROM = {'Row': ['Col'],'tr':['td','th']}
 
 export const JsonDomDraggable = {
     clientX:0,

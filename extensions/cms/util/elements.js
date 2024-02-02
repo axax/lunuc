@@ -2083,6 +2083,15 @@ const advancedElements = [
             }
         },
         options: {
+            p_component: {
+                tab: DEFAULT_TAB,
+                label: 'Komponente wählen',
+                type: 'CmsPage',
+                uitype: 'type_picker',
+                projection: ['slug'],
+                multi:false,
+                fullWidth:true
+            },
             p_slug: {
                 tab: DEFAULT_TAB,
                 label: 'Slug'

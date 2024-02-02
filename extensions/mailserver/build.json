@@ -74,18 +74,22 @@
           "name": "text",
           "label": "Text",
           "uitype": "editor",
-          "alwaysLoad": false
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
         },
         {
           "name": "html",
           "label": "Html",
           "uitype": "html",
-          "alwaysLoad": false
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
         },
         {
           "name": "meta",
           "type": "Object",
-          "alwaysLoad": false
+          "uitype": "json",
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
         }
       ]
     }

@@ -132,6 +132,11 @@
           "searchable": true
         },
         {
+          "name": "manual",
+          "hidden": true,
+          "searchable": true
+        },
+        {
           "name": "resolvedData",
           "hidden": true
         },

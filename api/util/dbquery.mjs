@@ -1,8 +1,11 @@
 import {ObjectId} from 'mongodb'
+import ClientUtil from '../../client/util'
 
 export const comparatorMap = {
     ':': '$regex',
     '=': '$regex',
+    '=~': '$regex',
+    '!~': '$regex', /* ~ ---> Alt+N */
     '==': '$eq',
     '===': '$eq',
     '>': '$gt',
@@ -162,11 +165,31 @@ export const addFilterToMatch = async ({db, debugInfo, filterKey, filterValue, t
             }
         }
     } else if (comparator === '$regex') {
-        if (rawComperator === '!=') {
-            matchExpression = {$not: {[comparator]: filterValue, $options: 'i'}}
-        } else {
-            matchExpression = {[comparator]: filterValue, $options: 'i'}
+        let $options, finalValue
+        if(rawComperator.indexOf('~')>=0){
+            const regParts = filterValue.match(/^\/(.*?)\/([gim]*)$/)
+            if (regParts) {
+                finalValue = new RegExp(regParts[1], regParts[2])
+            } else {
+                finalValue = new RegExp(filterValue)
+            }
+        }else {
+            $options= 'i'
+            finalValue = ClientUtil.escapeRegex(filterValue)
         }
+
+        if (rawComperator.indexOf('!')>=0) {
+            matchExpression = {$not: {[comparator]: finalValue}}
+            if($options){
+                matchExpression.$not.$options = $options
+            }
+        } else {
+            matchExpression = {[comparator]: finalValue}
+            if($options){
+                matchExpression.$options = $options
+            }
+        }
+
     } else {
         matchExpression = {[comparator]: filterValue}
     }
