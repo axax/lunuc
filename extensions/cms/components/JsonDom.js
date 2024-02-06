@@ -1155,7 +1155,7 @@ class JsonDom extends React.Component {
 
                     }
                     if ($c || $toHtml) {
-                        eleProps.dangerouslySetInnerHTML = {__html: $c || c.replace(/(?:\r\n|\r|\n)/g, '<br>')}
+                        eleProps.dangerouslySetInnerHTML = {__html: $c || c.replace(/(?:\r\n|\r|\n)/g, '<br />')}
                     }
 
                     if (_app_.JsonDom.elementWatch != false &&
