@@ -58,8 +58,15 @@ export default db => ({
                 if(hasRest || parsedFilter.parts.style) {
                     fields.push('style')
                 }
-            }
 
+                if(hasRest || parsedFilter.parts.resources) {
+                    fields.push('resources')
+                }
+
+                if(hasRest || parsedFilter.parts.manual) {
+                    fields.push('manual')
+                }
+            }
             const data = await GenericResolver.entities(db, {context, headers}, 'CmsPage', fields, {
                 limit,
                 page,
@@ -86,7 +93,7 @@ export default db => ({
 
             const {
                 _id, createdBy, template, script, style, resources, dataResolver, parseResolvedData, alwaysLoadAssets, loadPageOptions, ssrStyle, uniqueStyle, publicEdit, compress,
-                ssr, modifiedAt, urlSensitiv, name, keyword, serverScript
+                ssr, modifiedAt, urlSensitiv, name, keyword, serverScript, manual
             } = cmsPages.results[0]
             const scope = {
                 ...createScopeForDataResolver(query, props),
@@ -203,6 +210,7 @@ export default db => ({
                 if (await Util.userHasCapability(db, context, CAPABILITY_MANAGE_CMS_PAGES)) {
                     result.dataResolver = dataResolver
                     result.serverScript = serverScript
+                    result.manual = manual
                 }
             } else {
 
@@ -220,6 +228,7 @@ export default db => ({
             if(meta === 'fetchMore'){
                 delete result.dataResolver
                 delete result.serverScript
+                delete result.manual
                 delete result.template
                 delete result.script
                 delete result.style
@@ -264,7 +273,7 @@ export default db => ({
                 throw new Error('Cms page doesn\'t exist')
             }
 
-            const {serverScript, dataResolver} = cmsPages.results[0]
+            const {serverScript} = cmsPages.results[0]
 
             if (!serverScript) {
                 throw new Error('serverScript doesn\'t exist')

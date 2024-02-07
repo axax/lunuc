@@ -183,6 +183,7 @@ export default () => {
             delete newFields.template
             delete newFields.script
             delete newFields.serverScript
+            delete newFields.manual
             delete newFields.dataResolver
             delete newFields.style
 

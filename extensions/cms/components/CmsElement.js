@@ -74,7 +74,7 @@ export default function CmsElement(props) {
                 onDragEnd={onJsonDomDragEnd}
                 draggable={!props.disabled}>
                 <Icon sx={{fontSize: 30}}/>
-                <Typography variant="subtitle1">{element.name}</Typography>
+                <Typography variant="subtitle1">{_t(element.name)}</Typography>
             </StyledPaper>)
     }
 

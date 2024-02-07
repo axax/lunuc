@@ -9,10 +9,12 @@ import {
     ListItemSecondaryAction,
     DeleteIconButton,
     EditIconButton,
-    SimpleDialog
+    SimpleDialog,
+    Typography
 } from 'ui/admin'
 import FilesContainer from 'client/containers/FilesContainer'
 import styled from '@emotion/styled'
+import {_t} from '../../../util/i18n.mjs'
 
 const StyledFab = styled(Fab)(({theme})=>({
     position: 'absolute',
@@ -52,6 +54,7 @@ class ResourceEditor extends React.Component {
         const {resourcesArray} = this.state
 
         return <div style={{marginBottom: '30px'}}>
+            <Typography mb={2} variant="caption">{_t('ResourceEditor.description')}</Typography>
             <List dense={true}>
                 {resourcesArray.map((item, i) => {
                     let src

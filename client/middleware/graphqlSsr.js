@@ -1,5 +1,5 @@
 import ReactDOMServer from 'react-dom/server'
-import {SSR_FETCH_CHAIN, finalFetch} from '../../client/middleware/graphql'
+import {SSR_FETCH_CHAIN, finalFetch} from './graphql'
 
 export const renderToString = (component, context) => {
 

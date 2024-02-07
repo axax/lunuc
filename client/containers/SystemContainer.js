@@ -3,6 +3,7 @@ import extensions from 'gen/extensions.mjs'
 import {Typography, ExpansionPanel, Button, SimpleSwitch, ContentBlock,
     SimpleTab,
     SimpleTabPanel,
+    SimpleDialog,
     SimpleTabs} from 'ui/admin'
 import Hook from 'util/hook.cjs'
 import {client} from '../middleware/graphql'
@@ -31,7 +32,7 @@ class SystemContainer extends React.Component {
         Object.keys(extensions).map(k => {
             extensionStates[k] = fromStorage[k] || {enabled: true}
         })
-        this.state = {extensionStates, tabValue:0}
+        this.state = {extensionStates, tabValue:0, message:''}
     }
 
     setExtensionState(k, e) {
@@ -52,7 +53,7 @@ class SystemContainer extends React.Component {
     }
 
     render() {
-        const {extensionStates, tabValue} = this.state
+        const {extensionStates, tabValue, message} = this.state
 
         return <>
             <Typography variant="h3" component="h1" gutterBottom>System</Typography>
@@ -64,7 +65,7 @@ class SystemContainer extends React.Component {
                 }}
             >
                 <SimpleTab key="extensions" label="Extensions"/>
-                <SimpleTab key="cache" label="Cache"/>
+                <SimpleTab key="cache" label="Cache / Indexes"/>
             </SimpleTabs>
 
             <SimpleTabPanel value={tabValue} index={0}>
@@ -117,8 +118,24 @@ class SystemContainer extends React.Component {
                     client.resetStore()
                 }} variant="contained">Clear API cache</Button>
 
-            </SimpleTabPanel>
+                <Typography variant="h4" component="h2" gutterBottom sx={{mt:2}}>Indexes</Typography>
 
+                <Button color="secondary" onClick={e => {
+                    client.mutate({
+                            mutation: `mutation createDbIndexes{createDbIndexes{status}}`,
+                            update: (store, {data: {createDbIndexes}}) => {
+                                this.setState({message:createDbIndexes.status})
+                            }
+                        }
+                    )
+                }} variant="contained">Create DB Indexes</Button>
+
+            </SimpleTabPanel>
+            {message && <SimpleDialog open={true} onClose={()=>{
+                this.setState({message:''})
+            }} actions={[{autoFocus: true, key: 'ok', label: 'Ok', type: 'primary'}]} title="Response">
+                {message}
+            </SimpleDialog>}
         </>
     }
 }

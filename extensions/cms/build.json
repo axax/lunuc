@@ -146,7 +146,8 @@
         },
         {
           "name": "resources",
-          "hidden": true
+          "hidden": true,
+          "searchable": true
         },
         {
           "name": "style",

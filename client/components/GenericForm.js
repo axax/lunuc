@@ -435,7 +435,7 @@ class GenericForm extends React.Component {
         if (fields[name]) {
             value = checkFieldType(originalValue, fields[name])
         }
-console.log(name,value)
+
         const newState = this.newStateForField(this.state, {
             name,
             value,
@@ -901,7 +901,7 @@ console.log(name,value)
                         }}
                     >
                         {tabs.map((tab, i) =>
-                            <SimpleTab key={'tab-' + i} label={tab.name}/>
+                            <SimpleTab key={'tab-' + i} label={_t(tab.name)}/>
                         )}
 
                         {formFields.length > 0 &&
@@ -993,7 +993,7 @@ console.log(name,value)
                                                 sx={getSxProps({fullWidth:true})}>
                 <InputLabel key={'label' + fieldKey}
                             onMouseEnter={(e)=>{
-                                if(field.label && field.label !== field.name) {
+                                if(field.label && field.name && field.label !== field.name) {
                                     showTooltip(field.name, e)
                                 }
                             }}
@@ -1039,7 +1039,7 @@ console.log(name,value)
                                                 sx={getSxProps({fullWidth:true})}>
                 <InputLabel key={'label' + fieldKey}
                             onMouseEnter={(e)=>{
-                                if(field.label && field.label !== field.name) {
+                                if(field.label && field.name && field.label !== field.name) {
                                     showTooltip(field.name, e)
                                 }
                             }}
@@ -1110,7 +1110,7 @@ console.log(name,value)
                 InputLabelProps={{
                     shrink: true,
                     onMouseEnter:e=>{
-                        if(field.label && field.label !== field.name) {
+                        if(field.label && field.name && field.label !== field.name) {
                             showTooltip(field.name, e)
                         }
                     },
@@ -1126,7 +1126,7 @@ console.log(name,value)
                 fileImport={field.fileImport}
                 key={fieldKey}
                 name={fieldKey}
-                label={field.label+ (languageCode ? ' [' + languageCode + ']' : '')}
+                label={_t(field.label)+ (languageCode ? ' [' + languageCode + ']' : '')}
                 readOnly={field.readOnly}
                 genericType={field.genericType}
                 filter={field.filter}
@@ -1185,7 +1185,7 @@ console.log(name,value)
                             InputLabelProps={{
                                 shrink: true,
                                 onMouseEnter:e=>{
-                                    if(field.label && field.label !== field.name) {
+                                    if(field.label && field.name && field.label !== field.name) {
                                         showTooltip(field.name, e)
                                     }
                                 },
@@ -1222,7 +1222,7 @@ console.log(name,value)
                     InputLabelProps={{
                         shrink: true,
                         onMouseEnter:e=>{
-                            if(field.label && field.label !== field.name) {
+                            if(field.label && field.name && field.label !== field.name) {
                                 showTooltip(field.name, e)
                             }
                         },
@@ -1269,7 +1269,7 @@ console.log(name,value)
                                               InputLabelProps={{
                                                   shrink: true,
                                                   onMouseEnter:e=>{
-                                                      if(field.label && field.label !== field.name) {
+                                                      if(field.label && field.name && field.label !== field.name) {
                                                           showTooltip(field.name, e)
                                                       }
                                                   },

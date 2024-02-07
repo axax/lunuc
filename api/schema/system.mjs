@@ -30,6 +30,10 @@ export const systemSchemaRaw = `
     type RemoveBackupResult {
         status: String
     }
+       
+    type GenericResult {
+        status: String
+    }
         
     type Collection {
         name: String
@@ -103,6 +107,7 @@ export const systemSchemaRaw = `
     
       
     type Mutation {   	
+    	createDbIndexes: GenericResult    	
     	createBackup(type: String!): Backup    	
     	removeBackup(type: String!, name: String!): RemoveBackupResult   
     	cloneCollection(type: String!, name: String, empty: Boolean): CloneCollectionResult

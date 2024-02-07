@@ -113,5 +113,6 @@ export const createAllIndexes = async (db) => {
     console.log(`Indexes created ${new Date() - _app_.start}ms`)
     console.log(`---------------------------------------------`)
 
+    return {status:'Indexes created'}
 }
 

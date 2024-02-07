@@ -113,7 +113,7 @@ class TinyEditor extends React.Component {
                         alignjustify: {selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img', classes: 'full'}
                     },
                     plugins: [
-                        'advlist autolink link image lists charmap print preview hr anchor pagebreak spellchecker',
+                        'advlist autolink link image lists charmap print preview hr anchor pagebreak',
                         'searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking',
                         'table emoticons template paste help loremipsum',
                         /*'quickbars'*/

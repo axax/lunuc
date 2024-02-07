@@ -1,6 +1,7 @@
 /**
  * Object with helper methods for jsonDom handling
  */
+import DomUtilAdmin from '../../../client/util/domAdmin.mjs'
 
 export const getComponentByKey = (key, json) => {
     if (!json || !key) return
@@ -100,6 +101,43 @@ export const removeComponent = (key, json) => {
         console.warn(`Can't remove component ${key}`)
     }
 
+    return false
+}
+
+
+export const copyComponent = (key, json) => {
+
+    const source = getComponentByKey(key, json)
+
+    if (source) {
+
+        const trKeys = []
+        DomUtilAdmin.findProperties(source, 'trKey').forEach(({element}) => {
+            trKeys.push(element.trKey)
+        })
+
+        let finalSource
+        if (trKeys.length > 0) {
+            let sourceStr = JSON.stringify(source)
+            trKeys.forEach(trKey => {
+                const newTrKey = 'genid_' + Math.random().toString(36).substr(2, 9)
+                sourceStr = sourceStr.replace(new RegExp(trKey, "g"), newTrKey)
+            })
+            finalSource = JSON.parse(sourceStr)
+        } else {
+            finalSource = source
+        }
+
+        const parentKey = getParentKey(key)
+        let index = parseInt(key.substring(key.lastIndexOf('.') + 1))
+        if (isNaN(index)) {
+            index = -1
+        } else {
+            index++
+        }
+        addComponent({key: parentKey, json, index, component: finalSource})
+        return true
+    }
     return false
 }
 

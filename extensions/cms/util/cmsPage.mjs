@@ -87,6 +87,7 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
                 'style',
                 'serverScript',
                 'dataResolver',
+                'manual',
                 'resources',
                 'ssr',
                 'public',

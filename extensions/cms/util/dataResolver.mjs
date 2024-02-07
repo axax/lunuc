@@ -25,12 +25,15 @@ const DEFAULT_PARAM_MAX_LENGTH = 100,
 
 export const resolveData = async ({db, context, dataResolver, scope, nosession, req, editmode, dynamic}) => {
     const startTime = new Date().getTime()
+
     const resolvedData = {_meta: {}}, subscriptions = []
+
     if (dataResolver && dataResolver.trim() !== '') {
         const debugInfo = {}
         try {
             let segments = JSON.parse(dataResolver),
-                addDataResolverSubsription = false
+                addDataResolverSubscription = false
+
             if (segments.constructor === Object) segments = [segments]
 
 
@@ -49,7 +52,6 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
             }
 
             for (let i = 0; i < segments.length; i++) {
-
                 let tempBrowser
                 if (segments[i].website) {
                     // exclude pipline from replacements
@@ -61,6 +63,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                                               const Util = this.ClientUtil
                                               const ObjectId = this.ObjectId
                                               return \`${JSON.stringify(segments[i])}\``)
+
                 const replacedSegmentStr = tpl.call({
                     scope,
                     data: resolvedData,
@@ -109,7 +112,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     await typeResolver({segment, resolvedData, scope, db, req, context, subscriptions, debugInfo})
 
                 } else if (segment.request) {
-                    addDataResolverSubsription = await resolveRequest(segment, resolvedData, context, addDataResolverSubsription)
+                    addDataResolverSubscription = await resolveRequest(segment, resolvedData, context, addDataResolverSubscription)
 
                 } else if (segment.tr) {
 
@@ -273,7 +276,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     const cacheKey = createCacheKey(segment, 'website')
 
                     if (addToWebsiteQueue({segment, scope, resolvedData, context, dataKey, cacheKey})) {
-                        addDataResolverSubsription = true
+                        addDataResolverSubscription = true
                     }
 
                 } else {
@@ -298,7 +301,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
 
             }
             delete resolvedData._data
-            if (addDataResolverSubsription) {
+            if (addDataResolverSubscription) {
                 subscriptions.push({
                     name: 'cmsPageData',
                     query: 'resolvedData',

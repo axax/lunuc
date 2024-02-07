@@ -23,6 +23,7 @@ export const translations = {
         'CmsViewEditorContainer.noRelatedPages':'Keine verwandte Seiten',
         'CmsViewEditorContainer.pageOptions': 'Seite',
         'CmsViewEditorContainer.pageElements': 'Elemente',
+        'CmsViewEditorContainer.pageDevelopment': 'Entwicklung',
         'CmsViewEditorContainer.staticAssets':'Externe Scripts',
         'CmsViewEditorContainer.public':'Öffentlich (ist für jeden sichtbar)',
         'CmsAddNewSite.cancel':'Abbrechen',
@@ -43,10 +44,18 @@ export const translations = {
         'JsonEditor.remove': 'Eintrag löschen',
         'CmsElement.customTypes': 'Eigene Elemente',
         'DataResolverEditor.wizard': 'Assistent starten',
-        'DataResolverEditor.newDataResolverType': 'Neuer Daten-Resolver erstellen'
+        'DataResolverEditor.newDataResolverType': 'Neuer Daten-Resolver erstellen',
+        'JsonDomHelper.openComponent': 'Komponente %slug% öffnen',
+        'ResourceEditor.description': 'Alle hier hinzugefügten URLs werden je nach Typ als Skripte oder Stile hinzugefügt. Wenn Sie ein Attribut explizit festlegen möchten, können Sie url wie folgt hinzufügen: {"src": "https://www.lunuc.com/TweenMax.min.js", "async":true}',
+        'elements.cmsComponent': 'CMS-Komponente',
+        'elements.selectComponent': 'Komponente wählen',
+        'elements.general':'Allgemeine Elemente',
+        'elements.generalTab': 'Allgemein',
+        'JsonDomHelper.elementSettings': 'Komponenten Einstellungen',
+        'JsonDomAddElementDialog.editElement': 'Bearbeitung %name%'
     },
     en: {
-        'CmsViewEditorContainer.save': 'Speichern',
+        'CmsViewEditorContainer.save': 'Save',
         'CmsViewEditorContainer.editPage': 'Edit page',
         'CmsViewEditorContainer.pageTitle': 'Page title',
         'CmsViewEditorContainer.pageKeywords': 'Keywords',
@@ -67,6 +76,7 @@ export const translations = {
         'CmsViewEditorContainer.noRelatedPages':'No related pages',
         'CmsViewEditorContainer.pageOptions': 'Page',
         'CmsViewEditorContainer.pageElements': 'Elements',
+        'CmsViewEditorContainer.pageDevelopment': 'Development',
         'CmsViewEditorContainer.staticAssets':'External Scripts',
         'CmsViewEditorContainer.public':'Public (is visible to everyone)',
         'CmsAddNewSite.cancel':'Cancel',
@@ -87,6 +97,14 @@ export const translations = {
         'JsonEditor.remove': 'Remove',
         'CmsElement.customTypes': 'Custom elements',
         'DataResolverEditor.wizard': 'Start wizard',
-        'DataResolverEditor.newDataResolverType': 'Create new data resolver'
+        'DataResolverEditor.newDataResolverType': 'Create new data resolver',
+        'JsonDomHelper.openComponent': 'Open %slug%',
+        'ResourceEditor.description': 'Any URL\'s added here will be added as scripts or styles depending on the type. If you want to define an attribute explicitly, you can add urls like this: {"src":"https://www.lunuc.com/TweenMax.min.js","async":true}',
+        'elements.cmsComponent': 'Cms component',
+        'elements.selectComponent': 'Select component',
+        'elements.general': 'General',
+        'elements.generalTab': 'General',
+        'JsonDomHelper.elementSettings': 'Settings',
+        'JsonDomAddElementDialog.editElement': 'Editing %name%'
     }
 }

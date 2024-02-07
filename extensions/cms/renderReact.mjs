@@ -1,4 +1,4 @@
-import {renderToString} from '../../api/resolver/graphqlSsr.js'
+import {renderToString} from '../../client/middleware/graphqlSsr.js'
 import JsonDom from './components/JsonDom.js'
 import React from 'react'
 import {getHostFromHeaders} from '../../util/host.mjs'

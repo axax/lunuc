@@ -24,7 +24,7 @@ import zipper from 'zip-local'
 import Hook from '../../util/hook.cjs'
 import {execSync} from 'child_process'
 import {MONGO_URL} from '../database.mjs'
-
+import {createAllIndexes} from '../index/indexes.mjs'
 const {UPLOAD_DIR} = config
 
 
@@ -48,6 +48,8 @@ export const createAllInitialData = async (db) => {
 
         const response = execSync(`mongorestore --nsInclude=lunuc.* --noIndexRestore --uri="${MONGO_URL}" --drop --gzip --archive="${dbFile}"`)
         console.log('restoreDbDump', response)
+
+        await createAllIndexes(db)
     }
 
 

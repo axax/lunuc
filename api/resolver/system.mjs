@@ -17,12 +17,13 @@ import {sendMail} from '../util/mail.mjs'
 import {getType} from '../../util/types.mjs'
 import {findAndReplaceObjectIds} from '../util/graphql.js'
 import {listBackups, createBackup, removeBackup, mongoExport} from './backups.mjs'
-import {getCollections} from "../util/collection.mjs";
+import {getCollections} from '../util/collection.mjs'
 import {resolver} from './index.mjs'
-import {createRequireForScript} from "../../util/require.mjs";
-import {csv2json} from "../util/csv.mjs";
-import {setPropertyByPath} from "../../client/util/json.mjs";
-import Hook from "../../util/hook.cjs";
+import {createRequireForScript} from '../../util/require.mjs'
+import {csv2json} from '../util/csv.mjs'
+import {setPropertyByPath} from '../../client/util/json.mjs'
+import Hook from '../../util/hook.cjs'
+import {createAllIndexes} from '../index/indexes.mjs'
 
 const {UPLOAD_DIR} = config
 
@@ -415,6 +416,10 @@ export const systemResolver = (db) => ({
         }
     },
     Mutation: {
+        createDbIndexes: async ({}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
+            return await createAllIndexes(db)
+        },
         createBackup: async ({type}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_BACKUPS)
             return createBackup(type)

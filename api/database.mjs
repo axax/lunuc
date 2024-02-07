@@ -1,6 +1,5 @@
 import {MongoClient} from 'mongodb'
 import {createAllInitialData} from './data/initialData.mjs'
-import {createAllIndexes} from './index/indexes.mjs'
 import ClientUtil from '../client/util/index.mjs'
 import Hook from '../util/hook.cjs'
 import Util from './util/index.mjs'
@@ -32,7 +31,7 @@ export const dbPreparation = async (db, cb) => {
 
         Hook.call('dbready', {db})
 
-        await createAllIndexes(db)
+       // await createAllIndexes(db)
 
         console.log('load global translations from key/value store')
         const globalTranslations = (await Util.getKeyValueGlobal(db, null, "GlobalTranslations", true)) || {}

@@ -1,10 +1,13 @@
 import {
     CAPABILITY_MANAGE_CMS_PAGES
 } from '../constants/index.mjs'
+import {_t} from '../../../util/i18n.mjs'
 
-const DEFAULT_TAB = 'Allgemein', IMAGE_OPTIMIZATION_TAB = 'Bild Optimierung', MARGIN_TAB = 'Abstände',
+const DEFAULT_TAB = 'elements.generalTab', IMAGE_OPTIMIZATION_TAB = 'Bild Optimierung', MARGIN_TAB = 'Abstände',
     TRANSLATION_TAB = 'Übersetzung',
     MEDIA_PROJECTION = ['_id', 'size', 'name', 'group', 'src', 'mimeType',{'info':['width','height']}]
+
+
 const imageOptions = key => ({
     [`${key}options_hint`]: {
         uitype: 'htmlParser',
@@ -438,7 +441,7 @@ const sizeOptions = key => ({
 
 const baseElements = [
     {
-        subHeader: 'Allgemeine Elemente',
+        subHeader: _t('elements.general'),
         tagName: 'SmartImage',
         name: 'Bild',
         icon: 'image',
@@ -2071,7 +2074,7 @@ const advancedElements = [
     },
     {
         tagName: 'Cms',
-        name: 'Komponente',
+        name: 'elements.cmsComponent',
         icon: 'functions',
         defaults: {
             $inlineEditor: {
@@ -2084,22 +2087,37 @@ const advancedElements = [
         },
         options: {
             p_component: {
-                tab: DEFAULT_TAB,
-                label: 'Komponente wählen',
+                tab: 'elements.cmsComponent',
+                label: 'elements.selectComponent',
                 type: 'CmsPage',
                 uitype: 'type_picker',
                 projection: ['slug'],
+                queryFields: ['slug'],
+                searchFields: ['slug','name'],
                 multi:false,
                 fullWidth:true
             },
             p_slug: {
                 tab: DEFAULT_TAB,
-                label: 'Slug'
+                label: 'Slug (deprecated)'
             },
             ...marginOptions('p_'),
             ...classOptions('p_'),
             ...observeOptions()
-        }
+        },
+        trigger: {
+            change: [`
+            if(['p_component'].indexOf(this.name)>=0){
+                const response = await fetch('/lunucapi/system/man?type=CmsPage&slug='+state.fields.p_component[0].slug)
+                if(response){
+                    const json = await response.json()
+                    if(json && json.fields){
+                        this.props.onFieldsChange(json.fields)
+                    }
+                }
+            }`
+            ]
+        },
     },
     {
         tagName: 'div',
@@ -2304,7 +2322,7 @@ const advancedElements = [
             ...classOptions('p_')
         }
     },
-    {
+    /*{
         tagName: 'QuillEditor',
         icon: 'textFormat',
         name: 'Rich-Text Inline (Datasource)',
@@ -2321,7 +2339,7 @@ const advancedElements = [
                 source: ':tr.${_app_.lang}.__uid__:{multiline:true}'
             }
         }
-    }
+    }*/
 ]
 
 let elementsMap, elementsMapAdvanced

@@ -375,13 +375,15 @@ const GenericResolver = {
         //console.log(`1 time ${new Date() - startTime}ms`)
 
         let cacheKey, cacheTime, cachePolicy
-        if (cache !== undefined) {
+        if (cache !== undefined && cache !== false) {
             if (cache.constructor === Object) {
                 if (cache.if !== 'false' && cache.if !== false) {
                     cacheTime = cache.expires === undefined ? 60000 : cache.expires
                     cacheKey = cache.key
                     cachePolicy = cache.policy
                 }
+            }else  if (cache === true) {
+                cacheTime = 300000
             } else {
                 cacheTime = cache
             }

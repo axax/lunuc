@@ -34,6 +34,7 @@ import {
 import Drawer from '@mui/material/Drawer'
 import DisplaySettingsIcon from '@mui/icons-material/DisplaySettings'
 import AppsIcon from '@mui/icons-material/Apps'
+import CodeIcon from '@mui/icons-material/Code'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import BottomNavigation from '@mui/material/BottomNavigation'
 import BottomNavigationAction from '@mui/material/BottomNavigationAction'
@@ -62,6 +63,14 @@ import CmsElement from '../components/CmsElement'
 import JsonDomHelper from '../components/JsonDomHelper'
 import CmsRelatedPages from '../components/CmsRelatedPages'
 import CmsPageOptions from '../components/CmsPageOptions'
+import styled from '@emotion/styled'
+
+const StyledBox = styled(Box)(({theme})=>({
+    display: 'flex',
+    overflow: 'auto',
+    flexDirection: 'column',
+    marginBottom: 'auto'
+}))
 
 const CodeEditor = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
@@ -96,6 +105,7 @@ class CmsViewEditorContainer extends React.Component {
             style,
             uniqueStyle,
             serverScript,
+            manual,
             resources,
             dataResolver,
             ssr,
@@ -123,6 +133,7 @@ class CmsViewEditorContainer extends React.Component {
             style,
             uniqueStyle,
             serverScript,
+            manual,
             dataResolver,
             ssr,
             urlSensitiv,
@@ -285,9 +296,10 @@ class CmsViewEditorContainer extends React.Component {
             state.simpleDialog !== this.state.simpleDialog ||
             state.addNewSite !== this.state.addNewSite ||
             state.serverScript !== this.state.serverScript ||
+            state.manual !== this.state.manual ||
             state.EditorOptions !== this.state.EditorOptions ||
             Util.shallowCompare(state.EditorPageOptions, this.state.EditorPageOptions,
-                {ignoreKeys:['styleScroll','dataResolverScroll','serverScriptScroll','templateScroll','scriptScroll']}) ||
+                {ignoreKeys:['styleScroll','dataResolverScroll','serverScriptScroll','templateScroll','scriptScroll','manualScroll']}) ||
             state.cmsStatusData !== this.state.cmsStatusData ||
             (
                 !!props.cmsPage.urlSensitiv && (
@@ -312,6 +324,7 @@ class CmsViewEditorContainer extends React.Component {
             PageOptions,
             dataResolver,
             serverScript,
+            manual,
             simpleDialog,
             showPageSettings,
             showPageSettingsConfig,
@@ -511,106 +524,7 @@ class CmsViewEditorContainer extends React.Component {
                 </MenuList>}
                 {sideMenu.length > 0 && <Divider/>}
 
-                {!(EditorOptions.bottomNavigation>0) && <Box style={{
-                    display: 'flex',
-                    overflow: 'auto',
-                    flexDirection: 'column',
-                    marginBottom: 'auto'}}>
-
-                    {canMangeCmsTemplate && <Expandable title="Data resolver"
-                                                        icon="storage"
-                                                        disableGutters
-                                                        onChange={this.handleSettingChange.bind(this, 'dataResolverExpanded', true)}
-                                                        expanded={EditorPageOptions.dataResolverExpanded}>
-                        <DataResolverEditor onScroll={this.handleSettingChange.bind(this, 'dataResolverScroll', true)}
-                                            scrollPosition={EditorPageOptions.dataResolverScroll}
-                                            onBlur={() => {
-                                                this.saveUnsafedChanges()
-                                            }}
-                                            onChange={this.handleDataResolverChange.bind(this)}>{dataResolver}</DataResolverEditor>
-                    </Expandable>}
-
-                    {canMangeCmsTemplate && <Expandable title="Server Script"
-                                                        icon="code"
-                                                        disableGutters
-                                                        onChange={this.handleSettingChange.bind(this, 'serverScriptExpanded', true)}
-                                                        expanded={EditorPageOptions.serverScriptExpanded}>
-                        <ScriptEditor
-                            key={'script' + slug}
-                            identifier={'serverScript' + cmsPage._id}
-                            onScroll={this.handleSettingChange.bind(this, 'serverScriptScroll', true)}
-                            scrollPosition={EditorPageOptions.serverScriptScroll}
-                            onBlur={() => {
-                                this.saveUnsafedChanges()
-                            }}
-                            onChange={this.handleServerScriptChange.bind(this)}>{serverScript}</ScriptEditor>
-                    </Expandable>}
-
-                    {canMangeCmsTemplate && <Expandable title="Template"
-                                                        icon="html"
-                                                        disableGutters
-                                                        onChange={this.handleSettingChange.bind(this, 'templateExpanded', true)}
-                                                        expanded={EditorPageOptions.templateExpanded}>
-                        <TemplateEditor
-                            onScroll={this.handleSettingChange.bind(this, 'templateScroll', true)}
-                            scrollPosition={EditorPageOptions.templateScroll}
-                            tab={EditorPageOptions.templateTab}
-                            onTabChange={(tab) => {
-                                if (this._autoSaveTemplate) {
-                                    this._autoSaveTemplate()
-                                }
-                                this.handleSettingChange('templateTab', true, tab)
-                            }}
-                            onChange={this.handleTemplateChange.bind(this)}>{template}</TemplateEditor>
-                    </Expandable>}
-
-                    {canMangeCmsTemplate && <Expandable title="Script"
-                                                        icon="js"
-                                                        disableGutters
-                                                        onChange={this.handleSettingChange.bind(this, 'scriptExpanded', true)}
-                                                        expanded={EditorPageOptions.scriptExpanded}>
-                        <ScriptEditor
-                            identifier={'script' + cmsPage._id}
-                            onScroll={this.handleSettingChange.bind(this, 'scriptScroll', true)}
-                            scrollPosition={EditorPageOptions.scriptScroll}
-                            onChange={this.handleClientScriptChange.bind(this)}>{script}</ScriptEditor>
-                    </Expandable>}
-
-                    {canMangeCmsTemplate && <Expandable title="Style"
-                                                        icon="css"
-                                                        disableGutters
-                                                        onChange={this.handleSettingChange.bind(this, 'styleExpanded', true)}
-                                                        expanded={EditorPageOptions.styleExpanded}>
-
-                        <CodeEditor showFab
-                                    lineNumbers
-                                    fileSplit
-                                    identifier={slug}
-                                    fileIndex={EditorPageOptions.styleFileIndex}
-                                    onFileChange={this.handleSettingChange.bind(this, 'styleFileIndex', true)}
-                                    type="css"
-                                    onScroll={this.handleSettingChange.bind(this, 'styleScroll', true)}
-                                    scrollPosition={EditorPageOptions.styleScroll}
-                                    onChange={this.handleStyleChange.bind(this)}>{style}</CodeEditor>
-
-                        <SimpleSwitch
-                            label="Unique Style"
-                            checked={!!this.state.uniqueStyle}
-                            onChange={this.handleFlagChange.bind(this, 'uniqueStyle')}
-                        />
-
-                    </Expandable>}
-
-
-                    {canMangeCmsTemplate && <Expandable title={_t('CmsViewEditorContainer.staticAssets')}
-                                                        disableGutters
-                                                        icon="link"
-                                                        onChange={this.handleSettingChange.bind(this, 'resourceExpanded', true)}
-                                                        expanded={EditorPageOptions.resourceExpanded}>
-
-                        <ResourceEditor resources={resources}
-                                        onChange={this.handleResourceChange.bind(this)}></ResourceEditor>
-                    </Expandable>}
+                {!(EditorOptions.bottomNavigation>0) && <StyledBox>
 
 
                     {canMangeCmsContent && <Expandable title={_t('CmsViewEditorContainer.settings')}
@@ -649,16 +563,117 @@ class CmsViewEditorContainer extends React.Component {
                                 expanded={EditorPageOptions.relatedPagesExpanded}>
                         <CmsRelatedPages _version={_version} slug={slug} history={props.history} cmsPage={cmsPage}/>
                     </Expandable>
-                </Box>}
-                {EditorOptions.bottomNavigation===1 && <Box style={{padding: '10px',
-                    display: 'flex',
-                    overflow: 'auto',
-                    flexDirection: 'column',
-                    marginBottom: 'auto'}}>
+                </StyledBox>}
+                {EditorOptions.bottomNavigation===1 && <StyledBox style={{padding: '10px'}}>
 
                     <CmsElement disabled={!EditorOptions.inlineEditor}
                                 advanced={canMangeCmsTemplate}/>
-                </Box>}
+                </StyledBox>}
+                {EditorOptions.bottomNavigation===2 && canMangeCmsTemplate && <StyledBox>
+                    <Expandable title="Data resolver"
+                        icon="storage"
+                        disableGutters
+                        onChange={this.handleSettingChange.bind(this, 'dataResolverExpanded', true)}
+                        expanded={EditorPageOptions.dataResolverExpanded}>
+                        <DataResolverEditor onScroll={this.handleSettingChange.bind(this, 'dataResolverScroll', true)}
+                                            scrollPosition={EditorPageOptions.dataResolverScroll}
+                                            onBlur={() => {
+                                                this.saveUnsafedChanges()
+                                            }}
+                                            onChange={this.handleDataResolverChange.bind(this)}>{dataResolver}</DataResolverEditor>
+                    </Expandable>
+                    <Expandable title="Server Script"
+                        icon="code"
+                        disableGutters
+                        onChange={this.handleSettingChange.bind(this, 'serverScriptExpanded', true)}
+                        expanded={EditorPageOptions.serverScriptExpanded}>
+                        <ScriptEditor
+                            key={'script' + slug}
+                            identifier={'serverScript' + cmsPage._id}
+                            onScroll={this.handleSettingChange.bind(this, 'serverScriptScroll', true)}
+                            scrollPosition={EditorPageOptions.serverScriptScroll}
+                            onBlur={() => {
+                                this.saveUnsafedChanges()
+                            }}
+                            onChange={this.setCmsPageValue.bind(this, {key:'serverScript', timeoutSetState: 0, timeoutUpdate: 5000})}>{serverScript}</ScriptEditor>
+                    </Expandable>
+
+                    <Expandable title="Template"
+                                icon="html"
+                                disableGutters
+                                onChange={this.handleSettingChange.bind(this, 'templateExpanded', true)}
+                                expanded={EditorPageOptions.templateExpanded}>
+                        <TemplateEditor
+                            onScroll={this.handleSettingChange.bind(this, 'templateScroll', true)}
+                            scrollPosition={EditorPageOptions.templateScroll}
+                            tab={EditorPageOptions.templateTab}
+                            onTabChange={(tab) => {
+                                this.saveCmsPage()
+                                this.handleSettingChange('templateTab', true, tab)
+                            }}
+                            onChange={this.handleTemplateChange.bind(this)}>{template}</TemplateEditor>
+                    </Expandable>
+
+                    <Expandable title="Script"
+                                icon="js"
+                                disableGutters
+                                onChange={this.handleSettingChange.bind(this, 'scriptExpanded', true)}
+                                expanded={EditorPageOptions.scriptExpanded}>
+                        <ScriptEditor
+                            identifier={'script' + cmsPage._id}
+                            onScroll={this.handleSettingChange.bind(this, 'scriptScroll', true)}
+                            scrollPosition={EditorPageOptions.scriptScroll}
+                            onChange={this.setCmsPageValue.bind(this, {key:'script', timeoutSetState: 500, timeoutUpdate: 5000})}>{script}</ScriptEditor>
+
+
+                    </Expandable>
+
+                    <Expandable title="Style"
+                                icon="css"
+                                disableGutters
+                                onChange={this.handleSettingChange.bind(this, 'styleExpanded', true)}
+                                expanded={EditorPageOptions.styleExpanded}>
+                        <CodeEditor showFab
+                                    lineNumbers
+                                    fileSplit
+                                    identifier={slug}
+                                    fileIndex={EditorPageOptions.styleFileIndex}
+                                    onFileChange={this.handleSettingChange.bind(this, 'styleFileIndex', true)}
+                                    type="css"
+                                    onScroll={this.handleSettingChange.bind(this, 'styleScroll', true)}
+                                    scrollPosition={EditorPageOptions.styleScroll}
+                                    onChange={this.setCmsPageValue.bind(this, {key:'style', timeoutSetState: 1000, timeoutUpdate: 5000})}>{style}</CodeEditor>
+
+                        <SimpleSwitch
+                            label="Unique Style"
+                            checked={!!this.state.uniqueStyle}
+                            onChange={this.handleFlagChange.bind(this, 'uniqueStyle')}
+                        />
+                    </Expandable>
+                    <Expandable title={_t('CmsViewEditorContainer.staticAssets')}
+                                disableGutters
+                                icon="link"
+                                onChange={this.handleSettingChange.bind(this, 'resourceExpanded', true)}
+                                expanded={EditorPageOptions.resourceExpanded}>
+                        <ResourceEditor resources={resources}
+                                        onChange={this.setCmsPageValue.bind(this, {key:'resources', timeoutSetState: 0, timeoutUpdate: 50})}></ResourceEditor>
+                    </Expandable>
+
+                    <Expandable title="Manual Page"
+                                icon="support"
+                                disableGutters
+                                onChange={this.handleSettingChange.bind(this, 'manualExpanded', true)}
+                                expanded={EditorPageOptions.manualExpanded}>
+                        <CodeEditor showFab
+                                    lineNumbers
+                                    identifier={slug}
+                                    type="json"
+                                    onScroll={this.handleSettingChange.bind(this, 'manualScroll', true)}
+                                    scrollPosition={EditorPageOptions.manualScroll}
+                                    onChange={this.setCmsPageValue.bind(this, {key:'manual', timeoutSetState: 500, timeoutUpdate: 5000})}>{manual}</CodeEditor>
+                    </Expandable>
+
+                </StyledBox>}
 
                 {canMangeCmsContent && <Box sx={{width: '100%'}}>
                     <Paper elevation={3}>
@@ -670,6 +685,7 @@ class CmsViewEditorContainer extends React.Component {
                             }}>
                             <BottomNavigationAction label={_t('CmsViewEditorContainer.pageOptions')} icon={<DisplaySettingsIcon />} />
                             <BottomNavigationAction label={_t('CmsViewEditorContainer.pageElements')} icon={<AppsIcon />} />
+                            {canMangeCmsTemplate && <BottomNavigationAction label={_t('CmsViewEditorContainer.pageDevelopment')} icon={<CodeIcon />} />}
                         </BottomNavigation>
                     </Paper>
                 </Box>}
@@ -1037,197 +1053,92 @@ class CmsViewEditorContainer extends React.Component {
         if (curElement) {
             curElement.blur()
         }
-        // clear timeouts
-        if (this._saveSettings) {
-            this._saveSettings()
-        }
-        if (this._autoSaveScriptTimeout) {
-            this._autoSaveScript(true)
-        }
-
-        if (this._autoSaveStyleTimeout) {
-            this._autoSaveStyle(true)
-        }
-
-        if (this._autoSaveServerScriptTimeout) {
-            this._autoSaveServerScript()
-        }
-
-        clearTimeout(this._templateTimeout)
-        if (this._autoSaveTemplateTimeout) {
-            this._autoSaveTemplate()
-        }
-        if (this._autoSaveDataResolverTimeout) {
-            this._autoSaveDataResolver()
-        }
+        this.saveCmsPage()
         return true
     }
 
     _keyValueMap = {}
     _saveCmsPageTimeout = 0
+    _keyValueMapState = {}
+    _setCmsPageStateTimeout = 0
 
-    saveCmsPage = (value, key, force) => {
-        const {updateCmsPage, cmsPage} = this.props
+    setCmsPageValue = ({key, timeoutSetState, timeoutUpdate, setStateCallback}, value) => {
+        if (this._saveSettings)
+            this._saveSettings()
+        const {cmsPage} = this.props
         if (value !== cmsPage[key]) {
             this._keyValueMap[key] = value
+            this._keyValueMapState[key] = value
+            clearTimeout(this._setCmsPageStateTimeout)
             clearTimeout(this._saveCmsPageTimeout)
-            this._saveCmsPageTimeout = setTimeout(()=>{
-                console.log('save cms', key)
-                updateCmsPage({_id:cmsPage._id, slug: cmsPage.slug, realSlug: cmsPage.realSlug, ...this._keyValueMap}, () => {})
-                this._keyValueMap = {}
-            },force?0:50)
-        }
-    }
 
-    handleFlagChange = (key, event, flag) => {
-        if (this._saveSettings)
-            this._saveSettings()
-        this.setState({[key]: flag})
-        this.saveCmsPage(flag, key)
-    }
-
-
-    handleClientScriptChange = (script) => {
-        if (this._saveSettings)
-            this._saveSettings()
-
-
-        clearTimeout(this._scriptTimeout)
-        this._scriptTimeout = null
-
-
-        if (script.length > 50) {
-            // delay change
-            this._scriptTimeout = setTimeout(() => {
-                this._scriptTimeout = null
-                this.setState({script})
-            }, 500)
-
-        } else {
-            this.setState({script})
-        }
-
-        this._autoSaveScript = (force) => {
-            if (this._scriptTimeout) {
-                if (force) {
-                    this._scriptTimeout = clearTimeout(this._scriptTimeout)
-                    this._autoSaveScriptTimeout = clearTimeout(this._autoSaveScriptTimeout)
-                    this.saveCmsPage(script, 'script', force)
-                    this.setState({script})
-                } else {
-                    this._autoSaveScriptTimeout = setTimeout(this._autoSaveScript, 5000)
-                }
-            } else {
-                this._autoSaveScriptTimeout = clearTimeout(this._autoSaveScriptTimeout)
-                this.saveCmsPage(this.state.script, 'script', force)
-                delete this._autoSaveScript
+            if(timeoutSetState){
+                this._setCmsPageStateTimeout = setTimeout(()=>{
+                    this.setState(this._keyValueMapState, setStateCallback)
+                    this._keyValueMapState = {}
+                },timeoutSetState)
+            }else{
+                this.setState(this._keyValueMapState, setStateCallback)
+                this._keyValueMapState = {}
             }
-        }
 
-        clearTimeout(this._autoSaveScriptTimeout)
-        this._autoSaveScriptTimeout = setTimeout(this._autoSaveScript, 5000)
+            this._saveCmsPageTimeout = setTimeout(()=>{
+                this.saveCmsPage()
+            },timeoutUpdate || 50)
+
+        }
     }
 
-    handleStyleChange = (style) => {
+    saveCmsPage(){
         if (this._saveSettings)
             this._saveSettings()
-
-        clearTimeout(this._setStyleDelayed)
-        this._setStyleDelayed = setTimeout(() => {
-            this.setState({style})
-        }, 1000)
-
-        this._autoSaveStyle = (force) => {
-            clearTimeout(this._autoSaveStyleTimeout)
-            this._autoSaveStyleTimeout = 0
-            this.saveCmsPage(style, 'style', force)
+        const keys = Object.keys(this._keyValueMap)
+        if(keys.length>0) {
+            const {updateCmsPage, cmsPage} = this.props
+            console.log('save cms values for', keys)
+            updateCmsPage({
+                _id: cmsPage._id,
+                slug: cmsPage.slug,
+                realSlug: cmsPage.realSlug, ...this._keyValueMap
+            }, () => {})
+            this._keyValueMap = {}
         }
-
-        clearTimeout(this._autoSaveStyleTimeout)
-        this._autoSaveStyleTimeout = setTimeout(this._autoSaveStyle, 5000)
     }
 
-    handleServerScriptChange = (serverScript, instantSave) => {
-        if (this._saveSettings)
-            this._saveSettings()
-
-        this.setState({serverScript})
-        this._autoSaveServerScript = () => {
-            clearTimeout(this._autoSaveServerScriptTimeout)
-            this._autoSaveServerScriptTimeout = 0
-            this.saveCmsPage(serverScript, 'serverScript')
-        }
-
-        clearTimeout(this._autoSaveServerScriptTimeout)
-        if (instantSave) {
-            this._autoSaveServerScript()
-        } else {
-            this._autoSaveServerScriptTimeout = setTimeout(this._autoSaveServerScript, 5000)
-        }
+    handleFlagChange = (key, event, value) => {
+        this.setCmsPageValue({key}, value)
     }
 
     handleDataResolverChange = (str, instantSave) => {
-        if (this._saveSettings)
-            this._saveSettings()
-        this.setState({dataResolver: str}, () => {
-            this._tmpDataResolver = null
-        })
-
-        this._autoSaveDataResolver = () => {
-            clearTimeout(this._autoSaveDataResolverTimeout)
-            this._autoSaveDataResolverTimeout = 0
-            this.saveCmsPage(str, 'dataResolver')
-        }
-        clearTimeout(this._autoSaveDataResolverTimeout)
-        if (instantSave === true) {
-            this._autoSaveDataResolver()
-        } else {
-            this._autoSaveDataResolverTimeout = setTimeout(this._autoSaveDataResolver, instantSave || 1000)
-        }
+        this.setCmsPageValue({key: 'dataResolver',
+            timeoutSetState:0,
+            timeoutUpdate: instantSave?0:1000,
+            setStateCallback:()=>{
+                this._tmpDataResolver = null
+            }}, str)
     }
+
 
     handleTemplateChange = (str, instantSave, skipHistory) => {
         if (str !== this.state.template) {
-            clearTimeout(this._templateTimeout)
 
-            this._templateTimeout = setTimeout(() => {
-                if (str.constructor !== String) {
-                    str = JSON.stringify(str, null, 2)
+            if (str.constructor !== String) {
+                str = JSON.stringify(str, null, 2)
+            }
+
+            if (!skipHistory) {
+                this.templateChangeHistory.unshift(this.state.template)
+                if (this.templateChangeHistory.length > 10) {
+                    this.templateChangeHistory.length = 10
                 }
+            }
 
-                // save settings first
-                if (this._saveSettings)
-                    this._saveSettings()
-
-                if (!skipHistory) {
-                    this.templateChangeHistory.unshift(this.state.template)
-                    if (this.templateChangeHistory.length > 10) {
-                        this.templateChangeHistory.length = 10
-                    }
-                }
-
-                this.setState({template: str, templateError: null})
-                this._autoSaveTemplate = () => {
-                    clearTimeout(this._autoSaveTemplateTimeout)
-                    this._autoSaveTemplateTimeout = 0
-                    this._autoSaveTemplate = null
-                    this.saveCmsPage(str, 'template')
-                }
-
-                clearTimeout(this._autoSaveTemplateTimeout)
-                if (instantSave) {
-                    this._autoSaveTemplate()
-                } else {
-                    this._autoSaveTemplateTimeout = setTimeout(this._autoSaveTemplate, 5000)
-                }
-
-            }, instantSave ? 0 : 300)
+            this.setCmsPageValue({
+                key: 'template',
+                timeoutSetState:instantSave?0:300,
+                timeoutUpdate: instantSave?0:5000
+            }, str)
         }
-    }
-
-    handleResourceChange = (str) => {
-        this.setState({resources: str})
-        this.saveCmsPage(str,'resources')
     }
 
     drawerWidthChange = (newWidth) => {
@@ -1240,8 +1151,7 @@ class CmsViewEditorContainer extends React.Component {
 
     handleComponentEditClose() {
         const {cmsTemplateEditData} = this.state
-        this.saveCmsPage(this.state.template, 'template')
-
+        this.setCmsPageValue( {key:'template'}, this.state.template)
         this.editTemplate(null, cmsTemplateEditData.component, cmsTemplateEditData.scope)
     }
 
@@ -1409,7 +1319,7 @@ CmsViewEditorContainer.propTypes = {
 
 
 const CmsViewEditorContainerWithGql = compose(
-    graphql(`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$realSlug:String,$name:LocalizedStringInput,$keyword:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:String,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$loadPageOptions:Boolean,$ssrStyle:Boolean,$uniqueStyle:Boolean,$publicEdit:Boolean,$compress:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,realSlug:$realSlug,name:$name,keyword:$keyword,script:$script,style:$style,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,loadPageOptions:$loadPageOptions,compress:$compress,ssrStyle:$ssrStyle,uniqueStyle:$uniqueStyle,publicEdit:$publicEdit,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug realSlug name{${config.LANGUAGES.join(' ')}} keyword{${config.LANGUAGES.join(' ')}} template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
+    graphql(`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$realSlug:String,$name:LocalizedStringInput,$keyword:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$manual:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:String,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$loadPageOptions:Boolean,$ssrStyle:Boolean,$uniqueStyle:Boolean,$publicEdit:Boolean,$compress:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,realSlug:$realSlug,name:$name,keyword:$keyword,script:$script,style:$style,serverScript:$serverScript,manual:$manual,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,loadPageOptions:$loadPageOptions,compress:$compress,ssrStyle:$ssrStyle,uniqueStyle:$uniqueStyle,publicEdit:$publicEdit,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug realSlug name{${config.LANGUAGES.join(' ')}} keyword{${config.LANGUAGES.join(' ')}} template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, realSlug, ...rest}, cb) => {
 

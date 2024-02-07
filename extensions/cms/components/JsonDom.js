@@ -170,10 +170,19 @@ class JsonDom extends React.Component {
                 }} to={url} {...rest}/>
             }
         },
-        'Cms': ({props, _this, style, className, ...rest}) => {
+        'Cms': ({props, _this, style, className, component, slug, ...rest}) => {
             if (!rest.id) {
-                console.warn(`There is no id set for included Cms Component ${rest.slug}`, props)
+                console.warn(`There is no id set for included Cms Component ${slug}`, props)
             }
+
+            if(component && component.length > 0){
+                slug = component[0].slug
+            }
+
+            if (!slug) {
+                return <div>No Slug</div>
+            }
+
             let _props = props
             if (_props && _props.constructor === String) {
                 try {
@@ -182,10 +191,8 @@ class JsonDom extends React.Component {
                     console.log(e)
                 }
             }
-            if (!rest.slug) {
-                return <div>No Slug</div>
-            }
             const cvc = <CmsViewContainer key={rest.id}
+                                          slug={slug}
                                           _props={_props}
                                           _parentRef={_this}
                                           fetchPolicy='cache-first'
@@ -1146,7 +1153,6 @@ class JsonDom extends React.Component {
                             eleProps._WrappedComponent = eleType
                             eleProps._scope = scope
                             eleProps._cmsActions = this.props.cmsEditorActions
-                            eleProps._user = this.props.user
                             eleProps._onTemplateChange = this.onTemplateChange.bind(this)
                             eleProps._onDataResolverPropertyChange = this.props.onDataResolverPropertyChange
                             eleProps._findSegmentInDataResolverByKeyOrPath = this.props.findSegmentInDataResolverByKeyOrPath
