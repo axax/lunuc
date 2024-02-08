@@ -319,6 +319,7 @@ const sendFileFromTemplateDir = (req, res, urlPathname, headers, parsedUrl, host
 }
 
 const hasHttpsWwwRedirect = ({parsedUrl, hostrule, host, req, res, remoteAddress}) => {
+    console.log(host, config.DEV_MODE, req.isHttps, process.env.LUNUC_FORCE_HTTPS, req.headers['x-track-ip'], hostrule)
     if (host !== 'localhost' && !net.isIP(host)) {
 
         // force www
