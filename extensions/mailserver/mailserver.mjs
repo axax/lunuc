@@ -166,7 +166,7 @@ const startListening = async (db, context) => {
                             html: html || '', text: text || '', messageId, meta
                         }, {context}, false)
                     }else{
-                        console.warn(`no mail account for ${parsed.to.text}`, parsed)
+                        console.warn(`no mail account for`, parsed)
                     }
                 }
             })

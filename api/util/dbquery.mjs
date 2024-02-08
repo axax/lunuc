@@ -1,5 +1,6 @@
 import {ObjectId} from 'mongodb'
 import ClientUtil from '../../client/util'
+import GenericResolver from "../resolver/generic/genericResolver.mjs";
 
 export const comparatorMap = {
     ':': '$regex',
@@ -175,7 +176,18 @@ export const addFilterToMatch = async ({db, debugInfo, filterKey, filterValue, t
             }
         }else {
             $options= 'i'
+
             finalValue = ClientUtil.escapeRegex(filterValue)
+
+            if(finalValue !== filterValue){
+                console.log('filter exscaped', filterValue)
+                GenericResolver.createEntity(db, {context:{lang:'en'}}, 'Log', {
+                    location: 'dbquery',
+                    type: 'filterEscaped',
+                    message: 'filter exscaped: ' + filterValue,
+                    meta: {filterValue, filterKey, type}
+                })
+            }
         }
 
         if (rawComperator.indexOf('!')>=0) {
@@ -189,6 +201,8 @@ export const addFilterToMatch = async ({db, debugInfo, filterKey, filterValue, t
                 matchExpression.$options = $options
             }
         }
+
+        console.log('filer', matchExpression)
 
     } else {
         matchExpression = {[comparator]: filterValue}

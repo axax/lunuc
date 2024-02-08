@@ -226,7 +226,7 @@ const isHostGroupBlocked = (hostname) => {
     const groups = dnsServerContext.hosts[hostname].group || []
     for (const group of groups) {
         const hostGroup = dnsServerContext.hostsGroup[group.toString()]
-        if (hostGroup.block || hostGroup._block) {
+        if (hostGroup && (hostGroup.block || hostGroup._block)) {
             block = true
             break
         }
