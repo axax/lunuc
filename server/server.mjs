@@ -319,7 +319,7 @@ const sendFileFromTemplateDir = (req, res, urlPathname, headers, parsedUrl, host
 }
 
 const hasHttpsWwwRedirect = ({parsedUrl, hostrule, host, req, res, remoteAddress}) => {
-    console.log(host, config.DEV_MODE, req.isHttps, process.env.LUNUC_FORCE_HTTPS, req.headers['x-track-ip'], hostrule)
+
     if (host !== 'localhost' && !net.isIP(host)) {
 
         // force www
@@ -512,7 +512,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
         if(!isTemporarilyBlocked({req, key:remoteAddress})) {
             const host = getHostFromHeaders(req.headers)
 
-            req.isHttps = req.socket.encrypted || this.constructor.name === 'Server'
+            req.isHttps = req.connection.encrypted || req.socket.encrypted
 
             // check with and without www
             const hostRuleHost = req.headers['x-host-rule'] ? req.headers['x-host-rule'].split(':')[0] : host
