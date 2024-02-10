@@ -32,7 +32,7 @@ import DomUtil from '../util/dom.mjs'
 import {matchExpr, propertyByPath} from '../util/json.mjs'
 import JsonEditor from '../../extensions/cms/components/JsonEditor'
 import {Query} from '../middleware/graphql'
-import {getTypeQueries} from 'util/types.mjs'
+import {getTypeQueries, getTypes} from 'util/types.mjs'
 import Async from './Async'
 import styled from '@emotion/styled'
 import theme from './ui/impl/material/theme'
@@ -1203,6 +1203,9 @@ class GenericForm extends React.Component {
                     field.enum = new Function('const state = this.state;return ' + field.$enum).call({
                         state:this.state
                     })
+                }
+                if(field.enum==='$TYPES'){
+                    field.enum = Object.keys(getTypes())
                 }
 
                 value = matchObjectValueFromList(value, field, field.enum)

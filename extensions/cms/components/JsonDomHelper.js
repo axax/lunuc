@@ -948,14 +948,19 @@ class JsonDomHelper extends React.Component {
     }
 
     createContextMenu({isCms, subJson, menuItems, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange, overrideEvents, onChange, _options, _dynamic, rest, _json, isInLoop}) {
-        if (isCms && subJson && subJson.p && subJson.p.slug !== null && subJson.p.slug !== undefined) {
-            menuItems.push({
-                name: _t('JsonDomHelper.openComponent', {slug:subJson.p.id || subJson.p.slug}),
-                icon: <LaunchIcon/>,
-                onClick: () => {
-                    this.props.history.push('/' + subJson.p.slug)
-                }
-            })
+        if (isCms && subJson && subJson.p) {
+
+            const slug = subJson.p.component && subJson.p.component.length > 0 ? subJson.p.component[0].slug : subJson.p.slug
+
+            if(slug !== null && slug !== undefined) {
+                menuItems.push({
+                    name: _t('JsonDomHelper.openComponent', {slug: subJson.p.id || slug}),
+                    icon: <LaunchIcon/>,
+                    onClick: () => {
+                        this.props.history.push('/' + slug)
+                    }
+                })
+            }
         }
         if (hasJsonToEdit) {
             if (parsedSource) {

@@ -520,6 +520,9 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             const hostrule = {...hostrules.general, ...(hostrules[hostRuleHost] || hostrules[hostRuleHost.substring(4)])}
             const parsedUrl = url.parse(req.url, true)
 
+            console.log(`${req.method} ${remoteAddress}: ${host}${parsedUrl.href} - ${req.headers['user-agent']} - ${parsedUrl.pathname}`)
+
+
             if (hostrule.certDir && hasHttpsWwwRedirect( {parsedUrl, hostrule, host, req, res, remoteAddress})) {
                 return
             }
@@ -537,8 +540,6 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             } catch (e) {
                 urlPathname = decodeURIComponentSafe(parsedUrl.pathname)
             }
-
-            console.log(`${req.method} ${remoteAddress}: ${host}${parsedUrl.href} - ${req.headers['user-agent']}`)
 
             //small security check
             if (urlPathname.indexOf('../') >= 0) {

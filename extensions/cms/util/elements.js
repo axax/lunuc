@@ -2056,14 +2056,9 @@ const advancedElements = [
         },
         options: {
             $inlineEditor_picker_type: {
-                label: 'Style',
+                label: 'Type',
                 uitype: 'select',
-                enum: [
-                    {
-                        name: 'GenericData',
-                        value: 'GenericData'
-                    }
-                ]
+                enum: '$TYPES'
             },
             $inlineEditor_picker_baseFilter: {
                 label: 'Filter'
@@ -2074,7 +2069,7 @@ const advancedElements = [
     },
     {
         tagName: 'Cms',
-        name: 'elements.cmsComponent',
+        name: _t('elements.cmsComponent'),
         icon: 'functions',
         defaults: {
             $inlineEditor: {

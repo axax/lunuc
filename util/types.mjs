@@ -8,7 +8,6 @@ export const types = {}, typeQueries = {}
 
 export const getTypes = () => {
     if (Object.keys(types).length === 0) {
-        const allTypes = []
         //  create types object only once
         for (const extensionName in extensions) {
             const extension = extensions[extensionName]
@@ -16,17 +15,10 @@ export const getTypes = () => {
 
                 extension.options.types.forEach(type => {
                     types[type.name] = Object.assign({}, type)
-                    allTypes.push(type.name)
                     // add extension name so we know by which extension the type is used
                     if (!types[type.name].usedBy) {
                         types[type.name].usedBy = []
                     }
-                    type.fields.forEach(field => {
-                        if (field.enum === '$TYPES') {
-                            field.enum = allTypes
-                        }
-                    })
-
                     types[type.name].usedBy.push(extensionName)
                 })
 

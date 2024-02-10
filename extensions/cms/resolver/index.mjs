@@ -2,7 +2,7 @@ import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
 import React from 'react'
 import Util from '../../../api/util/index.mjs'
 import ClientUtil from '../../../client/util/index.mjs'
-import {getCmsPage} from '../util/cmsPage.mjs'
+import {getCmsPage, getCmsPageCacheKey} from '../util/cmsPage.mjs'
 import {resolveData} from '../util/dataResolver.mjs'
 import {pubsub, pubsubHooked} from '../../../api/subscription.mjs'
 import {DEFAULT_DATA_RESOLVER, DEFAULT_TEMPLATE, DEFAULT_SCRIPT, DEFAULT_STYLE, CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_CONTENT} from '../constants/index.mjs'
@@ -378,8 +378,7 @@ export default db => ({
 
 
             // clear server cache
-            const cacheKey = 'cmsPage-' + (_version ? _version + '-' : '') + rest.slug
-
+            const cacheKey = getCmsPageCacheKey({_version, slug: rest.slug})
 
             Cache.clearStartWith(cacheKey)
 

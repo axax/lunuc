@@ -26,10 +26,15 @@
         },
         {
           "name": "password",
+          "uitype": "password",
           "required": true
         },
         {
           "name": "active",
+          "type": "Boolean"
+        },
+        {
+          "name": "temp",
           "type": "Boolean"
         }
       ]
@@ -61,6 +66,13 @@
         },
         {
           "name": "date",
+          "label": "Date",
+          "type": "Float",
+          "uitype": "datetime",
+          "index": 1
+        },
+        {
+          "name": "openedDate",
           "label": "Date",
           "type": "Float",
           "uitype": "datetime",

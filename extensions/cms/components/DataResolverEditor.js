@@ -4,6 +4,7 @@ import {jsonPropertyTemplates, jsonTemplates} from './templates/dataResolver'
 import Async from '../../../client/components/Async'
 import {_t} from '../../../util/i18n.mjs'
 import GenericForm from '../../../client/components/GenericForm'
+import {getType} from '../../../util/types.mjs'
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
 
@@ -22,6 +23,28 @@ class DataResolverEditor extends React.Component {
                     {
                         track: {
                             event: 'visit'
+                        }
+                    })
+            }else if(this.wizardForm.state.fields.resolverType==='type'){
+                const type = this.wizardForm.state.fields.type
+                const typeDefinition = getType(type.name)
+                json.push(
+                    {
+                        $if: 'true',
+                        t: `${type.subscribe ? '$' : ''}${type.name}`,
+                        restriction: {
+                            type: 'role',
+                            role: 'view_app'
+                        },
+                        d: typeDefinition.fields.map(f => f.name),
+                        includeCount: false,
+                        l: type.limit || 10,
+                        f: type.filter || '',
+                        s: '_id desc',
+                        _before: {
+                            $sample: {
+                                size: 20
+                            }
                         }
                     })
             }else if(this.wizardForm.state.fields.resolverType==='genericType'){
@@ -77,9 +100,46 @@ class DataResolverEditor extends React.Component {
                         resolverType:{
                             name: 'resolverType',
                             label: 'Resolver Type',
-                            enum: [{value:'genericType', name:'Generic Type'},{value:'track', name:'Tracking'}],
+                            enum: [{value:'type', name:'Type'},{value:'genericType', name:'Generic Type'},{value:'track', name:'Tracking'}],
                             fullWidth: true,
-                            value:'genericType'
+                            value:'type'
+                        },
+                        type:{
+                            uistate: {
+                                visible: 'resolverType==type'
+                            },
+                            uitype:'wrapper',
+                            label:'Add type',
+                            name:'genericType',
+                            multi:false,
+                            titleTemplate: 'Generic Type ${this.context ? this.context.type || "": ""}',
+                            subFields:[
+                                {
+                                    name: 'name',
+                                    label: 'Name',
+                                    enum: '$TYPES',
+                                    fullWidth: true
+                                },
+                                {
+                                    name: 'filter',
+                                    label: 'Filter',
+                                    fullWidth: true
+                                },
+                                {
+                                    name: 'limit',
+                                    label: 'Limit',
+                                    type: 'Float',
+                                    defaultValue:10,
+                                    uitype:'number',
+                                    fullWidth: true
+                                },
+                                {
+                                    name: 'subscribe',
+                                    label: 'Subscribe',
+                                    type: 'Boolean',
+                                    fullWidth: true
+                                }
+                            ]
                         },
                         genericType:{
                             uistate: {

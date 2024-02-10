@@ -8,6 +8,10 @@ import {getHostRules, hostListFromString} from '../../../util/hostrules.mjs'
 import Hook from "../../../util/hook.cjs";
 
 
+export const getCmsPageCacheKey = ({_version, slug, host, inEditor})=>{
+    return 'cmsPage-' + (_version ? _version + '-' : '') + slug + (host ? '-' + host : '') + (inEditor ? '-inEditor': '')
+}
+
 export const getCmsPage = async ({db, context, headers, ...params}) => {
 
 
@@ -55,7 +59,8 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
         }
     }
 
-    const cacheKey = 'cmsPage-' + (_version ? _version + '-' : '') + slug + (host ? '-' + host : '') + (inEditor ? '-inEditor': '')
+    const cacheKey = getCmsPageCacheKey({_version, slug, host, inEditor})
+
     let cmsPages
     if (!editmode) {
         cmsPages = Cache.get(cacheKey)
@@ -157,7 +162,7 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
             //only cache if public
             if (!editmode && cmsPages.results[0].public) {
                 if (slug !== cmsPages.results[0].slug) {
-                    const cacheKeyAlias = 'cmsPage-' + (_version ? _version + '-' : '') + cmsPages.results[0].slug + (host ? '-' + host : '')
+                    const cacheKeyAlias = getCmsPageCacheKey({_version, slug: cmsPages.results[0].slug, host})
                     Cache.setAlias(cacheKeyAlias, cacheKey)
                 }
                 Cache.set(cacheKey, cmsPages, 6000000) // cache expires in 1h40min

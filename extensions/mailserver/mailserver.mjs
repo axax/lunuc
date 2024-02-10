@@ -159,7 +159,7 @@ const startListening = async (db, context) => {
 
                         mailserverResolver(db).Mutation.createMailAccountMessage({
                             mailAccount: mailAccount._id,
-                            from: meta.to.text,
+                            from: meta.from.text,
                             to: meta.to.text,
                             date: new Date(date).getTime(),
                             subject,

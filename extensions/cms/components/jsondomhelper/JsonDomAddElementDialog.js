@@ -16,7 +16,6 @@ export default function JsonDomAddElementDialog(props){
 
     const [currentElement, setCurrentElement] = React.useState(props.currentElement)
     const [form, setForm] = React.useState(null)
-console.log(currentElement.options)
     return <SimpleDialog fullWidth={true}
                          maxWidth="lg"
                          key="dialogProps"
@@ -35,7 +34,7 @@ console.log(currentElement.options)
                                  label: _t('core.save'),
                                  type: 'primary'
                              }]}
-                         title={_t('JsonDomAddElementDialog.editElement',{name: `${currentElement && currentElement.name? '(' + _t(currentElement.name) + ')' : ''}`})}>
+                         title={_t('JsonDomAddElementDialog.editElement',{name: `${currentElement && currentElement.name? '(' + currentElement.name + ')' : ''}`})}>
 
         {props.showElementSelector && <SimpleSelect
             fullWidth={true}

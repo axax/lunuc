@@ -26,7 +26,7 @@ export default function CmsRelatedPages(props){
                 _version,
                 limit,
                 page,
-                filter: `slug=^${cmsPage.realSlug.split('/')[0]}$ slug=^${cmsPage.realSlug.split('/')[0]}/`
+                filter: `slug=~^${cmsPage.realSlug.split('/')[0]}$ slug=~^${cmsPage.realSlug.split('/')[0]}/`
             }}>
             {({loading, error, data}) => {
                 if (loading) return <p>Loading...</p>
