@@ -123,7 +123,6 @@ export default db => ({
                             comment: 'Unsubscribe'
                         }
                     }
-                    console.log(listHeader)
                     /*const headers = {
                         'List-Unsubscribe': `<${(req.isHttps ? 'https://' : 'http://')}${getHostFromHeaders(req.headers)}/core/unsubscribe-newsletter?email=${sub.email}&token=${sub.token}&mailing=${sub.mailing}>, <mailto:info@onyou.ch>`,
                         'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
@@ -197,6 +196,7 @@ export default db => ({
                         }
                     }
 
+                    console.log('send newsletter', sub.email)
 
                     const result = await sendMail(db, Object.assign(req.context, {lang: subLang}), {
                         slug: template,
