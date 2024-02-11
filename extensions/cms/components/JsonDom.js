@@ -1234,6 +1234,9 @@ class JsonDom extends React.Component {
 
             scope.fetchingMore = false
 
+            // add a refrence to the global app object
+            //this.scope._app_ = _app_
+
             // add a reference of the bindings object
             scope.bindings = this.bindings
 

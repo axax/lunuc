@@ -177,18 +177,17 @@ class CmsViewEditorContainer extends React.Component {
         const {history, dynamic} = this.props
 
         if (!dynamic) {
-            this._handleWindowClose = this.saveUnsafedChanges.bind(this)
             window.addEventListener('beforeunload', ()=>{
                 console.log('beforeunload')
-                this._handleWindowClose()
+                this.saveCmsPage()
             })
             window.addEventListener('blur', () => {
-                this._handleWindowClose(true)
+                this.saveCmsPage()
             })
 
             history.block(() => {
                 console.log('block')
-                this.saveUnsafedChanges()
+                this.saveCmsPage()
                 return true
             })
         }
@@ -236,9 +235,7 @@ class CmsViewEditorContainer extends React.Component {
 
     componentWillUnmount() {
         clearTimeout(this._watchCmsPageStatus)
-        this.saveUnsafedChanges()
-        window.removeEventListener('beforeunload', this._handleWindowClose)
-        window.removeEventListener('blur', this._handleWindowClose)
+        this.saveCmsPage()
     }
 
 
@@ -577,9 +574,6 @@ class CmsViewEditorContainer extends React.Component {
                         expanded={EditorPageOptions.dataResolverExpanded}>
                         <DataResolverEditor onScroll={this.handleSettingChange.bind(this, 'dataResolverScroll', true)}
                                             scrollPosition={EditorPageOptions.dataResolverScroll}
-                                            onBlur={() => {
-                                                this.saveUnsafedChanges()
-                                            }}
                                             onChange={this.handleDataResolverChange.bind(this)}>{dataResolver}</DataResolverEditor>
                     </Expandable>
                     <Expandable title="Server Script"
@@ -592,9 +586,6 @@ class CmsViewEditorContainer extends React.Component {
                             identifier={'serverScript' + cmsPage._id}
                             onScroll={this.handleSettingChange.bind(this, 'serverScriptScroll', true)}
                             scrollPosition={EditorPageOptions.serverScriptScroll}
-                            onBlur={() => {
-                                this.saveUnsafedChanges()
-                            }}
                             onChange={this.setCmsPageValue.bind(this, {key:'serverScript', timeoutSetState: 0, timeoutUpdate: 5000})}>{serverScript}</ScriptEditor>
                     </Expandable>
 
@@ -1046,17 +1037,6 @@ class CmsViewEditorContainer extends React.Component {
         _app_.dispatcher.addError({key: 'cmsError', msg: `${meta.loc}: ${e.message} -> ${meta.slug}`})
     }
 
-    saveUnsafedChanges(isBlur) {
-        console.log(`safe unsafed changes for ${this.props.slug}`)
-        // blur on unload to make sure everything gets saved
-        const curElement = isBlur ? null : document.activeElement
-        if (curElement) {
-            curElement.blur()
-        }
-        this.saveCmsPage()
-        return true
-    }
-
     _keyValueMap = {}
     _saveCmsPageTimeout = 0
     _keyValueMapState = {}
@@ -1065,28 +1045,24 @@ class CmsViewEditorContainer extends React.Component {
     setCmsPageValue = ({key, timeoutSetState, timeoutUpdate, setStateCallback}, value) => {
         if (this._saveSettings)
             this._saveSettings()
-        const {cmsPage} = this.props
-        if (value !== cmsPage[key]) {
-            this._keyValueMap[key] = value
-            this._keyValueMapState[key] = value
-            clearTimeout(this._setCmsPageStateTimeout)
-            clearTimeout(this._saveCmsPageTimeout)
+        this._keyValueMap[key] = value
+        this._keyValueMapState[key] = value
+        clearTimeout(this._setCmsPageStateTimeout)
+        clearTimeout(this._saveCmsPageTimeout)
 
-            if(timeoutSetState){
-                this._setCmsPageStateTimeout = setTimeout(()=>{
-                    this.setState(this._keyValueMapState, setStateCallback)
-                    this._keyValueMapState = {}
-                },timeoutSetState)
-            }else{
+        if(timeoutSetState){
+            this._setCmsPageStateTimeout = setTimeout(()=>{
                 this.setState(this._keyValueMapState, setStateCallback)
                 this._keyValueMapState = {}
-            }
-
-            this._saveCmsPageTimeout = setTimeout(()=>{
-                this.saveCmsPage()
-            },timeoutUpdate || 50)
-
+            },timeoutSetState)
+        }else{
+            this.setState(this._keyValueMapState, setStateCallback)
+            this._keyValueMapState = {}
         }
+
+        this._saveCmsPageTimeout = setTimeout(()=>{
+            this.saveCmsPage()
+        },timeoutUpdate || 50)
     }
 
     saveCmsPage(){
