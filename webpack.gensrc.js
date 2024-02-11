@@ -52,6 +52,8 @@ GenSourceCode.prototype.apply = function (compiler) {
 
         clientAdminContent += base
 
+        const extensionConfigs = {}
+
         for (const file of exteionsion) {
             if (fs.statSync(EXTENSION_PATH + file).isDirectory()) {
                 if (APP_CONFIG.extensions) {
@@ -89,6 +91,13 @@ GenSourceCode.prototype.apply = function (compiler) {
 
                             // genearte source for backend
                             gensrcExtension(file, buildOptions)
+
+                            if(buildOptions.config){
+                                Object.keys(buildOptions.config).forEach(key=>{
+                                    extensionConfigs[key] = buildOptions.config[key]
+                                })
+                                delete buildOptions.config
+                            }
 
                             // remove hidden fields as we don't want theme to be exposed to the frontend
                             if (buildOptions.types) {
@@ -209,8 +218,13 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
         /* generate config */
         const config = Object.assign({}, APP_CONFIG.options, APP_VALUES)
 
+        Object.keys(extensionConfigs).forEach(key=>{
+            if(config[key]!==undefined){
+                console.warn(`config key ${key} is already used and will be overriden with value used in extension`)
+            }
+        })
 
-        let configContent = `${GENSRC_HEADER}export default ${JSON.stringify(config)}\n`
+        let configContent = `${GENSRC_HEADER}export default ${JSON.stringify({...config,...extensionConfigs},null,4)}\n`
         fs.writeFile(GENSRC_PATH + "/config.mjs", configContent, function (err) {
             if (err) {
                 return console.log(err)
@@ -220,13 +234,15 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
         // for client
         //delete config.HOSTRULES_ABSPATH
         //delete config.WEBROOT_ABSPATH
+        delete config.CONFIG_ABSPATH
+        delete config.BASE_POLYFILL
         delete config.STATIC_DIR
         delete config.STATIC_PRIVATE_DIR
         delete config.STATIC_TEMPLATE_DIR
         delete config.BACKUP_DIR
         delete config.UPLOAD_DIR
         delete config.UPLOAD_DIR_ABSPATH
-        configContent = `${GENSRC_HEADER}const config = ${JSON.stringify(config)}\nmodule.exports = config\n`
+        configContent = `${GENSRC_HEADER}const config = ${JSON.stringify(config,null,4)}\nmodule.exports = config\n`
 
         fs.writeFile(GENSRC_PATH + "/config-client.js", configContent, function (err) {
             if (err) {

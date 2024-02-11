@@ -1,4 +1,7 @@
 {
+  "config": {
+    "SMTP_PORT": 25
+  },
   "types": [
     {
       "name": "MailClient",

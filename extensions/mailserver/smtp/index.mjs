@@ -1,9 +1,10 @@
-import Hook from '../../util/hook.cjs'
-import Util from '../../api/util/index.mjs'
+import Hook from '../../../util/hook.cjs'
+import Util from '../../../api/util/index.mjs'
 import {SMTPServer} from 'smtp-server'
-import {getHostRules, hostListFromString} from '../../util/hostrules.mjs'
+import {getHostRules, hostListFromString} from '../../../util/hostrules.mjs'
 import {simpleParser} from 'mailparser'
-import mailserverResolver from './gensrc/resolver.mjs'
+import mailserverResolver from '../gensrc/resolver.mjs'
+import config from '../../../gensrc/config.mjs'
 
 /*
 // open port 25 on your server
@@ -176,7 +177,7 @@ const startListening = async (db, context) => {
     server.on("error", (err) => {
         console.log("SMTP Error", err)
     })
-    server.listen(25)
+    server.listen(config.SMTP_PORT)
 }
 
 
@@ -184,4 +185,4 @@ const stopListening = () => {
 
 }
 
-export {startListening, stopListening}
+export default {startListening, stopListening}
