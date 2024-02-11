@@ -1265,6 +1265,7 @@ class JsonDom extends React.Component {
              */
             this.json = JSON.parse(renderedTemplate)
         } catch (e) {
+            console.warn('getJson', renderedTemplate, e)
             this.error = {type: 'template', e, code: renderedTemplate}
         }
         if (_app_.ssr && props.style) {
