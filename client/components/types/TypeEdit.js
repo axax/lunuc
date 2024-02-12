@@ -74,52 +74,50 @@ class TypeEdit extends React.Component {
         const {title, type, meta} = this.props
         let {dataToEdit, open} = this.state
 
-        if(open) {
-            const formFields = Object.assign({}, getFormFieldsByType(type))
+        const formFields = Object.assign({}, getFormFieldsByType(type))
 
-            if (!dataToEdit) {
-                dataToEdit = this.props.initialData
-            }
-
-            if (!dataToEdit) {
-                // delete createdBy if new data is created
-                delete formFields.createdBy
-            }
-            const props = {
-                title,
-                fullWidth: true,
-                fullScreenMobile: true,
-                maxWidth: 'xl',
-                open,
-                onClose: this.handleSaveData.bind(this),
-                actions: [
-                    {
-                        key: 'cancel',
-                        label: _t('core.cancel')
-                    },
-                    {
-                        key: 'save',
-                        label: _t('core.save'),
-                        type: 'primary'
-                    },
-                    {
-                        key: 'save_close',
-                        label: _t('core.saveandclose'),
-                        type: 'primary'
-                    }
-                ],
-                children: <GenericForm key="genericForm" autoFocus onRef={ref => {
-                    if (ref) {
-                        this.createEditForm = ref
-                    }
-                }} onBlur={event => {
-                    Hook.call('TypeCreateEditBlur', {type, event})
-                }} onChange={field => {
-                    Hook.call('TypeCreateEditChange', {field, type, props, dataToEdit})
-                }} primaryButton={false} fields={formFields} values={dataToEdit}/>
-            }
-            Hook.call('TypeCreateEdit', {type, props, dataToEdit, formFields, meta, parentRef: this})
+        if (!dataToEdit) {
+            dataToEdit = this.props.initialData
         }
+
+        if (!dataToEdit) {
+            // delete createdBy if new data is created
+            delete formFields.createdBy
+        }
+        const props = {
+            title,
+            fullWidth: true,
+            fullScreenMobile: true,
+            maxWidth: 'xl',
+            open,
+            onClose: this.handleSaveData.bind(this),
+            actions: [
+                {
+                    key: 'cancel',
+                    label: _t('core.cancel')
+                },
+                {
+                    key: 'save',
+                    label: _t('core.save'),
+                    type: 'primary'
+                },
+                {
+                    key: 'save_close',
+                    label: _t('core.saveandclose'),
+                    type: 'primary'
+                }
+            ],
+            children: <GenericForm key="genericForm" autoFocus onRef={ref => {
+                if(ref) {
+                    this.createEditForm = ref
+                }
+            }} onBlur={event => {
+                Hook.call('TypeCreateEditBlur', {type, event})
+            }} onChange={field => {
+                Hook.call('TypeCreateEditChange', {field, type, props, dataToEdit})
+            }} primaryButton={false} fields={formFields} values={dataToEdit}/>
+        }
+        Hook.call('TypeCreateEdit', {type, props, dataToEdit, formFields, meta, parentRef: this})
         return <SimpleDialog {...props}/>
     }
 
