@@ -1085,7 +1085,7 @@ class JsonDomHelper extends React.Component {
                             icon: <AddIcon/>,
                             onClick: () => {
                                 JsonDomHelper.disableEvents = true
-                                this.setState({addChildDialog: {currentElement: null, showElementSelector:true}})
+                                this.setState({addChildDialog: {open:true, currentElement: null, showElementSelector:true}})
                             }
                         })
                     }
@@ -1097,7 +1097,7 @@ class JsonDomHelper extends React.Component {
                             icon: <PlaylistAddIcon/>,
                             onClick: () => {
                                 JsonDomHelper.disableEvents = true
-                                this.setState({addChildDialog: {currentElement: null, payload:{addabove: true}, showElementSelector:true}})
+                                this.setState({addChildDialog: {open:true, currentElement: null, payload:{addabove: true}, showElementSelector:true}})
                             }
                         })
                     }
@@ -1108,7 +1108,7 @@ class JsonDomHelper extends React.Component {
                             icon: <PlaylistAddIcon/>,
                             onClick: () => {
                                 JsonDomHelper.disableEvents = true
-                                this.setState({addChildDialog: {currentElement: null, payload:{addbelow: true}, showElementSelector:true}})
+                                this.setState({addChildDialog: {open:true, currentElement: null, payload:{addbelow: true}, showElementSelector:true}})
                             }
                         })
                     }
@@ -1118,7 +1118,7 @@ class JsonDomHelper extends React.Component {
                             icon: <FlipToBackIcon/>,
                             onClick: () => {
                                 JsonDomHelper.disableEvents = true
-                                this.setState({addChildDialog: {payload:{json: _json, subJson, wrap: true}, currentElement: null, showElementSelector:true}})
+                                this.setState({addChildDialog: {open:true, payload:{json: _json, subJson, wrap: true}, currentElement: null, showElementSelector:true}})
                             }
                         })
                     }
@@ -1311,7 +1311,7 @@ class JsonDomHelper extends React.Component {
             toolbarHovered: false,
             hovered: false,
             dragging: false,
-            addChildDialog: {currentElement: newJsonElement, payload: {json, subJson, jsonDom, edit: true}}
+            addChildDialog: {open:true, currentElement: newJsonElement, payload: {json, subJson, jsonDom, edit: true}}
         })
     }
 
@@ -1505,7 +1505,7 @@ class JsonDomHelper extends React.Component {
             }
         }
         JsonDomHelper.disableEvents = false
-        this.setState({addChildDialog: null})
+        this.setState({addChildDialog: {open:false}})
     }
 }
 
