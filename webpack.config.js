@@ -194,38 +194,6 @@ const config = {
         ]
     },
     plugins: [
-        {
-            apply: (compiler) => {
-                compiler.hooks.thisCompilation.tap('Replace', (compilation) => {
-                    compilation.hooks.processAssets.tap(
-                        {
-                            name: 'Replace',
-                            stage: webpack.Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE,
-                        },
-                        () => {
-                            // get the file main.js
-                            const key = 'main.bundle.js?v=' + BUILD_NUMBER
-
-                            const file = compilation.getAsset(key)
-
-                            let content = file.source.source()
-
-                            content = content.replace(/new Error\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'new Error()')
-                            content = content.replace(/new URIError\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'new URIError()')
-                            content = content.replace(/new TypeError\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'new TypeError()')
-                            content = content.replace(/new ReferenceError\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'new ReferenceError()')
-                            content = content.replace(/throw E\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'throw E()')
-                            content = content.replace(/throw Error\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'throw Error()')
-                            // update main.js with new content
-                            compilation.updateAsset(
-                                key,
-                                new webpack.sources.RawSource(content)
-                            )
-                        }
-                    )
-                })
-            }
-        },
         new GenSourceCode(APP_VALUES), /* Generate some source code based on the buildconfig.json file */
         new MiniCssExtractPlugin({
             filename: 'style.css'
@@ -281,7 +249,6 @@ if (DEV_MODE) {
     config.devServer = {
         /*contentBase: [path.join(__dirname, ''), path.join(__dirname, 'static'), path.join(__dirname, APP_VALUES.UPLOAD_DIR)],*/
         static: [
-
             {
                 directory: path.resolve(__dirname, ''),
                 publicPath: '/',
@@ -319,21 +286,27 @@ if (DEV_MODE) {
         hot: false,
         port: PORT,
         host: '0.0.0.0',
-        proxy: {
-            '/graphql': {target: `http://0.0.0.0:${API_PORT}`},
-            ['/' + APP_VALUES.API_PREFIX]: {target: `http://0.0.0.0:${API_PORT}`},
-            '/lunucws': {
+        proxy: [
+            {
+                context: ['/graphql'],
+                target: `http://0.0.0.0:${API_PORT}`
+            },
+            {
+                context: ['/' + APP_VALUES.API_PREFIX],
+                target: `http://0.0.0.0:${API_PORT}`
+            },
+            {
+                context:['/lunucws'],
                 target: `ws://0.0.0.0:${API_PORT}`,
                 ws: true
             }
-        },
+        ],
         client: {
             logging: 'info'
         },
         liveReload:true,
         hot:true,
         devMiddleware: {
-
             publicPath: '/',
             stats: 'errors-only'
 
@@ -346,6 +319,38 @@ if (DEV_MODE) {
     config.mode = 'production'
 
     config.plugins.push(
+        {
+            apply: (compiler) => {
+                compiler.hooks.thisCompilation.tap('Replace', (compilation) => {
+                    compilation.hooks.processAssets.tap(
+                        {
+                            name: 'Replace',
+                            stage: webpack.Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE,
+                        },
+                        () => {
+                            // get the file main.js
+                            const key = 'main.bundle.js?v=' + BUILD_NUMBER
+
+                            const file = compilation.getAsset(key)
+
+                            let content = file.source.source()
+
+                            content = content.replace(/new Error\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'new Error()')
+                            content = content.replace(/new URIError\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'new URIError()')
+                            content = content.replace(/new TypeError\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'new TypeError()')
+                            content = content.replace(/new ReferenceError\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'new ReferenceError()')
+                            content = content.replace(/throw E\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'throw E()')
+                            content = content.replace(/throw Error\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'throw Error()')
+                            // update main.js with new content
+                            compilation.updateAsset(
+                                key,
+                                new webpack.sources.RawSource(content)
+                            )
+                        }
+                    )
+                })
+            }
+        },
         new CompressionPlugin({
             minRatio: 0.95
         }),

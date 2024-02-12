@@ -62,9 +62,10 @@
   "dependencies": {
     "@emotion/react": "^11.11.3",
     "@emotion/styled": "^11.11.0",
-    "@mui/icons-material": "^5.15.9",
-    "@mui/material": "^5.15.9",
-    "@mui/styles": "^5.15.9",
+    "@mui/icons-material": "^5.15.10",
+    "@mui/material": "^5.15.10",
+    "@mui/styles": "^5.15.10",
+    "ajv": "^8.12.0",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.2",
     "cheerio": "^1.0.0-rc.12",
@@ -163,7 +164,7 @@
     "webpack": "^5.90.1",
     "webpack-bundle-analyzer": "^4.10.1",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^4.15.1"
+    "webpack-dev-server": "^5.0.0"
   },
   "overrides": {
     "react": "^18.2.0",
