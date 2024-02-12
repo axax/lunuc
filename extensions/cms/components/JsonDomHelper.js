@@ -873,77 +873,69 @@ class JsonDomHelper extends React.Component {
         if (toolbar) {
             return [comp, <AddToBody key="hover">{highlighter}{toolbar}</AddToBody>]
         } else {
-            const availableJsonElements = getJsonDomElements(null, {advanced: Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE)})
             return <React.Fragment>{comp}
                 {(deleteConfirmDialog &&
-                    <AddToBody>
-                        <SimpleDialog fullWidth={true} maxWidth="sm" key="deleteConfirmation" open={true}
-                                      onClose={(e) => {
-                                          if (e.key === 'delete') {
-                                              this.handleDeleteClick()
-                                          }
+                    <SimpleDialog fullWidth={true} maxWidth="sm" key="deleteConfirmation" open={true}
+                                  onClose={(e) => {
+                                      if (e.key === 'delete') {
+                                          this.handleDeleteClick()
+                                      }
 
-                                          this.setState({deleteConfirmDialog: null})
+                                      this.setState({deleteConfirmDialog: null})
 
-                                          setTimeout(() => {
-                                              JsonDomHelper.disableEvents = false
-                                          }, 200)
-                                      }}
-                                      actions={[
-                                          {
-                                              key: 'cancel',
-                                              label: 'Abbrechen',
-                                              type: 'secondary'
-                                          },
-                                          {
-                                              key: 'delete',
-                                              label: 'Löschen',
-                                              type: 'primary'
-                                          }]}
-                                      title="Löschung bestätigen">
-                            Sind Sie ganz sicher, dass Sie das Element löschen möchten?
-                        </SimpleDialog>
-                    </AddToBody>
+                                      setTimeout(() => {
+                                          JsonDomHelper.disableEvents = false
+                                      }, 200)
+                                  }}
+                                  actions={[
+                                      {
+                                          key: 'cancel',
+                                          label: 'Abbrechen',
+                                          type: 'secondary'
+                                      },
+                                      {
+                                          key: 'delete',
+                                          label: 'Löschen',
+                                          type: 'primary'
+                                      }]}
+                                  title="Löschung bestätigen">
+                        Sind Sie ganz sicher, dass Sie das Element löschen möchten?
+                    </SimpleDialog>
                 )}
                 {(deleteSourceConfirmDialog &&
-                    <AddToBody>
-                        <SimpleDialog fullWidth={true} maxWidth="sm" key="deleteSourceConfirmation" open={true}
-                                      onClose={(e) => {
-                                          if (e.key === 'delete') {
-                                              const {type, _id} = deleteSourceConfirmDialog
-                                              client.mutate({
-                                                      mutation: `mutation delete${type}($_id: ID!) {delete${type}(_id: $_id) {_id status}}`,
-                                                      variables: {_id},
-                                                      update: (store, {data: {setKeyValue}}) => {
-                                                          window.location.href = window.location.href
-                                                      }
+                    <SimpleDialog fullWidth={true} maxWidth="sm" key="deleteSourceConfirmation" open={true}
+                                  onClose={(e) => {
+                                      if (e.key === 'delete') {
+                                          const {type, _id} = deleteSourceConfirmDialog
+                                          client.mutate({
+                                                  mutation: `mutation delete${type}($_id: ID!) {delete${type}(_id: $_id) {_id status}}`,
+                                                  variables: {_id},
+                                                  update: (store, {data: {setKeyValue}}) => {
+                                                      window.location.href = window.location.href
                                                   }
-                                              )
+                                              }
+                                          )
 
-                                          }
-                                          //JsonDomHelper.disableEvents = false
-                                          this.setState({deleteSourceConfirmDialog: null})
-                                      }}
-                                      actions={[
-                                          {
-                                              key: 'cancel',
-                                              label: 'Abbrechen',
-                                              type: 'secondary'
-                                          },
-                                          {
-                                              key: 'delete',
-                                              label: 'Löschen',
-                                              type: 'primary'
-                                          }]}
-                                      title="Löschung bestätigen">
-                            Sind Sie ganz sicher, dass Sie das Element löschen möchten?
-                        </SimpleDialog>
-                    </AddToBody>
+                                      }
+                                      //JsonDomHelper.disableEvents = false
+                                      this.setState({deleteSourceConfirmDialog: null})
+                                  }}
+                                  actions={[
+                                      {
+                                          key: 'cancel',
+                                          label: 'Abbrechen',
+                                          type: 'secondary'
+                                      },
+                                      {
+                                          key: 'delete',
+                                          label: 'Löschen',
+                                          type: 'primary'
+                                      }]}
+                                  title="Löschung bestätigen">
+                        Sind Sie ganz sicher, dass Sie das Element löschen möchten?
+                    </SimpleDialog>
                 )}
-                {(addChildDialog &&
-                    <AddToBody>
-                        <JsonDomAddElementDialog {...addChildDialog} onClose={this.onAddChildDialogClose.bind(this)}/>
-                    </AddToBody>)}</React.Fragment>
+                {(addChildDialog && <JsonDomAddElementDialog {...addChildDialog} onClose={this.onAddChildDialogClose.bind(this)}/>)}</React.Fragment>
         }
     }
 
@@ -1085,7 +1077,7 @@ class JsonDomHelper extends React.Component {
                             icon: <AddIcon/>,
                             onClick: () => {
                                 JsonDomHelper.disableEvents = true
-                                this.setState({addChildDialog: {open:true, currentElement: null, showElementSelector:true}})
+                                this.setState({addChildDialog: {currentElement: null, showElementSelector:true}})
                             }
                         })
                     }
@@ -1097,7 +1089,7 @@ class JsonDomHelper extends React.Component {
                             icon: <PlaylistAddIcon/>,
                             onClick: () => {
                                 JsonDomHelper.disableEvents = true
-                                this.setState({addChildDialog: {open:true, currentElement: null, payload:{addabove: true}, showElementSelector:true}})
+                                this.setState({addChildDialog: {currentElement: null, payload:{addabove: true}, showElementSelector:true}})
                             }
                         })
                     }
@@ -1108,7 +1100,7 @@ class JsonDomHelper extends React.Component {
                             icon: <PlaylistAddIcon/>,
                             onClick: () => {
                                 JsonDomHelper.disableEvents = true
-                                this.setState({addChildDialog: {open:true, currentElement: null, payload:{addbelow: true}, showElementSelector:true}})
+                                this.setState({addChildDialog: {currentElement: null, payload:{addbelow: true}, showElementSelector:true}})
                             }
                         })
                     }
@@ -1118,7 +1110,7 @@ class JsonDomHelper extends React.Component {
                             icon: <FlipToBackIcon/>,
                             onClick: () => {
                                 JsonDomHelper.disableEvents = true
-                                this.setState({addChildDialog: {open:true, payload:{json: _json, subJson, wrap: true}, currentElement: null, showElementSelector:true}})
+                                this.setState({addChildDialog: {payload:{json: _json, subJson, wrap: true}, currentElement: null, showElementSelector:true}})
                             }
                         })
                     }
@@ -1311,7 +1303,7 @@ class JsonDomHelper extends React.Component {
             toolbarHovered: false,
             hovered: false,
             dragging: false,
-            addChildDialog: {open:true, currentElement: newJsonElement, payload: {json, subJson, jsonDom, edit: true}}
+            addChildDialog: {currentElement: newJsonElement, payload: {json, subJson, jsonDom, edit: true}}
         })
     }
 
@@ -1505,7 +1497,7 @@ class JsonDomHelper extends React.Component {
             }
         }
         JsonDomHelper.disableEvents = false
-        this.setState({addChildDialog: {open:false}})
+        this.setState({addChildDialog: null})
     }
 }
 

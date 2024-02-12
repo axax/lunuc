@@ -19,7 +19,7 @@ export default function JsonDomAddElementDialog(props){
     return <SimpleDialog fullWidth={true}
                          maxWidth="lg"
                          key="dialogProps"
-                         open={props.open}
+                         open={true}
                          onClose={(event)=>{
                              props.onClose(event, currentElement, form, props.payload)
                          }}

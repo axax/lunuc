@@ -437,7 +437,6 @@ class CmsViewEditorContainer extends React.Component {
                     </SimpleDialog>
                 }
             }
-            return null
         }
 
         const inner = [
@@ -1142,8 +1141,8 @@ class CmsViewEditorContainer extends React.Component {
                 this.findAndUpdateResolvedData(cmsEditData._jsonDom.scope.root, cmsEditData.resolverKey || type, type, optimisticData, dataToEdit)
             }
         }
-
-        this.editCmsData(null)
+        window.location.href = window.location.href
+       // this.editCmsData(null)
     }
 
     findAndUpdateResolvedData(jsonDom, resolverKey, type, optimisticData, dataToEdit) {
