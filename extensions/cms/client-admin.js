@@ -63,14 +63,12 @@ export default () => {
     })
 
     Hook.on('HomeContainerRender', ({content, match, location, history}) => {
-        const globalContext = useContext(AppContext)
-        const {user} = globalContext.state
 
         if(content) {
             if(content.length>0) {
                 content.splice(0, content.length)
             }
-            content.push(<CmsViewContainer key="widgets" user={user} match={match} dynamic={true} urlSensitiv={true}
+            content.push(<CmsViewContainer key="widgets" user={_app_.user} match={match} dynamic={true} urlSensitiv={true}
                                            location={location} history={history} slug={'system/widget'}/>)
         }
     })

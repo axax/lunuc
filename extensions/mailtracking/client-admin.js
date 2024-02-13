@@ -1,6 +1,6 @@
 import {registerTrs} from 'util/i18n.mjs'
 import {translations} from './translations/translations'
-import Hook from "../../util/hook";
+import Hook from '../../util/hook.cjs'
 import React from "react";
 import {client} from "../../client/middleware/graphql";
 

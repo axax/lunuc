@@ -71,12 +71,12 @@ export default () => {
 
                 if (slug.split('/')[0] !== container.adminBaseUrlPlain) {
 
-                    const globalContext = useContext(AppContext)
-                    const {user} = globalContext.state
+                   /* const globalContext = useContext(AppContext)
+                    const {user} = globalContext.state*/
 
                     return <CmsViewContainer location={location}
                                              history={history}
-                                             user={user}
+                                             user={_app_.user}
                                              slug={slug}/>
                 }
 

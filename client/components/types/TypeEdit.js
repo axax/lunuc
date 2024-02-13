@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import GenericForm from '../GenericForm'
 import Hook from '../../../util/hook.cjs'
 import {getFormFieldsByType, addAlwaysUpdateData, referencesToIds} from '../../../util/typesAdmin.mjs'
-import {SimpleDialog} from 'ui/admin'
+import {SimpleDialog, TextField} from 'ui/admin'
 import {_t} from 'util/i18n.mjs'
 import Util from '../../util/index.mjs'
 
@@ -73,6 +73,10 @@ class TypeEdit extends React.Component {
     render() {
         const {title, type, meta} = this.props
         let {dataToEdit, open} = this.state
+
+        if(!open){
+            return null
+        }
 
         const formFields = Object.assign({}, getFormFieldsByType(type))
 

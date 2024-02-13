@@ -1,7 +1,7 @@
 /* Remove this this line if you don't want to support older browser such as IE 11 */
 import 'gen/extensions-client'
 import React from 'react'
-import {render} from 'react-dom'
+import {createRoot} from 'react-dom/client'
 import App from './components/App'
 import config from 'gen/config-client'
 import DomUtil from 'client/util/dom.mjs'
@@ -115,10 +115,8 @@ function mainInit() {
     }
 
     if(_app_.renderApp !== false) {
-        render(
-            <App/>,
-            document.getElementById('app')
-        )
+        const root = createRoot(document.getElementById('app'))
+        root.render(<App/>)
     }
 
 

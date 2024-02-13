@@ -88,7 +88,7 @@
     "node-fetch": "^3.3.2",
     "nodemailer": "^6.9.9",
     "nodemailer-direct-transport": "^3.3.2",
-    "preact": "^10.19.4",
+    "preact": "^10.19.3",
     "react": "^18.2.0",
     "react-codemirror2": "^7.3.0",
     "react-dom": "^18.2.0",

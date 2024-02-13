@@ -12,22 +12,26 @@
           "type": "String",
           "name": "message",
           "uitype": "editor",
-          "alwaysLoad": false
+          "alwaysLoad": false,
+          "tab": "General"
         },
         {
           "name": "type",
-          "index": 1
+          "index": 1,
+          "tab": "General"
         },
         {
           "name": "location",
-          "index": 1
+          "index": 1,
+          "tab": "General"
         },
         {
           "name": "meta",
           "type": "Object",
           "uitype": "json",
           "hideColumnInTypes": true,
-          "alwaysLoad": false
+          "alwaysLoad": false,
+          "tab": "Details"
         }
       ]
     }

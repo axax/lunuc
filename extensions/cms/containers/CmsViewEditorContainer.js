@@ -1141,8 +1141,7 @@ class CmsViewEditorContainer extends React.Component {
                 this.findAndUpdateResolvedData(cmsEditData._jsonDom.scope.root, cmsEditData.resolverKey || type, type, optimisticData, dataToEdit)
             }
         }
-        window.location.href = window.location.href
-       // this.editCmsData(null)
+        this.editCmsData(null)
     }
 
     findAndUpdateResolvedData(jsonDom, resolverKey, type, optimisticData, dataToEdit) {
@@ -1267,7 +1266,7 @@ class CmsViewEditorContainer extends React.Component {
 
 }
 
-
+// TODO show only in development
 CmsViewEditorContainer.propTypes = {
     loading: PropTypes.bool,
     children: PropTypes.any,
@@ -1280,7 +1279,6 @@ CmsViewEditorContainer.propTypes = {
     /* with Router */
     history: PropTypes.object.isRequired,
     location: PropTypes.object.isRequired,
-    match: PropTypes.object.isRequired,
     /* Object is passed to JsonDom */
     _props: PropTypes.object,
     /* if dynamic is set to true that means it is a child of another CmsViewContainer */

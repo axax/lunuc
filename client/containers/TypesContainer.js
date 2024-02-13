@@ -1967,7 +1967,7 @@ class TypesContainer extends React.Component {
 
 
     handleCreateEditData = (action) => {
-        this.setState({createEditDialog: false, createEditDialogOption: null})
+        this.setState({createEditDialog: false, createEditDialogOption: null, dataToEdit: null})
     }
 
     handleViewSettingClose = (action) => {
