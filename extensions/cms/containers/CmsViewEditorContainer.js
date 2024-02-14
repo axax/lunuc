@@ -205,9 +205,9 @@ class CmsViewEditorContainer extends React.Component {
                     },
                 }).then((res) => {
                     this.watchCmsPageStatus()
-                    if (res.data.cmsPageStatus && res.data.cmsPageStatus.user && this.props.user.userData) {
+                    if (res.data.cmsPageStatus && res.data.cmsPageStatus.user && this.props.user._id) {
 
-                        if (res.data.cmsPageStatus.user._id !== this.props.user.userData._id) {
+                        if (res.data.cmsPageStatus.user._id !== this.props.user._id) {
                             this.setState({
                                 simpleDialog: {
                                     title: "Seite in Bearbeitung von einem anderen Benutzer",
@@ -823,7 +823,7 @@ class CmsViewEditorContainer extends React.Component {
                     name: _t('CmsViewEditorContainer.previewResponsive'),
                     icon: 'devices',
                     onClick: () => {
-                        window.open(`/system/responsive-viewer?url=${encodeURIComponent(location.pathname)}&preview=true`, '_blank').focus();
+                        window.open(`/system/responsive-viewer?url=${encodeURIComponent('/'+cmsPage.realSlug)}&preview=true`, '_blank').focus();
                     }
                 },
                 {

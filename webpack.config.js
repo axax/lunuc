@@ -150,13 +150,6 @@ const config = {
         chunkFilename: '[name].bundle.js?v=' + BUILD_NUMBER,
         publicPath: '/'
     },
-    resolve: {
-        extensions: ['.js', '.json', '.wasm', '.cjs', '.mjs'],
-        alias: {
-            'react': 'preact/compat',
-            'react-dom': 'preact/compat'
-        }
-    },
     externals: {
         'sharp': 'commonjs sharp'
     },
@@ -313,10 +306,24 @@ if (DEV_MODE) {
         }
     }
     config.devtool = 'inline-source-map'
-
+    config.resolve = {
+        extensions: ['.js', '.json', '.wasm', '.cjs', '.mjs'],
+        alias: {
+            'react': 'preact/compat',
+            'react-dom': 'preact/compat'
+        }
+    }
 } else {
     console.log('Build for production')
     config.mode = 'production'
+
+    config.resolve = {
+        extensions: ['.js', '.json', '.wasm', '.cjs', '.mjs'],
+        alias: {
+            'react': 'preact/compat',
+            'react-dom': 'preact/compat'
+        }
+    }
 
     config.plugins.push(
         {

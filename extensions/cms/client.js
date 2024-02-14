@@ -9,7 +9,6 @@ import {
     CAPABILITY_MANAGE_CMS_TEMPLATE,
     CAPABILITY_MANAGE_CMS_CONTENT
 } from './constants/index.mjs'
-import {AppContext} from 'client/components/AppContext'
 import Async from 'client/components/Async'
 import CmsViewContainer from './containers/CmsViewContainer'
 import JsonDom from './components/JsonDom'
@@ -71,12 +70,9 @@ export default () => {
 
                 if (slug.split('/')[0] !== container.adminBaseUrlPlain) {
 
-                    const globalContext = useContext(AppContext)
-                    const {user} = globalContext.state
-
                     return <CmsViewContainer location={location}
                                              history={history}
-                                             user={user}
+                                             user={_app_.user}
                                              slug={slug}/>
                 }
 

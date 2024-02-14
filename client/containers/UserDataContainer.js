@@ -1,8 +1,7 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import {client} from '../middleware/graphql'
 
-class UserDataContainer extends React.PureComponent {
+class UserDataContainer extends React.Component {
 
     state = {
         loading: false,
@@ -12,18 +11,20 @@ class UserDataContainer extends React.PureComponent {
     }
 
     getUserData = () => {
-        localStorage.removeItem('refreshUserData')
+        if(this.state.loading && this.state.hasAuth) {
+            localStorage.removeItem('refreshUserData')
 
-        client.query({
-            fetchPolicy: (_app_.lang !== _app_.langBefore || this.state.force ? 'network-only' : 'cache-first'),
-            query: 'query{me{username domain language email _id emailConfirmed group{_id} requestNewPassword picture{_id} role{_id capabilities} setting{_id}}}'
-        }).then(response => {
-            _app_.dispatcher.setUser(response.data.me)
-            this.setState({loading: false, loaded: true})
-        }).catch(error => {
-            console.log(error)
-            this.setState({loading: false, loaded: true})
-        })
+            client.query({
+                fetchPolicy: (_app_.lang !== _app_.langBefore || this.state.force ? 'network-only' : 'cache-first'),
+                query: 'query{me{username domain language email _id emailConfirmed group{_id} requestNewPassword picture{_id} role{_id capabilities} setting{_id}}}'
+            }).then(response => {
+                _app_.dispatcher.setUser(response.data.me)
+                this.setState({loading: false, loaded: true})
+            }).catch(error => {
+                console.log(error)
+                this.setState({loading: false, loaded: true})
+            })
+        }
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
@@ -42,19 +43,17 @@ class UserDataContainer extends React.PureComponent {
         return this.state.loading !== nextState.loading
     }
 
+    componentDidMount() {
+        this.getUserData()
+    }
+
     render() {
         console.log(`Render UserDataContainer ${this.state.hasAuth}`)
         if (this.state.loading && this.state.hasAuth) {
-            this.getUserData()
             return null
         }
         return this.props.children
     }
-}
-
-
-UserDataContainer.propTypes = {
-    children: PropTypes.object.isRequired
 }
 
 export default UserDataContainer

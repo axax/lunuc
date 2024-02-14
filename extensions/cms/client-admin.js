@@ -18,7 +18,6 @@ import {
 import {translations} from './translations/admin'
 import TypesContainer from 'client/containers/TypesContainer'
 import GenericForm from 'client/components/GenericForm'
-import {AppContext} from 'client/components/AppContext'
 import {translations as adminTranslations} from 'client/translations/admin'
 
 registerTrs(translations, 'CmsViewEditorContainer')

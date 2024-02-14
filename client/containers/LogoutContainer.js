@@ -37,11 +37,14 @@ class LogoutContainer extends React.Component {
 
 
         })
-
     }
 
-    render() {
+    componentDidMount() {
         this.logout()
+    }
+
+
+    render() {
         return null
     }
 }

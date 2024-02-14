@@ -10,6 +10,15 @@ import UserDataContainer from 'client/containers/UserDataContainer'
  */
 import {AppContext} from './AppContext'
 
+/*setTimeout(()=>{
+    _app_.dispatcher.dispatch({type:'MESSAGE',payload:{add:{key:'sss',msg:'xxxx'}}})
+},1000)*/
+
+/*setTimeout(()=>{
+    _app_.dispatcher.dispatch({type:'NOTIFICATION',payload:{message:'test'}})
+},1000)
+**/
+
 export default function App(props) {
     const globalDefaultState = {
         user:{isAuthenticated:false},
@@ -49,7 +58,11 @@ export default function App(props) {
                 }
                 return Object.assign({},state,{notifications})
             case 'LOGIN':
-                return Object.assign({},state,{messages:{},user:{userData:payload,isAuthenticated:!!payload}})
+                const user = Object.assign({},payload, {
+                    isAuthenticated:!!payload, /* attribute is deprecated */
+                    userData: payload /* attribute is deprecated */
+                })
+                return Object.assign({},state,{messages:{},user:user})
             default:
                 return state
         }
@@ -61,7 +74,6 @@ export default function App(props) {
     _app_.dispatcher = {
         dispatch,
         setUser:(user)=>{
-            _app_.user = user
             dispatch({type: 'LOGIN', payload: user})
         },
         addError:(add) =>{
@@ -72,9 +84,10 @@ export default function App(props) {
         }
     }
 
-  /*  setTimeout(()=>{
-     //   _app_.dispatcher.dispatch({type:'NOTIFICATION',payload:{add:{key:'sss',msg:'xxxx'}}})
-    },1000)*/
+    // set user to our global _app_ context
+    _app_.user = state.user
+
+    //console.log('App render', state)
     return <AppContext.Provider value={{state}}>
             {props.children ||
             <UserDataContainer>
