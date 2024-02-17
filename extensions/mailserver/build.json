@@ -21,13 +21,13 @@
         {
           "name": "username",
           "required": true,
-          "unique": true,
           "index": 1
         },
         {
           "name": "password",
           "uitype": "password",
-          "required": true
+          "required": true,
+          "hash": true
         },
         {
           "name": "active",

@@ -339,6 +339,8 @@ export default () => {
 
                         if (field.localized) {
                             newDataToEdit[newName] = dataObject[oriName]
+                        }else if(field.uitype==='wrapper' && field.type==='Object') {
+                            newDataToEdit[newName] = dataObject[oriName] && dataObject[oriName].constructor === String ? JSON.parse(dataObject[oriName]) : dataObject[oriName]
                         } else {
                             newDataToEdit[newName] = dataObject[oriName] && dataObject[oriName].constructor === Object ? JSON.stringify(dataObject[oriName]) : dataObject[oriName]
                         }
@@ -408,12 +410,12 @@ export default () => {
             // Combine data attributes to the data object
             definition.structure.fields.forEach(field => {
                 if(field.uitype==='wrapper' && field.subFields){
-
                     const fieldData = editedData['data_' + field.name]
                     let newFieldData
                     if(fieldData) {
                         newFieldData = JSON.parse(JSON.stringify(fieldData))
-                        field.subFields.forEach(subField => {
+                        const subFields = field.subFields.constructor === Object ? Object.values(field.subFields) : field.subFields
+                        subFields.forEach(subField => {
                             if (subField.lookup) {
                                 newFieldData.forEach(data => {
                                     if (data[subField.name]) {

@@ -144,3 +144,28 @@ export const hostListFromString = (host) =>{
 
     return hostList
 }
+
+let secureContext
+export const getRootCertContext = () => {
+    if(secureContext){
+        return secureContext
+    }
+    const SERVER_DIR = path.join(path.resolve(), './server'),
+    DEFAULT_CERT_DIR = process.env.LUNUC_CERT_DIR || SERVER_DIR,
+    DEFAULT_PKEY_FILE_DIR = path.join(DEFAULT_CERT_DIR, './RootCA.key'),
+    DEFAULT_CERT_FILE_DIR = path.join(DEFAULT_CERT_DIR, './RootCA.pem')
+    let pkey, cert
+    if (fs.existsSync(DEFAULT_PKEY_FILE_DIR)) {
+        pkey = fs.readFileSync(DEFAULT_PKEY_FILE_DIR)
+    }
+    if (fs.existsSync(DEFAULT_CERT_FILE_DIR)) {
+        cert = fs.readFileSync(DEFAULT_CERT_FILE_DIR)
+    }
+
+    secureContext = tls.createSecureContext({
+        key: pkey,
+        cert
+    })
+
+    return secureContext
+}
