@@ -40,6 +40,67 @@
       ]
     },
     {
+      "name": "MailAccountFolder",
+      "entryClonable": true,
+      "access": {
+        "create": "anonymous"
+      },
+      "fields": [
+        {
+          "name": "mailAccount",
+          "type": "MailAccount",
+          "pickerField": [
+            "username",
+            "host"
+          ],
+          "multi": false,
+          "index": 1
+        },
+        {
+          "name": "path",
+          "label": "Path",
+          "index": 1
+        },
+        {
+          "name": "symbol",
+          "label": "Symbol",
+          "index": 1
+        },
+        {
+          "name": "specialUse",
+          "label": "specialUse",
+          "index": 1
+        },
+        {
+          "name": "modifyIndex",
+          "label": "Modify index",
+          "type": "Float",
+          "uitype": "number",
+          "index": 1
+        },
+        {
+          "name": "uidNext",
+          "label": "uidNext",
+          "type": "Float",
+          "uitype": "number",
+          "index": 1
+        },
+        {
+          "name": "uidValidity",
+          "label": "uidValidity",
+          "type": "Float",
+          "uitype": "number",
+          "index": 1
+        },
+        {
+          "name": "subscribed",
+          "label": "Subscribed",
+          "type": "Boolean",
+          "index": 1
+        }
+      ]
+    },
+    {
       "name": "MailAccountMessage",
       "access": {
         "create": "anonymous"
@@ -49,55 +110,74 @@
           "name": "mailAccount",
           "type": "MailAccount",
           "multi": false,
+          "pickerField": [
+            "username",
+            "host"
+          ],
           "index": 1
         },
         {
-          "name": "messageId",
-          "label": "messageId",
-          "unique": true
+          "name": "mailAccountFolder",
+          "type": "MailAccountFolder",
+          "pickerField": ["path"],
+          "multi": false,
+          "index": 1
         },
         {
-          "name": "from",
-          "label": "From"
+          "name": "flags",
+          "label": "Falgs",
+          "enum": [
+            {
+              "value":"\\Recent",
+              "name": "Recent"
+            },
+            {
+              "value":"\\Deleted",
+              "name": "Deleted"
+            },
+            {
+              "value":"\\Draft",
+              "name": "Draft"
+            },
+            {
+              "value":"\\Flagged",
+              "name": "Flagged"
+            },
+            {
+              "value":"\\Answered",
+              "name": "Answered"
+            },
+            {
+              "value":"\\Seen",
+              "name": "Seen"
+            }
+          ],
+          "multi": true,
+          "index": 1
         },
         {
-          "name": "to",
-          "label": "To"
+          "name": "modseq",
+          "label": "modseq",
+          "type": "Float",
+          "uitype": "number",
+          "index": 1
         },
         {
-          "name": "date",
+          "name": "uid",
+          "label": "uid",
+          "type": "Float",
+          "uitype": "number",
+          "index": 1
+        },
+        {
+          "name": "seenDate",
           "label": "Date",
           "type": "Float",
           "uitype": "datetime",
           "index": 1
         },
         {
-          "name": "openedDate",
-          "label": "Date",
-          "type": "Float",
-          "uitype": "datetime",
-          "index": 1
-        },
-        {
-          "name": "subject",
-          "label": "Subject"
-        },
-        {
-          "name": "text",
-          "label": "Text",
-          "uitype": "editor",
-          "alwaysLoad": false,
-          "hideColumnInTypes": true
-        },
-        {
-          "name": "html",
-          "label": "Html",
-          "uitype": "html",
-          "alwaysLoad": false,
-          "hideColumnInTypes": true
-        },
-        {
-          "name": "meta",
+          "name": "data",
           "type": "Object",
           "uitype": "json",
           "alwaysLoad": false,

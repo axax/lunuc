@@ -125,6 +125,8 @@ http://localhost:49160/
 https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/
 
 #### Mongodb external access
+`vi /etc/mongod.conf`
+
 `# network interfaces
  net:
    port: 27017

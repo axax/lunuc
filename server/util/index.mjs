@@ -1,4 +1,5 @@
 import puppeteer from 'puppeteer'
+import ApiUtil from '../../api/util/index.mjs'
 
 
 export const doScreenCapture = async (url, filename, options) => {
@@ -16,7 +17,7 @@ export const doScreenCapture = async (url, filename, options) => {
 
         await page.setViewport({width: 1280, height: 800, ...options})
         if (options.delay) {
-            await page.waitForTimeout(options.delay)
+            await ApiUtil.sleep(options.delay)
         }
         console.log(options)
         if (options.padding) {

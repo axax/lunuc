@@ -5,6 +5,7 @@ import {getHostRules, hostListFromString} from '../../../util/hostrules.mjs'
 import {simpleParser} from 'mailparser'
 import mailserverResolver from '../gensrc/resolver.mjs'
 import config from '../../../gensrc/config.mjs'
+import {getFolderForMailAccount, getMailAccountByEmail} from '../util/index.mjs'
 
 /*
 // open port 25 on your server
@@ -18,13 +19,7 @@ domain.xx	IN	TXT	"v=spf1 ip4:144.91.119.30 -all"
 
  */
 
-const getMailAccountByEmail = async (db, address)=> {
-    const addressParts = address.split('@'),
-        username = addressParts[0],
-        host = addressParts[1]
-    const mailAccount = await db.collection('MailAccount').findOne({username, host, active: true})
-    return mailAccount
-}
+
 
 /*
  const testData = {to: {
@@ -32,7 +27,7 @@ const getMailAccountByEmail = async (db, address)=> {
         }}
     console.log(await getMailAcountFromMailData(db, testData))
  */
-const getMailAcountFromMailData = async (db, data) => {
+const getMailAccountFromMailData = async (db, data) => {
     let mailAccount
     if (data?.to?.value && data.to.value.length > 0) {
         for (const mailValue of data.to.value) {
@@ -54,7 +49,7 @@ const startListening = async (db, context) => {
     console.log(`Start SMTP Server`, context)
 
     server = new SMTPServer({
-        logger: true,
+        logger: false,
         secure: false,
         banner: 'Welcome to Lunuc SMTP Server',
         authMethods: ['PLAIN', 'LOGIN', 'CRAM-MD5','XOAUTH2'],
@@ -82,30 +77,41 @@ const startListening = async (db, context) => {
             }
             cb()
         },
-        onAuth(auth, session, callback) {
+        onAuth: async (auth, session, callback) => {
 
             console.log('onAuth',auth,session)
-         /*   if (auth.method !== "XOAUTH2") {
-                // should never occur in this case as only XOAUTH2 is allowed
-                return callback(new Error("Expecting XOAUTH2"));
-            }
-            if (auth.username !== "abc" || auth.accessToken !== "def") {
+            const mailAccount = await getMailAccountByEmail(db, auth.username)
+
+           /* if(!mailAccount){
                 return callback(null, {
                     data: {
                         status: "401",
                         schemes: "bearer mac",
                         scope: "my_smtp_access_scope_name",
                     },
-                });
+                })
             }*/
-            callback(null, { user: 123 }); // where 123 is the user id or similar property
+            /*   if (auth.method !== "XOAUTH2") {
+                   // should never occur in this case as only XOAUTH2 is allowed
+                   return callback(new Error("Expecting XOAUTH2"));
+               }
+               if (auth.username !== "abc" || auth.accessToken !== "def") {
+                   return callback(null, {
+                       data: {
+                           status: "401",
+                           schemes: "bearer mac",
+                           scope: "my_smtp_access_scope_name",
+                       },
+                   });
+               }*/
+            callback(null, { user: auth.username }); // where 123 is the user id or similar property
         },
         onConnect(session, callback) {
             console.log('onConnect',session)
             if (session.remoteAddress === "127.0.0.1") {
             //    return callback(new Error("No connections from localhost allowed"));
             }
-            return callback(); // Accept the connection
+            return callback() // Accept the connection
         },
         onSecure(socket, session, callback) {
             console.log('onSecure',session)
@@ -150,21 +156,19 @@ const startListening = async (db, context) => {
                 callback(null, "Message queued as abcdef");
             });
 
-            simpleParser(stream, {}, async (err, parsed) => {
+            simpleParser(stream, {}, async (err, data) => {
                 if (err){
                     console.log("Error:" , err)
                 } else {
-                    let mailAccount = await getMailAcountFromMailData(db, parsed)
+                    let mailAccount = await getMailAccountFromMailData(db, data)
                     if(mailAccount) {
-                        const {date, subject, html, text, messageId, ...meta} = parsed
 
-                        mailserverResolver(db).Mutation.createMailAccountMessage({
+                        const inbox = await getFolderForMailAccount(db, mailAccount._id, 'INBOX')
+
+                        await mailserverResolver(db).Mutation.createMailAccountMessage({
                             mailAccount: mailAccount._id,
-                            from: meta.from.text,
-                            to: meta.to.text,
-                            date: new Date(date).getTime(),
-                            subject,
-                            html: html || '', text: text || '', messageId, meta
+                            mailAccountFolder: inbox._id,
+                            data
                         }, {context}, false)
                     }else{
                         console.warn(`no mail account for`, parsed)

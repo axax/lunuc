@@ -1318,7 +1318,7 @@ class TypesContainer extends React.Component {
         const typeDefinition = this.types[type]
         let columnsFiltered = false
 
-        if(typeDefinition.onlyRequestedFields) {
+        if(typeDefinition && typeDefinition.onlyRequestedFields) {
             columnsFiltered = this.getFieldsActiveOrInactive(type, true)
         }
 
