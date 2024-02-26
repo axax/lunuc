@@ -4,7 +4,7 @@ import Hook from '../../util/hook.cjs'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import Util from '../../api/util/index.mjs'
 
-const TYPES_TO_IGNORE = ['History', 'Log', 'UserTracking', 'MailTracking']
+const TYPES_TO_IGNORE = ['History', 'Log', 'UserTracking', 'MailTracking', 'MailAccountMessage','MailAccountFolder']
 
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
