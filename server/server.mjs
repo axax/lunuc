@@ -86,7 +86,7 @@ process.on('uncaughtException', (error) => {
 const defaultWebHandler = (err, req, res) => {
     if (err) {
         console.log(req.url)
-        console.error('proxy error', err)
+        console.error('proxy error', err.message)
         finalhandler(req, res)(err)
     } else {
         res.end()
@@ -95,7 +95,7 @@ const defaultWebHandler = (err, req, res) => {
 
 const defaultWSHandler = (err, req, socket, head) => {
     if (err) {
-        console.error('proxy error ws ', err)
+        console.error('proxy error ws ', err.message)
         socket.destroy()
     }
 }
@@ -508,7 +508,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             const hostrule = {...hostrules.general, ...(hostrules[hostRuleHost] || hostrules[hostRuleHost.substring(4)])}
             const parsedUrl = url.parse(req.url, true)
 
-            console.log(`${req.method} ${remoteAddress}: ${host}${parsedUrl.href} - ${req.headers['user-agent']} - ${parsedUrl.pathname}`)
+            console.log(`${req.method} ${remoteAddress}: ${host}${parsedUrl.href} - ${req.headers['user-agent']}`)
 
 
             if (hostrule.certDir && hasHttpsWwwRedirect( {parsedUrl, hostrule, host, req, res, remoteAddress})) {
@@ -635,7 +635,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     const headers = {...hostrule.headers.common,...hostrule.headers[urlPathname]}
                     if (hostrule.fileMapping && hostrule.fileMapping[urlPathname]) {
                         const mappedFile = path.join(hostrule._basedir, hostrule.fileMapping[urlPathname])
-                        console.log('mapped file: ' + mappedFile)
+                        //console.log('mapped file: ' + mappedFile)
 
                         if (await sendFileFromDir(req, res, mappedFile, headers, parsedUrl)) {
                             return
