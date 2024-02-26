@@ -121,16 +121,16 @@ const startListening = async (db, context) => {
             }
 
             // do not accept messages larger than 1000 bytes to specific recipients
-            let expectedSize = Number(session.envelope.mailFrom.args.SIZE) || 0;
+            let expectedSize = Number(session.envelope.mailFrom.args.SIZE) || 0
             if (expectedSize > 100000) {
-                const err = new Error("Insufficient channel storage: " + address.address);
-                err.responseCode = 452;
-                return callback(err);
+                const err = new Error("Insufficient channel storage: " + address.address)
+                err.responseCode = 452
+                return callback(err)
             }
-            callback();
+            callback()
         },
         onData: (stream, session, callback) => {
-            //console.log('onData',session)
+            console.log('onData',session)
             //stream.pipe(process.stdout); // print message to console
             stream.on("end", () => {
                 let err;
@@ -157,7 +157,7 @@ const startListening = async (db, context) => {
                             data
                         }, {context}, false)
                     }else{
-                        console.warn(`no mail account for`, parsed)
+                        console.warn(`no mail account for`, data)
                     }
                 }
             })
