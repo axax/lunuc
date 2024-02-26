@@ -11,12 +11,13 @@ import {
     getMessagesForFolder,
     getMessagesForFolderByUids,
     getFolderForMailAccountById,
-    deleteMessagesForFolderByUids
+    deleteMessagesForFolderByUids, getMailAccountFromMailData
 } from '../util/dbhelper.mjs'
 import Util from '../../../api/util/index.mjs'
 import MemoryNotifier from './MemoryNotifier.js'
 import MailComposer from 'nodemailer/lib/mail-composer'
 import MailserverResolver from '../gensrc/resolver.mjs'
+import {simpleParser} from 'mailparser'
 
 
 // open port 993 on your server
@@ -292,39 +293,40 @@ const startListening = async (db, context) => {
         const folder = await getFolderForMailAccount(db, session.user.id, mailbox)
 
         if (!folder) {
-            return callback(null, 'TRYCREATE');
+            return callback(null, 'TRYCREATE')
         }
 
-        date = (date && new Date(date)) || new Date();
-        return callback(null, true)
-        /*let message = {
-            uid: folder.uidNext++,
-            modseq: ++folder.modifyIndex,
-            date: (date && new Date(date)) || new Date(),
-            mimeTree: parseMimeTree(raw),
-            flags
-        };
 
-        folder.messages.push(message);*/
+        simpleParser(raw, {}, async (err, data) => {
+            if (err) {
+                console.log("Error:", err)
+                return callback(null, 'TRYCREATE')
+            } else {
+                const insertResult = await MailserverResolver(db).Mutation.createMailAccountMessage({
+                    mailAccount: session.user.id,
+                    mailAccountFolder: folder._id,
+                    flags,
+                    data
+                }, {context}, false)
 
-        // do not write directly to stream, use notifications as the currently selected mailbox might not be the one that receives the message
-        /*this.notifier.addEntries(
-            session.user.id,
-            mailbox,
-            {
-                command: 'EXISTS',
-                uid: message.uid
-            },
-            () => {
-                this.notifier.fire(session.user.id, mailbox);
+                this.notifier.addEntries(
+                    folder,
+                    {
+                        command: 'EXISTS',
+                        uid: insertResult.uid
+                    },
+                    () => {
+                        this.notifier.fire(session.user.id, folder)
 
-                return callback(null, true, {
-                    uidValidity: folder.uidValidity,
-                    uid: message.uid
-                });
+                        return callback(null, true, {
+                            uidValidity: folder.uidValidity,
+                            uid: insertResult.uid
+                        })
+                    }
+                )
             }
-        );*/
-    };
+        })
+    }
 
     // STORE / UID STORE, updates flags for selected UIDs
     server.onStore = async function (folderId, update, session, callback) {
