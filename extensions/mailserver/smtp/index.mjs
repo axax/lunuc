@@ -32,7 +32,7 @@ const startListening = async (db, context) => {
         hidePIPELINING: true,
         useXForward: true,
         size: 10 * 1024 * 1024,
-        authOptional: false,
+        authOptional: true,
         /*needsUpgrade:true,*/
         SNICallback: (domain, cb) => {
             if (domain.startsWith('www.')) {
@@ -90,8 +90,8 @@ const startListening = async (db, context) => {
         },
         onSecure(socket, session, callback) {
             console.log('SMTP onSecure',session)
-            if (session.servername !== "sni.example.com") {
-               // return callback(new Error("Only connections for sni.example.com are allowed"));
+            if (session.servername !=='mail.simra.ch') {
+                return callback(new Error('Only connections for mail.simra.ch are allowed'))
             }
             return callback(); // Accept the connection
         },

@@ -18,6 +18,11 @@ import MemoryNotifier from './MemoryNotifier.js'
 import MailComposer from 'nodemailer/lib/mail-composer'
 import MailserverResolver from '../gensrc/resolver.mjs'
 
+
+// open port 993 on your server
+// sudo ufw allow 993
+
+
 //console.log(parseMimeTree())
 /*simpleParser('MIME-Version: 1.0\r\n' +
     'From: andris@kreata.ee\r\n' +
