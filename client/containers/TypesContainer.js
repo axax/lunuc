@@ -55,7 +55,7 @@ import {_t} from 'util/i18n.mjs'
 const {ADMIN_BASE_URL, LANGUAGES} = config
 import {COLLECTIONS_QUERY} from '../constants/index.mjs'
 import GenericForm from '../components/GenericForm'
-import {client, Query, clearFetchById} from '../middleware/graphql'
+import {client, clearFetchById} from '../middleware/graphql'
 import json2csv from 'util/json2csv'
 import Async from '../components/Async'
 import styled from '@emotion/styled'

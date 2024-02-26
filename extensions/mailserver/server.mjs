@@ -8,8 +8,8 @@ import {ObjectId} from 'mongodb'
 import {
     clearCacheForUserAccount,
     getFolderForMailAccount,
-    getFolderForMailAccountById
-} from './util/index.mjs'
+    getFolderForMailAccountById, getMailAccountFromMailData
+} from './util/dbhelper.mjs'
 
 
 // Hook to add mongodb resolver
@@ -35,7 +35,6 @@ Hook.on(['typeBeforeUpdate'], async ({db, type,data}) => {
             clearCacheForUserAccount(folder.mailAccount)
         })
     }else if(type==='MailAccountMessage'){
-        const st = new Date().getTime()
         const fullMessage = await db.collection('MailAccountMessage').findOne({_id: new ObjectId(data._id)}, { projection: { _id: 1, mailAccount:1,mailAccountFolder:1 } })
         if(fullMessage.mailAccount){
             let inbox
@@ -61,8 +60,6 @@ Hook.on(['typeBeforeUpdate'], async ({db, type,data}) => {
                 db.collection('MailAccountFolder').updateOne({_id: inbox._id}, {$set: {uidNext: inbox.uidNext, modifyIndex: inbox.modifyIndex}})
             }
         }
-        console.log(`${ new Date().getTime() - st}ms`, fullMessage)
-
     }
 })
 Hook.on(['typeBeforeCreate'], async ({db, type, data}) => {

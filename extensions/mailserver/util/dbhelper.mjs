@@ -1,4 +1,5 @@
 import ApiUtil from '../../../api/util/index.mjs'
+import MailserverResolver from "../gensrc/resolver.mjs";
 
 const mailAccountFoldersMap = {}
 
@@ -9,9 +10,15 @@ export const getMailAccountByEmail = async (db, address)=> {
     const addressParts = address.split('@'),
         username = addressParts[0],
         host = addressParts[1]
-    const mailAccount = await db.collection('MailAccount').findOne({username, host, active: true})
+    const mailAccount = await db.collection('MailAccount').findOne({username, host})
     return mailAccount
 }
+
+
+export const createFolderForMailAccount = async (db, mailAccountId, data) => {
+
+}
+
 
 export const getFoldersForMailAccount  = async (db, mailAccountId) =>  {
     const mailAccountIdString = mailAccountId.toString()
@@ -53,13 +60,12 @@ export const getFoldersForMailAccount  = async (db, mailAccountId) =>  {
             }
         }
 
-        collectionResult.forEach(entry=>{
-            if(entry.symbol) {
-                entry.symbol = Symbol(entry.symbol)
+        for(const folder of collectionResult){
+            if(folder.symbol) {
+                folder.symbol = Symbol(folder.symbol)
             }
-
-            mailAccountFoldersMap[mailAccountIdString].set(entry.path,entry)
-        })
+            mailAccountFoldersMap[mailAccountIdString].set(folder.path,folder)
+        }
     }
     return mailAccountFoldersMap[mailAccountIdString]
 }
@@ -114,9 +120,25 @@ export const getMessagesForFolderByUids = async (db, mailAccountFolderId, uids, 
 }
 
 
-export const deleteMessagesForFolderByUids = async (db, mailAccountFolderId, uids) => {
+export const deleteMessagesForFolderByUids = async (db, folder, uids) => {
     return await db.collection('MailAccountMessage').deleteMany( {
         uid: { $in: uids },
-        mailAccountFolder: mailAccountFolderId
+        mailAccountFolder: folder._id
     } )
+}
+
+
+export const getMailAccountFromMailData = async (db, data) => {
+    let mailAccount
+    if (data?.to?.value && data.to.value.length > 0) {
+        for (const mailValue of data.to.value) {
+            if (mailValue && mailValue.address) {
+                mailAccount = await getMailAccountByEmail(db, mailValue.address)
+                if(mailAccount){
+                    break
+                }
+            }
+        }
+    }
+    return mailAccount
 }

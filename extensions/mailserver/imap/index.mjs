@@ -12,7 +12,7 @@ import {
     getMessagesForFolderByUids,
     getFolderForMailAccountById,
     deleteMessagesForFolderByUids
-} from '../util/index.mjs'
+} from '../util/dbhelper.mjs'
 import Util from '../../../api/util/index.mjs'
 import MemoryNotifier from './MemoryNotifier.js'
 import MailComposer from 'nodemailer/lib/mail-composer'
@@ -58,110 +58,6 @@ import MailserverResolver from '../gensrc/resolver.mjs'
 let server
 const startListening = async (db, context) => {
 
-
-    // This example uses global folders and subscriptions
-   /* let folders = new Map();
-    let subscriptions = new WeakSet();
-    [
-        {
-            mailbox: Symbol('INBOX'),
-            path: 'INBOX',
-            uidValidity: 123,
-            uidNext: 70,
-            modifyIndex: 5000,
-            messages: [
-                {
-                    uid: 45,
-                    flags: [],
-                    modseq: 100,
-                    idate: new Date('14-Sep-2013 21:22:28 -0300'),
-                    mimeTree: parseMimeTree(
-                        Buffer.from('from: sender@example.com\r\nto: to@example.com\r\ncc: cc@example.com\r\nsubject: test\r\n\r\nzzzz\r\n')
-                    )
-                },
-               {
-                    uid: 49,
-                    flags: ['\\Seen'],
-                    idate: new Date(),
-                    modseq: 5000,
-                    mimeTree: MIMEParser(fs.readFileSync(__dirname + '/fixtures/ryan_finnie_mime_torture.eml'))
-                },
-                {
-                    uid: 50,
-                    flags: ['\\Seen'],
-                    modseq: 45,
-                    idate: new Date(),
-                    mimeTree: parseMimeTree(
-                        'MIME-Version: 1.0\r\n' +
-                        'From: andris@kreata.ee\r\n' +
-                        'To: andris@tr.ee\r\n' +
-                        'Content-Type: multipart/mixed;\r\n' +
-                        " boundary='----mailcomposer-?=_1-1328088797399'\r\n" +
-                        'Message-Id: <testmessage-for-bug>;\r\n' +
-                        '\r\n' +
-                        '------mailcomposer-?=_1-1328088797399\r\n' +
-                        'Content-Type: message/rfc822\r\n' +
-                        'Content-Transfer-Encoding: 7bit\r\n' +
-                        '\r\n' +
-                        'MIME-Version: 1.0\r\n' +
-                        'From: andris@kreata.ee\r\n' +
-                        'To: andris@pangalink.net\r\n' +
-                        'In-Reply-To: <test1>\r\n' +
-                        '\r\n' +
-                        'Hello world 1!\r\n' +
-                        '------mailcomposer-?=_1-1328088797399\r\n' +
-                        'Content-Type: message/rfc822\r\n' +
-                        'Content-Transfer-Encoding: 7bit\r\n' +
-                        '\r\n' +
-                        'MIME-Version: 1.0\r\n' +
-                        'From: andris@kreata.ee\r\n' +
-                        'To: andris@pangalink.net\r\n' +
-                        '\r\n' +
-                        'Hello world 2!\r\n' +
-                        '------mailcomposer-?=_1-1328088797399\r\n' +
-                        'Content-Type: text/html; charset=utf-8\r\n' +
-                        'Content-Transfer-Encoding: quoted-printable\r\n' +
-                        '\r\n' +
-                        '<b>Hello world 3!</b>\r\n' +
-                        '------mailcomposer-?=_1-1328088797399--\r\n'
-                    )
-                },
-                {
-                    uid: 52,
-                    flags: [],
-                    modseq: 4,
-                    idate: new Date(),
-                    mimeTree: parseMimeTree('from: sender@example.com\r\nto: to@example.com\r\ncc: cc@example.com\r\nsubject: test\r\n\r\nHello World!\r\n')
-                },
-                {
-                    uid: 53,
-                    flags: [],
-                    modseq: 5,
-                    idate: new Date()
-                },
-                {
-                    uid: 60,
-                    flags: [],
-                    modseq: 6,
-                    idate: new Date()
-                }
-            ],
-            journal: []
-        },
-        {
-            mailbox: Symbol('[Gmail]/Sent Mail'),
-            path: '[Gmail]/Sent Mail',
-            specialUse: '\\Sent',
-            uidValidity: 123,
-            uidNext: 90,
-            modifyIndex: 1,
-            messages: [],
-            journal: []
-        }
-    ].forEach(folder => {
-        folders.set(folder.path, folder);
-        subscriptions.add(folder);
-    });*/
 
     // Setup server
     let server = server = new Wildduck.IMAPServer({
@@ -239,7 +135,6 @@ const startListening = async (db, context) => {
 
         const mailAccountFolders = await getFoldersForMailAccount(db, session.user.id)
 
-
         callback(null, mailAccountFolders)
     };
 
@@ -281,15 +176,20 @@ const startListening = async (db, context) => {
     };
 
     // CREATE "path/to/mailbox"
-    server.onCreate = function (mailbox, session, callback) {
+    server.onCreate = async function (mailbox, session, callback) {
         console.log('IMAP onCreate', mailbox, session.id)
-       /* this.logger.debug('[%s] CREATE "%s"', session.id, mailbox);
+        this.logger.debug('[%s] CREATE "%s"', session.id, mailbox)
 
-        if (folders.has(mailbox)) {
-            return callback(null, 'ALREADYEXISTS');
+        const existingFolder = await getFolderForMailAccount(db,session.user.id,mailbox)
+
+        if (existingFolder) {
+            return callback(null, 'ALREADYEXISTS')
         }
 
-        folders.set(mailbox, {
+       //const insertResult = await MailserverResolver(db).Mutation.createMailAccountFolder(destinationMessage, {context}, {skipCheck:true})
+
+
+        /*folders.set(mailbox, {
             path: mailbox,
             uidValidity: Date.now(),
             uidNext: 1,
@@ -299,7 +199,7 @@ const startListening = async (db, context) => {
         });
 
         subscriptions.add(folders.get(mailbox));*/
-        callback(null, true);
+        callback(null, true)
     }
 
     // RENAME "path/to/mailbox" "new/path"
@@ -356,24 +256,15 @@ const startListening = async (db, context) => {
 
         folder.uidList = await getMessageUidsForFolderId(db,folder._id)
 
-
-
-        return callback(null, folder) /* {
-            specialUse: folder.specialUse,
-            uidValidity: folder.uidValidity,
-            uidNext: folder.uidNext,
-            modifyIndex: folder.modifyIndex,
-            _id: 'INBOX',
-            uidList: folder.messages.map(message => message.uid)
-        }*/
-    };
+        return callback(null, folder)
+    }
 
     // STATUS (X Y X)
-    server.onStatus = async function (mailbox, session, callback) {
-        console.log('IMAP onStatus', mailbox)
-        this.logger.debug('[%s] Requested status for "%s"', session.id, mailbox)
+    server.onStatus = async function (folderId, session, callback) {
+        console.log('IMAP onStatus', folderId)
+        this.logger.debug('[%s] Requested status for "%s"', session.id, folderId)
 
-        const folder = await getFolderForMailAccount(db, session.user.id, mailbox)
+        const folder = await getFolderForMailAccount(db, session.user.id, folderId)
 
         if (!folder) {
             return callback(null, 'NONEXISTENT')
@@ -533,6 +424,7 @@ const startListening = async (db, context) => {
                     )
                 }).catch(err=>{
                     console.warn('IMAP onStore', err)
+                    callback(null, 'ERROR')
                 })
             } else {
                 processMessages()
@@ -571,23 +463,12 @@ const startListening = async (db, context) => {
             }
         }
 
-        await deleteMessagesForFolderByUids(db, folder._id, messagesUidsToDelete)
+        await deleteMessagesForFolderByUids(db, folder, messagesUidsToDelete)
 
         this.notifier.addEntries(folder, entries, () => {
             this.notifier.fire(session.user.id, folder)
             return callback(null, true)
         })
-
-    /*    for (i = folder.messages.length - 1; i >= 0; i--) {
-            if (
-                ((update.isUid && update.messages.indexOf(folder.messages[i].uid) >= 0) || !update.isUid) &&
-                folder.messages[i].flags.indexOf('\\Deleted') >= 0
-            ) {
-                deleted.unshift(folder.messages[i].uid);
-                folder.messages.splice(i, 1);
-            }
-        }*/
-
     }
 
     // COPY / UID COPY sequence mailbox
@@ -626,20 +507,6 @@ const startListening = async (db, context) => {
 
             destinationMessage.uid = insertResult.uid
             destinationUid.push(destinationMessage.uid)
-
-
-            if(destinationFolder.specialUse==='\\Trash'){
-                //mark as deleted
-                /*await MailserverResolver(db).Mutation.updateMailAccountMessage({
-                    _id:sourceMessage._id,
-                    flags: ['\\Deleted']
-                }, {context}, {forceAdminContext:true})*/
-
-                //const index = sourceFolder.uidList.find(f=>f===sourceMessage.uid)
-                //sourceFolder.uidList.splice(index, index)
-
-                //console.log(index)
-            }
 
             // do not write directly to stream, use notifications as the currently selected mailbox might not be the one that receives the message
             entries.push({

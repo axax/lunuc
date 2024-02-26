@@ -1,11 +1,9 @@
-import Hook from '../../../util/hook.cjs'
-import Util from '../../../api/util/index.mjs'
 import {SMTPServer} from 'smtp-server'
 import {getHostRules, hostListFromString} from '../../../util/hostrules.mjs'
 import {simpleParser} from 'mailparser'
 import mailserverResolver from '../gensrc/resolver.mjs'
 import config from '../../../gensrc/config.mjs'
-import {getFolderForMailAccount, getMailAccountByEmail, getMailAccountFromMailData} from '../util/index.mjs'
+import {getFolderForMailAccount, getMailAccountByEmail, getMailAccountFromMailData} from '../util/dbhelper.mjs'
 
 /*
 // open port 25 on your server
@@ -18,16 +16,6 @@ domain.xx	IN	MX	10  mail.domain.xx
 domain.xx	IN	TXT	"v=spf1 ip4:144.91.119.30 -all"
 
  */
-
-
-
-/*
- const testData = {to: {
-            value: [ {address:'info@simra.ch'} ]
-        }}
-    console.log(await getMailAcountFromMailData(db, testData))
- */
-
 
 
 
