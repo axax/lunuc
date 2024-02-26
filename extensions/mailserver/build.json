@@ -170,13 +170,6 @@
           "index": 1
         },
         {
-          "name": "seenDate",
-          "label": "Date",
-          "type": "Float",
-          "uitype": "datetime",
-          "index": 1
-        },
-        {
           "name": "data",
           "type": "Object",
           "uitype": "json",

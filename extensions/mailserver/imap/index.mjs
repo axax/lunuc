@@ -7,12 +7,54 @@ import {
     getFoldersForMailAccount,
     getSubscribedFoldersForMailAccount,
     getFolderForMailAccount,
-    getMessageIdsForFolderId, getMessagesForFolder
+    getMessageUidsForFolderId,
+    getMessagesForFolder,
+    getMessagesForFolderByUids,
+    getFolderForMailAccountById,
+    deleteMessagesForFolderByUids
 } from '../util/index.mjs'
 import Util from '../../../api/util/index.mjs'
 import MemoryNotifier from './MemoryNotifier.js'
+import MailComposer from 'nodemailer/lib/mail-composer'
+import MailserverResolver from '../gensrc/resolver.mjs'
 
-
+//console.log(parseMimeTree())
+/*simpleParser('MIME-Version: 1.0\r\n' +
+    'From: andris@kreata.ee\r\n' +
+    'To: andris@tr.ee\r\n' +
+    'Content-Type: multipart/mixed;\r\n' +
+    " boundary='----mailcomposer-?=_1-1328088797399'\r\n" +
+    'Message-Id: <testmessage-for-bug>;\r\n' +
+    '\r\n' +
+    '------mailcomposer-?=_1-1328088797399\r\n' +
+    'Content-Type: message/rfc822\r\n' +
+    'Content-Transfer-Encoding: 7bit\r\n' +
+    '\r\n' +
+    'MIME-Version: 1.0\r\n' +
+    'From: andris@kreata.ee\r\n' +
+    'To: andris@pangalink.net\r\n' +
+    'In-Reply-To: <test1>\r\n' +
+    '\r\n' +
+    'Hello world 1!\r\n' +
+    '------mailcomposer-?=_1-1328088797399\r\n' +
+    'Content-Type: message/rfc822\r\n' +
+    'Content-Transfer-Encoding: 7bit\r\n' +
+    '\r\n' +
+    'MIME-Version: 1.0\r\n' +
+    'From: andris@kreata.ee\r\n' +
+    'To: andris@pangalink.net\r\n' +
+    '\r\n' +
+    'Hello world 2!\r\n' +
+    '------mailcomposer-?=_1-1328088797399\r\n' +
+    'Content-Type: text/html; charset=utf-8\r\n' +
+    'Content-Transfer-Encoding: quoted-printable\r\n' +
+    '\r\n' +
+    '<b>Hello world 3!</b>\r\n' +
+    '------mailcomposer-?=_1-1328088797399--\r\n', {
+    skipHtmlToText:true
+}, async (err, data) => {
+    console.log('xxxxx',data,err)
+})*/
 let server
 const startListening = async (db, context) => {
 
@@ -192,11 +234,11 @@ const startListening = async (db, context) => {
     // Returns all folders, query is informational
     // folders is either an Array or a Map
     server.onList = async function (query, session, callback) {
+        console.log('IMAP onList', query, session.id)
         this.logger.debug('[%s] LIST for "%s"', session.id, query);
 
         const mailAccountFolders = await getFoldersForMailAccount(db, session.user.id)
 
-        console.log('IMAP onList', query, session.id, mailAccountFolders)
 
         callback(null, mailAccountFolders)
     };
@@ -215,9 +257,9 @@ const startListening = async (db, context) => {
 
     // SUBSCRIBE "path/to/mailbox"
     server.onSubscribe = function (mailbox, session, callback) {
-        /*this.logger.debug('[%s] SUBSCRIBE to "%s"', session.id, mailbox);
-
-        if (!folders.has(mailbox)) {
+        console.log('IMAP onSubscribe', mailbox, session.id)
+        this.logger.debug('[%s] SUBSCRIBE to "%s"', session.id, mailbox)
+      /*  if (!folders.has(mailbox)) {
             return callback(null, 'NONEXISTENT');
         }
 
@@ -227,6 +269,7 @@ const startListening = async (db, context) => {
 
     // UNSUBSCRIBE "path/to/mailbox"
     server.onUnsubscribe = function (mailbox, session, callback) {
+        console.log('IMAP onUnsubscribe', mailbox, session.id)
         /*this.logger.debug('[%s] UNSUBSCRIBE from "%s"', session.id, mailbox);
 
         if (!folders.has(mailbox)) {
@@ -239,6 +282,7 @@ const startListening = async (db, context) => {
 
     // CREATE "path/to/mailbox"
     server.onCreate = function (mailbox, session, callback) {
+        console.log('IMAP onCreate', mailbox, session.id)
        /* this.logger.debug('[%s] CREATE "%s"', session.id, mailbox);
 
         if (folders.has(mailbox)) {
@@ -256,11 +300,12 @@ const startListening = async (db, context) => {
 
         subscriptions.add(folders.get(mailbox));*/
         callback(null, true);
-    };
+    }
 
     // RENAME "path/to/mailbox" "new/path"
     // NB! RENAME affects child and hierarchy mailboxes as well, this example does not do this
     server.onRename = function (mailbox, newname, session, callback) {
+        console.log('IMAP onRename', mailbox, session.id)
         /*this.logger.debug('[%s] RENAME "%s" to "%s"', session.id, mailbox, newname);
 
         if (!folders.has(mailbox)) {
@@ -282,6 +327,7 @@ const startListening = async (db, context) => {
 
     // DELETE "path/to/mailbox"
     server.onDelete = function (mailbox, session, callback) {
+        console.log('IMAP onDelete', mailbox, session.id)
         /*this.logger.debug('[%s] DELETE "%s"', session.id, mailbox);
 
         if (!folders.has(mailbox)) {
@@ -299,7 +345,7 @@ const startListening = async (db, context) => {
 
     // SELECT/EXAMINE
     server.onOpen = async function (mailbox, session, callback) {
-        console.log('onOpen', mailbox)
+        console.log('IMAP onOpen', mailbox)
         this.logger.debug('[%s] Opening "%s"', session.id, mailbox);
 
         const folder = await getFolderForMailAccount(db, session.user.id, mailbox)
@@ -308,9 +354,11 @@ const startListening = async (db, context) => {
             return callback(null, 'NONEXISTENT');
         }
 
-        const msgIds = await getMessageIdsForFolderId(db,folder._id)
+        folder.uidList = await getMessageUidsForFolderId(db,folder._id)
 
-        return callback(null, {...folder,_id:folder.path,uidList:msgIds}) /* {
+
+
+        return callback(null, folder) /* {
             specialUse: folder.specialUse,
             uidValidity: folder.uidValidity,
             uidNext: folder.uidNext,
@@ -322,6 +370,7 @@ const startListening = async (db, context) => {
 
     // STATUS (X Y X)
     server.onStatus = async function (mailbox, session, callback) {
+        console.log('IMAP onStatus', mailbox)
         this.logger.debug('[%s] Requested status for "%s"', session.id, mailbox)
 
         const folder = await getFolderForMailAccount(db, session.user.id, mailbox)
@@ -330,17 +379,18 @@ const startListening = async (db, context) => {
             return callback(null, 'NONEXISTENT')
         }
 
-        return callback(null, folder); /* {
-            messages: folder.messages.length,
+        return callback(null, {
+            messages: await db.collection('MailAccountMessage').count( {mailAccountFolder: folder._id} ),
             uidNext: folder.uidNext,
             uidValidity: folder.uidValidity,
             highestModseq: folder.modifyIndex,
-            unseen: folder.messages.filter(message => !message.flags.includes('\\Seen')).length
-        }*/
+            unseen: await db.collection('MailAccountMessage').count( {mailAccountFolder: folder._id, flags: {$nin:['\\Seen']}} )
+        })
     };
 
     // APPEND mailbox (flags) date message
     server.onAppend = async function (mailbox, flags, date, raw, session, callback) {
+        console.log('IMAP onAppend', mailbox, flags)
         this.logger.debug('[%s] Appending message to "%s"', session.id, mailbox);
 
         const folder = await getFolderForMailAccount(db, session.user.id, mailbox)
@@ -381,121 +431,154 @@ const startListening = async (db, context) => {
     };
 
     // STORE / UID STORE, updates flags for selected UIDs
-    server.onStore = async function (mailbox, update, session, callback) {
-        this.logger.debug('[%s] Updating messages in "%s"', session.id, mailbox)
+    server.onStore = async function (folderId, update, session, callback) {
+        console.log('IMAP onStore', folderId, session.id, update)
+        this.logger.debug('[%s] Updating messages in "%s"', session.id, folderId)
 
-        const folder = await getFolderForMailAccount(db, session.user.id, mailbox)
+        const folder = await getFolderForMailAccountById(db, session.user.id, folderId)
 
         if (!folder) {
             return callback(null, 'NONEXISTENT')
         }
-        return callback(null, true)
-        /*let condstoreEnabled = !!session.selected.condstoreEnabled
 
-        let modified = [];
-        let i = 0;
+        const messages = await getMessagesForFolderByUids(db,folder._id,update.messages)
+
+        let condstoreEnabled = !!session.selected.condstoreEnabled
+
+        let modified = []
+        let i = 0
 
         let processMessages = () => {
-            if (i >= folder.messages.length) {
-                this.notifier.fire(session.user.id, mailbox);
-                return callback(null, true, modified);
+            if (i >= messages.length) {
+                this.notifier.fire(session.user.id, folder)
+                return callback(null, true, modified)
             }
 
-            let message = folder.messages[i++];
-            let updated = false;
+            let message = messages[i++]
+            let updated = false
+            if(!message.flags){
+                message.flags = []
+            }
 
             if (update.messages.indexOf(message.uid) < 0) {
-                return processMessages();
+                return processMessages()
             }
 
             if (update.unchangedSince && message.modseq > update.unchangedSince) {
-                modified.push(message.uid);
-                return processMessages();
+                modified.push(message.uid)
+                return processMessages()
             }
 
             switch (update.action) {
                 case 'set':
                     // check if update set matches current or is different
                     if (message.flags.length !== update.value.length || update.value.filter(flag => message.flags.indexOf(flag) < 0).length) {
-                        updated = true;
+                        updated = true
                     }
                     // set flags
-                    message.flags = [].concat(update.value);
-                    break;
+                    message.flags = [].concat(update.value)
+                    break
 
                 case 'add':
                     message.flags = message.flags.concat(
                         update.value.filter(flag => {
                             if (message.flags.indexOf(flag) < 0) {
-                                updated = true;
-                                return true;
+                                updated = true
+                                return true
                             }
-                            return false;
+                            return false
                         })
-                    );
-                    break;
+                    )
+                    break
 
                 case 'remove':
                     message.flags = message.flags.filter(flag => {
                         if (update.value.indexOf(flag) < 0) {
-                            return true;
+                            return true
                         }
-                        updated = true;
-                        return false;
+                        updated = true
+                        return false
                     });
-                    break;
+                    break
             }
 
             // notifiy only if something changed
             if (updated) {
-                message.modseq = ++folder.modifyIndex;
+                MailserverResolver(db).Mutation.updateMailAccountMessage({
+                    _id:message._id,
+                    flags: message.flags
+                }, {context}, {forceAdminContext:true}).then((data)=>{
+                    message.modseq = data.modseq
 
-                // Only show response if not silent or modseq is required
-                if (!update.silent || condstoreEnabled) {
-                    session.writeStream.write(
-                        session.formatResponse('FETCH', message.uid, {
-                            uid: update.isUid ? message.uid : false,
-                            flags: update.silent ? false : message.flags,
-                            modseq: condstoreEnabled ? message.modseq : false
-                        })
-                    );
-                }
+                    // Only show response if not silent or modseq is required
+                    if (!update.silent || condstoreEnabled) {
+                        session.writeStream.write(
+                            session.formatResponse('FETCH', message.uid, {
+                                uid: update.isUid ? message.uid : false,
+                                flags: update.silent ? false : message.flags,
+                                modseq: condstoreEnabled ? message.modseq : false
+                            })
+                        )
+                    }
 
-                this.notifier.addEntries(
-                    session.user.id,
-                    mailbox,
-                    {
-                        command: 'FETCH',
-                        ignore: session.id,
-                        uid: message.uid,
-                        flags: message.flags
-                    },
-                    processMessages
-                );
+                    this.notifier.addEntries(
+                        folder,
+                        {
+                            command: 'FETCH',
+                            ignore: session.id,
+                            uid: message.uid,
+                            flags: message.flags
+                        },
+                        processMessages
+                    )
+                }).catch(err=>{
+                    console.warn('IMAP onStore', err)
+                })
             } else {
-                processMessages();
+                processMessages()
             }
-        };
-
-        processMessages();*/
-    };
+        }
+        processMessages()
+    }
 
     // EXPUNGE deletes all messages in selected mailbox marked with \Delete
-    server.onExpunge = async function (mailbox, update, session, callback) {
-        this.logger.debug('[%s] Deleting messages from "%s"', session.id, mailbox)
+    server.onExpunge = async function (folderId, update, session, callback) {
+        console.log('IMAP onExpunge', folderId, session.id,update)
+        this.logger.debug('[%s] Deleting messages from "%s"', session.id, folderId)
 
-        console.log('onExpunge', mailbox)
-
-        const folder = await getFolderForMailAccount(db, session.user.id, mailbox)
+        const folder = await getFolderForMailAccountById(db, session.user.id, folderId)
 
         if (!folder) {
             return callback(null, 'NONEXISTENT')
         }
-        return callback(null, true)
-        /*let deleted = [];
-        let i, len;
 
-        for (i = folder.messages.length - 1; i >= 0; i--) {
+        let messagesUidsToDelete
+        if(update.isUid) {
+            messagesUidsToDelete = update.messages
+        }else{
+            messagesUidsToDelete = await getMessageUidsForFolderId(db, folder._id, {flags: {$in:['\\Deleted']}})
+        }
+
+        const entries = []
+        for (const messageUidToDelete of messagesUidsToDelete) {
+            entries.push({
+                command: 'EXPUNGE',
+                ignore: session.id,
+                uid: messageUidToDelete
+            })
+            if (!update.silent) {
+                session.writeStream.write(session.formatResponse('EXPUNGE', messageUidToDelete))
+            }
+        }
+
+        await deleteMessagesForFolderByUids(db, folder._id, messagesUidsToDelete)
+
+        this.notifier.addEntries(folder, entries, () => {
+            this.notifier.fire(session.user.id, folder)
+            return callback(null, true)
+        })
+
+    /*    for (i = folder.messages.length - 1; i >= 0; i--) {
             if (
                 ((update.isUid && update.messages.indexOf(folder.messages[i].uid) >= 0) || !update.isUid) &&
                 folder.messages[i].flags.indexOf('\\Deleted') >= 0
@@ -503,101 +586,95 @@ const startListening = async (db, context) => {
                 deleted.unshift(folder.messages[i].uid);
                 folder.messages.splice(i, 1);
             }
-        }
+        }*/
 
-        let entries = [];
-        for (i = 0, len = deleted.length; i < len; i++) {
-            entries.push({
-                command: 'EXPUNGE',
-                ignore: session.id,
-                uid: deleted[i]
-            });
-            if (!update.silent) {
-                session.writeStream.write(session.formatResponse('EXPUNGE', deleted[i]));
-            }
-        }
-
-        this.notifier.addEntries(session.user.id, mailbox, entries, () => {
-            this.notifier.fire(session.user.id, mailbox);
-            return callback(null, true);
-        });*/
-    };
+    }
 
     // COPY / UID COPY sequence mailbox
-    server.onCopy = async function (connection, mailbox, update, session, callback) {
-        this.logger.debug('[%s] Copying messages from "%s" to "%s"', session.id, mailbox, update.destination);
+    server.onCopy = async function (connection, folderId, update, session, callback) {
+        console.log('IMAP onCopy', folderId, session.id, update)
+        this.logger.debug('[%s] Copying messages from "%s" to "%s"', session.id, folderId, update.destination);
 
-        const folder = await getFolderForMailAccount(db, session.user.id, mailbox)
+        const sourceFolder = await getFolderForMailAccountById(db, session.user.id, folderId)
 
-        if (!folder) {
+        if (!sourceFolder) {
             return callback(null, 'NONEXISTENT')
         }
 
-        const folderDestination = await getFolderForMailAccount(db, session.user.id, update.destination)
-
-        if (!folderDestination) {
+        const destinationFolder = await getFolderForMailAccount(db, session.user.id, update.destination)
+        if (!destinationFolder) {
             return callback(null, 'TRYCREATE')
         }
 
-        return callback(null, true)
-      /*  let sourceFolder = folders.get(mailbox);
-        let destinationFolder = folders.get(update.destination);
+        const sourceMessages = await getMessagesForFolderByUids(db,sourceFolder._id,update.messages,'ALL')
 
-        let messages = [];
-        let sourceUid = [];
-        let destinationUid = [];
-        let i, len;
-        let entries = [];
+        let sourceUid = sourceMessages.map(f=>f.uid)
+        let destinationUid = []
+        let entries = []
 
-        for (i = sourceFolder.messages.length - 1; i >= 0; i--) {
-            if (update.messages.indexOf(sourceFolder.messages[i].uid) >= 0) {
-                messages.unshift(JSON.parse(JSON.stringify(sourceFolder.messages[i])));
-                sourceUid.unshift(sourceFolder.messages[i].uid);
+
+        for (const sourceMessage of sourceMessages) {
+            const destinationMessage = JSON.parse(JSON.stringify(sourceMessage))
+            destinationMessage.mailAccountFolder = destinationFolder._id
+            delete destinationMessage.uid
+            delete destinationMessage.modseq
+            //delete desitnationMessage.flags
+            delete destinationMessage._id
+
+
+            const insertResult = await MailserverResolver(db).Mutation.createMailAccountMessage(destinationMessage, {context}, {skipCheck:true})
+
+            destinationMessage.uid = insertResult.uid
+            destinationUid.push(destinationMessage.uid)
+
+
+            if(destinationFolder.specialUse==='\\Trash'){
+                //mark as deleted
+                /*await MailserverResolver(db).Mutation.updateMailAccountMessage({
+                    _id:sourceMessage._id,
+                    flags: ['\\Deleted']
+                }, {context}, {forceAdminContext:true})*/
+
+                //const index = sourceFolder.uidList.find(f=>f===sourceMessage.uid)
+                //sourceFolder.uidList.splice(index, index)
+
+                //console.log(index)
             }
-        }
-
-        for (i = 0, len = messages.length; i < len; i++) {
-            messages[i].uid = destinationFolder.uidNext++;
-            destinationUid.push(messages[i].uid);
-            destinationFolder.messages.push(messages[i]);
 
             // do not write directly to stream, use notifications as the currently selected mailbox might not be the one that receives the message
             entries.push({
                 command: 'EXISTS',
-                uid: messages[i].uid
-            });
+                uid: destinationMessage.uid
+            })
         }
 
-        this.notifier.addEntries(update.destination, session.user.id, entries, () => {
-            this.notifier.fire(session.user.id, update.destination);
+        this.notifier.addEntries(destinationFolder, entries, () => {
+            this.notifier.fire(session.user.id, destinationFolder)
 
             return callback(null, true, {
                 uidValidity: destinationFolder.uidValidity,
                 sourceUid,
                 destinationUid
-            });
-        });*/
+            })
+        })
     }
 
     // sends results to socket
-    server.onFetch = async function (mailbox, options, session, callback) {
-        this.logger.debug('[%s] Requested FETCH for "%s"', session.id, mailbox);
+    server.onFetch = async function (folderId, options, session, callback) {
+        console.log('IMAP onFetch', folderId)
+        this.logger.debug('[%s] Requested FETCH for "%s"', session.id, folderId);
         this.logger.debug('[%s] FETCH: %s', session.id, JSON.stringify(options.query));
 
-        const folder = await getFolderForMailAccount(db, session.user.id, mailbox)
+        const folder = await getFolderForMailAccountById(db, session.user.id, folderId)
 
         if (!folder) {
             return callback(null, 'NONEXISTENT')
         }
-        return callback(null, 'NONEXISTENT')
 
         let entries = []
-
         const messages = await getMessagesForFolder(db,folder._id)
-
         if (options.markAsSeen) {
             // mark all matching messages as seen
-
             messages.forEach(message => {
                 if (options.messages.indexOf(message.uid) < 0) {
                     return
@@ -616,16 +693,15 @@ const startListening = async (db, context) => {
             })
         }
 
-        this.notifier.addEntries(mailbox, entries,{},  () => {
+        this.notifier.addEntries(folder, entries,() => {
             let pos = 0;
             let processMessage = () => {
                 if (pos >= messages.length) {
                     // once messages are processed show relevant updates
-                    this.notifier.fire(session.user.id, mailbox)
+                    this.notifier.fire(session.user.id, folder)
                     return callback(null, true)
                 }
                 let message = messages[pos++]
-
                 if (options.messages.indexOf(message.uid) < 0) {
                     return setImmediate(processMessage)
                 }
@@ -633,23 +709,34 @@ const startListening = async (db, context) => {
                 if (options.changedSince && message.modseq <= options.changedSince) {
                     return setImmediate(processMessage)
                 }
+                const messageData = {...message.data}
+                const addressKeys = ['from','to','cc','bcc',,'sender','reply-to','delivered-to','return-path']
+                addressKeys.forEach(addressKey =>{
+                    if(messageData[addressKey] && messageData[addressKey].value){
+                        messageData[addressKey] = messageData[addressKey].value
+                    }
+                })
 
-                let stream = imapHandler.compileStream(
-                    session.formatResponse('FETCH', message.uid, {
-                        query: options.query,
-                        values: session.getQueryResponse(
-                            options.query,
-                            {...message, idate: new Date(message.date)}
-                        )
+                const mailComposer = new MailComposer(messageData)
+                mailComposer.compile().build((err,mailMessage)=>{
+                    let stream = imapHandler.compileStream(
+                        session.formatResponse('FETCH', message.uid, {
+                            query: options.query,
+                            values: session.getQueryResponse(
+                                options.query,
+                                {...message,
+                                    mimeTree:parseMimeTree(mailMessage),
+                                    idate: new Date(message.date)
+                                }
+                            )
+                        })
+                    )
+                    // send formatted response to socket
+                    session.writeStream.write(stream, () => {
+                        setImmediate(processMessage)
                     })
-                );
-
-                // send formatted response to socket
-                session.writeStream.write(stream, () => {
-                    setImmediate(processMessage)
                 })
             }
-
             setImmediate(processMessage)
         })
     }

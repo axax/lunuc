@@ -5,7 +5,7 @@ import {getHostRules, hostListFromString} from '../../../util/hostrules.mjs'
 import {simpleParser} from 'mailparser'
 import mailserverResolver from '../gensrc/resolver.mjs'
 import config from '../../../gensrc/config.mjs'
-import {getFolderForMailAccount, getMailAccountByEmail} from '../util/index.mjs'
+import {getFolderForMailAccount, getMailAccountByEmail, getMailAccountFromMailData} from '../util/index.mjs'
 
 /*
 // open port 25 on your server
@@ -27,20 +27,7 @@ domain.xx	IN	TXT	"v=spf1 ip4:144.91.119.30 -all"
         }}
     console.log(await getMailAcountFromMailData(db, testData))
  */
-const getMailAccountFromMailData = async (db, data) => {
-    let mailAccount
-    if (data?.to?.value && data.to.value.length > 0) {
-        for (const mailValue of data.to.value) {
-            if (mailValue && mailValue.address) {
-                mailAccount = await getMailAccountByEmail(db, mailValue.address)
-                if(mailAccount){
-                    break
-                }
-            }
-        }
-    }
-    return mailAccount
-}
+
 
 
 
@@ -57,7 +44,7 @@ const startListening = async (db, context) => {
         hidePIPELINING: true,
         useXForward: true,
         size: 10 * 1024 * 1024,
-        authOptional: true,
+        authOptional: false,
         /*needsUpgrade:true,*/
         SNICallback: (domain, cb) => {
             if (domain.startsWith('www.')) {
@@ -79,7 +66,7 @@ const startListening = async (db, context) => {
         },
         onAuth: async (auth, session, callback) => {
 
-            console.log('onAuth',auth,session)
+            console.log('SMTP onAuth',auth,session)
             const mailAccount = await getMailAccountByEmail(db, auth.username)
 
            /* if(!mailAccount){
@@ -107,26 +94,26 @@ const startListening = async (db, context) => {
             callback(null, { user: auth.username }); // where 123 is the user id or similar property
         },
         onConnect(session, callback) {
-            console.log('onConnect',session)
+            console.log('SMTP onConnect',session)
             if (session.remoteAddress === "127.0.0.1") {
             //    return callback(new Error("No connections from localhost allowed"));
             }
             return callback() // Accept the connection
         },
         onSecure(socket, session, callback) {
-            console.log('onSecure',session)
+            console.log('SMTP onSecure',session)
             if (session.servername !== "sni.example.com") {
                // return callback(new Error("Only connections for sni.example.com are allowed"));
             }
             return callback(); // Accept the connection
         },
         onMailFrom: async (address, session, callback) => {
-            console.log('onMailFrom',address, session)
+            console.log('SMTP onMailFrom',address, session)
 
             return callback(); // Accept the address
         },
         onRcptTo: async (address, session, callback) => {
-            console.log('onRcptTo',address, session)
+            console.log('SMTP onRcptTo',address, session)
 
             const mailAccount = await getMailAccountByEmail(db, address.address)
 
@@ -161,7 +148,7 @@ const startListening = async (db, context) => {
                     console.log("Error:" , err)
                 } else {
                     let mailAccount = await getMailAccountFromMailData(db, data)
-                    if(mailAccount) {
+                    if(mailAccount && mailAccount.active) {
 
                         const inbox = await getFolderForMailAccount(db, mailAccount._id, 'INBOX')
 

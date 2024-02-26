@@ -6,8 +6,7 @@ let EventEmitter = require('events').EventEmitter;
 
 class MemoryNotifier extends EventEmitter {
     constructor(options) {
-        super();
-        this.folders = options.folders || new Map();
+        super()
 
         let logfunc = (...args) => {
             let level = args.shift() || 'DEBUG';
@@ -53,65 +52,63 @@ class MemoryNotifier extends EventEmitter {
     /**
      * Stores multiple journal entries to db
      *
-     * @param {String} username
-     * @param {String} mailbox
+     * @param {Object} folder
      * @param {Array|Object} entries An array of entries to be journaled
      * @param {Function} callback Runs once the entry is either stored or an error occurred
      */
-    addEntries(mailbox, entries, message, callback) {
-        let folder = this.folders.get(mailbox);
-console.log(mailbox, entries, callback)
+    addEntries(folder, entries, callback) {
         if (!folder) {
             return callback(null, new Error('Selected mailbox does not exist'));
         }
 
         if (entries && !Array.isArray(entries)) {
-            entries = [entries];
+            entries = [entries]
         } else if (!entries || !entries.length) {
-            return callback(null, false);
+            return callback(null, false)
         }
 
         // store entires in the folder object
         if (!folder.journal) {
-            folder.journal = [];
+            folder.journal = []
         }
 
         entries.forEach(entry => {
-            entry.modseq = ++folder.modifyIndex;
-            folder.journal.push(entry);
+            //entry.modseq = ++folder.modifyIndex
+            folder.journal.push(entry)
         });
 
-        setImmediate(callback);
+        setImmediate(callback)
     }
 
     /**
      * Sends a notification that there are new updates in the selected mailbox
      *
      * @param {String} username
-     * @param {String} mailbox
+     * @param {Object} payload
      */
     fire(username, payload) {
         setImmediate(() => {
-            this._listeners.emit(username, payload);
-        });
+            this._listeners.emit(username, payload)
+        })
     }
 
     /**
      * Returns all entries from the journal that have higher than provided modification index
      *
      * @param {String} username
-     * @param {String} mailbox
+     * @param {Object} folder
      * @param {Number} modifyIndex Last known modification id
      * @param {Function} callback Returns update entries as an array
      */
-    getUpdates(mailbox, modifyIndex, callback) {
+    getUpdates(folder, modifyIndex, callback) {
+console.log('getUpdates', folder, modifyIndex)
         modifyIndex = Number(modifyIndex) || 0;
 
-        if (!this.folders.has(mailbox)) {
+
+        if (!folder) {
             return callback(null, 'NONEXISTENT');
         }
 
-        let folder = this.folders.get(mailbox);
         let minIndex = folder.journal.length;
 
         for (let i = folder.journal.length - 1; i >= 0; i--) {

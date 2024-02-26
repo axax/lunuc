@@ -377,7 +377,16 @@ class TypesContainer extends React.Component {
                                     }
                                 } else {
                                     if (fieldValue && fieldValue.constructor === Array) {
-                                        dynamic[field.name] = fieldValue.map(e => <Chip key={e} label={e}/>)
+
+                                        if(field.enum && !field._enumMap){
+                                            field._enumMap = field.enum.reduce( (acc,f)=>{
+                                                acc[f.value || f] = f.name || f
+                                                return acc
+                                            },{})
+                                        }
+                                        dynamic[field.name] = fieldValue.map(e =>
+                                            <Chip key={e} label={field._enumMap?field._enumMap[e]:e}/>
+                                        )
                                     } else {
                                         dynamic[field.name] =
                                             <StyledTableContent
