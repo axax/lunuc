@@ -57,7 +57,7 @@ const startListening = async (db, context) => {
             console.log('SMTP onAuth',auth,session)
             const mailAccount = await getMailAccountByEmail(db, auth.username)
 
-           /* if(!mailAccount){
+            if(!mailAccount){
                 return callback(null, {
                     data: {
                         status: "401",
@@ -65,7 +65,7 @@ const startListening = async (db, context) => {
                         scope: "my_smtp_access_scope_name",
                     },
                 })
-            }*/
+            }
             /*   if (auth.method !== "XOAUTH2") {
                    // should never occur in this case as only XOAUTH2 is allowed
                    return callback(new Error("Expecting XOAUTH2"));
@@ -98,15 +98,26 @@ const startListening = async (db, context) => {
         onMailFrom: async (address, session, callback) => {
             console.log('SMTP onMailFrom',address, session)
 
+           /* const mailAccount = await getMailAccountByEmail(db, session.user)
+
+            if (!mailAccount) {
+                return callback(new Error(`Mail account ${session.user} doesen't exist`))
+            }*/
+
             return callback(); // Accept the address
         },
         onRcptTo: async (address, session, callback) => {
             console.log('SMTP onRcptTo',address, session)
 
-            const mailAccount = await getMailAccountByEmail(db, address.address)
+            let mailAccount
+            if(session.user){
+                mailAccount = await getMailAccountByEmail(db, session.user)
+            }else{
+                mailAccount = await getMailAccountByEmail(db, address.address)
+            }
 
             if (!mailAccount) {
-                return callback(new Error(`Mail account ${address.address} doesen't exist`))
+                return callback(new Error(`Mail account ${session.user} doesen't exist`))
             }
 
             // do not accept messages larger than 1000 bytes to specific recipients
