@@ -374,7 +374,11 @@ const startListening = async (db, context) => {
                         updated = true
                     }
                     // set flags
-                    message.flags = [].concat(update.value)
+                    if(update.value) {
+                        message.flags = [].concat(update.value)
+                    }else{
+                        message.flags = []
+                    }
                     break
 
                 case 'add':
@@ -556,7 +560,7 @@ const startListening = async (db, context) => {
 
                 // if BODY[] is touched, then add \Seen flag and notify other clients
                 if (!message.flags.includes('\\Seen')) {
-                    message.flags.unshift('\\Seen');
+                    message.flags.unshift('\\Seen')
                     entries.push({
                         command: 'FETCH',
                         ignore: session.id,
