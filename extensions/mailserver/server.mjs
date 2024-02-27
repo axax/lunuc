@@ -6,7 +6,6 @@ import resolverGen from './gensrc/resolver.mjs'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import {ObjectId} from 'mongodb'
 import {
-    clearCacheForUserAccount,
     getFolderForMailAccount,
     getFolderForMailAccountById, getMailAccountFromMailData
 } from './util/dbhelper.mjs'
@@ -31,9 +30,7 @@ Hook.on('appready', async ({app, context, db}) => {
 
 Hook.on(['typeBeforeUpdate'], async ({db, type,data}) => {
     if(type==='MailAccountFolder'){
-        db.collection('MailAccountFolder').findOne({_id: new ObjectId(data._id)}, {projection: {mailAccount:1}}).then((folder)=>{
-            clearCacheForUserAccount(folder.mailAccount)
-        })
+
     }else if(type==='MailAccountMessage'){
         const fullMessage = await db.collection('MailAccountMessage').findOne({_id: new ObjectId(data._id)}, { projection: { _id: 1, mailAccount:1,mailAccountFolder:1 } })
         if(fullMessage.mailAccount){
@@ -64,9 +61,7 @@ Hook.on(['typeBeforeUpdate'], async ({db, type,data}) => {
 })
 Hook.on(['typeBeforeCreate'], async ({db, type, data}) => {
     if(type==='MailAccountFolder'){
-        if(data.mailAccount) {
-            clearCacheForUserAccount(data.mailAccount)
-        }
+
     }else if(type==='MailAccountMessage'){
         let mailAccount
         if(data.mailAccount){

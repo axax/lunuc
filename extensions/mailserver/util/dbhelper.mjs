@@ -1,11 +1,7 @@
 import ApiUtil from '../../../api/util/index.mjs'
 import MailserverResolver from "../gensrc/resolver.mjs";
 
-const mailAccountFoldersMap = {}
 
-export const clearCacheForUserAccount = (mailAccountId)=>{
-    delete mailAccountFoldersMap[mailAccountId.toString()]
-}
 export const getMailAccountByEmail = async (db, address)=> {
     const addressParts = address.split('@'),
         username = addressParts[0],
@@ -21,53 +17,50 @@ export const createFolderForMailAccount = async (db, mailAccountId, data) => {
 
 
 export const getFoldersForMailAccount  = async (db, mailAccountId) =>  {
-    const mailAccountIdString = mailAccountId.toString()
-    if(!mailAccountFoldersMap[mailAccountIdString]){
-        const collectionResult = await db.collection('MailAccountFolder').find({mailAccount:mailAccountId}).toArray()
+    const collectionResult = await db.collection('MailAccountFolder').find({mailAccount:mailAccountId}).toArray()
 
-        mailAccountFoldersMap[mailAccountIdString] = new Map()
-        if(collectionResult.length === 0){
-            // create inbox
-            const anonymousUser = await ApiUtil.userByName(db, 'anonymous')
+    const mailAccountFoldersMap = new Map()
+    if(collectionResult.length === 0){
+        // create inbox
+        const anonymousUser = await ApiUtil.userByName(db, 'anonymous')
 
-            const defaultMailboxes = [
-                {path:'INBOX',symbol:'INBOX'},
-                {path:'Drafts',symbol:'Drafts',special_use:'\\Drafts'},
-                {path:'Sent Messages',symbol:'Sent Messages',special_use:'\\Sent'},
-                {path:'Junk',symbol:'Junk',special_use:'\\Junk'},
-                {path:'Deleted Messages',symbol:'Deleted Messages',special_use:'\\Trash'},
-                {path:'Archive',symbol:'Archive',special_use:'\\Archive'},
-                {path:'Notes',symbol:'Notes'}
-            ]
+        const defaultMailboxes = [
+            {path:'INBOX',symbol:'INBOX'},
+            {path:'Drafts',symbol:'Drafts',special_use:'\\Drafts'},
+            {path:'Sent Messages',symbol:'Sent Messages',special_use:'\\Sent'},
+            {path:'Junk',symbol:'Junk',special_use:'\\Junk'},
+            {path:'Deleted Messages',symbol:'Deleted Messages',special_use:'\\Trash'},
+            {path:'Archive',symbol:'Archive',special_use:'\\Archive'},
+            {path:'Notes',symbol:'Notes'}
+        ]
 
-            for(let i = 0; i<defaultMailboxes.length;i++) {
-                const mailbox = defaultMailboxes[i]
-                const inbox = {
-                    createdBy: anonymousUser._id,
-                    subscribed: true,
-                    path: mailbox.path,
-                    specialUse: mailbox.special_use,
-                    uidValidity: i + 1,
-                    uidNext: 1,
-                    modifyIndex: 1,
-                    symbol: mailbox.symbol,
-                    mailAccount: mailAccountId
-                }
-
-                const insertedData = await db.collection('MailAccountFolder').insertOne(inbox)
-                inbox._id = insertedData.insertedId
-                collectionResult.push(inbox)
+        for(let i = 0; i<defaultMailboxes.length;i++) {
+            const mailbox = defaultMailboxes[i]
+            const inbox = {
+                createdBy: anonymousUser._id,
+                subscribed: true,
+                path: mailbox.path,
+                specialUse: mailbox.special_use,
+                uidValidity: i + 1,
+                uidNext: 1,
+                modifyIndex: 1,
+                symbol: mailbox.symbol,
+                mailAccount: mailAccountId
             }
-        }
 
-        for(const folder of collectionResult){
-            if(folder.symbol) {
-                folder.symbol = Symbol(folder.symbol)
-            }
-            mailAccountFoldersMap[mailAccountIdString].set(folder.path,folder)
+            const insertedData = await db.collection('MailAccountFolder').insertOne(inbox)
+            inbox._id = insertedData.insertedId
+            collectionResult.push(inbox)
         }
     }
-    return mailAccountFoldersMap[mailAccountIdString]
+
+    for(const folder of collectionResult){
+        if(folder.symbol) {
+            folder.symbol = Symbol(folder.symbol)
+        }
+        mailAccountFoldersMap.set(folder.path,folder)
+    }
+    return mailAccountFoldersMap
 }
 
 export const getFolderForMailAccount = async (db, mailAccountId, path) => {
