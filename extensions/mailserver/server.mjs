@@ -32,7 +32,7 @@ Hook.on(['typeBeforeUpdate'], async ({db, type,data}) => {
     if(type==='MailAccountFolder'){
 
     }else if(type==='MailAccountMessage'){
-        const fullMessage = await db.collection('MailAccountMessage').findOne({_id: new ObjectId(data._id)}, { projection: { _id: 1, mailAccount:1,mailAccountFolder:1 } })
+        const fullMessage = await db.collection('MailAccountMessage').findOne({_id: new ObjectId(data._id)}, { projection: { _id: 1,uid:1,mailAccount:1,mailAccountFolder:1 } })
         if(fullMessage.mailAccount){
             let inbox
             const folderId = data.mailAccountFolder || fullMessage.mailAccountFolder
