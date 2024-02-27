@@ -305,7 +305,7 @@ const startListening = async (db, context) => {
                 const insertResult = await MailserverResolver(db).Mutation.createMailAccountMessage({
                     mailAccount: session.user.id,
                     mailAccountFolder: folder._id,
-                    flags,
+                    flags: flags ? flags.filter(f=>!!f): [],
                     data
                 }, {context}, false)
 
@@ -408,7 +408,7 @@ const startListening = async (db, context) => {
             if (updated) {
                 MailserverResolver(db).Mutation.updateMailAccountMessage({
                     _id:message._id,
-                    flags: message.flags
+                    flags: message.flags? message.flags.filter(f=>!!f): []
                 }, {context}, {forceAdminContext:true}).then((data)=>{
                     message.modseq = data.modseq
 

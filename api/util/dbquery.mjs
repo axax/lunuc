@@ -179,15 +179,6 @@ export const addFilterToMatch = async ({db, debugInfo, filterKey, filterValue, t
 
             finalValue = ClientUtil.escapeRegex(filterValue)
 
-            if(finalValue !== filterValue){
-                console.log('filter exscaped', filterValue)
-                GenericResolver.createEntity(db, {context:{lang:'en'}}, 'Log', {
-                    location: 'dbquery',
-                    type: 'filterEscaped',
-                    message: 'filter exscaped: ' + filterValue,
-                    meta: {filterValue, filterKey, type}
-                })
-            }
         }
 
         if (rawComperator.indexOf('!')>=0) {

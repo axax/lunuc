@@ -121,6 +121,14 @@ export const getMessagesForFolderByUids = async (db, mailAccountFolderId, uids, 
 
 
 export const deleteMessagesForFolderByUids = async (db, folder, uids) => {
+    if(folder.uidList) {
+        for (const uid of uids) {
+            const index = folder.uidList.indexOf(uid)
+            if (index !== -1) {
+                folder.uidList.splice(index, 1)
+            }
+        }
+    }
     return await db.collection('MailAccountMessage').deleteMany( {
         uid: { $in: uids },
         mailAccountFolder: folder._id
