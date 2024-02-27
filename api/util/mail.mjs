@@ -106,7 +106,9 @@ ${finalHtml}
         try {
             let transporter
             if(currentMailSettings.directTransport){
-                transporter = nodemailerDirectTransport({})
+                transporter = nodemailerDirectTransport({
+                    name: currentMailSettings.host
+                })
             }else {
                 transporter = {
                     service: currentMailSettings.service,

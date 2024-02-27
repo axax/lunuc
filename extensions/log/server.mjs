@@ -117,7 +117,7 @@ Hook.on('ExtensionApiError', async ({db, req, error, slug}) => {
       location: 'extensionApi',
       type: 'apiError',
       message: error.message,
-      meta: {slug}
+      meta: {slug, url: req.url}
   })
 })
 

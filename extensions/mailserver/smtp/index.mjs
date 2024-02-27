@@ -4,6 +4,8 @@ import {simpleParser} from 'mailparser'
 import mailserverResolver from '../gensrc/resolver.mjs'
 import config from '../../../gensrc/config.mjs'
 import {getFolderForMailAccount, getMailAccountByEmail, getMailAccountFromMailData} from '../util/dbhelper.mjs'
+import nodemailerDirectTransport from 'nodemailer-direct-transport'
+import nodemailer from 'nodemailer'
 
 /*
 // open port 25 on your server
@@ -90,7 +92,8 @@ const startListening = async (db, context) => {
         },
         onSecure(socket, session, callback) {
             console.log('SMTP onSecure',session)
-            if (session.servername !=='mail.simra.ch') {
+
+            if (session.localAddress !== session.remoteAddress && session.servername !=='mail.simra.ch') {
                 return callback(new Error('Only connections for mail.simra.ch are allowed'))
             }
             return callback(); // Accept the connection
@@ -135,19 +138,29 @@ const startListening = async (db, context) => {
             stream.on("end", () => {
                 let err;
                 if (stream.sizeExceeded) {
-                    err = new Error("Message exceeds fixed maximum message size");
-                    err.responseCode = 552;
-                    return callback(err);
+                    err = new Error("Message exceeds fixed maximum message size")
+                    err.responseCode = 552
+                    return callback(err)
                 }
-                callback(null, "Message queued as abcdef");
-            });
+                callback(null, "Message queued")
+            })
 
             simpleParser(stream, {}, async (err, data) => {
-                if (err){
-                    console.log("Error:" , err)
-                } else {
+                if (err) {
+                    console.log("Error:", err)
+                } else if(session.user){
+                    // send email
+                    const transporter = nodemailerDirectTransport({
+                        name: 'mail.simra.ch'
+                    })
+
+                    const transporterResult = nodemailer.createTransport(transporter)
+                    const mailResponse = await transporterResult.sendMail({data})
+                    console.log(mailResponse)
+                }else {
+                    // email received
                     let mailAccount = await getMailAccountFromMailData(db, data)
-                    if(mailAccount && mailAccount.active) {
+                    if (mailAccount && mailAccount.active) {
 
                         const inbox = await getFolderForMailAccount(db, mailAccount._id, 'INBOX')
 
@@ -156,13 +169,13 @@ const startListening = async (db, context) => {
                             mailAccountFolder: inbox._id,
                             data
                         }, {context}, false)
-                    }else{
+                    } else {
                         console.warn(`no mail account for`, data)
                     }
                 }
             })
 
-        },
+        }
     })
     server.on("error", (err) => {
         console.log("SMTP Error", err)
