@@ -1,6 +1,6 @@
 {
   "config": {
-    "SMTP_PORT": 25
+    "SMTP_PORT": 587
   },
   "types": [
     {

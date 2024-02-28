@@ -385,7 +385,7 @@ class TypesContainer extends React.Component {
                                             },{})
                                         }
                                         dynamic[field.name] = fieldValue.map(e =>
-                                            <Chip key={e} label={field._enumMap?field._enumMap[e]:e}/>
+                                            <Chip key={e} label={field._enumMap?field._enumMap[e] || e:e}/>
                                         )
                                     } else {
                                         dynamic[field.name] =

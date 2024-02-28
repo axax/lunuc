@@ -832,7 +832,11 @@ class JsonDomHelper extends React.Component {
                         onClick={(e) => {
                             e.stopPropagation()
                             if (isCms) {
-                                this.props.history.push('/' + subJson.p.slug)
+                                if(subJson.p.component && subJson.p.component.length > 0){
+                                    this.props.history.push('/' + subJson.p.component[0].slug)
+                                }else {
+                                    this.props.history.push('/' + subJson.p.slug)
+                                }
                             } else {
                                 this.openPicker(_options)
                             }

@@ -9,7 +9,7 @@ import nodemailer from 'nodemailer'
 
 /*
 // open port 25 on your server
-sudo ufw allow 25
+sudo ufw allow 587
 
 // add dns records
 
@@ -27,7 +27,7 @@ const startListening = async (db, context) => {
 
     server = new SMTPServer({
         logger: false,
-        secure: false,
+        secure: true,
         banner: 'Welcome to Lunuc SMTP Server',
         authMethods: ['PLAIN', 'LOGIN', 'CRAM-MD5','XOAUTH2'],
         useXClient: true,
