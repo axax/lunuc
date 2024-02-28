@@ -27,7 +27,7 @@ const startListening = async (db, context) => {
 
     server = new SMTPServer({
         logger: false,
-        secure: true,
+        secure: false,
         banner: 'Welcome to Lunuc SMTP Server',
         authMethods: ['PLAIN', 'LOGIN', 'CRAM-MD5','XOAUTH2'],
         useXClient: true,
