@@ -6,6 +6,7 @@ import config from '../../../gensrc/config.mjs'
 import {getFolderForMailAccount, getMailAccountByEmail, getMailAccountFromMailData} from '../util/dbhelper.mjs'
 import nodemailerDirectTransport from 'nodemailer-direct-transport'
 import nodemailer from 'nodemailer'
+import {replaceAddresseObjectsToString} from '../util/index.mjs'
 
 /*
 // open port 25 on your server
@@ -155,6 +156,8 @@ const startListening = async (db, context) => {
                     })
 
                     const transporterResult = nodemailer.createTransport(transporter)
+                    replaceAddresseObjectsToString(data)
+
                     const mailResponse = await transporterResult.sendMail({data})
                     console.log(mailResponse)
                 }else {

@@ -13,6 +13,7 @@ import {
     getFolderForMailAccountById,
     deleteMessagesForFolderByUids, getMailAccountFromMailData
 } from '../util/dbhelper.mjs'
+import {replaceAddresseObjectsToString} from '../util/index.mjs'
 import Util from '../../../api/util/index.mjs'
 import MemoryNotifier from './MemoryNotifier.js'
 import MailComposer from 'nodemailer/lib/mail-composer'
@@ -62,6 +63,7 @@ import {simpleParser} from 'mailparser'
     console.log('xxxxx',data,err)
 })*/
 let server
+
 const startListening = async (db, context) => {
 
 
@@ -588,12 +590,7 @@ const startListening = async (db, context) => {
                     return setImmediate(processMessage)
                 }
                 const messageData = {...message.data}
-                const addressKeys = ['from','to','cc','bcc',,'sender','reply-to','delivered-to','return-path']
-                addressKeys.forEach(addressKey =>{
-                    if(messageData[addressKey] && messageData[addressKey].value){
-                        messageData[addressKey] = messageData[addressKey].value
-                    }
-                })
+                replaceAddresseObjectsToString(messageData)
 
                 const mailComposer = new MailComposer(messageData)
                 mailComposer.compile().build((err,mailMessage)=>{

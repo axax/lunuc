@@ -76,7 +76,8 @@
         {
           "name": "text",
           "label": "Text",
-          "uitype": "editor"
+          "uitype": "editor",
+          "alwaysLoad": false
         },
         {
           "name": "html",

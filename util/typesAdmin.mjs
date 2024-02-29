@@ -27,9 +27,14 @@ export const typeDataToLabel = (item, pickerField) => {
     if (!item) {
         return 'null'
     }
+
     const context = {item, pickerField}
 
     Hook.call('typeDataToLabel', context)
+
+    if(context.item.constructor === String){
+        return context.item
+    }
 
     let pickers = []
     if (context.pickerField) {

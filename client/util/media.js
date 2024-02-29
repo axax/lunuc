@@ -4,7 +4,7 @@ import config from 'gen/config-client'
 const {UPLOAD_URL} = config
 
 const getImageSrc = (item, size = 'thumbnail') => {
-    let src = item.src ? item.src : UPLOAD_URL + '/' + item._id + (item.name ? '/' + config.PRETTYURL_SEPERATOR + '/' + item.name : '')
+    let src = item.constructor === String ? item : item.src ? item.src : UPLOAD_URL + '/' + item._id + (item.name ? '/' + config.PRETTYURL_SEPERATOR + '/' + item.name : '')
 
     if(size && (!item.mimeType || item.mimeType.indexOf('svg')<0)) {
         if(size=='thumbnail') {

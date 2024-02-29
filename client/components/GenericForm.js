@@ -1103,6 +1103,8 @@ class GenericForm extends React.Component {
 
             currentFormFields.push(<TypePicker
                 className={field.className}
+                keepTextValue={field.keepTextValue}
+                showAlwaysAsImage={field.showAlwaysAsImage}
                 value={(value ? (value.constructor === Array ? value : [value]) : null)}
                 dataset={{
                     'language': languageCode

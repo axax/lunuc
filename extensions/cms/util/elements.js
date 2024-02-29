@@ -1035,7 +1035,9 @@ const baseElements = [
                 type: 'Media',
                 filter: 'mimeType=image',
                 projection: MEDIA_PROJECTION,
-                tab: DEFAULT_TAB
+                tab: DEFAULT_TAB,
+                showAlwaysAsImage:true,
+                keepTextValue:true
             },
             p_href: {
                 fullWidth: true,

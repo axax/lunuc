@@ -192,9 +192,6 @@ export const addFilterToMatch = async ({db, debugInfo, filterKey, filterValue, t
                 matchExpression.$options = $options
             }
         }
-
-        console.log('filer', matchExpression)
-
     } else {
         matchExpression = {[comparator]: filterValue}
     }

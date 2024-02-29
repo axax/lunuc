@@ -166,7 +166,7 @@ class TypePicker extends React.Component {
     }
 
     render() {
-        const {inputProps, InputLabelProps, placeholder, multi, fileImport, error, helperText, className, sx, fullWidth, linkTemplate, pickerField, metaFields, type, filter, label, genericType, readOnly} = this.props
+        const {inputProps, InputLabelProps, placeholder, multi, showAlwaysAsImage, fileImport, error, helperText, className, sx, fullWidth, linkTemplate, pickerField, metaFields, type, filter, label, genericType, readOnly} = this.props
         const {data, hasFocus, selIdx, value, textValue, showContextMenu} = this.state
         console.log(`render TypePicker | hasFocus=${hasFocus} | pickerField=${pickerField}`, data)
         const openTypeWindow = (value) => {
@@ -282,7 +282,7 @@ class TypePicker extends React.Component {
 
                         const components = []
 
-                        if (isValidImage(singleValue, type)) {
+                        if (showAlwaysAsImage || isValidImage(singleValue, type)) {
                             components.push(<StyledImageChip
                                                  draggable={true}
                                                  data-index={singleValueIndex}
@@ -453,7 +453,7 @@ class TypePicker extends React.Component {
         const value = this.state.value.slice(0)
         value.splice(idx, 1)
 
-        this.setState({value})
+        this.setState({value, textValue:''})
         this.props.onChange({target: {value, name: this.props.name, dataset:this.props.dataset}})
 
     }
@@ -554,6 +554,13 @@ class TypePicker extends React.Component {
     }
 
     handleBlur(e) {
+        const {name, dataset, onChange, keepTextValue} = this.props
+        const {value, textValue} = this.state
+
+        if( (!value || !value.length) && keepTextValue){
+            onChange({target: {value: textValue,name,dataset}})
+        }
+
         setTimeout(() => {
             if (this.state.hasFocus)
                 this.setState({hasFocus: false})
