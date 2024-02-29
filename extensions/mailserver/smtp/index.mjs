@@ -156,14 +156,12 @@ const startListening = async (db, context) => {
 
                     const transporterResult = nodemailer.createTransport(transporter)
 
-                    delete data.to
-                    delete data.from
                     console.log('xxxx',data)
 
-                  //  for(const rcpt of session.envelope.rcptTo){
-                        const mailResponse = await transporterResult.sendMail(data)
+                    for(const rcpt of session.envelope.rcptTo){
+                        const mailResponse = await transporterResult.sendMail({...data,to:rcpt.address,from:session.envelope.mailFrom.address})
                         console.log(mailResponse)
-                   // }
+                    }
 
                 }else {
                     // email received
