@@ -157,6 +157,7 @@ const startListening = async (db, context) => {
 
                     const transporterResult = nodemailer.createTransport(transporter)
                     replaceAddresseObjectsToString(data)
+                    console.log('xxxx',data)
 
                     const mailResponse = await transporterResult.sendMail({data})
                     console.log(mailResponse)
