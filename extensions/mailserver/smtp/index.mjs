@@ -133,7 +133,8 @@ const startListening = async (db, context) => {
             callback()
         },
         onData: (stream, session, callback) => {
-            console.log('onData',session)
+            const fromMail = session?.envelope?.mailFrom?.address
+            console.log('onData',fromMail, session)
             //stream.pipe(process.stdout); // print message to console
             stream.on("end", () => {
                 let err;
@@ -156,11 +157,11 @@ const startListening = async (db, context) => {
 
                     const transporterResult = nodemailer.createTransport(transporter)
 
-                    console.log('xxxx',data,session.envelope.rcptTo)
+                    console.log('xxxx',data)
 
-                    for(const rcpt of session.envelope.rcptTo){
+                    for(const rcpt of data.to.value){
                         console.log('xxxx2',rcpt)
-                        const mailResponse = await transporterResult.sendMail({...data,to:rcpt.address,from:session.envelope.mailFrom.address})
+                        const mailResponse = await transporterResult.sendMail({...data,to:rcpt.address,from:fromMail})
                         console.log(mailResponse)
                     }
 
