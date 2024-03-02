@@ -653,11 +653,13 @@ class GenericForm extends React.Component {
                             })
                         }
 
+                        const expandedKey = `expanded-${field.name}-${fieldKey}`
                         currentFormFields.push(
                             <Expandable title={title}
                                         draggable={true}
                                         index={index}
-                                        key={"expandable" + fieldKey}
+                                        passThrough={field.accordion===false}
+                                        key={expandedKey}
                                         onPositionChange={(sourceIndex,targetIndex)=>{
                                             const newValue = subFieldValues.slice(0),
                                                 element = newValue.splice(sourceIndex, 1) [0]
@@ -672,9 +674,9 @@ class GenericForm extends React.Component {
                                             })
                                         }}
                                         onChange={(e) => {
-                                            this.setState({expanded: valueFieldKey})
+                                            this.setState({[expandedKey]: valueFieldKey})
                                         }}
-                                        expanded={this.state.expanded === valueFieldKey}>
+                                        expanded={this.state[expandedKey] === valueFieldKey}>
                                 <GenericForm onChange={(e) => {
                                     values[e.name] = e.value
                                     this.handleInputChange({
@@ -719,7 +721,7 @@ class GenericForm extends React.Component {
                             </Expandable>)
                     })
                     currentFormFields.push(<Button key={fieldKey}
-                                                   color="primary"
+                                                   color={field.addButtonColor || 'primary'}
                                                    variant="contained"
                                                    size="small"
                                                    style={field.style}

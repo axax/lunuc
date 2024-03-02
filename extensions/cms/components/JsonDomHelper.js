@@ -1212,6 +1212,19 @@ class JsonDomHelper extends React.Component {
         newJsonElement.options = deepMerge({}, newJsonElement.options, subJson.$inlineEditor && subJson.$inlineEditor.options)
         newJsonElement.groupOptions = deepMerge({}, newJsonElement.groupOptions, subJson.$inlineEditor && subJson.$inlineEditor.groupOptions)
 
+        if(subJson.$inlineEditor && subJson.$inlineEditor.groupOptions){
+            // sort by position attribute
+            Object.entries(newJsonElement.groupOptions).forEach(([groupKey,groupValue])=>{
+                newJsonElement.groupOptions[groupKey] = Object.entries(groupValue).map(([key,value],index) =>{
+                    if(value.position===undefined){
+                        value.position = index+1
+                    }
+                    return [key,value]
+                }).sort(([,valueA],[,valueB]) => {
+                    return valueA.position - valueB.position
+                }).reduce((r, [k, v]) => ({ ...r, [k]: v }), {})
+            })
+        }
 
         Object.keys(newJsonElement.options).forEach(key => {
 

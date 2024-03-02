@@ -1311,15 +1311,43 @@ const baseElements = [
                             }
                         }
                     }
+                },
+                {
+                    $inlineEditor: false,
+                    $is: '__sliderData.length>1',
+                    t: 'div.arrownav',
+                    c: [
+                        {
+                            $for: {
+                                $d: '__sliderData',
+                                s: 'slide',
+                                c: [
+                                    {
+                                        $inlineEditor: false,
+                                        t: 'label',
+                                        p: {
+                                            htmlFor: '__uid__$.slide{slide._index==0?this.scope.__sliderData.length-1:slide._index-1}'
+                                        }
+                                    },
+                                    {
+                                        $inlineEditor: false,
+                                        t: 'label',
+                                        p: {
+                                            htmlFor: '__uid__$.slide{slide._index+1>=this.scope.__sliderData.length?0:slide._index+1}'
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
                 }
-
             ]
         },
         groupOptions: {
             $set_0_value: {
                 image: {
                     tab: 'Slides',
-                    expandable: "Slide",
+                    expandable: 'Slide',
                     fullWidth: true,
                     value: '',
                     label: 'Bild',
@@ -1361,7 +1389,7 @@ const baseElements = [
         icon: 'subject',
         name: 'Text block',
         defaults: {
-            $c: "Paragraph",
+            $c: 'Paragraph',
             $inlineEditor: {
                 elementKey: 'p',
                 options: {

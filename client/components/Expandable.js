@@ -40,11 +40,14 @@ class Expandable extends React.Component {
 
 
     render() {
-        const {title, children, disableGutters, icon, draggable, index} = this.props
+        const {title, children, disableGutters, icon, draggable, index, passThrough} = this.props
 
         let Icon
         if(icon) {
             Icon = getIconByKey(icon)
+        }
+        if(passThrough){
+            return children
         }
         const MyExpansionPanel = <ExpansionPanel disableGutters={disableGutters}
                                                  expanded={this.state.expanded}
