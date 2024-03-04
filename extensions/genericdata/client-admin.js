@@ -147,6 +147,12 @@ export default () => {
                 structure = item.definition ? item.definition.structure : {}
 
             if (structure && structure.columns) {
+
+                const dataFieldIndex = columns.findIndex(f=>f.id==='data')
+                if(dataFieldIndex>=0){
+                    columns.splice(dataFieldIndex, 1)
+                }
+
                 structure.columns.reverse().forEach(col=>{
                     columns.splice(1, 0, {
                         title: col.label || col.field,

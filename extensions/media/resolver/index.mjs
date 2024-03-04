@@ -101,7 +101,10 @@ export default db => ({
                 'UserGroup',
                 'UserRestriction',
                 'UserSetting',
-                'SmsLog'
+                'SmsLog',
+                'MailAccountMessage',
+                'MailAccount',
+                'MailAccountFolder'
             ]
 
             const collectionsToSearchIn = []

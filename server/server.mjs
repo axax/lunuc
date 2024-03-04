@@ -581,9 +581,9 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                             const filename = Date.now() + '.heapsnapshot'
                             const filepath = path.join(backup_dir, filename)
 
-                            heapdump.writeSnapshot(filepath, (e) => {
+                            /*heapdump.writeSnapshot(filepath, (e) => {
                                 console.log(e)
-                            })
+                            })*/
                             res.writeHead(200, {'Content-Type': 'text/html'})
                             res.write(`<a download href='${BACKUP_URL}/heapdump/${filename}'>${filename}</a>`)
                             res.end()
