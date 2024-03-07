@@ -1,5 +1,5 @@
 import {ObjectId} from 'mongodb'
-import ClientUtil from '../../client/util'
+import ClientUtil from '../../client/util/index.mjs'
 
 export const comparatorMap = {
     ':': '$regex',
