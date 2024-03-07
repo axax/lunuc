@@ -11,7 +11,6 @@ import {getType} from '../../util/types.mjs'
 import {_t} from '../../util/i18nServer.mjs'
 import config from '../../gensrc/config-client.js'
 import {ensureDirectoryExistence} from '../../util/fileUtil.mjs'
-import {extendWithOwnerGroupMatch} from "./dbquery.mjs";
 
 const PASSWORD_MIN_LENGTH = 8
 
