@@ -136,6 +136,7 @@
         },
         {
           "name": "ownerGroup",
+          "bulkEditable": true,
           "hideColumnInTypes": true,
           "access": {
             "ui": {

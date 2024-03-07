@@ -11,6 +11,7 @@ import {getType} from '../../util/types.mjs'
 import {_t} from '../../util/i18nServer.mjs'
 import config from '../../gensrc/config-client.js'
 import {ensureDirectoryExistence} from '../../util/fileUtil.mjs'
+import {extendWithOwnerGroupMatch} from "./dbquery.mjs";
 
 const PASSWORD_MIN_LENGTH = 8
 
@@ -331,13 +332,19 @@ const Util = {
             return {ownerGroup: {$in: context.group.map(f => new ObjectId(f))}}
         } else if (access.type === 'user') {
             return {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
-        } else if (access.type === 'role') {
+        } else if (access.type === 'role' || access.type === 'roleGroup') {
             if (!await Util.userHasCapability(db, context, access.role)) {
                 if(access.users && access.users.indexOf(context.id)>=0){
                     // it is allowed for explicit users
                     return {}
                 }
-                return {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
+                let match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
+
+                if(access.type==='roleGroup') {
+                    const ownerMatch = {ownerGroup: {$in: context.group.map(f => new ObjectId(f))}}
+                    match = {$or: [match, ownerMatch]}
+                }
+                return match
             }
         }
 

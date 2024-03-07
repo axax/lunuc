@@ -144,7 +144,7 @@ class Routes extends React.Component {
 
                     let comp
                     if(route.render){
-                        comp = route.render({match, location: newLocation, history: _app_.history})
+                        comp = route.render({match, location: newLocation, history: _app_.history, route})
                     }
                     if(route.component) {
                         comp = <route.component match={match}

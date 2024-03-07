@@ -21,7 +21,7 @@ export const translations = {
         'Media.field.mimeType': 'Format',
         'Media.field.conversion': 'Conversion',
         'Media.field.size': 'Size',
-        'Media.field.group': 'group',
+        'Media.field.group': 'Group',
         'Media.field.ownerGroup': 'Owner group',
         'Media.cleanupMedia': 'CleanUp Medias'
     }

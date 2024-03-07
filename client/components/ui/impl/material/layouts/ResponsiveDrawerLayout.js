@@ -53,11 +53,13 @@ const StyledDrawerContent = styled.main`
     height: calc(100% - 56px);
     margin-top: 56px;
     margin-feft: 0;
-    ${theme.breakpoints.up('lg')} {
+    ${theme.breakpoints.up('sm')} {
         height: calc(100% - 64px);
         margin-top: 64px;
-        margin-left: ${drawerWidth}px;
-        width: calc(100% - ${drawerWidth}px);
+    }
+    ${theme.breakpoints.up('lg')} {
+      margin-left: ${drawerWidth}px;
+      width: calc(100% - ${drawerWidth}px);
     }
 `
 
