@@ -1,6 +1,5 @@
 import {ObjectId} from 'mongodb'
 import ClientUtil from '../../client/util'
-import GenericResolver from "../resolver/generic/genericResolver.mjs";
 
 export const comparatorMap = {
     ':': '$regex',
