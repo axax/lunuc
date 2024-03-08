@@ -415,7 +415,7 @@ const Util = {
             params += '&noenlarge=' + options.noenlarge
         }
         if (params && options.addParams!==false) {
-            data.src += '?' + params.substring(1)
+            data.src += (data.src.indexOf('?')>=0?'&':'?') + params.substring(1)
         }
 
         return data
