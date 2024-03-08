@@ -33,6 +33,8 @@ function addCanonicalTag(href) {
 
 function mainInit() {
 
+    _app_.user = {}
+
     // translation map
     _app_.tr = {}
 

@@ -89,13 +89,12 @@ const genMenuEntry = (item, path) => {
 const BaseLayout = props => {
     const {children} = props
 
-    const isAuthenticated = !!_app_.user
-    const user = _app_.user || {}
+    const user = _app_.user
 
     const keys = []
     let useKeySettings = {}
 
-    if (user && user.setting && user.setting.length > 0) {
+    if (user.setting && user.setting.length > 0) {
         user.setting.forEach(k => {
             keys.push('BaseLayoutSettings-' + k._id)
         })
@@ -235,7 +234,7 @@ const BaseLayout = props => {
 
     const headerRight = []
 
-    if(Util.hasCapability({userData: _app_.user}, CAPABILITY_EXTRA_OPTIONS)) {
+    if(Util.hasCapability(_app_.user, CAPABILITY_EXTRA_OPTIONS)) {
 
         headerRight.push(<GlobalSearch/>)
     }
@@ -260,7 +259,7 @@ const BaseLayout = props => {
         )
     })
 
-    if (isAuthenticated) {
+    if (user.isAuthenticated) {
 
         const menuItems= [{
             name: username,

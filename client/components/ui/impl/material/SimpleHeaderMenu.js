@@ -29,7 +29,7 @@ class SimpleHeaderMenu extends React.Component {
 
     render() {
         const {items, title, children, position} = this.props;
-        const isAuthenticated = !!_app_.user
+        const isAuthenticated = _app_.user.isAuthenticated
         return (
             <AppBar position={position}>
                 <Toolbar>

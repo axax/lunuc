@@ -544,12 +544,12 @@ class GenericForm extends React.Component {
             }
 
 
-            if (field.role && !Util.hasCapability({userData: _app_.user}, field.role)) {
+            if (field.role && !Util.hasCapability(_app_.user, field.role)) {
                 continue
             }
 
             if ((field.uistate && field.uistate.visible && matchExpr(field.uistate.visible, this.state.fields)) ||
-                (field.access && field.access.ui && field.access.ui.role && !Util.hasCapability({userData: _app_.user}, field.access.ui.role))
+                (field.access && field.access.ui && field.access.ui.role && !Util.hasCapability(_app_.user, field.access.ui.role))
             ) {
                 continue
             }

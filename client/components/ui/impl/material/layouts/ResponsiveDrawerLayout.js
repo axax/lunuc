@@ -115,7 +115,7 @@ const MenuList = (props) => {
 
     return <List disablePadding={depth > 0} style={{paddingLeft: (depth * 16) + 'px'}}>
         {items.map((item, i) => {
-            if (item.auth && _app_.user || !item.auth) {
+            if (item.auth && _app_.user.isAuthenticated || !item.auth) {
                 if (item.divider) {
                     return <Divider key={i}/>
                 }
@@ -154,7 +154,7 @@ const MenuList = (props) => {
 
                 </ListItem>,
                     item.items && <Collapse in={isOpen} timeout="auto" unmountOnExit>
-                        <MenuList items={item.items} onMenuChange={onMenuChange} depth={depth + 1} isAuthenticated={!!_app_.user}/>
+                        <MenuList items={item.items} onMenuChange={onMenuChange} depth={depth + 1}/>
                     </Collapse>]
             }
         })}
@@ -178,7 +178,7 @@ const ResponsiveDrawer = React.memo((props) => {
                 <div style={{marginLeft:'auto'}}>{headerLeft}</div>
             </Toolbar>
             <Divider/>
-            <MenuList key="mainMenu" depth={0} onMenuChange={onMenuChange} items={menuItems} isAuthenticated={!!_app_.user}/>
+            <MenuList key="mainMenu" depth={0} onMenuChange={onMenuChange} items={menuItems} />
             <Divider/>
             {extra}
         </div>
