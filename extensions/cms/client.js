@@ -57,12 +57,12 @@ export default () => {
             // match everything but paths that start with ADMIN_BASE_URL
             exact: false, path: '/:slug*', render: ({match, location, history, route}) => {
                 Hook.call('CMSSlug', {match})
-                let slug = match.params.slug ? decodeURI(match.params.slug) : '',
-                    editMode = undefined
+                let slug = match.params.slug ? decodeURI(match.params.slug) : ''
+                const cmsViewProps = {location,history,user:_app_.user}
 
                 if(slug.startsWith('[admin]')){
                     slug=slug.substring(8)
-                    editMode = false
+                    cmsViewProps.editMode = false
                     route.layout='base'
                     route.layoutProps= {contentStyle:{padding:0}}
                 }
@@ -76,12 +76,8 @@ export default () => {
                     slug = slug.substring(0, pos)
                 }
                 if (slug.split('/')[0] !== container.adminBaseUrlPlain) {
-
-                    return <CmsViewContainer location={location}
-                                             history={history}
-                                             editMode={editMode}
-                                             user={_app_.user}
-                                             slug={slug}/>
+                    cmsViewProps.slug=slug
+                    return <CmsViewContainer {...cmsViewProps}/>
                 }
 
                 return null

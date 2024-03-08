@@ -68,6 +68,11 @@ class LoginContainer extends React.Component {
 
                     _app_.dispatcher.setUser(response.data.login.user)
 
+                    if(response.data.login.user.requestNewPassword){
+                        // TODO
+
+                    }
+
                     // make sure translations are loaded
                     window.location = this.getFromUrl()
 
