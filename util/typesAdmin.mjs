@@ -553,7 +553,9 @@ Hook.on('TypeCreateEditAction', function ({type, action, dataToEdit, meta}) {
                         client.query({
                             fetchPolicy: 'network-only',
                             forceFetch: true,
-                            variables: {ids: [dataToEdit._id], fromName:_app_.user.domain || '',url:`${location.origin}/${_app_.user.domain || ''}`},
+                            variables: {ids: [dataToEdit._id],
+                                fromName:_app_.user.domain || _app_.config.APP_NAME || '',
+                                url:`${location.origin}/${_app_.user.domain || ''}`},
                             query: 'query setInitalPassword($ids:[ID],$url:String,$fromName:String){setInitalPassword(ids:$ids,url:$url,fromName:$fromName){status}}'
                         }).then(response => {
                             if (response.data && response.data.setInitalPassword) {

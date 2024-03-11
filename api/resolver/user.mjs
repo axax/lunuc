@@ -534,7 +534,7 @@ export const userResolver = (db) => ({
                             slug: 'core/new-password/mail',
                             recipient: user.email,
                             subject: _t('core.user.new.password.subject'),
-                            body: JSON.stringify({password, url, name: user.username, fromName}),
+                            body: JSON.stringify({password, url, name: user.username, email:user.email, meta: user.meta, fromName}),
                             req
                         })
                     }

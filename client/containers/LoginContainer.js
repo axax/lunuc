@@ -15,6 +15,8 @@ class LoginContainer extends React.Component {
         error: null,
         username: '',
         password: '',
+        newPassword:'',
+        resetToken:'',
         domain: _app_.login ? _app_.login.defaultDomain : ''
     }
 
@@ -42,6 +44,42 @@ class LoginContainer extends React.Component {
     }
 
 
+    changePassword = (e) =>{
+        e.preventDefault()
+
+        this.setState({loading: true, error: null})
+
+
+        client.query({
+            fetchPolicy: 'no-cache',
+            query: 'query newPassword($token:String!, $password:String!, $passwordConfirm:String){newPassword(token:$token,password:$password,passwordConfirm:$passwordConfirm){status}}',
+            variables: {
+                token: this.state.resetToken,
+                password: this.state.newPassword,
+                passwordConfirm: this.state.newPassword
+            }
+        }).then(response => {
+            this.setState({loading: false})
+            if (response.data && response.data.newPassword) {
+
+                if (!response.data.newPassword.error) {
+
+                    _app_.dispatcher.setUser(Object.assign({},this.state.currentUser,{
+                        requestNewPassword: false
+                    }))
+
+                    // make sure translations are loaded
+                    window.location = this.getFromUrl()
+
+                } else {
+                    this.setState({error: response.data.newPassword.error})
+                }
+            }
+        }).catch((response) => {
+            this.setState({loading: false, error: response.error.message})
+        })
+    }
+
     login = (e) => {
         e.preventDefault()
 
@@ -49,7 +87,7 @@ class LoginContainer extends React.Component {
 
         client.query({
             fetchPolicy: 'no-cache',
-            query: 'query login($username:String!,$password:String!,$domain:String){login(username:$username,password:$password,domain:$domain){token error user{username email _id role{_id capabilities}}}}',
+            query: 'query login($username:String!,$password:String!,$domain:String){login(username:$username,password:$password,domain:$domain){token resetToken error user{username requestNewPassword email _id role{_id capabilities}}}}',
             variables: {
                 username: this.state.username,
                 password: this.state.password,
@@ -69,19 +107,18 @@ class LoginContainer extends React.Component {
                     _app_.dispatcher.setUser(response.data.login.user)
 
                     if(response.data.login.user.requestNewPassword){
-                        // TODO
+                        this.setState({resetToken: response.data.login.resetToken, currentUser: response.data.login.user})
+                    } else {
 
+                        // make sure translations are loaded
+                        window.location = this.getFromUrl()
                     }
-
-                    // make sure translations are loaded
-                    window.location = this.getFromUrl()
 
                 } else {
                     this.setState({error: response.data.login.error})
                 }
             }
         }).catch((response) => {
-            console.log(response)
             this.setState({loading: false, error: response.error.message})
         })
     }
@@ -98,7 +135,7 @@ class LoginContainer extends React.Component {
         const {signupLink, showSignupLink} = this.props
         const from = this.getFromUrl()
 
-        const {redirectToReferrer, loading, username, password, domain, error} = this.state
+        const {resetToken, redirectToReferrer, loading, username, password, newPassword, domain, error} = this.state
 
         if (redirectToReferrer) {
             return <Redirect to={from} push={true}/>
@@ -108,7 +145,47 @@ class LoginContainer extends React.Component {
             <Col xs={1} sm={2} md={4}></Col>
             <Col xs={10} sm={8} md={4}>
                 <Card>
-                    <form noValidate autoComplete="off" action="/graphql/login" method="post">
+                    {resetToken ?
+                        <form noValidate autoComplete="off" action="/graphql/login" method="post">
+                            <Typography variant="h3" gutterBottom>{_t('Login.changePasswordTitle')}</Typography>
+
+                            <Typography gutterBottom>{_t('Login.changePasswordSubtitle')}</Typography>
+
+                            <input value={from}
+                                   type="hidden"
+                                   name="forward"/>
+
+                            <TextField label={_t('Login.newPassword')}
+                                       autoFocus
+                                       inputRef={(input) => {
+                                           if(input != null) {
+                                               input.focus()
+                                           }
+                                       }}
+                                       error={!!error}
+                                       helperText={error}
+                                       disabled={!!loading}
+                                       fullWidth
+                                       value={newPassword}
+                                       onChange={this.handleInputChange}
+                                       onKeyPress={(ev) => {
+                                           if (ev.key === 'Enter') {
+                                               this.changePassword(ev)
+                                           }
+                                       }}
+                                       type="password"
+                                       name="newPassword" required/>
+
+
+                            <div style={{textAlign: 'right'}}>
+                                <SimpleButton variant="contained" color="primary"
+                                              showProgress={loading}
+                                              type="submit"
+                                              onClick={this.changePassword.bind(this)}>{_t('Login.changePasswordButton')}</SimpleButton>
+                            </div>
+                        </form>
+                        :
+                        <form noValidate autoComplete="off" action="/graphql/login" method="post">
                         <Typography variant="h3" gutterBottom>{_t('Login.title')}</Typography>
 
                         <Typography gutterBottom>{_t('Login.subtitle', {pathname: from})}</Typography>
@@ -167,6 +244,7 @@ class LoginContainer extends React.Component {
                             to={signupLink || config.ADMIN_BASE_URL + '/signup'}>Sign
                             up</Link></Typography>}
                     </form>
+                    }
                 </Card>
             </Col>
             <Col xs={1} sm={2} md={4}></Col>
