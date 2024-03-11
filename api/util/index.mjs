@@ -339,7 +339,7 @@ const Util = {
                 }
                 let match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
 
-                if(access.type==='roleGroup') {
+                if(access.type==='roleGroup' && context.group) {
                     const ownerMatch = {ownerGroup: {$in: context.group.map(f => new ObjectId(f))}}
                     match = {$or: [match, ownerMatch]}
                 }
