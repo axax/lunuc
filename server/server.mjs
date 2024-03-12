@@ -50,8 +50,21 @@ const STATIC_TEMPLATE_DIR = path.join(ROOT_DIR, './' + config.STATIC_TEMPLATE_DI
 const DEFAULT_CERT_DIR = process.env.LUNUC_CERT_DIR || SERVER_DIR
 
 
+const DEFAULT_PKEY_FILE_DIR = path.join(DEFAULT_CERT_DIR, './privkey.pem')
+const DEFAULT_CERT_FILE_DIR = path.join(DEFAULT_CERT_DIR, './cert.pem')
+let pkey, cert
+if (fs.existsSync(DEFAULT_PKEY_FILE_DIR)) {
+    pkey = fs.readFileSync(DEFAULT_PKEY_FILE_DIR)
+}
+if (fs.existsSync(DEFAULT_CERT_FILE_DIR)) {
+    cert = fs.readFileSync(DEFAULT_CERT_FILE_DIR)
+}
+
+
 const options = {
     allowHTTP1: true,
+    key: pkey,
+    cert,
     SNICallback: (domain, cb) => {
         if (domain.startsWith('www.')) {
             domain = domain.substring(4)
@@ -61,7 +74,7 @@ const options = {
         if (hostrules[domain] && hostrules[domain].certContext) {
             cb(null, hostrules[domain].certContext)
         } else {
-            cb(null,getRootCertContext())
+            cb()
         }
     }
 }
