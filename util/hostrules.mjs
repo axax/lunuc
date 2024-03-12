@@ -146,21 +146,28 @@ export const hostListFromString = (host) =>{
 }
 
 let secureContext
+
+const readFileByNames = (baseDir, fileNames) => {
+    let fileContent
+    for (const name of fileNames) {
+        const filePath = path.join(baseDir, `./${name}`)
+        if (fs.existsSync(filePath)) {
+            fileContent = fs.readFileSync(filePath)
+            continue
+        }
+    }
+    return fileContent
+}
+
 export const getRootCertContext = () => {
     if(secureContext){
         return secureContext
     }
     const SERVER_DIR = path.join(path.resolve(), './server'),
-    DEFAULT_CERT_DIR = process.env.LUNUC_CERT_DIR || SERVER_DIR,
-    DEFAULT_PKEY_FILE_DIR = path.join(DEFAULT_CERT_DIR, './RootCA.key'),
-    DEFAULT_CERT_FILE_DIR = path.join(DEFAULT_CERT_DIR, './RootCA.pem')
-    let pkey, cert
-    if (fs.existsSync(DEFAULT_PKEY_FILE_DIR)) {
-        pkey = fs.readFileSync(DEFAULT_PKEY_FILE_DIR)
-    }
-    if (fs.existsSync(DEFAULT_CERT_FILE_DIR)) {
-        cert = fs.readFileSync(DEFAULT_CERT_FILE_DIR)
-    }
+    DEFAULT_CERT_DIR = process.env.LUNUC_CERT_DIR || SERVER_DIR
+
+    let pkey = readFileByNames(DEFAULT_CERT_DIR, ['privkey.pem','RootCA.key'] )
+    let cert = readFileByNames(DEFAULT_CERT_DIR, ['cert.pem','RootCA.pem'] )
 
     secureContext = tls.createSecureContext({
         key: pkey,
