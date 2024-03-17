@@ -390,6 +390,7 @@ Hook.on('Types', ({types}) => {
     types.User = {
         name: 'User',
         noUserRelation: true,
+        onlyRequestedFields: true,
         usedBy: ['core'],
         fields: [
             {

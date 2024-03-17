@@ -20,7 +20,8 @@ const JsonDomIFrame = ({
             graphqlOptions: {
                 url: getGraphQlUrl(),
                 wsUrl: getGraphQlWsUrl()
-            }
+            },
+            history: jsonDom.history
         }
         DomUtil.addScript(`/main.bundle.js?v=${config.BUILD_NUMBER}`, {
             id: 'main',

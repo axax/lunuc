@@ -1377,6 +1377,7 @@ const baseElements = [
         options: {
             ['p_data-slide-timeout']: {value: '7000', label: 'Anzeigezeit in ms pro Slide'},
             $set_0_chunk: {value: '1', label: 'Anzahl pro Seite'},
+            $set_0_chunkOptions_randomize: {type:'Boolean',value: '1', label: 'Slides zufällig sortieren'},
             ...trOptions('$inlineEditor_groupOptions_$set\\_0\\_value_text_'),
             ...classOptions('p_'),
             ...marginOptions('p_'),

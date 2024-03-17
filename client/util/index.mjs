@@ -529,6 +529,10 @@ const Util = {
             return []
         }
 
+        if(opts && opts.randomize) {
+            arr.sort(() => Math.random() - 0.5)
+        }
+        
         let chunkInt = parseInt(chunk)
 
         if (isNaN(chunkInt)) {

@@ -4,6 +4,7 @@
       "description": "Media can either be an internal or an external source.",
       "name": "Media",
       "entryClonable": true,
+      "onlyRequestedFields": true,
       "fields": [
         {
           "name": "name",
@@ -77,6 +78,7 @@
           "name": "references",
           "type": "Object",
           "uitype": "mediaReferences",
+          "alwaysLoad": false,
           "hideColumnInTypes": true,
           "vagueSearchable": false,
           "tab": "Refrenzen",

@@ -21,7 +21,7 @@ import JsonDomIFrame from './JsonDomIFrame'
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
 
 function CmsRevisionDialog(props){
-    const {onClose, onChange, cmsPage, revision, canMangeCmsTemplate, ...rest} = props
+    const {onClose, onChange, cmsPage, historyType, revision, canMangeCmsTemplate, ...rest} = props
 
     let parsedData
     return <SimpleDialog fullWidth={true}
@@ -58,7 +58,7 @@ function CmsRevisionDialog(props){
                 if (data.historys.results === 0) return 'No entry'
                 parsedData = JSON.parse(data.historys.results[0].data)
 
-                if (parsedData.dataResolver) {
+                if (historyType === 'dataResolver') {
 
                     return <div>
                         <Typography gutterBottom>Data resolver changed</Typography>
@@ -71,7 +71,7 @@ function CmsRevisionDialog(props){
 
                     </div>
 
-                } else if (parsedData.template) {
+                } else if (historyType === 'template') {
                     const [tabValue, setTabValue] = React.useState(0)
                     return <>
 
@@ -184,7 +184,7 @@ function CmsRevisionDialog(props){
                             }}
                         </Query>
                     </>
-                } else if (parsedData.style) {
+                } else if (historyType === 'style') {
 
                     return <div>
                         <Typography gutterBottom>Style changed</Typography>
@@ -196,7 +196,7 @@ function CmsRevisionDialog(props){
                            target="_blank">Show diff</a>
                     </div>
 
-                } else if (parsedData.script) {
+                } else if (historyType === 'script') {
 
                     return <div>
                         <p>Script changed</p>
@@ -209,7 +209,7 @@ function CmsRevisionDialog(props){
 
                     </div>
 
-                } else if (parsedData.serverScript) {
+                } else if (historyType === 'serverScript') {
 
                     return <div>
                         <p>Server Script changed</p>
@@ -318,6 +318,7 @@ export default function CmsRevision(props){
         {showRevision ? <CmsRevisionDialog revision={showRevision}
                                            canMangeCmsTemplate={canMangeCmsTemplate}
                                            cmsPage={cmsPage}
+                                           historyType={historyType}
                                            onChange={(mark)=>{
                                                setShowRevision(mark)
                                            }}

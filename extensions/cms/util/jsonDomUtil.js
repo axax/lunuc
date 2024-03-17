@@ -62,6 +62,22 @@ export const addComponent = ({key, json, index, component}) => {
         }
         if (!component) {
             component = {'c': 'new component'}
+        }else{
+
+            // Search for translation key and replace with newly generated one
+            const trKeys = []
+            DomUtilAdmin.findProperties(component, 'trKey').forEach(({element}) => {
+                trKeys.push(element.trKey)
+            })
+
+            if (trKeys.length > 0) {
+                let sourceStr = JSON.stringify(component)
+                trKeys.forEach(trKey => {
+                    const newTrKey = 'genid_' + Math.random().toString(36).substr(2, 9)
+                    sourceStr = sourceStr.replace(new RegExp(trKey, "g"), newTrKey)
+                })
+                component = JSON.parse(sourceStr)
+            }
         }
         if (isNaN(index) || index < 0) {
             index = c.length
@@ -110,24 +126,6 @@ export const copyComponent = (key, json) => {
     const source = getComponentByKey(key, json)
 
     if (source) {
-
-        const trKeys = []
-        DomUtilAdmin.findProperties(source, 'trKey').forEach(({element}) => {
-            trKeys.push(element.trKey)
-        })
-
-        let finalSource
-        if (trKeys.length > 0) {
-            let sourceStr = JSON.stringify(source)
-            trKeys.forEach(trKey => {
-                const newTrKey = 'genid_' + Math.random().toString(36).substr(2, 9)
-                sourceStr = sourceStr.replace(new RegExp(trKey, "g"), newTrKey)
-            })
-            finalSource = JSON.parse(sourceStr)
-        } else {
-            finalSource = source
-        }
-
         const parentKey = getParentKey(key)
         let index = parseInt(key.substring(key.lastIndexOf('.') + 1))
         if (isNaN(index)) {
@@ -135,7 +133,7 @@ export const copyComponent = (key, json) => {
         } else {
             index++
         }
-        addComponent({key: parentKey, json, index, component: finalSource})
+        addComponent({key: parentKey, json, index, component: source})
         return true
     }
     return false

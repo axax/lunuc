@@ -4,6 +4,7 @@ import {getFormFieldsByType} from '../../../util/typesAdmin.mjs'
 import config from '../../../gensrc/config.mjs'
 import Hook from '../../../util/hook.cjs'
 import {addFilterToMatch, addSearchStringToMatch} from '../../util/dbquery.mjs'
+import GenericResolver from './genericResolver.mjs'
 
 
 export default class AggregationBuilder {
@@ -331,7 +332,7 @@ export default class AggregationBuilder {
 
         // extend it with default definition
         if (typeFields[fieldDefinition.name]) {
-
+            fieldDefinition.existsInDefinition=true
             Object.keys(typeFields[fieldDefinition.name]).forEach(key=>{
                 if(fieldDefinition[key]===undefined){
                     fieldDefinition[key] = typeFields[fieldDefinition.name][key]
@@ -640,6 +641,31 @@ export default class AggregationBuilder {
     async createQueriesForFields(fields, projectResultData, lang, match, filters, groups, lookups, typeFields, resultMatch, resultFilters, lookupMatch, lookupFilters) {
         const createdFieldMatches = {}
         const processedFields = []
+
+
+        // Check whether there are fields that are contained in the filter but are not queried
+        if(filters && filters.parts) {
+            const keys = Object.keys(filters.parts)
+            for(const key of keys){
+                const parts = key.split('.')
+                if(!fields.find(f=>f===parts[0] || (f.constructor===Object && Object.keys(f)[0]===parts[0]))){
+                    console.log(`add filter for ${key}`, fields)
+                    // Temp log
+                    GenericResolver.createEntity(this.db, {context:{lang:'en'}}, 'Log', {
+                        location: 'dbquery',
+                        type: 'createQueriesForFields',
+                        message: 'add match from filter: ' + key,
+                        meta: {fields, filters, key, type:this.type}
+                    })
+                    const fieldDefinition = this.createFieldDefinition(parts[0], this.type)
+                    if(fieldDefinition.existsInDefinition) {
+                        await this.createFilterForField(fieldDefinition, match, {filters})
+                    }
+                }
+            }
+        }
+
+
         for (let i = 0; i < fields.length; i++) {
             const field = fields[i]
             const fieldDefinition = this.createFieldDefinition(field, this.type)
@@ -702,7 +728,6 @@ export default class AggregationBuilder {
                             if (!refFieldDefinition.reference) {
                                 // these filters are slow
                                 // probably it is better to do multiple queries instead
-
                                 await this.createFilterForField({
                                     name: fieldName,
                                     subQuery: {type: fieldDefinition.type, name: refFieldName},
@@ -745,13 +770,10 @@ export default class AggregationBuilder {
                     if (lookup && lookup.$lookup.pipeline) {
                         lookup.$lookup.pipeline.push({$project: projectPipeline})
                     }
-
-
                     groups[fieldName] = this.createGroup(fieldDefinition)
 
                 }
                 await this.createFilterForField(fieldDefinition, match, {filters})
-
             } else {
                 // regular field
                 if (fieldName !== '_id' && !createdFieldMatches[fieldName]) {
