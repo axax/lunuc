@@ -828,7 +828,9 @@ class JsonDom extends React.Component {
                         for (let i = 0; i < $set.length; i++) {
                             const keyvalue = $set[i]
                             if (keyvalue.chunk) {
-                                scope[keyvalue.key] = Util.chunkArray(keyvalue.value, keyvalue.chunk, keyvalue.chunkOptions)
+                                if(!scope[keyvalue.key] || !keyvalue.chunkOnce) {
+                                    scope[keyvalue.key] = Util.chunkArray(keyvalue.value, keyvalue.chunk, keyvalue.chunkOptions)
+                                }
                             } else {
                                 scope[keyvalue.key] = keyvalue.value
                             }
