@@ -42,6 +42,17 @@ process.on('SIGINT', () => {
     }
 })
 
+process.on('uncaughtException', (error) => {
+    console.log(error)
+    console.error(error.stack)
+    console.log("Node NOT Exiting...")
+})
+
+process.on('unhandledRejection', (reason, p) => {
+    console.log("Unhandled Rejection at: Promise ", p, " reason: ", reason)
+    // application specific logging, throwing an error, or other logic here
+})
+
 /*process.on('exit', async () => {
     console.log('Goodbye')
 })*/
