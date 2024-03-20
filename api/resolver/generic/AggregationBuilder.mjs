@@ -648,8 +648,8 @@ export default class AggregationBuilder {
             const keys = Object.keys(filters.parts)
             for(const key of keys){
                 const parts = key.split('.')
-                if(key!=='_id' && !fields.find(f=>f && (
-                    f.split('$')[0]===parts[0] ||
+                if(!fields.find(f=>f && (
+                    (f.constructor === String && f.split('$')[0]===parts[0]) ||
                     (f.constructor===Object && Object.keys(f)[0]===parts[0])
                 ))){
                     console.log(`add filter for ${key}`, fields)
