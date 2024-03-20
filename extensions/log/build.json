@@ -6,6 +6,7 @@
       "access": {
         "create": "anonymous"
       },
+      "onlyRequestedFields": true,
       "addMetaDataInQuery": false,
       "fields": [
         {
