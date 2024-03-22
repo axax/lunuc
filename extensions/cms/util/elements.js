@@ -467,7 +467,9 @@ const baseElements = [
                 localizedFallback: true,
                 filter: 'mimeType=image',
                 tab: DEFAULT_TAB,
-                projection: MEDIA_PROJECTION
+                projection: MEDIA_PROJECTION,
+                showAlwaysAsImage:true,
+                keepTextValue:true
             },
             'p_src@imageSrc': {
                 fullWidth: true,
