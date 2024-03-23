@@ -44,7 +44,7 @@ export const getComponentByKey = (key, json) => {
 }
 
 
-export const addComponent = ({key, json, index, component}) => {
+export const addComponent = ({key, json, index, component, newKeys}) => {
     const subJson = getComponentByKey(key, json)
     if (subJson) {
         let c
@@ -62,7 +62,7 @@ export const addComponent = ({key, json, index, component}) => {
         }
         if (!component) {
             component = {'c': 'new component'}
-        }else{
+        }else if(newKeys){
 
             // Search for translation key and replace with newly generated one
             const trKeys = []
@@ -133,7 +133,7 @@ export const copyComponent = (key, json) => {
         } else {
             index++
         }
-        addComponent({key: parentKey, json, index, component: source})
+        addComponent({key: parentKey, json, index, component: source, newKeys:true})
         return true
     }
     return false

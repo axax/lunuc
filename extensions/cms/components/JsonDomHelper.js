@@ -552,7 +552,7 @@ class JsonDomHelper extends React.Component {
         return parsedSource
     }
 
-    handleAddChildClick(component, index, dropIndex) {
+    handleAddChildClick(component, {index, dropIndex, newKeys}) {
         const {_key, _json, _onTemplateChange, _onDataResolverPropertyChange} = this.props
 
         let newkey = _key
@@ -578,7 +578,7 @@ class JsonDomHelper extends React.Component {
             _onDataResolverPropertyChange({value: dataResolver, key: dataResolver.key, instantSave: true})
 
         }
-        addComponent({key: newkey, json: _json, index, component})
+        addComponent({key: newkey, json: _json, index, component, newKeys})
         _onTemplateChange(_json, true)
     }
 
@@ -1153,7 +1153,7 @@ class JsonDomHelper extends React.Component {
                                         const json = JSON.parse(text),
                                             pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1)) + 1
 
-                                        this.handleAddChildClick(json, pos)
+                                        this.handleAddChildClick(json, {index:pos, newKeys: true})
 
                                     } catch (e) {
 
@@ -1509,7 +1509,7 @@ class JsonDomHelper extends React.Component {
                         pos = parseInt(_key.substring(_key.lastIndexOf('.') + 1))
                     }
 
-                    this.handleAddChildClick(comp, pos, payload.dropIndex)
+                    this.handleAddChildClick(comp, {index:pos, dropIndex: payload.dropIndex})
                 }
             }
         }
