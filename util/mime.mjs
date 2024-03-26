@@ -17,6 +17,8 @@ const MIME_TYPES = {
     'ico': 'image/x-icon',
     'heic': 'image/heic',
     'js': 'text/javascript',
+    'mjs': 'text/javascript',
+    'cjs': 'text/javascript',
     'json': 'application/json',
     'css': 'text/css',
     'mp3': 'audio/mp3',
