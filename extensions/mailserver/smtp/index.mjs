@@ -94,7 +94,7 @@ const startListening = async (db, context) => {
             onSecure(socket, session, callback) {
                 console.log('SMTP onSecure', session)
 
-                if (session.localAddress !== session.remoteAddress && (!session.servername || session.servername !== 'mail.simra.ch')) {
+                if (session.localAddress !== session.remoteAddress && !session.servername && session.servername !== 'mail.simra.ch') {
                     return callback(new Error('Only connections for mail.simra.ch are allowed'))
                 }
                 return callback(); // Accept the connection
