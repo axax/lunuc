@@ -39,6 +39,21 @@ export default function CmsPageOptions(props){
                    value={values.keyword ? values.keyword[_app_.lang] : ''}
                    fullWidth={true}/>
 
+        <TextField key="pageDescription"
+                   name="pageDescription"
+                   label={_t('CmsViewEditorContainer.pageDescription')}
+                   InputLabelProps={{
+                       shrink: true,
+                   }}
+                   multiline={true}
+                   onChange={(e) => {
+                       let value = {...cmsPage.description, [_app_.lang]: e.target.value}
+                       onChange('description', null, value)
+                   }}
+                   sx={{ mt: 0, mb: 2 }}
+                   value={values.description ? values.description[_app_.lang] : ''}
+                   fullWidth={true}/>
+
         {canMangeCmsTemplate ? <React.Fragment>
                 <SimpleSelect
                     fullWidth={true}

@@ -94,7 +94,7 @@ const startListening = async (db, context) => {
             onSecure(socket, session, callback) {
                 console.log('SMTP onSecure', session)
 
-                if (session.localAddress !== session.remoteAddress && session.servername !== 'mail.simra.ch') {
+                if (session.localAddress !== session.remoteAddress && (!session.servername || session.servername !== 'mail.simra.ch')) {
                     return callback(new Error('Only connections for mail.simra.ch are allowed'))
                 }
                 return callback(); // Accept the connection
@@ -135,7 +135,7 @@ const startListening = async (db, context) => {
             },
             onData: (stream, session, callback) => {
                 const fromMail = session?.envelope?.mailFrom?.address
-                console.log('onData', fromMail, session)
+                console.log('SMTP onData', fromMail, session)
                 //stream.pipe(process.stdout); // print message to console
                 stream.on("end", () => {
                     let err;

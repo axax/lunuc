@@ -32,7 +32,7 @@ export default db => ({
     Query: {
         cmsPages: async ({limit, page, offset, filter, sort, _version}, {headers, context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            const fields = ['public', 'slug', 'hostRule', 'name', 'keyword', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'loadPageOptions', 'ssrStyle', 'uniqueStyle', 'publicEdit', 'compress', 'isTemplate','ownerGroup$[UserGroup]']
+            const fields = ['public', 'slug', 'hostRule', 'name', 'keyword', 'description', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'loadPageOptions', 'ssrStyle', 'uniqueStyle', 'publicEdit', 'compress', 'isTemplate','ownerGroup$[UserGroup]']
 
             if (filter) {
 
@@ -93,7 +93,7 @@ export default db => ({
 
             const {
                 _id, createdBy, template, script, style, resources, dataResolver, parseResolvedData, alwaysLoadAssets, loadPageOptions, ssrStyle, uniqueStyle, publicEdit, compress,
-                ssr, modifiedAt, urlSensitiv, name, keyword, serverScript, manual
+                ssr, modifiedAt, urlSensitiv, name, keyword, description, serverScript, manual
             } = cmsPages.results[0]
             const scope = {
                 ...createScopeForDataResolver(query, props),
@@ -189,6 +189,7 @@ export default db => ({
                 // return all data if user is loggedin, and in editmode and has the capability to mange cms pages
                 result.name = name
                 result.keyword = keyword
+                result.description = description
 
                 if (!dynamic) {
                     const pageName = result.realSlug.split('/')[0]
@@ -217,7 +218,12 @@ export default db => ({
                 // if user is not looged in return only slug and rendered html
                 // never return sensitiv data here
                 result.name = {[context.lang]: name[context.lang]}
-
+                if(keyword) {
+                    result.keyword = {[context.lang]: keyword[context.lang]}
+                }
+                if(description) {
+                    result.description = {[context.lang]: description[context.lang]}
+                }
                 if( loadPageOptions ){
                     await setPageOptions()
                 }

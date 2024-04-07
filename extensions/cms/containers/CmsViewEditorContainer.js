@@ -113,6 +113,7 @@ class CmsViewEditorContainer extends React.Component {
             urlSensitiv,
             name,
             keyword,
+            description,
             parseResolvedData,
             alwaysLoadAssets,
             loadPageOptions,
@@ -127,6 +128,7 @@ class CmsViewEditorContainer extends React.Component {
             slug,
             name,
             keyword,
+            description,
             template,
             resources,
             script,
@@ -289,6 +291,7 @@ class CmsViewEditorContainer extends React.Component {
             state.urlSensitiv !== this.state.urlSensitiv ||
             state.name !== this.state.name ||
             state.keyword !== this.state.keyword ||
+            state.description !== this.state.description ||
             state.compress !== this.state.compress ||
             state.simpleDialog !== this.state.simpleDialog ||
             state.addNewSite !== this.state.addNewSite ||
@@ -1081,7 +1084,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     handleFlagChange = (key, event, value) => {
-        this.setCmsPageValue({key}, value)
+        this.setCmsPageValue({key,timeoutUpdate:500}, value)
     }
 
     handleDataResolverChange = (str, instantSave) => {
@@ -1292,7 +1295,7 @@ CmsViewEditorContainer.propTypes = {
 
 
 const CmsViewEditorContainerWithGql = compose(
-    graphql(`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$realSlug:String,$name:LocalizedStringInput,$keyword:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$manual:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:String,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$loadPageOptions:Boolean,$ssrStyle:Boolean,$uniqueStyle:Boolean,$publicEdit:Boolean,$compress:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,realSlug:$realSlug,name:$name,keyword:$keyword,script:$script,style:$style,serverScript:$serverScript,manual:$manual,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,loadPageOptions:$loadPageOptions,compress:$compress,ssrStyle:$ssrStyle,uniqueStyle:$uniqueStyle,publicEdit:$publicEdit,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug realSlug name{${config.LANGUAGES.join(' ')}} keyword{${config.LANGUAGES.join(' ')}} template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
+    graphql(`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$realSlug:String,$name:LocalizedStringInput,$keyword:LocalizedStringInput,$description:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$manual:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:String,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$loadPageOptions:Boolean,$ssrStyle:Boolean,$uniqueStyle:Boolean,$publicEdit:Boolean,$compress:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,realSlug:$realSlug,name:$name,keyword:$keyword,description:$description,script:$script,style:$style,serverScript:$serverScript,manual:$manual,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,loadPageOptions:$loadPageOptions,compress:$compress,ssrStyle:$ssrStyle,uniqueStyle:$uniqueStyle,publicEdit:$publicEdit,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug realSlug name{${config.LANGUAGES.join(' ')}} description{${config.LANGUAGES.join(' ')}} keyword{${config.LANGUAGES.join(' ')}} template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, realSlug, ...rest}, cb) => {
 

@@ -784,7 +784,8 @@ Hook.on('typeBeforeCreate', async ({db, type, data}) => {
                             } catch (e) {
                                 console.log(e)
                             }
-
+                        } else {
+                            data.data[field.name] = 1
                         }
 
                     }

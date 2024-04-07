@@ -101,6 +101,7 @@ class CmsViewContainer extends React.Component {
             return <span dangerouslySetInnerHTML={{__html: cmsPage.html}}/>
         }
         const startTime = new Date()
+
         const content = <JsonDom
             clientQuery={this.clientQuery.bind(this)}
             serverMethod={this.serverMethod.bind(this)}
@@ -116,6 +117,8 @@ class CmsViewContainer extends React.Component {
             resolvedData={cmsPage.resolvedData}
             parseResolvedData={cmsPage.parseResolvedData}
             resources={cmsPage.resources}
+            description={cmsPage.description}
+            keywords={cmsPage.keyword}
             editMode={editMode}
             inlineEditor={(cmsPage.publicEdit || Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_CONTENT)) && settings && !!settings.inlineEditor}
             slug={cmsPage.realSlug}

@@ -67,6 +67,9 @@ export const sendFileFromDir = async (req, res, filePath, headers, parsedUrl) =>
         sendFile(req, res, {headers: headerExtra, filename: modImage.filename})
 
         return true
+    } else if(fs.existsSync(filePath+'.br'))  {
+        // file exists as compressed file
+       // sendFile(req, res, {filename: filePath})
     }
     return false
 }

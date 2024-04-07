@@ -37,6 +37,16 @@
           "Tab": "Allgemein"
         },
         {
+          "name": "description",
+          "label": "Beschreibung (SEO)",
+          "localized": true,
+          "uitype": "textarea",
+          "index": 1,
+          "fullWidth": true,
+          "hideColumnInTypes": true,
+          "Tab": "Allgemein"
+        },
+        {
           "name": "hostRule",
           "label": "Host rule",
           "required": false,
