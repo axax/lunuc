@@ -13,6 +13,8 @@ import {ensureDirectoryExistence} from '../../util/fileUtil.mjs'
 
 // open port 21 on your server
 // sudo ufw allow 21
+// sudo ufw allow 65500:65515/tcp
+
 
 const ROOT_DIR = path.resolve()
 
@@ -24,7 +26,7 @@ const startFtpServer = (db)=> {
 
     const ftpServer = new FtpSrv({
         url: `ftp://${hostname}:${port}`,
-        pasv_url: `ftp://${hostname}:${port}`,
+        pasv_url: `ftp://${hostname}`,
         pasv_min: 65500,
         pasv_max: 65515,
         anonymous: false,
