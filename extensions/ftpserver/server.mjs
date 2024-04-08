@@ -1,8 +1,6 @@
 import Hook from '../../util/hook.cjs'
 import FtpSrv from 'ftp-srv'
 import path from 'path'
-import {networkInterfaces} from 'os'
-import {Netmask} from 'netmask'
 import config from 'gen/config'
 import Util from '../../api/util/index.mjs'
 import schemaGen from './gensrc/schema.mjs'
@@ -18,42 +16,18 @@ import {ensureDirectoryExistence} from '../../util/fileUtil.mjs'
 
 const ROOT_DIR = path.resolve()
 
-const nets = networkInterfaces()
-const getNetworks = () => {
-    let networks = {}
-    for (const name of Object.keys(nets)) {
-        for (const net of nets[name]) {
-            if (net.family === 'IPv4' && !net.internal) {
-                networks[net.address + "/24"] = net.address
-            }
-        }
-    }
-    return networks
-}
-
-const resolverFunction = (address) => {
-    // const networks = {
-    //     '$GATEWAY_IP/32': `${public_ip}`,
-    //     '10.0.0.0/8'    : `${lan_ip}`
-    // }
-    const networks = getNetworks()
-    for (const network in networks) {
-        if (new Netmask(network).contains(address)) {
-            return networks[network]
-        }
-    }
-    return '127.0.0.1'
-}
-
 
 const startFtpServer = (db)=> {
 
+    const hostname = '0.0.0.0';
+    const port = 5000;
 
-    const port = 21
     const ftpServer = new FtpSrv({
-        url: 'ftp://0.0.0.0:' + port,
+        url: `ftp://${hostname}:${port}`,
+        pasv_url: `ftp://${hostname}:${port}`,
+        pasv_min: 65500,
+        pasv_max: 65515,
         anonymous: false,
-        pasv_url: resolverFunction,
         /*SNICallback: (domain, cb) => {
             if (domain.startsWith('www.')) {
                 domain = domain.substring(4)
