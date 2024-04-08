@@ -448,7 +448,7 @@ class JsonDom extends React.Component {
                     }else if(key==='description') {
                         const tags = document.body.querySelectorAll('h1,h2,h3,h4')
                         for (let i = 0; i < tags.length; i++) {
-                            content += ' ' + tags[i].innerText.replaceAll('\n',' ').trim()
+                            content += ' ' + tags[i].textContent.trim()
                             if (content.indexOf('.', content.length - 1) === -1) {
                                 content += '.'
                             }
