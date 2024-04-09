@@ -92,6 +92,8 @@ class ElementWatch extends React.Component {
                     })
                 } else if (o && o.resize && o.resize.width && o.resize.height) {
                     tmpSrc = Util.createDummySvg(o.resize.width, o.resize.height)
+                } else if (eleProps.width && eleProps.height) {
+                    tmpSrc = Util.createDummySvg(eleProps.width, eleProps.height)
                 }
 
                 if (tmpSrc) {
