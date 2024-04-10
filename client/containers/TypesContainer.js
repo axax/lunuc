@@ -1233,6 +1233,7 @@ class TypesContainer extends React.Component {
             title,
             baseFilter,
             prettyFilter,
+            includeFields,
             multi,
             meta,
             opener,
@@ -1272,7 +1273,8 @@ class TypesContainer extends React.Component {
             page: pInt || typeSettings.page || 1,
             sort: s || typeSettings.sort || '',
             filter: f || typeSettings.filter || '',
-            _version: v || typeSettings._version || 'default'
+            _version: v || typeSettings._version || 'default',
+            includeFields
         }
         result.type = type
         return result
@@ -1329,8 +1331,17 @@ class TypesContainer extends React.Component {
 
         if(typeDefinition && typeDefinition.onlyRequestedFields) {
             columnsFiltered = this.getFieldsActiveOrInactive(type, true)
-        }
 
+            // special case for TypePicker opened in new window
+            if(this.pageParams.includeFields){
+                this.pageParams.includeFields.split(',').forEach(field=>{
+                    if(columnsFiltered.indexOf(field)<0){
+                        columnsFiltered.push(field)
+                    }
+                })
+                opts.loadAll = true
+            }
+        }
         return getTypeQueries(type, columnsFiltered, opts)
     }
 
@@ -1663,7 +1674,7 @@ class TypesContainer extends React.Component {
             prettyFilter
         } = Object.assign({}, this.pageParams, args)
 
-        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL + '/' + (location.pathname.indexOf('/typesblank/') >= 0 ? 'typesblank' : 'types') + (type ? '/' + type : '')}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${fixType ? '&fixType=' + fixType : ''}${title ? '&title=' + encodeURIComponent(title) : ''}${meta ? '&meta=' + meta : ''}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}${prettyFilter ? '&prettyFilter=' + encodeURIComponent(prettyFilter) : ''}${opener?'&opener=true':''}`)
+        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL + '/' + (location.pathname.indexOf('/typesblank/') >= 0 ? 'typesblank' : 'types') + (type ? '/' + type : '')}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${fixType ? '&fixType=' + fixType : ''}${includeFields ? '&includeFields=' + includeFields : ''}${title ? '&title=' + encodeURIComponent(title) : ''}${meta ? '&meta=' + meta : ''}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}${prettyFilter ? '&prettyFilter=' + encodeURIComponent(prettyFilter) : ''}${opener?'&opener=true':''}`)
     }
 
     getPrettyFilter() {

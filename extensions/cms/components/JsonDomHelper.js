@@ -627,7 +627,7 @@ class JsonDomHelper extends React.Component {
         const picker = options.picker
         const {_onTemplateChange, _key, _json} = this.props
 
-        const newwindow = openWindow({url:`${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/typesblank/?opener=true&fixType=${picker.type}&baseFilter=${encodeURIComponent(picker.baseFilter || '')}`})
+        const newwindow = openWindow({url:`${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/typesblank/?opener=true&fixType=${picker.type}${picker.type==='Media'?'&includeFields=info':''}&baseFilter=${encodeURIComponent(picker.baseFilter || '')}`})
 
 
         setTimeout(() => {
