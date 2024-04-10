@@ -81,6 +81,16 @@ class ElementWatch extends React.Component {
 
                 const lazyImage = $observe.lazyImage,
                     o = eleProps.options
+
+                let w, h
+                if (o && o.resize && o.resize.width && o.resize.height) {
+                    w = o.resize.width
+                    h = o.resize.height
+                } else if (eleProps.width && eleProps.height) {
+                    w = eleProps.width
+                    h = eleProps.height
+                }
+
                 if (lazyImage) {
                     tmpSrc = Util.getImageObject(eleProps.src, {
                         quality: lazyImage.quality || 25,
@@ -90,16 +100,16 @@ class ElementWatch extends React.Component {
                         },
                         webp: true
                     })
-                } else if (o && o.resize && o.resize.width && o.resize.height) {
-                    tmpSrc = Util.createDummySvg(o.resize.width, o.resize.height)
-                } else if (eleProps.width && eleProps.height) {
-                    tmpSrc = Util.createDummySvg(eleProps.width, eleProps.height)
+                } else if (w && h) {
+                    tmpSrc = Util.createDummySvg(w,h)
                 }
 
                 if (tmpSrc) {
                     return React.createElement(
                         eleType,
                         {
+                            width:w,
+                            height:h,
                             ...eleProps,
                             options: null,
                             src: tmpSrc,
