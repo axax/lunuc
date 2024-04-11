@@ -1671,7 +1671,8 @@ class TypesContainer extends React.Component {
             title,
             meta,
             opener,
-            prettyFilter
+            prettyFilter,
+            includeFields
         } = Object.assign({}, this.pageParams, args)
 
         this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL + '/' + (location.pathname.indexOf('/typesblank/') >= 0 ? 'typesblank' : 'types') + (type ? '/' + type : '')}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${fixType ? '&fixType=' + fixType : ''}${includeFields ? '&includeFields=' + includeFields : ''}${title ? '&title=' + encodeURIComponent(title) : ''}${meta ? '&meta=' + meta : ''}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}${prettyFilter ? '&prettyFilter=' + encodeURIComponent(prettyFilter) : ''}${opener?'&opener=true':''}`)
