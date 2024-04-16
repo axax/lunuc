@@ -75,7 +75,7 @@ const startListening = async (db, context) => {
         vendor: 'lunuc.com',
         host: '0.0.0.0',
         port: 993,
-        logger:false,
+        logger:true,
         markAsSeen:true,
         /*secured: false,
         disableSTARTTLS: true,
@@ -579,13 +579,14 @@ const startListening = async (db, context) => {
         this.notifier.addEntries(folder, entries,() => {
             let pos = 0;
             let processMessage = () => {
-                console.log(`imap process message with uid ${messages[pos].uid}`)
                 if (pos >= messages.length) {
                     // once messages are processed show relevant updates
                     this.notifier.fire(session.user.id, folder)
                     return callback(null, true)
                 }
                 let message = messages[pos++]
+                console.log(`imap process message with uid ${message.uid}`)
+
                 if (options.messages.indexOf(message.uid) < 0) {
                     console.log(`imap skip ${message.uid}`, options)
                     return setImmediate(processMessage)
@@ -600,7 +601,6 @@ const startListening = async (db, context) => {
 
                 const mailComposer = new MailComposer(messageData)
                 mailComposer.compile().build((err,mailMessage)=>{
-                    console.log(message.uid,mailMessage, parseMimeTree(mailMessage))
                     let stream = imapHandler.compileStream(
                         session.formatResponse('FETCH', message.uid, {
                             query: options.query,
