@@ -26,10 +26,10 @@ export const getFoldersForMailAccount  = async (db, mailAccountId) =>  {
 
         const defaultMailboxes = [
             {path:'INBOX',symbol:'INBOX'},
-            {path:'Drafts',symbol:'Drafts',special_use:'\\Drafts'},
             {path:'Sent Messages',symbol:'Sent Messages',special_use:'\\Sent'},
+            {path:'Drafts',symbol:'Drafts',special_use:'\\Drafts'},
             {path:'Junk',symbol:'Junk',special_use:'\\Junk'},
-            {path:'Deleted Messages',symbol:'Deleted Messages',special_use:'\\Trash'},
+            {path:'Trash',symbol:'Deleted Messages',special_use:'\\Trash'},
             {path:'Archive',symbol:'Archive',special_use:'\\Archive'},
             {path:'Notes',symbol:'Notes'}
         ]

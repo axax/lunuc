@@ -514,6 +514,9 @@ const startListening = async (db, context) => {
             delete destinationMessage.modseq
             //delete desitnationMessage.flags
             delete destinationMessage._id
+            if(desitnationMessage.flags){
+                desitnationMessage.flags = desitnationMessage.flags.filter(f=>!!f)
+            }
 
 
             const insertResult = await MailserverResolver(db).Mutation.createMailAccountMessage(destinationMessage, {context}, {skipCheck:true})
@@ -591,9 +594,11 @@ const startListening = async (db, context) => {
                 }
                 const messageData = {...message.data}
                 replaceAddresseObjectsToString(messageData)
+                console.log('1',err, mailMessage)
 
                 const mailComposer = new MailComposer(messageData)
                 mailComposer.compile().build((err,mailMessage)=>{
+                    console.log('2',err, mailMessage, parseMimeTree(mailMessage))
                     let stream = imapHandler.compileStream(
                         session.formatResponse('FETCH', message.uid, {
                             query: options.query,
