@@ -597,7 +597,7 @@ const startListening = async (db, context) => {
 
                 const mailComposer = new MailComposer(messageData)
                 mailComposer.compile().build((err,mailMessage)=>{
-                    console.log('2',err, mailMessage, parseMimeTree(mailMessage))
+                    console.log('2',mailMessage, parseMimeTree(mailMessage))
                     let stream = imapHandler.compileStream(
                         session.formatResponse('FETCH', message.uid, {
                             query: options.query,
