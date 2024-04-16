@@ -514,8 +514,8 @@ const startListening = async (db, context) => {
             delete destinationMessage.modseq
             //delete desitnationMessage.flags
             delete destinationMessage._id
-            if(desitnationMessage.flags){
-                desitnationMessage.flags = desitnationMessage.flags.filter(f=>!!f)
+            if(destinationMessage.flags){
+                destinationMessage.flags = destinationMessage.flags.filter(f=>!!f)
             }
 
 
