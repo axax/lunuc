@@ -594,7 +594,6 @@ const startListening = async (db, context) => {
                 }
                 const messageData = {...message.data}
                 replaceAddresseObjectsToString(messageData)
-                console.log('1',err, mailMessage)
 
                 const mailComposer = new MailComposer(messageData)
                 mailComposer.compile().build((err,mailMessage)=>{
