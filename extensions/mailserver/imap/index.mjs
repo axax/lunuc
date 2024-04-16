@@ -579,6 +579,7 @@ const startListening = async (db, context) => {
         this.notifier.addEntries(folder, entries,() => {
             let pos = 0;
             let processMessage = () => {
+                console.log(`imap process message with uid ${messages[pos].uid}`)
                 if (pos >= messages.length) {
                     // once messages are processed show relevant updates
                     this.notifier.fire(session.user.id, folder)
@@ -586,10 +587,12 @@ const startListening = async (db, context) => {
                 }
                 let message = messages[pos++]
                 if (options.messages.indexOf(message.uid) < 0) {
+                    console.log(`imap skip ${message.uid}`, options)
                     return setImmediate(processMessage)
                 }
 
                 if (options.changedSince && message.modseq <= options.changedSince) {
+                    console.log(`imap changedSince skip ${message.uid}`, options)
                     return setImmediate(processMessage)
                 }
                 const messageData = {...message.data}
