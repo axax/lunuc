@@ -596,7 +596,8 @@ const startListening = async (db, context) => {
                     console.log(`imap changedSince skip ${message.uid}`, options)
                     return setImmediate(processMessage)
                 }
-                const messageData = {...message.data}
+                const messageData = JSON.parse(JSON.stringify(message.data))
+                delete message.data
 
                 replaceAddresseObjectsToString(messageData)
 
@@ -605,7 +606,7 @@ const startListening = async (db, context) => {
                     console.log('IMAP send mail', options.query,
                         {...message,
                             mimeTree:parseMimeTree(mailMessage),
-                            idate: new Date(message.date)
+                            idate: new Date(messageData.date)
                         })
                     let stream = imapHandler.compileStream(
                         session.formatResponse('FETCH', message.uid, {
@@ -614,7 +615,7 @@ const startListening = async (db, context) => {
                                 options.query,
                                 {...message,
                                     mimeTree:parseMimeTree(mailMessage),
-                                    idate: new Date(message.date)
+                                    idate: new Date(messageData.date)
                                 }
                             )
                         })
