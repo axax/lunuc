@@ -598,12 +598,6 @@ const startListening = async (db, context) => {
                 }
                 const messageData = {...message.data}
                 replaceAddresseObjectsToString(messageData)
-                if(messageData.attachments){
-                    messageData.attachments.forEach(attachment=>{
-                        // otherwise message ends up empty in the inbox
-                        delete attachment.size
-                    })
-                }
 
                 const mailComposer = new MailComposer(messageData)
                 mailComposer.compile().build((err,mailMessage)=>{

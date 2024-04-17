@@ -169,6 +169,16 @@ const startListening = async (db, context) => {
                         }
 
                     } else {
+
+                        if(data.attachments){
+                            data.attachments.forEach(attachment=>{
+                                // otherwise message ends up empty in the inbox
+                                if(!attachment.encoding && attachment.headers && attachment.headers['content-transfer-encoding']){
+                                    attachment.encoding = attachment.headers['content-transfer-encoding']
+                                }
+                            })
+                        }
+
                         // email received
                         let mailAccount = await getMailAccountFromMailData(db, data)
                         if (mailAccount && mailAccount.active) {
