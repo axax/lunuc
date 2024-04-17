@@ -170,13 +170,13 @@ const startListening = async (db, context) => {
 
                     } else {
 
-                        console.log('data', data)
                         if(data && data.attachments){
                             data.attachments.forEach(attachment=>{
-                                console.log('attachment', attachment)
                                 // otherwise message ends up empty in the inbox
-                                if(!attachment.encoding && attachment.headers && attachment.headers['content-transfer-encoding']){
-                                    attachment.encoding = attachment.headers['content-transfer-encoding']
+                                if(!attachment.encoding && attachment.headers &&
+                                    attachment.headers.constructor === Map &&
+                                    attachment.headers.has('content-transfer-encoding')){
+                                    attachment.encoding = attachment.headers.get('content-transfer-encoding')
                                 }
                             })
                         }
