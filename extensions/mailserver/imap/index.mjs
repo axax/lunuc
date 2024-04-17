@@ -596,7 +596,7 @@ const startListening = async (db, context) => {
                     console.log(`imap changedSince skip ${message.uid}`, options)
                     return setImmediate(processMessage)
                 }
-                const messageData = message.data
+                const messageData = JSON.parse(JSON.stringify(message.data))
                 delete message.data
 
                 replaceAddresseObjectsToString(messageData)
