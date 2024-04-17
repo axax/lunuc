@@ -6,6 +6,7 @@ import config from '../../../gensrc/config.mjs'
 import {getFolderForMailAccount, getMailAccountByEmail, getMailAccountFromMailData} from '../util/dbhelper.mjs'
 import nodemailerDirectTransport from 'nodemailer-direct-transport'
 import nodemailer from 'nodemailer'
+import {isTemporarilyBlocked} from '../../../server/util/requestBlocker.mjs'
 
 /*
 // open port 25 and 587 on your server
@@ -86,6 +87,12 @@ const startListening = async (db, context) => {
             },
             onConnect(session, callback) {
                 console.log('SMTP onConnect', session)
+
+
+                if(isTemporarilyBlocked({requestTimeInMs: 3000, requestPerTime: 5,requestBlockForInMs:60000, key:'smtpConnection'})){
+                    return callback(new Error("No connections allowed"))
+                }
+
                 if (session.remoteAddress === "127.0.0.1") {
                     //    return callback(new Error("No connections from localhost allowed"));
                 }

@@ -597,6 +597,17 @@ const startListening = async (db, context) => {
                     return setImmediate(processMessage)
                 }
                 const messageData = {...message.data}
+                if(messageData.attachments){
+                    messageData.attachments.forEach(attachment=>{
+                        // otherwise message ends up empty in the inbox
+                        if(!attachment.encoding && attachment.headers &&
+                            attachment.headers.constructor === Map &&
+                            attachment.headers.has('content-transfer-encoding')){
+                            delete attachment.size
+                        }
+                    })
+                }
+
                 replaceAddresseObjectsToString(messageData)
 
                 const mailComposer = new MailComposer(messageData)
