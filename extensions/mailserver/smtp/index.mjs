@@ -126,7 +126,7 @@ const startListening = async (db, context) => {
 
                 // do not accept messages larger than 1000 bytes to specific recipients
                 let expectedSize = Number(session.envelope.mailFrom.args.SIZE) || 0
-                if (expectedSize > 100000) {
+                if (expectedSize > 1000000) {
                     const err = new Error("Insufficient channel storage: " + address.address)
                     err.responseCode = 452
                     return callback(err)

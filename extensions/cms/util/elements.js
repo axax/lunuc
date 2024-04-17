@@ -975,6 +975,13 @@ const baseElements = [
                 label: 'Url',
                 tab: DEFAULT_TAB
             },
+            p_title: {
+                fullWidth: true,
+                value: '',
+                placeholder: 'Linkbezeichnung',
+                label: 'Linkbezeichnung (Optional für SEO)',
+                tab: DEFAULT_TAB
+            },
             ...classIconListOptions('p_'),
             ...classOptions('p_'),
             p_target: {
