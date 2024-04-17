@@ -170,8 +170,10 @@ const startListening = async (db, context) => {
 
                     } else {
 
-                        if(data.attachments){
+                        console.log('data', data)
+                        if(data && data.attachments){
                             data.attachments.forEach(attachment=>{
+                                console.log('attachment', attachment)
                                 // otherwise message ends up empty in the inbox
                                 if(!attachment.encoding && attachment.headers && attachment.headers['content-transfer-encoding']){
                                     attachment.encoding = attachment.headers['content-transfer-encoding']
