@@ -587,10 +587,10 @@ const startListening = async (db, context) => {
                 let message = messages[pos++]
                 console.log(`imap process message with uid ${message.uid}`)
 
-               /* if (options.messages.indexOf(message.uid) < 0) {
+                if (options.messages.indexOf(message.uid) < 0) {
                     console.log(`imap skip ${message.uid}`, options)
                     return setImmediate(processMessage)
-                }*/
+                }
 
                 if (options.changedSince && message.modseq <= options.changedSince) {
                     console.log(`imap changedSince skip ${message.uid}`, options)
@@ -602,6 +602,11 @@ const startListening = async (db, context) => {
 
                 const mailComposer = new MailComposer(messageData)
                 mailComposer.compile().build((err,mailMessage)=>{
+                    console.log('IMAP send mail', options.query,
+                        {...message,
+                            mimeTree:parseMimeTree(mailMessage),
+                            idate: new Date(message.date)
+                        })
                     let stream = imapHandler.compileStream(
                         session.formatResponse('FETCH', message.uid, {
                             query: options.query,
