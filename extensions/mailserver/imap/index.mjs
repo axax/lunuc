@@ -603,11 +603,6 @@ const startListening = async (db, context) => {
 
                 const mailComposer = new MailComposer(messageData)
                 mailComposer.compile().build((err,mailMessage)=>{
-                    console.log('IMAP send mail', options.query,
-                        {...message,
-                            mimeTree:parseMimeTree(mailMessage),
-                            idate: new Date(messageData.date)
-                        })
                     let stream = imapHandler.compileStream(
                         session.formatResponse('FETCH', message.uid, {
                             query: options.query,
