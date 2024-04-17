@@ -600,11 +600,7 @@ const startListening = async (db, context) => {
                 if(messageData.attachments){
                     messageData.attachments.forEach(attachment=>{
                         // otherwise message ends up empty in the inbox
-                        if(!attachment.encoding && attachment.headers &&
-                            attachment.headers.constructor === Map &&
-                            attachment.headers.has('content-transfer-encoding')){
-                            delete attachment.size
-                        }
+                        delete attachment.size
                     })
                 }
 
