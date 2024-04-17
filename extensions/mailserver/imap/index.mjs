@@ -587,22 +587,16 @@ const startListening = async (db, context) => {
                 let message = messages[pos++]
                 console.log(`imap process message with uid ${message.uid}`)
 
-                if (options.messages.indexOf(message.uid) < 0) {
+               /* if (options.messages.indexOf(message.uid) < 0) {
                     console.log(`imap skip ${message.uid}`, options)
                     return setImmediate(processMessage)
-                }
+                }*/
 
                 if (options.changedSince && message.modseq <= options.changedSince) {
                     console.log(`imap changedSince skip ${message.uid}`, options)
                     return setImmediate(processMessage)
                 }
                 const messageData = {...message.data}
-                if(messageData.attachments){
-                    messageData.attachments.forEach(attachment=>{
-                        // otherwise message ends up empty in the inbox
-                        delete attachment.size
-                    })
-                }
 
                 replaceAddresseObjectsToString(messageData)
 
