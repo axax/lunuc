@@ -75,7 +75,7 @@ const startListening = async (db, context) => {
         vendor: 'lunuc.com',
         host: '0.0.0.0',
         port: 993,
-        logger:true,
+        logger:false,
         markAsSeen:true,
         /*secured: false,
         disableSTARTTLS: true,
@@ -598,6 +598,12 @@ const startListening = async (db, context) => {
                 }
                 const messageData = {...message.data}
                 replaceAddresseObjectsToString(messageData)
+                if(messageData.attachments){
+                    messageData.attachments.forEach(attachment=>{
+                        // otherwise message ends up empty in the inbox
+                        delete attachment.size
+                    })
+                }
 
                 const mailComposer = new MailComposer(messageData)
                 mailComposer.compile().build((err,mailMessage)=>{
