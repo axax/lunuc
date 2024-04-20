@@ -4,7 +4,13 @@
       "name": "MailAccount",
       "fields": [
         {
+          "name": "username",
+          "required": true,
+          "index": 1
+        },
+        {
           "name": "host",
+          "defaultValue": "$HOST",
           "required": true,
           "index": 1,
           "compoundIndex": [
@@ -16,16 +22,21 @@
                 "active": 1
               }
             }
-          ]
+          ],
+          "access": {
+            "ui": {
+              "role": "manage_types"
+            }
+          }
         },
         {
-          "name": "username",
-          "required": true,
+          "name": "redirect",
           "index": 1
         },
         {
           "name": "password",
           "uitype": "password",
+          "hideColumnInTypes": true,
           "required": true,
           "hash": true
         },
@@ -35,7 +46,29 @@
         },
         {
           "name": "temp",
-          "type": "Boolean"
+          "type": "Boolean",
+          "hideColumnInTypes": true,
+          "access": {
+            "ui": {
+              "role": "manage_types"
+            }
+          }
+        },
+        {
+          "name": "ownerGroup",
+          "bulkEditable": true,
+          "hideColumnInTypes": true,
+          "access": {
+            "ui": {
+              "role": "manage_user_group"
+            }
+          },
+          "type": "UserGroup",
+          "multi": true,
+          "fields": [
+            "name"
+          ],
+          "index": 1
         }
       ]
     },

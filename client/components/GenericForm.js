@@ -126,11 +126,13 @@ class GenericForm extends React.Component {
                 }
             } else {
                 if (props.values) {
-                    if(field.type==='Object' && props.values[fieldKey] && props.values[fieldKey].constructor===Object){
-                        fieldValue = Object.assign({},props.values[fieldKey])
-                    }else{
+                    if (field.type === 'Object' && props.values[fieldKey] && props.values[fieldKey].constructor === Object) {
+                        fieldValue = Object.assign({}, props.values[fieldKey])
+                    } else {
                         fieldValue = props.values[fieldKey]
                     }
+                } else if(field.defaultValue){
+                    fieldValue = field.defaultValue
                 } else {
                     // value must be null instead of undefined
                     fieldValue = field.value === undefined ? null : field.value
@@ -529,7 +531,6 @@ class GenericForm extends React.Component {
     render() {
         const {fields, primaryButton, caption, subForm} = this.props
 
-
         const fieldKeys = Object.keys(fields), formFields = [], tabs = [], formFieldsNoTabs = []
 
 
@@ -544,13 +545,10 @@ class GenericForm extends React.Component {
             }
 
 
-            if (field.role && !Util.hasCapability(_app_.user, field.role)) {
-                continue
-            }
-
-            if ((field.uistate && field.uistate.visible && matchExpr(field.uistate.visible, this.state.fields)) ||
+            if ((field.role && !Util.hasCapability(_app_.user, field.role)) ||
+                (field.uistate && field.uistate.visible && matchExpr(field.uistate.visible, this.state.fields)) ||
                 (field.access && field.access.ui && field.access.ui.role && !Util.hasCapability(_app_.user, field.access.ui.role))
-            ) {
+            ){
                 continue
             }
 

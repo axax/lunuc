@@ -65,6 +65,7 @@ import {
     CAPABILITY_MANAGE_COLLECTION
 } from '../../util/capabilities.mjs'
 import SelectCollection from '../components/types/SelectCollection'
+import {matchExpr} from "../util/json.mjs";
 
 const CodeEditor = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
@@ -388,13 +389,17 @@ class TypesContainer extends React.Component {
                                             <Chip key={e} label={field._enumMap?field._enumMap[e] || e:e}/>
                                         )
                                     } else {
-                                        dynamic[field.name] =
-                                            <StyledTableContent
-                                                onBlur={e => this.handleDataChange.bind(this)(e, item, field)}
-                                                suppressContentEditableWarning contentEditable
-                                                dangerouslySetInnerHTML={{
-                                                    __html: fieldValue
-                                                }}/>
+                                        if (field.access && field.access.ui && field.access.ui.role && !Util.hasCapability(_app_.user, field.access.ui.role)){
+                                            dynamic[field.name] = fieldValue
+                                        }else {
+                                            dynamic[field.name] =
+                                                <StyledTableContent
+                                                    onBlur={e => this.handleDataChange.bind(this)(e, item, field)}
+                                                    suppressContentEditableWarning contentEditable
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: fieldValue
+                                                    }}/>
+                                        }
                                     }
                                 }
 

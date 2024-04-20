@@ -494,8 +494,9 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
     if (!currentData) {
         currentData = rootData
     }
+
     reducePipe.forEach(re => {
-        if (re.path && re.$is !== 'false') {
+        if (re.path && re.$is !== false && re.$is !== 'false') {
 
             if (re.sort) {
                 const value = propertyByPath(re.path, currentData, '.', re.assign)
@@ -523,7 +524,7 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                 const value = propertyByPath(re.path, currentData)
                 let lookedupData, groups
                 if (value !== undefined && value !== null) {
-                    if (value.constructor === Number) {
+                    if (value.constructor === Number || value.constructor === String) {
                         lookedupData = lookupData[value]
                         if (lookupData === undefined) {
                             console.warn(`${value} not found in`, lookupData)
@@ -618,7 +619,15 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                     setPropertyByPath(sum, re.lookup.sum.path, rootData)
                 }
 
-                if (re.key) {
+                if(re.extend){
+                    if(lookedupData && lookedupData.constructor === Object){
+                        Object.keys(lookedupData).forEach(key=>{
+                            if(!currentData[key]){
+                                currentData[key] = lookedupData[key]
+                            }
+                        })
+                    }
+                }else if (re.key) {
                     rootData[re.key] = lookedupData
                 } else {
                     setPropertyByPath(lookedupData, re.path, currentData)
@@ -631,7 +640,9 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                 }
                 rootData[re.key] = picks
             } else if (re.key) {
+
                 const value = propertyByPath(re.path, currentData, '.', re.assign)
+
                 if (re.assign && value && value.constructor === Object) {
                     Object.keys(value).forEach(key => {
                         if (value[key] && value[key].constructor === Object) {
@@ -666,11 +677,32 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                             rootData[re.key] = aValue
 
                         } else {
-                            rootData[re.key] = value[getKey]
+                            if(re.toArray){
+                                if(!rootData[re.key]){
+                                    rootData[re.key] = []
+                                }
+                                rootData[re.key].push(value[getKey])
+                            }else {
+                                rootData[re.key] = value[getKey]
+                            }
                         }
                     }
                 } else {
-                    rootData[re.key] = value
+                    if(re.toArray){
+                        if(!rootData[re.key]){
+                            rootData[re.key] = []
+                        }
+                        if(!value){
+                        }else if(value.constructor === Object){
+                            rootData[re.key].push(...Object.values(value))
+                        }else if(value.constructor === Array){
+                            rootData[re.key].push(...value)
+                        }else /*if(rootData[re.key].indexOf(value)<0)*/{
+                            rootData[re.key].push(value)
+                        }
+                    }else {
+                        rootData[re.key] = value
+                    }
                 }
             } else if (re.loop) {
 
@@ -688,16 +720,21 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                     })
                 } else if (value.constructor === Array) {
                     for (let i = value.length - 1; i >= 0; i--) {
+
                         if (checkFilter(re.loop.filter, value, i)) {
                             value.splice(i, 1)
+                        }
+
+                        if (re.loop.reduce) {
+                            value[i] = re.assign ? assignIfObjectOrArray(value[i]) : value[i]
+                            //if()
+                            resolveReduce(re.loop.reduce, rootData, value[i])
                         }
                     }
                 }
             } else if (re.reduce) {
                 const arr = propertyByPath(re.path, currentData)
-
                 resolveReduce(re.reduce, rootData, arr)
-
             } else if (re.limit) {
                 let value = propertyByPath(re.path, currentData, '.', re.assign)
                 value.length = re.limit

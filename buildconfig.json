@@ -88,7 +88,7 @@
       "active": true
     },
     "ftpserver": {
-      "active": false
+      "active": true
     },
     "userrestriction": {
       "active": true

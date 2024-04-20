@@ -125,6 +125,17 @@ const enhanceField = (field, type) => {
         newField.tab = _t(`${type}.tab.${field.tab}`,null, field.tab)
     }
 
+    if(field.defaultValue) {
+        if(field.defaultValue ==='$HOST' && window.location.hostname) {
+            let host = window.location.hostname
+            if(host.startsWith('www.')){
+                host = host.substring(4)
+            }
+            newField.defaultValue = host
+        }
+    }
+
+
     return Object.assign({}, field, newField)
 }
 

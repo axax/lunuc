@@ -101,8 +101,10 @@ const startListening = async (db, context) => {
             onSecure(socket, session, callback) {
                 console.log('SMTP onSecure', session)
 
-                if (session.localAddress !== session.remoteAddress && session.servername && session.servername !== 'mail.simra.ch') {
-                    return callback(new Error('Only connections for mail.simra.ch are allowed'))
+                const mailserverList = Object.keys(getHostRules(false)).map(h=>`mail.${h}`)
+
+                if (session.localAddress !== session.remoteAddress && session.servername && mailserverList.indexOf(session.servername)<0) {
+                    return callback(new Error(`Only connections for ${session.servername} are allowed`))
                 }
                 return callback(); // Accept the connection
             },
@@ -160,7 +162,7 @@ const startListening = async (db, context) => {
                     } else if (session.user) {
                         // send email
                         const transporter = nodemailerDirectTransport({
-                            name: 'mail.simra.ch'
+                            name: session.servername
                         })
 
                         const transporterResult = nodemailer.createTransport(transporter)
@@ -199,6 +201,31 @@ const startListening = async (db, context) => {
                                 mailAccountFolder: inbox._id,
                                 data
                             }, {context}, false)
+
+
+                            if(mailAccount.redirect){
+
+                                // send email
+                                const transporter = nodemailerDirectTransport({
+                                    name: session.servername
+                                })
+
+                                const transporterResult = nodemailer.createTransport(transporter)
+
+                                const recipients = mailAccount.redirect.split(',')
+
+                                for (const rcpt of recipients) {
+                                    console.log('onData send redirect', rcpt, data)
+                                    await transporterResult.sendMail({
+                                        ...data,
+                                        to: rcpt,
+                                        replyTo:fromMail,
+                                        subject: `REDIRECT: ${data.subject}`
+                                    })
+                                }
+
+                            }
+
                         } else {
                             console.warn(`no mail account for`, data)
                         }
