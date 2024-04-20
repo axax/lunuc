@@ -220,6 +220,8 @@ const startListening = async (db, context) => {
                                         ...data,
                                         to: rcpt,
                                         replyTo:fromMail,
+                                        from: `${mailAccount.username}@${mailAccount.host}`,
+                                        fromName: session?.envelope?.mailFrom?.name,
                                         subject: `REDIRECT: ${data.subject}`
                                     })
                                 }
