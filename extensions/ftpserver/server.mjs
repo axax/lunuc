@@ -38,13 +38,14 @@ const resolverFunction = (address) => {
     //     '$GATEWAY_IP/32': `${public_ip}`,
     //     '10.0.0.0/8'    : `${lan_ip}`
     // }
+
     const networks = getNetworks()
     for (const network in networks) {
         if (new Netmask(network).contains(address)) {
             return networks[network]
         }
     }
-    return '127.0.0.1'
+    return address //'127.0.0.1'
 }
 
 
