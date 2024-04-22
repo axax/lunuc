@@ -654,12 +654,12 @@ export default class AggregationBuilder {
                 ))){
                     console.log(`add filter for ${key}`, fields)
                     // Temp log
-                    GenericResolver.createEntity(this.db, {context:{lang:'en'}}, 'Log', {
+                    /*GenericResolver.createEntity(this.db, {context:{lang:'en'}}, 'Log', {
                         location: 'dbquery',
                         type: 'createQueriesForFields',
                         message: 'add match from filter: ' + key,
                         meta: {fields, filters, key, type:this.type}
-                    })
+                    })*/
                     const fieldDefinition = this.createFieldDefinition(parts[0], this.type)
                     if(fieldDefinition.existsInDefinition) {
                         await this.createFilterForField(fieldDefinition, match, {filters})
