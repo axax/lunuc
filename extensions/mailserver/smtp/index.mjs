@@ -221,7 +221,7 @@ const startListening = async (db, context) => {
                                     await transporterResult.sendMail({
                                         ...data,
                                         to: rcpt,
-                                        replyTo:replyTo.address,
+                                        'reply-to':replyTo.address,
                                         from: `${mailAccount.username}@${mailAccount.host}`,
                                         /*fromName: replyTo.name,*/
                                         subject: `REDIRECT: ${data.subject}`
