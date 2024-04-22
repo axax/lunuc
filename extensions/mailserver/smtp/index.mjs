@@ -217,13 +217,13 @@ const startListening = async (db, context) => {
 
                                 let replyTo = data?.from?.value && data.from.value.length > 0?data.from.value[0]:{}
                                 for (const rcpt of recipients) {
-                                    console.log('onData send redirect', rcpt, data)
+                                    console.log('onData send redirect', rcpt, replyTo)
                                     await transporterResult.sendMail({
                                         ...data,
                                         to: rcpt,
                                         replyTo:replyTo.address,
                                         from: `${mailAccount.username}@${mailAccount.host}`,
-                                        fromName: replyTo.name,
+                                        /*fromName: replyTo.name,*/
                                         subject: `REDIRECT: ${data.subject}`
                                     })
                                 }
