@@ -216,6 +216,17 @@ const startListening = async (db, context) => {
 
 
                                 let replyTo = data?.from?.value && data.from.value.length > 0?data.from.value[0]:{}
+
+                                if(data?.headers?.from){
+                                    data.headers['reply-to'] = data.headers.from
+                                }
+                                if(data.headerLines && replyTo.address){
+                                    data.headerLines.push({
+                                            key: 'reply-to',
+                                            line: `Reply-to: <${replyTo.address}>`
+                                        })
+                                }
+
                                 for (const rcpt of recipients) {
                                     console.log('onData send redirect', rcpt, replyTo)
                                     await transporterResult.sendMail({
