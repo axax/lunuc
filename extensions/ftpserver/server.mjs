@@ -59,7 +59,8 @@ const startFtpServer = (db)=> {
         pasv_min: 65500,
         pasv_max: 65535,
         anonymous: false,
-        /*SNICallback: (domain, cb) => {
+        SNICallback: (domain, cb) => {
+            console.log('ftp SNICallback',domain)
             if (domain.startsWith('www.')) {
                 domain = domain.substring(4)
             }
@@ -76,8 +77,21 @@ const startFtpServer = (db)=> {
                 }
             }
             cb()
-        },*/
+        },
         greeting: [`${config.APP_NAME} ${config.APP_VERSION}`]
+    })
+
+    ftpServer.on('connect', async (data) => {
+        console.log('ftp connect',data)
+    })
+    ftpServer.on('disconnect', async (data) => {
+        console.log('ftp disconnect',data)
+    })
+    ftpServer.on('client-error', async ({connection, context, error}) => {
+        console.log('ftp client-error',error,context)
+    })
+    ftpServer.on('server-error', async ({error}) => {
+        console.log('ftp client-error',error)
     })
 
     ftpServer.on('login', async (data, resolve, reject) => {

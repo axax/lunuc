@@ -619,16 +619,21 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                     setPropertyByPath(sum, re.lookup.sum.path, rootData)
                 }
 
-                if(re.extend){
+                if(re.extend || re.override){
                     if(lookedupData && lookedupData.constructor === Object){
                         Object.keys(lookedupData).forEach(key=>{
-                            if(!currentData[key]){
+                            if(re.override || !currentData[key]){
                                 currentData[key] = lookedupData[key]
                             }
                         })
                     }
                 }else if (re.key) {
-                    rootData[re.key] = lookedupData
+
+                    if(re.onCurrent){
+                        currentData[re.key] = lookedupData
+                    }else{
+                        rootData[re.key] = lookedupData
+                    }
                 } else {
                     setPropertyByPath(lookedupData, re.path, currentData)
                 }
