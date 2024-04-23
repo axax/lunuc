@@ -167,11 +167,13 @@ const startListening = async (db, context) => {
 
                         const transporterResult = nodemailer.createTransport(transporter)
 
+                        let replyTo = data?.replyTo?.value && data.replyTo.value.length > 0?data.replyTo.value[0]:{}
 
                         for (const rcpt of data.to.value) {
                             console.log('onData send', rcpt, data)
-                            const mailResponse = await transporterResult.sendMail({
+                            await transporterResult.sendMail({
                                 ...data,
+                                replyTo: replyTo.address,
                                 to: rcpt.address,
                                 from: fromMail
                             })
@@ -221,6 +223,8 @@ const startListening = async (db, context) => {
                                     console.log('onData send redirect', rcpt, replyTo)
 
                                     const message = {
+                                       /* cc: data.cc,
+                                        bcc: data.bcc,*/
                                         replyTo: replyTo.address,
                                         from: `${mailAccount.username}@${mailAccount.host}`,
                                         to: rcpt,
