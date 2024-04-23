@@ -8,7 +8,7 @@ import Util from '../../api/util/index.mjs'
 import schemaGen from './gensrc/schema.mjs'
 import resolverGen from './gensrc/resolver.mjs'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
-const {WEBROOT_ABSPATH} = config
+let {WEBROOT_ABSPATH} = config
 import {ensureDirectoryExistence} from '../../util/fileUtil.mjs'
 //import {getHostRules, hostListFromString} from '../../util/hostrules.mjs'
 
@@ -19,7 +19,7 @@ import {ensureDirectoryExistence} from '../../util/fileUtil.mjs'
 
 
 const ROOT_DIR = path.resolve()
-
+WEBROOT_ABSPATH = ROOT_DIR
 const nets = networkInterfaces()
 const getNetworks = () => {
     let networks = {}
@@ -41,11 +41,13 @@ const resolverFunction = (address) => {
 
     const networks = getNetworks()
     for (const network in networks) {
+        console.log(new Netmask(network),address)
         if (new Netmask(network).contains(address)) {
+            console.log('network',network)
             return networks[network]
         }
     }
-    return address //'127.0.0.1'
+    return '0.0.0.0'
 }
 
 
