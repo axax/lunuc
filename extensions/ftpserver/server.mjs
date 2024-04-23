@@ -59,7 +59,7 @@ const startFtpServer = (db)=> {
         pasv_min: 65000,
         pasv_max: 65535,
         anonymous: false,
-        timeout:6000,
+        timeout:0,
         /*SNICallback: (domain, cb) => {
             console.log('ftp SNICallback',domain)
             if (domain.startsWith('www.')) {
