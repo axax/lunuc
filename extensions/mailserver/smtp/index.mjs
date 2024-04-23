@@ -167,13 +167,10 @@ const startListening = async (db, context) => {
 
                         const transporterResult = nodemailer.createTransport(transporter)
 
-                        let replyTo = data?.replyTo?.value && data.replyTo.value.length > 0?data.replyTo.value[0]:{}
-
                         for (const rcpt of data.to.value) {
                             console.log('onData send', rcpt, data)
                             await transporterResult.sendMail({
                                 ...data,
-                                replyTo: replyTo.address,
                                 to: rcpt.address,
                                 from: fromMail
                             })
