@@ -15,7 +15,7 @@ import {ensureDirectoryExistence} from '../../util/fileUtil.mjs'
 
 // open port 21 on your server
 // sudo ufw allow 21
-// sudo ufw allow 65500:65535/tcp
+// sudo ufw allow 65000:65535/tcp
 
 const ROOT_DIR = path.resolve()
 const nets = networkInterfaces()
@@ -37,13 +37,13 @@ const resolverFunction = (address) => {
     //     '10.0.0.0/8'    : `${lan_ip}`
     // }
 
-    const networks = getNetworks()
+   /* const networks = getNetworks()
     for (const network in networks) {
         if (new Netmask(network).contains(address)) {
             console.log('network',network)
             return networks[network]
         }
-    }
+    }*/
     return '144.91.119.30' // make it configurable
 }
 
@@ -56,10 +56,11 @@ const startFtpServer = (db)=> {
     const ftpServer = new FtpSrv({
         url: `ftp://${hostname}:${port}`,
         pasv_url: resolverFunction,
-        pasv_min: 65500,
+        pasv_min: 65000,
         pasv_max: 65535,
         anonymous: false,
-        SNICallback: (domain, cb) => {
+        timeout:6000,
+        /*SNICallback: (domain, cb) => {
             console.log('ftp SNICallback',domain)
             if (domain.startsWith('www.')) {
                 domain = domain.substring(4)
@@ -77,16 +78,10 @@ const startFtpServer = (db)=> {
                 }
             }
             cb()
-        },
+        },*/
         greeting: [`${config.APP_NAME} ${config.APP_VERSION}`]
     })
 
-    ftpServer.on('connect', async (data) => {
-        console.log('ftp connect',data)
-    })
-    ftpServer.on('disconnect', async (data) => {
-        console.log('ftp disconnect',data)
-    })
     ftpServer.on('client-error', async ({connection, context, error}) => {
         console.log('ftp client-error',error,context)
     })
