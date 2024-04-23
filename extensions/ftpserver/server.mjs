@@ -8,7 +8,7 @@ import Util from '../../api/util/index.mjs'
 import schemaGen from './gensrc/schema.mjs'
 import resolverGen from './gensrc/resolver.mjs'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
-let {WEBROOT_ABSPATH} = config
+const {WEBROOT_ABSPATH} = config
 import {ensureDirectoryExistence} from '../../util/fileUtil.mjs'
 //import {getHostRules, hostListFromString} from '../../util/hostrules.mjs'
 
@@ -17,9 +17,7 @@ import {ensureDirectoryExistence} from '../../util/fileUtil.mjs'
 // sudo ufw allow 21
 // sudo ufw allow 65500:65535/tcp
 
-
 const ROOT_DIR = path.resolve()
-WEBROOT_ABSPATH = ROOT_DIR
 const nets = networkInterfaces()
 const getNetworks = () => {
     let networks = {}
@@ -41,13 +39,12 @@ const resolverFunction = (address) => {
 
     const networks = getNetworks()
     for (const network in networks) {
-        console.log(new Netmask(network),address)
         if (new Netmask(network).contains(address)) {
             console.log('network',network)
             return networks[network]
         }
     }
-    return '0.0.0.0'
+    return '144.91.119.30' // make it configurable
 }
 
 
