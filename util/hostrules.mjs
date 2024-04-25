@@ -76,17 +76,21 @@ const loadHostRules = (dir, withCertContext, hostrules, isDefault) => {
 
                     const content = fs.readFileSync(absFilePaht)
 
-                    const hostrule = hostrules[domainname] = JSON.parse(content)
+                    try {
+                        const hostrule = hostrules[domainname] = JSON.parse(content)
 
-                    hostrule._basedir = dir
-                    hostrule._lastModified = stats.mtime
+                        hostrule._basedir = dir
+                        hostrule._lastModified = stats.mtime
 
-                    if(!hostrule.paths){
-                        hostrule.paths = []
-                    }
+                        if (!hostrule.paths) {
+                            hostrule.paths = []
+                        }
 
-                    if (hostrule.botregex) {
-                        hostrule.botregex = new RegExp(hostrule.botregex)
+                        if (hostrule.botregex) {
+                            hostrule.botregex = new RegExp(hostrule.botregex)
+                        }
+                    }catch (e){
+                        console.log(e)
                     }
                 }
 
