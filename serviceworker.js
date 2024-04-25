@@ -105,7 +105,9 @@ self.addEventListener('fetch', event => {
                 return resp && !resp.redirected ? resp : fetch(event.request).then((response) => {
                     let responseClone = response.clone()
                     caches.open(RUNTIME).then((cache) => {
-                        cache.put(event.request, responseClone)
+                        if(responseClone && responseClone.status===200) {
+                            cache.put(event.request, responseClone)
+                        }
                     })
                     return response
                 })

@@ -75,10 +75,13 @@ const loadHostRules = (dir, withCertContext, hostrules, isDefault) => {
                 if (!hostrules[domainname] || (!isDefault && stats.mtime > hostrules[domainname]._lastModified)) {
 
                     const content = fs.readFileSync(absFilePaht)
-
+                    let hostrule
                     try {
-                        const hostrule = hostrules[domainname] = JSON.parse(content)
-
+                        hostrule = hostrules[domainname] = JSON.parse(content)
+                    }catch (e){
+                        console.log(e)
+                    }
+                    if(hostrule) {
                         hostrule._basedir = dir
                         hostrule._lastModified = stats.mtime
 
@@ -89,12 +92,10 @@ const loadHostRules = (dir, withCertContext, hostrules, isDefault) => {
                         if (hostrule.botregex) {
                             hostrule.botregex = new RegExp(hostrule.botregex)
                         }
-                    }catch (e){
-                        console.log(e)
                     }
                 }
 
-                if (withCertContext) {
+                if (hostrules[domainname] && withCertContext) {
                     extendHostrulesWithCert(hostrules[domainname], domainname)
                 }
             }

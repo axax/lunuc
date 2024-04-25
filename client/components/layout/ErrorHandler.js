@@ -33,7 +33,9 @@ function ErrorHandler({snackbar}) {
         />
     }
 
-    if(msg.indexOf('user aborted a request')>=0){
+    // messages to be ignored
+    if(msg.indexOf('user aborted a request')>=0 ||
+        msg.indexOf('signal is aborted without reason')>=0){
         return null
     }
     return <SimpleDialog open={true} onClose={()=>{
