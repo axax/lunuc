@@ -84,7 +84,6 @@
     "mailparser": "^3.7.0",
     "mongodb": "^6.5.0",
     "node-cron": "^3.0.3",
-    "node-fetch": "^3.3.2",
     "nodemailer": "^6.9.13",
     "nodemailer-direct-transport": "^3.3.2",
     "preact": "^10.20.2",
@@ -123,12 +122,11 @@
     "mssql": "^10.0.2",
     "natural": "^7.0.5",
     "nodemon": "^3.1.0",
-    "openai": "^4.38.1",
+    "ollama": "^0.5.0",
     "puppeteer": "^22.6.5",
     "smtp-server": "^3.13.4",
-    "xlsx-js-style": "^1.2.0",
     "xml2js": "^0.6.2",
-    "xlsx-style": "^0.8.13",
+    "xlsx": "^0.18.5",
     "ytdl-core": "^4.11.5"
   },
   "devDependencies": {

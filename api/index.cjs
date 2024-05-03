@@ -8,11 +8,9 @@ require('@babel/register')({
 })
 require('./util/localStorage')
 
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 const config = require('../gensrc/config').default
 
-globalThis.fetch = fetch
 globalThis.window = {location:{href:'',origin: ''}}
 
 // define some global vars for server side rendering

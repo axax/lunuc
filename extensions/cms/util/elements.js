@@ -878,6 +878,10 @@ const baseElements = [
                     {
                         name: 'small',
                         value: 'small'
+                    },
+                    {
+                        name: 'time',
+                        value: 'time'
                     }
                 ]
             },
@@ -1833,7 +1837,6 @@ const baseElements = [
             }
         },
         options: {
-            ...classLayoutOptions('p_'),
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
             ...observeOptions()

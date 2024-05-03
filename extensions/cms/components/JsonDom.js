@@ -935,13 +935,15 @@ class JsonDom extends React.Component {
                      c = children in loop
                      s = scope in loop to access data
                      */
+                    let cStr
                     try {
                         /* $.loop{ --> ${ */
                         /* "$.loop" --> ${JSON.stringify(this.loop)} the whole loop item */
 
                         const re = new RegExp('\\$\\.' + s + '{', 'g'),
-                            re2 = new RegExp('"' + s + '###|###' + s + '"', 'g'),
-                            cStr = JSON.stringify(c).replace(re, '${')
+                            re2 = new RegExp('"' + s + '###|###' + s + '"', 'g')
+
+                        cStr = JSON.stringify(c).replace(re, '${')
                                 .replace('"$.' + s + '"', '${JSON.stringify(this.' + s + ')}')
                                 .replace(re2, '')
 
@@ -985,7 +987,7 @@ class JsonDom extends React.Component {
                         this.emitJsonError(ex, {loc: "Loop", meta:{slug: this.props.slug, data}})
 
                         console.log('------------- ERROR in ' + this.props.slug)
-                        console.log(ex, c)
+                        console.log(ex, c, cStr)
                         if (ex.message.startsWith('Unexpected token')) {
                             console.error('There is an error in the Json. Try to use Util.escapeForJson')
                         }
