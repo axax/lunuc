@@ -16,18 +16,18 @@ npm run build
 
 echo "restart "$restart
 
-if [ $restart = "all" ]
+if [ $restart -eq "all" ]
 then
   sudo systemctl restart lunuc-client
   sudo systemctl restart lunuc-api
 fi
 
-if [ $restart = "client" ]
+if [ $restart -eq "client" ]
 then
   sudo systemctl restart lunuc-client
 fi
 
-if [ $restart = "api" ]
+if [ $restart -eq "api" ]
 then
   sudo systemctl restart lunuc-api
 fi
