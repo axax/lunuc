@@ -65,7 +65,7 @@ export const sendFileFromDir = async (req, res, {filename, headers = {}, parsedU
             'Connection': 'Keep-Alive',
             'Cache-Control': 'public, max-age=31536000', /* 604800 (a week) */
             'Content-Length': stat.size,
-            'Content-Type': MimeType.takeOrDetect(modImage.mimeType, parsedUrl.path, parsedUrl.query),
+            'Content-Type': MimeType.takeOrDetect(modImage.mimeType, parsedUrl.pathname, parsedUrl.query),
             'ETag': `"${createSimpleEtag({content: filename, stat})}"`,
             ...headers
         }
