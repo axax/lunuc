@@ -45,7 +45,6 @@ const MIME_TYPES = {
 
 const MimeType = {
     detectByFileName: function (fileName) {
-        console.log(path.extname(fileName))
         let ext = path.extname(fileName)
         if(ext) {
             ext = ext.substring(1).toLowerCase()
