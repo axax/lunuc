@@ -4,6 +4,8 @@ import MimeType from '../../util/mime.mjs'
 import fs from 'fs'
 import path from 'path'
 
+const DEFAULT_FORMAT = 'jpeg'
+
 export const resizeImage = async (parsedUrl, req, filename) => {
     let mimeType, exists = false
     // resize image file
@@ -17,9 +19,9 @@ export const resizeImage = async (parsedUrl, req, filename) => {
             position = parsedUrl.query.position,
             withoutEnlargement = parsedUrl.query.noenlarge
 
-        let format = parsedUrl.query.format
+        let format = parsedUrl.query.format || DEFAULT_FORMAT
         if (format === 'webp' && req.headers['accept'] && req.headers['accept'].indexOf('image/webp') < 0) {
-            format = false
+            format = DEFAULT_FORMAT
         }
 
         if (!isNaN(width) || !isNaN(height) || format || flip || flop) {

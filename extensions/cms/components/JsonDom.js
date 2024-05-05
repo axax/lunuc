@@ -535,13 +535,15 @@ class JsonDom extends React.Component {
                     if (this.runScript) {
                         this.runScript = false
                         this.runJsEvent('beforerunscript', false, scope)
+                        const code = DomUtil.toES5('\'use strict\';const __this=this._this;' +
+                            'const {serverMethod,on,setLocal,getLocal,refresh,getComponent,addMetaTag,setStyle,fetchMore}=__this;' +
+                            'const {history,clientQuery,setKeyValue,getKeyValue,updateResolvedData}=__this.props;' +
+                            'const {scope,parent,root,Util,DomUtil}=this;' +
+                            'const _t=this._t.bind(scope.data),forceUpdate=refresh;' + script)
+
                         try {
                             this.jsOnStack = {}
-                            this.scriptResult = new Function(DomUtil.toES5('\'use strict\';const __this=this._this;' +
-                                'const {serverMethod,on,setLocal,getLocal,refresh,getComponent,addMetaTag,setStyle,fetchMore}=__this;' +
-                                'const {history,clientQuery,setKeyValue,getKeyValue,updateResolvedData}=__this.props;' +
-                                'const {scope,parent,root,Util,DomUtil}=this;' +
-                                'const _t=this._t.bind(scope.data),forceUpdate=refresh;' + script)).call({
+                            this.scriptResult = new Function(code).call({
                                 _this: this,
                                 scope,
                                 Util,
@@ -553,7 +555,7 @@ class JsonDom extends React.Component {
                                 parent
                             })
                         } catch (e) {
-                            this.error = {type: 'script', e, code: script, offset: 9}
+                            this.error = {type: 'script', e, code: script, offset: 3}
                             console.error(e)
                         }
                         scope.script = this.scriptResult || {}
@@ -566,7 +568,9 @@ class JsonDom extends React.Component {
                 } else {
                     this.jsOnStack = {}
                 }
-                content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope)
+                if(!this.error) {
+                    content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope)
+                }
             }
         }
         console.log(`render ${this.constructor.name} for ${scope.page.slug} in ${((new Date()).getTime() - startTime)}ms`)
@@ -574,7 +578,7 @@ class JsonDom extends React.Component {
         if (this.error) {
             Hook.call('JsonDomError', {error: this.error, slug: scope.page.slug, editMode: this.props.editMode})
 
-            return <div>Error in <strong>{this.error.type}</strong>. See details in console
+            return <div>Error in <strong>{this.error.type}</strong>: {this.error.e?this.error.e.message:''}
                 log: <PrettyErrorMessage {...this.error}/></div>
         } else {
             return content
@@ -1269,21 +1273,23 @@ class JsonDom extends React.Component {
         const scope = this.getScope(props)
         this.postRender = []
         const renderedTemplate = this.renderTemplate(template, scope)
-        try {
-            /*
-             This is the modified version of the json (placeholder are replaced)
-             */
-            this.json = JSON.parse(renderedTemplate)
-        } catch (e) {
-            console.warn('getJson', template, e)
-            this.error = {type: 'template', e, code: renderedTemplate}
-        }
-        if (_app_.ssr && props.style && this.json) {
-            // add style
-            if (this.json.constructor !== Array) {
-                this.json = [this.json]
+        if(renderedTemplate) {
+            try {
+                /*
+                 This is the modified version of the json (placeholder are replaced)
+                 */
+                this.json = JSON.parse(renderedTemplate)
+            } catch (e) {
+                console.warn('getJson', template, e)
+                this.error = {type: 'template', e, code: renderedTemplate}
             }
-            this.json.unshift({t: 'style', c: preprocessCss(props.style)})
+            if (_app_.ssr && props.style && this.json) {
+                // add style
+                if (this.json.constructor !== Array) {
+                    this.json = [this.json]
+                }
+                this.json.unshift({t: 'style', c: preprocessCss(props.style)})
+            }
         }
         return this.json
     }
@@ -1345,9 +1351,10 @@ class JsonDom extends React.Component {
                 c: Util.escapeForJson(str)
             }).replace(/\`/g, '\\`')
         }
+        const code = DomUtil.toES5(`const {${Object.keys(scope).join(',')}}=this.scope${SCRIPT_UTIL_PART}data),_r=this.addToPostRender;return \`${str}\``)
         try {
             // Scope properties get destructed so they can be accessed directly by property name
-            return new Function(DomUtil.toES5(`const {${Object.keys(scope).join(',')}}=this.scope${SCRIPT_UTIL_PART}data),_r=this.addToPostRender;return \`${str}\``)).call({
+            return new Function(code).call({
                 scope,
                 parent: this.props._parentRef,
                 Util,
@@ -1359,10 +1366,9 @@ class JsonDom extends React.Component {
             }).replace(/\t/g, '\\t')
 
         } catch (e) {
+            this.error = {type: 'template', e, code, offset:3}
             this.emitJsonError(e, {loc: 'Template'})
             console.error('Error in renderTemplate', e)
-            console.log(str)
-            return str
         }
     }
 

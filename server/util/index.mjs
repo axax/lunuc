@@ -57,6 +57,10 @@ export const doScreenCapture = async (url, filename, options) => {
 }
 
 
+export const isMimeTypeStreamable = (mimeType) => {
+    return mimeType && (mimeType.indexOf('video/') === 0 || mimeType.indexOf('audio/') === 0)
+}
+
 export const extendHeaderWithRange = (headerExtra, req, stat)=>{
 
     headerExtra['Accept-Ranges'] = 'bytes'

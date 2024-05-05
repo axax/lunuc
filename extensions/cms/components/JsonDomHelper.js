@@ -1071,58 +1071,84 @@ class JsonDomHelper extends React.Component {
                         onClick: this.handleCopyClick.bind(this)
                     })
                 }
+                const canAddElement = (_options.allowDrop && _options.menu.add !== false) || _options.menu.addAbove !== false || _options.menu.addBelow !== false || _options.menu.wrap !== false
 
                 if (!isInLoop) {
+                    if(canAddElement) {
 
-
-                    if (_options.allowDrop && _options.menu.add !== false) {
+                        const subMenu = []
                         menuItems.push({
-                            name: 'Element hinzufügen',
+                            name: _t('JsonDomHelper.create.element'),
                             icon: <AddIcon/>,
-                            onClick: () => {
-                                JsonDomHelper.disableEvents = true
-                                this.setState({addChildDialog: {currentElement: null, showElementSelector:true}})
-                            }
+                            items: subMenu
                         })
-                    }
+                        if (_options.allowDrop && _options.menu.add !== false) {
+                            subMenu.push({
+                                name: _t('JsonDomHelper.element.inside'),
+                                icon: <AddIcon/>,
+                                onClick: () => {
+                                    JsonDomHelper.disableEvents = true
+                                    this.setState({addChildDialog: {currentElement: null, showElementSelector: true}})
+                                }
+                            })
+                        }
 
-                    if (_options.menu.addAbove !== false) {
+                        if (_options.menu.addAbove !== false) {
 
-                        menuItems.push({
-                            name: 'Element oberhalb einfügen',
-                            icon: <PlaylistAddIcon/>,
-                            onClick: () => {
-                                JsonDomHelper.disableEvents = true
-                                this.setState({addChildDialog: {currentElement: null, payload:{addabove: true}, showElementSelector:true}})
-                            }
-                        })
-                    }
+                            subMenu.push({
+                                name: _t('JsonDomHelper.element.above'),
+                                icon: <PlaylistAddIcon/>,
+                                onClick: () => {
+                                    JsonDomHelper.disableEvents = true
+                                    this.setState({
+                                        addChildDialog: {
+                                            currentElement: null,
+                                            payload: {addabove: true},
+                                            showElementSelector: true
+                                        }
+                                    })
+                                }
+                            })
+                        }
 
-                    if (_options.menu.addBelow !== false) {
-                        menuItems.push({
-                            name: 'Element unterhalb einfügen',
-                            icon: <PlaylistAddIcon/>,
-                            onClick: () => {
-                                JsonDomHelper.disableEvents = true
-                                this.setState({addChildDialog: {currentElement: null, payload:{addbelow: true}, showElementSelector:true}})
-                            }
-                        })
-                    }
-                    if (_options.menu.wrap !== false) {
-                        menuItems.push({
-                            name: 'Element ausserhalb einfügen',
-                            icon: <FlipToBackIcon/>,
-                            onClick: () => {
-                                JsonDomHelper.disableEvents = true
-                                this.setState({addChildDialog: {payload:{json: _json, subJson, wrap: true}, currentElement: null, showElementSelector:true}})
-                            }
-                        })
+                        if (_options.menu.addBelow !== false) {
+                            subMenu.push({
+                                name: _t('JsonDomHelper.element.below'),
+                                icon: <PlaylistAddIcon/>,
+                                onClick: () => {
+                                    JsonDomHelper.disableEvents = true
+                                    this.setState({
+                                        addChildDialog: {
+                                            currentElement: null,
+                                            payload: {addbelow: true},
+                                            showElementSelector: true
+                                        }
+                                    })
+                                }
+                            })
+                        }
+                        if (_options.menu.wrap !== false) {
+                            subMenu.push({
+                                name: _t('JsonDomHelper.element.outside'),
+                                icon: <FlipToBackIcon/>,
+                                onClick: () => {
+                                    JsonDomHelper.disableEvents = true
+                                    this.setState({
+                                        addChildDialog: {
+                                            payload: {json: _json, subJson, wrap: true},
+                                            currentElement: null,
+                                            showElementSelector: true
+                                        }
+                                    })
+                                }
+                            })
+                        }
                     }
                 }
 
                 if (_options.menu.remove !== false) {
                     menuItems.push({
-                        name: 'Element entfernen',
+                        name: _t('JsonDomHelper.delete.element'),
                         icon: <DeleteIcon/>,
                         onClick: () => {
                             JsonDomHelper.disableEvents = true
@@ -1134,37 +1160,82 @@ class JsonDomHelper extends React.Component {
                 if (_options.menu.clipboard !== false) {
                     menuItems.push({
                         divider: true,
-                        name: 'Element in Zwischenablage kopieren',
+                        name: _t('JsonDomHelper.element.to.clipboard'),
                         icon: <FileCopyIcon/>,
                         onClick: () => {
                             navigator.clipboard.writeText(JSON.stringify(subJson, null, 2))
                         }
                     })
 
+                    if(canAddElement) {
 
-                    menuItems.push({
-                        name: 'Element von Zwischenablage einfügen',
-                        icon: <FileCopyIcon/>,
-                        onClick: () => {
+                        const subItems = []
 
-                            navigator.clipboard.readText().then(text => {
-                                if (text) {
-                                    try {
-                                        const json = JSON.parse(text),
-                                            pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1)) + 1
-
-                                        this.handleAddChildClick(json, {index:pos, newKeys: true})
-
-                                    } catch (e) {
-
-                                    }
+                        if (_options.allowDrop && _options.menu.add !== false) {
+                            subItems.push({
+                                name: _t('JsonDomHelper.element.inside'),
+                                icon: <PlaylistAddIcon/>,
+                                onClick: () => {
+                                    navigator.clipboard.readText().then(text => {
+                                        if (text) {
+                                            try {
+                                                const json = JSON.parse(text)
+                                                this.handleAddChildClick(json, {newKeys: true})
+                                            } catch (e) {}
+                                        }
+                                    }).catch(err => {
+                                        console.log('Something went wrong', err)
+                                    })
                                 }
-                            }).catch(err => {
-                                console.log('Something went wrong', err)
                             })
-
                         }
-                    })
+
+                        if (_options.menu.addAbove !== false) {
+                            subItems.push({
+                                name: _t('JsonDomHelper.element.above'),
+                                icon: <PlaylistAddIcon/>,
+                                onClick: () => {
+                                    navigator.clipboard.readText().then(text => {
+                                        if (text) {
+                                            try {
+                                                const json = JSON.parse(text),
+                                                    pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1))
+                                                this.handleAddChildClick(json, {index:pos, newKeys: true})
+                                            } catch (e) {}
+                                        }
+                                    }).catch(err => {
+                                        console.log('Something went wrong', err)
+                                    })
+                                }
+                            })
+                        }
+
+                        if (_options.menu.addBelow !== false) {
+                            subItems.push({
+                                name: _t('JsonDomHelper.element.below'),
+                                icon: <PlaylistAddIcon/>,
+                                onClick: () => {
+                                    navigator.clipboard.readText().then(text => {
+                                        if (text) {
+                                            try {
+                                                const json = JSON.parse(text),
+                                                    pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1)) + 1
+                                                this.handleAddChildClick(json, {index:pos, newKeys: true})
+                                            } catch (e) {}
+                                        }
+                                    }).catch(err => {
+                                        console.log('Something went wrong', err)
+                                    })
+                                }
+                            })
+                        }
+
+                        menuItems.push({
+                            name: _t('JsonDomHelper.element.from.clipboard'),
+                            icon: <FileCopyIcon/>,
+                            items: subItems
+                        })
+                    }
                 }
             }
         }

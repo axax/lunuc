@@ -5,10 +5,11 @@ import MimeType from '../../util/mime.mjs'
 import {createSimpleEtag} from './etag.mjs'
 import {isFileNotNewer} from '../../util/fileUtil.mjs'
 import zlib from 'zlib'
-import {extendHeaderWithRange} from './index.mjs'
+import {extendHeaderWithRange, isMimeTypeStreamable} from './index.mjs'
 import {clientAddress} from "../../util/host.mjs";
 import http from "http";
 import {PassThrough} from 'stream'
+import {transcodeAndStreamVideo, transcodeVideoOptions} from "./transcodeVideo.mjs";
 
 const LUNUC_SERVER_NODES = process.env.LUNUC_SERVER_NODES || ''
 
@@ -40,59 +41,60 @@ export const getFileFromOtherServer = (urlPath, filename, baseResponse, req) => 
 }
 
 
-export const sendFileFromDir = async (req, res, filePath, headers, parsedUrl) => {
+export const sendFileFromDir = async (req, res, {filename, headers = {}, parsedUrl}) => {
 
-    let stats
-    try {
-        stats = fs.statSync(filePath)
-    } catch (e) {
-        return false
-    }
+    if (fs.existsSync(filename)) {
 
-    if (stats.isFile()) {
-        const modImage = await resizeImage(parsedUrl, req, filePath)
-        // static file
-        let mimeType = modImage.mimeType
-        if (!mimeType) {
-            const ext = path.extname(modImage.filename).substring(1).trim().toLowerCase().split('@')[0]
-            mimeType = MimeType.detectByExtension(ext)
+        // Check if there is a modified image
+        const modImage = await resizeImage(parsedUrl, req, filename)
+        if (modImage.exists) {
+            filename = modImage.filename
         }
-        const headerExtra = {
-            'Cache-Control': 'public, max-age=604800', /* a week */
-            'Content-Type': mimeType,
-            'Last-Modified': stats.mtime.toUTCString(),
-            'ETag': `"${createSimpleEtag({content: filePath, stats})}"`,
+
+        // Check if there is a modified video
+        const transcodeOptions = transcodeVideoOptions(parsedUrl, filename)
+        if (transcodeOptions && transcodeOptions.exists) {
+            console.log(`stream from modified file ${transcodeOptions.filename}`)
+            filename = transcodeOptions.filename
+        }
+
+        const stat = fs.statSync(filename)
+        const headersExtended = {
+            'Vary': 'Accept-Encoding',
+            'Last-Modified': stat.mtime.toUTCString(),
+            'Connection': 'Keep-Alive',
+            'Cache-Control': 'public, max-age=31536000', /* 604800 (a week) */
+            'Content-Length': stat.size,
+            'Content-Type': MimeType.takeOrDetect(modImage.mimeType, parsedUrl.path, parsedUrl.query),
+            'ETag': `"${createSimpleEtag({content: filename, stat})}"`,
             ...headers
         }
-        sendFile(req, res, {headers: headerExtra, filename: modImage.filename})
 
+        if (transcodeOptions && !transcodeOptions.exists) {
+            await transcodeAndStreamVideo({options: transcodeOptions, headers: headersExtended, req, res, filename})
+        } else {
+            sendFile(req,res,{headers: headersExtended,filename,fileStat:stat,neverCompress:true,statusCode:200})
+        }
         return true
-    } else if(fs.existsSync(filePath+'.br'))  {
-        // file exists as compressed file
-       // sendFile(req, res, {filename: filePath})
     }
     return false
 }
 
 
-export const sendFile = (req, res, {headers, filename, statusCode = 200}) => {
-    let acceptEncoding = req.headers['accept-encoding'], neverCompress = false
+export const sendFile = (req, res, {headers, filename, fileStat, neverCompress = false, statusCode = 200}) => {
+    let acceptEncoding = req.headers['accept-encoding'] || ''
 
-    const isVideo = headers['Content-Type'] && headers['Content-Type'].indexOf('video/') === 0,
-        isImage = headers['Content-Type'] && headers['Content-Type'].indexOf('image/') === 0
+    const isStreamable = isMimeTypeStreamable(headers['Content-Type'])
 
-    if (isImage || isVideo) {
+    if (!neverCompress && headers['Content-Type'] &&
+        (headers['Content-Type'].indexOf('image/') === 0 || isStreamable)) {
         // TODO make it configurable
         neverCompress = true
     }
 
-    if (!acceptEncoding) {
-        acceptEncoding = ''
-    }
-
     let statsMainFile
     try {
-        statsMainFile = fs.statSync(filename)
+        statsMainFile = fileStat || fs.statSync(filename)
 
         if (!neverCompress && acceptEncoding.match(/\bbr\b/)) {
 
@@ -136,21 +138,24 @@ export const sendFile = (req, res, {headers, filename, statusCode = 200}) => {
         } else {
 
             let streamOption
-
-            if(isVideo){
+            if(isStreamable){
 
                 streamOption = extendHeaderWithRange(headers, req, statsMainFile)
-                delete headers.ETag
-                delete headers['Cache-Control']
+                //delete headers.ETag
+                //delete headers['Cache-Control']
                 if(streamOption){
                     statusCode = 206
                 }
             }
 
-            res.writeHead(statusCode, {'Content-Length':statsMainFile.size,...headers})
+            res.writeHead(statusCode, {
+                'Last-Modified': statsMainFile.mtime.toUTCString(), /* just to be sure header is set */
+                'Content-Length':statsMainFile.size,
+                ...headers})
 
             const fileStream = fs.createReadStream(filename, streamOption)
             fileStream.pipe(res)
+
         }
     } catch (err) {
         console.error(filename + ' does not exist', err)

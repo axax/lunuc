@@ -325,7 +325,6 @@ class CodeEditor extends React.Component {
             options.extraKeys.Tab = (cm) => cm.execCommand('indentMore')
             options.extraKeys['Shift-Tab'] = (cm) => cm.execCommand('indentLess')
 
-
             options.keyword = {
                 "\"$inlineEditor\"": "custom",
                 "\"slug\"": "custom-link"

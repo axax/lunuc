@@ -35,7 +35,6 @@ class QuillEditor extends React.Component {
         if (readOnlyChanged) {
             this.isInit = false
         } else if (this.state.value !== state.value) {
-            console.log('xxxxxx', this.state.value, state.value)
             setTimeout(() => {
                 const sY = window.scrollY, sX = window.scrollX
                 this.quill.setContents([])

@@ -8,9 +8,9 @@ const getImageSrc = (item, size = 'thumbnail') => {
 
     if(size && (!item.mimeType || item.mimeType.indexOf('svg')<0)) {
         if(size=='thumbnail') {
-            src += '?webp=true&quality=65&width=96'
+            src += '?format=webp&quality=65&width=96'
         }else if(size=='avatar'){
-            src += '?webp=true&quality=65&width=48&height=48'
+            src += '?format=webp&quality=65&width=48&height=48'
         }
     }
 

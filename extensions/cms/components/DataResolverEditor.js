@@ -25,6 +25,20 @@ class DataResolverEditor extends React.Component {
                             event: 'visit'
                         }
                     })
+            }else if(this.wizardForm.state.fields.resolverType==='tr') {
+                json.push(
+                    {
+                        defaultLanguage: 'de',
+                        forceLanguage: '',
+                        tr: {
+                            de: {
+                                key: 'value'
+                            },
+                            en: {
+                                key: 'value'
+                            }
+                        }
+                    })
             }else if(this.wizardForm.state.fields.resolverType==='type'){
                 const type = this.wizardForm.state.fields.type
                 const typeDefinition = getType(type.name)
@@ -100,7 +114,7 @@ class DataResolverEditor extends React.Component {
                         resolverType:{
                             name: 'resolverType',
                             label: 'Resolver Type',
-                            enum: [{value:'type', name:'Type'},{value:'genericType', name:'Generic Type'},{value:'track', name:'Tracking'}],
+                            enum: [{value:'type', name:'Type'},{value:'genericType', name:'Generic Type'},{value:'track', name:'Tracking'},{value:'tr', name:'Translations'}],
                             fullWidth: true,
                             value:'type'
                         },

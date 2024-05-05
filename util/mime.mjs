@@ -22,6 +22,7 @@ const MIME_TYPES = {
     'json': 'application/json',
     'css': 'text/css',
     'mp3': 'audio/mp3',
+    'wav': 'audio/wav',
     'mp4': 'video/mp4',
     'webm': 'video/webm',
     'weba': 'video/webm',
@@ -44,7 +45,11 @@ const MIME_TYPES = {
 
 const MimeType = {
     detectByFileName: function (fileName) {
-        const ext = path.extname(fileName).split('.')[1].toLowerCase()
+        console.log(path.extname(fileName))
+        let ext = path.extname(fileName)
+        if(ext) {
+            ext = ext.substring(1).toLowerCase()
+        }
         return this.detectByExtension(ext)
     },
     detectByExtension: function (ext) {
@@ -52,6 +57,18 @@ const MimeType = {
             return MIME_TYPES[ext]
         }
         return 'application/octet-stream'
+    },
+    takeOrDetect: (mimeType, uri, query) => {
+        if(mimeType){
+            return mimeType
+        }
+        // if set by query parameter
+        // should not be used anymore
+        let ext = query.ext
+        if (!ext) {
+            return MimeType.detectByFileName(uri)
+        }
+        return MimeType.detectByExtension(ext)
     }
 }
 

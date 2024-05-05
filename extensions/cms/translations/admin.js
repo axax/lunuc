@@ -53,7 +53,18 @@ export const translations = {
         'elements.general':'Allgemeine Elemente',
         'elements.generalTab': 'Allgemein',
         'JsonDomHelper.elementSettings': 'Komponenten Einstellungen',
-        'JsonDomAddElementDialog.editElement': 'Bearbeitung %name%'
+        'JsonDomAddElementDialog.editElement': 'Bearbeitung %name%',
+        'JsonDomAddElementDialog.selectElement': 'Element auswählen',
+        'JsonDomAddElementDialog.createElementAi': 'Element mit KI erstellen',
+        'JsonDomAddElementDialog.createElementAiPlaceholder': 'Schreiben Sie z.B.: Input Element erstellen',
+        'JsonDomHelper.create.element': 'Neues Element',
+        'JsonDomHelper.delete.element': 'Element entfernen',
+        'JsonDomHelper.element.inside':'Element innerhalb hinzufügen',
+        'JsonDomHelper.element.outside':'Element ausserhalb hinzufügen',
+        'JsonDomHelper.element.below':'Element unterhalb hinzufügen',
+        'JsonDomHelper.element.above':'Element oberhalb hinzufügen',
+        'JsonDomHelper.element.to.clipboard': 'Element in Zwischenablage kopieren',
+        'JsonDomHelper.element.from.clipboard': 'Element von Zwischenablage einfügen'
     },
     en: {
         'CmsViewEditorContainer.save': 'Save',
@@ -107,6 +118,17 @@ export const translations = {
         'elements.general': 'General',
         'elements.generalTab': 'General',
         'JsonDomHelper.elementSettings': 'Settings',
-        'JsonDomAddElementDialog.editElement': 'Editing %name%'
+        'JsonDomAddElementDialog.editElement': 'Editing %name%',
+        'JsonDomAddElementDialog.selectElement': 'Select element',
+        'JsonDomAddElementDialog.createElementAi': 'Create element using AI',
+        'JsonDomAddElementDialog.createElementAiPlaceholder': 'For example, type: Create input element',
+        'JsonDomHelper.element.to.clipboard': 'Copy element to clipboard',
+        'JsonDomHelper.element.from.clipboard': 'Insert element from clipboard',
+        'JsonDomHelper.create.element': 'New element',
+        'JsonDomHelper.delete.element': 'Delete element',
+        'JsonDomHelper.element.inside':'Insert inside',
+        'JsonDomHelper.element.outside':'Insert outside',
+        'JsonDomHelper.element.below':'Insert below',
+        'JsonDomHelper.element.above':'Insert above'
     }
 }

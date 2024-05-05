@@ -42,19 +42,21 @@ export function assignIfObjectOrArray(obj) {
 }
 
 /*
-return true if expresion is not valid
+return true if expression is not valid
  */
 export function matchExpr(expr, scope) {
     if (expr === 'false') {
         return true
     }
     const match = expr.match(/([\w|$|\.]*)(==|\!=|>=|<=|>|<| in | nin )(.*)/)
+
     if (match && match.length === 4) {
         let prop
         try {
             prop = propertyByPath(match[1], scope)
         } catch (e) {
         }
+
         if (match[2] === '==') {
             if (match[3] !== String(prop)) {
                 return true
@@ -83,7 +85,7 @@ export function matchExpr(expr, scope) {
             if (prop && prop.constructor === Array) {
                 let exists = false
                 for (let i = 0; i < prop.length; i++) {
-                    if (match[3].indexOf('"' + prop[i] + '"') >= 0) {
+                    if (match[3].indexOf('"' + prop[i] + '"') >= 0 || match[3]===prop[i]) {
                         exists = true
                         break
                     }

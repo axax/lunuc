@@ -1,5 +1,4 @@
 import React from 'react'
-import ReactDOM from 'react-dom'
 
 class PrettyErrorMessage extends React.Component {
     constructor(props) {
@@ -8,7 +7,7 @@ class PrettyErrorMessage extends React.Component {
 
     render() {
         const {e,code,msg,offset} = this.props
-        if( code ) {
+        if( code && e ) {
             return <span
                 dangerouslySetInnerHTML={{__html: this.prettyErrorMessage(e, code, offset)}}/>
         }else{
@@ -19,12 +18,32 @@ class PrettyErrorMessage extends React.Component {
     prettyErrorMessage = (e, code, offset=0) => {
         let lineNrStr, column, errorMsg = '<pre style="margin-top:2rem">'
 
-        if(e.message.indexOf('in JSON at')>0){
+        if(e.message.indexOf('is not valid JSON')>0){
+            const pos = e.message.lastIndexOf('..."')
+            if(pos>=0){
+                const tmp = e.message.substring(pos+4).split('\n')[0]
+                const lines = code.split('\n')
+                for(let i = 0;i< lines.length;i++){
+                    if(lines[i].indexOf(tmp)>=0){
+                        lineNrStr=i
+                        break
+                    }
+                }
+            }
+            column=0
+        }else if(e.message.indexOf('in JSON at')>0){
             const pos = parseInt(e.message.substring(e.message.lastIndexOf(' ')))
             lineNrStr = code.substring(0,pos).split('\n').length - 1
             column=0
         }else {
-            const line = e.stack.split('\n')[1], matches = line.match(/:(\d*):(\d*)/)
+            let line = e.stack.split('\n')[1]
+            const anPos = line.indexOf('<anonymous>:')
+            if(anPos>=0){
+                line = line.substring(anPos-1)
+            }
+            console.log(line,e.lineNumber)
+
+            const matches = line.match(/:(\d*):(\d*)/)
             if (matches && matches.length > 2) {
                 lineNrStr = matches[1]
                 column = matches[2]

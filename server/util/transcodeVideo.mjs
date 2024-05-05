@@ -19,10 +19,11 @@ const noCacheHeaders = {
 
 export const transcodeVideoOptions = (parsedUrl, filename) => {
 
-    if (!parsedUrl.query.transcode) {
+    if (!parsedUrl || !parsedUrl.query.transcode) {
         return false
     }
 
+    //http://localhost:8080/240.1824.mp4?ext=mp4&transcode={"audioQuality":3,"videoBitrate":800,"fps":25,"size":"720x?","crf":28}
     //https://www.lunuc.com/uploads/5f676c358ebac32c662cdb02/-/La%20maison%20du%20bonheur-2006.mp4?ext=mp4&transcode={%22audioQuality%22:3,%22videoBitrate%22:800,%22fps%22:25,%22size%22:%22720x?%22,%22crf%22:28}
     // default options
     let options = {
@@ -75,18 +76,19 @@ export const transcodeVideoOptions = (parsedUrl, filename) => {
     return options
 }
 
-export const transcodeAndStreamVideo = ({options, headerExtra, req, res, code, filename}) => {
+export const transcodeAndStreamVideo = async ({options, headers, req, res, filename}) => {
     // make sure ffmpeg is install on your device
     // brew install ffmpeg
     //sudo apt install ffmpeg
     // http://localhost:8080/uploads/5f935f98f5ca78b7cbeaa853/-/test.mpg?ext=mp4&transcode={"audioQuality":2,"fps":24,"size":"720x?","crf":24,"keep":true,"nostream":true}
 
-    delete headerExtra['Content-Length']
+    delete headers['Content-Length']
+    delete headers.ETag
+    delete headers['Cache-Control']
 
     if(options.keep && !options.nostream && fs.existsSync(options.filename+ '.temp'))
     {
-
-        sendFileFromDir(req,res,SERVER_DIR+'/loading.mp4',{...headerExtra,...noCacheHeaders})
+        await sendFileFromDir(req,res,{filename: SERVER_DIR+'/loading.mp4',headers:{...headers,...noCacheHeaders}})
         return true
     }
 
@@ -100,9 +102,9 @@ export const transcodeAndStreamVideo = ({options, headerExtra, req, res, code, f
             console.log('Will generate ' + filenames.join(', '))
         }).on('end', function() {
             console.log('Screenshots taken')
-            fs.rename(options.filename + '.png', options.filename, () => {
+            fs.rename(options.filename + '.png', options.filename, async () => {
                 console.log('transcode ended and file saved as ' + options.filename)
-                sendFileFromDir(req,res,options.filename, headerExtra)
+                await sendFileFromDir(req,res,{filename:options.filename, headers})
             })
         }).screenshots({
             // Will take screens at 20%, 40%, 60% and 80% of the video
@@ -259,12 +261,12 @@ export const transcodeAndStreamVideo = ({options, headerExtra, req, res, code, f
             .pipe(res, {end: true})*/
 
 
-        sendFileFromDir(req,res,SERVER_DIR+'/loading.mp4',{...headerExtra,...noCacheHeaders})
+        await sendFileFromDir(req,res,{filename:SERVER_DIR+'/loading.mp4',headers:{...headers,...noCacheHeaders}})
 
     } else {
-        headerExtra['Transfer-Encoding'] = 'chunked'
-        headerExtra['Accept-Ranges'] = 'bytes'
-        res.writeHead(code, {...headerExtra})
+        headers['Transfer-Encoding'] = 'chunked'
+        headers['Accept-Ranges'] = 'bytes'
+        res.writeHead(200, headers)
         video.pipe(res, {end: true})
     }
 

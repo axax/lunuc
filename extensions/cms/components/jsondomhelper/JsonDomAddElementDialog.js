@@ -1,5 +1,8 @@
 import React from 'react'
 import {
+    TextField,
+    InputAdornment,
+    AutoFixHighIconButton,
     SimpleDialog,
     SimpleSelect
 } from 'ui/admin'
@@ -8,6 +11,9 @@ import GenericForm from '../../../../client/components/GenericForm'
 import Util from '../../../../client/util/index.mjs'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../../constants/index.mjs'
 import {_t} from '../../../../util/i18n.mjs'
+import Async from '../../../../client/components/Async'
+
+const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../../../../client/components/CodeEditor')}/>
 
 
 export default function JsonDomAddElementDialog(props){
@@ -16,12 +22,36 @@ export default function JsonDomAddElementDialog(props){
 
     const [currentElement, setCurrentElement] = React.useState(props.currentElement)
     const [form, setForm] = React.useState(null)
+    const [aiAssistent, setAiAssistent] = React.useState({promt:''})
+
     return <SimpleDialog fullWidth={true}
                          maxWidth="lg"
                          key="dialogProps"
                          open={true}
                          onClose={(event)=>{
-                             props.onClose(event, currentElement, form, props.payload)
+                             if(event.key==='save' && aiAssistent.answer){
+
+                                 fetch(`/lunucapi/system/html2json?html=${encodeURIComponent(aiAssistent.answer)}`).then(response => response.json())
+                                    .then(data => {
+                                        const newElement = {
+                                            tagName:'div',
+                                            defaults: {
+                                                $inlineEditor: {
+                                                    allowDrop: true,
+                                                    elementKey: 'custom'
+                                                },
+                                                p: {
+                                                    'data-element-key': 'custom'
+                                                },
+                                                c: data.json
+                                            }
+                                        }
+                                        props.onClose(event, newElement, form, props.payload)
+                                     })
+
+                             }else if(event.key==='cancel' || currentElement){
+                                 props.onClose(event, currentElement, form, props.payload)
+                             }
                          }}
                          actions={[
                              {
@@ -31,23 +61,61 @@ export default function JsonDomAddElementDialog(props){
                              },
                              {
                                  key: 'save',
-                                 label: _t('core.save'),
+                                 label: currentElement?_t('core.save'):_t('core.add'),
                                  type: 'primary'
                              }]}
                          title={_t('JsonDomAddElementDialog.editElement',{name: `${currentElement && currentElement.name? '(' + currentElement.name + ')' : ''}`})}>
 
         {props.showElementSelector && <SimpleSelect
-            fullWidth={true}
-            style={{width: 'calc(100% - 16px)'}}
-            label="Element auswählen"
+            sx={{width: 'calc(50% - 16px)' }}
+            label={_t('JsonDomAddElementDialog.selectElement')}
             value={currentElement && currentElement.defaults && currentElement.defaults.$inlineEditor.elementKey}
             onChange={(e) => {
                 const value = e.target.value
                 const item = createElementByKeyFromList(value, availableJsonElements)
+                setAiAssistent({promt:''})
                 setCurrentElement(item)
             }}
             items={availableJsonElements}
         />}
+
+
+        {props.showElementSelector && <TextField placeholder={_t('JsonDomAddElementDialog.createElementAiPlaceholder')}
+                   label={_t('JsonDomAddElementDialog.createElementAi')}
+                   sx={{width: 'calc(50% - 16px)' }}
+                   value={aiAssistent.promt}
+                   onChange={(e)=>{
+                       setCurrentElement(null)
+                       setAiAssistent({...aiAssistent,promt: e.target.value})
+                   }}
+                   InputProps={{
+                       endAdornment: (
+                           <InputAdornment position="end">
+                               <AutoFixHighIconButton disabled={aiAssistent.running || !aiAssistent.promt} color="primary" onClick={()=>{
+                                   setAiAssistent({...aiAssistent,running:true})
+                                   fetch(`/lunucapi/system/llm?stream=true&content=${encodeURIComponent(aiAssistent.promt+'. Return only html code without explanation')}`).then(async response => {
+                                       const reader = response.body.getReader()
+                                       let answer = ''
+                                       while(true){
+                                           const chunk = await reader.read()
+                                           answer += new TextDecoder().decode(chunk.value)
+                                           setAiAssistent({...aiAssistent,running:!chunk.done,answer:answer})
+                                           if (chunk.done) {
+                                               break
+                                           }
+                                       }
+                                   })
+                               }}>
+                               </AutoFixHighIconButton>
+                           </InputAdornment>
+                       ),
+                   }}/>}
+
+        {aiAssistent.answer &&
+
+            <CodeEditor controlled lineNumbers type="html" height="auto">
+            {aiAssistent.answer}
+        </CodeEditor>}
 
         {currentElement && currentElement.options &&
             <GenericForm primaryButton={false}

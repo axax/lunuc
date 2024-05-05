@@ -22,12 +22,10 @@ import {decodeToken} from '../api/util/jwt.mjs'
 //import heapdump from 'heapdump'
 import {clientAddress} from '../util/host.mjs'
 import Cache from '../util/cache.mjs'
-import {doScreenCapture, extendHeaderWithRange} from './util/index.mjs'
+import {doScreenCapture} from './util/index.mjs'
 import {createSimpleEtag} from './util/etag.mjs'
-import {resizeImage} from './util/resizeImage.mjs'
 import {getDynamicConfig} from '../util/config.mjs'
 import {getFileFromOtherServer, sendError, sendFile, sendFileFromDir} from './util/file.mjs'
-import {transcodeAndStreamVideo, transcodeVideoOptions} from './util/transcodeVideo.mjs'
 
 const config = getDynamicConfig()
 
@@ -400,83 +398,7 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
         }
     }
 
-
-    if (fs.existsSync(filename)) {
-
-        // Check if there is a modified image
-        const modImage = await resizeImage(parsedUrl, req, filename)
-        if (modImage.exists) {
-            filename = modImage.filename
-        }
-
-        // Check if there is a modified video
-        const transcodeOptions = transcodeVideoOptions(parsedUrl, filename)
-        if (transcodeOptions && transcodeOptions.exists) {
-            console.log(`stream from modified file ${transcodeOptions.filename}`)
-            filename = transcodeOptions.filename
-        }
-
-
-        const stat = fs.statSync(filename)
-        if (!stat.isFile()) {
-            sendError(res, 404)
-            return
-        }
-
-        const headerExtra = {
-            'Vary': 'Accept-Encoding',
-            'Last-Modified': stat.mtime.toUTCString(),
-            'Connection': 'Keep-Alive',
-            'Cache-Control': 'public, max-age=31536000',
-            'Content-Length': stat.size
-        }
-
-
-        let code = 200, streamOption
-
-        if (modImage.mimeType) {
-            headerExtra['Content-Type'] = modImage.mimeType
-        } else {
-
-            let ext = parsedUrl.query.ext
-
-            if (!ext) {
-                const pos = uri.lastIndexOf('.')
-                if (pos >= 0) {
-                    ext = uri.substring(pos + 1).toLocaleLowerCase()
-                }
-            }
-            if (ext) {
-                const mimeType = MimeType.detectByExtension(ext)
-
-                headerExtra['Content-Type'] = mimeType
-
-                if ((ext === 'mp3' || ext === 'mp4' || ext === 'm4v' || ext === 'm4a')) {
-
-
-                    if (!transcodeOptions || transcodeOptions.exists) {
-
-                        streamOption = extendHeaderWithRange(headerExtra, req, stat)
-
-                        if(streamOption){
-                            code = 206
-                        }
-                    }
-                }
-            }
-        }
-
-
-        if (transcodeOptions && !transcodeOptions.exists) {
-            transcodeAndStreamVideo({options: transcodeOptions, headerExtra, req, res, code, filename})
-        } else {
-
-            const fileStream = fs.createReadStream(filename, streamOption)
-            res.writeHead(code, headerExtra)
-            fileStream.pipe(res)
-        }
-
-    } else {
+    if(!await sendFileFromDir(req, res,{filename, parsedUrl})){
         console.log('not exists: ' + filename)
         sendError(res, 404)
     }
@@ -637,7 +559,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                         const mappedFile = path.join(hostrule._basedir, hostrule.fileMapping[urlPathname])
                         //console.log('mapped file: ' + mappedFile)
 
-                        if (await sendFileFromDir(req, res, mappedFile, headers, parsedUrl)) {
+                        if (await sendFileFromDir(req, res, {filename: mappedFile, headers, parsedUrl})) {
                             return
                         }
                     } else if (urlPathname.length > 1 && fs.existsSync(STATIC_TEMPLATE_DIR + urlPathname)) {
@@ -649,7 +571,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     const pathsToCheck = [...hostrule.paths, STATIC_DIR, WEBROOT_ABSPATH, BUILD_DIR]
 
                     for(const curPath of pathsToCheck){
-                        if (await sendFileFromDir(req, res, path.join(curPath, urlPathname), headers, parsedUrl)) {
+                        if (await sendFileFromDir(req, res, {filename: path.join(curPath, urlPathname), headers, parsedUrl})) {
                             return
                         }
                     }
