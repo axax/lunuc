@@ -42,9 +42,38 @@ const MIME_TYPES = {
     'dmg': 'application/octet-stream'
 }
 
+const MIME_TYPE_COMPRESSIBLE = [
+    'application/x-javascript',
+    'application/javascript',
+    'application/json',
+    'application/manifest+json',
+    'application/vnd.api+json',
+    'application/xml',
+    'application/xhtml+xml',
+    'application/rss+xml',
+    'application/atom+xml',
+    'application/vnd.ms-fontobject',
+    'application/x-font-ttf',
+    'application/x-font-opentype',
+    'application/x-font-truetype',
+    'image/svg+xml',
+    'image/x-icon',
+    'image/vnd.microsoft.icon',
+    'font/ttf',
+    'font/eot',
+    'font/otf',
+    'font/opentype'
+]
+
 const DEFAULT_MIME_TYPE = 'application/octet-stream'
 
 const MimeType = {
+    inCompressible:(mimeType)=>{
+        if(!mimeType){
+            return false
+        }
+        return MIME_TYPE_COMPRESSIBLE.indexOf(mimeType)>=0
+    },
     detectByFileName: function (fileName) {
         let ext = path.extname(fileName)
         if(ext) {

@@ -89,10 +89,7 @@ export const sendFileFromDir = async (req, res, {filename, headers = {}, parsedU
 export const sendFile = (req, res, {headers, filename, fileStat, neverCompress = false, statusCode = 200}) => {
     let acceptEncoding = req.headers['accept-encoding'] || ''
 
-    const isStreamable = isMimeTypeStreamable(headers['Content-Type'])
-
-    if (!neverCompress && headers['Content-Type'] &&
-        (headers['Content-Type'].indexOf('image/') === 0 || isStreamable)) {
+    if (!neverCompress && !MimeType.inCompressible(headers['Content-Type'])) {
         // TODO make it configurable
         neverCompress = true
     }
@@ -142,7 +139,7 @@ export const sendFile = (req, res, {headers, filename, fileStat, neverCompress =
         } else {
 
             let streamOption
-            if(isStreamable){
+            if(isMimeTypeStreamable(headers['Content-Type'])){
 
                 streamOption = extendHeaderWithRange(headers, req, statsMainFile)
                 //delete headers.ETag
