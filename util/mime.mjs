@@ -42,6 +42,7 @@ const MIME_TYPES = {
     'dmg': 'application/octet-stream'
 }
 
+const DEFAULT_MIME_TYPE = 'application/octet-stream'
 
 const MimeType = {
     detectByFileName: function (fileName) {
@@ -55,19 +56,22 @@ const MimeType = {
         if (MIME_TYPES[ext]) {
             return MIME_TYPES[ext]
         }
-        return 'application/octet-stream'
+        return DEFAULT_MIME_TYPE
     },
-    takeOrDetect: (mimeType, uri, query) => {
+    takeOrDetect: (mimeType, parsedUrl) => {
         if(mimeType){
             return mimeType
         }
-        // if set by query parameter
-        // should not be used anymore
-        let ext = query.ext
-        if (!ext && uri) {
-            return MimeType.detectByFileName(uri)
+        if(parsedUrl){
+            if(parsedUrl.query && parsedUrl.query.ext){
+                // if set by query parameter
+                // should not be used anymore
+                return MimeType.detectByExtension(parsedUrl.query.ext)
+            }else if(parsedUrl.pathname){
+                return MimeType.detectByFileName(parsedUrl.pathname)
+            }
         }
-        return MimeType.detectByExtension(ext)
+        return DEFAULT_MIME_TYPE
     }
 }
 
