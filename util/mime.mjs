@@ -64,7 +64,7 @@ const MimeType = {
         // if set by query parameter
         // should not be used anymore
         let ext = query.ext
-        if (!ext) {
+        if (!ext && uri) {
             return MimeType.detectByFileName(uri)
         }
         return MimeType.detectByExtension(ext)

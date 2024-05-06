@@ -558,7 +558,6 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     if (hostrule.fileMapping && hostrule.fileMapping[urlPathname]) {
                         const mappedFile = path.join(hostrule._basedir, hostrule.fileMapping[urlPathname])
                         //console.log('mapped file: ' + mappedFile)
-
                         if (await sendFileFromDir(req, res, {filename: mappedFile, headers, parsedUrl})) {
                             return
                         }
@@ -567,12 +566,13 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                         return
                     }
 
+                    if(urlPathname!=='/'){
+                        const pathsToCheck = [...hostrule.paths, STATIC_DIR, WEBROOT_ABSPATH, BUILD_DIR]
 
-                    const pathsToCheck = [...hostrule.paths, STATIC_DIR, WEBROOT_ABSPATH, BUILD_DIR]
-
-                    for(const curPath of pathsToCheck){
-                        if (await sendFileFromDir(req, res, {filename: path.join(curPath, urlPathname), headers, parsedUrl})) {
-                            return
+                        for(const curPath of pathsToCheck){
+                            if (await sendFileFromDir(req, res, {filename: path.join(curPath, urlPathname), headers, parsedUrl})) {
+                                return
+                            }
                         }
                     }
 

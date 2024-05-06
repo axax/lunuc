@@ -43,7 +43,12 @@ export const getFileFromOtherServer = (urlPath, filename, baseResponse, req) => 
 
 export const sendFileFromDir = async (req, res, {filename, headers = {}, parsedUrl}) => {
 
-    if (fs.existsSync(filename)) {
+    let statMain
+    try {
+        statMain = fs.statSync(filename)
+    }catch (e){}
+
+    if (statMain && statMain.isFile()) {
 
         // Check if there is a modified image
         const modImage = await resizeImage(parsedUrl, req, filename)
@@ -65,7 +70,7 @@ export const sendFileFromDir = async (req, res, {filename, headers = {}, parsedU
             'Connection': 'Keep-Alive',
             'Cache-Control': 'public, max-age=31536000', /* 604800 (a week) */
             'Content-Length': stat.size,
-            'Content-Type': MimeType.takeOrDetect(modImage.mimeType, parsedUrl.pathname, parsedUrl.query),
+            'Content-Type': MimeType.takeOrDetect(modImage.mimeType, parsedUrl && parsedUrl.pathname, parsedUrl.query),
             'ETag': `"${createSimpleEtag({content: filename, stat})}"`,
             ...headers
         }
@@ -91,7 +96,6 @@ export const sendFile = (req, res, {headers, filename, fileStat, neverCompress =
         // TODO make it configurable
         neverCompress = true
     }
-
     let statsMainFile
     try {
         statsMainFile = fileStat || fs.statSync(filename)
