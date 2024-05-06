@@ -72,7 +72,7 @@ const MimeType = {
         if(!mimeType){
             return false
         }
-        return MIME_TYPE_COMPRESSIBLE.indexOf(mimeType)>=0
+        return mimeType.startsWith('text/') || MIME_TYPE_COMPRESSIBLE.indexOf(mimeType)>=0
     },
     detectByFileName: function (fileName) {
         let ext = path.extname(fileName)
