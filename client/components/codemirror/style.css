@@ -7,6 +7,12 @@
     color: #f4c242;
     font-weight: bold;
 }
+
+.cm-s-default .cm-custom-comment, .cm-s-default .cm-custom-comment + .cm-string{
+    color: #666;
+    font-weight: bold;
+    font-style: italic;
+}
 .cm-s-default .cm-custom-link {
     color: mediumblue;
     font-weight: bold;

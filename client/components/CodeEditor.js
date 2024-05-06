@@ -327,7 +327,8 @@ class CodeEditor extends React.Component {
 
             options.keyword = {
                 "\"$inlineEditor\"": "custom",
-                "\"slug\"": "custom-link"
+                "\"slug\"": "custom-link",
+                "\"$comment\"": "custom-comment"
             }
 
             const rulers = []

@@ -1,6 +1,49 @@
 import {assignIfObjectOrArray, matchExpr, propertyByPath, setPropertyByPath} from '../../../../client/util/json.mjs'
 
 
+const createFacets = (facets, data) => {
+    if (facets) {
+        Object.keys(facets).forEach(facetKey => {
+            const facet = facets[facetKey]
+            if (facet && data) {
+                if (facet.type === 'slider') {
+                    if (facet.min === undefined || facet.min > data[facetKey]) {
+                        if (!isNaN(data[facetKey])) {
+                            facet.min = data[facetKey]
+                        }
+                    }
+                    if (facet.max === undefined || facet.max < data[facetKey]) {
+                        if (!isNaN(data[facetKey])) {
+                            facet.max = data[facetKey]
+                        }
+                    }
+                } else {
+                    if (!facet.values) {
+                        facet.values = {}
+                    }
+
+                    let arr = data[facetKey]
+                    if (arr.constructor !== Array) {
+                        arr = [arr]
+                    }
+
+                    for (let i = 0; i < arr.length; i++) {
+                        const v = arr[i]
+                        if (!facet.values[v]) {
+                            facet.values[v] = {
+                                value: v,
+                                count: 1
+                            }
+                        } else {
+                            facet.values[v].count++
+                        }
+                    }
+                }
+            }
+        })
+    }
+}
+
 /*
 Version 1
 Takes a data structure and converts it or extracts specific data from it.
@@ -54,47 +97,7 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
                             }
 
                             if (re.lookup.facets) {
-                                const facets = propertyByPath(re.lookup.facets.path, rootData)
-                                if (facets) {
-                                    Object.keys(facets).forEach(facetKey => {
-                                        const facet = facets[facetKey]
-                                        if (facet && lookupData[key]) {
-                                            if (facet.type === 'slider') {
-                                                if (facet.min === undefined || facet.min > lookupData[key][facetKey]) {
-                                                    if (!isNaN(lookupData[key][facetKey])) {
-                                                        facet.min = lookupData[key][facetKey]
-                                                    }
-                                                }
-                                                if (facet.max === undefined || facet.max < lookupData[key][facetKey]) {
-                                                    if (!isNaN(lookupData[key][facetKey])) {
-                                                        facet.max = lookupData[key][facetKey]
-                                                    }
-                                                }
-                                            } else {
-                                                if (!facet.values) {
-                                                    facet.values = {}
-                                                }
-
-                                                let arr = lookupData[key][facetKey]
-                                                if (arr.constructor !== Array) {
-                                                    arr = [arr]
-                                                }
-
-                                                for (let i = 0; i < arr.length; i++) {
-                                                    const v = arr[i]
-                                                    if (!facet.values[v]) {
-                                                        facet.values[v] = {
-                                                            value: v,
-                                                            count: 1
-                                                        }
-                                                    } else {
-                                                        facet.values[v].count++
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    })
-                                }
+                                createFacets(propertyByPath(re.lookup.facets.path, rootData), lookupData[key])
                             }
 
                             if (re.lookup.group && re.lookup.group.keepOnlyOne) {
@@ -201,7 +204,9 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
                                 if(!rootData[re.key]){
                                     rootData[re.key] = []
                                 }
-                                rootData[re.key].push(value[getKey])
+                                if(re.duplicates || rootData[re.key].indexOf(value[getKey])<0) {
+                                    rootData[re.key].push(value[getKey])
+                                }
                             }else {
                                 rootData[re.key] = value[getKey]
                             }
@@ -214,10 +219,15 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
                         }
                         if(!value){
                         }else if(value.constructor === Object){
+
+                            // TODO duplicates check
                             rootData[re.key].push(...Object.values(value))
                         }else if(value.constructor === Array){
+
+                            // TODO duplicates check
                             rootData[re.key].push(...value)
-                        }else /*if(rootData[re.key].indexOf(value)<0)*/{
+
+                        }else if(re.duplicates || rootData[re.key].indexOf(value)<0){
                             rootData[re.key].push(value)
                         }
                     }else {
@@ -237,6 +247,11 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
                             }
                             resolveReduce(re.loop.reduce, rootData, value[key])
                         }
+
+                        if (re.loop.facets) {
+                            createFacets(propertyByPath(re.loop.facets.path, rootData), value[key])
+                        }
+
                     })
                 } else if (value.constructor === Array) {
                     for (let i = value.length - 1; i >= 0; i--) {
