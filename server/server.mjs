@@ -398,7 +398,7 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
         }
     }
 
-    if(!await sendFileFromDir(req, res,{filename, parsedUrl})){
+    if(!await sendFileFromDir(req, res,{filename, parsedUrl, neverCompress:true})){
         console.log('not exists: ' + filename)
         sendError(res, 404)
     }

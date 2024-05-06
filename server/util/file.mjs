@@ -41,7 +41,7 @@ export const getFileFromOtherServer = (urlPath, filename, baseResponse, req) => 
 }
 
 
-export const sendFileFromDir = async (req, res, {filename, headers = {}, parsedUrl}) => {
+export const sendFileFromDir = async (req, res, {filename, headers = {}, parsedUrl, neverCompress=false}) => {
 
     let statMain
     try {
@@ -78,7 +78,7 @@ export const sendFileFromDir = async (req, res, {filename, headers = {}, parsedU
         if (transcodeOptions && !transcodeOptions.exists) {
             await transcodeAndStreamVideo({options: transcodeOptions, headers: headersExtended, req, res, filename})
         } else {
-            sendFile(req,res,{headers: headersExtended,filename,fileStat:stat,neverCompress:true,statusCode:200})
+            sendFile(req,res,{headers: headersExtended,filename,fileStat:stat,neverCompress,statusCode:200})
         }
         return true
     }
