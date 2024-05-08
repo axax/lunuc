@@ -222,10 +222,14 @@ const startListening = async (db, context) => {
                                     const message = {
                                        /* cc: data.cc,
                                         bcc: data.bcc,*/
+                                        envelope: {
+                                            from: `<${replyTo.address}>`,
+                                            to: rcpt
+                                        },
                                         replyTo: replyTo.address,
                                         from: `${mailAccount.username}@${mailAccount.host}`,
                                         to: rcpt,
-                                        subject: `REDIRECT: ${data.subject}`,
+                                        subject: `${data.subject}`,
                                         text: data.text, //'Plaintext version of the message'
                                         html: data.html,
                                         attachments: data.attachments

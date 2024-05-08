@@ -14,7 +14,7 @@ export const translations = {
         'MailAccount.field.password': 'Password',
         'MailAccount.field.active': 'Active',
         'MailAccount.field.temp': 'Temp',
-        'MailAccount.field.redirect': 'Redirect',
+        'MailAccount.field.redirect': 'Forward',
         'MailAccount.field.ownerGroup': 'Owner group'
     }
 }

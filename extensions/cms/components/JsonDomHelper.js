@@ -1395,7 +1395,7 @@ class JsonDomHelper extends React.Component {
         })
     }
 
-    onAddChildDialogClose(event, currentElement, form, payload){
+    onAddChildDialogClose(event, currentElement, form, payload = {}){
         const {_onTemplateChange, _onDataResolverPropertyChange, _key} = this.props
 
 
