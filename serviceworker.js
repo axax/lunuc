@@ -110,6 +110,8 @@ self.addEventListener('fetch', event => {
                         }
                     })
                     return response
+                }).catch(error=>{
+                    console.log(error)
                 })
             })
         )

@@ -1,25 +1,32 @@
 import {assignIfObjectOrArray, matchExpr, propertyByPath, setPropertyByPath} from '../../../../client/util/json.mjs'
 
 
-const createFacets = (facets, data) => {
+const createFacets = (facets, data, beforeFilter) => {
     if (facets) {
         Object.keys(facets).forEach(facetKey => {
             const facet = facets[facetKey]
             if (facet && data) {
+                let facetData = facet
+                if(beforeFilter){
+                    if(!facet.beforeFilter) {
+                        facet.beforeFilter = {}
+                    }
+                    facetData = facet.beforeFilter
+                }
                 if (facet.type === 'slider') {
-                    if (facet.min === undefined || facet.min > data[facetKey]) {
+                    if (facetData.min === undefined || facetData.min > data[facetKey]) {
                         if (!isNaN(data[facetKey])) {
-                            facet.min = data[facetKey]
+                            facetData.min = data[facetKey]
                         }
                     }
-                    if (facet.max === undefined || facet.max < data[facetKey]) {
+                    if (facetData.max === undefined || facetData.max < data[facetKey]) {
                         if (!isNaN(data[facetKey])) {
-                            facet.max = data[facetKey]
+                            facetData.max = data[facetKey]
                         }
                     }
                 } else {
-                    if (!facet.values) {
-                        facet.values = {}
+                    if (!facetData.values) {
+                        facetData.values = {}
                     }
 
                     let arr = data[facetKey]
@@ -28,14 +35,14 @@ const createFacets = (facets, data) => {
                     }
 
                     for (let i = 0; i < arr.length; i++) {
-                        const v = arr[i]
-                        if (!facet.values[v]) {
-                            facet.values[v] = {
+                        const v = arr[i] || 'unknown'
+                        if (!facetData.values[v]) {
+                            facetData.values[v] = {
                                 value: v,
                                 count: 1
                             }
                         } else {
-                            facet.values[v].count++
+                            facetData.values[v].count++
                         }
                     }
                 }
@@ -235,24 +242,32 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
                     }
                 }
             } else if (re.loop) {
-
-
-                let value = propertyByPath(re.path, currentData, '.', re.assign)
+                let value = propertyByPath(re.path, currentData, '.', re.assign),
+                    loopFacet
+                if(re.loop.facets){
+                    loopFacet = propertyByPath(re.loop.facets.path, rootData)
+                }
                 if (value.constructor === Object) {
+                    let facetOriginal = {}
                     Object.keys(value).forEach(key => {
+                        if (loopFacet) {
+                            createFacets(loopFacet, value[key], true)
+                        }
+
+                        if (checkFilter(re.loop.filter, value, key)) {
+                            return
+                        }
+
                         if (re.loop.reduce) {
                             value[key] = re.assign ? assignIfObjectOrArray(value[key]) : value[key]
-                            if (checkFilter(re.loop.filter, value, key)) {
-                                return
-                            }
                             resolveReduce(re.loop.reduce, rootData, value[key])
                         }
 
-                        if (re.loop.facets) {
-                            createFacets(propertyByPath(re.loop.facets.path, rootData), value[key])
+                        if (loopFacet) {
+                            createFacets(loopFacet, value[key])
                         }
-
                     })
+
                 } else if (value.constructor === Array) {
                     for (let i = value.length - 1; i >= 0; i--) {
 
@@ -262,7 +277,6 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
 
                         if (re.loop.reduce) {
                             value[i] = re.assign ? assignIfObjectOrArray(value[i]) : value[i]
-                            //if()
                             resolveReduce(re.loop.reduce, rootData, value[i])
                         }
                     }
