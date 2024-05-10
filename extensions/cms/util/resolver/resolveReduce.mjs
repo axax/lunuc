@@ -241,6 +241,7 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
             } else if (re.loop) {
                 let value = propertyByPath(re.path, currentData, '.', re.assign),
                     loopFacet
+
                 if(re.loop.facets){
                     loopFacet = propertyByPath(re.loop.facets.path, rootData)
                 }
@@ -250,7 +251,12 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
                             createFacets(loopFacet, value[key], true)
                         }
 
-                        if (checkFilter(re.loop.filter, value, key)) {
+                        const filter = checkFilter(re.loop.filter, value, key)
+                        if (filter) {
+
+                            if(filter.or && loopFacet){
+                                createFacets(loopFacet, value[i])
+                            }
                             return
                         }
 
@@ -271,14 +277,21 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
                             createFacets(loopFacet, value[i], true)
                         }
 
-                        if (checkFilter(re.loop.filter, value, i)) {
+                        const filter = checkFilter(re.loop.filter, value, i)
+
+                        if (filter) {
+                            if(filter.or && loopFacet){
+                                createFacets(loopFacet, value[i])
+                            }
                             value.splice(i, 1)
-                        }else if (loopFacet) {
+                        }else {
                             if (re.loop.reduce) {
                                 value[i] = re.assign ? assignIfObjectOrArray(value[i]) : value[i]
                                 resolveReduce(re.loop.reduce, rootData, value[i])
                             }
-                            createFacets(loopFacet, value[i])
+                            if (loopFacet) {
+                                createFacets(loopFacet, value[i])
+                            }
                         }
                     }
                     if(re.loop.total){
@@ -327,14 +340,14 @@ const checkFilter = (filters, value, key) => {
                         }
                     }
 
-                    return true
+                    return filter
 
                 } else {
                     if (matchExpr(filter.expr, {key, value: value[key]})) {
                         if (filter.elseRemove) {
                             delete value[key]
                         }
-                        return true
+                        return filter
                     }
                 }
             }
