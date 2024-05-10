@@ -35,7 +35,7 @@ const createFacets = (facets, data, beforeFilter) => {
                     }
 
                     for (let i = 0; i < arr.length; i++) {
-                        const v = arr[i] || 'unknown'
+                        const v = arr[i] || ''
                         if (!facetData.values[v]) {
                             facetData.values[v] = {
                                 value: v,
@@ -61,7 +61,7 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
     }
 
     reducePipe.forEach(re => {
-        if (re.path && re.$is !== false && re.$is !== 'false') {
+        if (re.$is !== false && re.$is !== 'false') {
 
             if (re.sort) {
                 const value = propertyByPath(re.path, currentData, '.', re.assign)
@@ -225,15 +225,12 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
                             rootData[re.key] = []
                         }
                         if(!value){
-                        }else if(value.constructor === Object){
-
+                        }else if(value.constructor === Object && re.toArray==='fromObject'){
                             // TODO duplicates check
                             rootData[re.key].push(...Object.values(value))
                         }else if(value.constructor === Array){
-
                             // TODO duplicates check
                             rootData[re.key].push(...value)
-
                         }else if(re.duplicates || rootData[re.key].indexOf(value)<0){
                             rootData[re.key].push(value)
                         }
@@ -248,7 +245,6 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
                     loopFacet = propertyByPath(re.loop.facets.path, rootData)
                 }
                 if (value.constructor === Object) {
-                    let facetOriginal = {}
                     Object.keys(value).forEach(key => {
                         if (loopFacet) {
                             createFacets(loopFacet, value[key], true)
@@ -271,14 +267,22 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
                 } else if (value.constructor === Array) {
                     for (let i = value.length - 1; i >= 0; i--) {
 
-                        if (checkFilter(re.loop.filter, value, i)) {
-                            value.splice(i, 1)
+                        if (loopFacet) {
+                            createFacets(loopFacet, value[i], true)
                         }
 
-                        if (re.loop.reduce) {
-                            value[i] = re.assign ? assignIfObjectOrArray(value[i]) : value[i]
-                            resolveReduce(re.loop.reduce, rootData, value[i])
+                        if (checkFilter(re.loop.filter, value, i)) {
+                            value.splice(i, 1)
+                        }else if (loopFacet) {
+                            if (re.loop.reduce) {
+                                value[i] = re.assign ? assignIfObjectOrArray(value[i]) : value[i]
+                                resolveReduce(re.loop.reduce, rootData, value[i])
+                            }
+                            createFacets(loopFacet, value[i])
                         }
+                    }
+                    if(re.loop.total){
+                        setPropertyByPath(value.length, re.loop.total.path, rootData)
                     }
                 }
             } else if (re.reduce) {
