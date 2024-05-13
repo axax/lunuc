@@ -1,6 +1,5 @@
 import fs from 'fs'
 import {resizeImage} from './resizeImage.mjs'
-import path from 'path'
 import MimeType from '../../util/mime.mjs'
 import {createSimpleEtag} from './etag.mjs'
 import {isFileNotNewer} from '../../util/fileUtil.mjs'

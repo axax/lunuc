@@ -19,7 +19,7 @@ export const resizeImage = async (parsedUrl, req, filename) => {
             position = parsedUrl.query.position,
             withoutEnlargement = parsedUrl.query.noenlarge
 
-        let format = parsedUrl.query.format || DEFAULT_FORMAT
+        let format = parsedUrl.query.format
         if (format === 'webp' && req.headers['accept'] && req.headers['accept'].indexOf('image/webp') < 0) {
             format = DEFAULT_FORMAT
         }
@@ -49,16 +49,19 @@ export const resizeImage = async (parsedUrl, req, filename) => {
 
             let ext = path.extname(parsedUrl.pathname).toLowerCase()
             if (!format) {
-                if (ext === '.svg' || ext === '.png') {
+                if (ext === '.svg') {
                     // convert svg to png by default
                     format = 'png'
+                }else if(ext){
+                    format = ext.substring(1)
+                }else{
+                    format = DEFAULT_FORMAT
                 }
             }
 
             let modfilename = `${filename}@${width}x${height}-${quality}${fit ? '-' + fit : ''}${position ? '-' + position : ''}${format ? '-' + format : ''}${flip ? '-flip' : ''}${flop ? '-flop' : ''}${withoutEnlargement ? '-noenlarge' : ''}${bg ? '-' + bg : ''}`
-            if (format) {
-                mimeType = MimeType.detectByExtension(format)
-            }
+
+            mimeType = MimeType.detectByExtension(format)
             exists = true
 
             if (!fs.existsSync(modfilename)) {
