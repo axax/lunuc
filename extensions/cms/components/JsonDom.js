@@ -826,8 +826,8 @@ class JsonDom extends React.Component {
 
                 if (t === '#') {
                     // hidden element
-                    if (c) {
-                        h.push(this.parseRec(c, rootKey + '.' + aIdx, scope))
+                    if (c || $c) {
+                        h.push(this.parseRec(c || $c, rootKey + '.' + aIdx, scope))
                     }
                     return
                 }
