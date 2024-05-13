@@ -51,6 +51,11 @@ const createFacets = (facets, data, beforeFilter) => {
     }
 }
 
+
+const isNotFalse = ($is)=>{
+    return $is !== false && $is !== 'false'
+}
+
 /*
 Version 1
 Takes a data structure and converts it or extracts specific data from it.
@@ -61,7 +66,7 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
     }
 
     reducePipe.forEach(re => {
-        if (re.$is !== false && re.$is !== 'false') {
+        if (isNotFalse(re.$is)) {
 
             if (re.sort) {
                 const value = propertyByPath(re.path, currentData, '.', re.assign)
@@ -242,7 +247,7 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
                 let value = propertyByPath(re.path, currentData, '.', re.assign),
                     loopFacet
 
-                if(re.loop.facets){
+                if(re.loop.facets && isNotFalse(re.loop.facets.$is)){
                     loopFacet = propertyByPath(re.loop.facets.path, rootData)
                 }
                 if (value.constructor === Object) {

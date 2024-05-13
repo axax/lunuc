@@ -26,16 +26,16 @@ export const resizeImage = async (parsedUrl, req, filename) => {
 
         if (!isNaN(width) || !isNaN(height) || format || flip || flop) {
 
-            const resizeOptions = {fit: fit || sharp.fit.cover, background: bg || { r: 0, g: 0, b: 0, alpha: 0 }}
+            const resizeOptions = {fit: fit || sharp.fit.cover, background: bg || {r: 0, g: 0, b: 0, alpha: 0}}
             if (!isNaN(width)) {
                 resizeOptions.width = width
             }
-            if(position){
+            if (position) {
                 resizeOptions.position = position
             }
 
-            if(withoutEnlargement){
-                resizeOptions.withoutEnlargement = withoutEnlargement=='true'
+            if (withoutEnlargement) {
+                resizeOptions.withoutEnlargement = withoutEnlargement == 'true'
             }
 
             if (!isNaN(height)) {
@@ -48,9 +48,11 @@ export const resizeImage = async (parsedUrl, req, filename) => {
             }
 
             let ext = path.extname(parsedUrl.pathname).toLowerCase()
-            if(ext==='.svg' && !format){
-                // convert svg to png by default
-                format = 'png'
+            if (!format) {
+                if (ext === '.svg' || ext === '.png') {
+                    // convert svg to png by default
+                    format = 'png'
+                }
             }
 
             let modfilename = `${filename}@${width}x${height}-${quality}${fit ? '-' + fit : ''}${position ? '-' + position : ''}${format ? '-' + format : ''}${flip ? '-flip' : ''}${flop ? '-flop' : ''}${withoutEnlargement ? '-noenlarge' : ''}${bg ? '-' + bg : ''}`
