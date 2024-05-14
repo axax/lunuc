@@ -81,7 +81,6 @@
     "graphql-tools": "^9.0.1",
     "http2-proxy": "^5.0.53",
     "jsonwebtoken": "^9.0.2",
-    "langchain": "^0.1.36",
     "mailparser": "^3.7.1",
     "mongodb": "^6.6.1",
     "node-cron": "^3.0.3",
