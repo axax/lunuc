@@ -21,7 +21,7 @@ export const resizeImage = async (parsedUrl, req, filename) => {
 
         let format = parsedUrl.query.format
         if (format === 'webp' && req.headers['accept'] && req.headers['accept'].indexOf('image/webp') < 0) {
-            format = DEFAULT_FORMAT
+            format = ''
         }
 
         if (!isNaN(width) || !isNaN(height) || format || flip || flop) {
