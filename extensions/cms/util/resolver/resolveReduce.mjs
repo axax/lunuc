@@ -109,15 +109,23 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
                         }
                     } else if (value.constructor === Array) {
                         lookedupData = [], groups = {}
-                        let count = 0
+                        let count = 0,loopFacet
+
+                        if(re.lookup.facets && isNotFalse(re.lookup.facets.$is)){
+                            loopFacet = propertyByPath(re.lookup.facets.path, rootData)
+                        }
                         value.forEach(key => {
+
+                            if (loopFacet) {
+                                createFacets(loopFacet, lookupData[key], true)
+                            }
 
                             if (checkFilter(re.lookup.filterBefore, lookupData, key)) {
                                 return
                             }
 
-                            if (re.lookup.facets) {
-                                createFacets(propertyByPath(re.lookup.facets.path, rootData), lookupData[key])
+                            if (loopFacet) {
+                                createFacets(loopFacet, lookupData[key])
                             }
 
                             if (re.lookup.group && re.lookup.group.keepOnlyOne) {

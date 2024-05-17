@@ -50,18 +50,18 @@ class PrettyErrorMessage extends React.Component {
             }
         }
         if (lineNrStr !== undefined) {
-            const lineNr = parseInt(lineNrStr)
-            const columnNr = parseInt(columnNrStr)
             const cbLines = code.split('\n'),
+                lineNr = Math.min(parseInt(lineNrStr),cbLines.length),
+                columnNr = parseInt(columnNrStr),
                 start = Math.max(offset, lineNr - 3),
                 end = Math.min(cbLines.length, lineNr + 4)
+
             for (let i = start; i <= end; i++) {
 
                 let str = cbLines[i - offset]
-
                 if (i === lineNr) {
                     if(columnNr>0 && str.length>100){
-                        str = '...'+str.substring(columnNr-20, columnNr+20)+'...'
+                        str = '...'+str.substring(columnNr-25, columnNr+25)+'...'
                     }
                     errorMsg += `<i style="background:rgba(255,255,200,1);color:#000;font-size: 0.9rem">Line ${i - (offset-1)}: ${e.message}</i><br/><strong><i style="background:red;color:#fff">${str}</i></strong>\n`
                 } else {
