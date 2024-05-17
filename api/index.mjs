@@ -10,7 +10,9 @@ globalThis.window = {location:{href:'',origin: ''}}
 
 // define some global vars for server side rendering
 global.document = {documentElement: {}, referrer:''}
-global._app_ = {lang: config.DEFAULT_LANGUAGE || 'en', ssr: true, es6Module:true, tr: {}, JsonDom: {}, start: new Date(), config}
+global._app_ = {noStorage:true,
+    lang: config.DEFAULT_LANGUAGE || 'en',
+    ssr: true, es6Module:true, tr: {}, JsonDom: {}, start: new Date(), config}
 
 // Entry point for our server
 import('./server.mjs').then(server=>{

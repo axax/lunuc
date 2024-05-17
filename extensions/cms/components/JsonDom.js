@@ -579,7 +579,7 @@ class JsonDom extends React.Component {
             Hook.call('JsonDomError', {error: this.error, slug: scope.page.slug, editMode: this.props.editMode})
 
             return <div>Error in <strong>{this.error.type}</strong>: {this.error.e?this.error.e.message:''}
-                log: <PrettyErrorMessage {...this.error}/></div>
+                <PrettyErrorMessage {...this.error}/></div>
         } else {
             return content
         }
@@ -939,7 +939,7 @@ class JsonDom extends React.Component {
                      c = children in loop
                      s = scope in loop to access data
                      */
-                    let cStr
+                    let cStr, jsonString
                     try {
                         /* $.loop{ --> ${ */
                         /* "$.loop" --> ${JSON.stringify(this.loop)} the whole loop item */
@@ -970,12 +970,14 @@ class JsonDom extends React.Component {
                             }
 
                             // remove tabs and parse
-                            const json = JSON.parse(tpl.call({
+                            jsonString = tpl.call({
                                 [s]: loopChild,
                                 scope,
                                 Util: Util,
                                 _t
-                            }).replace(/\t/g, '\\t').replace(/\n/g, '\\n').replace(/\r/g, '\\r'))
+                            }).replace(/\t/g, '\\t').replace(/\n/g, '\\n').replace(/\r/g, '\\r')
+
+                            const json = JSON.parse(jsonString)
 
                             const key = rootKey + '.' + aIdx + '.$loop.' + childIdx
                             scope[s] = loopChild
@@ -987,14 +989,11 @@ class JsonDom extends React.Component {
                             h.push(com && com.length === 1 ? com[0] : com)
                         })
                     } catch (ex) {
-
-                        this.emitJsonError(ex, {loc: "Loop", meta:{slug: this.props.slug, data}})
-
+                        this.emitJsonError(ex, {loc: 'Loop',
+                            code: jsonString || cStr,
+                            meta:{slug: this.props.slug, text:`Source: ${$d || d} / Key: ${rootKey}`}})
                         console.log('------------- ERROR in ' + this.props.slug)
                         console.log(ex, c, cStr)
-                        if (ex.message.startsWith('Unexpected token')) {
-                            console.error('There is an error in the Json. Try to use Util.escapeForJson')
-                        }
                         return
                     }
 
@@ -1281,7 +1280,7 @@ class JsonDom extends React.Component {
                 this.json = JSON.parse(renderedTemplate)
             } catch (e) {
                 console.warn('getJson', template, e)
-                this.error = {type: 'template', e, code: renderedTemplate}
+                this.error = {type: 'template parse', e, code: renderedTemplate}
             }
             if (_app_.ssr && props.style && this.json) {
                 // add style
@@ -1310,7 +1309,7 @@ class JsonDom extends React.Component {
         } catch (e) {
             console.log(e, template)
             if (!ignoreError) {
-                this.error = {type: 'template', e, code: template}
+                this.error = {type: 'template parse raw', e, code: template}
             }
         }
         return this.jsonRaw
@@ -1366,7 +1365,7 @@ class JsonDom extends React.Component {
             }).replace(/\t/g, '\\t')
 
         } catch (e) {
-            this.error = {type: 'template', e, code, offset:3}
+            this.error = {type: 'template render', e, code, offset:3}
             this.emitJsonError(e, {loc: 'Template'})
             console.error('Error in renderTemplate', e)
         }
@@ -1401,8 +1400,8 @@ class JsonDom extends React.Component {
                                 results.push(cb(...args))
                             } catch (e) {
                                 console.log(e, cb)
-                                this.error = {type: `script event ${name}`, e, code: this.props.script, offset: 9}
-                                if (async) {
+                                this.error = {type: `script event ${name}`, e, code: this.props.script, offset: 3}
+                                if (async || this.props.inEditor) {
                                     this.forceUpdate()
                                 }
                             }
@@ -1531,7 +1530,7 @@ class JsonDom extends React.Component {
     }
 
     getLocal = (key, def) => {
-        if (_app_.noStorage || typeof localStorage === 'undefined') return def
+        if (_app_.noStorage) return def
         const value = localStorage.getItem(key)
         if (value) {
             try {
@@ -1544,7 +1543,7 @@ class JsonDom extends React.Component {
         return def
     }
     setLocal = (key, value) => {
-        if (!_app_.noStorage && typeof localStorage !== 'undefined') {
+        if (!_app_.noStorage) {
             localStorage.setItem(key, JSON.stringify(value))
         }
     }

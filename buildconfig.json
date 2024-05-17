@@ -199,7 +199,9 @@
         "Notifications",
         "Support",
         "Devices",
-        "GridOn"
+        "GridOn",
+        "Replay",
+        "Language"
       ],
       "theme":{
         "colors":{

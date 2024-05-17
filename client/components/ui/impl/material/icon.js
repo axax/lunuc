@@ -82,7 +82,9 @@ import {
     NotificationsIcon,
     SupportIcon,
     DevicesIcon,
-    GridOnIcon
+    GridOnIcon,
+    LanguageIcon,
+    ReplayIcon
 } from 'gensrc/ui/admin/icons'
 
 const iconComponents = {
@@ -168,7 +170,9 @@ const iconComponents = {
     support: SupportIcon,
     devices: DevicesIcon,
     upload: CloudUploadIcon,
-    grid: GridOnIcon
+    grid: GridOnIcon,
+    replay:ReplayIcon,
+    language: LanguageIcon
 }
 
 export const getIconByKey = (key, defaultIcon) => {

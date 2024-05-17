@@ -8,20 +8,20 @@ class PrettyErrorMessage extends React.Component {
     render() {
         const {e,code,msg,offset} = this.props
         if( code && e ) {
-            return <span
-                dangerouslySetInnerHTML={{__html: this.prettyErrorMessage(e, code, offset)}}/>
+            return <span dangerouslySetInnerHTML={{__html: this.prettyErrorMessage(e, code, offset)}}/>
         }else{
             return <b><i>{msg || e.message}</i></b>
         }
     }
 
-    prettyErrorMessage = (e, code, offset=0) => {
-        let lineNrStr, column, errorMsg = '<pre style="margin-top:2rem">'
+    prettyErrorMessage = (e, code, offset=1) => {
+        let lineNrStr, columnNrStr='0', errorMsg = '<pre style="margin-top:2rem">'
 
         if(e.message.indexOf('is not valid JSON')>0){
             const pos = e.message.lastIndexOf('..."')
             if(pos>=0){
-                const tmp = e.message.substring(pos+4).split('\n')[0]
+                let tmp = e.message.substring(pos+4).split('\n')[0]
+                tmp = tmp.substring(0,tmp.indexOf('"...'))
                 const lines = code.split('\n')
                 for(let i = 0;i< lines.length;i++){
                     if(lines[i].indexOf(tmp)>=0){
@@ -30,37 +30,40 @@ class PrettyErrorMessage extends React.Component {
                     }
                 }
             }
-            column=0
         }else if(e.message.indexOf('in JSON at')>0){
-            const pos = parseInt(e.message.substring(e.message.lastIndexOf(' ')))
-            lineNrStr = code.substring(0,pos).split('\n').length - 1
-            column=0
+            columnNrStr = e.message.substring(e.message.indexOf(' column ')+8)
+            columnNrStr = columnNrStr.substring(0,columnNrStr.indexOf(')'))
+            lineNrStr = e.message.substring(e.message.indexOf('(line ')+6)
+            lineNrStr = lineNrStr.substring(0,lineNrStr.indexOf(' ')+1)
         }else {
             let line = e.stack.split('\n')[1]
             const anPos = line.indexOf('<anonymous>:')
             if(anPos>=0){
                 line = line.substring(anPos-1)
             }
-            console.log(line,e.lineNumber)
-
             const matches = line.match(/:(\d*):(\d*)/)
             if (matches && matches.length > 2) {
                 lineNrStr = matches[1]
-                column = matches[2]
+                columnNrStr = matches[2]
             } else {
-                lineNrStr = column = offset
+                lineNrStr = offset
             }
         }
         if (lineNrStr !== undefined) {
             const lineNr = parseInt(lineNrStr)
+            const columnNr = parseInt(columnNrStr)
             const cbLines = code.split('\n'),
                 start = Math.max(offset, lineNr - 3),
                 end = Math.min(cbLines.length, lineNr + 4)
-            for (let i = start; i < end; i++) {
+            for (let i = start; i <= end; i++) {
 
-                const str = cbLines[i - offset]
+                let str = cbLines[i - offset]
+
                 if (i === lineNr) {
-                    errorMsg += `<i style="background:red;color:#fff">Line ${i - (offset-1)}: ${e.message}</i>\n<i style="background:yellow">${str}</i>\n`
+                    if(columnNr>0 && str.length>100){
+                        str = '...'+str.substring(columnNr-20, columnNr+20)+'...'
+                    }
+                    errorMsg += `<i style="background:rgba(255,255,200,1);color:#000;font-size: 0.9rem">Line ${i - (offset-1)}: ${e.message}</i><br/><strong><i style="background:red;color:#fff">${str}</i></strong>\n`
                 } else {
                     errorMsg += str + '\n'
                 }

@@ -1058,7 +1058,7 @@ class JsonDomHelper extends React.Component {
 
                 if (_options.menu.editTemplate !== false && Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
                     menuItems.push({
-                        name: 'Template bearbeiten',
+                        name: _t('JsonDomHelper.edit.template'),
                         icon: <BuildIcon/>,
                         onClick: this.handleTemplateEditClick.bind(this)
                     })
@@ -1066,7 +1066,7 @@ class JsonDomHelper extends React.Component {
 
                 if (_options.menu.clone !== false) {
                     menuItems.push({
-                        name: 'Element duplizieren',
+                        name: _t('JsonDomHelper.copy.element'),
                         icon: <FileCopyIcon/>,
                         onClick: this.handleCopyClick.bind(this)
                     })

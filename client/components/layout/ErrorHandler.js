@@ -1,5 +1,5 @@
 import React, {useContext} from 'react'
-import {SimpleDialog, Snackbar} from 'ui/admin'
+import {SimpleDialog, Snackbar,CloseIconButton} from 'ui/admin'
 import {_t} from 'util/i18n.mjs'
 import {AppContext} from '../AppContext'
 
@@ -21,6 +21,15 @@ function ErrorHandler({snackbar}) {
     if( snackbar ){
         return <Snackbar
             open={true}
+            action={<CloseIconButton
+                key="close"
+                aria-label="Close"
+                color="inherit"
+                className=""
+                onClick={()=>{
+                    handleDialogClose(key)
+                }}
+            />}
             onClose={()=>{
                 handleDialogClose(key)
             }}
@@ -28,13 +37,13 @@ function ErrorHandler({snackbar}) {
                 vertical: 'bottom',
                 horizontal: 'right',
             }}
-            autoHideDuration={5000}
+            autoHideDuration={messages[key].duration!==undefined?messages[key].duration:6000}
             message={msg}
         />
     }
 
     // messages to be ignored
-    if(msg.indexOf('user aborted a request')>=0 ||
+    if(msg.constructor === String && msg.indexOf('user aborted a request')>=0 ||
         msg.indexOf('signal is aborted without reason')>=0){
         return null
     }

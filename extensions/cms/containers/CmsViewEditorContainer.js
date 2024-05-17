@@ -64,6 +64,8 @@ import JsonDomHelper from '../components/JsonDomHelper'
 import CmsRelatedPages from '../components/CmsRelatedPages'
 import CmsPageOptions from '../components/CmsPageOptions'
 import styled from '@emotion/styled'
+import PrettyErrorMessage from '../components/PrettyErrorMessage'
+import {useKeyValuesGlobal, setKeyValue} from '../../../client/util/keyvalue'
 
 const StyledBox = styled(Box)(({theme})=>({
     display: 'flex',
@@ -485,7 +487,7 @@ class CmsViewEditorContainer extends React.Component {
                               label: 'Ok',
                               type: 'primary'
                           }]}
-                          title="Edit Component">,
+                          title={_t('CmsViewEditorContainer.editComponent')}>
                 <TemplateEditor
                     fabButtonStyle={{bottom: '3rem', right: '1rem'}}
                     component={cmsTemplateEditData}
@@ -719,10 +721,55 @@ class CmsViewEditorContainer extends React.Component {
                 moreMenu.push(
                     {
                         icon:'translate',
-                        divider: canMangeCmsContent,
                         name: _t('CmsViewEditorContainer.languages'),
-                        items: langItems
+                        items: langItems,
+                        divider: canMangeCmsContent
                     })
+
+
+                moreMenu.push({
+                        icon:'language',
+                        name: _t('CmsViewEditorContainer.globalTranslation'),
+                        onClick: () =>{
+                            const key ='GlobalTranslations-'+slug.split('/')[0]
+                            let editedData
+                            const GlobalEditor = ()=>{
+                                const keyValues = useKeyValuesGlobal([key], {})
+                                if(!keyValues.loading){
+                                    return <CodeEditor onChange={(e)=>{
+                                        editedData = e
+                                    }} type="json">{keyValues.data[key]}</CodeEditor>
+                                }
+                                return 'loading...'
+                            }
+                            this.setState({
+                                simpleDialog: {
+                                    title: _t('CmsViewEditorContainer.globalTranslation'),
+                                    text: <GlobalEditor />,
+                                    actions: [
+                                        {
+                                            key: 'cancel',
+                                            label: _t('core.cancel'),
+                                            type: 'secondary'
+                                        },
+                                        {
+                                            key: 'save',
+                                            label: _t('core.save'),
+                                            type: 'primary'
+                                        }
+                                    ],
+                                    onClose: (e) => {
+                                        if(e.key==='save' && editedData) {
+                                            setKeyValue({key,value:editedData,clearCache:true, global:true})
+                                            location.href = location.href
+                                        }
+                                        this.setState({simpleDialog: true})
+                                    }
+                                }
+                            })
+                        }
+                    })
+
                 if(canMangeCmsContent) {
                     moreMenu.push({
                             divider: true,
@@ -784,6 +831,7 @@ class CmsViewEditorContainer extends React.Component {
                 moreMenu.push(
                     {
                         divider: true,
+                        icon:'replay',
                         name: _t('CmsViewEditorContainer.undochange') + ' (' + this.templateChangeHistory.length + ')',
                         onClick: () => {
                             if (this.templateChangeHistory.length > 0) {
@@ -1035,8 +1083,10 @@ class CmsViewEditorContainer extends React.Component {
         return {dataResolver: this._tmpDataResolver, segment, index}
     }
 
-    handleCmsError(e, meta) {
-        _app_.dispatcher.addError({key: 'cmsError', msg: `${meta.loc}: ${e.message} -> ${meta.slug}`})
+    handleCmsError(e, data) {
+        _app_.dispatcher.addError({key: 'cmsError', duration: 15000, msg: data.code?<div>Error in <strong>{data.loc}</strong>: {data.slug}
+                {data.meta.text?<p><small>{data.meta.text}</small></p>:''}
+                <PrettyErrorMessage  e={e} code={data.code}/></div>:`${data.loc}: ${e.message} -> ${data.slug}`})
     }
 
     _keyValueMap = {}

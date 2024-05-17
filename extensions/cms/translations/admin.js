@@ -17,6 +17,7 @@ export const translations = {
         'CmsViewEditorContainer.addnewpage': 'Neue Seite erstellen',
         'CmsViewEditorContainer.pagesettings': 'Allgemeine Seiteneigenschaften',
         'CmsViewEditorContainer.autotranslate': 'Automatisch übersetzen',
+        'CmsViewEditorContainer.globalTranslation': 'Globale Übersetzungen',
         'CmsViewEditorContainer.languages': 'Sprachvarianten',
         'CmsViewEditorContainer.undochange': 'Änderung Rückgängig',
         'CmsViewEditorContainer.logout': 'Abmelden',
@@ -27,6 +28,7 @@ export const translations = {
         'CmsViewEditorContainer.pageDevelopment': 'Entwicklung',
         'CmsViewEditorContainer.staticAssets':'Externe Scripts',
         'CmsViewEditorContainer.public':'Öffentlich (ist für jeden sichtbar)',
+        'CmsViewEditorContainer.editComponent':'Komponentenvorlage bearbeiten',
         'CmsAddNewSite.cancel':'Abbrechen',
         'CmsAddNewSite.create':'Erstellen',
         'CmsAddNewSite.createPageIfNotExist':'Seite "%slug%" exisitert nicht. Möchten Sie die Seite jetzt erstellen?',
@@ -64,7 +66,9 @@ export const translations = {
         'JsonDomHelper.element.below':'Element unterhalb hinzufügen',
         'JsonDomHelper.element.above':'Element oberhalb hinzufügen',
         'JsonDomHelper.element.to.clipboard': 'Element in Zwischenablage kopieren',
-        'JsonDomHelper.element.from.clipboard': 'Element von Zwischenablage einfügen'
+        'JsonDomHelper.element.from.clipboard': 'Element von Zwischenablage einfügen',
+        'JsonDomHelper.edit.template':'Template bearbeiten',
+        'JsonDomHelper.copy.element':'Element duplizieren'
     },
     en: {
         'CmsViewEditorContainer.save': 'Save',
@@ -82,6 +86,7 @@ export const translations = {
         'CmsViewEditorContainer.addnewpage': 'Add new page',
         'CmsViewEditorContainer.pagesettings': 'General page settings',
         'CmsViewEditorContainer.autotranslate': 'Auto translate',
+        'CmsViewEditorContainer.globalTranslation': 'Global translations',
         'CmsViewEditorContainer.languages': 'Language variants',
         'CmsViewEditorContainer.undochange': 'Undo change',
         'CmsViewEditorContainer.logout': 'Logout',
@@ -92,6 +97,7 @@ export const translations = {
         'CmsViewEditorContainer.pageDevelopment': 'Development',
         'CmsViewEditorContainer.staticAssets':'External Scripts',
         'CmsViewEditorContainer.public':'Public (is visible to everyone)',
+        'CmsViewEditorContainer.editComponent':'Edit component template',
         'CmsAddNewSite.cancel':'Cancel',
         'CmsAddNewSite.create':'Create',
         'CmsAddNewSite.createPageIfNotExist':'Page "%slug%" doesn\'t exist. Do you want to create it?',
@@ -129,6 +135,8 @@ export const translations = {
         'JsonDomHelper.element.inside':'Insert inside',
         'JsonDomHelper.element.outside':'Insert outside',
         'JsonDomHelper.element.below':'Insert below',
-        'JsonDomHelper.element.above':'Insert above'
+        'JsonDomHelper.element.above':'Insert above',
+        'JsonDomHelper.edit.template':'Edit template',
+        'JsonDomHelper.copy.element':'Copy element'
     }
 }
