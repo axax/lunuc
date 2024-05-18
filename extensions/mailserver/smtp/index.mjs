@@ -7,6 +7,7 @@ import {getFolderForMailAccount, getMailAccountByEmail, getMailAccountFromMailDa
 import nodemailerDirectTransport from 'nodemailer-direct-transport'
 import nodemailer from 'nodemailer'
 import {isTemporarilyBlocked} from '../../../server/util/requestBlocker.mjs'
+import Util from '../../../api/util/index.mjs'
 
 /*
 // open port 25 and 587 on your server
@@ -62,14 +63,24 @@ const startListening = async (db, context) => {
                 const mailAccount = await getMailAccountByEmail(db, auth.username)
 
                 if (!mailAccount) {
-                    return callback(null, {
+                    return callback(new Error('Invalid username or password'))
+                    /*return callback(null, {
                         data: {
                             status: "401",
                             schemes: "bearer mac",
                             scope: "my_smtp_access_scope_name",
                         },
-                    })
+                    })*/
                 }
+
+
+                if (auth.method === 'LOGIN') {
+                    if (!Util.compareWithHashedPassword(auth.password, mailAccount.password)) {
+                        return callback(new Error('Invalid username or password'))
+                    }
+                }
+
+
                 /*   if (auth.method !== "XOAUTH2") {
                        // should never occur in this case as only XOAUTH2 is allowed
                        return callback(new Error("Expecting XOAUTH2"));
@@ -117,6 +128,31 @@ const startListening = async (db, context) => {
                      return callback(new Error(`Mail account ${session.user} doesen't exist`))
                  }*/
 
+             /*   { address: 'simon@simra.ch', args: false } {
+                      id: 'gcvbczrb6unqhl7j',
+                       secure: true,
+                       localAddress: '144.91.119.30',
+                       localPort: 587,
+                       remoteAddress: '93.33.15.128',
+                       remotePort: 50451,
+                       clientHostname: '93-33-15-128.ip42.fastwebnet.it',
+                       openingCommand: 'EHLO',
+                       hostNameAppearsAs: 'smtpclient.apple',
+                       xClient: Map(0) {},
+                      xForward: Map(0) {},
+                      transmissionType: 'ESMTPSA',
+                      tlsOptions: {
+                        name: 'ECDHE-RSA-AES128-GCM-SHA256',
+                    3]:     standardName: 'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256',
+                    3]:     version: 'TLSv1.2'
+                      },
+                      envelope: { mailFrom: false, rcptTo: [] },
+                      transaction: 1,
+                    3]:   servername: 'mail.simra.ch',
+                    3]:   user: 'simon@simra.ch'
+                    }
+*/
+
                 return callback(); // Accept the address
             },
             onRcptTo: async (address, session, callback) => {
@@ -145,6 +181,7 @@ const startListening = async (db, context) => {
             onData: (stream, session, callback) => {
                 const fromMail = session?.envelope?.mailFrom?.address
                 console.log('SMTP onData', fromMail, session)
+
                 //stream.pipe(process.stdout); // print message to console
                 stream.on("end", () => {
                     let err;
