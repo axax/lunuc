@@ -65,7 +65,6 @@ import {
     CAPABILITY_MANAGE_COLLECTION
 } from '../../util/capabilities.mjs'
 import SelectCollection from '../components/types/SelectCollection'
-import {matchExpr} from "../util/json.mjs";
 
 const CodeEditor = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
