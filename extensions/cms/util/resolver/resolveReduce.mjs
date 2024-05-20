@@ -307,7 +307,6 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
                         }
 
                         const filter = checkFilter(re.loop.filter, value, i)
-
                         if (filter) {
                             if(filter.or && loopFacet){
                                 createFacets(loopFacet, value[i])
@@ -356,6 +355,7 @@ const checkFilter = (filters, value, key) => {
                         keys = Object.keys(filter.search.fields)
 
 
+                    let hasMatch = false
                     for (let y = 0; y < keys.length; y++) {
                         const fieldKey = keys[y]
                         let valueToCheck
@@ -365,10 +365,13 @@ const checkFilter = (filters, value, key) => {
                             valueToCheck = value[key][fieldKey]
                         }
                         if (valueToCheck && re.test(valueToCheck)) {
-                            return false
+                            hasMatch = true
+                            break
                         }
                     }
-
+                    if(hasMatch){
+                        continue
+                    }
                     return filter
 
                 } else {
