@@ -6,15 +6,15 @@ class PrettyErrorMessage extends React.Component {
     }
 
     render() {
-        const {e,code,msg,offset} = this.props
+        const {e,code,msg,offset, maxLength} = this.props
         if( code && e ) {
-            return <span dangerouslySetInnerHTML={{__html: this.prettyErrorMessage(e, code, offset)}}/>
+            return <span dangerouslySetInnerHTML={{__html: this.prettyErrorMessage(e, code, offset, maxLength)}}/>
         }else{
             return <b><i>{msg || e.message}</i></b>
         }
     }
 
-    prettyErrorMessage = (e, code, offset=1) => {
+    prettyErrorMessage = (e, code, offset=1, maxLength) => {
         let lineNrStr, columnNrStr='0', errorMsg = '<pre style="margin-top:2rem">'
 
         if(e.message.indexOf('is not valid JSON')>0){
@@ -63,6 +63,10 @@ class PrettyErrorMessage extends React.Component {
                     if(columnNr>0 && str.length>100){
                         str = '...'+str.substring(columnNr-25, columnNr+25)+'...'
                     }
+                    if(maxLength){
+                        str = str.substring(0,maxLength)
+                    }
+                    console.log(maxLength,str)
                     errorMsg += `<i style="background:rgba(255,255,200,1);color:#000;font-size: 0.9rem">Line ${i - (offset-1)}: ${e.message}</i><br/><strong><i style="background:red;color:#fff">${str}</i></strong>\n`
                 } else {
                     errorMsg += str + '\n'

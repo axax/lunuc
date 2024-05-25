@@ -52,7 +52,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
         render() {
             const {keyValues, keyValueGlobals, loading, ...rest} = this.props
             if (keys) {
-                if (!_app_.user) {
+                if (!_app_.user.isAuthenticated) {
                     // fallback: load keyValues from localstore
                     this.keyValueMap = getKeyValuesFromLS()
                 } else if (keyValues) {
@@ -149,7 +149,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
             props: ({ownProps, mutate}) => ({
                 setKeyValue: ({key, value, server}) => {
                     if (!key) throw Error('Key is missing in setKeyValue')
-                    if (!_app_.user) {
+                    if (!_app_.user.isAuthenticated) {
                         return new Promise((res) => {
                             setKeyValueToLS({key, value, server})
                             res()
@@ -249,7 +249,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
         graphql(gqlKeyValueDelete, {
             props: ({ownProps, mutate}) => ({
                 deleteKeyValueByKey: ({key}) => {
-                    if (!_app_.user) {
+                    if (!_app_.user.isAuthenticated) {
                         return new Promise((res) => {
                             setKeyValueToLS({key, value: null})
                             res()

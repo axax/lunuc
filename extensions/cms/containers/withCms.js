@@ -168,7 +168,7 @@ export default function (WrappedComponent) {
                 value: value && value.constructor !== String ? JSON.stringify(value) : value
             }
 
-            if (global || _app_.user) {
+            if (global || _app_.user.isAuthenticated) {
                 client.mutate({
                     mutation: global ? QUERY_SET_KEY_VALUE_GLOBAL : QUERY_SET_KEY_VALUE,
                     variables,

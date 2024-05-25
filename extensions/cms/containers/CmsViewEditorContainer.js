@@ -1086,7 +1086,7 @@ class CmsViewEditorContainer extends React.Component {
     handleCmsError(e, data) {
         _app_.dispatcher.addError({key: 'cmsError', duration: 15000, msg: data.code?<div>Error in <strong>{data.loc}</strong>: {data.slug}
                 {data.meta.text?<p><small>{data.meta.text}</small></p>:''}
-                <PrettyErrorMessage  e={e} code={data.code} offset={data.offset}/></div>:`${data.loc}: ${e.message} -> ${data.slug}`})
+                <PrettyErrorMessage  e={e} code={data.code} offset={data.offset} maxLength={100}/></div>:`${data.loc}: ${e.message} -> ${data.slug}`})
     }
 
     _keyValueMap = {}

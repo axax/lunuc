@@ -76,7 +76,7 @@ export const getGqlVariables = props => {
     }
 
     // add settings from local storage if user is not logged in
-    if (!_app_.user) {
+    if (!_app_.user.isAuthenticated) {
         const kv = !_app_.noStorage && localStorage.getItem(NO_SESSION_KEY_VALUES + '_SERVER')
         if (kv) {
             variables.nosession = kv

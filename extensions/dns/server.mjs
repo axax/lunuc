@@ -102,8 +102,11 @@ Hook.on('appready', async ({db, context}) => {
                         response.authorities = resolvedQuestion.authorities
                         response.answers = resolvedQuestion.answers
                         response.additionals = resolvedQuestion.additionals
-                        send(response)
-
+                        try {
+                            send(response)
+                        }catch (e){
+                            console.log(e, response)
+                        }
                         debugMessage(`DNS: resolved ${name} after ${new Date().getTime() - startTime}ms`)
                     }
 
