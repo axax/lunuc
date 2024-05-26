@@ -32,7 +32,7 @@ export default db => ({
     Query: {
         cmsPages: async ({limit, page, offset, filter, sort, _version}, {headers, context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            const fields = ['public', 'slug', 'hostRule', 'name', 'keyword', 'description', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'loadPageOptions', 'ssrStyle', 'uniqueStyle', 'publicEdit', 'compress', 'isTemplate','ownerGroup$[UserGroup]']
+            const fields = ['public', 'slug', 'hostRule', 'name', 'author','keyword', 'description', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'loadPageOptions', 'ssrStyle', 'uniqueStyle', 'publicEdit', 'compress', 'isTemplate','ownerGroup$[UserGroup]']
 
             if (filter) {
 
@@ -93,7 +93,7 @@ export default db => ({
 
             const {
                 _id, createdBy, template, script, style, resources, dataResolver, parseResolvedData, alwaysLoadAssets, loadPageOptions, ssrStyle, uniqueStyle, publicEdit, compress,
-                ssr, modifiedAt, urlSensitiv, name, keyword, description, serverScript, manual
+                ssr, modifiedAt, urlSensitiv, name, keyword, author, description, serverScript, manual
             } = cmsPages.results[0]
             const scope = {
                 ...createScopeForDataResolver(query, props),
@@ -171,7 +171,8 @@ export default db => ({
                 compress,
                 subscriptions,
                 urlSensitiv,
-                editable
+                editable,
+                author
             }
 
 

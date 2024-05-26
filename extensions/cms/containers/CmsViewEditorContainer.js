@@ -63,6 +63,7 @@ import CmsElement from '../components/CmsElement'
 import JsonDomHelper from '../components/JsonDomHelper'
 import CmsRelatedPages from '../components/CmsRelatedPages'
 import CmsPageOptions from '../components/CmsPageOptions'
+import CmsPageSeo from '../components/CmsPageSeo'
 import styled from '@emotion/styled'
 import PrettyErrorMessage from '../components/PrettyErrorMessage'
 import {useKeyValuesGlobal, setKeyValue} from '../../../client/util/keyvalue'
@@ -115,6 +116,7 @@ class CmsViewEditorContainer extends React.Component {
             urlSensitiv,
             name,
             keyword,
+            author,
             description,
             parseResolvedData,
             alwaysLoadAssets,
@@ -130,6 +132,7 @@ class CmsViewEditorContainer extends React.Component {
             slug,
             name,
             keyword,
+            author,
             description,
             template,
             resources,
@@ -293,6 +296,7 @@ class CmsViewEditorContainer extends React.Component {
             state.urlSensitiv !== this.state.urlSensitiv ||
             state.name !== this.state.name ||
             state.keyword !== this.state.keyword ||
+            state.author !== this.state.author ||
             state.description !== this.state.description ||
             state.compress !== this.state.compress ||
             state.simpleDialog !== this.state.simpleDialog ||
@@ -528,6 +532,17 @@ class CmsViewEditorContainer extends React.Component {
                 {!(EditorOptions.bottomNavigation>0) && <StyledBox>
 
 
+                    {canMangeCmsContent && <Expandable title={_t('CmsViewEditorContainer.seo')}
+                                                       disableGutters
+                                                       icon="google"
+                                                       onChange={this.handleSettingChange.bind(this, 'seoExpanded', true)}
+                                                       expanded={EditorPageOptions.seoExpanded}>
+
+                        <CmsPageSeo cmsPage={cmsPage}
+                                    values={this.state}
+                                    onChange={this.handleFlagChange}/>
+                    </Expandable>}
+
                     {canMangeCmsContent && <Expandable title={_t('CmsViewEditorContainer.settings')}
                                 disableGutters
                                 icon="displaySetting"
@@ -539,6 +554,8 @@ class CmsViewEditorContainer extends React.Component {
                                         onChange={this.handleFlagChange}
                                         canMangeCmsTemplate={canMangeCmsTemplate} />
                     </Expandable>}
+
+
 
                     {canMangeCmsContent && !loadingState && <Expandable title={_t('CmsViewEditorContainer.revisions')}
                                                   disableGutters
@@ -1345,7 +1362,7 @@ CmsViewEditorContainer.propTypes = {
 
 
 const CmsViewEditorContainerWithGql = compose(
-    graphql(`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$realSlug:String,$name:LocalizedStringInput,$keyword:LocalizedStringInput,$description:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$manual:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:String,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$loadPageOptions:Boolean,$ssrStyle:Boolean,$uniqueStyle:Boolean,$publicEdit:Boolean,$compress:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,realSlug:$realSlug,name:$name,keyword:$keyword,description:$description,script:$script,style:$style,serverScript:$serverScript,manual:$manual,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,loadPageOptions:$loadPageOptions,compress:$compress,ssrStyle:$ssrStyle,uniqueStyle:$uniqueStyle,publicEdit:$publicEdit,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug realSlug name{${config.LANGUAGES.join(' ')}} description{${config.LANGUAGES.join(' ')}} keyword{${config.LANGUAGES.join(' ')}} template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
+    graphql(`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$realSlug:String,$name:LocalizedStringInput,$author:String,$keyword:LocalizedStringInput,$description:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$manual:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:String,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$loadPageOptions:Boolean,$ssrStyle:Boolean,$uniqueStyle:Boolean,$publicEdit:Boolean,$compress:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,realSlug:$realSlug,name:$name,author:$author,keyword:$keyword,description:$description,script:$script,style:$style,serverScript:$serverScript,manual:$manual,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,loadPageOptions:$loadPageOptions,compress:$compress,ssrStyle:$ssrStyle,uniqueStyle:$uniqueStyle,publicEdit:$publicEdit,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug realSlug name{${config.LANGUAGES.join(' ')}} description{${config.LANGUAGES.join(' ')}} keyword{${config.LANGUAGES.join(' ')}} author template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, realSlug, ...rest}, cb) => {
 

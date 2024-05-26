@@ -161,46 +161,26 @@ export const prepareDataForUpdate = (typeName, data) => {
         if (k !== '_id' && k !== '_version' && data[k] !== undefined) {
             if (data[k] && data[k].constructor === Object) {
 
-                /* "report.$.contratos.URLPDF": {
-                     $cond: {
-                         if: {
-                             $eq: ["$report.$.contratos.NumContrato", `${param[1]}`]
-                         },
-                         then: `${param[2]}`,
-                     else: null
-                     }
-                 }
-                 o[k]
-*/
-                /* o[k] = {
-                      $ifNull:
-                          [
-                              '$'+k,
-                              {...data[k]},
-                              { $mergeObjects: [ '$'+k, {...data[k]} ] }
-                          ]
-                  }*
 
-                  /*updateStages.push({ $set: { [k]: {
-                              $ifNull:
-                                  [
-                                      '$'+k,
-                                      {}
-                                  ]
-                          } } })*/
-
-                // rewrite to dot notation for partial update
+                // rewrite for partial update
+                let keyNotation = {}
                 Object.keys(data[k]).forEach(key => {
-                    o[k + '.' + key] = data[k][key]
+                    if(data[k][key]!==null) {
+                        keyNotation[key] = data[k][key]
+                    }
+                    //o[k + '.' + key] = data[k][key]
                 })
 
-                /* o[k] = {
-                     $mergeObjects: [
-                         `$${k}`,
-                         data[k]
-                     ]
-                 }*/
-
+                o[k] = {$cond: {
+                    if: {
+                        $or:[{$eq: [`$${k}`,null]},{$eq: [`$${k}`,'']}]
+                    },
+                    then: keyNotation,
+                    else: {$mergeObjects: [
+                        `$${k}`,
+                        keyNotation
+                    ]}
+                }}
 
             } else if (data[k] && fields[k] && fields[k].type === 'Object') {
                 // store as object
@@ -778,17 +758,17 @@ const GenericResolver = {
         if(options.returnDocument){
             updateOptions.returnDocument = options.returnDocument
 
-            const result = (await collection.findOneAndUpdate(params, {
+            const result = (await collection.findOneAndUpdate(params, [{
                     $set: dataSet
-                }, updateOptions))
+                }], updateOptions))
             if(!result){
                 throw new Error(_t('core.update.permission.error', context.lang, {name: collectionName}))
             }
             newData = result
         }else{
-            const result = (await collection.updateOne(params, {
+            const result = (await collection.updateOne(params, [{
                     $set: dataSet
-                }, updateOptions))
+                }], updateOptions))
 
             if (result.modifiedCount !== 1 && result.upsertedCount !== 1) {
                 throw new Error(_t('core.update.permission.error', context.lang, {name: collectionName}))

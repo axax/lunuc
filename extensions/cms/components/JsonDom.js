@@ -439,37 +439,36 @@ class JsonDom extends React.Component {
 
     checkMetaTags(props) {
         if (!props.dynamic && !props.editMode) {
-            ['description','keywords'].forEach(key=>{
+            ['description','keywords','author'].forEach(key=>{
                 const meta = document.head.querySelector(`meta[name=${key}]`)
                 if (!meta) {
                     let content = ''
                     if(props[key] && props[key][_app_.lang]){
                         content = props[key][_app_.lang]
                     }else if(key==='description') {
-                        const tags = document.body.querySelectorAll('h1,h2,h3,h4')
-                        for (let i = 0; i < tags.length; i++) {
-                            content += ' ' + tags[i].textContent.trim()
-                            if (content.indexOf('.', content.length - 1) === -1) {
-                                content += '.'
-                            }
-                            if (content.length > 150) {
-                                break
+                        const textLoop = (nodes) => {
+                            for (let i = 0; i < nodes.length; i++) {
+                                const node = nodes[i]
+                                if (node.nodeType === 3) {
+                                    const text = node.textContent.trim()
+                                    if(text){
+                                        content += ' ' + text
+                                        if (content.length > 150) {
+                                            break
+                                        }
+                                    }
+                                } else {
+                                    textLoop(node.childNodes)
+                                }
                             }
                         }
+                        textLoop(document.body.querySelectorAll('h1,h2,h3,h4'))
+                    }else{
+                        content = props[key]
                     }
-                    //console.log(content)
-                    //content = document.body.innerText.substring(0, 160).replace(/(\r\n|\n|\r)/gm, ' ').trim()
                     if (content) {
                         this.addMetaTag(key, content.trim())
-                    } /*else {
-                    const observer = new MutationObserver((mutations) => {
-                        observer.disconnect()
-                        setTimeout(()=> {
-                            this.checkMetaTags(props)
-                        },0)
-                    })
-                    observer.observe(document.body, {childList: true, subtree: true})
-                }*/
+                    }
                 }
             })
         }

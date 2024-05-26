@@ -87,6 +87,7 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
             ['slug',
                 'name',
                 'keyword',
+                'author',
                 'description',
                 'template',
                 'script',

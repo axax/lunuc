@@ -1,6 +1,5 @@
 import React from 'react'
 import {
-    TextField,
     SimpleSelect,
     SimpleSwitch
 } from 'ui/admin'
@@ -8,52 +7,9 @@ import {_t} from '../../../util/i18n.mjs'
 
 export default function CmsPageOptions(props){
 
-    const {onChange, cmsPage, values, canMangeCmsTemplate} = props
+    const {onChange, values, canMangeCmsTemplate} = props
 
     return <>
-        <TextField key="pageTitle"
-                   name="pageTitle"
-                   label={_t('CmsViewEditorContainer.pageTitle')}
-                   InputLabelProps={{
-                       shrink: true,
-                   }}
-                   onBlur={(e) => {
-                       let value = {...cmsPage.name, [_app_.lang]: e.target.value}
-                       onChange('name', null, value)
-                   }}
-                   sx={{ mt: 0, mb: 2 }}
-                   value={values.name ? values.name[_app_.lang] : ''}
-                   fullWidth={true}/>
-
-        <TextField key="pageKeywords"
-                   name="pageKeywords"
-                   label={_t('CmsViewEditorContainer.pageKeywords')}
-                   InputLabelProps={{
-                       shrink: true,
-                   }}
-                   onBlur={(e) => {
-                       let value = {...cmsPage.keyword, [_app_.lang]: e.target.value}
-                       onChange('keyword', null, value)
-                   }}
-                   sx={{ mt: 0, mb: 2 }}
-                   value={values.keyword ? values.keyword[_app_.lang] : ''}
-                   fullWidth={true}/>
-
-        <TextField key="pageDescription"
-                   name="pageDescription"
-                   label={_t('CmsViewEditorContainer.pageDescription')}
-                   InputLabelProps={{
-                       shrink: true,
-                   }}
-                   multiline={true}
-                   onChange={(e) => {
-                       let value = {...cmsPage.description, [_app_.lang]: e.target.value}
-                       onChange('description', null, value)
-                   }}
-                   sx={{ mt: 0, mb: 2 }}
-                   value={values.description ? values.description[_app_.lang] : ''}
-                   fullWidth={true}/>
-
         {canMangeCmsTemplate ? <React.Fragment>
                 <SimpleSelect
                     fullWidth={true}

@@ -27,6 +27,13 @@
           "tab": "Allgemein"
         },
         {
+          "name": "author",
+          "label": "Author",
+          "index": 1,
+          "fullWidth": true,
+          "Tab": "Allgemein"
+        },
+        {
           "name": "keyword",
           "label": "Keywords",
           "localized": true,

@@ -201,7 +201,8 @@
         "Devices",
         "GridOn",
         "Replay",
-        "Language"
+        "Language",
+        "Google"
       ],
       "theme":{
         "colors":{
