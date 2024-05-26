@@ -443,7 +443,7 @@ class JsonDom extends React.Component {
                 const meta = document.head.querySelector(`meta[name=${key}]`)
                 if (!meta) {
                     let content = ''
-                    if(props[key] && props[key][_app_.lang]){
+                    if(props[key] && props[key].constructor === Object){
                         content = props[key][_app_.lang]
                     }else if(key==='description') {
                         const textLoop = (nodes) => {
