@@ -467,7 +467,7 @@ class JsonDom extends React.Component {
                         content = props[key]
                     }
                     if (content) {
-                        this.addMetaTag(key, content.trim())
+                        this.addMetaTag(key, content)
                     }
                 }
             })
