@@ -438,39 +438,49 @@ class JsonDom extends React.Component {
     }
 
     checkMetaTags(props) {
-        if (!props.dynamic && !props.editMode) {
-            ['description','keywords','author'].forEach(key=>{
-                const meta = document.head.querySelector(`meta[name=${key}]`)
-                if (!meta) {
-                    let content = ''
-                    if(props[key] && props[key].constructor === Object){
-                        content = props[key][_app_.lang]
-                    }else if(key==='description') {
-                        const textLoop = (nodes) => {
-                            for (let i = 0; i < nodes.length; i++) {
-                                const node = nodes[i]
-                                if (node.nodeType === 3) {
-                                    const text = node.textContent.trim()
-                                    if(text){
-                                        content += ' ' + text
-                                        if (content.length > 150) {
-                                            break
-                                        }
+        if(props.editMode){
+            return
+        }
+        const keys = ['keywords','author']
+        if(!props.dynamic){
+            keys.push('description')
+        }
+        for(let i = 0;i < keys.length;i++){
+            const key = keys[i],
+                value = props[key] || ''
+
+            if((value || key==='description') && !document.head.querySelector(`meta[name=${key}]`)){
+                let content = ''
+                if(value.constructor === Object){
+                    content = value[_app_.lang]
+                }else if(key==='description') {
+                    const textLoop = (nodes) => {
+                        for (let i = 0; i < nodes.length; i++) {
+                            const node = nodes[i]
+                            if (node.nodeType === 3) {
+                                const text = node.textContent.trim()
+                                if(text){
+                                    if(content){
+                                        content += ' '
                                     }
-                                } else {
-                                    textLoop(node.childNodes)
+                                    content += text
+                                    if (content.length > 150) {
+                                        break
+                                    }
                                 }
+                            } else {
+                                textLoop(node.childNodes)
                             }
                         }
-                        textLoop(document.body.querySelectorAll('h1,h2,h3,h4'))
-                    }else{
-                        content = props[key]
                     }
-                    if (content) {
-                        this.addMetaTag(key, content)
-                    }
+                    textLoop(document.body.querySelectorAll('h1,h2,h3,h4'))
+                }else{
+                    content = value
                 }
-            })
+                if (content) {
+                    this.addMetaTag(key, content)
+                }
+            }
         }
     }
 
