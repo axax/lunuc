@@ -588,12 +588,12 @@ const startListening = async (db, context) => {
                 console.log(`imap process message with uid ${message.uid}`)
 
                 if (options.messages.indexOf(message.uid) < 0) {
-                    console.log(`imap skip ${message.uid}`, options)
+                    console.log(`imap skip ${message.uid}`)
                     return setImmediate(processMessage)
                 }
 
                 if (options.changedSince && message.modseq <= options.changedSince) {
-                    console.log(`imap changedSince skip ${message.uid}`, options)
+                    console.log(`imap changedSince skip ${message.uid}`)
                     return setImmediate(processMessage)
                 }
                 const messageData = JSON.parse(JSON.stringify(message.data))
