@@ -54,12 +54,16 @@ export default db => ({
 
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
 
-            const allGenericData = []
-          /*  const res = (await db.collection('GenericData').find({}).toArray())
+            const startTime = new Date().getTime()
+  /*          const allGenericData = []
+            const res = (await db.collection('GenericData').find({}).toArray())
 
             res.forEach(item => {
                 allGenericData.push({data: JSON.stringify(item.data), _id: item._id})
-            })*/
+            })
+            console.log(`findReferencesForMedia time to load data ${new Date().getTime()-startTime}ms`)*/
+
+
 
 
             const allCollections = await db.listCollections().toArray()
@@ -104,7 +108,8 @@ export default db => ({
                 'SmsLog',
                 'MailAccountMessage',
                 'MailAccount',
-                'MailAccountFolder'
+                'MailAccountFolder',
+                'DnsHostGroup'
             ]
 
             const collectionsToSearchIn = []
@@ -149,6 +154,7 @@ export default db => ({
                 db.collection('Media').updateOne({_id: new ObjectId(_id)}, {$set})
 
             }
+            console.log(`findReferencesForMedia ended after ${new Date().getTime()-startTime}ms`)
             return {status: `{"items":${JSON.stringify(checkedItems)}}`}
         }
     }

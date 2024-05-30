@@ -35,6 +35,10 @@ const registerCronJobs = async (db) => {
             console.log(`register cronjob ${cronJob.name}`)
             const task = cron.schedule(cronJob.expression, () => {
 
+                console.log('_________________________________________')
+                console.log('Run CronJob: ' +cronJob.name)
+                console.log('_________________________________________')
+
                 const context = {lang: 'en', id: cronJob.createdBy, username: 'unknown'}
 
                 processCronJobQueue({

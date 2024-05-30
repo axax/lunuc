@@ -74,7 +74,11 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
                 const sort = re.sort[0]
                 if (sort.desc) {
                     if(sort.localCompare){
-                        value.sort((a, b) => (b[sort.key] || '').localeCompare(a[sort.key]))
+                        if(sort.path){
+                            value.sort((a, b) => (propertyByPath(sort.path, b) || '').localeCompare(propertyByPath(sort.path, a)))
+                        }else {
+                            value.sort((a, b) => (b[sort.key] || '').localeCompare(a[sort.key]))
+                        }
                     }else {
                         value.sort((a, b) => {
                             if (a[sort.key] > b[sort.key])
@@ -86,7 +90,11 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
                     }
                 } else {
                     if(sort.localCompare){
-                        value.sort((a, b) => (a[sort.key] || '').localeCompare(b[sort.key]))
+                        if(sort.path){
+                            value.sort((a, b) => (propertyByPath(sort.path, a) || '').localeCompare(propertyByPath(sort.path, b)))
+                        }else {
+                            value.sort((a, b) => (a[sort.key] || '').localeCompare(b[sort.key]))
+                        }
                     }else {
                         value.sort((a, b) => {
                             if (a[sort.key] < b[sort.key])
