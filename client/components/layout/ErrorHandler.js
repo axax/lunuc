@@ -18,6 +18,12 @@ function ErrorHandler({snackbar}) {
         return null
     const key = Object.keys(messages)[0], msg = messages[key].msg
 
+    // messages to be ignored
+    if(msg.constructor === String && msg.indexOf('user aborted a request')>=0 ||
+        msg.indexOf('signal is aborted without reason')>=0){
+        return null
+    }
+
     if( snackbar ){
         return <Snackbar
             open={true}
@@ -42,11 +48,6 @@ function ErrorHandler({snackbar}) {
         />
     }
 
-    // messages to be ignored
-    if(msg.constructor === String && msg.indexOf('user aborted a request')>=0 ||
-        msg.indexOf('signal is aborted without reason')>=0){
-        return null
-    }
     return <SimpleDialog open={true} onClose={()=>{
             handleDialogClose(key)
         }}

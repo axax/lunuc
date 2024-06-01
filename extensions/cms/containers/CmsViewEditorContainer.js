@@ -1413,6 +1413,10 @@ const CmsViewEditorContainerWithGql = compose(
                                 newData.subscriptions = updateCmsPage.subscriptions
                             }
                             client.writeQuery({query: getCmsPageQuery(ownProps), variables, data: {...data, cmsPage: newData}})
+                            if(!ownProps.dynamic){
+                                // clear caches for dynamic use
+                                client.clearCacheWith({start:getCmsPageQuery({dynamic:true}),contain:`"slug":"${ownProps.slug}"`})
+                            }
                         }
                         if (cb) {
                             cb()

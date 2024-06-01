@@ -126,7 +126,7 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
 
         console.log(`url fetched ${urlToFetch} (statusCode ${statusCode}} in ${new Date().getTime() - startTime}ms`)
 
-        page.close()
+        await page.close()
 
         /*try {
 

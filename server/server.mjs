@@ -479,17 +479,11 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                         // only allow download if valid jwt token is set
                         const backup_dir = path.join(ROOT_DIR, BACKUP_DIR)
                         const filename = path.join(backup_dir, urlPathname.substring(BACKUP_URL.length))
-                        fs.exists(filename, (exists) => {
-                            if (exists) {
-                                const fileStream = fs.createReadStream(filename)
-                                const headerExtra = {}
-                                res.writeHead(200, {...headerExtra})
-                                fileStream.pipe(res)
-                            } else {
-                                console.log('not exists: ' + filename)
-                                sendError(res, 404)
-                            }
-                        })
+
+                        if(!await sendFileFromDir(req, res, {filename: filename,
+                            neverCompress:true, headers: {}, parsedUrl})){
+                            sendError(res, 404)
+                        }
                     } else {
                         sendError(res, 403)
                     }
@@ -617,7 +611,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                         }
 
                     } else {
-                        sendIndexFile({req, res, remoteAddress, urlPathname, hostrule, host, parsedUrl})
+                        await sendIndexFile({req, res, remoteAddress, urlPathname, hostrule, host, parsedUrl})
                     }
                 }
             }

@@ -363,6 +363,13 @@ export const client = {
     query: ({query, variables, fetchPolicy, timeout, id}) => {
         return finalFetch({id, timeout, query, variables, fetchPolicy})
     },
+    clearCacheWith:({start, contain}) =>{
+        Object.keys(CACHE_QUERIES).forEach(key=>{
+            if(key.startsWith(start) && key.indexOf(contain)>=0){
+                delete CACHE_QUERIES[key]
+            }
+        })
+    },
     writeQuery: ({query, variables, data, cacheKey}) => {
         if (data &&
             query &&
