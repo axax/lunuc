@@ -207,6 +207,11 @@ const startListening = async (db, context) => {
                         for (const rcpt of data.to.value) {
                             console.log('onData send', rcpt, data)
                             try {
+                                console.log('send email',{
+                                    ...data,
+                                    to: rcpt.address,
+                                    from: fromMail
+                                })
                                 /*await transporterResult.sendMail({
                                     ...data,
                                     to: rcpt.address,
@@ -278,6 +283,7 @@ const startListening = async (db, context) => {
 
                                     try {
                                         //await transporterResult.sendMail(message)
+                                        console.log('forward email',message)
                                     }catch (e){
                                         console.log(`error forward email to ${rcpt.address} from ${mailAccount.username}@${mailAccount.host}`)
                                         console.log(e)
