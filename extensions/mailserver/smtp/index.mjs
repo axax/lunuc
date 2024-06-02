@@ -81,7 +81,7 @@ const startListening = async (db, context) => {
                     }
                 }else if (auth.method === 'CRAM-MD5'){
                     // it is not really working (only with the hashed password) as we don't store the password unencrypted
-                    if (!auth.validatePassword(auth.password)) {
+                    if (!auth.password || !auth.validatePassword(auth.password)) {
                         return callback(new Error(generalInvalidLoginMessage));
                     }
                 }else{
