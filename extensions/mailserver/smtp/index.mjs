@@ -61,9 +61,10 @@ const startListening = async (db, context) => {
 
                 console.log('SMTP onAuth', auth, session)
                 const mailAccount = await getMailAccountByEmail(db, auth.username)
+                const generalInvalidLoginMessage = 'Invalid username or password'
 
                 if (!mailAccount) {
-                    return callback(new Error('Invalid username or password'))
+                    return callback(new Error(generalInvalidLoginMessage))
                     /*return callback(null, {
                         data: {
                             status: "401",
@@ -76,8 +77,15 @@ const startListening = async (db, context) => {
 
                 if (auth.method === 'LOGIN') {
                     if (!Util.compareWithHashedPassword(auth.password, mailAccount.password)) {
-                        return callback(new Error('Invalid username or password'))
+                        return callback(new Error(generalInvalidLoginMessage))
                     }
+                }else if (auth.method === 'CRAM-MD5'){
+                    // it is not really working (only with the hashed password) as we don't store the password unencrypted
+                    if (!auth.validatePassword(auth.password)) {
+                        return callback(new Error(generalInvalidLoginMessage));
+                    }
+                }else{
+                    return callback(new Error(`Authentication needed or auth method ${auth.method} - ${auth.accessToken} invalid`))
                 }
 
 
@@ -94,6 +102,7 @@ const startListening = async (db, context) => {
                            },
                        });
                    }*/
+
                 callback(null, {user: auth.username}); // where 123 is the user id or similar property
             },
             onConnect(session, callback) {
