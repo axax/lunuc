@@ -32,7 +32,7 @@ const startListening = async (db, context) => {
             logger: false,
             secure: false,
             banner: 'Welcome to Lunuc SMTP Server',
-            authMethods: ['PLAIN', 'LOGIN', 'CRAM-MD5', 'XOAUTH2'],
+            authMethods: ['PLAIN', 'LOGIN', /*'CRAM-MD5','XOAUTH2'*/ ],
             useXClient: true,
             hidePIPELINING: true,
             useXForward: true,
@@ -59,7 +59,7 @@ const startListening = async (db, context) => {
             },
             onAuth: async (auth, session, callback) => {
 
-                console.log('SMTP onAuth', auth, session)
+                console.log('SMTP onAuth', {...auth,password:'*****'}, session)
                 const mailAccount = await getMailAccountByEmail(db, auth.username)
                 const generalInvalidLoginMessage = 'Invalid username or password'
 
@@ -75,7 +75,7 @@ const startListening = async (db, context) => {
                 }
 
 
-                if (auth.method === 'LOGIN') {
+                if (auth.method === 'LOGIN' || auth.method === 'PLAIN') {
                     if (!Util.compareWithHashedPassword(auth.password, mailAccount.password)) {
                         return callback(new Error(generalInvalidLoginMessage))
                     }
