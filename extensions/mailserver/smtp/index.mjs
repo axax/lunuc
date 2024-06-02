@@ -216,16 +216,11 @@ const startListening = async (db, context) => {
                         for (const rcpt of data.to.value) {
                             console.log('onData send', rcpt, data)
                             try {
-                                console.log('send email',{
+                                await transporterResult.sendMail({
                                     ...data,
                                     to: rcpt.address,
                                     from: fromMail
                                 })
-                                /*await transporterResult.sendMail({
-                                    ...data,
-                                    to: rcpt.address,
-                                    from: fromMail
-                                })*/
                             }catch (e){
                                 console.log(`error sending email to ${rcpt.address} from ${fromMail}`, e)
                             }
@@ -272,7 +267,7 @@ const startListening = async (db, context) => {
                                 let replyTo = data?.from?.value && data.from.value.length > 0?data.from.value[0]:{}
 
                                 for (const rcpt of recipients) {
-                                    console.log('onData send redirect', rcpt, replyTo)
+                                    console.log('onData send forward', rcpt, replyTo)
 
                                     const message = {
                                        /* cc: data.cc,
@@ -291,8 +286,7 @@ const startListening = async (db, context) => {
                                     }
 
                                     try {
-                                        //await transporterResult.sendMail(message)
-                                        console.log('forward email',message)
+                                        await transporterResult.sendMail(message)
                                     }catch (e){
                                         console.log(`error forward email to ${rcpt.address} from ${mailAccount.username}@${mailAccount.host}`)
                                         console.log(e)
