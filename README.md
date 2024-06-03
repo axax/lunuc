@@ -4,8 +4,6 @@
 
 __A full-stack setup to build progressive web apps.__
 
-For more information and examples, go to https://www.lunuc.com/
-
 *Here is a list with the main features:*
 * React for UI
 * Declarative routing

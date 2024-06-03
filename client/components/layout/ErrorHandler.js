@@ -19,8 +19,8 @@ function ErrorHandler({snackbar}) {
     const key = Object.keys(messages)[0], msg = messages[key].msg
 
     // messages to be ignored
-    if(msg.constructor === String && msg.indexOf('user aborted a request')>=0 ||
-        msg.indexOf('signal is aborted without reason')>=0){
+    if(msg && msg.constructor === String && (msg.indexOf('user aborted a request')>=0 ||
+        msg.indexOf('signal is aborted without reason')>=0)){
         return null
     }
 

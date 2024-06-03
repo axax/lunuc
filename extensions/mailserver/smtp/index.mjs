@@ -20,6 +20,9 @@ mail.domain.xx	IN	A	144.91.119.30
 domain.xx	IN	MX	10  mail.domain.xx
 domain.xx	IN	TXT	"v=spf1 ip4:144.91.119.30 -all"
 
+// reverse dns
+add Reverse-DNS (PTR-Record) -> service provider
+
  */
 
 let serverPorts = {}
@@ -80,7 +83,7 @@ const startListening = async (db, context) => {
                         return callback(new Error(generalInvalidLoginMessage))
                     }
                 }else if (auth.method === 'CRAM-MD5'){
-                    // it is not really working (only with the hashed password) as we don't store the password unencrypted
+                    // it is not really working as we don't want to store the password unencrypted
                     if (!auth.password || !auth.validatePassword(auth.password)) {
                         return callback(new Error(generalInvalidLoginMessage));
                     }
