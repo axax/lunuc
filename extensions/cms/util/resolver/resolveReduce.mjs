@@ -181,7 +181,11 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
                                 if(re.override){
                                     currentData[key] = lookedupData[key]
                                 }else if(re.extend.constructor===Object && re.extend.fields && re.extend.fields.indexOf(key)>=0){
-                                    currentData[key] = lookedupData[key]
+                                    if(currentData[key].constructor === Array){
+                                        currentData[key].push(...lookedupData[key])
+                                    }else {
+                                        currentData[key] = lookedupData[key]
+                                    }
                                 }
                             }else{
                                 currentData[key] = lookedupData[key]
