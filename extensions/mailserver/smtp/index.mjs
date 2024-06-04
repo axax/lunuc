@@ -275,10 +275,10 @@ const startListening = async (db, context) => {
                                     const message = {
                                        /* cc: data.cc,
                                         bcc: data.bcc,*/
-                                        envelope: {
+                                        /*envelope: {
                                             from: `<${replyTo.address}>`,
                                             to: rcpt
-                                        },
+                                        },*/
                                         inReplyTo: data.messageId,
                                         replyTo: replyTo.address,
                                         from: `${mailAccount.username}@${mailAccount.host}`,
