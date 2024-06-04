@@ -81,6 +81,9 @@ http://localhost:49160/
 `sudo node -v`
 `nvm install 18.16.0`
 
+##### Find location of nodejs
+`which node`
+
 ##### Install nvm
 `apt install curl`
 `curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | bash`
