@@ -259,7 +259,7 @@ const startListening = async (db, context) => {
 
                                 // send email
                                 const transporter = nodemailerDirectTransport({
-                                    name: session.servername
+                                    name: `mail.${mailAccount.host}`,
                                 })
 
                                 const transporterResult = nodemailer.createTransport(transporter)
@@ -279,6 +279,7 @@ const startListening = async (db, context) => {
                                             from: `<${replyTo.address}>`,
                                             to: rcpt
                                         },
+                                        inReplyTo: data.messageId,
                                         replyTo: replyTo.address,
                                         from: `${mailAccount.username}@${mailAccount.host}`,
                                         to: rcpt,
