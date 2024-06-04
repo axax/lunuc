@@ -30,7 +30,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
     const resolvedData = {_meta: {}}, subscriptions = []
 
     if (dataResolver && dataResolver.trim() !== '') {
-        const debugInfo = {}
+
         try {
             let segments = JSON.parse(dataResolver),
                 addDataResolverSubscription = false
@@ -83,6 +83,8 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                 if (segment.if === false || segment.if === 'false') {
                     continue
                 }
+                const debugLog = []
+                const startTimeSegment = new Date().getTime()
 
 
                 if (segment.access) {
@@ -110,7 +112,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     })
                 } else if (segment.t) {
 
-                    await typeResolver({segment, resolvedData, scope, db, req, context, subscriptions, debugInfo})
+                    await typeResolver({segment, resolvedData, scope, db, req, context, subscriptions})
 
                 } else if (segment.request) {
                     addDataResolverSubscription = await resolveRequest(segment, resolvedData, context, addDataResolverSubscription)
@@ -120,7 +122,6 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     resolveTranslations(resolvedData, segment, context)
 
                 } else if (segment['eval']) {
-                    debugInfo.message = ' in eval'
                     try {
                         const tpl = new Function('const {' + Object.keys(scope).join(',') + '} = this.scope; const {data} = this;' + segment.eval)
                         tpl.call({data: resolvedData, scope, context})
@@ -130,7 +131,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     }
                 } else if (segment.reduce) {
                     try {
-                        resolveReduce(segment.reduce, resolvedData)
+                        resolveReduce(segment.reduce, resolvedData, resolvedData, {debugLog})
                     } catch (e) {
                         console.warn(`segment ${segment.key} can not be reduced`, e)
                     }
@@ -277,7 +278,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                 }
 
                 if(segment.debug){
-                    resolvedData[segment.debug] = {totalTime:new Date().getTime() - startTime}
+                    resolvedData[segment.debug] = {totalTime:new Date().getTime() - startTimeSegment, log:debugLog}
                 }
             }
             delete resolvedData._data
@@ -291,7 +292,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
             }
         } catch (e) {
             console.log(e)
-            resolvedData.error = e.message + ' -> scope=' + JSON.stringify(scope) + debugInfo.message
+            resolvedData.error = e.message + ' -> scope=' + JSON.stringify(scope)
         }
 
     }

@@ -30,7 +30,7 @@ const createFacets = (facets, data, beforeFilter) => {
                     }
 
                     let arr = data[facetKey]
-                    if (arr.constructor !== Array) {
+                    if (!arr || arr.constructor !== Array) {
                         arr = [arr]
                     }
 
@@ -56,17 +56,26 @@ const isNotFalse = ($is)=>{
     return $is !== false && $is !== 'false'
 }
 
+const addToArray = (newArray, value, options)=>{
+    if(options.key){
+        if(options.duplicates || !newArray.includes(value[options.key])){
+            newArray.push(value[options.key])
+        }
+    }else if(options.duplicates || !newArray.includes(value)){
+        newArray.push(value)
+    }
+}
+
 /*
 Version 1
 Takes a data structure and converts it or extracts specific data from it.
  */
-export const resolveReduce = (reducePipe, rootData, currentData) => {
-    if (!currentData) {
-        currentData = rootData
-    }
+export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, depth=0}) => {
 
-    reducePipe.forEach(re => {
+    for(let pipeIndex = 0 ; pipeIndex<reducePipe.length;pipeIndex++){
+        const re = reducePipe[pipeIndex]
         if (isNotFalse(re.$is)) {
+            const debugInfo = {index: pipeIndex, step: re, startTime: new Date().getTime()}
 
             if (re.sort) {
                 const value = propertyByPath(re.path, currentData, '.', re.assign)
@@ -203,6 +212,7 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
                 } else {
                     setPropertyByPath(lookedupData, re.path, currentData)
                 }
+
             } else if (re.random) {
                 let value = propertyByPath(re.path, currentData, '.', false)
                 const picks = []
@@ -230,6 +240,7 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
                             if (getKey === null || getKey === undefined) {
                                 getKey = sget
                             }
+
                             if(!re.ignoreNull || value[getKey] != null){
                                 aValue.push(value[getKey])
                             }
@@ -262,6 +273,7 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
                     }
                 } else {
                     if(re.toArray){
+                        const toArrayStart = new Date().getTime()
                         if(!rootData[re.key]){
                             rootData[re.key] = []
                         }
@@ -275,83 +287,97 @@ export const resolveReduce = (reducePipe, rootData, currentData) => {
                         }else if(re.duplicates || rootData[re.key].indexOf(value)<0){
                             rootData[re.key].push(value)
                         }
+                        debugInfo.toArrayTime = new Date().getTime()-toArrayStart
+
                     }else {
                         rootData[re.key] = value
                     }
                 }
             } else if (re.loop) {
                 let value = propertyByPath(re.path, currentData, '.', re.assign),
-                    loopFacet
-
+                    loopFacet, newArray = []
                 if(re.loop.facets && isNotFalse(re.loop.facets.$is)){
                     loopFacet = propertyByPath(re.loop.facets.path, rootData)
                 }
-                if (value.constructor === Object) {
-                    Object.keys(value).forEach(key => {
-                        if (loopFacet) {
-                            createFacets(loopFacet, value[key], true)
+
+                let total = 0
+
+                const inLoop = (key, isObject) =>{
+                    if (loopFacet) {
+                        createFacets(loopFacet, value[key], true)
+                    }
+                    const filter = checkFilter(re.loop.filter, value, key)
+                    if (filter) {
+
+                        if(filter.or && loopFacet){
+                            createFacets(loopFacet, value[key])
                         }
 
-                        const filter = checkFilter(re.loop.filter, value, key)
-                        if (filter) {
-
-                            if(filter.or && loopFacet){
-                                createFacets(loopFacet, value[i])
+                        if(re.assign) {
+                            if(isObject) {
+                                delete value[key]
+                            }else{
+                                value.splice(key, 1)
                             }
-                            return
                         }
-
+                    } else {
+                        total++
                         if (re.loop.reduce) {
+                            // not recommended tue to performance
                             value[key] = re.assign ? assignIfObjectOrArray(value[key]) : value[key]
-                            resolveReduce(re.loop.reduce, rootData, value[key])
+                            resolveReduce(re.loop.reduce, rootData, value[key], {debugLog, depth: depth + 1})
                         }
 
                         if (loopFacet) {
                             createFacets(loopFacet, value[key])
                         }
-                    })
 
-                } else if (value.constructor === Array) {
-                    for (let i = value.length - 1; i >= 0; i--) {
-
-                        if (loopFacet) {
-                            createFacets(loopFacet, value[i], true)
+                        if(re.loop.toArray) {
+                            addToArray(newArray, value[key], re.loop.toArray)
                         }
-
-                        const filter = checkFilter(re.loop.filter, value, i)
-                        if (filter) {
-                            if(filter.or && loopFacet){
-                                createFacets(loopFacet, value[i])
-                            }
-                            value.splice(i, 1)
-                        }else {
-                            if (re.loop.reduce) {
-                                value[i] = re.assign ? assignIfObjectOrArray(value[i]) : value[i]
-                                resolveReduce(re.loop.reduce, rootData, value[i])
-                            }
-                            if (loopFacet) {
-                                createFacets(loopFacet, value[i])
-                            }
-                        }
-                    }
-                    if(re.loop.total){
-                        setPropertyByPath(value.length, re.loop.total.path, rootData)
                     }
                 }
+
+
+                if (value.constructor === Object) {
+                    for(const key in value){
+                        inLoop(key, true)
+                    }
+                } else if (value.constructor === Array) {
+                    for (let i = value.length - 1; i >= 0; i--) {
+                        inLoop(i)
+                    }
+                }
+
+                if(re.loop.total){
+                    setPropertyByPath(total, re.loop.total.path, rootData)
+                }
+
+                if(re.loop.toArray){
+                    setPropertyByPath(newArray, re.loop.toArray.pathTo, rootData)
+                }
+
             } else if (re.reduce) {
                 const arr = propertyByPath(re.path, currentData)
-                resolveReduce(re.reduce, rootData, arr)
+                resolveReduce(re.reduce, rootData, arr, {debugLog, depth: depth + 1})
             } else if (re.limit) {
                 let value = propertyByPath(re.path, currentData, '.', re.assign)
-                value.length = re.limit
+                if(value.length>re.limit) {
+                    value.length = re.limit
+                }
             }
             if (re.remove) {
                 const parentPath = re.path.substring(0, re.path.lastIndexOf('.'))
                 const ob = propertyByPath(parentPath, currentData)
                 delete ob[re.path.substring(re.path.lastIndexOf('.') + 1)]
             }
+
+            if(depth<1) {
+                debugInfo.time = new Date().getTime() - debugInfo.startTime
+                debugLog.push(debugInfo)
+            }
         }
-    })
+    }
 }
 
 

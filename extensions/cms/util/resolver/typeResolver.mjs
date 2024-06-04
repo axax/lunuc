@@ -1,7 +1,7 @@
 import Util from 'api/util/index.mjs'
 import GenericResolver from 'api/resolver/generic/genericResolver.mjs'
 
-export const typeResolver = async ({segment, resolvedData, scope, db, req, context, subscriptions, debugInfo}) => {
+export const typeResolver = async ({segment, resolvedData, scope, db, req, context, subscriptions}) => {
     const {t, f, l, o, g, p, d, s, $if, cache, includeCount, resultFilter, ...other} = segment
     /*
      f = filter for the query
@@ -58,7 +58,6 @@ export const typeResolver = async ({segment, resolvedData, scope, db, req, conte
     } else {
         match = {}
     }
-    debugInfo.message = ' type=' + type
     const result = await GenericResolver.entities(db, {headers: req.headers, context}, type, fields, {
         filter: f,
         resultFilter,
@@ -74,7 +73,6 @@ export const typeResolver = async ({segment, resolvedData, scope, db, req, conte
         postConvert: false,
         ...other,
     })
-    debugInfo.message += ' result=true'
 
     resolvedData[segment.key || type] = result
 }
