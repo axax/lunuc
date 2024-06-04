@@ -15,15 +15,17 @@ const createServer = (opts, handler) => {
 
             if (buffer[0] === 22) {
                 proxy = server.https
-            } else /*if (32 < byte && byte < 127)*/ {
+            } else if (32 < byte && byte < 127) {
                 proxy = server.http
             }
 
-            // Push the buffer back onto the front of the data stream
-            socket.unshift(buffer)
+            if(proxy) {
+                // Push the buffer back onto the front of the data stream
+                socket.unshift(buffer)
 
-            // Emit the socket to the HTTP(s) server
-            proxy.emit('connection', socket)
+                // Emit the socket to the HTTP(s) server
+                proxy.emit('connection', socket)
+            }
 
             // As of NodeJS 10.x the socket must be
             // resumed asynchronously or the socket
