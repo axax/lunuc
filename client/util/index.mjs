@@ -172,6 +172,14 @@ const Util = {
                 if (options.removeUndefined) {
                     delete obj[prop]
                 }
+            }else if(obj[prop] === 0){
+                if (options.removeZero) {
+                    delete obj[prop]
+                }
+            }else if(obj[prop] === ''){
+                if (options.removeEmpty) {
+                    delete obj[prop]
+                }
             } else if (obj[prop] !== null) {
                 if (obj[prop].constructor === Array) {
                     if (options.emptyArray && obj[prop].length === 0) {
