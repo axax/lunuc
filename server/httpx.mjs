@@ -12,8 +12,8 @@ const createServer = (opts, handler) => {
             socket.pause()
             // Determine if this is an HTTP(s) request
             let proxy
-
-            if (buffer[0] === 22) {
+            const byte = buffer[0]
+            if (byte === 22) {
                 proxy = server.https
             } else if (32 < byte && byte < 127) {
                 proxy = server.http
