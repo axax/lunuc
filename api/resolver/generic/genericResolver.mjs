@@ -149,12 +149,9 @@ async function resolveReferences(typeName, result, db, context) {
     }
 }
 
-
-
 export const prepareDataForUpdate = (typeName, data) => {
     //check if this field is a reference
     const fields = getFormFieldsByType(typeName)
-
     // clone object but without _id, _version and undefined property
     // null is when a refrence has been removed
     const dataSet = Object.keys(data).reduce((o, k) => {
@@ -166,7 +163,7 @@ export const prepareDataForUpdate = (typeName, data) => {
                 let keyNotation = {}
                 Object.keys(data[k]).forEach(key => {
                     if(data[k][key]!==null) {
-                        keyNotation[key] = data[k][key]
+                        keyNotation[key] = {$literal:data[k][key]}
                     }
                     //o[k + '.' + key] = data[k][key]
                 })
@@ -184,11 +181,11 @@ export const prepareDataForUpdate = (typeName, data) => {
 
             } else if (data[k] && fields[k] && fields[k].type === 'Object') {
                 // store as object
-                o[k] = JSON.parse(data[k])
+                o[k] = {$literal: JSON.parse(data[k])}
             } else if (fields[k] && fields[k].hash) {
-                o[k] = Util.hashPassword(data[k])
+                o[k] = {$literal:Util.hashPassword(data[k])}
             } else {
-                o[k] = data[k]
+                o[k] = {$literal:data[k]}
             }
         }
         return o
