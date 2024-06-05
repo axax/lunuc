@@ -23,6 +23,36 @@ Hook.on('schema', ({schemas}) => {
     schemas.push(schema)
 })
 
+const fromAnyToIdStrings = (any) => {
+    const ids = []
+
+    if(!any){
+        return ids
+    }
+
+    const addId = (idStringOrObject) => {
+        if (idStringOrObject) {
+            if (idStringOrObject.constructor === Object) {
+                if(idStringOrObject._id) {
+                    ids.push(idStringOrObject._id.toString())
+                }
+            } else if (idStringOrObject.constructor === String) {
+                const idTrimmed = idStringOrObject.trim()
+                if(idTrimmed) {
+                    ids.push(idTrimmed)
+                }
+            }
+        }
+    }
+
+    if(any.constructor === Array){
+        any.forEach(addId)
+    }else{
+        addId(any)
+    }
+
+    return ids
+}
 Hook.on('beforePubSub', async ({triggerName, payload, db, context}) => {
     if (triggerName === 'subscribeGenericData') {
         if (payload.subscribeGenericData.action === 'update' || payload.subscribeGenericData.action === 'create') {
@@ -43,23 +73,12 @@ Hook.on('beforePubSub', async ({triggerName, payload, db, context}) => {
                                 if (!jsonData) {
                                     jsonData = item.data.constructor === Object ? item.data : JSON.parse(item.data)
                                 }
-                                const ids = jsonData[field.name]
-                                if (ids) {
-                                    const idsStr = []
-                                    if (ids.constructor === Array) {
-                                        ids.forEach(id => {
-                                            if (id) {
-                                                if (id.constructor === Object) {
-                                                    idsStr.push(id._id)
-                                                } else {
-                                                    idsStr.push(id)
-                                                }
-                                            }
-                                        })
-                                    } else {
-                                        idsStr.push(ids)
-                                    }
-                                    console.log(`Resolve ids ${idsStr.join(',')}`)
+                                const idsStr =fromAnyToIdStrings(jsonData[field.name])
+
+
+                                if (idsStr.length>0) {
+                                    console.log(`Resolve ids ${idsStr.join(',')} for ${def.name}.${field.name}`)
+
                                     const subData = await GenericResolver.entities(db, context, 'GenericData', ['_id', {definition: ['_id']}, 'data'],
                                         {
                                             filter: `_id==[${idsStr.join(',')}]`,
