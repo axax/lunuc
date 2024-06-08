@@ -260,12 +260,12 @@ const startListening = async (db, context) => {
                                 data
                             }, {context}, false)
 
+                            const contentType = data.headers.get('content-type') || {}
 
-                            console.log('xxxx',data?.headers)
-                            console.log('xxxx',data?.headers?.[`content-type`])
-                            console.log('xxxx',data?.headers?.[`content-type`]?.params?.[`report-type`])
+                            console.log('xxxx',contentType)
+                            console.log('xxxx',contentType?.params?.[`report-type`])
 
-                            if(mailAccount.redirect && data?.headers?.[`content-type`]?.params?.[`report-type`]!=='delivery-status'){
+                            if(mailAccount.redirect && contentType?.params?.[`report-type`]!=='delivery-status'){
 
                                 // send email
                                 const transporter = nodemailerDirectTransport({
