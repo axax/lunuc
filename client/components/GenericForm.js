@@ -140,6 +140,7 @@ class GenericForm extends React.Component {
             }
             initalState.fields[fieldKey] = fieldValue
         })
+        console.log(initalState)
         const formValidation = GenericForm.staticValidate(initalState, props)
         initalState.isValid = formValidation.isValid
         initalState.fieldErrors = formValidation.fieldErrors
@@ -540,7 +541,7 @@ class GenericForm extends React.Component {
                 field = fields[fieldKey]
 
 
-            if (!field) {
+            if (!field || field.invisible) {
                 continue
             }
 

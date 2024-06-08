@@ -1481,8 +1481,9 @@ class JsonDom extends React.Component {
         }
 
         this.props.onFetchMore({query, meta}, (res) => {
+            let newData
             if (res.cmsPage && res.cmsPage.resolvedData) {
-                const newData = JSON.parse(res.cmsPage.resolvedData)
+                newData = JSON.parse(res.cmsPage.resolvedData)
                 if(options.ignoreKeys){
                     options.ignoreKeys.forEach(key=>{
                         delete newData[key]
@@ -1501,7 +1502,7 @@ class JsonDom extends React.Component {
                 }
             }
             if (callback && callback.constructor === Function) {
-                callback()
+                callback(newData)
             }
         })
     }

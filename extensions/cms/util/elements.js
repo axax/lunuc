@@ -1157,7 +1157,15 @@ const baseElements = [
                 fullWidth: true,
                 value: '',
                 label: 'Bezeichnung',
-                tab: DEFAULT_TAB
+                tab: DEFAULT_TAB,
+                template: '${this.context.data?this.context.data:(_comp.$original.p && _comp.$original.p.href && _comp.$original.p.href.length>0?_comp.$original.p.href[0].name:"Dokument")}'
+            },
+            [`p_className@extension`]: {
+                value:'',
+                invisible:true,
+                label: 'Datei Extension',
+                tab: DEFAULT_TAB,
+                template: 'file-ext-${_comp.$original.p && _comp.$original.p.href && _comp.$original.p.href.length>0?_comp.$original.p.href[0].name.split(".").pop():""}'
             },
             ...marginOptions('p_'),
             ...classIconListOptions('p_'),

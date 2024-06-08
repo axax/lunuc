@@ -151,7 +151,7 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
                                 }
                             }
 
-                            if (re.lookup.limit && re.lookup.limit <= count) {
+                                if (re.lookup.limit && re.lookup.limit <= count) {
                                 return
                             }
                             if (checkFilter(re.lookup.filter, lookupData, key)) {
@@ -362,9 +362,17 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
                 resolveReduce(re.reduce, rootData, arr, {debugLog, depth: depth + 1})
             } else if (re.limit) {
                 let value = propertyByPath(re.path, currentData, '.', re.assign)
+                const offset =  (re.offset || 0)
+
+                if(offset>0){
+                    value.splice(0,offset)
+                }
+
                 if(value.length>re.limit) {
                     value.length = re.limit
                 }
+                console.log(value, re.path)
+
             }
             if (re.remove) {
                 const parentPath = re.path.substring(0, re.path.lastIndexOf('.'))

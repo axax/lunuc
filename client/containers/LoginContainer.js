@@ -9,16 +9,7 @@ import {client} from 'client/middleware/graphql'
 import {_t} from 'util/i18n.mjs'
 
 class LoginContainer extends React.Component {
-    state = {
-        redirectToReferrer: false,
-        loading: false,
-        error: null,
-        username: '',
-        password: '',
-        newPassword:'',
-        resetToken:'',
-        domain: _app_.login ? _app_.login.defaultDomain : ''
-    }
+
 
     constructor(props) {
         super(props)
@@ -27,6 +18,19 @@ class LoginContainer extends React.Component {
             content: 'noindex, nofollow',
             id: 'metaTagNoIndex'
         })
+
+        const {domain, username} = Util.extractQueryParams(window.location.search.substring(1))
+
+        this.state = {
+            redirectToReferrer: false,
+            loading: false,
+            error: null,
+            username: username || '',
+            password: '',
+            newPassword:'',
+            resetToken:'',
+            domain: _app_.login ? _app_.login.defaultDomain : domain || ''
+        }
     }
 
     componentWillUnmount() {

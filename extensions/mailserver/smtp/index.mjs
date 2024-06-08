@@ -8,6 +8,7 @@ import nodemailerDirectTransport from 'nodemailer-direct-transport'
 import nodemailer from 'nodemailer'
 import {isTemporarilyBlocked} from '../../../server/util/requestBlocker.mjs'
 import Util from '../../../api/util/index.mjs'
+import {detectSpam} from './spam.mjs'
 
 /*
 // open port 25 and 587 on your server
@@ -246,7 +247,9 @@ const startListening = async (db, context) => {
                         let mailAccount = await getMailAccountFromMailData(db, data)
                         if (mailAccount && mailAccount.active) {
 
-                            const inbox = await getFolderForMailAccount(db, mailAccount._id, 'INBOX')
+                            const isSpam = await detectSpam(db, context, {text:data.subject+data.text})
+                            const inbox = await getFolderForMailAccount(db, mailAccount._id, isSpam?'Junk':'INBOX')
+
 
                             await mailserverResolver(db).Mutation.createMailAccountMessage({
                                 mailAccount: mailAccount._id,
@@ -255,7 +258,8 @@ const startListening = async (db, context) => {
                             }, {context}, false)
 
 
-                            if(mailAccount.redirect){
+
+                            if(mailAccount.redirect && data?.headers?.[`content-type`]?.params?.[`report-type`]!=='delivery-status'){
 
                                 // send email
                                 const transporter = nodemailerDirectTransport({

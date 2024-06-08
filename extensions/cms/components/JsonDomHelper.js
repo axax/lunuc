@@ -1413,7 +1413,6 @@ class JsonDomHelper extends React.Component {
 
             if (form) {
                 const fields = form.state.fields
-
                 let groupKeyMap = {}
                 Object.keys(fields).forEach(key => {
                     let val = fields[key]
@@ -1476,9 +1475,14 @@ class JsonDomHelper extends React.Component {
                             currentElement.options && currentElement.options[key],
                             comp.$inlineEditor && comp.$inlineEditor.options && comp.$inlineEditor.options[key])
 
-                        if (currentOpt.template && val !== undefined && val !== null) {
-                            setPropertyByPath(val, '$original_' + key, comp, '_')
-                            val = Util.replacePlaceholders(currentOpt.template, {_comp: comp, ...(val.constructor === String ? {data: val} : val[0])})
+                        const noValue = (val !== undefined && val !== null)
+                        if (currentOpt.template && (currentOpt.invisible || noValue)) {
+                            if(noValue) {
+                                setPropertyByPath(val, '$original_' + key, comp, '_')
+                                val = Util.replacePlaceholders(currentOpt.template, {_comp: comp, ...(val.constructor === String ? {data: val} : val[0])})
+                            }else{
+                                val = Util.replacePlaceholders(currentOpt.template, {_comp: comp})
+                            }
                         }
 
                         if (currentOpt.tr && currentOpt.trKey) {
