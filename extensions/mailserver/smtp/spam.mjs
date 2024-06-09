@@ -11,7 +11,7 @@ import Util from '../../../api/util/index.mjs'
 
 
  */
-export const detectSpam = async (db, context, {text}) => {
+export const detectSpam = async (db, context, {text, sender}) => {
 
     let spamFilter
     if(db && context){
@@ -22,6 +22,9 @@ export const detectSpam = async (db, context, {text}) => {
     if (!spamFilter) {
         console.warn('Spam filter is not configured in global store with Key MailSpamFilter')
         spamFilter = {
+            senderBlacklist:[
+                'coletolakervresort.com'
+            ],
             threshold: 7,
             keywords:{
                 'bitcoingewinner':10,
@@ -39,6 +42,14 @@ export const detectSpam = async (db, context, {text}) => {
             }
         }
     }
+    if(sender){
+        const senderLowerCase = sender.toLowerCase()
+
+        const containsWord = spamFilter.senderBlacklist.some(word => senderLowerCase.includes(word))
+        if(containsWord){
+            return true
+        }
+    }
 
     const lowerCaseText = text.toLowerCase()
 
@@ -49,7 +60,7 @@ export const detectSpam = async (db, context, {text}) => {
             totalScore += score
         }
     }
-console.log(text.subscribe(0,50), totalScore)
+console.log(text.substring(0,50), totalScore)
     return totalScore >= spamFilter.threshold
 }
 

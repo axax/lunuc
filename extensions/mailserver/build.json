@@ -152,7 +152,7 @@
         {
           "name": "mailAccountFolder",
           "type": "MailAccountFolder",
-          "pickerField": ["path"],
+          "pickerField": ["path",{"mailAccount": ["username","host"]}],
           "multi": false,
           "index": 1
         },

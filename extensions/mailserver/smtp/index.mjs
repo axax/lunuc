@@ -247,9 +247,11 @@ const startListening = async (db, context) => {
                         let mailAccount = await getMailAccountFromMailData(db, data)
                         if (mailAccount && mailAccount.active) {
 
-                            const isSpam = await detectSpam(db, context, {text:data.subject+data.text})
+                            const sender = data.headers.get('sender') || {}
+
+                            const isSpam = await detectSpam(db, context, {sender:sender.text,text:data.subject+data.text})
                             const inbox = await getFolderForMailAccount(db, mailAccount._id, isSpam?'Junk':'INBOX')
-console.log('yyyyyyy',isSpam)
+
                             if(isSpam){
                                 data.subject = "***SPAM***" + (data.subject || '')
                             }
