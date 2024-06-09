@@ -68,7 +68,7 @@ export const findProjection = (key, projection) => {
 }
 
 export const projectionToQueryString = (projection, type) => {
-    let queryString = ''
+    let queryString = '{_id __typename'
 
     projection.forEach(field => {
         if (queryString != '') {
@@ -98,5 +98,6 @@ export const projectionToQueryString = (projection, type) => {
             })
         }
     })
+    queryString += '}'
     return queryString
 }

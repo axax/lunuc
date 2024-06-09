@@ -60,7 +60,6 @@ export const detectSpam = async (db, context, {text, sender}) => {
             totalScore += score
         }
     }
-console.log(text.substring(0,50), totalScore)
     return totalScore >= spamFilter.threshold
 }
 

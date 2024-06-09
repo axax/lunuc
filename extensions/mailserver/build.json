@@ -134,6 +134,7 @@
       ]
     },
     {
+      "onlyRequestedFields": true,
       "name": "MailAccountMessage",
       "access": {
         "create": "anonymous"
@@ -152,7 +153,7 @@
         {
           "name": "mailAccountFolder",
           "type": "MailAccountFolder",
-          "pickerField": ["path",{"mailAccount": ["username","host"]}],
+          "pickerField": ["path"],
           "multi": false,
           "index": 1
         },

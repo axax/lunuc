@@ -34,6 +34,18 @@ export const getFieldsFromGraphqlInfoSelectionSet = (selections, maxLevel=2, lev
     return map
 }
 
+export const fieldsToArrayStructure = (fields) => {
+    const arr = []
+    for (const [fieldName, subField] of Object.entries(fields)) {
+        if(subField.constructor === Object){
+            arr.push({[fieldName]:fieldsToArrayStructure(subField)})
+        }else{
+            arr.push(fieldName)
+        }
+    }
+    return arr
+}
+
 export const findAndReplaceObjectIds = function (obj) {
     for (var i in obj) {
         if (obj.hasOwnProperty(i)) {

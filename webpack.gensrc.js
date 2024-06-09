@@ -386,7 +386,7 @@ function gensrcExtension(name, options) {
         let schema = GENSRC_HEADER + 'export default `\n'
         let resolver = GENSRC_HEADER + `import Util from '../../../api/util/index.mjs'\nimport {ObjectId} from 'mongodb'\nimport {pubsubHooked, pubsub} from '../../../api/subscription.mjs'\nimport {withFilter} from 'graphql-subscriptions'\n`
         resolver += `import Hook from '../../../util/hook.cjs'\n`
-        resolver += `import {getFieldsFromGraphqlInfoSelectionSet} from '../../../api/util/graphql.js'\n`
+        resolver += `import {getFieldsFromGraphqlInfoSelectionSet, fieldsToArrayStructure} from '../../../api/util/graphql.js'\n`
         resolver += `import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'\n\nexport default db => ({\n`
         let resolverQuery = '\tQuery:{\n'
         let resolverMutation = '\tMutation:{\n'
@@ -524,7 +524,12 @@ function gensrcExtension(name, options) {
 
                 resolverQuery += `      ${nameStartLower}s: async ({sort, limit, offset, page, filter${(type.collectionClonable ? ', _version' : '')}${(type.addMetaDataInQuery ? ', meta' : '')}}, req, graphqlInfo) => {
             const onlyRequestedFields = ${!!type.onlyRequestedFields}
-            const fields = onlyRequestedFields && graphqlInfo && graphqlInfo.fieldNodes && graphqlInfo.fieldNodes.length>0?Object.keys(getFieldsFromGraphqlInfoSelectionSet(graphqlInfo.fieldNodes[0].selectionSet.selections).results):[${resolverFields}]
+            let fields
+            if(onlyRequestedFields && graphqlInfo && graphqlInfo?.fieldNodes?.length>0){
+                fields = fieldsToArrayStructure(getFieldsFromGraphqlInfoSelectionSet(graphqlInfo.fieldNodes[0].selectionSet.selections).results)
+            }else{
+                fields = [${resolverFields}]
+            }
             return await GenericResolver.entities(db, req, '${type.name}', fields, {graphqlInfo, limit, offset, page, filter, sort${(type.collectionClonable ? ', _version' : '')}${(type.addMetaDataInQuery ? ', meta' : '')}})
         },\n`
 

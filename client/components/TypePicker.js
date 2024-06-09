@@ -606,10 +606,10 @@ class TypePicker extends React.Component {
                 queryString = projectionToQueryString(finalFields, type)
 
             } else {
-                queryString = queryStatemantForType(type)
+                queryString = queryStatemantForType({type})
             }
             const variables = {filter, limit: limit || 20},
-                gqlQuery = `query ${nameStartLower}($sort: String,$limit: Int,$page: Int,$filter: String){${nameStartLower}(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results{_id __typename ${queryString}}}}`
+                gqlQuery = `query ${nameStartLower}($sort: String,$limit: Int,$page: Int,$filter: String){${nameStartLower}(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results${queryString}}}`
 
             if(pickerSort){
                 variables.sort = pickerSort

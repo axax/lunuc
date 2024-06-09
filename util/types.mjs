@@ -95,42 +95,7 @@ export const getTypeQueries = (typeName, queryFields, opts) => {
             if (!excludeSelect && (!queryFields || queryFields.indexOf(name) >= 0)) {
                 if (reference) {
                     if (name !== 'createdBy') {
-
-                        let subquery = ''
-                        query += ' ' + name
-                        subquery += '{_id'
-                        if (rest.fields) {
-
-                            const subTypeDef = getType(type)
-                            if(subTypeDef){
-                                subTypeDef.fields.forEach(subField=>{
-                                    if(rest.fields.indexOf(subField.name)>=0){
-                                        subquery += ' '
-                                        if(subField.localized){
-                                            subquery += subField.name + '{' + LANGUAGES.join(' ') + '}'
-                                        }else{
-                                            subquery +=subField.name
-                                        }
-                                    }
-                                })
-
-                            }else {
-                                subquery += ' ' + rest.fields.join(' ')
-                            }
-                        } else {
-                            subquery += queryStatemantForType(type, opts)
-                        }
-                        subquery += '} '
-
-                        if(localized){
-                            query += '{'
-                            LANGUAGES.forEach(lang => {
-                                query += lang + subquery
-                            })
-                            query += '} '
-                        }else{
-                            query += subquery
-                        }
+                        query += ' ' + name + queryStatemantForType({type, fields:rest.fields, localized}, opts)
                     }
                 } else {
                     if (localized) {
@@ -171,32 +136,57 @@ export const getTypeQueries = (typeName, queryFields, opts) => {
     return result
 }
 
-export const queryStatemantForType = (type, opts) => {
-    let query = ''
-    const typeDate = getType(type)
+export const queryStatemantForType = (field, opts = {}, level = 0) => {
+    let subQuery = ''
+    const typeDate = getType(field.type)
     if (typeDate && typeDate.fields) {
-
         for (let i = 0; i < typeDate.fields.length; i++) {
-            const field = typeDate.fields[i]
+            const subField = typeDate.fields[i]
 
-            const excludeSelect = field.alwaysLoad === false && opts && opts.loadAll === false
-
-            if (field.reference || excludeSelect) {
+            if( subField.reference /* && (!field.referenceLevel || field.referenceLevel<=level)*/){
+                //subQuery += ' ' + subField.name + '{_id}'
                 continue
             }
 
-            query += ' ' + field.name
-            if (field.localized) {
-                query += '{'
+            if(field.fields){
+                if(!field.fields.includes(subField.name)){
+                    continue
+                }
+            }else if(subField.alwaysLoad === false && opts.loadAll === false){
+                continue
+            }
+
+            subQuery += ' ' + subField.name
+
+            if (subField.reference) {
+                // not supported yet
+                subQuery += queryStatemantForType(subField,opts, level+1)
+            }else if (subField.localized) {
+                subQuery += '{'
                 LANGUAGES.forEach(lang => {
-                    query += ' ' + lang
+                    subQuery += ' ' + lang
                 })
-                query += '}'
+                subQuery += '}'
             }
         }
-    } else {
+    } else if(field.fields) {
+        subQuery += ' ' + field.fields.join(' ')
+    }else{
         // assuming there is a name field
-        query += ' name'
+        subQuery += ' name'
     }
-    return query
+    if(subQuery){
+        subQuery = `{_id __typename${subQuery}}`
+        if(field.localized){
+            let langQuery = '{'
+            LANGUAGES.forEach(lang => {
+                langQuery += lang + subQuery
+            })
+            langQuery += '} '
+            return langQuery
+        }else{
+            return subQuery
+        }
+    }
+    return subQuery
 }
