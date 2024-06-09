@@ -1,6 +1,16 @@
 import Util from '../../../api/util/index.mjs'
 
+/*
 
+
+
+    {
+      "key": "x-recommended-action",
+      "line": "X-Recommended-Action: accept"
+    },
+
+
+ */
 export const detectSpam = async (db, context, {text}) => {
 
     let spamFilter
@@ -39,7 +49,7 @@ export const detectSpam = async (db, context, {text}) => {
             totalScore += score
         }
     }
-
+console.log(text.subscribe(0,50), totalScore)
     return totalScore >= spamFilter.threshold
 }
 

@@ -249,9 +249,9 @@ const startListening = async (db, context) => {
 
                             const isSpam = await detectSpam(db, context, {text:data.subject+data.text})
                             const inbox = await getFolderForMailAccount(db, mailAccount._id, isSpam?'Junk':'INBOX')
-
+console.log('yyyyyyy',isSpam)
                             if(isSpam){
-                                data.subject = "SPAM: " + (data.subject || '')
+                                data.subject = "***SPAM***" + (data.subject || '')
                             }
 
                             await mailserverResolver(db).Mutation.createMailAccountMessage({
@@ -261,9 +261,6 @@ const startListening = async (db, context) => {
                             }, {context}, false)
 
                             const contentType = data.headers.get('content-type') || {}
-
-                            console.log('xxxx',contentType)
-                            console.log('xxxx',contentType?.params?.[`report-type`])
 
                             if(mailAccount.redirect && contentType?.params?.[`report-type`]!=='delivery-status'){
 
