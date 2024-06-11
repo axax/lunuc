@@ -4,11 +4,13 @@
       "name": "MailAccount",
       "fields": [
         {
+          "tab": "elements.generalTab",
           "name": "username",
           "required": true,
           "index": 1
         },
         {
+          "tab": "elements.generalTab",
           "name": "host",
           "defaultValue": "$HOST",
           "required": true,
@@ -30,10 +32,12 @@
           }
         },
         {
+          "tab": "elements.generalTab",
           "name": "redirect",
           "index": 1
         },
         {
+          "tab": "elements.generalTab",
           "name": "password",
           "uitype": "password",
           "hideColumnInTypes": true,
@@ -41,8 +45,15 @@
           "hash": true
         },
         {
+          "tab": "elements.generalTab",
           "name": "active",
           "type": "Boolean"
+        },
+        {
+          "tab": "Spam",
+          "name": "spamThreshold",
+          "type": "Int",
+          "description": "0=deaktiviert, 1=am stärksten, 10=schwach...."
         },
         {
           "name": "temp",

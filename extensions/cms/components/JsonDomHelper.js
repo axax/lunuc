@@ -831,6 +831,9 @@ class JsonDomHelper extends React.Component {
                         onContextMenu={events.onContextMenu.bind(this)}
                         onClick={(e) => {
                             e.stopPropagation()
+                            if(_options.openOnClick===false){
+                                return
+                            }
                             if (isCms) {
                                 if(subJson.p.component && subJson.p.component.length > 0){
                                     this.props.history.push('/' + subJson.p.component[0].slug)

@@ -315,8 +315,7 @@ class JsonDom extends React.Component {
             }
             if (slugChanged || searchChanged || templateChanged || propsChanged || scriptChanged) {
                 this.json = this.jsonRaw = null
-              //  console.log(props.slug, slugChanged,searchChanged, templateChanged,scriptChanged, props.location.href, this.props.location.href)
-                this.updateScope = {renewProps: propsChanged}
+                this.updateScope = {renewProps: propsChanged || slugChanged}
             } else if (userChanged) {
                 // set new user to scope
                 this.scope.user = props.user

@@ -66,7 +66,7 @@ class JsonDomEditor extends React.Component {
         return null
     }
 
-    renderJsonRec(json, key, level) {
+    renderJsonRec(json, key, level=0) {
         if (json === undefined) return null
         if (!key) {
             key = '0'
@@ -74,7 +74,6 @@ class JsonDomEditor extends React.Component {
                 key += '.0'
             }
         }
-        if (!level) level = 0
 
         if (json.constructor === Array) {
             const acc = []

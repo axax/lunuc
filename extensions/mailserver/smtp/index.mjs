@@ -249,7 +249,7 @@ const startListening = async (db, context) => {
 
                             const sender = data.headers.get('sender') || data.headers.get('from') || {}
 
-                            const isSpam = await detectSpam(db, context, {sender:sender.text,text:data.subject+data.text})
+                            const isSpam = await detectSpam(db, context, {threshold: mailAccount.spamThreshold, sender:sender.text,text:data.subject+data.text})
                             const inbox = await getFolderForMailAccount(db, mailAccount._id, isSpam?'Junk':'INBOX')
 
                             if(isSpam){
@@ -309,7 +309,7 @@ const startListening = async (db, context) => {
                             }
 
                         } else {
-                            console.warn(`no mail account for`, data)
+                            console.warn(`no mail account for`, data?.to?.text)
                         }
                     }
                 })

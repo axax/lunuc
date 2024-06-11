@@ -1011,7 +1011,7 @@ class GenericForm extends React.Component {
                             name: fieldKey,
                             value: newValue
                         }
-                    })} componentTemplate={field.componentTemplate}>{value}</JsonEditor> :
+                    })} componentTemplate={field.componentTemplate} propertyTemplate={field.propertyTemplate}>{value}</JsonEditor> :
 
                     <CodeEditor
                         style={{border: '1px solid #eeeeee',margin: '24px 0'}}

@@ -33,7 +33,7 @@ const getIndexOfKey = (key)=> {
     return parseInt(keyParts[keyParts.length - 1])
 }
 const getParentKeyOfKey = (key)=> {
-    return key.split('.').splice(-1).join('.')
+    return key.split('.').slice(0,-1).join('.')
 }
 
 class JsonDomEditor extends React.Component {
@@ -83,7 +83,7 @@ class JsonDomEditor extends React.Component {
         return null
     }
 
-    renderJsonRec(json, key, level) {
+    renderJsonRec(json, key, level=0) {
         if (json === undefined) return null
         if (!key) {
             key = '0'
@@ -91,31 +91,54 @@ class JsonDomEditor extends React.Component {
                 key += '.0'
             }
         }
-        if (!level) level = 0
 
         if (json.constructor === Array) {
             const acc = []
             json.forEach((item, idx) => {
                 acc.push(this.renderJsonRec(item, key + '.' + idx, level + 1))
             })
+
+            let compTemp = this.props.componentTemplate || []
+            if(compTemp.constructor===Object){
+                //fallback for old structure
+                compTemp = [{label:_t('JsonEditor.addEntry'),value:compTemp}]
+            }
+            if(compTemp.length===0){
+                compTemp.push({label:_t('JsonEditor.addEntry')})
+            }
+
             return <List component="nav">
-                <SimpleMenu mini color="secondary" items={[{
-                    name: _t('JsonEditor.addEntry'), onClick: e => {
-                        this.addComponent(key)
-                        return this.stopPropagation(e)
+                <SimpleMenu mini color="secondary" items={compTemp.map(el=>{
+                    return {
+                        name: el.label, onClick: e => {
+                            this.addComponent(key, el.value)
+                            return this.stopPropagation(e)
+                        }
                     }
-                }]}/>{acc}</List>
+                })}/>{acc}</List>
         } else if (json.constructor === Object) {
 
+
+
+            let propTemp = this.props.propertyTemplate || []
+
+            if(propTemp.length===0){
+                propTemp.push({label:_t('JsonEditor.addProperty'), key:'newProperty', value:'Property value'})
+            }
+
             const actions = [
-                {
-                    name: _t('JsonEditor.addProperty'), onClick: e => {
-                        const comp = getComponentByKey(key, this.state.json)
-                        comp['newProperty'] = 'Property value'
-                        this.updateJson(this.state.json)
-                        return this.stopPropagation(e)
+                ...propTemp.map(el=>{
+                    return {
+                        name: el.label, onClick: e => {
+                            const comp = getComponentByKey(key, this.state.json)
+                            if(!comp[el.key]) {
+                                comp[el.key] = el.value
+                                this.updateJson(this.state.json)
+                            }
+                            return this.stopPropagation(e)
+                        }
                     }
-                },
+                }),
                 {
                     name: _t('JsonEditor.remove'), onClick: e => {
                         this.removeComponent(key)
@@ -128,12 +151,8 @@ class JsonDomEditor extends React.Component {
             let itemLabel = ''
             const props = []
             Object.keys(json).forEach(k => {
-                let value = json[k], valueOri = json[k]
-
-                if (value && value.constructor !== String) {
-                    value = JSON.stringify(value, null, 2)
-
-                } else if (!itemLabel) {
+                let value = json[k] || '', valueOri = json[k]
+                if (!itemLabel && value.constructor === String) {
                     itemLabel += value
                 }
                 props.push(<tr key={key + '.' + k}>
@@ -150,20 +169,23 @@ class JsonDomEditor extends React.Component {
                                 this.updateJson(this.state.json)
                             }
                         }}>{k}</td>
-                    <td style={{width: '100%', whiteSpace: 'pre', background: '#dbffde'}}
-                        suppressContentEditableWarning={true}
-                        contentEditable
-                        onBlur={(e) => {
-                            let newValue = e.target.innerText.trim()
-                            const comp = getComponentByKey(key, this.state.json)
-                            comp[k] = newValue
-                            this.updateJson(this.state.json)
-                        }}>{value}</td>
+                    {
+                        value.constructor === Array ? <td>{this.renderJsonRec(value,  key+'.'+k, level + 1)}</td> :
+                            <td style={{width: '100%', whiteSpace: 'pre', background: '#dbffde'}}
+                            suppressContentEditableWarning={true}
+                            contentEditable
+                            onBlur={(e) => {
+                                let newValue = e.target.innerText.trim()
+                                const comp = getComponentByKey(key, this.state.json)
+                                comp[k] = newValue
+                                this.updateJson(this.state.json)
+                            }}>{value.constructor===String?value:JSON.stringify(value, null, 2)}</td>
+                    }
                     <td><ClearIconButton onClick={() => {
-                        const comp = getComponentByKey(key, this.state.json)
-                        delete comp[k]
-                        this.updateJson(this.state.json)
-                    }}/></td>
+                    const comp = getComponentByKey(key, this.state.json)
+                    delete comp[k]
+                    this.updateJson(this.state.json)}}/></td>
+
                 </tr>)
             })
 
@@ -225,7 +247,7 @@ class JsonDomEditor extends React.Component {
                         <ExpandMoreIcon/>)}
                 </ListItem>,
                 <Collapse key={key + '.colapse'} in={!!this.state.open[key]} timeout="auto" unmountOnExit>
-                    <div style={{paddingLeft: INDENT * level + 65}}>
+                    <div style={{paddingLeft: INDENT * level + 50}}>
                         <table colspstyle={{width: '100%', fontSize: '0.9em'}}>
                             <tbody>{props}</tbody>
                         </table>
@@ -257,8 +279,8 @@ class JsonDomEditor extends React.Component {
         return false
     }
 
-    addComponent(key) {
-        const json = addComponent({key, json: this.state.json, component: this.props.componentTemplate})
+    addComponent(key, component) {
+        const json = addComponent({key, json: this.state.json, component})
         if (json) {
             this.updateJson(this.state.json)
             this.setState({open: Object.assign({}, this.state.open, {[key]: true})});

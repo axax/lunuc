@@ -11,7 +11,13 @@ import Util from '../../../api/util/index.mjs'
 
 
  */
-export const detectSpam = async (db, context, {text, sender}) => {
+export const detectSpam = async (db, context, {text, sender, threshold}) => {
+
+    if(threshold===0){
+        return false
+    }else if(isNaN(threshold)){
+        threshold = 7
+    }
 
     let spamFilter
     if(db && context){
@@ -25,7 +31,6 @@ export const detectSpam = async (db, context, {text, sender}) => {
             senderBlacklist:[
                 'coletolakervresort.com'
             ],
-            threshold: 7,
             keywords:{
                 'bitcoingewinner':10,
                 'potenz': 4,
@@ -42,7 +47,7 @@ export const detectSpam = async (db, context, {text, sender}) => {
             }
         }
     }
-    if(sender){
+    if(sender && spamFilter.senderBlacklist){
         const senderLowerCase = sender.toLowerCase()
 
         const containsWord = spamFilter.senderBlacklist.some(word => senderLowerCase.includes(word))
@@ -60,7 +65,7 @@ export const detectSpam = async (db, context, {text, sender}) => {
             totalScore += score
         }
     }
-    return totalScore >= spamFilter.threshold
+    return totalScore >= threshold
 }
 
 // Example usage:
