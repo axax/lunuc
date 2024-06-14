@@ -112,11 +112,19 @@ const StyledContent = styled('main')(({ theme, fixed, open }) => ({
     flexGrow: 1,
     backgroundColor: theme.palette.background.default,
     padding: 24,
-    height: 'calc(100% - 56px)',
+    minHeight: 'calc(100vh - 56px)',
     marginTop: 56,
     [theme.breakpoints.up('sm')]: {
-        height: 'calc(100% - 64px)',
+        minHeight: 'calc(100vh - 64px)',
         marginTop: 64,
+    },
+    '> [data-isempty="true"]:first-child:last-child':{
+        height:'100%',
+        '> [data-drop-area="true"]':{
+            height:'calc(100% - 112px)',
+            margin:'0 !important',
+
+        }
     },
     transition: theme.transitions.create('margin', {
         easing: theme.transitions.easing.sharp,

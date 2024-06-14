@@ -137,7 +137,12 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
                                 createFacets(loopFacet, lookupData[key], true)
                             }
 
-                            if (checkFilter(re.lookup.filterBefore, lookupData, key)) {
+                            const filter = checkFilter(re.lookup.filterBefore, lookupData, key)
+
+                            if (filter) {
+                                if(loopFacet && filter.or) {
+                                    createFacets(loopFacet, lookupData[key])
+                                }
                                 return
                             }
 
@@ -371,8 +376,6 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
                 if(value.length>re.limit) {
                     value.length = re.limit
                 }
-                console.log(value, re.path)
-
             }
             if (re.remove) {
                 const parentPath = re.path.substring(0, re.path.lastIndexOf('.'))

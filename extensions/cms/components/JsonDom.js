@@ -487,7 +487,7 @@ class JsonDom extends React.Component {
         const {template, script, resolvedData, parseResolvedData, _props, _key, loading} = this.props
         if (!template) {
             console.warn('Template is missing.', this.props)
-            return null
+            return this.parseRec([{}], 0, {})
         }
         const startTime = (new Date()).getTime(),
             scope = this.getScope(this.props)
@@ -1318,6 +1318,8 @@ class JsonDom extends React.Component {
             console.log(e, template)
             if (!ignoreError) {
                 this.error = {type: 'template parse raw', e, code: template}
+            }else{
+                this.jsonRaw = {}
             }
         }
         return this.jsonRaw
