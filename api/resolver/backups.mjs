@@ -41,10 +41,10 @@ export const listBackups = type =>{
     return files
 }
 
-export const createBackup = type =>{
+export const createBackup = (type, options) =>{
     let result
     if(type==='db'){
-        result = createDbBackup()
+        result = createDbBackup(options)
     }else if(type==='media'){
         result = createMediaBackup()
     }else if(type==='hostrule'){
@@ -69,7 +69,7 @@ export const removeBackup = (type, name) => {
     return {status: 'ok'}
 }
 
-export const createDbBackup = ()=>{
+export const createDbBackup = (options={})=>{
     // make sure upload dir exists
     const backup_dir = getBackupDir('db')
     if (!Util.ensureDirectoryExistence(backup_dir)) {
@@ -83,8 +83,13 @@ export const createDbBackup = ()=>{
         name = 'backup.db.' + date + '.gz',
         fullName = path.join(backup_dir, name)
 
-    exec(`mongodump --uri ${MONGO_URL} -v --archive="${fullName}" --gzip`)
-    console.log('createDbDump')
+    let command = `mongodump --uri ${MONGO_URL} -v --archive="${fullName}" --gzip`
+    if(options.excludeCollection){
+        command += options.excludeCollection.map(f=> ' --excludeCollection '+f).join('')
+    }
+
+    exec(command)
+    console.log('createDbDump', command)
     return {fullName, name, date}
 
 }
