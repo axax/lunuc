@@ -85,7 +85,7 @@ export const createDbBackup = (options={})=>{
 
     let command = `mongodump --uri ${MONGO_URL} -v --archive="${fullName}" --gzip`
     if(options.excludeCollection){
-        command += options.excludeCollection.map(f=> ' --excludeCollection '+f).join('')
+        command += options.excludeCollection.map(f=> ' --excludeCollection='+f).join('')
     }
 
     exec(command)
