@@ -138,6 +138,13 @@ const invisibleOptions = key => ({
 })
 
 const observeOptions = () => ({
+    '$observe_if': {
+        fullWidth: true,
+        type: 'Boolean',
+        value: false,
+        label: 'Überwachung aktivieren',
+        tab: 'Sichtbarkeit'
+    },
     '$observe_waitVisible': {
         fullWidth: true,
         type: 'Boolean',

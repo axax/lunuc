@@ -21,6 +21,7 @@ import {parseStyles} from '../../client/util/style'
 
 import DomUtil from '../../client/util/dom.mjs'
 import {CAPABILITY_ADMIN_OPTIONS} from "../../util/capabilities.mjs";
+import {getImageTag} from '../../client/util/media'
 
 registerTrs(translations, 'GenericData')
 
@@ -65,7 +66,9 @@ export default () => {
 
                     if (structure && structure.columns) {
                         structure.columns.reverse().forEach(col=>{
-                            if(col.format==='date'){
+                            if(col.format==='image'){
+                                row['data_' + col.field] = getImageTag(item.data[col.field], {size:'avatar',height: 40})
+                            }else if(col.format==='date'){
                                 row['data_' + col.field] =  Util.formattedDatetime(item.data[col.field],{hour:undefined, minute:undefined, second:undefined})
                             }else{
                                 row['data_' + col.field] = item.data[col.field]
@@ -149,7 +152,7 @@ export default () => {
             if (structure && structure.columns) {
 
                 const dataFieldIndex = columns.findIndex(f=>f.id==='data')
-                if(dataFieldIndex>=0){
+                if(dataFieldIndex>=0 && !structure.titleTemplate){
                     columns.splice(dataFieldIndex, 1)
                 }
 

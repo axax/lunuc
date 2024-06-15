@@ -261,7 +261,7 @@ const BaseLayout = props => {
 
     if (user.isAuthenticated) {
 
-        const menuItems= [{
+        const userMenuItems= [{
             name: username,
             disabled:true
         },
@@ -280,12 +280,12 @@ const BaseLayout = props => {
             }
         }]
 
-        Hook.call('UserMenu', {menuItems})
+        Hook.call('UserMenu', {menuItems: userMenuItems})
 
         headerRight.push(<Box sx={{ flexGrow: 0 }}>
             <SimpleMenu
                 icon={<Avatar alt={username} src={user.picture?getImageSrc(user.picture,'avatar'):''} />}
-                items={menuItems}/>
+                items={userMenuItems}/>
 
         </Box>)
         /*headerRight.push(<Button key="logout" color="inherit" size="small"

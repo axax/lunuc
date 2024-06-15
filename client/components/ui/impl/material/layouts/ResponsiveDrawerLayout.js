@@ -234,7 +234,8 @@ const ResponsiveDrawer = React.memo((props) => {
     )
 
 }, (prev, next) => {
-    let equal = prev.menuItems.length === next.menuItems.length && prev.children[prev.children.length-1] === next.children[next.children.length-1]
+    let equal = prev.menuItems.map(f=>f.key).join('-') === next.menuItems.map(f=>f.key).join('-') &&
+        prev.children[prev.children.length-1] === next.children[next.children.length-1]
 
     return equal
 })

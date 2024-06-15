@@ -1190,9 +1190,9 @@ class JsonDom extends React.Component {
                             (
                                 ( eleType.name === 'SmartImage' || eleProps.inlineSvg) &&
                                 eleProps.src &&
-                                (!$observe || $observe.if !== 'false')
+                                (!$observe || $observe.if !== 'false' || $observe.if !== false)
                             ) ||
-                            ($observe && $observe.if !== 'false')
+                            ($observe && $observe.if !== 'false' && $observe.if !== false)
                         ) &&
                         !(eleProps.loading==='lazy' && hasNativeLazyLoadSupport) &&
                         (!!window.IntersectionObserver || eleProps.inlineSvg)) {
