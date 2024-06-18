@@ -50,6 +50,8 @@ const hasNativeLazyLoadSupport = !_app_.ssr && window.HTMLImageElement && 'loadi
 
 const SCRIPT_UTIL_PART = ',Util=this.Util,_e=Util.escapeForJson,_i=Util.tryCatch.bind(this),_t=this._t.bind('
 
+const isFalse = value => value==='false' || value===false
+
 class JsonDom extends React.Component {
 
     /* Events that are listened to */
@@ -1159,7 +1161,7 @@ class JsonDom extends React.Component {
                         eleProps.className = className + (eleProps.className ? ' ' + eleProps.className : '')
                     }
                     if (editMode &&
-                        (($inlineEditor !== false && (!$inlineEditor || $inlineEditor.if!=='false')) || _app_.JsonDom.inlineEditor === true) &&
+                        (($inlineEditor !== false && (!$inlineEditor || !isFalse($inlineEditor.if))) || _app_.JsonDom.inlineEditor === true) &&
                         _app_.JsonDom.inlineEditor !== false) {
 
                         if (this.props.inlineEditor || ($inlineEditor && $inlineEditor.mode === 'source')) {
@@ -1190,9 +1192,9 @@ class JsonDom extends React.Component {
                             (
                                 ( eleType.name === 'SmartImage' || eleProps.inlineSvg) &&
                                 eleProps.src &&
-                                (!$observe || $observe.if !== 'false' || $observe.if !== false)
+                                (!$observe || !isFalse($observe.if))
                             ) ||
-                            ($observe && $observe.if !== 'false' && $observe.if !== false)
+                            ($observe && !isFalse($observe.if))
                         ) &&
                         !(eleProps.loading==='lazy' && hasNativeLazyLoadSupport) &&
                         (!!window.IntersectionObserver || eleProps.inlineSvg)) {
