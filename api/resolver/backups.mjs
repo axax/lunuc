@@ -54,7 +54,6 @@ export const createBackup = (type, options) =>{
     try{
         stats = fs.statSync(result.fullName)
     }catch (e) {
-        console.log(e)
     }
 
     return {name: result.name, createdAt: result.date, size: (stats.size / 1000) + 'kb'}

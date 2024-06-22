@@ -29,7 +29,11 @@ export const resolveFrom = async ({segment, db, context, resolvedData, scope, no
                 dynamic
             })
             Object.keys(resolvedFromKey.resolvedData).forEach(k => {
-                resolvedData[k] = resolvedFromKey.resolvedData[k]
+                if (k === '_meta') {
+                    resolvedData[k] = Object.assign({},resolvedData[k], resolvedFromKey.resolvedData[k])
+                } else {
+                    resolvedData[k] = resolvedFromKey.resolvedData[k]
+                }
             })
         }
     } else if(resolveFrom.CmsPage){

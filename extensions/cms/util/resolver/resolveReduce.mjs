@@ -156,7 +156,7 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
                                 }
                             }
 
-                                if (re.lookup.limit && re.lookup.limit <= count) {
+                            if (re.lookup.limit && re.lookup.limit <= count) {
                                 return
                             }
                             if (checkFilter(re.lookup.filter, lookupData, key)) {
@@ -189,22 +189,21 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
 
                 if(re.extend || re.override){
                     if(lookedupData && lookedupData.constructor === Object){
-                        Object.keys(lookedupData).forEach(key=>{
-                            if(currentData[key]){
+                        Object.keys(lookedupData).forEach(key=> {
 
-                                if(re.override){
-                                    currentData[key] = lookedupData[key]
-                                }else if(re.extend.constructor===Object && re.extend.fields && re.extend.fields.indexOf(key)>=0){
+                            if (re.override) {
+                                currentData[key] = lookedupData[key]
+                            } else if (re.extend === true || (re.extend.constructor === Object && re.extend.fields && re.extend.fields.indexOf(key) >= 0)) {
+                                if (currentData[key]) {
                                     if(currentData[key].constructor === Array){
                                         currentData[key].push(...lookedupData[key])
                                     }else {
                                         currentData[key] = lookedupData[key]
                                     }
+                                } else {
+                                    currentData[key] = lookedupData[key]
                                 }
-                            }else{
-                                currentData[key] = lookedupData[key]
                             }
-
                         })
                     }
                 }else if (re.key) {

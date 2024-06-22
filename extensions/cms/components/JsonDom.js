@@ -1487,21 +1487,25 @@ class JsonDom extends React.Component {
             let newData
             if (res.cmsPage && res.cmsPage.resolvedData) {
                 newData = JSON.parse(res.cmsPage.resolvedData)
-                if(options.ignoreKeys){
-                    options.ignoreKeys.forEach(key=>{
-                        delete newData[key]
-                    })
-                }
-                this.resolvedDataJson = deepMergeOptional({concatArrays: true}, this.resolvedDataJson, newData)
-
                 scope.fetchingMore = false
 
-                if (this._ismounted) {
-                    if(options.parseTemplate){
-                        this.json = null
+                if(options.merge !== false) {
+
+                    if(options.ignoreKeys){
+                        options.ignoreKeys.forEach(key=>{
+                            delete newData[key]
+                        })
                     }
-                    this.props.updateResolvedData({json: this.resolvedDataJson})
-                    this.forceUpdate()
+
+                    this.resolvedDataJson = deepMergeOptional({concatArrays: true}, this.resolvedDataJson, newData)
+
+                    if (this._ismounted) {
+                        if (options.parseTemplate) {
+                            this.json = null
+                        }
+                        this.props.updateResolvedData({json: this.resolvedDataJson})
+                        this.forceUpdate()
+                    }
                 }
             }
             if (callback && callback.constructor === Function) {

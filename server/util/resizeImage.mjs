@@ -125,8 +125,10 @@ export const resizeImage = async (parsedUrl, req, filename) => {
                     }
                     filename = modfilename
                 } catch (e) {
-                    fs.unlinkSync(modfilename)
                     console.error(e)
+                    if(fs.existsSync(modfilename)) {
+                        fs.unlinkSync(modfilename)
+                    }
                 }
             } else {
                 filename = modfilename
