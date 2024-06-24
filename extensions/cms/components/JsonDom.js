@@ -18,7 +18,7 @@ import {deepMerge, deepMergeOptional} from 'util/deepMerge.mjs'
 import {preprocessCss} from '../util/cssPreprocessor.mjs'
 import {parseStyles} from 'client/util/style'
 import ElementWatch from './ElementWatch'
-import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants/index.mjs'
+import {CAPABILITY_MANAGE_CMS_PAGES} from '../constants/index.mjs'
 import {getKeyValuesFromLS} from '../../../client/util/keyvalue'
 import {createManifest} from '../util/manifest.mjs'
 
@@ -107,13 +107,12 @@ class JsonDom extends React.Component {
         'QuillEditor': (props) => <QuillEditor {...props}/>,
         'CodeEditor': (props) => <CodeEditor {...props}/>,
         'select': (props) => <JsonDomInput select={true} {...props}/>,
-        'Redirect': ({to, push, _this}) => {
-            if (_this && Util.hasCapability(_this.props.user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
-
+        'Redirect': ({to, push, _this,...props}) => {
+            if (_this && Util.hasCapability(_this.props.user, CAPABILITY_MANAGE_CMS_PAGES)) {
                 _this.emitJsonError({message: 'Redirect prevented for user'}, {loc: 'Redirect'})
-                return null
+                return <div {...props}>Redirect: {to}</div>
             } else {
-                return <Redirect to={{pathname: Util.removeSlugContext(to)}} push={push}/>
+                return <Redirect to={Util.removeSlugContext(to)} push={push}/>
             }
         },
         'Link': ({to, href, target, gotop, native, onClick, tracking, scrollOffset, scrollStep, scrollTimeout, ...rest}) => {

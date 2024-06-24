@@ -1576,6 +1576,26 @@ const baseElements = [
         }
     },
     {
+        tagName: 'Redirect',
+        name: 'Weiterleitung',
+        icon: 'replay',
+        options: {
+            p_to: {
+                fullWidth:true,
+                value: '',
+                label: 'Link (relativ oder absolut)'
+            }
+        },
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'redirect'
+            },
+            p: {
+                ['data-element-key']: 'redirect'
+            }
+        }
+    },
+    {
         subHeader: 'Layout Elemente',
         tagName: 'div',
         icon: 'grid',

@@ -424,9 +424,6 @@ const checkFilter = (filters, value, key) => {
 
                 } else {
                     if (matchExpr(filter.expr, {key, value: value[key]})) {
-                        if (filter.elseRemove) {
-                            delete value[key]
-                        }
                         return filter
                     }
                 }

@@ -14,8 +14,15 @@ export const Link = ({to, href, target, onClick, ...rest}) => {
 }
 
 export const Redirect = ({to, push}) => {
-    _app_.history.push(to, !push)
-    return null
+    if(_app_.ssr){
+        return
+    }
+    if (/^(?:[a-z]+:)?\/\//i.test(to)){
+        location.href = to
+    }else {
+        _app_.history.push(to, !push)
+    }
+    return
 }
 
 export class RouteHistory {
