@@ -75,7 +75,7 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
     for(let pipeIndex = 0 ; pipeIndex<reducePipe.length;pipeIndex++){
         const re = reducePipe[pipeIndex]
         if (isNotFalse(re.$is)) {
-            const debugInfo = {index: pipeIndex, step: re, startTime: new Date().getTime()}
+            const debugInfo = {index: pipeIndex, step: re, startTime: new Date().getTime(), messages:[]}
 
             if (re.sort) {
                 const value = propertyByPath(re.path, currentData, '.', re.assign)
@@ -189,14 +189,14 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
 
                 if(re.extend || re.override){
                     if(lookedupData && lookedupData.constructor === Object){
-                        Object.keys(lookedupData).forEach(key=> {
 
+                        Object.keys(lookedupData).forEach(key=> {
                             if (re.override) {
                                 currentData[key] = lookedupData[key]
                             } else if (re.extend === true || (re.extend.constructor === Object && re.extend.fields && re.extend.fields.indexOf(key) >= 0)) {
                                 if (currentData[key]) {
                                     if(currentData[key].constructor === Array){
-                                        currentData[key].push(...lookedupData[key])
+                                        currentData[key] = [...currentData[key], ...lookedupData[key]]
                                     }else {
                                         currentData[key] = lookedupData[key]
                                     }
@@ -305,7 +305,6 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
                 }
 
                 let total = 0
-
                 const inLoop = (key, isObject) =>{
                     if (loopFacet) {
                         createFacets(loopFacet, value[key], true)
@@ -328,7 +327,8 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
                         total++
                         if (re.loop.reduce) {
                             // not recommended tue to performance
-                            value[key] = re.assign ? assignIfObjectOrArray(value[key]) : value[key]
+                            value[key] = re.loop.assign ? assignIfObjectOrArray(value[key]) : value[key]
+
                             resolveReduce(re.loop.reduce, rootData, value[key], {debugLog, depth: depth + 1})
                         }
 
@@ -343,13 +343,17 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
                 }
 
 
-                if (value.constructor === Object) {
-                    for(const key in value){
-                        inLoop(key, true)
-                    }
-                } else if (value.constructor === Array) {
-                    for (let i = value.length - 1; i >= 0; i--) {
-                        inLoop(i)
+                if(!value){
+                    debugInfo.messages.push(`no value for ${JSON.stringify(re)}`)
+                }else {
+                    if (value.constructor === Object) {
+                        for (const key in value) {
+                            inLoop(key, true)
+                        }
+                    } else if (value.constructor === Array) {
+                        for (let i = value.length - 1; i >= 0; i--) {
+                            inLoop(i)
+                        }
                     }
                 }
 
