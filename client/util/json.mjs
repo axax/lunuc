@@ -66,19 +66,19 @@ export function matchExpr(expr, scope) {
                 return true
             }
         } else if (match[2] === '>') {
-            if (!(prop > parseInt(match[3]))) {
+            if (!(prop > parseFloat(match[3]))) {
                 return true
             }
         } else if (match[2] === '>=') {
-            if (!(prop >= parseInt(match[3]))) {
+            if (!(prop >= parseFloat(match[3]))) {
                 return true
             }
         } else if (match[2] === '<') {
-            if (!(prop < parseInt(match[3]))) {
+            if (!(prop < parseFloat(match[3]))) {
                 return true
             }
         } else if (match[2] === '<=') {
-            if (!(prop <= parseInt(match[3]))) {
+            if (!(prop <= parseFloat(match[3]))) {
                 return true
             }
         } else if (match[2] === ' in ' || match[2] === ' nin ') {
