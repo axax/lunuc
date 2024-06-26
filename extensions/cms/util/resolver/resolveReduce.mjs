@@ -1,6 +1,19 @@
 import {assignIfObjectOrArray, matchExpr, propertyByPath, setPropertyByPath} from '../../../../client/util/json.mjs'
 
 
+function createFacetSliderMinMax(value, facetData) {
+    if (facetData.min === undefined || facetData.min > value) {
+        if (!isNaN(value)) {
+            facetData.min = value
+        }
+    }
+    if (facetData.max === undefined || facetData.max < value) {
+        if (!isNaN(value)) {
+            facetData.max = value
+        }
+    }
+}
+
 const createFacets = (facets, data, beforeFilter) => {
     if (facets) {
         Object.keys(facets).forEach(facetKey => {
@@ -14,16 +27,15 @@ const createFacets = (facets, data, beforeFilter) => {
                     facetData = facet.beforeFilter
                 }
                 if (facet.type === 'slider') {
-                    if (facetData.min === undefined || facetData.min > data[facetKey]) {
-                        if (!isNaN(data[facetKey])) {
-                            facetData.min = data[facetKey]
-                        }
+
+                    if(data[facetKey] && data[facetKey].constructor === Array){
+                        data[facetKey].forEach(value=>{
+                            createFacetSliderMinMax(value, facetData)
+                        })
+                    }else{
+                        createFacetSliderMinMax(data[facetKey], facetData)
                     }
-                    if (facetData.max === undefined || facetData.max < data[facetKey]) {
-                        if (!isNaN(data[facetKey])) {
-                            facetData.max = data[facetKey]
-                        }
-                    }
+
                 } else {
                     if (!facetData.values) {
                         facetData.values = {}
