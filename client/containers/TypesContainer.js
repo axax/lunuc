@@ -1345,6 +1345,14 @@ class TypesContainer extends React.Component {
                 })
                 opts.loadAll = true
             }
+            typeDefinition.fields.forEach(field=>{
+                if(field.alwaysLoad && columnsFiltered.indexOf(field.name)<0){
+                    columnsFiltered.push(field.name)
+                }
+            })
+            if(columnsFiltered.indexOf('_id')<0){
+                columnsFiltered.push('_id')
+            }
         }
         return getTypeQueries(type, columnsFiltered, opts)
     }
