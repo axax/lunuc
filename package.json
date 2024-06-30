@@ -62,9 +62,9 @@
   "dependencies": {
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
-    "@mui/icons-material": "^5.15.19",
-    "@mui/material": "^5.15.19",
-    "@mui/styles": "^5.15.19",
+    "@mui/icons-material": "^5.15.21",
+    "@mui/material": "^5.15.21",
+    "@mui/styles": "^5.15.21",
     "ajv": "^8.16.0",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.2",
@@ -76,16 +76,16 @@
     "express": "^4.19.2",
     "express-graphql": "^0.12.0",
     "formidable": "^3.5.1",
-    "graphql": "^16.8.1",
+    "graphql": "^16.9.0",
     "graphql-subscriptions": "^2.0.0",
     "graphql-tools": "^9.0.1",
     "http2-proxy": "^5.0.53",
     "jsonwebtoken": "^9.0.2",
-    "langchain": "^0.2.5",
+    "langchain": "^0.2.8",
     "mailparser": "^3.7.1",
-    "mongodb": "^6.7.0",
+    "mongodb": "^6.8.0",
     "node-cron": "^3.0.3",
-    "nodemailer": "^6.9.13",
+    "nodemailer": "^6.9.14",
     "nodemailer-direct-transport": "^3.3.2",
     "preact": "^10.22.0",
     "react": "^18.3.1",
@@ -101,7 +101,7 @@
     "zip-local": "^0.3.5"
   },
   "optionalDependencies": {
-    "@aws-sdk/client-lambda": "^3.592.0",
+    "@aws-sdk/client-lambda": "^3.606.0",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@ffprobe-installer/ffprobe": "^2.1.2",
     "@google-cloud/storage": "^7.11.2",
@@ -118,17 +118,18 @@
     "fluent-ffmpeg": "^2.1.3",
     "ftp-srv": "^4.6.3",
     "lexical": "^0.16.0",
-    "lighthouse": "^12.0.0",
+    "lighthouse": "^12.1.0",
     "mail-notifier": "^0.5.0",
-    "mssql": "^10.0.2",
+    "mssql": "^11.0.0",
     "natural": "^7.0.6",
-    "nodemon": "^3.1.3",
-    "ollama": "^0.5.1",
-    "puppeteer": "^22.10.0",
+    "nodemon": "^3.1.4",
+    "ollama": "^0.5.2",
+    "puppeteer": "^22.12.1",
     "smtp-server": "^3.13.4",
     "xlsx": "^0.18.5",
     "xml2js": "^0.6.2",
-    "ytdl-core": "^4.11.5"
+    "ytdl-core": "^4.11.5",
+    "https-proxy-agent": "^7.0.5"
   },
   "devDependencies": {
     "@babel/cli": "^7.24.7",
@@ -159,7 +160,7 @@
     "react-test-renderer": "^18.3.1",
     "style-loader": "^4.0.0",
     "terser-webpack-plugin": "^5.3.10",
-    "webpack": "^5.91.0",
+    "webpack": "^5.92.1",
     "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.0.4"
@@ -167,6 +168,6 @@
   "overrides": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "graphql": "^16.8.1"
+    "graphql": "^16.9.0"
   }
 }

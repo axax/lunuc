@@ -14,49 +14,50 @@ function createFacetSliderMinMax(value, facetData) {
     }
 }
 
+function addFacetValue(currentFacet, facetValue) {
+    if (!currentFacet.values[facetValue]) {
+        currentFacet.values[facetValue] = {
+            value: facetValue,
+            count: 1
+        }
+    } else {
+        currentFacet.values[facetValue].count++
+    }
+}
+
 const createFacets = (facets, data, beforeFilter) => {
-    if (facets) {
-        Object.keys(facets).forEach(facetKey => {
-            const facet = facets[facetKey]
-            if (facet && data) {
-                let facetData = facet
-                if(beforeFilter){
-                    if(!facet.beforeFilter) {
-                        facet.beforeFilter = {}
-                    }
-                    facetData = facet.beforeFilter
+    if (facets && data) {
+        facets.forEach(facet=>{
+            let currentFacet = facet
+            const facetValue = data[facet.key]
+            if(beforeFilter){
+                if(!facet.beforeFilter) {
+                    facet.beforeFilter = {}
                 }
-                if (facet.type === 'slider') {
+                currentFacet = facet.beforeFilter
+            }
+            if (facet.type === 'slider') {
 
-                    if(data[facetKey] && data[facetKey].constructor === Array){
-                        data[facetKey].forEach(value=>{
-                            createFacetSliderMinMax(value, facetData)
-                        })
-                    }else{
-                        createFacetSliderMinMax(data[facetKey], facetData)
-                    }
+                if(facetValue && facetValue.constructor === Array){
+                    facetValue.forEach(value=>{
+                        createFacetSliderMinMax(value, currentFacet)
+                    })
+                }else{
+                    createFacetSliderMinMax(facetValue, currentFacet)
+                }
 
-                } else {
-                    if (!facetData.values) {
-                        facetData.values = {}
-                    }
+            } else {
+                if (!currentFacet.values) {
+                    currentFacet.values = {}
+                }
 
-                    let arr = data[facetKey]
-                    if (!arr || arr.constructor !== Array) {
-                        arr = [arr]
-                    }
 
-                    for (let i = 0; i < arr.length; i++) {
-                        const v = arr[i] || ''
-                        if (!facetData.values[v]) {
-                            facetData.values[v] = {
-                                value: v,
-                                count: 1
-                            }
-                        } else {
-                            facetData.values[v].count++
-                        }
-                    }
+                if(Array.isArray(facetValue)){
+                    facetValue.forEach(fv=>{
+                        addFacetValue(currentFacet, fv)
+                    })
+                }else{
+                    addFacetValue(currentFacet, facetValue || '')
                 }
             }
         })
@@ -76,6 +77,22 @@ const addToArray = (newArray, value, options)=>{
     }else if(options.duplicates || !newArray.includes(value)){
         newArray.push(value)
     }
+}
+
+function getFacetAsArray(path, rootData) {
+    let  loopFacet = propertyByPath(path, rootData)
+    if(loopFacet){
+        //to array
+        return Object.keys(loopFacet).map(key=>({...loopFacet[key], key}))
+    }
+}
+
+function setFacetToObject(path, rootData, loopFacet) {
+    let  facets = propertyByPath(path, rootData)
+    loopFacet.forEach(facet=>{
+        facets[facet.key] = facet
+        delete facet.key
+    })
 }
 
 /*
@@ -141,7 +158,7 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
                         let count = 0,loopFacet
 
                         if(re.lookup.facets && isNotFalse(re.lookup.facets.$is)){
-                            loopFacet = propertyByPath(re.lookup.facets.path, rootData)
+                            loopFacet = getFacetAsArray(re.lookup.facets.path, rootData)
                         }
                         value.forEach(key => {
 
@@ -187,6 +204,11 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
                             }
                             lookedupData.push(lookupData[key])
                         })
+
+
+                        if(loopFacet){
+                            setFacetToObject(re.lookup.facets.path, rootData, loopFacet)
+                        }
                     }
                 }
 
@@ -311,17 +333,21 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
                 }
             } else if (re.loop) {
                 let value = propertyByPath(re.path, currentData, '.', re.assign),
-                    loopFacet, newArray = []
+                    loopFacet,
+                    newArray = []
+
                 if(re.loop.facets && isNotFalse(re.loop.facets.$is)){
-                    loopFacet = propertyByPath(re.loop.facets.path, rootData)
+                    loopFacet = getFacetAsArray(re.loop.facets.path, rootData)
                 }
+
+                const activeFilters = re.loop.filter ? re.loop.filter.filter(f=>f.is===true || f.is==='true') : []
 
                 let total = 0
                 const inLoop = (key, isObject) =>{
                     if (loopFacet) {
                         createFacets(loopFacet, value[key], true)
                     }
-                    const filter = checkFilter(re.loop.filter, value, key)
+                    const filter = activeFilters.length>0 && checkFilter(activeFilters, value, key)
                     if (filter) {
 
                         if(filter.or && loopFacet){
@@ -354,12 +380,12 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
                     }
                 }
 
-
                 if(!value){
                     debugInfo.messages.push(`no value for ${JSON.stringify(re)}`)
                 }else {
                     if (value.constructor === Object) {
-                        for (const key in value) {
+
+                        for (const key of Object.keys(value)) {
                             inLoop(key, true)
                         }
                     } else if (value.constructor === Array) {
@@ -367,6 +393,10 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
                             inLoop(i)
                         }
                     }
+                }
+
+                if(loopFacet){
+                    setFacetToObject(re.loop.facets.path, rootData, loopFacet)
                 }
 
                 if(re.loop.total){
