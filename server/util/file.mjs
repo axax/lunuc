@@ -40,7 +40,7 @@ export const getFileFromOtherServer = (urlPath, filename, baseResponse, req) => 
 }
 
 
-export const sendFileFromDir = async (req, res, {filename, headers = {}, parsedUrl, neverCompress=false}) => {
+export const sendFileFromDir = async (req, res, {send404 = false, filename, headers = {}, parsedUrl, neverCompress=false}) => {
 
     let statMain
     try {
@@ -69,7 +69,7 @@ export const sendFileFromDir = async (req, res, {filename, headers = {}, parsedU
             'Connection': 'Keep-Alive',
             'Cache-Control': 'public, max-age=31536000', /* 604800 (a week) */
             'Content-Length': stat.size,
-            'Content-Type': MimeType.takeOrDetect(modImage.mimeType, parsedUrl),
+            'Content-Type': parsedUrl?MimeType.takeOrDetect(modImage.mimeType, parsedUrl):MimeType.detectByFileName(filename),
             'ETag': `"${createSimpleEtag({content: filename, stat})}"`,
             ...headers
         }
@@ -80,6 +80,8 @@ export const sendFileFromDir = async (req, res, {filename, headers = {}, parsedU
             sendFile(req,res,{headers: headersExtended,filename,fileStat:stat,neverCompress,statusCode:200})
         }
         return true
+    }else if(send404){
+        sendError(res, 404)
     }
     return false
 }
