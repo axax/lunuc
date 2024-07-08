@@ -97,6 +97,12 @@ const trOptions = key => ({
         tab: TRANSLATION_TAB,
         role: CAPABILITY_MANAGE_CMS_PAGES
     },
+    [`${key}trGlobal`]: {
+        label: 'Globale Übersetzung',
+        type: 'Boolean',
+        tab: TRANSLATION_TAB,
+        role: CAPABILITY_MANAGE_CMS_PAGES
+    },
     [`${key}trKey`]: {
         label: 'Übersetzungsschlüssel',
         value: '__uid__',

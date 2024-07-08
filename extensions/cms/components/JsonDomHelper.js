@@ -1496,11 +1496,15 @@ class JsonDomHelper extends React.Component {
                                     val = val.replace(/\n/g, '')
                                 }
 
-                                _onDataResolverPropertyChange({
-                                    value: Util.escapeForJson(Util.escapeForJson(val)),
-                                    path: 'tr.' + _app_.lang + '.' + currentOpt.trKey,
-                                    instantSave: true
-                                })
+                                if(currentOpt.trGlobal) {
+                                    // handle global tr
+                                }else{
+                                    _onDataResolverPropertyChange({
+                                        value: Util.escapeForJson(Util.escapeForJson(val)),
+                                        path: 'tr.' + _app_.lang + '.' + currentOpt.trKey,
+                                        instantSave: true
+                                    })
+                                }
                             }
                             setPropertyByPath(`$\{_t('${currentOpt.trKey}'${currentOpt.trContext?','+currentOpt.trContext:''})\}`, key, comp, '_')
 
