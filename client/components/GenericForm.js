@@ -803,7 +803,7 @@ class GenericForm extends React.Component {
 
             if (field.localized) {
                 const showTranslations = this.state.showTranslations[fieldKey]
-                const valueDefaultlanguage = value && value.constructor===String?value:value[config.DEFAULT_LANGUAGE]
+                const valueDefaultlanguage = value ? value.constructor===String?value:value[config.DEFAULT_LANGUAGE]:''
                 const translateButton = config.LANGUAGES.length > 1 && <>
                 {valueDefaultlanguage && <Tooltip title={_t('GenericFrom.autoTranslate')} key={fieldKey + "tooltip1"}>
                     <AutoFixHighIconButton key={fieldKey + "autoTranslate"}
