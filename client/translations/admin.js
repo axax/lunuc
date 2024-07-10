@@ -92,6 +92,8 @@ export const translations = {
         'UserRole.field.ownerGroup': 'Besitzergruppe',
         'GenericForm.delete': 'Löschen',
         'GenericForm.clone': 'Duplizieren',
+        'GenericFrom.autoTranslate': 'Automatisch übersetzen',
+        'GenericFrom.translation': 'Alle Übersetzungen anzeigen',
         'TypePicker.editEntry':'Eintrag bearbeiten'
     },
     en: {
@@ -185,6 +187,8 @@ export const translations = {
         'UserRole.field.ownerGroup': 'Owner group',
         'GenericForm.delete': 'Delete',
         'GenericForm.clone': 'Duplicate',
+        'GenericFrom.autoTranslate': 'Translate automatically',
+        'GenericFrom.translation': 'Show all translations',
         'TypePicker.editEntry':'Edit entry'
     }
 }

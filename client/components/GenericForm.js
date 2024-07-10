@@ -17,7 +17,9 @@ import {
     DeleteIcon,
     ExpandLessIconButton,
     ExpandMoreIconButton,
-    TranslateIconButton
+    TranslateIconButton,
+    AutoFixHighIconButton,
+    Tooltip
 } from 'ui/admin'
 import FileDrop from './FileDrop'
 import TypePicker from './TypePicker'
@@ -38,6 +40,7 @@ import styled from '@emotion/styled'
 import theme from './ui/impl/material/theme'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import {showTooltip, hideTooltip} from '../util/tooltip'
+import {translateText} from '../util/translate.mjs'
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ './CodeEditor')}/>
 
@@ -102,9 +105,10 @@ class GenericForm extends React.Component {
                         if (!fieldValue) {
                             fieldValue = {}
                         }
-                        config.LANGUAGES.forEach(lang => {
+                        fieldValue[config.DEFAULT_LANGUAGE] = props.values[fieldKey]
+                        /*config.LANGUAGES.forEach(lang => {
                             fieldValue[lang] = props.values[fieldKey]
-                        })
+                        })*/
                     } else {
                         fieldValue = Object.assign({}, props.values[fieldKey])
                     }
@@ -140,7 +144,6 @@ class GenericForm extends React.Component {
             }
             initalState.fields[fieldKey] = fieldValue
         })
-        console.log(initalState)
         const formValidation = GenericForm.staticValidate(initalState, props)
         initalState.isValid = formValidation.isValid
         initalState.fieldErrors = formValidation.fieldErrors
@@ -403,8 +406,9 @@ class GenericForm extends React.Component {
         if (localized) {
             const path = name.split('.'),
                 field = prevState.fieldsOri[path[0]]
-            if (!newState.fields[path[0]] || newState.fields[path[0]].constructor !== Object) {
-                newState.fields[path[0]] = {}
+            const currentVal = newState.fields[path[0]]
+            if (!currentVal || currentVal.constructor !== Object) {
+                newState.fields[path[0]] = currentVal && currentVal.constructor === String ? {[config.DEFAULT_LANGUAGE]:currentVal} : {}
             }
             newState.fields[path[0]][path[1]] = value
             if(field.localizedFallback){
@@ -799,22 +803,47 @@ class GenericForm extends React.Component {
 
             if (field.localized) {
                 const showTranslations = this.state.showTranslations[fieldKey]
-
-                const translateButton = config.LANGUAGES.length > 1 && <TranslateIconButton key={fieldKey + "translation"}
-                                                             onClick={() => {
-
-                                                                 this.setState({showTranslations: Object.assign({}, this.state.showTranslations, {[fieldKey]: !showTranslations})})
-                                                             }}></TranslateIconButton>
+                const valueDefaultlanguage = value && value.constructor===String?value:value[config.DEFAULT_LANGUAGE]
+                const translateButton = config.LANGUAGES.length > 1 && <>
+                {valueDefaultlanguage && <Tooltip title={_t('GenericFrom.autoTranslate')} key={fieldKey + "tooltip1"}>
+                    <AutoFixHighIconButton key={fieldKey + "autoTranslate"}
+                                     onClick={() => {
+                                         config.LANGUAGES.forEach(lang => {
+                                             if (!value[lang] && lang !== config.DEFAULT_LANGUAGE) {
+                                                 translateText({text: valueDefaultlanguage, toIso:lang, fromIso: config.DEFAULT_LANGUAGE}).then(({text,toIso}) => {
+                                                     this.handleInputChange({
+                                                         target: {
+                                                             dataset: {
+                                                                 language: toIso
+                                                             },
+                                                             name: `${fieldKey}.${toIso}`,
+                                                             value: text
+                                                         }
+                                                     })
+                                                 })
+                                             }
+                                         })
+                                     }}>
+                    </AutoFixHighIconButton>
+                </Tooltip>}
+                <Tooltip title={_t('GenericFrom.translation')} key={fieldKey + "tooltip2"}>
+                    <TranslateIconButton key={fieldKey + "translation"}
+                     onClick={() => {
+                         this.setState({showTranslations: Object.assign({}, this.state.showTranslations, {[fieldKey]: !showTranslations})})
+                     }}>
+                    </TranslateIconButton>
+                </Tooltip>
+                </>
 
 
                 config.LANGUAGES.forEach(languageCode => {
                     const fieldKeyTr = fieldKey + '.' + languageCode
                     if (languageCode === _app_.lang || showTranslations || !!this.state.fieldErrors[fieldKeyTr]) {
-
                         this.createInputField({
                             uitype,
                             field,
-                            value: value && value[languageCode] ? value[languageCode] : '',
+                            value: value && value[languageCode] ? value[languageCode] :
+                                (field.localizedFallback && value && value.constructor === String && config.DEFAULT_LANGUAGE===languageCode ? value:''),
                             currentFormFields,
                             fieldKey: fieldKeyTr,
                             fieldIndex,

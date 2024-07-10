@@ -1360,9 +1360,16 @@ class JsonDomHelper extends React.Component {
                                     ...newJsonElement.groupOptions[key][fieldKey],
                                     value: groupFieldValue
                                 }
-
                             if (optData.expandable && optData.expandable.constructor === String) {
-                                optData.expandable += ' ' + (idx + 1) + (groupFieldValue && groupFieldValue.constructor === String ? ' (' + groupFieldValue.substring(0, 20) + ')' : '')
+                                optData.expandable += ' ' + (idx + 1)
+
+                                if(groupFieldValue){
+                                    if(groupFieldValue.constructor === String){
+                                        optData.expandable += ' (' + groupFieldValue.substring(0, 20) + ')'
+                                    }else if(groupFieldValue.constructor === Object && groupFieldOption.localized && groupFieldValue[_app_.lang]){
+                                        optData.expandable += ' (' + groupFieldValue[_app_.lang].substring(0, 20) + ')'
+                                    }
+                                }
                             }
 
                             newJsonElement.options[optKey] = optData

@@ -43,6 +43,7 @@ import Box from '@mui/material/Box'
 import NetworkStatusHandler from 'client/components/layout/NetworkStatusHandler'
 import {getTypeQueries} from 'util/types.mjs'
 import Util from '../../../client/util/index.mjs'
+import {translateText} from '../../../client/util/translate.mjs'
 import {
     CAPABILITY_MANAGE_CMS_CONTENT,
     CAPABILITY_MANAGE_CMS_TEMPLATE,
@@ -810,33 +811,17 @@ class CmsViewEditorContainer extends React.Component {
                                             if (o[key] && o[key].constructor === String) {
                                                 config.LANGUAGES.forEach(lang => {
                                                     if ((overrideTranslations || !base[lang] || !base[lang][key]) && lang !== config.DEFAULT_LANGUAGE) {
-                                                        const text = o[key].replace(/\\n/g, '\n').replace(/%(\w+)%/g, '@_$1_')
-                                                        client.query({
-                                                            fetchPolicy: 'no-cache',
-                                                            query: 'query translate($text: String!, $toIso: String!){translate(text: $text, toIso: $toIso){text toIso}}',
-                                                            variables: {
-                                                                text,
-                                                                toIso: lang,
-                                                                fromIso: config.DEFAULT_LANGUAGE
-                                                            },
-                                                        }).then((res) => {
-                                                            // double escape
-                                                            const newText = Util.escapeForJson(Util.escapeForJson(res.data.translate.text.replace(/@_(\w+)_/g, '%$1%').replace(/\\/g, '')))
-                                                            setPropertyByPath(newText, lang + path + '.' + key.replace(/\./g, '\\\.'), base)
+                                                        translateText({text: o[key], toIso:lang, fromIso: config.DEFAULT_LANGUAGE}).then(({text}) => {
+                                                            setPropertyByPath(text, lang + path + '.' + key.replace(/\./g, '\\\.'), base)
                                                             saveResolver()
-
                                                         })
-
                                                     }
                                                 })
                                             }
                                         })
                                     }
                                     transRec(segment.tr[config.DEFAULT_LANGUAGE], segment.tr, '')
-
-
                                 }
-
                             }
                         }
                     )

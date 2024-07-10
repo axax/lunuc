@@ -2100,7 +2100,9 @@ const advancedElements = [
                     expandable: 'Element',
                     tab: 'Einträge',
                     label: 'Überschrift',
-                    fullWidth: true
+                    fullWidth: true,
+                    localized:true,
+                    localizedFallback:true
                 },
                 img: {
                     fullWidth: true,
@@ -2113,6 +2115,8 @@ const advancedElements = [
                 html: {
                     tab: 'Einträge',
                     expandable: false,
+                    localized:true,
+                    localizedFallback:true,
                     label: 'Text',
                     uitype: 'html',
                 }

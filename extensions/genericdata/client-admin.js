@@ -22,6 +22,7 @@ import {parseStyles} from '../../client/util/style'
 import DomUtil from '../../client/util/dom.mjs'
 import {CAPABILITY_ADMIN_OPTIONS} from "../../util/capabilities.mjs";
 import {getImageTag} from '../../client/util/media'
+import {translateText} from "../../client/util/translate.mjs";
 
 registerTrs(translations, 'GenericData')
 
@@ -298,21 +299,8 @@ export default () => {
                                                       if (obj) {
                                                           config.LANGUAGES.forEach(lang => {
                                                               if ((overrideTranslations || !obj[lang]) && lang !== config.DEFAULT_LANGUAGE) {
-
-                                                                  const text = obj[config.DEFAULT_LANGUAGE].replace(/\\n/g, '\n').replace(/%(\w+)%/g, '@_$1_')
-                                                                  client.query({
-                                                                      fetchPolicy: 'no-cache',
-                                                                      query: 'query translate($text: String!, $toIso: String!){translate(text: $text, toIso: $toIso){text toIso}}',
-                                                                      variables: {
-                                                                          text,
-                                                                          toIso: lang,
-                                                                          fromIso: config.DEFAULT_LANGUAGE
-                                                                      },
-                                                                  }).then((res) => {
-                                                                      const resLang = res.data.translate.toIso
-                                                                      const newText = res.data.translate.text.replace(/@_(\w+)_/g, '%$1%').replace(/\\/g, '') //.replace(/"/g,'\\"')
-                                                                      dataObject[name][resLang] = newText
-
+                                                                  translateText({text: obj[config.DEFAULT_LANGUAGE], toIso:lang, fromIso: config.DEFAULT_LANGUAGE}).then(({toIso,text}) => {
+                                                                      dataObject[name][toIso] = text
                                                                       clearTimeout(translateTimeout)
                                                                       translateTimeout = setTimeout(() => {
                                                                           parentRef.setState({
@@ -324,7 +312,6 @@ export default () => {
                                                                           })
                                                                       }, 1000)
                                                                   })
-
                                                               }
                                                           })
                                                       }
@@ -366,7 +353,6 @@ export default () => {
                         deepMergeToFirst(newFields, structure.extendFields)
 
                     }
-
 
                     // override default
                     props.children = <GenericForm autoFocus
