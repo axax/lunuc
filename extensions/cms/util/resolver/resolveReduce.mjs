@@ -160,13 +160,17 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
                         if(re.lookup.facets && isNotFalse(re.lookup.facets.$is)){
                             loopFacet = getFacetAsArray(re.lookup.facets.path, rootData)
                         }
+
+                        const activeFilters = re.lookup.filter && re.lookup.filter.filter(f=>isNotFalse(f.is))
+                        const activeFiltersBefore = re.lookup.filterBefore && re.lookup.filterBefore.filter(f=>isNotFalse(f.is))
+
                         value.forEach(key => {
 
                             if (loopFacet) {
                                 createFacets(loopFacet, lookupData[key], true)
                             }
 
-                            const filter = checkFilter(re.lookup.filterBefore, lookupData, key)
+                            const filter = checkFilter(activeFiltersBefore, lookupData, key)
 
                             if (filter) {
                                 if(loopFacet && filter.or) {
@@ -188,7 +192,7 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
                             if (re.lookup.limit && re.lookup.limit <= count) {
                                 return
                             }
-                            if (checkFilter(re.lookup.filter, lookupData, key)) {
+                            if (checkFilter(activeFilters, lookupData, key)) {
                                 return
                             }
                             count++
@@ -340,14 +344,14 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
                     loopFacet = getFacetAsArray(re.loop.facets.path, rootData)
                 }
 
-                const activeFilters = re.loop.filter ? re.loop.filter.filter(f=>f.is===true || f.is==='true') : []
+                const activeFilters = re.loop.filter && re.loop.filter.filter(f=>isNotFalse(f.is))
 
                 let total = 0
                 const inLoop = (key, isObject) =>{
                     if (loopFacet) {
                         createFacets(loopFacet, value[key], true)
                     }
-                    const filter = activeFilters.length>0 && checkFilter(activeFilters, value, key)
+                    const filter = checkFilter(activeFilters, value, key)
                     if (filter) {
 
                         if(filter.or && loopFacet){
@@ -439,39 +443,37 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
 
 
 const checkFilter = (filters, value, key) => {
-    if (filters) {
+    if(filters) {
         for (let i = 0; i < filters.length; i++) {
             const filter = filters[i]
-            if (!filter.is || filter.is === 'true') {
 
-                if (filter.search) {
-                    const re = new RegExp(filter.search.expr, 'i'),
-                        keys = Object.keys(filter.search.fields)
+            if (filter.search) {
+                const re = new RegExp(filter.search.expr, 'i'),
+                    keys = Object.keys(filter.search.fields)
 
 
-                    let hasMatch = false
-                    for (let y = 0; y < keys.length; y++) {
-                        const fieldKey = keys[y]
-                        let valueToCheck
-                        if (fieldKey.indexOf('.') >= 0) {
-                            valueToCheck = propertyByPath(fieldKey, value[key])
-                        } else {
-                            valueToCheck = value[key][fieldKey]
-                        }
-                        if (valueToCheck && re.test(valueToCheck)) {
-                            hasMatch = true
-                            break
-                        }
+                let hasMatch = false
+                for (let y = 0; y < keys.length; y++) {
+                    const fieldKey = keys[y]
+                    let valueToCheck
+                    if (fieldKey.indexOf('.') >= 0) {
+                        valueToCheck = propertyByPath(fieldKey, value[key])
+                    } else {
+                        valueToCheck = value[key][fieldKey]
                     }
-                    if(hasMatch){
-                        continue
+                    if (valueToCheck && re.test(valueToCheck)) {
+                        hasMatch = true
+                        break
                     }
+                }
+                if (hasMatch) {
+                    continue
+                }
+                return filter
+
+            } else {
+                if (matchExpr(filter.expr, {key, value: value[key]})) {
                     return filter
-
-                } else {
-                    if (matchExpr(filter.expr, {key, value: value[key]})) {
-                        return filter
-                    }
                 }
             }
         }
