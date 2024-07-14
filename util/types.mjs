@@ -110,7 +110,7 @@ export const getTypeQueries = (typeName, queryFields, opts) => {
                 insertParams += '$' + name + ': ' + (multi && !reference ? '[' + queryType + ']' : queryType) + (required ? '!' : '')
                 updateParams += '$' + name + ': ' + (multi && !reference ? '[' + queryType + ']' : queryType)
                 insertUpdateQuery += name + ': ' + '$' + name
-                if (clone) {
+                if (clone!==undefined) {
                     cloneParams += ', $' + name + ': ' + (multi && !reference ? '[' + queryType + ']' : queryType) + (required ? '!' : '')
                     cloneQuery += ',' + name + ': ' + '$' + name
                 }

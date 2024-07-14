@@ -27,6 +27,7 @@ export const translations = {
         'NewsletterMailing.field.list': 'Versandliste',
         'NewsletterMailing.field.users': 'Versand direkt an Benutzer',
         'NewsletterMailing.field.template': 'Template/Seite',
+        'NewsletterMailing.field.genericData': 'Datensätze',
         'NewsletterMailing.field.active': 'Versand starten',
         'NewsletterMailing.field.unsubscribeHeader': 'List-Unsubscribe-Header',
         'NewsletterMailing.field.batchSize': 'Anzahl Emails pro Lauf',
@@ -43,7 +44,9 @@ export const translations = {
         'NewsletterSent.field.mailResponse': 'Server Antwort',
         'NewsletterTracking.field.subscriber': 'Abonnent',
         'NewsletterTracking.field.mailing': 'Versand',
-        'NewsletterTracking.field.url': 'Url'
+        'NewsletterTracking.field.url': 'Url',
+        'NewsletterMailing.preview': 'Vorschau',
+        'NewsletterMailing.sendNewsletter':'Newsletter senden'
     },
     en: {
         'NewsletterSubscriber.tab.general': 'General',
@@ -72,11 +75,15 @@ export const translations = {
         'NewsletterMailing.field.list': 'Sending list',
         'NewsletterMailing.field.users': 'Send directly to user',
         'NewsletterMailing.field.template': 'Template/page',
+        'NewsletterMailing.field.genericData': 'Entries',
         'NewsletterMailing.field.active': 'Active',
+        'NewsletterMailing.field.mailCount': 'Mail sent',
         'NewsletterMailing.field.unsubscribeHeader': 'List-Unsubscribe-Header',
         'NewsletterMailing.field.batchSize': 'Batch size',
         'NewsletterMailing.field.perHour': 'Max. emails per hour',
         'NewsletterMailing.field.language': 'Languages (comma-separated)',
         'NewsletterMailing.field.mailSettings': 'Mail server settings',
+        'NewsletterMailing.preview': 'Preview',
+        'NewsletterMailing.sendNewsletter':'Send Newsletter'
     }
 }

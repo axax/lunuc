@@ -465,7 +465,7 @@ function gensrcExtension(name, options) {
                     insertFields += newInsertField
                 }
 
-                if (field.clone) {
+                if (field.clone!==undefined) {
                     cloneFields += ',' + newInsertField
                 }
             })

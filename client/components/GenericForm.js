@@ -195,6 +195,7 @@ class GenericForm extends React.Component {
                         config.LANGUAGES.forEach(lang => {
                             if (!state.fields[fieldKey] || !state.fields[fieldKey][lang] || !state.fields[fieldKey][lang].trim() === '') {
                                 fieldErrors[fieldKey + '.' + lang] = _t('GenericForm.fieldIsRequired')
+                                state.showTranslations[fieldKey] = true
                             }
                         })
                     } else {
@@ -838,7 +839,7 @@ class GenericForm extends React.Component {
 
                 config.LANGUAGES.forEach(languageCode => {
                     const fieldKeyTr = fieldKey + '.' + languageCode
-                    if (languageCode === _app_.lang || showTranslations || !!this.state.fieldErrors[fieldKeyTr]) {
+                    if (languageCode === _app_.lang || showTranslations) {
                         this.createInputField({
                             uitype,
                             field,

@@ -128,6 +128,7 @@ const classOptions = (key, tab) => ({
     },
     [`${key}style@custom`]: {
         label: 'CSS Style',
+        fullWidth:true,
         tab: tab || DEFAULT_TAB
     }
 })

@@ -3,8 +3,9 @@ import Hook from 'util/hook.cjs'
 import Async from 'client/components/Async'
 import {client} from 'client/middleware/graphql'
 
-import {registerTrs} from '../../util/i18n.mjs'
+import {registerTrs,_t} from '../../util/i18n.mjs'
 import {translations} from './translations/admin'
+import {openWindow} from "../../client/util/window";
 registerTrs(translations, 'Newsletter')
 
 const SimpleDialog = (props) => <Async {...props} expose="SimpleDialog"
@@ -25,61 +26,70 @@ export default () => {
     })*/
 
     Hook.on('TypeCreateEditAction', function ({type, action, dataToEdit, createEditForm, meta}) {
-        if (type === 'NewsletterMailing' && action && action.key === 'send') {
+        if (type === 'NewsletterMailing' && action) {
 
-            const listIds = []
+            if(action.key === 'preview') {
+                openWindow({url:`/${dataToEdit.template.slug}?preview=true&context=${encodeURIComponent(JSON.stringify(dataToEdit))}`})
 
-            const fieldsForSend = createEditForm.state.fields
-            if(fieldsForSend.list) {
-                fieldsForSend.list.forEach(list => {
-                    listIds.push(list._id)
-                })
-            }
+            }else if(action.key === 'send') {
+                const listIds = []
 
-            const usersIds = []
-
-            if(fieldsForSend.users) {
-                fieldsForSend.users.forEach(user => {
-                    usersIds.push(user._id)
-                })
-            }
-
-
-            let template = fieldsForSend.template
-            if(template && template.constructor === Array && template.length>0){
-                template = template[0]
-            }
-
-            client.query({
-                fetchPolicy: 'network-only',
-                query: 'query sendNewsletter($mailing: ID!, $subject: LocalizedStringInput!,$template: String, $list:[ID],$users:[ID],$unsubscribeHeader:Boolean,$batchSize: Float, $host: String, $text: LocalizedStringInput, $html: LocalizedStringInput){sendNewsletter(mailing:$mailing,subject:$subject,template:$template,list:$list,users:$users,unsubscribeHeader:$unsubscribeHeader,batchSize:$batchSize,host:$host,text:$text,html:$html){status}}',
-                variables: {
-                    mailing: dataToEdit._id,
-                    subject: fieldsForSend.subject,
-                    batchSize: fieldsForSend.batchSize,
-                    host: fieldsForSend.host || '',
-                    text: fieldsForSend.text,
-                    html: fieldsForSend.html,
-                    template: template?template.slug: undefined,
-                    list: listIds,
-                    users: usersIds,
-                    unsubscribeHeader: fieldsForSend.unsubscribeHeader
-            }
-            }).then(response => {
-
-                if( meta && meta.TypeContainer) {
-                    meta.TypeContainer.setState({mailingResponse: response})
+                const fieldsForSend = createEditForm.state.fields
+                if (fieldsForSend.list) {
+                    fieldsForSend.list.forEach(list => {
+                        listIds.push(list._id)
+                    })
                 }
-            }).catch(error => {
-                console.log(error.message)
-            })
+
+                const usersIds = []
+
+                if (fieldsForSend.users) {
+                    fieldsForSend.users.forEach(user => {
+                        usersIds.push(user._id)
+                    })
+                }
+
+
+                let template = fieldsForSend.template
+                if (template && template.constructor === Array && template.length > 0) {
+                    template = template[0]
+                }
+
+                client.query({
+                    fetchPolicy: 'network-only',
+                    query: 'query sendNewsletter($mailing: ID!, $subject: LocalizedStringInput!,$template: String, $list:[ID],$users:[ID],$unsubscribeHeader:Boolean,$batchSize: Float, $host: String, $text: LocalizedStringInput, $html: LocalizedStringInput){sendNewsletter(mailing:$mailing,subject:$subject,template:$template,list:$list,users:$users,unsubscribeHeader:$unsubscribeHeader,batchSize:$batchSize,host:$host,text:$text,html:$html){status}}',
+                    variables: {
+                        mailing: dataToEdit._id,
+                        subject: fieldsForSend.subject,
+                        batchSize: fieldsForSend.batchSize,
+                        host: fieldsForSend.host || '',
+                        text: fieldsForSend.text,
+                        html: fieldsForSend.html,
+                        template: template ? template.slug : undefined,
+                        list: listIds,
+                        users: usersIds,
+                        unsubscribeHeader: fieldsForSend.unsubscribeHeader
+                    }
+                }).then(response => {
+
+                    if (meta && meta.TypeContainer) {
+                        meta.TypeContainer.setState({mailingResponse: response})
+                    }
+                }).catch(error => {
+                    console.log(error.message)
+                })
+            }
         }
     })
 
 
     Hook.on('TypeCreateEdit', ({type, props, dataToEdit}) => {
         if (type === 'NewsletterMailing' && dataToEdit && dataToEdit._id) {
-            props.actions.unshift({key: 'send', label: 'Send Newsletter'})
+            props.actions.unshift({key: 'send', label: _t('NewsletterMailing.sendNewsletter')})
+
+            if(dataToEdit.template && dataToEdit.template.slug){
+                props.actions.unshift({key: 'preview', label: _t('NewsletterMailing.preview')})
+            }
         }
     })
 

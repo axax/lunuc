@@ -88,6 +88,14 @@ export default db => ({
                 )
                 if (!sent) {
 
+                    const sentResult = await db.collection('NewsletterSent').insertOne(
+                        {
+                            subscriber: sub._id,
+                            userAccount: userAccountId,
+                            mailing: new ObjectId(mailing)
+                        }
+                    )
+
                     if(userAccountId && (!sub.account || sub.account.constructor !== Object)) {
                         sub.account = await db.collection('User').findOne(
                             {_id: userAccountId}
@@ -194,8 +202,17 @@ export default db => ({
                             console.log(e)
                         }
                     }
+                    if(mailingData && mailingData.genericData){
+                       body.genericData = []
+                        for(const id of mailingData.genericData){
+                            const data = await db.collection('GenericData').findOne({_id: id})
+                            if(data){
+                                body.genericData.push(data)
+                            }
+                        }
+                    }
 
-                    console.log('send newsletter', sub.email)
+                    console.log('send newsletter', sub.email, body)
 
                     const result = await sendMail(db, Object.assign(req.context, {lang: subLang}), {
                         slug: template,
@@ -210,14 +227,7 @@ export default db => ({
                     })
                     emails.push(sub.email)
 
-                    db.collection('NewsletterSent').insertOne(
-                        {
-                            subscriber: sub._id,
-                            userAccount: userAccountId,
-                            mailing: new ObjectId(mailing),
-                            mailResponse: result
-                        }
-                    )
+                    await db.collection('NewsletterSent').updateOne({_id:sentResult.insertedId}, {$set: {mailResponse: result}})
                 }
 
             }

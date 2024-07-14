@@ -160,6 +160,7 @@
         {
           "tab": "general",
           "name": "active",
+          "clone": false,
           "description": "Wenn aktiv wird der Versand im Hintergrund ausgeführt",
           "type": "Boolean",
           "index": 1
@@ -169,7 +170,8 @@
           "name": "template",
           "description": "Es besteht die Möglichkeit, entweder ein Seitentemplate auszuwählen oder den Inhalt direkt an dieser Stelle einzugeben.",
           "type": "CmsPage",
-          "hideColumnInTypes": true
+          "hideColumnInTypes": true,
+          "fields": ["_id","name","slug"]
         },
         {
           "tab": "plainContent",
@@ -188,6 +190,19 @@
           "localized": true
         },
         {
+          "name": "genericData",
+          "type": "GenericData",
+          "hideColumnInTypes": true,
+          "fullWidth": true,
+          "multi": true,
+          "tab": "content",
+          "fields": ["_id","data"],
+          "pickerField": [
+            "title",
+            "name"
+          ]
+        },
+        {
           "tab": "attachment",
           "name": "attachment",
           "type": "Media",
@@ -203,17 +218,33 @@
         {
           "name": "contextProps",
           "uitype": "json",
+          "access": {
+            "ui": {
+              "role": "manage_types"
+            }
+          },
           "hideColumnInTypes": true,
           "localized": false
         },
         {
           "name": "unsubscribeHeader",
           "type": "Boolean",
+          "hideColumnInTypes": true,
+          "access": {
+            "ui": {
+              "role": "manage_types"
+            }
+          },
           "index": 1
         },
         {
           "tab": "send",
           "name": "batchSize",
+          "access": {
+            "ui": {
+              "role": "manage_types"
+            }
+          },
           "hideColumnInTypes": true,
           "type": "Float"
         },
@@ -221,20 +252,40 @@
           "tab": "send",
           "name": "perHour",
           "hideColumnInTypes": true,
+          "access": {
+            "ui": {
+              "role": "manage_types"
+            }
+          },
           "type": "Float"
         },
         {
           "tab": "send",
           "name": "host",
+          "access": {
+            "ui": {
+              "role": "manage_types"
+            }
+          },
           "hideColumnInTypes": true
         },
         {
           "tab": "send",
           "name": "language",
+          "access": {
+            "ui": {
+              "role": "manage_types"
+            }
+          },
           "hideColumnInTypes": true
         },
         {
           "name": "mailSettings",
+          "access": {
+            "ui": {
+              "role": "manage_types"
+            }
+          },
           "type": "Object",
           "alwaysLoad": false,
           "hideColumnInTypes": true,
