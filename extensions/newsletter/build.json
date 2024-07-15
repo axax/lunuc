@@ -200,6 +200,10 @@
           "pickerField": [
             "title",
             "name"
+          ],
+          "projection": [
+            "title",
+            "name"
           ]
         },
         {
