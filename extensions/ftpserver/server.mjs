@@ -50,8 +50,8 @@ const resolverFunction = (address) => {
 
 const startFtpServer = (db)=> {
 
-    const hostname = '0.0.0.0';
-    const port = 21;
+    const hostname = '0.0.0.0'
+    const port = 21
 
     const ftpServer = new FtpSrv({
         url: `ftp://${hostname}:${port}`,

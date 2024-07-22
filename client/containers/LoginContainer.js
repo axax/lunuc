@@ -29,7 +29,7 @@ class LoginContainer extends React.Component {
             password: '',
             newPassword:'',
             resetToken:'',
-            domain: _app_.login ? _app_.login.defaultDomain : domain || ''
+            domain: domain ? domain : _app_.login ? _app_.login.defaultDomain : ''
         }
     }
 

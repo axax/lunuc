@@ -68,6 +68,9 @@ import CmsPageSeo from '../components/CmsPageSeo'
 import styled from '@emotion/styled'
 import PrettyErrorMessage from '../components/PrettyErrorMessage'
 import {useKeyValuesGlobal, setKeyValue} from '../../../client/util/keyvalue'
+import {downloadAs} from '../../../client/util/download'
+import FileDrop from "../../../client/components/FileDrop";
+import {csvToJson} from "../../../client/util/csv.mjs";
 
 const StyledBox = styled(Box)(({theme})=>({
     display: 'flex',
@@ -81,6 +84,21 @@ const CodeEditor = (props) => <Async {...props}
 
 const DEFAULT_EDITOR_SETTINGS = {inlineEditor: true, fixedLayout: true, drawerOpen: false, drawerWidth: 500}
 
+
+function saveTrsAsCsv(data) {
+    const json = JSON.parse(data)
+    if (json.tr && json.tr[config.DEFAULT_LANGUAGE]) {
+        let csv = '"key";"' + config.LANGUAGES.join('";"') + '"\r\n'
+        Object.keys(json.tr[config.DEFAULT_LANGUAGE]).forEach(key => {
+            const tr = [key]
+            config.LANGUAGES.forEach(lang => {
+                tr.push(json.tr[lang] && json.tr[lang][key] ? json.tr[lang][key].replace(/"/g, '\\"') : '')
+            })
+            csv += '"' + tr.join('";"') + '"\r\n'
+        })
+        downloadAs(csv, 'export.csv')
+    }
+}
 
 class CmsViewEditorContainer extends React.Component {
 
@@ -467,6 +485,7 @@ class CmsViewEditorContainer extends React.Component {
             <ErrorHandler key="errorHandler" snackbar/>,
             <NetworkStatusHandler key="networkStatus"/>,
             simpleDialog && <SimpleDialog open={true}
+                                          fullWidth={true} maxWidth="md"
                                           onClose={(action) => {
                                               if (simpleDialog.onClose) {
                                                   simpleDialog.onClose(action)
@@ -750,12 +769,14 @@ class CmsViewEditorContainer extends React.Component {
                         name: _t('CmsViewEditorContainer.globalTranslation'),
                         onClick: () =>{
                             const key ='GlobalTranslations-'+slug.split('/')[0]
-                            let editedData
+                            let editedData, editor
                             const GlobalEditor = ()=>{
                                 const keyValues = useKeyValuesGlobal([key], {})
                                 if(!keyValues.loading){
                                     return <CodeEditor onChange={(e)=>{
                                         editedData = e
+                                    }} onForwardRef={(e) => {
+                                        editor = e
                                     }} type="json">{keyValues.data[key]}</CodeEditor>
                                 }
                                 return 'loading...'
@@ -763,12 +784,36 @@ class CmsViewEditorContainer extends React.Component {
                             this.setState({
                                 simpleDialog: {
                                     title: _t('CmsViewEditorContainer.globalTranslation'),
-                                    text: <GlobalEditor />,
+                                    text: <><GlobalEditor /><FileDrop maxSize={100000} style={{width: '100%'}} accept="text/csv"
+                                                                      onFileContent={(files,content)=>{
+                                                                          const json = csvToJson(content)
+                                                                          if(json && json.length>0){
+                                                                              const trs = {}
+                                                                              json.forEach(entry=>{
+                                                                                  config.LANGUAGES.forEach(lang => {
+                                                                                      if(entry[lang]) {
+                                                                                          if (!trs[lang]) {
+                                                                                              trs[lang] = {}
+                                                                                          }
+                                                                                          trs[lang][entry.key] = entry[lang]
+                                                                                      }
+                                                                                  })
+                                                                              })
+                                                                              //setKeyValue({key,value:JSON.stringify({tr:trs}),clearCache:true, global:true})
+                                                                              editor._editor.setValue(JSON.stringify({tr:trs},null,4))
+                                                                              console.log(trs)
+                                                                          }
+                                                                      }} label={_t('CmsViewEditorContainer.importCsv')}/></>,
                                     actions: [
                                         {
                                             key: 'cancel',
                                             label: _t('core.cancel'),
                                             type: 'secondary'
+                                        },
+                                        {
+                                            key: 'export',
+                                            label: _t('CmsViewEditorContainer.exportCsv'),
+                                            type: 'primary'
                                         },
                                         {
                                             key: 'save',
@@ -777,7 +822,10 @@ class CmsViewEditorContainer extends React.Component {
                                         }
                                     ],
                                     onClose: (e) => {
-                                        if(e.key==='save' && editedData) {
+                                        if (e.key === 'export') {
+                                            saveTrsAsCsv(editor.state.data)
+                                            return
+                                        }else if(e.key==='save' && editedData) {
                                             setKeyValue({key,value:editedData,clearCache:true, global:true})
                                             location.href = location.href
                                         }
