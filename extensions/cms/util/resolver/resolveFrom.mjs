@@ -2,6 +2,7 @@ import Util from '../../../../api/util/index.mjs'
 import {propertyByPath} from '../../../../client/util/json.mjs'
 import {resolveData} from '../dataResolver.mjs'
 import {getCmsPage} from '../cmsPage.mjs'
+import {performFieldProjection} from '../../../../util/project.mjs'
 
 export const resolveFrom = async ({segment, db, context, resolvedData, scope, nosession, req, editmode, dynamic}) => {
     const resolveFrom = segment.resolveFrom
@@ -28,11 +29,17 @@ export const resolveFrom = async ({segment, db, context, resolvedData, scope, no
                 editmode,
                 dynamic
             })
-            Object.keys(resolvedFromKey.resolvedData).forEach(k => {
+
+            let projected = resolvedFromKey.resolvedData
+            if(resolveFrom.project) {
+                projected = performFieldProjection(resolveFrom.project, projected)
+            }
+
+            Object.keys(projected).forEach(k => {
                 if (k === '_meta') {
-                    resolvedData[k] = Object.assign({},resolvedData[k], resolvedFromKey.resolvedData[k])
+                    resolvedData[k] = Object.assign({},resolvedData[k], projected[k])
                 } else {
-                    resolvedData[k] = resolvedFromKey.resolvedData[k]
+                    resolvedData[k] = projected[k]
                 }
             })
         }
