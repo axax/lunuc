@@ -7,7 +7,7 @@ import DialogTitle from '@mui/material/DialogTitle'
 import Button from '@mui/material/Button'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import theme from './theme'
-import { FocusTrap } from '@mui/base/FocusTrap'
+import FocusTrap from '@mui/material/Unstable_TrapFocus/FocusTrap'
 
 
 
