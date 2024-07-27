@@ -19,8 +19,6 @@ const renderReact = async ({
                                context
                            }) => {
 
-   // const store = getStore()
-
     const loc = {pathname: '', search: '', origin: ''}
     if (req) {
         const host = getHostFromHeaders(req.headers)

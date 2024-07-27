@@ -172,11 +172,12 @@ const setUpWs = () => {
 
     }
 }
-const getHeaders = (lang) => {
+const getHeaders = (lang, headersExtra={}) => {
     const headers = {
         'Content-Language': lang || _app_.lang,
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        ...headersExtra
     }
 
     const token = Util.getAuthToken()
@@ -216,7 +217,7 @@ export const clearFetchById = (id) => {
     }
 }
 const FETCHING_BY_CACHEKEY = {}
-export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  query, variables, hiddenVariables, fetchPolicy = 'cache-first', lang}) => {
+export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  query, variables, hiddenVariables, fetchPolicy = 'cache-first', lang, headersExtra}) => {
 
     if (!cacheKey && type === RequestType.query) {
         cacheKey = getCacheKey({query, variables})
@@ -269,13 +270,12 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  qu
         } else {
             body = JSON.stringify({query, variables})
         }
-
         addLoader()
         fetch(getGraphQlUrl(), {
             method: 'POST',
             signal: controller.signal,
             credentials: 'include',
-            headers: getHeaders(lang),
+            headers: getHeaders(lang, headersExtra),
             body
         }).then(r => {
             finalizeRequest()

@@ -1,0 +1,28 @@
+{
+  "config": {
+    "PROXY_PORTS": [3011]
+  },
+  "types": [
+    {
+      "name": "ProxyUser",
+      "entryClonable": true,
+      "fields": [
+        {
+          "unique": true,
+          "name": "username",
+          "index": 1
+        },
+        {
+          "name": "password",
+          "uitype": "password",
+          "hash": true
+        },
+        {
+          "name": "active",
+          "type": "Boolean",
+          "index": 1
+        }
+      ]
+    }
+  ]
+}

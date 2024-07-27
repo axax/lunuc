@@ -16,6 +16,7 @@ export const decodeToken = (token) => {
                 }
             })
         }
+        result.auth = token
     }
     return result
 }
