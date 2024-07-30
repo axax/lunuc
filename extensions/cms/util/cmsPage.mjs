@@ -41,7 +41,7 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
 
         for (let i = 0; i < hostsChecks.length; i++) {
             const currentHost = hostsChecks[i]
-            const hostrule = hostrules[currentHost]
+            const hostrule = hostrules[currentHost] || hostrules.general
             if (hostrule){
                 if(hostrule.slugContext && (slug + '/').indexOf(hostrule.slugContext + '/') !== 0)
                 {
