@@ -5,7 +5,7 @@ import {isTemporarilyBlocked} from './requestBlocker.mjs'
 
 export const doScreenCapture = async (url, filename, options) => {
 
-    if(isTemporarilyBlocked({requestTimeInMs: 3000, requestPerTime: 1,requestBlockForInMs:10000, key:'parseWebsite'})){
+    if(isTemporarilyBlocked({requestTimeInMs: 2000, requestPerTime: 2,requestBlockForInMs:6000, key:'doScreenCapture'})){
         return {html: '503 Service Unavailable', statusCode: 503}
     }
 
