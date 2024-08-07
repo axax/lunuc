@@ -592,7 +592,12 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                                     if (url.indexOf('/') === 0) {
                                         url = /*(req.isHttps ? 'https://' : 'http://') + hostRuleHost*/ 'http://127.0.0.1:'+PORT + url
                                     }
-                                    await doScreenCapture(url, absFilename, data.screenshot.options)
+                                    const result = await doScreenCapture(url, absFilename, data.screenshot.options)
+                                    if(result.statusCode!=200){
+                                        sendError(res, result.statusCode)
+                                        return
+                                    }
+
                                 }
 
                                 await resolveUploadedFile(`${UPLOAD_URL}/screenshots/${filename}`, false, req, res)

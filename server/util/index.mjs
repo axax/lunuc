@@ -1,8 +1,13 @@
 import puppeteer from 'puppeteer'
 import ApiUtil from '../../api/util/index.mjs'
+import {isTemporarilyBlocked} from './requestBlocker.mjs'
 
 
 export const doScreenCapture = async (url, filename, options) => {
+
+    if(isTemporarilyBlocked({requestTimeInMs: 3000, requestPerTime: 1,requestBlockForInMs:10000, key:'parseWebsite'})){
+        return {html: '503 Service Unavailable', statusCode: 503}
+    }
 
     console.log(`take screenshot ${url}`)
 
@@ -19,7 +24,6 @@ export const doScreenCapture = async (url, filename, options) => {
         if (options.delay) {
             await ApiUtil.sleep(options.delay)
         }
-        console.log(options)
         if (options.padding) {
             let t, l, b, r
             if (options.padding.constructor === String) {
@@ -54,6 +58,7 @@ export const doScreenCapture = async (url, filename, options) => {
         await page.close()
     }catch (e){}
     await browser.close()
+    return {statusCode:200}
 }
 
 
