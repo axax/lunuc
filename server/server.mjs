@@ -595,7 +595,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                                     await doScreenCapture(url, absFilename, data.screenshot.options)
                                 }
 
-                                await resolveUploadedFile(`${UPLOAD_URL}/screenshots/${filename}`, parsedUrl, req, res)
+                                await resolveUploadedFile(`${UPLOAD_URL}/screenshots/${filename}`, false, req, res)
 
 
                             } else {
