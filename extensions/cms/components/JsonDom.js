@@ -117,6 +117,9 @@ class JsonDom extends React.Component {
         },
         'Link': ({to, href, target, gotop, native, onClick, tracking, scrollOffset, scrollStep, scrollTimeout, ...rest}) => {
             let url = to || href || ''
+            if(url._localized){
+                url = url[_app_.lang] || url[config.DEFAULT_LANGUAGE]
+            }
             const newTarget = target && target !== 'undefined' ? target : '_self',
                 rel = target === '_blank' ? 'noopener' : ''
 

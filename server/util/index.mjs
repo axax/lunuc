@@ -6,7 +6,7 @@ import {isTemporarilyBlocked} from './requestBlocker.mjs'
 export const doScreenCapture = async (url, filename, options) => {
 
     if(isTemporarilyBlocked({requestTimeInMs: 2000, requestPerTime: 2,requestBlockForInMs:6000, key:'doScreenCapture'})){
-        return {html: '503 Service Unavailable', statusCode: 503}
+        return {location: `/lunucapi/system/genimage?width=${options.width || 600}&height=${options.height || 600}&text=Server%20busy.%20Please%20try%20again%20later`, statusCode: 302}
     }
 
     console.log(`take screenshot ${url}`)

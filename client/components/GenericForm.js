@@ -806,7 +806,7 @@ class GenericForm extends React.Component {
                 const showTranslations = this.state.showTranslations[fieldKey]
                 const valueDefaultlanguage = value ? value.constructor===String?value:value[config.DEFAULT_LANGUAGE]:''
                 const translateButton = config.LANGUAGES.length > 1 && <>
-                {valueDefaultlanguage && <Tooltip title={_t('GenericFrom.autoTranslate')} key={fieldKey + "tooltip1"}>
+                {valueDefaultlanguage && uitype!=='type_picker' && <Tooltip title={_t('GenericFrom.autoTranslate')} key={fieldKey + "tooltip1"}>
                     <AutoFixHighIconButton key={fieldKey + "autoTranslate"}
                                      onClick={() => {
                                          config.LANGUAGES.forEach(lang => {
@@ -969,7 +969,22 @@ class GenericForm extends React.Component {
         if (field.description) {
             currentFormFields.push(<p>{field.description}</p>)
         }
-        if (uitype === 'htmlParser') {
+        if(uitype==='timestamp') {
+            currentFormFields.push(<><Button key={fieldKey}
+                                           className={field.className}
+                                           color="primary"
+                                           variant="contained"
+                                           style={field.style}
+                                           onClick={() => {
+                                               this.handleInputChange({
+                                                   target: {
+                                                       name: fieldKey,
+                                                       value: new Date().getTime()
+                                                   }
+                                               })
+                                           }}>{field.label}</Button><small>{value?Util.formattedDatetime(value):''}</small></>)
+
+        }else if (uitype === 'htmlParser') {
             let html
             if(field.replacePlaceholders){
                 html =  Util.replacePlaceholders(field.html, {data:this.state.fields, Util})

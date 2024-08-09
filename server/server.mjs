@@ -594,7 +594,12 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                                     }
                                     const result = await doScreenCapture(url, absFilename, data.screenshot.options)
                                     if(result.statusCode!=200){
-                                        sendError(res, result.statusCode)
+                                        if(result.statusCode===302){
+                                            res.writeHead(result.statusCode, {'Location': result.location})
+                                            res.end()
+                                        }else {
+                                            sendError(res, result.statusCode)
+                                        }
                                         return
                                     }
 

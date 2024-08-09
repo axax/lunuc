@@ -11,7 +11,7 @@ cd "$(dirname "$0")"
 cd ..
 
 git pull
-npm install --legacy-peer-deps
+npm install --legacy-peer-deps --production
 npm run build
 
 echo "restart "$restart

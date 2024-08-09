@@ -695,51 +695,57 @@ const baseElements = [
                 type: 'Media',
                 filter: 'mimeType=pdf',
                 projection: MEDIA_PROJECTION,
-                tab: DEFAULT_TAB
+                tab: 'Screenshot'
             },
             $set_url: {
                 fullWidth: true,
                 value: '',
                 label: 'Screenshot von Url',
-                tab: DEFAULT_TAB
+                tab: 'Screenshot'
             },
             $set_width: {
                 fullWidth: true,
                 value: '',
                 label: 'Breite',
-                tab: DEFAULT_TAB
+                tab: 'Screenshot'
             },
             $set_height: {
                 fullWidth: true,
                 value: '',
                 label: 'Höhe',
-                tab: DEFAULT_TAB
+                tab: 'Screenshot'
             },
             $set_padding: {
                 fullWidth: true,
                 value: '',
                 label: 'Bildrand reduzieren',
-                tab: DEFAULT_TAB
+                tab: 'Screenshot'
+            },
+            c_1_c: {
+                label: 'Beschriftung',
+                fullWidth: true,
+                tab: 'Screenshot'
             },
             $set_islink: {
                 type: 'Boolean',
                 newLine: true,
                 label: 'Verlinken',
                 value: true,
-                tab: DEFAULT_TAB
+                tab: 'Screenshot'
+            },
+            $set_timestamp: {
+                uitype: 'timestamp',
+                newLine: true,
+                label: 'Neue Variante erzeugen',
+                value: true,
+                tab: 'Screenshot'
             },
             c_0_p_src: {
                 readOnly: true,
                 fullWidth: true,
                 value: '',
                 label: 'Final url',
-                template: '/-/-/%7B%22screenshot%22%3A%7B%22url%22%3A%22${encodeURIComponent(_comp.$set.pdf?\'/core/pdfviewer?pdf=\'+_app_.config.UPLOAD_URL+\'/\'+_comp.$set.pdf[0]._id :_comp.$set.url)}%22%2C%22options%22%3A%7B%22height%22%3A${(_comp.$set.height || 1600)}%2C%22delay%22%3A10000%2C%22width%22%3A${(_comp.$set.width || 1200)}%2C%22padding%22%3A%22${(_comp.$set.padding?encodeURIComponent(_comp.$set.padding):0)}%22%7D%7D%7D',
-                tab: DEFAULT_TAB
-            },
-            c_1_c: {
-                label: 'Beschriftung',
-                fullWidth: true,
-                tab: DEFAULT_TAB
+                template: '/-/-/%7B%22screenshot%22%3A%7B%22url%22%3A%22${encodeURIComponent(_comp.$set.pdf?\'/core/pdfviewer?pdf=\'+_app_.config.UPLOAD_URL+\'/\'+_comp.$set.pdf[0]._id :_comp.$set.url)}%22%2C%22options%22%3A%7B%22height%22%3A${(_comp.$set.height || 1600)}%2C%22delay%22%3A15000%2C%22width%22%3A${(_comp.$set.width || 1200)}%2C%22padding%22%3A%22${(_comp.$set.padding?encodeURIComponent(_comp.$set.padding):0)}%22%2C%22timestamp%22%3A%22${(_comp.$set.timestamp || 0)}%22%7D%7D%7D',
             },
             c_0_p_alt: {
                 value: '',
@@ -1062,6 +1068,8 @@ const baseElements = [
                 type: 'Media',
                 filter: 'mimeType=image',
                 projection: MEDIA_PROJECTION,
+                localized: true,
+                localizedFallback: true,
                 tab: DEFAULT_TAB,
                 showAlwaysAsImage:true,
                 keepTextValue:true
@@ -1071,6 +1079,8 @@ const baseElements = [
                 value: '',
                 placeholder: 'Url eingeben',
                 label: 'Url',
+                localized: true,
+                localizedFallback: true,
                 tab: DEFAULT_TAB
             },
             p_title: {
