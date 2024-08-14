@@ -6,6 +6,8 @@ import {client} from 'client/middleware/graphql'
 import {registerTrs,_t} from '../../util/i18n.mjs'
 import {translations} from './translations/admin'
 import {openWindow} from '../../client/util/window'
+import Util from '../../client/util/index.mjs'
+import {CAPABILITY_MANAGE_TYPES} from '../../util/capabilities.mjs'
 registerTrs(translations, 'Newsletter')
 
 const SimpleDialog = (props) => <Async {...props} expose="SimpleDialog"
@@ -124,7 +126,9 @@ export default () => {
                 props.actions.unshift({variant:'outlined', type: 'secondary',key: 'preview', label: _t('NewsletterMailing.preview')})
             }
 
-            props.actions.unshift({ key: 'send', label: _t('NewsletterMailing.sendNewsletter')})
+            if(Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_TYPES)) {
+                props.actions.unshift({key: 'send', label: _t('NewsletterMailing.sendNewsletter')})
+            }
         }
     })
 
