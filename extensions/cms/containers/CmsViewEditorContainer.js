@@ -100,6 +100,29 @@ function saveTrsAsCsv(data) {
     }
 }
 
+const transRec = async ({source, base, path='', overrideTranslations=false, onChange}) => {
+    if (!source || source.constructor !== Object) {
+        return
+    }
+    const trKeys = Object.keys(source)
+    for(const trKey of trKeys){
+        if (source[trKey] && source[trKey].constructor === String) {
+            for(const lang of config.LANGUAGES){
+                if ((overrideTranslations || !base[lang] || !base[lang][trKey]) && lang !== config.DEFAULT_LANGUAGE) {
+                    const res = await translateText({text: source[trKey], toIso:lang, fromIso: config.DEFAULT_LANGUAGE})
+
+                    if(res.text){
+                        setPropertyByPath(res.text, lang + path + '.' + trKey.replace(/\./g, '\\\.'), base)
+                        if(onChange){
+                            onChange(res)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 class CmsViewEditorContainer extends React.Component {
 
     templateChangeHistory = []
@@ -487,10 +510,13 @@ class CmsViewEditorContainer extends React.Component {
             simpleDialog && <SimpleDialog open={true}
                                           fullWidth={true} maxWidth="md"
                                           onClose={(action) => {
+                                              let preventClose = false
                                               if (simpleDialog.onClose) {
-                                                  simpleDialog.onClose(action)
+                                                  preventClose = simpleDialog.onClose(action)
                                               }
-                                              this.setState({simpleDialog: null})
+                                              if(!preventClose) {
+                                                  this.setState({simpleDialog: null})
+                                              }
                                           }}
                                           actions={simpleDialog.actions || [
                                               {
@@ -799,9 +825,7 @@ class CmsViewEditorContainer extends React.Component {
                                                                                       }
                                                                                   })
                                                                               })
-                                                                              //setKeyValue({key,value:JSON.stringify({tr:trs}),clearCache:true, global:true})
                                                                               editor._editor.setValue(JSON.stringify({tr:trs},null,4))
-                                                                              console.log(trs)
                                                                           }
                                                                       }} label={_t('CmsViewEditorContainer.importCsv')}/></>,
                                     actions: [
@@ -811,6 +835,11 @@ class CmsViewEditorContainer extends React.Component {
                                             type: 'secondary'
                                         },
                                         {
+                                            key: 'translate',
+                                            label: _t('CmsViewEditorContainer.translate'),
+                                            type: 'primary'
+                                        },
+                                        {
                                             key: 'export',
                                             label: _t('CmsViewEditorContainer.exportCsv'),
                                             type: 'primary'
@@ -818,16 +847,31 @@ class CmsViewEditorContainer extends React.Component {
                                         {
                                             key: 'save',
                                             label: _t('core.save'),
-                                            type: 'primary'
+                                            type: 'primary',
+                                            variant:'contained'
                                         }
                                     ],
                                     onClose: (e) => {
-                                        if (e.key === 'export') {
+                                        if (e.key === 'translate') {
+                                            const json = JSON.parse(editor.state.data)
+                                            if(json && json.tr){
+
+                                                transRec({source:json.tr[config.DEFAULT_LANGUAGE],
+                                                    base: json.tr,
+                                                    onChange:()=>{
+                                                        const scrollInfo = editor._editor.getScrollInfo()
+                                                        editor._editor.setValue(JSON.stringify(json,null,4))
+                                                        editor._editor.scrollTo(scrollInfo.left, scrollInfo.top)
+                                                    }})
+                                            }
+                                            return true
+                                        }else if (e.key === 'export') {
                                             saveTrsAsCsv(editor.state.data)
                                             return
                                         }else if(e.key==='save' && editedData) {
-                                            setKeyValue({key,value:editedData,clearCache:true, global:true})
-                                            location.href = location.href
+                                            setKeyValue({key,value:editedData,clearCache:true, global:true}).then(()=>{
+                                                location.href = location.href
+                                            })
                                         }
                                         this.setState({simpleDialog: true})
                                     }
@@ -850,25 +894,11 @@ class CmsViewEditorContainer extends React.Component {
                                             this.handleDataResolverChange(JSON.stringify(dataResolver, null, 2), true)
                                         }, 100)
                                     }
-                                    const transRec = (o, base, path) => {
-                                        if (!o || o.constructor !== Object) {
-                                            return
-                                        }
-                                        const overrideTranslations = false
-                                        Object.keys(o).forEach(key => {
-                                            if (o[key] && o[key].constructor === String) {
-                                                config.LANGUAGES.forEach(lang => {
-                                                    if ((overrideTranslations || !base[lang] || !base[lang][key]) && lang !== config.DEFAULT_LANGUAGE) {
-                                                        translateText({text: o[key], toIso:lang, fromIso: config.DEFAULT_LANGUAGE}).then(({text}) => {
-                                                            setPropertyByPath(text, lang + path + '.' + key.replace(/\./g, '\\\.'), base)
-                                                            saveResolver()
-                                                        })
-                                                    }
-                                                })
-                                            }
-                                        })
-                                    }
-                                    transRec(segment.tr[config.DEFAULT_LANGUAGE], segment.tr, '')
+                                    transRec({source:segment.tr[config.DEFAULT_LANGUAGE],
+                                        base: segment.tr,
+                                        onChange:()=>{
+                                            saveResolver()
+                                        }})
                                 }
                             }
                         }

@@ -5,7 +5,7 @@ import {client} from 'client/middleware/graphql'
 
 import {registerTrs,_t} from '../../util/i18n.mjs'
 import {translations} from './translations/admin'
-import {openWindow} from "../../client/util/window";
+import {openWindow} from '../../client/util/window'
 registerTrs(translations, 'Newsletter')
 
 const SimpleDialog = (props) => <Async {...props} expose="SimpleDialog"
@@ -25,11 +25,44 @@ export default () => {
         }
     })*/
 
-    Hook.on('TypeCreateEditAction', function ({type, action, dataToEdit, createEditForm, meta}) {
+    Hook.on('TypeTable', ({type, dataSource, data, container}) => {
+        if (type === 'NewsletterMailing' && data.results.length > 0) {
+            dataSource.forEach((row, i) => {
+                const item = data.results[i]
+                if(item.state=='error') {
+                    row.style = {backgroundColor: 'red'}
+                }else if(item.state=='running') {
+                    row.style = {backgroundColor: 'rgba(250, 244, 211, 0.75)'}
+                }else if(item.state=='finished') {
+                    row.style = {backgroundColor: 'rgba(5, 148, 10, 0.64)'}
+                }
+            })
+        }
+    })
+
+
+
+    Hook.on('TypeCreateEditAction', function ({type, action, dataToEdit, createEditForm, meta, typeEdit}) {
         if (type === 'NewsletterMailing' && action) {
 
             if(action.key === 'preview') {
                 openWindow({url:`/${dataToEdit.template.slug}?preview=true&context=${encodeURIComponent(JSON.stringify(dataToEdit))}`})
+
+            }else if(action.key === 'start') {
+
+                meta.TypeContainer.setState({simpleDialog:{title: _t('NewsletterMailing.startNewsletter'),
+                        actions: [{key: 'cancel', label: _t('core.cancel')},{key: 'yes', label: _t('core.yes')}],
+                        onClose: (action) => {
+                            if(action.key==='yes'){
+                                createEditForm.state.fields.active = true
+                                createEditForm.state.fields.state = 'running'
+
+                                typeEdit.handleSaveData({key:'save_close'})
+
+                            }
+                            meta.TypeContainer.setState({simpleDialog: false})
+                        },
+                        children: _t('NewsletterMailing.startNewsletter.question')}})
 
             }else if(action.key === 'send') {
                 const listIds = []
@@ -85,11 +118,13 @@ export default () => {
 
     Hook.on('TypeCreateEdit', ({type, props, dataToEdit}) => {
         if (type === 'NewsletterMailing' && dataToEdit && dataToEdit._id) {
-            props.actions.unshift({key: 'send', label: _t('NewsletterMailing.sendNewsletter')})
+            props.actions.unshift({variant:'contained',key: 'start', label: _t('NewsletterMailing.startNewsletter')})
 
             if(dataToEdit.template && dataToEdit.template.slug){
-                props.actions.unshift({key: 'preview', label: _t('NewsletterMailing.preview')})
+                props.actions.unshift({variant:'outlined', type: 'secondary',key: 'preview', label: _t('NewsletterMailing.preview')})
             }
+
+            props.actions.unshift({ key: 'send', label: _t('NewsletterMailing.sendNewsletter')})
         }
     })
 

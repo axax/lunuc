@@ -1146,7 +1146,6 @@ class GenericForm extends React.Component {
 
 
         } else if (uitype === 'type_picker') {
-
             currentFormFields.push(<TypePicker
                 className={field.className}
                 keepTextValue={field.keepTextValue}
@@ -1177,7 +1176,7 @@ class GenericForm extends React.Component {
                 label={_t(field.label)+ (languageCode ? ' [' + languageCode + ']' : '')}
                 readOnly={field.readOnly}
                 genericType={field.genericType}
-                filter={field.filter}
+                filter={field.filter?Util.replacePlaceholders(field.filter, this.state):''}
                 linkTemplate={field.linkTemplate}
                 multi={field.multi}
                 pickerField={field.pickerField} /* fields that are searched */

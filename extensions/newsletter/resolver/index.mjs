@@ -231,6 +231,12 @@ export default db => ({
                 }
 
             }
+
+            if(emails.length===0){
+                await db.collection('NewsletterMailing').updateOne({
+                    _id: mailingId
+                }, {$set: {state: 'finished', active:false}})
+            }
             return {
                 status: 'Newsletter sent to: ' + emails.join(',')
             }

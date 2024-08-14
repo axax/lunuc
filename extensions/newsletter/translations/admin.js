@@ -20,10 +20,12 @@ export const translations = {
         'NewsletterMailing.tab.plainContent': 'Inhalt (nur Text)',
         'NewsletterMailing.tab.attachment': 'Anhänge',
         'NewsletterMailing.tab.send': 'Versandoptionen',
+        'NewsletterMailing.tab.stats': 'Versand',
         'NewsletterMailing.field.subject': 'Betreff',
         'NewsletterMailing.field.text': 'Klartextversion (optional)',
         'NewsletterMailing.field.html': 'Inhalt (Html)',
         'NewsletterMailing.field.host': 'Host',
+        'NewsletterMailing.field.state': 'Status',
         'NewsletterMailing.field.list': 'Versandliste',
         'NewsletterMailing.field.users': 'Versand direkt an Benutzer',
         'NewsletterMailing.field.template': 'Template/Seite',
@@ -46,7 +48,9 @@ export const translations = {
         'NewsletterTracking.field.mailing': 'Versand',
         'NewsletterTracking.field.url': 'Url',
         'NewsletterMailing.preview': 'Vorschau',
-        'NewsletterMailing.sendNewsletter':'Newsletter senden'
+        'NewsletterMailing.sendNewsletter':'Newsletter senden',
+        'NewsletterMailing.startNewsletter':'Versand starten',
+        'NewsletterMailing.startNewsletter.question':'Sind Sie sicher, dass Sie den Versand starten möchten?'
     },
     en: {
         'NewsletterSubscriber.tab.general': 'General',
@@ -69,6 +73,7 @@ export const translations = {
         'NewsletterMailing.tab.plainContent': 'Content (text only)',
         'NewsletterMailing.tab.attachment': 'Attachments',
         'NewsletterMailing.tab.send': 'Sending options',
+        'NewsletterMailing.tab.stats': 'Mailing',
         'NewsletterMailing.field.subject': 'Subject',
         'NewsletterMailing.field.text': 'Plain text version',
         'NewsletterMailing.field.html': 'Html version',
@@ -77,6 +82,7 @@ export const translations = {
         'NewsletterMailing.field.template': 'Template/page',
         'NewsletterMailing.field.genericData': 'Entries',
         'NewsletterMailing.field.active': 'Active',
+        'NewsletterMailing.field.state': 'State',
         'NewsletterMailing.field.mailCount': 'Mail sent',
         'NewsletterMailing.field.unsubscribeHeader': 'List-Unsubscribe-Header',
         'NewsletterMailing.field.batchSize': 'Batch size',
@@ -84,6 +90,8 @@ export const translations = {
         'NewsletterMailing.field.language': 'Languages (comma-separated)',
         'NewsletterMailing.field.mailSettings': 'Mail server settings',
         'NewsletterMailing.preview': 'Preview',
-        'NewsletterMailing.sendNewsletter':'Send Newsletter'
+        'NewsletterMailing.sendNewsletter':'Send Newsletter',
+        'NewsletterMailing.startNewsletter':'Start mailing',
+        'NewsletterMailing.startNewsletter.question':'Are you sure you want to start the mailing?'
     }
 }

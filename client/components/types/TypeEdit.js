@@ -255,7 +255,8 @@ class TypeEdit extends React.Component {
                 action,
                 dataToEdit,
                 meta,
-                createEditForm: this.createEditForm
+                createEditForm: this.createEditForm,
+                typeEdit: this
             })
         }
     }

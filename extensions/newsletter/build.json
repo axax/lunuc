@@ -158,14 +158,6 @@
           "tab": "general"
         },
         {
-          "tab": "general",
-          "name": "active",
-          "clone": false,
-          "description": "Wenn aktiv wird der Versand im Hintergrund ausgeführt",
-          "type": "Boolean",
-          "index": 1
-        },
-        {
           "tab": "content",
           "name": "template",
           "description": "Es besteht die Möglichkeit, entweder ein Seitentemplate auszuwählen oder den Inhalt direkt an dieser Stelle einzugeben.",
@@ -190,11 +182,25 @@
           "localized": true
         },
         {
+          "name": "dataFilter",
+          "required": false,
+          "tab": "content",
+          "localized": false,
+          "fullWidth": true,
+          "hideColumnInTypes": true,
+          "access": {
+            "ui": {
+              "role": "manage_types"
+            }
+          }
+        },
+        {
           "name": "genericData",
           "type": "GenericData",
           "hideColumnInTypes": true,
           "fullWidth": true,
           "multi": true,
+          "filter": "${fields.dataFilter || ''}",
           "tab": "content",
           "fields": ["_id","data"],
           "pickerField": [
@@ -297,7 +303,29 @@
           "tab": "Optional"
         },
         {
-          "tab": "general",
+          "tab": "stats",
+          "name": "active",
+          "clone": false,
+          "description": "Wenn aktiv wird der Versand im Hintergrund ausgeführt",
+          "type": "Boolean",
+          "index": 1,
+          "hideColumnInTypes": true
+        },
+        {
+          "tab": "stats",
+          "name": "state",
+          "defaultValue": "new",
+          "enum": [
+            "new",
+            "running",
+            "finished",
+            "error"
+          ],
+          "readOnly": true,
+          "index": 1
+        },
+        {
+          "tab": "stats",
           "name": "mailCount",
           "readOnly": true,
           "hideColumnInTypes": true,

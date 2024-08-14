@@ -44,6 +44,7 @@ const renderToCollectFetchRec = async (component, context)=>{
             }
         }
     }
+    _app_.lang = backupLang
 }
 
 export const renderToString = (component, context) => {
