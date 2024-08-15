@@ -314,6 +314,7 @@
         {
           "tab": "stats",
           "name": "state",
+          "clone": "new",
           "defaultValue": "new",
           "enum": [
             "new",
