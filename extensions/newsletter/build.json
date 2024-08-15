@@ -322,7 +322,7 @@
             "finished",
             "error"
           ],
-          "readOnly": true,
+          "readOnly": false,
           "index": 1
         },
         {
