@@ -8,10 +8,9 @@ const renderToCollectFetchRec = async (component, context)=>{
     // set global lang temporarily
     const backupLang = _app_.lang
     const lang = (context && context.lang ? context.lang : _app_.lang)
+    console.log('renderToCollectFetchRec',lang)
     _app_.lang = lang
     ReactDOMServer.renderToStaticMarkup(component)
-    _app_.lang = backupLang
-
 
     const keys = Object.keys(SSR_FETCH_CHAIN)
     if (keys.length > 0) {
@@ -48,7 +47,7 @@ const renderToCollectFetchRec = async (component, context)=>{
 }
 
 export const renderToString = (component, context) => {
-
+console.log('renderToString', context)
     return new Promise(async (resolve) => {
 
         const backupLang = _app_.lang
