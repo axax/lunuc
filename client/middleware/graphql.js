@@ -271,6 +271,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  qu
             body = JSON.stringify({query, variables})
         }
         addLoader()
+        console.log("finalFetch",getHeaders(lang, headersExtra))
         fetch(getGraphQlUrl(), {
             method: 'POST',
             signal: controller.signal,

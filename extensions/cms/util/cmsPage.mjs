@@ -14,7 +14,7 @@ export const getCmsPageCacheKey = ({_version, slug, host, inEditor})=>{
 
 export const getCmsPage = async ({db, context, headers, ...params}) => {
 
-
+console.log('getCmsPage', context)
     if (Hook.hooks['beforeCmsPage'] && Hook.hooks['beforeCmsPage'].length) {
         for (let i = 0; i < Hook.hooks['beforeCmsPage'].length; ++i) {
             await Hook.hooks['beforeCmsPage'][i].callback({db, context, headers, params})
