@@ -192,8 +192,8 @@ const getHeaders = (lang, headersExtra={}) => {
     return headers
 }
 
-const getCacheKey = ({query, variables}) => {
-    return query + (variables ? JSON.stringify(variables) : '')
+const getCacheKey = ({query, variables, lang = _app_.lang}) => {
+    return query + lang + (variables ? JSON.stringify(variables) : '')
 }
 
 const getFetchMore = ({prevData, type, query, variables, fetchPolicy}) => {
@@ -220,7 +220,7 @@ const FETCHING_BY_CACHEKEY = {}
 export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  query, variables, hiddenVariables, fetchPolicy = 'cache-first', lang, headersExtra}) => {
 
     if (!cacheKey && type === RequestType.query) {
-        cacheKey = getCacheKey({query, variables})
+        cacheKey = getCacheKey({query, variables, lang})
     }
     if(cacheKey && FETCHING_BY_CACHEKEY[cacheKey]){
         // exact same query is running
@@ -271,7 +271,6 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  qu
             body = JSON.stringify({query, variables})
         }
         addLoader()
-        console.log("finalFetch",getHeaders(lang, headersExtra))
         fetch(getGraphQlUrl(), {
             method: 'POST',
             signal: controller.signal,

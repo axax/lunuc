@@ -8,7 +8,6 @@ const renderToCollectFetchRec = async (component, context)=>{
     // set global lang temporarily
     const backupLang = _app_.lang
     const lang = (context && context.lang ? context.lang : _app_.lang)
-    console.log('renderToCollectFetchRec',lang)
     _app_.lang = lang
     ReactDOMServer.renderToStaticMarkup(component)
 

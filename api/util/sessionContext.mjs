@@ -98,7 +98,5 @@ export const contextByRequest = (req, res) => {
     // add the requested language to the context
     context.lang = lang || DEFAULT_LANGUAGE
 
-    console.log('requested langauge', context)
-
     return context
 }
