@@ -18,7 +18,12 @@ export const sendMail = async (db, context, {settings, recipient, from, fromName
 
     let mailSettings
     if (settings) {
-        mailSettings = settings
+        if(settings.extendDefault){
+            const values = await Util.keyValueGlobalMap(db, context, ['MailSettings'])
+            mailSettings = Object.assign({},values.MailSettings,settings)
+        }else {
+            mailSettings = settings
+        }
     } else {
         const values = await Util.keyValueGlobalMap(db, context, ['MailSettings'])
 
