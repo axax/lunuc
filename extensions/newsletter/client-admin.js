@@ -8,6 +8,7 @@ import {translations} from './translations/admin'
 import {openWindow} from '../../client/util/window'
 import Util from '../../client/util/index.mjs'
 import {CAPABILITY_MANAGE_TYPES} from '../../util/capabilities.mjs'
+import GenericForm from "../../client/components/GenericForm";
 registerTrs(translations, 'Newsletter')
 
 const SimpleDialog = (props) => <Async {...props} expose="SimpleDialog"
@@ -49,6 +50,59 @@ export default () => {
 
             if(action.key === 'preview') {
                 openWindow({url:`/${dataToEdit.template.slug}?preview=true&context=${encodeURIComponent(JSON.stringify(dataToEdit))}`})
+
+            }else if(action.key === 'test') {
+
+                meta.TypeContainer.setState({simpleDialog:{title: _t('NewsletterMailing.sendTest'),
+                        actions: [{key: 'cancel', label: _t('core.cancel')},{key: 'yes', label: _t('core.ok')}],
+                        onClose: (action) => {
+                            if(action.key==='yes'){
+                                const validationState = this.emailForm.validate()
+                                console.log(this.emailForm.state.fields)
+                                if(validationState.isValid && this.emailForm.state.fields.email){
+                                    typeEdit.handleSaveData({key:'save'})
+
+                                    client.query({
+                                        fetchPolicy: 'network-only',
+                                        query: 'query sendNewsletter($mailing: ID!, $testReceiver: String){sendNewsletter(mailing:$mailing,testReceiver:$testReceiver){status}}',
+                                        variables: {
+                                            mailing: dataToEdit._id,
+                                            testReceiver:this.emailForm.state.fields.email
+                                        }
+                                    }).then(response => {
+
+                                        if (meta && meta.TypeContainer) {
+                                            meta.TypeContainer.setState({mailingResponse: response})
+                                        }
+                                    }).catch(error => {
+                                        console.log(error.message)
+                                    })
+
+
+                                    meta.TypeContainer.setState({simpleDialog: false})
+
+
+                                }else{
+
+
+                                }
+
+                            }else {
+                                meta.TypeContainer.setState({simpleDialog: false})
+                            }
+                        },
+                        children: <>{_t('NewsletterMailing.sendTest.text')}
+                            <GenericForm onRef={(e) => {
+                                this.emailForm = e
+                             }} primaryButton={false}
+                             fields={{
+                                 email: {
+                                     fullWidth: true,
+                                     required:true,
+                                     label: 'Email'
+                                 }
+                             }}/></>}})
+
 
             }else if(action.key === 'start') {
 
@@ -120,11 +174,16 @@ export default () => {
 
     Hook.on('TypeCreateEdit', ({type, props, dataToEdit}) => {
         if (type === 'NewsletterMailing' && dataToEdit && dataToEdit._id) {
+
+
             props.actions.unshift({variant:'contained',key: 'start', label: _t('NewsletterMailing.startNewsletter')})
+
+            props.actions.unshift({variant:'outlined', type: 'secondary',key: 'test', label: _t('NewsletterMailing.sendTest')})
 
             if(dataToEdit.template && dataToEdit.template.slug){
                 props.actions.unshift({variant:'outlined', type: 'secondary',key: 'preview', label: _t('NewsletterMailing.preview')})
             }
+
 
             if(Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_TYPES)) {
                 props.actions.unshift({key: 'send', label: _t('NewsletterMailing.sendNewsletter')})

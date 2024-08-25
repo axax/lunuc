@@ -388,7 +388,13 @@ class TypesContainer extends React.Component {
                                             <Chip key={e} label={field._enumMap?field._enumMap[e] || e:e}/>
                                         )
                                     } else {
-                                        if (field.access && field.access.ui && field.access.ui.role && !Util.hasCapability(_app_.user, field.access.ui.role)){
+                                        if(field.enum){
+                                            if(fieldValue) {
+                                                const enumEntry = field.enum.find(f => f.value == fieldValue)
+
+                                                dynamic[field.name] = enumEntry && enumEntry.name ? enumEntry.name : _t(`${type}.field.${field.name}.enum.${fieldValue}`,{},fieldValue)
+                                            }
+                                        }else if (field.access && field.access.ui && field.access.ui.role && !Util.hasCapability(_app_.user, field.access.ui.role)){
                                             dynamic[field.name] = fieldValue
                                         }else {
                                             dynamic[field.name] =

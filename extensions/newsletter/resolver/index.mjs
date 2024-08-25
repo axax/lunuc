@@ -7,10 +7,11 @@ import config from '../../../gensrc/config.mjs'
 import Hook from '../../../util/hook.cjs'
 import {CAPABILITY_SEND_NEWSLETTER} from '../constants/index.mjs'
 import path from 'path'
+import genResolver from '../gensrc/resolver.mjs'
 
 export default db => ({
     Query: {
-        sendNewsletter: async ({mailing, subject, template, text, html, batchSize, host, list, unsubscribeHeader, users}, req) => {
+        sendNewsletter: async ({testReceiver, mailing, subject, template, text, html, batchSize, host, list, unsubscribeHeader, users}, req) => {
             await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_SEND_NEWSLETTER)
 
             if(host){
@@ -33,8 +34,18 @@ export default db => ({
 
             let settings
             if(mailingData){
-                if( template === undefined){
-                    template = mailingData.template
+                if( template === undefined && ObjectId.isValid(mailingData.template)){
+                    const cmsPage = await db.collection('CmsPage').findOne(
+                        {
+                            _id: new ObjectId(mailingData.template)
+                        },
+                        {
+                            slug:1
+                        }
+                    )
+                    if(cmsPage){
+                        template = cmsPage.slug
+                    }
                 }
 
                 settings = mailingData.mailSettings
@@ -50,21 +61,29 @@ export default db => ({
 
             const languageToSend = mailingData.language ? mailingData.language.split(',') : []
 
-
-            const subscribers = await db.collection('NewsletterSubscriber').find(
-                {state: 'subscribed', list: {$in: list.map(l => l.constructor===String?new ObjectId(l):l)}}
-            ).toArray()
-
-            if(users){
-                users.forEach(user=>{
-                    subscribers.push({account: user, userAccountOnly: true})
+            let subscribers
+            if(testReceiver){
+                subscribers = testReceiver.split(',').map(email => {
+                    const emailLang = email.split('|')
+                    return {email:emailLang[0], language: emailLang.length>1?emailLang[1]:config.DEFAULT_LANGUAGE, testOnly:true}
                 })
+            }else {
+
+                subscribers = await db.collection('NewsletterSubscriber').find(
+                    {state: 'subscribed', list: {$in: list.map(l => l.constructor === String ? new ObjectId(l) : l)}}
+                ).toArray()
+
+                if (users) {
+                    users.forEach(user => {
+                        subscribers.push({account: user, userAccountOnly: true})
+                    })
+                }
             }
 
-            const emails = []
+            const sentToEmailAddresses = []
 
             for (let i = 0; i < subscribers.length; i++) {
-                if (emails.length >= batchSize) {
+                if (sentToEmailAddresses.length >= batchSize) {
                     break
                 }
                 const sub = subscribers[i]
@@ -80,7 +99,7 @@ export default db => ({
                     }
                 }
 
-                const sent = await db.collection('NewsletterSent').findOne(
+                const sent = sub.testOnly ? false : await db.collection('NewsletterSent').findOne(
                     {
                         $or: [{$and:[{subscriber: {$ne: null}}, {subscriber: sub._id}]}, {$and:[{userAccount: {$ne: null}},{userAccount: userAccountId}]}],
                         mailing: mailingId
@@ -88,7 +107,7 @@ export default db => ({
                 )
                 if (!sent) {
 
-                    const sentResult = await db.collection('NewsletterSent').insertOne(
+                    const sentResult =  sub.testOnly ? false : await db.collection('NewsletterSent').insertOne(
                         {
                             subscriber: sub._id,
                             userAccount: userAccountId,
@@ -114,8 +133,9 @@ export default db => ({
                     if (!sub.token && !sub.userAccountOnly) {
                         sub.token = crypto.randomBytes(32).toString("hex")
 
-                        await db.collection('NewsletterSubscriber').updateOne({_id: new ObjectId(sub._id)}, {$set: {token: sub.token}})
-
+                        if(sub._id) {
+                            await db.collection('NewsletterSubscriber').updateOne({_id: new ObjectId(sub._id)}, {$set: {token: sub.token}})
+                        }
                     }
                     sub.mailing = mailing
 
@@ -225,20 +245,25 @@ export default db => ({
                         req,
                         settings
                     })
-                    emails.push(sub.email)
+                    sentToEmailAddresses.push(sub.email)
 
-                    await db.collection('NewsletterSent').updateOne({_id:sentResult.insertedId}, {$set: {mailResponse: result}})
+                    if(sentResult && sentResult.insertedId) {
+                        await db.collection('NewsletterSent').updateOne({_id: sentResult.insertedId}, {$set: {mailResponse: result}})
+                    }
                 }
 
             }
 
-            if(emails.length===0){
-                await db.collection('NewsletterMailing').updateOne({
+            if(!testReceiver && sentToEmailAddresses.length===0){
+
+                await genResolver(db).Mutation.updateNewsletterMailing({_id:mailingId,state: 'finished', active:false},req,{forceAdminContext:true})
+
+                /*await db.collection('NewsletterMailing').updateOne({
                     _id: mailingId
-                }, {$set: {state: 'finished', active:false}})
+                }, {$set: {state: 'finished', active:false}})*/
             }
             return {
-                status: 'Newsletter sent to: ' + emails.join(',')
+                status: 'Newsletter sent to: ' + sentToEmailAddresses.join(',')
             }
         },
         subscribeNewsletter: async ({email, replyTo, fromEmail, fromName, confirmSlug, location, url, meta, list}, req) => {

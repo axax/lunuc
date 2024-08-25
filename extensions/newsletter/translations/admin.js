@@ -26,6 +26,10 @@ export const translations = {
         'NewsletterMailing.field.html': 'Inhalt (Html)',
         'NewsletterMailing.field.host': 'Host',
         'NewsletterMailing.field.state': 'Status',
+        'NewsletterMailing.field.state.enum.finished': 'Beendet',
+        'NewsletterMailing.field.state.enum.new': 'Neu',
+        'NewsletterMailing.field.state.enum.running': 'Läuft',
+        'NewsletterMailing.field.state.enum.error': 'Fehler',
         'NewsletterMailing.field.list': 'Versandliste',
         'NewsletterMailing.field.users': 'Versand direkt an Benutzer',
         'NewsletterMailing.field.template': 'Template/Seite',
@@ -50,6 +54,7 @@ export const translations = {
         'NewsletterTracking.field.url': 'Url',
         'NewsletterMailing.preview': 'Vorschau',
         'NewsletterMailing.sendNewsletter':'Newsletter senden',
+        'NewsletterMailing.sendTest':'Test senden',
         'NewsletterMailing.startNewsletter':'Versand starten',
         'NewsletterMailing.startNewsletter.question':'Sind Sie sicher, dass Sie den Versand starten möchten?'
     },
@@ -94,6 +99,8 @@ export const translations = {
         'NewsletterMailing.preview': 'Preview',
         'NewsletterMailing.sendNewsletter':'Send Newsletter',
         'NewsletterMailing.startNewsletter':'Start mailing',
+        'NewsletterMailing.sendTest':'Send test',
+        'NewsletterMailing.sendTest.text':'Enter an e-mail address to which the test message should be sent',
         'NewsletterMailing.startNewsletter.question':'Are you sure you want to start the mailing?'
     }
 }
