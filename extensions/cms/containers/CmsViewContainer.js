@@ -1,5 +1,4 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import JsonDom from '../components/JsonDom'
 import Util from 'client/util/index.mjs'
 import DomUtil from 'client/util/dom.mjs'
@@ -476,6 +475,7 @@ class CmsViewContainer extends React.Component {
 
 }
 
+/*
 
 CmsViewContainer.propTypes = {
     loading: PropTypes.bool,
@@ -489,17 +489,18 @@ CmsViewContainer.propTypes = {
     updateResolvedData: PropTypes.func.isRequired,
     slug: PropTypes.string.isRequired,
     user: PropTypes.object.isRequired,
-    /* with Router */
+    /!* with Router *!/
     history: PropTypes.object.isRequired,
     location: PropTypes.object.isRequired,
 
-    /* Object is passed to JsonDom */
+    /!* Object is passed to JsonDom *!/
     _props: PropTypes.object,
-    /* if dynamic is set to true that means it is a child of another CmsViewContainer */
+    /!* if dynamic is set to true that means it is a child of another CmsViewContainer *!/
     dynamic: PropTypes.bool,
-    /* if true data gets refetched with query on url change*/
+    /!* if true data gets refetched with query on url change*!/
     urlSensitiv: PropTypes.any,
     inEditor: PropTypes.bool
 }
+*/
 
 export default withCms(CmsViewContainer)

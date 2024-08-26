@@ -1,6 +1,5 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import PropTypes from 'prop-types'
 import {
     SimpleDialog,
     SimpleMenu,
@@ -1608,6 +1607,7 @@ class JsonDomHelper extends React.Component {
     }
 }
 
+/*
 
 JsonDomHelper.propTypes = {
     _cmsActions: PropTypes.object.isRequired,
@@ -1619,6 +1619,7 @@ JsonDomHelper.propTypes = {
     _onDataResolverPropertyChange: PropTypes.func,
     _inlineEditor: PropTypes.bool
 }
+*/
 
 
 export default JsonDomHelper

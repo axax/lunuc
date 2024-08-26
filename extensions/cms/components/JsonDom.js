@@ -1,6 +1,5 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import PropTypes from 'prop-types'
 import Hook from 'util/hook.cjs'
 import {_t} from 'util/i18n.mjs'
 import Util from 'client/util/index.mjs'
@@ -1695,7 +1694,7 @@ class JsonDom extends React.Component {
 
 }
 
-JsonDom.propTypes = {
+/*JsonDom.propTypes = {
     template: PropTypes.string,
     meta: PropTypes.any,
     resolvedData: PropTypes.string,
@@ -1707,40 +1706,40 @@ JsonDom.propTypes = {
     slug: PropTypes.string,
     user: PropTypes.object,
 
-    /* states */
+    /!* states *!/
     loading: PropTypes.bool,
 
-    /* Methods */
+    /!* Methods *!/
     setKeyValue: PropTypes.func,
     getKeyValue: PropTypes.func,
     updateResolvedData: PropTypes.func,
     serverMethod: PropTypes.func,
     clientQuery: PropTypes.func,
     subscriptionCallback: PropTypes.func,
-    onTemplateChange: PropTypes.func, /* Is fired when the json dom has changed */
-    onDataResolverPropertyChange: PropTypes.func, /* Is fired when a property of the dataResolver has changed */
+    onTemplateChange: PropTypes.func, /!* Is fired when the json dom has changed *!/
+    onDataResolverPropertyChange: PropTypes.func, /!* Is fired when a property of the dataResolver has changed *!/
     onError: PropTypes.func,
     onFetchMore: PropTypes.func,
 
-    /* editMode */
+    /!* editMode *!/
     editMode: PropTypes.bool,
     inEditor: PropTypes.bool,
     inlineEditor: PropTypes.bool,
     _key: PropTypes.string,
 
-    /* properties that are passed from another component */
+    /!* properties that are passed from another component *!/
     _props: PropTypes.object,
     _parentRef: PropTypes.object,
 
-    /* Routing */
+    /!* Routing *!/
     history: PropTypes.object,
     location: PropTypes.object,
 
     children: PropTypes.any,
     id: PropTypes.string,
-    /* if dynamic is set to true that means it is a child of another JsonDom */
+    /!* if dynamic is set to true that means it is a child of another JsonDom *!/
     dynamic: PropTypes.bool
-}
+}*/
 
 
 export default JsonDom

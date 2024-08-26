@@ -120,7 +120,8 @@ const openInBrowser = async (options, scope, resolvedData) => {
 
 
     const browserInstance = await puppeteer.launch({
-        ignoreHTTPSErrors: true,
+        ignoreHTTPSErrors: true,  /* deprecated */
+        acceptInsecureCerts:true,
         args: args || minimal_args /* ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--no-zygote']*/
     })
     const page = await browserInstance.newPage()

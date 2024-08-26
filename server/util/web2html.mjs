@@ -37,7 +37,8 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
                 headless:'new',
                 devtools: false,
                 /*userDataDir: './server/myUserDataDir',*/
-                ignoreHTTPSErrors: true,
+                ignoreHTTPSErrors: true, /* deprecated */
+                acceptInsecureCerts:true,
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
