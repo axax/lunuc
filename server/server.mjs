@@ -348,7 +348,7 @@ const hasHttpsWwwRedirect = ({parsedUrl, hostrule, host, req, res, remoteAddress
 
             if( !agent || agent.indexOf('www.letsencrypt.org') < 0 ) {
                 console.log(`${remoteAddress}: Redirect to ${newhost} / request url=${req.url}`)
-                res.writeHead(301, {'Location': (req.isHttps ? 'http' : 'https') + '://' + newhost + req.url})
+                res.writeHead(301, {'Location': (req.isHttps ? 'https' : 'http') + '://' + newhost + req.url})
                 res.end()
                 return true
             }
