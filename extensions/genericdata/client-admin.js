@@ -6,7 +6,6 @@ import {
     SimpleButton
 } from 'ui/admin'
 import Util from '../../client/util/index.mjs'
-import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../cms/constants/index.mjs'
 import {client} from 'client/middleware/graphql'
 import config from 'gen/config-client'
 import {_t, registerTrs} from '../../util/i18n.mjs'
