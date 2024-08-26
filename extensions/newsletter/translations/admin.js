@@ -55,6 +55,7 @@ export const translations = {
         'NewsletterMailing.preview': 'Vorschau',
         'NewsletterMailing.sendNewsletter':'Newsletter senden',
         'NewsletterMailing.sendTest':'Test senden',
+        'NewsletterMailing.sendTest.text':'Geben Sie eine E-Mail-Adresse ein, an die die Testnachricht gesendet werden soll',
         'NewsletterMailing.startNewsletter':'Versand starten',
         'NewsletterMailing.startNewsletter.question':'Sind Sie sicher, dass Sie den Versand starten möchten?'
     },
