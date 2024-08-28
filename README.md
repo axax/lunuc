@@ -125,6 +125,9 @@ with nvm
 
 `git checkout HEAD -- /opt/lunuc/shell/start.sh`
 
+`journalctl -lf -u lunuc-client`
+`journalctl -lf -u lunuc-api`
+
 ### Mongodb on ubuntu
 `lsb_release -a` // ubuntu version
 

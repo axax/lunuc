@@ -4,6 +4,8 @@ import config from '../gensrc/config-client.js'
 
 const {LANGUAGES} = config
 
+const TYPENAME = '__typename'
+
 export const types = {}, typeQueries = {}
 
 export const getTypes = () => {
@@ -42,6 +44,33 @@ export const getFieldOfType = (typeName, fieldName) => {
     return field
 }
 
+export const getSubscribeQuery = (typeName) =>{
+    const type = getType(typeName)
+    if (!type) {
+        return
+    }
+
+    let subscriptionQuery = `_meta action filter removedIds data${queryStatemantForType({type:typeName})}`
+
+    console.log(subscriptionQuery, typeName)
+   /* type.fields.map(({name, reference, localized}) => {
+
+        if (reference) {
+            // todo: query for subtypes
+            //subscriptionQuery += ' ' + name + '{_id name}'
+        } else {
+            if (localized) {
+                subscriptionQuery += ' ' + name + '{'+TYPENAME+' ' + _app_.lang + '}'
+            } else {
+                subscriptionQuery += ' ' + name
+            }
+        }
+    })
+    subscriptionQuery += '}'*/
+    console.log(subscriptionQuery)
+    return subscriptionQuery
+}
+
 export const getTypeQueries = (typeName, queryFields, opts) => {
 
     const cacheKey = typeName + (queryFields ? queryFields.join('') : '') + (opts ? JSON.stringify(opts) : '')
@@ -68,7 +97,7 @@ export const getTypeQueries = (typeName, queryFields, opts) => {
 
     let queryMutation = '_id status'
     if (!noUserRelation) {
-        const uquery = 'createdBy{'+(createdByQuery?createdByQuery:'_id username')+'} '
+        const uquery = 'createdBy{'+(createdByQuery?createdByQuery:TYPENAME+' _id username')+'} '
         if (!queryFields || queryFields.indexOf('createdBy') >= 0) {
             query += uquery
         }
@@ -99,7 +128,7 @@ export const getTypeQueries = (typeName, queryFields, opts) => {
                     }
                 } else {
                     if (localized) {
-                        query += name + '{' + LANGUAGES.join(' ') + '} '
+                        query += name + '{'+TYPENAME+' ' + LANGUAGES.join(' ') + '} '
                     } else {
                         query += name + ' '
                     }
@@ -162,7 +191,7 @@ export const queryStatemantForType = (field, opts = {}, level = 0) => {
                 // not supported yet
                 subQuery += queryStatemantForType(subField,opts, level+1)
             }else if (subField.localized) {
-                subQuery += '{'
+                subQuery += '{'+TYPENAME+' '
                 LANGUAGES.forEach(lang => {
                     subQuery += ' ' + lang
                 })
@@ -176,7 +205,7 @@ export const queryStatemantForType = (field, opts = {}, level = 0) => {
         subQuery += ' name'
     }
     if(subQuery){
-        subQuery = `{_id __typename${subQuery}}`
+        subQuery = `{_id ${TYPENAME}${subQuery}}`
         if(field.localized){
             let langQuery = '{'
             LANGUAGES.forEach(lang => {

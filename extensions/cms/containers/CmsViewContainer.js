@@ -2,7 +2,7 @@ import React from 'react'
 import JsonDom from '../components/JsonDom'
 import Util from 'client/util/index.mjs'
 import DomUtil from 'client/util/dom.mjs'
-import {getType} from 'util/types.mjs'
+import {getSubscribeQuery} from 'util/types.mjs'
 import {isEditMode, getSlugVersion, getCmsPageQuery} from '../util/cmsView.mjs'
 import withCms from './withCms'
 import {client} from '../../../client/middleware/graphql'
@@ -276,28 +276,11 @@ class CmsViewContainer extends React.Component {
                     if(!subscription.query) {
 
                         // create query based on type structure
-                        const type = getType(subscription.type)
-
-                        if (!type) {
+                        subscriptionQuery = getSubscribeQuery(subscription.type)
+                        if (!subscriptionQuery) {
                             console.error('Invalid type for subscription')
                             return
                         }
-
-                        subscriptionQuery = '_meta action filter removedIds data{_id'
-                        type.fields.map(({name, reference, localized}) => {
-
-                            if (reference) {
-                                // todo: query for subtypes
-                                //subscriptionQuery += ' ' + name + '{_id name}'
-                            } else {
-                                if (localized) {
-                                    subscriptionQuery += ' ' + name + '{__typename ' + _app_.lang + '}'
-                                } else {
-                                    subscriptionQuery += ' ' + name
-                                }
-                            }
-                        })
-                        subscriptionQuery += '}'
                     }
                 }
 

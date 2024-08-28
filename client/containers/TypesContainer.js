@@ -37,7 +37,7 @@ import config from 'gen/config-client'
 import Hook from 'util/hook.cjs'
 import {
     getTypes,
-    getTypeQueries,
+    getTypeQueries, getSubscribeQuery,
 } from 'util/types.mjs'
 import {
     checkFieldType,
@@ -65,6 +65,8 @@ import {
     CAPABILITY_MANAGE_COLLECTION
 } from '../../util/capabilities.mjs'
 import SelectCollection from '../components/types/SelectCollection'
+import {getCmsPageQuery} from "../../extensions/cms/util/cmsView.mjs";
+import {setPropertyByPath} from "../util/json.mjs";
 
 const CodeEditor = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
@@ -100,6 +102,7 @@ class TypesContainer extends React.Component {
     createEditForm = null
     typesToSelect = []
     settings = {}
+    subscriptions = {}
 
     constructor(props) {
         super(props)
@@ -200,6 +203,7 @@ class TypesContainer extends React.Component {
         window.removeEventListener('beforeunload', this._handleWindowClose)
         window.removeEventListener('popstate', this._urlChanged)
         clearFetchById('TypesContainer')
+        this.removeSubscriptions()
     }
 
     handleWindowClose() {
@@ -407,8 +411,6 @@ class TypesContainer extends React.Component {
                                         }
                                     }
                                 }
-
-
                             }
                         }
                     })
@@ -1363,7 +1365,48 @@ class TypesContainer extends React.Component {
         return getTypeQueries(type, columnsFiltered, opts)
     }
 
+    setUpSubscriptions(type){
+        this.removeSubscriptions()
+        const subscriptionQuery = getSubscribeQuery(type)
+        const qqlSubscribe = `subscription subscribe${type}{subscribe${type}{${subscriptionQuery}}}`
+        const _this = this
+        this.subscriptions[type] = client.subscribe({
+            query: qqlSubscribe,
+            variables: {}
+        }).subscribe({
+            next(supscriptionData) {
+                const data = supscriptionData.data && supscriptionData.data[`subscribe${type}`]
+                if(data){
+                    if(data.action === 'update'){
+                        const newStateDate = Object.assign({},_this.state.data)
+                        data.data.forEach(dataEntry=>{
+                            const index = newStateDate.results.findIndex(f=>f._id===dataEntry._id)
+                            if(index>=0){
+                                newStateDate.results[index] = Object.assign({},
+                                    newStateDate.results[index],
+                                    Util.removeNullValues(dataEntry, {emptyArray: true}))
+                            }
+                        })
+                        _this.setState({data:newStateDate})
+                    }
+                }
+            },
+            error(err) {
+                console.error('err', err)
+            },
+        })
+    }
+
+    removeSubscriptions() {
+        // remove all subscriptions
+        Object.keys(this.subscriptions).forEach(key => {
+            this.subscriptions[key].unsubscribe()
+            delete this.subscriptions[key]
+        })
+    }
+
     getData({type, page, limit, sort, filter, meta, _version}, cacheFirst, typeChanged) {
+
         if (type) {
             const queries = this.getTypeQueriesFiltered(type, {loadAll: false})
             if (queries) {
@@ -1410,6 +1453,10 @@ class TypesContainer extends React.Component {
                         this.setState({data: null})
                     }
                 })
+
+                if(typeChanged || Object.keys(this.subscriptions).length===0){
+                    this.setUpSubscriptions(type)
+                }
 
             }
         }

@@ -316,6 +316,17 @@ const Util = {
         if (typeDefinition.access && typeDefinition.access.subscribe) {
             return await Util.userHasCapability(db, context, typeDefinition.access.subscribe)
         } else {
+            if(payload.userId===context.id){
+                // same user
+                return true
+            }
+
+            /*const datas = payload?.[`subscribe${type}`]?.data
+            if(datas && datas.length===1 && datas[0]?.createdBy?._id?.toString()===context.id){
+                // data belong to user
+                return true
+            }*/
+
             return await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
         }
         return false

@@ -85,7 +85,8 @@ import {
     GridOnIcon,
     LanguageIcon,
     ReplayIcon,
-    GoogleIcon
+    GoogleIcon,
+    ShieldIcon
 } from 'gensrc/ui/admin/icons'
 
 const iconComponents = {
@@ -174,7 +175,8 @@ const iconComponents = {
     grid: GridOnIcon,
     replay:ReplayIcon,
     language: LanguageIcon,
-    google: GoogleIcon
+    google: GoogleIcon,
+    shield:ShieldIcon
 }
 
 export const getIconByKey = (key, defaultIcon) => {
