@@ -166,6 +166,14 @@ export const addFilterToMatch = async ({db, debugInfo, filterKey, filterValue, t
         }
     } else if (comparator === '$regex') {
         let $options, finalValue
+        if(filterValue===undefined){
+            filterValue = ''
+        }
+
+        if(filterValue.constructor!==String){
+            // value must be a string
+            filterValue = filterValue + ''
+        }
         if(rawComperator.indexOf('~')>=0){
             const regParts = filterValue.match(/^\/(.*?)\/([gim]*)$/)
             if (regParts) {
@@ -175,9 +183,7 @@ export const addFilterToMatch = async ({db, debugInfo, filterKey, filterValue, t
             }
         }else {
             $options= 'i'
-
             finalValue = ClientUtil.escapeRegex(filterValue)
-
         }
 
         if (rawComperator.indexOf('!')>=0) {

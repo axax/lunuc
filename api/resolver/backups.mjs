@@ -130,8 +130,8 @@ export const createMediaBackup = (filesToBackup)=>{
                 const stat = fs.lstatSync(media_dir + '/' + file)
 
 
-                if (!stat.isDirectory() && stat.size < 2000000) {
-                    // only include files small then 2MBs
+                if (!stat.isDirectory() && stat.size < 200000000) {
+                    // only include files small then 200MBs
                     fs.copyFileSync(media_dir + '/' + file, tmpDir + '/' + file)
                 }
             }

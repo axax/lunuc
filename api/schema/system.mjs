@@ -90,6 +90,10 @@ export const systemSchemaRaw = `
         results: [SearchInCollections]
     }
         
+    type TokenLinkResult{
+        token: String
+    }
+        
     type Query {
         searchInCollections(search: String!): SearchInCollectionsResult
         brokenReferences(type: String!, field: String): BrokenReferencesResult
@@ -103,6 +107,7 @@ export const systemSchemaRaw = `
     	importCollection (collection: String!, json: String!, meta: String): ImportCollectionResult
     	bulkEdit (collection: String!, _id: [ID]!, data: String!, action: String): BulkEditResult,
     	exportQuery (type: String!, query: String): ExportQueryResult
+        getTokenLink(filePath:String!): TokenLinkResult
     }
     
       

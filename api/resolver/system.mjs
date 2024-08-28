@@ -6,7 +6,7 @@ import {
     CAPABILITY_MANAGE_BACKUPS,
     CAPABILITY_MANAGE_COLLECTION,
     CAPABILITY_RUN_COMMAND,
-    CAPABILITY_BULK_EDIT, CAPABILITY_BULK_EDIT_SCRIPT, CAPABILITY_MANAGE_TYPES
+    CAPABILITY_BULK_EDIT, CAPABILITY_BULK_EDIT_SCRIPT, CAPABILITY_ADMIN_OPTIONS
 } from '../../util/capabilities.mjs'
 import Cache from '../../util/cache.mjs'
 import {pubsub} from '../subscription.mjs'
@@ -24,6 +24,8 @@ import {csv2json} from '../util/csv.mjs'
 import {setPropertyByPath} from '../../client/util/json.mjs'
 import Hook from '../../util/hook.cjs'
 import {createAllIndexes} from '../index/indexes.mjs'
+import jwt from 'jsonwebtoken'
+import {AUTH_EXPIRES_IN, SECRET_KEY} from '../constants/index.mjs'
 
 const {UPLOAD_DIR} = config
 
@@ -413,6 +415,16 @@ export const systemResolver = (db) => ({
         exportQuery: async ({type, query}) => {
 
             return {result: mongoExport({type, query})}
+        },
+        getTokenLink: async ({filePath}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_ADMIN_OPTIONS)
+
+            filePath = filePath.replace(/%(\w+)%/g, (all, key) => {
+                return config[key] !== undefined ? config[key] : all
+            })
+            const payload = {filePath}
+            const token = jwt.sign(payload, SECRET_KEY, {expiresIn: '5h'})
+            return {token}
         }
     },
     Mutation: {

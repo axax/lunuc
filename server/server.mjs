@@ -13,7 +13,7 @@ import {ensureDirectoryExistence} from '../util/fileUtil.mjs'
 import {getHostRules, getRootCertContext} from '../util/hostrules.mjs'
 import {contextByRequest} from '../api/util/sessionContext.mjs'
 import {parseUserAgent} from '../util/userAgent.mjs'
-import {USE_COOKIES} from '../api/constants/index.mjs'
+import {SECRET_KEY, USE_COOKIES} from '../api/constants/index.mjs'
 import {parseCookies} from '../api/util/parseCookies.mjs'
 import {isTemporarilyBlocked} from './util/requestBlocker.mjs'
 import {parseWebsite} from './util/web2html.mjs'
@@ -472,8 +472,22 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 }, defaultWebHandler)
 
             } else {
+                if (urlPathname.startsWith( '/tokenlink/')) {
+                    let token = urlPathname.substring(11)
+                    token = token.substring(0,token.indexOf('/'))
+                    jwt.verify(token, SECRET_KEY, async (err, decoded) => {
+                        if (!err) {
+                            if(!await sendFileFromDir(req, res, {filename: path.join(ROOT_DIR, decoded.filePath),
+                                neverCompress:true, headers: {}, parsedUrl})){
+                                sendError(res, 404)
+                            }
+                        } else {
+                            console.error(err)
+                            sendError(res, 404)
+                        }
+                    })
 
-                if (urlPathname.startsWith(BACKUP_URL + '/')) {
+                }else if (urlPathname.startsWith(BACKUP_URL + '/')) {
                     const context = contextByRequest(req)
                     if (context.id && context.role === 'administrator') {
                         // only allow download if valid jwt token is set
@@ -636,6 +650,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 //TODO: Move this to an extension as it doesn't belong here
 import stream from './stream.js'
 import {Server} from 'socket.io'
+import jwt from "jsonwebtoken";
 
 
 let ioHttp = new Server(app.http)

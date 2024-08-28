@@ -77,8 +77,11 @@ http://localhost:49160/
 `sudo apt install npm`
 
 ##### Update nodejs
+`npm install -g n`
 `sudo n stable`
 `sudo node -v`
+
+with nvm
 `nvm install 18.16.0`
 
 ##### Find location of nodejs
@@ -118,11 +121,13 @@ http://localhost:49160/
 
 `sudo chmod 777 /opt/lunuc`
 
-`sudo /opt/lunuc/shell/start.sh`
+`sudo /opt/lunuc/shell/start.sh -r all`
 
 `git checkout HEAD -- /opt/lunuc/shell/start.sh`
 
 ### Mongodb on ubuntu
+`lsb_release -a` // ubuntu version
+
 https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/
 
 #### Mongodb external access
@@ -235,9 +240,9 @@ create lunuc-api.service file under /etc/systemd/system
 #### Enable service to run at boot
 `sudo systemctl enable lunuc-api`
 `sudo systemctl enable lunuc-client`
+`sudo systemctl enable mongod`
 
 ### Port forwarding
-
 
 `sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 8080`
 `sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 8080`

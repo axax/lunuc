@@ -8,7 +8,7 @@ export const _t = function (key, replacements, defaultValue) {
         str = _app_.tr[key] || defaultValue || key
     }
     if (replacements) {
-        str = str.replace(/%(\w+)%/g, function (all, key) {
+        str = str.replace(/%(\w+)%/g, (all, key) => {
             return replacements[key] !== undefined ? replacements[key] : all
         })
     }

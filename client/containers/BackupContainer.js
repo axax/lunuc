@@ -4,16 +4,18 @@ import compose from 'util/compose'
 import {
     SimpleButton,
     SimpleDialog,
+    SimpleList,
     Typography,
     DeleteIconButton,
-    SimpleList,
+    ShieldIcon,
+    LinkIcon,
     Row,
     Col
 } from 'ui/admin'
 import FileDrop from 'client/components/FileDrop'
 import Util from 'client/util/index.mjs'
 import config from 'gen/config-client'
-import {graphql, client} from '../middleware/graphql'
+import {graphql, client, Query} from '../middleware/graphql'
 
 const {BACKUP_URL} = config
 
@@ -33,7 +35,8 @@ class BackupContainer extends React.Component {
             importingHostruleDump: false,
             importMediaDumpDialog: false,
             importDbDumpDialog: false,
-            importHostruleDumpDialog: false
+            importHostruleDumpDialog: false,
+            linkDialog: {open:false}
         }
     }
 
@@ -89,8 +92,8 @@ class BackupContainer extends React.Component {
         this.setState({importDbDumpDialog: false})
     }
 
-    handleMediaDumpUpload(e) {
-        console.log(e)
+    handleLinkDialog() {
+        this.setState({linkDialog: {...this.state.linkDialog,open:false}})
     }
 
 
@@ -128,7 +131,7 @@ class BackupContainer extends React.Component {
 
     render() {
         const {dbDumps, mediaDumps, hostruleDumps} = this.props
-        const {creatingDump, creatingMediaDump, creatingHostruleDump, importingMediaDump, importingHostruleDump, importMediaDumpDialog, importDbDumpDialog, importHostruleDumpDialog, importingDbDump} = this.state
+        const {linkDialog, creatingDump, creatingMediaDump, creatingHostruleDump, importingMediaDump, importingHostruleDump, importMediaDumpDialog, importDbDumpDialog, importHostruleDumpDialog, importingDbDump} = this.state
         return <>
                 <Typography variant="h3" gutterBottom>Backups</Typography>
 
@@ -150,9 +153,12 @@ class BackupContainer extends React.Component {
                                 a.push({
                                     primary: i.name,
                                     onClick: () => {
-
-                                        this.authorizedRequest(BACKUP_URL + '/dbdumps/' + i.name, 'db.backup.gz')
-
+                                        this.setState({linkDialog: {
+                                                open:true,
+                                                fileName: i.name,
+                                                filePath:'%BACKUP_DIR%/dbdumps/',
+                                                downloadName: 'db.backup.gz'
+                                        }})
                                     },
                                     secondary: Util.formattedDatetime(i.createdAt) + ' - ' + i.size,
                                     actions: <DeleteIconButton onClick={() => {
@@ -182,7 +188,12 @@ class BackupContainer extends React.Component {
                             a.push({
                                 primary: i.name,
                                 onClick: () => {
-                                    this.authorizedRequest(BACKUP_URL + '/mediadumps/' + i.name, 'medias.backup.gz')
+                                    this.setState({linkDialog: {
+                                        open:true,
+                                        fileName: i.name,
+                                        filePath:'%BACKUP_DIR%/mediadumps/',
+                                        downloadName: 'medias.backup.gz'
+                                    }})
                                 },
                                 secondary: Util.formattedDatetime(i.createdAt) + ' - ' + i.size,
                                 actions: <DeleteIconButton onClick={()=>{
@@ -213,7 +224,12 @@ class BackupContainer extends React.Component {
                             a.push({
                                 primary: i.name,
                                 onClick: () => {
-                                    this.authorizedRequest(BACKUP_URL + '/hostruledumps/' + i.name, 'hostrule.backup.gz')
+                                    this.setState({linkDialog: {
+                                        open:true,
+                                        fileName: i.name,
+                                        filePath:'%BACKUP_DIR%/hostruledumps/',
+                                        downloadName: 'hostrule.backup.gz'
+                                    }})
                                 },
                                 secondary: Util.formattedDatetime(i.createdAt) + ' - ' + i.size,
                                 actions: <DeleteIconButton onClick={()=>{
@@ -225,6 +241,44 @@ class BackupContainer extends React.Component {
                         }
                     </Col>
                 </Row>
+
+
+                <SimpleDialog open={linkDialog.open} onClose={this.handleLinkDialog.bind(this)}
+                              actions={[{key: 'close', label: 'Close'}]}
+                              title={'Secure Link for '+linkDialog.fileName}>
+                    {linkDialog.filePath && <Query query="query getTokenLink($filePath:String!){getTokenLink(filePath:$filePath){token}}"
+                           fetchPolicy="no-cache"
+                           variables={{filePath:linkDialog.filePath+linkDialog.fileName}}>
+                        {({loading, error, data}) => {
+                            if (loading) return 'Loading...'
+                            if (error) return `Error! ${error.message}`
+
+                           //
+
+
+                            return  <>
+                                <div style={{marginBottom:'1rem',padding:'1rem',border:'dashed 1px #cccccc',wordBreak: 'break-all'}}>
+                                    {`${location.origin}/tokenlink/${data.getTokenLink.token}/-/${linkDialog.downloadName}`}
+                                </div>
+                                <SimpleList items={[{
+                                        onClick:()=>{
+                                            window.open(`/tokenlink/${data.getTokenLink.token}/-/${linkDialog.downloadName}`, '_blank').focus();
+                                        },
+                                        icon: <LinkIcon></LinkIcon>,
+                                        primary:'Click to download',
+                                        secondary: 'Link expires in 5 hours'
+                                    },
+                                    {
+                                        onClick:()=>{
+                                            this.authorizedRequest(linkDialog.filePath+linkDialog.fileName, linkDialog.downloadName)
+                                        },
+                                        icon: <ShieldIcon></ShieldIcon>,
+                                        primary:'Download via auth token',
+                                        secondary: ''
+                                    }]}/></>
+                        }}
+                    </Query>}
+                </SimpleDialog>
 
                 <SimpleDialog open={importHostruleDumpDialog} onClose={this.handleConfirmHostruleDialog.bind(this)}
                               actions={[{key: 'close', label: 'Close'}]}
