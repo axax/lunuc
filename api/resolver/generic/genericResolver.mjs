@@ -785,8 +785,8 @@ const GenericResolver = {
         const returnValue = {
             ...newData,
             modifiedAt: dataSet.modifiedAt,
-            createdBy: {
-                _id: new ObjectId(context.id),
+            createdBy: newData.createdBy || {
+                _id:  new ObjectId(context.id),
                 username: context.username
             },
             status: 'updated'

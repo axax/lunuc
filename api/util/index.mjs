@@ -321,11 +321,13 @@ const Util = {
                 return true
             }
 
-            /*const datas = payload?.[`subscribe${type}`]?.data
+
+            const datas = payload?.[`subscribe${type}`]?.data
             if(datas && datas.length===1 && datas[0]?.createdBy?._id?.toString()===context.id){
                 // data belong to user
+                // TODO: get createdBy of entry because it can be the id of the user that updates the entry
                 return true
-            }*/
+            }
 
             return await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
         }

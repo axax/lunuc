@@ -254,9 +254,12 @@ export default db => ({
 
             }
 
-            if(!testReceiver && sentToEmailAddresses.length===0){
-
-                await genResolver(db).Mutation.updateNewsletterMailing({_id:mailingId,state: 'finished', active:false},req,{forceAdminContext:true})
+            if(!testReceiver && mailingId && sentToEmailAddresses.length===0){
+                await genResolver(db).Mutation.updateNewsletterMailing({
+                    createdBy: mailingData.createdBy._id,
+                    _id:mailingId,
+                    state: 'finished',
+                    active:false},req,{forceAdminContext:true})
 
                 /*await db.collection('NewsletterMailing').updateOne({
                     _id: mailingId

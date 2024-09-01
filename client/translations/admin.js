@@ -95,7 +95,8 @@ export const translations = {
         'GenericForm.clone': 'Duplizieren',
         'GenericFrom.autoTranslate': 'Automatisch übersetzen',
         'GenericFrom.translation': 'Alle Übersetzungen anzeigen',
-        'TypePicker.editEntry':'Eintrag bearbeiten'
+        'TypePicker.editEntry':'Eintrag bearbeiten',
+        'BackupContainer.includedCollections':'Inkludierte Daten'
     },
     en: {
         'BaseLayout.editEntry': 'Edit entry',
@@ -191,6 +192,7 @@ export const translations = {
         'GenericForm.clone': 'Duplicate',
         'GenericFrom.autoTranslate': 'Translate automatically',
         'GenericFrom.translation': 'Show all translations',
-        'TypePicker.editEntry':'Edit entry'
+        'TypePicker.editEntry':'Edit entry',
+        'BackupContainer.includedCollections':'Included collections'
     }
 }

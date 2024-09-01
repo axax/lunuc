@@ -1,25 +1,15 @@
 import React, {useState} from 'react'
-import PropTypes from 'prop-types'
 import {
-    DeleteIconButton,
-    BackupIconButton,
-    DoneIconButton,
-    SimpleList,
     SimpleDialog,
-    Tooltip,
     Box
 } from 'ui/admin'
-import Util from 'client/util/index.mjs'
-import {COLLECTIONS_QUERY, COLLECTIONS_SYNC_QUERY} from '../../constants/index.mjs'
-import {withKeyValues} from 'client/containers/generic/withKeyValues'
-import {theme} from 'ui/admin'
-import {client, Query} from '../../middleware/graphql'
+import {COLLECTIONS_SYNC_QUERY} from '../../constants/index.mjs'
+import {client} from '../../middleware/graphql'
 import {_t} from 'util/i18n.mjs'
 import SelectCollection from './SelectCollection'
 
 const SyncCollectionDialog = ({type, open, entries, onClose, _version}) => {
     const [collection, setCollection] = useState(null)
-console.log(entries)
     return <SimpleDialog key="syncDialog"
                             title={_t('TypesContainer.syncEntry')}
                             fullScreen={false}

@@ -65,8 +65,6 @@ import {
     CAPABILITY_MANAGE_COLLECTION
 } from '../../util/capabilities.mjs'
 import SelectCollection from '../components/types/SelectCollection'
-import {getCmsPageQuery} from "../../extensions/cms/util/cmsView.mjs";
-import {setPropertyByPath} from "../util/json.mjs";
 
 const CodeEditor = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>

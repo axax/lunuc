@@ -11,7 +11,7 @@ const SelectCollection = ({type, _version, ignore, onChange}) =>{
 
     return <Query query={COLLECTIONS_QUERY}
                   fetchPolicy="cache-and-network"
-                  variables={{filter: '^' + type + '_.*'}}>
+                  variables={{filter: type?`^${type}_.*`:''}}>
         {({loading, error, data}) => {
             if (loading) return 'Loading...'
             if (error) return `Error! ${error.message}`

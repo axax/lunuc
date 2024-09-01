@@ -432,9 +432,11 @@ export const systemResolver = (db) => ({
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
             return await createAllIndexes(db)
         },
-        createBackup: async ({type}, {context}) => {
+        createBackup: async ({type, options}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_BACKUPS)
-            return createBackup(type)
+
+            const optionsAsJson = options ? JSON.parse(options) : {}
+            return createBackup(type, optionsAsJson)
         },
         removeBackup: async ({type, name}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)

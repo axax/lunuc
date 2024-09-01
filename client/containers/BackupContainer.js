@@ -14,10 +14,9 @@ import {
 } from 'ui/admin'
 import FileDrop from 'client/components/FileDrop'
 import Util from 'client/util/index.mjs'
-import config from 'gen/config-client'
-import {graphql, client, Query} from '../middleware/graphql'
-
-const {BACKUP_URL} = config
+import {graphql, Query} from '../middleware/graphql'
+import {getTypes} from '../../util/types.mjs'
+import {_t} from 'util/i18n.mjs'
 
 
 class BackupContainer extends React.Component {
@@ -36,13 +35,19 @@ class BackupContainer extends React.Component {
             importMediaDumpDialog: false,
             importDbDumpDialog: false,
             importHostruleDumpDialog: false,
-            linkDialog: {open:false}
+            linkDialog: {open:false},
+            createDumpDialog: {open:false}
         }
+        const types = getTypes()
+        this.typesToSelect = []
+        Object.keys(types).sort().map((k) => {
+            this.typesToSelect.push({primary: k,checkbox:true,checked:true})
+        })
     }
 
-    createDump() {
+    createDump(options) {
         this.setState({creatingDump: true})
-        this.props.createBackup({type:'db'}).then(e => {
+        this.props.createBackup({type:'db', options: options?JSON.stringify(options):undefined}).then(e => {
             this.setState({creatingDump: false})
         }).catch(()=>{
             this.setState({creatingDump: false})
@@ -96,6 +101,14 @@ class BackupContainer extends React.Component {
         this.setState({linkDialog: {...this.state.linkDialog,open:false}})
     }
 
+    handleCreateDumpDialog(action) {
+        if(action.key === 'create'){
+            const excludeCollection = this.typesToSelect.filter(type=>!type.checked).map(type=>type.primary)
+            this.createDump({excludeCollection})
+        }
+        this.setState({createDumpDialog: {...this.state.createDumpDialog,open:false}})
+    }
+
 
     download(content, filename, contentType) {
         if (!contentType) contentType = 'application/octet-stream';
@@ -131,7 +144,7 @@ class BackupContainer extends React.Component {
 
     render() {
         const {dbDumps, mediaDumps, hostruleDumps} = this.props
-        const {linkDialog, creatingDump, creatingMediaDump, creatingHostruleDump, importingMediaDump, importingHostruleDump, importMediaDumpDialog, importDbDumpDialog, importHostruleDumpDialog, importingDbDump} = this.state
+        const {createDumpDialog, linkDialog, creatingDump, creatingMediaDump, creatingHostruleDump, importingMediaDump, importingHostruleDump, importMediaDumpDialog, importDbDumpDialog, importHostruleDumpDialog, importingDbDump} = this.state
         return <>
                 <Typography variant="h3" gutterBottom>Backups</Typography>
 
@@ -140,7 +153,11 @@ class BackupContainer extends React.Component {
 
                         <SimpleButton variant="contained" color="primary"
                                       showProgress={creatingDump}
-                                      onClick={this.createDump.bind(this)}>{creatingDump ? 'Dump is beeing created' : 'Create db dump'}</SimpleButton>
+                                      onClick={()=>{
+                                          this.setState({createDumpDialog: {
+                                              open:true
+                                          }})
+                                      }}>{creatingDump ? 'Dump is beeing created' : 'Create db dump'}</SimpleButton>
 
                         <SimpleButton color="secondary"
                                       disabled={importDbDumpDialog}
@@ -253,9 +270,6 @@ class BackupContainer extends React.Component {
                             if (loading) return 'Loading...'
                             if (error) return `Error! ${error.message}`
 
-                           //
-
-
                             return  <>
                                 <div style={{marginBottom:'1rem',padding:'1rem',border:'dashed 1px #cccccc',wordBreak: 'break-all'}}>
                                     {`${location.origin}/tokenlink/${data.getTokenLink.token}/-/${linkDialog.downloadName}`}
@@ -278,6 +292,28 @@ class BackupContainer extends React.Component {
                                     }]}/></>
                         }}
                     </Query>}
+                </SimpleDialog>
+
+                <SimpleDialog fullWidth={true} maxWidth="md"
+                              open={createDumpDialog.open} onClose={this.handleCreateDumpDialog.bind(this)}
+                              actions={[{key: 'close', label: 'Cancel', type:'secondary'},{key: 'create', label: 'Create', variant:'contained',type: 'primary'}]}
+                              title={'Create db dump'}>
+
+
+                    <Typography variant="h6" color="inherit">
+                        {_t('BackupContainer.includedCollections')}
+                    </Typography>
+                    <SimpleList
+                        onCheck={(checked)=>{
+                            this.typesToSelect.forEach((type,index)=>{
+                                type.checked = checked.indexOf(index)>=0
+                            })
+                        }}
+                        sx={{
+                        overflow: 'auto',
+                        maxHeight: 300
+                    }} allChecked={true} items={this.typesToSelect}/>
+
                 </SimpleDialog>
 
                 <SimpleDialog open={importHostruleDumpDialog} onClose={this.handleConfirmHostruleDialog.bind(this)}
@@ -324,7 +360,7 @@ BackupContainer.propTypes = {
 }
 
 const gqlQuery = `query backups($type:String!){backups(type:$type){results{name createdAt size}}}`
-const gqlUpdate = `mutation createBackup($type:String!){createBackup(type:$type){name createdAt size}}`
+const gqlUpdate = `mutation createBackup($type:String!,$options:String){createBackup(type:$type,options:$options){name createdAt size}}`
 const gqlRemove = `mutation removeBackup($type:String!,$name:String!){removeBackup(type:$type,name:$name){status}}`
 
 const BackupContainerWithGql = compose(
@@ -363,9 +399,9 @@ const BackupContainerWithGql = compose(
     }),
     graphql(gqlUpdate, {
         props: ({mutate}) => ({
-            createBackup: ({type}) => {
+            createBackup: ({type, options}) => {
                 return mutate({
-                    variables: {type},
+                    variables: {type, options},
                     update: (proxy, {data: {createBackup}}) => {
                         if(!createBackup.errors) {
                             // Read the data from our cache for this query.

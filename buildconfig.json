@@ -67,7 +67,7 @@
       "active": true
     },
     "proxy": {
-      "active": false
+      "active": true
     },
     "dns": {
       "active": false
@@ -202,7 +202,8 @@
         "GridOn",
         "Replay",
         "Language",
-        "Google"
+        "Google",
+        "Shield"
       ],
       "theme":{
         "colors":{
