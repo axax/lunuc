@@ -1,5 +1,5 @@
 import React from 'react'
-import {AutoFixHighIcon, SimpleDialog} from 'ui/admin'
+import {AutoFixHighIcon, CleaningServicesIcon,  SimpleDialog} from 'ui/admin'
 import {jsonPropertyTemplates, jsonTemplates} from './templates/dataResolver'
 import Async from '../../../client/components/Async'
 import {_t} from '../../../util/i18n.mjs'
@@ -10,14 +10,18 @@ const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName
 
 class DataResolverEditor extends React.Component {
 
+    getJsonData() {
+        let json
+        try {
+            json = JSON.parse(this.props.children)
+        }catch (e){
+            json = []
+        }
+        return json
+    }
     onWizardClose(action) {
         if(action.key==='save') {
-            let json
-            try {
-                json = JSON.parse(this.props.children)
-            }catch (e){
-                json = []
-            }
+            const json = this.getJsonData()
             if(this.wizardForm.state.fields.resolverType==='track') {
                 json.push(
                     {
@@ -190,14 +194,18 @@ class DataResolverEditor extends React.Component {
                        propertyTemplates={jsonPropertyTemplates}
                        actions={[
                            {
-                               divider:true
-                           },
-                           {
+                               divider:true,
                                name: _t('DataResolverEditor.wizard'),
                                icon: <AutoFixHighIcon/>,
                                onClick: ()=>{
                                    setShowWizard(true)
                                }
+                           },
+                           {
+                               divider:true,
+                               name: _t('DataResolverEditor.cleanUpTranslations'),
+                               icon: <CleaningServicesIcon/>,
+                               onClick: this.props.onCleanUpTranslations
                            }
                        ]} lineNumbers controlled type="json" {...this.props}/>
         </>

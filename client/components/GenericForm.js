@@ -1367,6 +1367,10 @@ class GenericForm extends React.Component {
             currentFormFields.push(<Divider className={field.className} key={'divider' + field.name}/>)
         }
 
+        if (field.extraAfter) {
+            currentFormFields.push(field.extraAfter)
+        }
+
         if (!langButtonWasInserted && translateButton && languageCode === _app_.lang) {
             currentFormFields.splice(currentFormFields.length - 1, 0, <div key={'tr' + fieldKey}
                                                                            style={{right: '3.55rem',

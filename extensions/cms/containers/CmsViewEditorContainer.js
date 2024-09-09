@@ -641,6 +641,7 @@ class CmsViewEditorContainer extends React.Component {
                         expanded={EditorPageOptions.dataResolverExpanded}>
                         <DataResolverEditor onScroll={this.handleSettingChange.bind(this, 'dataResolverScroll', true)}
                                             scrollPosition={EditorPageOptions.dataResolverScroll}
+                                            onCleanUpTranslations={this.handleCleanUpTranslations.bind(this)}
                                             onChange={this.handleDataResolverChange.bind(this)}>{dataResolver}</DataResolverEditor>
                     </Expandable>
                     <Expandable title="Server Script"
@@ -1077,6 +1078,33 @@ class CmsViewEditorContainer extends React.Component {
             </UIProvider>
         }
 
+    }
+
+
+    handleCleanUpTranslations() {
+        const {
+            template,
+            script,
+            dataResolver,
+        } = this.state
+
+        const json = JSON.parse(dataResolver)
+        json.forEach(entry=>{
+            if(entry.tr){
+                const langs = Object.keys(entry.tr)
+                langs.forEach(lang=>{
+                    Object.keys(entry.tr[lang]).forEach(key=>{
+                        if(![template,script].some(data =>
+                            data.indexOf(`_t('${key}'`)>=0 ||
+                            data.indexOf(`_t("${key}"`)>=0 ||
+                            data.indexOf(`"trKey": "${key}"'`)>=0)){
+                            delete entry.tr[lang][key]
+                        }
+                    })
+                })
+            }
+        })
+        this.handleDataResolverChange(JSON.stringify(json,null,4),true)
     }
 
 

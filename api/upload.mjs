@@ -266,7 +266,7 @@ export const handleDbDumpUpload = (db, client) => async (req, res) => {
     if (authContext) {
 
         /* Process the uploads */
-        const form = formidable({maxFileSize: 1014 * 1024 * 1024, keepExtensions: false})
+        const form = formidable({maxFileSize: 1014 * 1024 * 1024 * 10, keepExtensions: false})
 
 
         res.writeHead(200, {'content-type': 'application/json'})

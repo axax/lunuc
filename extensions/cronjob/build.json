@@ -27,6 +27,7 @@
           "tab": "Allgemein",
           "name": "execfilter",
           "label": "Execution filter",
+          "fullWidth": true,
           "index": 1
         },
         {

@@ -25,6 +25,8 @@ export default async function (response, {typeName, db, graphqlInfo}){
                     // convert type Object to String
                     // item[field.name] = JSON.stringify(item[field.name])
                     if (field) {
+                        console.log(field)
+
                         if(field.type==='Float'){
                             if (isNaN(item[field.name])) {
                                 item[field.name] = 0
@@ -71,6 +73,9 @@ export default async function (response, {typeName, db, graphqlInfo}){
                                     }
                                 }
                             }
+                        }else if(field.required && item[field.name]===null){
+                            // prevent ERROR: Cannot return null for non-nullable field UserSetting.name.
+                            item[field.name] = ''
                         }
 
                         const dyn = field.dynamic

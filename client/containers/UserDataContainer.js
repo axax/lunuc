@@ -10,7 +10,7 @@ class UserDataContainer extends React.Component {
         force:  !_app_.noStorage && localStorage.getItem('refreshUserData')
     }
 
-    getUserData = () => {
+    getUserData = (tries = 0) => {
         if(this.state.loading && this.state.hasAuth) {
             localStorage.removeItem('refreshUserData')
 
@@ -21,8 +21,15 @@ class UserDataContainer extends React.Component {
                 _app_.dispatcher.setUser(response.data.me)
                 this.setState({loading: false, loaded: true})
             }).catch(error => {
+                if(tries<10 && error.error.message==='Gateway Timeout'){
+                    setTimeout(()=> {
+                        this.getUserData(tries + 1)
+                    },1000)
+                }else{
+                    this.setState({loading: false, loaded: true})
+                }
                 console.log(error)
-                this.setState({loading: false, loaded: true})
+
             })
         }
     }

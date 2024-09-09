@@ -682,7 +682,7 @@ if (USE_HTTPX) {
         socket.end('HTTP/1.1 400 Bad Request\r\n\r\n')
     })
     app.https.on('clientError', (err, socket) => {
-        console.log('https clientError', err)
+        console.log('https clientError', err, socket && socket.remoteAddress)
 
         if (err.code === 'ECONNRESET' || !socket.writable) {
             return

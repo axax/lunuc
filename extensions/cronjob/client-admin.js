@@ -22,7 +22,7 @@ export default () => {
     })*/
 
     Hook.on('TypeCreateEditAction', function ({type, action, dataToEdit, createEditForm, meta}) {
-        if (type === 'CronJob' && action && action.key.startsWith('run')) {
+        if (type === 'CronJob' && action && action.key && action.key.startsWith('run')) {
             const runOnlyScript = action.key==='run_script'
             client.query({
                 fetchPolicy: 'network-only',
@@ -50,6 +50,12 @@ export default () => {
         if (type === 'CronJob') {
             props.actions.unshift({key: 'run', label: 'Run CronJob'})
             props.actions.unshift({key: 'run_script', label: 'Run Script'})
+        }
+    })
+
+    Hook.on('TypeCreateEditFormFields', ({type, formFields}) => {
+        if (type === 'CronJob') {
+            formFields.execfilter.extraAfter = <iframe style={{marginTop:'2rem',height:'35rem',border:'none', width:'100%'}} src="/system/info"></iframe>//<a target='_blank' href="/system/info">System Properties</a>
         }
     })
 

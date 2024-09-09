@@ -8,7 +8,9 @@ import {translations} from './translations/admin'
 import {openWindow} from '../../client/util/window'
 import Util from '../../client/util/index.mjs'
 import {CAPABILITY_MANAGE_TYPES} from '../../util/capabilities.mjs'
-import GenericForm from "../../client/components/GenericForm";
+import GenericForm from '../../client/components/GenericForm'
+import {referencesToIds} from '../../util/typesAdmin.mjs'
+
 registerTrs(translations, 'Newsletter')
 
 const SimpleDialog = (props) => <Async {...props} expose="SimpleDialog"
@@ -121,29 +123,15 @@ export default () => {
                         children: _t('NewsletterMailing.startNewsletter.question')}})
 
             }else if(action.key === 'send') {
-                const listIds = []
 
-                const fieldsForSend = createEditForm.state.fields
-                if (fieldsForSend.list) {
-                    fieldsForSend.list.forEach(list => {
-                        listIds.push(list._id)
-                    })
-                }
-
-                const usersIds = []
-
-                if (fieldsForSend.users) {
-                    fieldsForSend.users.forEach(user => {
-                        usersIds.push(user._id)
-                    })
-                }
+                const fieldsForSend = referencesToIds(createEditForm.state.fields,type)
 
 
-                let template = fieldsForSend.template
+
+                let template = createEditForm.state.fields.template
                 if (template && template.constructor === Array && template.length > 0) {
                     template = template[0]
                 }
-
                 client.query({
                     fetchPolicy: 'network-only',
                     query: 'query sendNewsletter($mailing: ID!, $subject: LocalizedStringInput!,$template: String, $list:[ID],$users:[ID],$unsubscribeHeader:Boolean,$batchSize: Float, $host: String, $text: LocalizedStringInput, $html: LocalizedStringInput){sendNewsletter(mailing:$mailing,subject:$subject,template:$template,list:$list,users:$users,unsubscribeHeader:$unsubscribeHeader,batchSize:$batchSize,host:$host,text:$text,html:$html){status}}',
@@ -155,8 +143,8 @@ export default () => {
                         text: fieldsForSend.text,
                         html: fieldsForSend.html,
                         template: template ? template.slug : undefined,
-                        list: listIds,
-                        users: usersIds,
+                        list: fieldsForSend.list,
+                        users: fieldsForSend.users,
                         unsubscribeHeader: fieldsForSend.unsubscribeHeader
                     }
                 }).then(response => {

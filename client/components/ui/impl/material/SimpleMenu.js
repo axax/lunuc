@@ -108,7 +108,7 @@ class SimpleMenu extends React.Component {
             style.paddingLeft = (intent*2.5)+'rem'
         }
         return items.map((item, i) => {
-            if(!item) return
+            if(!item && item.hide) return
             let icon = getIconByKey(item.icon)
             if(item.icon) {
                 if (typeof item.icon === 'string') {
