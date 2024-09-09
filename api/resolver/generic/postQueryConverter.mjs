@@ -25,8 +25,6 @@ export default async function (response, {typeName, db, graphqlInfo}){
                     // convert type Object to String
                     // item[field.name] = JSON.stringify(item[field.name])
                     if (field) {
-                        console.log(field)
-
                         if(field.type==='Float'){
                             if (isNaN(item[field.name])) {
                                 item[field.name] = 0

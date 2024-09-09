@@ -52,7 +52,7 @@ export const getSubscribeQuery = (typeName) =>{
 
     let subscriptionQuery = `_meta action filter removedIds data${queryStatemantForType({type:typeName})}`
 
-    console.log(subscriptionQuery, typeName)
+    //console.log(subscriptionQuery, typeName)
    /* type.fields.map(({name, reference, localized}) => {
 
         if (reference) {
@@ -67,7 +67,7 @@ export const getSubscribeQuery = (typeName) =>{
         }
     })
     subscriptionQuery += '}'*/
-    console.log(subscriptionQuery)
+    //console.log(subscriptionQuery)
     return subscriptionQuery
 }
 

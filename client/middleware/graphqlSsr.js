@@ -1,5 +1,5 @@
 import ReactDOMServer from 'react-dom/server'
-import {SSR_FETCH_CHAIN, finalFetch} from './graphql'
+import {SSR_FETCH_CHAIN, finalFetch, client} from './graphql'
 import JsonDom from '../../extensions/cms/components/JsonDom'
 import App from '../components/App'
 import React from 'react'
@@ -9,6 +9,7 @@ const renderToCollectFetchRec = async (component, context)=>{
     const backupLang = _app_.lang
     const lang = (context && context.lang ? context.lang : _app_.lang)
     _app_.lang = lang
+    client.resetStore()
     ReactDOMServer.renderToStaticMarkup(component)
 
     const keys = Object.keys(SSR_FETCH_CHAIN)
@@ -46,7 +47,7 @@ const renderToCollectFetchRec = async (component, context)=>{
 }
 
 export const renderToString = (component, context) => {
-console.log('renderToString', context)
+
     return new Promise(async (resolve) => {
 
         const backupLang = _app_.lang
