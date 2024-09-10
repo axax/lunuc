@@ -124,17 +124,18 @@ export const systemResolver = (db) => ({
                      subscribeRun: {response: stdout, error: stderr, id}
                      })
                      })*/
+
                     if (!execs[currentId] || execs[currentId].exitCode !== null) {
                         execs[currentId] = spawn('bash', [], {detached: true})
-
-
+                        execs[currentId].isRunning = false
                         execs[currentId].stdout.on('data', (data) => {
                             let str = data.toString('utf8')
-                            const isEnd = (str.indexOf(ENDOFCOMMAND) === str.length - ENDOFCOMMAND.length)
+                            const isEnd = str.endsWith(ENDOFCOMMAND)
+                            console.log(str)
                             if (isEnd) {
+                                execs[currentId].isRunning = false
                                 str = str.substring(0, str.length - ENDOFCOMMAND.length)
                             }
-
                             pubsub.publish('subscribeRun', {
                                 userId: context.id,
                                 subscribeRun: {event: isEnd ? 'end' : 'data', response: str, id: currentId}
@@ -161,7 +162,14 @@ export const systemResolver = (db) => ({
                             })
                         })
                     }
-                    execs[currentId].stdin.write(`${command} && echo ${ENDOFCOMMAND}`)
+                    console.log('is running',execs[currentId].isRunning,`-${command}-`)
+                    execs[currentId].stdin.write(`${command}`)
+                    if(!execs[currentId].isRunning) {
+                        execs[currentId].stdin.write(` && echo ${ENDOFCOMMAND}`)
+                    }else{
+                        execs[currentId].stdin.write(`\n`)
+                    }
+                    execs[currentId].isRunning = true
 
                     clearTimeout(execs[currentId].execTimeout)
                     execs[currentId].execTimeout = setTimeout(function () {
