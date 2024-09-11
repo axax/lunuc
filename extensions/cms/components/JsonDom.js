@@ -118,9 +118,9 @@ class JsonDom extends React.Component {
             let url = to || href || ''
             if(url._localized){
                 url = url[_app_.lang] || url[_app_.config.DEFAULT_LANGUAGE]
-                if(url === undefined || url.constructor !== String){
-                    return null
-                }
+            }
+            if(url === undefined || url.constructor !== String){
+                return null
             }
             const newTarget = target && target !== 'undefined' ? target : '_self',
                 rel = target === '_blank' ? 'noopener' : ''
