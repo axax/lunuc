@@ -791,7 +791,6 @@ const GenericResolver = {
             },
             status: 'updated'
         }
-        console.log(returnValue)
 
         if (_meta) {
             const meta = _meta.constructor===Object?_meta:JSON.parse(_meta)
