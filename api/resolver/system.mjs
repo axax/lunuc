@@ -131,7 +131,6 @@ export const systemResolver = (db) => ({
                         execs[currentId].stdout.on('data', (data) => {
                             let str = data.toString('utf8')
                             const isEnd = str.endsWith(ENDOFCOMMAND)
-                            console.log(str)
                             if (isEnd) {
                                 execs[currentId].isRunning = false
                                 str = str.substring(0, str.length - ENDOFCOMMAND.length)
