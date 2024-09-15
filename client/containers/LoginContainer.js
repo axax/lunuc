@@ -7,6 +7,7 @@ import Util from 'client/util/index.mjs'
 import DomUtil from '../util/dom.mjs'
 import {client} from 'client/middleware/graphql'
 import {_t} from 'util/i18n.mjs'
+import Hook from '../../util/hook'
 
 class LoginContainer extends React.Component {
 
@@ -100,31 +101,40 @@ class LoginContainer extends React.Component {
         }).then(response => {
             this.setState({loading: false})
             if (response.data && response.data.login) {
-
-                if (!response.data.login.error) {
-                    // clear cache completely
-                    client.resetStore()
-                    if (response.data.login.token) {
-                        localStorage.setItem('token', response.data.login.token)
-                    }
-
-                    _app_.dispatcher.setUser(response.data.login.user)
-
-                    if(response.data.login.user.requestNewPassword){
-                        this.setState({resetToken: response.data.login.resetToken, currentUser: response.data.login.user})
-                    } else {
-
-                        // make sure translations are loaded
-                        window.location = this.getFromUrl()
-                    }
-
-                } else {
-                    this.setState({error: response.data.login.error})
-                }
+                this.loginWithResponse(response.data.login)
             }
         }).catch((response) => {
             this.setState({loading: false, error: response.error.message})
         })
+    }
+
+    loginWithResponse(login) {
+
+        if (!login.error) {
+            // clear cache completely
+            client.resetStore()
+
+
+            if (login.token) {
+                localStorage.setItem('token', login.token)
+            }
+
+            _app_.dispatcher.setUser(login.user)
+
+            if (login.user.requestNewPassword) {
+                this.setState({
+                    resetToken: login.resetToken,
+                    currentUser: login.user
+                })
+            } else {
+
+                // make sure translations are loaded
+                window.location = this.getFromUrl()
+            }
+
+        } else {
+            this.setState({error: login.error})
+        }
     }
 
     getFromUrl() {
@@ -145,10 +155,15 @@ class LoginContainer extends React.Component {
             return <Redirect to={from} push={true}/>
         }
 
+        const loginAlternatives = []
+        Hook.call('LoginContainerBeforeRender', {loginAlternatives, container: this})
+
+
+
         return <Row style={{marginTop: '5rem'}}>
             <Col xs={1} sm={2} md={4}></Col>
             <Col xs={10} sm={8} md={4}>
-                <Card>
+                <Card sx={{mb:2}}>
                     {resetToken ?
                         <form noValidate autoComplete="off" action="/graphql/login" method="post">
                             <Typography variant="h3" gutterBottom>{_t('Login.changePasswordTitle')}</Typography>
@@ -250,8 +265,10 @@ class LoginContainer extends React.Component {
                     </form>
                     }
                 </Card>
+                {loginAlternatives}
             </Col>
-            <Col xs={1} sm={2} md={4}></Col>
+            <Col xs={1} sm={2} md={4}>
+            </Col>
         </Row>
     }
 }

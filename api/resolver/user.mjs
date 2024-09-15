@@ -364,7 +364,7 @@ export const userResolver = (db) => ({
 
                 if (result.user.requestNewPassword) {
                     // generate reset token
-                    const resetToken = crypto.randomBytes(16).toString("hex")
+                    const resetToken = crypto.randomBytes(16).toString('hex')
                     await db.collection('User').findOneAndUpdate({_id: new ObjectId(result.user._id)}, {
                         $set: {
                             passwordReset: new Date().getTime(),

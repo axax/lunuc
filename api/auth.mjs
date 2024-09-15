@@ -7,8 +7,7 @@ import {contextByRequest} from './util/sessionContext.mjs'
 export const auth = {
     createToken: async ({username, password, domain, db, context}) => {
 
-        const userCollection = db.collection('User')
-        const user = await userCollection.findOneAndUpdate({domain: domain?{ $in: [ domain, "$ALL" ] }:{ $in: [ null, "", "$ALL" ] }, $or: [{'email': username}, {'username': username}]}, {$set: {lastLogin: new Date().getTime()}})
+        const user = await db.collection('User').findOneAndUpdate({domain: domain?{ $in: [ domain, "$ALL" ] }:{ $in: [ null, "", "$ALL" ] }, $or: [{'email': username}, {'username': username}]}, {$set: {lastLogin: new Date().getTime()}})
 
 
         if (!user || !password) {

@@ -781,14 +781,24 @@ const GenericResolver = {
                 return o
             }, {})
         }
+        let createdBy
+        if(newData.createdBy){
+            if(newData.createdBy._id){
+                createdBy = {username: '',_id:newData.createdBy}
+            }else{
+                createdBy = Object.assign({username: ''},newData.createdBy)
+            }
+        }else{
+            createdBy = {
+                _id:  new ObjectId(context.id),
+                username: context.username
+            }
+        }
 
         const returnValue = {
             ...newData,
             modifiedAt: dataSet.modifiedAt,
-            createdBy: newData.createdBy ? Object.assign({username: ''},newData.createdBy) : {
-                _id:  new ObjectId(context.id),
-                username: context.username
-            },
+            createdBy: createdBy,
             status: 'updated'
         }
 

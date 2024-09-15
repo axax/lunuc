@@ -98,6 +98,9 @@
     },
     "mailserver": {
       "active": true
+    },
+    "webauthn": {
+      "active": true
     }
   },
   "ui": [
@@ -204,7 +207,8 @@
         "Language",
         "Google",
         "Shield",
-        "CleaningServices"
+        "CleaningServices",
+        "Fingerprint"
       ],
       "theme":{
         "colors":{
