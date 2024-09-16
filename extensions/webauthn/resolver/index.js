@@ -81,7 +81,7 @@ export default (db) => ({
 
             checkChallenge(clientDataJson,req.context)
 
-            const expectedHost = getHostFromHeaders(req)
+            const expectedHost = getHostFromHeaders(req.headers)
             checkOrigin(clientDataJson, expectedHost)
 
             const authData = parseAuthData(Buffer.from(authenticatorData, 'base64'))
