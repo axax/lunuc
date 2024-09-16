@@ -149,7 +149,7 @@ export default (db) => ({
 
             checkChallenge(clientDataJson,req.context)
 
-            const expectedHost = getHostFromHeaders(req)
+            const expectedHost = getHostFromHeaders(req.headers)
             checkOrigin(clientDataJson, expectedHost)
 
             let attestationObject = decodeAttestation(attestation)
@@ -196,10 +196,9 @@ export default (db) => ({
                 //signCount: authData.signCount,
             }
 
-            await genResolver(db).Mutation.createWebAuthnCredential(credential, req,{})
+            const insertResult = await genResolver(db).Mutation.createWebAuthnCredential(credential, req,{})
 
-
-            return { status: 'PassKey created'}
+            return insertResult
         }
     }
 })

@@ -20,11 +20,19 @@ class PasskeyContainer extends React.Component {
             <Typography variant="h3" gutterBottom>Passkey</Typography>
 
             <Button sx={{mb:4}} variant="contained" endIcon={<FingerprintIcon />}
-            onClick={registerWebAuthn}>
+            onClick={async ()=>{
+                const result = await registerWebAuthn()
+                if(result.error) {
+                    alert(result.error)
+                }else {
+                    this.typeContainer.getData(this.typeContainer.pageParams, false)
+                }
+            }}>
                 {_t('PasskeyContainer.createNewPasskey')}
             </Button>
 
-            <TypesContainer baseUrl={location.pathname}
+            <TypesContainer onRef={ref => (this.typeContainer = ref)}
+                            baseUrl={location.pathname}
                             title={false}
                             fixType="WebAuthnCredential"
                             history={history} location={location} match={match}/>
