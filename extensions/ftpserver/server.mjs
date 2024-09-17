@@ -10,6 +10,12 @@ import resolverGen from './gensrc/resolver.mjs'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 const {WEBROOT_ABSPATH} = config
 import {ensureDirectoryExistence} from '../../util/fileUtil.mjs'
+import {
+    addInvalidLoginAttempt,
+    clearInvalidLoginAttempt,
+    hasTooManyInvalidLoginAttempts
+} from "../../api/util/loginBlocker.mjs";
+import {_t} from '../../util/i18nServer.mjs'
 //import {getHostRules, hostListFromString} from '../../util/hostrules.mjs'
 
 
@@ -90,10 +96,15 @@ const startFtpServer = (db)=> {
     })
 
     ftpServer.on('login', async (data, resolve, reject) => {
+        const ip= data.connection.ip
+        if(hasTooManyInvalidLoginAttempts(ip)){
+            return reject(new Error(_t('core.login.blocked.temporarily'), 401))
+        }
 
         const ftpUser = await db.collection('FtpUser').findOne({active:true,username: data.username})
         if(ftpUser){
             if (Util.compareWithHashedPassword(data.password, ftpUser.password)) {
+                clearInvalidLoginAttempt(ip)
                 let absdir = path.join(WEBROOT_ABSPATH, ftpUser.root)
                 if(ftpUser.root && ftpUser.root.startsWith('@approot/')){
                     absdir = path.join(ROOT_DIR, ftpUser.root.substring(8))
@@ -102,12 +113,18 @@ const startFtpServer = (db)=> {
                 if(ensureDirectoryExistence(absdir)) {
                     console.log(absdir)
                     return resolve({root: absdir})
+                }else{
+                    return reject(new Error(`Root dir ${ftpUser.root} for username ${data.username} doesn't exist`, 500))
                 }
+            }else{
+                addInvalidLoginAttempt(ip)
             }
+        }else{
+            addInvalidLoginAttempt(ip)
         }
 
 
-        return reject(new Error('Invalid username or password', 401))
+        return reject(new Error(`Invalid username ${data.username} or password from ${ip}`, 401))
     })
 
     ftpServer.listen().then(() => {

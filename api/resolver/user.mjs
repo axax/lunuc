@@ -20,10 +20,12 @@ import Hook from '../../util/hook.cjs'
 import {USE_COOKIES} from '../constants/index.mjs'
 import {hasQueryField} from '../util/graphql.js'
 import {generatePassword} from '../../util/password.mjs'
+import {
+    addInvalidLoginAttempt,
+    clearInvalidLoginAttempt,
+    hasTooManyInvalidLoginAttempts
+} from '../util/loginBlocker.mjs'
 
-const LOGIN_ATTEMPTS_MAP = {},
-    MAX_LOGIN_ATTEMPTS = 10,
-    LOGIN_DELAY_IN_SEC = 180
 
 export const createUser = async ({username, role, junior, group, setting, password, language, email, emailConfirmed, blocked, requestNewPassword, meta, domain, picture, db, context}, opts) => {
 
@@ -322,14 +324,8 @@ export const userResolver = (db) => ({
             const {context} = req
             const ip = clientAddress(req)
 
-            if (LOGIN_ATTEMPTS_MAP[ip] && LOGIN_ATTEMPTS_MAP[ip].count >= MAX_LOGIN_ATTEMPTS) {
-                const time = new Date().getTime()
-
-                if (time - LOGIN_ATTEMPTS_MAP[ip].lasttry < LOGIN_DELAY_IN_SEC * 1000) {
-                    return {error: _t('core.login.blocked.temporarily', context.lang), token: null, user: null}
-                } else {
-                    delete LOGIN_ATTEMPTS_MAP[ip]
-                }
+            if(hasTooManyInvalidLoginAttempts(ip)){
+                return {error: _t('core.login.blocked.temporarily', context.lang), token: null, user: null}
             }
 
             const result = await auth.createToken({username, password, domain, db, context})
@@ -341,19 +337,14 @@ export const userResolver = (db) => ({
 
             if (!result.token) {
 
-                if (!LOGIN_ATTEMPTS_MAP[ip]) {
-                    LOGIN_ATTEMPTS_MAP[ip] = {count: 0, username}
-                }
-                LOGIN_ATTEMPTS_MAP[ip].lasttry = new Date().getTime()
-                LOGIN_ATTEMPTS_MAP[ip].count++
+                addInvalidLoginAttempt(ip)
+
                 console.log(`Invalid login attempt from ${username}`)
                 Hook.call('invalidLogin', {context, db, username, domain, ip})
 
                 //invalid login
             } else {
-                if (LOGIN_ATTEMPTS_MAP[ip]) {
-                    delete LOGIN_ATTEMPTS_MAP[ip]
-                }
+                clearInvalidLoginAttempt(ip)
 
                 if (USE_COOKIES) {
                     setAuthCookies(result, req.res)
