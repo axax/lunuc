@@ -9,6 +9,7 @@ import {createRequireForScript,createScriptForWorker} from '../../util/require.m
 import { fileURLToPath } from 'url'
 import {Worker} from 'node:worker_threads'
 import Hook from "../../util/hook.cjs";
+import Cache from "../../util/cache.mjs";
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const cronjobUtil = {
@@ -87,7 +88,12 @@ const cronjobUtil = {
             })()
             `, {eval: true, workerData: {context:args.context}})
             worker.on('message', msg => {
-                console.log(msg)
+                if(msg.clearCache){
+                    console.log(`From worker-thread: clearCache ${msg.clearCache}`)
+                    Cache.clearStartWith(msg.clearCache)
+                }else{
+                    console.log(`From worker-thread: ${msg}`)
+                }
             })
             worker.on('error', (msg) => {
                 args.error(msg)

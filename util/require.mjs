@@ -96,6 +96,7 @@ export const createRequireForScript = (importPath) => {
             this.getDb = () =>{
                 return this.db
             }
+            this.parentPort = {postMessage:()=>{}}
             ${enhancePathScript}
             const requireAsync = async (filePath)=>{               
                 const newFilePath = enhanceFilePath(filePath)
@@ -138,7 +139,8 @@ export const createScriptForWorker = (importPath) => {
                 const newFilePath = enhanceFilePath(filePath)
                 return await import(newFilePath)
             }
-            const {workerData} = require('worker_threads')
+            const {workerData,parentPort} = require('worker_threads')
+            this.parentPort = parentPort
             this.context = workerData.context
             
             this.getDb = async ()=>{
