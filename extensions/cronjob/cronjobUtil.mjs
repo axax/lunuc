@@ -5,8 +5,9 @@ import fs from 'fs'
 import readline from 'readline'
 import { spawn } from 'child_process'
 import path from 'path'
-import {createRequireForScript} from '../../util/require.mjs'
+import {createRequireForScript,createScriptForWorker} from '../../util/require.mjs'
 import { fileURLToPath } from 'url'
+import {Worker} from 'node:worker_threads'
 import Hook from "../../util/hook.cjs";
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -72,28 +73,54 @@ const cronjobUtil = {
     },
     runJavascript: (script, args) => {
 
-        const requireContext = createRequireForScript(import.meta.url)
 
-        try {
-
-            const tpl = new Function(`
-        
-        ${requireContext.script}
-        (async () => {
-            try {
+        if(args.workerThread){
+            const scriptContext = createScriptForWorker(import.meta.url)
+            const worker = new Worker(` 
+            ${scriptContext.script}            
+            (async () => {
                 ${script}
-            } catch(e) {
-                this.error(e.message);
+                
+                if(this.db){
+                    await this.db.client.close()
+                }
+            })()
+            `, {eval: true, workerData: {context:args.context}})
+            worker.on('message', msg => {
+                console.log(msg)
+            })
+            worker.on('error', (msg) => {
+                args.error(msg)
+                args.end()
+            })
+            worker.on('exit', (code) => {
+                if (code !== 0)
+                    args.error(`Worker stopped with exit code ${code}`)
+                args.end()
+            })
+        }else {
+            const requireContext = createRequireForScript(import.meta.url)
+
+            try {
+
+                const tpl = new Function(` 
+                ${requireContext.script}
+                (async () => {
+                    try {
+                        ${script}
+                    } catch(e) {
+                        this.error(e.message);
+                    }
+                    this.end();
+                })();
+                `)
+
+                tpl.call({require: requireContext.require, ...args})
+            } catch (e) {
+                args.error(e.message)
+                args.end()
+
             }
-            this.end();
-        })();
-        `)
-
-            tpl.call({require: requireContext.require, ...args})
-        }catch (e) {
-            args.error(e.message)
-            args.end()
-
         }
 
     },

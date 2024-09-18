@@ -2,7 +2,6 @@ import config from '../gensrc/config.mjs'
 import path from 'path'
 
 import {createRequire} from 'module'
-import module from 'module'
 import {fileURLToPath} from 'url'
 
 const {STATIC_DIR, STATIC_PRIVATE_DIR} = config
@@ -17,21 +16,7 @@ const EXTENSION_ABS = path.join(ROOT_DIR, './extensions')
 const GENSRC_ABS = path.join(ROOT_DIR, './gensrc')
 const UTIL_ABS = path.join(ROOT_DIR, './util')
 
-export const createRequireForScript = (importPath) => {
-    const myRequire = createRequire(importPath)
-    const dirname = path.dirname(fileURLToPath(importPath))
-
-    //console.log(Object.keys(module._cache))
-
-    return {
-        require: myRequire,
-        __dirname: dirname,
-        script: `        
-            const fs = this.require('fs')
-            const path = this.require('path')
-            const module = this.require('module')
-            const __dirname = '${dirname}'
-            this.__dirname = __dirname
+const enhancePathScript = `
             const paths = [
                 {
                     name: 'static',
@@ -93,8 +78,25 @@ export const createRequireForScript = (importPath) => {
                 }
                 
                 return filePath
+            }`
+
+export const createRequireForScript = (importPath) => {
+    const myRequire = createRequire(importPath)
+    const dirname = path.dirname(fileURLToPath(importPath))
+
+    return {
+        require: myRequire,
+        __dirname: dirname,
+        script: `        
+            const fs = this.require('fs')
+            const path = this.require('path')
+            const module = this.require('module')
+            const __dirname = '${dirname}'
+            this.__dirname = __dirname
+            this.getDb = () =>{
+                return this.db
             }
-            
+            ${enhancePathScript}
             const requireAsync = async (filePath)=>{               
                 const newFilePath = enhanceFilePath(filePath)
                
@@ -116,5 +118,46 @@ export const createRequireForScript = (importPath) => {
                     return this.require(newFilePath)
                 }
             }`
+    }
+}
+
+
+export const createScriptForWorker = (importPath) => {
+    const dirname = path.dirname(fileURLToPath(importPath))
+
+    return {
+        __dirname: dirname,
+        script: `        
+            global._app_ = {start: new Date().getTime()}
+            const fs = global.require('fs')
+            const path = global.require('path')
+            const module = global.require('module')            
+            const __dirname = '${dirname}'      
+            ${enhancePathScript}
+            const requireAsync = async (filePath)=>{               
+                const newFilePath = enhanceFilePath(filePath)
+                return await import(newFilePath)
+            }
+            const {workerData} = require('worker_threads')
+            this.context = workerData.context
+            
+            this.getDb = async ()=>{
+                if(this.db){
+                    return this.db
+                }
+                const {MONGO_URL,dbConnection} = await requireAsync('@api/database.mjs')                
+                return await (new Promise((resolve) => {
+                    dbConnection(MONGO_URL,(err, db, client)=>{
+                        if(err){
+                            console.log(err)
+                        }
+                        this.db = db
+                        resolve(db)
+                    })
+                }))
+            };
+                        
+            `
+
     }
 }

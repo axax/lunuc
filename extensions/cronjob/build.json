@@ -50,6 +50,13 @@
           "name": "noEntry",
           "type": "Boolean",
           "index": 1
+        },
+        {
+          "tab": "Script",
+          "name": "workerThread",
+          "type": "Boolean",
+          "label": "Run in Worker-Thread",
+          "index": 1
         }
       ]
     },

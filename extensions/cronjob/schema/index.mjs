@@ -10,7 +10,7 @@ export default `
     }
     
     type Query {
-    	runCronJob(cronjobId: String, script: String, scriptLanguage: String, sync: Boolean, noEntry: Boolean, meta: String): RunScriptResult
+    	runCronJob(cronjobId: String, script: String, scriptLanguage: String, sync: Boolean, noEntry: Boolean, workerThread: Boolean, meta: String): RunScriptResult
     	testExecFilter(filter: String!): TestExecFilterResult
     }
 `

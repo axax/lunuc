@@ -97,14 +97,14 @@ const startFtpServer = (db)=> {
 
     ftpServer.on('login', async (data, resolve, reject) => {
         const ip= data.connection.ip
-        if(hasTooManyInvalidLoginAttempts(ip)){
+        if(hasTooManyInvalidLoginAttempts(ip+':ftp')){
             return reject(new Error(_t('core.login.blocked.temporarily'), 401))
         }
 
         const ftpUser = await db.collection('FtpUser').findOne({active:true,username: data.username})
         if(ftpUser){
             if (Util.compareWithHashedPassword(data.password, ftpUser.password)) {
-                clearInvalidLoginAttempt(ip)
+                clearInvalidLoginAttempt(ip+':ftp')
                 let absdir = path.join(WEBROOT_ABSPATH, ftpUser.root)
                 if(ftpUser.root && ftpUser.root.startsWith('@approot/')){
                     absdir = path.join(ROOT_DIR, ftpUser.root.substring(8))
@@ -117,10 +117,10 @@ const startFtpServer = (db)=> {
                     return reject(new Error(`Root dir ${ftpUser.root} for username ${data.username} doesn't exist`, 500))
                 }
             }else{
-                addInvalidLoginAttempt(ip)
+                addInvalidLoginAttempt(ip+':ftp')
             }
         }else{
-            addInvalidLoginAttempt(ip)
+            addInvalidLoginAttempt(ip+':ftp')
         }
 
 

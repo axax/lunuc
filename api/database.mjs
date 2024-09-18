@@ -38,7 +38,6 @@ export const dbPreparation = async (db, cb) => {
 
         registerTrs(globalTranslations)
 
-
     }
 
     cb(db)
@@ -70,7 +69,7 @@ export const dbConnection = (dburl, cb) => {
         const client = new MongoClient(urlParts[0], options)
         console.log(`Start connecting to db ${dburl}... ${new Date() - _app_.start}ms`)
 
-        client.connect().then( client => {
+        client.connect().then( async client => {
                 console.log(`Connection to db ${dburl} (driver version ${client.options.metadata.driver.version}) established. 🚀 ${new Date() - _app_.start}ms`)
                 const parts = urlParts[0].split('/')
                 const db = client.db(parts[parts.length - 1])
@@ -78,11 +77,10 @@ export const dbConnection = (dburl, cb) => {
 
                 const adminDb = db.admin()
                 db._versionInt = parseInt(client.options.metadata.driver.version)
-                adminDb.serverStatus((err, info) => {
-                    db._version = info.version
-                    db._versionInt = parseInt(info.version)
-                    console.log(`mongodb version is ${db._version}`)
-                })
+                const info = await adminDb.serverStatus()
+                db._version = info.version
+                db._versionInt = parseInt(info.version)
+                console.log(`mongodb version is ${db._version}`)
 
                 Hook.call('dbconnected', {db})
                 cb(null, db, client)

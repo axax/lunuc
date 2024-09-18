@@ -45,6 +45,7 @@ const registerCronJobs = async (db) => {
                     cronjobId: cronJob._id,
                     script: cronJob.script,
                     noEntry: cronJob.noEntry,
+                    workerThread: cronJob.workerThread,
                     context,
                     db
                 })

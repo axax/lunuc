@@ -27,10 +27,11 @@ export default () => {
             client.query({
                 fetchPolicy: 'network-only',
                 timeout:0,
-                query: `query runCronJob($cronjobId:String,$script:String,$scriptLanguage:String,$sync:Boolean,$noEntry:Boolean){runCronJob(cronjobId:$cronjobId,script:$script,scriptLanguage:$scriptLanguage,sync:$sync,noEntry:$noEntry){status result}}`,
+                query: `query runCronJob($cronjobId:String,$script:String,$scriptLanguage:String,$sync:Boolean,$noEntry:Boolean,$workerThread:Boolean){runCronJob(cronjobId:$cronjobId,script:$script,scriptLanguage:$scriptLanguage,sync:$sync,noEntry:$noEntry,workerThread:$workerThread){status result}}`,
                 variables: {
                     script: createEditForm.state.fields.script,
                     scriptLanguage: createEditForm.state.fields.scriptLanguage,
+                    workerThread: createEditForm.state.fields.workerThread,
                     cronjobId: dataToEdit ? dataToEdit._id : 'none',
                     sync: runOnlyScript,
                     noEntry: runOnlyScript || dataToEdit.noEntry
