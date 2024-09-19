@@ -428,6 +428,8 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
                 if(value.length>re.limit) {
                     value.length = re.limit
                 }
+            }else if (re.set) {
+                setPropertyByPath(re.set, re.path,currentData)
             }
             if (re.remove) {
                 const parentPath = re.path.substring(0, re.path.lastIndexOf('.'))
