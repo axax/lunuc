@@ -265,6 +265,8 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
                     picks.push(value[Math.floor(Math.random() * value.length)])
                 }
                 rootData[re.key] = picks
+            }else if(re.set){
+                setPropertyByPath(re.set, re.key, currentData)
             } else if (re.key) {
 
                 const value = propertyByPath(re.path, currentData, '.', re.assign)
@@ -428,8 +430,6 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
                 if(value.length>re.limit) {
                     value.length = re.limit
                 }
-            }else if (re.set) {
-                setPropertyByPath(re.set, re.path,currentData)
             }
             if (re.remove) {
                 const parentPath = re.path.substring(0, re.path.lastIndexOf('.'))
