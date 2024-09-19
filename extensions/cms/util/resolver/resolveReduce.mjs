@@ -227,14 +227,17 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
 
                 if(re.extend || re.override){
                     if(lookedupData && lookedupData.constructor === Object){
-
+                        const fieldOptions = re.extend && re.extend.fieldOptions || {}
                         Object.keys(lookedupData).forEach(key=> {
                             if (re.override) {
                                 currentData[key] = lookedupData[key]
-                            } else if (re.extend === true || (re.extend.constructor === Object && re.extend.fields && re.extend.fields.indexOf(key) >= 0)) {
+                            } else if (re.extend === true || re.extend.full === true || (re.extend.constructor === Object && re.extend.fields && re.extend.fields.indexOf(key) >= 0)) {
+
                                 if (currentData[key]) {
                                     if(currentData[key].constructor === Array){
-                                        currentData[key] = [...currentData[key], ...lookedupData[key]]
+                                        if(!fieldOptions[key] || fieldOptions[key].mergeArray!==false) {
+                                            currentData[key] = [...currentData[key], ...lookedupData[key]]
+                                        }
                                     }else {
                                         currentData[key] = lookedupData[key]
                                     }
