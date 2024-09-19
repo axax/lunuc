@@ -106,11 +106,11 @@ const cronjobUtil = {
 
             worker.on('error', (msg) => {
                 args.error(msg)
-                args.end()
             })
             worker.on('exit', (code) => {
-                if (code !== 0)
-                    args.error(`Worker stopped with exit code ${code}`)
+                if (code !== 0) {
+                    //args.error(`Worker stopped with exit code ${code}`)
+                }
                 args.end()
             })
         }else {
