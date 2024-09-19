@@ -163,6 +163,9 @@ export const createScriptForWorker = (importPath) => {
                 },
                 error: (...args)=>{
                     parentPort.postMessage({console:{type:'error',args}})
+                },
+                debug: (...args)=>{
+                    parentPort.postMessage({console:{type:'debug',args}})
                 }
             }
             
