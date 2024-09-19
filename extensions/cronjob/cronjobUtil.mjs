@@ -89,12 +89,21 @@ const cronjobUtil = {
             `, {eval: true, workerData: {context:args.context}})
             worker.on('message', msg => {
                 if(msg.clearCache){
-                    console.log(`From worker-thread: clearCache ${msg.clearCache}`)
+                    console.log(`Worker-thread: clearCache ${msg.clearCache}`)
                     Cache.clearStartWith(msg.clearCache)
+                }else if(msg.console){
+                    console[msg.console.type]('Worker-thread:',...msg.console.args)
+                }else if(msg.log){
+                    args.log(msg.log)
+                }else if(msg.debug){
+                    args.debug(msg.debug)
+                }else if(msg.error){
+                    args.error(msg.error)
                 }else{
-                    console.log(`From worker-thread: ${msg}`)
+                    console.log(`Worker-thread: ${msg}`)
                 }
             })
+
             worker.on('error', (msg) => {
                 args.error(msg)
                 args.end()

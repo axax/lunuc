@@ -142,6 +142,29 @@ export const createScriptForWorker = (importPath) => {
             const {workerData,parentPort} = require('worker_threads')
             this.parentPort = parentPort
             this.context = workerData.context
+            this.log=(msg)=>{
+                parentPort.postMessage({log:msg})
+            }
+            this.debug=(msg)=>{
+                parentPort.postMessage({debug:msg})
+            }
+            this.error=(msg)=>{
+                parentPort.postMessage({error:msg})
+            }
+            global.console={
+                log: (...args)=>{
+                    parentPort.postMessage({console:{type:'log',args}})
+                },
+                info: (...args)=>{
+                    parentPort.postMessage({console:{type:'info',args}})
+                },
+                warn: (...args)=>{
+                    parentPort.postMessage({console:{type:'warn',args}})
+                },
+                error: (...args)=>{
+                    parentPort.postMessage({console:{type:'error',args}})
+                }
+            }
             
             this.getDb = async ()=>{
                 if(this.db){
