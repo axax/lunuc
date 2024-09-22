@@ -783,10 +783,12 @@ const GenericResolver = {
         }
         let createdBy
         if(newData.createdBy){
-            if(newData.createdBy._id){
+            if(newData.createdBy.constructor===Object){
                 createdBy = Object.assign({username: ''},newData.createdBy)
+            }else if(newData.createdBy.constructor===String){
+                createdBy = {username: '',_id: new ObjectId(newData.createdBy)}
             }else{
-                createdBy = {username: '',_id:newData.createdBy}
+                createdBy = {username: '',_id: newData.createdBy}
             }
         }else{
             createdBy = {
@@ -794,6 +796,7 @@ const GenericResolver = {
                 username: context.username
             }
         }
+        console.log(createdBy)
 
         const returnValue = {
             ...newData,
