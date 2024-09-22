@@ -104,9 +104,9 @@ const cronjobUtil = {
                 }
             })
 
-            worker.on('error', (msg) => {
-                if(msg) {
-                    args.error(msg)
+            worker.on('error', (err) => {
+                if(err && err.message) {
+                    args.error(err.message)
                 }
             })
             worker.on('exit', (code) => {
