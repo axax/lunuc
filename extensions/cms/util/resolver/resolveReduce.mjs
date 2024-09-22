@@ -281,7 +281,7 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
                 if (re.get) {
                     if (re.separator) {
                         const aGet = re.get.split(re.separator)
-                        const aValue = []
+                        const aValue = rootData[re.key] || []
                         aGet.forEach(sget => {
                             let getKey = propertyByPath(sget, currentData)
                             if (getKey === null || getKey === undefined) {
