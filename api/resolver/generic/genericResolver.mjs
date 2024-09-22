@@ -796,7 +796,6 @@ const GenericResolver = {
                 username: context.username
             }
         }
-        console.log(createdBy)
 
         const returnValue = {
             ...newData,
