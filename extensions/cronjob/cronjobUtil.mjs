@@ -106,7 +106,7 @@ const cronjobUtil = {
 
             worker.on('error', (err) => {
                 if(err && err.message) {
-                    args.error(JSON.stringify(err))
+                    args.error(err.message+' '+err.stack + ' -> line: '+err.lineNumber)
                 }
             })
             worker.on('exit', (code) => {
