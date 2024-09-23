@@ -126,7 +126,7 @@ const cronjobUtil = {
                     try {
                         ${script}
                     } catch(e) {
-                        this.error(e.message);
+                        this.error(e.message+' '+e.stack);
                     }
                     this.end();
                 })();

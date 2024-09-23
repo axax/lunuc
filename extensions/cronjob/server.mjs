@@ -39,7 +39,7 @@ const registerCronJobs = async (db) => {
                 console.log('Run CronJob: ' +cronJob.name)
                 console.log('_________________________________________')
 
-                const context = {lang: 'en', id: cronJob.createdBy, username: 'unknown'}
+                const context = {lang: 'en', id: cronJob.createdBy ? cronJob.createdBy.toString() : '', username: 'unknown'}
 
                 processCronJobQueue({
                     cronjobId: cronJob._id,
