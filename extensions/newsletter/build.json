@@ -216,6 +216,7 @@
           "tab": "attachment",
           "name": "attachment",
           "type": "Media",
+          "multi": true,
           "localized": true,
           "hideColumnInTypes": true,
           "fields": [
