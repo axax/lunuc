@@ -218,7 +218,9 @@ export const referencesToIds = (data, type) => {
             if (fieldDefinition.localized) {
                 if(fieldDefinition.reference && item){
                     newData[key] = Object.keys(item).reduce((acc,key)=>{
-                        acc[key]=item[key].map(it=>it._id)
+                        if(item[key]) {
+                            acc[key] = item[key].map(it => it._id)
+                        }
                         return acc
                     },{})
                 }else {
