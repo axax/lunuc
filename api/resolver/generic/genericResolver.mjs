@@ -254,12 +254,12 @@ const GenericResolver = {
             if (!isNaN(cacheTime) && cacheTime > 0) {
                 if (!cacheKey) {
                     //create cacheKey
-                    cacheKey = collectionName + JSON.stringify(match) + context.lang + JSON.stringify(otherOptions)
+                    cacheKey = collectionName + (context.id || '') + (Object.keys(match).length>0?JSON.stringify(match):'') + context.lang + JSON.stringify(otherOptions)
                 }
                 if (cachePolicy !== 'cache-only') {
                     const resultFromCache = Cache.get(cacheKey)
                     if (resultFromCache) {
-                        console.log(`GenericResolver from cache for ${collectionName} complete: total time ${new Date() - startTime}ms`)
+                        console.debug(`GenericResolver: from cache for ${collectionName} complete: total time ${new Date() - startTime}ms`)
 
                         return resultFromCache
                     }
@@ -340,8 +340,6 @@ const GenericResolver = {
         const totalTime = new Date() - startTime
 
 
-
-
         if (Hook.hooks['typeLoaded'] && Hook.hooks['typeLoaded'].length) {
             for (let i = 0; i < Hook.hooks['typeLoaded'].length; ++i) {
                 await Hook.hooks['typeLoaded'][i].callback({
@@ -380,7 +378,7 @@ const GenericResolver = {
             Cache.set(cacheKey, result, cacheTime)
         }
 
-        console.log(`GenericResolver for ${collectionName} complete: aggregate time = ${aggregateTime}ms total time ${totalTime}ms`)
+        console.debug(`GenericResolver: for ${collectionName} complete: aggregate time = ${aggregateTime}ms total time ${totalTime}ms`)
         return result
     },
     createEntity: async (db, req, typeName, {_version, ...data}, options) => {
@@ -803,7 +801,9 @@ const GenericResolver = {
             createdBy: createdBy,
             status: 'updated'
         }
-
+        if(context.id) {
+            Cache.clearStartWith(collectionName+context.id)
+        }
         if (_meta) {
             const meta = _meta.constructor===Object?_meta:JSON.parse(_meta)
             if (meta.clearCachePrefix) {

@@ -199,7 +199,7 @@ Hook.on('appexit', async () => {
 
 const debugMessage = (msg)=>{
     if(dnsServerContext.settings.debug) {
-        console.log(msg)
+        console.debug(msg)
     }
 }
 
@@ -271,7 +271,6 @@ const isHostBlocked = (hostname) => {
 
 const insertBuffer= async () => {
     if (dnsServerContext.database) {
-        console.log('DNS: insert buffer')
         await dnsServerContext.database.collection('DnsHost').bulkWrite(Object.values(dnsServerContext.dbBuffer), { ordered: false })
         dnsServerContext.dbBuffer = {}
     }

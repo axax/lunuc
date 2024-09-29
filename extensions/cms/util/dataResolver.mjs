@@ -296,7 +296,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
         }
 
     }
-    console.log(`dataResolver for ${scope.page.slug} in ${new Date().getTime() - startTime}ms`)
+    console.debug(`CMS: dataResolver for ${scope.page.slug} in ${new Date().getTime() - startTime}ms`)
     return {resolvedData, subscriptions: subscriptions.length > 0 ? JSON.stringify(subscriptions) : ''}
 }
 

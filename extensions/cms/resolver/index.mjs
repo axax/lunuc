@@ -229,7 +229,7 @@ export default db => ({
                     await setPageOptions()
                 }
             }
-            console.log(`cms resolver for ${slug} got data in ${(new Date()).getTime() - startTime}ms`)
+            console.debug(`CMS: resolver for ${slug} got data in ${(new Date()).getTime() - startTime}ms`)
 
             //TODO: only experimental
             if(meta === 'fetchMore'){

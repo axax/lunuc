@@ -63,7 +63,7 @@ const startListening = async (db, context) => {
             },
             onAuth: async (auth, session, callback) => {
 
-                console.log('SMTP onAuth', {...auth,password:'*****'}, session)
+                console.debug('SMTP onAuth', {...auth,password:'*****'}, session)
                 const mailAccount = await getMailAccountByEmail(db, auth.username)
                 const generalInvalidLoginMessage = 'Invalid username or password'
 
@@ -110,7 +110,7 @@ const startListening = async (db, context) => {
                 callback(null, {user: auth.username}); // where 123 is the user id or similar property
             },
             onConnect(session, callback) {
-                console.log('SMTP onConnect', session)
+                console.debug('SMTP onConnect', session)
 
 
                 if(isTemporarilyBlocked({requestTimeInMs: 3000, requestPerTime: 5,requestBlockForInMs:60000, key:'smtpConnection'})){
@@ -123,7 +123,7 @@ const startListening = async (db, context) => {
                 return callback() // Accept the connection
             },
             onSecure(socket, session, callback) {
-                console.log('SMTP onSecure', session)
+                console.debug('SMTP onSecure', session)
 
                 const mailserverList = Object.keys(getHostRules(false)).map(h=>`mail.${h}`)
 
@@ -133,7 +133,7 @@ const startListening = async (db, context) => {
                 return callback(); // Accept the connection
             },
             onMailFrom: async (address, session, callback) => {
-                console.log('SMTP onMailFrom', address, session)
+                console.debug('SMTP onMailFrom', address, session)
 
                 /* const mailAccount = await getMailAccountByEmail(db, session.user)
 
@@ -169,7 +169,7 @@ const startListening = async (db, context) => {
                 return callback(); // Accept the address
             },
             onRcptTo: async (address, session, callback) => {
-                console.log('SMTP onRcptTo', address, session)
+                console.debug('SMTP onRcptTo', address, session)
 
                 let mailAccount
                 if (session.user) {
@@ -193,7 +193,7 @@ const startListening = async (db, context) => {
             },
             onData: (stream, session, callback) => {
                 const fromMail = session?.envelope?.mailFrom?.address
-                console.log('SMTP onData', fromMail, session)
+                console.debug('SMTP onData', fromMail, session)
 
                 //stream.pipe(process.stdout); // print message to console
                 stream.on("end", () => {
