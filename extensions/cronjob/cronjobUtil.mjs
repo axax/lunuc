@@ -67,7 +67,7 @@ const cronjobUtil = {
                 cronjobUtil.runJavascript(script, finalArgs)
             }
         }catch (e) {
-            console.log('Error in runCronJob', e)
+            console.error('Error in runCronJob', e)
             error(e.message)
         }
         return result;
@@ -126,7 +126,7 @@ const cronjobUtil = {
                     try {
                         ${script}
                     } catch(e) {
-                        this.error(e.message+' '+e.stack);
+                        this.error(e.message+' '+e.stack + ${args.cronjobId?' -> in '+args.cronjobId:''});
                     }
                     this.end();
                 })();

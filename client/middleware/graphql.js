@@ -219,6 +219,10 @@ export const clearFetchById = (id) => {
 const FETCHING_BY_CACHEKEY = {}
 export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  query, variables, hiddenVariables, fetchPolicy = 'cache-first', lang, headersExtra}) => {
 
+    if(!query){
+        console.error('query is missing in finalFetch')
+        return
+    }
     if (!cacheKey && type === RequestType.query) {
         cacheKey = getCacheKey({query, variables, lang})
     }

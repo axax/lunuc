@@ -208,7 +208,8 @@
         "Google",
         "Shield",
         "CleaningServices",
-        "Fingerprint"
+        "Fingerprint",
+        "EmojiEvents"
       ],
       "theme":{
         "colors":{

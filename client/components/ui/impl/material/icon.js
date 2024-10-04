@@ -87,7 +87,8 @@ import {
     ReplayIcon,
     GoogleIcon,
     ShieldIcon,
-    FingerprintIcon
+    FingerprintIcon,
+    EmojiEventsIcon
 } from 'gensrc/ui/admin/icons'
 
 const iconComponents = {
@@ -178,7 +179,8 @@ const iconComponents = {
     language: LanguageIcon,
     google: GoogleIcon,
     shield:ShieldIcon,
-    fingerprint: FingerprintIcon
+    fingerprint: FingerprintIcon,
+    win: EmojiEventsIcon
 }
 
 export const getIconByKey = (key, defaultIcon) => {

@@ -9,13 +9,17 @@ const renderToCollectFetchRec = async (component, context)=>{
     const backupLang = _app_.lang
     const lang = (context && context.lang ? context.lang : _app_.lang)
     _app_.lang = lang
-    client.resetStore()
     ReactDOMServer.renderToStaticMarkup(component)
 
     const keys = Object.keys(SSR_FETCH_CHAIN)
     if (keys.length > 0) {
         for (let i = keys.length - 1; i >= 0; i--) {
             const cacheKey = keys[i]
+            if(!cacheKey || !SSR_FETCH_CHAIN[cacheKey]){
+                continue
+            }
+
+            // put into cache
             const res = await finalFetch({
                 cacheKey, ...SSR_FETCH_CHAIN[cacheKey],
                 fetchPolicy: 'network-only',
@@ -52,6 +56,8 @@ export const renderToString = (component, context) => {
 
         const backupLang = _app_.lang
         try {
+
+            client.resetStore()
             await renderToCollectFetchRec(component, context)
 
             const lang = (context && context.lang ? context.lang : _app_.lang)
