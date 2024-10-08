@@ -126,7 +126,7 @@ const cronjobUtil = {
                     try {
                         ${script}
                     } catch(e) {
-                        this.error(e.message+' '+e.stack + ${args.cronjobId?' -> in '+args.cronjobId:''});
+                        this.error(e.message+' '+e.stack + ${args.cronjobId?"' -> in "+args.cronjobId+"'":''});
                     }
                     this.end();
                 })();

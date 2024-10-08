@@ -324,7 +324,8 @@ export default db => ({
                         req,
                         GenericResolver,
                         ObjectId,
-                        globalScope
+                        globalScope,
+                        cmsPage: cmsPages.results[0]
                     })
 
                 })
