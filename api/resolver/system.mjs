@@ -142,9 +142,10 @@ export const systemResolver = (db) => ({
                         })
 
                         execs[currentId].stderr.on('data', (data) => {
+                            const error = data.toString('utf8')
                             pubsub.publish('subscribeRun', {
                                 userId: context.id,
-                                subscribeRun: {event: 'error', error: data.toString('utf8'), id: currentId}
+                                subscribeRun: {event: 'error', error, id: currentId}
                             })
                         })
 
@@ -164,7 +165,7 @@ export const systemResolver = (db) => ({
                     console.log('is running',execs[currentId].isRunning,`-${command}-`)
                     execs[currentId].stdin.write(`${command}`)
                     if(!execs[currentId].isRunning) {
-                        execs[currentId].stdin.write(` && echo ${ENDOFCOMMAND}`)
+                        execs[currentId].stdin.write(` ; echo ${ENDOFCOMMAND}`)
                     }else{
                         execs[currentId].stdin.write(`\n`)
                     }
