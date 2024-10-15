@@ -141,6 +141,13 @@ class TypeEdit extends React.Component {
                 console.warn('validation error',formValidation)
                 return
             }
+            if(Object.keys(this.createEditForm.state.fieldsDirty).length===0){
+                console.warn('nothing to save')
+                if (action.key === 'save_close') {
+                    closeModal()
+                }
+                return
+            }
             editedData = Object.assign({}, this.createEditForm.state.fields)
             const formFields = getFormFieldsByType(type)
 

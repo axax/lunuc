@@ -343,6 +343,7 @@ export default () => {
                             try {
                                 newDataToEdit[newName] = eval(field.defaultValue)
                             } catch (e) {
+                                console.warn(`default value ${field.defaultValue} cannot be evalved`)
                                 newDataToEdit[newName] = field.defaultValue
                             }
                         }

@@ -89,6 +89,7 @@ class GenericForm extends React.Component {
             fieldsOri: props.fields,
             fields: {},
             fieldsTmp: {},
+            fieldsDirty: {}, /* only set when fields has changed */
             valuesOri: props.values,
             showTranslations: {},
             tabValue: prevState.tabValue ? prevState.tabValue : 0
@@ -401,7 +402,7 @@ class GenericForm extends React.Component {
     }
 
     newStateForField(prevState, {name, value, originalValue, localized}) {
-        const newState = Object.assign({}, {fields: {}}, prevState)
+        const newState = Object.assign({}, {fields: {}, fieldsDirty:{}}, prevState)
 
         // for localization --> name.de / name.en
         if (localized) {
@@ -432,6 +433,8 @@ class GenericForm extends React.Component {
                 newState.fieldsTmp[name] = originalValue
             }
         }
+
+        newState.fieldsDirty[name]=newState.fields[name]
         return newState
     }
 

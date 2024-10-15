@@ -174,7 +174,16 @@ class TypePicker extends React.Component {
             if (linkTemplate) {
                 url = Util.replacePlaceholders(linkTemplate, value)
             } else {
-                url = `${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/typesblank/?opener=true&includeFields=info&multi=${!!multi}&fixType=${type}${genericType ? '&meta=' + genericType : ''}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}${label ? '&title=' + encodeURIComponent(label) : ''}`
+                const includeFields = ['info']
+                if(pickerField){
+                    pickerField.forEach(field=>{
+                        const base = field.split('.')[0]
+                        if(includeFields.indexOf(base)<0){
+                            includeFields.push(base)
+                        }
+                    })
+                }
+                url = `${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/typesblank/?opener=true&includeFields=${includeFields.join(',')}&multi=${!!multi}&fixType=${type}${genericType ? '&meta=' + genericType : ''}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}${label ? '&title=' + encodeURIComponent(label) : ''}`
                 /*if(value && value._id){
                     url +='&prettyFilter='+JSON.stringify({_id:value._id})
                 }*/
