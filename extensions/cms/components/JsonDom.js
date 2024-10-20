@@ -1023,7 +1023,7 @@ class JsonDom extends React.Component {
                     const {editMode, location, history, children} = this.props
                     const key = !editMode && k ? k : rootKey + '.' + aIdx, eleProps = {}
                     let tagName, className
-                    if (!t || t.constructor !== String) {
+                    if (!t || t.constructor !== String || t.indexOf('.')===0) {
                         tagName = 'div'
                     } else if (t === '$children') {
                         if (children) {

@@ -90,6 +90,9 @@ class CmsViewContainer extends React.Component {
 
             return null
         } else {
+            if(cmsPage.disableRendering){
+                return <div>Rendering is disabled</div>
+            }
             // set page title
             if (!dynamic && cmsPage.name)
                 document.title = cmsPage.name[_app_.lang]

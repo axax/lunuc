@@ -249,6 +249,11 @@
             "name"
           ],
           "index": 1
+        },
+        {
+          "name": "disableRendering",
+          "type": "Boolean",
+          "hideColumnInTypes": true
         }
       ]
     }

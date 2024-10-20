@@ -75,7 +75,8 @@ export const translations = {
         'JsonDomHelper.element.to.clipboard': 'Element in Zwischenablage kopieren',
         'JsonDomHelper.element.from.clipboard': 'Element von Zwischenablage einfügen',
         'JsonDomHelper.edit.template':'Template bearbeiten',
-        'JsonDomHelper.copy.element':'Element duplizieren'
+        'JsonDomHelper.copy.element':'Element duplizieren',
+        'Cms.field.disableRendering': 'Rendering deaktivieren'
     },
     en: {
         'CmsViewEditorContainer.save': 'Save',
@@ -151,6 +152,7 @@ export const translations = {
         'JsonDomHelper.element.below':'Insert below',
         'JsonDomHelper.element.above':'Insert above',
         'JsonDomHelper.edit.template':'Edit template',
-        'JsonDomHelper.copy.element':'Copy element'
+        'JsonDomHelper.copy.element':'Copy element',
+        'GenericData.field.disableRendering': 'Disable rendering'
     }
 }

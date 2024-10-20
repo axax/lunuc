@@ -104,6 +104,7 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
                 'ssrStyle',
                 'uniqueStyle',
                 'publicEdit',
+                'disableRendering',
                 'compress'],
             {
                 match,
