@@ -67,15 +67,6 @@ export default function CmsPageSeo(props){
                    value={values.description ? values.description[_app_.lang] : ''}
                    fullWidth={true}/>
 
-        <Divider component="div" role="presentation" sx={{'alignItems': 'start', mt: 3, mb: 3}}></Divider>
-
-
-        <SimpleSwitch
-            disabled={true}
-            label={_t('CmsViewEditorContainer.aiContent')}
-            checked={!!values.aiSeoContent}
-            onChange={onChange.bind(this, 'aiSeoContent')}
-        />
     </>
 
 }

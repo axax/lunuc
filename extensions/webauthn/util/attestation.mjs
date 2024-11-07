@@ -1,5 +1,4 @@
 import cbor  from 'cbor'
-import crypto from 'crypto'
 
 
 export const decodeAttestation = (attestation) =>{

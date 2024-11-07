@@ -96,6 +96,7 @@ export const translations = {
         'GenericFrom.autoTranslate': 'Automatisch übersetzen',
         'GenericFrom.translation': 'Alle Übersetzungen anzeigen',
         'TypePicker.editEntry':'Eintrag bearbeiten',
+        'TypePicker.deleteSelection':'Alle ausgewähle Elemente löschen',
         'BackupContainer.includedCollections':'Inkludierte Daten'
     },
     en: {
@@ -193,6 +194,7 @@ export const translations = {
         'GenericFrom.autoTranslate': 'Translate automatically',
         'GenericFrom.translation': 'Show all translations',
         'TypePicker.editEntry':'Edit entry',
+        'TypePicker.deleteSelection':'Delete all selected items',
         'BackupContainer.includedCollections':'Included collections'
     }
 }

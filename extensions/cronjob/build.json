@@ -5,6 +5,15 @@
       "entryClonable": true,
       "fields": [
         {
+          "tab": "Script",
+          "name": "scriptLanguage",
+          "enum": [
+            "Javascript",
+            "Python"
+          ],
+          "index": 1
+        },
+        {
           "tab": "Allgemein",
           "name": "name",
           "required": true,
@@ -28,15 +37,6 @@
           "name": "execfilter",
           "label": "Execution filter",
           "fullWidth": true,
-          "index": 1
-        },
-        {
-          "tab": "Script",
-          "name": "scriptLanguage",
-          "enum": [
-            "Javascript",
-            "Python"
-          ],
           "index": 1
         },
         {

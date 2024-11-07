@@ -23,7 +23,7 @@ Hook.on('schema', ({schemas}) => {
 
 
 let uncaughtExceptionCount=0, unhandledRejectionCount=0
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', (error, origin) => {
     console.log(error)
 
     uncaughtExceptionCount++
@@ -31,7 +31,7 @@ process.on('uncaughtException', (error) => {
     if(mydb && error) {
         GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {
             type: 'uncaughtException',
-            message: error.message?error.message + '\n\n' + error.stack:JSON.stringify(error),
+            message: (error.message?error.message + '\n\n' + error.stack:JSON.stringify(error))+'\n\n'+origin,
             meta: error.debugData
         })
     }

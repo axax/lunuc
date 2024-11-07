@@ -6,6 +6,7 @@ import url from 'url'
 import config from '../../gensrc/config.mjs'
 import Cache from '../../util/cache.mjs'
 import {createRequireForScript} from '../../util/require.mjs'
+import Util from "../../api/util/index.mjs";
 
 const CACHE_PREFIX = 'ExtensionsApi-'
 
@@ -67,6 +68,18 @@ Hook.on('schema', ({schemas}) => {
 })
 
 
+const checkBasicAuth = (req, res, auth)=>  {
+
+    const b64auth = (req.headers.authorization || '').split(' ')[1] || ''
+    const [login, password] = Buffer.from(b64auth, 'base64').toString().split(':')
+    if (!login || !password || login !== auth.login || !Util.compareWithHashedPassword(password, auth.password)) {
+        res.set('WWW-Authenticate', 'Basic realm="401"')
+        res.status(401).send('Authentication required.')
+        return false
+    }
+    return true
+}
+
 // Hook when db is ready
 Hook.on('appready', ({app, db}) => {
 
@@ -84,6 +97,12 @@ Hook.on('appready', ({app, db}) => {
                 res.writeHead(404, {'content-type': 'application/json'})
                 res.end(`{"status":"notfound","message":"Api for '${slug}' not found"}`)
             } else {
+
+
+                if(api.basicAuth && !checkBasicAuth(req, res, {login:api.baUser, password: api.baPassword})) {
+                    return
+                }
+
                 const result = await runApiScript({api, db, req, res, startTime})
 
                 if (result.responseStatus && result.responseStatus.ignore) {

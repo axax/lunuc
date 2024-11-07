@@ -5,30 +5,55 @@
       "entryClonable": true,
       "fields": [
         {
+          "tab": "elements.generalTab",
           "name": "name",
           "required": true,
           "clone": "${name} (copy)",
           "index": 1
         },
         {
+          "tab": "elements.generalTab",
           "name": "slug",
           "required": true,
           "clone": "${name}/copy",
           "index": 1
         },
         {
+          "tab": "elements.generalTab",
           "name": "mimeType",
           "index": 1
         },
         {
+          "tab": "elements.generalTab",
           "name": "active",
           "type": "Boolean",
           "index": 1
         },
         {
+          "tab": "elements.generalTab",
           "name": "script",
           "uitype": "jseditor",
           "alwaysLoad": false
+        },
+        {
+          "tab": "Api.basicAuthTab",
+          "name": "basicAuth",
+          "type": "Boolean",
+          "hideColumnInTypes": true,
+          "index": 1
+        },
+        {
+          "tab": "Api.basicAuthTab",
+          "name": "baUser",
+          "hideColumnInTypes": true,
+          "index": 1
+        },
+        {
+          "tab": "Api.basicAuthTab",
+          "name": "baPassword",
+          "uitype": "password",
+          "hideColumnInTypes": true,
+          "hash": true
         }
       ]
     }

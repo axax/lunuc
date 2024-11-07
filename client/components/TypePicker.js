@@ -15,7 +15,8 @@ import {
     LaunchIcon,
     Card,
     CardActions,
-    CardContent
+    CardContent,
+    Tooltip
 } from 'ui/admin'
 import {getImageTag, isValidImage, getImageSrc} from 'client/util/media'
 import {convertRawValuesFromPicker} from 'client/util/picker'
@@ -227,6 +228,17 @@ class TypePicker extends React.Component {
                                            }}>
                                            <SearchIcon/>
                                        </IconButton>
+                                       {value.length>1 && <Tooltip title={_t('TypePicker.deleteSelection')} key="tooltipDelete">
+                                           <IconButton
+                                               edge="end"
+                                               onClick={() => {
+                                                   this.setState({value:[], textValue:''})
+                                                   this.props.onChange({target: {value:[], name: this.props.name, dataset:this.props.dataset}})
+
+                                               }}>
+                                               <DeleteIcon/>
+                                           </IconButton>
+                                       </Tooltip>}
                                    </InputAdornment>
                                )
                            }}
