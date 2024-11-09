@@ -61,7 +61,7 @@ export default db => ({
 
             const languageToSend = mailingData.language ? mailingData.language.split(',') : []
 
-            let subscribers
+            let subscribers = []
             if(testReceiver){
                 subscribers = testReceiver.split(',').map(email => {
                     const emailLang = email.split('|')
@@ -69,10 +69,14 @@ export default db => ({
                 })
             }else {
 
-                subscribers = await db.collection('NewsletterSubscriber').find(
-                    {state: 'subscribed', list: {$in: list.map(l => l.constructor === String ? new ObjectId(l) : l)}}
-                ).toArray()
-
+                if(list) {
+                    subscribers = await db.collection('NewsletterSubscriber').find(
+                        {
+                            state: 'subscribed',
+                            list: {$in: list.map(l => l.constructor === String ? new ObjectId(l) : l)}
+                        }
+                    ).toArray()
+                }
                 if (users) {
                     users.forEach(user => {
                         subscribers.push({account: user, userAccountOnly: true})

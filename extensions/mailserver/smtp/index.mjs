@@ -206,7 +206,7 @@ const startListening = async (db, context) => {
                     callback(null, "Message queued")
                 })
 
-                simpleParser(stream, {}, async (err, data) => {
+                simpleParser(stream, {keepCidLinks:true}, async (err, data) => {
                     if (err) {
                         console.log("Error:", err)
                     } else if (session.user) {

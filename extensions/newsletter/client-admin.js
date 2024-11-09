@@ -51,7 +51,10 @@ export default () => {
         if (type === 'NewsletterMailing' && action) {
 
             if(action.key === 'preview') {
-                openWindow({url:`/${dataToEdit.template.slug}?preview=true&context=${encodeURIComponent(JSON.stringify(dataToEdit))}`})
+                const dataForPreview = Object.assign({},dataToEdit)
+                delete dataForPreview.users
+                delete dataForPreview.mailSettings
+                openWindow({url:`/${dataToEdit.template.slug}?preview=true&context=${encodeURIComponent(JSON.stringify(dataForPreview))}`})
 
             }else if(action.key === 'test') {
 

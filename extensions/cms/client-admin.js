@@ -10,7 +10,9 @@ import {
     SimpleButton,
     SimpleMenu,
     SimpleDialog,
+    SimpleMobileStepper,
     Switch,
+    Divider,
     ResponsiveDrawerLayout,
     Typography,
     WebIcon
@@ -33,9 +35,11 @@ const cmsPageEditorUrl = (slug, _version) => {
 const addAdminComponents = (components) => {
     /* Admin Elements */
     components['AdminButton'] = SimpleButton
+    components['AdminMobileStepper'] = SimpleMobileStepper
     components['AdminDialog'] = SimpleDialog
     components['AdminSelect'] = Select
     components['AdminSwitch'] = Switch
+    components['AdminDivider'] = Divider
     components['AdminForm'] = GenericForm
     components['AdminSimpleMenu'] = SimpleMenu
     components['DrawerLayout'] = ResponsiveDrawerLayout

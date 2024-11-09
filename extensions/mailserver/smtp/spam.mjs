@@ -13,7 +13,7 @@ import Util from '../../../api/util/index.mjs'
  */
 export const detectSpam = async (db, context, {text, sender, threshold}) => {
 
-    if(threshold===0){
+    if(threshold===0 || threshold === null){
         return false
     }else if(isNaN(threshold)){
         threshold = 7

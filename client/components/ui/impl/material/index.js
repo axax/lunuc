@@ -78,6 +78,7 @@ export SimpleButton from './SimpleButton'
 export SimpleList from './SimpleList'
 export SimpleToolbar from './SimpleToolbar'
 export SimpleAutosuggest from './SimpleAutosuggest'
+export SimpleMobileStepper from './SimpleMobileStepper'
 export {SimpleTab, SimpleTabPanel, SimpleTabs} from './SimpleTab'
 
 export ContentBlock from './ContentBlock'
