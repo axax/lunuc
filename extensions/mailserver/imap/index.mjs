@@ -408,6 +408,7 @@ const startListening = async (db, context) => {
 
             // notifiy only if something changed
             if (updated) {
+                console.log('-----------imap update message', message)
                 MailserverResolver(db).Mutation.updateMailAccountMessage({
                     _id:message._id,
                     flags: message.flags? message.flags.filter(f=>!!f): []

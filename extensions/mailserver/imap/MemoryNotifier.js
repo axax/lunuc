@@ -101,7 +101,6 @@ class MemoryNotifier extends EventEmitter {
      * @param {Function} callback Returns update entries as an array
      */
     getUpdates(folder, modifyIndex, callback) {
-console.log('getUpdates', folder, modifyIndex)
         modifyIndex = Number(modifyIndex) || 0;
 
 

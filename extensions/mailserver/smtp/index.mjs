@@ -219,11 +219,18 @@ const startListening = async (db, context) => {
 
                         for (const rcpt of data.to.value) {
                             console.log('onData send', rcpt, data)
+
                             try {
                                 await transporterResult.sendMail({
-                                    ...data,
+                                    html:data.html,
+                                    text:data.text,
+                                    subject:data.subject,
                                     to: rcpt.address,
-                                    from: fromMail
+                                    from: fromMail,
+                                    attachments: data.attachments,
+                                    /* not sure if these attributes are needed */
+                                    messageId: data.messageId,
+                                    headers: {date: data.headers.date}
                                 })
                             }catch (e){
                                 console.log(`error sending email to ${rcpt.address} from ${fromMail}`, e)
