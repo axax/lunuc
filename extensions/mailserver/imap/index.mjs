@@ -599,6 +599,12 @@ const startListening = async (db, context) => {
                 }
                 const messageData = JSON.parse(JSON.stringify(message.data))
                 delete message.data
+                delete messageData.headerLines
+
+                if(messageData.headers && messageData.headers['content-transfer-encoding']==='quoted-printable'){
+                    delete messageData.headers['content-transfer-encoding']
+                    delete messageData.headers['content-type']
+                }
 
                 replaceAddresseObjectsToString(messageData)
 
