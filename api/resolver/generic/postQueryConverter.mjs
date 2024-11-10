@@ -25,23 +25,9 @@ export default async function (response, {typeName, db, graphqlInfo}){
                     // convert type Object to String
                     // item[field.name] = JSON.stringify(item[field.name])
                     if (field) {
-                        if(field.type==='Float'){
-                            if (isNaN(item[field.name])) {
-                                item[field.name] = 0
-                            }
-                        }else if(field.type==='String'){
-                            if (item[field.name] && item[field.name].constructor !== String) {
-                                //console.log(`convert ${typeName}.${field.name} to string`)
-                                item[field.name] = JSON.stringify(item[field.name])
-                            }
-                        }else if (field.type === 'Object') {
-                            hasField = true
-                            // TODO: with mongodb 4 this can be removed as convert and toString is supported
-                            if (item[field.name] && (item[field.name].constructor === Object || item[field.name].constructor === Array)) {
-                                //console.log(`convert ${typeName}.${field.name} to string`)
-                                item[field.name] = JSON.stringify(item[field.name])
-                            }
-                        } else if (field.reference) {
+
+
+                        if (field.reference) {
                             const refTypeDefinition = getType(field.type) || {}
                             for (let z = 0; z < refTypeDefinition.fields.length; z++) {
                                 const refField = refTypeDefinition.fields[z]
@@ -71,7 +57,25 @@ export default async function (response, {typeName, db, graphqlInfo}){
                                     }
                                 }
                             }
-                        }else if(field.required && item[field.name]===null){
+                        }else if(field.type==='Float'){
+                            if (isNaN(item[field.name])) {
+                                item[field.name] = 0
+                            }
+                        }else if (field.type === 'Object') {
+                            hasField = true
+                            // TODO: with mongodb 4 this can be removed as convert and toString is supported
+                            if (item[field.name] && (item[field.name].constructor === Object || item[field.name].constructor === Array)) {
+                                //console.log(`convert ${typeName}.${field.name} to string`)
+                                item[field.name] = JSON.stringify(item[field.name])
+                            }
+                        }else if(field.type==='String' || !field.type){
+                            if (item[field.name] && item[field.name].constructor !== String) {
+                                //console.log(`convert ${typeName}.${field.name} to string`)
+                                item[field.name] = JSON.stringify(item[field.name])
+                            }
+                        }
+
+                        if(field.required && item[field.name]===null){
                             // prevent ERROR: Cannot return null for non-nullable field UserSetting.name.
                             item[field.name] = ''
                         }
