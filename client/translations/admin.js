@@ -97,7 +97,8 @@ export const translations = {
         'GenericFrom.translation': 'Alle Übersetzungen anzeigen',
         'TypePicker.editEntry':'Eintrag bearbeiten',
         'TypePicker.deleteSelection':'Alle ausgewähle Elemente löschen',
-        'BackupContainer.includedCollections':'Inkludierte Daten'
+        'BackupContainer.includedCollections':'Inkludierte Daten',
+        'core.deselectAll':'Alle abwählen'
     },
     en: {
         'BaseLayout.editEntry': 'Edit entry',
@@ -195,6 +196,7 @@ export const translations = {
         'GenericFrom.translation': 'Show all translations',
         'TypePicker.editEntry':'Edit entry',
         'TypePicker.deleteSelection':'Delete all selected items',
-        'BackupContainer.includedCollections':'Included collections'
+        'BackupContainer.includedCollections':'Included collections',
+        'core.deselectAll':'Deselect all'
     }
 }

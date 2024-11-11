@@ -109,7 +109,9 @@ export default db => ({
                 'MailAccountMessage',
                 'MailAccount',
                 'MailAccountFolder',
-                'DnsHostGroup'
+                'DnsHostGroup',
+                'ProxyUser',
+                'WebAuthnCredential'
             ]
 
             const collectionsToSearchIn = []

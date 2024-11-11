@@ -9,6 +9,8 @@ import Paper from '@mui/material/Paper'
 import TablePagination from '@mui/material/TablePagination'
 import Divider from '@mui/material/Divider'
 import TextField from '@mui/material/TextField'
+import Button from '@mui/material/Button'
+import {_t} from 'util/i18n.mjs'
 
 export const SimpleList = ({sx, onCheck, items, allChecked, count, page, rowsPerPage, onChangePage, onChangeRowsPerPage, onFilterKeyDown, onFilterChange, filter, ...rest}) => {
     const [checked, setChecked] = React.useState(allChecked?items.map((e,i)=>i):[])
@@ -81,6 +83,10 @@ export const SimpleList = ({sx, onCheck, items, allChecked, count, page, rowsPer
             }
         </List>
 
+        {onCheck &&
+        <Button onClick={()=>{
+            setChecked([])
+        }}>{_t('core.deselectAll')}</Button>}
 
         {count && rowsPerPage && onChangePage ?
             <div>
