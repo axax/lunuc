@@ -68,7 +68,7 @@ export default async function (response, {typeName, db, graphqlInfo}){
                                 //console.log(`convert ${typeName}.${field.name} to string`)
                                 item[field.name] = JSON.stringify(item[field.name])
                             }
-                        }else if(field.type==='String' || (!field.type && !field.enum)){
+                        }else if(field.type==='String' || (!field.type && !field.enum && !field.localized)){
                             if (item[field.name] && item[field.name].constructor !== String) {
                                 //console.log(`convert ${typeName}.${field.name} to string`)
                                 item[field.name] = JSON.stringify(item[field.name])
