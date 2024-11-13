@@ -74,6 +74,8 @@ export default () => {
                 const pos = slug.indexOf('/' + PRETTYURL_SEPERATOR + '/')
                 if (pos >= 0) {
                     slug = slug.substring(0, pos)
+                }else if(slug.startsWith(PRETTYURL_SEPERATOR+'/')){
+                    slug = ''
                 }
                 if (slug.split('/')[0] !== container.adminBaseUrlPlain) {
                     cmsViewProps.slug=slug

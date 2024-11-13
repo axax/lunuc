@@ -21,6 +21,7 @@ import {translations} from './translations/admin'
 import TypesContainer from 'client/containers/TypesContainer'
 import GenericForm from 'client/components/GenericForm'
 import {translations as adminTranslations} from 'client/translations/admin'
+import Expandable from '../../client/components/Expandable'
 
 registerTrs(translations, 'CmsViewEditorContainer')
 registerTrs(adminTranslations, 'AdminTranslations')
@@ -31,9 +32,9 @@ const cmsPageEditorUrl = (slug, _version) => {
 }
 
 
-
 const addAdminComponents = (components) => {
     /* Admin Elements */
+    components['AdminExpandable'] = Expandable
     components['AdminButton'] = SimpleButton
     components['AdminMobileStepper'] = SimpleMobileStepper
     components['AdminDialog'] = SimpleDialog
@@ -42,6 +43,7 @@ const addAdminComponents = (components) => {
     components['AdminDivider'] = Divider
     components['AdminForm'] = GenericForm
     components['AdminSimpleMenu'] = SimpleMenu
+    components['AdminTypography'] = Typography
     components['DrawerLayout'] = ResponsiveDrawerLayout
     components['TypesContainer'] = (props) => <TypesContainer title={false} baseUrl={location.pathname} {...props}/>
 
