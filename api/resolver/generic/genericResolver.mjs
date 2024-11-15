@@ -459,7 +459,25 @@ const GenericResolver = {
             return o
         }, {})
 
+        let lastEntry
         for (const [fieldName, field] of Object.entries(fields)) {
+            if(field.copyLastValue && dataSet[fieldName]===null){
+                if(!lastEntry) {
+                    let match
+                    if (await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
+                        match = {}
+                    } else {
+                        match = await createMatchForCurrentUser({typeName, db, context})
+                    }
+                    const lastEntryArray = await db.collection(typeName).find(match).sort({_id: 1}).limit(1).toArray()
+                    if(lastEntryArray.length>0){
+                        lastEntry = lastEntryArray[0]
+                    }
+                }
+                if(lastEntry){
+                    dataSet[fieldName] = lastEntry[fieldName]
+                }
+            }
             if(field.localized && !dataSet[fieldName]){
                 dataSet[fieldName] = {}
             }

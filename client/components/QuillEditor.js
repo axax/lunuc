@@ -37,8 +37,9 @@ class QuillEditor extends React.Component {
         } else if (this.state.value !== state.value) {
             setTimeout(() => {
                 const sY = window.scrollY, sX = window.scrollX
-                this.quill.setContents([])
-                this.quill.clipboard.dangerouslyPasteHTML(0, state.value)
+                this.quill.setContents(this.quill.clipboard.convert({
+                    html: state.value
+                }))
                 window.scrollTo(sX, sY)
             }, 0)
         }
@@ -85,21 +86,8 @@ class QuillEditor extends React.Component {
 
                     /*['clean']  */                                       // remove formatting button
                 ]
-                this.quill = new Quill('#quilleditor' + this.instanceId, {
+                this.quill = new window.Quill('#quilleditor' + this.instanceId, {
                     modules: {
-                        keyboard: {
-                            bindings: {
-                                linebreak: {
-                                    key: 13,
-                                    shiftKey: true,
-                                    handler: function(range) {
-                                        this.quill.insertEmbed(range.index, 'breaker', true, Quill.sources.USER);
-                                        this.quill.setSelection(range.index + 1, Quill.sources.SILENT);
-                                        return false;
-                                    }
-                                }
-                            }
-                        },
                         toolbar: {
                             container: toolbar,
                             handlers: {
@@ -110,8 +98,7 @@ class QuillEditor extends React.Component {
                                     } else {
                                         this.txtArea.value = this.quill.root.innerHTML
                                     }
-                                    this.txtArea.style.display =
-                                        this.txtArea.style.display === "none" ? "" : "none";
+                                    this.txtArea.style.display = this.txtArea.style.display === 'none' ? '' : 'none'
                                 }
                             }
                         },
@@ -124,37 +111,22 @@ class QuillEditor extends React.Component {
                     theme
                 })
 
-                let Embed = Quill.import('blots/embed')
-                class Breaker extends Embed {
-                    static tagName = 'br';
-                    static blotName = 'breaker';
-                }
-
-                Quill.register(Breaker)
-
                 this.txtArea = document.createElement("textarea")
-                this.txtArea.style.cssText =
-                    "width: 100%;margin: 0px;background: rgb(29, 29, 29);box-sizing: border-box;color: rgb(204, 204, 204);font-size: 15px;outline: none;padding: 20px;line-height: 24px;font-family: Consolas, Menlo, Monaco, &quot;Courier New&quot;, monospace;position: absolute;top: 0;bottom: 0;border: noe;display:none;resize: none;"
+                this.txtArea.style.cssText = 'width: 100%;margin: 0px;background: rgb(29, 29, 29);box-sizing: border-box;color: rgb(204, 204, 204);font-size: 15px;outline: none;padding: 20px;line-height: 24px;font-family: Consolas, Menlo, Monaco, &quot;Courier New&quot;, monospace;position: absolute;top: 0;bottom: 0;border: noe;display:none;resize: none;'
 
-                const htmlEditor = this.quill.addContainer("ql-custom")
+                const htmlEditor = this.quill.addContainer('ql-custom')
                 htmlEditor.appendChild(this.txtArea)
 
                 this.quill.on('text-change', (e) => {
                     const {onChange, name} = this.props
 
                     if (onChange) {
-                        /* this.editor.root.querySelectorAll('a').forEach(a => {
-                             const href = a.getAttribute('href')
-                             if (href && href.indexOf('/') === 0) {
-                                 a.removeAttribute('target')
-                             }
-                         })*/
                         let html = this.quill.root.innerHTML
                         if (html === '<p><br></p>') {
                             html = ''
                         }
-                        html = html.replace(/<p[^>]*>(&nbsp;|\s+|<br\s*\/?>)*<\/p>/g,'<p style="margin: 0;">&nbsp;</p>')
 
+                      //  html = html.replace(/<p[^>]*>(&nbsp;|\s+|<br\s*\/?>)*<\/p>/g,'<p style="margin: 0;">&nbsp;</p>')
                         if (name) {
                             onChange({target: {name, value: html}})
                         } else {

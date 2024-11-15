@@ -160,6 +160,7 @@
         {
           "tab": "content",
           "name": "template",
+          "copyLastValue": true,
           "description": "Es besteht die Möglichkeit, entweder ein Seitentemplate auszuwählen oder den Inhalt direkt an dieser Stelle einzugeben.",
           "type": "CmsPage",
           "hideColumnInTypes": true,
@@ -188,6 +189,7 @@
           "localized": false,
           "fullWidth": true,
           "hideColumnInTypes": true,
+          "copyLastValue": true,
           "access": {
             "ui": {
               "role": "manage_types"
@@ -251,6 +253,7 @@
         {
           "tab": "send",
           "name": "batchSize",
+          "copyLastValue": true,
           "access": {
             "ui": {
               "role": "manage_types"
@@ -262,6 +265,7 @@
         {
           "tab": "send",
           "name": "perHour",
+          "copyLastValue": true,
           "hideColumnInTypes": true,
           "access": {
             "ui": {
@@ -273,6 +277,7 @@
         {
           "tab": "send",
           "name": "host",
+          "copyLastValue": true,
           "access": {
             "ui": {
               "role": "manage_types"
@@ -283,6 +288,7 @@
         {
           "tab": "send",
           "name": "language",
+          "copyLastValue": true,
           "access": {
             "ui": {
               "role": "manage_types"
@@ -297,6 +303,7 @@
               "role": "manage_types"
             }
           },
+          "copyLastValue": true,
           "type": "Object",
           "alwaysLoad": false,
           "hideColumnInTypes": true,
