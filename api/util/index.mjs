@@ -9,10 +9,15 @@ import {
 import {ApiError} from '../error.mjs'
 import {getType} from '../../util/types.mjs'
 import {_t} from '../../util/i18nServer.mjs'
-import config from '../../gensrc/config-client.js'
+import config from '../../gensrc/config.mjs'
 import {ensureDirectoryExistence} from '../../util/fileUtil.mjs'
-
+import path from 'path'
+import fs from "fs";
 const PASSWORD_MIN_LENGTH = 8
+
+const ROOT_DIR = path.resolve()
+const BACKUP_DIR_ABS = path.join(ROOT_DIR, config.BACKUP_DIR)
+const KEYVALUE_DIR_ABS = path.join(BACKUP_DIR_ABS, 'keyvalues')
 
 /**
  * Object with general server side helper methods
@@ -71,6 +76,17 @@ const Util = {
 
         if ((newOption.skipCheck) || await Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)) {
             Cache.clearStartWith('KeyValueGlobal_' + key)
+            if(newOption.asFile && Util.ensureDirectoryExistence(KEYVALUE_DIR_ABS)){
+                const fileName = `KeyValueGlobal_${key}.txt`
+                const fileAbs = path.join(KEYVALUE_DIR_ABS, fileName)
+                fs.writeFile(fileAbs, value.constructor!==String?JSON.stringify(value):value,  (err) => {
+                    if (err) {
+                        console.log(err)
+                    }
+                })
+
+                value = `@FILE:${fileName}`
+            }
 
             return db.collection('KeyValueGlobal').updateOne({
                 key
@@ -178,20 +194,28 @@ const Util = {
 
         console.log(`load KeyValueGlobal "${keys.join(',')}" ${new Date() - _app_.start}ms`)
         return keyvalues.reduce((map, obj) => {
-            let v
-            if (allOptions.parse && obj.value && obj.value.constructor === String) {
-                try {
-                    v = JSON.parse(obj.value)
-                } catch (e) {
-                    console.warn(`load KeyValueGlobal - "${obj.key}" is not a json`)
-                    v = obj.value
+            let finalValue
+
+            if(obj.value && obj.value.constructor === String){
+                finalValue = obj.value
+                if(obj.value.startsWith('@FILE:KeyValueGlobal_')){
+                    //read from file
+                    const fileAbs = path.join(KEYVALUE_DIR_ABS, obj.value.substring(6))
+                    finalValue = fs.readFileSync(fileAbs, 'utf8')
+                }
+                if (allOptions.parse) {
+                    try {
+                        finalValue = JSON.parse(finalValue)
+                    } catch (e) {
+                        console.warn(`load KeyValueGlobal - "${obj.key}" is not a json`)
+                    }
                 }
             } else {
-                v = obj.value
+                finalValue = obj.value
             }
-            map[obj.key] = v
+            map[obj.key] = finalValue
             if (allOptions.cache) {
-                Cache.set(cacheKeyPrefix + obj.key + allOptions.parse + allOptions.public, v)
+                Cache.set(cacheKeyPrefix + obj.key + allOptions.parse + allOptions.public, finalValue)
             }
             return map
         }, {})
