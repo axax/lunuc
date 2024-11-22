@@ -30,63 +30,20 @@ self.addEventListener('install', event => {
     )
 })
 
-self.addEventListener('activate', event => {
-    event.waitUntil(
-        caches.keys().then(function(cacheNames) {
-            return Promise.all(
-                cacheNames.filter(function(cacheName) {
-                    return cacheName.indexOf('?v=')>=0
-                }).map(function(cacheName) {
-                    return caches.delete(cacheName);
-                })
-            );
-        })
-    );
-});
+// remove old cache if any
+self.addEventListener('activate', (event) => {
+    const expectedCaches = [PRECACHE, RUNTIME]
+    event.waitUntil((async () => {
+        const cacheNames = await caches.keys()
 
-/*self.addEventListener('activate', event => {
-    const expectedCaches = [PRECACHE, RUNTIME];
-
-    
-    // delete any caches that aren't in expectedCaches
-    event.waitUntil(
-        // update caches
-        caches.keys().then(keys => {
-            keys.forEach(key => {
-                caches.open(key).then(cache => {
-                    cache.keys().then((requests) => {
-
-
-                        if(key.startsWith('runtime-')) {
-                            requests.forEach(async request => {
-                                // the cache option set to reload will force the browser to
-                                // request any of these resources via the network,
-                                // which avoids caching older files again
-                                const req = new Request(request.url, {cache: 'reload'})
-                                console.log('fetch ' + request.url)
-                                fetch(req).then(res => {
-                                    if (res && res.status === 200) {
-                                        caches.open(RUNTIME).then((cache) => {
-
-                                            console.log('cache ' + request.url)
-                                            cache.put(req, res.clone())
-                                        })
-                                    }
-                                })
-                            })
-                        }
-
-                        if (!expectedCaches.includes(key)) {
-                            caches.delete(key).then(()=>{
-                                console.log('cache key '+key+' deleted')
-                            })
-                        }
-                    })
-                })
-            })
-        })
-    )
-})*/
+        await Promise.all(cacheNames.map(async (cacheName) => {
+            if (!expectedCaches.includes(cacheName)) {
+                await caches.delete(cacheName)
+                console.log('cache key '+cacheName+' deleted')
+            }
+        }))
+    })())
+})
 
 // The fetch handler serves responses for same-origin resources from a cache.
 // If no response is found, it populates the runtime cache with the response
@@ -109,6 +66,7 @@ self.addEventListener('fetch', event => {
 
         event.respondWith(
             caches.match(event.request).then((resp) => {
+
                 return resp && !resp.redirected ? resp : fetch(event.request).then((response) => {
                     let responseClone = response.clone()
                     caches.open(RUNTIME).then((cache) => {

@@ -170,22 +170,14 @@ function mainInit() {
 
         if ('PushManager' in window) {
             console.log('Push is supported')
-
-
             if (config.DEV_MODE || location.host.startsWith('localhost')) {
-
-                navigator.serviceWorker.getRegistrations().then(function (registrations) {
-                    for (let registration of registrations) {
-                        registration.unregister()
-                    }
-                })
+                unregisterAllServiceworker()
             } else {
+
                 navigator.serviceWorker.register('/serviceworker.js?v=' + config.BUILD_NUMBER)
-                    .then(function (swReg) {
+                    .then(async (swReg) => {
                         console.log('Service Worker is registered')
-                        setTimeout(() => {
-                            swReg.update()
-                        }, 5000)
+                        await swReg.update()
                     })
                     .catch(function (error) {
                         console.error('Service Worker Error', error)
@@ -199,6 +191,14 @@ function mainInit() {
     } else {
         console.warn('Service Worker is not supported')
     }
+}
+
+function unregisterAllServiceworker() {
+    navigator.serviceWorker.getRegistrations().then(async (registrations) => {
+        for (let registration of registrations) {
+           await registration.unregister()
+        }
+    })
 }
 
 if (!window.LUNUC_PREPARSED) {
