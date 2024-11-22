@@ -30,19 +30,26 @@ self.addEventListener('install', event => {
     )
 })
 
-
 self.addEventListener('activate', event => {
+    event.waitUntil(
+        caches.keys().then(function(cacheNames) {
+            return Promise.all(
+                cacheNames.filter(function(cacheName) {
+                    return cacheName.indexOf('?v=')>=0
+                }).map(function(cacheName) {
+                    return caches.delete(cacheName);
+                })
+            );
+        })
+    );
+});
+
+/*self.addEventListener('activate', event => {
     const expectedCaches = [PRECACHE, RUNTIME];
 
     
     // delete any caches that aren't in expectedCaches
     event.waitUntil(
-        // clear all caches
-        /*caches.keys().then(function(names) {
-            for (let name of names)
-                caches.delete(name)
-        })*/
-
         // update caches
         caches.keys().then(keys => {
             keys.forEach(key => {
@@ -79,7 +86,7 @@ self.addEventListener('activate', event => {
             })
         })
     )
-})
+})*/
 
 // The fetch handler serves responses for same-origin resources from a cache.
 // If no response is found, it populates the runtime cache with the response
