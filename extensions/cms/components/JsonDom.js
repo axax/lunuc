@@ -366,7 +366,7 @@ class JsonDom extends React.Component {
 
     componentDidMount() {
         this.addStyle(this.props)
-        this.triggerMountEvent()
+        this.triggerMountEvent(true)
 
         let pr = this.props._parentRef
         while (pr) {
@@ -415,13 +415,19 @@ class JsonDom extends React.Component {
         this.renderPostRender()
     }
 
-    triggerMountEvent() {
+    triggerMountEvent(firstMount) {
         if (!this._ismounted && !this.props.loading) {
             this._ismounted = true
             this.addDynamicManifest()
             setTimeout(() => {
                 this.node = ReactDOM.findDOMNode(this)
                 this.runJsEvent('mount')
+
+                if(!this.props.dynamic && !firstMount) {
+                    // window load event
+                    // can be used in puppeteer waitForNavigation with load
+                    dispatchEvent(new Event('load'))
+                }
             }, 0)
 
         }
@@ -1532,7 +1538,7 @@ class JsonDom extends React.Component {
             this.props.serverMethod(name, args, (response) => {
                 Util.$('#' + key).innerHTML = response.data.cmsServerMethod.result
             })
-            return '<div id=\'' + key + '\'>Here goes the content</div>'
+            return '<div id=\'' + key + '\'>...</div>'
         }
         this.props.serverMethod(name, args, cb)
     }

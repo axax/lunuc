@@ -34,7 +34,7 @@ const Cache = {
         console.debug(`Cache: clear cache start with ${startkey}`)
         Object.keys(Cache.cache).forEach(key => {
             if (key.indexOf(startkey) === 0) {
-                console.debug('clear cache by key ' + key)
+                console.debug('Cache: clear cache by key ' + key)
                 delete Cache.cache[key]
             }
         })

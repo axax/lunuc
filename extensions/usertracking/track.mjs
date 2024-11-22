@@ -2,6 +2,7 @@ import {clientAddress, getHostFromHeaders} from '../../util/host.mjs'
 import Util from '../../api/util/index.mjs'
 import Hook from '../../util/hook.cjs'
 import {pubsub} from '../../api/subscription.mjs'
+import {DEFAULT_BOT_REGEX} from '../../util/userAgent.mjs'
 
 export const trackUser = async ({req, event, slug, db, context, data, meta}) => {
 
@@ -30,10 +31,11 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
         }
 
         const date = new Date()
+        const agent = req.headers['x-track-user-agent'] || req.headers['user-agent'] || '';
         const insertData = {
             ip: ip,
-            agent: req.headers['x-track-user-agent'] || req.headers['user-agent'],
-            isBot: req.headers['x-track-is-bot'] === 'true' ? true : false,
+            agent,
+            isBot: req.headers['x-track-is-bot'] === 'true' ? true : DEFAULT_BOT_REGEX.test(agent),
             referer: req.headers['x-referer'] || referer,
             data,
             /*headers: req.headers,*/

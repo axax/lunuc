@@ -31,14 +31,14 @@ Hook.on('schema', ({schemas}) => {
 // Hook when db is ready
 Hook.on('appready', async ({db, context}) => {
 
-    dnsServerContext.settings = (await Util.getKeyValueGlobal(db, context, "DnsSettings", true)) || {}
+    dnsServerContext.settings = (await Util.getKeyValueGlobal(db, context, 'DnsSettings', true)) || {}
 
     if (!dnsServerContext.settings.execfilter || Util.execFilter(dnsServerContext.settings.execfilter)) {
 
 
         // refresh settings every minute
         setInterval(async ()=>{
-            dnsServerContext.settings =  (await Util.getKeyValueGlobal(db, context, "DnsSettings", true)) || {}
+            dnsServerContext.settings =  (await Util.getKeyValueGlobal(db, context, 'DnsSettings', true)) || {}
 
             Object.keys(dnsServerContext.hostsGroup).forEach(key=>{
                 const hostGroup = dnsServerContext.hostsGroup[key]
@@ -58,7 +58,7 @@ Hook.on('appready', async ({db, context}) => {
         }, 1000 * 60)
 
         dnsServerContext.database = db
-        readHosts(db)
+        await readHosts(db)
 
 
         console.log('DNS: create dns server')

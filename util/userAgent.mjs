@@ -1,12 +1,22 @@
 // /WhatsApp|TelegramBot|AhrefsBot|Applebot|x28-job-bot|bingbot|msnbot|YandexBot|PetalBot|Googlebot|facebookexternalhit|LinkedInBot|Twitterbot|Xing|AdsBot/
-export const parseUserAgent = (agent, botregex = /bot|crawl|slurp|spider|mediapartners|facebookexternalhit|Xing|WhatsApp|NetcraftSurveyAgent/i) => {
+
+// exception if it starts with spiderweb/ because that is a browser
+export const DEFAULT_BOT_REGEX = /(?!(^spiderweb\/))(bot|crawl|slurp|spider|mediapartners|facebookexternalhit|Xing|WhatsApp|NetcraftSurveyAgent)/i
+export const DEFAULT_BOT_WITH_NO_JS_SUPPORT_REGEX = /YandexBot|bingbot|facebookexternalhit|LinkedInBot|Xing|WhatsApp|TelegramBot/i
+export const parseUserAgent = (agent,
+                               botRegex = DEFAULT_BOT_REGEX) => {
+
 
     let result = {}
     if (agent) {
         const agentLower = agent.toLowerCase().trim()
-        result.isBot = !agentLower.startsWith('spiderweb/') && botregex.test(agentLower)
+        result.isBot = botRegex.test(agentLower)
 
-        if (!result.isBot) {
+        if (result.isBot) {
+            result.noJsRendering = DEFAULT_BOT_WITH_NO_JS_SUPPORT_REGEX.test(agentLower)
+        }else{
+
+
             const raw = parseUserAgentRaw(agentLower)
 
 
@@ -117,6 +127,13 @@ export const parseUserAgent = (agent, botregex = /bot|crawl|slurp|spider|mediapa
             }
             result.raw = raw
 
+            result.noJsRendering = (result.browser === 'netscape') ||
+                (result.browser === 'safari' && result.version < 5) ||
+                (result.browser === 'firefox' && result.version <= 12) ||
+                (result.browser === 'opera' && result.version <= 10) ||
+                (result.browser === 'chrome' && result.version <= 16) ||
+                (result.browser === 'msie' && result.version <= 10)
+
         }
     }
 
@@ -220,7 +237,5 @@ console.log(parseUserAgent('Mozilla/5.0 (iPad; CPU OS 12_3 like Mac OS X) AppleW
 console.log(parseUserAgent(' Mozilla/5.0 (iPhone; CPU iPhone OS 15_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.5 Mobile/15E148 Safari/604.1'))
 console.log(parseUserAgent(' Mozilla/5.0 (iPad; CPU OS 10_3_3 like Mac OS X) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.0 Mobile/14G60 Safari/602.1'))
 console.log(parseUserAgent('Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.2; WOW64; Trident/4.0)'))
-console.log(parseUserAgent('Mozilla/5.0 (compatible; MegaIndex.ru/2.0; +http://megaindex.com/crawler)'))*/
-
-
-
+console.log(parseUserAgent('Mozilla/5.0 (compatible; MegaIndex.ru/2.0; +http://megaindex.com/crawler)'))
+console.log(parseUserAgent('Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'))*/

@@ -39,9 +39,8 @@ const updateKeyValueGlobal = async ({_id, key, value, ispublic, createdBy}, {con
             upsert: await Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
         })
 
-        // TODO: we don't have the key here (sometimes we only have the id)
-        // so let clear all KeyValueGlobal
-        Cache.clearStartWith('KeyValueGlobal_')
+        // clear cache
+        Cache.clearStartWith('KeyValueGlobal_'+res.key)
 
         // clear caches from dataResolver --> see method createCacheKey
         Cache.clearStartWith('dataresolver_keyValueGlobals')

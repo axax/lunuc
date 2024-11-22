@@ -138,29 +138,20 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
 
     const agent = req.headers['user-agent']
     const via = req.headers['via']
-    let botregex
+    let botRegex
     if(hostrule.botregex){
-        botregex = hostrule.botregex
+        botRegex = hostrule.botregex
     }else {
         const hostrules = getHostRules(true)
-        botregex = (hostrules.general && hostrules.general.botregex)
+        botRegex = (hostrules.general && hostrules.general.botregex)
     }
-    let {version, browser, isBot} = parseUserAgent(agent, botregex)
+    let {isBot, noJsRendering} = parseUserAgent(agent, botRegex)
 
     if(via && via.indexOf('archive.org_bot') >= 0){
         // https://web.archive.org/
         isBot = true
     }
-    /*if(!isBot) {
-        console.log(browser, version)
-    }*/
-    if (isBot ||
-        (browser === 'netscape') ||
-        (browser === 'safari' && version < 5) ||
-        (browser === 'firefox' && version <= 12) ||
-        (browser === 'opera' && version <= 10) ||
-        (browser === 'chrome' && version <= 16) ||
-        (browser === 'msie' && version <= 10)) {
+    if (noJsRendering) {
 
         if ( req.headers.accept && req.headers.accept.indexOf('text/html') < 0 && req.headers.accept.indexOf('*/*') < 0) {
             console.log('headers not valid', req.headers.accept)

@@ -586,10 +586,10 @@ const startListening = async (db, context) => {
                     return callback(null, true)
                 }
                 let message = messages[pos++]
-                console.log(`imap process message with uid ${message.uid}`)
+                console.log(`Mailserver: imap process message with uid ${message.uid}`)
 
                 if (options.messages.indexOf(message.uid) < 0) {
-                    console.log(`imap skip ${message.uid}`)
+                    console.log(`Mailserver: imap skip ${message.uid}`)
                     return setImmediate(processMessage)
                 }
 
