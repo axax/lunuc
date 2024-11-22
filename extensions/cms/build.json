@@ -15,7 +15,8 @@
           "index": 1,
           "unique": true,
           "fullWidth": true,
-          "tab": "Allgemein"
+          "tab": "Allgemein",
+          "validatePattern":"^([a-zA-Z0-9/-_öäü]+)$"
         },
         {
           "name": "name",

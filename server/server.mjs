@@ -626,7 +626,14 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                         }
 
                     } else {
-                        await sendIndexFile({req, res, remoteAddress, urlPathname, hostrule, host, parsedUrl})
+
+                        const ext = path.extname(urlPathname)
+                        if(!ext) {
+                            // file extension is not allowed here
+                            await sendIndexFile({req, res, remoteAddress, urlPathname, hostrule, host, parsedUrl})
+                        }else{
+                            sendError(res, 404)
+                        }
                     }
                 }
             }
