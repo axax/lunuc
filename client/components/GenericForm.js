@@ -1338,6 +1338,8 @@ class GenericForm extends React.Component {
                                               inputProps={{
                                                   readOnly: field.readOnly,
                                                   step: field.step || '',
+                                                  min: field.min || '',
+                                                  max: field.max || '',
                                                   'data-language': languageCode,
                                                   'data-datetime-field': isDateOrTime
                                               }}

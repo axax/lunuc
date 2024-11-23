@@ -125,7 +125,7 @@ class SimpleMenu extends React.Component {
                     if (item.items) {
                         this.setState({collapse: { ...collapse, [i]: {open: !(collapse[i] && collapse[i].open) }}})
                     } else if (item.onClick) {
-                        item.onClick(e)
+                        item.onClick(e, this.props.payload)
                         this.handleClose(e)
                     }
                 }} key={'menuitem' + i}>

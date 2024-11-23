@@ -56,45 +56,45 @@ export function matchExpr(expr, scope) {
             prop = propertyByPath(match[1], scope)
         } catch (e) {
         }
-
-        if (match[2] === '==') {
-            if (match[3] !== String(prop)) {
+        const m2 = match[2], m3 = match[3]
+        if (m2 === '==') {
+            if (m3 !== String(prop)) {
                 return true
             }
-        } else if (match[2] === '!=') {
-            if (match[3] === String(prop)) {
+        } else if (m2 === '!=') {
+            if (m3 === String(prop)) {
                 return true
             }
-        } else if (match[2] === '>') {
-            if (!(prop > parseFloat(match[3]))) {
+        } else if (m2 === '>') {
+            if (!(prop > parseFloat(m3))) {
                 return true
             }
-        } else if (match[2] === '>=') {
-            if (!(prop >= parseFloat(match[3]))) {
+        } else if (m2 === '>=') {
+            if (!(prop >= parseFloat(m3))) {
                 return true
             }
-        } else if (match[2] === '<') {
-            if (!(prop < parseFloat(match[3]))) {
+        } else if (m2 === '<') {
+            if (!(prop < parseFloat(m3))) {
                 return true
             }
-        } else if (match[2] === '<=') {
-            if (!(prop <= parseFloat(match[3]))) {
+        } else if (m2 === '<=') {
+            if (!(prop <= parseFloat(m3))) {
                 return true
             }
-        } else if (match[2] === ' in ' || match[2] === ' nin ') {
+        } else if (m2 === ' in ' || m2 === ' nin ') {
             if (prop && prop.constructor === Array) {
                 let exists = false
                 for (let i = 0; i < prop.length; i++) {
-                    if (match[3].indexOf('"' + prop[i] + '"') >= 0 || match[3]===prop[i]) {
+                    if (m3.indexOf('"' + prop[i] + '"') >= 0 || m3===prop[i]) {
                         exists = true
                         break
                     }
                 }
                 let res = exists ? false : true
-                return match[2] === ' nin ' ? !res : res
+                return m2 === ' nin ' ? !res : res
             } else {
-                const idx = match[3].indexOf('"' + prop + '"')
-                if (match[2] === ' nin ') {
+                const idx = m3.indexOf('"' + prop + '"')
+                if (m2 === ' nin ') {
                     return idx >= 0
                 } else {
                     return idx === -1

@@ -4,6 +4,7 @@ import {
     TextField,
     SimpleList,
     SimpleSelect,
+    SimpleDialog,
     Row,
     Col,
     FolderIcon,
@@ -17,6 +18,7 @@ import config from 'gen/config-client'
 import {Query, client} from '../middleware/graphql'
 import FileDrop from '../components/FileDrop'
 import Async from '../components/Async'
+import {_t} from 'util/i18n.mjs'
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
 
@@ -34,19 +36,19 @@ class FilesContainer extends React.Component {
             file: props.file,
             dir: params.dir || '',
             searchText: '',
-            space: props.space || params.space || './'
+            space: props.space || params.space || './',
+            confirmDeletionDialog:{open:false}
         }
     }
 
 
     render() {
         const {embedded, editOnly, history} = this.props
-        const {file, dir, searchText, space} = this.state
+        const {file, dir, searchText, space,confirmDeletionDialog} = this.state
         let command = 'ls -l ' + space + dir
 
         if (searchText) {
             command = `find ${space+dir} -size -1M -type f -name '*.*' ! -path "./node_modules/*" ! -path "./bower_components/*" -exec grep -ril "${searchText}" {} \\;`
-
         }
 
         let fileEditor = file &&
@@ -72,6 +74,33 @@ class FilesContainer extends React.Component {
         } else {
             content = <Row spacing={3}>
                 <Col sm={4}>
+                    <SimpleDialog open={confirmDeletionDialog.open} onClose={(e)=>{
+                        const fileName = confirmDeletionDialog.fileName
+
+                        if(e.key==='yes') {
+                            client.query({
+                                fetchPolicy: 'no-cache',
+                                query: COMMAND_QUERY,
+                                variables: {
+                                    sync: true,
+                                    command: `rm "${space}${dir}/${fileName}"`
+                                }
+
+                            }).then(response => {
+                                console.log(response)
+                                _app_.dispatcher.addNotification({key: 'fileChange', message: `File "${fileName}" removed`})
+                                client.clearCache({query:COMMAND_QUERY,variables:{sync: true, command}})
+                               console.log('before refresh')
+                                this.forceUpdate()
+
+                            })
+                        }
+                        this.setState({confirmDeletionDialog: {...confirmDeletionDialog, open: false}})
+                    }}
+                                  actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
+                                  title="Confirm deletion">
+                        Are you sure you want to delete the file &ldquo;{confirmDeletionDialog.fileName}&rdquo;?
+                    </SimpleDialog>
                     <SimpleSelect
                         label="Select aspace"
                         fullWidth={true}
@@ -136,6 +165,7 @@ class FilesContainer extends React.Component {
                                                 <InsertDriveFileIcon />,
                                             selected: false,
                                             primary: b[8],
+
                                             onClick: () => {
                                                 if (b[0].indexOf('d') === 0) {
                                                     //change dir
@@ -168,6 +198,18 @@ class FilesContainer extends React.Component {
                             }
 
                             return <SimpleList items={listItems}
+                                               paperProps={{sx:{
+                                                   height:'41.5rem', overflow:'auto'
+                                               }}}
+                                               contextMenu={[
+                                                   {
+                                                       name: _t('FilesContainer.deleteFile'),
+                                                       onClick: (e, payload)=>{
+                                                           this.setState({confirmDeletionDialog:{open:true, fileName:payload.primary}})
+                                                       },
+                                                       icon: 'delete'
+                                                   }
+                                               ]}
                                                count={listItems.length}/>
                         }}
                     </Query>

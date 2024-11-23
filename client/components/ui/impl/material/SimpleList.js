@@ -11,9 +11,11 @@ import Divider from '@mui/material/Divider'
 import TextField from '@mui/material/TextField'
 import Button from '@mui/material/Button'
 import {_t} from 'util/i18n.mjs'
+import SimpleMenu from './SimpleMenu.js'
 
-export const SimpleList = ({sx, onCheck, items, allChecked, count, page, rowsPerPage, onChangePage, onChangeRowsPerPage, onFilterKeyDown, onFilterChange, filter, ...rest}) => {
+export const SimpleList = ({sx, paperProps, onCheck, items, allChecked, count, page, contextMenu, rowsPerPage, onChangePage, onChangeRowsPerPage, onFilterKeyDown, onFilterChange, filter, ...rest}) => {
     const [checked, setChecked] = React.useState(allChecked?items.map((e,i)=>i):[])
+    const [showContextMenu, setShowContextMenu] = React.useState(null)
 
     const handleToggle = (i) => {
         const currentIndex = checked.indexOf(i)
@@ -30,8 +32,34 @@ export const SimpleList = ({sx, onCheck, items, allChecked, count, page, rowsPer
         setChecked(newChecked)
     }
 
-    return <Paper>
+    const handleContextMenu = (event, item) => {
+        if(!contextMenu){
+            return
+        }
+        event.preventDefault()
+        setShowContextMenu(
+            showContextMenu === null
+                ? {
+                    left: event.clientX + 2,
+                    top: event.clientY - 6,
+                    item
+                }
+                : // repeated contextmenu when it is already open closes it with Chrome 84 on Ubuntu
+                  // Other native context menus might behave different.
+                  // With this behavior we prevent contextmenu from the backdrop to re-locale existing context menus.
+                null
+        )
+    }
 
+    return <Paper {...paperProps}>
+        {showContextMenu && <SimpleMenu open={showContextMenu}
+                                        anchorReference={"anchorPosition"}
+                                        anchorPosition={showContextMenu}
+                                        payload={showContextMenu.item}
+                                        onClose={() => {
+                                            setShowContextMenu(null)
+                                        }}
+                                        key="menu" noButton items={contextMenu}/>}
         {onFilterChange &&
         <div style={{padding: '10px 20px'}}>
             <TextField label="Search"
@@ -51,6 +79,7 @@ export const SimpleList = ({sx, onCheck, items, allChecked, count, page, rowsPer
                                   button={(!!item.onClick || item.checkbox)}
                                   style={item.style}
                                   disabled={item.disabled}
+                                  onContextMenu={(e)=>{handleContextMenu(e,item)}}
                                   onClick={(e)=>{
 
                             if(item.checkbox) {

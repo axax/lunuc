@@ -17,7 +17,7 @@ const StyledCircularProgress = styled(CircularProgress)(({ theme }) => ({
 
 class SimpleButton extends React.Component {
     render() {
-        const {showProgress,children,icon, ...rest} = this.props
+        const {showProgress,children,icon,startIcon, ...rest} = this.props
 
         if( showProgress ) {
             return <Button
@@ -30,7 +30,11 @@ class SimpleButton extends React.Component {
                 <Icon />
             </IconButton>
         }else{
-            return <Button children={children} {...rest} />
+            let Icon = startIcon
+            if(Icon && Icon.constructor === String){
+                Icon = getIconByKey(Icon)
+            }
+            return <Button startIcon={Icon?<Icon/>:null} children={children} {...rest} />
         }
     }
 }

@@ -2,6 +2,7 @@ import GenericForm from "../components/GenericForm";
 
 export const translations = {
     de: {
+        'FilesContainer.deleteFile':'Datei löschen',
         'BaseLayout.editEntry': 'Eintrag bearbeiten',
         'BaseLayout.editMenu': 'Menü bearbeiten',
         'BaseLayout.resetMenu': 'Menü zurücksetzen',
@@ -102,6 +103,7 @@ export const translations = {
         'core.deselectAll':'Alle abwählen'
     },
     en: {
+        'FilesContainer.deleteFile':'Delete File',
         'BaseLayout.editEntry': 'Edit entry',
         'BaseLayout.editMenu': 'Edit menu',
         'BaseLayout.resetMenu': 'Reset menu',
