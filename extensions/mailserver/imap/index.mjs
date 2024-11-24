@@ -19,7 +19,7 @@ import MemoryNotifier from './MemoryNotifier.js'
 import MailComposer from 'nodemailer/lib/mail-composer'
 import MailserverResolver from '../gensrc/resolver.mjs'
 import {simpleParser} from 'mailparser'
-
+import {createDefaultLogger} from './logger.mjs'
 
 // open port 993 on your server
 // sudo ufw allow 993
@@ -66,16 +66,29 @@ let server
 
 const startListening = async (db, context) => {
 
+    const settings = {}
+    let server, settingRefreshTimeout
+
+    const getSettings = async () => {
+        const newSettings = (await Util.getKeyValueGlobal(db, context, 'IMAPServerSettings', true)) || {}
+        Object.keys(newSettings).forEach(key=>{
+            settings[key] = newSettings[key]
+        })
+        clearTimeout(settingRefreshTimeout)
+        settingRefreshTimeout = setTimeout(getSettings,1000*60)
+    }
+
+    await getSettings()
 
     // Setup server
-    let server = server = new Wildduck.IMAPServer({
+    server = server = new Wildduck.IMAPServer({
         secure:true,
         name: 'Lunuc IMAP Server',
         version: '1.0.0',
         vendor: 'lunuc.com',
         host: '0.0.0.0',
         port: 993,
-        logger:false,
+        logger:createDefaultLogger(settings),
         markAsSeen:true,
         /*secured: false,
         disableSTARTTLS: true,
@@ -104,6 +117,7 @@ const startListening = async (db, context) => {
         }
     })
 
+
     server.notifier = new MemoryNotifier({
         logger: {
             info: () => false,
@@ -113,12 +127,12 @@ const startListening = async (db, context) => {
     })
 
     server.on('error', err => {
-        console.log('SERVER ERR\n%s', err.stack); // eslint-disable-line no-console
+        console.error('SERVER ERR\n%s', err.stack); // eslint-disable-line no-console
     });
 
     server.onAuth = async function (login, session, callback) {
 
-        console.log('IMAP onAuth', login.username)
+        this.logger.log('IMAP onAuth %s', login.username)
 
         const mailAccount = await getMailAccountByEmail(db, login.username)
 
@@ -138,7 +152,6 @@ const startListening = async (db, context) => {
     // Returns all folders, query is informational
     // folders is either an Array or a Map
     server.onList = async function (query, session, callback) {
-        console.log('IMAP onList', query, session.id)
         this.logger.debug('[%s] LIST for "%s"', session.id, query);
 
         const mailAccountFolders = await getFoldersForMailAccount(db, session.user.id)
@@ -151,7 +164,6 @@ const startListening = async (db, context) => {
     // folders is either an Array or a Map
     server.onLsub = async function (query, session, callback) {
         this.logger.debug('[%s] LSUB for "%s"', session.id, query);
-        console.log('IMAP onLsub', query, session.id)
 
         const subscribedFolders = await getSubscribedFoldersForMailAccount(db, session.user.id)
 
@@ -160,7 +172,6 @@ const startListening = async (db, context) => {
 
     // SUBSCRIBE "path/to/mailbox"
     server.onSubscribe = function (mailbox, session, callback) {
-        console.log('IMAP onSubscribe', mailbox, session.id)
         this.logger.debug('[%s] SUBSCRIBE to "%s"', session.id, mailbox)
       /*  if (!folders.has(mailbox)) {
             return callback(null, 'NONEXISTENT');
@@ -172,10 +183,9 @@ const startListening = async (db, context) => {
 
     // UNSUBSCRIBE "path/to/mailbox"
     server.onUnsubscribe = function (mailbox, session, callback) {
-        console.log('IMAP onUnsubscribe', mailbox, session.id)
-        /*this.logger.debug('[%s] UNSUBSCRIBE from "%s"', session.id, mailbox);
+        this.logger.debug('[%s] UNSUBSCRIBE from "%s"', session.id, mailbox);
 
-        if (!folders.has(mailbox)) {
+        /*if (!folders.has(mailbox)) {
             return callback(null, 'NONEXISTENT');
         }
 
@@ -185,7 +195,6 @@ const startListening = async (db, context) => {
 
     // CREATE "path/to/mailbox"
     server.onCreate = async function (mailbox, session, callback) {
-        console.log('IMAP onCreate', mailbox, session.id)
         this.logger.debug('[%s] CREATE "%s"', session.id, mailbox)
 
         const existingFolder = await getFolderForMailAccount(db,session.user.id,mailbox)
@@ -213,10 +222,9 @@ const startListening = async (db, context) => {
     // RENAME "path/to/mailbox" "new/path"
     // NB! RENAME affects child and hierarchy mailboxes as well, this example does not do this
     server.onRename = function (mailbox, newname, session, callback) {
-        console.log('IMAP onRename', mailbox, session.id)
-        /*this.logger.debug('[%s] RENAME "%s" to "%s"', session.id, mailbox, newname);
+        this.logger.debug('[%s] RENAME "%s" to "%s"', session.id, mailbox, newname);
 
-        if (!folders.has(mailbox)) {
+        /*if (!folders.has(mailbox)) {
             return callback(null, 'NONEXISTENT');
         }
 
@@ -235,10 +243,9 @@ const startListening = async (db, context) => {
 
     // DELETE "path/to/mailbox"
     server.onDelete = function (mailbox, session, callback) {
-        console.log('IMAP onDelete', mailbox, session.id)
-        /*this.logger.debug('[%s] DELETE "%s"', session.id, mailbox);
+        this.logger.debug('[%s] DELETE "%s"', session.id, mailbox);
 
-        if (!folders.has(mailbox)) {
+        /*if (!folders.has(mailbox)) {
             return callback(null, 'NONEXISTENT');
         }
 
@@ -253,7 +260,6 @@ const startListening = async (db, context) => {
 
     // SELECT/EXAMINE
     server.onOpen = async function (mailbox, session, callback) {
-        console.log('IMAP onOpen', mailbox)
         this.logger.debug('[%s] Opening "%s"', session.id, mailbox);
 
         const folder = await getFolderForMailAccount(db, session.user.id, mailbox)
@@ -269,7 +275,6 @@ const startListening = async (db, context) => {
 
     // STATUS (X Y X)
     server.onStatus = async function (folderId, session, callback) {
-        console.log('IMAP onStatus', folderId)
         this.logger.debug('[%s] Requested status for "%s"', session.id, folderId)
 
         const folder = await getFolderForMailAccount(db, session.user.id, folderId)
@@ -289,7 +294,6 @@ const startListening = async (db, context) => {
 
     // APPEND mailbox (flags) date message
     server.onAppend = async function (mailbox, flags, date, raw, session, callback) {
-        console.log('IMAP onAppend', mailbox, flags)
         this.logger.debug('[%s] Appending message to "%s"', session.id, mailbox);
 
         const folder = await getFolderForMailAccount(db, session.user.id, mailbox)
@@ -301,7 +305,7 @@ const startListening = async (db, context) => {
 
         simpleParser(raw, {}, async (err, data) => {
             if (err) {
-                console.log("Error:", err)
+                console.error("IMAP parser error:", err)
                 return callback(null, 'TRYCREATE')
             } else {
                 const insertResult = await MailserverResolver(db).Mutation.createMailAccountMessage({
@@ -332,7 +336,6 @@ const startListening = async (db, context) => {
 
     // STORE / UID STORE, updates flags for selected UIDs
     server.onStore = async function (folderId, update, session, callback) {
-        console.log('IMAP onStore', folderId, session.id, update)
         this.logger.debug('[%s] Updating messages in "%s"', session.id, folderId)
 
         const folder = await getFolderForMailAccountById(db, session.user.id, folderId)
@@ -408,7 +411,6 @@ const startListening = async (db, context) => {
 
             // notifiy only if something changed
             if (updated) {
-                console.log('-----------imap update message', message)
                 MailserverResolver(db).Mutation.updateMailAccountMessage({
                     _id:message._id,
                     flags: message.flags? message.flags.filter(f=>!!f): []
@@ -449,7 +451,6 @@ const startListening = async (db, context) => {
 
     // EXPUNGE deletes all messages in selected mailbox marked with \Delete
     server.onExpunge = async function (folderId, update, session, callback) {
-        console.log('IMAP onExpunge', folderId, session.id,update)
         this.logger.debug('[%s] Deleting messages from "%s"', session.id, folderId)
 
         const folder = await getFolderForMailAccountById(db, session.user.id, folderId)
@@ -487,7 +488,6 @@ const startListening = async (db, context) => {
 
     // COPY / UID COPY sequence mailbox
     server.onCopy = async function (connection, folderId, update, session, callback) {
-        console.log('IMAP onCopy', folderId, session.id, update)
         this.logger.debug('[%s] Copying messages from "%s" to "%s"', session.id, folderId, update.destination);
 
         const sourceFolder = await getFolderForMailAccountById(db, session.user.id, folderId)
@@ -545,7 +545,6 @@ const startListening = async (db, context) => {
 
     // sends results to socket
     server.onFetch = async function (folderId, options, session, callback) {
-        console.log('IMAP onFetch', folderId)
         this.logger.debug('[%s] Requested FETCH for "%s"', session.id, folderId);
         this.logger.debug('[%s] FETCH: %s', session.id, JSON.stringify(options.query));
 
@@ -586,15 +585,16 @@ const startListening = async (db, context) => {
                     return callback(null, true)
                 }
                 let message = messages[pos++]
-                console.log(`Mailserver: imap process message with uid ${message.uid}`)
+                this.logger.debug('[%s] imap process message with uid "%s"', session.id, message.uid)
+
 
                 if (options.messages.indexOf(message.uid) < 0) {
-                    console.log(`Mailserver: imap skip ${message.uid}`)
+                    this.logger.debug('[%s] imap skip message with uid "%s"', session.id, message.uid)
                     return setImmediate(processMessage)
                 }
 
                 if (options.changedSince && message.modseq <= options.changedSince) {
-                    console.log(`imap changedSince skip ${message.uid}`)
+                    this.logger.debug('[%s] imap changedSince skip message with uid "%s"', session.id, message.uid)
                     return setImmediate(processMessage)
                 }
                 const messageData = JSON.parse(JSON.stringify(message.data))
