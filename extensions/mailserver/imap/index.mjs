@@ -117,9 +117,14 @@ const startListening = async (db, context) => {
         }
     })
 
+    const logger = {
+        info: (...args) => {server.logger.info(null,...args)},
+        debug: (...args) => {server.logger.debug(null,...args)},
+        error: (...args) => {server.logger.error(null,...args)}
+    }
 
     server.notifier = new MemoryNotifier({
-        logger: createDefaultLogger(settings)
+        logger
     })
 
     server.on('error', err => {
@@ -128,7 +133,7 @@ const startListening = async (db, context) => {
 
     server.onAuth = async function (login, session, callback) {
 
-        this.logger.debug('IMAP onAuth %s', login.username)
+        logger.debug('IMAP onAuth %s', login.username)
 
         const mailAccount = await getMailAccountByEmail(db, login.username)
 
@@ -148,7 +153,7 @@ const startListening = async (db, context) => {
     // Returns all folders, query is informational
     // folders is either an Array or a Map
     server.onList = async function (query, session, callback) {
-        this.logger.debug('[%s] LIST for "%s"', session.id, query);
+        logger.debug('[%s] LIST for "%s"', session.id, query);
 
         const mailAccountFolders = await getFoldersForMailAccount(db, session.user.id)
 
@@ -159,7 +164,7 @@ const startListening = async (db, context) => {
     // Returns all subscribed folders, query is informational
     // folders is either an Array or a Map
     server.onLsub = async function (query, session, callback) {
-        this.logger.debug('[%s] LSUB for "%s"', session.id, query);
+        logger.debug('[%s] LSUB for "%s"', session.id, query);
 
         const subscribedFolders = await getSubscribedFoldersForMailAccount(db, session.user.id)
 
@@ -168,7 +173,7 @@ const startListening = async (db, context) => {
 
     // SUBSCRIBE "path/to/mailbox"
     server.onSubscribe = function (mailbox, session, callback) {
-        this.logger.debug('[%s] SUBSCRIBE to "%s"', session.id, mailbox)
+        logger.debug('[%s] SUBSCRIBE to "%s"', session.id, mailbox)
       /*  if (!folders.has(mailbox)) {
             return callback(null, 'NONEXISTENT');
         }
@@ -179,7 +184,7 @@ const startListening = async (db, context) => {
 
     // UNSUBSCRIBE "path/to/mailbox"
     server.onUnsubscribe = function (mailbox, session, callback) {
-        this.logger.debug('[%s] UNSUBSCRIBE from "%s"', session.id, mailbox);
+        logger.debug('[%s] UNSUBSCRIBE from "%s"', session.id, mailbox);
 
         /*if (!folders.has(mailbox)) {
             return callback(null, 'NONEXISTENT');
@@ -191,7 +196,7 @@ const startListening = async (db, context) => {
 
     // CREATE "path/to/mailbox"
     server.onCreate = async function (mailbox, session, callback) {
-        this.logger.debug('[%s] CREATE "%s"', session.id, mailbox)
+        logger.debug('[%s] CREATE "%s"', session.id, mailbox)
 
         const existingFolder = await getFolderForMailAccount(db,session.user.id,mailbox)
 
@@ -218,7 +223,7 @@ const startListening = async (db, context) => {
     // RENAME "path/to/mailbox" "new/path"
     // NB! RENAME affects child and hierarchy mailboxes as well, this example does not do this
     server.onRename = function (mailbox, newname, session, callback) {
-        this.logger.debug('[%s] RENAME "%s" to "%s"', session.id, mailbox, newname);
+        logger.debug('[%s] RENAME "%s" to "%s"', session.id, mailbox, newname);
 
         /*if (!folders.has(mailbox)) {
             return callback(null, 'NONEXISTENT');
@@ -239,7 +244,7 @@ const startListening = async (db, context) => {
 
     // DELETE "path/to/mailbox"
     server.onDelete = function (mailbox, session, callback) {
-        this.logger.debug('[%s] DELETE "%s"', session.id, mailbox);
+        logger.debug('[%s] DELETE "%s"', session.id, mailbox);
 
         /*if (!folders.has(mailbox)) {
             return callback(null, 'NONEXISTENT');
@@ -256,7 +261,7 @@ const startListening = async (db, context) => {
 
     // SELECT/EXAMINE
     server.onOpen = async function (mailbox, session, callback) {
-        this.logger.debug('[%s] Opening "%s"', session.id, mailbox);
+        logger.debug('[%s] Opening "%s"', session.id, mailbox);
 
         const folder = await getFolderForMailAccount(db, session.user.id, mailbox)
 
@@ -271,7 +276,7 @@ const startListening = async (db, context) => {
 
     // STATUS (X Y X)
     server.onStatus = async function (folderId, session, callback) {
-        this.logger.debug('[%s] Requested status for "%s"', session.id, folderId)
+        logger.debug('[%s] Requested status for "%s"', session.id, folderId)
 
         const folder = await getFolderForMailAccount(db, session.user.id, folderId)
 
@@ -290,7 +295,7 @@ const startListening = async (db, context) => {
 
     // APPEND mailbox (flags) date message
     server.onAppend = async function (mailbox, flags, date, raw, session, callback) {
-        this.logger.debug('[%s] Appending message to "%s"', session.id, mailbox);
+        logger.debug('[%s] Appending message to "%s"', session.id, mailbox);
 
         const folder = await getFolderForMailAccount(db, session.user.id, mailbox)
 
@@ -332,7 +337,7 @@ const startListening = async (db, context) => {
 
     // STORE / UID STORE, updates flags for selected UIDs
     server.onStore = async function (folderId, update, session, callback) {
-        this.logger.debug('[%s] Updating messages in "%s"', session.id, folderId)
+        logger.debug('[%s] Updating messages in "%s"', session.id, folderId)
 
         const folder = await getFolderForMailAccountById(db, session.user.id, folderId)
 
@@ -447,7 +452,7 @@ const startListening = async (db, context) => {
 
     // EXPUNGE deletes all messages in selected mailbox marked with \Delete
     server.onExpunge = async function (folderId, update, session, callback) {
-        this.logger.debug('[%s] Deleting messages from "%s"', session.id, folderId)
+        logger.debug('[%s] Deleting messages from "%s"', session.id, folderId)
 
         const folder = await getFolderForMailAccountById(db, session.user.id, folderId)
 
@@ -484,7 +489,7 @@ const startListening = async (db, context) => {
 
     // COPY / UID COPY sequence mailbox
     server.onCopy = async function (connection, folderId, update, session, callback) {
-        this.logger.debug('[%s] Copying messages from "%s" to "%s"', session.id, folderId, update.destination);
+        logger.debug('[%s] Copying messages from "%s" to "%s"', session.id, folderId, update.destination);
 
         const sourceFolder = await getFolderForMailAccountById(db, session.user.id, folderId)
 
@@ -541,8 +546,8 @@ const startListening = async (db, context) => {
 
     // sends results to socket
     server.onFetch = async function (folderId, options, session, callback) {
-        this.logger.debug('[%s] Requested FETCH for "%s"', session.id, folderId);
-        this.logger.debug('[%s] FETCH: %s', session.id, JSON.stringify(options.query));
+        logger.debug('[%s] Requested FETCH for "%s"', session.id, folderId);
+        logger.debug('[%s] FETCH: %s', session.id, JSON.stringify(options.query));
 
         const folder = await getFolderForMailAccountById(db, session.user.id, folderId)
 
@@ -581,16 +586,16 @@ const startListening = async (db, context) => {
                     return callback(null, true)
                 }
                 let message = messages[pos++]
-                this.logger.debug('[%s] imap process message with uid "%s"', session.id, message.uid)
+                logger.debug('[%s] imap process message with uid "%s"', session.id, message.uid)
 
 
                 if (options.messages.indexOf(message.uid) < 0) {
-                    this.logger.debug('[%s] imap skip message with uid "%s"', session.id, message.uid)
+                    logger.debug('[%s] imap skip message with uid "%s"', session.id, message.uid)
                     return setImmediate(processMessage)
                 }
 
                 if (options.changedSince && message.modseq <= options.changedSince) {
-                    this.logger.debug('[%s] imap changedSince skip message with uid "%s"', session.id, message.uid)
+                    logger.debug('[%s] imap changedSince skip message with uid "%s"', session.id, message.uid)
                     return setImmediate(processMessage)
                 }
                 const messageData = JSON.parse(JSON.stringify(message.data))
@@ -630,7 +635,7 @@ const startListening = async (db, context) => {
 
     // returns an array of matching UID values and the highest modseq of matching messages
     server.onSearch = async function (mailbox, options, session, callback) {
-        this.logger.debug('[%s] imap search with query "%s"', session.id, options.query)
+        logger.debug('[%s] imap search with query "%s"', session.id, options.query)
 
         const folder = await getFolderForMailAccount(db, session.user.id, mailbox)
 
