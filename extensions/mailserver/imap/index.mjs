@@ -635,15 +635,17 @@ const startListening = async (db, context) => {
 
     // returns an array of matching UID values and the highest modseq of matching messages
     server.onSearch = async function (mailbox, options, session, callback) {
-        logger.debug('[%s] imap search with query "%s"', session.id, JSON.stringify(options.query))
+        logger.debug('[%s] imap search folder %s with query "%s"', session.id, mailbox, JSON.stringify(options.query))
 
         const folder = await getFolderForMailAccount(db, session.user.id, mailbox)
 
         if (!folder) {
+            logger.debug('[%s] folder %s NONEXISTENT', session.id, mailbox)
             return callback(null, 'NONEXISTENT');
         }
         // TODO: Improve query --> don't select all messages
         const messages = await getMessagesForFolder(db,folder._id)
+        logger.debug('[%s] folder %s number of messages found %s', session.id, mailbox, messages.length)
 
         let highestModseq = 0
 
@@ -658,6 +660,7 @@ const startListening = async (db, context) => {
                 });
             }
             let message = messages[checked++];
+console.log('IMAP Search', message)
             session.matchSearchQuery(message, options.query, (err, match) => {
                 if (err) {
                     console.error('IMAP Search', err)
