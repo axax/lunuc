@@ -119,11 +119,7 @@ const startListening = async (db, context) => {
 
 
     server.notifier = new MemoryNotifier({
-        logger: {
-            info: () => false,
-            debug: () => false,
-            error: () => false
-        }
+        logger: createDefaultLogger(settings)
     })
 
     server.on('error', err => {
@@ -658,6 +654,7 @@ const startListening = async (db, context) => {
             let message = messages[checked++];
             session.matchSearchQuery(message, options.query, (err, match) => {
                 if (err) {
+                    console.error('IMAP Search', error)
                     // ignore
                 }
                 if (match && highestModseq < message.modseq) {
