@@ -635,7 +635,7 @@ const startListening = async (db, context) => {
 
     // returns an array of matching UID values and the highest modseq of matching messages
     server.onSearch = async function (mailbox, options, session, callback) {
-        logger.debug('[%s] imap search with query "%s"', session.id, options.query)
+        logger.debug('[%s] imap search with query "%s"', session.id, JSON.stringify(options.query))
 
         const folder = await getFolderForMailAccount(db, session.user.id, mailbox)
 
@@ -651,7 +651,7 @@ const startListening = async (db, context) => {
         let checked = 0
         let checkNext = () => {
             if (checked >= messages.length) {
-                console.log('onSearch ', options, uidList)
+                console.log('onSearch uids', uidList.join(','))
                 return callback(null, {
                     uidList,
                     highestModseq
