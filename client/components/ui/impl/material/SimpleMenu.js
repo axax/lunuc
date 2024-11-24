@@ -100,7 +100,7 @@ class SimpleMenu extends React.Component {
 
     renderMenu(items, intent=0){
         const {collapse} = this.state
-        const {avatarIcon} = this.props
+        const {avatarIcon, onClick} = this.props
 
         const style = {}
 
@@ -126,6 +126,9 @@ class SimpleMenu extends React.Component {
                         this.setState({collapse: { ...collapse, [i]: {open: !(collapse[i] && collapse[i].open) }}})
                     } else if (item.onClick) {
                         item.onClick(e, this.props.payload)
+                        this.handleClose(e)
+                    }else if(onClick) {
+                        onClick(e, this.props.payload)
                         this.handleClose(e)
                     }
                 }} key={'menuitem' + i}>
