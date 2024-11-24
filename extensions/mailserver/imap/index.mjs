@@ -634,18 +634,18 @@ const startListening = async (db, context) => {
     }
 
     // returns an array of matching UID values and the highest modseq of matching messages
-    server.onSearch = async function (mailbox, options, session, callback) {
-        logger.debug('[%s] imap search folder %s with query "%s"', session.id, mailbox, JSON.stringify(options.query))
+    server.onSearch = async function (folderId, options, session, callback) {
+        logger.debug('[%s] imap search folder %s with query "%s"', session.id, folderId, JSON.stringify(options.query))
 
-        const folder = await getFolderForMailAccount(db, session.user.id, mailbox)
+        const folder = await getFolderForMailAccountById(db, session.user.id, folderId)
 
         if (!folder) {
-            logger.debug('[%s] folder %s NONEXISTENT', session.id, mailbox)
+            logger.debug('[%s] folder with id %s NONEXISTENT', session.id, folderId)
             return callback(null, 'NONEXISTENT');
         }
         // TODO: Improve query --> don't select all messages
         const messages = await getMessagesForFolder(db,folder._id)
-        logger.debug('[%s] folder %s number of messages found %s', session.id, mailbox, messages.length)
+        logger.debug('[%s] folder %s number of messages found %s', session.id, folder.path, messages.length)
 
         let highestModseq = 0
 
@@ -653,17 +653,15 @@ const startListening = async (db, context) => {
         let checked = 0
         let checkNext = () => {
             if (checked >= messages.length) {
-                console.log('onSearch uids', uidList.join(','))
                 return callback(null, {
                     uidList,
                     highestModseq
                 });
             }
             let message = messages[checked++];
-console.log('IMAP Search', message)
             session.matchSearchQuery(message, options.query, (err, match) => {
                 if (err) {
-                    console.error('IMAP Search', err)
+                    console.error('IMAP Search', err, folder)
                     // ignore
                 }
                 if (match && highestModseq < message.modseq) {
