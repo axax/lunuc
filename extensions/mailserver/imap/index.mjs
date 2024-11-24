@@ -646,6 +646,7 @@ const startListening = async (db, context) => {
         let checked = 0
         let checkNext = () => {
             if (checked >= messages.length) {
+                console.log('onSearch ', options, uidList)
                 return callback(null, {
                     uidList,
                     highestModseq
@@ -654,7 +655,7 @@ const startListening = async (db, context) => {
             let message = messages[checked++];
             session.matchSearchQuery(message, options.query, (err, match) => {
                 if (err) {
-                    console.error('IMAP Search', error)
+                    console.error('IMAP Search', err)
                     // ignore
                 }
                 if (match && highestModseq < message.modseq) {
