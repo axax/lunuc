@@ -132,7 +132,7 @@ const startListening = async (db, context) => {
 
     server.onAuth = async function (login, session, callback) {
 
-        this.logger.log('IMAP onAuth %s', login.username)
+        this.logger.debug('IMAP onAuth %s', login.username)
 
         const mailAccount = await getMailAccountByEmail(db, login.username)
 
