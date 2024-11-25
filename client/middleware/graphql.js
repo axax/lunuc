@@ -320,7 +320,6 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  qu
                             Hook.call('ApiClientQueryResponse', {response})
                             resolve(resolveData)
                             if (fetchPolicy !== 'no-cache') {
-                                console.log('xxxxx wirte', cacheKey)
                                 client.writeQuery({cacheKey, query, variables, data: response.data})
                             }
                         } else {
@@ -385,8 +384,10 @@ export const client = {
 
             const newVariables = Object.assign({}, variables)
             delete newVariables.query
+            const oldCacheKey = cacheKey
             cacheKey = getCacheKey({query, variables: newVariables})
-            console.log('new cacheKey', cacheKey)
+            CACHE_QUERIES[oldCacheKey] = {__alias:cacheKey}
+            console.log('new cacheKey with alias')
         }
 
         if (!cacheKey) {
@@ -407,7 +408,11 @@ export const client = {
         if (!cacheKey) {
             cacheKey = getCacheKey({query, variables})
         }
-        const res = CACHE_QUERIES[cacheKey]
+        let res = CACHE_QUERIES[cacheKey]
+        if(res && res.__alias){
+            console.log('read cache from alias')
+            res = CACHE_QUERIES[res.__alias]
+        }
         if (res && res.__optimistic) {
             // return optimistic response
             return res.__optimistic
@@ -635,11 +640,13 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
 
     const [response, setResponse] = useState(initialData)
 
+    const cacheDeletedAt = checkCache && response.data && !currentData ? Date.now(): response.cacheDeletedAt
+
     useEffect(() => {
 
         let controller
 
-        const newResponse = {cacheKey, fetchMore: initialData.fetchMore}
+        const newResponse = {cacheDeletedAt, cacheKey, fetchMore: initialData.fetchMore}
         newResponse.loading = response.networkStatus !== NetworkStatus.error
 
         client.addQueryWatcher({
@@ -662,7 +669,7 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
 
                 controller = promise._controller
                 promise.then(response => {
-                    setResponse({...response, cacheKey})
+                    setResponse({...response, cacheDeletedAt, cacheKey})
                 }).catch(error => {
                     if (!controller.signal.aborted || controller._timeout) {
                         setResponse(error)
@@ -676,7 +683,7 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
                 controller.abort()
             }
         }
-    }, [cacheKey])
+    }, [cacheKey,cacheDeletedAt])
 
     if (!initialLoading) {
         response.data = currentData
