@@ -320,6 +320,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  qu
                             Hook.call('ApiClientQueryResponse', {response})
                             resolve(resolveData)
                             if (fetchPolicy !== 'no-cache') {
+                                console.log('xxxxx wirte', cacheKey)
                                 client.writeQuery({cacheKey, query, variables, data: response.data})
                             }
                         } else {
@@ -385,6 +386,7 @@ export const client = {
             const newVariables = Object.assign({}, variables)
             delete newVariables.query
             cacheKey = getCacheKey({query, variables: newVariables})
+            console.log('new cacheKey', cacheKey)
         }
 
         if (!cacheKey) {
@@ -633,13 +635,11 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
 
     const [response, setResponse] = useState(initialData)
 
-    const cacheDeletedAt = checkCache && response.data && !currentData ? Date.now(): response.cacheDeletedAt
-
     useEffect(() => {
 
         let controller
 
-        const newResponse = {cacheDeletedAt, cacheKey, fetchMore: initialData.fetchMore}
+        const newResponse = {cacheKey, fetchMore: initialData.fetchMore}
         newResponse.loading = response.networkStatus !== NetworkStatus.error
 
         client.addQueryWatcher({
@@ -662,7 +662,7 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
 
                 controller = promise._controller
                 promise.then(response => {
-                    setResponse({...response, cacheDeletedAt, cacheKey})
+                    setResponse({...response, cacheKey})
                 }).catch(error => {
                     if (!controller.signal.aborted || controller._timeout) {
                         setResponse(error)
@@ -676,7 +676,7 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
                 controller.abort()
             }
         }
-    }, [cacheKey,cacheDeletedAt])
+    }, [cacheKey])
 
     if (!initialLoading) {
         response.data = currentData
