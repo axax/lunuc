@@ -122,8 +122,11 @@ const removeWsSubscription = (id, subId) => {
 }
 
 let setUpWsWasCalled = false
+const isLighthouse = ()=>{
+    return window.navigator && window.navigator.userAgent && window.navigator.userAgent.indexOf('Chrome-Lighthouse')>=0
+}
 const setUpWs = () => {
-    if (!setUpWsWasCalled && !_app_.ssr && !window._disableWsConnection) {
+    if (!setUpWsWasCalled && !_app_.ssr && !window._disableWsConnection && !isLighthouse()) {
         setUpWsWasCalled = true
         try {
             wsCurrentConnection = new WebSocket(getGraphQlWsUrl(), ['graphql-ws'])
