@@ -122,11 +122,8 @@ const removeWsSubscription = (id, subId) => {
 }
 
 let setUpWsWasCalled = false
-const isLighthouse = ()=>{
-    return window.navigator && window.navigator.userAgent && window.navigator.userAgent.indexOf('Chrome-Lighthouse')>=0
-}
 const setUpWs = () => {
-    if (!setUpWsWasCalled && !_app_.ssr && !window._disableWsConnection && !isLighthouse()) {
+    if (!setUpWsWasCalled && !_app_.ssr && !window._disableWsConnection) {
         setUpWsWasCalled = true
         try {
             wsCurrentConnection = new WebSocket(getGraphQlWsUrl(), ['graphql-ws'])
@@ -288,7 +285,6 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  qu
             finalizeRequest()
             removeLoader()
             if (r.ok) {
-                setUpWs()
                 // x-session is only set when USE_COOKIES is false
                 _app_.session = r.headers.get('x-session')
 
@@ -309,7 +305,10 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  qu
                         reject(rejectData)
                     } else {
                         const resolveData = {...response, loading: false, networkStatus: NetworkStatus.ready}
-
+                        if(response.data && response.data.cmsPage && response.data.cmsPage.subscriptions) {
+                            // only setup subscription if needed
+                            setUpWs()
+                        }
                         if (type === RequestType.query) {
 
                             resolveData.fetchMore = getFetchMore({
