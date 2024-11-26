@@ -2,7 +2,8 @@
  * Object with helper methods for jsonDom handling
  */
 import DomUtilAdmin from '../../../client/util/domAdmin.mjs'
-export {getComponentByKey} from './jsonDomUtilClient'
+import {getComponentByKey} from './jsonDomUtilClient'
+export {getComponentByKey}
 
 export const addComponent = ({key, json, index, component, newKeys}) => {
     const subJson = getComponentByKey(key, json)
