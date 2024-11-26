@@ -41,6 +41,7 @@ import theme from './ui/impl/material/theme'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import {showTooltip, hideTooltip} from '../util/tooltip'
 import {translateText} from '../util/translate.mjs'
+import markdown from '../../util/markdown'
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ './CodeEditor')}/>
 
@@ -1111,7 +1112,7 @@ class GenericForm extends React.Component {
                                     name: fieldKey,
                                     value: newValue
                                 }
-                            })}>{value}</TinyEditor>
+                            })}>{field.parseMarkdown?markdown(value):value}</TinyEditor>
                 {(hasError ?
                     <FormHelperText error>Bitte
                         ausfüllen</FormHelperText> : '')}
