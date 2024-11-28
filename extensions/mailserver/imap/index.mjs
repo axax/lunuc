@@ -363,7 +363,7 @@ const startListening = async (db, context) => {
             if(!message.flags){
                 message.flags = []
             }
-
+console.log(JSON.stringify(update), JSON.stringify(message))
             if (update.messages.indexOf(message.uid) < 0) {
                 return processMessages()
             }
@@ -412,9 +412,11 @@ const startListening = async (db, context) => {
 
             // notifiy only if something changed
             if (updated) {
+                message.flags = message.flags? message.flags.filter(f=>!!f): []
+console.log('xxxxx updated', message.flags)
                 MailserverResolver(db).Mutation.updateMailAccountMessage({
                     _id:message._id,
-                    flags: message.flags? message.flags.filter(f=>!!f): []
+                    flags: message.flags
                 }, {context}, {forceAdminContext:true}).then((data)=>{
                     message.modseq = data.modseq
 
