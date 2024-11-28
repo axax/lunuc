@@ -316,7 +316,6 @@ const startListening = async (db, context) => {
                     data
                 }, {context}, false)
 
-                console.log('xxxxssssssss inserted', JSON.stringify(insertResult))
                 this.notifier.addEntries(
                     folder,
                     {
@@ -325,6 +324,9 @@ const startListening = async (db, context) => {
                     },
                     () => {
                         this.notifier.fire(session.user.id, folder)
+
+                        // TODO is this really needed?
+                        //folder.uidList.push(insertResult.uid)
 
                         return callback(null, true, {
                             uidValidity: folder.uidValidity,

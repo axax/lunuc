@@ -73,7 +73,7 @@ class MemoryNotifier extends EventEmitter {
         }
 
         entries.forEach(entry => {
-            //entry.modseq = ++folder.modifyIndex
+            entry.modseq = ++folder.modifyIndex
             folder.journal.push(entry)
         });
 
