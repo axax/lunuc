@@ -108,7 +108,7 @@ class MemoryNotifier extends EventEmitter {
             return callback(null, 'NONEXISTENT');
         }
 
-        let minIndex = folder.journal.length;
+        let minIndex = folder.journal ? folder.journal.length : 0;
 
         for (let i = folder.journal.length - 1; i >= 0; i--) {
             if (folder.journal[i].modseq > modifyIndex) {

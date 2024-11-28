@@ -323,12 +323,7 @@ const startListening = async (db, context) => {
                         uid: insertResult.uid
                     },
                     () => {
-                        this.notifier.fire(session.user.id, folder)
-
-                        // TODO is this really needed?
-                        if(folder.uidList && folder.uidList.indexOf(insertResult.uid)<0) {
-                            folder.uidList.push(insertResult.uid)
-                        }
+                        this.notifier.fire(session.user.id, null)
 
                         return callback(null, true, {
                             uidValidity: folder.uidValidity,
@@ -359,7 +354,7 @@ const startListening = async (db, context) => {
 
         let processMessages = () => {
             if (i >= messages.length) {
-                this.notifier.fire(session.user.id, folder)
+                this.notifier.fire(session.user.id, null)
                 return callback(null, true, modified)
             }
 
@@ -487,7 +482,7 @@ const startListening = async (db, context) => {
         await deleteMessagesForFolderByUids(db, folder, messagesUidsToDelete)
 
         this.notifier.addEntries(folder, entries, () => {
-            this.notifier.fire(session.user.id, folder)
+            this.notifier.fire(session.user.id, null)
             return callback(null, true)
         })
     }
@@ -539,7 +534,7 @@ const startListening = async (db, context) => {
         }
 
         this.notifier.addEntries(destinationFolder, entries, () => {
-            this.notifier.fire(session.user.id, destinationFolder)
+            this.notifier.fire(session.user.id, null)
 
             return callback(null, true, {
                 uidValidity: destinationFolder.uidValidity,
@@ -587,7 +582,7 @@ const startListening = async (db, context) => {
             let processMessage = () => {
                 if (pos >= messages.length) {
                     // once messages are processed show relevant updates
-                    this.notifier.fire(session.user.id, folder)
+                    this.notifier.fire(session.user.id, null)
                     return callback(null, true)
                 }
                 let message = messages[pos++]
