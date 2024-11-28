@@ -304,7 +304,7 @@ const startListening = async (db, context) => {
         }
 
 
-        simpleParser(raw, {}, async (err, data) => {
+        await simpleParser(raw, {}, async (err, data) => {
             if (err) {
                 console.error("IMAP parser error:", err)
                 return callback(null, 'TRYCREATE')
@@ -316,6 +316,7 @@ const startListening = async (db, context) => {
                     data
                 }, {context}, false)
 
+                console.log('xxxxssssssss inserted', JSON.stringify(insertResult))
                 this.notifier.addEntries(
                     folder,
                     {
@@ -346,7 +347,7 @@ const startListening = async (db, context) => {
         }
 
         const messages = await getMessagesForFolderByUids(db,folder._id,update.messages)
-console.log('xxxxxxxxxx', JSON.stringify(messages), JSON.stringify(update))
+
         let condstoreEnabled = !!session.selected.condstoreEnabled
 
         let modified = []
