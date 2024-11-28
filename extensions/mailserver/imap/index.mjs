@@ -326,7 +326,9 @@ const startListening = async (db, context) => {
                         this.notifier.fire(session.user.id, folder)
 
                         // TODO is this really needed?
-                        //folder.uidList.push(insertResult.uid)
+                        if(folder.uidList && folder.uidList.indexOf(insertResult.uid)<0) {
+                            folder.uidList.push(insertResult.uid)
+                        }
 
                         return callback(null, true, {
                             uidValidity: folder.uidValidity,
