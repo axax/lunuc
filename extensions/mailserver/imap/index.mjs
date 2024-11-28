@@ -346,7 +346,7 @@ const startListening = async (db, context) => {
         }
 
         const messages = await getMessagesForFolderByUids(db,folder._id,update.messages)
-
+console.log('xxxxxxxxxx', JSON.stringify(messages), JSON.stringify(update))
         let condstoreEnabled = !!session.selected.condstoreEnabled
 
         let modified = []
@@ -363,7 +363,6 @@ const startListening = async (db, context) => {
             if(!message.flags){
                 message.flags = []
             }
-console.log(JSON.stringify(update), JSON.stringify(message))
             if (update.messages.indexOf(message.uid) < 0) {
                 return processMessages()
             }
@@ -413,7 +412,6 @@ console.log(JSON.stringify(update), JSON.stringify(message))
             // notifiy only if something changed
             if (updated) {
                 message.flags = message.flags? message.flags.filter(f=>!!f): []
-console.log('xxxxx updated', message.flags)
                 MailserverResolver(db).Mutation.updateMailAccountMessage({
                     _id:message._id,
                     flags: message.flags
