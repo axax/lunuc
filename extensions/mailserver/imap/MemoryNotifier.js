@@ -24,6 +24,8 @@ class MemoryNotifier extends EventEmitter {
         this._listeners = new EventEmitter();
         this._listeners.setMaxListeners(0);
 
+        this._sessionFolders = {}
+
         EventEmitter.call(this);
     }
 
@@ -46,17 +48,17 @@ class MemoryNotifier extends EventEmitter {
      * @param {Function} handler Function to run once there are new entries in the journal
      */
     removeListener(session, handler) {
+        //console.log('removeListener',this._sessionFolders, session.id)
+        Object.keys(this._sessionFolders).forEach(key=>{
+            const sessionFolder = this._sessionFolders[key]
+            if(sessionFolder.sessionId===session.id){
+                delete this._sessionFolders[key];
+            }
+        })
         this._listeners.removeListener(session.user.id.toString(), handler);
     }
 
-    /**
-     * Stores multiple journal entries to db
-     *
-     * @param {Object} folder
-     * @param {Array|Object} entries An array of entries to be journaled
-     * @param {Function} callback Runs once the entry is either stored or an error occurred
-     */
-    addEntries(folder, entries, callback) {
+    addEntries(session, folder, entries, callback) {
         if (!folder) {
             return callback(null, new Error('Selected mailbox does not exist'));
         }
@@ -67,14 +69,15 @@ class MemoryNotifier extends EventEmitter {
             return callback(null, false)
         }
 
-        // store entires in the folder object
-        if (!folder.journal) {
-            folder.journal = []
+        const folderId = folder._id.toString()
+        if(!this._sessionFolders[folderId]) {
+            this._sessionFolders[folderId] = {sessionId:session.id,journal: [], ...folder}
         }
 
+        // store entires in the folder object
         entries.forEach(entry => {
             entry.modseq = ++folder.modifyIndex
-            folder.journal.push(entry)
+            this._sessionFolders[folderId].journal.push(entry)
         });
 
         setImmediate(callback)
@@ -92,36 +95,26 @@ class MemoryNotifier extends EventEmitter {
         })
     }
 
-    /**
-     * Returns all entries from the journal that have higher than provided modification index
-     *
-     * @param {String} username
-     * @param {Object} folder
-     * @param {Number} modifyIndex Last known modification id
-     * @param {Function} callback Returns update entries as an array
-     */
-    getUpdates(folder, modifyIndex, callback) {
+
+    getUpdates(folderObjectId, modifyIndex, callback) {
         modifyIndex = Number(modifyIndex) || 0;
 
-
-        if (!folder) {
+        if (!folderObjectId) {
             return callback(null, 'NONEXISTENT');
         }
+        const folderId = folderObjectId.toString()
+        const sessionFolder = this._sessionFolders[folderId] || {journal:[]}
+        let minIndex = sessionFolder.journal.length
 
-        if(!folder.journal){
-            folder.journal = []
-        }
-        let minIndex = folder.journal.length
-
-        for (let i = folder.journal.length - 1; i >= 0; i--) {
-            if (folder.journal[i].modseq > modifyIndex) {
+        for (let i = sessionFolder.journal.length - 1; i >= 0; i--) {
+            if (sessionFolder.journal[i].modseq > modifyIndex) {
                 minIndex = i;
             } else {
                 break;
             }
         }
 
-        return callback(null, folder.journal.slice(minIndex));
+        return callback(null, sessionFolder.journal.slice(minIndex))
     }
 }
 

@@ -317,6 +317,7 @@ const startListening = async (db, context) => {
                 }, {context}, false)
 
                 this.notifier.addEntries(
+                    session,
                     folder,
                     {
                         command: 'EXISTS',
@@ -430,6 +431,7 @@ const startListening = async (db, context) => {
                     }
 
                     this.notifier.addEntries(
+                        session,
                         folder,
                         {
                             command: 'FETCH',
@@ -481,7 +483,7 @@ const startListening = async (db, context) => {
 
         await deleteMessagesForFolderByUids(db, folder, messagesUidsToDelete)
 
-        this.notifier.addEntries(folder, entries, () => {
+        this.notifier.addEntries(session,folder, entries, () => {
             this.notifier.fire(session.user.id, null)
             return callback(null, true)
         })
@@ -533,7 +535,7 @@ const startListening = async (db, context) => {
             })
         }
 
-        this.notifier.addEntries(destinationFolder, entries, () => {
+        this.notifier.addEntries(session,destinationFolder, entries, () => {
             this.notifier.fire(session.user.id, null)
 
             return callback(null, true, {
@@ -577,7 +579,7 @@ const startListening = async (db, context) => {
             })
         }
 
-        this.notifier.addEntries(folder, entries,() => {
+        this.notifier.addEntries(session,folder, entries,() => {
             let pos = 0;
             let processMessage = () => {
                 if (pos >= messages.length) {
