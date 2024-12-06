@@ -473,19 +473,20 @@ export default () => {
         }
         return [<Box sx={{ flexGrow: 1, bgcolor: 'background.paper', display: 'flex' }}>
                 <SimpleTabs
-                orientation="vertical"
-                value={tabValue}
-                onChange={(e, newValue) => {
-                    setTabValue(newValue)
-                }}>
+                    style={{minWidth:'10rem'}}
+                    orientation="vertical"
+                    value={tabValue}
+                    onChange={(e, newValue) => {
+                        setTabValue(newValue)
+                    }}>
                     <SimpleTab key="tab0" label="Einstellungen"/>
                     <SimpleTab key="tab1" label="Voransicht"/>
                     <SimpleTab key="tab2" label="Upload"/>
-
                 </SimpleTabs>
-                <SimpleTabPanel style={{flexGrow:1,marginTop:'-24px'}} key="tabPanel0" value={tabValue} index={0}>
+                <SimpleTabPanel style={{flexGrow:1,marginTop:'-24px',overflow:'hidden'}} key="tabPanel0" value={tabValue} index={0}>
                     <Paper elevation={1}>
-                        {children}</Paper>
+                        {children}
+                    </Paper>
                 </SimpleTabPanel>
                 <SimpleTabPanel style={{flexGrow:1}} key="tabPanel1" value={tabValue} index={1}>
                     {editor}

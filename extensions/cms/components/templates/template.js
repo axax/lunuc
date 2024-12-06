@@ -3,6 +3,7 @@ export const jsonPropertyTemplates = [
     {title: 'Click Event', template: '"onClick":{"action":"click"}'},
     {title: 'Change Event', template: '"onChange":{"action":"change"}'},
     {title: 'Inline Editor false', template: '"$inlineEditor":false'},
+    {title: 'Inline Editor Menu', template: '"menu": {"edit":false,"clone": false, "editTemplate": false,"add":false,"addAbove":false,"addBelow": false,"wrap":false,"remove": false,"clipboard": false}'},
     {title: 'Observer', template: '"$observe": {"threshold": 0, "waitVisible": true,"initialClass": "animation","visibleClass": "fade-in-up"}'},
 ]
 

@@ -157,6 +157,7 @@ const config = {
         rules: [
             {
                 test: /\.(js|mjs|cjs|jsx|tsx|ts)$/,
+                exclude: excludeFunction,
                 loader: 'babel-loader'
             },
             {
@@ -183,6 +184,10 @@ const config = {
             {
                 test: /^(?:(?!\.global).)*\.less$/,
                 use: ['style-loader', 'css-loader', 'less-loader']
+            },
+            {
+                test: /\.ttf$/,
+                type: 'asset/resource'
             }
         ]
     },

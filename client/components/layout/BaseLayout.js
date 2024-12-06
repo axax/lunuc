@@ -1,4 +1,4 @@
-import React from 'react'
+import React,{useRef} from 'react'
 import {
     Box,
     Badge,
@@ -86,6 +86,22 @@ const genMenuEntry = (item, path) => {
     }
 }
 
+function getSettingsFromKeys(userKeys) {
+    if (!userKeys.loading && userKeys.data) {
+        const userSettings = userKeys.data.BaseLayoutSettings || {}
+
+        let inheritedSettings = {}
+
+        Object.keys(userKeys.data).forEach(k => {
+            if (k !== 'BaseLayoutSettings') {
+                inheritedSettings = deepMergeOptional({concatArrays: true}, inheritedSettings, userKeys.data[k])
+            }
+        })
+        return deepMergeOptional({concatArrays: false}, inheritedSettings, userSettings)
+    }
+    return {}
+}
+
 const BaseLayout = props => {
     const {children} = props
 
@@ -103,7 +119,6 @@ const BaseLayout = props => {
 
     keys.push('BaseLayoutSettings')
 
-
     const userKeys = useKeyValues(keys, useKeySettings)
 
     const [openMenuEditor, setOpenMenuEditor] = React.useState(undefined)
@@ -112,36 +127,22 @@ const BaseLayout = props => {
         setOpenMenuEditor(true)
     }
 
-    let menuEditor
-    const handleCloseMenuEditor = (p) => {
-        if (p.key === 'save') {
-            if (menuEditor) {
+    const menuEditorRef = useRef()
 
-                if (menuEditor.state.stateError) {
+    const handleCloseMenuEditor = (action) => {
+        if (action.key === 'save') {
+            if (menuEditorRef.current) {
+                if (menuEditorRef.current.getStateError()) {
                     return
                 }
-
-                setKeyValue({key: 'BaseLayoutSettings', value: menuEditor.state.data, clearCache:true}).then(() => {
+                setKeyValue({key: 'BaseLayoutSettings', value: menuEditorRef.current.getValue(), clearCache:true}).then(() => {
                     location.href = location.href
                 })
             }
         }
         setOpenMenuEditor(false)
     }
-
-    let settings = {}
-    if(!userKeys.loading && userKeys.data ){
-        const userSettings = userKeys.data.BaseLayoutSettings || {}
-
-        let inheritedSettings = {}
-
-        Object.keys(userKeys.data).forEach(k=>{
-            if(k!=='BaseLayoutSettings') {
-                inheritedSettings = deepMergeOptional({concatArrays: true}, inheritedSettings, userKeys.data[k])
-            }
-        })
-        settings = deepMergeOptional({concatArrays: false}, inheritedSettings, userSettings)
-    }
+    let settings = getSettingsFromKeys(userKeys)
 
     const menuItems = [
         {
@@ -370,9 +371,7 @@ const BaseLayout = props => {
                 }]}
         >
 
-            <CodeEditor lineNumbers type="json" forceJson={true} onForwardRef={(e) => {
-                menuEditor = e
-            }}>
+            <CodeEditor lineNumbers type="json" forceJson={true} asyncRef={menuEditorRef}>
                 {settings}
             </CodeEditor>
         </SimpleDialog>}

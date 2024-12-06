@@ -1,5 +1,6 @@
 import {
-    CAPABILITY_MANAGE_CMS_PAGES
+    CAPABILITY_MANAGE_CMS_PAGES,
+    CAPABILITY_MANAGE_CMS_TEMPLATE
 } from '../constants/index.mjs'
 import {_t} from '../../../util/i18n.mjs'
 
@@ -2288,6 +2289,7 @@ const advancedElements = [
         },
         options: {
             $inlineEditor_dataResolver: {
+                role: CAPABILITY_MANAGE_CMS_TEMPLATE,
                 tab: 'Data',
                 label: 'Data Resolver',
                 uitype: 'json',
@@ -2316,11 +2318,13 @@ const advancedElements = [
                 }
             },
             c_$for_d: {
+                role: CAPABILITY_MANAGE_CMS_TEMPLATE,
                 tab: 'Data',
                 label: 'Data source',
                 value: 'data.__uid__.results'
             },
             c_$for_c_c: {
+                role: CAPABILITY_MANAGE_CMS_TEMPLATE,
                 tab: 'Template',
                 label: 'Template',
                 uitype: 'editor',
@@ -2409,6 +2413,7 @@ const advancedElements = [
                 }
             },
             c_$for_c_$c: {
+                role: CAPABILITY_MANAGE_CMS_TEMPLATE,
                 tab: 'Template',
                 label: 'Template (can be used alternatively)',
                 value: ''

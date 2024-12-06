@@ -82,7 +82,8 @@ http://localhost:49160/
 `sudo node -v`
 
 with nvm
-`nvm install 18.16.0`
+`curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash`
+`nvm install node`
 
 ##### Find location of nodejs
 `which node`
@@ -100,7 +101,7 @@ with nvm
 #### Run install script
 `sudo chmod +x /opt/lunuc/shell/install.sh`
 
-`sudo /opt/lunuc/shell/install.sh`
+`sudo sh /opt/lunuc/shell/install.sh`
 
 #### Edit config
 `sudo vi /etc/lunuc/buildconfig.json`
@@ -268,10 +269,12 @@ create lunuc-api.service file under /etc/systemd/system
 `sudo iptables -t nat -A OUTPUT -o lo -p tcp --dport 80 -j REDIRECT --to-port 8080`
 `sudo iptables -t nat -A OUTPUT -o lo -p tcp --dport 443 -j REDIRECT --to-port 8080`
 
+`sudo ufw allow from any to any port 8080`
+
 ##### Remove iptables entry
 `sudo iptables -t nat -D PREROUTING 1`
 ### Create cert with letsencrypt
-
+`apt install certbot`
 `sudo certbot certonly --manual`
 
 

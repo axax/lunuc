@@ -100,7 +100,10 @@ export const translations = {
         'TypePicker.editEntry':'Eintrag bearbeiten',
         'TypePicker.deleteSelection':'Alle ausgewähle Elemente löschen',
         'BackupContainer.includedCollections':'Inkludierte Daten',
-        'core.deselectAll':'Alle abwählen'
+        'core.deselectAll':'Alle abwählen',
+        'CodeEditor.editAsText':'Als Text bearbeiten',
+        'CodeEditor.editAsHtml':'Als HTML bearbeiten',
+        'CodeEditor.openPage': 'Seite öffnen'
     },
     en: {
         'FilesContainer.deleteFile':'Delete File',
@@ -201,6 +204,9 @@ export const translations = {
         'TypePicker.editEntry':'Edit entry',
         'TypePicker.deleteSelection':'Delete all selected items',
         'BackupContainer.includedCollections':'Included collections',
-        'core.deselectAll':'Deselect all'
+        'core.deselectAll':'Deselect all',
+        'CodeEditor.editAsText':'Edit as text',
+        'CodeEditor.editAsHtml':'Edit as HTML',
+        'CodeEditor.openPage': 'Open page'
     }
 }

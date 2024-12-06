@@ -558,7 +558,7 @@ function gensrcExtension(name, options) {
             ${type.subscription === false ? '//' : ''}pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', removedIds: _id}}, db, context)
             return GenericResolver.deleteEnities(db, context, '${type.name}', {_id})
         },\n`
-                resolverSubscription += `       subscribe${type.name}: withFilter(() => pubsub.asyncIterator('subscribe${type.name}'),
+                resolverSubscription += `       subscribe${type.name}: withFilter(() => pubsub.asyncIterableIterator('subscribe${type.name}'),
             async (payload, context) => {
                 if( payload ) {
                     

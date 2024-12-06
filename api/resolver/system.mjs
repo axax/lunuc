@@ -526,7 +526,7 @@ export const systemResolver = (db) => ({
         }
     },
     Subscription: {
-        subscribeRun: withFilter(() => pubsub.asyncIterator('subscribeRun'),
+        subscribeRun: withFilter(() => pubsub.asyncIterableIterator('subscribeRun'),
             (payload, context) => {
                 if (payload) {
                     return payload.userId === context.id

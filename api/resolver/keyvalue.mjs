@@ -262,7 +262,7 @@ export const keyvalueResolver = (db) => ({
         }
     },
     Subscription:{
-        subscribeKeyValueGlobal: withFilter(() => pubsub.asyncIterator('subscribeKeyValueGlobal'),
+        subscribeKeyValueGlobal: withFilter(() => pubsub.asyncIterableIterator('subscribeKeyValueGlobal'),
             async (payload, context) => {
                 if( payload &&
                     context?.variables?.keys &&

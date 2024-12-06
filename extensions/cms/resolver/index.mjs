@@ -445,17 +445,17 @@ export default db => ({
         }
     },
     Subscription: {
-        cmsPageData: withFilter(() => pubsub.asyncIterator('cmsPageData'),
+        cmsPageData: withFilter(() => pubsub.asyncIterableIterator('cmsPageData'),
             (payload, context) => {
                 return payload && payload.session === context.session //payload.userId === context.id
             }
         ),
-        cmsCustomData: withFilter(() => pubsub.asyncIterator('cmsCustomData'),
+        cmsCustomData: withFilter(() => pubsub.asyncIterableIterator('cmsCustomData'),
             (payload, context) => {
                 return payload && payload.session === context.session //payload.userId === context.id
             }
         ),
-        subscribeCmsPage: withFilter(() => pubsub.asyncIterator('subscribeCmsPage'),
+        subscribeCmsPage: withFilter(() => pubsub.asyncIterableIterator('subscribeCmsPage'),
             async (payload, context) => {
                 if( payload ) {
 

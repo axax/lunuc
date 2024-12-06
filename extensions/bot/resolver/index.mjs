@@ -238,7 +238,7 @@ export default db => ({
                         botConnector.sessions[session] = {}
                     }
                 }
-                return pubsub.asyncIterator('subscribeBotMessage')
+                return pubsub.asyncIterableIterator('subscribeBotMessage')
             },
             (payload, context) => {
 

@@ -139,7 +139,7 @@ export default db => ({
         }
     },
     Subscription:{
-        subscribePost: withFilter(() => pubsub.asyncIterator('subscribePost'),
+        subscribePost: withFilter(() => pubsub.asyncIterableIterator('subscribePost'),
             (payload, context) => {
                 if( payload ) {
                     //return payload.userId === context.id

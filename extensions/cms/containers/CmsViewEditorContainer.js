@@ -796,14 +796,14 @@ class CmsViewEditorContainer extends React.Component {
                         name: _t('CmsViewEditorContainer.globalTranslation'),
                         onClick: () =>{
                             const key ='GlobalTranslations-'+slug.split('/')[0]
-                            let editedData, editor
+                            let editedData, editorRef
                             const GlobalEditor = ()=>{
                                 const keyValues = useKeyValuesGlobal([key], {})
                                 if(!keyValues.loading){
                                     return <CodeEditor onChange={(e)=>{
                                         editedData = e
                                     }} onForwardRef={(e) => {
-                                        editor = e
+                                        editorRef = e
                                     }} type="json">{keyValues.data[key]}</CodeEditor>
                                 }
                                 return 'loading...'
@@ -826,7 +826,7 @@ class CmsViewEditorContainer extends React.Component {
                                                                                       }
                                                                                   })
                                                                               })
-                                                                              editor._editor.setValue(JSON.stringify({tr:trs},null,4))
+                                                                              editorRef.setValue(JSON.stringify({tr:trs},null,4))
                                                                           }
                                                                       }} label={_t('CmsViewEditorContainer.importCsv')}/></>,
                                     actions: [
@@ -854,20 +854,17 @@ class CmsViewEditorContainer extends React.Component {
                                     ],
                                     onClose: (e) => {
                                         if (e.key === 'translate') {
-                                            const json = JSON.parse(editor.state.data)
+                                            const json = JSON.parse(editorRef.getValue())
                                             if(json && json.tr){
-
                                                 transRec({source:json.tr[config.DEFAULT_LANGUAGE],
                                                     base: json.tr,
                                                     onChange:()=>{
-                                                        const scrollInfo = editor._editor.getScrollInfo()
-                                                        editor._editor.setValue(JSON.stringify(json,null,4))
-                                                        editor._editor.scrollTo(scrollInfo.left, scrollInfo.top)
+                                                        editorRef.setValue(JSON.stringify(json,null,4))
                                                     }})
                                             }
                                             return true
                                         }else if (e.key === 'export') {
-                                            saveTrsAsCsv(editor.state.data)
+                                            saveTrsAsCsv(editorRef.getData())
                                             return
                                         }else if(e.key==='save' && editedData) {
                                             setKeyValue({key,value:editedData,clearCache:true, global:true}).then(()=>{
@@ -1348,7 +1345,6 @@ class CmsViewEditorContainer extends React.Component {
         const settingKey = pageSetting ? 'EditorPageOptions' : 'EditorOptions'
         const stateSettings = this.state[settingKey]
         if(!stateSettings || !stateSettings[key] || Util.shallowCompare(stateSettings[key], value)) {
-
             this.setState({
                 [settingKey]: Object.assign({}, stateSettings, {
                     [key]: value,
