@@ -50,7 +50,7 @@ const resolverFunction = (address) => {
             return networks[network]
         }
     }*/
-    return '144.91.119.30' // make it configurable
+    return '157.173.127.37'//'144.91.119.30' // make it configurable
 }
 
 
