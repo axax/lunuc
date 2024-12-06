@@ -157,7 +157,7 @@ const config = {
         rules: [
             {
                 test: /\.(js|mjs|cjs|jsx|tsx|ts)$/,
-                exclude: excludeFunction,
+                /*exclude: excludeFunction,*/
                 loader: 'babel-loader'
             },
             {
