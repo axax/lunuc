@@ -37,16 +37,13 @@ export const getFileFromOtherServer = async (urlPath, filename, baseResponse, re
                 const url = server + urlPath
                 console.log('load from ' + url + ' - ' + remoteAdr)
                 const response = await downloadUrl(url)
-                if(!response.error) {
+                if(!response.error && response.statusCode == 200) {
                     const passStream = new PassThrough()
                     response.pipe(passStream)
                     passStream.pipe(baseResponse)
-
-                    if(response.statusCode == 200) {
-                        const file = fs.createWriteStream(filename)
-                        passStream.pipe(file)
-                        return true
-                    }
+                    const file = fs.createWriteStream(filename)
+                    passStream.pipe(file)
+                    return true
                 }
             }
         }
