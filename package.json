@@ -99,6 +99,7 @@
     "langchain": "^0.3.6",
     "mailparser": "^3.7.2",
     "mongodb": "^6.11.0",
+    "network": "^0.7.0",
     "node-cron": "^3.0.3",
     "nodemailer": "^6.9.16",
     "nodemailer-direct-transport": "^3.3.2",

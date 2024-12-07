@@ -1,8 +1,6 @@
 import Hook from '../../util/hook.cjs'
 import FtpSrv from 'ftp-srv'
 import path from 'path'
-import {networkInterfaces} from 'os'
-import {Netmask} from 'netmask'
 import config from 'gen/config'
 import Util from '../../api/util/index.mjs'
 import schemaGen from './gensrc/schema.mjs'
@@ -14,8 +12,10 @@ import {
     addInvalidLoginAttempt,
     clearInvalidLoginAttempt,
     hasTooManyInvalidLoginAttempts
-} from "../../api/util/loginBlocker.mjs";
+} from '../../api/util/loginBlocker.mjs'
 import {_t} from '../../util/i18nServer.mjs'
+import {getGatewayIp} from '../../util/gatewayIp.mjs'
+
 //import {getHostRules, hostListFromString} from '../../util/hostrules.mjs'
 
 
@@ -24,44 +24,15 @@ import {_t} from '../../util/i18nServer.mjs'
 // sudo ufw allow 65000:65535/tcp
 
 const ROOT_DIR = path.resolve()
-const nets = networkInterfaces()
-const getNetworks = () => {
-    let networks = {}
-    for (const name of Object.keys(nets)) {
-        for (const net of nets[name]) {
-            if (net.family === 'IPv4' && !net.internal) {
-                networks[net.address + "/24"] = net.address
-            }
-        }
-    }
-    return networks
-}
-
-const resolverFunction = (address) => {
-    // const networks = {
-    //     '$GATEWAY_IP/32': `${public_ip}`,
-    //     '10.0.0.0/8'    : `${lan_ip}`
-    // }
-
-   /* const networks = getNetworks()
-    for (const network in networks) {
-        if (new Netmask(network).contains(address)) {
-            console.log('network',network)
-            return networks[network]
-        }
-    }*/
-    return '157.173.127.37'//'144.91.119.30' // make it configurable
-}
 
 
-const startFtpServer = (db)=> {
+const startFtpServer = async (db)=> {
 
     const hostname = '0.0.0.0'
     const port = 21
-
     const ftpServer = new FtpSrv({
         url: `ftp://${hostname}:${port}`,
-        pasv_url: resolverFunction,
+        pasv_url: await getGatewayIp(),
         pasv_min: 65000,
         pasv_max: 65535,
         anonymous: false,

@@ -9,6 +9,7 @@ import {clientAddress} from "../../util/host.mjs";
 import http from "http";
 import {PassThrough} from 'stream'
 import {transcodeAndStreamVideo, transcodeVideoOptions} from "./transcodeVideo.mjs";
+import {getGatewayIp} from '../../util/gatewayIp.mjs'
 
 const LUNUC_SERVER_NODES = process.env.LUNUC_SERVER_NODES || ''
 
@@ -26,12 +27,13 @@ const downloadUrl = ( url ) => {
 
 export const getFileFromOtherServer = async (urlPath, filename, baseResponse, req) => {
 
-    const remoteAdr = clientAddress(req)
+    const remoteAdr = clientAddress(req),
+        gatewayIp = await getGatewayIp()
 
     if(LUNUC_SERVER_NODES){
         const servers = LUNUC_SERVER_NODES.split(',')
         for(const server of servers){
-            if(server.indexOf(remoteAdr)<0) {
+            if(server.indexOf(remoteAdr)<0 && server.indexOf(gatewayIp)<0) {
                 const url = server + urlPath
                 console.log('load from ' + url + ' - ' + remoteAdr)
                 const response = await downloadUrl(url)
