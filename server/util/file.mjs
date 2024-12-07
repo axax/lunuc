@@ -45,8 +45,8 @@ export const getFileFromOtherServer = async (urlPath, filename, baseResponse, re
                     if(response.statusCode == 200) {
                         const file = fs.createWriteStream(filename)
                         passStream.pipe(file)
+                        return true
                     }
-                    return true
                 }
             }
         }
