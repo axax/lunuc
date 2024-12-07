@@ -384,7 +384,7 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
 
 
     if (!fs.existsSync(filename)) {
-        if(getFileFromOtherServer(modUri,baseFilename,res, req)){
+        if(await getFileFromOtherServer(modUri,baseFilename,res, req)){
             return
         }
     }

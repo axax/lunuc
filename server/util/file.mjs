@@ -12,30 +12,43 @@ import {transcodeAndStreamVideo, transcodeVideoOptions} from "./transcodeVideo.m
 
 const LUNUC_SERVER_NODES = process.env.LUNUC_SERVER_NODES || ''
 
-export const getFileFromOtherServer = (urlPath, filename, baseResponse, req) => {
+const downloadUrl = ( url ) => {
+    return new Promise ( ( resolve ) => {
+        const request = http.get( url )
+        request.on( 'response', ( response ) => {
+            resolve( response )
+        })
+        request.on( 'error', ( error ) => {
+            resolve({error} )
+        })
+    })
+}
+
+export const getFileFromOtherServer = async (urlPath, filename, baseResponse, req) => {
 
     const remoteAdr = clientAddress(req)
 
-    if(LUNUC_SERVER_NODES && LUNUC_SERVER_NODES.indexOf(remoteAdr)<0){
-        const url = LUNUC_SERVER_NODES+urlPath
-        console.log('load from ' + url + ' - '+remoteAdr)
-        http.get(url, function(response) {
+    if(LUNUC_SERVER_NODES){
+        const servers = LUNUC_SERVER_NODES.split(',')
+        for(const server of servers){
+            if(server.indexOf(remoteAdr)<0) {
+                const url = server + urlPath
+                console.log('load from ' + url + ' - ' + remoteAdr)
+                const response = await downloadUrl(url)
+                if(!response.error) {
+                    const passStream = new PassThrough()
+                    response.pipe(passStream)
+                    passStream.pipe(baseResponse)
 
-            const passStream = new PassThrough()
-            response.pipe(passStream)
-            passStream.pipe(baseResponse)
-
-            if(response.statusCode == 200) {
-                const file = fs.createWriteStream(filename)
-                passStream.pipe(file)
+                    if(response.statusCode == 200) {
+                        const file = fs.createWriteStream(filename)
+                        passStream.pipe(file)
+                    }
+                    return true
+                }
             }
-
-        }).on('error', function(err) { // Handle errors
-            sendError(baseResponse, 404)
-        })
-        return true
+        }
     }
-
     return false
 }
 
