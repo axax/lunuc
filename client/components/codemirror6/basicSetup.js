@@ -29,18 +29,24 @@ import { html } from '@codemirror/lang-html'
 import {emptyLineGutter} from './emptyLineGutter'
 import {keywordDecorator} from './keywordDecorator'
 import {jsSnippets} from './snippets'
+import {formatCode} from './utils'
 
 const customKeymap = keymap.of([
     { key: "Ctrl-s", run: (view) => {
             // Your save function here
             console.log("Saving...")
             return true
-        }},
+    }},
     { key: "Ctrl-f", run: (view) => {
             // Your find function here
             console.log("Finding...")
             return true
-        }}
+    }},
+    { key: "Ctrl-l", run: (view) => {
+        console.log(view)
+        formatCode(view)
+            return true
+    }},
 ])
 
 const typeSpecific = type=>{

@@ -64,7 +64,7 @@ function CodeEditor(props,ref){
     const allActions = [
         {
             icon: <ViewListIcon/>,
-            name: 'Format selection (Ctrl-L)',
+            name: _t('CodeEditor.reformatCode')+' (Ctrl-L)',
             onClick: ()=>{formatCode(editorViewRef.current)}
         },
         {
@@ -164,7 +164,7 @@ function CodeEditor(props,ref){
             bottom: '8px',
             right: '8px', ...fabButtonStyle
         }} items={allActions}/>}
-        {contextMenu && <SimpleMenu anchorReference={"anchorPosition"} anchorPosition={contextMenu} noButton={true} open={contextMenu}
+        {contextMenu && contextMenu.items.length > 0 && <SimpleMenu anchorReference={"anchorPosition"} anchorPosition={contextMenu} noButton={true} open={contextMenu}
             onClose={() => {setContextMenu(false)}}
             mini items={contextMenu.items}/>}
         {hasError && <div style={{color: 'red'}}>{error ? error + ' ' : ''}{stateError ? stateError.message : ''}</div>}

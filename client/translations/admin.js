@@ -103,7 +103,8 @@ export const translations = {
         'core.deselectAll':'Alle abwählen',
         'CodeEditor.editAsText':'Als Text bearbeiten',
         'CodeEditor.editAsHtml':'Als HTML bearbeiten',
-        'CodeEditor.openPage': 'Seite öffnen'
+        'CodeEditor.openPage': 'Seite öffnen',
+        'CodeEditor.reformatCode': 'Automatisch formatieren'
     },
     en: {
         'FilesContainer.deleteFile':'Delete File',
@@ -207,6 +208,7 @@ export const translations = {
         'core.deselectAll':'Deselect all',
         'CodeEditor.editAsText':'Edit as text',
         'CodeEditor.editAsHtml':'Edit as HTML',
-        'CodeEditor.openPage': 'Open page'
+        'CodeEditor.openPage': 'Open page',
+        'CodeEditor.reformatCode': 'Reformat'
     }
 }

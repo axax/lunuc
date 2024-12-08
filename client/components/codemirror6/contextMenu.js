@@ -1,5 +1,5 @@
 import React from 'react'
-import {EditIcon, CodeIcon, AddIcon} from 'ui/admin'
+import {EditIcon, CodeIcon, AddIcon, AutoFixHighIcon} from 'ui/admin'
 import {_t} from '../../../util/i18n.mjs'
 import {formatCode} from "./utils";
 
@@ -18,6 +18,7 @@ export function generateContextMenu({clickEvent, editorView, propertyTemplates, 
             tempJson = JSON.parse(`{${lineData.endsWithComma ? lineData.text.substring(0, lineData.text.length - 1) : lineData.text}}`)
         } catch (e) {
         }
+        console.log(tempJson)
         if (tempJson) {
             contextMenuItems = [
                 {
@@ -75,7 +76,7 @@ export function generateContextMenu({clickEvent, editorView, propertyTemplates, 
             contextMenuItems = [
                 {
                     icon: <AddIcon/>,
-                    name: _t('core.add'),
+                    name: _t('CodeEditor.editAsText'),
                     items: templates.map(f => ({
                         name: f.title,
                         onClick: () => {
@@ -92,6 +93,14 @@ export function generateContextMenu({clickEvent, editorView, propertyTemplates, 
                 }
             ]
         }
+
+       contextMenuItems.push({
+           icon: <AutoFixHighIcon/>,
+           name: _t('CodeEditor.reformatCode'),
+           onClick: () => {
+               formatCode(editorView)
+           }
+       })
     }
     return {left: clickEvent.clientX, top: clickEvent.clientY, items:contextMenuItems}
 }

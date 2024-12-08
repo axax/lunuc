@@ -27,32 +27,43 @@ const processCronJobQueue = async (job) => {
     }
 }
 
-const registerCronJobs = async (db) => {
+function createCronjobRunner(cronJob, db) {
+    return {
+        cronjobId: cronJob._id,
+        script: cronJob.script,
+        noEntry: cronJob.noEntry,
+        workerThread: cronJob.workerThread,
+        context: {
+            lang: 'en',
+            id: cronJob.createdBy ? cronJob.createdBy.toString() : '',
+            username: 'unknown'
+        },
+        db
+    }
+}
+
+const registerCronJobs = async (db, startup) => {
     const cronJobs = (await db.collection('CronJob').find({active: true}).toArray())
     cronJobs.forEach(cronJob => {
         if (cronJob.expression && (!cronJob.execfilter || Util.execFilter(cronJob.execfilter))) {
+            if(startup && cronJob.expression==='STARTUP'){
+                console.log(`run cronjob ${cronJob.name} on startup`)
 
-            console.log(`register cronjob ${cronJob.name}`)
-            const task = cron.schedule(cronJob.expression, () => {
+                cronjobUtil.runCronJob(createCronjobRunner(cronJob, db))
+            }else {
+                console.log(`register cronjob ${cronJob.name}`)
+                const task = cron.schedule(cronJob.expression, () => {
 
-                console.log('_________________________________________')
-                console.log('Run CronJob: ' +cronJob.name)
-                console.log('_________________________________________')
+                    console.log('_________________________________________')
+                    console.log('Run CronJob: ' + cronJob.name)
+                    console.log('_________________________________________')
 
-                const context = {lang: 'en', id: cronJob.createdBy ? cronJob.createdBy.toString() : '', username: 'unknown'}
+                    processCronJobQueue(createCronjobRunner(cronJob, db))
 
-                processCronJobQueue({
-                    cronjobId: cronJob._id,
-                    script: cronJob.script,
-                    noEntry: cronJob.noEntry,
-                    workerThread: cronJob.workerThread,
-                    context,
-                    db
                 })
 
-            })
-
-            registeredCronJobs.push(task)
+                registeredCronJobs.push(task)
+            }
         }
     })
 }
@@ -83,7 +94,7 @@ Hook.on('schema', ({schemas}) => {
 
 // Hook when db is ready
 Hook.on('appready', ({db}) => {
-    registerCronJobs(db)
+    registerCronJobs(db, true)
 })
 
 // Hook when the type CronJob has changed
