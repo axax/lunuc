@@ -38,7 +38,7 @@ export function seperateFiles(value){
 
 export function putFilesTogether(files, finalFileIndex, codeAsString) {
     let fullCodeAsString
-    if (files) {
+    if (files && files.length > 0) {
         fullCodeAsString = ''
         files.forEach((file, i) => {
             fullCodeAsString += '//!#' + file.filename + '\n'
