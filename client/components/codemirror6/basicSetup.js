@@ -42,7 +42,7 @@ const customKeymap = keymap.of([
             console.log("Finding...")
             return true
     }},
-    { key: "Ctrl-l", run: (view) => {
+    { key: "Alt-Cmd-l", run: (view) => {
         console.log(view)
         formatCode(view)
             return true

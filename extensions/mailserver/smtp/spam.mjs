@@ -60,9 +60,11 @@ export const detectSpam = async (db, context, {text, sender, threshold}) => {
 
     let totalScore = 0
 
-    for (const [keyword, score] of Object.entries(spamFilter.keywords)) {
-        if (lowerCaseText.includes(keyword)) {
-            totalScore += score
+    if(spamFilter.keywords) {
+        for (const [keyword, score] of Object.entries(spamFilter.keywords)) {
+            if (lowerCaseText.includes(keyword)) {
+                totalScore += score
+            }
         }
     }
     return totalScore >= threshold

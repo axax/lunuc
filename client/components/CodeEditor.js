@@ -64,7 +64,7 @@ function CodeEditor(props,ref){
     const allActions = [
         {
             icon: <ViewListIcon/>,
-            name: _t('CodeEditor.reformatCode')+' (Ctrl-L)',
+            name: _t('CodeEditor.reformatCode')+' (Alt-Cmd-L)',
             onClick: ()=>{formatCode(editorViewRef.current)}
         },
         {

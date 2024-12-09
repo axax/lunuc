@@ -96,7 +96,7 @@ export function generateContextMenu({clickEvent, editorView, propertyTemplates, 
 
        contextMenuItems.push({
            icon: <AutoFixHighIcon/>,
-           name: _t('CodeEditor.reformatCode'),
+           name: _t('CodeEditor.reformatCode')+' (Alt-Cmd-L)',
            onClick: () => {
                formatCode(editorView)
            }

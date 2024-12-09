@@ -46,10 +46,11 @@ const registerCronJobs = async (db, startup) => {
     const cronJobs = (await db.collection('CronJob').find({active: true}).toArray())
     cronJobs.forEach(cronJob => {
         if (cronJob.expression && (!cronJob.execfilter || Util.execFilter(cronJob.execfilter))) {
-            if(startup && cronJob.expression==='STARTUP'){
-                console.log(`run cronjob ${cronJob.name} on startup`)
-
-                cronjobUtil.runCronJob(createCronjobRunner(cronJob, db))
+            if(cronJob.expression==='STARTUP'){
+                if(startup) {
+                    console.log(`run cronjob ${cronJob.name} on startup`)
+                    cronjobUtil.runCronJob(createCronjobRunner(cronJob, db))
+                }
             }else {
                 console.log(`register cronjob ${cronJob.name}`)
                 const task = cron.schedule(cronJob.expression, () => {
