@@ -115,9 +115,8 @@ export default () => {
                         actions: [{key: 'cancel', label: _t('core.cancel')},{key: 'yes', label: _t('core.yes')}],
                         onClose: (action) => {
                             if(action.key==='yes'){
-                                createEditForm.state.fields.active = true
-                                createEditForm.state.fields.state = 'running'
-
+                                createEditForm.handleInputChange({target:{name:'active',type:'checkbox',checked:true}})
+                                createEditForm.handleInputChange({target:{name:'state',value:'running'}})
                                 typeEdit.handleSaveData({key:'save_close'})
 
                             }
