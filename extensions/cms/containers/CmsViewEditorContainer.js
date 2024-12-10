@@ -177,6 +177,7 @@ class CmsViewEditorContainer extends React.Component {
             author,
             description,
             template,
+            templateChangeCount:0,
             resources,
             script,
             style,
@@ -542,11 +543,12 @@ class CmsViewEditorContainer extends React.Component {
                     fabButtonStyle={{bottom: '3rem', right: '1rem'}}
                     component={cmsTemplateEditData}
                     tab={EditorPageOptions.templateTab}
+                    identifier={'templatePart-'+cmsTemplateEditData.key}
                     onTabChange={this.handleSettingChange.bind(this, 'templateTab', true)}
                     onChange={this.handleTemplateChange.bind(this)}/>
                 <Button key="editParent" size="small" variant="contained" color="primary" onClick={e => {
                     this.editTemplate(cmsTemplateEditData.key.substring(0, cmsTemplateEditData.key.lastIndexOf('.')), cmsTemplateEditData.json, cmsTemplateEditData.scope)
-                }}>Edit parent component</Button>
+                }}>{_t('CmsViewEditorContainer.editParentComponent')}</Button>
             </SimpleDialog>,
             <DataEditDialog key="dataEditDialog"/>]
 
@@ -666,11 +668,14 @@ class CmsViewEditorContainer extends React.Component {
                             onScroll={this.handleSettingChange.bind(this, 'templateScroll', true)}
                             scrollPosition={EditorPageOptions.templateScroll}
                             tab={EditorPageOptions.templateTab}
+                            identifier={`template-${cmsPage._id}-${this.state.templateChangeCount}`}
                             onTabChange={(tab) => {
                                 this.saveCmsPage()
                                 this.handleSettingChange('templateTab', true, tab)
                             }}
-                            onChange={this.handleTemplateChange.bind(this)}>{template}</TemplateEditor>
+                            onChange={(str)=>{
+                                this.handleTemplateChange(str,false,false,true)
+                            }}>{template}</TemplateEditor>
                     </Expandable>
 
                     <Expandable title="Script"
@@ -1252,7 +1257,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
 
-    handleTemplateChange = (str, instantSave, skipHistory) => {
+    handleTemplateChange = (str, instantSave, skipHistory, skipChangeCount) => {
         if (str !== this.state.template) {
 
             if (str.constructor !== String) {
@@ -1265,7 +1270,9 @@ class CmsViewEditorContainer extends React.Component {
                     this.templateChangeHistory.length = 10
                 }
             }
-
+            if(!skipChangeCount) {
+                this._keyValueMapState.templateChangeCount = this.state.templateChangeCount + 1
+            }
             this.setCmsPageValue({
                 key: 'template',
                 timeoutSetState:instantSave?0:300,

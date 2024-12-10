@@ -119,8 +119,8 @@ class TemplateEditor extends React.Component {
     }
 
     render() {
-        const {component, fabButtonStyle, onScroll, scrollPosition} = this.props
-        const {tab, data, type, error} = this.state
+        const {component, fabButtonStyle, onScroll, scrollPosition, identifier} = this.props
+        const {data, type, error} = this.state
         const currentTab = (!component && this.state.tab === 2 ? 0 : this.state.tab) || 0
 
         return <>
@@ -144,6 +144,7 @@ class TemplateEditor extends React.Component {
                             fabButtonStyle={fabButtonStyle}
                             onChange={this.handleChange.bind(this)}
                             error={error}
+                            identifier={identifier}
                             templates={jsonTemplates}
                             propertyTemplates={jsonPropertyTemplates}
                             onError={(e, data)=>{
@@ -151,10 +152,8 @@ class TemplateEditor extends React.Component {
                                     // content changed to html
                                     this.handleChange(data)
                                 }
-
                             }}
                             showFab
-                            controlled
                             lineNumbers
                             type={type}>{data}</CodeEditor>
 

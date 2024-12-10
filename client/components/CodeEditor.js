@@ -59,7 +59,10 @@ function CodeEditor(props,ref){
     const hasError = (error || stateError)
     let value = isDataJson ? JSON.stringify(children, null, 2) : children
 
-    console.log(`Render CodeEditor with height=${height || ''}`, scrollPositions, props)
+    console.log(`Render CodeEditor with height=${height || ''} and identifier=${identifier}`)
+    if(!identifier){
+        console.warn('CodeEditor identifier is missing')
+    }
 
     const allActions = [
         {
@@ -201,5 +204,5 @@ function CodeEditor(props,ref){
 }
 
 export default memo(forwardRef(CodeEditor), (prev, next)=>{
-    return true
+    return prev.identifier === next.identifier
 })
