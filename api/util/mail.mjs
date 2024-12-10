@@ -3,8 +3,6 @@ import Hook from '../../util/hook.cjs'
 import nodemailer from 'nodemailer'
 import {replacePlaceholders} from '../../util/placeholders.mjs'
 import nodemailerDirectTransport from 'nodemailer-direct-transport'
-import {replaceRelativeUrls} from './toAbsoluteUrls.mjs'
-import {getHostFromHeaders} from "../../util/host.mjs";
 
 
 
@@ -71,12 +69,6 @@ ${finalHtml}
         finalHtml = replacePlaceholders(body.html, body)
     } else if (body) {
         finalHtml = body
-    }
-
-    //replace relative urls with absolute urls
-    if(req?.headers){
-        const host = getHostFromHeaders(req.headers)
-        finalHtml = replaceRelativeUrls(finalHtml, (req.isHttps ? 'https://' : 'http://') + (host === 'localhost' ? host + ':8080' : host))
     }
 
     let fromFinal = from || mailSettings.from

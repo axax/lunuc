@@ -8,6 +8,7 @@ import Hook from '../../../util/hook.cjs'
 import {CAPABILITY_SEND_NEWSLETTER} from '../constants/index.mjs'
 import path from 'path'
 import genResolver from '../gensrc/resolver.mjs'
+import {replaceRelativeUrls} from '../../../api/util/toAbsoluteUrls.mjs'
 
 export default db => ({
     Query: {
@@ -217,6 +218,14 @@ export default db => ({
                             finalHtml = finalHtml[config.DEFAULT_LANGUAGE]
                         }
                     }
+
+                    //replace relative urls with absolute urls
+                    if(finalHtml && finalHtml.constructor === String && req?.headers){
+                        const host = getHostFromHeaders(req.headers)
+                        finalHtml = replaceRelativeUrls(finalHtml, (req.isHttps ? 'https://' : 'http://') + (host === 'localhost' ? host + ':8080' : host))
+                    }
+
+
                     const body = Object.assign({html: finalHtml},sub)
 
                     if(mailingData && mailingData.contextProps){
