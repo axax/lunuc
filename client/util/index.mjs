@@ -36,6 +36,10 @@ const Util = {
             str = JSON.stringify(str)
         if (options) {
 
+            if(options.literals){
+                str = str.replace(/\$\{[^}]+\}/g, '')
+            }
+
             if (options.regex) {
                 str = Util.escapeRegex(str)
             }
