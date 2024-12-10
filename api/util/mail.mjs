@@ -3,6 +3,10 @@ import Hook from '../../util/hook.cjs'
 import nodemailer from 'nodemailer'
 import {replacePlaceholders} from '../../util/placeholders.mjs'
 import nodemailerDirectTransport from 'nodemailer-direct-transport'
+import {replaceRelativeUrls} from './toAbsoluteUrls.mjs'
+
+
+
 
 
 /*
@@ -56,8 +60,7 @@ export const sendMail = async (db, context, {settings, recipient, from, fromName
 <body>
 ${finalHtml}
   </body>
-</html>
-    
+</html>    
 `
 
 
@@ -67,6 +70,11 @@ ${finalHtml}
         finalHtml = replacePlaceholders(body.html, body)
     } else if (body) {
         finalHtml = body
+    }
+
+    //replace relative urls with absolute urls
+    if(req?.headers?.host){
+        finalHtml = replaceRelativeUrls(finalHtml, `https://${req.headers.host}`)
     }
 
     let fromFinal = from || mailSettings.from
