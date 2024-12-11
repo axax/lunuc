@@ -112,7 +112,7 @@ function CodeEditor(props,ref){
                                 }}
                                 active={i === finalFileIndex}>{file.filename}</StyledFile>)})}</div>}
         <CodeMirrorWrapper mergeView={mergeView} mergeValue={mergeValue}
-            identifier={`${identifier}-${finalFileIndex}`}
+            identifier={`${identifier}${showFileSplit?'-'+finalFileIndex:''}`}
             onChange={(codeAsString)=>{
                 let fullCodeAsString = putFilesTogether(files, finalFileIndex, codeAsString)
 

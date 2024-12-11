@@ -1,4 +1,4 @@
-import React, {useContext} from 'react'
+import React from 'react'
 import Hook from 'util/hook.cjs'
 import config from 'gen/config-client'
 const {ADMIN_BASE_URL, PRETTYURL_SEPERATOR} = config

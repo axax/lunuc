@@ -111,12 +111,12 @@ class BackupContainer extends React.Component {
 
 
     download(content, filename, contentType) {
-        if (!contentType) contentType = 'application/octet-stream';
-        var a = document.createElement('a');
-        var blob = new Blob([content], {'type': contentType});
-        a.href = window.URL.createObjectURL(blob);
-        a.download = filename;
-        a.click();
+        if (!contentType) contentType = 'application/octet-stream'
+        const a = document.createElement('a')
+        const blob = new Blob([content], {'type': contentType})
+        a.href = window.URL.createObjectURL(blob)
+        a.download = filename
+        a.click()
     }
 
     authorizedRequest(url, name) {

@@ -1,3 +1,4 @@
+import React from 'react'
 import Hook from './hook.cjs'
 import {
     CAPABILITY_MANAGE_OTHER_USERS,
@@ -12,7 +13,7 @@ import extensionsPrivate from '../gensrc/extensions-private.mjs'
 import extensions from '../gensrc/extensions.mjs'
 import {propertyByPath} from '../client/util/json.mjs'
 import Util from '../client/util/index.mjs'
-import {client} from '../client/middleware/graphql.js'
+import {client, Query} from '../client/middleware/graphql.js'
 
 console.log(`replace / merge extension definition with extended version ${new Date() - _app_.start}ms`)
 Object.keys(extensionsPrivate).forEach(key => {
@@ -556,6 +557,24 @@ Hook.on('Types', ({types}) => {
 Hook.on('TypeCreateEdit', function ({type, props, dataToEdit}) {
     if (type === 'User' && dataToEdit && dataToEdit._id) {
         props.actions.unshift({key: 'setNewPassword', label: _t('user.send.new.password')})
+    } else if(type==='KeyValueGlobal' && dataToEdit && dataToEdit.value){
+        // override default
+        if(dataToEdit.value.startsWith('@FILE:')){
+            const fileName = dataToEdit.value.substring(6)
+            props.children = [props.children, <>
+                <hr/>
+                <Query query="query getTokenLink($filePath:String!){getTokenLink(filePath:$filePath){token}}"
+                       fetchPolicy="no-cache"
+                       variables={{filePath:`%BACKUP_DIR%/keyvalues/${fileName}`}}>
+                    {({loading, error, data}) => {
+                        if (loading) return 'Loading...'
+                        if (error) return `Error! ${error.message}`
+
+                        return  <a href={`${location.origin}/tokenlink/${data.getTokenLink.token}/-/${fileName}`}>Download {fileName}</a>
+                    }}
+                </Query>
+            </>]
+        }
     }
 })
 Hook.on('TypeCreateEditAction', function ({type, action, dataToEdit, meta}) {
