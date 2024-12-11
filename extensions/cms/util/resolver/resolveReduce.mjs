@@ -1,4 +1,5 @@
 import {assignIfObjectOrArray, matchExpr, propertyByPath, setPropertyByPath} from '../../../../client/util/json.mjs'
+import Cache from '../../../../util/cache.mjs'
 
 
 function createFacetSliderMinMax(value, facetData) {
@@ -95,6 +96,142 @@ function setFacetToObject(path, rootData, loopFacet) {
     })
 }
 
+function doSorting(re, currentData) {
+    const value = propertyByPath(re.path, currentData, '.', re.assign)
+
+    const sort = re.sort[0]
+    if (sort.desc) {
+        if (sort.localCompare) {
+            if (sort.path) {
+                value.sort((a, b) => (propertyByPath(sort.path, b) || '').localeCompare(propertyByPath(sort.path, a)))
+            } else {
+                value.sort((a, b) => (b[sort.key] || '').localeCompare(a[sort.key]))
+            }
+        } else {
+            value.sort((a, b) => {
+                if (a[sort.key] > b[sort.key])
+                    return -1
+                if (a[sort.key] < b[sort.key])
+                    return 1
+                return 0
+            })
+        }
+    } else {
+        if (sort.localCompare) {
+            if (sort.path) {
+                value.sort((a, b) => (propertyByPath(sort.path, a) || '').localeCompare(propertyByPath(sort.path, b)))
+            } else {
+                value.sort((a, b) => (a[sort.key] || '').localeCompare(b[sort.key]))
+            }
+        } else {
+            value.sort((a, b) => {
+                if (a[sort.key] < b[sort.key])
+                    return -1
+                if (a[sort.key] > b[sort.key])
+                    return 1
+                return 0
+            })
+        }
+    }
+}
+
+function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo) {
+    let value = propertyByPath(re.path, currentData, '.', re.assign),
+        loopFacet,
+        newArray = []
+
+    let cacheKey
+    if(re.loop.cache && isNotFalse(re.loop.cache.$is) && !re.loop.reduce){
+        cacheKey = `resolveReduce${JSON.stringify(re.loop)}`
+        const fromCache = Cache.get(cacheKey)
+        if(fromCache){
+            Object.keys(fromCache).forEach(path=>{
+                setPropertyByPath(fromCache[path], path, rootData)
+            })
+            return
+        }
+    }
+
+    if (re.loop.facets && isNotFalse(re.loop.facets.$is)) {
+        loopFacet = getFacetAsArray(re.loop.facets.path, rootData)
+    }
+
+    const activeFilters = re.loop.filter && re.loop.filter.filter(f => isNotFalse(f.is))
+
+    let total = 0
+    const inLoop = (key, isObject) => {
+        if (loopFacet) {
+            createFacets(loopFacet, value[key], true)
+        }
+        const filter = checkFilter(activeFilters, value, key)
+        if (filter) {
+
+            if (filter.or && loopFacet) {
+                createFacets(loopFacet, value[key])
+            }
+
+            if (re.assign) {
+                if (isObject) {
+                    delete value[key]
+                } else {
+                    value.splice(key, 1)
+                }
+            }
+        } else {
+            total++
+            if (re.loop.reduce) {
+                // not recommended tue to performance
+                value[key] = re.loop.assign ? assignIfObjectOrArray(value[key]) : value[key]
+
+                resolveReduce(re.loop.reduce, rootData, value[key], {debugLog, depth: depth + 1})
+            }
+
+            if (loopFacet) {
+                createFacets(loopFacet, value[key])
+            }
+
+            if (re.loop.toArray) {
+                addToArray(newArray, value[key], re.loop.toArray)
+            }
+        }
+    }
+
+    if (!value) {
+        debugInfo.messages.push(`no value for ${JSON.stringify(re)}`)
+    } else {
+        if (value.constructor === Object) {
+
+            for (const key of Object.keys(value)) {
+                inLoop(key, true)
+            }
+        } else if (value.constructor === Array) {
+            for (let i = value.length - 1; i >= 0; i--) {
+                inLoop(i)
+            }
+        }
+    }
+
+    const cacheData = {}
+    if (loopFacet) {
+        setFacetToObject(re.loop.facets.path, rootData, loopFacet)
+        cacheData[re.loop.facets.path] = propertyByPath(re.loop.facets.path,rootData)
+    }
+
+    if (re.loop.total) {
+        setPropertyByPath(total, re.loop.total.path, rootData)
+        cacheData[re.loop.total.path] = total
+    }
+
+    if (re.loop.toArray) {
+        setPropertyByPath(newArray, re.loop.toArray.pathTo, rootData)
+        cacheData[re.loop.toArray.pathTo] = newArray
+    }
+
+    if(cacheKey){
+        Cache.set(cacheKey,cacheData,re.loop.cache.expires || 0)
+    }
+}
+
 /*
 Version 1
 Takes a data structure and converts it or extracts specific data from it.
@@ -107,42 +244,7 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
             const debugInfo = {index: pipeIndex, step: re, startTime: new Date().getTime(), messages:[]}
 
             if (re.sort) {
-                const value = propertyByPath(re.path, currentData, '.', re.assign)
-
-                const sort = re.sort[0]
-                if (sort.desc) {
-                    if(sort.localCompare){
-                        if(sort.path){
-                            value.sort((a, b) => (propertyByPath(sort.path, b) || '').localeCompare(propertyByPath(sort.path, a)))
-                        }else {
-                            value.sort((a, b) => (b[sort.key] || '').localeCompare(a[sort.key]))
-                        }
-                    }else {
-                        value.sort((a, b) => {
-                            if (a[sort.key] > b[sort.key])
-                                return -1
-                            if (a[sort.key] < b[sort.key])
-                                return 1
-                            return 0
-                        })
-                    }
-                } else {
-                    if(sort.localCompare){
-                        if(sort.path){
-                            value.sort((a, b) => (propertyByPath(sort.path, a) || '').localeCompare(propertyByPath(sort.path, b)))
-                        }else {
-                            value.sort((a, b) => (a[sort.key] || '').localeCompare(b[sort.key]))
-                        }
-                    }else {
-                        value.sort((a, b) => {
-                            if (a[sort.key] < b[sort.key])
-                                return -1
-                            if (a[sort.key] > b[sort.key])
-                                return 1
-                            return 0
-                        })
-                    }
-                }
+                doSorting(re, currentData)
             } else if (re.lookup) {
                 const lookupData = propertyByPath(re.lookup.path, rootData, '.', !!re.lookup.assign)
                 const value = propertyByPath(re.path, currentData)
@@ -341,81 +443,7 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
                     }
                 }
             } else if (re.loop) {
-                let value = propertyByPath(re.path, currentData, '.', re.assign),
-                    loopFacet,
-                    newArray = []
-
-                if(re.loop.facets && isNotFalse(re.loop.facets.$is)){
-                    loopFacet = getFacetAsArray(re.loop.facets.path, rootData)
-                }
-
-                const activeFilters = re.loop.filter && re.loop.filter.filter(f=>isNotFalse(f.is))
-
-                let total = 0
-                const inLoop = (key, isObject) =>{
-                    if (loopFacet) {
-                        createFacets(loopFacet, value[key], true)
-                    }
-                    const filter = checkFilter(activeFilters, value, key)
-                    if (filter) {
-
-                        if(filter.or && loopFacet){
-                            createFacets(loopFacet, value[key])
-                        }
-
-                        if(re.assign) {
-                            if(isObject) {
-                                delete value[key]
-                            }else{
-                                value.splice(key, 1)
-                            }
-                        }
-                    } else {
-                        total++
-                        if (re.loop.reduce) {
-                            // not recommended tue to performance
-                            value[key] = re.loop.assign ? assignIfObjectOrArray(value[key]) : value[key]
-
-                            resolveReduce(re.loop.reduce, rootData, value[key], {debugLog, depth: depth + 1})
-                        }
-
-                        if (loopFacet) {
-                            createFacets(loopFacet, value[key])
-                        }
-
-                        if(re.loop.toArray) {
-                            addToArray(newArray, value[key], re.loop.toArray)
-                        }
-                    }
-                }
-
-                if(!value){
-                    debugInfo.messages.push(`no value for ${JSON.stringify(re)}`)
-                }else {
-                    if (value.constructor === Object) {
-
-                        for (const key of Object.keys(value)) {
-                            inLoop(key, true)
-                        }
-                    } else if (value.constructor === Array) {
-                        for (let i = value.length - 1; i >= 0; i--) {
-                            inLoop(i)
-                        }
-                    }
-                }
-
-                if(loopFacet){
-                    setFacetToObject(re.loop.facets.path, rootData, loopFacet)
-                }
-
-                if(re.loop.total){
-                    setPropertyByPath(total, re.loop.total.path, rootData)
-                }
-
-                if(re.loop.toArray){
-                    setPropertyByPath(newArray, re.loop.toArray.pathTo, rootData)
-                }
-
+                doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo)
             } else if (re.reduce) {
                 const arr = propertyByPath(re.path, currentData)
                 resolveReduce(re.reduce, rootData, arr, {debugLog, depth: depth + 1})

@@ -643,6 +643,7 @@ class CmsViewEditorContainer extends React.Component {
                         expanded={EditorPageOptions.dataResolverExpanded}>
                         <DataResolverEditor onScroll={this.handleSettingChange.bind(this, 'dataResolverScroll', true)}
                                             scrollPosition={EditorPageOptions.dataResolverScroll}
+                                            identifier={'dataResolver' + cmsPage._id}
                                             onCleanUpTranslations={this.handleCleanUpTranslations.bind(this)}
                                             onChange={this.handleDataResolverChange.bind(this)}>{dataResolver}</DataResolverEditor>
                     </Expandable>

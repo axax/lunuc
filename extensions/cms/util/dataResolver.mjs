@@ -349,6 +349,9 @@ function resolveSystemData(segment, req, resolvedData) {
         if (segment.system.cache.size) {
             data.cache.size = JSON.stringify(Cache.cache).length
         }
+        if (segment.system.cache.sizePerKey) {
+            data.cache.sizePerKey = Object.keys(Cache.cache).map(key=>({key,size:JSON.stringify(Cache.cache[key]).length}))
+        }
     }
     if (segment.system.client) {
         data.client = {
