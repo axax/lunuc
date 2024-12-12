@@ -5,6 +5,7 @@ import path from 'path'
 
 // mime type mapping
 const MIME_TYPES = {
+    'md': 'text/markdown',
     'html': 'text/html',
     'text': 'text/plain',
     'txt': 'text/plain',

@@ -140,9 +140,12 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
         loopFacet,
         newArray = []
 
+    const activeFilters = re.loop.filter && re.loop.filter.filter(f => isNotFalse(f.is))
+
     let cacheKey
-    if(re.loop.cache && isNotFalse(re.loop.cache.$is) && !re.loop.reduce){
-        cacheKey = `resolveReduce${JSON.stringify(re.loop)}`
+    if(re.loop.cache && isNotFalse(re.loop.cache.$is) && !re.loop.reduce &&
+        (re.loop.cache.includeFilter || !activeFilters || activeFilters.length===0)){
+        cacheKey = `resolveReduce${re.path}-${JSON.stringify(re.loop)}`
         const fromCache = Cache.get(cacheKey)
         if(fromCache){
             Object.keys(fromCache).forEach(path=>{
@@ -155,8 +158,6 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
     if (re.loop.facets && isNotFalse(re.loop.facets.$is)) {
         loopFacet = getFacetAsArray(re.loop.facets.path, rootData)
     }
-
-    const activeFilters = re.loop.filter && re.loop.filter.filter(f => isNotFalse(f.is))
 
     let total = 0
     const inLoop = (key, isObject) => {

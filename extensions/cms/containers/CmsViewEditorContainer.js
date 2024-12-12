@@ -506,7 +506,7 @@ class CmsViewEditorContainer extends React.Component {
                                                    editCmsData: this.editCmsData.bind(this)
                                                }}
                                                {...props} />,
-            <ErrorHandler key="errorHandler" snackbar/>,
+            !props.dynamic && <ErrorHandler key="errorHandler" snackbar/>,
             <NetworkStatusHandler key="networkStatus"/>,
             simpleDialog && <SimpleDialog open={true}
                                           fullWidth={true} maxWidth="md"

@@ -149,7 +149,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                 } else if (segment.keyValueGlobals) {
 
                     // if user don't have capability to manage keys he can only see the public ones
-                    const onlyPublic = !await Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)
+                    const onlyPublic = segment.public!==undefined?segment.public:!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)
                     const dataKey = segment.key || 'keyValueGlobals'
 
                     const map = await Util.keyValueGlobalMap(db, context, segment.keyValueGlobals, {

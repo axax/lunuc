@@ -1,4 +1,4 @@
-import React, {useContext} from 'react'
+import React, {memo, useContext, useEffect} from 'react'
 import {SimpleDialog, Snackbar,CloseIconButton} from 'ui/admin'
 import {_t} from 'util/i18n.mjs'
 import {AppContext} from '../AppContext'
@@ -11,7 +11,13 @@ function handleDialogClose(key) {
 
 function ErrorHandler({snackbar}) {
 
+    console.debug('Render ErrorHandler')
+
     const globalContext = useContext(AppContext)
+
+    useEffect(() => {
+        return () => _app_.dispatcher.dispatch({type:'MESSAGE',payload:{removeAll:true}})
+    }, [])
 
     const messages = globalContext.state.messages
     if (!messages || !Object.keys(messages).length)
@@ -56,5 +62,5 @@ function ErrorHandler({snackbar}) {
     </SimpleDialog>
 }
 
-export default ErrorHandler
+export default memo(ErrorHandler)
 

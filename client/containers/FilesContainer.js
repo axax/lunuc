@@ -5,6 +5,7 @@ import {
     SimpleList,
     SimpleSelect,
     SimpleDialog,
+    SimpleMenu,
     Row,
     Col,
     FolderIcon,
@@ -19,6 +20,9 @@ import {Query, client} from '../middleware/graphql'
 import FileDrop from '../components/FileDrop'
 import Async from '../components/Async'
 import {_t} from 'util/i18n.mjs'
+
+
+const EXTENSIONS_TO_EDIT = ['','html','js','md','cjs','mjs','text','yml','json','xml','csv']
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
 
@@ -37,35 +41,54 @@ class FilesContainer extends React.Component {
             dir: params.dir || '',
             searchText: '',
             space: props.space || params.space || './',
-            confirmDeletionDialog:{open:false}
+            confirmDeletionDialog:{open:false},
+            nameFileDialog:{open:false}
         }
     }
 
 
     render() {
         const {embedded, editOnly, history} = this.props
-        const {file, dir, searchText, space,confirmDeletionDialog} = this.state
-        let command = 'ls -l ' + space + dir
-
+        const {file, fileSize, dir, searchText, space,confirmDeletionDialog,nameFileDialog} = this.state
+        //let command = 'ls -l ' + space + dir
+        let command = `if [[ "$OSTYPE" == "darwin"* ]]; then 
+  ls -l -D"%Y-%m-%dT%H:%M:%S" "${space + dir}"
+else
+   ls -l --time-style="+%Y-%m-%dT%H:%M:%S" "${space + dir}"
+fi`
         if (searchText) {
             command = `find ${space+dir} -size -1M -type f -name '*.*' ! -path "./node_modules/*" ! -path "./bower_components/*" -exec grep -ril "${searchText}" {} \\;`
         }
 
-        let fileEditor = file &&
-            <Query query={COMMAND_QUERY}
-                   fetchPolicy="cache-and-network"
-                   variables={{sync: true, command: 'less -f -L ' + space+dir + '/' + file}}>
-                {({loading, error, data}) => {
-                    if (loading) return 'Loading...'
-                    if (error) return `Error! ${error.message}`
-                    if (!data.run) return 'No data'
-                    const ext = file.slice((file.lastIndexOf('.') - 1 >>> 0) + 2)
-                    return <CodeEditor lineNumbers controlled={false} height="50rem" onChange={c => {
-                        this.fileChange(space+dir + '/' + file, c)
-                    }} type={ext || 'text' }>{data.run.response}</CodeEditor>
-                }}
-            </Query>
+        let fileEditor
 
+        if(file){
+            const ext = file.slice((file.lastIndexOf(".") - 1 >>> 0) + 2).toLowerCase()
+            if(fileSize>10000 || EXTENSIONS_TO_EDIT.indexOf(ext)<0){
+                fileEditor = <Query query="query getTokenLink($filePath:String!){getTokenLink(filePath:$filePath){token}}" fetchPolicy="no-cache"
+                                    variables={{filePath:`/${space+dir}/${file}`}}>
+                    {({loading, error, data}) => {
+                        if (loading) return 'Loading...'
+                        if (error) return `Error! ${error.message}`
+
+                        return  <a target="_blank" href={`${location.origin}/tokenlink/${data.getTokenLink.token}/-/${file}`}>Download {file} ({formatBytes(fileSize)})</a>
+                    }}
+                </Query>
+            }else{
+                fileEditor = <Query query={COMMAND_QUERY} fetchPolicy="cache-and-network"
+                                    variables={{sync: true, command: 'less -f -L ' + space + dir + '/' + file}}>
+                    {({loading, error, data}) => {
+                        if (loading) return 'Loading...'
+                        if (error) return `Error! ${error.message}`
+                        if (!data.run) return 'No data'
+                        const ext = file.slice((file.lastIndexOf('.') - 1 >>> 0) + 2)
+                        return <CodeEditor lineNumbers controlled={false} height="50rem" onChange={c => {
+                            this.fileChange(space + dir + '/' + file, c)
+                        }} type={ext || 'text'}>{data.run.response}</CodeEditor>
+                    }}
+                </Query>
+            }
+        }
 
         let content
 
@@ -98,8 +121,11 @@ class FilesContainer extends React.Component {
                         this.setState({confirmDeletionDialog: {...confirmDeletionDialog, open: false}})
                     }}
                                   actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
-                                  title="Confirm deletion">
-                        Are you sure you want to delete the file &ldquo;{confirmDeletionDialog.fileName}&rdquo;?
+                                  title="Confirm deletion">{_t('FilesContainer.confirmDeletion',confirmDeletionDialog)}</SimpleDialog>
+                    <SimpleDialog open={nameFileDialog.open} onClose={(e)=>{
+                        this.setState({nameFileDialog: {...nameFileDialog, open: false}})
+                    }} actions={[{key: 'cancel', label: _t('core.cancel')}, {key: 'save', label: _t('core.save'), type: 'primary'}]} title="Datei erstellen">
+                        TODO: do implementation
                     </SimpleDialog>
                     <SimpleSelect
                         label="Select aspace"
@@ -119,7 +145,6 @@ class FilesContainer extends React.Component {
                         name="searchText"
                         onKeyPress={(e) => {
                             if (e.key === 'Enter') {
-                                console.log(e)
                                 this.setState({searchText: e.target.value})
                             }
                         }}/>
@@ -156,26 +181,25 @@ class FilesContainer extends React.Component {
                                 }, [])
                             } else {
                                 rows.shift()
-
                                 listItems = rows.reduce((a, fileRow) => {
                                     if (fileRow) {
                                         const b = fileRow.split(' ').filter(x => x)
+                                        const mdate = new Date(b[5])
+                                        const fileName = b.splice(6).join(' ')
                                         a.push({
-                                            icon: b[0].indexOf('d') === 0 ? <FolderIcon /> :
-                                                <InsertDriveFileIcon />,
+                                            icon: b[0].indexOf('d') === 0 ? <FolderIcon /> : <InsertDriveFileIcon />,
                                             selected: false,
-                                            primary: b[8],
-
+                                            primary: fileName,
                                             onClick: () => {
                                                 if (b[0].indexOf('d') === 0) {
                                                     //change dir
-                                                    this.setState({file:null, dir: dir + '/' + b[8]})
-                                                    history.push(`${location.origin+location.pathname}?space=${this.state.space}&dir=${dir + '/' + b[8]}`)
+                                                    this.setState({file:null, fileSize:0, dir: dir + '/' + fileName})
+                                                    history.push(`${location.origin+location.pathname}?space=${this.state.space}&dir=${dir + '/' + fileName}`)
                                                 } else {
-                                                    this.setState({file: b[8]})
+                                                    this.setState({file: fileName, fileSize:parseFloat(b[4])})
                                                 }
                                             },
-                                            secondary: formatBytes(b[4])/*,
+                                            secondary: `${formatBytes(b[4])} - ${Util.formatDate(mdate)}`/*,
                                              actions: <DeleteIconButton onClick={this.handlePostDeleteClick.bind(this, post)}/>,
                                              disabled: ['creating', 'deleting'].indexOf(post.status) > -1*/
                                         })
@@ -197,7 +221,7 @@ class FilesContainer extends React.Component {
                                 }
                             }
 
-                            return <SimpleList items={listItems}
+                            return <div style={{position:'relative'}}><SimpleList items={listItems}
                                                paperProps={{sx:{
                                                    height:'41.5rem', overflow:'auto'
                                                }}}
@@ -211,6 +235,22 @@ class FilesContainer extends React.Component {
                                                    }
                                                ]}
                                                count={listItems.length}/>
+
+                                <SimpleMenu key="menu" mini fab color="secondary" style={{
+                                    zIndex: 999,
+                                    position: 'absolute',
+                                    bottom: '8px',
+                                    right: '8px'
+                                }} items={[
+                                    {
+                                        name: _t('FilesContainer.createFolder'),
+                                        onClick: ()=>{
+                                            this.setState({nameFileDialog:{open:true, isFolder:true}})
+                                        },
+                                        icon: <FolderIcon />
+                                    }
+                                ]}/>
+                            </div>
                         }}
                     </Query>
 
