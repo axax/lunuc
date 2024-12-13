@@ -152,6 +152,21 @@
           "index": 1,
           "vagueSearchable": false,
           "tab": "Data"
+        },
+        {
+          "name": "server",
+          "index": 1,
+          "compoundIndex": [
+            {
+              "unique": true,
+              "fields": {
+                "server": 1,
+                "host": 1,
+                "_id": 1
+              }
+            }
+          ],
+          "tab": "Allgemein"
         }
       ]
     }

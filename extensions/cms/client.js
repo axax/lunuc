@@ -59,12 +59,14 @@ export default () => {
                 Hook.call('CMSSlug', {match})
                 let slug = match.params.slug ? decodeURI(match.params.slug) : ''
                 const cmsViewProps = {location,history,user:_app_.user}
-
                 if(slug.startsWith('[admin]')){
                     slug=slug.substring(8)
                     cmsViewProps.editMode = false
                     route.layout='base'
                     route.layoutProps= {contentStyle:{padding:0}}
+                } else {
+                    delete route.layout
+                    delete route.layoutProps
                 }
 
                 if(slug.endsWith('/')){

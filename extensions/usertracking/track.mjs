@@ -29,7 +29,7 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
         if (!referer) {
             referer = ''//req.headers['referer']
         }
-
+        const properties = Util.systemProperties()
         const date = new Date()
         const agent = req.headers['x-track-user-agent'] || req.headers['user-agent'] || '';
         const insertData = {
@@ -41,6 +41,7 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
             /*headers: req.headers,*/
             event,
             host: host,
+            server: properties.hostname,
             slug,
             day: date.getDate(),
             month: date.getMonth() + 1,

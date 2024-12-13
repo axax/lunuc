@@ -6,6 +6,8 @@ import {client} from 'client/middleware/graphql'
 
 const SimpleDialog = (props) => <Async {...props} expose="SimpleDialog"
                                        load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../../client/components/CodeEditor')}/>
+
 
 export default () => {
 
@@ -84,16 +86,18 @@ export default () => {
     Hook.on('TypesContainerRender', function ({type, content}) {
         if (type === 'CronJob') {
             if (this.state.cronjobResponse && this.state.cronjobResponse.data.runCronJob && this.state.cronjobResponse.data.runCronJob.status) {
-                content.push(<SimpleDialog key="cronjobDialog" open={true} onClose={() => {
-                    this.setState({cronjobResponse: null})
-                }}
+                const resultJson = this.state.cronjobResponse.data.runCronJob.result?JSON.parse(this.state.cronjobResponse.data.runCronJob.result):{}
+
+                content.push(<SimpleDialog fullWidth={true} maxWidth="md" key="cronjobDialog" open={true} onClose={() => {this.setState({cronjobResponse: null})}}
                                            actions={[{key: 'ok', label: 'Ok'}]}
                                            title="CronJob response">
                     <h3 key="status">{this.state.cronjobResponse.data.runCronJob.status}</h3>
                     {this.state.cronjobResponse.data.runCronJob.result &&
-                    <pre key="result">
-                        {JSON.stringify(JSON.parse(this.state.cronjobResponse.data.runCronJob.result),null,2)}
-                    </pre>
+                        Object.keys(resultJson).map(key=>{
+                            if(resultJson[key]) {
+                                return <><strong style={{marginBottom:'1rem'}}>{key}</strong>{resultJson[key].constructor===String?<CodeEditor height="auto" type="text">{resultJson[key]}</CodeEditor>:resultJson[key]}</>
+                            }
+                        })
                     }
 
                 </SimpleDialog>)

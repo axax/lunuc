@@ -563,3 +563,14 @@ const Util = {
 }
 
 export default Util
+
+
+/* */
+/*const start = Date.now()
+for(let i = 0; i< 10000;i++){
+    const properties = Util.systemProperties()
+    if(properties.os){
+
+    }
+}
+console.log('xxxxxxx', Date.now()-start)*/
