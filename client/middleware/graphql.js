@@ -293,7 +293,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  qu
                         // if a user is logged in and for some reason user session is not valid anymore update user in client
                         _app_.dispatcher.setUser(null)
                     }
-                    if (!r.ok || response.errors) {
+                    if (response.errors) {
                         const rejectData = {...response, loading: false, networkStatus: NetworkStatus.ready}
                         if (response.errors) {
                             rejectData.error = response.errors[0]
@@ -611,7 +611,6 @@ export const Subscription = props => {
 
 export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cache-first', skip}) => {
     const cacheKey = getCacheKey({query, variables})
-
     let currentData = null
     const checkCache = _app_.ssr || skip || fetchPolicy === 'cache-first' || fetchPolicy === 'cache-and-network'
     if (checkCache) {
@@ -642,7 +641,7 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
 
     const [response, setResponse] = useState(initialData)
 
-    const cacheDeletedAt = checkCache && response.data && !currentData ? Date.now(): response.cacheDeletedAt
+    const cacheDeletedAt = checkCache && response.data && !response.errors && !currentData ? Date.now(): response.cacheDeletedAt
 
     useEffect(() => {
 
