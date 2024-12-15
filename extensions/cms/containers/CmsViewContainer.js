@@ -340,7 +340,7 @@ class CmsViewContainer extends React.Component {
                                             subscription.updateMap.forEach(map=>{
                                                 const fromValue = dataEntry[map.fromValueKey],
                                                     fromKey = dataEntry[map.fromKey],
-                                                    toKey = Util.replacePlaceholders(map.toKey,{fromKey})
+                                                    toKey = Util.replacePlaceholders(map.toKey,{fromKey: fromKey.replaceAll('.','\\.')})
                                                 setPropertyByPath(map.parse?JSON.parse(fromValue):fromValue,toKey, resolvedDataJson)
                                             })
                                         })
