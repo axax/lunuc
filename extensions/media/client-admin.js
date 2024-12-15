@@ -495,7 +495,7 @@ export default () => {
                     <p>Sie können hier das bestehende Media durch einen Upload ersetzen. Alle Elemente die das Media referenzieren werden ersetzt.</p>
 
 
-                    <SimpleSwitch key="overrideFile" label="Ich möchte die bestehende Datei unwiederruflich überschrieben" name="overrideFile"
+                    <SimpleSwitch key="overrideFile" label={_t('Media.overrideExistingMedia')} name="overrideFile"
                                   onChange={(e) => {
                                       setOverrideFile(e.target.checked)
                                   }} checked={overrideFile}/><br /><br />

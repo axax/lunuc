@@ -30,12 +30,12 @@ const cronjobUtil = {
         }
 
         const log = (msg) => {
-            result.scriptLog += msg
+            result.scriptLog += (result.scriptLog?'\n':'')+msg
         }, debug = (msg) => {
-            result.scriptDebug += msg
+            result.scriptDebug += (result.scriptDebug?'\n':'')+msg
         }, error = (msg) => {
             Hook.call('CronJobError', {db, context, cronjobId, scriptLanguage, script, error: {message:msg}})
-            result.scriptError += msg
+            result.scriptError += (result.scriptError?'\n':'')+msg
         }
 
         const end = () => {

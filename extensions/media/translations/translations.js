@@ -10,7 +10,8 @@ export const translations = {
         'Media.field.size': 'Dateigrösse',
         'Media.field.group': 'Gruppe',
         'Media.field.ownerGroup': 'Besitzergruppe',
-        'Media.cleanupMedia': 'Media Varianten löschen'
+        'Media.cleanupMedia': 'Media Varianten löschen',
+        'Media.overrideExistingMedia': 'Ich möchte die bestehende Datei unwiderruflich überschrieben'
     },
     en: {
         'Media.uploadMedia': 'Upload medias',
@@ -23,6 +24,7 @@ export const translations = {
         'Media.field.size': 'Size',
         'Media.field.group': 'Group',
         'Media.field.ownerGroup': 'Owner group',
-        'Media.cleanupMedia': 'CleanUp Medias'
+        'Media.cleanupMedia': 'CleanUp Medias',
+        'Media.overrideExistingMedia': 'I would like to overwrite the existing file irrevocably',
     }
 }

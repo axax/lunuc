@@ -1,7 +1,7 @@
 import React from 'react'
 import Hook from 'util/hook.cjs'
 import config from 'gen/config-client'
-const {ADMIN_BASE_URL, PRETTYURL_SEPERATOR} = config
+const {ADMIN_BASE_URL} = config
 import CmsViewContainer from './containers/CmsViewContainer'
 import {Link} from 'client/util/route'
 import {_t, registerTrs} from '../../util/i18n.mjs'
@@ -15,7 +15,9 @@ import {
     Divider,
     ResponsiveDrawerLayout,
     Typography,
-    WebIcon
+    WebIcon,
+    CircularProgress,
+    LinearProgress
 } from 'ui/admin'
 import {translations} from './translations/admin'
 import TypesContainer from 'client/containers/TypesContainer'
@@ -36,6 +38,8 @@ const addAdminComponents = (components) => {
     /* Admin Elements */
     components['AdminExpandable'] = Expandable
     components['AdminButton'] = SimpleButton
+    components['AdminCircularProgress'] = CircularProgress
+    components['AdminLinearProgress'] = LinearProgress
     components['AdminMobileStepper'] = SimpleMobileStepper
     components['AdminDialog'] = SimpleDialog
     components['AdminSelect'] = Select
