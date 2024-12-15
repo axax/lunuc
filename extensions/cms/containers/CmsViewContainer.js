@@ -241,7 +241,7 @@ class CmsViewContainer extends React.Component {
     setUpSubscriptions(props) {
         if (!props.cmsPage) return
 
-        const {cmsPage: {subscriptions}, slug} = props
+        const {cmsPage: {subscriptions}} = props
         if (!subscriptions) return
 
         let subscriptionArray

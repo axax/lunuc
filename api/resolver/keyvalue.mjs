@@ -46,7 +46,7 @@ const updateKeyValueGlobal = async ({_id, key, value, ispublic, createdBy}, {con
         Cache.clearStartWith('dataresolver_keyValueGlobals')
 
         if(res && res.ispublic){
-           pubsubHooked.publish('subscribeKeyValueGlobal', {session:context.session,userId:context.id,subscribeKeyValueGlobal: {action: 'update', data: [res]}}, db, context)
+           await pubsubHooked.publish('subscribeKeyValueGlobal', {session:context.session,userId:context.id,subscribeKeyValueGlobal: {action: 'update', data: [res]}}, db, context)
         }
 
 

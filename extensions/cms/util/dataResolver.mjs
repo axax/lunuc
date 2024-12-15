@@ -165,7 +165,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         subscriptions.push({query: 'action keys data{_id key value}',
                             variables:{'keys':JSON.stringify(segment.keyValueGlobals)},
                             autoUpdate:true,
-                            updateMap: [{toKey:'keyValueGlobals.${fromKey}',fromKey:'key', fromValueKey: 'value', parse:true}],
+                            updateMap: [{toKey:`${dataKey}.\${fromKey}`,fromKey:'key', fromValueKey: 'value', parse:true}],
                             callback: false, name: 'subscribeKeyValueGlobal'})
                     }
 
