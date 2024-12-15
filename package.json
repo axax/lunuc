@@ -74,7 +74,7 @@
     "@codemirror/state": "^6.5.0",
     "@codemirror/theme-one-dark": "^6.1.2",
     "@codemirror/view": "^6.35.3",
-    "@distube/ytdl-core": "^4.15.1",
+    "@distube/ytdl-core": "^4.15.3",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^6.2.0",
@@ -91,9 +91,9 @@
     "express": "^4.21.2",
     "express-graphql": "^0.12.0",
     "formidable": "^3.5.2",
-    "graphql": "^16.9.0",
+    "graphql": "^16.10.0",
     "graphql-subscriptions": "^3.0.0",
-    "graphql-tools": "^9.0.7",
+    "graphql-tools": "^9.0.8",
     "http2-proxy": "^5.0.53",
     "jsonwebtoken": "^9.0.2",
     "langchain": "^0.3.7",
@@ -185,6 +185,6 @@
   "overrides": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "graphql": "^16.9.0"
+    "graphql": "^16.10.0"
   }
 }
