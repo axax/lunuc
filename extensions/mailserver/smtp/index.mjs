@@ -27,6 +27,8 @@ add Reverse-DNS (PTR-Record) -> service provider
  */
 
 let serverPorts = {}
+const MAX_EMAIL_SIZE = 30000000
+
 const startListening = async (db, context) => {
 
     for(const port of config.SMTP_PORTS) {
@@ -184,7 +186,7 @@ const startListening = async (db, context) => {
 
                 // do not accept messages larger than 1000 bytes to specific recipients
                 let expectedSize = Number(session.envelope.mailFrom.args.SIZE) || 0
-                if (expectedSize > 10000000) {
+                if (expectedSize > MAX_EMAIL_SIZE) {
                     const err = new Error("Insufficient channel storage: " + address.address)
                     err.responseCode = 452
                     return callback(err)
@@ -214,21 +216,19 @@ const startListening = async (db, context) => {
                         const transporter = nodemailerDirectTransport({
                             name: session.servername
                         })
+                        console.log('onData send', data)
 
                         const transporterResult = nodemailer.createTransport(transporter)
-
-                        for (const rcpt of data.to.value) {
-                            console.log('onData send', rcpt, data)
-
-                            try {
-                                await transporterResult.sendMail({
-                                    ...data,
-                                    to: rcpt.address,
-                                    from: fromMail
-                                })
-                            }catch (e){
-                                console.log(`error sending email to ${rcpt.address} from ${fromMail}`, e)
-                            }
+                        try {
+                            await transporterResult.sendMail({
+                                ...data,
+                                to: data?.to?.value,
+                                cc: data?.cc?.value,
+                                bcc: data?.bcc?.value,
+                                from: fromMail
+                            })
+                        }catch (e){
+                            console.log(`error sending email to ${data?.to?.text} from ${fromMail}`, e)
                         }
 
                     } else {
