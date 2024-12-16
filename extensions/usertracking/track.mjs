@@ -4,7 +4,7 @@ import Hook from '../../util/hook.cjs'
 import {pubsub} from '../../api/subscription.mjs'
 import {DEFAULT_BOT_REGEX} from '../../util/userAgent.mjs'
 
-export const trackUser = async ({req, event, slug, db, context, data, meta}) => {
+export const trackUser = async ({req, event, slug, db, context, data, meta, path}) => {
 
     const ip = clientAddress(req)
 
@@ -29,10 +29,12 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
         if (!referer) {
             referer = ''//req.headers['referer']
         }
+
+        let finalPath = path || req.url
+
         const properties = Util.systemProperties()
         const date = new Date()
         const agent = req.headers['x-track-user-agent'] || req.headers['user-agent'] || '';
-        const path = req.url
 
         const insertData = {
             ip: ip,
@@ -45,7 +47,7 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
             host: host,
             server: properties.hostname,
             slug,
-            path: path?path.split('?')[0]:'',
+            path: finalPath?finalPath.split('?')[0]:'',
             day: date.getDate(),
             month: date.getMonth() + 1,
             year: date.getFullYear(),

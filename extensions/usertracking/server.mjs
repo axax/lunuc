@@ -6,6 +6,7 @@ import {clientAddress, getHostFromHeaders} from '../../util/host.mjs'
 import {trackUser} from './track.mjs'
 import React from 'react'
 import Util from '../../api/util/index.mjs'
+import url from 'url'
 
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
@@ -23,6 +24,14 @@ Hook.on('trackMail', ({req, event, slug, db, context, data, meta}) => {
 
 Hook.on('cmsCustomResolver', async ({db, segment, context, req, scope, editmode, dynamic}) => {
     if (segment.track && req && (segment.track.force || (!editmode && !dynamic))) {
+
+        let path
+        if(req.headers['referer']){
+            // is from graphql
+            const parsedUrl = url.parse(req.headers['referer'], true)
+            path = parsedUrl.pathname
+        }
+
         trackUser({
             req,
             event: segment.track.event,
@@ -30,7 +39,8 @@ Hook.on('cmsCustomResolver', async ({db, segment, context, req, scope, editmode,
             db,
             slug: scope.page.slug,
             data: scope.params,
-            meta: scope.page.meta
+            meta: scope.page.meta,
+            path
         })
     }
 })
