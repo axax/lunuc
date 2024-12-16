@@ -5,6 +5,8 @@ import {
 } from 'ui/admin'
 import Util from '../../client/util/index.mjs'
 import {_t, registerTrs} from '../../util/i18n.mjs'
+import {translations} from './translations/translations'
+registerTrs(translations, 'UserTracking')
 
 export default () => {
     Hook.on('TypeTable', ({type, dataSource, data, container}) => {

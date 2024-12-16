@@ -819,7 +819,7 @@ class TypesContainer extends React.Component {
             }
         }
         const selectedLength = Object.keys(this.state.selectedRows).length
-        const {description} = this.types[type]
+        const {description, searchOnKeyDown} = this.types[type]
 
         const typeSettings = this.getSettingsForType(type, this.pageParams.meta)
         let savedQueries = typeSettings.savedQueries
@@ -853,7 +853,9 @@ class TypesContainer extends React.Component {
                                 value={this.state.filter}
                                 onChange={(e) => {
                                     this.setState({filter: e.target.value})
-                                    this.handleFilter({value: e.target.value, target: e.target}, false)
+                                    if(searchOnKeyDown!==false) {
+                                        this.handleFilter({value: e.target.value, target: e.target}, false)
+                                    }
                                 }}
                                 onKeyDown={(e) => {
                                     this.handelFilterKeyDown(e, e.target.value)

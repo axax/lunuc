@@ -8,6 +8,7 @@
         }
       },
       "name": "UserTracking",
+      "searchOnKeyDown": false,
       "fields": [
         {
           "name": "ip",
@@ -17,7 +18,8 @@
         {
           "name": "agent",
           "index": 1,
-          "tab": "Allgemein"
+          "tab": "Allgemein",
+          "hideColumnInTypes": true
         },
         {
           "name": "host",
@@ -36,6 +38,22 @@
         {
           "name": "slug",
           "index": 1,
+          "tab": "Allgemein",
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "path",
+          "index": 1,
+          "compoundIndex": [
+            {
+              "unique": true,
+              "fields": {
+                "path": 1,
+                "host": 1,
+                "_id": 1
+              }
+            }
+          ],
           "tab": "Allgemein"
         },
         {
@@ -132,26 +150,30 @@
           "type": "Object",
           "uitype": "json",
           "vagueSearchable": false,
-          "tab": "Data"
+          "tab": "Data",
+          "hideColumnInTypes": true
         },
         {
           "name": "headers",
           "type": "Object",
           "uitype": "json",
           "vagueSearchable": false,
-          "tab": "Headers"
+          "tab": "Headers",
+          "hideColumnInTypes": true
         },
         {
           "name": "referer",
           "index": 1,
-          "tab": "Allgemein"
+          "tab": "Allgemein",
+          "hideColumnInTypes": true
         },
         {
           "name": "geodata",
           "type": "Object",
           "index": 1,
           "vagueSearchable": false,
-          "tab": "Data"
+          "tab": "Data",
+          "hideColumnInTypes": true
         },
         {
           "name": "server",
@@ -166,7 +188,8 @@
               }
             }
           ],
-          "tab": "Allgemein"
+          "tab": "Allgemein",
+          "hideColumnInTypes": true
         }
       ]
     }
