@@ -225,7 +225,7 @@ const startListening = async (db, context) => {
                                 to: data?.to?.value,
                                 cc: data?.cc?.value,
                                 bcc: data?.bcc?.value,
-                                from: fromMail
+                                from: data?.from?.text || fromMail
                             })
                         }catch (e){
                             console.log(`error sending email to ${data?.to?.text} from ${fromMail}`, e)

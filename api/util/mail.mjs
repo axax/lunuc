@@ -114,6 +114,9 @@ ${finalHtml}
             let transporter
             if(currentMailSettings.directTransport){
                 transporter = nodemailerDirectTransport(currentMailSettings)
+                if(currentMailSettings.dkim) {
+                    message.dkim = currentMailSettings.dkim
+                }
             }else {
                 transporter = {
                     service: currentMailSettings.service,
