@@ -22,7 +22,7 @@ import Async from '../components/Async'
 import {_t} from 'util/i18n.mjs'
 
 
-const EXTENSIONS_TO_EDIT = ['','html','js','md','cjs','mjs','text','yml','json','xml','csv']
+const EXTENSIONS_TO_EDIT = ['','html','js','md','cjs','mjs','text','yml','json','xml','csv','template']
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
 
@@ -40,6 +40,7 @@ class FilesContainer extends React.Component {
             file: props.file,
             dir: params.dir || '',
             searchText: '',
+            filterText:'',
             space: props.space || params.space || './',
             confirmDeletionDialog:{open:false},
             nameFileDialog:{open:false}
@@ -49,7 +50,7 @@ class FilesContainer extends React.Component {
 
     render() {
         const {embedded, editOnly, history} = this.props
-        const {file, fileSize, dir, searchText, space,confirmDeletionDialog,nameFileDialog} = this.state
+        const {file, fileSize, dir, searchText, filterText, space,confirmDeletionDialog,nameFileDialog} = this.state
         //let command = 'ls -l ' + space + dir
         let command = `if [[ "$OSTYPE" == "darwin"* ]]; then 
   ls -l -D"%Y-%m-%dT%H:%M:%S" "${space + dir}"
@@ -148,6 +149,15 @@ fi`
                                 this.setState({searchText: e.target.value})
                             }
                         }}/>
+                    <TextField
+                        type="search"
+                        helperText={'Filter'}
+                        disabled={false} fullWidth
+                        placeholder="Filter"
+                        name="filterText"
+                        onChange={(e) => {
+                            this.setState({filterText: e.target.value})
+                        }}/>
 
                     <Query query={COMMAND_QUERY}
                            fetchPolicy="cache-and-network"
@@ -157,7 +167,6 @@ fi`
                                 this._loading = true
                                 return 'Loading...'
                             }
-
                             this._loading = false
                             if (error) return `Error! ${error.message}`
                             if (!data.run) return 'No data'
@@ -186,23 +195,29 @@ fi`
                                         const b = fileRow.split(' ').filter(x => x)
                                         const mdate = new Date(b[5])
                                         const fileName = b.splice(6).join(' ')
-                                        a.push({
-                                            icon: b[0].indexOf('d') === 0 ? <FolderIcon /> : <InsertDriveFileIcon />,
-                                            selected: false,
-                                            primary: fileName,
-                                            onClick: () => {
-                                                if (b[0].indexOf('d') === 0) {
-                                                    //change dir
-                                                    this.setState({file:null, fileSize:0, dir: dir + '/' + fileName})
-                                                    history.push(`${location.origin+location.pathname}?space=${this.state.space}&dir=${dir + '/' + fileName}`)
-                                                } else {
-                                                    this.setState({file: fileName, fileSize:parseFloat(b[4])})
-                                                }
-                                            },
-                                            secondary: `${formatBytes(b[4])} - ${Util.formatDate(mdate)}`/*,
+                                        if(!filterText || fileName.toLowerCase().indexOf(filterText.toLowerCase())>=0) {
+                                            a.push({
+                                                icon: b[0].indexOf('d') === 0 ? <FolderIcon/> : <InsertDriveFileIcon/>,
+                                                selected: false,
+                                                primary: fileName,
+                                                onClick: () => {
+                                                    if (b[0].indexOf('d') === 0) {
+                                                        //change dir
+                                                        this.setState({
+                                                            file: null,
+                                                            fileSize: 0,
+                                                            dir: dir + '/' + fileName
+                                                        })
+                                                        history.push(`${location.origin + location.pathname}?space=${this.state.space}&dir=${dir + '/' + fileName}`)
+                                                    } else {
+                                                        this.setState({file: fileName, fileSize: parseFloat(b[4])})
+                                                    }
+                                                },
+                                                secondary: `${formatBytes(b[4])} - ${Util.formatDate(mdate)}`/*,
                                              actions: <DeleteIconButton onClick={this.handlePostDeleteClick.bind(this, post)}/>,
                                              disabled: ['creating', 'deleting'].indexOf(post.status) > -1*/
-                                        })
+                                            })
+                                        }
                                     }
                                     return a
                                 }, [])

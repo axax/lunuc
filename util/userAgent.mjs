@@ -2,7 +2,7 @@
 
 // exception if it starts with spiderweb/ because that is a browser
 export const DEFAULT_BOT_REGEX = /(?!(^spiderweb\/))(bot|crawl|slurp|spider|mediapartners|facebookexternalhit|Xing|WhatsApp|NetcraftSurveyAgent)/i
-export const DEFAULT_BOT_WITH_NO_JS_SUPPORT_REGEX = /YandexBot|bingbot|facebookexternalhit|LinkedInBot|Xing|WhatsApp|TelegramBot/i
+export const DEFAULT_BOT_WITH_NO_JS_SUPPORT_REGEX = /YandexBot|facebookexternalhit|LinkedInBot|Xing|WhatsApp|TelegramBot/i
 export const parseUserAgent = (agent,
                                botRegex = DEFAULT_BOT_REGEX) => {
 
