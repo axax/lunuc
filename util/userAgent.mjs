@@ -1,8 +1,8 @@
 // /WhatsApp|TelegramBot|AhrefsBot|Applebot|x28-job-bot|bingbot|msnbot|YandexBot|PetalBot|Googlebot|facebookexternalhit|LinkedInBot|Twitterbot|Xing|AdsBot/
 
 // exception if it starts with spiderweb/ because that is a browser
-export const DEFAULT_BOT_REGEX = /(?!(^spiderweb\/))(bot|crawl|slurp|spider|mediapartners|facebookexternalhit|Xing|WhatsApp|NetcraftSurveyAgent)/i
-export const DEFAULT_BOT_WITH_NO_JS_SUPPORT_REGEX = /YandexBot|localsearch|facebookexternalhit|LinkedInBot|Xing|WhatsApp|TelegramBot/i
+export const DEFAULT_BOT_REGEX = /(?!(^spiderweb\/))(bot|crawl|slurp|spider|mediapartners|facebookexternalhit|Xing|WhatsApp|NetcraftSurveyAgent|\(compatible; ITools;)/i
+export const DEFAULT_BOT_WITH_NO_JS_SUPPORT_REGEX = /YandexBot|localsearch|facebookexternalhit|LinkedInBot|Xing|WhatsApp|TelegramBot|\(compatible; ITools;/i
 export const parseUserAgent = (agent,
                                botRegex = DEFAULT_BOT_REGEX) => {
 
@@ -203,6 +203,9 @@ export const parseUserAgentRaw = (() => {
     }
 })()
 
+
+//console.log(parseUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'))
+//console.log(parseUserAgent('Mozilla/5.0 (compatible; ITools; Chrome/70.0.3538.102 Safari/537.36 Edge/18.19582)')) // search.ch
 //console.log(parseUserAgent('Mozilla/5.0 (Linux; Android 7.0;) AppleWebKit/537.36 (KHTML, like Gecko) Mobile Safari/537.36 (compatible; PetalBot;+https://webmaster.petalsearch.com/site/petalbot)'))
 /*console.log(parseUserAgent('Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko'))
 console.log(parseUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'))
