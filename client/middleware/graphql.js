@@ -377,6 +377,7 @@ export const client = {
         })
     },
     writeQuery: ({query, variables, data, cacheKey}) => {
+        let oldCacheKey
         if (data &&
             query &&
             variables &&
@@ -384,11 +385,12 @@ export const client = {
             (!data.cmsPage.urlSensitiv || data.cmsPage.urlSensitiv === 'client') &&
             variables.query) {
 
+            oldCacheKey = cacheKey || getCacheKey({query, variables})
+
             const newVariables = Object.assign({}, variables)
             delete newVariables.query
-            const oldCacheKey = cacheKey
             cacheKey = getCacheKey({query, variables: newVariables})
-            CACHE_QUERIES[oldCacheKey] = {__alias:cacheKey}
+            CACHE_QUERIES[oldCacheKey] = {__alias: cacheKey}
             console.log('new cacheKey with alias')
         }
 
@@ -396,7 +398,8 @@ export const client = {
             cacheKey = getCacheKey({query, variables})
         }
         CACHE_QUERIES[cacheKey] = data
-        const update = QUERY_WATCHER[cacheKey]
+        const update = QUERY_WATCHER[cacheKey] || QUERY_WATCHER[oldCacheKey]
+
         if (update) {
             if (data.__optimistic) {
                 // return optimistic response

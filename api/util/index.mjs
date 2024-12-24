@@ -13,6 +13,7 @@ import config from '../../gensrc/config.mjs'
 import {ensureDirectoryExistence} from '../../util/fileUtil.mjs'
 import path from 'path'
 import fs from "fs";
+import {pubsubHooked} from '../subscription.mjs'
 const PASSWORD_MIN_LENGTH = 8
 
 const ROOT_DIR = path.resolve()
@@ -67,7 +68,7 @@ const Util = {
         }
     },
     setKeyValueGlobal: async (db, context, key, value, options) => {
-        let newContext, newOption
+        let newOption
         if (options) {
             newOption = options
         } else {
@@ -75,7 +76,6 @@ const Util = {
         }
 
         if ((newOption.skipCheck) || await Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)) {
-            Cache.clearStartWith('KeyValueGlobal_' + key)
             if(newOption.asFile && Util.ensureDirectoryExistence(KEYVALUE_DIR_ABS)){
                 const fileName = `KeyValueGlobal_${key}.txt`
                 const fileAbs = path.join(KEYVALUE_DIR_ABS, fileName)
@@ -88,16 +88,38 @@ const Util = {
                 value = `@FILE:${fileName}`
             }
 
-            return db.collection('KeyValueGlobal').updateOne({
-                key
-            }, {
-                $set: {
-                    createdBy: await Util.userOrAnonymousId(db, context),
-                    key,
-                    value,
-                    ispublic: !!newOption.ispublic
+            const updateData = {
+                createdBy: await Util.userOrAnonymousId(db, context),
+                key,
+                value,
+                ispublic: !!newOption.ispublic
+            }
+
+            let insertUpdateResult
+            if(newOption.publish && updateData.ispublic){
+                insertUpdateResult = await db.collection('KeyValueGlobal').findOneAndUpdate({
+                    key
+                }, {$set: updateData}, {upsert: true, returnDocument:'after'})
+            }else{
+                insertUpdateResult = await db.collection('KeyValueGlobal').updateOne({
+                    key
+                }, {$set: updateData}, {upsert: true})
+            }
+
+            // clear cache
+            Cache.clearStartWith('KeyValueGlobal_' + key)
+            //Cache.clearStartWith('dataresolver_keyValueGlobals')
+
+            if(newOption.publish && updateData.ispublic){
+
+                if(insertUpdateResult.value && insertUpdateResult.value.constructor === Object){
+                    insertUpdateResult.value = JSON.stringify(insertUpdateResult.value)
                 }
-            }, {upsert: true})
+                await pubsubHooked.publish('subscribeKeyValueGlobal', {session:context.session,userId:context.id,subscribeKeyValueGlobal: {action: 'update', data: [insertUpdateResult]}}, db, context)
+            }
+
+
+            return insertUpdateResult
         }
     },
     getKeyValueGlobal: async (db, context, key, parse) => {

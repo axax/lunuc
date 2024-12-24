@@ -76,7 +76,7 @@ export function generateContextMenu({clickEvent, editorView, propertyTemplates, 
             contextMenuItems = [
                 {
                     icon: <AddIcon/>,
-                    name: _t('CodeEditor.editAsText'),
+                    name: _t('core.add'),
                     items: templates.map(f => ({
                         name: f.title,
                         onClick: () => {

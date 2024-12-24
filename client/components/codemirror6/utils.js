@@ -25,7 +25,7 @@ export function replaceLineWithText(view, lineNumberToReplace, newText) {
 export function formatCode(view) {
     const code = view.state.doc.toString()
 
-    const formattedCode = JSON.stringify(JSON.parse(code),null,4)
+    const formattedCode = JSON.stringify(JSON.parse(code),null,2)
 
     view.dispatch({
         changes: {from: 0, to: view.state.doc.length, insert: formattedCode}

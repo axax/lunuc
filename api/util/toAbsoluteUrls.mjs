@@ -16,4 +16,4 @@ export const replaceRelativeUrls = (html, baseUrl) => {
 
 
 /**/
-console.log(replaceRelativeUrls('<html><a href="https://www.google.ch/test"></a><img src="https://www.bbfzuf.ch/lunucapi/tracking?url=https%3A%2F%2Fwww.bbfzuf.ch%2F&subscriber=&mailing=675805af595620b3167bbe42" /></html>', 'https://lunuc.com'))
+//console.log(replaceRelativeUrls('<html><a href="https://www.google.ch/test"></a><img src="https://www.bbfzuf.ch/lunucapi/tracking?url=https%3A%2F%2Fwww.bbfzuf.ch%2F&subscriber=&mailing=675805af595620b3167bbe42" /></html>', 'https://lunuc.com'))
