@@ -492,20 +492,20 @@ class CmsViewEditorContainer extends React.Component {
         }
 
         const inner = [
-            !loadingState && <WrappedComponent key="cmsView"
-                                               cmsEditData={cmsEditData}
-                                               onTemplateChange={this.handleTemplateChange}
-                                               findSegmentInDataResolverByKeyOrPath={this.findSegmentInDataResolverByKeyOrPath.bind(this)}
-                                               inEditor={canViewCmsEditor}
-                                               onError={this.handleCmsError.bind(this)}
-                                               onDataResolverPropertyChange={this.handleDataResolverPropertySave.bind(this)}
-                                               settings={EditorOptions}
-                                               cmsPage={cmsPageWithState}
-                                               cmsEditorActions={{
-                                                   editTemplate: this.editTemplate.bind(this),
-                                                   editCmsData: this.editCmsData.bind(this)
-                                               }}
-                                               {...props} />,
+            <WrappedComponent key="cmsView"
+                                           cmsEditData={cmsEditData}
+                                           onTemplateChange={this.handleTemplateChange}
+                                           findSegmentInDataResolverByKeyOrPath={this.findSegmentInDataResolverByKeyOrPath.bind(this)}
+                                           inEditor={canViewCmsEditor}
+                                           onError={this.handleCmsError.bind(this)}
+                                           onDataResolverPropertyChange={this.handleDataResolverPropertySave.bind(this)}
+                                           settings={EditorOptions}
+                                           cmsPage={cmsPageWithState}
+                                           cmsEditorActions={{
+                                               editTemplate: this.editTemplate.bind(this),
+                                               editCmsData: this.editCmsData.bind(this)
+                                           }}
+                                           {...props} />,
             !props.dynamic && <ErrorHandler key="errorHandler" snackbar/>,
             <NetworkStatusHandler key="networkStatus"/>,
             simpleDialog && <SimpleDialog open={true}

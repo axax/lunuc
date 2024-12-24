@@ -177,7 +177,7 @@ class TypePicker extends React.Component {
             } else {
                 const includeFields = ['info']
                 if(pickerField){
-                    pickerField.forEach(field=>{
+                    (Array.isArray(pickerField)?pickerField:[pickerField]).forEach(field=>{
                         const base = field.split('.')[0]
                         if(includeFields.indexOf(base)<0){
                             includeFields.push(base)

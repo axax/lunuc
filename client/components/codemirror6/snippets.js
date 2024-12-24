@@ -4,6 +4,7 @@ import {snippetCompletion} from "@codemirror/autocomplete"
 export const jsSnippets = ()=> {
     return javascriptLanguage.data.of({
         autocomplete: [
+            snippetCompletion(`forceUpdate()`, {label: 'forceUpdate'}),
             snippetCompletion(`Util.escapeForJson('\${str}')`, {label: 'Util.escapeForJson'}),
             snippetCompletion(`on('mount',()=>{\n\tDomUtil.waitForElement('.selector').then((el)=>{})\n})`, {label: 'mount event'}),
             snippetCompletion('on([\'resourcesready\'],()=>{})', {label: 'resourcesready event'}),
