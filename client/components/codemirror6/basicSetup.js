@@ -28,7 +28,7 @@ import { json } from '@codemirror/lang-json'
 import { html } from '@codemirror/lang-html'
 import {emptyLineGutter} from './emptyLineGutter'
 import {keywordDecorator} from './keywordDecorator'
-import {jsSnippets} from './snippets'
+import {jsSnippets,cssSnippets} from './snippets'
 import {formatCode} from './utils'
 
 const customKeymap = keymap.of([
@@ -45,7 +45,7 @@ const customKeymap = keymap.of([
     { key: "Alt-Cmd-l", run: (view) => {
         console.log(view)
         formatCode(view)
-            return true
+        return true
     }},
 ])
 
@@ -53,7 +53,7 @@ const typeSpecific = type=>{
     console.log(`style for ${type}`)
 
     if(type==='css'){
-        return [css()]
+        return [css(),cssSnippets()]
     } else if(type==='json'){
         return [json()]
     } else if(type==='html'){
@@ -66,7 +66,62 @@ const typeSpecific = type=>{
     ]
 }
 
+const atCompletions = (config)=>{
+    return (context) => {
+        let word = context.matchBefore(/^@@.*$/)
+        if (!word) return null
+        if (word.from == word.to && !context.explicit) return null
+        return {
+            from: word.from,
+            options: [
+                {
+                    label: word.text, type: 'ai completion', apply: (view, completion, from, to) => {
+                        // Your custom logic here
+                        console.log("Completion selected:", completion);
+                        // Perform the default insertion
+
+                        view.dispatch({
+                            changes: {
+                                from, // Start position of the line
+                                to,     // End position of the line
+                                insert: ''      // New text to insert
+                            }
+                        })
+
+                        const contextInstructions = `the answer must be in plain ${config.type} code without code marker and instructions`
+                        fetch(`/lunucapi/system/llm?stream=true&contextInstructions=${encodeURIComponent(contextInstructions)}&content=${encodeURIComponent(completion.label.substring(3))}`).then(async response => {
+                            const reader = response.body.getReader()
+                            let answer = ''
+                            while (true) {
+                                const chunk = await reader.read()
+                                const answerPart = new TextDecoder().decode(chunk.value)
+                                console.log(answerPart)
+                                view.dispatch({
+                                    changes: {
+                                        from: from + answer.length, // Start position of the line
+                                        insert: answerPart      // New text to insert
+                                    },
+                                    selection: {anchor: from + answer.length},
+                                    scrollIntoView: true,
+                                })
+                                answer += answerPart
+
+                                if (chunk.done) {
+                                    break
+                                }
+                            }
+                        })
+                    }
+                }
+                // Add more options as needed
+            ]
+        }
+
+    }
+}
+
 const basicSetup = (config={}) => {
+    const customAutocomplete = atCompletions(config)
     return [
         config.lineNumbers && lineNumbers(),
         highlightActiveLineGutter(),
@@ -100,7 +155,10 @@ const basicSetup = (config={}) => {
         ...typeSpecific(config.type),
         config.emptyLineGutter && emptyLineGutter,
         keywordDecorator,
-        config.readOnly && EditorState.readOnly.of(true)
+        config.readOnly && EditorState.readOnly.of(true),
+        EditorState.languageData.of(() => [{
+            autocomplete: customAutocomplete
+        }])
     ]
 }
 

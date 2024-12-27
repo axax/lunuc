@@ -208,7 +208,10 @@
         "Google",
         "Shield",
         "CleaningServices",
-        "Fingerprint"
+        "Fingerprint",
+        "MoveDown",
+        "MoveUp",
+        "LowPriority"
       ],
       "theme":{
         "colors":{

@@ -1,9 +1,11 @@
 import {javascriptLanguage} from "@codemirror/lang-javascript"
+import {cssLanguage} from "@codemirror/lang-css"
 import {snippetCompletion} from "@codemirror/autocomplete"
 
 export const jsSnippets = ()=> {
     return javascriptLanguage.data.of({
         autocomplete: [
+            snippetCompletion(`const \${name} = require('@\${str}').default`, {label: 'require'}),
             snippetCompletion(`forceUpdate()`, {label: 'forceUpdate'}),
             snippetCompletion(`__this.reload({$:{time:new Date()}})`, {label: '__this.reload'}),
             snippetCompletion(`Util.escapeForJson('\${str}')`, {label: 'Util.escapeForJson'}),
@@ -22,6 +24,14 @@ export const jsSnippets = ()=> {
         }
     }
 })`, {label: 'serverMethod'})
+        ]
+    })
+}
+
+export const cssSnippets = ()=> {
+    return cssLanguage.data.of({
+        autocomplete: [
+            snippetCompletion(`//<!!#REMOVE\n\n//!!#REMOVE>`, {label: 'REMOVE Block'})
         ]
     })
 }

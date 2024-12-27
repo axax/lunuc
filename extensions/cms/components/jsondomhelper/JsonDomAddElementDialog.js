@@ -93,7 +93,8 @@ export default function JsonDomAddElementDialog(props){
                            <InputAdornment position="end">
                                <AutoFixHighIconButton disabled={aiAssistent.running || !aiAssistent.promt} color="primary" onClick={()=>{
                                    setAiAssistent({...aiAssistent,running:true})
-                                   fetch(`/lunucapi/system/llm?stream=true&content=${encodeURIComponent(aiAssistent.promt+'. Return only html code without explanation')}`).then(async response => {
+                                   const contextInstructions = `the answer must be plain html code without code marker and instructions`
+                                   fetch(`/lunucapi/system/llm?stream=true&contextInstructions=${encodeURIComponent(contextInstructions)}&content=${encodeURIComponent(aiAssistent.promt)}`).then(async response => {
                                        const reader = response.body.getReader()
                                        let answer = ''
                                        while(true){
@@ -111,9 +112,7 @@ export default function JsonDomAddElementDialog(props){
                        ),
                    }}/>}
 
-        {aiAssistent.answer &&
-
-            <CodeEditor controlled lineNumbers type="html" height="auto">
+        {aiAssistent.answer && <CodeEditor controlled lineNumbers type="html" height="auto" identifier={`aiAnswer${aiAssistent.answer.length}`}>
             {aiAssistent.answer}
         </CodeEditor>}
 

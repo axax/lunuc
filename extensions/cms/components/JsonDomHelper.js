@@ -12,7 +12,10 @@ import {
     ImageIcon,
     FileCopyIcon,
     PlaylistAddIcon,
-    FlipToBackIcon
+    FlipToBackIcon,
+    MoveDownIcon,
+    MoveUpIcon,
+    LowPriorityIcon
 } from 'ui/admin'
 import JsonDomAddElementDialog from './jsondomhelper/JsonDomAddElementDialog'
 import AddToBody from './AddToBody'
@@ -442,20 +445,7 @@ class JsonDomHelper extends React.Component {
                 // 1. get element from json structure by key
                 const source = getComponentByKey(sourceKey, _json)
                 if (source) {
-                    if (isTargetAbove(sourceKey, targetKey + '.' + targetIndex)) {
-                        //2. remove it from json
-                        if (removeComponent(sourceKey, _json)) {
-
-                            // 3. add it to new position
-                            addComponent({key: targetKey, json: _json, index: targetIndex, component: source})
-                            _onTemplateChange(_json, true)
-
-                        }
-                    } else {
-                        addComponent({key: targetKey, json: _json, index: targetIndex, component: source})
-                        removeComponent(sourceKey, _json)
-                        _onTemplateChange(_json, true)
-                    }
+                    this.moveElementFromTo(sourceKey, targetKey, targetIndex, _json, source)
                 } else{
                     this.setState({addChildDialog: {
                             payload: {dropIndex: targetIndex},
@@ -472,6 +462,25 @@ class JsonDomHelper extends React.Component {
         this.resetDragState()
     }
 
+
+    moveElementFromTo(sourceKey, targetKey, targetIndex, _json, source) {
+        const {_onTemplateChange} = this.props
+
+        if (isTargetAbove(sourceKey, targetKey + '.' + targetIndex)) {
+            //2. remove it from json
+            if (removeComponent(sourceKey, _json)) {
+
+                // 3. add it to new position
+                addComponent({key: targetKey, json: _json, index: targetIndex, component: source})
+                _onTemplateChange(_json, true)
+
+            }
+        } else {
+            addComponent({key: targetKey, json: _json, index: targetIndex, component: source})
+            removeComponent(sourceKey, _json)
+            _onTemplateChange(_json, true)
+        }
+    }
 
     resetDragState() {
         onJsonDomDragEnd()
@@ -783,7 +792,7 @@ class JsonDomHelper extends React.Component {
                 onMouseOut={this.onToolbarMouseOut.bind(this)}
                 style={{top: this.state.top, left: this.state.left, height: this.state.height}}>
 
-                <StyledInfoBox>{rest['data-element-key'] || rest.id || rest.slug}</StyledInfoBox>
+                <StyledInfoBox>{rest['data-element-key'] || rest.id || rest.slug || _tagName}</StyledInfoBox>
 
                 {menuItems.length > 0 && <StyledToolbarMenu
                     anchorReference={this.state.mouseY ? "anchorPosition" : "anchorEl"}
@@ -1146,6 +1155,39 @@ class JsonDomHelper extends React.Component {
                                 }
                             })
                         }
+                    }
+                }
+
+                const subMenuMove = []
+                const parentKey = rest._key.substring(0,rest._key.lastIndexOf('.'))
+                const parentJson = getComponentByKey(parentKey, _json)
+                if(parentJson && parentJson !==subJson && parentJson.c && parentJson.c.constructor === Array){
+                    const currentIndex = parentJson.c.indexOf(subJson)
+                    if(currentIndex>0) {
+                        subMenuMove.push({
+                            name: _t('JsonDomHelper.move.element.up'),
+                            icon: <MoveUpIcon/>,
+                            onClick: () => {
+                                this.moveElementFromTo(rest._key, parentKey, currentIndex-1, _json, subJson)
+                            }
+                        })
+                    }
+                    if(currentIndex+1<parentJson.c.length) {
+                        subMenuMove.push({
+                            name: _t('JsonDomHelper.move.element.down'),
+                            icon: <MoveDownIcon/>,
+                            onClick: () => {
+                                this.moveElementFromTo(rest._key, parentKey, currentIndex+2, _json, subJson)
+                            }
+                        })
+                    }
+
+                    if(subMenuMove.length>0) {
+                        menuItems.push({
+                            name: _t('JsonDomHelper.move.element'),
+                            icon: <LowPriorityIcon/>,
+                            items: subMenuMove
+                        })
                     }
                 }
 

@@ -73,6 +73,9 @@ export const translations = {
         'JsonDomHelper.element.above':'Element oberhalb hinzufügen',
         'JsonDomHelper.element.to.clipboard': 'Element in Zwischenablage kopieren',
         'JsonDomHelper.element.from.clipboard': 'Element von Zwischenablage einfügen',
+        'JsonDomHelper.move.element':'Element verschieben',
+        'JsonDomHelper.move.element.up':'Element nach oben verschieben',
+        'JsonDomHelper.move.element.down':'Element nach unten verschieben',
         'JsonDomHelper.edit.template':'Template bearbeiten',
         'JsonDomHelper.copy.element':'Element duplizieren',
         'Cms.field.disableRendering': 'Rendering deaktivieren',
@@ -152,6 +155,9 @@ export const translations = {
         'JsonDomHelper.element.above':'Insert above',
         'JsonDomHelper.edit.template':'Edit template',
         'JsonDomHelper.copy.element':'Copy element',
+        'JsonDomHelper.move.element':'Move element',
+        'JsonDomHelper.move.element.up':'Move element up',
+        'JsonDomHelper.move.element.down':'Move element down',
         'GenericData.field.disableRendering': 'Disable rendering',
         'CmsViewEditorContainer.editParentComponent':'Edit parent component'
     }
