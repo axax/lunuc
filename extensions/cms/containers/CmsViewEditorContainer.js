@@ -178,6 +178,7 @@ class CmsViewEditorContainer extends React.Component {
             description,
             template,
             templateChangeCount:0,
+            dataResolverChangeCount:0,
             resources,
             script,
             style,
@@ -643,7 +644,7 @@ class CmsViewEditorContainer extends React.Component {
                         expanded={EditorPageOptions.dataResolverExpanded}>
                         <DataResolverEditor onScroll={this.handleSettingChange.bind(this, 'dataResolverScroll', true)}
                                             scrollPosition={EditorPageOptions.dataResolverScroll}
-                                            identifier={'dataResolver' + cmsPage._id}
+                                            identifier={`dataResolver${cmsPage._id}-${this.state.dataResolverChangeCount}`}
                                             onCleanUpTranslations={this.handleCleanUpTranslations.bind(this)}
                                             onChange={this.handleDataResolverChange.bind(this)}>{dataResolver}</DataResolverEditor>
                     </Expandable>
@@ -1249,6 +1250,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     handleDataResolverChange = (str, instantSave) => {
+        this._keyValueMapState.dataResolverChangeCount = this.state.dataResolverChangeCount + 1
         this.setCmsPageValue({key: 'dataResolver',
             timeoutSetState:0,
             timeoutUpdate: instantSave?0:1000,
