@@ -17,7 +17,8 @@ export const resizeImage = async (parsedUrl, req, filename) => {
             flip = parsedUrl.query.flip,
             flop = parsedUrl.query.flop,
             position = parsedUrl.query.position,
-            withoutEnlargement = parsedUrl.query.noenlarge
+            withoutEnlargement = parsedUrl.query.noenlarge,
+            density = parsedUrl.query.density
 
         let format = parsedUrl.query.format
         if (format === 'webp' && req.headers['accept'] && req.headers['accept'].indexOf('image/webp') < 0) {
@@ -59,7 +60,7 @@ export const resizeImage = async (parsedUrl, req, filename) => {
                 }
             }
 
-            let modfilename = `${filename}@${width}x${height}-${quality}${fit ? '-' + fit : ''}${position ? '-' + position : ''}${format ? '-' + format : ''}${flip ? '-flip' : ''}${flop ? '-flop' : ''}${withoutEnlargement ? '-noenlarge' : ''}${bg ? '-' + bg : ''}`
+            let modfilename = `${filename}@${width}x${height}-${quality}${fit ? '-' + fit : ''}${position ? '-' + position : ''}${format ? '-' + format : ''}${flip ? '-flip' : ''}${flop ? '-flop' : ''}${withoutEnlargement ? '-noenlarge' : ''}${bg ? '-' + bg : ''}${density?'-'+density:''}`
 
             mimeType = MimeType.detectByExtension(format)
             exists = true
@@ -87,6 +88,9 @@ export const resizeImage = async (parsedUrl, req, filename) => {
                     if (ext === '.gif') {
                         // might be animated
                         sharpOptions.animated = true
+                    }
+                    if(!isNaN(density)){
+                        sharpOptions.density = parseInt(density)
                     }
 
                     let resizedFile = await sharp(filename, sharpOptions).resize(resizeOptions)/*.withMetadata()*/
