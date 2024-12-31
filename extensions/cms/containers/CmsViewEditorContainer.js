@@ -646,7 +646,9 @@ class CmsViewEditorContainer extends React.Component {
                                             scrollPosition={EditorPageOptions.dataResolverScroll}
                                             identifier={`dataResolver${cmsPage._id}-${this.state.dataResolverChangeCount}`}
                                             onCleanUpTranslations={this.handleCleanUpTranslations.bind(this)}
-                                            onChange={this.handleDataResolverChange.bind(this)}>{dataResolver}</DataResolverEditor>
+                                            onChange={(str)=>{
+                                                this.handleDataResolverChange(str,false,true)
+                                            }}>{dataResolver}</DataResolverEditor>
                     </Expandable>
                     <Expandable title="Server Script"
                         icon="code"
@@ -1249,8 +1251,10 @@ class CmsViewEditorContainer extends React.Component {
         this.setCmsPageValue({key,timeoutUpdate:500}, value)
     }
 
-    handleDataResolverChange = (str, instantSave) => {
-        this._keyValueMapState.dataResolverChangeCount = this.state.dataResolverChangeCount + 1
+    handleDataResolverChange = (str, instantSave, skipChangeCount) => {
+        if(!skipChangeCount) {
+            this._keyValueMapState.dataResolverChangeCount = this.state.dataResolverChangeCount + 1
+        }
         this.setCmsPageValue({key: 'dataResolver',
             timeoutSetState:0,
             timeoutUpdate: instantSave?0:1000,

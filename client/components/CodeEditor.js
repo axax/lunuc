@@ -153,9 +153,9 @@ function CodeEditor(props,ref){
                 }
             }}
             onContextMenu={(clickEvent, editorView) => {
-                if (type === 'json') {
+                if (type === 'json' || type === 'css') {
                     clickEvent.preventDefault()
-                    setContextMenu(generateContextMenu({clickEvent,editorView,propertyTemplates,templates,setEditData}))
+                    setContextMenu(generateContextMenu({type,clickEvent,editorView,propertyTemplates,templates,setEditData}))
                 }
             }}
             style={{height:height ? height : (renderInWindow ? '100%':'30rem')}}

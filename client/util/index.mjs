@@ -332,6 +332,9 @@ const Util = {
         }
         if(image._localized){
             image = image[_app_.lang] || image[config.DEFAULT_LANGUAGE]
+            if(image && image.constructor===String){
+                image = {src:image}
+            }
         }
         if (Array.isArray(image)) {
             image = image[0]

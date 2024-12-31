@@ -106,7 +106,8 @@ export const translations = {
         'CodeEditor.editAsText':'Als Text bearbeiten',
         'CodeEditor.editAsHtml':'Als HTML bearbeiten',
         'CodeEditor.openPage': 'Seite öffnen',
-        'CodeEditor.reformatCode': 'Automatisch formatieren'
+        'CodeEditor.reformatCode': 'Automatisch formatieren',
+        'GlobalSearch.placeholder':'Schnellsuche'
     },
     en: {
         'FilesContainer.deleteFile':'Delete File',
@@ -213,6 +214,7 @@ export const translations = {
         'CodeEditor.editAsText':'Edit as text',
         'CodeEditor.editAsHtml':'Edit as HTML',
         'CodeEditor.openPage': 'Open page',
-        'CodeEditor.reformatCode': 'Reformat'
+        'CodeEditor.reformatCode': 'Reformat',
+        'GlobalSearch.placeholder':'Quick search'
     }
 }

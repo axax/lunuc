@@ -161,15 +161,41 @@ export default class AggregationBuilder {
 
 
             if (localized) {
+                const localizedMatch = {}
                 for (const lang of config.LANGUAGES) {
                     if (await this.createFilterForField({
                         name: name + '.' + lang,
                         subQuery,
                         reference
-                    }, match, {exact, filters})) {
+                    }, localizedMatch, {exact, filters})) {
                         hasAtLeastOneMatch = true
                     }
                 }
+
+                // merge localized match to match
+                if(!match.$or) {
+                    match.$or=[]
+                }
+                if(localizedMatch?.$and?.length>0){
+
+                    const allMatches = []
+                    if(localizedMatch?.$or?.length>0) {
+                        allMatches.push(...localizedMatch.$or)
+                    }
+                    allMatches.push(...localizedMatch.$and)
+                    const byLang = {}
+                    allMatches.forEach(m=>{
+                        const key = Object.keys(m)[0]
+                        if(!byLang[key]){
+                            byLang[key] = []
+                        }
+                        byLang[key].push(m)
+                    })
+                    match.$or.push(...Object.keys(byLang).map(key=>({$and:byLang[key]})))
+                }else if(localizedMatch?.$or?.length>0){
+                    match.$or.push(...localizedMatch.$or)
+                }
+
                 return hasAtLeastOneMatch
             }
 
@@ -373,7 +399,7 @@ export default class AggregationBuilder {
         this.debugInfo = []
 
         const typeDefinition = getType(this.type) || {}
-        const {projectResult, lang, includeCount, includeUserFilter} = this.options
+        const {projectResult, includeCount, includeUserFilter} = this.options
 
         // limit and offset
         const limit = this.getLimit(),
@@ -443,7 +469,7 @@ export default class AggregationBuilder {
             }
         }
 
-        await this.createQueriesForFields(fields, projectResultData, lang, match, filters, groups, lookups, typeFields, resultMatch, resultFilters, lookupMatch, lookupFilters);
+        await this.createQueriesForFields(fields, projectResultData, match, filters, groups, lookups, typeFields, resultMatch, resultFilters, lookupMatch, lookupFilters);
 
         if (!projectResult) {
             // also return extra fields
@@ -638,36 +664,20 @@ export default class AggregationBuilder {
 
     }
 
-    async createQueriesForFields(fields, projectResultData, lang, match, filters, groups, lookups, typeFields, resultMatch, resultFilters, lookupMatch, lookupFilters) {
-        const createdFieldMatches = {}
-        const processedFields = []
-
+    async createQueriesForFields(fields, projectResultData, match, filters, groups, lookups, typeFields, resultMatch, resultFilters, lookupMatch, lookupFilters) {
 
         // Check whether there are fields that are contained in the filter but are not queried
-        if(filters && filters.parts) {
-            const keys = Object.keys(filters.parts)
-            for(const key of keys){
-                const parts = key.split('.')
-                if(!fields.find(f=>f && (
-                    (f.constructor === String && f.split('$')[0]===parts[0]) ||
-                    (f.constructor===Object && Object.keys(f)[0]===parts[0])
-                ))){
-                    console.log(`add filter for ${key}`, fields)
-                    // Temp log
-                    /*GenericResolver.createEntity(this.db, {context:{lang:'en'}}, 'Log', {
-                        location: 'dbquery',
-                        type: 'createQueriesForFields',
-                        message: 'add match from filter: ' + key,
-                        meta: {fields, filters, key, type:this.type}
-                    })*/
-                    const fieldDefinition = this.createFieldDefinition(parts[0], this.type)
-                    if(fieldDefinition.existsInDefinition) {
-                        await this.createFilterForField(fieldDefinition, match, {filters})
-                    }
-                }
-            }
-        }
+        await this.addMissingFieldsFromFilters(filters, fields, match);
 
+        await this.createQueriesForFieldsRecursiv(fields, projectResultData, match, filters, groups, lookups, typeFields, resultMatch, resultFilters, lookupMatch, lookupFilters)
+    }
+
+    async createQueriesForFieldsRecursiv(fields, projectResultData,
+                                         match, filters, groups, lookups,
+                                         typeFields, resultMatch, resultFilters, lookupMatch, lookupFilters,
+                                         level=0, parentName='') {
+        const processedFields = []
+        const createdFieldMatches = {}
 
         for (let i = 0; i < fields.length; i++) {
             const field = fields[i]
@@ -717,7 +727,7 @@ export default class AggregationBuilder {
                                 usePipeline = true
                                 localProjected = true
                                 // project localized field in current language
-                                projectPipeline[refFieldName] = '$' + refFieldName + '.' + lang
+                                projectPipeline[refFieldName] = '$' + refFieldName + '.' + this.options.lang
                             } else {
                                 projectPipeline[refFieldName] = 1
                             }
@@ -738,6 +748,8 @@ export default class AggregationBuilder {
                                     type: refFieldDefinition.type,
                                     localized: refFieldDefinition.localized && !localProjected
                                 }, match, {exact: true, filters})
+                            }else{
+                                //console.log('Aggregation',field,refFieldDefinition)
                             }
                         }
                     }
@@ -751,16 +763,16 @@ export default class AggregationBuilder {
                       match.$and.push({[fieldName]: {$in: ids}})
                   }*/
 
-                if (fieldDefinition.multi) {
-                    // if multi it has to be an array
-                    // this is an anditional filter to remove non array values. it is not needed if database is consistent
-                    // without this filter you might get the error: $in requires an array as a second argument
-                    /*addFilterToMatch({
-                     filterKey:fieldName+'.0',
-                     filterValue: { '$exists': true },
-                     match: rootMatch
-                     })*/
-                }
+                //if (fieldDefinition.multi) {
+                // if multi it has to be an array
+                // this is an anditional filter to remove non array values. it is not needed if database is consistent
+                // without this filter you might get the error: $in requires an array as a second argument
+                /*addFilterToMatch({
+                 filterKey:fieldName+'.0',
+                 filterValue: { '$exists': true },
+                 match: rootMatch
+                 })*/
+                // }
 
 
                 if (refFields && refFields.length === 1 && refFields[0] === '_id') {
@@ -796,9 +808,9 @@ export default class AggregationBuilder {
                     if (fieldDefinition.projectLocal) {
                         // project localized field in current language
                         if (fieldDefinition.substr) {
-                            projectResultData[fieldName] = {$substrCP: ['$' + fieldName + (fieldDefinition.localized ? '.' + lang : ''), fieldDefinition.substr[0], fieldDefinition.substr[1]]}
+                            projectResultData[fieldName] = {$substrCP: ['$' + fieldName + (fieldDefinition.localized ? '.' + this.options.lang : ''), fieldDefinition.substr[0], fieldDefinition.substr[1]]}
                         } else if (fieldDefinition.localized) {
-                            projectResultData[fieldName] = '$' + fieldName + '.' + lang
+                            projectResultData[fieldName] = '$' + fieldName + '.' + this.options.lang
                         }
 
                     } else {
@@ -809,6 +821,32 @@ export default class AggregationBuilder {
                         /*if (fieldDefinition.type === 'Object') {
                             projectResultData[fieldName] = {$convert: {input: '$' + fieldName, to: "string", onError: "error" }}
                         }*/
+                    }
+                }
+            }
+        }
+    }
+
+    async addMissingFieldsFromFilters(filters, fields, match) {
+        if (filters && filters.parts) {
+            const keys = Object.keys(filters.parts)
+            for (const key of keys) {
+                const parts = key.split('.')
+                if (!fields.find(f => f && (
+                    (f.constructor === String && f.split('$')[0] === parts[0]) ||
+                    (f.constructor === Object && Object.keys(f)[0] === parts[0])
+                ))) {
+                    console.log(`add filter for ${key}`, fields)
+                    // Temp log
+                    /*GenericResolver.createEntity(this.db, {context:{lang:'en'}}, 'Log', {
+                        location: 'dbquery',
+                        type: 'createQueriesForFields',
+                        message: 'add match from filter: ' + key,
+                        meta: {fields, filters, key, type:this.type}
+                    })*/
+                    const fieldDefinition = this.createFieldDefinition(parts[0], this.type)
+                    if (fieldDefinition.existsInDefinition) {
+                        await this.createFilterForField(fieldDefinition, match, {filters})
                     }
                 }
             }

@@ -26,18 +26,23 @@ export default function SimpleAutosuggest(props) {
             //setOptions([])
         }
     }, [open])*/
-    const getData = (text)=>{
-
+    const getData = (searchData)=>{
         if(!props.apiUrl) {
             return
         }
-        const textTrimmed = text.trim()
+        let apiUrl
+        if(props.apiUrl instanceof Function){
+            apiUrl = props.apiUrl(searchData)
+        }else{
+            apiUrl = props.apiUrl
+        }
+        const textTrimmed = searchData.text.trim()
         setLoading(textTrimmed?true:false)
 
         if(textTrimmed){
 
             const abortController = new AbortController()
-            fetch(`${props.apiUrl.replaceAll('%search%',text)}`,
+            fetch(`${apiUrl.replaceAll('%search%',textTrimmed)}`,
                 {signal:abortController.signal})
             .then(response => {
 
@@ -89,7 +94,7 @@ export default function SimpleAutosuggest(props) {
             onBlur={props.onBlur}
             onChange={props.onChange}
             onInputChange={(event, text)=>{
-                getData(text)
+                getData({text})
                 if(props.onInputChange){
                     props.onInputChange(event, text)
                 }
@@ -104,8 +109,8 @@ export default function SimpleAutosuggest(props) {
                     return foundOption.name
                 }
                 return option
-            }
-            }
+            }}
+            filterOptions={props.filterOptions}
             options={options}
             loading={loading}
             renderInput={(params) => {

@@ -1,3 +1,4 @@
+import {formatCss} from './formatCss'
 
 export function scrollToLine(view, firstVisibleLine) {
     if (firstVisibleLine > 1 && view.state.doc.lines > firstVisibleLine) {
@@ -22,12 +23,19 @@ export function replaceLineWithText(view, lineNumberToReplace, newText) {
     })
 }
 
-export function formatCode(view) {
+export function formatCode(view, type) {
     const code = view.state.doc.toString()
+    console.log(`format code for type ${type}`)
+    let formattedCode
+    if(type==='json') {
+        formattedCode = JSON.stringify(JSON.parse(code), null, 2)
+    }else if(type==='css'){
+        formattedCode = formatCss(code)
+    }
 
-    const formattedCode = JSON.stringify(JSON.parse(code),null,2)
-
-    view.dispatch({
-        changes: {from: 0, to: view.state.doc.length, insert: formattedCode}
-    })
+    if(formattedCode){
+        view.dispatch({
+            changes: {from: 0, to: view.state.doc.length, insert: formattedCode}
+        })
+    }
 }

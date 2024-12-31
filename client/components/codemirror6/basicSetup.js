@@ -31,31 +31,22 @@ import {keywordDecorator} from './keywordDecorator'
 import {jsSnippets,cssSnippets} from './snippets'
 import {formatCode} from './utils'
 
-const customKeymap = keymap.of([
-    { key: "Ctrl-s", run: (view) => {
-            // Your save function here
-            console.log("Saving...")
-            return true
-    }},
-    { key: "Ctrl-f", run: (view) => {
-            // Your find function here
-            console.log("Finding...")
-            return true
-    }},
-    { key: "Alt-Cmd-l", run: (view) => {
-        console.log(view)
-        formatCode(view)
-        return true
-    }},
-])
-
 const typeSpecific = type=>{
     console.log(`style for ${type}`)
 
+
+    const customKeymap = keymap.of([
+        { key: "Alt-Cmd-l", run: (view) => {
+            formatCode(view, type)
+            return true
+        }}
+    ])
+
     if(type==='css'){
-        return [css(),cssSnippets()]
+        return [css(),cssSnippets(), customKeymap]
     } else if(type==='json'){
-        return [json()]
+        return [json(), customKeymap]
+
     } else if(type==='html'){
         return [html()]
     }
@@ -151,7 +142,6 @@ const basicSetup = (config={}) => {
         ]),
         /* custom */
         keymap.of([indentWithTab]),
-        customKeymap,
         ...typeSpecific(config.type),
         config.emptyLineGutter && emptyLineGutter,
         keywordDecorator,
