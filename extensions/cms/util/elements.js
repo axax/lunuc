@@ -1304,7 +1304,7 @@ const baseElements = [
                                                         $inlineEditor: false,
                                                         $is: '$.item{item.title?true:false}',
                                                         t: 'div.slide-title',
-                                                        c: '$.item{item.title}'
+                                                        $c: '$.item{_e(item.title)}'
 
                                                     },
                                                     {
@@ -1410,7 +1410,9 @@ const baseElements = [
                 title: {
                     tab: 'Slides',
                     label: 'Title',
-                    fullWidth: true
+                    fullWidth: true,
+                    replaceBreaks: true,
+                    uitype:'textarea'
                 },
                 text: {
                     tab: 'Slides',
