@@ -166,8 +166,9 @@ class Bot {
     communicate(key, ctx, opts) {
         if (ctx.message) {
             this.archiveMessage(ctx)
-            if( ctx.message.text ) {
-                let command = ctx.message.text.trim().toLowerCase()
+            const text = ctx.message.text || ctx.message.caption
+            if( text ) {
+                let command = text.trim().toLowerCase()
 
                 if (command.startsWith('/') && this.commands[command.substring(1)]) {
                     // its a command
@@ -175,7 +176,7 @@ class Bot {
                     return
                 } else {
                     if (!opts || opts.createResult !== false) {
-                        this.createResult(ctx.message.text)
+                        this.createResult(text)
                     }
                 }
             }
