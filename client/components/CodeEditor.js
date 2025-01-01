@@ -44,6 +44,8 @@ function CodeEditor(props,ref){
     const [fileIndex, setFileIndex] = useState(props.fileIndex || 0)
     const [showFileSplit, setShowFileSplit] = useState(true)
     const [scrollPositions] = useState(Object.assign({}, props.scrollPosition))
+    const [stateValue,setStateValue] = useState(children)
+    const [isDataJson] = useState(props.forceJson || children && (children.constructor === Object || children.constructor === Array))
     const editorViewRef = useRef()
     const editDataFormRef = useRef()
 
@@ -55,9 +57,10 @@ function CodeEditor(props,ref){
         getStateError: () => stateError
     }))
 
-    const isDataJson = props.forceJson || children && (children.constructor === Object || children.constructor === Array)
+
+
+    let finalValue = isDataJson && stateValue.constructor !== String ? JSON.stringify(stateValue, null, 2) : stateValue
     const hasError = (error || stateError)
-    let value = isDataJson ? JSON.stringify(children, null, 2) : children
 
     console.log(`Render CodeEditor with height=${height || ''} and identifier=${identifier}`)
     if(!identifier){
@@ -84,14 +87,14 @@ function CodeEditor(props,ref){
     }
 
     let files, finalFileIndex = fileIndex
-    if (fileSplit && !isDataJson && value) {
+    if (fileSplit && !isDataJson && finalValue) {
         if (showFileSplit) {
-            files = seperateFiles(value)
+            files = seperateFiles(finalValue)
             if(files.length>0) {
                 if (fileIndex >= files.length) {
                     finalFileIndex = 0
                 }
-                value = files[finalFileIndex].content
+                finalValue = files[finalFileIndex].content
             }
         }
         allActions.push({
@@ -105,6 +108,8 @@ function CodeEditor(props,ref){
         {files && <div>{files.map((file, i) => {
                 return (<StyledFile key={'file' + i}
                                 onClick={() => {
+                                    // to keep value in state
+                                    setStateValue(putFilesTogether(files, finalFileIndex, editorViewRef.current.state.doc.toString()))
                                     setFileIndex(i)
                                     if (onFileChange) {
                                         onFileChange(i)
@@ -160,7 +165,7 @@ function CodeEditor(props,ref){
             }}
             style={{height:height ? height : (renderInWindow ? '100%':'30rem')}}
             firstVisibleLine={scrollPositions[finalFileIndex] ? scrollPositions[finalFileIndex].firstVisibleLine : 0}
-            value={value}/>
+            value={finalValue}/>
         {showFab && <SimpleMenu key="menu" mini fab color="secondary" style={{
             zIndex: 999,
             position: 'absolute',
