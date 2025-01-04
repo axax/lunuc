@@ -75,6 +75,12 @@ export const request = (options) => {
                 }
             })
 
+
+            res.on('error', (error) => {
+                reject(error)
+            })
+
+
             if(finalOptions.headerOnly){
                 resolve(res)
                 req.abort()

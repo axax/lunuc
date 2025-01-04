@@ -1,4 +1,4 @@
-import React, {useState,useImperativeHandle,forwardRef,memo,useRef} from 'react'
+import React, {useState, useImperativeHandle, forwardRef, memo, useRef, useEffect} from 'react'
 import CodeMirrorWrapper from './codemirror6/CodeMirrorWrapper'
 import {SimpleMenu,SimpleDialog,LaunchIcon,ViewListIcon} from 'ui/admin'
 import GenericForm from './GenericForm'
@@ -37,6 +37,11 @@ const StyledRoot = styled('div')(({ error, inWindow}) => ({
 
 function CodeEditor(props,ref){
     const {mergeView, mergeValue, children, height, onScroll, onFileChange, showFab, fabButtonStyle, actions, onChange, onError, onBlur, lineNumbers, type, style, className, error, templates, propertyTemplates, fileSplit, identifier, readOnly} = props
+
+    if(!identifier){
+        console.warn('CodeEditor identifier is missing')
+    }
+
     const [renderInWindow, setRenderInWindow] = useState(false)
     const [contextMenu, setContextMenu] = useState(false)
     const [stateError, setStateError] = useState(false)
@@ -45,6 +50,7 @@ function CodeEditor(props,ref){
     const [showFileSplit, setShowFileSplit] = useState(true)
     const [scrollPositions] = useState(Object.assign({}, props.scrollPosition))
     const [stateValue,setStateValue] = useState(children)
+    const [stateIdentifier,setStateIdentifier] = useState(identifier)
     const [isDataJson] = useState(props.forceJson || children && (children.constructor === Object || children.constructor === Array))
     const editorViewRef = useRef()
     const editDataFormRef = useRef()
@@ -57,15 +63,18 @@ function CodeEditor(props,ref){
         getStateError: () => stateError
     }))
 
+    useEffect(() => {
+        setStateValue(children)
+        setStateIdentifier(identifier)
+        return () => {}
+    }, [identifier])
+
 
 
     let finalValue = isDataJson && stateValue.constructor !== String ? JSON.stringify(stateValue, null, 2) : stateValue
     const hasError = (error || stateError)
 
-    console.log(`Render CodeEditor with height=${height || ''} and identifier=${identifier}`)
-    if(!identifier){
-        console.warn('CodeEditor identifier is missing')
-    }
+    console.log(`Render CodeEditor with height=${height || ''} and identifier=${stateIdentifier}`)
 
     const allActions = [
         {
@@ -117,7 +126,7 @@ function CodeEditor(props,ref){
                                 }}
                                 active={i === finalFileIndex}>{file.filename}</StyledFile>)})}</div>}
         <CodeMirrorWrapper mergeView={mergeView} mergeValue={mergeValue}
-            identifier={`${identifier}${showFileSplit?'-'+finalFileIndex:''}`}
+            identifier={`${stateIdentifier}${showFileSplit?'-'+finalFileIndex:''}`}
             onChange={(codeAsString)=>{
                 let fullCodeAsString = putFilesTogether(files, finalFileIndex, codeAsString)
 
