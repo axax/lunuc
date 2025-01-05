@@ -58,7 +58,7 @@ function RestorePlugin({ post, readOnly }){
     const [editor] = useLexicalComposerContext()
     useEffect(() => {
         if (post && editor ) {
-            const initialEditorState = editor.parseEditorState(JSON.parse(post.body))
+            const initialEditorState = editor.parseEditorState(post.body && post.body.constructor===String?JSON.parse(post.body):post.body)
             editor.setEditorState(initialEditorState)
         }
     }, [post, editor, readOnly])
@@ -68,8 +68,8 @@ function RestorePlugin({ post, readOnly }){
 
 export default React.memo((props) => {
 
-    const {post, onChange, debug} = props
-    console.log(`render post editor for ${post._id}`)
+    const {post, onChange, debug, style} = props
+    console.log(`render post editor for ${post && post._id}`)
 
     return (
         <LexicalComposer ref={(ref)=>{
@@ -95,9 +95,10 @@ export default React.memo((props) => {
                     <ListMaxIndentLevelPlugin maxDepth={7} />
                     <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
                     <OnChangePlugin ignoreSelectionChange={true} ignoreHistoryMergeTagChange={true} onChange={(editorState, x)=>{
-
                         //  console.log(JSON.stringify(editorState.toJSON()), post.body)
-                        onChange(editorState.toJSON())
+                        if(onChange) {
+                            onChange(editorState.toJSON())
+                        }
                     }} />
                 </div>
             </div>
@@ -105,5 +106,5 @@ export default React.memo((props) => {
     )
 }, (prevProps, nextProps) => {
 
-    return prevProps.post._id === nextProps.post._id
+    return prevProps.post && nextProps.post && prevProps.post._id === nextProps.post._id
 })

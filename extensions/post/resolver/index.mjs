@@ -7,15 +7,15 @@ import {pubsub} from '../../../api/subscription.mjs'
 
 export default db => ({
     Query: {
-        posts: async ({limit, page, offset, filter, query}, {context}) => {
+        posts: async ({sort, limit, page, offset, filter, query}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
-            let sort = {_id: 1},
+            let finalSort = sort || {_id: 1},
                 match = {createdBy: new ObjectId(context.id)}
 
             if (query) {
                 match.$or = [{title: {$regex: query, $options: 'i'}}, {$text: {$search: query}}]
-                sort = {score: {$meta: 'textScore'}}
+                finalSort = {score: {$meta: 'textScore'}}
             }
             const posts = await GenericResolver.entities(db, context, 'Post', ['title', 'body', 'editor', 'search', 'searchScore'], {
                 match,
@@ -23,7 +23,7 @@ export default db => ({
                 limit,
                 offset,
                 filter,
-                sort
+                sort: finalSort
             })
 
             posts.results.forEach(post=>{

@@ -690,6 +690,8 @@ class CmsViewEditorContainer extends React.Component {
                         <ScriptEditor
                             identifier={'script' + cmsPage._id}
                             onScroll={this.handleSettingChange.bind(this, 'scriptScroll', true)}
+                            fileIndex={EditorPageOptions.scriptFileIndex}
+                            onFileChange={this.handleSettingChange.bind(this, 'scriptFileIndex', true)}
                             scrollPosition={EditorPageOptions.scriptScroll}
                             onChange={this.setCmsPageValue.bind(this, {key:'script', timeoutSetState: 500, timeoutUpdate: 5000})}>{script}</ScriptEditor>
 

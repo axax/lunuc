@@ -402,7 +402,7 @@ export default () => {
 
         let editor
 
-        if (dataToEdit.mimeType.indexOf('image') === 0) {
+        if (dataToEdit.mimeType && dataToEdit.mimeType.indexOf('image') === 0) {
 
 
             editor = [<img key="mediaImage"
@@ -453,7 +453,7 @@ export default () => {
                 </Button>]
 
 
-        } else if (dataToEdit.mimeType.indexOf('video') === 0) {
+        } else if (dataToEdit.mimeType && dataToEdit.mimeType.indexOf('video') === 0) {
             let src = mediaData.src
             if (dataToEdit.mimeType === 'video/mpeg') {
                 src += '?ext=mp4&transcode={"audioQuality":2,"videoBitrate":2000,"fps":15,"size":"320x?","crf":25}'
@@ -461,7 +461,7 @@ export default () => {
             editor = <video width="320" height="240" controls>
                 <source src={src} type={'video/mp4'}/>
             </video>
-        } else if (dataToEdit.mimeType.indexOf('audio') === 0) {
+        } else if (dataToEdit.mimeType && dataToEdit.mimeType.indexOf('audio') === 0) {
 
             editor = <audio controls>
                 <source src={mediaData.src + '?ext=mp3'} type={dataToEdit.mimeType}/>

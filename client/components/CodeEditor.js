@@ -49,7 +49,7 @@ function CodeEditor(props,ref){
     const [fileIndex, setFileIndex] = useState(props.fileIndex || 0)
     const [showFileSplit, setShowFileSplit] = useState(true)
     const [scrollPositions] = useState(Object.assign({}, props.scrollPosition))
-    const [stateValue,setStateValue] = useState(children)
+    const [stateValue,setStateValue] = useState(children || '')
     const [stateIdentifier,setStateIdentifier] = useState(identifier)
     const [isDataJson] = useState(props.forceJson || children && (children.constructor === Object || children.constructor === Array))
     const editorViewRef = useRef()
@@ -64,7 +64,7 @@ function CodeEditor(props,ref){
     }))
 
     useEffect(() => {
-        setStateValue(children)
+        setStateValue(children || '')
         setStateIdentifier(identifier)
         return () => {}
     }, [identifier])
@@ -74,7 +74,7 @@ function CodeEditor(props,ref){
     let finalValue = isDataJson && stateValue.constructor !== String ? JSON.stringify(stateValue, null, 2) : stateValue
     const hasError = (error || stateError)
 
-    console.log(`Render CodeEditor with height=${height || ''} and identifier=${stateIdentifier}`)
+    console.log(`Render CodeEditor with height=${height || ''} and identifier=${stateIdentifier} fileIndex=${fileIndex}`)
 
     const allActions = [
         {
@@ -100,7 +100,7 @@ function CodeEditor(props,ref){
         if (showFileSplit) {
             files = seperateFiles(finalValue)
             if(files.length>0) {
-                if (fileIndex >= files.length) {
+                if (finalFileIndex >= files.length) {
                     finalFileIndex = 0
                 }
                 finalValue = files[finalFileIndex].content
