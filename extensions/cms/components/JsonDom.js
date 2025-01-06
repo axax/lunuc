@@ -312,7 +312,9 @@ class JsonDom extends React.Component {
                 // renew resolved data json
                 this.resolvedDataJson = undefined
                 this.json = null
-
+                if(props.inlineEditor) {
+                    this.jsonRaw = null
+                }
             }
 
             if (slugChanged) {
