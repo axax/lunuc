@@ -112,13 +112,6 @@ export default db => ({
                 )
                 if (!sent) {
 
-                    const sentResult =  sub.testOnly ? false : await db.collection('NewsletterSent').insertOne(
-                        {
-                            subscriber: sub._id,
-                            userAccount: userAccountId,
-                            mailing: new ObjectId(mailing)
-                        }
-                    )
 
                     if(userAccountId && (!sub.account || sub.account.constructor !== Object)) {
                         sub.account = await db.collection('User').findOne(
@@ -171,6 +164,15 @@ export default db => ({
                         // don't send
                         continue
                     }
+
+
+                    const sentResult =  sub.testOnly ? false : await db.collection('NewsletterSent').insertOne(
+                        {
+                            subscriber: sub._id,
+                            userAccount: userAccountId,
+                            mailing: new ObjectId(mailing)
+                        }
+                    )
 
                     if(mailingData){
                         if(mailingData.subject && subject === undefined){
