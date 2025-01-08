@@ -73,11 +73,6 @@
           "type": "Boolean",
           "hideColumnInTypes": true,
           "index": 1,
-          "access": {
-            "ui": {
-              "role": "manage_cms_template"
-            }
-          },
           "compoundIndex": [
             {
               "unique": false,
@@ -165,7 +160,12 @@
         {
           "name": "resources",
           "hidden": true,
-          "searchable": true
+          "searchable": true,
+          "access": {
+            "ui": {
+              "role": "manage_cms_template"
+            }
+          }
         },
         {
           "name": "style",
@@ -217,7 +217,8 @@
         },
         {
           "name": "cacheKey",
-          "readOnly": true
+          "readOnly": true,
+          "hidden": true
         },
         {
           "name": "query",
@@ -254,7 +255,12 @@
         {
           "name": "disableRendering",
           "type": "Boolean",
-          "hideColumnInTypes": true
+          "hideColumnInTypes": true,
+          "access": {
+            "ui": {
+              "role": "manage_cms_template"
+            }
+          }
         }
       ]
     }
