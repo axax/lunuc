@@ -55,6 +55,10 @@ function CodeEditor(props,ref){
     const editorViewRef = useRef()
     const editDataFormRef = useRef()
 
+    if(props.onRef){
+        props.onRef(editorViewRef)
+    }
+
     useImperativeHandle(ref, () => ({
         getValue: () => editorViewRef.current.state.doc.toString(),
         setValue: (value) => {
