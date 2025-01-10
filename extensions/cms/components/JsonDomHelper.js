@@ -161,6 +161,51 @@ const StyledInfoBox = styled('div')({
 })
 
 
+const getHighlightPosition = (node)=>  {
+    let childMaxTop = 0,
+        childMaxLeft = 0,
+        childMinTop = Infinity,
+        childMinLeft = Infinity,
+        checkNode = false
+
+    if (node.childNodes.length === 0) {
+        checkNode = true
+    } else {
+        for (const childNode of node.childNodes) {
+            if (childNode.nodeType === Node.ELEMENT_NODE) {
+                const style = window.getComputedStyle(childNode)
+                if (style.display !== 'none' && style.opacity > 0) {
+                    const childOffsets = DomUtilAdmin.elemOffset(childNode)
+                    childMinLeft = Math.min(childOffsets.left, childMinLeft)
+                    childMaxLeft = Math.max(childOffsets.left + childNode.offsetWidth, childMaxLeft)
+                    childMinTop = Math.min(childOffsets.top, childMinTop)
+                    childMaxTop = Math.max(childOffsets.top + childNode.offsetHeight, childMaxTop)
+                } else {
+                    checkNode = true
+                }
+            } else {
+                checkNode = true
+            }
+        }
+    }
+    if (checkNode) {
+        const nodeOffsets = DomUtilAdmin.elemOffset(node)
+        childMinLeft = Math.min(nodeOffsets.left, childMinLeft)
+        childMaxLeft = Math.max(nodeOffsets.left + node.offsetWidth, childMaxLeft)
+        childMinTop = Math.min(nodeOffsets.top, childMinTop)
+        childMaxTop = Math.max(nodeOffsets.top + node.offsetHeight, childMaxTop)
+    }
+
+    return {
+        hovered: true,
+        height: childMaxTop - childMinTop,
+        width: childMaxLeft - childMinLeft,
+        top: childMinTop,
+        left: childMinLeft
+    }
+}
+
+
 let aftershockTimeout
 const highlighterHandler = (e, observer, after) => {
     const hightlighters = document.querySelectorAll('[data-highlighter]')
@@ -170,18 +215,17 @@ const highlighterHandler = (e, observer, after) => {
             const node = document.querySelector('[_key="' + key + '"]')
 
             if (node) {
-                const offset = DomUtilAdmin.elemOffset(node)
-                hightlighter.style.top = offset.top + 'px'
-                hightlighter.style.left = offset.left + 'px'
-                hightlighter.style.width = node.offsetWidth + 'px'
-                hightlighter.style.height = node.offsetHeight + 'px'
-
+                const pos = getHighlightPosition(node)
+                hightlighter.style.top = pos.top + 'px'
+                hightlighter.style.left = pos.left + 'px'
+                hightlighter.style.width = pos.width + 'px'
+                hightlighter.style.height = pos.height + 'px'
 
                 const toolbar = document.querySelector('[data-toolbar="' + key + '"]')
                 if (toolbar) {
-                    toolbar.style.top = offset.top + 'px'
-                    toolbar.style.left = offset.left + 'px'
-                    toolbar.style.height = node.offsetHeight + 'px'
+                    toolbar.style.top = pos.top + 'px'
+                    toolbar.style.left = pos.left + 'px'
+                    toolbar.style.height = pos.height + 'px'
                 }
 
             }
@@ -225,7 +269,6 @@ document.addEventListener('keyup', (e) => {
 })
 
 document.addEventListener('scroll', highlighterHandler)
-
 
 class JsonDomHelper extends React.Component {
     static disableEvents = false
@@ -303,33 +346,7 @@ class JsonDomHelper extends React.Component {
         clearTimeout(this.helperTimeoutIn)
 
         if (!hovered && node) {
-            let height = node.offsetHeight,
-                width=node.offsetWidth,
-                offsets = DomUtilAdmin.elemOffset(node),
-                left = offsets.left,
-                top = offsets.top
-
-            node.childNodes.forEach(childNode=>{
-                if(childNode.style) {
-                    const style = window.getComputedStyle(childNode)
-                    if( (style.position==='fixed' || style.display==='inline' ) && style.display !== 'none' && style.opacity > 0){
-                        const childOffsets = DomUtilAdmin.elemOffset(childNode)
-                        if(childOffsets.top<top){
-                            top = childOffsets.top
-                        }
-
-                        width = Math.max(childNode.offsetWidth, width)
-                        height = Math.max(childNode.offsetHeight, height)
-                    }
-                }
-            })
-            const stat = {
-                hovered: true,
-                height,
-                width,
-                top,
-                left
-            }
+            const stat = getHighlightPosition(node)
             this.helperTimeoutIn = setTimeout(() => {
                 this.setState(stat)
             }, 80)
