@@ -220,6 +220,13 @@
           "uitype": "json",
           "alwaysLoad": false,
           "hideColumnInTypes": true
+        },
+        {
+          "name": "spamScore",
+          "label": "Spam score",
+          "type": "Float",
+          "uitype": "number",
+          "index": 1
         }
       ]
     }
