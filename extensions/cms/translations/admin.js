@@ -79,7 +79,8 @@ export const translations = {
         'JsonDomHelper.edit.template':'Template bearbeiten',
         'JsonDomHelper.copy.element':'Element duplizieren',
         'Cms.field.disableRendering': 'Rendering deaktivieren',
-        'CmsViewEditorContainer.editParentComponent':'Übergeordnete Komponente bearbeiten'
+        'CmsViewEditorContainer.editParentComponent':'Übergeordnete Komponente bearbeiten',
+        'TemplateEditor.insertFromHtml':'Von HTML hinzufügen'
     },
     en: {
         'CmsViewEditorContainer.save': 'Save',
@@ -159,6 +160,7 @@ export const translations = {
         'JsonDomHelper.move.element.up':'Move element up',
         'JsonDomHelper.move.element.down':'Move element down',
         'GenericData.field.disableRendering': 'Disable rendering',
-        'CmsViewEditorContainer.editParentComponent':'Edit parent component'
+        'CmsViewEditorContainer.editParentComponent':'Edit parent component',
+        'TemplateEditor.insertFromHtml':'Insert from HTML'
     }
 }

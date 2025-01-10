@@ -1,13 +1,33 @@
+import {_t} from '../../../../util/i18n.mjs'
+import {openWindow} from '../../../../client/util/window'
+import {formatCode} from '../../../../client/components/codemirror6/utils'
 
 export const jsonPropertyTemplates = [
     {title: 'Click Event', template: '"onClick":{"action":"click"}'},
     {title: 'Change Event', template: '"onChange":{"action":"change"}'},
     {title: 'Inline Editor false', template: '"$inlineEditor":false'},
     {title: 'Inline Editor Menu', template: '"menu": {"edit":false,"clone": false, "editTemplate": false,"add":false,"addAbove":false,"addBelow": false,"wrap":false,"remove": false,"clipboard": false}'},
-    {title: 'Observer', template: '"$observe": {"threshold": 0, "waitVisible": true,"initialClass": "animation","visibleClass": "fade-in-up"}'},
+    {title: 'Observer', template: '"$observe": {"threshold": 0, "waitVisible": true,"initialClass": "animation","visibleClass": "fade-in-up"}'}
 ]
 
 export const jsonTemplates = [
+    {title: _t('TemplateEditor.insertFromHtml'), icon:'html',onClick:(editorView,lineInfo,lineData)=>{
+            const win = openWindow({url:`/system/converter/html2json?preview=true`})
+            setTimeout(()=>{
+                win.addEventListener('beforeunload', (e) => {
+                    if (win.resultValue) {
+                        editorView.dispatch({
+                            changes: {
+                                from: lineInfo.to,
+                                to: lineInfo.to,
+                                insert: `${!lineData.endsWithComma ? ',' : ''}{"c":${win.resultValue}}${lineData.endsWithComma ? ',' : ''}`
+                            }
+                        })
+                        formatCode(editorView,'json')
+                    }
+                })
+            },500)
+        }},
     {title: 'For loop', template: '{"$for": {"d": "data","s":"loop","c": [{"c":"$.loop{loop.value}"}]}}'},
     {
         title: 'Form Checkbox',

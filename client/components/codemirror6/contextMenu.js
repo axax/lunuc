@@ -1,7 +1,7 @@
 import React from 'react'
 import {EditIcon, CodeIcon, AddIcon, AutoFixHighIcon} from 'ui/admin'
 import {_t} from '../../../util/i18n.mjs'
-import {formatCode} from "./utils";
+import {formatCode} from './utils'
 
 
 export function generateContextMenu({type,clickEvent, editorView, propertyTemplates, templates, setEditData}) {
@@ -60,15 +60,20 @@ export function generateContextMenu({type,clickEvent, editorView, propertyTempla
                        name: _t('core.add'),
                        items: propertyTemplates.map(f => ({
                            name: f.title,
+                           icon: f.icon,
                            onClick: () => {
-                               editorView.dispatch({
-                                   changes: {
-                                       from: lineInfo.to,
-                                       to: lineInfo.to,
-                                       insert: `${!lineData.endsWithComma ? ',' : ''}${f.template}${lineData.endsWithComma ? ',' : ''}`
-                                   }
-                               })
-                               formatCode(editorView)
+                               if(f.onClick){
+                                   f.onClick(editorView,lineInfo,lineData)
+                               }else {
+                                   editorView.dispatch({
+                                       changes: {
+                                           from: lineInfo.to,
+                                           to: lineInfo.to,
+                                           insert: `${!lineData.endsWithComma ? ',' : ''}${f.template}${lineData.endsWithComma ? ',' : ''}`
+                                       }
+                                   })
+                                   formatCode(editorView,'json')
+                               }
                            }
                        }))
                    })
@@ -80,15 +85,20 @@ export function generateContextMenu({type,clickEvent, editorView, propertyTempla
                        name: _t('core.add'),
                        items: templates.map(f => ({
                            name: f.title,
+                           icon: f.icon,
                            onClick: () => {
-                               editorView.dispatch({
-                                   changes: {
-                                       from: lineInfo.to,
-                                       to: lineInfo.to,
-                                       insert: `${!lineData.endsWithComma ? ',' : ''}${f.template}${lineData.endsWithComma ? ',' : ''}`
-                                   }
-                               })
-                               formatCode(editorView)
+                               if(f.onClick){
+                                   f.onClick(editorView,lineInfo,lineData)
+                               }else {
+                                   editorView.dispatch({
+                                       changes: {
+                                           from: lineInfo.to,
+                                           to: lineInfo.to,
+                                           insert: `${!lineData.endsWithComma ? ',' : ''}${f.template}${lineData.endsWithComma ? ',' : ''}`
+                                       }
+                                   })
+                                   formatCode(editorView,'json')
+                               }
                            }
                        }))
                    }
