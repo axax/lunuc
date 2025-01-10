@@ -253,7 +253,6 @@ const startListening = async (db, context) => {
                             const {isSpam, spamScore} = await detectSpam(db, context, {threshold: mailAccount.spamThreshold, sender:sender.text,text:data.subject+data.text})
                             const inbox = await getFolderForMailAccount(db, mailAccount._id, isSpam?'Junk':'INBOX')
 
-                            data.spamScore = spamScore
                             if(isSpam){
                                 data.subject = "***SPAM***" + (data.subject || '')
                             }
@@ -261,7 +260,8 @@ const startListening = async (db, context) => {
                             await mailserverResolver(db).Mutation.createMailAccountMessage({
                                 mailAccount: mailAccount._id,
                                 mailAccountFolder: inbox._id,
-                                data
+                                data,
+                                spamScore
                             }, {context}, false)
 
                             const contentType = data.headers.get('content-type') || {}
