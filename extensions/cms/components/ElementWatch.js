@@ -89,8 +89,13 @@ class ElementWatch extends React.Component {
                 } else if (eleProps.width && eleProps.height) {
                     w = eleProps.width
                     h = eleProps.height
+                }else if(!lazyImage){
+                    const data = Util.getImageObject(eleProps.src)
+                    if(data.width && data.height){
+                        w = data.width
+                        h = data.height
+                    }
                 }
-
                 if (lazyImage) {
                     tmpSrc = Util.getImageObject(eleProps.src, {
                         quality: lazyImage.quality || 25,
