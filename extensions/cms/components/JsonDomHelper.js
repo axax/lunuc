@@ -717,7 +717,7 @@ class JsonDomHelper extends React.Component {
     }
 
     render() {
-        const {_this,_scope,_WrappedComponent, _json, _cmsActions, _onTemplateChange, _onDataResolverPropertyChange, children, _tagName, _options, _inlineEditor, _dynamic, onChange, onClick, ...rest} = this.props
+        const {_WrappedComponent, _json, _cmsActions, _onTemplateChange, _onDataResolverPropertyChange, children, _tagName, _options, _inlineEditor, _dynamic, onChange, onClick, ...rest} = this.props
         const {hovered, toolbarHovered, toolbarMenuOpen, addChildDialog, deleteConfirmDialog, deleteSourceConfirmDialog} = this.state
 
         if(!rest._key){
@@ -1061,7 +1061,7 @@ class JsonDomHelper extends React.Component {
 
                 if (_dynamic && _options.menu.edit !== false) {
 
-                    const parent = rest._scope.parent
+                    const parent = this.props._scope.parent
                     const parentJson = parent.getJsonRaw(parent.props, true)
 
                     const parentSubJson = getComponentByKey(rest._rootKey, parentJson)
