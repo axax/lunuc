@@ -127,7 +127,7 @@ class TinyEditor extends React.Component {
                         'bullist numlist outdent indent | link image | print preview media fullpage | ' +
                         'forecolor backcolor emoticons | help',
                     menu: {
-                        favs: {title: 'Extra', items: 'code visualaid | searchreplace | emoticons | loremipsum | cleanhtml'}
+                        favs: {title: 'Extras', items: 'code visualaid | searchreplace | emoticons | loremipsum | cleanhtml'}
                     },
                     menubar: 'favs file edit view insert format tools table help',
                     file_picker_callback: function (callback, value, meta) {

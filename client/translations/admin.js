@@ -1,4 +1,3 @@
-import GenericForm from "../components/GenericForm";
 
 export const translations = {
     de: {
@@ -69,6 +68,7 @@ export const translations = {
         'ErrorHandler.title':'Fehler',
         'core.saveandclose': 'Speichern & Schliessen',
         'core.cancel': 'Abbrechen',
+        'core.delete': 'Löschen',
         'core.yes': 'Ja',
         'core.no': 'Nein',
         'core.ok': 'Ok',
@@ -177,6 +177,7 @@ export const translations = {
         'core.add': 'Add',
         'core.saveandclose': 'Save & close',
         'core.cancel': 'Cancel',
+        'core.delete': 'Delete',
         'core.yes': 'Yes',
         'core.no': 'No',
         'core.ok': 'Ok',

@@ -112,6 +112,13 @@ const defaultTheme = createTheme({
             defaultProps: {
                 variant: 'standard',
             }
+        },
+        MuiAppBar: {
+            styleOverrides: {
+                colorPrimary: {
+                    background: `linear-gradient(to right bottom, ${blue[300]}, ${blue.A700})`
+                }
+            }
         }
     }
 })

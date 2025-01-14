@@ -211,7 +211,8 @@
         "Fingerprint",
         "MoveDown",
         "MoveUp",
-        "LowPriority"
+        "LowPriority",
+        "HighlightAlt"
       ],
       "theme":{
         "colors":{

@@ -78,6 +78,10 @@ export const translations = {
         'JsonDomHelper.move.element.down':'Element nach unten verschieben',
         'JsonDomHelper.edit.template':'Template bearbeiten',
         'JsonDomHelper.copy.element':'Element duplizieren',
+        'JsonDomHelper.confirm.deletion':'Löschung bestätigen',
+        'JsonDomHelper.selection.delete':'Gewählte Elemente löschen',
+        'JsonDomHelper.delete.element.question':'Sind Sie ganz sicher, dass Sie das Element löschen möchten?',
+        'JsonDomHelper.delete.selected.question':'ASind Sie ganz sicher, dass Sie alle ausgwählten Elemente löschen möchten?',
         'Cms.field.disableRendering': 'Rendering deaktivieren',
         'CmsViewEditorContainer.editParentComponent':'Übergeordnete Komponente bearbeiten',
         'TemplateEditor.insertFromHtml':'Von HTML hinzufügen'
@@ -159,6 +163,10 @@ export const translations = {
         'JsonDomHelper.move.element':'Move element',
         'JsonDomHelper.move.element.up':'Move element up',
         'JsonDomHelper.move.element.down':'Move element down',
+        'JsonDomHelper.confirm.deletion':'Confirm deletion',
+        'JsonDomHelper.delete.element.question':'Are you sure you want to delete this element?',
+        'JsonDomHelper.delete.selected.question':'Are you sure you want to delete all selected elements?',
+        'JsonDomHelper.selection.delete':'Delete selected elements',
         'GenericData.field.disableRendering': 'Disable rendering',
         'CmsViewEditorContainer.editParentComponent':'Edit parent component',
         'TemplateEditor.insertFromHtml':'Insert from HTML'

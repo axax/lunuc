@@ -58,7 +58,7 @@ const StyledHighlighter = styled('span')(({ color, selected }) => ({
     justifyContent: 'center',
     alignItems: 'center',
     ...(selected && {
-        border: '5px solid rgba(0,0,0,1)',
+        border: '2px solid #8b3dff',
     }),
     ...(color==='yellow' && {
         background: 'rgba(245, 245, 66,0.05)',
@@ -163,6 +163,18 @@ const StyledInfoBox = styled('div')({
     zIndex: 99999
 })
 
+
+const deleteDialogActions = [
+    {
+        key: 'cancel',
+        label: _t('core.cancel'),
+        type: 'secondary'
+    },
+    {
+        key: 'delete',
+        label: _t('core.delete'),
+        type: 'primary'
+    }]
 
 const getHighlightPosition = (node)=>  {
     let childMaxTop = 0,
@@ -273,17 +285,6 @@ document.addEventListener('keyup', (e) => {
     }
 })
 
-document.addEventListener('click', (e)=>{
-    if(e.shiftKey){
-        JsonDomHelper.selected = []
-
-        const key = e.target.getAttribute('_key')
-        if(key) {
-            JsonDomHelper.selected.push(key)
-        }
-    }
-})
-
 document.addEventListener('scroll', highlighterHandler)
 
 
@@ -291,6 +292,7 @@ class JsonDomHelper extends React.Component {
     static disableEvents = false
     static altKeyDown = false
     static mutationObserver = false
+    static selected = []
 
     state = {
         hovered: false,
@@ -302,7 +304,8 @@ class JsonDomHelper extends React.Component {
         dragging: false,
         toolbarMenuOpen: false,
         addChildDialog: null,
-        deleteConfirmDialog: false
+        deleteConfirmDialog: false,
+        deleteSelectionConfirmDialog: false
     }
 
     constructor(props) {
@@ -336,6 +339,7 @@ class JsonDomHelper extends React.Component {
             state.hovered !== this.state.hovered ||
             state.addChildDialog !== this.state.addChildDialog ||
             state.deleteConfirmDialog !== this.state.deleteConfirmDialog ||
+            state.deleteSelectionConfirmDialog !== this.state.deleteSelectionConfirmDialog ||
             state.deleteSourceConfirmDialog !== this.state.deleteSourceConfirmDialog ||
             state.dragging !== this.state.dragging ||
             state.top !== this.state.top ||
@@ -372,7 +376,6 @@ class JsonDomHelper extends React.Component {
     }
 
     onHelperMouseOut(e) {
-
         const {hovered, dragging} = this.state
 
         if (hovered || dragging) {
@@ -489,13 +492,15 @@ class JsonDomHelper extends React.Component {
 
             }
         }
-        setTimeout(() => {
-            JsonDomHelper.disableEvents = false
-        }, 200)
-
+        this.enableEvents()
         this.resetDragState()
     }
 
+    enableEvents(){
+        setTimeout(() => {
+            JsonDomHelper.disableEvents = false
+        }, 200)
+    }
 
     moveElementFromTo(sourceKey, targetKey, targetIndex, _json, source) {
         const {_onTemplateChange} = this.props
@@ -627,16 +632,21 @@ class JsonDomHelper extends React.Component {
 
 
     handleDeleteClick(e) {
-        const {_key, _json, _onTemplateChange, _onDataResolverPropertyChange} = this.props
-        const source = getComponentByKey(_key, _json)
+        const {_key, _json, _onTemplateChange} = this.props
+        this.removeByKey(_key)
+        _onTemplateChange(_json, true)
+    }
+
+    removeByKey(key) {
+        const {_json, _onDataResolverPropertyChange} = this.props
+
+        const source = getComponentByKey(key, _json)
 
         if (source && source.$inlineEditor && source.$inlineEditor.dataResolver) {
             _onDataResolverPropertyChange({value: null, key: source.$inlineEditor.dataResolver})
         }
-        removeComponent(_key, _json)
-        _onTemplateChange(_json, true)
+        removeComponent(key, _json)
     }
-
 
     getDropArea(rest, index) {
         let label = ''
@@ -718,7 +728,7 @@ class JsonDomHelper extends React.Component {
 
     render() {
         const {_WrappedComponent, _json, _cmsActions, _onTemplateChange, _onDataResolverPropertyChange, children, _tagName, _options, _inlineEditor, _dynamic, onChange, onClick, ...rest} = this.props
-        const {hovered, toolbarHovered, toolbarMenuOpen, addChildDialog, deleteConfirmDialog, deleteSourceConfirmDialog} = this.state
+        const {hovered, toolbarHovered, toolbarMenuOpen, addChildDialog, deleteConfirmDialog, deleteSelectionConfirmDialog, deleteSourceConfirmDialog} = this.state
 
         if(!rest._key){
             return
@@ -726,7 +736,9 @@ class JsonDomHelper extends React.Component {
         const menuItems = [],
             isCms = _tagName === 'Cms',
             isInLoop = rest._key.indexOf('$loop') >= 0,
-            isElementActive = !JsonDomHelper.disableEvents && (hovered || toolbarHovered || toolbarMenuOpen)
+            isElementActive = !JsonDomHelper.disableEvents && (hovered || toolbarHovered || toolbarMenuOpen),
+            isSelected = JsonDomHelper.selected.indexOf(this)>=0
+
 
         let hasJsonToEdit = !!_json, subJson, toolbar, highlighter,
             overrideEvents = {}, parsedSource
@@ -742,6 +754,19 @@ class JsonDomHelper extends React.Component {
                         mouseX: e.clientX - 2,
                         mouseY: e.clientY - 4
                     })
+                }
+            },
+            onClick: (e) =>{
+                if(e.shiftKey){
+                    if(isSelected){
+                        JsonDomHelper.selected.splice(JsonDomHelper.selected.indexOf(this), 1)
+                    }else {
+                        JsonDomHelper.selected.push(this)
+                    }
+                    e.stopPropagation()
+                    this.forceUpdate()
+                }else{
+                    this.deselectSelected()
                 }
             }
         }
@@ -814,48 +839,50 @@ class JsonDomHelper extends React.Component {
         }
 
 
-        if (isElementActive) {
+        if (isElementActive || isSelected) {
 
-            this.createContextMenu({isCms, subJson, menuItems, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange,
-                overrideEvents, onChange, _options, _dynamic, rest, _json, isInLoop})
+            if(isElementActive) {
+                this.createContextMenu({
+                    isCms, subJson, menuItems, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange,
+                    overrideEvents, onChange, _options, _dynamic, rest, _json, isInLoop, isSelected
+                })
 
-            toolbar = <StyledToolbarButton
-                key={rest._key + '.toolbar'}
-                data-toolbar={rest._key}
-                onMouseOver={this.onToolbarMouseOver.bind(this)}
-                onMouseOut={this.onToolbarMouseOut.bind(this)}
-                style={{top: this.state.top, left: this.state.left, height: this.state.height}}>
+                toolbar = <StyledToolbarButton
+                    key={rest._key + '.toolbar'}
+                    data-toolbar={rest._key}
+                    onMouseOver={this.onToolbarMouseOver.bind(this)}
+                    onMouseOut={this.onToolbarMouseOut.bind(this)}
+                    style={{top: this.state.top, left: this.state.left, height: this.state.height}}>
 
-                <StyledInfoBox>{rest['data-element-key'] || rest.id || rest.slug || _tagName}</StyledInfoBox>
+                    <StyledInfoBox>{rest['data-element-key'] || rest.id || rest.slug || _tagName}</StyledInfoBox>
 
-                {menuItems.length > 0 && <StyledToolbarMenu
-                    anchorReference={this.state.mouseY ? "anchorPosition" : "anchorEl"}
-                    anchorPosition={
-                        this.state.mouseY && this.state.mouseX
-                            ? {top: this.state.mouseY, left: this.state.mouseX}
-                            : undefined
-                    }
-                    open={this.state.mouseY ? toolbarMenuOpen : undefined}
-                    onOpen={() => {
-                        this.setState({toolbarMenuOpen: true})
-                    }}
-                    onClose={() => {
-                        this.setState({
-                            hovered: false,
-                            toolbarHovered: false,
-                            toolbarMenuOpen: false,
-                            mouseY: undefined,
-                            mouseX: undefined
-                        })
-                    }}
-                    avatarIcon={true}
-                    mini items={menuItems}/>}
-            </StyledToolbarButton>
+                    {menuItems.length > 0 && <StyledToolbarMenu
+                        anchorReference={this.state.mouseY ? "anchorPosition" : "anchorEl"}
+                        anchorPosition={
+                            this.state.mouseY && this.state.mouseX
+                                ? {top: this.state.mouseY, left: this.state.mouseX}
+                                : undefined
+                        }
+                        open={this.state.mouseY ? toolbarMenuOpen : undefined}
+                        onOpen={() => {
+                            this.setState({toolbarMenuOpen: true})
+                        }}
+                        onClose={() => {
+                            this.setState({
+                                hovered: false,
+                                toolbarHovered: false,
+                                toolbarMenuOpen: false,
+                                mouseY: undefined,
+                                mouseX: undefined
+                            })
+                        }}
+                        avatarIcon={true}
+                        mini items={menuItems}/>}
+                </StyledToolbarButton>
+            }
 
-            if (_options.highlight !== false) {
+            if (isSelected || _options.highlight !== false) {
                 const highligherColor = _dynamic ? 'red' : isCms || _options.picker ? 'blue' : 'yellow'
-
-
 
                 highlighter = <StyledHighlighter
                     key={rest._key + '.highlighter'}
@@ -866,6 +893,7 @@ class JsonDomHelper extends React.Component {
                         height: this.state.height + 2,
                         width: this.state.width + 2
                     }}
+                    selected={isSelected}
                     color={highligherColor}>{_options.picker || isCms ?
                     <StyledPicker
                         data-picker={rest._key}
@@ -920,8 +948,27 @@ class JsonDomHelper extends React.Component {
                 {...rest}
                 children={kids}/>
         }
-        if (toolbar) {
-            return [comp, <AddToBody key="hover">{highlighter}{toolbar}</AddToBody>]
+        if (toolbar || isSelected) {
+            return [comp, <AddToBody key="hover">{highlighter}{toolbar}</AddToBody>,(deleteSelectionConfirmDialog &&
+                <SimpleDialog fullWidth={true} maxWidth="sm" key="deleteSelectionConfirm" open={true}
+                              onClose={(e) => {
+                                  if (e.key === 'delete') {
+                                      const keys = JsonDomHelper.selected.map(sel=>sel.props._key)
+                                      keys.sort().reverse().forEach(key=>{
+                                          this.removeByKey(key)
+                                      })
+                                      _onTemplateChange(_json, true)
+                                  }
+
+                                  this.setState({deleteSelectionConfirmDialog: null})
+                                  this.enableEvents()
+                                  this.deselectSelected()
+                              }}
+                              actions={deleteDialogActions}
+                              title={_t('JsonDomHelper.confirm.deletion')}>
+                    {_t('JsonDomHelper.delete.selected.question')}
+                </SimpleDialog>
+            )]
         } else {
             return <React.Fragment>{comp}
                 {(deleteConfirmDialog &&
@@ -932,24 +979,11 @@ class JsonDomHelper extends React.Component {
                                       }
 
                                       this.setState({deleteConfirmDialog: null})
-
-                                      setTimeout(() => {
-                                          JsonDomHelper.disableEvents = false
-                                      }, 200)
+                                      this.enableEvents()
                                   }}
-                                  actions={[
-                                      {
-                                          key: 'cancel',
-                                          label: 'Abbrechen',
-                                          type: 'secondary'
-                                      },
-                                      {
-                                          key: 'delete',
-                                          label: 'Löschen',
-                                          type: 'primary'
-                                      }]}
-                                  title="Löschung bestätigen">
-                        Sind Sie ganz sicher, dass Sie das Element löschen möchten?
+                                  actions={deleteDialogActions}
+                                  title={_t('JsonDomHelper.confirm.deletion')}>
+                        {_t('JsonDomHelper.delete.element.question')}
                     </SimpleDialog>
                 )}
                 {(deleteSourceConfirmDialog &&
@@ -970,26 +1004,28 @@ class JsonDomHelper extends React.Component {
                                       //JsonDomHelper.disableEvents = false
                                       this.setState({deleteSourceConfirmDialog: null})
                                   }}
-                                  actions={[
-                                      {
-                                          key: 'cancel',
-                                          label: 'Abbrechen',
-                                          type: 'secondary'
-                                      },
-                                      {
-                                          key: 'delete',
-                                          label: 'Löschen',
-                                          type: 'primary'
-                                      }]}
-                                  title="Löschung bestätigen">
-                        Sind Sie ganz sicher, dass Sie das Element löschen möchten?
+                                  actions={deleteDialogActions}
+                                  title={_t('JsonDomHelper.confirm.deletion')}>
+                        {_t('JsonDomHelper.delete.element.question')}
                     </SimpleDialog>
                 )}
                 {(addChildDialog && <JsonDomAddElementDialog {...addChildDialog} onClose={this.onAddChildDialogClose.bind(this)}/>)}</React.Fragment>
         }
     }
 
-    createContextMenu({isCms, subJson, menuItems, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange, overrideEvents, onChange, _options, _dynamic, rest, _json, isInLoop}) {
+    createContextMenu({isCms, subJson, menuItems, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange, overrideEvents, onChange, _options, _dynamic, rest, _json, isInLoop, isSelected}) {
+
+        if(isSelected){
+            menuItems.push({
+                name: _t('JsonDomHelper.selection.delete'),
+                icon: <DeleteIcon/>,
+                onClick: () => {
+                    JsonDomHelper.disableEvents = true
+                    this.setState({deleteSelectionConfirmDialog: true})
+                }
+            })
+            return
+        }
         if (isCms && subJson && subJson.p) {
 
             const slug = subJson.p.component && subJson.p.component.length > 0 ? subJson.p.component[0].slug : subJson.p.slug
@@ -1353,8 +1389,20 @@ class JsonDomHelper extends React.Component {
         return kids
     }
 
+    deselectSelected(){
+        if(JsonDomHelper.selected.length===0){
+            return
+        }
+        const selected = JsonDomHelper.selected
+        JsonDomHelper.selected = []
+        selected.forEach(select=>{
+            select.forceUpdate()
+        })
+    }
+
     handleEditElement({jsonElement, subJson, isCms, json, jsonDom}) {
         JsonDomHelper.disableEvents = true
+        this.deselectSelected()
         //clone
         const newJsonElement = JSON.parse(JSON.stringify(jsonElement))
         delete newJsonElement.defaults
