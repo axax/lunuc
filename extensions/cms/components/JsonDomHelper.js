@@ -45,7 +45,7 @@ import {_t} from '../../../util/i18n.mjs'
 const {DEFAULT_LANGUAGE} = config
 
 
-const StyledHighlighter = styled('span')(({ color }) => ({
+const StyledHighlighter = styled('span')(({ color, selected }) => ({
     zIndex: 999,
     position: 'fixed',
     bottom: 0,
@@ -57,6 +57,9 @@ const StyledHighlighter = styled('span')(({ color }) => ({
     pointerEvents: 'none',
     justifyContent: 'center',
     alignItems: 'center',
+    ...(selected && {
+        border: '5px solid rgba(0,0,0,1)',
+    }),
     ...(color==='yellow' && {
         background: 'rgba(245, 245, 66,0.05)',
         boxShadow: '0px 0px 6px 2px rgba(0,0,0,0.4), 0px 0px 5px 0px rgba(235,252,0,1)'
@@ -258,9 +261,11 @@ document.addEventListener('keydown', (e) => {
 })
 const altKeyReleased = () => {
     JsonDomHelper.altKeyDown = false
-    JsonDomHelper.disabledSelect.forEach(el => {
-        el.disabled = false
-    })
+    if(JsonDomHelper.disabledSelect) {
+        JsonDomHelper.disabledSelect.forEach(el => {
+            el.disabled = false
+        })
+    }
 }
 document.addEventListener('keyup', (e) => {
     if (e.key === 'Alt') {
@@ -268,7 +273,19 @@ document.addEventListener('keyup', (e) => {
     }
 })
 
+document.addEventListener('click', (e)=>{
+    if(e.shiftKey){
+        JsonDomHelper.selected = []
+
+        const key = e.target.getAttribute('_key')
+        if(key) {
+            JsonDomHelper.selected.push(key)
+        }
+    }
+})
+
 document.addEventListener('scroll', highlighterHandler)
+
 
 class JsonDomHelper extends React.Component {
     static disableEvents = false
@@ -363,7 +380,7 @@ class JsonDomHelper extends React.Component {
         }
         if (JsonDomHelper.altKeyDown) {
             setTimeout(() => {
-                this.onHelperMouseOut()
+                this.onHelperMouseOut(e)
             }, 80)
             return
         }
@@ -700,7 +717,7 @@ class JsonDomHelper extends React.Component {
     }
 
     render() {
-        const {_WrappedComponent, _json, _cmsActions, _onTemplateChange, _onDataResolverPropertyChange, children, _tagName, _options, _inlineEditor, _dynamic, onChange, onClick, ...rest} = this.props
+        const {_this,_scope,_WrappedComponent, _json, _cmsActions, _onTemplateChange, _onDataResolverPropertyChange, children, _tagName, _options, _inlineEditor, _dynamic, onChange, onClick, ...rest} = this.props
         const {hovered, toolbarHovered, toolbarMenuOpen, addChildDialog, deleteConfirmDialog, deleteSourceConfirmDialog} = this.state
 
         if(!rest._key){

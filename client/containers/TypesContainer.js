@@ -379,8 +379,11 @@ class TypesContainer extends React.Component {
                                     }
                                 } else {
                                     if (fieldValue && fieldValue.constructor === Array) {
-
                                         if(field.enum && !field._enumMap){
+
+                                            if(field.enum==='$TYPES'){
+                                                field.enum = Object.keys(getTypes())
+                                            }
                                             field._enumMap = field.enum.reduce( (acc,f)=>{
                                                 acc[f.value || f] = f.name || f
                                                 return acc

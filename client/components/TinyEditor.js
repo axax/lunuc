@@ -4,6 +4,7 @@ import DomUtil from 'client/util/dom.mjs'
 import Util from '../util/index.mjs'
 import config from 'gen/config-client'
 import {addLoremipsumPlugin} from './tinymce/loremipsum'
+import {addCleanHtmlPlugin} from './tinymce/cleanHtml'
 import {openWindow} from '../util/window'
 const {DEFAULT_LANGUAGE} = config
 
@@ -50,6 +51,7 @@ class TinyEditor extends React.Component {
                 this.isInit = true
 
                 addLoremipsumPlugin()
+                addCleanHtmlPlugin()
 
                 tinymce.init({
                     selector: '#TinyEditor' + this.instanceId,
@@ -115,7 +117,7 @@ class TinyEditor extends React.Component {
                     plugins: [
                         'advlist autolink link image lists charmap print preview hr anchor pagebreak',
                         'searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking',
-                        'table emoticons template paste help loremipsum',
+                        'table emoticons template paste help loremipsum cleanhtml',
                         /*'quickbars'*/
                     ],
                     quickbars_selection_toolbar: 'bold italic | formatselect | quicklink blockquote',
@@ -125,7 +127,7 @@ class TinyEditor extends React.Component {
                         'bullist numlist outdent indent | link image | print preview media fullpage | ' +
                         'forecolor backcolor emoticons | help',
                     menu: {
-                        favs: {title: 'Favoriten', items: 'code visualaid | searchreplace | emoticons | loremipsum'}
+                        favs: {title: 'Extra', items: 'code visualaid | searchreplace | emoticons | loremipsum | cleanhtml'}
                     },
                     menubar: 'favs file edit view insert format tools table help',
                     file_picker_callback: function (callback, value, meta) {
