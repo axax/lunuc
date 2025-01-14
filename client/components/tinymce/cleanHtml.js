@@ -13,8 +13,7 @@ export const addCleanHtmlPlugin = ()=> {
             tooltip: 'In reinen Text umwandeln',
             onAction: () => {
                 let content = editor.getContent();
-                content = content.replace(/<[^>]*>?/gm, '')
-                console.log(content)
+                content = content.replace(/<[^>]*>?/gm, ' ').replace(/ +(?= )/g,'')
                 editor.setContent(content)
             }
         }
