@@ -758,12 +758,13 @@ class JsonDomHelper extends React.Component {
             },
             onClick: (e) =>{
                 if(e.shiftKey){
+                    e.stopPropagation()
+                    e.preventDefault()
                     if(isSelected){
                         JsonDomHelper.selected.splice(JsonDomHelper.selected.indexOf(this), 1)
                     }else {
                         JsonDomHelper.selected.push(this)
                     }
-                    e.stopPropagation()
                     this.forceUpdate()
                 }else{
                     this.deselectSelected()
