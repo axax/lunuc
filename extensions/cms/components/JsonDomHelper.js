@@ -766,6 +766,7 @@ class JsonDomHelper extends React.Component {
                         JsonDomHelper.selected.push(this)
                     }
                     this.forceUpdate()
+                    return false
                 }else{
                     this.deselectSelected()
                 }
