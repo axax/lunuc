@@ -4,17 +4,27 @@ import React from 'react'
 export class ShadowRoot extends React.Component {
 
     attachShadow(host) {
-        if (host == null) {
-            return
+        this.host = host
+        if (this.host && !this.host.shadowRoot) {
+            this.host.attachShadow({mode: 'open'})
         }
-        host.attachShadow({mode: 'open'})
-        host.shadowRoot.innerHTML = host.innerHTML
-        host.innerHTML = ''
+        this.updateShadowDom()
+    }
+
+    updateShadowDom(){
+        if(this.host) {
+            this.host.shadowRoot.innerHTML =this.props.dangerouslySetInnerHTML.__html
+        }
+    }
+
+    componentDidUpdate() {
+        this.updateShadowDom()
     }
 
     render() {
+        const {dangerouslySetInnerHTML,...rest} = this.props
         return (
-            <span {...this.props} ref={this.attachShadow} />
+            <span {...this.props} ref={this.attachShadow.bind(this)} />
         )
     }
 }
