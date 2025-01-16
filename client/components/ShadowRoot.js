@@ -13,7 +13,7 @@ export class ShadowRoot extends React.Component {
 
     updateShadowDom(){
         if(this.host) {
-            this.host.shadowRoot.innerHTML =this.props.dangerouslySetInnerHTML.__html
+            this.host.shadowRoot.innerHTML = this.props.dangerouslySetInnerHTML ? this.props.dangerouslySetInnerHTML.__html : ''
         }
     }
 
