@@ -105,6 +105,7 @@ export const translations = {
         'core.deselectAll':'Alle abwählen',
         'CodeEditor.editAsText':'Als Text bearbeiten',
         'CodeEditor.editAsHtml':'Als HTML bearbeiten',
+        'CodeEditor.repeatSelection':'Auswahl wiederholen',
         'CodeEditor.openPage': 'Seite öffnen',
         'CodeEditor.reformatCode': 'Automatisch formatieren',
         'GlobalSearch.placeholder':'Schnellsuche'
@@ -214,6 +215,7 @@ export const translations = {
         'core.deselectAll':'Deselect all',
         'CodeEditor.editAsText':'Edit as text',
         'CodeEditor.editAsHtml':'Edit as HTML',
+        'CodeEditor.repeatSelection':'Repeat selection',
         'CodeEditor.openPage': 'Open page',
         'CodeEditor.reformatCode': 'Reformat',
         'GlobalSearch.placeholder':'Quick search'

@@ -1,8 +1,8 @@
 import React from 'react'
-import {EditIcon, CodeIcon, AddIcon, AutoFixHighIcon} from 'ui/admin'
+import {EditIcon, CodeIcon, AddIcon, AutoFixHighIcon,RepeatIcon} from 'ui/admin'
 import {_t} from '../../../util/i18n.mjs'
 import {formatCode} from './utils'
-
+import {openWindow} from '../../util/window'
 
 export function generateContextMenu({type,clickEvent, editorView, propertyTemplates, templates, setEditData}) {
     let contextMenuItems = []
@@ -107,12 +107,42 @@ export function generateContextMenu({type,clickEvent, editorView, propertyTempla
        }
 
        contextMenuItems.push({
+           divider:true,
            icon: <AutoFixHighIcon/>,
            name: _t('CodeEditor.reformatCode')+' (Alt-Cmd-L)',
            onClick: () => {
                formatCode(editorView, type)
            }
        })
-    }
+
+       const selectedContent = editorView.state.sliceDoc(editorView.state.selection.main.from, editorView.state.selection.main.to)
+
+       if(selectedContent){
+           contextMenuItems.push({
+               divider:true,
+               icon: <RepeatIcon/>,
+               name: _t('CodeEditor.repeatSelection'),
+               onClick: () => {
+                   const win = openWindow({url:`/system/repeater?preview=true&content=${selectedContent}`})
+                   setTimeout(()=>{
+                       win.addEventListener('beforeunload', (e) => {
+                           console.log(win.returnValue)
+                           if (win.returnValue) {
+                               editorView.dispatch({
+                                   changes: {
+                                       from: editorView.state.selection.main.from,
+                                       to: editorView.state.selection.main.to,
+                                       insert: win.returnValue
+                                   }
+                               })
+                               formatCode(editorView,'json')
+                           }
+                       })
+                   },500)
+               }
+           })
+       }
+
+   }
     return {left: clickEvent.clientX, top: clickEvent.clientY, items:contextMenuItems}
 }

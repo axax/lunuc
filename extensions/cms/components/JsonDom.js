@@ -59,7 +59,7 @@ const isFalse = value => value==='false' || value===false
 class JsonDom extends React.Component {
 
     /* Events that are listened to */
-    static events = ['onDragEnd', 'onDragStart', 'onError','onClose','onRef','onAnimationEnd','onMouseMove','onMouseOver', 'onMouseOut', 'onMouseEnter', 'onMouseLeave', 'onMouseDown', 'onMouseUp', 'onClick', 'onKeyDown', 'onKeyUp', 'onFocus', 'onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput', 'onForwardRef']
+    static events = ['onTouchStart','onTouchEnd','onDragEnd', 'onDragStart', 'onError','onClose','onRef','onAnimationEnd','onMouseMove','onMouseOver', 'onMouseOut', 'onMouseEnter', 'onMouseLeave', 'onMouseDown', 'onMouseUp', 'onClick', 'onKeyDown', 'onKeyUp', 'onFocus', 'onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput', 'onForwardRef']
 
     /*
      * Default components

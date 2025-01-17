@@ -29,7 +29,7 @@ import { html } from '@codemirror/lang-html'
 import {emptyLineGutter} from './emptyLineGutter'
 import {keywordDecorator} from './keywordDecorator'
 import {jsSnippets,cssSnippets} from './snippets'
-import {formatCode} from './utils'
+import {formatCode,jumpToLine} from './utils'
 
 const typeSpecific = type=>{
     console.log(`style for ${type}`)
@@ -39,7 +39,8 @@ const typeSpecific = type=>{
         { key: "Alt-Cmd-l", run: (view) => {
             formatCode(view, type)
             return true
-        }}
+        }},
+        { key: "Alt-Cmd-g", run: jumpToLine }
     ])
 
     if(type==='css'){

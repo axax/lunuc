@@ -1349,7 +1349,7 @@ class GenericForm extends React.Component {
                                                           {translateButton}
                                                       </InputAdornment>
                                               }}
-                                              helperText={this.state.fieldErrors[fieldKey]}
+                                              helperText={this.state.fieldErrors[fieldKey]||(field.helperText?Util.replacePlaceholders(field.helperText, this.state.fields):'')}
                                               fullWidth={field.fullWidth}
                                               type={isDateOrTime?'text':uitype}
                                               multiline={uitype === 'textarea'}

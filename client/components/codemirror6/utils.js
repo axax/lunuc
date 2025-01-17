@@ -39,3 +39,14 @@ export function formatCode(view, type) {
         })
     }
 }
+
+export const jumpToLine = (view) => {
+    const lineNumber = Number(prompt("Enter line number:"))
+    if (!isNaN(lineNumber) && lineNumber > 0) {
+        const targetPosition = view.state.doc.line(lineNumber).from
+        view.dispatch({
+            selection: { anchor: targetPosition },
+            scrollIntoView: true
+        })
+    }
+}

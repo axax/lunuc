@@ -12,6 +12,7 @@ export const jsSnippets = ()=> {
             snippetCompletion(`on('mount',()=>{\n\tDomUtil.waitForElement('.selector').then((el)=>{})\n})`, {label: 'mount event'}),
             snippetCompletion('on([\'resourcesready\'],()=>{})', {label: 'resourcesready event'}),
             snippetCompletion('on(\'beforerender\',()=>{\n\t\n})', {label: 'beforerender event'}),
+            snippetCompletion('e.stopPropagation()', {label: 'stopPropagation()'}),
             snippetCompletion('on(\'click\',(p,e)=>{\n\tif(p.action===\'click\'){\n\t\tconsole.log(e)\n\t}\n})', {label: 'on click event'}),
             snippetCompletion('DomUtil.waitForElement(\'.selector\').then(()=>{\n\t\n})', {label: 'waitForElement'}),
             snippetCompletion(`on('customevent',p=>{\n\tif(p.action === 'modalClosed'){\n\t\t\n\t}else if(p.action === 'modalButtonClicked'){\n\t}\n})`, {label: 'custom event'}),

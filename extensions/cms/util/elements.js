@@ -444,12 +444,14 @@ const marginOptions = key => ({
 
 const sizeOptions = key => ({
     [`${key}width`]: {
-        label: 'Breite',
-        tab: MARGIN_TAB
+        label: _t('elements.width'),
+        tab: MARGIN_TAB,
+        helperText:'${c_0_p_height && c_0_p_src[_app_.lang][0].info.width?_t("elements.aspectRatio",{height:c_0_p_height,width:(c_0_p_src[_app_.lang][0].info.width/c_0_p_src[_app_.lang][0].info.height*c_0_p_height).toFixed(2)}):""}'
     },
     [`${key}height`]: {
-        label: 'Höhe',
-        tab: MARGIN_TAB
+        label: _t('elements.height'),
+        tab: MARGIN_TAB,
+        helperText:'${c_0_p_width && c_0_p_src[_app_.lang][0].info.height?_t("elements.aspectRatio",{width:c_0_p_width,height:(c_0_p_src[_app_.lang][0].info.height/c_0_p_src[_app_.lang][0].info.width*c_0_p_width).toFixed(2)}):""}'
     }
 })
 
