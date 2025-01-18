@@ -40,13 +40,14 @@ export function generateContextMenu({type,clickEvent, editorView, propertyTempla
                needsCommaAtEnd:startsWithAny(textNext,['[','{','"'])
            }
            let tempJson
-
-           if(text.endsWith('{') && textNext.startsWith('"')){
-               tempJson={}
-           }else {
-               try {
-                   tempJson = JSON.parse(`{${lineData.endsWithComma ? lineData.text.substring(0, lineData.text.length - 1) : lineData.text}}`)
-               } catch (e) {
+           if(editorView.state.doc.length>0 && !textNext.startsWith(']')) {
+               if (text.endsWith('{') && textNext.startsWith('"')) {
+                   tempJson = {}
+               } else {
+                   try {
+                       tempJson = JSON.parse(`{${lineData.endsWithComma ? lineData.text.substring(0, lineData.text.length - 1) : lineData.text}}`)
+                   } catch (e) {
+                   }
                }
            }
 
@@ -107,8 +108,8 @@ export function generateContextMenu({type,clickEvent, editorView, propertyTempla
                        }))
                    })
                }
-           } else if (templates && textNext && !textNext.startsWith('"') &&
-               (!startsWithAny(textNext,[']','}']) || endsWithAny(text,['}']))) {
+           } else if (templates && editorView.state.doc.length===0 || (textNext && !textNext.startsWith('"') &&
+               (!startsWithAny(textNext,[']','}']) || endsWithAny(text,['}','['])))) {
                contextMenuItems = [
                    {
                        icon: <AddIcon/>,
