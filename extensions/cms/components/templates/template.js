@@ -15,12 +15,12 @@ export const jsonTemplates = [
             const win = openWindow({url:`/system/converter/html2json?preview=true`})
             setTimeout(()=>{
                 win.addEventListener('beforeunload', (e) => {
-                    if (win.resultValue) {
+                    if (win.returnValue) {
                         editorView.dispatch({
                             changes: {
                                 from: lineInfo.to,
                                 to: lineInfo.to,
-                                insert: `${!lineData.endsWithComma ? ',' : ''}{"c":${win.resultValue}}${lineData.endsWithComma ? ',' : ''}`
+                                insert: `${!lineData.endsWithComma && lineData.needsComma? ',' : ''}{"c":${win.returnValue}}${lineData.endsWithComma ? ',' : ''}`
                             }
                         })
                         formatCode(editorView,'json')

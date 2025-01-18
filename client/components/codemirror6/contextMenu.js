@@ -4,6 +4,26 @@ import {_t} from '../../../util/i18n.mjs'
 import {formatCode} from './utils'
 import {openWindow} from '../../util/window'
 
+const getTextAtLineNumber = (editorView, number) => {
+    try {
+        const lineData = editorView.state.doc.line(number)
+        return lineData.text.trim()
+    }catch (e){
+        return ''
+    }
+}
+
+function startsWithAny(str, chars) {
+    if (!str || !chars.length) return false
+    const firstChar = str.charAt(0)
+    return chars.includes(firstChar)
+}
+function endsWithAny(str, chars) {
+    if (!str || !chars.length) return false
+    const lastChar = str.charAt(str.length - 1)
+    return chars.includes(lastChar)
+}
+
 export function generateContextMenu({type,clickEvent, editorView, propertyTemplates, templates, setEditData}) {
     let contextMenuItems = []
 
@@ -12,38 +32,47 @@ export function generateContextMenu({type,clickEvent, editorView, propertyTempla
        if(type==='json') {
            const pos = editorView.posAtCoords({x: clickEvent.clientX, y: clickEvent.clientY})
            const lineInfo = editorView.state.doc.lineAt(pos)
-
            const text = lineInfo.text.trim()
-           const lineData = {number: lineInfo.number, text, endsWithComma: text.endsWith(',')}
-           let tempJson
-           try {
-               tempJson = JSON.parse(`{${lineData.endsWithComma ? lineData.text.substring(0, lineData.text.length - 1) : lineData.text}}`)
-           } catch (e) {
+           const textNext = getTextAtLineNumber(editorView, lineInfo.number + 1)
+           const lineData = {number: lineInfo.number, text,
+               endsWithComma: text.endsWith(','),
+               needsComma:endsWithAny(text,[']','}','"']),
+               needsCommaAtEnd:startsWithAny(textNext,['[','{','"'])
            }
+           let tempJson
+
+           if(text.endsWith('{') && textNext.startsWith('"')){
+               tempJson={}
+           }else {
+               try {
+                   tempJson = JSON.parse(`{${lineData.endsWithComma ? lineData.text.substring(0, lineData.text.length - 1) : lineData.text}}`)
+               } catch (e) {
+               }
+           }
+
            if (tempJson) {
-               contextMenuItems = [
-                   {
-                       icon: <EditIcon/>,
-                       name: _t('CodeEditor.editAsText'),
-                       onClick: () => {
-                           const keys = Object.keys(tempJson)
-                           if (keys.length > 0) {
+
+               const keys = Object.keys(tempJson)
+
+               contextMenuItems = []
+               if (keys.length > 0){
+                   contextMenuItems.push(
+                       {
+                           icon: <EditIcon/>,
+                           name: _t('CodeEditor.editAsText'),
+                           onClick: () => {
                                setEditData({lineData, uitype: 'textarea', key: keys[0], value: tempJson[keys[0]]})
                            }
-                       }
-                   },
-                   {
-                       icon: <CodeIcon/>,
-                       name: _t('CodeEditor.editAsHtml'),
-                       onClick: () => {
-                           const keys = Object.keys(tempJson)
-                           if (keys.length > 0) {
+                       },
+                       {
+                           icon: <CodeIcon/>,
+                           name: _t('CodeEditor.editAsHtml'),
+                           onClick: () => {
                                setEditData({lineData, uitype: 'html', key: keys[0], value: tempJson[keys[0]]})
                            }
-                       }
-                   }
-               ]
-               const keys = Object.keys(tempJson)
+                       })
+                }
+
                if (keys.length > 0 && keys[0] == 'slug') {
                    contextMenuItems.push({
                        icon: <CodeIcon/>,
@@ -69,7 +98,7 @@ export function generateContextMenu({type,clickEvent, editorView, propertyTempla
                                        changes: {
                                            from: lineInfo.to,
                                            to: lineInfo.to,
-                                           insert: `${!lineData.endsWithComma ? ',' : ''}${f.template}${lineData.endsWithComma ? ',' : ''}`
+                                           insert: `${lineData.needsComma ? ',' : ''}${f.template}${lineData.needsCommaAtEnd ? ',' : ''}`
                                        }
                                    })
                                    formatCode(editorView,'json')
@@ -78,7 +107,8 @@ export function generateContextMenu({type,clickEvent, editorView, propertyTempla
                        }))
                    })
                }
-           } else if (templates) {
+           } else if (templates && textNext && !textNext.startsWith('"') &&
+               (!startsWithAny(textNext,[']','}']) || endsWithAny(text,['}']))) {
                contextMenuItems = [
                    {
                        icon: <AddIcon/>,
@@ -94,7 +124,7 @@ export function generateContextMenu({type,clickEvent, editorView, propertyTempla
                                        changes: {
                                            from: lineInfo.to,
                                            to: lineInfo.to,
-                                           insert: `${!lineData.endsWithComma ? ',' : ''}${f.template}${lineData.endsWithComma ? ',' : ''}`
+                                           insert: `${lineData.needsComma ? ',' : ''}${f.template}${lineData.needsCommaAtEnd ? ',' : ''}`
                                        }
                                    })
                                    formatCode(editorView,'json')

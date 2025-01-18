@@ -14,7 +14,9 @@ export const jsSnippets = ()=> {
             snippetCompletion('on(\'beforerender\',()=>{\n\t\n})', {label: 'beforerender event'}),
             snippetCompletion('e.stopPropagation()', {label: 'stopPropagation()'}),
             snippetCompletion('on(\'click\',(p,e)=>{\n\tif(p.action===\'click\'){\n\t\tconsole.log(e)\n\t}\n})', {label: 'on click event'}),
+            snippetCompletion('on(\'change\',(p,e)=>{\n\tif(p.action===\'change\'){\n\t\tconsole.log(e)\n\t}\n})', {label: 'on change event'}),
             snippetCompletion('DomUtil.waitForElement(\'.selector\').then(()=>{\n\t\n})', {label: 'waitForElement'}),
+            snippetCompletion(`DomUtil.waitForVariable('\${name}').then(()=>{\n\t\n})`, {label: 'waitForVariable'}),
             snippetCompletion(`on('customevent',p=>{\n\tif(p.action === 'modalClosed'){\n\t\t\n\t}else if(p.action === 'modalButtonClicked'){\n\t}\n})`, {label: 'custom event'}),
             snippetCompletion(`serverMethod('\${methodName}',\${args},(res)=>{
     if(res.data.cmsServerMethod.result){          

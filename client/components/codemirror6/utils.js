@@ -34,9 +34,11 @@ export function formatCode(view, type) {
     }
 
     if(formattedCode){
+        const fistVisibleLine = view.state.doc.lineAt(view.elementAtHeight(view.dom.getBoundingClientRect().top - view.documentTop).from).number
         view.dispatch({
             changes: {from: 0, to: view.state.doc.length, insert: formattedCode}
         })
+        scrollToLine(view, fistVisibleLine)
     }
 }
 
