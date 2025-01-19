@@ -15,7 +15,8 @@ import {
     FlipToBackIcon,
     MoveDownIcon,
     MoveUpIcon,
-    LowPriorityIcon
+    LowPriorityIcon,
+    TransformIcon
 } from 'ui/admin'
 import JsonDomAddElementDialog from './jsondomhelper/JsonDomAddElementDialog'
 import AddToBody from './AddToBody'
@@ -31,7 +32,7 @@ import {
 } from '../util/jsonDomUtil'
 import {DROPAREA_ACTIVE, DROPAREA_OVERLAP, DROPAREA_OVER, ALLOW_DROP, JsonDomDraggable, onJsonDomDrag, onJsonDomDragEnd} from '../util/jsonDomDragUtil'
 import config from 'gen/config-client'
-import {getJsonDomElements, createElementByKeyFromList, MEDIA_PROJECTION} from '../util/elements'
+import {getJsonDomElements, MEDIA_PROJECTION} from '../util/elements'
 import {deepMergeOptional, deepMerge} from '../../../util/deepMerge.mjs'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants/index.mjs'
 import {client} from '../../../client/middleware/graphql'
@@ -1166,6 +1167,31 @@ class JsonDomHelper extends React.Component {
                             icon: <AddIcon/>,
                             items: subMenu
                         })
+
+                        if(!_options.elementKey && Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
+                            const changeToType = (type)=>{
+                                const customElement = getJsonDomElements(type)
+                                subJson.$inlineEditor = customElement.defaults.$inlineEditor
+                                subJson.p = Object.assign({},subJson.p,customElement.defaults.p)
+                                this.props._onTemplateChange(_json, true)
+                            }
+
+                            menuItems.push({
+                                name: _t('JsonDomHelper.convert.element'),
+                                icon: <TransformIcon/>,
+                                items: [{
+                                    name: 'Custom container',
+                                    onClick: () => {
+                                        changeToType('custom')
+                                    }
+                                },{
+                                    name: 'Headline',
+                                    onClick: () => {
+                                        changeToType('headline')
+                                    }
+                                }]
+                            })
+                        }
                         if (_options.allowDrop && _options.menu.add !== false) {
                             subMenu.push({
                                 name: _t('JsonDomHelper.element.inside'),

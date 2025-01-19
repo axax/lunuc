@@ -26,7 +26,8 @@ import {
     SimpleMenu,
     Divider,
     UIProvider,
-    Checkbox
+    Checkbox,
+    ReplayIcon
 } from 'ui/admin'
 import {
     LogoutIcon, PreviewIcon, SettingsIcon, SaveIcon
@@ -923,10 +924,7 @@ class CmsViewEditorContainer extends React.Component {
                         icon:'replay',
                         name: _t('CmsViewEditorContainer.undochange') + ' (' + this.templateChangeHistory.length + ')',
                         onClick: () => {
-                            if (this.templateChangeHistory.length > 0) {
-                                this.handleTemplateChange(this.templateChangeHistory[0], true, true)
-                                this.templateChangeHistory.splice(0, 1)
-                            }
+                            this.undoLastChange()
                         }
                     })
             }
@@ -935,6 +933,13 @@ class CmsViewEditorContainer extends React.Component {
             const toolbarRight = []
 
             if(canMangeCmsContent) {
+
+                if (this.templateChangeHistory.length > 0) {
+                    toolbarRight.push(<Button startIcon={<ReplayIcon/>} size="small" color="inherit" onClick={() => {
+                        this.undoLastChange()
+                    }}>{_t('CmsViewEditorContainer.undochange')}</Button>)
+                }
+
                 if (isSmallScreen) {
                     moreMenu.unshift({
                         component: <SimpleSwitch key="inlineEditorSwitch" color="default"
@@ -1072,7 +1077,6 @@ class CmsViewEditorContainer extends React.Component {
                               toolbarLeft={<IconButton
                                   onClick={()=>{
                                       this.props.history.push(config.ADMIN_BASE_URL + '/cms' + (_app_._cmsLastSearch ? _app_._cmsLastSearch : ''))
-
                                   }}
                                   color="inherit"><ArrowBackIcon/></IconButton>}
                               toolbarRight={toolbarRight}
@@ -1088,6 +1092,13 @@ class CmsViewEditorContainer extends React.Component {
 
     }
 
+
+    undoLastChange() {
+        if (this.templateChangeHistory.length > 0) {
+            this.handleTemplateChange(this.templateChangeHistory[0], true, true)
+            this.templateChangeHistory.splice(0, 1)
+        }
+    }
 
     handleCleanUpTranslations() {
         const {

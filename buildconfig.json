@@ -213,7 +213,8 @@
         "MoveUp",
         "LowPriority",
         "HighlightAlt",
-        "Repeat"
+        "Repeat",
+        "Transform"
       ],
       "theme":{
         "colors":{
