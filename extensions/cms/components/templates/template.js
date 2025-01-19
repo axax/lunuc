@@ -20,7 +20,7 @@ export const jsonTemplates = [
                             changes: {
                                 from: lineInfo.to,
                                 to: lineInfo.to,
-                                insert: `${!lineData.endsWithComma && lineData.needsComma? ',' : ''}{"c":${win.returnValue}}${lineData.endsWithComma ? ',' : ''}`
+                                insert: `${!lineData.endsWithComma && lineData.needsComma? ',' : ''}{"c":${win.returnValue}}${lineData.needsCommaAtEnd ? ',' : ''}`
                             }
                         })
                         formatCode(editorView,'json')

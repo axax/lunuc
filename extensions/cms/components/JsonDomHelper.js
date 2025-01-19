@@ -1168,30 +1168,6 @@ class JsonDomHelper extends React.Component {
                             items: subMenu
                         })
 
-                        if(!_options.elementKey && Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
-                            const changeToType = (type)=>{
-                                const customElement = getJsonDomElements(type)
-                                subJson.$inlineEditor = replaceUidPlaceholder(customElement.defaults.$inlineEditor)
-                                subJson.p = Object.assign({},subJson.p,customElement.defaults.p)
-                                this.props._onTemplateChange(_json, true)
-                            }
-
-                            menuItems.push({
-                                name: _t('JsonDomHelper.convert.element'),
-                                icon: <TransformIcon/>,
-                                items: [{
-                                    name: 'Custom container',
-                                    onClick: () => {
-                                        changeToType('custom')
-                                    }
-                                },{
-                                    name: 'Headline',
-                                    onClick: () => {
-                                        changeToType('headline')
-                                    }
-                                }]
-                            })
-                        }
                         if (_options.allowDrop && _options.menu.add !== false) {
                             subMenu.push({
                                 name: _t('JsonDomHelper.element.inside'),
@@ -1287,6 +1263,31 @@ class JsonDomHelper extends React.Component {
                             items: subMenuMove
                         })
                     }
+                }
+
+                if(!_options.elementKey && Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
+                    const changeToType = (type)=>{
+                        const customElement = getJsonDomElements(type)
+                        subJson.$inlineEditor = replaceUidPlaceholder(customElement.defaults.$inlineEditor)
+                        subJson.p = Object.assign({},subJson.p,customElement.defaults.p)
+                        this.props._onTemplateChange(_json, true)
+                    }
+
+                    menuItems.push({
+                        name: _t('JsonDomHelper.convert.element'),
+                        icon: <TransformIcon/>,
+                        items: [{
+                            name: 'Custom container',
+                            onClick: () => {
+                                changeToType('custom')
+                            }
+                        },{
+                            name: 'Headline',
+                            onClick: () => {
+                                changeToType('headline')
+                            }
+                        }]
+                    })
                 }
 
                 if (_options.menu.remove !== false) {
