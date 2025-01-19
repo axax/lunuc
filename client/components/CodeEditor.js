@@ -112,6 +112,8 @@ function CodeEditor(props,ref){
         }
         allActions.push({
             name: (showFileSplit ? 'Hide' : 'Show') + ' File split', onClick: () => {
+                // to keep value in state
+                setStateValue(putFilesTogether(files, finalFileIndex, editorViewRef.current.state.doc.toString()))
                 setShowFileSplit(!showFileSplit)
             }
         })
