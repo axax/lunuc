@@ -1,4 +1,5 @@
 import Util from '../../../api/util/index.mjs'
+import ClientUtil from '../../../client/util/index.mjs'
 
 /*
 
@@ -56,7 +57,7 @@ export const detectSpam = async (db, context, {text, sender, threshold}) => {
         }
     }
 
-    const lowerCaseText = text.toLowerCase()
+    const lowerCaseText = ClientUtil.removeControlChars(text.toLowerCase())
 
     let totalScore = 0
 

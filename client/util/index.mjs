@@ -52,7 +52,7 @@ const Util = {
             }
 
             if (options.removeControlChars) {
-                str = str.replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+                str = Util.removeControlChars(str)
             }
         }
 

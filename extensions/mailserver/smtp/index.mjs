@@ -8,7 +8,6 @@ import nodemailerDirectTransport from 'nodemailer-direct-transport'
 import nodemailer from 'nodemailer'
 import {isTemporarilyBlocked} from '../../../server/util/requestBlocker.mjs'
 import Util from '../../../api/util/index.mjs'
-import ClientUtil from '../../../client/util/index.mjs'
 import {detectSpam} from './spam.mjs'
 
 /*
@@ -250,16 +249,6 @@ const startListening = async (db, context) => {
                         if (mailAccount && mailAccount.active) {
 
                             const sender = data.headers.get('sender') || data.headers.get('from') || {}
-
-                            if(data.text) {
-                                data.text = ClientUtil.removeControlChars(data.text)
-                            }
-                            if(data.html) {
-                                data.html = ClientUtil.removeControlChars(data.html)
-                            }
-                            if(data.subject) {
-                                data.subject = ClientUtil.removeControlChars(data.subject)
-                            }
 
                             const {isSpam, spamScore} = await detectSpam(db, context, {
                                 threshold: mailAccount.spamThreshold,
