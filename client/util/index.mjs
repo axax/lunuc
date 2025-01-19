@@ -29,6 +29,13 @@ const Util = {
     safeTags: str => {
         return str ? str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''
     },
+    removeControlChars: str => {
+        if (str && str.constructor === String) {
+            // https://en.wikipedia.org/wiki/Control_character#In_Unicode
+            return str.replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+        }
+        return str
+    },
     escapeForJson: (str, options) => {
         // console.log(str)
         if (str === undefined || str === null) return ''
