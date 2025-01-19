@@ -2475,14 +2475,18 @@ const getJsonDomElements = (value, options) => {
     return baseElements
 }
 
+export const replaceUidPlaceholder = (comp) => {
+    const uid = 'genid_' + Math.random().toString(36).substr(2, 9)
+    return JSON.parse(JSON.stringify(comp).replace(/__uid__/g, uid))
+}
+
 const createElementByKeyFromList = (key, elementList) => {
     let item
     for (let i = 0; i < elementList.length; i++) {
         const comp = elementList[i]
         if (key === comp.defaults.$inlineEditor.elementKey) {
             // replace __uid__ placeholder
-            const uid = 'genid_' + Math.random().toString(36).substr(2, 9)
-            item = JSON.parse(JSON.stringify(comp).replace(/__uid__/g, uid))
+            item = replaceUidPlaceholder(comp)
             break
         }
     }
