@@ -50,6 +50,12 @@ Nicht empfolen für SVG Bilder, da diese dabei in PNG umgewandelt werden. Im Tab
             'entropy'
         ]
     },
+    [`${key}options_format`]: {
+        enum: [{value:'',name:'keine Umwandlung'},'png','gif','jpeg'],
+        newLine: true,
+        label: 'In Format umwandeln',
+        tab: IMAGE_OPTIMIZATION_TAB
+    },
     [`${key}options_webp`]: {
         type: 'Boolean',
         newLine: true,
