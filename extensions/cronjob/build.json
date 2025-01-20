@@ -14,7 +14,7 @@
           "index": 1
         },
         {
-          "tab": "Allgemein",
+          "tab": "Script",
           "name": "name",
           "required": true,
           "clone": "${name} (copy)",
