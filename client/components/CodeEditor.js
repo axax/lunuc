@@ -173,10 +173,8 @@ function CodeEditor(props,ref){
                 }
             }}
             onContextMenu={(clickEvent, editorView) => {
-                if (type === 'json' || type === 'css') {
-                    clickEvent.preventDefault()
-                    setContextMenu(generateContextMenu({type,clickEvent,editorView,propertyTemplates,templates,setEditData}))
-                }
+                clickEvent.preventDefault()
+                setContextMenu(generateContextMenu({type,clickEvent,editorView,propertyTemplates,templates,setEditData}))
             }}
             style={{height:height ? height : (renderInWindow ? '100%':'30rem')}}
             firstVisibleLine={scrollPositions[finalFileIndex] ? scrollPositions[finalFileIndex].firstVisibleLine : 0}
@@ -224,5 +222,5 @@ function CodeEditor(props,ref){
 }
 
 export default memo(forwardRef(CodeEditor), (prev, next)=>{
-    return prev.identifier === next.identifier
+    return prev.identifier === next.identifier && prev.height === next.height
 })

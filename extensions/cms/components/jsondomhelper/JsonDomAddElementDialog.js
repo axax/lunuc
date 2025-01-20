@@ -2,7 +2,7 @@ import React from 'react'
 import {
     TextField,
     InputAdornment,
-    AutoFixHighIconButton,
+    AutoAwesomeIconButton,
     SimpleDialog,
     SimpleSelect
 } from 'ui/admin'
@@ -91,7 +91,7 @@ export default function JsonDomAddElementDialog(props){
                    InputProps={{
                        endAdornment: (
                            <InputAdornment position="end">
-                               <AutoFixHighIconButton disabled={aiAssistent.running || !aiAssistent.promt} color="primary" onClick={()=>{
+                               <AutoAwesomeIconButton disabled={aiAssistent.running || !aiAssistent.promt} color="primary" onClick={()=>{
                                    setAiAssistent({...aiAssistent,running:true})
                                    const contextInstructions = `the answer must be plain html code without code marker and instructions`
                                    fetch(`/lunucapi/system/llm?stream=true&contextInstructions=${encodeURIComponent(contextInstructions)}&content=${encodeURIComponent(aiAssistent.promt)}`).then(async response => {
@@ -107,7 +107,7 @@ export default function JsonDomAddElementDialog(props){
                                        }
                                    })
                                }}>
-                               </AutoFixHighIconButton>
+                               </AutoAwesomeIconButton>
                            </InputAdornment>
                        ),
                    }}/>}

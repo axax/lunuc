@@ -1,5 +1,5 @@
 import React from 'react'
-import {EditIcon, CodeIcon, AddIcon, AutoFixHighIcon,RepeatIcon} from 'ui/admin'
+import {EditIcon, CodeIcon, AddIcon, AutoFixHighIcon,RepeatIcon,AutoAwesomeIcon} from 'ui/admin'
 import {_t} from '../../../util/i18n.mjs'
 import {formatCode} from './utils'
 import {openWindow} from '../../util/window'
@@ -148,28 +148,40 @@ export function generateContextMenu({type,clickEvent, editorView, propertyTempla
 
        const selectedContent = editorView.state.sliceDoc(editorView.state.selection.main.from, editorView.state.selection.main.to)
 
-       if(selectedContent){
+       const winAndReplace = (url)=>{
+           const win = openWindow({url})
+           win.onload = ()=>{
+               win.addEventListener('beforeunload', (e) => {
+                   console.log(win.returnValue)
+                   if (win.returnValue) {
+                       editorView.dispatch({
+                           changes: {
+                               from: editorView.state.selection.main.from,
+                               to: editorView.state.selection.main.to,
+                               insert: win.returnValue
+                           }
+                       })
+                       formatCode(editorView,type)
+                   }
+               })
+           }
+       }
+       contextMenuItems.push({
+           divider: true,
+           icon: <AutoAwesomeIcon/>,
+           name: _t('CodeEditor.aiAssistent') + ' (Alt-Cmd-A)',
+           onClick: () => {
+               winAndReplace(`/system/aiassistent?preview=true&input=${encodeURIComponent(selectedContent || '')}true&type=${type}`)
+           }
+       })
+
+       if (selectedContent) {
            contextMenuItems.push({
-               divider:true,
+               divider: false,
                icon: <RepeatIcon/>,
                name: _t('CodeEditor.repeatSelection'),
                onClick: () => {
-                   const win = openWindow({url:`/system/repeater?preview=true&content=${selectedContent}`})
-                   setTimeout(()=>{
-                       win.addEventListener('beforeunload', (e) => {
-                           console.log(win.returnValue)
-                           if (win.returnValue) {
-                               editorView.dispatch({
-                                   changes: {
-                                       from: editorView.state.selection.main.from,
-                                       to: editorView.state.selection.main.to,
-                                       insert: win.returnValue
-                                   }
-                               })
-                               formatCode(editorView,'json')
-                           }
-                       })
-                   },500)
+                   winAndReplace(`/system/repeater?preview=true&content=${selectedContent}`)
                }
            })
        }

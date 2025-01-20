@@ -108,6 +108,7 @@ export const translations = {
         'CodeEditor.repeatSelection':'Auswahl wiederholen',
         'CodeEditor.openPage': 'Seite öffnen',
         'CodeEditor.reformatCode': 'Automatisch formatieren',
+        'CodeEditor.aiAssistent':'KI Assistent',
         'GlobalSearch.placeholder':'Schnellsuche'
     },
     en: {
@@ -216,6 +217,7 @@ export const translations = {
         'CodeEditor.editAsText':'Edit as text',
         'CodeEditor.editAsHtml':'Edit as HTML',
         'CodeEditor.repeatSelection':'Repeat selection',
+        'CodeEditor.aiAssistent':'AI assistent',
         'CodeEditor.openPage': 'Open page',
         'CodeEditor.reformatCode': 'Reformat',
         'GlobalSearch.placeholder':'Quick search'

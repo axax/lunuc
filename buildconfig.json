@@ -214,7 +214,8 @@
         "LowPriority",
         "HighlightAlt",
         "Repeat",
-        "Transform"
+        "Transform",
+        "AutoAwesome"
       ],
       "theme":{
         "colors":{

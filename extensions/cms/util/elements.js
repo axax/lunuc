@@ -52,7 +52,7 @@ Nicht empfolen für SVG Bilder, da diese dabei in PNG umgewandelt werden. Im Tab
     },
     [`${key}options_format`]: {
         enum: [{value:'',name:'keine Umwandlung'},'png','gif','jpeg'],
-        newLine: true,
+        newLine: false,
         label: 'In Format umwandeln',
         tab: IMAGE_OPTIMIZATION_TAB
     },
