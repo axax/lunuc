@@ -45,6 +45,7 @@ const styles = {
         overflow: 'hidden'
     },
     printAreaInner: {
+        position:'relative',
         '& img': {
             maxWidth: '100%'
         }
@@ -112,7 +113,7 @@ class Print extends React.PureComponent {
     }
 
     componentDidUpdate() {
-        if(this.props.showPageBreak) {
+        if (this.props.showPageBreak) {
             this.createPdf(true)
         }
     }
@@ -127,7 +128,7 @@ class Print extends React.PureComponent {
             }, 300)
         } else {
 
-            if(this.props.showPageBreak) {
+            if (this.props.showPageBreak) {
                 setTimeout(() => {
                     this.createPdf(true)
                 }, 500)
@@ -143,7 +144,7 @@ class Print extends React.PureComponent {
         return <div className={classNames(classes.root, className)}>
             {showButtons !== false && <button className={classes.button}
                                               id="printPdfButton"
-                                              onClick={()=>{
+                                              onClick={() => {
                                                   this.createPdf()
                                               }}>{buttonLabel || 'Create PDF'}</button>}
             <div className={classes.overlay}></div>
@@ -171,22 +172,22 @@ class Print extends React.PureComponent {
     createPdf(simulation) {
         if (!simulation && !window.html2canvas) return false
         if (!simulation && !window.pdfMake) return false
-
-        const {classes, pdfName, showDate} = this.props
+        const {classes, pdfName, showDate, headerSelector, footerSelector} = this.props
         const overlay = this.$(`.${classes.overlay}`)[0],
             printArea = this.$(`.${classes.printArea}`)[0],
             printAreaInner = this.$(`.${classes.printAreaInner}`, printArea)[0],
-            pdfContent = []
-
-        const scale = this.props.scale || 1
+            printHeader = headerSelector ? this.$(headerSelector, printArea)[0]:null,
+            printFooter = footerSelector ? this.$(footerSelector, printArea)[0]:null,
+            pdfContent = [],
+            scale = this.props.scale || 1
 
         let watermarkImage
         if (!simulation) {
             overlay.style.display = 'flex'
             printArea.classList.add(classes.isPrinting)
             printArea.classList.add('print-area-printing')
-            if(this.props.watermark) {
-                watermarkImage= new Image()
+            if (this.props.watermark) {
+                watermarkImage = new Image()
                 watermarkImage.src = this.props.watermark
             }
         }
@@ -194,7 +195,9 @@ class Print extends React.PureComponent {
 
         const offsetTop = this.offsetTop(printArea),
             pagePaddingTop = this.getPropertyAsNumber(printArea, 'padding-top') + this.getPropertyAsNumber(printAreaInner, 'padding-top'),
-            pagePaddingBottom = this.getPropertyAsNumber(printArea, 'padding-bottom') + this.getPropertyAsNumber(printAreaInner, 'padding-bottom')
+            pagePaddingBottom = this.getPropertyAsNumber(printArea, 'padding-bottom') + this.getPropertyAsNumber(printAreaInner, 'padding-bottom'),
+            pageHeaderHeight = this.getPropertyAsNumber(printHeader, ['height','margin-top','margin-bottom']),
+            pageFooterHeight = this.getPropertyAsNumber(printFooter, ['height','margin-top','margin-bottom'])
 
         setTimeout(() => {
 
@@ -204,11 +207,7 @@ class Print extends React.PureComponent {
                 paddingBottom: pagePaddingBottom,
                 offsetTop
             })
-            /*  ol.style.display = 'none'
-               return*/
-
             const breaks = this.$('.' + classes.pageBreak, printAreaInner)
-
 
             const nextPage = page => {
                 overlay.innerText = _t('Print.createPage', {page: page + 1, numberOfPages: breaks.length + 1})
@@ -218,12 +217,42 @@ class Print extends React.PureComponent {
 
                 let posCurrentBreak = 0, posPreviousBreak = 0
 
-
                 if (!isLastPage) {
                     posCurrentBreak = this.offsetTop(breaks[page]) - offsetTop + this.outerHeight(breaks[page])
                 }
                 if (!isFirstPage) {
                     posPreviousBreak = this.offsetTop(breaks[page - 1]) - offsetTop + this.outerHeight(breaks[page - 1])
+                }
+                const scrollY = (page > 0 ? -(posPreviousBreak - pagePaddingTop + window.scrollY) : -window.scrollY)
+
+                if(printHeader && page > 0){
+                    const printHeaderClone = printHeader.cloneNode(true)
+                    printHeaderClone.dataset.isPrintClone = true
+                    printHeaderClone.style.position = 'absolute'
+                    printHeaderClone.style.left = 0
+                    printHeaderClone.style.right = 0
+                    printHeaderClone.style.top = `${posPreviousBreak - pagePaddingTop}px`
+                    printAreaInner.appendChild(printHeaderClone)
+                    breaks[page - 1].style.height = `${pageHeaderHeight}px`
+                }
+
+                if(printFooter){
+
+                    const printFooterClone = printFooter.cloneNode(true)
+                    printFooterClone.dataset.isPrintClone = true
+                    printFooterClone.style.visibility='visible'
+                    let contentHeight
+
+                    if(!isLastPage) {
+                        contentHeight = PAGE_HEIGHT - (posCurrentBreak - posPreviousBreak) - (page * (pagePaddingTop+pageHeaderHeight))
+                        posCurrentBreak += contentHeight + pageFooterHeight
+                        breaks[page].parentNode.insertBefore(printFooterClone, breaks[page])
+                    }else{
+                        contentHeight = PAGE_HEIGHT - (this.outerHeight(printAreaInner) -  posPreviousBreak) - pageFooterHeight
+                        printAreaInner.appendChild(printFooterClone)
+                        printFooter.style.visibility='hidden'
+                    }
+                    printFooterClone.style.marginTop = `${contentHeight - pageFooterHeight}px`
                 }
 
 
@@ -234,7 +263,7 @@ class Print extends React.PureComponent {
                     height: PAGE_HEIGHT,
                     scale,
                     scrollX: -window.scrollX - 7,
-                    scrollY: page > 0 ? -(posPreviousBreak - pagePaddingTop + window.scrollY) : -window.scrollY,
+                    scrollY: scrollY,
                     /*logging: true,*/
                     /*proxy: ( (ENV=="development" )?"linkedin/src/php/html2canvasproxy.php":"php/html2canvasproxy.php"),*/
                 }).then(canvas => {
@@ -250,7 +279,7 @@ class Print extends React.PureComponent {
                     context.drawImage(canvas, 0, 0)
 
                     // Cover top and bottom area with a white rect
-                    context.fillStyle = "white"
+                    context.fillStyle = 'white'
                     if (!isFirstPage) {
                         context.fillRect(0, 0, canvas.width, pagePaddingTop * scale)
                     }
@@ -260,31 +289,31 @@ class Print extends React.PureComponent {
                     }
 
 
-                    if(watermarkImage) {
+                    if (watermarkImage) {
                         const wmOptions = this.props.watermarkOption
 
 
-                        let w=watermarkImage.width * scale,
-                            h=watermarkImage.height * scale,
+                        let w = watermarkImage.width * scale,
+                            h = watermarkImage.height * scale,
                             y = canvas.height - h
 
 
                         let x
-                        if(wmOptions){
-                            if( wmOptions.left==='center'){
-                                x = (canvas.width - w)/2
+                        if (wmOptions) {
+                            if (wmOptions.left === 'center') {
+                                x = (canvas.width - w) / 2
                             }
-                            if( wmOptions.bottom){
+                            if (wmOptions.bottom) {
                                 y -= wmOptions.bottom * scale
                             }
                         }
 
-                        if(!x){
+                        if (!x) {
                             x = canvas.width - w
                         }
 
 
-                        context.drawImage(watermarkImage, x, y,  w, h)
+                        context.drawImage(watermarkImage, x, y, w, h)
                     }
 
                     // draw page number
@@ -357,10 +386,16 @@ class Print extends React.PureComponent {
                                 overlay.style.display = 'none'
                             })
                         }
-                        if(!this.props.showPageBreak) {
+                        if (!this.props.showPageBreak) {
                             this.removeExistingPageBreaks(printAreaInner)
                         }
-                        /*}*/
+
+                        this.$('[data-is-print-clone="true"]', printAreaInner).forEach(n => {
+                            n.parentNode.removeChild(n)
+                        })
+                        if(printFooter){
+                            printFooter.style.visibility='visible'
+                        }
                     }
                 })
 
@@ -368,7 +403,6 @@ class Print extends React.PureComponent {
             }
 
             if (!simulation) {
-
                 nextPage(0)
             }
 
@@ -382,27 +416,36 @@ class Print extends React.PureComponent {
     }
 
 
-    getPropertyAsNumber(printArea, propName) {
-        return parseInt(window.getComputedStyle(printArea, null).getPropertyValue(propName));
+    getPropertyAsNumber(element, propName) {
+        if(!element || !propName){
+            return 0
+        }
+        if(propName.constructor===Array){
+            return propName.reduce((a,p)=>a+this.getPropertyAsNumber(element,p),0)
+        }
+        const propValue = parseInt(window.getComputedStyle(element, null).getPropertyValue(propName))
+        if(isNaN(propValue)){
+            return 0
+        }
+        return propValue
     }
 
     calculatePageBreaks({printAreaInner, paddingTop, paddingBottom, offsetTop}) {
-
+        const {forceManuelBreak, manualBreakSelector} = this.props
 
         this.removeExistingPageBreaks(printAreaInner)
 
         // check if there is a break needed
-        if (printAreaInner.clientHeight < PAGE_HEIGHT) {
+        if (printAreaInner.clientHeight < (PAGE_HEIGHT - paddingTop - paddingBottom) && !(forceManuelBreak && manualBreakSelector)) {
             return
         }
 
         console.log('calculatePageBreaks')
-
         this.setBreakRec(printAreaInner, {offsetTop, PAGE_HEIGHT, paddingBottom, paddingTop})
 
     }
 
-    removeExistingPageBreaks(printAreaInner){
+    removeExistingPageBreaks(printAreaInner) {
         const {classes} = this.props
 
         //remove existing breaks
@@ -412,78 +455,94 @@ class Print extends React.PureComponent {
 
     }
 
-    setBreakRec(node, {offsetTop, paddingBottom, paddingTop}) {
-
+    setBreakRec(node, {offsetTop, paddingBottom, paddingTop, rootNode}) {
+        const {forceManuelBreak, manualBreakSelector, noBreakClassName} = this.props
         const innerPageHeight = PAGE_HEIGHT - paddingTop - paddingBottom
 
-        let noBreakClassName
-        if(this.props.noBreakClassName){
-            noBreakClassName = this.props.noBreakClassName
-        }else{
-            noBreakClassName = []
-        }
-
         let nodes = node.childNodes
-        if(this.props.manualBreakSelector){
-            nodes = node.querySelectorAll(this.props.manualBreakSelector)
+        if (manualBreakSelector) {
+            nodes = node.querySelectorAll(manualBreakSelector)
         }
 
         nodes.forEach(childNode => {
 
-                const newOffsetTop = this.offsetTop(childNode)
+            if(childNode.nodeType === Node.TEXT_NODE){
+                return
+            }
 
-                let pos = newOffsetTop - offsetTop + this.outerHeight(childNode)
+            const newOffsetTop = this.offsetTop(childNode),
+                pos = newOffsetTop - offsetTop + this.outerHeight(childNode),
+                dif = pos - innerPageHeight
 
-                const dif = pos - innerPageHeight
+            if (forceManuelBreak && manualBreakSelector) {
+                offsetTop = this.createPageBreakDiv(childNode)
+            } else if (dif >= 20) {
 
-                if (dif >= 20) {
-
-                    let noBreak = false
-                    noBreakClassName.forEach(cn=>{
-                        if(childNode.classList.contains(cn)){
+                let noBreak = false
+                if (noBreakClassName) {
+                    noBreakClassName.forEach(cn => {
+                        if (childNode.classList.contains(cn)) {
                             noBreak = true
                         }
                     })
+                }
 
-
-
-                    // A break is needed
-                    if (!noBreak && (childNode.tagName === 'TD' || childNode.tagName === 'TH' || childNode.tagName === 'TR')) {
-
-                        // special treatment for breaks within a table
-
-                        const holderNode = childNode.tagName === 'TR' ? childNode : childNode.parentNode,
-                            br = document.createElement('tr'),
-                            td = document.createElement('td')
-                        td.className = this.props.classes.pageBreak
-                        td.colSpan = 99
-                        td.style.border = 'none'
-                        br.appendChild(td)
-                        holderNode.parentNode.insertBefore(br, holderNode)
-                        offsetTop = this.offsetTop(br)
-
-
-                    } else if ( !noBreak && !this.props.manualBreakSelector && childNode.hasChildNodes() && childNode.childNodes[0].nodeType !== Node.TEXT_NODE) {
-                        offsetTop = this.setBreakRec(childNode, {offsetTop, PAGE_HEIGHT, paddingBottom, paddingTop})
-                    } else {
-                        let br = document.createElement('div')
-                        br.className = this.props.classes.pageBreak
-                        childNode.parentNode.insertBefore(br, childNode)
-                        offsetTop = this.offsetTop(br)
+                // A break is needed
+                if (!noBreak && (childNode.tagName === 'TD' || childNode.tagName === 'TH' || childNode.tagName === 'TR')) {
+                    // special treatment for breaks within a table
+                    offsetTop = this.createPageBreakTd(childNode)
+                } else if (!noBreak && !manualBreakSelector && childNode.hasChildNodes() && childNode.childNodes[0].nodeType !== Node.TEXT_NODE) {
+                    offsetTop = this.setBreakRec(childNode, {offsetTop, PAGE_HEIGHT, paddingBottom, paddingTop, rootNode: rootNode || node})
+                } else {
+                    if(rootNode) {
+                        let viewtop = childNode.getBoundingClientRect().top
+                        while (childNode.parentNode !== rootNode) {
+                            if (viewtop - childNode.parentNode.getBoundingClientRect().top < 3) {
+                                childNode = childNode.parentNode
+                            } else {
+                                break
+                            }
+                        }
                     }
+                    offsetTop = this.createPageBreakDiv(childNode)
                 }
             }
-        )
+        })
         return offsetTop
     }
 
+    createPageBreakTd(childNode) {
+        const holderNode = childNode.tagName === 'TR' ? childNode : childNode.parentNode,
+            br = document.createElement('tr'),
+            td = document.createElement('td')
+        td.className = this.props.classes.pageBreak
+        td.colSpan = 99
+        td.style.border = 'none'
+        br.appendChild(td)
+        holderNode.parentNode.insertBefore(br, holderNode)
+        return this.offsetTop(br)
+    }
+
+    createPageBreakDiv(childNode) {
+        let br = document.createElement('div')
+        br.className = this.props.classes.pageBreak
+        childNode.parentNode.insertBefore(br, childNode)
+        return this.offsetTop(br)
+    }
 
     offsetTop(e) {
+        if(!e || e.nodeType === Node.TEXT_NODE){
+            return document.documentElement.scrollTop
+        }
         const r = e.getBoundingClientRect()
         return r.top + document.documentElement.scrollTop
     }
 
     outerHeight(element) {
+        if(!element ||element.nodeType === Node.TEXT_NODE){
+            return 0
+        }
+
         const height = element.offsetHeight,
             style = window.getComputedStyle(element)
 
