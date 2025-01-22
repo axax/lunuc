@@ -181,36 +181,26 @@ const getHighlightPosition = (node)=>  {
     let childMaxTop = 0,
         childMaxLeft = 0,
         childMinTop = Infinity,
-        childMinLeft = Infinity,
-        checkNode = false
+        childMinLeft = Infinity
 
-    if (node.childNodes.length === 0) {
-        checkNode = true
-    } else {
-        for (const childNode of node.childNodes) {
-            if (childNode.nodeType === Node.ELEMENT_NODE) {
-                const style = window.getComputedStyle(childNode)
-                if (style.display !== 'none' && style.opacity > 0) {
-                    const childOffsets = DomUtilAdmin.elemOffset(childNode)
-                    childMinLeft = Math.min(childOffsets.left, childMinLeft)
-                    childMaxLeft = Math.max(childOffsets.left + childNode.offsetWidth, childMaxLeft)
-                    childMinTop = Math.min(childOffsets.top, childMinTop)
-                    childMaxTop = Math.max(childOffsets.top + childNode.offsetHeight, childMaxTop)
-                } else {
-                    checkNode = true
-                }
-            } else {
-                checkNode = true
+    for (const childNode of node.childNodes) {
+        if (childNode.nodeType === Node.ELEMENT_NODE) {
+            const style = window.getComputedStyle(childNode)
+            if (style.display !== 'none' && style.opacity > 0) {
+                const childOffsets = DomUtilAdmin.elemOffset(childNode)
+                childMinLeft = Math.min(childOffsets.left, childMinLeft)
+                childMaxLeft = Math.max(childOffsets.left + childNode.offsetWidth, childMaxLeft)
+                childMinTop = Math.min(childOffsets.top, childMinTop)
+                childMaxTop = Math.max(childOffsets.top + childNode.offsetHeight, childMaxTop)
             }
         }
     }
-    if (checkNode) {
-        const nodeOffsets = DomUtilAdmin.elemOffset(node)
-        childMinLeft = Math.min(nodeOffsets.left, childMinLeft)
-        childMaxLeft = Math.max(nodeOffsets.left + node.offsetWidth, childMaxLeft)
-        childMinTop = Math.min(nodeOffsets.top, childMinTop)
-        childMaxTop = Math.max(nodeOffsets.top + node.offsetHeight, childMaxTop)
-    }
+
+    const nodeOffsets = DomUtilAdmin.elemOffset(node)
+    childMinLeft = Math.min(nodeOffsets.left, childMinLeft)
+    childMaxLeft = Math.max(nodeOffsets.left + node.offsetWidth, childMaxLeft)
+    childMinTop = Math.min(nodeOffsets.top, childMinTop)
+    childMaxTop = Math.max(nodeOffsets.top + node.offsetHeight, childMaxTop)
 
     return {
         hovered: true,
@@ -1638,9 +1628,10 @@ class JsonDomHelper extends React.Component {
                             currentElement.options && currentElement.options[key],
                             comp.$inlineEditor && comp.$inlineEditor.options && comp.$inlineEditor.options[key])
 
-                        const noValue = (val !== undefined && val !== null)
-                        if (currentOpt.template && (currentOpt.invisible || noValue)) {
-                            if(noValue) {
+                        const hasValue = (val !== undefined && val !== null)
+
+                        if (currentOpt.template && (currentOpt.invisible || hasValue)) {
+                            if(hasValue) {
                                 setPropertyByPath(val, '$original_' + key, comp, '_')
                                 val = Util.replacePlaceholders(currentOpt.template, {_comp: comp, ...(val.constructor === String ? {data: val} : val[0])})
                             }else{
@@ -1667,7 +1658,7 @@ class JsonDomHelper extends React.Component {
                             }
                             setPropertyByPath(`$\{_t('${currentOpt.trKey}'${currentOpt.trContext?','+currentOpt.trContext:''})\}`, key, comp, '_')
 
-                        } else {
+                        } else if(val!=null && val!=undefined){
                             setPropertyByPath(val, key, comp, '_')
                         }
                     }

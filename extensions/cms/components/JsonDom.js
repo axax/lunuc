@@ -93,7 +93,9 @@ class JsonDom extends React.Component {
 
             /*TODO remove  figureStyle, figureClassName use figureProps instead */
             if (caption || wrapper) {
-                return <figure style={figureStyle} className={figureClassName} {...figureProps}>
+                const _key = props._key
+                delete props._key
+                return <figure style={figureStyle} _key={_key} className={figureClassName} {...figureProps}>
                     {imgTag()}
                     {caption && <figcaption className={figureCaptionClassName} dangerouslySetInnerHTML={{__html: caption}}/>}
                 </figure>

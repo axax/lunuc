@@ -23,7 +23,6 @@ export default function JsonDomAddElementDialog(props){
     const [currentElement, setCurrentElement] = React.useState(props.currentElement)
     const [form, setForm] = React.useState(null)
     const [aiAssistent, setAiAssistent] = React.useState({promt:''})
-
     return <SimpleDialog fullWidth={true}
                          maxWidth="lg"
                          key="dialogProps"
@@ -32,22 +31,22 @@ export default function JsonDomAddElementDialog(props){
                              if(event.key==='save' && aiAssistent.answer){
 
                                  fetch(`/lunucapi/system/html2json?html=${encodeURIComponent(aiAssistent.answer)}`).then(response => response.json())
-                                    .then(data => {
-                                        const newElement = {
-                                            tagName:'div',
-                                            defaults: {
-                                                $inlineEditor: {
-                                                    allowDrop: true,
-                                                    elementKey: 'custom'
-                                                },
-                                                p: {
-                                                    'data-element-key': 'custom'
-                                                },
-                                                c: data.json
-                                            }
+                                .then(data => {
+                                    const newElement = {
+                                        tagName:'div',
+                                        defaults: {
+                                            $inlineEditor: {
+                                                allowDrop: true,
+                                                elementKey: 'custom'
+                                            },
+                                            p: {
+                                                'data-element-key': 'custom'
+                                            },
+                                            c: data.json
                                         }
-                                        props.onClose(event, newElement, form, props.payload)
-                                     })
+                                    }
+                                    props.onClose(event, newElement, form, props.payload)
+                                 })
 
                              }else if(event.key==='cancel' || currentElement){
                                  props.onClose(event, currentElement, form, props.payload)
