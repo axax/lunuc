@@ -726,7 +726,7 @@ class JsonDomHelper extends React.Component {
         }
         const menuItems = [],
             isCms = _tagName === 'Cms',
-            isInLoop = rest._key.indexOf('$loop') >= 0,
+            isInLoop = rest._key.indexOf('$loop') >= 0 && !Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE),
             isElementActive = !JsonDomHelper.disableEvents && (hovered || toolbarHovered || toolbarMenuOpen),
             isSelected = JsonDomHelper.selected.indexOf(this)>=0
 
