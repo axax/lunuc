@@ -10,44 +10,51 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const {UPLOAD_DIR} = config
 
 
+async function removeMediaVariants(db, {ids,saveMode}) {
+    const idsAll = await db.collection('Media').distinct("_id", {})
+
+    const idMap = idsAll.reduce((map, obj) => {
+        map[obj.toString()] = true
+        return map
+    }, {})
+    const uploadPath = path.join(__dirname, '../../../' + UPLOAD_DIR)
+    const idsRemoved = []
+    if (fs.existsSync(uploadPath)) {
+        fs.readdirSync(uploadPath).forEach(function (file, index) {
+            const filePath = uploadPath + "/" + file
+            const stat = fs.lstatSync(filePath)
+            if (!stat.isDirectory() && (!saveMode || file.indexOf('@')>0)) {
+
+                if (ids) {
+                    if (!ids.find(id => file.indexOf(id) >= 0)) {
+                        return
+                    }
+                }
+
+                let id
+                if (file.indexOf('private') === 0) {
+                    id = file.substring(7)
+                } else {
+                    id = file
+                }
+                if (!idMap[id]) {
+                    console.log('delete file ' + filePath)
+                    fs.unlinkSync(filePath)
+                    idsRemoved.push(id)
+                }
+            }
+        })
+    }
+    return idsRemoved
+}
+
 export default db => ({
     Query: {
         cleanUpMedia: async ({ids}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
 
-            const idsAll = await db.collection('Media').distinct("_id", {})
+            const idsRemoved = await removeMediaVariants(db, {ids})
 
-            const idMap = idsAll.reduce((map, obj) => {
-                map[obj.toString()] = true
-                return map
-            }, {})
-            const uploadPath = path.join(__dirname, '../../../' + UPLOAD_DIR)
-            const idsRemoved = []
-            if (fs.existsSync(uploadPath)) {
-                fs.readdirSync(uploadPath).forEach(function (file, index) {
-                    const filePath = uploadPath + "/" + file
-                    const stat = fs.lstatSync(filePath)
-                    if (!stat.isDirectory()) {
-
-                        if(ids){
-                            if(!ids.find(id => file.indexOf(id)>=0)){
-                                return
-                            }
-                        }
-
-                        let id
-                        if (file.indexOf('private') === 0) {
-                            id = file.substring(7)
-                        } else {
-                            id = file
-                        }
-                        if (!idMap[id]) {
-                            fs.unlinkSync(filePath)
-                            idsRemoved.push(id)
-                        }
-                    }
-                })
-            }
             return {status: `${idsRemoved.length} ${idsRemoved.length > 1 ? 'files' : 'file'} removed`}
         },
         findReferencesForMedia: async ({limit, ids}, {context}) => {
@@ -163,7 +170,11 @@ export default db => ({
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_ADMIN_OPTIONS)
 
             const result = []
-            // delete files
+
+            // delete file variants
+            await removeMediaVariants(db, {saveMode:true, ids:_id})
+
+            // delete original files
             for(const id of _id) {
                 const fileName = path.join(__dirname, `../../../${UPLOAD_DIR}/${id}`)
                 const fileExist = fs.existsSync(fileName)
