@@ -20,7 +20,7 @@ import {_t, registerTrs} from 'util/i18n.mjs'
 import UploadUtil from '../../client/util/upload'
 import {client} from 'client/middleware/graphql'
 import {translations} from './translations/translations'
-import {CAPABILITY_MANAGE_OTHER_USERS} from '../../util/capabilities.mjs'
+import {CAPABILITY_MANAGE_OTHER_USERS, CAPABILITY_ADMIN_OPTIONS} from '../../util/capabilities.mjs'
 import {formatBytes} from '../../client/util/format.mjs'
 
 registerTrs(translations, 'MediaTranslations')
@@ -85,6 +85,11 @@ export default () => {
 
             multiSelectActions.unshift({name: 'Download', value: 'download'})
 
+
+            if(Util.hasCapability({userData: _app_.user}, CAPABILITY_ADMIN_OPTIONS)){
+                multiSelectActions.push( {name: _t('TypesContainer.deleteOnlyFile'), value: 'deleteOnlyFile'})
+            }
+
             const userCanManageOtherUser = Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_OTHER_USERS)
 
             if (userCanManageOtherUser) {
@@ -134,7 +139,7 @@ export default () => {
     })
 
 
-    Hook.on('TypeTableMultiSelectAction', function ({action, data, selectedRows}) {
+    Hook.on('TypeTableMultiSelectAction', function ({action, data, selectedRows, meta}) {
         if(action === 'download'){
             Object.keys(selectedRows).forEach(id=>{
                 const item = data.results.find(f=>f._id===id)
@@ -147,9 +152,37 @@ export default () => {
                 }
             })
             //downloadAll(files)
+        }else if(action === 'deleteOnlyFile'){
+            const dataToDelete = Object.keys(selectedRows)
+            this.setState({confirmDialog: {
+                    title:_t('TypesContainer.deleteConfirmTitle'),
+                    text:<>{(dataToDelete.length > 1 ? _t('TypesContainer.deleteConfirmTextMulti') : _t('TypesContainer.deleteConfirmText'))}
+                        <p><strong>{_t('TypesContainer.deleteConfirmTextOnlyFile')}</strong></p></>,
+                    action:'deleteOnlyFile', open:true,payload:dataToDelete}})
         }
     })
 
+
+    Hook.on('TypeContainerConfirmDialog', function ({type, confirmDialog, action}) {
+        if (type === 'Media' && action.key==='yes' && confirmDialog.action==='deleteOnlyFile') {
+            client.query({
+                query: `query deleteOnlyMediaFiles($_id:[ID]){deleteOnlyMediaFiles(_id: $_id){_id status}}`,
+                variables: {
+                    _id: confirmDialog.payload
+                }}).then(response => {
+                    if (response.data && response.data.deleteOnlyMediaFiles) {
+                        const fileTypes = {}
+                        response.data.deleteOnlyMediaFiles.forEach(file=>{
+                            if(!fileTypes[file.status]){
+                                fileTypes[file.status]=0
+                            }
+                            fileTypes[file.status]++
+                        })
+                        this.setState({simpleDialog: {children: Object.keys(fileTypes).map(key=><p>{key}: {fileTypes[key]}</p>)}})
+                    }
+                }).catch((error)=>{})
+        }
+    })
 
     Hook.on('TypeCreateEditAction', function ({type, action, dataToEdit, meta}) {
         if (type === 'Media' && action && dataToEdit) {

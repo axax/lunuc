@@ -11,7 +11,9 @@ export const translations = {
         'Media.field.group': 'Gruppe',
         'Media.field.ownerGroup': 'Besitzergruppe',
         'Media.cleanupMedia': 'Media Varianten löschen',
-        'Media.overrideExistingMedia': 'Ich möchte die bestehende Datei unwiderruflich überschrieben'
+        'Media.overrideExistingMedia': 'Ich möchte die bestehende Datei unwiderruflich überschrieben',
+        'TypesContainer.deleteOnlyFile': 'Nur Datei löschen',
+        'TypesContainer.deleteConfirmTextOnlyFile': 'Beachten Sie, dass nur die physische Datei und nicht der Medieneintrag gelöscht wird.'
     },
     en: {
         'Media.uploadMedia': 'Upload medias',
@@ -26,5 +28,7 @@ export const translations = {
         'Media.field.ownerGroup': 'Owner group',
         'Media.cleanupMedia': 'CleanUp Medias',
         'Media.overrideExistingMedia': 'I would like to overwrite the existing file irrevocably',
+        'TypesContainer.deleteOnlyFile': 'Delete only file',
+        'TypesContainer.deleteConfirmTextOnlyFile': 'Please note that only the physical file and not the media entry is deleted.'
     }
 }

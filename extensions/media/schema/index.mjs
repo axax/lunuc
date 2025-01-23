@@ -18,6 +18,6 @@ export default `
     type Query {
     	cleanUpMedia(ids:[String]): CleanUpMediaResult
     	findReferencesForMedia(limit: String, ids:[ID]): FindReferencesForMediaResult
+        deleteOnlyMediaFiles (_id:[ID]):[MediaStatus]
     }
-    
 `

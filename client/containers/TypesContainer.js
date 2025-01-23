@@ -117,13 +117,12 @@ class TypesContainer extends React.Component {
             meta: this.pageParams.meta,
             selectAllRows: false,
             selectedRows: {},
-            confirmDeletionDialog: true,
+            confirmDialog: {open:false},
             viewSettingDialog: undefined,
             viewSyncDialog: undefined,
             viewFilterDialog: undefined,
             manageColDialog: undefined,
             confirmCloneColDialog: undefined,
-            dataToDelete: null,
             dataToBulkEdit: null,
             createEditDialog: undefined,
             createEditDialogOption: null,
@@ -448,7 +447,7 @@ class TypesContainer extends React.Component {
                         entryActions.push({
                             name: _t('TypesContainer.deleteEntry'),
                             disabled: (item.status == 'deleting' || item.status == 'updating'),
-                            onClick: this.handleDeleteDataClick.bind(this, item),
+                            onClick: this.handleDeleteDataClick.bind(this, [item]),
                             icon: <DeleteIcon/>
                         })
 
@@ -666,9 +665,8 @@ class TypesContainer extends React.Component {
             dataToSync,
             confirmCloneColDialog,
             manageColDialog,
-            dataToDelete,
             dataToBulkEdit,
-            confirmDeletionDialog
+            confirmDialog
         } = this.state
         const {title} = this.props
         const {type, fixType} = this.pageParams
@@ -752,8 +750,6 @@ class TypesContainer extends React.Component {
                     }} fields={filterFields} values={prettyFilter}/>
                 </div>
             }
-
-
         }
 
         if (viewSettingDialog !== undefined) {
@@ -925,15 +921,14 @@ class TypesContainer extends React.Component {
                             variant="caption">{this.searchHint()}</Typography>
             </div>,
             this.renderTable(columns),
-            dataToDelete &&
-            <SimpleDialog key="deleteDialog" open={confirmDeletionDialog} onClose={this.handleConfirmDeletion}
+            <SimpleDialog key="deleteDialog" open={confirmDialog.open} onClose={this.handleConfirmDialog}
                           actions={[{key: 'yes', label: _t('core.yes')}, {
                               key: 'no',
                               label: _t('core.no'),
                               type: 'primary'
                           }]}
-                          title={_t('TypesContainer.deleteConfirmTitle')}>
-                {dataToDelete.length > 1 ? _t('TypesContainer.deleteConfirmTextMulti') : _t('TypesContainer.deleteConfirmText')}
+                          title={confirmDialog.title}>
+                {confirmDialog.text}
             </SimpleDialog>,
             dataToBulkEdit &&
             <SimpleDialog fullWidth={true}
@@ -1124,8 +1119,7 @@ class TypesContainer extends React.Component {
             Object.keys(selectedRows).forEach(_id => {
                 dataToDelete.push({_id})
             })
-            this.setState({dataToDelete, confirmDeletionDialog: true})
-
+            this.handleDeleteDataClick(dataToDelete)
         } else if (action === 'edit' || action === 'editScript') {
             const items = []
             Object.keys(selectedRows).forEach(_id => {
@@ -1949,8 +1943,13 @@ class TypesContainer extends React.Component {
     }
 
 
-    handleDeleteDataClick = (data) => {
-        this.setState({confirmDeletionDialog: true, dataToDelete: [data]})
+    handleDeleteDataClick = (dataToDelete) => {
+        this.setState({confirmDialog: {
+                action:'deleteEntries',
+                open:true,
+                title:_t('TypesContainer.deleteConfirmTitle'),
+                payload: dataToDelete,
+                text:dataToDelete.length > 1 ? _t('TypesContainer.deleteConfirmTextMulti') : _t('TypesContainer.deleteConfirmText')}})
     }
 
     handleSyncClick = (data) => {
@@ -2042,14 +2041,19 @@ class TypesContainer extends React.Component {
         })
     }
 
-    handleConfirmDeletion = (action) => {
-        if (action && action.key === 'yes') {
-            this.deleteData(this.pageParams, this.state.dataToDelete.reduce((acc, item) => {
-                acc.push(item._id)
-                return acc
-            }, []))
+    handleConfirmDialog = (action) => {
+        const {confirmDialog} = this.state
+        if(action) {
+            if (confirmDialog.action === 'deleteEntries' && action.key === 'yes') {
+                this.deleteData(this.pageParams, confirmDialog.payload.reduce((acc, item) => {
+                    acc.push(item._id)
+                    return acc
+                }, []))
+            } else {
+                Hook.call('TypeContainerConfirmDialog', {type: this.pageParams.type, confirmDialog, action}, this)
+            }
         }
-        this.setState({confirmDeletionDialog: false, dataToDelete: false, selectAllRows: false, selectedRows: {}})
+        this.setState({confirmDialog: {open:false}, selectAllRows: false, selectedRows: {}})
     }
 
     handleCloneClollection = (action) => {

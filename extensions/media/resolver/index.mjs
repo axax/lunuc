@@ -1,5 +1,5 @@
 import Util from '../../../api/util/index.mjs'
-import {CAPABILITY_MANAGE_TYPES} from '../../../util/capabilities.mjs'
+import {CAPABILITY_ADMIN_OPTIONS, CAPABILITY_MANAGE_TYPES} from '../../../util/capabilities.mjs'
 import config from '../../../gensrc/config.mjs'
 import path from 'path'
 import fs from 'fs'
@@ -158,6 +158,22 @@ export default db => ({
             }
             console.log(`findReferencesForMedia ended after ${new Date().getTime()-startTime}ms`)
             return {status: `{"items":${JSON.stringify(checkedItems)}}`}
+        },
+        deleteOnlyMediaFiles: async ({_id}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_ADMIN_OPTIONS)
+
+            const result = []
+            // delete files
+            for(const id of _id) {
+                const fileName = path.join(__dirname, `../../../${UPLOAD_DIR}/${id}`)
+                const fileExist = fs.existsSync(fileName)
+                if (fileExist) {
+                    console.log('delete file ' + fileName)
+                    fs.unlinkSync(fileName)
+                }
+                result.push({_id: id,status: fileExist ? 'deleted' : 'nofile'})
+            }
+            return result
         }
     }
 })
