@@ -383,7 +383,7 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
     }
 
 
-    if (!fs.existsSync(filename)) {
+    if (!fs.existsSync(filename) && (!parsedUrl || parsedUrl.query.remoteserver!=='false') ) {
         if(await getFileFromOtherServer(modUri,baseFilename,res, req)){
             return
         }
