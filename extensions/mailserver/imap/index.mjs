@@ -1,7 +1,10 @@
 import Wildduck from 'wildduck/imap-core'
 import parseMimeTree from 'wildduck/imap-core/lib/indexer/parse-mime-tree'
 import imapHandler from 'wildduck/imap-core/lib/handler/imap-handler'
-import {getHostRules, hostListFromString, getRootCertContext} from '../../../util/hostrules.mjs'
+import {
+    getRootCertContext,
+    getBestMatchingHostRule
+} from '../../../util/hostrules.mjs'
 import {
     getMailAccountByEmail,
     getFoldersForMailAccount,
@@ -99,21 +102,16 @@ const startListening = async (db, context) => {
         enableCompression: true,
         SNICallback: (domain, cb) => {
             console.log('IMAP SNICallback',domain)
-            if (domain.startsWith('www.')) {
-                domain = domain.substring(4)
+
+            const {hostrule, host} = getBestMatchingHostRule(domain)
+
+            if(hostrule){
+                console.log(`imap server certContext for ${host}`)
+                cb(null, hostrule.certContext)
+            }else{
+                cb(null,getRootCertContext())
             }
-            const hostsChecks = hostListFromString(domain)
-            const hostrules = getHostRules(true)
-            for (let i = 0; i < hostsChecks.length; i++) {
-                const currentHost = hostsChecks[i]
-                const hostrule = hostrules[currentHost]
-                if (hostrule && hostrule.certContext) {
-                    console.log(`imap server certContext for ${currentHost}`)
-                    cb(null, hostrule.certContext)
-                    return
-                }
-            }
-            cb(null,getRootCertContext())
+
         }
     })
 

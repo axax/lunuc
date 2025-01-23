@@ -10,7 +10,7 @@ import {getHostFromHeaders} from '../util/host.mjs'
 import finalhandler from 'finalhandler'
 import {replacePlaceholders} from '../util/placeholders.mjs'
 import {ensureDirectoryExistence} from '../util/fileUtil.mjs'
-import {getHostRules, getRootCertContext} from '../util/hostrules.mjs'
+import {getBestMatchingHostRule, getHostRules, getRootCertContext, hostListFromString} from '../util/hostrules.mjs'
 import {contextByRequest} from '../api/util/sessionContext.mjs'
 import {parseUserAgent} from '../util/userAgent.mjs'
 import {SECRET_KEY, USE_COOKIES} from '../api/constants/index.mjs'
@@ -51,14 +51,12 @@ const DEFAULT_CERT_DIR = process.env.LUNUC_CERT_DIR || SERVER_DIR
 const options = {
     allowHTTP1: true,
     SNICallback: (domain, cb) => {
-        if (domain.startsWith('www.')) {
-            domain = domain.substring(4)
-        }
-        const hostrules = getHostRules(true)
 
-        if (hostrules[domain] && hostrules[domain].certContext) {
-            cb(null, hostrules[domain].certContext)
-        } else {
+        const {hostrule} = getBestMatchingHostRule(domain)
+
+        if(hostrule){
+            cb(null, hostrule.certContext)
+        }else{
             cb(null,getRootCertContext())
         }
     }

@@ -1,5 +1,5 @@
 import {SMTPServer} from 'smtp-server'
-import {getHostRules, hostListFromString} from '../../../util/hostrules.mjs'
+import {getBestMatchingHostRule, getHostRules} from '../../../util/hostrules.mjs'
 import {simpleParser} from 'mailparser'
 import mailserverResolver from '../gensrc/resolver.mjs'
 import config from '../../../gensrc/config.mjs'
@@ -46,22 +46,15 @@ const startListening = async (db, context) => {
             authOptional: true,
             /*needsUpgrade:true,*/
             SNICallback: (domain, cb) => {
-                if (domain.startsWith('www.')) {
-                    domain = domain.substring(4)
-                }
-                const hostsChecks = hostListFromString(domain)
-                const hostrules = getHostRules(true)
 
-                for (let i = 0; i < hostsChecks.length; i++) {
-                    const currentHost = hostsChecks[i]
-                    const hostrule = hostrules[currentHost]
-                    if (hostrule && hostrule.certContext) {
-                        console.log(`smtp server certContext for ${currentHost}`)
-                        cb(null, hostrule.certContext)
-                        return
-                    }
+                const {hostrule, host} = getBestMatchingHostRule(domain)
+
+                if(hostrule){
+                    console.log(`smtp server certContext for ${host}`)
+                    cb(null, hostrule.certContext)
+                }else{
+                    cb()
                 }
-                cb()
             },
             onAuth: async (auth, session, callback) => {
 

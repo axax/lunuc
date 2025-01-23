@@ -150,6 +150,22 @@ export const hostListFromString = (host) =>{
     return hostList
 }
 
+/*console.log(hostListFromString('main.onyou.ch'))
+console.log(hostListFromString('www.onyou.ch'))*/
+
+export const getBestMatchingHostRule = (host) => {
+    const hostsChecks = hostListFromString(host)
+    const hostrules = getHostRules(true)
+
+    for (let i = 0; i < hostsChecks.length; i++) {
+        const currentHost = hostsChecks[i]
+        const hostrule = hostrules[currentHost]
+        if (hostrule && hostrule.certContext) {
+            return {hostrule, host: currentHost}
+        }
+    }
+}
+
 let secureContext
 
 const readFileByNames = (baseDir, fileNames) => {
