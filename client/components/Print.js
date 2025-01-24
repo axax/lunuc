@@ -223,7 +223,8 @@ class Print extends React.PureComponent {
                 if (!isFirstPage) {
                     posPreviousBreak = this.offsetTop(breaks[page - 1]) - offsetTop + this.outerHeight(breaks[page - 1])
                 }
-                const scrollY = (page > 0 ? -(posPreviousBreak - pagePaddingTop + window.scrollY) : -window.scrollY)
+                const scrollYOffset = this.isInFixedContainer(printArea) ? 0 : window.scrollY
+                const scrollY = (page > 0 ? -(posPreviousBreak - pagePaddingTop + scrollYOffset) : -scrollYOffset)
 
                 if(printHeader && page > 0){
                     const printHeaderClone = printHeader.cloneNode(true)
@@ -551,7 +552,21 @@ class Print extends React.PureComponent {
             .reduce((total, side) => total + side, height)
     }
 
+    isInFixedContainer(element) {
+        let currentElement = element;
 
+        while (currentElement && currentElement !== document.body) {
+            const computedStyle = window.getComputedStyle(currentElement);
+
+            if (computedStyle.position === "fixed") {
+                return true; // A fixed-position container is found
+            }
+
+            currentElement = currentElement.parentElement; // Move up the DOM tree
+        }
+
+        return false; // No fixed-position container found
+    }
 }
 
 
