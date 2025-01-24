@@ -9,6 +9,8 @@ import nodemailer from 'nodemailer'
 import {isTemporarilyBlocked} from '../../../server/util/requestBlocker.mjs'
 import Util from '../../../api/util/index.mjs'
 import {detectSpam} from './spam.mjs'
+import {dynamicSettings} from '../../../api/util/settings.mjs'
+
 
 /*
 // open port 25 and 587 on your server
@@ -30,6 +32,8 @@ let serverPorts = {}
 const MAX_EMAIL_SIZE = 30000000
 
 const startListening = async (db, context) => {
+    const settings = {}
+    await dynamicSettings({db, context, settings, key:'SMTPServerSettings'})
 
     for(const port of config.SMTP_PORTS) {
         console.log(`Start SMTP Server listening on port ${port}`, context)
@@ -122,8 +126,14 @@ const startListening = async (db, context) => {
 
                 const mailserverList = Object.keys(getHostRules(false)).map(h=>`mail.${h}`)
 
-                if (session.localAddress !== session.remoteAddress && session.servername && mailserverList.indexOf(session.servername)<0) {
-                    return callback(new Error(`Only connections for ${session.servername} are allowed`))
+                if(settings.serverList){
+                    mailserverList.push(...settings.serverList)
+                }
+
+                if (session.localAddress !== session.remoteAddress &&
+                    session.servername && mailserverList.indexOf(session.servername)<0) {
+
+                    return callback(new Error(`Only connections for ${session.localAddress} are allowed`))
                 }
                 return callback(); // Accept the connection
             },

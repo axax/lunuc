@@ -6,6 +6,7 @@ import App from './components/App'
 import config from 'gen/config-client'
 import DomUtil from 'client/util/dom.mjs'
 import Util from 'client/util/index.mjs'
+import {unregisterAllServiceworker} from './util/serviceWorkerUtil.mjs'
 
 const hasStorageSupport = () => {
     try {
@@ -191,14 +192,6 @@ function mainInit() {
     } else {
         console.warn('Service Worker is not supported')
     }
-}
-
-function unregisterAllServiceworker() {
-    navigator.serviceWorker.getRegistrations().then(async (registrations) => {
-        for (let registration of registrations) {
-           await registration.unregister()
-        }
-    })
 }
 
 if (!window.LUNUC_PREPARSED) {

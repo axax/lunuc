@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import Hook from '../../util/hook.cjs'
+import {unregisterAllServiceworker} from '../util/serviceWorkerUtil.mjs'
 
 class Async extends React.Component {
 
@@ -29,6 +30,7 @@ class Async extends React.Component {
                 const hasForcedReload = localStorage.getItem('forced-reload')
                 if(!hasForcedReload){
                     // try to force reload one time
+                    unregisterAllServiceworker()
                     localStorage.setItem('forced-reload', true)
                     window.location.reload(true)
                 }else {

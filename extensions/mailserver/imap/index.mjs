@@ -23,6 +23,7 @@ import MailComposer from 'nodemailer/lib/mail-composer'
 import MailserverResolver from '../gensrc/resolver.mjs'
 import {simpleParser} from 'mailparser'
 import {createDefaultLogger} from './logger.mjs'
+import {dynamicSettings} from '../../../api/util/settings.mjs'
 
 // open port 993 on your server
 // sudo ufw allow 993
@@ -65,23 +66,13 @@ import {createDefaultLogger} from './logger.mjs'
 }, async (err, data) => {
     console.log('xxxxx',data,err)
 })*/
-let server
-
 const startListening = async (db, context) => {
 
     const settings = {}
-    let server, settingRefreshTimeout
+    let server
 
-    const getSettings = async () => {
-        const newSettings = (await Util.getKeyValueGlobal(db, context, 'IMAPServerSettings', true)) || {}
-        Object.keys(newSettings).forEach(key=>{
-            settings[key] = newSettings[key]
-        })
-        clearTimeout(settingRefreshTimeout)
-        settingRefreshTimeout = setTimeout(getSettings,1000*60)
-    }
+    await dynamicSettings({db, context, settings, key:'IMAPServerSettings'})
 
-    await getSettings()
 
     // Setup server
     server = server = new Wildduck.IMAPServer({

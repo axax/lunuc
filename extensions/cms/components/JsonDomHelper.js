@@ -181,7 +181,8 @@ const getHighlightPosition = (node)=>  {
     let childMaxTop = 0,
         childMaxLeft = 0,
         childMinTop = Infinity,
-        childMinLeft = Infinity
+        childMinLeft = Infinity,
+        allAbs = node.childNodes.length>0
 
     for (const childNode of node.childNodes) {
         if (childNode.nodeType === Node.ELEMENT_NODE) {
@@ -193,15 +194,20 @@ const getHighlightPosition = (node)=>  {
                 childMinTop = Math.min(childOffsets.top, childMinTop)
                 childMaxTop = Math.max(childOffsets.top + childNode.offsetHeight, childMaxTop)
             }
+            if(style.position!=='absolute'){
+                allAbs = false
+            }
+        }else{
+            allAbs =false
         }
     }
-
-    const nodeOffsets = DomUtilAdmin.elemOffset(node)
-    childMinLeft = Math.min(nodeOffsets.left, childMinLeft)
-    childMaxLeft = Math.max(nodeOffsets.left + node.offsetWidth, childMaxLeft)
-    childMinTop = Math.min(nodeOffsets.top, childMinTop)
-    childMaxTop = Math.max(nodeOffsets.top + node.offsetHeight, childMaxTop)
-
+    if(!allAbs) {
+        const nodeOffsets = DomUtilAdmin.elemOffset(node)
+        childMinLeft = Math.min(nodeOffsets.left, childMinLeft)
+        childMaxLeft = Math.max(nodeOffsets.left + node.offsetWidth, childMaxLeft)
+        childMinTop = Math.min(nodeOffsets.top, childMinTop)
+        childMaxTop = Math.max(nodeOffsets.top + node.offsetHeight, childMaxTop)
+    }
     return {
         hovered: true,
         height: childMaxTop - childMinTop,
