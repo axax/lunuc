@@ -164,6 +164,7 @@ export const getBestMatchingHostRule = (host) => {
             return {hostrule, host: currentHost}
         }
     }
+    return {}
 }
 
 let secureContext
