@@ -193,6 +193,8 @@ const getHighlightPosition = (node)=>  {
                 childMaxLeft = Math.max(childOffsets.left + childNode.offsetWidth, childMaxLeft)
                 childMinTop = Math.min(childOffsets.top, childMinTop)
                 childMaxTop = Math.max(childOffsets.top + childNode.offsetHeight, childMaxTop)
+            }else{
+                allAbs = false
             }
             if(style.position!=='absolute'){
                 allAbs = false
