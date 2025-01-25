@@ -1,4 +1,5 @@
 import {formatCss} from './formatCss'
+import {formatJs} from './formatJs'
 
 export function scrollToLine(view, firstVisibleLine) {
     if (firstVisibleLine > 1 && view.state.doc.lines > firstVisibleLine) {
@@ -31,6 +32,8 @@ export function formatCode(view, type) {
         formattedCode = JSON.stringify(JSON.parse(code), null, 2)
     }else if(type==='css'){
         formattedCode = formatCss(code)
+    }else if(type==='js' || type==='customJs'){
+        formattedCode = formatJs(code)
     }
 
     if(formattedCode){

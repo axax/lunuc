@@ -42,8 +42,7 @@ export default function SimpleAutosuggest(props) {
         if(textTrimmed){
 
             const abortController = new AbortController()
-            fetch(`${apiUrl.replaceAll('%search%',textTrimmed)}`,
-                {signal:abortController.signal})
+            fetch(`${apiUrl.replaceAll('%search%',textTrimmed)}`,{signal:abortController.signal})
             .then(response => {
 
                 if (response.status === 200) {
@@ -53,11 +52,17 @@ export default function SimpleAutosuggest(props) {
                         Object.keys(json).forEach(key=> {
                             if (key !== 'total') {
                                 json[key].forEach(item=>{
-                                    let name = item.name
-                                    if(item.name && item.name[_app_.lang]){
-                                        name = item.name[_app_.lang]
+                                    let displayName
+                                    if(props.nameRender){
+                                        displayName = props.nameRender(item, key)
+                                    }else{
+                                        let name = item.name
+                                        if(item.name && item.name[_app_.lang]){
+                                            name = item.name[_app_.lang]
+                                        }
+                                        displayName = `${key}: ${name}`
                                     }
-                                    allData.push({...item, name: `${key}: ${name}`, __type: key})
+                                    allData.push({...item, name: displayName, __type: key})
                                 })
                             }
                         })

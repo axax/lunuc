@@ -6,7 +6,6 @@ import {
     List,
     ListItem,
     TextField,
-    ListItemSecondaryAction,
     DeleteIconButton,
     EditIconButton,
     SimpleDialog,
@@ -69,11 +68,9 @@ class ResourceEditor extends React.Component {
                         <TextField value={item}
                                    onChange={this.handleChange.bind(this, i)}
                                    style={{width: '80%'}}
-                                   placeholder="Enter a url"/>
-                        <ListItemSecondaryAction>
-                            {!isExternal && <EditIconButton onClick={this.handleEditClick.bind(this, item)}/>}
-                            <DeleteIconButton onClick={this.handleRemoveClick.bind(this, i)}/>
-                        </ListItemSecondaryAction>
+                                   placeholder="Enter a url"
+                                   secondaryAction={<>{!isExternal && <EditIconButton onClick={this.handleEditClick.bind(this, item)}/>}
+                        <DeleteIconButton onClick={this.handleRemoveClick.bind(this, i)}/></>}/>
                     </ListItem>
                 })
                 }

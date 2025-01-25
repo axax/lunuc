@@ -124,6 +124,8 @@ class SimpleMenu extends React.Component {
                 <MenuItem disabled={item.disabled} style={style} onClick={(e) => {
                     if (item.items) {
                         this.setState({collapse: { ...collapse, [i]: {open: !(collapse[i] && collapse[i].open) }}})
+                        // triggers repositioning of menu https://github.com/mui/material-ui/issues/10595
+                        window.dispatchEvent(new CustomEvent('resize'))
                     } else if (item.onClick) {
                         item.onClick(e, this.props.payload, item)
                         this.handleClose(e)

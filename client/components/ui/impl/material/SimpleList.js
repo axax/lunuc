@@ -4,7 +4,6 @@ import ListItemIcon from '@mui/material/ListItemIcon'
 import ListItem from '@mui/material/ListItem'
 import ListItemText from '@mui/material/ListItemText'
 import Checkbox from '@mui/material/Checkbox'
-import ListItemSecondaryAction from '@mui/material/ListItemSecondaryAction'
 import Paper from '@mui/material/Paper'
 import TablePagination from '@mui/material/TablePagination'
 import Divider from '@mui/material/Divider'
@@ -82,14 +81,15 @@ export const SimpleList = ({sx, paperProps, onCheck, items, allChecked, count, p
                                   onContextMenu={(e)=>{handleContextMenu(e,item)}}
                                   onClick={(e)=>{
 
-                            if(item.checkbox) {
-                                handleToggle(i)
-                            }
+                                        if(item.checkbox) {
+                                            handleToggle(i)
+                                        }
 
-                            if(item.onClick) {
-                                item.onClick(e)
-                            }
-                        }}>
+                                        if(item.onClick) {
+                                            item.onClick(e)
+                                        }
+                                    }}
+                                  secondaryAction={item.actions}>
                             {(item.icon || item.checkbox) &&
                             <ListItemIcon>
                                 {item.checkbox && <Checkbox
@@ -102,9 +102,6 @@ export const SimpleList = ({sx, paperProps, onCheck, items, allChecked, count, p
                             </ListItemIcon>
                             }
                             <ListItemText primary={item.primary} secondary={item.secondary}/>
-                            <ListItemSecondaryAction>
-                                {item.actions}
-                            </ListItemSecondaryAction>
                         </ListItem>
                     ) : <ListItem key="noresults" disabled={true}>
                         <ListItemText primary="No results"/>

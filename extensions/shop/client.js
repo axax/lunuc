@@ -4,7 +4,7 @@ import './style.global.less'
 import Async from 'client/components/Async'
 
 const Login = (props) => <Async {...props}
-                                load={import(/* webpackChunkName: "admin" */ '../../client/containers/LoginContainer')}/>
+                                load={import(/* webpackChunkName: "adminLogin" */ '../../client/containers/LoginContainer')}/>
 const System = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ './containers/System')}/>
 
 

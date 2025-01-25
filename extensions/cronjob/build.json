@@ -7,6 +7,7 @@
         {
           "tab": "Script",
           "name": "scriptLanguage",
+          "hideColumnInTypes": true,
           "enum": [
             "Javascript",
             "Python"
@@ -21,19 +22,19 @@
           "index": 1
         },
         {
-          "tab": "Allgemein",
+          "tab": "elements.generalTab",
           "name": "active",
           "type": "Boolean",
           "index": 1
         },
         {
-          "tab": "Allgemein",
+          "tab": "elements.generalTab",
           "name": "expression",
           "label": "Cron expression",
           "index": 1
         },
         {
-          "tab": "Allgemein",
+          "tab": "elements.generalTab",
           "name": "execfilter",
           "label": "Execution filter",
           "fullWidth": true,
@@ -42,19 +43,22 @@
         {
           "tab": "Script",
           "name": "script",
+          "hideColumnInTypes": true,
           "uitype": "jseditor",
           "alwaysLoad": false
         },
         {
-          "tab": "Script",
+          "tab": "elements.generalTab",
           "name": "noEntry",
+          "hideColumnInTypes": true,
           "type": "Boolean",
           "index": 1
         },
         {
-          "tab": "Script",
+          "tab": "elements.generalTab",
           "name": "workerThread",
           "type": "Boolean",
+          "hideColumnInTypes": true,
           "label": "Run in Worker-Thread",
           "index": 1
         }

@@ -79,7 +79,7 @@ class TypeEdit extends React.Component {
         }
 
         const formFields = Object.assign({}, getFormFieldsByType(type))
-        Hook.call('TypeCreateEditFormFields', {type, formFields})
+        Hook.call('TypeCreateEditFormFields', {type, formFields, dataToEdit})
 
         if (!dataToEdit) {
             dataToEdit = this.props.initialData

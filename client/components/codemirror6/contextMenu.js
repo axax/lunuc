@@ -181,7 +181,7 @@ export function generateContextMenu({type,clickEvent, editorView, propertyTempla
                icon: <RepeatIcon/>,
                name: _t('CodeEditor.repeatSelection'),
                onClick: () => {
-                   winAndReplace(`/system/repeater?preview=true&content=${selectedContent}`)
+                   winAndReplace(`/system/repeater?preview=true&content=${encodeURIComponent(selectedContent)}`)
                }
            })
        }

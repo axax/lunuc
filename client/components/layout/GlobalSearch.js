@@ -52,7 +52,7 @@ const GlobalSearch = props => {
         search
         fullWidth
         apiUrl={(searchData)=>{
-            let coreTypes = ['Media', 'CmsPage', 'Api', 'CronJob','StaticFile','Hook']
+            let coreTypes = ['Media', 'CmsPage', 'Api', 'CronJob','StaticFile','Hook','KeyValueGlobal']
             const regex = /^\w+:/g
             const matches = searchData.text.match(regex)
 
@@ -69,6 +69,13 @@ const GlobalSearch = props => {
         filterOptions={(options)=>options}
         placeholder={_t('GlobalSearch.placeholder')}
         value={''}
+        nameRender={(item, key)=>{
+            let name = item.name || item.key
+            if(name && name[_app_.lang]){
+                name = name[_app_.lang]
+            }
+            return `${key}: ${name}`
+        }}
         onChange={(e, item) => {
             //_app_.history.push(`/admin/types/${item.__type}?open=${item._id}`)
             if(item) {

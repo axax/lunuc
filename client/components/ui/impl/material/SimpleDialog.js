@@ -1,4 +1,5 @@
 import React from 'react'
+import Paper from '@mui/material/Paper'
 import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
@@ -8,8 +9,20 @@ import Button from '@mui/material/Button'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import theme from './theme'
 import FocusTrap from '@mui/material/Unstable_TrapFocus/FocusTrap'
+import Draggable from 'react-draggable'
 
 
+function PaperComponent(props) {
+    const nodeRef = React.useRef(null);
+    return (
+        <Draggable
+            nodeRef={nodeRef}
+            handle="#responsive-dialog-title"
+            cancel={'[class*="MuiDialogContent-root"]'}>
+            <Paper {...props} ref={nodeRef} />
+        </Draggable>
+    );
+}
 
 export const SimpleDialog = ({children, onClose, actions, title, fullScreen, fullScreenMobile, ...rest}) => {
     const fullScreenFinal = fullScreenMobile ? useMediaQuery(theme.breakpoints.down('md')): fullScreen
@@ -22,8 +35,9 @@ export const SimpleDialog = ({children, onClose, actions, title, fullScreen, ful
         sx={{zIndex: '9999 !important'}}
         scroll="body"
         fullScreen={fullScreenFinal}
+        PaperComponent={PaperComponent}
         {...rest}>
-        <DialogTitle id="responsive-dialog-title">{title}</DialogTitle>
+        <DialogTitle style={{ cursor: 'move' }} id="responsive-dialog-title">{title}</DialogTitle>
         <DialogContent sx={{overflow: 'visible'}}>
             <FocusTrap>{!children || children.constructor === String ?
                 <DialogContentText>

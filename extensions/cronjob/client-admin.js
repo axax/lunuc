@@ -2,12 +2,15 @@ import React from 'react'
 import Hook from 'util/hook.cjs'
 import Async from 'client/components/Async'
 import {client} from 'client/middleware/graphql'
+import {cronToReadableString} from './util/cronexpression.mjs'
+import {registerTrs} from '../../util/i18n.mjs'
+import {translations} from './translations/admin'
 
+registerTrs(translations, 'CronJobExtension')
 
 const SimpleDialog = (props) => <Async {...props} expose="SimpleDialog"
                                        load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../../client/components/CodeEditor')}/>
-
 
 export default () => {
 
@@ -56,9 +59,10 @@ export default () => {
         }
     })
 
-    Hook.on('TypeCreateEditFormFields', ({type, formFields}) => {
+    Hook.on('TypeCreateEditFormFields', ({type, formFields, dataToEdit}) => {
         if (type === 'CronJob') {
             formFields.execfilter.extraAfter = <iframe style={{marginTop:'2rem',height:'35rem',border:'none', width:'100%'}} src="/system/info"></iframe>//<a target='_blank' href="/system/info">System Properties</a>
+            formFields.expression.helperText = cronToReadableString(dataToEdit.expression)
         }
     })
 

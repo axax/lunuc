@@ -21,7 +21,7 @@ const BlankLayout = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "admin" */ '../../components/layout/BlankLayout')}/>
 
 const LoginContainer = (props) => <Async {...props}
-                                         load={import(/* webpackChunkName: "admin" */ '../../containers/LoginContainer')}/>
+                                         load={import(/* webpackChunkName: "adminLogin" */ '../../containers/LoginContainer')}/>
 const SignUpContainer = (props) => <Async {...props}
                                           load={import(/* webpackChunkName: "admin" */ '../../containers/SignUpContainer')}/>
 const UserProfileContainer = (props) => <Async {...props}

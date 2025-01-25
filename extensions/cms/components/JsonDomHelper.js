@@ -190,9 +190,9 @@ const getHighlightPosition = (node)=>  {
             if (style.display !== 'none' && style.opacity > 0) {
                 const childOffsets = DomUtilAdmin.elemOffset(childNode)
                 childMinLeft = Math.min(childOffsets.left, childMinLeft)
-                childMaxLeft = Math.max(childOffsets.left + childNode.offsetWidth, childMaxLeft)
+                childMaxLeft = Math.max(childOffsets.left + (childNode.offsetWidth ?? 0), childMaxLeft)
                 childMinTop = Math.min(childOffsets.top, childMinTop)
-                childMaxTop = Math.max(childOffsets.top + childNode.offsetHeight, childMaxTop)
+                childMaxTop = Math.max(childOffsets.top + (childNode.offsetHeight ?? 0), childMaxTop)
             }else{
                 allAbs = false
             }
@@ -206,9 +206,9 @@ const getHighlightPosition = (node)=>  {
     if(!allAbs) {
         const nodeOffsets = DomUtilAdmin.elemOffset(node)
         childMinLeft = Math.min(nodeOffsets.left, childMinLeft)
-        childMaxLeft = Math.max(nodeOffsets.left + node.offsetWidth, childMaxLeft)
+        childMaxLeft = Math.max(nodeOffsets.left + (node.offsetWidth ?? 0), childMaxLeft)
         childMinTop = Math.min(nodeOffsets.top, childMinTop)
-        childMaxTop = Math.max(nodeOffsets.top + node.offsetHeight, childMaxTop)
+        childMaxTop = Math.max(nodeOffsets.top + (node.offsetHeight ?? 0), childMaxTop)
     }
     return {
         hovered: true,
