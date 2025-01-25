@@ -9,6 +9,7 @@ import {getKeyValuesFromLS,
     QUERY_KEY_VALUES_GLOBAL,
     QUERY_SET_KEY_VALUE_GLOBAL} from 'client/util/keyvalue'
 import {graphql} from '../../middleware/graphql'
+import {parseOrElse} from '../../util/json.mjs'
 
 const gqlKeyValueDelete = `
           mutation deleteKeyValueByKey($key: String!) {
@@ -64,11 +65,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                         if (results) {
                             for (const i in results) {
                                 const o = results[i]
-                                try {
-                                    this.keyValueMap[o.key] = JSON.parse(o.value)
-                                } catch (e) {
-                                    this.keyValueMap[o.key] = o.value
-                                }
+                                this.keyValueMap[o.key] = parseOrElse(o.value)
                             }
                         }
                     }
@@ -88,11 +85,8 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                 if (results) {
                     for (const i in results) {
                         const o = results[i]
-                        try {
-                            this.keyValueGlobalMap[o.key] = JSON.parse(o.value)
-                        } catch (e) {
-                            this.keyValueGlobalMap[o.key] = o.value
-                        }
+
+                        this.keyValueGlobalMap[o.key] = parseOrElse(o.valueOf())
                     }
                 }
             }

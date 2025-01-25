@@ -1,5 +1,6 @@
 import {NO_SESSION_KEY_VALUES} from 'client/constants/index.mjs'
 import {client, useQuery} from '../middleware/graphql'
+import {parseOrElse} from './json.mjs'
 
 export const QUERY_KEY_VALUES = 'query keyValues($keys:[String],$global:Boolean){keyValues(keys:$keys,global:$global){limit offset total results{key value status createdBy{_id username}}}}'
 export const QUERY_SET_KEY_VALUE = 'mutation setKeyValue($key:String!,$value:String){setKeyValue(key:$key,value:$value){key value status createdBy{_id username}}}'
@@ -14,11 +15,8 @@ export const useKeyValues = (keys, options, keyName = 'keyValues') => {
         if (keyData && keyData.results) {
             for (const i in keyData.results) {
                 const o = keyData.results[i]
-                try {
-                    enhancedData[o.key] = JSON.parse(o.value)
-                } catch (e) {
-                    enhancedData[o.key] = o.value
-                }
+
+                enhancedData[o.key] = parseOrElse(o.value)
             }
         }
     }
@@ -66,11 +64,8 @@ export const setKeyValue = ({key, value, clearCache, global}) => {
 
 export const getKeyValueFromLS = (key) => {
     const kv = getKeyValuesFromLS()
-    try {
-        return JSON.parse(kv[key])
-    } catch (e) {
-        return kv[key]
-    }
+
+    return parseOrElse(kv[key])
 }
 
 export const getKeyValuesFromLS = () => {
@@ -95,11 +90,7 @@ const getValuesFromLocalStorageAsJson = (localStorageKey) => {
     if (!_app_.noStorage) {
         const kv = localStorage.getItem(localStorageKey)
         if (kv) {
-            try {
-                json = JSON.parse(kv)
-            } catch (e) {
-                json = {}
-            }
+            json = parseOrElse(kv,{})
         }
     }
 

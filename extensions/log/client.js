@@ -36,6 +36,18 @@ export default () => {
         })
     })
 
+    // CSP violation error
+    document.addEventListener("securitypolicyviolation", (e) => {
+        sendError({
+            location:'securitypolicyviolation',
+            message: [
+                'blockedURI: ' + e.blockedURI,
+                'violatedDirective: ' + e.violatedDirective,
+                'originalPolicy: ' + e.originalPolicy
+            ].join('\n')
+        })
+    })
+
     // add routes for this extension
     Hook.on('JsonDomError', ({error, editMode, slug}) => {
         if (!editMode && error) {

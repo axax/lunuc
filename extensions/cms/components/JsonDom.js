@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom'
 import Hook from 'util/hook.cjs'
 import {_t} from 'util/i18n.mjs'
 import Util from 'client/util/index.mjs'
-import {propertyByPath, matchExpr} from '../../../client/util/json.mjs'
+import {propertyByPath, matchExpr, parseOrElse} from '../../../client/util/json.mjs'
 import {scrollByHash} from '../util/urlUtil'
 import {getComponentByKey} from '../util/jsonDomUtilClient'
 import DomUtil from 'client/util/dom.mjs'
@@ -199,11 +199,7 @@ class JsonDom extends React.Component {
 
             let _props = props
             if (_props && _props.constructor === String) {
-                try {
-                    _props = JSON.parse(_props)
-                } catch (e) {
-                    console.log(e)
-                }
+                _props = parseOrElse(_props)
             }
             const cvc = <CmsViewContainer key={rest.id}
                                           slug={slug}
@@ -912,11 +908,7 @@ class JsonDom extends React.Component {
                             // get data from scope by path (foo.bar)
                             data = propertyByPath($d, scope)
                             if (data && data.constructor === String) {
-                                try {
-                                    data = JSON.parse(data)
-                                } catch (e) {
-                                    console.warn(e)
-                                }
+                                data = parseOrElse(data)
                             }
                             if ($sort) {
                                 data.sort()
@@ -1009,7 +1001,7 @@ class JsonDom extends React.Component {
 
                             const json = JSON.parse(jsonString)
 
-                            const key = rootKey + '.' + aIdx + '.$loop.' + childIdx
+                            const key = `${rootKey}.${aIdx}.$loop.${childIdx}`
                             scope[s] = loopChild
                             const com = this.parseRec(json, key, scope)
 
@@ -1570,12 +1562,7 @@ class JsonDom extends React.Component {
         if (_app_.noStorage) return def
         const value = localStorage.getItem(key)
         if (value) {
-            try {
-                const o = JSON.parse(value)
-                return o
-            } catch (e) {
-                return value
-            }
+            return  parseOrElse(value)
         }
         return def
     }
