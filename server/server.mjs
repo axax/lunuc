@@ -299,7 +299,9 @@ const hasHttpsWwwRedirect = ({parsedUrl, hostrule, host, req, res, remoteAddress
 
         // force www
         let newhost = host
-        if (!newhost.startsWith('www.') && hostrule.forceWWW) {
+        if (!newhost.startsWith('www.')
+            && (newhost.indexOf('.')===newhost.lastIndexOf('.')) // not for subdomains
+            && hostrule.forceWWW) {
             newhost = 'www.' + newhost
         }
 
