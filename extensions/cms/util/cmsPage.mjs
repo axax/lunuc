@@ -42,10 +42,16 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
             const currentHost = hostsChecks[i]
             const hostrule = hostrules[currentHost] || hostrules.general
             if (hostrule){
-                if(hostrule.slugContext && (slug + '/').indexOf(hostrule.slugContext + '/') !== 0)
+                let slugContext = hostrule.slugContext,
+                    slugFallback = hostrule.slugFallback
+                if(hostrule.subDomains && hostrule.subDomains[host]){
+                    slugContext = hostrule.subDomains[host].slugContext
+                    slugFallback = hostrule.subDomains[host].slugFallback
+                }
+                if(slugContext && (slug + '/').indexOf(slugContext + '/') !== 0)
                 {
-                    const modSlug = hostrule.slugContext + (slug.length > 0 ? '/' : '') + slug
-                    if (hostrule.slugFallback) {
+                    const modSlug = slugContext + (slug.length > 0 ? '/' : '') + slug
+                    if (slugFallback) {
                         slugMatch = {$or: [{slug: modSlug}, {slug}]}
                     } else {
                         slugMatch = {slug: modSlug}

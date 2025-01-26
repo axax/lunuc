@@ -84,7 +84,7 @@ function CodeEditor(props,ref){
         {
             icon: <ViewListIcon/>,
             name: _t('CodeEditor.reformatCode')+' (Alt-Cmd-L)',
-            onClick: ()=>{formatCode(editorViewRef.current)}
+            onClick: ()=>{formatCode(editorViewRef.current, type)}
         },
         {
             icon: <LaunchIcon/>,
