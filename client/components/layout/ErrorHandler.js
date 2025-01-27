@@ -33,6 +33,7 @@ function ErrorHandler({snackbar}) {
     if( snackbar ){
         return <Snackbar
             open={true}
+            style={{wordBreak: 'break-all'}}
             action={<CloseIconButton
                 key="close"
                 aria-label="Close"

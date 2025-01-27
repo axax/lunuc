@@ -10,6 +10,7 @@ import PropTypes from 'prop-types'
 import compose from 'util/compose'
 import Expandable from 'client/components/Expandable'
 import ErrorHandler from 'client/components/layout/ErrorHandler'
+import NotificationHandler from 'client/components/layout/NotificationHandler'
 import DataResolverEditor from '../components/DataResolverEditor'
 import TemplateEditor from '../components/TemplateEditor'
 import ScriptEditor from '../components/ScriptEditor'
@@ -509,6 +510,7 @@ class CmsViewEditorContainer extends React.Component {
                                            }}
                                            {...props} />,
             !props.dynamic && <ErrorHandler key="errorHandler" snackbar/>,
+            !props.dynamic && <NotificationHandler />,
             <NetworkStatusHandler key="networkStatus"/>,
             simpleDialog && <SimpleDialog open={true}
                                           fullWidth={true} maxWidth="md"

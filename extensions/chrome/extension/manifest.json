@@ -13,7 +13,10 @@
       "js": ["content.js"]
     }
   ],
-  "permissions": ["storage", "activeTab", "scripting"],
+  "permissions": ["alarms","storage", "activeTab", "scripting","cookies"],
+  "host_permissions": [
+    "*://*.youtube.com/*"
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

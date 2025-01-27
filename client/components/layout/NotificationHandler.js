@@ -45,15 +45,17 @@ function NotificationHandler() {
         }
 
         const notification = notificationStack[0]
-        const actions = [
-            <CloseIconButton
-                key="close"
-                aria-label="Close"
-                color="inherit"
-                className=""
-                onClick={handleNotificationClose}
-            />,
-        ]
+        const actions = []
+        if(notification.closeButton!==false){
+            actions.push(
+                <CloseIconButton
+                    key="close"
+                    aria-label="Close"
+                    color="inherit"
+                    className=""
+                    onClick={handleNotificationClose}
+                />)
+        }
         if (notification.link) {
             actions.unshift(
                 <Link style={{color:theme.palette.secondary.light}} key="link" to={notification.link}>{notification.linkText || notification.link}</Link>)
@@ -62,10 +64,10 @@ function NotificationHandler() {
             key={notification.key}
             anchorOrigin={{
                 vertical: 'bottom',
-                horizontal: 'left',
+                horizontal: notification.horizontal || 'left',
             }}
             open={notificationOpen}
-            autoHideDuration={7000}
+            autoHideDuration={notification.autoHideDuration ?? 7000}
             onClose={handleNotificationClose}
             ContentProps={{
                 'aria-describedby': 'message-id',

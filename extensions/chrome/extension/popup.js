@@ -2,10 +2,14 @@
 let changeColor = document.getElementById("downloadMp3");
 
 changeColor.addEventListener('click',()=>{
-
     chrome.tabs.query({active: true, currentWindow: true},function(tabs){
-        chrome.tabs.create({url: 'https://www.lunuc.com/system/youtube_downloader?preview=true&format=mp3&url='+ encodeURIComponent(tabs[0].url)});
 
+        chrome.runtime.sendMessage({ command: "ytCookies"},
+            function(response) {
+            console.log(response)
+                chrome.tabs.create({url: `https://www.lunuc.com/system/youtube_downloader?preview=true&format=mp3&url=${encodeURIComponent(tabs[0].url)}&cookies=${encodeURIComponent(JSON.stringify(response))}`});
+            }
+        );
     })
 
 

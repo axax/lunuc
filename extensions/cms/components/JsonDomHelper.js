@@ -600,6 +600,12 @@ class JsonDomHelper extends React.Component {
     }
 
     handleAddChildClick(component, {index, dropIndex, newKeys}) {
+        if(Array.isArray(component)){
+            for(let i = component.length-1; i>=0; i--){
+                this.handleAddChildClick(component[i], {index, dropIndex, newKeys})
+            }
+            return
+        }
         const {_key, _json, _onTemplateChange, _onDataResolverPropertyChange} = this.props
 
         let newkey = _key
@@ -1025,6 +1031,23 @@ class JsonDomHelper extends React.Component {
                     this.setState({deleteSelectionConfirmDialog: true})
                 }
             })
+            menuItems.push({
+                name: _t('JsonDomHelper.element.to.clipboard'),
+                icon: <FileCopyIcon/>,
+                onClick: () => {
+                    const allSubJsons = JsonDomHelper.selected.map(element=>{
+                        subJson = getComponentByKey(element.props._key, element.props._json)
+                        console.log(subJson)
+                        return subJson
+                    })
+                    navigator.clipboard.writeText(JSON.stringify(allSubJsons, null, 2))
+                    this.deselectSelected()
+                    _app_.dispatcher.addNotification({horizontal:'right',
+                        autoHideDuration:2200,
+                        closeButton:false,
+                        message: _t('JsonDomHelper.element.copied.to.clipboard',{length:allSubJsons.length})})
+                }
+            })
             return
         }
         if (isCms && subJson && subJson.p) {
@@ -1306,6 +1329,10 @@ class JsonDomHelper extends React.Component {
                         icon: <FileCopyIcon/>,
                         onClick: () => {
                             navigator.clipboard.writeText(JSON.stringify(subJson, null, 2))
+                            _app_.dispatcher.addNotification({horizontal:'right',
+                                autoHideDuration:2200,
+                                closeButton:false,
+                                message: _t('JsonDomHelper.element.copied.to.clipboard',{length:1})})
                         }
                     })
 
@@ -1318,16 +1345,7 @@ class JsonDomHelper extends React.Component {
                                 name: _t('JsonDomHelper.element.inside'),
                                 icon: <PlaylistAddIcon/>,
                                 onClick: () => {
-                                    navigator.clipboard.readText().then(text => {
-                                        if (text) {
-                                            try {
-                                                const json = JSON.parse(text)
-                                                this.handleAddChildClick(json, {newKeys: true})
-                                            } catch (e) {}
-                                        }
-                                    }).catch(err => {
-                                        console.log('Something went wrong', err)
-                                    })
+                                    this.insertFromClipboard(rest,'inside')
                                 }
                             })
                         }
@@ -1337,17 +1355,7 @@ class JsonDomHelper extends React.Component {
                                 name: _t('JsonDomHelper.element.above'),
                                 icon: <PlaylistAddIcon/>,
                                 onClick: () => {
-                                    navigator.clipboard.readText().then(text => {
-                                        if (text) {
-                                            try {
-                                                const json = JSON.parse(text),
-                                                    pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1))
-                                                this.handleAddChildClick(json, {index:pos, newKeys: true})
-                                            } catch (e) {}
-                                        }
-                                    }).catch(err => {
-                                        console.log('Something went wrong', err)
-                                    })
+                                    this.insertFromClipboard(rest,'above')
                                 }
                             })
                         }
@@ -1357,17 +1365,7 @@ class JsonDomHelper extends React.Component {
                                 name: _t('JsonDomHelper.element.below'),
                                 icon: <PlaylistAddIcon/>,
                                 onClick: () => {
-                                    navigator.clipboard.readText().then(text => {
-                                        if (text) {
-                                            try {
-                                                const json = JSON.parse(text),
-                                                    pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1)) + 1
-                                                this.handleAddChildClick(json, {index:pos, newKeys: true})
-                                            } catch (e) {}
-                                        }
-                                    }).catch(err => {
-                                        console.log('Something went wrong', err)
-                                    })
+                                    this.insertFromClipboard(rest,'below')
                                 }
                             })
                         }
@@ -1381,6 +1379,26 @@ class JsonDomHelper extends React.Component {
                 }
             }
         }
+    }
+
+    insertFromClipboard(rest,place) {
+        navigator.clipboard.readText().then(text => {
+            if (text) {
+                try {
+                    const json = JSON.parse(text)
+                    const addData = {newKeys:true}
+                    if(place==='above'){
+                        addData.index = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1))
+                    }else if(place==='below'){
+                        addData.index = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1)) + 1
+                    }
+                    this.handleAddChildClick(json, addData)
+                } catch (e) {
+                }
+            }
+        }).catch(err => {
+            console.log('Something went wrong', err)
+        })
     }
 
     addDropAreasToChildren({children, hasJsonToEdit, isInLoop, _options}) {

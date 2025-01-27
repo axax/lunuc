@@ -6,7 +6,7 @@ import {_t} from '../../../util/i18n.mjs'
 
 const DEFAULT_TAB = 'elements.generalTab', IMAGE_OPTIMIZATION_TAB = 'Bild Optimierung', MARGIN_TAB = 'Abstände',
     TRANSLATION_TAB = 'Übersetzung',
-    MEDIA_PROJECTION = ['_id', 'size', 'name', 'group', 'src', 'mimeType',{'info':['width','height']}]
+    MEDIA_PROJECTION = ['_id', 'size', 'name', 'group', 'src', 'mimeType', {'info': ['width', 'height']}]
 
 
 const imageOptions = key => ({
@@ -18,7 +18,7 @@ Nicht empfolen für SVG Bilder, da diese dabei in PNG umgewandelt werden. Im Tab
     },
     [`${key}options_quality`]: {
         type: 'number',
-        newLine:true,
+        newLine: true,
         label: 'Qualität (Wert zwischen 1 und 100)',
         tab: IMAGE_OPTIMIZATION_TAB
     },
@@ -51,7 +51,7 @@ Nicht empfolen für SVG Bilder, da diese dabei in PNG umgewandelt werden. Im Tab
         ]
     },
     [`${key}options_format`]: {
-        enum: [{value:'',name:'keine Umwandlung'},'png','gif','jpeg'],
+        enum: [{value: '', name: 'keine Umwandlung'}, 'png', 'gif', 'jpeg'],
         newLine: false,
         label: 'In Format umwandeln',
         tab: IMAGE_OPTIMIZATION_TAB
@@ -135,7 +135,7 @@ const classOptions = (key, tab) => ({
     },
     [`${key}style@custom`]: {
         label: 'CSS Style',
-        fullWidth:true,
+        fullWidth: true,
         tab: tab || DEFAULT_TAB
     }
 })
@@ -193,7 +193,7 @@ const observeOptions = () => ({
     '$observe_threshold': {
         fullWidth: true,
         label: 'Threshold',
-        type:'Float',
+        type: 'Float',
         tab: 'Sichtbarkeit'
     },
     '$observe_flipMode': {
@@ -452,12 +452,12 @@ const sizeOptions = key => ({
     [`${key}width`]: {
         label: _t('elements.width'),
         tab: MARGIN_TAB,
-        helperText:'${c_0_p_height && c_0_p_src[_app_.lang][0].info.width?_t("elements.aspectRatio",{height:c_0_p_height,width:(c_0_p_src[_app_.lang][0].info.width/c_0_p_src[_app_.lang][0].info.height*c_0_p_height).toFixed(2)}):""}'
+        helperText: '${c_0_p_height && c_0_p_src[_app_.lang][0].info.width?_t("elements.aspectRatio",{height:c_0_p_height,width:(c_0_p_src[_app_.lang][0].info.width/c_0_p_src[_app_.lang][0].info.height*c_0_p_height).toFixed(2)}):""}'
     },
     [`${key}height`]: {
         label: _t('elements.height'),
         tab: MARGIN_TAB,
-        helperText:'${c_0_p_width && c_0_p_src[_app_.lang][0].info.height?_t("elements.aspectRatio",{width:c_0_p_width,height:(c_0_p_src[_app_.lang][0].info.height/c_0_p_src[_app_.lang][0].info.width*c_0_p_width).toFixed(2)}):""}'
+        helperText: '${c_0_p_width && c_0_p_src[_app_.lang][0].info.height?_t("elements.aspectRatio",{width:c_0_p_width,height:(c_0_p_src[_app_.lang][0].info.height/c_0_p_src[_app_.lang][0].info.width*c_0_p_width).toFixed(2)}):""}'
     }
 })
 
@@ -491,8 +491,8 @@ const baseElements = [
                 filter: 'mimeType=image',
                 tab: DEFAULT_TAB,
                 projection: MEDIA_PROJECTION,
-                showAlwaysAsImage:true,
-                keepTextValue:true
+                showAlwaysAsImage: true,
+                keepTextValue: true
             },
             'p_src@imageSrc': {
                 fullWidth: true,
@@ -575,7 +575,7 @@ const baseElements = [
                 type: 'Media',
                 filter: 'mimeType=image',
                 projection: MEDIA_PROJECTION,
-                tabPosition:1,
+                tabPosition: 1,
                 tab: 'Videooptionen',
                 template: '${this.context._id?_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+name:\'\'}',
             },
@@ -642,7 +642,7 @@ const baseElements = [
                 type: 'Media',
                 filter: 'mimeType=video',
                 projection: MEDIA_PROJECTION,
-                tabPosition:0,
+                tabPosition: 0,
                 tab: DEFAULT_TAB,
                 template: '${this.context._id?\'<video \'+(_comp.$set.muted?\'muted \':\'\')+(_comp.$set.controls?\'controls \':\'\')+(_comp.$set.autoplay?\'autoplay \':\'\')+(_comp.$set.loop?\'loop \':\'\')+\'style="\'+_comp.$set.style+\'" preload="\'+_comp.$set.preload+\'" poster="\'+(_comp.$set.poster || \'\')+(_comp.$set.posterSrc || \'\')+\'"><source src="\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+name+(_comp.$set.transcode?\'?transcode=\'+encodeURIComponent(_comp.$set.transcode):\'\')+\'" type="\'+mimeType+\'"/></video>\':\'\'}',
             },
@@ -920,7 +920,7 @@ const baseElements = [
                 uitype: 'textarea',
                 tab: DEFAULT_TAB
             },
-            $toHtml:{
+            $toHtml: {
                 label: 'Zeilenumbrüche behalten',
                 fullWidth: true,
                 type: 'Boolean',
@@ -1080,8 +1080,8 @@ const baseElements = [
                 localized: true,
                 localizedFallback: true,
                 tab: DEFAULT_TAB,
-                showAlwaysAsImage:true,
-                keepTextValue:true
+                showAlwaysAsImage: true,
+                keepTextValue: true
             },
             p_href: {
                 fullWidth: true,
@@ -1194,8 +1194,8 @@ const baseElements = [
                 template: '${this.context.data?this.context.data:(_comp.$original.p && _comp.$original.p.href && _comp.$original.p.href.length>0?_comp.$original.p.href[0].name:"Dokument")}'
             },
             [`p_className@extension`]: {
-                value:'',
-                invisible:true,
+                value: '',
+                invisible: true,
                 label: 'Datei Extension',
                 tab: DEFAULT_TAB,
                 template: 'file-ext-${_comp.$original.p && _comp.$original.p.href && _comp.$original.p.href.length>0?_comp.$original.p.href[0].name.split(".").pop():""}'
@@ -1420,7 +1420,7 @@ const baseElements = [
                     label: 'Title',
                     fullWidth: true,
                     replaceBreaks: true,
-                    uitype:'textarea'
+                    uitype: 'textarea'
                 },
                 text: {
                     tab: 'Slides',
@@ -1433,7 +1433,7 @@ const baseElements = [
         options: {
             ['p_data-slide-timeout']: {value: '7000', label: 'Anzeigezeit in ms pro Slide'},
             $set_0_chunk: {value: '1', label: 'Anzahl pro Seite'},
-            $set_0_chunkOptions_randomize: {type:'Boolean',value: '1', label: 'Slides zufällig sortieren'},
+            $set_0_chunkOptions_randomize: {type: 'Boolean', value: '1', label: 'Slides zufällig sortieren'},
             ...trOptions('$inlineEditor_groupOptions_$set\\_0\\_value_text_'),
             ...classOptions('p_'),
             ...marginOptions('p_'),
@@ -1610,7 +1610,7 @@ const baseElements = [
         icon: 'replay',
         options: {
             p_to: {
-                fullWidth:true,
+                fullWidth: true,
                 value: '',
                 label: 'Link (relativ oder absolut)'
             }
@@ -1637,8 +1637,7 @@ const baseElements = [
             p: {
                 ['data-element-key']: 'grid'
             },
-            c: [
-            ]
+            c: []
         },
         options: {
             'p_style@xs_--grid-template-columns-xs': {
@@ -2124,8 +2123,8 @@ const advancedElements = [
                     tab: 'Einträge',
                     label: 'Überschrift',
                     fullWidth: true,
-                    localized:true,
-                    localizedFallback:true
+                    localized: true,
+                    localizedFallback: true
                 },
                 img: {
                     fullWidth: true,
@@ -2138,8 +2137,8 @@ const advancedElements = [
                 html: {
                     tab: 'Einträge',
                     expandable: false,
-                    localized:true,
-                    localizedFallback:true,
+                    localized: true,
+                    localizedFallback: true,
                     label: 'Text',
                     uitype: 'html',
                 }
@@ -2199,9 +2198,9 @@ const advancedElements = [
                 uitype: 'type_picker',
                 projection: ['slug'],
                 queryFields: ['slug'],
-                searchFields: ['slug','name'],
-                multi:false,
-                fullWidth:true
+                searchFields: ['slug', 'name'],
+                multi: false,
+                fullWidth: true
             },
             p_slug: {
                 tab: DEFAULT_TAB,
@@ -2321,7 +2320,7 @@ const advancedElements = [
                             ]
                         },
                     ],
-                    l:1000,
+                    l: 1000,
                     f: '_id>${ObjectId.createFromTime(Date.now()/1000-60*60*24*50)}',
                     returnMeta: false,
                     removeDefinition: false
@@ -2432,6 +2431,55 @@ const advancedElements = [
             ...classOptions('p_')
         }
     },
+    {
+        tagName: 'div',
+        name: 'Web',
+        icon: 'html',
+        defaults: {
+            $inlineEditor: {
+                allowDrop: true,
+                elementKey: 'web'
+            },
+            p: {
+                ['data-element-key']: 'web'
+            }
+        },
+        options: {
+            t: {
+                label: 'Tag'
+            },
+            [`p_className@style`]: {
+                label: 'Style',
+                tab: DEFAULT_TAB,
+                enum: [
+                    {
+                        value: '',
+                        name: 'Keine'
+                    },
+                    {
+                        value: ' indented ',
+                        name: 'Eingerückt (mittel)'
+                    },
+                    {
+                        value: ' indented-small ',
+                        name: 'Eingerückt (klein)'
+                    },
+                    {
+                        value: ' indented-large ',
+                        name: 'Eingerückt (gross)'
+                    }
+                ]
+            },
+            $is: {
+                label: 'Bedingung'
+            },
+            ...marginOptions('p_'),
+            ...classOptions('p_'),
+            ...invisibleOptions('p_'),
+            ...observeOptions()
+        }
+    },
+
     /*{
         tagName: 'QuillEditor',
         icon: 'textFormat',
