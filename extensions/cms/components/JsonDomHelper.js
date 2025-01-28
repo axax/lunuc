@@ -774,6 +774,9 @@ class JsonDomHelper extends React.Component {
                     return false
                 }else{
                     this.deselectSelected()
+                    if(overrideEvents.onClick){
+                        overrideEvents.onClick(e)
+                    }
                 }
             }
         }
