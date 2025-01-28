@@ -81,6 +81,11 @@ export const onJsonDomDrag = (e) => {
 
                                 tag.classList.add(DROPAREA_ACTIVE)
                                 tag.style.width = (elementWidth) + 'px'
+                                if(tag.dataset.fill) {
+                                    let elementHeight = nodeForWidth.clientHeight
+                                    elementHeight -= parseFloat(computedStyle.paddingTop) + parseFloat(computedStyle.paddingBottom)
+                                    tag.style.height = (elementHeight) + 'px'
+                                }
                                 allTags.push(tag)
 
                             } else {

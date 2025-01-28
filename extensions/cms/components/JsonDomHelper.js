@@ -653,7 +653,7 @@ class JsonDomHelper extends React.Component {
         removeComponent(key, _json)
     }
 
-    getDropArea(rest, index) {
+    getDropArea(rest, index, fill) {
         let label = ''
         if(Util.hasCapability(_app_.user, CAPABILITY_ADMIN_OPTIONS)) {
             if (rest['data-element-key']) {
@@ -678,6 +678,7 @@ class JsonDomHelper extends React.Component {
             data-index={index}
             data-drop-area
             data-tag-name={rest._tagName}
+            data-fill={fill || ''}
             key={`${rest._key}.dropArea.${index}`}>Hier plazieren <small>{label?'('+label+')':''}</small></StyledDropArea>
     }
 
@@ -1428,7 +1429,7 @@ class JsonDomHelper extends React.Component {
                 }
 
             } else {
-                kids.push(this.getDropArea(this.props, 0))
+                kids.push(this.getDropArea(this.props, 0,true))
             }
 
         } else {

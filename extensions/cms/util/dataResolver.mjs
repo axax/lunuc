@@ -2,7 +2,7 @@ import {ObjectId} from 'mongodb'
 import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
 import Cache from '../../../util/cache.mjs'
 import request from '../../../api/util/request.mjs'
-import Util from '../../../api/util/index.mjs'
+import ApiUtil from '../../../api/util/index.mjs'
 import ClientUtil from '../../../client/util/index.mjs'
 import {CAPABILITY_MANAGE_KEYVALUES, CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities.mjs'
 import {addToWebsiteQueue} from './browser.mjs'
@@ -62,6 +62,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                 const tpl = new Function(`const {${Object.keys(scope).join(',')}} = this.scope
                                               const {data} = this
                                               const Util = this.ClientUtil
+                                              const ApiUtil = this.ApiUtil
                                               const ObjectId = this.ObjectId
                                               return \`${JSON.stringify(segments[i])}\``)
 
@@ -71,6 +72,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     context,
                     editmode,
                     ClientUtil,
+                    ApiUtil,
                     config,
                     ObjectId
                 }).replace(/"###/g, '').replace(/###"/g, '')
@@ -89,7 +91,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
 
                 if (segment.access) {
 
-                    if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
+                    if (!await ApiUtil.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
 
                         resolvedData.access = {}
                         Object.keys(segment.access).forEach(key => {
@@ -150,10 +152,10 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                 } else if (segment.keyValueGlobals) {
 
                     // if user don't have capability to manage keys he can only see the public ones
-                    const onlyPublic = segment.public!==undefined?segment.public:!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)
+                    const onlyPublic = segment.public!==undefined?segment.public:!await ApiUtil.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)
                     const dataKey = segment.key || 'keyValueGlobals'
 
-                    const map = await Util.keyValueGlobalMap(db, context, segment.keyValueGlobals, {
+                    const map = await ApiUtil.keyValueGlobalMap(db, context, segment.keyValueGlobals, {
                         public: onlyPublic,
                         cache: true,
                         parse: true
@@ -175,7 +177,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
 
                     resolvedData.user = {id: context.id}
                     if (context.id) {
-                        const user = await Util.userById(db, context.id)
+                        const user = await ApiUtil.userById(db, context.id)
 
                         if (user) {
                             //resolvedData.user = Object.assign({}, resolvedData.user)
@@ -197,7 +199,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                             }
 
                             if (segment.user.roles) {
-                                resolvedData.user.roles = await Util.getUserRoles(db, user.role)
+                                resolvedData.user.roles = await ApiUtil.getUserRoles(db, user.role)
                             }
                             if (segment.user.group) {
                                 resolvedData.user.group = user.group ? user.group.map(group=>({id:group.toString()})) : []
@@ -208,7 +210,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
 
                     const map = {}
 
-                    if (Util.isUserLoggedIn(context)) {
+                    if (ApiUtil.isUserLoggedIn(context)) {
                         const match = {createdBy: new ObjectId(context.id), key: {$in: segment.keyValues}}
                         const result = await GenericResolver.entities(db, {headers: req.headers, context}, 'KeyValue', ['key', 'value'], {
                             match
@@ -320,7 +322,7 @@ const createCacheKey = (segment, name) => {
 function resolveSystemData(segment, req, resolvedData) {
     const data = {}
     if (segment.system.properties) {
-        data.properties = Util.systemProperties()
+        data.properties = ApiUtil.systemProperties()
         //Object.keys(Cache.cache).length
     }
     if (segment.system.ls) {
