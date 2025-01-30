@@ -161,7 +161,7 @@ export const getBestMatchingHostRule = (host) => {
         const currentHost = hostsChecks[i]
         const hostrule = hostrules[currentHost]
         if (hostrule) {
-            if(hostrule.subDomains[host]){
+            if(hostrule.subDomains && hostrule.subDomains[host]){
                 return {hostrule: {...hostrule,...hostrule.subDomains[host]}, host: currentHost}
             }
             return {hostrule, host: currentHost}
