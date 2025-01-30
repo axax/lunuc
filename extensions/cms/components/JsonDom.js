@@ -59,7 +59,7 @@ const isFalse = value => value==='false' || value===false
 class JsonDom extends React.Component {
 
     /* Events that are listened to */
-    static events = ['onTouchStart','onTouchEnd','onDragEnd', 'onDragStart', 'onError','onClose','onRef','onAnimationEnd','onMouseMove','onMouseOver', 'onMouseOut', 'onMouseEnter', 'onMouseLeave', 'onMouseDown', 'onMouseUp', 'onClick', 'onKeyDown', 'onKeyUp', 'onFocus', 'onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput', 'onForwardRef']
+    static events = ['onTouchStart','onTouchEnd','onTouchCancel','onTouchMove','onDragEnd', 'onDragStart', 'onError','onClose','onRef','onAnimationEnd','onMouseMove','onMouseOver', 'onMouseOut', 'onMouseEnter', 'onMouseLeave', 'onMouseDown', 'onMouseUp', 'onClick', 'onKeyDown', 'onKeyUp', 'onFocus', 'onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput', 'onForwardRef']
 
     /*
      * Default components
@@ -1674,10 +1674,14 @@ class JsonDom extends React.Component {
         }
     }
 
-    reload = props => {
+    reloadData = (props) => {
+        this.reload(props,{extendData:true})
+    }
+
+    reload = (props, refetchOptions) => {
         setTimeout(()=> {
 
-            this.props.refetch({_props:deepMerge({$: {}}, this.scope.props, props)})
+            this.props.refetch({_props:deepMerge({$: {}}, this.scope.props, props)}, refetchOptions)
            /* _app_.dispatcher.dispatch({
                 type: 'CMS_RENDER',
                 payload:{

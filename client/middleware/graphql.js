@@ -1,6 +1,7 @@
 import React, {useState, useEffect, useContext} from 'react'
 import Util from '../util/index.mjs'
 import Hook from '../../util/hook.cjs'
+import {deepMerge} from "../../util/deepMerge.mjs";
 
 
 const NetworkStatus = {
@@ -542,7 +543,7 @@ export const graphql = (query, operationOptions = {}) => {
 
             render() {
                 if(query.constructor === Function) {
-                    finalQuery = query(this.props)
+                    finalQuery = query(this.props, this.state)
                 }
 
                 if (finalQuery.startsWith('mutation')) {
@@ -558,8 +559,10 @@ export const graphql = (query, operationOptions = {}) => {
 
                 let finalProps
 
-                if(this.state && this.state.refetchProps){
-                    finalProps = Object.assign({isRefetch:true}, this.props, this.state.refetchProps)
+                const {refetchProps,refetchOptions} = this.state || {}
+
+                if(refetchProps){
+                    finalProps = Object.assign({isRefetch:true, refetchOptions}, this.props, refetchProps)
                 } else {
                     finalProps = this.props
                 }
@@ -576,16 +579,19 @@ export const graphql = (query, operationOptions = {}) => {
                     if (!data && (res.loading || skip)) {
                         data = prevData
                     }
-
-                    this.prevRespone = res
+                    if(refetchOptions && refetchOptions.extendData) {
+                        data = deepMerge({}, prevData, res.data)
+                    }else {
+                        this.prevRespone = res
+                    }
                     const props = operationOptions.props({
                         data: {
                             variables, ...data,
                             loading: res.loading,
                             networkStatus: res.networkStatus,
                             fetchMore: res.fetchMore,
-                            refetch: (props)=>{
-                                this.setState({refetchProps:props})
+                            refetch: (refetchProps, refetchOptions={})=>{
+                                this.setState({refetchProps,refetchOptions})
                             }
                         },
                         ownProps: finalProps
