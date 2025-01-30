@@ -3,6 +3,7 @@ export const translations = {
     de: {
         'FilesContainer.deleteFile':'Datei löschen',
         'FilesContainer.createFolder':'Verzeichnis erstellen',
+        'FilesContainer.createFile':'Datei erstellen',
         'FilesContainer.confirmDeletion':'Sind Sie sicher, dass sie die Datei "%fileName%" löschen möchten?',
         'BaseLayout.editEntry': 'Eintrag bearbeiten',
         'BaseLayout.editMenu': 'Menü bearbeiten',
@@ -113,6 +114,7 @@ export const translations = {
     },
     en: {
         'FilesContainer.deleteFile':'Delete File',
+        'FilesContainer.createFile':'Create file',
         'FilesContainer.createFolder':'Create folder',
         'FilesContainer.confirmDeletion':'Are you sure you want to delete the file "%fileName%"?',
         'BaseLayout.editEntry': 'Edit entry',

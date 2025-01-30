@@ -160,7 +160,10 @@ export const getBestMatchingHostRule = (host) => {
     for (let i = 0; i < hostsChecks.length; i++) {
         const currentHost = hostsChecks[i]
         const hostrule = hostrules[currentHost]
-        if (hostrule && hostrule.certContext) {
+        if (hostrule) {
+            if(hostrule.subDomains[host]){
+                return {hostrule: {...hostrule,...hostrule.subDomains[host]}, host: currentHost}
+            }
             return {hostrule, host: currentHost}
         }
     }

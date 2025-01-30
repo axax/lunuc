@@ -53,7 +53,7 @@ const startListening = async (db, context) => {
 
                 const {hostrule, host} = getBestMatchingHostRule(domain)
 
-                if(hostrule){
+                if(hostrule && hostrule.certContext){
                     console.log(`smtp server certContext for ${host}`)
                     cb(null, hostrule.certContext)
                 }else{

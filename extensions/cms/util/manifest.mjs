@@ -16,7 +16,7 @@ export const createManifest = ()=>{
         theme_color: color,
         background_color: color,
         orientation: 'any',
-        scope: '/',
+        scope: ori + loc.pathname,
         icons: [
             { src: `${ori}192x192.png`, sizes: '192x192', type },
             { src: `${ori}${size512x512}.png`, sizes: size512x512, type },

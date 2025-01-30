@@ -20,9 +20,18 @@ import {Query, client} from '../middleware/graphql'
 import FileDrop from '../components/FileDrop'
 import Async from '../components/Async'
 import {_t} from 'util/i18n.mjs'
+import styled from '@emotion/styled'
 
 
-const EXTENSIONS_TO_EDIT = ['','html','js','md','cjs','mjs','text','yml','json','xml','csv','template']
+const StyledTextField = styled(TextField)(() => ({
+    input: {
+        '&:invalid': {
+            border: 'red solid 1px'
+        }
+    }
+}))
+
+const EXTENSIONS_TO_EDIT = ['','html','js','md','cjs','mjs','text','txt','yml','json','xml','csv','template']
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
 
@@ -107,7 +116,7 @@ fi`
                                 query: COMMAND_QUERY,
                                 variables: {
                                     sync: true,
-                                    command: `rm "${space}${dir}/${fileName}"`
+                                    command: `rm -r "${space}${dir}/${fileName}"`
                                 }
 
                             }).then(response => {
@@ -124,9 +133,39 @@ fi`
                                   actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
                                   title="Confirm deletion">{_t('FilesContainer.confirmDeletion',confirmDeletionDialog)}</SimpleDialog>
                     <SimpleDialog open={nameFileDialog.open} onClose={(e)=>{
-                        this.setState({nameFileDialog: {...nameFileDialog, open: false}})
-                    }} actions={[{key: 'cancel', label: _t('core.cancel')}, {key: 'save', label: _t('core.save'), type: 'primary'}]} title="Datei erstellen">
-                        TODO: do implementation
+
+                        if(e.key==='save') {
+                            if(nameFileDialog.input.checkValidity()) {
+                                client.query({
+                                    fetchPolicy: 'no-cache',
+                                    query: COMMAND_QUERY,
+                                    variables: {
+                                        sync: true,
+                                        command: `${nameFileDialog.isFolder?'mkdir':'touch'} "${space}${dir}/${nameFileDialog.input.value}"`
+                                    }
+
+                                }).then(response => {
+                                    console.log(response)
+                                    _app_.dispatcher.addNotification({key: 'fileChange', message: `${nameFileDialog.isFolder?'Folder':'File'} "${nameFileDialog.input.value}" created`})
+                                    client.clearCache({query:COMMAND_QUERY,variables:{sync: true, command}})
+                                    console.log('before refresh')
+                                    this.setState({nameFileDialog: {open: false}})
+
+                                })
+                            }
+                        }else {
+                            this.setState({nameFileDialog: {open: false}})
+                        }
+
+
+
+                    }} actions={[{key: 'cancel', label: _t('core.cancel')}, {key: 'save', label: _t('core.save'), type: 'primary'}]}
+                                  title={_t(nameFileDialog.isFolder?'FilesContainer.createFolder':'FilesContainer.createFile')}>
+
+                        <StyledTextField inputRef={(ref)=>{
+                            nameFileDialog.input = ref
+                        }} inputProps={{pattern: '[a-zA-Z0-9._-]{1,15}'}} placeholder="Name" required={true}></StyledTextField>
+
                     </SimpleDialog>
                     <SimpleSelect
                         label="Select aspace"
@@ -257,6 +296,13 @@ fi`
                                     bottom: '8px',
                                     right: '8px'
                                 }} items={[
+                                    {
+                                        name: _t('FilesContainer.createFile'),
+                                        onClick: ()=>{
+                                            this.setState({nameFileDialog:{open:true, isFolder:false}})
+                                        },
+                                        icon: <InsertDriveFileIcon />
+                                    },
                                     {
                                         name: _t('FilesContainer.createFolder'),
                                         onClick: ()=>{

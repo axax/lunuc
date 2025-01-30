@@ -10,7 +10,7 @@ import {getHostFromHeaders} from '../util/host.mjs'
 import finalhandler from 'finalhandler'
 import {replacePlaceholders} from '../util/placeholders.mjs'
 import {ensureDirectoryExistence} from '../util/fileUtil.mjs'
-import {getBestMatchingHostRule, getHostRules, getRootCertContext, hostListFromString} from '../util/hostrules.mjs'
+import {getBestMatchingHostRule, getHostRules, getRootCertContext} from '../util/hostrules.mjs'
 import {contextByRequest} from '../api/util/sessionContext.mjs'
 import {parseUserAgent} from '../util/userAgent.mjs'
 import {SECRET_KEY, USE_COOKIES} from '../api/constants/index.mjs'
@@ -54,7 +54,7 @@ const options = {
 
         const {hostrule} = getBestMatchingHostRule(domain)
 
-        if(hostrule){
+        if(hostrule && hostrule.certContext){
             cb(null, hostrule.certContext)
         }else{
             cb(null,getRootCertContext())
@@ -418,7 +418,8 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             // check with and without www
             const hostRuleHost = req.headers['x-host-rule'] ? req.headers['x-host-rule'].split(':')[0] : host
             const hostrules = getHostRules(true)
-            const hostrule = {...hostrules.general, ...(hostrules[hostRuleHost] || hostrules[hostRuleHost.substring(4)])}
+            const hostrule = {...hostrules.general, ...getBestMatchingHostRule(hostRuleHost).hostrule}
+
             const parsedUrl = url.parse(req.url, true)
 
             console.log(`${req.method} ${remoteAddress}: ${host}${parsedUrl.href} - ${req.headers['user-agent']}`)
@@ -565,7 +566,15 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                         return
                     }
 
-                    if(urlPathname!=='/'){
+                    if(hostrule.webRoot){
+                        // if a webRoot is defined, only this path is checked for matching files
+                        const indexFile = hostrule.indexFile || 'index.html'
+                        if (await sendFileFromDir(req, res, {filename: path.join(WEBROOT_ABSPATH, hostrule.webRoot, urlPathname!=='/'?urlPathname:indexFile), headers, parsedUrl})) {
+                            return
+                        }
+                        sendError(res, 404)
+                        return
+                    }else if(urlPathname!=='/'){
                         const pathsToCheck = [...hostrule.paths, STATIC_DIR, WEBROOT_ABSPATH, BUILD_DIR]
 
                         for(const curPath of pathsToCheck){
