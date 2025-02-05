@@ -84,6 +84,9 @@ export const onJsonDomDrag = (e) => {
                                 if(tag.dataset.fill) {
                                     let elementHeight = nodeForWidth.clientHeight
                                     elementHeight -= parseFloat(computedStyle.paddingTop) + parseFloat(computedStyle.paddingBottom)
+                                    if(elementHeight<20){
+                                        elementHeight=32
+                                    }
                                     tag.style.height = (elementHeight) + 'px'
                                 }
                                 allTags.push(tag)

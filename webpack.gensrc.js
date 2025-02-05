@@ -242,6 +242,7 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
         delete config.BACKUP_DIR
         delete config.UPLOAD_DIR
         delete config.UPLOAD_DIR_ABSPATH
+        delete config.HTML_HEAD
         configContent = `${GENSRC_HEADER}const config = ${JSON.stringify(config,null,4)}\nmodule.exports = config\n`
 
         fs.writeFile(GENSRC_PATH + "/config-client.js", configContent, function (err) {

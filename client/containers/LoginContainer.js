@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {Link, Redirect} from '../util/route'
-import {Card, SimpleButton, TextField, Row, Col, Typography} from 'ui/admin'
+import {Card, SimpleButton, TextField, Row, Col, Typography, VisibilityIconButton, VisibilityOffIconButton} from 'ui/admin'
 import config from 'gen/config-client'
 import Util from 'client/util/index.mjs'
 import DomUtil from '../util/dom.mjs'
@@ -30,6 +30,7 @@ class LoginContainer extends React.Component {
             password: '',
             newPassword:'',
             resetToken:'',
+            passwordVisible:false,
             domain: domain ? domain : _app_.login ? _app_.login.defaultDomain : ''
         }
     }
@@ -149,7 +150,7 @@ class LoginContainer extends React.Component {
         const {signupLink, showSignupLink} = this.props
         const from = this.getFromUrl()
 
-        const {resetToken, redirectToReferrer, loading, username, password, newPassword, domain, error} = this.state
+        const {resetToken, redirectToReferrer, loading, username, password, newPassword, domain, error, passwordVisible} = this.state
 
         if (redirectToReferrer) {
             return <Redirect to={from} push={true}/>
@@ -239,7 +240,12 @@ class LoginContainer extends React.Component {
                                            this.login(ev)
                                        }
                                    }}
-                                   type="password"
+                                   InputProps={{endAdornment: passwordVisible ? <VisibilityOffIconButton onClick={()=>{
+                                           this.setState({passwordVisible:false})
+                                       }} /> : <VisibilityIconButton onClick={()=>{
+                                       this.setState({passwordVisible:true})
+                                       }}/>}}
+                                   type={passwordVisible?'text':'password'}
                                    name="password" required/>
 
                         {(!_app_.login || !_app_.login.hideDomain) ?

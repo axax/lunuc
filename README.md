@@ -168,7 +168,12 @@ https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/
 3. Reload systemctl daemon: `sudo systemctl daemon-reload`
 
 Now whenever mongod gets killed. It'll get respawned by systemctl.
- 
+
+Debug
+`grep mongod /var/log/kern.log*`
+
+
+
 ## Implementation
 
 ### Folder structure

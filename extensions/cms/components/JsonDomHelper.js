@@ -1290,7 +1290,7 @@ class JsonDomHelper extends React.Component {
                     }
                 }
 
-                if(!_options.elementKey && Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
+                if(_options.menu.convert !== false && !_options.elementKey && Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
                     const changeToType = (type)=>{
                         const customElement = getJsonDomElements(type)
                         subJson.$inlineEditor = replaceUidPlaceholder(customElement.defaults.$inlineEditor)

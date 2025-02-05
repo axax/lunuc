@@ -4,8 +4,14 @@
 export const DEFAULT_BOT_REGEX = /(?!(^spiderweb\/))(bot|crawl|slurp|spider|mediapartners|facebookexternalhit|Xing|WhatsApp|NetcraftSurveyAgent|\(compatible; ITools;)/i
 export const DEFAULT_BOT_WITH_NO_JS_SUPPORT_REGEX = /YandexBot|localsearch|facebookexternalhit|LinkedInBot|Xing|WhatsApp|TelegramBot|\(compatible; ITools;/i
 export const parseUserAgent = (agent,
-                               botRegex = DEFAULT_BOT_REGEX) => {
+                               botRegex = DEFAULT_BOT_REGEX,
+                               via) => {
 
+
+    if(via && via.indexOf('archive.org_bot') >= 0){
+        // https://web.archive.org/
+        return {isBot: true, noJsRendering: true}
+    }
 
     let result = {}
     if (agent) {

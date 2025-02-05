@@ -41,7 +41,9 @@ export const formatJs = (code) => {
  */
 function formatLine(line) {
     // Add space around operators
-    line = line.replace(/([+\-*/%=&|<>!]+)/g, ' $1 ');
+    line = line.replace(/(?:"[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*'|([+\-*/%=&|<>!]+))/g, function(match, group) {
+        return group ? ' ' + group + ' ' : match
+    })
 
     // Remove extra spaces
     line = line.replace(/\s+/g, ' ');

@@ -24,7 +24,7 @@ export class ShadowRoot extends React.Component {
     render() {
         const {dangerouslySetInnerHTML,...rest} = this.props
         return (
-            <span {...this.props} ref={this.attachShadow.bind(this)} />
+            <span {...rest} ref={this.attachShadow.bind(this)} />
         )
     }
 }

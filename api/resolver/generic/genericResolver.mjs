@@ -451,7 +451,7 @@ const GenericResolver = {
             if (fields[k] && fields[k].type === 'Object' && data[k] && data[k].constructor !== Object) {
                 // store as object
                 o[k] = JSON.parse(data[k])
-            } else if(fields[k] && fields[k].hash){
+            } else if(fields[k] && fields[k].hash && data[k]){
                 o[k] =Util.hashPassword(data[k])
             } else {
                 o[k] = data[k]

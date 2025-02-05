@@ -825,6 +825,7 @@ class TypesContainer extends React.Component {
         if (!savedQueries) {
             savedQueries = []
         }
+        console.log(prettyFilter)
 
         const content = [
             !title && !this.pageParams.title ? null :
@@ -1766,17 +1767,17 @@ class TypesContainer extends React.Component {
                         }
                         newFilter += `_id${fieldKey === '_idTo' ? '<=' : '>='}${Math.floor(value / 1000).toString(16) + '0000000000000000'}`
 
-                    } else if (value.constructor === Array) {
+                    } else if (Array.isArray(value)) {
                         if (value.length > 0) {
 
-                            let ids = []
+                            let idsOrString = []
                             value.forEach(item => {
-                                ids.push(item._id)
+                                idsOrString.push(item._id || item)
                             })
                             if (newFilter) {
                                 newFilter += ' && '
                             }
-                            newFilter += `${fieldKey}==[${ids.join(',')}]`
+                            newFilter += `${fieldKey}==[${idsOrString.join(',')}]`
                         }
                     } else if (value.constructor === Object) {
 
@@ -1800,7 +1801,6 @@ class TypesContainer extends React.Component {
                 }
             }
         })
-        console.log(newFilter)
         return newFilter
     }
 
@@ -1839,11 +1839,10 @@ class TypesContainer extends React.Component {
                         const operator = payload.prettyFilter['__operator.' + fieldKey] || '='
 
                         newFilter.push(<span>{fieldKey}{operator}</span>)
-                        if (value.constructor === Array) {
+                        if (Array.isArray(value)) {
                             if (value.length > 0) {
                                 value.forEach(item => {
-                                    newFilter.push(
-                                        <strong>{item.data ? item.data.name || getValues(item.data) : item.name || item.username}</strong>)
+                                    newFilter.push(<strong>{item.data ? item.data.name || getValues(item.data) : item.name ?? item.username ?? item}</strong>)
                                 })
                             }
                         } else if (value.constructor === Object) {

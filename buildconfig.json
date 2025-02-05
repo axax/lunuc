@@ -215,7 +215,9 @@
         "HighlightAlt",
         "Repeat",
         "Transform",
-        "AutoAwesome"
+        "AutoAwesome",
+        "Visibility",
+        "VisibilityOff"
       ],
       "theme":{
         "colors":{
@@ -241,6 +243,6 @@
     "DEFAULT_LANGUAGE": "de",
     "API_PREFIX": "lunucapi",
     "PRETTYURL_SEPERATOR": "-",
-    "HTML_HEAD": ""
+    "HTML_HEAD": "<noscript><meta http-equiv=\"refresh\" content=\"0; url=/lunucapi/system/noscript\"></noscript>"
   }
 }

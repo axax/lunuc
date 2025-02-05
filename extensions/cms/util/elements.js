@@ -170,7 +170,7 @@ const observeOptions = () => ({
         fullWidth: true,
         type: 'Boolean',
         value: false,
-        label: 'Nur Hintergrundbild',
+        label: 'Nur Hintergrundbild (Bild erst laden wenn sichtbar)',
         tab: 'Sichtbarkeit'
     },
     '$observe_passProps': {

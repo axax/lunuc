@@ -135,7 +135,6 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
     const statusCode = (hostrule.statusCode && hostrule.statusCode[urlPathname] ? hostrule.statusCode[urlPathname] : 200)
 
     const agent = req.headers['user-agent']
-    const via = req.headers['via']
     let botRegex
     if(hostrule.botregex){
         botRegex = hostrule.botregex
@@ -145,11 +144,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
     }
     let {isBot, noJsRendering} = parseUserAgent(agent, botRegex)
 
-    if(via && via.indexOf('archive.org_bot') >= 0){
-        // https://web.archive.org/
-        isBot = true
-    }
-    if (noJsRendering) {
+    if (noJsRendering || parsedUrl.query.__ssr==='1') {
 
         if ( req.headers.accept && req.headers.accept.indexOf('text/html') < 0 && req.headers.accept.indexOf('*/*') < 0) {
             console.log('headers not valid', req.headers.accept)
@@ -159,7 +154,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
         }
         // return rendered html for bing as they are not able to render js properly
         const baseUrl = `http://localhost:${PORT}`
-        const urlToFetch = baseUrl + urlPathname + (parsedUrl.search ? parsedUrl.search : '')
+        const urlToFetch = baseUrl + urlPathname + (parsedUrl.search ? parsedUrl.search : '').replace('?__ssr=1','').replace('&__ssr=1','')
 
         const cacheFileDir = path.join(SERVER_DIR, 'cache', host.replace(/\W/g, ''))
         const cacheFileName = cacheFileDir + '/' + urlToFetch.replace(/\W/g, '') + '.html'
@@ -206,7 +201,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
         const pageData = await parseWebsite(urlToFetch, {host, agent, referer: req.headers.referer, isBot, remoteAddress, cookies})
 
         // remove script tags
-        pageData.html = pageData.html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,'')
+        pageData.html = pageData.html.replace(/<(script|noscript)[\s\S]*?<\/\1>/gi,'')
 
         // replace host
         const re = new RegExp(baseUrl, 'g')

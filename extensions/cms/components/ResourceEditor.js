@@ -67,10 +67,10 @@ class ResourceEditor extends React.Component {
                     return <ListItem key={'resource-' + i}>
                         <TextField value={item}
                                    onChange={this.handleChange.bind(this, i)}
-                                   style={{width: '80%'}}
+                                   fullWidth={true}
                                    placeholder="Enter a url"
-                                   secondaryAction={<>{!isExternal && <EditIconButton onClick={this.handleEditClick.bind(this, item)}/>}
-                        <DeleteIconButton onClick={this.handleRemoveClick.bind(this, i)}/></>}/>
+                                   InputProps={{endAdornment: <>{!isExternal && <EditIconButton onClick={this.handleEditClick.bind(this, item)}/>}
+                                           <DeleteIconButton onClick={this.handleRemoveClick.bind(this, i)}/></>}}/>
                     </ListItem>
                 })
                 }

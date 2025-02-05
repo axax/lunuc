@@ -28,7 +28,9 @@ export default function JsonDomAddElementDialog(props){
                          key="dialogProps"
                          open={true}
                          onClose={(event)=>{
-                             if(event.key==='save' && aiAssistent.answer){
+                             if(event.key==='editParent'){
+                                alert('todo')
+                             }else if(event.key==='save' && aiAssistent.answer){
 
                                  fetch(`/lunucapi/system/html2json?html=${encodeURIComponent(aiAssistent.answer)}`).then(response => response.json())
                                 .then(data => {
@@ -54,6 +56,12 @@ export default function JsonDomAddElementDialog(props){
                          }}
                          actions={[
                              {
+                                 key:'editParent',
+                                 label:_t('CmsViewEditorContainer.editParentComponent'),
+                                 type: 'secondary'
+                             },
+                             {
+                                 divider:true,
                                  key: 'cancel',
                                  label: _t('core.cancel'),
                                  type: 'secondary'

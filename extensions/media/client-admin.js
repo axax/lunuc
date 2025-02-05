@@ -516,7 +516,7 @@ export default () => {
                     <SimpleTab key="tab1" label="Voransicht"/>
                     <SimpleTab key="tab2" label="Upload"/>
                 </SimpleTabs>
-                <SimpleTabPanel style={{flexGrow:1,marginTop:'-24px',overflow:'hidden'}} key="tabPanel0" value={tabValue} index={0}>
+                <SimpleTabPanel style={{flexGrow:1,marginTop:'-24px',maxWidth: 'calc(100% - 10rem)'}} key="tabPanel0" value={tabValue} index={0}>
                     <Paper elevation={1}>
                         {children}
                     </Paper>

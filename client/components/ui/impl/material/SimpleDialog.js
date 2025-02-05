@@ -49,13 +49,13 @@ export const SimpleDialog = ({children, onClose, actions, title, fullScreen, ful
         {actions ?
             <DialogActions>
                 {actions.map((action, i) => {
-                    return (
+                    return <>
+                        {action.divider && <div style={{flex: '1 0 0'}} />}
                         <Button autoFocus={action.autoFocus} key={i} onClick={() => {
                             onClose(action)
                         }} color={action.type} variant={action.variant} size={action.size}>
                             {action.label}
-                        </Button>
-                    )
+                        </Button></>
                 })}
             </DialogActions>
             : ''}

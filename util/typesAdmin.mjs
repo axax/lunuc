@@ -555,7 +555,9 @@ Hook.on('Types', ({types}) => {
 })
 
 Hook.on('TypeCreateEdit', function ({type, props, dataToEdit}) {
-    if (type === 'User' && dataToEdit && dataToEdit._id) {
+    if(type === 'UserSetting'){
+        props.children = [props.children, <p>BaseLayoutSettings-_id</p>]
+    }else if (type === 'User' && dataToEdit && dataToEdit._id) {
         props.actions.unshift({key: 'setNewPassword', label: _t('user.send.new.password')})
     } else if(type==='KeyValueGlobal' && dataToEdit && dataToEdit.value){
         // override default

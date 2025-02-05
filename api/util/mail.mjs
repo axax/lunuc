@@ -88,7 +88,7 @@ ${finalHtml}
 
     let finalText = text?text.trim():''
     if(!finalText){
-        finalText = finalHtml.replace(/<[^>]*>/g, ' ').replace(/\s\s+/g, ' ')
+        finalText = finalHtml.replace(/<(script|style)\b[^<]*(?:(?!<\/\1>)<[^<]*)*<\/\1>|<[^>]+>/gi, '').trim()
     }
 
     const message = {
