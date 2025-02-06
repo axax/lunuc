@@ -158,6 +158,7 @@ export const userSchemaRaw = `
 			prettyName: LocalizedStringInput,
 			capabilities: [String],
 			ownerGroup:[ID]
+			setting:[ID]
 		): UserRole
 		
 		
