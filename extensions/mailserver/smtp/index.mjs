@@ -112,7 +112,7 @@ const startListening = async (db, context) => {
                 console.debug('SMTP onConnect', session)
 
 
-                if(isTemporarilyBlocked({requestTimeInMs: 3000, requestPerTime: 5,requestBlockForInMs:60000, key:'smtpConnection'})){
+                if(isTemporarilyBlocked({requestTimeInMs: 3000, requestPerTime: 50,requestBlockForInMs:60000, key:'smtpConnection'})){
                     return callback(new Error("No connections allowed"))
                 }
 
