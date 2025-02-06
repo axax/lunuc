@@ -286,7 +286,7 @@ export default () => {
 
     // add entry to main menu
     Hook.on('MenuMenu', ({menuItems}) => {
-        menuItems.push({name: 'Medias', to: ADMIN_BASE_URL + '/medias', auth: true, icon: <ImageIcon/>})
+        menuItems.push({key:'Media',name: 'Medias', to: ADMIN_BASE_URL + '/medias', auth: true, icon: <ImageIcon/>})
     })
 
 

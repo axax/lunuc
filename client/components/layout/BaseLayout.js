@@ -186,7 +186,7 @@ const BaseLayout = props => {
             settings.menu.items.forEach((item, i) => {
                 let existingItem
                 if (item.key) {
-                    const existingItems = menuItems.filter(m => m.key === item.key || m.name===item.name)
+                    const existingItems = menuItems.filter(m => m.key === item.key)
                     if (existingItems.length > 0) {
                         if(item.remove){
                             existingItems.forEach(existingItem=>{

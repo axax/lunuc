@@ -84,7 +84,7 @@ export default () => {
 
     // add entry to main menu
     Hook.on('MenuMenu', ({menuItems}) => {
-        menuItems.push({name: _t('CmsMenu.pages'), to: ADMIN_BASE_URL + '/cms', auth: true, icon: <WebIcon/>})
+        menuItems.push({key:'CmsPage',name: _t('CmsMenu.pages'), to: ADMIN_BASE_URL + '/cms', auth: true, icon: <WebIcon/>})
     })
 
     Hook.on('TypeTableColumns', ({type, columns}) => {
