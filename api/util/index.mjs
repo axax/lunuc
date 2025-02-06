@@ -420,6 +420,11 @@ const Util = {
             if (userRole === null) {
                 userRole = (await db.collection('UserRole').findOne({name: 'subscriber'}))
             }
+
+            if(userRole.setting){
+                userRole.setting = userRole.setting.map(_id=>({_id}))
+            }
+
             Cache.set(cacheKeyUserRole, userRole, 6000000) // cache expires in 100 min
         }
         return userRole

@@ -24,6 +24,7 @@ export const userSchemaRaw = `
         prettyName: LocalizedString
         capabilities: [String]!
         ownerGroup:[UserGroup]
+        setting:[UserSetting]
     }
     
     type UserRoleResult {
@@ -188,6 +189,7 @@ export const userSchemaRaw = `
 			prettyName: LocalizedStringInput,
 			capabilities: [String]
 			ownerGroup:[ID]
+			setting:[ID]
 		): UserRole
 		
 		

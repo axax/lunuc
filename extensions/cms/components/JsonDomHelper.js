@@ -1584,7 +1584,7 @@ class JsonDomHelper extends React.Component {
 
         if (event.key === 'save' && currentElement) {
 
-            let comp = {'t': currentElement.tagName, ...currentElement.defaults}
+            let comp = currentElement.tagName ? {'t': currentElement.tagName, ...currentElement.defaults} : currentElement
             if (payload.edit) {
                 // merge existing component
                 comp = deepMergeOptional({

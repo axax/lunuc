@@ -49,6 +49,9 @@ export const SimpleDialog = ({children, onClose, actions, title, fullScreen, ful
         {actions ?
             <DialogActions>
                 {actions.map((action, i) => {
+                    if(!action){
+                        return null
+                    }
                     return <>
                         {action.divider && <div style={{flex: '1 0 0'}} />}
                         <Button autoFocus={action.autoFocus} key={i} onClick={() => {

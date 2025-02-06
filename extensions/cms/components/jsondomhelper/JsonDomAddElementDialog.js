@@ -12,6 +12,7 @@ import Util from '../../../../client/util/index.mjs'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../../constants/index.mjs'
 import {_t} from '../../../../util/i18n.mjs'
 import Async from '../../../../client/components/Async'
+import {openWindow} from "../../../../client/util/window";
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../../../../client/components/CodeEditor')}/>
 
@@ -28,7 +29,16 @@ export default function JsonDomAddElementDialog(props){
                          key="dialogProps"
                          open={true}
                          onClose={(event)=>{
-                             if(event.key==='editParent'){
+                             if(event.key==='fromHtml'){
+                                 const win = openWindow({url:`/system/converter/html2json?preview=true`})
+                                 setTimeout(()=>{
+                                     win.addEventListener('beforeunload', (e) => {
+                                         if (win.returnValue) {
+                                             props.onClose({key:'save'}, JSON.parse(win.returnValue),null,props.payload)
+                                         }
+                                     })
+                                 },500)
+                             }else if(event.key==='editParent'){
                                 alert('todo')
                              }else if(event.key==='save' && aiAssistent.answer){
 
@@ -55,9 +65,14 @@ export default function JsonDomAddElementDialog(props){
                              }
                          }}
                          actions={[
-                             {
+                             !props.showElementSelector && {
                                  key:'editParent',
                                  label:_t('CmsViewEditorContainer.editParentComponent'),
+                                 type: 'secondary'
+                             },
+                             props.showElementSelector && {
+                                 key: 'fromHtml',
+                                 label: _t('TemplateEditor.insertFromHtml'),
                                  type: 'secondary'
                              },
                              {

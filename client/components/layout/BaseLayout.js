@@ -109,9 +109,13 @@ const BaseLayout = props => {
 
     const keys = []
     let useKeySettings = {}
-
-    if (user.setting && user.setting.length > 0) {
+    if (user?.setting?.length > 0) {
         user.setting.forEach(k => {
+            keys.push('BaseLayoutSettings-' + k._id)
+        })
+    }
+    if(user?.role?.setting?.length>0){
+        user.role.setting.forEach(k => {
             keys.push('BaseLayoutSettings-' + k._id)
         })
         useKeySettings.global = true

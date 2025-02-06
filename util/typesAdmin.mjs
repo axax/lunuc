@@ -373,6 +373,16 @@ Hook.on('Types', ({types}) => {
                 ],
                 index: 1,
                 reference: true
+            },
+            {
+                name: 'setting',
+                type: 'UserSetting',
+                reference: true,
+                fields: ['name'],
+                multi:true,
+                fullWidth:true,
+                hideColumnInTypes: true,
+                vagueSearchable:false
             }
         ]
     }

@@ -237,7 +237,7 @@ export const userResolver = (db) => ({
         },
         userRoles: async ({limit, page, offset, filter, sort}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            return await GenericResolver.entities(db, context, 'UserRole', ['name', 'prettyName', 'ownerGroup', 'capabilities'], {
+            return await GenericResolver.entities(db, context, 'UserRole', ['name', 'prettyName', 'ownerGroup', 'capabilities', 'setting'], {
                 limit,
                 page,
                 offset,
@@ -756,14 +756,15 @@ export const userResolver = (db) => ({
             return result.value
 
         },
-        createUserRole: async ({name, prettyName, ownerGroup, capabilities}, req) => {
+        createUserRole: async ({name, prettyName, ownerGroup, capabilities, setting}, req) => {
             await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_MANAGE_USER_ROLE)
 
             return await GenericResolver.createEntity(db, req, 'UserRole', {
                 name,
                 prettyName,
                 ownerGroup:(ownerGroup?ownerGroup.reduce((o,id)=>{o.push(new ObjectId(id));return o},[]):ownerGroup),
-                capabilities
+                capabilities,
+                setting: (setting?setting.map(_id=>(new ObjectId(_id))):setting)
             })
         },
         createUserSetting: async ({name}, req) => {
@@ -771,14 +772,15 @@ export const userResolver = (db) => ({
                 name
             })
         },
-        updateUserRole: async ({_id, name, prettyName, ownerGroup, capabilities}, {context}) => {
+        updateUserRole: async ({_id, name, prettyName, ownerGroup, capabilities,setting}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)
             return await GenericResolver.updateEnity(db, context, 'UserRole', {
                 _id,
                 name,
                 prettyName,
                 capabilities,
-                ownerGroup:(ownerGroup?ownerGroup.reduce((o,id)=>{o.push(new ObjectId(id));return o},[]):ownerGroup)
+                ownerGroup:(ownerGroup?ownerGroup.reduce((o,id)=>{o.push(new ObjectId(id));return o},[]):ownerGroup),
+                setting: (setting?setting.map(_id=>(new ObjectId(_id))):setting)
             })
 
         },
