@@ -841,7 +841,8 @@ const baseElements = [
         }
     },
     {
-        tagName: '', name: 'Überschrift',
+        tagName: 'div',
+        name: 'Überschrift',
         icon: 'format',
         defaults: {
             $inlineEditor: {
