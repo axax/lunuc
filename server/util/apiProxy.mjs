@@ -5,15 +5,29 @@ import {Socket} from 'net'
 const API_PORT = (process.env.API_PORT || process.env.LUNUC_API_PORT || 3000)
 const API_HOST = 'localhost'
 
-export const proxyToApiServer = (req, res, path)=> {
+export const proxyToApiServer = (req, res, {host, path})=> {
+
+    const newHeaders = Object.fromEntries(
+        Object.entries(req.headers).filter(
+            ([key]) => !/^:/.test(key)
+        )
+    )
+
+    newHeaders['x-forwarded-for'] = req.socket.remoteAddress
+    newHeaders['x-forwarded-proto'] = req.isHttps ? 'https' : 'http'
+    newHeaders['x-forwarded-host'] = host
+
 
     const proxyReq = http.request({
         hostname: API_HOST,
         port: API_PORT,
         path: path,
         method: req.method,
-        headers: req.headers
+        headers: newHeaders,
+        timeout: 3600000, /* 1h */
     }, (proxyRes) => {
+        delete proxyRes.headers['keep-alive']
+        delete proxyRes.headers['transfer-encoding']
         res.writeHead(proxyRes.statusCode, proxyRes.headers)
         proxyRes.pipe(res)
     })
