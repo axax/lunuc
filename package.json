@@ -94,6 +94,7 @@
     "graphql": "^16.10.0",
     "graphql-subscriptions": "^3.0.0",
     "graphql-tools": "^9.0.11",
+    "http2-proxy": "^5.0.53",
     "jsonwebtoken": "^9.0.2",
     "langchain": "^0.3.13",
     "mailparser": "^3.7.2",

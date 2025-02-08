@@ -1,12 +1,13 @@
+import proxy from 'http2-proxy'
 import httpx from './httpx.mjs'
 import http from 'http'
 import url from 'url'
 import path from 'path'
 import net from 'net'
 import fs from 'fs'
-import jwt from 'jsonwebtoken'
 import MimeType from '../util/mime.mjs'
 import {getHostFromHeaders} from '../util/host.mjs'
+import finalhandler from 'finalhandler'
 import {replacePlaceholders} from '../util/placeholders.mjs'
 import {ensureDirectoryExistence} from '../util/fileUtil.mjs'
 import {getBestMatchingHostRule, getHostRules, getRootCertContext} from '../util/hostrules.mjs'
@@ -17,7 +18,7 @@ import {parseCookies} from '../api/util/parseCookies.mjs'
 import {isTemporarilyBlocked} from './util/requestBlocker.mjs'
 import {parseWebsite} from './util/web2html.mjs'
 import {decodeToken} from '../api/util/jwt.mjs'
-import {proxyToApiServer, proxyWsToApiServer} from './util/apiProxy.mjs'
+
 //import heapdump from 'heapdump'
 import {clientAddress} from '../util/host.mjs'
 import Cache from '../util/cache.mjs'
@@ -37,6 +38,7 @@ const USE_HTTPX = process.env.LUNUC_HTTPX === 'false' ? false : true
 
 // Port to listen to
 const PORT = (process.env.PORT || process.env.LUNUC_PORT || 8080)
+const API_PORT = (process.env.API_PORT || process.env.LUNUC_API_PORT || 3000)
 
 // Build dir
 const BUILD_DIR = path.join(ROOT_DIR, './build')
@@ -76,6 +78,42 @@ process.on('uncaughtException', (error) => {
 })
 
 
+
+const defaultWebHandler = (err, req, res) => {
+    if (err) {
+        console.log(req.url)
+        console.error('proxy error', err.message)
+        finalhandler(req, res)(err)
+    } else {
+        res.end()
+    }
+}
+
+const defaultWSHandler = (err, req, socket, head) => {
+    if (err) {
+        console.error('proxy error ws ', err.message)
+        socket.destroy()
+    }
+}
+
+const webSocket = function (req, socket, head) {
+    if (req.url === '/lunucws') {
+        socket.on('error', (e)=>{
+            console.log('ws socket error',e)
+        })
+        if(req.headers['upgrade'] && req.headers['upgrade'].startsWith('W')) {
+            req.headers['upgrade'] = req.headers['upgrade'].toLowerCase()
+        }
+
+        proxy.ws(req, socket, head, {
+            hostname: 'localhost',
+            port: API_PORT,
+            protocol: 'http',
+            path: '/ws'
+        }, defaultWSHandler)
+        // }
+    }
+}
 
 
 const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, host, parsedUrl}) => {
@@ -163,7 +201,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
         const pageData = await parseWebsite(urlToFetch, {host, agent, referer: req.headers.referer, isBot, remoteAddress, cookies})
 
         // remove script tags
-        pageData.html = pageData.html.replace(/<(script|noscript)[\s\S]*?<\/\1>/gi,'')
+        pageData.html = pageData.html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,'')
 
         // replace host
         const re = new RegExp(baseUrl, 'g')
@@ -362,7 +400,6 @@ function decodeURIComponentSafe(s) {
 }
 
 
-
 // Initialize http api
 const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req, res) {
 
@@ -409,7 +446,18 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
             if (urlPathname.startsWith('/graphql') || urlPathname.startsWith('/' + API_PREFIX)) {
                 // there is also /graphql/upload
-                proxyToApiServer(req, res, parsedUrl.path)
+                return proxy.web(req, res, {
+                    hostname: 'localhost',
+                    proxyTimeout: 3600000, /* 1h */
+                    port: API_PORT,
+                    path: req.url,
+                    onReq: (req, {headers}) => {
+                        headers['x-forwarded-for'] = req.socket.remoteAddress
+                        headers['x-forwarded-proto'] = req.isHttps ? 'https' : 'http'
+                        headers['x-forwarded-host'] = host
+                    }
+                }, defaultWebHandler)
+
             } else {
                 if (urlPathname.startsWith( '/tokenlink/')) {
                     let token = urlPathname.substring(11)
@@ -604,6 +652,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 //TODO: Move this to an extension as it doesn't belong here
 import stream from './stream.js'
 import {Server} from 'socket.io'
+import jwt from "jsonwebtoken";
 
 
 let ioHttp = new Server(app.http)
@@ -618,8 +667,8 @@ ioHttps.on('connection', stream)
 // WebSocket requests as well.
 //
 if (USE_HTTPX) {
-    app.http.on('upgrade', proxyWsToApiServer)
-    app.https.on('upgrade', proxyWsToApiServer)
+    app.http.on('upgrade', webSocket)
+    app.https.on('upgrade', webSocket)
     app.http.on('error', (e) => {
         console.log('http error', e)
     })
@@ -643,7 +692,7 @@ if (USE_HTTPX) {
         socket.end('HTTP/1.1 400 Bad Request\r\n\r\n')
     })
 } else {
-    app.on('upgrade', proxyWsToApiServer)
+    app.on('upgrade', webSocket)
 }
 // Start server
 app.listen(PORT, () => console.log(
