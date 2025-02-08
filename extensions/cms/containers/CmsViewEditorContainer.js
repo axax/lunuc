@@ -650,7 +650,7 @@ class CmsViewEditorContainer extends React.Component {
                                             identifier={`dataResolver${cmsPage._id}-${this.state.dataResolverChangeCount}`}
                                             onCleanUpTranslations={this.handleCleanUpTranslations.bind(this)}
                                             onChange={(str)=>{
-                                                this.handleDataResolverChange(str,false,true)
+                                                this.handleDataResolverChange(str,false,false)
                                             }}>{dataResolver}</DataResolverEditor>
                     </Expandable>
                     <Expandable title="Server Script"
