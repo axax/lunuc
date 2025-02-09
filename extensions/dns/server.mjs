@@ -97,17 +97,26 @@ Hook.on('appready', async ({db, context}) => {
                         send(response)
 
                     } else {
-                        const resolvedQuestion = await resolveDnsQuestion(question)
-                        response.header = Object.assign({}, resolvedQuestion.header, {id: response.header.id})
-                        response.authorities = resolvedQuestion.authorities
-                        response.answers = resolvedQuestion.answers
-                        response.additionals = resolvedQuestion.additionals
+                        const localResponse = dnsServerContext.hosts[name].response
+                        if(localResponse?.answers?.length>0){
+                            response.header = Object.assign({}, localResponse.header, {id: response.header.id})
+                            response.authorities = localResponse.authorities
+                            response.answers = localResponse.answers
+                            response.additionals = localResponse.additionals
+                        }else{
+                            const resolvedQuestion = await resolveDnsQuestion(question)
+                            response.header = Object.assign({}, resolvedQuestion.header, {id: response.header.id})
+                            response.authorities = resolvedQuestion.authorities
+                            response.answers = resolvedQuestion.answers
+                            response.additionals = resolvedQuestion.additionals
+                        }
+
                         try {
                             send(response)
                         }catch (e){
                             console.log(e, response)
                         }
-                        debugMessage(`DNS: resolved ${name} after ${new Date().getTime() - startTime}ms`)
+                        debugMessage(`DNS: resolved ${name} after ${new Date().getTime() - startTime}ms`, response)
                     }
 
                     dnsServerContext.dbBuffer[name] = {
@@ -197,9 +206,9 @@ Hook.on('appexit', async () => {
     await insertBuffer()
 })
 
-const debugMessage = (msg)=>{
+const debugMessage = (msg, details)=>{
     if(dnsServerContext.settings.debug) {
-        console.debug(msg)
+        console.debug(msg, details)
     }
 }
 
@@ -215,7 +224,11 @@ const resolveDnsQuestion = async (question) => {
 
 const readHosts = async (db) => {
     await db.collection('DnsHost').find().forEach(o => {
-        dnsServerContext.hosts[o.name] = {block: o.block, subdomains: o.subdomains, count: o.count, group: o.group}
+        dnsServerContext.hosts[o.name] = {block: o.block,
+            subdomains: o.subdomains,
+            count: o.count,
+            response: o.response,
+            group: o.group}
     })
 
     await db.collection('DnsHostGroup').find().forEach(o => {

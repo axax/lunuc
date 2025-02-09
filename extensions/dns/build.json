@@ -57,6 +57,11 @@
           "name": "lastUsed",
           "type": "Float",
           "uitype":"datetime"
+        },
+        {
+          "name": "response",
+          "type": "Object",
+          "uitype": "json"
         }
       ]
     }
