@@ -649,8 +649,8 @@ class CmsViewEditorContainer extends React.Component {
                                             scrollPosition={EditorPageOptions.dataResolverScroll}
                                             identifier={`dataResolver${cmsPage._id}-${this.state.dataResolverChangeCount}`}
                                             onCleanUpTranslations={this.handleCleanUpTranslations.bind(this)}
-                                            onChange={(str)=>{
-                                                this.handleDataResolverChange(str,false,false)
+                                            onChange={(str, reload)=>{
+                                                this.handleDataResolverChange(str,false,!reload)
                                             }}>{dataResolver}</DataResolverEditor>
                     </Expandable>
                     <Expandable title="Server Script"

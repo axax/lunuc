@@ -4,6 +4,7 @@ import schemaGen from './gensrc/schema'
 import resolverGen from './gensrc/resolver'
 import {deepMergeToFirst} from 'util/deepMerge.mjs'
 import Util from '../../api/util/index.mjs'
+import {parseOrElse} from '../../client/util/json.mjs'
 dns2.Packet.TYPE['HTTPS'] = 65
 const dnsServerContext = {
     server: false,
@@ -100,9 +101,9 @@ Hook.on('appready', async ({db, context}) => {
                         const localResponse = dnsServerContext.hosts[name].response
                         if(localResponse?.answers?.length>0){
                             response.header = Object.assign({}, localResponse.header, {id: response.header.id})
-                            response.authorities = localResponse.authorities
+                            response.authorities = localResponse.authorities || []
                             response.answers = localResponse.answers
-                            response.additionals = localResponse.additionals
+                            response.additionals = localResponse.additionals || []
                         }else{
                             const resolvedQuestion = await resolveDnsQuestion(question)
                             response.header = Object.assign({}, resolvedQuestion.header, {id: response.header.id})
@@ -110,13 +111,12 @@ Hook.on('appready', async ({db, context}) => {
                             response.answers = resolvedQuestion.answers
                             response.additionals = resolvedQuestion.additionals
                         }
-
                         try {
                             send(response)
                         }catch (e){
                             console.log(e, response)
                         }
-                        debugMessage(`DNS: resolved ${name} after ${new Date().getTime() - startTime}ms`, response)
+                        debugMessage(`DNS: resolved ${name} after ${new Date().getTime() - startTime}ms`, localResponse)
                     }
 
                     dnsServerContext.dbBuffer[name] = {
@@ -184,6 +184,8 @@ Hook.on('typeUpdated_DnsHost', ({result}) => {
     if (result.name && dnsServerContext.hosts[result.name]) {
 
         dnsServerContext.hosts[result.name].group = result.group
+
+        dnsServerContext.hosts[result.name].response = parseOrElse(result.response)
 
         if( result.block !== undefined) {
             dnsServerContext.hosts[result.name].block = result.block

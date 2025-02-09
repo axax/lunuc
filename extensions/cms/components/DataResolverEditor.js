@@ -94,7 +94,7 @@ class DataResolverEditor extends React.Component {
                     })
             }
 
-            this.props.onChange(JSON.stringify(json,null,2))
+            this.props.onChange(JSON.stringify(json,null,2), true)
         }
     }
 
@@ -210,24 +210,6 @@ class DataResolverEditor extends React.Component {
                        ]} lineNumbers controlled type="json" {...this.props}/>
         </>
     }
-
-    createExample() {
-        const {onChange} = this.props
-
-
-        onChange(JSON.stringify([
-            {
-                "t": "$Word",
-                "d": [
-                    "de",
-                    "en"
-                ],
-                "l": 20,
-                "o": 0
-            }
-        ], null, 2), true)
-    }
-
 }
 
 

@@ -316,6 +316,7 @@ Add this to the file:
 `sudo iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 53 -j REDIRECT --to-port 53`
 
 allow only from certain ip
+`sudo ufw allow from any to any port 53`
 `sudo ufw allow from 188.154.137.74 to any port 53`
 `sudo ufw allow from 89.217.57.0/24 to any port 53`
 
