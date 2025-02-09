@@ -6,7 +6,7 @@ import injectSheet from 'react-jss'
 import {_t, registerTrs} from '../../util/i18n.mjs'
 import classNames from 'classnames'
 
-const PAGE_HEIGHT = 1430, PAGE_WIDTH = 1010
+const PAGE_HEIGHT = 1430, PAGE_WIDTH = 1020
 
 const styles = {
     button: {
@@ -324,16 +324,28 @@ class Print extends React.PureComponent {
                     context.fillText((page + 1) + ' / ' + (breaks.length + 1) + (showDate ? ' - ' + Util.formatDate(new Date()) : ''), 10 * scale, canvas.height - 20 * scale)
 
 
-                    const data = createCanvas.toDataURL()
+                    //const data = createCanvas.toDataURL('image/png')
+
+                    const resizedCanvas = document.createElement('canvas')
+                    const resizedContext = resizedCanvas.getContext('2d')
+
+                    resizedCanvas.height = PAGE_HEIGHT
+                    resizedCanvas.width = PAGE_WIDTH
+                    resizedContext.drawImage(createCanvas, 0, 0, PAGE_WIDTH, PAGE_HEIGHT)
+
+                    const data = resizedCanvas.toDataURL('image/png')
                     /*
                                         const img = document.createElement('img')
                                         img.src = data
 
                                         document.body.appendChild(img)
                                         console.log(data)*/
+                    pdfContent.push(    { text: '.', fontSize: 0.1 })
                     pdfContent.push({
                         image: data,
-                        width: 595
+                        //width: PAGE_WIDTH
+                        width: 598,
+                        pageBreak: page < breaks.length?'after':''
                     })
 
                     if (page < breaks.length) {
@@ -346,13 +358,24 @@ class Print extends React.PureComponent {
                         //$pa.css({overflow:"visible",height:"auto"})
 
                         // window.open(data);
-
                         const docDefinition = {
-                            pageMargins: [0, 0, 0, 0],
+                            version: '1.5',
+                            pages:breaks.length+1,
+                            info: {
+                                title: pdfName,
+                                author: 'lunuc.com'
+                            },
+                            pageMargins: [1, 1, 1, 1],
                             pageSize: 'A4',
-
                             content: pdfContent
                         }
+
+                        pdfMake.fonts = {
+                            Roboto: {
+                                normal: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf',
+                               },
+                        };
+
                         overlay.innerText = _t('Print.almostDone')
 
                         /* if( toprint ){
