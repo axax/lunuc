@@ -329,9 +329,9 @@ class Print extends React.PureComponent {
                     const resizedCanvas = document.createElement('canvas')
                     const resizedContext = resizedCanvas.getContext('2d')
 
-                    resizedCanvas.height = PAGE_HEIGHT
-                    resizedCanvas.width = PAGE_WIDTH
-                    resizedContext.drawImage(createCanvas, 0, 0, PAGE_WIDTH, PAGE_HEIGHT)
+                    resizedCanvas.height = PAGE_HEIGHT*1.5
+                    resizedCanvas.width = PAGE_WIDTH*1.5
+                    resizedContext.drawImage(createCanvas, 0, 0, resizedCanvas.width, resizedCanvas.height)
 
                     const data = resizedCanvas.toDataURL('image/png')
                     /*
