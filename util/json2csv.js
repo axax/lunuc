@@ -1,6 +1,9 @@
 import Util from '../client/util/index.mjs'
 
 const json2csv =(items, seperator=';')=>{
+    if(!items || items.length===0){
+        return ''
+    }
 
     const replacer = (key, value) => {
         if(value === null || value===undefined ){

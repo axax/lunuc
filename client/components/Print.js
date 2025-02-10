@@ -334,12 +334,6 @@ class Print extends React.PureComponent {
                     resizedContext.drawImage(createCanvas, 0, 0, resizedCanvas.width, resizedCanvas.height)
 
                     const data = resizedCanvas.toDataURL('image/png')
-                    /*
-                                        const img = document.createElement('img')
-                                        img.src = data
-
-                                        document.body.appendChild(img)
-                                        console.log(data)*/
                     pdfContent.push(    { text: '.', fontSize: 0.1 })
                     pdfContent.push({
                         image: data,

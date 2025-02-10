@@ -41,27 +41,27 @@ export const formatJs = (code) => {
  */
 function formatLine(line) {
     // Add space around operators
-    line = line.replace(/(?:"[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*'|([+\-*/%=&|<>!]+))/g, function(match, group) {
-        return group ? ' ' + group + ' ' : match
-    })
+    //line = line.replace(/(?:"[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*'|([+\-*/%=&|<>!]+))/g, function(match, group) {
+    //    return group ? ' ' + group + ' ' : match
+    //})
 
     // Remove extra spaces
-    line = line.replace(/\s+/g, ' ');
+    //line = line.replace(/\s+/g, ' ');
 
     // Fix spacing around parentheses
-    line = line.replace(/\(\s+/g, '(');
-    line = line.replace(/\s+\)/g, ')');
+    //line = line.replace(/\(\s+/g, '(');
+    //line = line.replace(/\s+\)/g, ')');
 
     // Fix spacing around commas
-    line = line.replace(/\s*,\s*/g, ', ');
+    //line = line.replace(/\s*,\s*/g, ', ');
 
     // Fix spacing around semicolons
-    line = line.replace(/\s*;\s*/g, ';');
+    //line = line.replace(/\s*;\s*/g, ';');
 
     // Fix spacing around colons
-    line = line.replace(/\s*:\s*/g, ': ');
+    //line = line.replace(/\s*:\s*/g, ': ');
 
-    return line.trim();
+    return line.trim()
 }
 
 // Example usage:
