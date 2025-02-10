@@ -15,7 +15,6 @@ const dnsServerContext = {
     hostsGroup: {},
     dbBuffer: {},
     settings: {},
-    gatewayIp: getGatewayIp(),
     typeMap: Object.keys(dns2.Packet.TYPE).reduce((a, k) => {
         a[dns2.Packet.TYPE[k]] = k;
         return a
@@ -41,6 +40,7 @@ Hook.on('appready', async ({db, context}) => {
 
     if (!dnsServerContext.settings.execfilter || Util.execFilter(dnsServerContext.settings.execfilter)) {
 
+        dnsServerContext.gatewayIp = await getGatewayIp()
 
         // refresh settings every minute
         setInterval(async () => {
@@ -117,6 +117,7 @@ Hook.on('appready', async ({db, context}) => {
                             response.additionals = resolvedQuestion.additionals
 
                             if (response?.answers?.length > 0) {
+                                console.log(response.answers, dnsServerContext.gatewayIp)
                                 response.answers.forEach(answer => {
                                     if (answer.address == dnsServerContext.gatewayIp) {
                                         answer.address = '127.0.0.1'
