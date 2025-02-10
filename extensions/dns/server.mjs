@@ -5,15 +5,21 @@ import resolverGen from './gensrc/resolver'
 import {deepMergeToFirst} from 'util/deepMerge.mjs'
 import Util from '../../api/util/index.mjs'
 import {parseOrElse} from '../../client/util/json.mjs'
+import {getGatewayIp} from '../../util/gatewayIp.mjs'
+
 dns2.Packet.TYPE['HTTPS'] = 65
 const dnsServerContext = {
     server: false,
     database: false,
     hosts: {},
-    hostsGroup:{},
+    hostsGroup: {},
     dbBuffer: {},
     settings: {},
-    typeMap: Object.keys(dns2.Packet.TYPE).reduce((a,k)=>{a[dns2.Packet.TYPE[k]]=k;return a},{})
+    gatewayIp: getGatewayIp(),
+    typeMap: Object.keys(dns2.Packet.TYPE).reduce((a, k) => {
+        a[dns2.Packet.TYPE[k]] = k;
+        return a
+    }, {})
 }
 
 
@@ -28,7 +34,6 @@ Hook.on('schema', ({schemas}) => {
 })
 
 
-
 // Hook when db is ready
 Hook.on('appready', async ({db, context}) => {
 
@@ -38,18 +43,18 @@ Hook.on('appready', async ({db, context}) => {
 
 
         // refresh settings every minute
-        setInterval(async ()=>{
-            dnsServerContext.settings =  (await Util.getKeyValueGlobal(db, context, 'DnsSettings', true)) || {}
+        setInterval(async () => {
+            dnsServerContext.settings = (await Util.getKeyValueGlobal(db, context, 'DnsSettings', true)) || {}
 
-            Object.keys(dnsServerContext.hostsGroup).forEach(key=>{
+            Object.keys(dnsServerContext.hostsGroup).forEach(key => {
                 const hostGroup = dnsServerContext.hostsGroup[key]
 
-                if(!hostGroup.block && hostGroup.blockRule){
+                if (!hostGroup.block && hostGroup.blockRule) {
 
                     const tpl = new Function(hostGroup.blockRule)
                     hostGroup._block = tpl.call({})
 
-                }else{
+                } else {
                     hostGroup._block = false
                 }
 
@@ -68,9 +73,9 @@ Hook.on('appready', async ({db, context}) => {
             udp: true,
             handle: async (request, send, rinfo) => {
                 const response = dns2.Packet.createResponseFromRequest(request)
-                const [ question ] = request.questions
+                const [question] = request.questions
 
-                if(question) {
+                if (question) {
                     const {name} = question
                     const startTime = new Date().getTime()
 
@@ -99,21 +104,29 @@ Hook.on('appready', async ({db, context}) => {
 
                     } else {
                         const localResponse = dnsServerContext.hosts[name].response
-                        if(localResponse?.answers?.length>0){
+                        if (localResponse?.answers?.length > 0) {
                             response.header = Object.assign({}, localResponse.header, {id: response.header.id})
                             response.authorities = localResponse.authorities || []
                             response.answers = localResponse.answers
                             response.additionals = localResponse.additionals || []
-                        }else{
+                        } else {
                             const resolvedQuestion = await resolveDnsQuestion(question)
                             response.header = Object.assign({}, resolvedQuestion.header, {id: response.header.id})
                             response.authorities = resolvedQuestion.authorities
                             response.answers = resolvedQuestion.answers
                             response.additionals = resolvedQuestion.additionals
+
+                            if (response?.answers?.length > 0) {
+                                response.answers.forEach(answer => {
+                                    if (answer.address == dnsServerContext.gatewayIp) {
+                                        answer.address = '127.0.0.1'
+                                    }
+                                })
+                            }
                         }
                         try {
                             send(response)
-                        }catch (e){
+                        } catch (e) {
                             console.log(e, response)
                         }
                         debugMessage(`DNS: resolved ${name} after ${new Date().getTime() - startTime}ms`, localResponse)
@@ -137,7 +150,7 @@ Hook.on('appready', async ({db, context}) => {
                     if (Object.keys(dnsServerContext.dbBuffer).length > 20) {
                         insertBuffer()
                     }
-                }else{
+                } else {
                     send(response)
                 }
             }
@@ -145,7 +158,7 @@ Hook.on('appready', async ({db, context}) => {
 
 
         dnsServerContext.server.on('request', (request, response, rinfo) => {
-       //     console.log(request.header.id, request.questions[0]);
+            //     console.log(request.header.id, request.questions[0]);
         })
 
         dnsServerContext.server.on('requestError', (error) => {
@@ -168,10 +181,10 @@ Hook.on('appready', async ({db, context}) => {
                 type: 'udp4',  // IPv4 or IPv6 (Must be either "udp4" or "udp6")
             },
             // Optionally specify port and/or address for tcp server:
-           /* tcp: {
-                port: 53,
-                address: "0.0.0.0",
-            },*/
+            /* tcp: {
+                 port: 53,
+                 address: "0.0.0.0",
+             },*/
         })
 
         // eventually
@@ -187,29 +200,29 @@ Hook.on('typeUpdated_DnsHost', ({result}) => {
 
         dnsServerContext.hosts[result.name].response = parseOrElse(result.response)
 
-        if( result.block !== undefined) {
+        if (result.block !== undefined) {
             dnsServerContext.hosts[result.name].block = result.block
         }
-        if( result.subdomains !== undefined) {
+        if (result.subdomains !== undefined) {
             dnsServerContext.hosts[result.name].subdomains = result.subdomains
         }
     }
 })
-Hook.on(['typeUpdated_DnsHostGroup','typeCreated_DnsHostGroup'], ({result}) => {
+Hook.on(['typeUpdated_DnsHostGroup', 'typeCreated_DnsHostGroup'], ({result}) => {
     const id = result._id.toString()
     if (!dnsServerContext.hostsGroup[id]) {
         dnsServerContext.hostsGroup[id] = result
     }
     dnsServerContext.hostsGroup[id].block = result.block
-    dnsServerContext.hostsGroup[id].blockRule = result.blockRule?result.blockRule.trim():''
+    dnsServerContext.hostsGroup[id].blockRule = result.blockRule ? result.blockRule.trim() : ''
 })
 
 Hook.on('appexit', async () => {
     await insertBuffer()
 })
 
-const debugMessage = (msg, details)=>{
-    if(dnsServerContext.settings.debug) {
+const debugMessage = (msg, details) => {
+    if (dnsServerContext.settings.debug) {
         console.debug(msg, details)
     }
 }
@@ -226,15 +239,20 @@ const resolveDnsQuestion = async (question) => {
 
 const readHosts = async (db) => {
     await db.collection('DnsHost').find().forEach(o => {
-        dnsServerContext.hosts[o.name] = {block: o.block,
+        dnsServerContext.hosts[o.name] = {
+            block: o.block,
             subdomains: o.subdomains,
             count: o.count,
             response: o.response,
-            group: o.group}
+            group: o.group
+        }
     })
 
     await db.collection('DnsHostGroup').find().forEach(o => {
-        dnsServerContext.hostsGroup[o._id.toString()] = {block: o.block, blockRule: o.blockRule?o.blockRule.trim():''}
+        dnsServerContext.hostsGroup[o._id.toString()] = {
+            block: o.block,
+            blockRule: o.blockRule ? o.blockRule.trim() : ''
+        }
     })
 }
 
@@ -255,7 +273,7 @@ const isHostGroupBlocked = (hostname) => {
 const isHostBlocked = (hostname) => {
     let block = dnsServerContext.hosts[hostname].block === true
 
-    if(!block){
+    if (!block) {
         // check group blocking
         block = isHostGroupBlocked(hostname)
     }
@@ -268,12 +286,12 @@ const isHostBlocked = (hostname) => {
             subHostname = subHostname.substring(pos + 1)
             if (dnsServerContext.hosts[subHostname] && dnsServerContext.hosts[subHostname].subdomains === true) {
 
-                if(dnsServerContext.hosts[subHostname].block === true) {
+                if (dnsServerContext.hosts[subHostname].block === true) {
                     block = true
                     break
-                }else{
+                } else {
                     block = isHostGroupBlocked(subHostname)
-                    if(block){
+                    if (block) {
                         break
                     }
                 }
@@ -284,9 +302,9 @@ const isHostBlocked = (hostname) => {
     return block
 }
 
-const insertBuffer= async () => {
+const insertBuffer = async () => {
     if (dnsServerContext.database) {
-        await dnsServerContext.database.collection('DnsHost').bulkWrite(Object.values(dnsServerContext.dbBuffer), { ordered: false })
+        await dnsServerContext.database.collection('DnsHost').bulkWrite(Object.values(dnsServerContext.dbBuffer), {ordered: false})
         dnsServerContext.dbBuffer = {}
     }
 }

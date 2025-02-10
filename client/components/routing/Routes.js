@@ -121,7 +121,13 @@ class Routes extends React.Component {
                         continue
                     }
 
-                    const newLocation = Object.assign({},location)
+                    let newLocation
+                    try {
+                        newLocation = Object.assign({}, location)
+                    }catch(e){
+                        newLocation = location
+                    }
+
                     const match = {params:{}}
                     if(patternPath){
                         // dirty implementation.... works only for one parameter
