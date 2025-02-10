@@ -62,7 +62,9 @@ export default () => {
     Hook.on('TypeCreateEditFormFields', ({type, formFields, dataToEdit}) => {
         if (type === 'CronJob') {
             formFields.execfilter.extraAfter = <iframe style={{marginTop:'2rem',height:'35rem',border:'none', width:'100%'}} src="/system/info"></iframe>//<a target='_blank' href="/system/info">System Properties</a>
-            formFields.expression.helperText = cronToReadableString(dataToEdit.expression)
+            if(dataToEdit) {
+                formFields.expression.helperText = cronToReadableString(dataToEdit.expression)
+            }
         }
     })
 

@@ -40,8 +40,6 @@ Hook.on('appready', async ({db, context}) => {
 
     if (!dnsServerContext.settings.execfilter || Util.execFilter(dnsServerContext.settings.execfilter)) {
 
-        dnsServerContext.gatewayIp = await getGatewayIp()
-
         // refresh settings every minute
         setInterval(async () => {
             dnsServerContext.settings = (await Util.getKeyValueGlobal(db, context, 'DnsSettings', true)) || {}
@@ -117,7 +115,6 @@ Hook.on('appready', async ({db, context}) => {
                             response.additionals = resolvedQuestion.additionals
 
                             if (response?.answers?.length > 0) {
-                                console.log(response.answers, dnsServerContext.gatewayIp)
                                 response.answers.forEach(answer => {
                                     if (answer.address == dnsServerContext.gatewayIp) {
                                         answer.address = '127.0.0.1'
@@ -166,8 +163,10 @@ Hook.on('appready', async ({db, context}) => {
             console.log('DNS: Client sent an invalid request', error)
         })
 
-        dnsServerContext.server.on('listening', () => {
+        dnsServerContext.server.on('listening', async () => {
             console.log('DNS: listening', dnsServerContext.server.addresses())
+
+            dnsServerContext.gatewayIp = await getGatewayIp(true)
         })
 
         dnsServerContext.server.on('close', () => {

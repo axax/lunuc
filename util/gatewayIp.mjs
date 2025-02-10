@@ -11,8 +11,8 @@ const getPublicIpAsPromise = ( url ) => {
     })
 }
 
-export const getGatewayIp = async () =>{
-    if(!GATEWAY_IP) {
+export const getGatewayIp = async (forced) =>{
+    if(!GATEWAY_IP || forced) {
         const response = await getPublicIpAsPromise()
         if(response.error){
             GATEWAY_IP = '127.0.0.1'
