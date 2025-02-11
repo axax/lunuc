@@ -191,7 +191,9 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
             }
         })
 
-        const manifestPrivateStr = `${GENSRC_HEADER}const extensions=${JSON.stringify(manifestJsonPrivate, null, 2)}\nexport default extensions`
+        let manifestPrivateStr = `${GENSRC_HEADER}const extensions=${JSON.stringify(manifestJsonPrivate, null, 2)}\nexport default extensions\n`
+
+        manifestPrivateStr += `export const isExtensionEnabled = (extension)=>{return !!extensions[extension]}`
 
         fs.writeFile(GENSRC_PATH + "/extensions-private.mjs", manifestPrivateStr, function (err) {
             if (err) {

@@ -127,7 +127,7 @@ Hook.on('appready', async ({db, context}) => {
                         } catch (e) {
                             console.log(e, response)
                         }
-                        debugMessage(`DNS: resolved ${name} after ${new Date().getTime() - startTime}ms`, localResponse)
+                        debugMessage(`DNS: resolved ${name} after ${new Date().getTime() - startTime}ms`)
                     }
 
                     dnsServerContext.dbBuffer[name] = {
@@ -146,7 +146,7 @@ Hook.on('appready', async ({db, context}) => {
                     }
 
                     if (Object.keys(dnsServerContext.dbBuffer).length > 20) {
-                        insertBuffer()
+                        await insertBuffer()
                     }
                 } else {
                     send(response)
@@ -165,8 +165,8 @@ Hook.on('appready', async ({db, context}) => {
 
         dnsServerContext.server.on('listening', async () => {
             console.log('DNS: listening', dnsServerContext.server.addresses())
-
             dnsServerContext.gatewayIp = await getGatewayIp(true)
+            Hook.call('dnsready', {db,context})
         })
 
         dnsServerContext.server.on('close', () => {
@@ -189,6 +189,8 @@ Hook.on('appready', async ({db, context}) => {
 
         // eventually
         // server.close();
+    }else{
+        Hook.call('dnsready', {db,context})
     }
 })
 

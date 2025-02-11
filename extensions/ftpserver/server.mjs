@@ -15,6 +15,7 @@ import {
 } from '../../api/util/loginBlocker.mjs'
 import {_t} from '../../util/i18nServer.mjs'
 import {getGatewayIp} from '../../util/gatewayIp.mjs'
+import {isExtensionEnabled} from '../../gensrc/extensions-private.mjs'
 
 //import {getHostRules, hostListFromString} from '../../util/hostrules.mjs'
 
@@ -113,9 +114,13 @@ Hook.on('schema', ({schemas}) => {
     schemas.push(schemaGen)
 })
 
-
-
-// Hook when db is ready
-Hook.on('appready', ({db}) => {
-    startFtpServer(db)
-})
+if(isExtensionEnabled('dns')){
+    Hook.on('dnsready', async ({db}) => {
+        await startFtpServer(db)
+    })
+}else {
+    // Hook when db is ready
+    Hook.on('appready', async ({db}) => {
+        await startFtpServer(db)
+    })
+}
