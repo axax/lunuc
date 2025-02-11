@@ -116,7 +116,7 @@ Hook.on('appready', async ({db, context}) => {
 
                             if (response?.answers?.length > 0) {
                                 response.answers.forEach(answer => {
-                                    if (answer.address == dnsServerContext.gatewayIp) {
+                                    if (answer.address == dnsServerContext.gatewayIp && rinfo.address=="127.0.0.1") {
                                         answer.address = '127.0.0.1'
                                     }
                                 })
