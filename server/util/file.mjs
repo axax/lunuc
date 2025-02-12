@@ -6,10 +6,11 @@ import {isFileNotNewer} from '../../util/fileUtil.mjs'
 import zlib from 'zlib'
 import {extendHeaderWithRange, isMimeTypeStreamable} from './index.mjs'
 import {clientAddress} from "../../util/host.mjs";
-import http from "http";
+import http from 'http'
 import {PassThrough} from 'stream'
-import {transcodeAndStreamVideo, transcodeVideoOptions} from "./transcodeVideo.mjs";
+import {transcodeAndStreamVideo, transcodeVideoOptions} from './transcodeVideo.mjs'
 import {getGatewayIp} from '../../util/gatewayIp.mjs'
+import Cache from '../../util/cache.mjs'
 
 const LUNUC_SERVER_NODES = process.env.LUNUC_SERVER_NODES || ''
 
@@ -110,11 +111,16 @@ export const sendFile = (req, res, {headers, filename, fileStat, neverCompress =
     try {
         statsMainFile = fileStat || fs.statSync(filename)
 
+        if(!headers['Last-Modified']){
+            headers['Last-Modified'] = statsMainFile.mtime.toUTCString()
+        }
+
         if (!neverCompress && acceptEncoding.match(/\bbr\b/)) {
 
             if (isFileNotNewer(filename + '.br', statsMainFile)) {
                 // if br version is available send this instead
                 const statsFile = fs.statSync(filename + '.br')
+
                 res.writeHead(statusCode, {...headers, 'Content-Length': statsFile.size, 'Content-Encoding': 'br'})
                 const fileStream = fs.createReadStream(filename + '.br')
                 fileStream.pipe(res)
@@ -163,7 +169,6 @@ export const sendFile = (req, res, {headers, filename, fileStat, neverCompress =
             }
 
             res.writeHead(statusCode, {
-                'Last-Modified': statsMainFile.mtime.toUTCString(), /* just to be sure header is set */
                 'Content-Length':statsMainFile.size,
                 ...headers})
 
@@ -191,5 +196,53 @@ export const sendError = (res, code) => {
         res.end()
     } catch (e) {
         console.error(`Error sending error: ${e.message}`)
+    }
+}
+
+
+export const parseAndSendFile = (req, res, {filename, headers, statusCode, parsedUrl}) => {
+
+
+    let data = Cache.get('IndexFile' + filename)
+    if (!data) {
+        data = {time:new Date()}
+        try {
+            data.content = fs.readFileSync(filename, 'utf8')
+        }catch (err){
+            console.error(`parseAndSendFile: ${filename} does not exist`, err)
+            sendError(res, 404)
+            return
+        }
+        Cache.set('IndexFile'+filename, data)
+    }
+
+    /* there is currently only one use case */
+    const finalContent = data.content.replace('<%=encodedUrl%>', encodeURIComponent(parsedUrl.href))
+
+    // Check if the client accepts gzip
+    if (req.headers['accept-encoding'] && req.headers['accept-encoding'].includes('gzip')) {
+        zlib.gzip(finalContent, (err, compressed) => {
+            if (!err) {
+                res.writeHead(statusCode, {
+                    'Last-Modified': data.time.toUTCString(),
+                    'Content-Length':compressed.length,
+                    ...headers,
+                    'Content-Encoding': 'gzip'})
+                res.write(compressed)
+                res.end()
+            } else {
+                console.error(err)
+                res.writeHead(500)
+                res.end('Error occurred during compression.')
+            }
+        })
+    } else {
+        // If gzip is not accepted, send the uncompressed data
+        res.writeHead(statusCode, {
+            'Last-Modified': data.time.toUTCString(),
+            'Content-Length':finalContent.length,
+            ...headers})
+        res.write(finalContent)
+        res.end()
     }
 }

@@ -87,3 +87,11 @@ export const extendHeaderWithRange = (headerExtra, req, stat)=>{
         return {start, end}
     }
 }
+
+
+export const decodeURIComponentSafe = (string) => {
+    if (!string) {
+        return string
+    }
+    return decodeURIComponent(string.replace(/%(?![0-9][0-9a-fA-F]+)/g, '%25'))
+}

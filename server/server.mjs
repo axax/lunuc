@@ -21,10 +21,16 @@ import {proxyToApiServer, proxyWsToApiServer} from './util/apiProxy.mjs'
 //import heapdump from 'heapdump'
 import {clientAddress} from '../util/host.mjs'
 import Cache from '../util/cache.mjs'
-import {doScreenCapture} from './util/index.mjs'
+import {decodeURIComponentSafe, doScreenCapture} from './util/index.mjs'
 import {createSimpleEtag} from './util/etag.mjs'
 import {getDynamicConfig} from '../util/config.mjs'
-import {getFileFromOtherServer, sendError, sendFile, sendFileFromDir} from './util/file.mjs'
+import {
+    getFileFromOtherServer,
+    parseAndSendFile,
+    sendError,
+    sendFile,
+    sendFileFromDir
+} from './util/file.mjs'
 
 const config = getDynamicConfig()
 
@@ -74,9 +80,6 @@ process.on('uncaughtException', (error) => {
     console.error(error.stack);
     console.log("Node NOT Exiting...");
 })
-
-
-
 
 const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, host, parsedUrl}) => {
     const headers = {
@@ -210,7 +213,8 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
             // default index
             indexfile = path.join(BUILD_DIR, '/index.min.html')
         }
-        sendFile(req, res, {headers, filename: indexfile, statusCode})
+        //        sendFile(req, res, {headers, filename: indexfile, statusCode})
+        parseAndSendFile(req, res, {filename:indexfile, headers, statusCode, parsedUrl, host})
     }
 }
 
@@ -350,15 +354,6 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
         console.log('not exists: ' + filename)
         sendError(res, 404)
     }
-}
-
-
-
-function decodeURIComponentSafe(s) {
-    if (!s) {
-        return s
-    }
-    return decodeURIComponent(s.replace(/%(?![0-9][0-9a-fA-F]+)/g, '%25'))
 }
 
 
