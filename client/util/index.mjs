@@ -357,6 +357,11 @@ const Util = {
         } else {
             data.src = image.src
         }
+
+        if(!data.alt){
+            data.alt = data.src.split('/').pop().split('?')[0]
+        }
+
         if(image.info){
             data.width = image.info.width
             data.height = image.info.height
