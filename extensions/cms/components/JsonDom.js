@@ -195,7 +195,7 @@ class JsonDom extends React.Component {
             }
 
             if (!rest.id) {
-                rest.id = slug.replace(/\W/g, '')+'-'+JsonDom.instanceCounter
+                rest.id = slug.replace(/\W/g, '')
                 console.warn(`There is no id set for included Cms Component ${slug} -> ${rest.id}`, props)
             }
 

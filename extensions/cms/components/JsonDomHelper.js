@@ -1260,7 +1260,10 @@ class JsonDomHelper extends React.Component {
                 const subMenuMove = []
                 const parentKey = rest._key.substring(0,rest._key.lastIndexOf('.'))
                 const parentJson = getComponentByKey(parentKey, _json)
-                if(parentJson && parentJson !==subJson && parentJson.c && parentJson.c.constructor === Array){
+                if(parentJson &&
+                    _options.menu.move !== false &&
+                    parentJson !==subJson && parentJson.c &&
+                    parentJson.c.constructor === Array){
                     const currentIndex = parentJson.c.indexOf(subJson)
                     if(currentIndex>0) {
                         subMenuMove.push({
