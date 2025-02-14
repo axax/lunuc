@@ -3,6 +3,7 @@ import DomUtil from './dom.mjs'
 import config from '../../gensrc/config-client.js'
 import {replacePlaceholders} from '../../util/placeholders.mjs'
 import {propertyByPath, setPropertyByPath} from './json.mjs'
+import {_t} from '../../util/i18n.mjs'
 
 /**
  * Object with general client helper methods. It is also accessible in the CMS Editor
@@ -338,7 +339,7 @@ const Util = {
             image = raw
         }
         if(image._localized){
-            image = image[_app_.lang] || image[config.DEFAULT_LANGUAGE]
+            image = _t(image)
             if(image && image.constructor===String){
                 image = {src:image}
             }
