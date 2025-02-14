@@ -31,7 +31,7 @@ import Expandable from 'client/components/Expandable'
 import {_t} from '../../util/i18n.mjs'
 import Util from '../util/index.mjs'
 import DomUtil from '../util/dom.mjs'
-import {matchExpr, propertyByPath} from '../util/json.mjs'
+import {matchExpr, propertyByPath, setPropertyByPath} from '../util/json.mjs'
 import JsonEditor from '../../extensions/cms/components/JsonEditor'
 import {Query} from '../middleware/graphql'
 import {getTypeQueries, getTypes} from 'util/types.mjs'
@@ -91,9 +91,10 @@ class GenericForm extends React.Component {
             fieldsTmp: {},
             fieldsDirty: {}, /* only set when fields has changed */
             valuesOri: props.values,
-            showTranslations: {},
+            showTranslations: prevState.showTranslations || {},
             tabValue: prevState.tabValue ? prevState.tabValue : 0
         }
+
         Object.keys(props.fields).map(fieldKey => {
             const field = props.fields[fieldKey]
             if (!field) {
@@ -690,7 +691,9 @@ class GenericForm extends React.Component {
                                         }}
                                         expanded={this.state[expandedKey] === valueFieldKey}>
                                 <GenericForm onChange={(e) => {
-                                    values[e.name] = e.value
+
+                                    setPropertyByPath(e.value,e.name,values)
+
                                     this.handleInputChange({
                                         target: {
                                             name: fieldKey,
