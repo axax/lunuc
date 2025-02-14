@@ -1,7 +1,7 @@
 export const _t = function (key, replacements, defaultValue) {
     if(key && key.constructor === Object){
         // for {"de":"Title"}
-        return key[_app_.lang] || key[_app_.config.DEFAULT_LANGUAGE]
+        return key[_app_.lang] || key[_app_.config.DEFAULT_LANGUAGE] || ''
     }
     let str
     if (this && this.tr && this.tr[key]) {
