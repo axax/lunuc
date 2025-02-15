@@ -657,9 +657,10 @@ class JsonDom extends React.Component {
                             return this.styles[key]
                         }
                     })
-                } catch (e) {
+                } catch (error) {
                     parsedStyle = style
-                    console.log(e)
+                    Hook.call('JsonDomStyleError', {error, style, slug: this.props.slug, editMode: this.props.editMode})
+                    console.log(error)
                 }
             } else {
                 parsedStyle = style

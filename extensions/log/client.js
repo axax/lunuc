@@ -62,6 +62,20 @@ export default () => {
         }
     })
 
+
+    Hook.on('JsonDomStyleError', ({error, style, editMode, slug}) => {
+        if (!editMode && error) {
+            sendError({
+                location:'JsonDom',
+                message: error.message + '\n\n' + error.stack,
+                meta:{
+                    slug,
+                    style
+                }
+            })
+        }
+    })
+
     // add routes for this extension
     Hook.on('AsyncError', ({error}) => {
         sendError({
