@@ -66,7 +66,7 @@ export default () => {
     Hook.on('JsonDomStyleError', ({error, style, editMode, slug}) => {
         if (!editMode && error) {
             sendError({
-                location:'JsonDom',
+                location:'JsonDomStyle',
                 message: error.message + '\n\n' + error.stack,
                 meta:{
                     slug,

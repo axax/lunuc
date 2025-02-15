@@ -115,7 +115,7 @@ class GenericForm extends React.Component {
                         fieldValue = Object.assign({}, props.values[fieldKey])
                     }
                 } else {
-                    if(field.value && field.localizedFallback) {
+                    if(field.value && (!props.values || field.localizedFallback)) {
                         if (!fieldValue) {
                             fieldValue = {_localized:true}
                         }
