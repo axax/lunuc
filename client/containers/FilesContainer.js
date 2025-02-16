@@ -245,6 +245,7 @@ fi`
                                                         this.setState({
                                                             file: null,
                                                             fileSize: 0,
+                                                            filterText:'',
                                                             dir: dir + '/' + fileName
                                                         })
                                                         history.push(`${location.origin + location.pathname}?space=${this.state.space}&dir=${dir + '/' + fileName}`)

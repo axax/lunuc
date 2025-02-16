@@ -204,8 +204,8 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
 
 
     let data = Cache.get('IndexFile' + filename)
-    if (!data) {
-        data = {time:new Date()}
+    if (!data || isFileNotNewer(filename, data)) {
+        data = {mtime:new Date()}
         try {
             data.content = fs.readFileSync(filename, 'utf8')
         }catch (err){
@@ -224,7 +224,7 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
         zlib.gzip(finalContent, (err, compressed) => {
             if (!err) {
                 res.writeHead(statusCode, {
-                    'Last-Modified': data.time.toUTCString(),
+                    'Last-Modified': data.mtime.toUTCString(),
                     'Content-Length':compressed.length,
                     ...headers,
                     'Content-Encoding': 'gzip'})
@@ -239,7 +239,7 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
     } else {
         // If gzip is not accepted, send the uncompressed data
         res.writeHead(statusCode, {
-            'Last-Modified': data.time.toUTCString(),
+            'Last-Modified': data.mtime.toUTCString(),
             'Content-Length':finalContent.length,
             ...headers})
         res.write(finalContent)
