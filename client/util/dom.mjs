@@ -121,7 +121,11 @@ const DomUtil = {
                 const timer = options && options.timeout && setTimeout(() => {
                     observer.disconnect()
                     console.log('waitForElement timeout')
-                    reject(new Error('waitForElement timeout'))
+                    if(options.resolveOnTimeout) {
+                        resolve()
+                    }else{
+                        reject(new Error('waitForElement timeout'))
+                    }
                 }, options.timeout)
 
                 const observer = new MutationObserver(mutations => {
