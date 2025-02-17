@@ -185,3 +185,31 @@ export const parseOrElse = (str, elseValue) => {
         return elseValue===undefined ? str : elseValue
     }
 }
+
+export const findObjectsByAttributeValue = (obj, attr, attrValue) => {
+    let results = []
+
+    function traverse(obj) {
+        if (typeof obj === 'object' && obj !== null) {
+            if (Array.isArray(obj)) {
+                // Handle arrays
+                for (let i = 0; i < obj.length; i++) {
+                    traverse(obj[i], attr, attrValue)
+                }
+            } else {
+                // Handle objects
+                if (obj[attr] === attrValue) {
+                    results.push(obj)
+                }
+                for (let key in obj) {
+                    if (obj.hasOwnProperty(key)) {
+                        traverse(obj[key],attr, attrValue)
+                    }
+                }
+            }
+        }
+    }
+
+    traverse(obj, attr, attrValue)
+    return results
+}

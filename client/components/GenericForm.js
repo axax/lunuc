@@ -102,30 +102,18 @@ class GenericForm extends React.Component {
             }
             let fieldValue
             if (field.localized) {
+                fieldValue = {_localized:true}
                 if (props.values && props.values[fieldKey]) {
                     if (props.values[fieldKey].constructor === String) {
-                        if (!fieldValue) {
-                            fieldValue = {}
-                        }
                         fieldValue[config.DEFAULT_LANGUAGE] = props.values[fieldKey]
-                        /*config.LANGUAGES.forEach(lang => {
-                            fieldValue[lang] = props.values[fieldKey]
-                        })*/
                     } else {
-                        fieldValue = Object.assign({}, props.values[fieldKey])
+                        Object.assign(fieldValue, props.values[fieldKey])
                     }
                 } else {
                     if(field.value && (!props.values || field.localizedFallback)) {
-                        if (!fieldValue) {
-                            fieldValue = {_localized:true}
-                        }
-                        if(field.value._localized){
-                            config.LANGUAGES.forEach(lang => {
-                                fieldValue[lang] = field.value[lang]
-                            })
-                        }else{
-                            fieldValue[_app_.lang] = field.value
-                        }
+                        config.LANGUAGES.forEach(lang => {
+                            fieldValue[lang] = field.value[lang]
+                        })
                     }else{
                         fieldValue = null
                     }
@@ -419,20 +407,20 @@ class GenericForm extends React.Component {
                 newState.fields[path[0]] = currentVal && currentVal.constructor === String ? {[config.DEFAULT_LANGUAGE]:currentVal} : {}
             }
             newState.fields[path[0]][path[1]] = value
+            newState.fields[path[0]]._localized = true
+
             if(field.localizedFallback){
                 const localizedField = Object.assign({}, newState.fields[path[0]])
                 delete localizedField._localized
+
                 const values = Object.values(localizedField)
                 const allEqual = values.length<=1 || values.every( v => !v ||
                     (v.constructor===Array && v.length===0) ||
                     JSON.stringify(v) === JSON.stringify(values[0]))
                 if(allEqual){
                     newState.fields[path[0]] = values.length>0?values[0]:null
-                }else{
-                    newState.fields[path[0]]._localized = true
                 }
             }
-
         } else {
             newState.fields[name] = value
             if(value !== originalValue){
@@ -691,8 +679,16 @@ class GenericForm extends React.Component {
                                         }}
                                         expanded={this.state[expandedKey] === valueFieldKey}>
                                 <GenericForm onChange={(e) => {
+                                    const {fields} = this.props
+                                    const subField = subFields[e.name.split('.')[0]]
 
                                     setPropertyByPath(e.value,e.name,values)
+
+                                    if(subField.localized) {
+                                        // mark as localized
+                                        values[subField.name]._localized = true
+                                    }
+
 
                                     this.handleInputChange({
                                         target: {

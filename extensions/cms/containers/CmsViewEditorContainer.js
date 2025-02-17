@@ -51,7 +51,12 @@ import {
     CAPABILITY_MANAGE_CMS_TEMPLATE,
     CAPABILITY_VIEW_CMS_EDITOR
 } from '../constants/index.mjs'
-import {propertyByPath, setPropertyByPath, findSegmentByKeyOrPath} from '../../../client/util/json.mjs'
+import {
+    propertyByPath,
+    setPropertyByPath,
+    findSegmentByKeyOrPath,
+    findObjectsByAttributeValue
+} from '../../../client/util/json.mjs'
 import GenericForm from '../../../client/components/GenericForm'
 import {_t} from '../../../util/i18n.mjs'
 import config from 'gen/config-client'
@@ -102,21 +107,47 @@ function saveTrsAsCsv(data) {
     }
 }
 
-const transRec = async ({source, base, path='', overrideTranslations=false, onChange}) => {
+const translateInDataResolver = async ({source, base, path='', overrideTranslations=false, onChange}) => {
     if (!source || source.constructor !== Object) {
         return
     }
     const trKeys = Object.keys(source)
     for(const trKey of trKeys){
-        if (source[trKey] && source[trKey].constructor === String) {
+        const fromText = source[trKey]
+        if (fromText?.constructor === String) {
             for(const lang of config.LANGUAGES){
                 if ((overrideTranslations || !base[lang] || !base[lang][trKey]) && lang !== config.DEFAULT_LANGUAGE) {
-                    const res = await translateText({text: source[trKey], toIso:lang, fromIso: config.DEFAULT_LANGUAGE})
+                    const res = await translateText({text: fromText, toIso:lang, fromIso: config.DEFAULT_LANGUAGE})
 
                     if(res.text){
                         setPropertyByPath(res.text, lang + path + '.' + trKey.replace(/\./g, '\\\.'), base)
                         if(onChange){
                             onChange(res)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+const translateInTemplate = async ({template, onChange, overrideTranslations})=> {
+    const results = findObjectsByAttributeValue(template, '_localized', true)
+    if (results.length > 0) {
+        for (const result of results) {
+            const text = result[config.DEFAULT_LANGUAGE]
+            if (text && text.constructor === String) {
+                for (const lang of config.LANGUAGES) {
+                    if ((overrideTranslations || !result[lang]) && lang !== config.DEFAULT_LANGUAGE) {
+
+                        const res = await translateText({
+                            text,
+                            toIso: lang,
+                            fromIso: config.DEFAULT_LANGUAGE
+                        })
+                        if (res.text) {
+                            result[lang] = res.text
+                            onChange(template)
                         }
                     }
                 }
@@ -513,7 +544,8 @@ class CmsViewEditorContainer extends React.Component {
             !props.dynamic && <NotificationHandler />,
             <NetworkStatusHandler key="networkStatus"/>,
             simpleDialog && <SimpleDialog open={true}
-                                          fullWidth={true} maxWidth="md"
+                                          fullWidth={true}
+                                          maxWidth={simpleDialog.maxWidth || 'md'}
                                           onClose={(action) => {
                                               let preventClose = false
                                               if (simpleDialog.onClose) {
@@ -870,7 +902,7 @@ class CmsViewEditorContainer extends React.Component {
                                         if (e.key === 'translate') {
                                             const json = JSON.parse(editorRef.getValue())
                                             if(json && json.tr){
-                                                transRec({source:json.tr[config.DEFAULT_LANGUAGE],
+                                                translateInDataResolver({source:json.tr[config.DEFAULT_LANGUAGE],
                                                     base: json.tr,
                                                     onChange:()=>{
                                                         editorRef.setValue(JSON.stringify(json,null,4))
@@ -896,22 +928,51 @@ class CmsViewEditorContainer extends React.Component {
                     moreMenu.push({
                             divider: true,
                             icon: 'magic',
-                            name: _t('CmsViewEditorContainer.autotranslate'), onClick: () => {
-                                const {segment, dataResolver} = this.findSegmentInDataResolverByKeyOrPath({path: 'tr'})
-                                if (segment.tr && segment.tr[config.DEFAULT_LANGUAGE]) {
-                                    let timeout
-                                    const saveResolver = () => {
-                                        clearTimeout(timeout)
-                                        timeout = setTimeout(() => {
-                                            this.handleDataResolverChange(JSON.stringify(dataResolver, null, 2), true)
-                                        }, 100)
+                            name: _t('CmsViewEditorContainer.autotranslate'), onClick: async () => {
+                            this.setState({
+                                simpleDialog: {
+                                    title: _t('CmsViewEditorContainer.autotranslate'),
+                                    text: <SimpleSwitch key="overrideTranslationsSwitch" color="primary"
+                                                        defaultChecked={this.state.overrideTranslations}
+                                                        onChange={(e)=>{
+                                                            this.setState({overrideTranslations:!this.state.overrideTranslations})
+                                                        }}
+                                                        label={_t('CmsViewEditorContainer.overrideTranslations')}/>,
+                                    maxWidth:'sm',
+                                    actions: [
+                                        {
+                                            key: 'translate',
+                                            label: _t('CmsViewEditorContainer.translate'),
+                                            type: 'primary'
+                                        }
+                                    ],
+                                    onClose: async (event) => {
+                                        if(event.key==='translate'){
+                                            const {segment, dataResolver} = this.findSegmentInDataResolverByKeyOrPath({path: 'tr'})
+                                            if (segment.tr && segment.tr[config.DEFAULT_LANGUAGE]) {
+
+                                                await translateInDataResolver({
+                                                    overrideTranslations: this.state.overrideTranslations,
+                                                    source:segment.tr[config.DEFAULT_LANGUAGE],
+                                                    base: segment.tr,
+                                                    onChange:()=>{
+                                                        this.handleDataResolverChange(JSON.stringify(dataResolver, null, 2))
+                                                    }})
+                                            }
+
+                                            await translateInTemplate({
+                                                overrideTranslations: this.state.overrideTranslations,
+                                                template:JSON.parse(this.state.template),
+                                                onChange:(template)=>{
+                                                this.handleTemplateChange(template,false,true)
+                                            }})
+                                            this.setState({simpleDialog: null})
+                                        }else {
+                                            this.setState({simpleDialog: null})
+                                        }
                                     }
-                                    transRec({source:segment.tr[config.DEFAULT_LANGUAGE],
-                                        base: segment.tr,
-                                        onChange:()=>{
-                                            saveResolver()
-                                        }})
                                 }
+                            })
                             }
                         }
                     )
@@ -1272,7 +1333,7 @@ class CmsViewEditorContainer extends React.Component {
         }
         this.setCmsPageValue({key: 'dataResolver',
             timeoutSetState:0,
-            timeoutUpdate: instantSave?0:1000,
+            timeoutUpdate: instantSave?0:900,
             setStateCallback:()=>{
                 this._tmpDataResolver = null
             }}, str)

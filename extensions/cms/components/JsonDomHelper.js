@@ -188,11 +188,11 @@ const getHighlightPosition = (node)=>  {
         if (childNode.nodeType === Node.ELEMENT_NODE) {
             const style = window.getComputedStyle(childNode)
             if (style.display !== 'none' && style.opacity > 0) {
-                const childOffsets = DomUtilAdmin.elemOffset(childNode)
-                childMinLeft = Math.min(childOffsets.left, childMinLeft)
-                childMaxLeft = Math.max(childOffsets.left + (childNode.offsetWidth ?? 0), childMaxLeft)
-                childMinTop = Math.min(childOffsets.top, childMinTop)
-                childMaxTop = Math.max(childOffsets.top + (childNode.offsetHeight ?? 0), childMaxTop)
+                const rect = childNode.getBoundingClientRect()
+                childMinLeft = Math.min(rect.left, childMinLeft)
+                childMaxLeft = Math.max(rect.left + (rect.width ?? 0), childMaxLeft)
+                childMinTop = Math.min(rect.top, childMinTop)
+                childMaxTop = Math.max(rect.top + (rect.height ?? 0), childMaxTop)
             }else{
                 allAbs = false
             }
@@ -204,11 +204,11 @@ const getHighlightPosition = (node)=>  {
         }
     }
     if(!allAbs) {
-        const nodeOffsets = DomUtilAdmin.elemOffset(node)
-        childMinLeft = Math.min(nodeOffsets.left, childMinLeft)
-        childMaxLeft = Math.max(nodeOffsets.left + (node.offsetWidth ?? 0), childMaxLeft)
-        childMinTop = Math.min(nodeOffsets.top, childMinTop)
-        childMaxTop = Math.max(nodeOffsets.top + (node.offsetHeight ?? 0), childMaxTop)
+        const rect = node.getBoundingClientRect()
+        childMinLeft = Math.min(rect.left, childMinLeft)
+        childMaxLeft = Math.max(rect.left + (rect.width ?? 0), childMaxLeft)
+        childMinTop = Math.min(rect.top, childMinTop)
+        childMaxTop = Math.max(rect.top + (rect.height ?? 0), childMaxTop)
     }
     return {
         hovered: true,
