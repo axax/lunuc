@@ -1,4 +1,5 @@
 import React from "react";
+import Util from "./index.mjs";
 
 export const Link = ({to, href, target, onClick, ...rest}) => {
     const newHref = to || href
@@ -44,7 +45,11 @@ export class RouteHistory {
         }
 
         let newPath
-        if (url.indexOf('#') !== 0 && url.split('?')[0].split('#')[0] !== _app_.contextPath && url.indexOf(_app_.contextPath + '/') !== 0) {
+
+        if (url.indexOf('#') !== 0 &&
+            url.split('?')[0].split('#')[0] !== _app_.contextPath &&
+            url.indexOf(_app_.contextPath + '/') !== 0 &&
+            !Util.contextLanguage(url)) {
             newPath = _app_.contextPath + url
         } else {
             newPath = url

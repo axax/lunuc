@@ -488,6 +488,14 @@ const Util = {
         }
         return url
     },
+    contextLanguage(path) {
+        const parts = path.split('/')
+        const contextLanguage = parts.length > 1 ? parts[1].toLowerCase() : ''
+        if (contextLanguage && config.LANGUAGES.indexOf(contextLanguage) >= 0){
+            return contextLanguage
+        }
+        return ''
+    },
     translateUrl(lang) {
         const loc = window.location, path = loc.pathname
         if (lang === _app_.lang) return path

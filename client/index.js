@@ -28,6 +28,7 @@ function addCanonicalTag(href) {
     })
 }
 
+
 function mainInit() {
 
     _app_.user = {}
@@ -62,18 +63,11 @@ function mainInit() {
 
     // context language
     // we expect the first part of the path to be the language when its length is 2
-    const parts = loc.pathname.split('/')
-    contextLanguage = parts.length>1?parts[1].toLowerCase():''
+    const pathname= loc.pathname
+    contextLanguage = Util.contextLanguage(pathname)
 
-    if (contextLanguage && LANGUAGES.indexOf(contextLanguage) >= 0) {
-        _app_.contextPath = '/' + contextLanguage
-        basePath = Util.removeTrailingSlash(loc.pathname.substring(contextLanguage.length + 1))
-    } else {
-        _app_.contextPath = ''
-        contextLanguage = false
-        basePath = Util.removeTrailingSlash(loc.pathname)
-    }
-    basePath += loc.search + loc.hash
+    _app_.contextPath = contextLanguage ? '/' + contextLanguage : ''
+    basePath = Util.removeTrailingSlash(contextLanguage ? pathname.substring(contextLanguage.length + 1) : pathname) + loc.search + loc.hash
 
     // if multi languages
     if (hasMultiLanguages) {
