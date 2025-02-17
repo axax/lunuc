@@ -458,7 +458,7 @@ const Util = {
     },
     removeSlugContext(url) {
         const sc = _app_.slugContext
-        if (sc && url && url.startsWith('/' + sc)) {
+        if (sc && url && (url === '/'+sc || url.indexOf('/'+sc+'/')===0)) {
             url = url.substring(sc.length + 1)
             if (!url) {
                 url = '/'
