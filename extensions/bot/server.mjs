@@ -5,6 +5,7 @@ import schema from './schema/index.mjs'
 import resolver from './resolver/index.mjs'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import {unregisterBots, registerBots, botConnectors, registeredBots} from './bot.mjs'
+import {isExtensionEnabled} from '../../gensrc/extensions-private.mjs'
 
 
 // Hook to add mongodb resolver
@@ -42,11 +43,16 @@ Hook.on('cmsCustomResolver', async ({segment, resolvedData, context}) => {
     }
 })
 
-
-// Hook when db is ready
-Hook.on('appready', ({db}) => {
-    registerBots(db)
-})
+if(isExtensionEnabled('dns')){
+    Hook.on('dnsready', async ({db}) => {
+        await registerBots(db)
+    })
+}else {
+    // Hook when db is ready
+    Hook.on('appready', async ({db}) => {
+        await registerBots(db)
+    })
+}
 
 // Hook when the type CronJob has changed
 Hook.on(['typeUpdated_Bot', 'typeUpdated_BotCommand'], ({db}) => {
