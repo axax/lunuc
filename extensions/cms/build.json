@@ -31,6 +31,7 @@
           "name": "author",
           "label": "Author",
           "index": 1,
+          "bulkEditable": true,
           "fullWidth": true,
           "Tab": "Allgemein"
         },
@@ -71,6 +72,7 @@
           "name": "public",
           "label": "Public",
           "type": "Boolean",
+          "bulkEditable": true,
           "hideColumnInTypes": true,
           "index": 1,
           "compoundIndex": [

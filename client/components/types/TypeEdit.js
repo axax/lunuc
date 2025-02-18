@@ -233,7 +233,9 @@ class TypeEdit extends React.Component {
                             if(Util.shallowCompare(editedDataWithRefs[k], before)){
                                 editedDataToUpdate[k] = editedDataWithRefs[k]
                             }
-
+                            if(editedDataToUpdate[k]){
+                                delete editedDataToUpdate[k]._localized
+                            }
                         } else if (editedDataWithRefs[k] !== before) {
 
                             editedDataToUpdate[k] = editedDataWithRefs[k]

@@ -825,7 +825,6 @@ class TypesContainer extends React.Component {
         if (!savedQueries) {
             savedQueries = []
         }
-        console.log(prettyFilter)
 
         const content = [
             !title && !this.pageParams.title ? null :
@@ -959,7 +958,12 @@ class TypesContainer extends React.Component {
                                       }
                                   }).then(response => {
                                       if (response.data.bulkEdit) {
-                                          this.setState({simpleDialog: {children: JSON.stringify(response.data.bulkEdit)}})
+                                          this.setState({dataToBulkEdit:false,simpleDialog: {children: JSON.stringify(response.data.bulkEdit)}})
+
+                                          // refresh
+                                          this.getData(this.pageParams, false)
+
+
                                       }
                                   })
 
@@ -984,7 +988,7 @@ class TypesContainer extends React.Component {
                         if(ref) {
                             dataToBulkEdit.form = ref
                         }
-                    }} primaryButton={false} fields={getFieldsForBulkEdit(type)}/>}
+                    }} primaryButton={false} values={dataToBulkEdit.values} fields={getFieldsForBulkEdit(type)}/>}
 
             </SimpleDialog>,
             confirmCloneColDialog !== undefined &&
@@ -1126,7 +1130,7 @@ class TypesContainer extends React.Component {
             Object.keys(selectedRows).forEach(_id => {
                 items.push(_id)
             })
-            this.setState({dataToBulkEdit:{items,action:action}})
+            this.setState({dataToBulkEdit:{items,action:action, values:data.results.find(entry=>entry._id===items[0])}})
         } else {
 
             Hook.call('TypeTableMultiSelectAction', {data, action, selectedRows}, this)
