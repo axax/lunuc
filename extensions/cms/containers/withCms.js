@@ -237,8 +237,9 @@ export default function (WrappedComponent) {
 
     const withGql = compose(
         graphql(getCmsPageQuery, {
-            skip: (props, prevData) => {
+            skip: (props, prevData, prevLang) => {
                 if (prevData &&
+                    _app_.lang===prevLang &&
                     prevData.cmsPage &&
                     prevData.cmsPage.slug === props.slug &&
                     (!prevData.cmsPage.urlSensitiv || prevData.cmsPage.urlSensitiv==='client') &&

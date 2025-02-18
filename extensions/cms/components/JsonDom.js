@@ -158,10 +158,6 @@ class JsonDom extends React.Component {
             } else {
                 url = Util.removeSlugContext(url)
 
-                /*if(url.indexOf(_app_.contextPath + '/') !== 0){
-                    url=_app_.contextPath+url
-                }*/
-
                 return <Link target={newTarget} rel={rel} onClick={(e) => {
 
                     if (!url) {
@@ -181,7 +177,7 @@ class JsonDom extends React.Component {
                         onClick(e)
                     }
 
-                }} to={url} {...rest}/>
+                }} to={Util.addUrlContext(url)} {...rest}/>
             }
         },
         'Cms': ({props, _this, style, className, component, slug, ...rest}) => {

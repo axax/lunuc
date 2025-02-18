@@ -568,7 +568,7 @@ export const graphql = (query, operationOptions = {}) => {
                 }
                 const options = operationOptions.options ? (typeof operationOptions.options === 'function' ? operationOptions.options(finalProps) : operationOptions.options) : {},
                     variables = options.variables,
-                    skip = operationOptions.skip ? (typeof operationOptions.skip === 'function' ? operationOptions.skip(finalProps, this.prevRespone.data) : operationOptions.skip) : false
+                    skip = operationOptions.skip ? (typeof operationOptions.skip === 'function' ? operationOptions.skip(finalProps, this.prevRespone.data, this.prevRespone.lang) : operationOptions.skip) : false
 
                 const prevData = this.prevRespone.data
                 return <Query skip={skip} query={finalQuery} variables={variables}
@@ -582,6 +582,7 @@ export const graphql = (query, operationOptions = {}) => {
                     if(refetchOptions && refetchOptions.extendData) {
                         data = deepMerge({}, prevData, res.data)
                     }else {
+                        res.lang = _app_.lang
                         this.prevRespone = res
                     }
                     const props = operationOptions.props({

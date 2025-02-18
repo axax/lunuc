@@ -488,33 +488,40 @@ const Util = {
         }
         return url
     },
-    contextLanguage(path) {
+    urlContext(path) {
         const parts = path.split('/')
-        const contextLanguage = parts.length > 1 ? parts[1].toLowerCase() : ''
-        if (contextLanguage && config.LANGUAGES.indexOf(contextLanguage) >= 0){
-            return contextLanguage
+        let contextLanguage = parts.length > 1 ? parts[1].split('?')[0].split('#')[0].toLowerCase() : ''
+        if(config.LANGUAGES.indexOf(contextLanguage) < 0){
+            contextLanguage = ''
         }
-        return ''
+        return contextLanguage
+    },
+    setUrlContext(path) {
+        const contextLanguage = Util.urlContext(path)
+        if(contextLanguage){
+            _app_.contextPath =  '/' + contextLanguage
+        }else if(_app_.contextPath === '/' + config.DEFAULT_LANGUAGE){
+            _app_.contextPath = ''
+        }
+        return contextLanguage
+    },
+    addUrlContext(path) {
+        if(path && _app_.contextPath && _app_.contextPath !== '/' + config.DEFAULT_LANGUAGE && (path.indexOf('/')===0 || path.indexOf('?')===0) && !Util.urlContext(path)){
+            return _app_.contextPath + path
+        }
+        return path
     },
     translateUrl(lang) {
-        const loc = window.location, path = loc.pathname
-        if (lang === _app_.lang) return path
-        const p = path.split('/')
-        if(p.length===1){
-            //about:blank
-            return p
-        }
-        if (p[1].length === 2 && p[1] !== lang) {
-            if (lang === '' || lang === config.DEFAULT_LANGUAGE) {
-                //default language
-                p.splice(1, 1)
-            } else {
-                p[1] = lang
+        const loc = window.location
+        let path = loc.pathname
+        if (lang && lang !== _app_.lang){
+            const contextLanguage = Util.urlContext(path)
+            if(contextLanguage){
+                path = path.substring(contextLanguage.length+1)
             }
-        } else {
-            p.splice(1, 0, lang)
+            path = '/' + lang + path
         }
-        return p.join('/') + loc.search + loc.hash
+        return path + loc.search + loc.hash
     },
     /*createWorker(fn) {
         const blob = new Blob([`self.onmessage = (args)=>{

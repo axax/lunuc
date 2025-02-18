@@ -13,9 +13,8 @@ class UserDataContainer extends React.Component {
     getUserData = (tries = 0) => {
         if(this.state.loading && this.state.hasAuth) {
             localStorage.removeItem('refreshUserData')
-
             client.query({
-                fetchPolicy: (_app_.lang !== _app_.langBefore || this.state.force ? 'network-only' : 'cache-first'),
+                fetchPolicy: (this.state.force ? 'network-only' : 'cache-first'),
                 query: 'query{me{username domain language email _id emailConfirmed group{_id} requestNewPassword picture{_id} role{_id capabilities setting{_id}} setting{_id}}}'
             }).then(response => {
                 _app_.dispatcher.setUser(response.data.me)

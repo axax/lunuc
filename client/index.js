@@ -30,7 +30,7 @@ function addCanonicalTag(href) {
 
 
 function mainInit() {
-
+    _app_.contextPath = ''
     _app_.user = {}
 
     // translation map
@@ -64,31 +64,25 @@ function mainInit() {
     // context language
     // we expect the first part of the path to be the language when its length is 2
     const pathname= loc.pathname
-    contextLanguage = Util.contextLanguage(pathname)
-
-    _app_.contextPath = contextLanguage ? '/' + contextLanguage : ''
+    contextLanguage = Util.setUrlContext(pathname)
     basePath = Util.removeTrailingSlash(contextLanguage ? pathname.substring(contextLanguage.length + 1) : pathname) + loc.search + loc.hash
 
     // if multi languages
     if (hasMultiLanguages) {
         // if lang is not set already
         if (!_app_.lang || LANGUAGES.indexOf(_app_.lang) < 0) {
-            let lang,sessionLanguage
-            if(!_app_.noStorage){
-                sessionLanguage = sessionStorage.getItem('lang')
-            }
+            let lang
 
             if (contextLanguage) {
                 lang = contextLanguage
             } else {
-                if (!sessionLanguage && _app_.detectLang) {
+                if (_app_.detectLang) {
                     lang = (navigator.language || navigator.userLanguage).substr(0, 2)
                 }
                 if (!lang || LANGUAGES.indexOf(lang) < 0) {
                     lang = DEFAULT_LANGUAGE
                 }
             }
-            _app_.langBefore = sessionLanguage
             _app_.lang = lang
         }
 
@@ -97,12 +91,6 @@ function mainInit() {
             window.location = loc.origin + '/' + _app_.lang + (basePath === '/' ? '' : basePath)
             return
         }
-
-        // keep language in session
-        if(!_app_.noStorage){
-            sessionStorage.setItem('lang', _app_.lang)
-        }
-
     } else {
         _app_.lang = DEFAULT_LANGUAGE
     }
@@ -116,7 +104,7 @@ function mainInit() {
     document.documentElement.setAttribute('lang', _app_.lang)
 
 
-    // has trailing slash --> set canonical link of seo
+    // has trailing slash --> set canonical link
     const cleanPathnameWithoutTrailingSlash = Util.removeTrailingSlash(cleanPathname)
     if (cleanPathnameWithoutTrailingSlash !== cleanPathname) {
         addCanonicalTag(loc.origin + cleanPathnameWithoutTrailingSlash + loc.search + loc.hash)
@@ -136,12 +124,13 @@ function mainInit() {
         })
         for (let i = 0; i < LANGUAGES.length; i++) {
             const curLang = LANGUAGES[i]
-            const isDefault = curLang === DEFAULT_LANGUAGE
-            DomUtil.createAndAddTag('link', 'head', {
-                rel: 'alternate',
-                hreflang: curLang,
-                href: loc.origin + (!isDefault ? '/' + curLang : '') + (basePath === '/' ? '' : basePath)
-            })
+            if(curLang !== DEFAULT_LANGUAGE) {
+                DomUtil.createAndAddTag('link', 'head', {
+                    rel: 'alternate',
+                    hreflang: curLang,
+                    href: loc.origin + '/' + curLang + (basePath === '/' ? '' : basePath)
+                })
+            }
         }
     }
 

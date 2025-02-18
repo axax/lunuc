@@ -1,5 +1,6 @@
-import React from "react";
-import Util from "./index.mjs";
+import React from 'react'
+import Util from './index.mjs'
+import config from '../../gensrc/config-client'
 
 export const Link = ({to, href, target, onClick, ...rest}) => {
     const newHref = to || href
@@ -44,16 +45,18 @@ export class RouteHistory {
             url = url.pathname
         }
 
-        let newPath
+        const contextLanguage = Util.setUrlContext(url)
 
-        if (url.indexOf('#') !== 0 &&
-            url.split('?')[0].split('#')[0] !== _app_.contextPath &&
-            url.indexOf(_app_.contextPath + '/') !== 0 &&
-            !Util.contextLanguage(url)) {
-            newPath = _app_.contextPath + url
-        } else {
-            newPath = url
+        if(contextLanguage && _app_.lang !== contextLanguage) {
+            console.log(`switch language from ${_app_.lang} to ${contextLanguage}`)
+            _app_.lang = contextLanguage
+            if(contextLanguage === config.DEFAULT_LANGUAGE){
+                url = url.substring(contextLanguage.length+1)
+                _app_.contextPath = ''
+            }
         }
+
+        const newPath = Util.addUrlContext(url)
 
         const index = this._urlStack.indexOf(newPath)
 
