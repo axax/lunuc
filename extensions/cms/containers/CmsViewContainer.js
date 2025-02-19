@@ -9,7 +9,7 @@ import {client} from '../../../client/middleware/graphql'
 import Hook from '../../../util/hook.cjs'
 import {deepMerge} from '../../../util/deepMerge.mjs'
 import {CAPABILITY_MANAGE_CMS_CONTENT} from '../constants/index.mjs'
-import {setPropertyByPath} from '../../../client/util/json.mjs'
+import {isString, parseOrElse, setPropertyByPath} from '../../../client/util/json.mjs'
 
 class CmsViewContainer extends React.Component {
     oriTitle = document.title
@@ -33,11 +33,7 @@ class CmsViewContainer extends React.Component {
             }
         }
 
-        if(props.aboutToChange){
-            false
-        }
-
-        if (!cmsPage && props.loading) {
+        if ((!cmsPage && props.loading) || props.aboutToChange) {
             // if there is still no cmsPage and it is still loading
             // there is no need to update
             return false
@@ -80,7 +76,7 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {slug, aboutToChange, cmsPage, children, dynamic, settings, setKeyValue, getKeyValue, updateResolvedData, _props, loaderClass, ...props} = this.props
+        const {slug, cmsPage, children, dynamic, settings, setKeyValue, getKeyValue, updateResolvedData, _props, loaderClass, ...props} = this.props
         const editMode = isEditMode(this.props)
         if (!cmsPage) {
             // show a loader here
@@ -149,7 +145,7 @@ class CmsViewContainer extends React.Component {
             _props={_props}
             {...props}>{children}</JsonDom>
 
-        console.info(`render ${this.constructor.name} for ${slug} (loading=${this.props.loading}, change=${!!aboutToChange}) in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime() - _app_.start.getTime()}ms`)
+        console.info(`render ${this.constructor.name} for ${slug} (loading=${this.props.loading}) in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime() - _app_.start.getTime()}ms`)
         return content
     }
 
@@ -242,13 +238,10 @@ class CmsViewContainer extends React.Component {
         if (!props.cmsPage) return
 
         const {cmsPage: {subscriptions}} = props
-        if (!subscriptions) return
 
-        let subscriptionArray
-        try{
-            subscriptionArray = JSON.parse(subscriptions)
-        }catch (e) {
-            console.error(e)
+        let subscriptionArray = parseOrElse(subscriptions, false)
+
+        if(!subscriptionArray){
             return
         }
 
@@ -368,12 +361,7 @@ class CmsViewContainer extends React.Component {
 
                                                 if (idx > -1) {
                                                     if (action === 'update') {
-                                                        let partialUpdate = false
-                                                        try {
-                                                            partialUpdate = _meta && JSON.parse(_meta).partialUpdate
-                                                        }catch (e) {
-                                                            console.log(e)
-                                                        }
+                                                        let partialUpdate = parseOrElse(_meta,{}).partialUpdate
                                                         if(partialUpdate){
                                                            // TODO partialUpdate
                                                             console.log( noNullData)
@@ -426,7 +414,7 @@ class CmsViewContainer extends React.Component {
     }
 
     clientQuery(query, options = {}) {
-        if (!query || query.constructor !== String) return
+        if (!isString(query)) return
 
         const {success, error, ...rest} = options
         if (query.startsWith('mutation')) {

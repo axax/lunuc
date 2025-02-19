@@ -296,9 +296,6 @@ const Util = {
         }
         return '/placeholder.svg'
     },*/
-    getMediaSrc(media, src) {
-        return src ? src : (media.src ? media.src : _app_.config.UPLOAD_URL + '/' + media._id)
-    },
     getImageObject(raw, options) {
         if(!options){
             options = {}

@@ -171,6 +171,9 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
                     for(const field of type.fields){
                         delete field.index
                         delete field.tab
+                        delete field.label
+                        delete field.validatePattern
+                        delete field.fullWidth
                         delete field.hideColumnInTypes
                         delete field.vagueSearchable
                         delete field.vagueSearchable
