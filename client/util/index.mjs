@@ -39,7 +39,7 @@ const Util = {
     },
     escapeForJson: (str, options) => {
         if (str === undefined || str === null) return ''
-        if (isString(str))
+        if (!isString(str))
             str = JSON.stringify(str)
         if (options) {
 
