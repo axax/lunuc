@@ -517,7 +517,7 @@ const Util = {
         let restString = ''
         if (filter) {
             let operator = 'or'
-            const matches = filter.match(/(?:[^\s"\\]+|"(?:(?:[^"\\]|\\.)*?)")+/g) ///(?:[^\s"]+|"[^"]*")+/g
+            const matches = filter.match(/(?:[^\s"]+|"[^"]*")+/g) ///
             /* 'group==5ed25740fa5ea8681ef58a99 && mimeType=audio && info.format.tags.artist=="Globi"' */
             if(matches) {
                 matches.forEach(item => {

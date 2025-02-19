@@ -24,7 +24,7 @@ const Util = {
         }
         return str
     },
-    safeStr: (str, defaultStr) =>{
+    safeStr: (str, defaultStr='') =>{
         return str ? str.replace(/[^a-zA-Z0-9öäüÖÜÄ\s\-_]/g, ''): defaultStr
     },
     safeTags: str => {
