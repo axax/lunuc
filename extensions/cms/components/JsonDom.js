@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom'
 import Hook from 'util/hook.cjs'
 import {_t} from 'util/i18n.mjs'
 import Util from 'client/util/index.mjs'
-import {propertyByPath, matchExpr, parseOrElse} from '../../../client/util/json.mjs'
+import {propertyByPath, matchExpr, parseOrElse, isFalse, isString} from '../../../client/util/json.mjs'
 import {scrollByHash} from '../util/urlUtil'
 import {getComponentByKey} from '../util/jsonDomUtilClient'
 import DomUtil from 'client/util/dom.mjs'
@@ -54,7 +54,20 @@ const hasNativeLazyLoadSupport = !_app_.ssr && window.HTMLImageElement && 'loadi
 
 const SCRIPT_UTIL_PART = ',Util=this.Util,_e=Util.escapeForJson,_i=Util.tryCatch.bind(this),_t=this._t.bind('
 
-const isFalse = value => value==='false' || value===false
+/*function isString(variable) {
+    return typeof variable === 'string'
+}
+
+let start = Date.now()
+let z=0
+for(let i = 0; i<1000000;i++){
+    const x = Math.random()
+    const y = 'asdasd'+x
+    if(isString(y) && matchExpr('true')){
+        z++
+    }
+}
+console.log(`xxxxx time to check ${Date.now()-start}ms ${z}`)*/
 
 class JsonDom extends React.Component {
 
@@ -67,16 +80,17 @@ class JsonDom extends React.Component {
      * */
     static components = {
         /* Default UI Implementation Components */
-        Col: ({className, ...rest}) => {
+        /*Col: ({className, ...rest}) => {
             return <div className={'col' + (className ? ' ' + className : '')} {...rest} />
         },
         Row: ({className, ...rest}) => {
             return <div className={'row' + (className ? ' ' + className : '')} {...rest} />
-        },
+        },*/
 
         /* Other components */
         FileDrop,
         MarkDown,
+        JsonDom,
         ShadowRoot,
         'SmartImage': ({src, options, caption, wrapper, inlineSvg, svgData, tagName, figureStyle, figureClassName, figureCaptionClassName, figureProps, ...props}) => {
             const imgTag = () => {
@@ -127,7 +141,7 @@ class JsonDom extends React.Component {
             if(url._localized){
                 url = _t(url)
             }
-            if(url === undefined || url.constructor !== String){
+            if(!isString(url)){
                 return null
             }
             const newTarget = target && target !== 'undefined' ? target : '_self',
@@ -196,7 +210,7 @@ class JsonDom extends React.Component {
             }
 
             let _props = props
-            if (_props && _props.constructor === String) {
+            if (isString(_props)) {
                 _props = parseOrElse(_props)
             }
             const cvc = <CmsViewContainer key={rest.id}
@@ -765,9 +779,9 @@ class JsonDom extends React.Component {
         const jsonClone = this.getJsonRaw(this.props)
         const o = getComponentByKey(key, jsonClone)
         if (o) {
-            if (o.c !== undefined && o.c.constructor === String) {
+            if (isString(o.c)) {
                 o.c = value
-            } else if (o.$c != undefined && o.$c.constructor === String) {
+            } else if (isString(o.$c)) {
                 o.$c = value
             }
             this.onTemplateChange(jsonClone)
@@ -800,7 +814,7 @@ class JsonDom extends React.Component {
 
     parseRec(a, rootKey, scope) {
         if (!a) return null
-        if (a.constructor === String) return a
+        if (isString(a)) return a
         if (a.constructor === Object) return this.parseRec([a], rootKey, scope)
         if (a.constructor !== Array) return ''
         let h = []
@@ -827,14 +841,16 @@ class JsonDom extends React.Component {
                         return
                     }
                 }
-
-                if ($is === false) {
+                if (matchExpr($is, scope)) {
+                    return
+                }
+                /*if (isFalse($is)) {
                     return
                 } else if ($is && $is !== true && $is !== 'true') {
-                    if ($is === 'false' || matchExpr($is, scope)) {
+                    if (matchExpr($is, scope)) {
                         return
                     }
-                }
+                }*/
 
                 if ($if) {
                     // check condition --> slower than to check with $ifexist or $is
@@ -906,7 +922,7 @@ class JsonDom extends React.Component {
                         try {
                             // get data from scope by path (foo.bar)
                             data = propertyByPath($d, scope)
-                            if (data && data.constructor === String) {
+                            if (isString(data)) {
                                 data = parseOrElse(data)
                             }
                             if ($sort) {
@@ -917,7 +933,7 @@ class JsonDom extends React.Component {
                             this.emitJsonError(e, {loc: 'Loop Datasrouce'})
                         }
                     } else {
-                        if (d && d.constructor === String) {
+                        if (isString(d)) {
                             try {
                                 data = Function(`${Object.keys(scope).reduce((str, key) => str + '\nconst ' + key + '=this.scope.' + key, '')};const Util = this.Util;return ${d}`).call({
                                     scope,
@@ -1024,7 +1040,7 @@ class JsonDom extends React.Component {
                     const {editMode, location, history, children} = this.props
                     const key = !editMode && k ? k : rootKey + '.' + aIdx, eleProps = {}
                     let tagName, className
-                    if (!t || t.constructor !== String || t.indexOf('.')===0) {
+                    if (!t || !isString(t) || t.indexOf('.')===0) {
                         tagName = 'div'
                     } else if (t === '$children') {
                         if (children) {
@@ -1083,7 +1099,7 @@ class JsonDom extends React.Component {
                                     if (cur) {
                                         if(curKey==='style'){
                                             eleProps[curKey] = Object.assign(parseStyles(cur), parseStyles(p[elKey]))
-                                        }else if (cur.constructor === String) {
+                                        }else if (isString(cur)) {
                                             eleProps[curKey] = cur + ' ' + p[elKey]
                                         } else if (cur.constructor === Object) {
                                             eleProps[curKey] = Object.assign(cur, p[elKey])
@@ -1097,7 +1113,7 @@ class JsonDom extends React.Component {
                             }
                         })
 
-                        if (eleProps.style && eleProps.style.constructor === String) {
+                        if (isString(eleProps.style)) {
                             //Parses a string of inline styles into a javascript object with casing for react
                             eleProps.style = parseStyles(eleProps.style)
                         }
@@ -1255,7 +1271,7 @@ class JsonDom extends React.Component {
             scope.dynamic = props.dynamic
 
             if (props.meta) {
-                if (props.meta.constructor === String) {
+                if (isString(props.meta)) {
                     const metaJson = JSON.parse(props.meta)
                     scope.PageOptions = metaJson.PageOptions
                 } else {

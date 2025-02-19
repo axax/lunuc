@@ -41,63 +41,70 @@ export function assignIfObjectOrArray(obj) {
     return obj
 }
 
+export const isFalse = value => value==='false' || value===false
+
+export const isString = (variable) => typeof variable === 'string'
+
 /*
 return true if expression is not valid
  */
 export function matchExpr(expr, scope) {
-    if (expr === 'false') {
+    if (isFalse(expr)) {
         return true
     }
-    const match = expr.match(/([\w|$|\.]*)(==|\!=|>=|<=|>|<| in | nin )(.*)/)
 
-    if (match && match.length === 4) {
-        let prop
-        try {
-            prop = propertyByPath(match[1], scope)
-        } catch (e) {
-        }
-        const m2 = match[2], m3 = match[3]
-        if (m2 === '==') {
-            if (m3 !== String(prop)) {
-                return true
+    if(isString(expr) && expr!=='true') {
+        const match = expr.match(/([\w|$|\.]*)(==|\!=|>=|<=|>|<| in | nin )(.*)/)
+
+        if (match && match.length === 4) {
+            let prop
+            try {
+                prop = propertyByPath(match[1], scope)
+            } catch (e) {
             }
-        } else if (m2 === '!=') {
-            if (m3 === String(prop)) {
-                return true
-            }
-        } else if (m2 === '>') {
-            if (!(prop > parseFloat(m3))) {
-                return true
-            }
-        } else if (m2 === '>=') {
-            if (!(prop >= parseFloat(m3))) {
-                return true
-            }
-        } else if (m2 === '<') {
-            if (!(prop < parseFloat(m3))) {
-                return true
-            }
-        } else if (m2 === '<=') {
-            if (!(prop <= parseFloat(m3))) {
-                return true
-            }
-        } else if (m2 === ' in ' || m2 === ' nin ') {
-            if (prop && prop.constructor === Array) {
-                let exists = false
-                for (let i = 0; i < prop.length; i++) {
-                    if (m3.indexOf('"' + prop[i] + '"') >= 0 || m3===prop[i]) {
-                        exists = true
-                        break
-                    }
+            const m2 = match[2], m3 = match[3]
+            if (m2 === '==') {
+                if (m3 !== String(prop)) {
+                    return true
                 }
-                let res = exists ? false : true
-                return m2 === ' nin ' ? !res : res
-            } else {
-                const idx = m3.indexOf('"' + prop + '"')
-                if (m2 === ' nin ') {
-                    return idx >= 0
+            } else if (m2 === '!=') {
+                if (m3 === String(prop)) {
+                    return true
+                }
+            } else if (m2 === '>') {
+                if (!(prop > parseFloat(m3))) {
+                    return true
+                }
+            } else if (m2 === '>=') {
+                if (!(prop >= parseFloat(m3))) {
+                    return true
+                }
+            } else if (m2 === '<') {
+                if (!(prop < parseFloat(m3))) {
+                    return true
+                }
+            } else if (m2 === '<=') {
+                if (!(prop <= parseFloat(m3))) {
+                    return true
+                }
+            } else if (m2 === ' in ' || m2 === ' nin ') {
+                if (prop && prop.constructor === Array) {
+                    let exists = false
+                    for (let i = 0; i < prop.length; i++) {
+                        if (m3.indexOf('"' + prop[i] + '"') >= 0 || m3 === prop[i]) {
+                            exists = true
+                            break
+                        }
+                    }
+                    let res = exists ? false : true
+                    return m2 === ' nin ' ? !res : res
                 } else {
-                    return idx === -1
+                    const idx = m3.indexOf('"' + prop + '"')
+                    if (m2 === ' nin ') {
+                        return idx >= 0
+                    } else {
+                        return idx === -1
+                    }
                 }
             }
         }

@@ -2,7 +2,7 @@ import {getType, getTypes, getTypeQueries} from '../../util/types.mjs'
 import DomUtil from './dom.mjs'
 import config from '../../gensrc/config-client.js'
 import {replacePlaceholders} from '../../util/placeholders.mjs'
-import {propertyByPath, setPropertyByPath} from './json.mjs'
+import {propertyByPath, setPropertyByPath, isString} from './json.mjs'
 import {_t} from '../../util/i18n.mjs'
 
 /**
@@ -19,28 +19,27 @@ const Util = {
     getTypeQueries: getTypeQueries,
     replacePlaceholders: replacePlaceholders,
     escapeDoubleQuotes: (str) => {
-        if (str && str.constructor === String) {
+        if (isString(str)) {
             return str.replace(/"/g, '\\"')
         }
         return str
     },
     safeStr: (str, defaultStr) =>{
-        return str ? str.replace(/[\W_]+/g,''): defaultStr
+        return str ? str.replace(/[^a-zA-Z0-9öäüÖÜÄ\s\-_]/g, ''): defaultStr
     },
     safeTags: str => {
         return str ? str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''
     },
     removeControlChars: str => {
-        if (str && str.constructor === String) {
+        if (isString(str)) {
             // https://en.wikipedia.org/wiki/Control_character#In_Unicode
             return str.replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
         }
         return str
     },
     escapeForJson: (str, options) => {
-        // console.log(str)
         if (str === undefined || str === null) return ''
-        if (str.constructor !== String)
+        if (isString(str))
             str = JSON.stringify(str)
         if (options) {
 
@@ -143,8 +142,8 @@ const Util = {
         return Util.getDateTimeFormat().format(Util.dateFromObjectId(objectId, new Date()))
     },
     formattedDatetime(stamp, options) {
-        if (!stamp) return ''
-        if (typeof stamp === 'string' && stamp.indexOf('-') < 0) {
+        if (!isString(stamp)) return ''
+        if (stamp.indexOf('-') < 0) {
             stamp = parseFloat(stamp);
         }
 
@@ -319,7 +318,7 @@ const Util = {
             }
             data.alt = 'Placeholder'
             return data
-        } else if (raw.constructor === String) {
+        } else if (isString(raw)) {
             image = {
                 src: raw
             }
@@ -340,7 +339,7 @@ const Util = {
         }
         if(image._localized){
             image = _t(image)
-            if(image && image.constructor===String){
+            if(isString(image)){
                 image = {src:image}
             }
         }

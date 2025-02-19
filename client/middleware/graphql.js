@@ -18,6 +18,8 @@ const RequestType = {
     mutate: 2
 }
 
+const CACHE_FIRST = 'cache-first'
+
 let GRAPHQL_URL, GRAPHQL_WS_URL
 
 export let SSR_FETCH_CHAIN = {}
@@ -218,7 +220,7 @@ export const clearFetchById = (id) => {
     }
 }
 const FETCHING_BY_CACHEKEY = {}
-export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  query, variables, hiddenVariables, fetchPolicy = 'cache-first', lang, headersExtra}) => {
+export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  query, variables, hiddenVariables, fetchPolicy = CACHE_FIRST, lang, headersExtra}) => {
 
     if(!query){
         console.error('query is missing in finalFetch')
@@ -253,7 +255,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  qu
 
     const promise = new Promise((resolve, reject) => {
 
-        if (type === RequestType.query && fetchPolicy === 'cache-first') {
+        if (type === RequestType.query && fetchPolicy === CACHE_FIRST) {
             const fromCache = client.readQuery({cacheKey})
             if (fromCache) {
                 const resolveData = {
@@ -619,14 +621,14 @@ export const Subscription = props => {
     return props.children && result ? props.children(result) : null
 }*/
 
-export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cache-first', skip}) => {
+export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = CACHE_FIRST, skip}) => {
     const cacheKey = getCacheKey({query, variables})
     let currentData = null
-    const checkCache = _app_.ssr || skip || fetchPolicy === 'cache-first' || fetchPolicy === 'cache-and-network'
+    const checkCache = _app_.ssr || skip || fetchPolicy === CACHE_FIRST || fetchPolicy === 'cache-and-network'
     if (checkCache) {
         currentData = client.readQuery({cacheKey})
     }
-    const initialLoading = _app_.ssr || skip || (fetchPolicy === 'cache-first' && currentData) ? false : true
+    const initialLoading = _app_.ssr || skip || (fetchPolicy === CACHE_FIRST && currentData) ? false : true
 
     const initialData = {
         cacheKey,
