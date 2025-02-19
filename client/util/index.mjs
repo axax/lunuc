@@ -142,8 +142,8 @@ const Util = {
         return Util.getDateTimeFormat().format(Util.dateFromObjectId(objectId, new Date()))
     },
     formattedDatetime(stamp, options) {
-        if (!isString(stamp)) return ''
-        if (stamp.indexOf('-') < 0) {
+        if (!stamp) return ''
+        if (isString(stamp) && stamp.indexOf('-') < 0) {
             stamp = parseFloat(stamp);
         }
 
