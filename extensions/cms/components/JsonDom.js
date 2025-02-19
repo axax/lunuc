@@ -80,12 +80,12 @@ class JsonDom extends React.Component {
      * */
     static components = {
         /* Default UI Implementation Components */
-        /*Col: ({className, ...rest}) => {
+        Col: ({className, ...rest}) => {
             return <div className={'col' + (className ? ' ' + className : '')} {...rest} />
         },
         Row: ({className, ...rest}) => {
             return <div className={'row' + (className ? ' ' + className : '')} {...rest} />
-        },*/
+        },
 
         /* Other components */
         FileDrop,

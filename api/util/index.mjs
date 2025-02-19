@@ -517,7 +517,7 @@ const Util = {
         let restString = ''
         if (filter) {
             let operator = 'or'
-            const matches = filter.match(/(?:[^\s"]+|"[^"]*")+/g)
+            const matches = filter.match(/(?:[^\s"\\]+|"(?:(?:[^"\\]|\\.)*?)")+/g) ///(?:[^\s"]+|"[^"]*")+/g
             /* 'group==5ed25740fa5ea8681ef58a99 && mimeType=audio && info.format.tags.artist=="Globi"' */
             if(matches) {
                 matches.forEach(item => {
@@ -542,7 +542,7 @@ const Util = {
                             let inDoubleQuotes = false
 
                             if (value.length > 1 && value.endsWith('"') && value.startsWith('"')) {
-                                value = value.substring(1, value.length - 1)
+                                value = value.substring(1, value.length - 1).replace(/\\"/g, '"')
                                 inDoubleQuotes = true
                             } else if (value === 'true') {
                                 value = true
