@@ -203,6 +203,14 @@ class TypeEdit extends React.Component {
 
             const editedDataWithRefs = referencesToIds(editedData, type)
 
+            // remove localized attribute
+            Object.keys(formFields).forEach(key=>{
+                if(formFields[key].localized){
+                    if(editedDataWithRefs[key]){
+                        delete editedDataWithRefs[key]._localized
+                    }
+                }
+            })
 
             // if dataToEdit is set we are in edit mode
             if (dataToEdit && dataToEdit._id) {
@@ -232,9 +240,6 @@ class TypeEdit extends React.Component {
 
                             if(Util.shallowCompare(editedDataWithRefs[k], before)){
                                 editedDataToUpdate[k] = editedDataWithRefs[k]
-                            }
-                            if(editedDataToUpdate[k]){
-                                delete editedDataToUpdate[k]._localized
                             }
                         } else if (editedDataWithRefs[k] !== before) {
 
