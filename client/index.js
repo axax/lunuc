@@ -55,15 +55,15 @@ function mainInit() {
     }
 
     // remove double slashes
-    const cleanPathname = loc.pathname.replace(/\/\/+/g, '/')
-    if (cleanPathname !== loc.pathname && loc.protocol !== 'file:') {
+    const pathname= loc.pathname
+    const cleanPathname = pathname.replace(/\/\/+/g, '/')
+    if (cleanPathname !== pathname && loc.protocol !== 'file:') {
         window.location = loc.origin + cleanPathname + loc.search + loc.hash
         return
     }
 
     // context language
     // we expect the first part of the path to be the language when its length is 2
-    const pathname= loc.pathname
     contextLanguage = Util.setUrlContext(pathname)
     basePath = Util.removeTrailingSlash(contextLanguage ? pathname.substring(contextLanguage.length + 1) : pathname) + loc.search + loc.hash
 

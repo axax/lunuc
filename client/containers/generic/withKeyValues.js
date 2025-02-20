@@ -1,5 +1,4 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import compose from 'util/compose'
 import NetworkStatusHandler from 'client/components/layout/NetworkStatusHandler'
 import {getKeyValuesFromLS,
@@ -9,14 +8,9 @@ import {getKeyValuesFromLS,
     QUERY_KEY_VALUES_GLOBAL,
     QUERY_SET_KEY_VALUE_GLOBAL} from 'client/util/keyvalue'
 import {graphql} from '../../middleware/graphql'
-import {parseOrElse} from '../../util/json.mjs'
+import {isString, parseOrElse} from '../../util/json.mjs'
 
-const gqlKeyValueDelete = `
-          mutation deleteKeyValueByKey($key: String!) {
-            deleteKeyValueByKey(key: $key){
-                key status
-            }
-          }`
+const gqlKeyValueDelete = 'mutation deleteKeyValueByKey($key:String!){deleteKeyValueByKey(key:$key){key status}}'
 
 // This function takes a component...
 export function withKeyValues(WrappedComponent, keys, keysGlobal) {
@@ -98,15 +92,6 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
         }
     }
 
-    WithKeyValues.propTypes = {
-        keyValues: PropTypes.object,
-        keyValueGlobals: PropTypes.object,
-        loading: PropTypes.bool,
-        setKeyValue: PropTypes.func.isRequired,
-        setKeyValueGlobal: PropTypes.func.isRequired,
-        deleteKeyValueByKey: PropTypes.func.isRequired,
-    }
-
     const WithKeyValuesWithGql = compose(
         graphql(QUERY_KEY_VALUES, {
             skip: props => !_app_.user || !keys, // skip request if user is not logged in
@@ -149,7 +134,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                             res()
                         })
                     }
-                    const valueStr = value.constructor === String ? value : JSON.stringify(value)
+                    const valueStr = isString(value) ? value : JSON.stringify(value)
                     const user = _app_.user || {}
                     return mutate({
                         variables: {key, value: valueStr},
@@ -198,10 +183,10 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
         }),
         graphql(QUERY_SET_KEY_VALUE_GLOBAL, {
             props: ({ownProps, mutate}) => ({
-                setKeyValueGlobal: ({key, value, server}) => {
+                setKeyValueGlobal: ({key, value}) => {
                     if (!key) throw Error('Key is missing in setKeyValue')
 
-                    const valueStr = value.constructor === String ? value : JSON.stringify(value)
+                    const valueStr = isString(value) ? value : JSON.stringify(value)
 
                     return mutate({
                         variables: {key, value: valueStr},

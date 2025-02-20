@@ -1,5 +1,4 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import Hook from '../../util/hook.cjs'
 import {unregisterAllServiceworker} from '../util/serviceWorkerUtil.mjs'
 
@@ -45,12 +44,6 @@ class Async extends React.Component {
         rest.ref = asyncRef || onForwardRef
         return this.Component ? React.createElement(this.Component, rest) : null
     }
-}
-
-
-Async.propTypes = {
-    load: PropTypes.object.isRequired,
-    expose: PropTypes.string
 }
 
 export default Async

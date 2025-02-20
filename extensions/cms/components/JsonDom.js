@@ -90,7 +90,6 @@ class JsonDom extends React.Component {
         /* Other components */
         FileDrop,
         MarkDown,
-        JsonDom,
         ShadowRoot,
         'SmartImage': ({src, options, caption, wrapper, inlineSvg, svgData, tagName, figureStyle, figureClassName, figureCaptionClassName, figureProps, ...props}) => {
             const imgTag = () => {

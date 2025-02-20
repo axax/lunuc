@@ -63,11 +63,11 @@ function CmsRevisionDialog(props){
                     return <div>
                         <Typography gutterBottom>Data resolver changed</Typography>
 
-                        <CodeEditor lineNumbers
-                                    type="json"
-                                    readOnly={true}>{JSON.stringify(JSON.parse(parsedData.dataResolver), null, 2)}</CodeEditor>
-                        <a href={'/system/diff?preview=true#value=' + encodeURIComponent(parsedData.dataResolver) + '&orig1=' + encodeURIComponent(cmsPage.dataResolver)}
-                           target="_blank">Show diff</a>
+                        <CodeEditor mergeView={true}
+                                    style={{border: 0,width:'100%',height:'calc(100vh - 19.8rem)',overflow:'auto'}}
+                                    mergeValue={cmsPage.dataResolver}
+                                    lineNumbers type="json" readOnly={true}>{parsedData.dataResolver}</CodeEditor>
+
 
                     </div>
 
@@ -111,16 +111,17 @@ function CmsRevisionDialog(props){
                         </SimpleTabPanel>
 
                         <SimpleTabPanel key="tabPanelCode" value={tabValue} index={1}>
-                            <CodeEditor lineNumbers type="json" readOnly={true}>{JSON.stringify(JSON.parse(parsedData.template), null, 2)}</CodeEditor>
-
-                            <a href={'/system/diff?preview=true#value=' + encodeURIComponent(parsedData.template) + '&orig1=' + encodeURIComponent(cmsPage.template)}
-                               target="_blank">Show diff</a>
+                            <CodeEditor mergeView={true}
+                                        style={{border: 0,width:'100%',height:'calc(100vh - 19.8rem)',overflow:'auto'}}
+                                        mergeValue={cmsPage.template}
+                                        lineNumbers type="json" readOnly={true}>{parsedData.template}</CodeEditor>
                         </SimpleTabPanel>
 
                         <Query
-                            query={`query historys($limit:Int,$filter:String){historys(limit:$limit,filter:$filter){results{_id createdBy{username}}}}`}
+                            query={`query historys($limit:Int,$offset:Int,$filter:String){historys(limit:$limit,offset:$offset,filter:$filter){results{_id createdBy{username}}}}`}
                             fetchPolicy="cache-and-network"
                             variables={{
+                                offset:1,
                                 limit: 999,
                                 filter: `data._id==${cmsPage._id} && meta.keys==template`
                             }}>
@@ -189,11 +190,10 @@ function CmsRevisionDialog(props){
                     return <div>
                         <Typography gutterBottom>Style changed</Typography>
 
-                        <CodeEditor lineNumbers
-                                    type="css"
-                                    readOnly={true}>{parsedData.style}</CodeEditor>
-                        <a href={'/system/diff?preview=true#value=' + encodeURIComponent(parsedData.style) + '&orig1=' + encodeURIComponent(cmsPage.style)}
-                           target="_blank">Show diff</a>
+                        <CodeEditor mergeView={true}
+                                    style={{border: 0,width:'100%',height:'calc(100vh - 19.8rem)',overflow:'auto'}}
+                                    mergeValue={cmsPage.style}
+                                    lineNumbers type="css" readOnly={true}>{parsedData.style}</CodeEditor>
                     </div>
 
                 } else if (historyType === 'script') {
@@ -201,11 +201,11 @@ function CmsRevisionDialog(props){
                     return <div>
                         <p>Script changed</p>
 
-                        <CodeEditor lineNumbers
-                                    type="js"
-                                    readOnly={true}>{parsedData.script}</CodeEditor>
-                        <a href={'/system/diff?preview=true#value=' + encodeURIComponent(parsedData.script) + '&orig1=' + encodeURIComponent(cmsPage.script)}
-                           target="_blank">Show diff</a>
+
+                        <CodeEditor mergeView={true}
+                                    style={{border: 0,width:'100%',height:'calc(100vh - 19.8rem)',overflow:'auto'}}
+                                    mergeValue={cmsPage.script}
+                                    lineNumbers type="js" readOnly={true}>{parsedData.script}</CodeEditor>
 
                     </div>
 
@@ -214,11 +214,10 @@ function CmsRevisionDialog(props){
                     return <div>
                         <p>Server Script changed</p>
 
-                        <CodeEditor lineNumbers
-                                    type="js"
-                                    readOnly={true}>{parsedData.serverScript}</CodeEditor>
-                        <a href={'/system/diff?preview=true#value=' + encodeURIComponent(parsedData.serverScript) + '&orig1=' + encodeURIComponent(cmsPage.serverScript)}
-                           target="_blank">Show diff</a>
+                        <CodeEditor mergeView={true}
+                                    style={{border: 0,width:'100%',height:'calc(100vh - 19.8rem)',overflow:'auto'}}
+                                    mergeValue={cmsPage.serverScript}
+                                    lineNumbers type="js" readOnly={true}>{parsedData.serverScript}</CodeEditor>
 
                     </div>
 
@@ -257,11 +256,11 @@ export default function CmsRevision(props){
                 {name: 'Style', value: 'style'}]}
         /> }
         <Query
-            query={'query historys($filter:String,$limit:Int,$page:Int){historys(filter:$filter,limit:$limit,page:$page){total offset results{_id action meta createdBy{username}}}}'}
+            query={'query historys($filter:String,$limit:Int,$offset:Int,$page:Int){historys(filter:$filter,limit:$limit,offset:$offset,page:$page){total offset results{_id action meta createdBy{username}}}}'}
             fetchPolicy="cache-and-network"
             variables={{
+                offset:1 + ((historyPage-1) * historyLimit),
                 limit: historyLimit,
-                page: historyPage,
                 filter: `data._id==${cmsPage._id} && meta.keys==${historyType || 'script'}`
             }}>
             {({loading, error, data}) => {

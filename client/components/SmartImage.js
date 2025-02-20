@@ -1,7 +1,5 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import PropTypes from 'prop-types'
-
 
 class SmartImage extends React.Component {
 
@@ -122,13 +120,6 @@ class SmartImage extends React.Component {
         }
     }
 
-}
-
-SmartImage.propTypes = {
-    src: PropTypes.string,
-    asBackground: PropTypes.bool,
-    className: PropTypes.string,
-    style: PropTypes.object
 }
 
 export default SmartImage

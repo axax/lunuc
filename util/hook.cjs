@@ -14,11 +14,12 @@ const Hook = {
     hooks: {},
     hooksOrder: {},
     remove: (name ,key)=>{
-        if(Hook.hooks[name]) {
-            for (let i = Hook.hooks[name].length - 1; i >= 0; i--) {
-                if (Hook.hooks[name][i].key === key) {
+        const hook = Hook.hooks[name]
+        if(hook) {
+            for (let i = hook.length - 1; i >= 0; i--) {
+                if (hook[i].key === key) {
                     console.log(`remove hook ${name} with key ${key}`)
-                    Hook.hooks[name].splice(i, 1)
+                    hook.splice(i, 1)
                 }
             }
         }

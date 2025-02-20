@@ -45,6 +45,7 @@ export default function CmsAddNewSite(props){
                                          }
                                          const name = Object.assign({},values.name)
                                          delete name.__typename
+                                         delete name._localized
                                          client.mutate({
                                              mutation: queries.clone,
                                              variables: {

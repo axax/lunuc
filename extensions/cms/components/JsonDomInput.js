@@ -1,5 +1,4 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 
 /* Wrapper for input so we are able to pass a value prop  */
 class JsonDomInput extends React.Component {
@@ -78,15 +77,6 @@ class JsonDomInput extends React.Component {
         }
     }
 
-}
-
-
-JsonDomInput.propTypes = {
-    type: PropTypes.string,
-    value: PropTypes.any,
-    onChange: PropTypes.func,
-    textarea: PropTypes.bool,
-    select: PropTypes.bool,
 }
 
 export default JsonDomInput

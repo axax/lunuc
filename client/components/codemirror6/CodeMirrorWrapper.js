@@ -58,7 +58,10 @@ const CodeMirrorWrapper = (props) => {
             view = new MergeView({
                 a: {doc: value,extensions},
                 b: {doc: mergeValue, extensions: [...extensions,EditorView.editable.of(false),EditorState.readOnly.of(true)]},
-                parent: editor.current
+                parent: editor.current,
+                collapseUnchanged: { margin: 3, minSize: 3 },
+                highlightChanges:true,
+                revertControls:'a-to-b'
             })
         }else {
             view = new EditorView({state: EditorState.create({doc:value,extensions}), parent: editor.current})
@@ -74,7 +77,17 @@ const CodeMirrorWrapper = (props) => {
         }
     }, [identifier])
 
-    return <div ref={editor}></div>
+    if(mergeView){
+        return <><div style={{display:'flex',width:'100%'}}>
+                <div style={{flex:1}}>Old Version</div>
+                <div style={{flex:1}}>Your Version</div>
+            </div>
+            <div ref={editor}></div></>
+    }else{
+        return <div ref={editor}></div>
+    }
+
+
 }
 
 export default CodeMirrorWrapper
