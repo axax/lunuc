@@ -319,7 +319,7 @@ export const addSearchStringToMatch = (inputString, query) => {
 
 
 export const extendWithOwnerGroupMatch = (typeDefinition, context, match, userFilter) => {
-    if (typeDefinition && context.role !== 'subscriber') {
+    if (typeDefinition /* && context.role !== 'subscriber'*/) {
         // check for same ownerGroup
         const ownerGroup = typeDefinition.fields.find(f => f.name === 'ownerGroup')
         if (ownerGroup) {
