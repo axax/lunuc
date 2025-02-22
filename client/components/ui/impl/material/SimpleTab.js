@@ -50,12 +50,13 @@ const StyledTab = styled(Tab)(({theme}) => ({
 }))
 */
 
-const StyledTabs = styled(Tabs)({
-    borderBottom: '1px solid #e8e8e8',
+const StyledTabs = styled(Tabs)(props=>({
+    borderBottom: props.orientation!=='vertical' && '1px solid #f0f0f0',
+    borderRight: props.orientation==='vertical' && '1px solid #f0f0f0',
     '& .MuiTabs-indicator': {
         backgroundColor: '#1890ff',
-    },
-})
+    }
+}))
 
 const StyledTab = styled((props) => <Tab disableRipple {...props} />)(({ theme }) => ({
     textTransform: 'none',
@@ -105,7 +106,7 @@ export const SimpleTabPanel = (props) => {
             hidden={value !== index}
             {...other}
         >
-            {value === index && <Box p={3}>{children}</Box>}
+            {value === index && <Box sx={{ mt: 3, ml:3, minHeight:'100%' }}>{children}</Box>}
         </Typography>
     )
 }

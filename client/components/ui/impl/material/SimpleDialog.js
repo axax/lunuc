@@ -26,7 +26,7 @@ function PaperComponent(props) {
 
 export const SimpleDialog = ({children, onClose, actions, title, fullScreen, fullScreenMobile, ...rest}) => {
     const fullScreenFinal = fullScreenMobile ? useMediaQuery(theme.breakpoints.down('md')): fullScreen
-    console.log('render SimpleDialog')
+    console.log('render SimpleDialog',title)
     return <Dialog
         aria-labelledby="responsive-dialog-title"
         onClose={onClose}

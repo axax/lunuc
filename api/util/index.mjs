@@ -20,6 +20,14 @@ const ROOT_DIR = path.resolve()
 const BACKUP_DIR_ABS = path.join(ROOT_DIR, config.BACKUP_DIR)
 const KEYVALUE_DIR_ABS = path.join(BACKUP_DIR_ABS, 'keyvalues')
 
+function ownerGroupMatch(context) {
+    return {ownerGroup: {$in: context.group.map(f => new ObjectId(f))}}
+}
+
+async function userMatch(db, context) {
+    return {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
+}
+
 /**
  * Object with general server side helper methods
  */
@@ -383,23 +391,27 @@ const Util = {
     getAccessFilter: async (db, context, access, details) => {
         if (!access) {
             // do nothing
-        } else if (access.type === 'group') {
+        } else if (access.type === 'group' || access.type === 'userAndGroup') {
             if(details && details.type === 'User'){
                 return {group: {$in: context.group.map(f => new ObjectId(f))}}
             }
-            return {ownerGroup: {$in: context.group.map(f => new ObjectId(f))}}
+            if(access.type === 'userAndGroup'){
+                return {$or: [await userMatch(db, context), ownerGroupMatch(context)]}
+            }else {
+                return ownerGroupMatch(context)
+            }
         } else if (access.type === 'user') {
-            return {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
+            return await userMatch(db, context)
         } else if (access.type === 'role' || access.type === 'roleGroup') {
             if (!await Util.userHasCapability(db, context, access.role)) {
                 if(access.users && access.users.indexOf(context.id)>=0){
                     // it is allowed for explicit users
                     return {}
                 }
-                let match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
+                let match = await userMatch(db, context)
 
                 if(access.type==='roleGroup' && context.group) {
-                    const ownerMatch = {ownerGroup: {$in: context.group.map(f => new ObjectId(f))}}
+                    const ownerMatch = ownerGroupMatch(context)
                     match = {$or: [match, ownerMatch]}
                 }
                 return match

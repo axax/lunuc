@@ -36,7 +36,7 @@ const StyledRoot = styled('div')(({ error, inWindow}) => ({
 
 
 function CodeEditor(props,ref){
-    const {mergeView, mergeValue, children, height, onScroll, onFileChange, showFab, fabButtonStyle, actions, onChange, onError, onBlur, lineNumbers, type, style, className, error, templates, propertyTemplates, fileSplit, identifier, readOnly} = props
+    const {hasContextMenu, mergeView, mergeValue, children, height, onScroll, onFileChange, showFab, fabButtonStyle, actions, onChange, onError, onBlur, lineNumbers, type, style, className, error, templates, propertyTemplates, fileSplit, identifier, readOnly} = props
 
     if(!identifier){
         console.warn('CodeEditor identifier is missing')
@@ -173,8 +173,17 @@ function CodeEditor(props,ref){
                 }
             }}
             onContextMenu={(clickEvent, editorView) => {
-                clickEvent.preventDefault()
-                setContextMenu(generateContextMenu({type,clickEvent,editorView,propertyTemplates,templates,setEditData}))
+                if(hasContextMenu !== false) {
+                    clickEvent.preventDefault()
+                    setContextMenu(generateContextMenu({
+                        type,
+                        clickEvent,
+                        editorView,
+                        propertyTemplates,
+                        templates,
+                        setEditData
+                    }))
+                }
             }}
             style={{height:height ? height : (renderInWindow ? '100%':'30rem')}}
             firstVisibleLine={scrollPositions[finalFileIndex] ? scrollPositions[finalFileIndex].firstVisibleLine : 0}

@@ -1,5 +1,7 @@
 export const translations = {
     de: {
+        'Media.editImage': 'Bild bearbeiten',
+        'Media.clearVariants': 'Varianten Löschen',
         'Media.uploadMedia': 'Medias hochladen',
         'Media.selectGroup': 'Gruppe wählen',
         'Media.field.name': 'Name',
@@ -16,6 +18,8 @@ export const translations = {
         'TypesContainer.deleteConfirmTextOnlyFile': 'Beachten Sie, dass nur die physische Datei und nicht der Medieneintrag gelöscht wird.'
     },
     en: {
+        'Media.editImage': 'Edit image',
+        'Media.clearVariants': 'Clear variants',
         'Media.uploadMedia': 'Upload medias',
         'Media.selectGroup': 'Select a group',
         'Media.selectConversion': 'Select a conversion',

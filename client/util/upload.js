@@ -13,7 +13,9 @@ const UploadUtil = {
 
             xhr.responseType = 'json'
             // Progress bar
-            xhr.upload.addEventListener('progress', onProgress, false)
+            if(onProgress) {
+                xhr.upload.addEventListener('progress', onProgress, false)
+            }
             xhr.onload = onLoad
             xhr.onerror = onError
 
