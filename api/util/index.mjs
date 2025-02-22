@@ -392,6 +392,9 @@ const Util = {
         if (!access) {
             // do nothing
         } else if (access.type === 'group' || access.type === 'userAndGroup') {
+            if(!context.group){
+                return await userMatch(db, context)
+            }
             if(details && details.type === 'User'){
                 return {group: {$in: context.group.map(f => new ObjectId(f))}}
             }
