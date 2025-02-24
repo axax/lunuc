@@ -292,6 +292,7 @@ Hook.on('Types', ({types}) => {
         name: 'KeyValue',
         usedBy: ['core'],
         entryClonable: true,
+        wildcardIndex: true,
         fields: [
             {
                 clone: "${key}_copy",
@@ -464,6 +465,7 @@ Hook.on('Types', ({types}) => {
                 fullWidth: true,
                 name: 'picture',
                 type: 'Media',
+                index:1,
                 reference: true,
                 fields: ['name','mimeType'],
                 filter: 'mimeType=image',

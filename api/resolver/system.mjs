@@ -433,6 +433,21 @@ export const systemResolver = (db) => ({
             const payload = {filePath}
             const token = jwt.sign(payload, SECRET_KEY, {expiresIn: '5h'})
             return {token}
+        },
+        getAllCollectionIndexes: async ({},{context}) =>{
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_ADMIN_OPTIONS)
+
+            const collections = await db.listCollections().toArray()
+            const results = []
+
+            for (const collection of collections) {
+                console.log(await db.collection(collection.name).indexes())
+                results.push({
+                    name: collection.name,
+                    indexes: (await db.collection(collection.name).indexes()).map(index => JSON.stringify(index))
+                })
+            }
+            return {results}
         }
     },
     Mutation: {

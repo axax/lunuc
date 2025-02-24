@@ -6,7 +6,7 @@ import {Typography, ExpansionPanel, Button, SimpleSwitch, ContentBlock,
     SimpleDialog,
     SimpleTabs} from 'ui/admin'
 import Hook from 'util/hook.cjs'
-import {client} from '../middleware/graphql'
+import {client, Query} from '../middleware/graphql'
 import styled from '@emotion/styled'
 const StyledColumn = styled('div')({
     flexBasis: '50%'
@@ -129,6 +129,19 @@ class SystemContainer extends React.Component {
                         }
                     )
                 }} variant="contained">Create DB Indexes</Button>
+
+
+                <Query key="query" query="query{getAllCollectionIndexes{results{name indexes}}}"
+                       fetchPolicy="cache-and-network">
+                    {({loading, error, data}) => {
+                        if (loading) return 'Loading...'
+                        if (error) return `Error! ${error.message}`
+                        if (!data.getAllCollectionIndexes.results) return 'No data'
+                        return <ul>{data.getAllCollectionIndexes.results.map(collection=><li>{collection.name}<ul>{
+                            collection.indexes.map(index=><li>{index}</li>)
+                        }</ul></li>)}</ul>
+                    }}
+                </Query>
 
             </SimpleTabPanel>
             {message && <SimpleDialog open={true} onClose={()=>{

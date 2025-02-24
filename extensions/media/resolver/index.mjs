@@ -5,6 +5,7 @@ import path from 'path'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
 import {ObjectId} from 'mongodb'
+import {getType} from '../../../util/types.mjs'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const {UPLOAD_DIR} = config
@@ -82,6 +83,7 @@ export default db => ({
                 'GenericDataDefinition',
                 'History',
                 'Comment',
+                'Bot',
                 'BotConversation',
                 'Media',
                 'UserRole',
@@ -115,10 +117,12 @@ export default db => ({
                 'SmsLog',
                 'MailAccountMessage',
                 'MailAccount',
+                'MailAccounts', /* collection can be deleted */
                 'MailAccountFolder',
                 'DnsHostGroup',
                 'ProxyUser',
-                'WebAuthnCredential'
+                'WebAuthnCredential',
+                'ChatMessage'
             ]
 
             const collectionsToSearchIn = []
@@ -127,7 +131,6 @@ export default db => ({
                     collectionsToSearchIn.push(name)
                 }
             }
-
             if(!ids){
                 const mediaIds = await db.collection('Media').find(
                     {},
@@ -135,7 +138,6 @@ export default db => ({
                     .sort({'references.lastChecked':1}).limit(limit || 10).toArray()
                 ids = mediaIds.map(f=>f._id.toString())
             }
-
 
             let checkedItems = {}
             for (let i = 0; i < ids.length; i++) {
@@ -149,7 +151,20 @@ export default db => ({
                 for( const name of collectionsToSearchIn){
 
                     console.log(`search ${_id} in ${name}`)
-                    const item = await db.collection(name).findOne({$where},  { projection: { _id: 1 } } )
+                    let searchQuery
+                    if(name==='User') {
+                        searchQuery = {picture:new ObjectId(_id)}
+                    }else{
+                        const typeDefinition = getType(name)
+                        if (typeDefinition && typeDefinition.wildcardIndex) {
+                            searchQuery = {$text: {$search: _id}}
+                        } else {
+                            searchQuery = {$where}
+                            console.warn(`type ${name} does not support wildcard search`)
+                        }
+                    }
+                    const item = await db.collection(name).findOne(searchQuery,  { projection: { _id: 1 } } )
+
 
                     if( item ){
                         count++

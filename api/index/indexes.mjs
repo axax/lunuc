@@ -108,6 +108,11 @@ export const createAllIndexes = async (db) => {
                 console.error('Error creating text index', e)
             })
         }
+
+        if(type.wildcardIndex){
+            console.log(`Creating wildcard index for ${typeName}`)
+            db.collection(typeName).createIndex({ '$**': 'text' })
+        }
     }
 
     Hook.call('index', {db})

@@ -89,6 +89,15 @@ export const systemSchemaRaw = `
     type SearchInCollectionsResult{
         results: [SearchInCollections]
     }
+    
+    type CollectionIndexes{
+        name: String
+        indexes: [String]
+    }
+    
+    type CollectionIndexResult{
+        results: [CollectionIndexes]
+    }
         
     type TokenLinkResult{
         token: String
@@ -108,6 +117,7 @@ export const systemSchemaRaw = `
     	bulkEdit (collection: String!, _id: [ID]!, data: String!, action: String): BulkEditResult,
     	exportQuery (type: String!, query: String): ExportQueryResult
         getTokenLink(filePath:String!): TokenLinkResult
+        getAllCollectionIndexes: CollectionIndexResult
     }
     
       
