@@ -157,51 +157,59 @@ const observeOptions = () => ({
         type: 'Boolean',
         value: false,
         label: 'Überwachung aktivieren',
-        tab: 'Sichtbarkeit'
+        tab: 'Sichtbarkeit',
+        role: CAPABILITY_MANAGE_CMS_PAGES
     },
     '$observe_waitVisible': {
         fullWidth: true,
         type: 'Boolean',
         value: false,
         label: 'Sichtbarkeit überwachen (Rendering wenn in Viewport)',
-        tab: 'Sichtbarkeit'
+        tab: 'Sichtbarkeit',
+        role: CAPABILITY_MANAGE_CMS_PAGES
     },
     '$observe_backgroundImage': {
         fullWidth: true,
         type: 'Boolean',
         value: false,
         label: 'Nur Hintergrundbild (Bild erst laden wenn sichtbar)',
-        tab: 'Sichtbarkeit'
+        tab: 'Sichtbarkeit',
+        role: CAPABILITY_MANAGE_CMS_PAGES
     },
     '$observe_passProps': {
         fullWidth: true,
         type: 'Boolean',
         value: false,
         label: 'Attribute beibehalten',
-        tab: 'Sichtbarkeit'
+        tab: 'Sichtbarkeit',
+        role: CAPABILITY_MANAGE_CMS_PAGES
     },
     '$observe_initialClass': {
         fullWidth: true,
         label: 'Initial Klasse',
-        tab: 'Sichtbarkeit'
+        tab: 'Sichtbarkeit',
+        role: CAPABILITY_MANAGE_CMS_PAGES
     },
     '$observe_visibleClass': {
         fullWidth: true,
         label: 'Sichtbar Klasse',
-        tab: 'Sichtbarkeit'
+        tab: 'Sichtbarkeit',
+        role: CAPABILITY_MANAGE_CMS_PAGES
     },
     '$observe_threshold': {
         fullWidth: true,
         label: 'Threshold',
         type: 'Float',
-        tab: 'Sichtbarkeit'
+        tab: 'Sichtbarkeit',
+        role: CAPABILITY_MANAGE_CMS_PAGES
     },
     '$observe_flipMode': {
         fullWidth: true,
         type: 'Boolean',
         value: false,
         label: 'Ein-/Ausblenden',
-        tab: 'Sichtbarkeit'
+        tab: 'Sichtbarkeit',
+        role: CAPABILITY_MANAGE_CMS_PAGES
     },
 })
 
@@ -931,7 +939,8 @@ const baseElements = [
                 label: 'Text (HTML)',
                 fullWidth: true,
                 uitype: 'textarea',
-                tab: 'Erweitert'
+                tab: 'Erweitert',
+                role: CAPABILITY_MANAGE_CMS_TEMPLATE
             },
             p_style_textAlign: {
                 label: 'Ausrichtung',

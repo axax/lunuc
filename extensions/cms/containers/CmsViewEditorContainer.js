@@ -652,6 +652,7 @@ class CmsViewEditorContainer extends React.Component {
                                      canMangeCmsTemplate={canMangeCmsTemplate}
                                      slug={slug}
                                      user={props.user}
+                                     onScriptChange={this.setCmsPageValue.bind(this, {key:'script', timeoutSetState: 500, timeoutUpdate: 5000})}
                                      onDataResolverChange={this.handleDataResolverChange.bind(this)}
                                      onTemplateChange={this.handleTemplateChange.bind(this)}/>
 
@@ -1078,9 +1079,6 @@ class CmsViewEditorContainer extends React.Component {
                         }}
                         disableEnforceFocus={true} open={showPageSettings}
                         onClose={() => {
-                            if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
-                                return
-                            }
                             this.setState({showPageSettings: false})
                         }}> {showPageSettings && <div style={{padding: '1rem'}}>
                     <Typography key="pageOptionTitle" mb={2}

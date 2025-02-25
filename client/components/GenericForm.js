@@ -168,9 +168,16 @@ class GenericForm extends React.Component {
             if ((field.required || field.validatePattern) && (!field.uistate || !field.uistate.visible || !matchExpr(field.uistate.visible, state.fields))) {
 
                 if(field.validatePattern){
-                    const reg = new RegExp(field.validatePattern)
-                    if(!reg.test(state.fields[fieldKey])){
-                        fieldErrors[fieldKey] = _t('GenericForm.fieldIsInvalid',{pattern:field.validatePattern})
+
+                    if(!state.fields[fieldKey]){
+                        if(field.required){
+                            fieldErrors[fieldKey] = _t('GenericForm.fieldIsRequired')
+                        }
+                    }else {
+                        const reg = new RegExp(field.validatePattern)
+                        if (!reg.test(state.fields[fieldKey])) {
+                            fieldErrors[fieldKey] = _t('GenericForm.fieldIsInvalid', {pattern: field.validatePattern})
+                        }
                     }
                 }else if(field.uitype==='select'){
                     const value = state.fields[fieldKey]

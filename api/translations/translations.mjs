@@ -1,6 +1,6 @@
 export default {
     de: {
-        'core.user.missing.permission':'Der Benutzer hat keine Erlaubnis für diesen Vorgang erteilt. Fehlende Fähigkeit %capability%',
+        'core.user.missing.permission':'Der Benutzer hat keine Berechtigung für diesen Vorgang. Änderung wird nicht gespeichert. Fehlende Fähigkeit %capability%',
         'core.password.too.short': 'Das Passwort ist zu kurz. Es muss mindestens %minlength% Zeichen lang sein.',
         'core.user.new.password.subject': 'Neues Passwort'
     },

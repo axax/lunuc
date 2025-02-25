@@ -102,7 +102,7 @@ export default function JsonDomAddElementDialog(props){
         />}
 
 
-        {props.showElementSelector && <TextField placeholder={_t('JsonDomAddElementDialog.createElementAiPlaceholder')}
+        {props.showElementSelector &&  Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE) && <TextField placeholder={_t('JsonDomAddElementDialog.createElementAiPlaceholder')}
                    label={_t('JsonDomAddElementDialog.createElementAi')}
                    sx={{width: 'calc(50% - 16px)' }}
                    value={aiAssistent.promt}
