@@ -20,7 +20,6 @@ import {
 } from 'ui/admin'
 import JsonDomAddElementDialog from './jsondomhelper/JsonDomAddElementDialog'
 import AddToBody from './AddToBody'
-import DomUtilAdmin from 'client/util/domAdmin.mjs'
 import Util from 'client/util/index.mjs'
 import {propertyByPath, setPropertyByPath} from '../../../client/util/json.mjs'
 import {
