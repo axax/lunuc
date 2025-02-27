@@ -111,7 +111,7 @@ class GenericForm extends React.Component {
                     }
                 } else {
                     if(field.value && (!props.values || field.localizedFallback)) {
-                        if (field.value.__typename) {
+                        if (field.value.__typename || Array.isArray(field.value)) {
                             // fallback case if attribute of type picker
                             // and is not localized yet
                             fieldValue[_app_.lang] = field.value
