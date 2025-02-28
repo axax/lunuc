@@ -57,7 +57,7 @@ const scrollToElement = (el, options, tries = 0, winHash) => {
         let tout
         if (scrollY !== win.scrollY) {
             tout = scrollTimeout || 10
-        } else if (tries < 30) {
+        } else if (tries < 20) {
             // try to scroll a few times more in case elements are lazy loaded
             tries++
             tout = 50

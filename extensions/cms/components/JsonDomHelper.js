@@ -143,7 +143,7 @@ const StyledPicker = styled('div')({
 })
 
 const StyledToolbarButton = styled('div')({
-    zIndex: 999,
+    zIndex: 9999,
     position: 'fixed',
     maxHeight: '200px'
 })
@@ -248,10 +248,10 @@ const highlighterHandler = (e, observer, after) => {
         clearTimeout(aftershockTimeout)
         aftershockTimeout = setTimeout(() => {
             highlighterHandler(e, observer, true)
-            for (let i = 0; i < 10; i++) {
+            for (let i = 0; i < 25; i++) {
                 setTimeout(() => {
                     highlighterHandler(e, observer, true)
-                }, i * 50)
+                }, i * 20)
             }
         }, 50)
     }
@@ -367,7 +367,9 @@ class JsonDomHelper extends React.Component {
         if (!hovered && node) {
             const stat = getHighlightPosition(node)
             this.helperTimeoutIn = setTimeout(() => {
-                this.setState(stat)
+                this.setState(stat,()=>{
+                    highlighterHandler(node)
+                })
             }, 80)
         }
 
