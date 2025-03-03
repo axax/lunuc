@@ -89,7 +89,16 @@ export default () => {
                                                                                               }
                                                                                           })
                                                                                       }else{
-                                                                                          addProto(`File doesn't exist ${file.name}\n`)
+                                                                                          addProto(`Added ${file.name}\n`)
+                                                                                          client.mutate({
+                                                                                              mutation: queries.create,
+                                                                                              variables: {
+                                                                                                  content,
+                                                                                                  name:`${prefix}${file.name}`,
+                                                                                                  mimeType:'image/svg+xml',
+                                                                                                  active: true
+                                                                                              }
+                                                                                          })
                                                                                       }
                                                                                   }).catch(error => {
 
