@@ -511,7 +511,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     if(hostrule.webRoot){
                         // if a webRoot is defined, only this path is checked for matching files
                         const indexFile = hostrule.indexFile || 'index.html'
-                        if (await sendFileFromDir(req, res, {filename: path.join(WEBROOT_ABSPATH, hostrule.webRoot, urlPathname!=='/'?urlPathname:indexFile), headers, parsedUrl})) {
+                        if (await sendFileFromDir(req, res, {filename: path.join(WEBROOT_ABSPATH, hostrule.webRoot, urlPathname!=='/'?urlPathname:indexFile), headers})) {
                             return
                         }
                         sendError(res, 404)
