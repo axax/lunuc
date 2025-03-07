@@ -546,7 +546,9 @@ const baseElements = [
             p_caption: {
                 label: 'Beschreibung',
                 uitype: 'html',
-                fullWidth: true
+                fullWidth: true,
+                localized: true,
+                localizedFallback: true,
             },
             ...classOptions('p_'),
             ...imageOptions('p_'),
@@ -1136,6 +1138,20 @@ const baseElements = [
                 type: 'Boolean',
                 label: 'Scroll top',
                 tab: DEFAULT_TAB
+            },
+            c_0_p_figureClassName: {
+                label: 'Figure Klassenname'
+            },
+            c_0_p_wrapper: {
+                label: 'Zoom',
+                type: 'Boolean'
+            },
+            c_0_p_caption: {
+                label: 'Beschreibung',
+                uitype: 'html',
+                fullWidth: true,
+                localized: true,
+                localizedFallback: true,
             },
             ...invisibleOptions('p_'),
             ...marginOptions('p_'),
