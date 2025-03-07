@@ -110,7 +110,7 @@ class JsonDom extends React.Component {
                 delete props._key
                 return <figure style={figureStyle} _key={_key} className={figureClassName} {...figureProps}>
                     {imgTag()}
-                    {caption && <figcaption className={figureCaptionClassName} dangerouslySetInnerHTML={{__html: caption}}/>}
+                    {caption && <figcaption className={figureCaptionClassName} dangerouslySetInnerHTML={{__html: _t(caption)}}/>}
                 </figure>
             }
             return imgTag()
