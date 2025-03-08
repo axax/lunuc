@@ -118,7 +118,7 @@ export const getTypeQueries = (typeName, queryFields, opts) => {
             }
 
             const queryType = reference ?
-                (multi ? '[' : '') + (localized?'LocalizedRefInput':'ID') + (multi ? ']' : '') :
+                (multi && !localized? '[' : '') + (localized?'LocalizedRefInput':'ID') + (multi && !localized? ']' : '') :
                 (localized ? 'LocalizedStringInput' : (type && type !== 'Object' ? type : 'String'))
 
             if (!excludeSelect && (!queryFields || queryFields.indexOf(name) >= 0)) {

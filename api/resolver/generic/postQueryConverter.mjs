@@ -29,31 +29,34 @@ export default async function (response, {typeName, db, graphqlInfo}){
 
                         if (field.reference) {
                             const refTypeDefinition = getType(field.type) || {}
-                            for (let z = 0; z < refTypeDefinition.fields.length; z++) {
-                                const refField = refTypeDefinition.fields[z]
-                                if (refField) {
-                                    if (refField.type === 'Object' && item[field.name]) {
 
-                                        let itemValueAsArray = item[field.name]
+                            if(!field.localized) {
+                                for (let z = 0; z < refTypeDefinition.fields.length; z++) {
+                                    const refField = refTypeDefinition.fields[z]
+                                    if (refField) {
+                                        if (refField.type === 'Object' && item[field.name]) {
 
-                                        if(!Array.isArray(itemValueAsArray)){
-                                            itemValueAsArray = [itemValueAsArray]
-                                        }
-                                        const newitemValueAsArray = []
+                                            let itemValueAsArray = item[field.name]
 
-                                        itemValueAsArray.forEach(itemValue=>{
-                                            if(itemValue && itemValue[refField.name] && (itemValue[refField.name].constructor === Object || itemValue[refField.name].constructor === Array)) {
-                                                itemValue[refField.name] = JSON.stringify(itemValue[refField.name])
+                                            if (!Array.isArray(itemValueAsArray)) {
+                                                itemValueAsArray = [itemValueAsArray]
                                             }
-                                            newitemValueAsArray.push(itemValue)
-                                        })
+                                            const newitemValueAsArray = []
 
-                                        if(field.multi){
-                                            item[field.name] = newitemValueAsArray
-                                        }else{
-                                            item[field.name] = newitemValueAsArray.length>0?newitemValueAsArray[0]:''
+                                            itemValueAsArray.forEach(itemValue => {
+                                                if (itemValue && itemValue[refField.name] && (itemValue[refField.name].constructor === Object || itemValue[refField.name].constructor === Array)) {
+                                                    itemValue[refField.name] = JSON.stringify(itemValue[refField.name])
+                                                }
+                                                newitemValueAsArray.push(itemValue)
+                                            })
+
+                                            if (field.multi) {
+                                                item[field.name] = newitemValueAsArray
+                                            } else {
+                                                item[field.name] = newitemValueAsArray.length > 0 ? newitemValueAsArray[0] : ''
+                                            }
+                                            //console.log(`convert ${typeName}.${field.name}.${refField.name} to string`)
                                         }
-                                        //console.log(`convert ${typeName}.${field.name}.${refField.name} to string`)
                                     }
                                 }
                             }
