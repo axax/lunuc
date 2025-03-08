@@ -4,8 +4,11 @@ import {
 } from '../constants/index.mjs'
 import {_t} from '../../../util/i18n.mjs'
 
-const DEFAULT_TAB = 'elements.generalTab', IMAGE_OPTIMIZATION_TAB = 'Bild Optimierung', MARGIN_TAB = 'Abstände',
-    TRANSLATION_TAB = 'Übersetzung',
+const DEFAULT_TAB = 'elements.generalTab',
+    IMAGE_OPTIMIZATION_TAB = 'elements.imageTab',
+    MARGIN_TAB = 'elements.marginTab',
+    TRANSLATION_TAB = 'elements.translationTab',
+    MISC_TAB = 'elements.miscTab',
     MEDIA_PROJECTION = ['_id', 'size', 'name', 'group', 'src', 'mimeType', {'info': ['width', 'height']}]
 
 
@@ -460,15 +463,34 @@ const sizeOptions = key => ({
     [`${key}width`]: {
         label: _t('elements.width'),
         tab: MARGIN_TAB,
-        helperText: '${c_0_p_height && c_0_p_src[_app_.lang][0].info.width?_t("elements.aspectRatio",{height:c_0_p_height,width:(c_0_p_src[_app_.lang][0].info.width/c_0_p_src[_app_.lang][0].info.height*c_0_p_height).toFixed(2)}):""}'
+        helperText: '${this.c_0_p_height && c_0_p_src[_app_.lang][0].info.width?_t("elements.aspectRatio",{height:c_0_p_height,width:(c_0_p_src[_app_.lang][0].info.width/c_0_p_src[_app_.lang][0].info.height*c_0_p_height).toFixed(2)}):""}'
     },
     [`${key}height`]: {
         label: _t('elements.height'),
         tab: MARGIN_TAB,
-        helperText: '${c_0_p_width && c_0_p_src[_app_.lang][0].info.height?_t("elements.aspectRatio",{width:c_0_p_width,height:(c_0_p_src[_app_.lang][0].info.height/c_0_p_src[_app_.lang][0].info.width*c_0_p_width).toFixed(2)}):""}'
+        helperText: '${this.c_0_p_width && c_0_p_src[_app_.lang][0].info.height?_t("elements.aspectRatio",{width:c_0_p_width,height:(c_0_p_src[_app_.lang][0].info.height/c_0_p_src[_app_.lang][0].info.width*c_0_p_width).toFixed(2)}):""}'
     }
 })
 
+const imgFigureOptions = key => ({
+    [`${key}wrapper`]: {
+        label: 'Bild mit Beschreibung (Figure / Zoom)',
+        type: 'Boolean',
+        tab: MISC_TAB
+    },
+    [`${key}figureClassName`]: {
+        label: 'Figure Klassenname',
+        tab: MISC_TAB
+    },
+    [`${key}caption`]: {
+        label: _t('elements.description'),
+        uitype: 'html',
+        fullWidth: true,
+        localized: true,
+        localizedFallback: true,
+        tab: MISC_TAB
+    }
+})
 
 const baseElements = [
     {
@@ -536,20 +558,7 @@ const baseElements = [
                 ],
                 tab: DEFAULT_TAB
             },
-            p_figureClassName: {
-                label: 'Figure Klassenname'
-            },
-            p_wrapper: {
-                label: 'Zoom',
-                type: 'Boolean'
-            },
-            p_caption: {
-                label: 'Beschreibung',
-                uitype: 'html',
-                fullWidth: true,
-                localized: true,
-                localizedFallback: true,
-            },
+            ...imgFigureOptions('p_'),
             ...classOptions('p_'),
             ...imageOptions('p_'),
             ...sizeOptions('p_'),
@@ -1109,6 +1118,8 @@ const baseElements = [
                 value: '',
                 placeholder: 'Url Titel eingeben',
                 label: 'Url Titel',
+                localized: true,
+                localizedFallback: true,
                 tab: DEFAULT_TAB
             },
             c_1_c: {
@@ -1116,14 +1127,14 @@ const baseElements = [
                 value: '',
                 placeholder: 'Text eingeben',
                 label: 'Text',
-                tab: DEFAULT_TAB
+                tab: MISC_TAB
             },
             ['p_data-hover-text']: {
                 fullWidth: true,
                 value: '',
                 placeholder: 'Mouseover text',
-                label: 'Text',
-                tab: DEFAULT_TAB
+                label: 'Text hover',
+                tab: MISC_TAB
             },
             p_target: {
                 fullWidth: true,
@@ -1139,20 +1150,7 @@ const baseElements = [
                 label: 'Scroll top',
                 tab: DEFAULT_TAB
             },
-            c_0_p_figureClassName: {
-                label: 'Figure Klassenname'
-            },
-            c_0_p_wrapper: {
-                label: 'Zoom',
-                type: 'Boolean'
-            },
-            c_0_p_caption: {
-                label: 'Beschreibung',
-                uitype: 'html',
-                fullWidth: true,
-                localized: true,
-                localizedFallback: true,
-            },
+            ...imgFigureOptions('c_0_p_'),
             ...invisibleOptions('p_'),
             ...marginOptions('p_'),
             ...classOptions('p_'),
