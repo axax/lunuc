@@ -31,7 +31,7 @@ import Expandable from 'client/components/Expandable'
 import {_t} from '../../util/i18n.mjs'
 import Util from '../util/index.mjs'
 import DomUtil from '../util/dom.mjs'
-import {matchExpr, propertyByPath, setPropertyByPath} from '../util/json.mjs'
+import {isString, matchExpr, propertyByPath, setPropertyByPath} from '../util/json.mjs'
 import JsonEditor from '../../extensions/cms/components/JsonEditor'
 import {Query} from '../middleware/graphql'
 import {getTypeQueries, getTypes} from 'util/types.mjs'
@@ -111,10 +111,9 @@ class GenericForm extends React.Component {
                     }
                 } else {
                     if(field.value && (!props.values || field.localizedFallback)) {
-                        if (field.value.__typename || Array.isArray(field.value)) {
-                            // fallback case if attribute of type picker
-                            // and is not localized yet
-                            fieldValue[_app_.lang] = field.value
+                        if (field.value.__typename || Array.isArray(field.value) || isString(field.value)) {
+                            // fallback case if attribute is not localized yet
+                            fieldValue[config.DEFAULT_LANGUAGE] = field.value
                         } else{
                             config.LANGUAGES.forEach(lang => {
                                 fieldValue[lang] = field.value[lang]
