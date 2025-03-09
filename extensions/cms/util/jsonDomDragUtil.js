@@ -103,6 +103,7 @@ export const onJsonDomDrag = (e) => {
                 }
             }
 
+            const elementsWithOverlap = []
             // check for overlapping elements
             for (let y = 0; y < allTags.length; y++) {
                 for (let z = 0; z < allTags.length; z++) {
@@ -114,13 +115,19 @@ export const onJsonDomDrag = (e) => {
                             rect.bottom < rect2.top ||
                             rect.top > rect2.bottom)) {
 
-                            allTags[z].classList.add(DROPAREA_OVERLAP)
-                            allTags[y].classList.add(DROPAREA_OVERLAP)
+                            elementsWithOverlap.push(allTags[z])
+                            elementsWithOverlap.push(allTags[y])
                             break
                         }
                     }
                 }
             }
+
+            elementsWithOverlap.forEach(el=>{
+                el.classList.add(DROPAREA_OVERLAP)
+            })
+
+
         }, 100) // prevent flickering
     }
 }
