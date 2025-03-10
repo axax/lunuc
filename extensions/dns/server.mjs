@@ -127,7 +127,7 @@ Hook.on('appready', async ({db, context}) => {
                         } catch (e) {
                             console.log(e, response)
                         }
-                        debugMessage(`DNS: resolved ${name} after ${new Date().getTime() - startTime}ms`, response)
+                        debugMessage(`DNS: resolved ${name} after ${new Date().getTime() - startTime}ms`)
                     }
 
                     dnsServerContext.dbBuffer[name] = {
