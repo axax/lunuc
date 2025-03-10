@@ -9,7 +9,7 @@ import {
     getFolderForMailAccount,
     getFolderForMailAccountById, getMailAccountFromMailData
 } from './util/dbhelper.mjs'
-import {isExtensionEnabled} from "../../gensrc/extensions-private.mjs";
+import {isExtensionEnabled} from '../../gensrc/extensions-private.mjs'
 
 
 // Hook to add mongodb resolver
