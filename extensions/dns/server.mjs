@@ -73,7 +73,7 @@ Hook.on('appready', async ({db, context}) => {
                 const response = dns2.Packet.createResponseFromRequest(request)
                 const [question] = request.questions
 
-                if (question) {
+                if (question && question.name) {
                     const {name} = question
                     const startTime = new Date().getTime()
 
@@ -225,7 +225,11 @@ Hook.on('appexit', async () => {
 
 const debugMessage = (msg, details) => {
     if (dnsServerContext.settings.debug) {
-        console.debug(msg, details)
+        if(details) {
+            console.debug(msg, details)
+        }else{
+            console.debug(msg)
+        }
     }
 }
 
@@ -246,7 +250,7 @@ const resolveDnsQuestion = async (question) => {
         })
     }
     const typeName = dnsServerContext.typeMap[question.type]
-    debugMessage(`resolve dns type ${typeName} for question`, question)
+    debugMessage(`DNS: resolve ${dnsServer} dns type ${typeName} for question (cache size ${dnsCachedAnswers.length})`, question)
 
     const answer = await dnsResolvers[dnsServer].resolve(question.name, typeName, question.class)
 
