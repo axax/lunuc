@@ -230,7 +230,14 @@ const debugMessage = (msg, details) => {
 }
 
 let dnsResolvers = {}
+const dnsCachedAnswers = [], maxNumbersOfCachedAnswers = 1000
 const resolveDnsQuestion = async (question) => {
+    const cacheKey = `${question.name}${question.type}${question.class}`
+    const cachedAnswer = dnsCachedAnswers.find(entry=>entry.cacheKey===cacheKey)
+    if(cachedAnswer){
+        return cachedAnswer.answer
+    }
+
     const dnsServer = dnsServerContext.settings.dns || '8.8.8.8'
     if(!dnsResolvers[dnsServer]) {
         dnsResolvers[dnsServer] = new dns2({
@@ -241,8 +248,15 @@ const resolveDnsQuestion = async (question) => {
     const typeName = dnsServerContext.typeMap[question.type]
     debugMessage(`resolve dns type ${typeName} for question`, question)
 
-    const result = await dnsResolvers[dnsServer].resolve(question.name, typeName, question.class)
-    return result
+    const answer = await dnsResolvers[dnsServer].resolve(question.name, typeName, question.class)
+
+    cachedAnswer.push({cacheKey,answer})
+
+    if(dnsCachedAnswers.length>maxNumbersOfCachedAnswers){
+        dnsCachedAnswers.shift()
+    }
+
+    return answer
 }
 
 const readHosts = async (db) => {
