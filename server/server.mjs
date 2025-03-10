@@ -82,6 +82,16 @@ process.on('uncaughtException', (error) => {
 })
 
 const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, host, parsedUrl}) => {
+
+    const agent = req.headers['user-agent']
+
+    if(!agent){
+        console.warn('Server: User-Agent missing for '+urlPathname)
+        res.writeHead(404)
+        res.end()
+        return
+    }
+
     const headers = {
         'Cache-Control': 'public, max-age=60',
         'Content-Type': MimeType.detectByExtension('html'),
@@ -99,7 +109,6 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
 
     const statusCode = (hostrule.statusCode && hostrule.statusCode[urlPathname] ? hostrule.statusCode[urlPathname] : 200)
 
-    const agent = req.headers['user-agent']
     let botRegex
     if(hostrule.botregex){
         botRegex = hostrule.botregex
