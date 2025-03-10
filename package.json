@@ -31,7 +31,7 @@
     "client:dev": "export BABEL_ENV=client;API_PORT=3000 webpack serve",
     "build": "export BABEL_ENV=client_build;NODE_ENV=production webpack",
     "build:api": "export BABEL_ENV=api;PORT=3000 npx babel ./api/index.mjs --presets es2015 --config-file ./babel.config.json --ignore './api/index.cjs' --out-file ./build_api/index.js",
-    "api": "export BABEL_ENV=api;export PORT=3000; node --heapsnapshot-signal=SIGUSR2 ./api/index.cjs",
+    "api": "export BABEL_ENV=api;export PORT=3000; node --prof --heapsnapshot-signal=SIGUSR2 ./api/index.cjs",
     "api:prod": "node ./build_api/index.js",
     "api:es6": "export BABEL_ENV=api;PORT=3000 node ./api/index.mjs",
     "api:dev": "export BABEL_ENV=api;PORT=3000 nodemon ./api/index.cjs -e js,cjs,mjs,json --watch api --watch extensions -i 'gensrc/*' -i 'extensions/*/client.mjs' -i 'extensions/*/client.js' -i 'extensions/*/components/*' -i 'extensions/*/containers/*'",
