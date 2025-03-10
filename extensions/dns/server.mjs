@@ -229,13 +229,18 @@ const debugMessage = (msg, details) => {
     }
 }
 
+let dnsResolvers = {}
 const resolveDnsQuestion = async (question) => {
-    const dns = new dns2({
-        dns: dnsServerContext.settings.dns || '1.1.1.1'
-    })
-    const typeName = dnsServerContext.typeMap[question.type]
+    const dnsServer = dnsServerContext.settings.dns || '1.1.1.1'
 
-    const result = await dns.resolve(question.name, typeName, question.class)
+    if(!dnsResolvers[dnsServer]) {
+        dnsResolvers[dnsServer] = new dns2({
+            dns: dnsServer
+        })
+    }
+    const typeName = dnsServerContext.typeMap[question.type]
+    debugMessage('resolve dns question', question, typeName)
+    const result = await dnsResolvers[dnsServer].resolve(question.name, typeName, question.class)
     return result
 }
 
