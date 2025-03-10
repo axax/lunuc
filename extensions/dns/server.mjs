@@ -70,7 +70,6 @@ Hook.on('appready', async ({db, context}) => {
         dnsServerContext.server = dns2.createServer({
             udp: true,
             handle: async (request, send, rinfo) => {
-                debugMessage(`DNS: handle `, request, rinfo)
                 const response = dns2.Packet.createResponseFromRequest(request)
                 const [question] = request.questions
 
@@ -157,7 +156,7 @@ Hook.on('appready', async ({db, context}) => {
 
 
         dnsServerContext.server.on('request', (request, response, rinfo) => {
-            debugMessage(`DNS: request`, request.header.id, request.questions[0])
+            //debugMessage(`DNS: request`, request.header.id, request.questions[0])
         })
 
         dnsServerContext.server.on('requestError', (error) => {
@@ -233,8 +232,6 @@ const debugMessage = (msg, details) => {
 let dnsResolvers = {}
 const resolveDnsQuestion = async (question) => {
     const dnsServer = dnsServerContext.settings.dns || '8.8.8.8'
-    debugMessage('resolve dns question', question)
-
     if(!dnsResolvers[dnsServer]) {
         dnsResolvers[dnsServer] = new dns2({
             dns: dnsServer,
@@ -242,6 +239,8 @@ const resolveDnsQuestion = async (question) => {
         })
     }
     const typeName = dnsServerContext.typeMap[question.type]
+    debugMessage(`resolve dns type ${typeName} for question`, question)
+
     const result = await dnsResolvers[dnsServer].resolve(question.name, typeName, question.class)
     return result
 }
