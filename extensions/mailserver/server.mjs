@@ -9,6 +9,7 @@ import {
     getFolderForMailAccount,
     getFolderForMailAccountById, getMailAccountFromMailData
 } from './util/dbhelper.mjs'
+import {isExtensionEnabled} from "../../gensrc/extensions-private.mjs";
 
 
 // Hook to add mongodb resolver
@@ -23,10 +24,18 @@ Hook.on('schema', ({schemas}) => {
 
 
 // Hook when db is ready
-Hook.on('appready', async ({app, context, db}) => {
-    SMTPServer.startListening(db, context)
-    IMAPServer.startListening(db, context)
-})
+if(isExtensionEnabled('dns')){
+    Hook.on('dnsready', async ({db, context}) => {
+        await SMTPServer.startListening(db, context)
+        await IMAPServer.startListening(db, context)
+    })
+}else {
+    // Hook when db is ready
+    Hook.on('appready', async ({db, context}) => {
+        await SMTPServer.startListening(db, context)
+        await IMAPServer.startListening(db, context)
+    })
+}
 
 Hook.on(['typeBeforeUpdate'], async ({db, type,data}) => {
     if(type==='MailAccountFolder'){
