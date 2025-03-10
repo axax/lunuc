@@ -250,7 +250,7 @@ const resolveDnsQuestion = async (question) => {
 
     const answer = await dnsResolvers[dnsServer].resolve(question.name, typeName, question.class)
 
-    cachedAnswer.push({cacheKey,answer})
+    dnsCachedAnswers.push({cacheKey,answer})
 
     if(dnsCachedAnswers.length>maxNumbersOfCachedAnswers){
         dnsCachedAnswers.shift()
