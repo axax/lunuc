@@ -236,7 +236,7 @@ const resolveDnsQuestion = async (question) => {
     debugMessage('resolve dns question', question)
 
     if(!dnsResolvers[dnsServer]) {
-        dnsResolvers[dnsServer] = new dns2.UDPClient({
+        dnsResolvers[dnsServer] = new dns2({
             dns: dnsServer,
             recursive:false
         })
