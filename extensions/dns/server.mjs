@@ -70,6 +70,7 @@ Hook.on('appready', async ({db, context}) => {
         dnsServerContext.server = dns2.createServer({
             udp: true,
             handle: async (request, send, rinfo) => {
+                debugMessage(`DNS: handle `, request, rinfo)
                 const response = dns2.Packet.createResponseFromRequest(request)
                 const [question] = request.questions
 
@@ -127,7 +128,7 @@ Hook.on('appready', async ({db, context}) => {
                         } catch (e) {
                             console.log(e, response)
                         }
-                        debugMessage(`DNS: resolved ${name} after ${new Date().getTime() - startTime}ms`)
+                        debugMessage(`DNS: resolved ${name} after ${new Date().getTime() - startTime}ms`, response)
                     }
 
                     dnsServerContext.dbBuffer[name] = {
@@ -156,7 +157,7 @@ Hook.on('appready', async ({db, context}) => {
 
 
         dnsServerContext.server.on('request', (request, response, rinfo) => {
-            //     console.log(request.header.id, request.questions[0]);
+            debugMessage(`DNS: request`, request.header.id, request.questions[0])
         })
 
         dnsServerContext.server.on('requestError', (error) => {
@@ -231,15 +232,16 @@ const debugMessage = (msg, details) => {
 
 let dnsResolvers = {}
 const resolveDnsQuestion = async (question) => {
-    const dnsServer = dnsServerContext.settings.dns || '1.1.1.1'
+    const dnsServer = dnsServerContext.settings.dns || '8.8.8.8'
+    debugMessage('resolve dns question', question)
 
     if(!dnsResolvers[dnsServer]) {
-        dnsResolvers[dnsServer] = new dns2({
-            dns: dnsServer
+        dnsResolvers[dnsServer] = new dns2.UDPClient({
+            dns: dnsServer,
+            recursive:false
         })
     }
     const typeName = dnsServerContext.typeMap[question.type]
-    debugMessage('resolve dns question', question, typeName)
     const result = await dnsResolvers[dnsServer].resolve(question.name, typeName, question.class)
     return result
 }
