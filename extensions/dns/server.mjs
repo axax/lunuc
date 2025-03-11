@@ -111,14 +111,17 @@ Hook.on('appready', async ({db, context}) => {
                             const resolvedQuestion = await resolveDnsQuestion(question)
                             response.header = Object.assign({}, resolvedQuestion.header, {id: response.header.id})
                             response.authorities = resolvedQuestion.authorities
-                            response.answers = resolvedQuestion.answers.slice(0)
                             response.additionals = resolvedQuestion.additionals
 
-                            if (response?.answers?.length > 0) {
-                                for(let i = 0;i<response.answers.length;i++){
-                                    const answer = response.answers[i]
+                            if (resolvedQuestion?.answers?.length > 0) {
+                                // clone answers
+                                response.answers = []
+                                for(let i = 0;i<resolvedQuestion.answers.length;i++){
+                                    const answer = resolvedQuestion.answers[i]
                                     if (answer.address == dnsServerContext.gatewayIp && rinfo.address=="127.0.0.1") {
-                                        response.answers[i] = Object.assign({},answer,{address:'127.0.0.1'})
+                                        response.answers.push(Object.assign({},answer,{address:'127.0.0.1'}))
+                                    }else{
+                                        response.answers.push(answer)
                                     }
                                 }
                             }
