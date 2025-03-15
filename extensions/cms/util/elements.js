@@ -460,6 +460,12 @@ const marginOptions = key => ({
     }
 })
 
+const condition = () => ({
+    $is: {
+        label: 'Bedingung'
+    }
+})
+
 const sizeOptions = key => ({
     [`${key}width`]: {
         label: _t('elements.width'),
@@ -2198,6 +2204,7 @@ const advancedElements = [
             $inlineEditor_picker_baseFilter: {
                 label: 'Filter'
             },
+            ...condition(),
             ...marginOptions('p_'),
             ...classOptions('p_')
         }
@@ -2231,6 +2238,7 @@ const advancedElements = [
                 tab: DEFAULT_TAB,
                 label: 'Slug (deprecated)'
             },
+            ...condition(),
             ...marginOptions('p_'),
             ...classOptions('p_'),
             ...observeOptions()
@@ -2288,9 +2296,7 @@ const advancedElements = [
                     }
                 ]
             },
-            $is: {
-                label: 'Bedingung'
-            },
+            ...condition(),
             ...marginOptions('p_'),
             ...classOptions('p_'),
             ...invisibleOptions('p_'),
@@ -2452,6 +2458,7 @@ const advancedElements = [
                 label: 'Template (can be used alternatively)',
                 value: ''
             },
+            ...condition(),
             ...marginOptions('p_'),
             ...classOptions('p_')
         }
@@ -2495,9 +2502,7 @@ const advancedElements = [
                     }
                 ]
             },
-            $is: {
-                label: 'Bedingung'
-            },
+            ...condition(),
             ...marginOptions('p_'),
             ...classOptions('p_'),
             ...invisibleOptions('p_'),
