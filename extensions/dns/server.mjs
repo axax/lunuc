@@ -238,7 +238,7 @@ const debugMessage = (msg, details) => {
 }
 
 let dnsResolvers = {}
-const dnsCachedAnswers = [], maxNumbersOfCachedAnswers = 1000
+const dnsCachedAnswers = []
 const resolveDnsQuestion = async (question) => {
     const cacheKey = `${question.name}${question.type}${question.class}`
     const cachedAnswer = dnsCachedAnswers.find(entry=>entry.cacheKey===cacheKey)
@@ -260,6 +260,7 @@ const resolveDnsQuestion = async (question) => {
 
     dnsCachedAnswers.push({cacheKey,answer})
 
+    const maxNumbersOfCachedAnswers = dnsServerContext.settings.cacheSize || 1000
     if(dnsCachedAnswers.length>maxNumbersOfCachedAnswers){
         dnsCachedAnswers.shift()
     }

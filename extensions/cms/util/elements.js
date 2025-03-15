@@ -134,6 +134,7 @@ const classOptions = (key, tab) => ({
     },
     [`${key}className`]: {
         label: 'CSS Klassname',
+        fullWidth: true,
         tab: tab || DEFAULT_TAB
     },
     [`${key}style@custom`]: {
@@ -1217,16 +1218,16 @@ const baseElements = [
                 tab: DEFAULT_TAB,
                 template: '${this.context.data?this.context.data:(_comp.$original.p && _comp.$original.p.href && _comp.$original.p.href.length>0?_comp.$original.p.href[0].name:"Dokument")}'
             },
+            ...marginOptions('p_'),
+            ...classIconListOptions('p_'),
+            ...classOptions('p_'),
             [`p_className@extension`]: {
                 value: '',
                 invisible: true,
                 label: 'Datei Extension',
                 tab: DEFAULT_TAB,
                 template: 'file-ext-${_comp.$original.p && _comp.$original.p.href && _comp.$original.p.href.length>0?_comp.$original.p.href[0].name.split(".").pop():""}'
-            },
-            ...marginOptions('p_'),
-            ...classIconListOptions('p_'),
-            ...classOptions('p_')
+            }
         }
     },
     {
