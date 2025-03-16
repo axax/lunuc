@@ -1017,7 +1017,7 @@ class JsonDom extends React.Component {
 
                             const key = `${rootKey}.${aIdx}.$loop.${childIdx}`
                             scope[s] = loopChild
-                            const com = this.parseRec(json, key, scope)
+                            const com = this.parseRec(json, key, Object.assign({},scope))
 
                             // remove _index
                             delete loopChild._index
