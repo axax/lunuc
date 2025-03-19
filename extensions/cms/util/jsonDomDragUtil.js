@@ -72,18 +72,29 @@ export const onJsonDomDrag = (e) => {
 
                             if (distanceTop < 100 || distanceMiddle < 100 || distanceBottom < 100) {
 
-                                const nodeForWidth = ['DIV'].indexOf(node.tagName) < 0 ? node.parentNode : node
+                                let nodeForWidth = ['DIV'].indexOf(node.tagName) < 0 ? node.parentNode : node
+                                let computedStyle = window.getComputedStyle(nodeForWidth, null)
+                                let fillHeight = !!tag.dataset.fill
 
-                                const computedStyle = window.getComputedStyle(nodeForWidth, null)
+                                if(computedStyle.display==='grid' && nodeForWidth !== node){
+                                    nodeForWidth = node
+                                    computedStyle = window.getComputedStyle(nodeForWidth, null)
+                                    fillHeight = true
+                                    tag.style.writingMode = 'vertical-rl'
+                                }
 
                                 let elementWidth = nodeForWidth.clientWidth
                                 elementWidth -= parseFloat(computedStyle.paddingLeft) + parseFloat(computedStyle.paddingRight)
 
+
                                 tag.classList.add(DROPAREA_ACTIVE)
                                 tag.style.width = (elementWidth) + 'px'
-                                if(tag.dataset.fill) {
-                                    let elementHeight = nodeForWidth.clientHeight
-                                    elementHeight -= parseFloat(computedStyle.paddingTop) + parseFloat(computedStyle.paddingBottom)
+                                if(fillHeight) {
+                                    let elementHeight = nodeForWidth.dataset.oriHeight || nodeForWidth.clientHeight
+                                    if(!nodeForWidth.dataset.oriHeight){
+                                        elementHeight -= parseFloat(computedStyle.paddingTop) + parseFloat(computedStyle.paddingBottom)
+                                        nodeForWidth.dataset.oriHeight = elementHeight
+                                    }
                                     if(elementHeight<20){
                                         elementHeight=32
                                     }
@@ -123,7 +134,7 @@ export const onJsonDomDrag = (e) => {
                 }
             }
 
-            elementsWithOverlap.forEach(el=>{
+            elementsWithOverlap.forEach((el,idx)=>{
                 el.classList.add(DROPAREA_OVERLAP)
             })
 
@@ -139,9 +150,11 @@ export const onJsonDomDragEnd = (dragEvent)=>{
     const dropAreas = document.querySelectorAll('[data-drop-area="true"]')
     for (let i = 0; i < dropAreas.length; ++i) {
         const dropArea = dropAreas[i]
-        dropArea.classList.remove(DROPAREA_OVERLAP)
         dropArea.classList.remove(DROPAREA_OVER)
         dropArea.classList.remove(DROPAREA_ACTIVE)
+        setTimeout(()=>{
+            dropArea.classList.remove(DROPAREA_OVERLAP)
+        },300)
     }
     JsonDomDraggable.props = JsonDomDraggable.element = null
 }

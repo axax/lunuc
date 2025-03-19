@@ -79,8 +79,6 @@ const StyledHighlighter = styled('span')(({ color, selected }) => ({
 }))
 
 const StyledDropArea = styled('span')({
-    overflow: 'hidden',
-    whiteSpace: 'pre',
     transition: 'visibility .5s ease-out, opacity .5s ease-out',
     opacity: 0,
     zIndex: 999,
@@ -89,18 +87,23 @@ const StyledDropArea = styled('span')({
     alignItems:'center',
     visibility: 'hidden',
     position: 'absolute',
-    fontWeight: 'bold',
+    fontWeight: 'normal',
     borderRadius: '5px',
-    background: '#000',
-    padding: '0',
+    background: '#000000',
+    padding: '5px',
     maxWidth: '100%',
     margin: '-28px 0 0 0 !important',
     border: '1px dashed #c1c1c1',
     height: '32px',
     color: '#fff',
     textAlign: 'center',
-    fontSize: '1rem',
-    '&:after': {
+    fontSize: '0.9rem',
+    '> span':{
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+    },
+    /*'&:after': {
         top: '100%',
         left: '50%',
         border: 'solid transparent',
@@ -113,14 +116,14 @@ const StyledDropArea = styled('span')({
         borderTopColor: '#000',
         borderWidth: '10px',
         marginLeft: '-10px'
-    },
+    },*/
     [`&.${DROPAREA_ACTIVE}`]:{
         visibility: 'visible',
         opacity: 0.8
     },
     [`&.${DROPAREA_OVERLAP}`]:{
         position: 'relative',
-        marginTop: '0px !important',
+        marginTop: '0px !important'
     },
     [`&.${DROPAREA_OVER}`]:{
         zIndex: 1000,
@@ -680,7 +683,7 @@ class JsonDomHelper extends React.Component {
             data-drop-area
             data-tag-name={rest._tagName}
             data-fill={fill || ''}
-            key={`${rest._key}.dropArea.${index}`}>Hier plazieren <small>{label?'('+label+')':''}</small></StyledDropArea>
+            key={`${rest._key}.dropArea.${index}`}><span>Hier plazieren <small>{label?'('+label+')':''}</small></span></StyledDropArea>
     }
 
     openPicker(options) {
@@ -1055,20 +1058,6 @@ class JsonDomHelper extends React.Component {
             })
             return
         }
-        if (isCms && subJson && subJson.p) {
-
-            const slug = subJson.p.component && subJson.p.component.length > 0 ? subJson.p.component[0].slug : subJson.p.slug
-
-            if(slug !== null && slug !== undefined) {
-                menuItems.push({
-                    name: _t('JsonDomHelper.openComponent', {slug: subJson.p.id || slug}),
-                    icon: <LaunchIcon/>,
-                    onClick: () => {
-                        this.props.history.push('/' + slug)
-                    }
-                })
-            }
-        }
         if (hasJsonToEdit) {
             if (parsedSource) {
 
@@ -1385,6 +1374,23 @@ class JsonDomHelper extends React.Component {
                         })
                     }
                 }
+            }
+        }
+
+
+        if (isCms && subJson && subJson.p) {
+
+            const slug = subJson.p.component && subJson.p.component.length > 0 ? subJson.p.component[0].slug : subJson.p.slug
+
+            if(slug !== null && slug !== undefined) {
+                menuItems.push({
+                    name: _t('JsonDomHelper.openComponent', {slug: subJson.p.id || slug}),
+                    icon: <LaunchIcon/>,
+                    divider:true,
+                    onClick: () => {
+                        this.props.history.push('/' + slug)
+                    }
+                })
             }
         }
     }
