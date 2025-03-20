@@ -124,6 +124,9 @@ class JsonDom extends React.Component {
             return <JsonDomInput {...rest} />
         },
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
+        'JsonDom': ({_this,...props}) => {
+            return <JsonDom history={_this.props.history} location={_this.props.location} {...props}/>
+        },
         'QuillEditor': (props) => <QuillEditor {...props}/>,
         'CodeEditor': (props) => <CodeEditor {...props}/>,
         'select': (props) => <JsonDomInput select={true} {...props}/>,
@@ -523,7 +526,7 @@ class JsonDom extends React.Component {
         let content
         if (!this.error) {
             let isNew = false
-            if (this.resolvedDataJson === undefined) {
+            if (this.resolvedDataJson === undefined && resolvedData) {
                 isNew = true
                 try {
                     if (parseResolvedData) {
@@ -1386,9 +1389,9 @@ class JsonDom extends React.Component {
             str = JSON.stringify({
                 t: 'MarkDown.JsonDom-markdown',
                 c: Util.escapeForJson(str)
-            }).replace(/\`/g, '\\`')
+            })
         }
-        const code = DomUtil.toES5(`const {${Object.keys(scope).join(',')}}=this.scope${SCRIPT_UTIL_PART}data),_r=this.addToPostRender;return \`${str}\``)
+        const code = DomUtil.toES5(`const {${Object.keys(scope).join(',')}}=this.scope${SCRIPT_UTIL_PART}data),_r=this.addToPostRender;return \`${str.replace(/\`/g, '\\`')}\``)
         try {
             // Scope properties get destructed so they can be accessed directly by property name
             return new Function(code).call({
