@@ -124,9 +124,6 @@ class JsonDom extends React.Component {
             return <JsonDomInput {...rest} />
         },
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
-        JsonDom: ({_this,...props}) => {
-            return <JsonDom {...props}/>
-        },
         'QuillEditor': (props) => <QuillEditor {...props}/>,
         'CodeEditor': (props) => <CodeEditor {...props}/>,
         'select': (props) => <JsonDomInput select={true} {...props}/>,
@@ -1167,7 +1164,7 @@ class JsonDom extends React.Component {
                     let eleType = JsonDom.components[tagName] || this.extendedComponents[tagName] || tagName
 
                     eleProps.key = this.props.slug+key
-                    if (t === 'Cms' || t === 'JsonDom') {
+                    if (t === 'Cms') {
                         // if we have a cms component in another cms component the location props gets not refreshed
                         // that's way we pass it directly to the reactElement as a prop
                         eleProps.user = this.props.user
@@ -1388,10 +1385,10 @@ class JsonDom extends React.Component {
             //Is other
             str = JSON.stringify({
                 t: 'MarkDown.JsonDom-markdown',
-                c: Util.escapeForJson(str)
+                c: Util.escapeForJson(str).replace(/\`/g, '\\`')
             })
         }
-        const code = DomUtil.toES5(`const {${Object.keys(scope).join(',')}}=this.scope${SCRIPT_UTIL_PART}data),_r=this.addToPostRender;return \`${str.replace(/\`/g, '\\`')}\``)
+        const code = DomUtil.toES5(`const {${Object.keys(scope).join(',')}}=this.scope${SCRIPT_UTIL_PART}data),_r=this.addToPostRender;return \`${str}\``)
         try {
             // Scope properties get destructed so they can be accessed directly by property name
             return new Function(code).call({
