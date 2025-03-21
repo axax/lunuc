@@ -124,8 +124,8 @@ class JsonDom extends React.Component {
             return <JsonDomInput {...rest} />
         },
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
-        'JsonDom': ({_this,...props}) => {
-            return <JsonDom history={_this.props.history} location={_this.props.location} {...props}/>
+        JsonDom: ({_this,...props}) => {
+            return <JsonDom {...props}/>
         },
         'QuillEditor': (props) => <QuillEditor {...props}/>,
         'CodeEditor': (props) => <CodeEditor {...props}/>,
@@ -1167,7 +1167,7 @@ class JsonDom extends React.Component {
                     let eleType = JsonDom.components[tagName] || this.extendedComponents[tagName] || tagName
 
                     eleProps.key = this.props.slug+key
-                    if (t === 'Cms') {
+                    if (t === 'Cms' || t === 'JsonDom') {
                         // if we have a cms component in another cms component the location props gets not refreshed
                         // that's way we pass it directly to the reactElement as a prop
                         eleProps.user = this.props.user

@@ -129,12 +129,12 @@ const trOptions = key => ({
 
 const classOptions = (key, tab) => ({
     [`${key}id`]: {
+        newLine: true,
         label: 'ID',
         tab: tab || DEFAULT_TAB
     },
     [`${key}className`]: {
         label: 'CSS Klassname',
-        fullWidth: true,
         tab: tab || DEFAULT_TAB
     },
     [`${key}style@custom`]: {
