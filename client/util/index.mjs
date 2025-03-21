@@ -515,7 +515,9 @@ const Util = {
             if(contextLanguage){
                 path = path.substring(contextLanguage.length+1)
             }
-            path = '/' + lang + path
+            if(lang !== config.DEFAULT_LANGUAGE) {
+                path = '/' + lang + path
+            }
         }
         return path + loc.search + loc.hash
     },
