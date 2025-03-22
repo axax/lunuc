@@ -17,8 +17,7 @@ export const preprocessCss = (ncss, sub) => {
             let atRule = null
             let ll
             for (let token = get(); token; token = get()) {
-                //console.log(token)
-                if ( /^@/.test(token)) {
+                if ( atRule==null && /^@/.test(token)) {
                     atRule = '';
                     ll = 0;
                 }
@@ -88,7 +87,7 @@ export const preprocessCss = (ncss, sub) => {
 
     }
     console.log(`css preprocessed in ${new Date() - startTime}ms`)*/
-
+console.log(result)
     return result
 
 }

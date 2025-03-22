@@ -1536,6 +1536,7 @@ const baseElements = [
                 label: 'Style',
                 tab: DEFAULT_TAB
             },
+            ...marginOptions('p_'),
             ...classOptions('p_')
         },
         defaults: {

@@ -105,7 +105,7 @@ Hook.on('appready', ({app, db}) => {
 
                 const result = await runApiScript({api, db, req, res, startTime})
 
-                if (result.responseStatus && result.responseStatus.ignore) {
+                if (!result.error && result.responseStatus && result.responseStatus.ignore) {
 
                 } else if (result.error) {
                     Hook.call('ExtensionApiError', {db, req, error: result.error, slug})
