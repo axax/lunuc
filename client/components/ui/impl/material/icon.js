@@ -89,11 +89,14 @@ import {
     ShieldIcon,
     FingerprintIcon,
     DeleteIcon,
-    HighlightAltIcon
+    HighlightAltIcon,
+    AccountTreeIcon,
+    RefreshIcon
 } from 'gensrc/ui/admin/icons'
 
 const iconComponents = {
     delete:DeleteIcon,
+    refresh:RefreshIcon,
     magic:AutoFixHighIcon,
     translate: TranslateIcon,
     displaySetting:DisplaySettingsIcon,
@@ -182,7 +185,8 @@ const iconComponents = {
     google: GoogleIcon,
     shield:ShieldIcon,
     fingerprint: FingerprintIcon,
-    highlight:HighlightAltIcon
+    highlight:HighlightAltIcon,
+    tree:AccountTreeIcon
 }
 
 export const getIconByKey = (key, defaultIcon) => {

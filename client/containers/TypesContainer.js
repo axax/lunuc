@@ -233,6 +233,7 @@ class TypesContainer extends React.Component {
             this.pageParams._version !== pageParams._version ||
             this.pageParams.limit !== pageParams.limit ||
             this.pageParams.sort !== pageParams.sort ||
+            this.pageParams.view !== pageParams.view ||
             this.pageParams.baseFilter !== pageParams.baseFilter ||
             this.pageParams.prettyFilter !== pageParams.prettyFilter ||
             this.pageParams.filter !== pageParams.filter) {
@@ -256,7 +257,7 @@ class TypesContainer extends React.Component {
         const {data, selectedRows} = this.state
         if (data) {
 
-            const {type, page, limit, sort, _version} = this.pageParams
+            const {type, page, limit, sort, _version, view} = this.pageParams
             const fields = this.types[type].fields, dataSource = []
 
             const columnsFiltered = [], columnsMap = {}
@@ -579,12 +580,14 @@ class TypesContainer extends React.Component {
                     divider:true,
                     name: _t('TypesContainer.tableSettings'), onClick: () => {
                         this.setState({viewSettingDialog: true})
-                    }
+                    },
+                    icon:'displaySetting'
                 },
                 {
-                    name: 'Refresh', onClick: () => {
+                    name: _t('TypesContainer.refresh'), onClick: () => {
                         this.getData(this.pageParams, false)
-                    }
+                    },
+                    icon:'refresh'
                 }]
 
             if (this.types[type].collectionClonable) {
@@ -611,11 +614,14 @@ class TypesContainer extends React.Component {
             if(Util.hasCapability({userData: _app_.user}, CAPABILITY_BULK_EDIT_SCRIPT)){
                 multiSelectActions.push( {name: _t('TypesContainer.bulkEditScript'), value: 'editScript'})
             }
-            Hook.call('TypeTableAction', {type, actions, multiSelectActions, pageParams: this.pageParams}, this)
+
+
+            Hook.call('TypeTableAction', {type, actions, multiSelectActions, pageParams: this.pageParams, data}, this)
 
             return <SimpleTable key="typeTable"
                                 style={{marginBottom: '5rem'}}
                                 title=""
+                                tableRenderer={this.tableRenderer}
                                 onRowClick={this.handleRowClick.bind(this)}
                                 dataSource={dataSource}
                                 columns={columnsFiltered}
@@ -1252,7 +1258,8 @@ class TypesContainer extends React.Component {
             meta,
             opener,
             action,
-            open
+            open,
+            view
         } = Util.extractQueryParams(window.location.search.substring(1))
         const pInt = parseInt(p), lInt = parseInt(l)
 
@@ -1287,6 +1294,7 @@ class TypesContainer extends React.Component {
             page: pInt || typeSettings.page || 1,
             sort: s || typeSettings.sort || '',
             filter: f || typeSettings.filter || '',
+            view: view || typeSettings.view || '',
             _version: v || typeSettings._version || 'default',
             includeFields
         }
@@ -1319,6 +1327,10 @@ class TypesContainer extends React.Component {
             finalFilter += this.prettyFilterToStringFilter(prettyFilter)
         }
         return finalFilter
+    }
+
+    extendSort(sort) {
+        return (sort || '')
     }
 
     getFieldsActiveOrInactive(type, active){
@@ -1413,7 +1425,7 @@ class TypesContainer extends React.Component {
             const queries = this.getTypeQueriesFiltered(type, {loadAll: false})
             if (queries) {
                 const storeKey = this.getStoreKey(type),
-                    variables = {limit, page, sort, meta, _version, filter: this.extendFilter(filter)}
+                    variables = {limit, page, sort: this.extendSort(sort), meta, _version, filter: this.extendFilter(filter)}
                 if (cacheFirst) {
                     try {
                         const storeData = client.readQuery({
@@ -1498,9 +1510,7 @@ class TypesContainer extends React.Component {
                     console.log(freshData, optimisticInput)
 
                     const storeKey = this.getStoreKey(type)
-                    const extendedFilter = this.extendFilter(filter)
-
-                    const variables = {limit, page, sort, meta, _version, filter: extendedFilter}
+                    const variables = {limit, page, sort: this.extendSort(sort), meta, _version, filter: this.extendFilter(filter)}
 
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
@@ -1540,9 +1550,7 @@ class TypesContainer extends React.Component {
                 update: (store, {data}) => {
                     const storeKey = this.getStoreKey(type),
                         responseItem = data['update' + type]
-                    const extendedFilter = this.extendFilter(filter)
-
-                    const variables = {limit, page, sort, meta, _version, filter: extendedFilter}
+                    const variables = {limit, page, sort:  this.extendSort(sort), meta, _version, filter: this.extendFilter(filter)}
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
                         query: queries.query,
@@ -1587,9 +1595,7 @@ class TypesContainer extends React.Component {
                     _id: ids.length > 1 ? ids : ids[0]
                 },
                 update: (store, {data}) => {
-                    const extendedFilter = this.extendFilter(filter)
-
-                    const variables = {limit, page, sort, meta, _version, filter: extendedFilter}
+                    const variables = {limit, page, sort: this.extendSort(sort), meta, _version, filter: this.extendFilter(filter)}
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
                         query: queries.query,
@@ -1664,8 +1670,7 @@ class TypesContainer extends React.Component {
 
                     const storeKey = this.getStoreKey(type)
 
-                    const extendedFilter = this.extendFilter(filter)
-                    const variables = {limit, page, sort, meta, _version, filter: extendedFilter}
+                    const variables = {limit, page, sort: this.extendSort(sort), meta, _version, filter: this.extendFilter(filter)}
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
                         query: queries.query,
@@ -1739,10 +1744,11 @@ class TypesContainer extends React.Component {
             meta,
             opener,
             prettyFilter,
-            includeFields
+            includeFields,
+            view
         } = Object.assign({}, this.pageParams, args)
 
-        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL + '/' + (location.pathname.indexOf('/typesblank/') >= 0 ? 'typesblank' : 'types') + (type ? '/' + type : '')}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${fixType ? '&fixType=' + fixType : ''}${includeFields ? '&includeFields=' + includeFields : ''}${title ? '&title=' + encodeURIComponent(title) : ''}${meta ? '&meta=' + meta : ''}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}${prettyFilter ? '&prettyFilter=' + encodeURIComponent(prettyFilter) : ''}${opener?'&opener=true':''}`)
+        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL + '/' + (location.pathname.indexOf('/typesblank/') >= 0 ? 'typesblank' : 'types') + (type ? '/' + type : '')}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${fixType ? '&fixType=' + fixType : ''}${includeFields ? '&includeFields=' + includeFields : ''}${title ? '&title=' + encodeURIComponent(title) : ''}${meta ? '&meta=' + meta : ''}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}${prettyFilter ? '&prettyFilter=' + encodeURIComponent(prettyFilter) : ''}${opener?'&opener=true':''}${view?'&view='+view:''}`)
     }
 
     getPrettyFilter() {

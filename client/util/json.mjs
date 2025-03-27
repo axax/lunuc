@@ -185,12 +185,14 @@ export const findSegmentByKeyOrPath = ({json, key, path}) => {
 }
 
 export const parseOrElse = (str, elseValue) => {
-    try{
-        return JSON.parse(str)
-    }catch (e){
-        console.warn('parseOrElse',e,str,elseValue)
-        return elseValue===undefined ? str : elseValue
+    if(str) {
+        try {
+            return JSON.parse(str)
+        } catch (e) {
+            console.warn('parseOrElse', e, str, elseValue)
+        }
     }
+    return elseValue===undefined ? str : elseValue
 }
 
 export const findObjectsByAttributeValue = (obj, attr, attrValue) => {

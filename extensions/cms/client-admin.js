@@ -24,6 +24,7 @@ import TypesContainer from 'client/containers/TypesContainer'
 import GenericForm from 'client/components/GenericForm'
 import {translations as adminTranslations} from 'client/translations/admin'
 import Expandable from '../../client/components/Expandable'
+import SimpleImageList from '../../client/components/ui/impl/material/SimpleImageList'
 
 registerTrs(translations, 'CmsViewEditorContainer')
 registerTrs(adminTranslations, 'AdminTranslations')
@@ -65,6 +66,14 @@ const addAdminComponents = (components) => {
     }
 }*/
 
+const getImageFromCmsPageItem = (item) => {
+    if (item.public) {
+        return `/lunucapi/generate/png?url=/${item.slug}${encodeURI('?preview=true')}&width=1200&height=800&rwidth=240&rheight=160&cache=true&cacheExpire=${new Date(item.modifiedAt).getTime()}`
+    } else {
+        return `/lunucapi/system/genimage?width=120&height=80&text=Kein Bild&fontsize=1em`
+    }
+}
+
 export default () => {
 
     Hook.on('JsonDom', ({components}) => {
@@ -100,15 +109,9 @@ export default () => {
                 if (d.slug) {
                     const item = data.results[i]
                     if( item ) {
-                        let src
-                        if(item.public){
-                            src = `/lunucapi/generate/png?url=/${item.slug}${encodeURI('?preview=true')}&width=1200&height=800&rwidth=120&rheight=80&cache=true&cacheExpire=${new Date(item.modifiedAt).getTime()}`
-                        }else{
-                            src = `/lunucapi/system/genimage?width=120&height=80&text=Kein Bild&fontsize=1em`
-                        }
                         d.preview =  <Link style={{display:'block', lineHeight: '0'}} to={cmsPageEditorUrl(item.slug, container.pageParams._version)}>
                             <img style={{}} width={120} height={80}
-                                         src={src}/>
+                                         src={getImageFromCmsPageItem(item)}/>
                         </Link>
 
                         d.slug = <Link
@@ -139,6 +142,34 @@ export default () => {
             })
         }
     })
+
+
+
+    // add some extra data to the table
+    Hook.on('TypeTableAction', function ({type, actions, pageParams, data}) {
+        if (type === 'CmsPage') {
+            const isImageView = pageParams.view==='image'
+            if(isImageView){
+                this.tableRenderer = ()=>{
+                    return <SimpleImageList items={data.results.map(ds=>({
+                        author: ds.createdBy.username,
+                        title: _t(ds.name),
+                        href:cmsPageEditorUrl(ds.slug, pageParams._version),
+                        img:getImageFromCmsPageItem(ds)}))}/>
+                }
+            }else{
+                delete this.tableRenderer
+            }
+            actions.push({
+                    name: isImageView?'List view':'Image view',
+                    onClick: () => {
+                        this.goTo({view: isImageView?'':'image'})
+                    },
+                    icon:isImageView?'view':'image'
+                })
+        }
+    })
+
 
     //            slug = slug.trim().toLowerCase().replace(/[\W_]+/g,"_")
 

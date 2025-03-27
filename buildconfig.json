@@ -217,7 +217,9 @@
         "Transform",
         "AutoAwesome",
         "Visibility",
-        "VisibilityOff"
+        "VisibilityOff",
+        "AccountTree",
+        "Refresh"
       ],
       "theme":{
         "colors":{

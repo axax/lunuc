@@ -19,7 +19,6 @@ import theme from './theme'
 import {_t} from 'util/i18n.mjs'
 import styled from '@emotion/styled'
 
-
 const StyledScrollArea = styled.div`
     width: 100%;
     overflow-y: hidden;
@@ -61,7 +60,7 @@ class SimpleTable extends React.Component {
     }
 
     render() {
-        const {style, title, actions, header, count, rowsPerPage, page, orderDirection, orderBy, onChangePage, onChangeRowsPerPage, onRowClick, columns, dataSource, footer} = this.props
+        const {tableRenderer, style, title, actions, header, count, rowsPerPage, page, orderDirection, orderBy, onChangePage, onChangeRowsPerPage, onRowClick, columns, dataSource, footer} = this.props
 
         const numSelected = 0
         return <Paper style={style}>
@@ -102,6 +101,7 @@ class SimpleTable extends React.Component {
             }
 
             <StyledScrollArea>
+                {tableRenderer ? tableRenderer() :
                 <Table size="small">
                     <TableHead>
                         <TableRow>
@@ -159,7 +159,7 @@ class SimpleTable extends React.Component {
                     </TableBody>
                     }
 
-                </Table>
+                </Table>}
             </StyledScrollArea>
             <Table>
                 <TableFooter>
