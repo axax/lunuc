@@ -62,6 +62,11 @@ class QuillEditor extends React.Component {
 
                 this.isInit = true
 
+                if(window.QuillTableBetter) {
+                    Quill.register({
+                        'modules/table-better': window.QuillTableBetter
+                    }, true)
+                }
 
                 const toolbar = this.props.toolbar || [
                     ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
@@ -81,7 +86,7 @@ class QuillEditor extends React.Component {
                     /*[{ 'font': [] }],*/
                     [{'align': []}],
                     ['clean'],
-                    ['bettertable'],
+                    ['table-better'],
                     ['showhtml']
 
                     /*['clean']  */                                       // remove formatting button
@@ -101,6 +106,14 @@ class QuillEditor extends React.Component {
                                     this.txtArea.style.display = this.txtArea.style.display === 'none' ? '' : 'none'
                                 }
                             }
+                        },
+                        table: false,
+                        'table-better': {
+                            toolbarTable: true,
+                            menus: ['column', 'row', 'merge', 'table', 'cell', 'wrap', 'copy', 'delete'],
+                        },
+                        keyboard: {
+                            bindings: window.QuillTableBetter ? QuillTableBetter.keyboardBindings: null
                         },
                         history: {
                             delay: 2000,
@@ -140,7 +153,6 @@ class QuillEditor extends React.Component {
                 DomUtil.addScript('/quill.min.js', {
                     onload: quillIsReady
                 })
-
 
             } else {
                 quillIsReady()
