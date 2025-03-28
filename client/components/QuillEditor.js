@@ -63,7 +63,7 @@ class QuillEditor extends React.Component {
                 this.isInit = true
 
                 if(window.QuillTableBetter) {
-                    Quill.register({
+                    window.Quill.register({
                         'modules/table-better': window.QuillTableBetter
                     }, true)
                 }
@@ -91,6 +91,7 @@ class QuillEditor extends React.Component {
 
                     /*['clean']  */                                       // remove formatting button
                 ]
+
                 this.quill = new window.Quill('#quilleditor' + this.instanceId, {
                     modules: {
                         toolbar: {
@@ -111,9 +112,6 @@ class QuillEditor extends React.Component {
                         'table-better': {
                             toolbarTable: true,
                             menus: ['column', 'row', 'merge', 'table', 'cell', 'wrap', 'copy', 'delete'],
-                        },
-                        keyboard: {
-                            bindings: window.QuillTableBetter ? QuillTableBetter.keyboardBindings: null
                         },
                         history: {
                             delay: 2000,
