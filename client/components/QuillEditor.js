@@ -92,33 +92,39 @@ class QuillEditor extends React.Component {
                     /*['clean']  */                                       // remove formatting button
                 ]
 
-                this.quill = new window.Quill('#quilleditor' + this.instanceId, {
-                    modules: {
-                        toolbar: {
-                            container: toolbar,
-                            handlers: {
-                                showhtml: () => {
-                                    if (this.txtArea.style.display === '') {
-                                        const html = this.txtArea.value
-                                        this.quill.root.innerHTML = html
-                                    } else {
-                                        this.txtArea.value = this.quill.root.innerHTML
-                                    }
-                                    this.txtArea.style.display = this.txtArea.style.display === 'none' ? '' : 'none'
+                const modules = {
+                    toolbar: {
+                        container: toolbar,
+                        handlers: {
+                            showhtml: () => {
+                                if (this.txtArea.style.display === '') {
+                                    const html = this.txtArea.value
+                                    this.quill.root.innerHTML = html
+                                } else {
+                                    this.txtArea.value = this.quill.root.innerHTML
                                 }
+                                this.txtArea.style.display = this.txtArea.style.display === 'none' ? '' : 'none'
                             }
-                        },
-                        table: false,
-                        'table-better': {
-                            toolbarTable: true,
-                            menus: ['column', 'row', 'merge', 'table', 'cell', 'wrap', 'copy', 'delete'],
-                        },
-                        history: {
-                            delay: 2000,
-                            maxStack: 500,
-                            userOnly: true
                         }
                     },
+                    table: false,
+                    'table-better': {
+                        toolbarTable: true,
+                        menus: ['column', 'row', 'merge', 'table', 'cell', 'wrap', 'copy', 'delete'],
+                    },
+                    history: {
+                        delay: 2000,
+                        maxStack: 500,
+                        userOnly: true
+                    }
+                }
+
+                if(window.QuillTableBetter){
+                    modules.keyboard = {bindings: window.QuillTableBetter.keyboardBindings}
+                }
+
+                this.quill = new window.Quill('#quilleditor' + this.instanceId, {
+                    modules,
                     theme
                 })
 
@@ -136,6 +142,8 @@ class QuillEditor extends React.Component {
                         if (html === '<p><br></p>') {
                             html = ''
                         }
+
+                        console.log('yyyy', html)
 
                       //  html = html.replace(/<p[^>]*>(&nbsp;|\s+|<br\s*\/?>)*<\/p>/g,'<p style="margin: 0;">&nbsp;</p>')
                         if (name) {
