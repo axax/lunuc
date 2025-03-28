@@ -318,7 +318,7 @@ class CmsViewContainer extends React.Component {
                             }
                             const {action, _meta, filter, data, removedIds} = supscriptionData.data[subscriptionName]
 
-                            if ((data || removedIds) && (!filter || filter === subscription.filter[action])) {
+                            if ((data || removedIds) && (!filter || !subscription.filter[action] || filter === subscription.filter[action])) {
                                 const storedData = client.readQuery({
                                     query: getCmsPageQuery(_this.props),
                                     variables: _this.props.cmsPageVariables
