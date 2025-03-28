@@ -44,13 +44,11 @@ const SearchWrapper = styled('div')(({ theme }) => ({
 
 const GlobalSearch = props => {
 
-
-
-
     return <SearchWrapper><SimpleAutosuggest
         freeSolo
         search
         fullWidth
+        historyKey="GlobalSearch"
         apiUrl={(searchData)=>{
             let coreTypes = ['Media', 'CmsPage', 'Api', 'CronJob','StaticFile','Hook','KeyValueGlobal']
             const regex = /^\w+:/g

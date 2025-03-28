@@ -195,30 +195,35 @@ export const parseOrElse = (str, elseValue) => {
     return elseValue===undefined ? str : elseValue
 }
 
-export const findObjectsByAttributeValue = (obj, attr, attrValue) => {
+export const findObjectsByAttributeValue = (obj, attr, attrValue, options = {}) => {
     let results = []
 
-    function traverse(obj) {
+    function traverse(obj, parentObj, keyIndex) {
         if (typeof obj === 'object' && obj !== null) {
             if (Array.isArray(obj)) {
                 // Handle arrays
                 for (let i = 0; i < obj.length; i++) {
-                    traverse(obj[i], attr, attrValue)
+                    traverse(obj[i], obj, i)
                 }
             } else {
                 // Handle objects
                 if (obj[attr] === attrValue) {
-                    results.push(obj)
+                    if(options.returnParent) {
+                        results.push({data:obj, parent:parentObj, keyIndex})
+
+                    }else{
+                        results.push(obj)
+                    }
                 }
                 for (let key in obj) {
                     if (obj.hasOwnProperty(key)) {
-                        traverse(obj[key],attr, attrValue)
+                        traverse(obj[key], obj, key)
                     }
                 }
             }
         }
     }
 
-    traverse(obj, attr, attrValue)
+    traverse(obj)
     return results
 }

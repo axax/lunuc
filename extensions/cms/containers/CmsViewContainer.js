@@ -9,7 +9,7 @@ import {client} from '../../../client/middleware/graphql'
 import Hook from '../../../util/hook.cjs'
 import {deepMerge} from '../../../util/deepMerge.mjs'
 import {CAPABILITY_MANAGE_CMS_CONTENT} from '../constants/index.mjs'
-import {isString, parseOrElse, setPropertyByPath} from '../../../client/util/json.mjs'
+import {findObjectsByAttributeValue, isString, parseOrElse, setPropertyByPath} from '../../../client/util/json.mjs'
 
 class CmsViewContainer extends React.Component {
     oriTitle = document.title
@@ -324,6 +324,7 @@ class CmsViewContainer extends React.Component {
                                     variables: _this.props.cmsPageVariables
                                 })
 
+
                                 // upadate data in resolvedData string
                                 if (storedData && storedData.cmsPage && storedData.cmsPage.resolvedData) {
                                     const resolvedDataJson = JSON.parse(storedData.cmsPage.resolvedData)
@@ -356,25 +357,28 @@ class CmsViewContainer extends React.Component {
                                             })
                                             if (['update', 'delete'].indexOf(action) >= 0) {
 
-                                                // find data to update
-                                                const idx = refResults.findIndex(o => o._id === entry._id)
-
-                                                if (idx > -1) {
+                                                const allData = findObjectsByAttributeValue(refResults, '_id', entry._id, {returnParent:true})
+                                                const partialUpdate = parseOrElse(_meta,{}).partialUpdate
+                                                allData.sort((a, b) => b.keyIndex - a.keyIndex).forEach(data=>{
                                                     if (action === 'update') {
-                                                        let partialUpdate = parseOrElse(_meta,{}).partialUpdate
                                                         if(partialUpdate){
-                                                           // TODO partialUpdate
+                                                            // TODO partialUpdate
                                                             console.log( noNullData)
-                                                            refResults[idx] = deepMerge({}, refResults[idx], noNullData)
+                                                            data.parent[data.keyIndex] = deepMerge({}, data.data, noNullData)
                                                         }else {
                                                             // update data
-                                                            refResults[idx] = Object.assign({}, refResults[idx], noNullData)
+                                                            data.parent[data.keyIndex] = Object.assign({}, data.data, noNullData)
                                                         }
                                                     } else {
                                                         // delete data
-                                                        refResults.splice(idx, 1)
+                                                        if(Array.isArray(data.parent)) {
+                                                            data.parent.splice(data.keyIndex, 1)
+                                                        }else{
+                                                            delete data.parent[data.keyIndex]
+                                                        }
                                                     }
-                                                } else {
+                                                })
+                                                if(allData.length==0){
                                                     console.warn(`Data ${entry._id} does not exist.`)
                                                 }
 

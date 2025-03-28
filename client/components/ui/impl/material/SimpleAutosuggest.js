@@ -2,24 +2,42 @@ import * as React from 'react'
 import TextField from '@mui/material/TextField'
 import Autocomplete from '@mui/material/Autocomplete'
 import CircularProgress from '@mui/material/CircularProgress'
+import {setKeyValue, useKeyValues} from '../../../../util/keyvalue'
+import HistoryIcon from '@mui/icons-material/History'
 
 export default function SimpleAutosuggest(props) {
 
     const [open, setOpen] = React.useState(false)
     const [loading, setLoading] = React.useState(false)
+    const [hadFocus, setHadFocus] = React.useState(false)
+    const [text, setText] = React.useState(props.value || '')
     const [options, setOptions] = React.useState(props.options || [])
 
-   /* React.useEffect(() => {
-        let active = true
+    const settingKey = `SimpleAutosuggestHistory-${props.historyKey}`
+    const keyValueData = hadFocus && props.historyKey?useKeyValues([settingKey]):{data:{}}
+    const settings = keyValueData.data[settingKey] || {}
 
-        if (!loading) {
-            return undefined
-        }
 
-        return () => {
-            active = false
-        }
-    }, [loading])*/
+    const finalOptions = options.slice(0)
+    if(settings.history){
+        settings.history.reverse().forEach(historyText=>{
+            if(!text || historyText.indexOf(text)>=0) {
+                finalOptions.unshift({name: historyText, history: true})
+            }
+        })
+    }
+
+    /* React.useEffect(() => {
+         let active = true
+
+         if (!loading) {
+             return undefined
+         }
+
+         return () => {
+             active = false
+         }
+     }, [loading])*/
 
     /*React.useEffect(() => {
         if (!open) {
@@ -84,21 +102,53 @@ export default function SimpleAutosuggest(props) {
 
     return (
         <Autocomplete
+            autoHighlight={true}
+            autoComplete={true}
+            onFocus={()=>{
+                setHadFocus(true)
+            }}
             fullWidth={props.fullWidth}
             sx={props.sx}
-            value={props.value}
+            value={text}
             freeSolo={props.freeSolo}
             clearOnEscape={true}
             open={open}
             onOpen={() => {
-                setOpen(true);
+                setOpen(true)
             }}
             onClose={() => {
-                setOpen(false);
+                setOpen(false)
             }}
             onBlur={props.onBlur}
-            onChange={props.onChange}
+            onChange={(e, item)=>{
+                if(!item){
+                    return
+                }
+                if(!item.history) {
+                    if(props.historyKey) {
+                        if(!settings.history){
+                            settings.history = []
+                        }
+                        const index = settings.history.indexOf(text)
+                        if (index !== -1) {
+                            settings.history.splice(index, 1)
+                        }
+                        settings.history.unshift(text)
+                        settings.history.length = Math.min(settings.history.length, 50)
+
+                        setKeyValue({key: settingKey, value: settings})
+                    }
+                    props.onChange(e, item, text)
+                }else{
+                    setText(item.name)
+                    setTimeout(()=> {
+                        setOpen(true)
+                    },0)
+
+                }
+            }}
             onInputChange={(event, text)=>{
+                setText(text)
                 getData({text})
                 if(props.onInputChange){
                     props.onInputChange(event, text)
@@ -109,15 +159,24 @@ export default function SimpleAutosuggest(props) {
                 if(option.name){
                     return option.name
                 }
-                const foundOption = options.find(item=>item.value===option)
+                const foundOption = finalOptions.find(item=>item.value===option)
                 if(foundOption){
                     return foundOption.name
                 }
                 return option
             }}
             filterOptions={props.filterOptions}
-            options={options}
+            options={finalOptions}
             loading={loading}
+            renderOption={(props, option, { selected }) => {
+                const { key, ...optionProps } = props
+                return (
+                    <li key={key} {...optionProps}>
+                        {option.history && <HistoryIcon sx={{marginRight:1}} />}
+                        {option.name}
+                    </li>
+                );
+            }}
             renderInput={(params) => {
                 return <TextField
                     onClick={props.onClick}
