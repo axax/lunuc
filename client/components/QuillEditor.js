@@ -37,7 +37,8 @@ class QuillEditor extends React.Component {
         } else if (this.state.value !== state.value) {
             setTimeout(() => {
                 const sY = window.scrollY, sX = window.scrollX
-                this.quill.setContents(this.quill.clipboard.convert({
+                this.quill.setContents('')
+                this.quill.updateContents(this.quill.clipboard.convert({
                     html: state.value
                 }))
                 window.scrollTo(sX, sY)
@@ -142,9 +143,6 @@ class QuillEditor extends React.Component {
                         if (html === '<p><br></p>') {
                             html = ''
                         }
-
-                        console.log('yyyy', html)
-
                       //  html = html.replace(/<p[^>]*>(&nbsp;|\s+|<br\s*\/?>)*<\/p>/g,'<p style="margin: 0;">&nbsp;</p>')
                         if (name) {
                             onChange({target: {name, value: html}})
