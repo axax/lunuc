@@ -219,7 +219,7 @@ const startListening = async (db, context) => {
                         const transporter = nodemailerDirectTransport({
                             name: session.servername
                         })
-                        console.log('onData send', data)
+                        console.log('onData send', data, settings.dkim)
 
                         const transporterResult = nodemailer.createTransport(transporter)
                         try {
@@ -305,7 +305,8 @@ const startListening = async (db, context) => {
                                         subject: `${data.subject}`,
                                         text: data.text, //'Plaintext version of the message'
                                         html: data.html,
-                                        attachments: data.attachments
+                                        attachments: data.attachments,
+                                        dkim: settings.dkim
                                     }
 
                                     try {
