@@ -225,6 +225,7 @@ const startListening = async (db, context) => {
                         try {
                             await transporterResult.sendMail({
                                 ...data,
+                                dkim: settings.dkim,
                                 to: data?.to?.value,
                                 cc: data?.cc?.value,
                                 bcc: data?.bcc?.value,
