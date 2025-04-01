@@ -118,11 +118,8 @@ Hook.on('appready', async ({db, context}) => {
                                 response.answers = []
                                 for(let i = 0;i<resolvedQuestion.answers.length;i++){
                                     const answer = resolvedQuestion.answers[i]
-                                    if (answer.address == dnsServerContext.gatewayIp && rinfo.address=="127.0.0.1") {
-
-                                        console.log(rinfo)
-                                        console.log(question)
-                                        console.log(answer)
+                                    if (question.name!=='mail.onyou.ch' && question.name!== 'mail-service.onyou.ch' &&
+                                        answer.address == dnsServerContext.gatewayIp && rinfo.address=="127.0.0.1") {
                                         response.answers.push(Object.assign({},answer,{address:'127.0.0.1'}))
                                     }else{
                                         response.answers.push(answer)
