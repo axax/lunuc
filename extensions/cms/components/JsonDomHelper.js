@@ -146,7 +146,7 @@ const StyledPicker = styled('div')({
 })
 
 const StyledToolbarButton = styled('div')({
-    zIndex: 9999,
+    zIndex: 1000,
     position: 'fixed',
     maxHeight: '200px'
 })
@@ -158,14 +158,29 @@ const StyledToolbarMenu = styled(SimpleMenu)({
 })
 
 const StyledInfoBox = styled('div')({
-    position: 'fixed',
-    bottom: '0px',
-    right: '0px',
-    background: '#fff',
-    padding: '3px',
-    zIndex: 99999
+    position: 'absolute',
+    top:'-16px',
+    color:'#ffffff',
+    background: '#000000',
+    padding: '2px 3px',
+    fontSize:'11px',
+    lineHeight:1,
+    zIndex: 1001,
+    whiteSpace:'nowrap'
 })
 
+const StyledHorizontalDivider = styled('div')({
+    position: 'absolute',
+    height: '4px',
+    width:'100%',
+    background: 'rgba(66, 164, 245,0.1)',
+    /*borderBottom:'solid 2px #000000',*/
+    right: 0,
+    top: '100%',
+    left: 0,
+    cursor: 'ew-resize',
+    zIndex: 1002,
+})
 
 const deleteDialogActions = [
     {
@@ -212,12 +227,16 @@ const getHighlightPosition = (node)=>  {
         childMinTop = Math.min(rect.top, childMinTop)
         childMaxTop = Math.max(rect.top + (rect.height ?? 0), childMaxTop)
     }
+
+
+    const computedStyle = window.getComputedStyle(node)
     return {
         hovered: true,
         height: childMaxTop - childMinTop,
         width: childMaxLeft - childMinLeft,
         top: childMinTop,
-        left: childMinLeft
+        left: childMinLeft,
+        marginBottom: computedStyle.marginBottom
     }
 }
 
@@ -862,6 +881,7 @@ class JsonDomHelper extends React.Component {
                     overrideEvents, onChange, _options, _dynamic, rest, _json, isInLoop, isSelected
                 })
 
+                const elementKey = rest['data-element-key'] || _tagName
                 toolbar = <StyledToolbarButton
                     key={rest._key + '.toolbar'}
                     data-toolbar={rest._key}
@@ -869,7 +889,8 @@ class JsonDomHelper extends React.Component {
                     onMouseOut={this.onToolbarMouseOut.bind(this)}
                     style={{top: this.state.top, left: this.state.left, height: this.state.height}}>
 
-                    <StyledInfoBox>{(rest['data-element-key'] || rest.slug || _tagName) + (rest.id?` (${rest.id})`:'')}</StyledInfoBox>
+                    <StyledInfoBox>{(_t(`elements.key.${elementKey}`,null,elementKey)) + (rest.id?` (${rest.id})`:(rest.slug?` (${rest.slug})`:''))}</StyledInfoBox>
+
 
                     {menuItems.length > 0 && <StyledToolbarMenu
                         anchorReference={this.state.mouseY ? "anchorPosition" : "anchorEl"}
@@ -930,7 +951,9 @@ class JsonDomHelper extends React.Component {
                                 this.openPicker(_options)
                             }
                         }}>{isCms && subJson && subJson.p ? subJson.p.id || subJson.p.slug :
-                        <ImageIcon/>}</StyledPicker> : ''}</StyledHighlighter>
+                        <ImageIcon/>}</StyledPicker> : ''}
+                    <StyledHorizontalDivider style={{height:this.state.marginBottom}}></StyledHorizontalDivider>
+                </StyledHighlighter>
             }
         }
 

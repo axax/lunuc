@@ -271,9 +271,6 @@ export const handleDbDumpUpload = (db, client) => async (req, res) => {
 
         res.writeHead(200, {'content-type': 'application/json'})
 
-
-        // every time a file has been uploaded successfully,
-        // rename it to it's orignal name
         form.on('file', function (field, file) {
 
             console.log(client.s.url, file.filepath)

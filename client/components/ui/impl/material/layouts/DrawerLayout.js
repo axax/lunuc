@@ -30,7 +30,7 @@ const StyledAppBar = styled(AppBar, {
 })(({ theme, fixed }) => ({
     position: 'absolute',
     maxWidth: '100%',
-    zIndex: theme.zIndex.drawer + 1,
+    zIndex: /*theme.zIndex.drawer + 1 + */1100,
     transition: theme.transitions.create(['width', 'margin'], {
         easing: theme.transitions.easing.sharp,
         duration: theme.transitions.duration.leavingScreen,

@@ -503,8 +503,8 @@ const baseElements = [
     {
         subHeader: _t('elements.general'),
         tagName: 'SmartImage',
-        name: 'Bild',
         icon: 'image',
+        name: _t('elements.key.image'),
         xhint: 'Ein Bild von der Mediatheke hinzufügen',
         defaults: {
             $inlineEditor: {
@@ -868,7 +868,7 @@ const baseElements = [
     },
     {
         tagName: 'div',
-        name: 'Überschrift',
+        name: _t('elements.key.headline'),
         icon: 'format',
         defaults: {
             $inlineEditor: {
@@ -987,7 +987,7 @@ const baseElements = [
     {
         tagName: 'div',
         icon: 'wysiwyg',
-        name: 'Texteditor (Rich-Text)',
+        name: _t('elements.key.richText'),
         defaults: {
             $c: '',
             $inlineEditor: {
@@ -1017,7 +1017,7 @@ const baseElements = [
     },
     {
         tagName: 'Link',
-        name: 'Link',
+        name: _t('elements.key.link'),
         icon: 'link',
         options: {
             ...trOptions('$inlineEditor_options_c_'),
@@ -1094,7 +1094,7 @@ const baseElements = [
     },
     {
         tagName: 'Link',
-        name: 'Link mit Bild',
+        name: _t('elements.key.imageLink'),
         icon: 'datasetLink',
         options: {
             c_0_p_src: {
@@ -1660,7 +1660,7 @@ const baseElements = [
         subHeader: 'Layout Elemente',
         tagName: 'div',
         icon: 'grid',
-        name: 'Grid',
+        name: _t('elements.key.grid'),
         defaults: {
             allowDrop: true,
             $inlineEditor: {
@@ -2260,7 +2260,7 @@ const advancedElements = [
     },
     {
         tagName: 'div',
-        name: 'Custom',
+        name: _t('elements.key.custom'),
         icon: 'widgets',
         defaults: {
             $inlineEditor: {
