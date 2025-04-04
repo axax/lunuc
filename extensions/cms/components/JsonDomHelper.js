@@ -1306,28 +1306,46 @@ class JsonDomHelper extends React.Component {
                     }
                 }
 
-                if(_options.menu.convert !== false && !_options.elementKey && Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
+                if(_options.menu.convert !== false &&
+                    (!_options.elementKey || ['image'].indexOf(_options.elementKey) >= 0) &&
+                    Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
                     const changeToType = (type)=>{
                         const customElement = getJsonDomElements(type)
+
                         subJson.$inlineEditor = replaceUidPlaceholder(customElement.defaults.$inlineEditor)
                         subJson.p = Object.assign({},subJson.p,customElement.defaults.p)
+
                         this.props._onTemplateChange(_json, true)
+                    }
+
+                    const items = []
+                    if(_options.elementKey=='image'){
+                        items.push({
+                            name: _t('elements.key.imageLink'),
+                            icon: 'datasetLink',
+                            onClick: () => {
+                                subJson.c = [{...subJson,$inlineEditor:false}]
+                                subJson.t = 'Link'
+                                delete subJson.p
+                                changeToType('imageLink')
+                            }})
+                    }else{
+                        items.push({
+                            name: 'Custom container',
+                            onClick: () => {
+                                changeToType('custom')
+                            }})
+                        items.push({
+                            name: 'Headline',
+                            onClick: () => {
+                                changeToType('headline')
+                            }})
                     }
 
                     menuItems.push({
                         name: _t('JsonDomHelper.convert.element'),
                         icon: <TransformIcon/>,
-                        items: [{
-                            name: 'Custom container',
-                            onClick: () => {
-                                changeToType('custom')
-                            }
-                        },{
-                            name: 'Headline',
-                            onClick: () => {
-                                changeToType('headline')
-                            }
-                        }]
+                        items
                     })
                 }
 
