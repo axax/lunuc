@@ -24,6 +24,7 @@ import MailserverResolver from '../gensrc/resolver.mjs'
 import {simpleParser} from 'mailparser'
 import {createDefaultLogger} from './logger.mjs'
 import {dynamicSettings} from '../../../api/util/settings.mjs'
+import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
 
 // open port 993 on your server
 // sudo ufw allow 993
@@ -600,25 +601,37 @@ const startListening = async (db, context) => {
 
                 replaceAddresseObjectsToString(messageData)
 
-                const mailComposer = new MailComposer(messageData)
-                mailComposer.compile().build((err,mailMessage)=>{
-                    let stream = imapHandler.compileStream(
-                        session.formatResponse('FETCH', message.uid, {
-                            query: options.query,
-                            values: session.getQueryResponse(
-                                options.query,
-                                {...message,
-                                    mimeTree:parseMimeTree(mailMessage),
-                                    idate: new Date(messageData.date)
-                                }
-                            )
+                try {
+                    const mailComposer = new MailComposer(messageData)
+                    mailComposer.compile().build((err, mailMessage) => {
+                        let stream = imapHandler.compileStream(
+                            session.formatResponse('FETCH', message.uid, {
+                                query: options.query,
+                                values: session.getQueryResponse(
+                                    options.query,
+                                    {
+                                        ...message,
+                                        mimeTree: parseMimeTree(mailMessage),
+                                        idate: new Date(messageData.date)
+                                    }
+                                )
+                            })
+                        )
+                        // send formatted response to socket
+                        session.writeStream.write(stream, () => {
+                            setImmediate(processMessage)
                         })
-                    )
-                    // send formatted response to socket
-                    session.writeStream.write(stream, () => {
-                        setImmediate(processMessage)
                     })
-                })
+                }catch (error){
+                    GenericResolver.createEntity(db, {context:context}, 'Log', {
+                        location: 'mailserver',
+                        type: 'imapError',
+                        message: error.message,
+                        meta: messageData
+                    })
+                    console.error('error building email', error)
+                    setImmediate(processMessage)
+                }
             }
             setImmediate(processMessage)
         })
