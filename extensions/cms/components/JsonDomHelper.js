@@ -1307,19 +1307,54 @@ class JsonDomHelper extends React.Component {
                 }
 
                 if(_options.menu.convert !== false &&
-                    (!_options.elementKey || ['image'].indexOf(_options.elementKey) >= 0) &&
+                    (!_options.elementKey || ['image','layout-1-2','layout-1-3','layout-1-4','layout-1-6'].indexOf(_options.elementKey) >= 0) &&
                     Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
                     const changeToType = (type)=>{
                         const customElement = getJsonDomElements(type)
-
                         subJson.$inlineEditor = replaceUidPlaceholder(customElement.defaults.$inlineEditor)
                         subJson.p = Object.assign({},subJson.p,customElement.defaults.p)
-
+                        if(type.startsWith('layout-')) {
+                            if(subJson.c.length<customElement.defaults.c.length){
+                                for(let i=subJson.c.length;i<=customElement.defaults.c.length;i++){
+                                    subJson.c[i] = customElement.defaults.c[i]
+                                }
+                            }else {
+                                subJson.c.length = customElement.defaults.c.length
+                            }
+                        }
+                        if(customElement.options){
+                            Object.keys(customElement.options).forEach(optKey=>{
+                                if(customElement.options[optKey].value !== undefined) {
+                                    const prop = propertyByPath(optKey, subJson, '_')
+                                    if (prop === undefined || prop === null || customElement.options[optKey].forceOverride) {
+                                        setPropertyByPath(customElement.options[optKey].value, optKey, subJson, '_')
+                                    }
+                                }
+                            })
+                        }
                         this.props._onTemplateChange(_json, true)
                     }
 
                     const items = []
-                    if(_options.elementKey=='image'){
+                    if(_options?.elementKey?.startsWith('layout-')){
+                        const layouts = ['layout-1-2','layout-1-3','layout-1-4','layout-1-6']
+                        layouts.forEach(layout=>{
+                            if(layout==_options.elementKey){
+                                return
+                            }
+                            items.push({
+                                name: _t(`elements.key.${layout}`),
+                                icon: 'viewColum',
+                                onClick: () => {
+                                   // subJson.c = [{...subJson,$inlineEditor:false}]
+                                    //subJson.t = 'Link'
+                                   // delete subJson.p
+                                    changeToType(layout)
+                                }})
+
+                        })
+
+                    }else if(_options.elementKey=='image'){
                         items.push({
                             name: _t('elements.key.imageLink'),
                             icon: 'datasetLink',

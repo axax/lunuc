@@ -271,6 +271,7 @@ const classLayoutColumnOptions = (count, options) => {
 
             obj[`c_${i - 1}_p_className@${col.short}`] = {
                 fourthWidth: true,
+                forceOverride:true,
                 label: `Spalte ${i}: ${col.long}`,
                 value: options[col.short] ? ` col-${col.short}-${options[col.short]} ` : ' ',
                 tab: 'Responsive',
@@ -1702,7 +1703,7 @@ const baseElements = [
     {
         tagName: 'Row',
         icon: 'pause',
-        name: 'Layout 1/2',
+        name: _t('elements.key.layout-1-2'),
         defaults: {
             $inlineEditor: {
                 elementKey: 'layout-1-2'
@@ -1735,7 +1736,7 @@ const baseElements = [
     },
     {
         tagName: 'Row',
-        name: 'Layout 1/3',
+        name: _t('elements.key.layout-1-3'),
         icon: 'viewColum',
         defaults: {
             $inlineEditor: {
@@ -1774,7 +1775,7 @@ const baseElements = [
     },
     {
         tagName: 'Row',
-        name: 'Layout 1/4',
+        name: _t('elements.key.layout-1-4'),
         icon: 'viewColum',
         defaults: {
             $inlineEditor: {
@@ -1867,7 +1868,7 @@ const baseElements = [
     },*/
     {
         tagName: 'Row',
-        name: 'Layout 1/6',
+        name: _t('elements.key.layout-1-6'),
         icon: 'viewColum',
         defaults: {
             $inlineEditor: {
