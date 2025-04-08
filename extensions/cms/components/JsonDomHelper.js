@@ -1047,7 +1047,20 @@ class JsonDomHelper extends React.Component {
                         {_t('JsonDomHelper.delete.element.question')}
                     </SimpleDialog>
                 )}
-                {(addChildDialog && <JsonDomAddElementDialog {...addChildDialog} onClose={this.onAddChildDialogClose.bind(this)}/>)}</React.Fragment>
+                {(addChildDialog && <JsonDomAddElementDialog {...addChildDialog}
+                    onSelectParent={({key})=>{
+                        const parentKey = key.substring(0, key.lastIndexOf('.'))
+                        if(parentKey) {
+                            const subJsonParent = getComponentByKey(parentKey, _json)
+                            this.handleEditElement({
+                                jsonElement: subJsonParent?.$inlineEditor?.elementKey && getJsonDomElements(subJsonParent.$inlineEditor.elementKey),
+                                subJson: subJsonParent,
+                                isCms: subJsonParent?.$inlineEditor?.elementKey == 'cms',
+                                json: _json,
+                                key: parentKey
+                            })
+                        }
+                    }} onClose={this.onAddChildDialogClose.bind(this)}/>)}</React.Fragment>
         }
     }
 
@@ -1169,7 +1182,7 @@ class JsonDomHelper extends React.Component {
                     if (jsonElement && (isCms || jsonElement.options || jsonElement.groupOptions || (subJson && subJson.$inlineEditor && subJson.$inlineEditor.options))) {
 
                         overrideEvents.onDoubleClick = () => {
-                            this.handleEditElement({jsonElement, subJson, isCms, json: _json})
+                            this.handleEditElement({jsonElement, subJson, isCms, json: _json, key: rest._key})
                         }
                         menuItems.push({
                             name: _options.menuTitle.edit || _t('JsonDomHelper.elementSettings'),
@@ -1307,8 +1320,7 @@ class JsonDomHelper extends React.Component {
                 }
 
                 if(_options.menu.convert !== false &&
-                    (!_options.elementKey || ['image','layout-1-2','layout-1-3','layout-1-4','layout-1-6'].indexOf(_options.elementKey) >= 0) &&
-                    Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
+                    (!_options.elementKey || ['image','layout-1-2','layout-1-3','layout-1-4','layout-1-6'].indexOf(_options.elementKey) >= 0)){
                     const changeToType = (type)=>{
                         const customElement = getJsonDomElements(type)
                         subJson.$inlineEditor = replaceUidPlaceholder(customElement.defaults.$inlineEditor)
@@ -1535,7 +1547,7 @@ class JsonDomHelper extends React.Component {
         })
     }
 
-    handleEditElement({jsonElement, subJson, isCms, json, jsonDom}) {
+    handleEditElement({jsonElement, subJson, isCms, json, jsonDom, key}) {
         JsonDomHelper.disableEvents = true
         this.deselectSelected()
         //clone
@@ -1655,12 +1667,11 @@ class JsonDomHelper extends React.Component {
         if (isCms) {
             this.setFormOptionsByProperties(subJson.p, newJsonElement.options, 'p_')
         }
-
         this.setState({
             toolbarHovered: false,
             hovered: false,
             dragging: false,
-            addChildDialog: {currentElement: newJsonElement, payload: {json, subJson, jsonDom, edit: true}}
+            addChildDialog: {currentElement: newJsonElement, payload: {json, subJson, jsonDom, key, edit: true}}
         })
     }
 

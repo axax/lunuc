@@ -22,6 +22,10 @@ export default function JsonDomAddElementDialog(props){
     const availableJsonElements = getJsonDomElements(null, {advanced: Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE)})
 
     const [currentElement, setCurrentElement] = React.useState(props.currentElement)
+    React.useEffect(() => {
+        setCurrentElement(props.currentElement)
+    }, [props.currentElement])
+
     const [form, setForm] = React.useState(null)
     const [aiAssistent, setAiAssistent] = React.useState({promt:''})
     return <SimpleDialog fullWidth={true}
@@ -39,7 +43,7 @@ export default function JsonDomAddElementDialog(props){
                                      })
                                  },500)
                              }else if(event.key==='editParent'){
-                                alert('todo')
+                                 props.onSelectParent(props.payload)
                              }else if(event.key==='save' && aiAssistent.answer){
 
                                  fetch(`/lunucapi/system/html2json?html=${encodeURIComponent(aiAssistent.answer)}`).then(response => response.json())
