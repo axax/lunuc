@@ -1036,6 +1036,20 @@ class CmsViewEditorContainer extends React.Component {
                     }
                 },
                 {
+                    name: _t('CmsViewEditorContainer.genQrCode'),
+                    icon: 'qrcode',
+                    onClick: () => {
+                        fetch(`/lunucapi/su?url=${encodeURIComponent(location.href)}`).then(response => response.json().then(
+                            json=>{
+                                if(json.shortUrl){
+                                    window.open(`/core/qrcode?url=${encodeURIComponent(location.href)}&shortUrl=${encodeURIComponent(json.shortUrl)}&preview=true`, '_blank').focus();
+                                }else{
+                                    alert(json.message)
+                                }
+                            }))
+                    }
+                },
+                {
                     divider: true,
                     icon: <LogoutIcon />,
                     name: _t('CmsViewEditorContainer.logout'),

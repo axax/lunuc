@@ -219,7 +219,8 @@
         "Visibility",
         "VisibilityOff",
         "AccountTree",
-        "Refresh"
+        "Refresh",
+        "QrCode2"
       ],
       "theme":{
         "colors":{

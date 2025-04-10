@@ -91,7 +91,8 @@ import {
     DeleteIcon,
     HighlightAltIcon,
     AccountTreeIcon,
-    RefreshIcon
+    RefreshIcon,
+    QrCode2Icon
 } from 'gensrc/ui/admin/icons'
 
 const iconComponents = {
@@ -186,7 +187,8 @@ const iconComponents = {
     shield:ShieldIcon,
     fingerprint: FingerprintIcon,
     highlight:HighlightAltIcon,
-    tree:AccountTreeIcon
+    tree:AccountTreeIcon,
+    qrcode:QrCode2Icon
 }
 
 export const getIconByKey = (key, defaultIcon) => {
