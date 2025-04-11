@@ -1042,7 +1042,7 @@ class CmsViewEditorContainer extends React.Component {
                         fetch(`/lunucapi/su?url=${encodeURIComponent(location.href)}`).then(response => response.json().then(
                             json=>{
                                 if(json.shortUrl){
-                                    window.open(`/core/qrcode?url=${encodeURIComponent(location.href)}&shortUrl=${encodeURIComponent(json.shortUrl)}&preview=true`, '_blank').focus();
+                                    window.open(`/core/qrcode?content=${location.origin}${encodeURIComponent(json.shortUrl)}&preview=true`, '_blank').focus();
                                 }else{
                                     alert(json.message)
                                 }

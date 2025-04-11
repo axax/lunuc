@@ -615,10 +615,6 @@ const startListening = async (db, context) => {
                 try {
                     const mailComposer = new MailComposer(messageData)
                     mailComposer.compile().build((err, mailMessage) => {
-                        if(err){
-
-                        }
-                        console.log(err, mailMessage)
                         let stream = imapHandler.compileStream(
                             session.formatResponse('FETCH', message.uid, {
                                 query: options.query,
@@ -638,7 +634,12 @@ const startListening = async (db, context) => {
                                 setImmediate(processMessage)
                             })
                         }else{
-
+                            GenericResolver.createEntity(db, {context:context}, 'Log', {
+                                location: 'mailserver',
+                                type: 'imapError',
+                                message: `stream is null`,
+                                meta: messageData
+                            })
                         }
                     })
                 }catch (error){

@@ -173,12 +173,18 @@ const StyledHorizontalDivider = styled('div')({
     position: 'absolute',
     height: '4px',
     width:'100%',
-    background: 'rgba(66, 164, 245,0.1)',
+    pointerEvents: 'auto',
+    fontSize:'0.8rem',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    color:'rgb(100,100,100)',
+    background: 'rgba(66, 164, 245,0.09)',
     /*borderBottom:'solid 2px #000000',*/
     right: 0,
     top: '100%',
     left: 0,
-    cursor: 'ew-resize',
+    cursor: 'ns-resize',
     zIndex: 1002,
 })
 
@@ -320,6 +326,7 @@ class JsonDomHelper extends React.Component {
         left: 0,
         height: 0,
         width: 0,
+        marginBottom:0,
         toolbarHovered: false,
         dragging: false,
         toolbarMenuOpen: false,
@@ -366,6 +373,7 @@ class JsonDomHelper extends React.Component {
             state.left !== this.state.left ||
             state.height !== this.state.height ||
             state.width !== this.state.width ||
+            state.marginBottomNew !== this.state.marginBottomNew ||
             state.toolbarHovered !== this.state.toolbarHovered ||
             state.mouseX !== this.state.mouseX
     }
@@ -416,7 +424,9 @@ class JsonDomHelper extends React.Component {
 
         if (hovered) {
             this.helperTimeoutOut = setTimeout(() => {
-                this.setState({hovered: false})
+                if(!this.state.dividerHovered) {
+                    this.setState({hovered: false})
+                }
             }, 80)
         } else {
             clearTimeout(this.helperTimeoutIn)
@@ -916,7 +926,6 @@ class JsonDomHelper extends React.Component {
                         mini items={menuItems}/>}
                 </StyledToolbarButton>
             }
-
             if (isSelected || _options.highlight !== false) {
                 const highligherColor = _dynamic ? 'red' : isCms || _options.picker ? 'blue' : 'yellow'
 
@@ -952,8 +961,37 @@ class JsonDomHelper extends React.Component {
                             }
                         }}>{isCms && subJson && subJson.p ? subJson.p.id || subJson.p.slug :
                         <ImageIcon/>}</StyledPicker> : ''}
-                    <StyledHorizontalDivider style={{height:this.state.marginBottom}}></StyledHorizontalDivider>
-                </StyledHighlighter>
+                    <StyledHorizontalDivider style={{height:this.state.marginBottomNew || this.state.marginBottom}}
+                                             onMouseDown={(e)=>{
+                                                 this.setState({dividerMousePos:e.pageY})
+                                             }}
+                                             onMouseUp={()=>{
+                                                 if(this.state.marginBottomNew) {
+                                                     setPropertyByPath(this.state.marginBottomNew,'p.style.marginBottom',subJson)
+                                                     _onTemplateChange(_json, true)
+
+                                                 }
+                                                this.setState({dividerMousePos:false,
+                                                    marginBottom: this.state.marginBottomNew,
+                                                    marginBottomNew:false})
+                                             }}
+                                             onMouseMove={(e)=>{
+                                                 if(this.state.dividerMousePos) {
+                                                     const marginBottom = parseFloat(this.state.marginBottom)
+                                                     let newMarginBottom = marginBottom + (e.pageY - this.state.dividerMousePos)
+                                                     if(isNaN(newMarginBottom) || newMarginBottom< 10) {
+                                                         newMarginBottom = 10
+                                                     }
+                                                     this.setState({marginBottomNew: newMarginBottom + 'px'})
+                                                 }
+                                             }}
+                                             onMouseOver={()=>{
+                                                 this.setState({dividerHovered:true})
+                                             }}
+                                             onMouseOut={(e)=>{
+                                                 this.setState({dividerHovered: false,dividerMousePos:false, marginBottomNew:false})
+                                                 this.onHelperMouseOut(e)
+                                             }}>{this.state.marginBottom!='0px'?this.state.marginBottomNew || this.state.marginBottom:''}</StyledHorizontalDivider></StyledHighlighter>
             }
         }
 
