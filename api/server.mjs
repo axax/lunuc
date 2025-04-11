@@ -123,6 +123,9 @@ export const start = (done) => {
             // fix graphql limit of 100kb body size
             app.use(bodyParser.json({limit: '10000mb'}))
 
+            // to upload large files
+           // app.use(bodyParser.raw({ limit : '10gb', type : '*/*'}))
+
             // only allow post methode
             app.post('/graphql', (req, res, next) => {
 
