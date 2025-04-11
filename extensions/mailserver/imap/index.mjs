@@ -615,6 +615,10 @@ const startListening = async (db, context) => {
                 try {
                     const mailComposer = new MailComposer(messageData)
                     mailComposer.compile().build((err, mailMessage) => {
+                        if(err){
+
+                        }
+                        console.log(err, mailMessage)
                         let stream = imapHandler.compileStream(
                             session.formatResponse('FETCH', message.uid, {
                                 query: options.query,
@@ -628,10 +632,14 @@ const startListening = async (db, context) => {
                                 )
                             })
                         )
-                        // send formatted response to socket
-                        session.writeStream.write(stream, () => {
-                            setImmediate(processMessage)
-                        })
+                        if(stream) {
+                            // send formatted response to socket
+                            session.writeStream.write(stream, () => {
+                                setImmediate(processMessage)
+                            })
+                        }else{
+
+                        }
                     })
                 }catch (error){
                     GenericResolver.createEntity(db, {context:context}, 'Log', {
