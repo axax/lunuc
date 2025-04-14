@@ -27,7 +27,7 @@ import {
     addComponent,
     removeComponent,
     isTargetAbove,
-    copyComponent
+    copyComponent, recalculatePixelValue
 } from '../util/jsonDomUtil'
 import {DROPAREA_ACTIVE, DROPAREA_OVERLAP, DROPAREA_OVER, ALLOW_DROP, JsonDomDraggable, onJsonDomDrag, onJsonDomDragEnd} from '../util/jsonDomDragUtil'
 import config from 'gen/config-client'
@@ -43,6 +43,7 @@ import {CAPABILITY_ADMIN_OPTIONS} from '../../../util/capabilities.mjs'
 import {_t} from '../../../util/i18n.mjs'
 
 const {DEFAULT_LANGUAGE} = config
+const CONVERTABLE_ELEMENTS = ['image','layout-1-2','layout-1-3','layout-1-4','layout-1-6','headline','p','richText']
 
 
 const StyledHighlighter = styled('span')(({ color, selected }) => ({
@@ -207,25 +208,31 @@ const getHighlightPosition = (node)=>  {
         childMinLeft = Infinity,
         allAbs = node.childNodes.length>0
 
-    for (const childNode of node.childNodes) {
-        if (childNode.nodeType === Node.ELEMENT_NODE) {
-            const style = window.getComputedStyle(childNode)
-            if (style.display !== 'none' && style.opacity > 0) {
-                const rect = childNode.getBoundingClientRect()
-                childMinLeft = Math.min(rect.left, childMinLeft)
-                childMaxLeft = Math.max(rect.left + (rect.width ?? 0), childMaxLeft)
-                childMinTop = Math.min(rect.top, childMinTop)
-                childMaxTop = Math.max(rect.top + (rect.height ?? 0), childMaxTop)
-            }else{
+    if(node.tagName==='SELECT') {
+        allAbs=false
+    }else{
+        for (const childNode of node.childNodes) {
+
+            if (childNode.nodeType === Node.ELEMENT_NODE) {
+                const style = window.getComputedStyle(childNode)
+                if (style.display !== 'none' && style.opacity > 0) {
+                    const rect = childNode.getBoundingClientRect()
+                    childMinLeft = Math.min(rect.left, childMinLeft)
+                    childMaxLeft = Math.max(rect.left + (rect.width ?? 0), childMaxLeft)
+                    childMinTop = Math.min(rect.top, childMinTop)
+                    childMaxTop = Math.max(rect.top + (rect.height ?? 0), childMaxTop)
+                } else {
+                    allAbs = false
+                }
+                if (style.position !== 'absolute') {
+                    allAbs = false
+                }
+            } else {
                 allAbs = false
             }
-            if(style.position!=='absolute'){
-                allAbs = false
-            }
-        }else{
-            allAbs =false
         }
     }
+
     if(!allAbs) {
         const rect = node.getBoundingClientRect()
         childMinLeft = Math.min(rect.left, childMinLeft)
@@ -233,7 +240,6 @@ const getHighlightPosition = (node)=>  {
         childMinTop = Math.min(rect.top, childMinTop)
         childMaxTop = Math.max(rect.top + (rect.height ?? 0), childMaxTop)
     }
-
 
     const computedStyle = window.getComputedStyle(node)
     return {
@@ -312,6 +318,7 @@ document.addEventListener('keyup', (e) => {
 })
 
 document.addEventListener('scroll', highlighterHandler)
+
 
 
 class JsonDomHelper extends React.Component {
@@ -928,6 +935,7 @@ class JsonDomHelper extends React.Component {
             }
             if (isSelected || _options.highlight !== false) {
                 const highligherColor = _dynamic ? 'red' : isCms || _options.picker ? 'blue' : 'yellow'
+                let marginBottomStyle = subJson?.p?.style?.marginBottom?.trim()
 
                 highlighter = <StyledHighlighter
                     key={rest._key + '.highlighter'}
@@ -967,7 +975,8 @@ class JsonDomHelper extends React.Component {
                                              }}
                                              onMouseUp={()=>{
                                                  if(this.state.marginBottomNew) {
-                                                     setPropertyByPath(this.state.marginBottomNew,'p.style.marginBottom',subJson)
+                                                     const finalValue = recalculatePixelValue(marginBottomStyle, this.state.marginBottomNew, this.state.marginBottom)
+                                                     setPropertyByPath(finalValue,'p.style.marginBottom',subJson)
                                                      _onTemplateChange(_json, true)
 
                                                  }
@@ -991,7 +1000,7 @@ class JsonDomHelper extends React.Component {
                                              onMouseOut={(e)=>{
                                                  this.setState({dividerHovered: false,dividerMousePos:false, marginBottomNew:false})
                                                  this.onHelperMouseOut(e)
-                                             }}>{this.state.marginBottom!='0px'?this.state.marginBottomNew || this.state.marginBottom:''}</StyledHorizontalDivider></StyledHighlighter>
+                                             }}>{this.state.marginBottom!='0px'?(Math.round(parseFloat(this.state.marginBottomNew || this.state.marginBottom) * 100) / 100 + 'px')+(marginBottomStyle && this.state.marginBottom!=marginBottomStyle?` = ${marginBottomStyle}`:''):''}</StyledHorizontalDivider></StyledHighlighter>
             }
         }
 
@@ -1357,81 +1366,31 @@ class JsonDomHelper extends React.Component {
                     }
                 }
 
-                if(_options.menu.convert !== false &&
-                    (!_options.elementKey || ['image','layout-1-2','layout-1-3','layout-1-4','layout-1-6'].indexOf(_options.elementKey) >= 0)){
-                    const changeToType = (type)=>{
-                        const customElement = getJsonDomElements(type)
-                        subJson.$inlineEditor = replaceUidPlaceholder(customElement.defaults.$inlineEditor)
-                        subJson.p = Object.assign({},subJson.p,customElement.defaults.p)
-                        if(type.startsWith('layout-')) {
-                            if(subJson.c.length<customElement.defaults.c.length){
-                                for(let i=subJson.c.length;i<=customElement.defaults.c.length;i++){
-                                    subJson.c[i] = customElement.defaults.c[i]
-                                }
-                            }else {
-                                subJson.c.length = customElement.defaults.c.length
+                if(_options.menu.addSpace !== false){
+                    if(this.state.marginBottom==='0px') {
+                        menuItems.push({
+                            name: _t('JsonDomHelper.element.addMarginBottom'),
+                            icon: 'horizontalSplit',
+                            onClick: () => {
+                                setPropertyByPath('2rem', 'p.style.marginBottom', subJson)
+                                this.props._onTemplateChange(_json, true)
                             }
-                        }
-                        if(customElement.options){
-                            Object.keys(customElement.options).forEach(optKey=>{
-                                if(customElement.options[optKey].value !== undefined) {
-                                    const prop = propertyByPath(optKey, subJson, '_')
-                                    if (prop === undefined || prop === null || customElement.options[optKey].forceOverride) {
-                                        setPropertyByPath(customElement.options[optKey].value, optKey, subJson, '_')
-                                    }
-                                }
-                            })
-                        }
-                        this.props._onTemplateChange(_json, true)
-                    }
-
-                    const items = []
-                    if(_options?.elementKey?.startsWith('layout-')){
-                        const layouts = ['layout-1-2','layout-1-3','layout-1-4','layout-1-6']
-                        layouts.forEach(layout=>{
-                            if(layout==_options.elementKey){
-                                return
-                            }
-                            items.push({
-                                name: _t(`elements.key.${layout}`),
-                                icon: 'viewColum',
-                                onClick: () => {
-                                   // subJson.c = [{...subJson,$inlineEditor:false}]
-                                    //subJson.t = 'Link'
-                                   // delete subJson.p
-                                    changeToType(layout)
-                                }})
-
                         })
-
-                    }else if(_options.elementKey=='image'){
-                        items.push({
-                            name: _t('elements.key.imageLink'),
-                            icon: 'datasetLink',
-                            onClick: () => {
-                                subJson.c = [{...subJson,$inlineEditor:false}]
-                                subJson.t = 'Link'
-                                delete subJson.p
-                                changeToType('imageLink')
-                            }})
                     }else{
-                        items.push({
-                            name: 'Custom container',
+                        menuItems.push({
+                            name: _t('JsonDomHelper.element.removeMarginBottom'),
+                            icon: 'horizontalSplit',
                             onClick: () => {
-                                changeToType('custom')
-                            }})
-                        items.push({
-                            name: 'Headline',
-                            onClick: () => {
-                                changeToType('headline')
-                            }})
+                                setPropertyByPath('0px', 'p.style.marginBottom', subJson)
+                                this.props._onTemplateChange(_json, true)
+                            }
+                        })
                     }
+                }
 
-                    menuItems.push({
-                        name: _t('JsonDomHelper.convert.element'),
-                        icon: <TransformIcon/>,
-                        items
-                    })
+                if(_options.menu.convert !== false &&
+                    (!_options.elementKey || CONVERTABLE_ELEMENTS.indexOf(_options.elementKey) >= 0)){
+                    this.addConversionToMenu(subJson, _json, _options, menuItems)
                 }
 
                 if (_options.menu.remove !== false) {
@@ -1519,6 +1478,125 @@ class JsonDomHelper extends React.Component {
                 })
             }
         }
+    }
+
+    addConversionToMenu(subJson, _json, _options, menuItems) {
+        const changeToType = (type) => {
+            const customElement = getJsonDomElements(type)
+            subJson.$inlineEditor = replaceUidPlaceholder(customElement.defaults.$inlineEditor)
+            subJson.p = Object.assign({}, subJson.p, customElement.defaults.p)
+            if (type.startsWith('layout-')) {
+                if (subJson.c.length < customElement.defaults.c.length) {
+                    for (let i = subJson.c.length; i <= customElement.defaults.c.length; i++) {
+                        subJson.c[i] = customElement.defaults.c[i]
+                    }
+                } else {
+                    subJson.c.length = customElement.defaults.c.length
+                }
+            }
+            if (customElement.options) {
+                Object.keys(customElement.options).forEach(optKey => {
+                    if (customElement.options[optKey].value !== undefined) {
+                        const prop = propertyByPath(optKey, subJson, '_')
+                        if (prop === undefined || prop === null || customElement.options[optKey].forceOverride) {
+                            setPropertyByPath(customElement.options[optKey].value, optKey, subJson, '_')
+                        }
+                    }
+                })
+            }
+            this.props._onTemplateChange(_json, true)
+        }
+
+        const items = []
+        if (['richText','p','headline'].indexOf(_options.elementKey)>=0) {
+
+            if (['richText', 'headline'].indexOf(_options.elementKey) >= 0) {
+                items.push({
+                    name: _t('elements.key.p'),
+                    icon: 'subject',
+                    onClick: () => {
+                        subJson.t = 'p'
+                        delete subJson.p['data-element-key']
+                        changeToType('p')
+                    }
+                })
+            }
+            if (['p', 'headline'].indexOf(_options.elementKey) >= 0) {
+                items.push({
+                    name: _t('elements.key.richText'),
+                    icon: 'wysiwyg',
+                    onClick: () => {
+                        subJson.$c = subJson.$c ? `<p>${subJson.$c}</p>` : `<${subJson.t}>${subJson.c}</${subJson.t}>`
+                        subJson.t = 'div'
+                        delete subJson.c
+                        changeToType('richText')
+                    }
+                })
+            }
+
+            if (['richText', 'p'].indexOf(_options.elementKey) >= 0) {
+                items.push({
+                    name: _t('elements.key.headline'),
+                    icon: 'format',
+                    onClick: () => {
+                        subJson.c = subJson.c || (subJson.$c?subJson.$c.replace(/<[^>]*>/g, ''):'')
+                        subJson.t = 'h1'
+                        delete subJson.$c
+                        changeToType('headline')
+                    }
+                })
+            }
+
+        }else if (_options?.elementKey?.startsWith('layout-')) {
+            const layouts = ['layout-1-2', 'layout-1-3', 'layout-1-4', 'layout-1-6']
+            layouts.forEach(layout => {
+                if (layout == _options.elementKey) {
+                    return
+                }
+                items.push({
+                    name: _t(`elements.key.${layout}`),
+                    icon: 'viewColum',
+                    onClick: () => {
+                        // subJson.c = [{...subJson,$inlineEditor:false}]
+                        //subJson.t = 'Link'
+                        // delete subJson.p
+                        changeToType(layout)
+                    }
+                })
+
+            })
+
+        } else if (_options.elementKey == 'image') {
+            items.push({
+                name: _t('elements.key.imageLink'),
+                icon: 'datasetLink',
+                onClick: () => {
+                    subJson.c = [{...subJson, $inlineEditor: false}]
+                    subJson.t = 'Link'
+                    delete subJson.p
+                    changeToType('imageLink')
+                }
+            })
+        } else {
+            items.push({
+                name: 'Custom container',
+                onClick: () => {
+                    changeToType('custom')
+                }
+            })
+            items.push({
+                name: 'Headline',
+                onClick: () => {
+                    changeToType('headline')
+                }
+            })
+        }
+
+        menuItems.push({
+            name: _t('JsonDomHelper.convert.element'),
+            icon: <TransformIcon/>,
+            items
+        })
     }
 
     insertFromClipboard(rest,place) {

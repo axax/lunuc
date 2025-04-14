@@ -140,3 +140,52 @@ export const classNameByPath = (path, extraClassName) => {
         className += ' ' + extraClassName
     return className
 }
+
+
+export const recalculatePixelValue = (currentValue, newValue, currentValuePx) => {
+    if (currentValue.endsWith('vh')) {
+        newValue = `${(parseFloat(newValue) / window.innerHeight * 100).toFixed(2)}vh`
+    } else if (currentValue.endsWith('rem')) {
+        newValue = `${(parseFloat(newValue) / 16).toFixed(2)}rem`
+    } else if (currentValue.startsWith('calc(') && currentValue.endsWith(')')) {
+        // Remove whitespace and validate calc string
+        const valueWithoutWhitespace = currentValue.replace(/\s/g, '')
+
+        // Extract the expression inside calc()
+        let expression = valueWithoutWhitespace.slice(5, -1)
+
+        // Find and sum existing pixel values
+        let totalPixels = parseFloat(newValue) - parseFloat(currentValuePx)
+        const pixelRegex = /([+-]?\d*\.?\d+px)/g
+        const pixelMatches = expression.match(pixelRegex) || []
+
+        pixelMatches.forEach(px => {
+            totalPixels += parseFloat(px)
+            expression = expression.replace(px, '')
+        })
+
+        // Clean up expression (remove empty + or - signs)
+        expression = expression.replace(/[+-]$/, '').replace(/\+-/, '-').replace(/--/, '+').replace(/\+\+/, '+')
+
+        // Build new expression
+        let newExpression = expression
+        if (newExpression && totalPixels !== 0) {
+            newExpression += totalPixels >= 0 ? '+' : ''
+            newExpression += Math.round(parseFloat(totalPixels) * 100) / 100 + 'px'
+        } else if (totalPixels !== 0) {
+            newExpression = Math.round(parseFloat(totalPixels) * 100) / 100 + 'px'
+        }
+
+        // Add spaces around + and - signs
+        if (newExpression) {
+            newExpression = newExpression.replace(/([+-])/g, ' $1 ')
+            newExpression = newExpression.replace(/\s+/g, ' ').trim()
+            return `calc(${newExpression})`
+        }
+        return '0px'
+
+    } else {
+        newValue = Math.round(parseFloat(newValue) * 100) / 100 + 'px'
+    }
+    return newValue
+}

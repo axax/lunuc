@@ -371,7 +371,9 @@ class JsonDom extends React.Component {
 
     componentDidCatch(e, info) {
         console.log(e.message, e.stack)
-        this.error = {type: 'unknown', e}
+        if(this.props.inEditor) {
+            this.error = {type: 'unknown', e}
+        }
         this.forceUpdate()
     }
 
@@ -1226,7 +1228,7 @@ class JsonDom extends React.Component {
                         (!!window.IntersectionObserver || eleProps.inlineSvg)) {
 
 
-
+console.log(eleProps)
                         h.push(React.createElement(
                             ElementWatch,
                             {

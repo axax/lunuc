@@ -459,7 +459,7 @@ class Print extends React.PureComponent {
         }
 
         console.log('calculatePageBreaks')
-        this.setBreakRec(printAreaInner, {offsetTop, PAGE_HEIGHT, paddingBottom, paddingTop})
+        this.setBreakRec(printAreaInner, {manualBreakSelector, offsetTop, PAGE_HEIGHT, paddingBottom, paddingTop})
 
     }
 
@@ -473,8 +473,8 @@ class Print extends React.PureComponent {
 
     }
 
-    setBreakRec(node, {offsetTop, paddingBottom, paddingTop, rootNode}) {
-        const {forceManuelBreak, manualBreakSelector, noBreakClassName} = this.props
+    setBreakRec(node, {offsetTop, paddingBottom, paddingTop, rootNode, manualBreakSelector}) {
+        const {forceManuelBreak, noBreakClassName} = this.props
         const innerPageHeight = PAGE_HEIGHT - paddingTop - paddingBottom
 
         let nodes = node.childNodes
@@ -491,11 +491,9 @@ class Print extends React.PureComponent {
             const newOffsetTop = this.offsetTop(childNode),
                 pos = newOffsetTop - offsetTop + this.outerHeight(childNode),
                 dif = pos - innerPageHeight
-
             if (forceManuelBreak && manualBreakSelector) {
                 offsetTop = this.createPageBreakDiv(childNode)
             } else if (dif >= 20) {
-
                 let noBreak = false
                 if (noBreakClassName) {
                     noBreakClassName.forEach(cn => {
@@ -510,7 +508,7 @@ class Print extends React.PureComponent {
                     // special treatment for breaks within a table
                     offsetTop = this.createPageBreakTd(childNode)
                 } else if (!noBreak && !manualBreakSelector && childNode.hasChildNodes() && childNode.childNodes[0].nodeType !== Node.TEXT_NODE) {
-                    offsetTop = this.setBreakRec(childNode, {offsetTop, PAGE_HEIGHT, paddingBottom, paddingTop, rootNode: rootNode || node})
+                    offsetTop = this.setBreakRec(childNode, {manualBreakSelector, offsetTop, PAGE_HEIGHT, paddingBottom, paddingTop, rootNode: rootNode || node})
                 } else {
                     if(rootNode) {
                         let viewtop = childNode.getBoundingClientRect().top
@@ -524,6 +522,8 @@ class Print extends React.PureComponent {
                     }
                     offsetTop = this.createPageBreakDiv(childNode)
                 }
+            }else if(manualBreakSelector){
+                offsetTop = this.setBreakRec(node, {manualBreakSelector:false,offsetTop, PAGE_HEIGHT, paddingBottom, paddingTop, rootNode: rootNode || node})
             }
         })
         return offsetTop

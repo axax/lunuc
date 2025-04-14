@@ -467,6 +467,34 @@ const condition = () => ({
     }
 })
 
+const styleIndented = () => ({
+    [`p_className@style`]: {
+        label: 'Style',
+        tab: DEFAULT_TAB,
+        enum: [
+            {
+                value: '',
+                name: 'Keine'
+            },
+            {
+                value: ' indented ',
+                name: 'Eingerückt (mittel)'
+            },
+            {
+                value: ' indented-small ',
+                name: 'Eingerückt (klein)'
+            },
+            {
+                value: ' indented-large ',
+                name: 'Eingerückt (gross)'
+            }
+        ]
+    },
+})
+
+
+
+
 const sizeOptions = key => ({
     [`${key}width`]: {
         label: _t('elements.width'),
@@ -1189,7 +1217,7 @@ const baseElements = [
     },
     {
         tagName: 'a',
-        name: 'Dokument Link',
+        name: _t('elements.key.documentLink'),
         icon: 'attachment',
         xicon: '/icons/pdf.svg',
         defaults: {
@@ -1477,7 +1505,7 @@ const baseElements = [
     {
         tagName: 'p',
         icon: 'subject',
-        name: 'Text block',
+        name: _t('elements.key.p'),
         defaults: {
             $c: 'Paragraph',
             $inlineEditor: {
@@ -2276,28 +2304,7 @@ const advancedElements = [
             t: {
                 label: 'Tag'
             },
-            [`p_className@style`]: {
-                label: 'Style',
-                tab: DEFAULT_TAB,
-                enum: [
-                    {
-                        value: '',
-                        name: 'Keine'
-                    },
-                    {
-                        value: ' indented ',
-                        name: 'Eingerückt (mittel)'
-                    },
-                    {
-                        value: ' indented-small ',
-                        name: 'Eingerückt (klein)'
-                    },
-                    {
-                        value: ' indented-large ',
-                        name: 'Eingerückt (gross)'
-                    }
-                ]
-            },
+            ...styleIndented(),
             ...condition(),
             ...marginOptions('p_'),
             ...classOptions('p_'),
@@ -2482,28 +2489,13 @@ const advancedElements = [
             t: {
                 label: 'Tag'
             },
-            [`p_className@style`]: {
-                label: 'Style',
+            $c: {
                 tab: DEFAULT_TAB,
-                enum: [
-                    {
-                        value: '',
-                        name: 'Keine'
-                    },
-                    {
-                        value: ' indented ',
-                        name: 'Eingerückt (mittel)'
-                    },
-                    {
-                        value: ' indented-small ',
-                        name: 'Eingerückt (klein)'
-                    },
-                    {
-                        value: ' indented-large ',
-                        name: 'Eingerückt (gross)'
-                    }
-                ]
+                label: 'Plain HTML',
+                fullWidth:true,
+                uitype:'editor'
             },
+            ...styleIndented(),
             ...condition(),
             ...marginOptions('p_'),
             ...classOptions('p_'),

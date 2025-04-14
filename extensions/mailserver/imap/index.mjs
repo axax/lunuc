@@ -612,6 +612,16 @@ const startListening = async (db, context) => {
 
                 replaceAddresseObjectsToString(messageData)
 
+
+                const sendError = (message)=>{
+                    GenericResolver.createEntity(db, {context:context}, 'Log', {
+                        location: 'mailserver',
+                        type: 'imapError',
+                        message: message,
+                        meta: messageData
+                    })
+                }
+
                 try {
                     const mailComposer = new MailComposer(messageData)
                     mailComposer.compile().build((err, mailMessage) => {
@@ -629,26 +639,22 @@ const startListening = async (db, context) => {
                             })
                         )
                         if(stream) {
-                            // send formatted response to socket
+                            stream.on('error', (err) => {
+                                sendError(err.message)
+                            })
+                            session.writeStream.on('error', (err) => {
+                                sendError(err.message)
+                            })
+
                             session.writeStream.write(stream, () => {
                                 setImmediate(processMessage)
                             })
                         }else{
-                            GenericResolver.createEntity(db, {context:context}, 'Log', {
-                                location: 'mailserver',
-                                type: 'imapError',
-                                message: `stream is null`,
-                                meta: messageData
-                            })
+                            sendError(`stream is null`)
                         }
                     })
                 }catch (error){
-                    GenericResolver.createEntity(db, {context:context}, 'Log', {
-                        location: 'mailserver',
-                        type: 'imapError',
-                        message: error.message,
-                        meta: messageData
-                    })
+                    sendError(error.message)
                     console.error('error building email', error)
                     setImmediate(processMessage)
                 }
