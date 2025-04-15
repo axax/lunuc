@@ -5,6 +5,7 @@ import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import GenericResolver from '../../api/resolver/generic/genericResolver.mjs'
 import {getHostFromHeaders} from '../../util/host.mjs'
 import config from '../../gensrc/config.mjs'
+import os from 'os'
 
 let mydb
 Hook.on('dbready', ({db}) => {
@@ -24,7 +25,6 @@ Hook.on('schema', ({schemas}) => {
 
 let uncaughtExceptionCount=0, unhandledRejectionCount=0
 process.on('uncaughtException', (error, origin) => {
-    console.log(error)
 
     uncaughtExceptionCount++
 
@@ -32,12 +32,12 @@ process.on('uncaughtException', (error, origin) => {
         GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {
             type: 'uncaughtException',
             message: (error.message?error.message + '\n\n' + error.stack:JSON.stringify(error))+'\n\n'+origin,
-            meta: error.debugData
+            meta: {debug:error.debugData, globalDebug: _app_.errorDebug, systemName: os.hostname()}
         })
     }
 
 
-    if(uncaughtExceptionCount>10){
+    if(uncaughtExceptionCount>20){
         process.exit(1)
     }
 

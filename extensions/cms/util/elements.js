@@ -1968,7 +1968,7 @@ const baseElements = [
     },
     {
         tagName: 'div',
-        name: 'Hintergrund',
+        name: _t('elements.key.background'),
         icon: 'wallpaper',
         options: {
             t: {

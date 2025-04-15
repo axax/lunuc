@@ -612,7 +612,7 @@ const startListening = async (db, context) => {
 
                 replaceAddresseObjectsToString(messageData)
 
-
+                _app_.errorDebug = messageData
                 const sendError = (message)=>{
                     GenericResolver.createEntity(db, {context:context}, 'Log', {
                         location: 'mailserver',
