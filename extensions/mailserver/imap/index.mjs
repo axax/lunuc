@@ -599,7 +599,7 @@ const startListening = async (db, context) => {
                     delete messageData.headers['content-type']
                 }
 
-               /* if(Array.isArray(messageData.attachments)){
+                if(Array.isArray(messageData.attachments)){
                     messageData.attachments.forEach(attachment=>{
                         if(attachment.encoding==='quoted-printable'){
                             delete attachment.encoding
@@ -608,7 +608,7 @@ const startListening = async (db, context) => {
                             delete attachment.headers['content-transfer-encoding']
                         }
                     })
-                }*/
+                }
 
                 replaceAddresseObjectsToString(messageData)
 
