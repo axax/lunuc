@@ -614,6 +614,9 @@ const startListening = async (db, context) => {
 
                 replaceAddresseObjectsToString(messageData)
 
+
+                _app_.errorDebug = messageData
+
                 const logError = (message)=>{
                     GenericResolver.createEntity(db, {context:context}, 'Log', {
                         location: 'mailserver',
@@ -624,12 +627,13 @@ const startListening = async (db, context) => {
                 }
 
                 try {
-                    const mailComposer = new MailComposer({
+                    /*const mailComposer = new MailComposer({
                         headers: messageData.headers,
                         text: messageData.text,
                         html: messageData.html,
                         attachments: messageData.attachments
-                    })
+                    })*/
+                    const mailComposer = new MailComposer(messageData)
 
 
                     mailComposer.compile().build((err, mailMessage) => {
