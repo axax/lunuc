@@ -592,37 +592,7 @@ const startListening = async (db, context) => {
                     return setImmediate(processMessage)
                 }
 
-                const logError = (message)=>{
-                    GenericResolver.createEntity(db, {context:context}, 'Log', {
-                        location: 'mailserver',
-                        type: 'imapError',
-                        message: message,
-                        meta: messageData
-                    })
-                }
-
-                try {
-                    const msgData = JSON.parse(JSON.stringify(message.data))
-
-                    const composer = new MailComposer({
-                        headers: msgData.headers,
-                        text: msgData.text,
-                        html: msgData.html,
-                        attachments: msgData.attachments
-                    })
-
-                    const mimeStream = composer.compile().createReadStream()
-                    session.writeStream.write(mimeStream, () => {
-                        setImmediate(processMessage)
-                    })
-
-                } catch (err) {
-                    console.error('IMAP onFetch', err)
-                    logError(err.message)
-                }
-
-
-                /*delete message.data
+                delete message.data
                 delete messageData.headerLines
 
                 if(messageData.headers ){
@@ -643,8 +613,7 @@ const startListening = async (db, context) => {
 
                 replaceAddresseObjectsToString(messageData)
 
-                _app_.errorDebug = messageData
-                const sendError = (message)=>{
+                const logError = (message)=>{
                     GenericResolver.createEntity(db, {context:context}, 'Log', {
                         location: 'mailserver',
                         type: 'imapError',
@@ -654,7 +623,14 @@ const startListening = async (db, context) => {
                 }
 
                 try {
-                    const mailComposer = new MailComposer(messageData)
+                    const mailComposer = new MailComposer({
+                        headers: messageData.headers,
+                        text: messageData.text,
+                        html: messageData.html,
+                        attachments: messageData.attachments
+                    })
+
+
                     mailComposer.compile().build((err, mailMessage) => {
                         let stream = imapHandler.compileStream(
                             session.formatResponse('FETCH', message.uid, {
@@ -671,24 +647,24 @@ const startListening = async (db, context) => {
                         )
                         if(stream) {
                             stream.on('error', (err) => {
-                                sendError(err.message)
+                                logError(err.message)
                             })
                             session.writeStream.on('error', (err) => {
-                                sendError(err.message)
+                                logError(err.message)
                             })
 
                             session.writeStream.write(stream, () => {
                                 setImmediate(processMessage)
                             })
                         }else{
-                            sendError(`stream is null`)
+                            logError(`stream is null`)
                         }
                     })
                 }catch (error){
-                    sendError(error.message)
+                    logError(error.message)
                     console.error('error building email', error)
                     setImmediate(processMessage)
-                }*/
+                }
             }
             setImmediate(processMessage)
         })
