@@ -25,7 +25,6 @@ import {simpleParser} from 'mailparser'
 import {createDefaultLogger} from './logger.mjs'
 import {dynamicSettings} from '../../../api/util/settings.mjs'
 import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
-import { pipeline } from 'stream'
 
 // open port 993 on your server
 // sudo ufw allow 993
@@ -615,7 +614,7 @@ const startListening = async (db, context) => {
                 replaceAddresseObjectsToString(messageData)
 
 
-                _app_.errorDebug = messageData
+                _app_.errorDebug = {folderId, options, session}
 
                 const logError = (message)=>{
                     GenericResolver.createEntity(db, {context:context}, 'Log', {
