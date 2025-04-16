@@ -493,8 +493,11 @@ class JsonDom extends React.Component {
                                     if(content){
                                         content += ' '
                                     }
-                                    content += text
+                                    content += text + '.'
                                     if (content.length > 150) {
+                                        if( content.length > 160){
+                                            content = content.substring(0,152)+'...'
+                                        }
                                         break
                                     }
                                 }

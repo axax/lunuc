@@ -94,7 +94,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
 
     const headers = {
         'Cache-Control': 'public, max-age=60',
-        'Content-Type': MimeType.detectByExtension('html'),
+        'Content-Type': MimeType.detectByExtension('html')+'; charset=utf-8',
         'X-Frame-Options': 'SAMEORIGIN',
         'X-Content-Type-Options': 'nosniff',
         'Strict-Transport-Security': 'max-age=31536000',

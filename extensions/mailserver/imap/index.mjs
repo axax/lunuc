@@ -25,6 +25,7 @@ import {simpleParser} from 'mailparser'
 import {createDefaultLogger} from './logger.mjs'
 import {dynamicSettings} from '../../../api/util/settings.mjs'
 import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
+import { pipeline } from 'stream'
 
 // open port 993 on your server
 // sudo ufw allow 993
@@ -590,11 +591,41 @@ const startListening = async (db, context) => {
                     logger.debug('[%s] imap changedSince skip message with uid "%s"', session.id, message.uid)
                     return setImmediate(processMessage)
                 }
-                const messageData = JSON.parse(JSON.stringify(message.data))
-                delete message.data
+
+                const logError = (message)=>{
+                    GenericResolver.createEntity(db, {context:context}, 'Log', {
+                        location: 'mailserver',
+                        type: 'imapError',
+                        message: message,
+                        meta: messageData
+                    })
+                }
+
+                try {
+                    const msgData = JSON.parse(JSON.stringify(message.data))
+
+                    const composer = new MailComposer({
+                        headers: msgData.headers,
+                        text: msgData.text,
+                        html: msgData.html,
+                        attachments: msgData.attachments
+                    })
+
+                    const mimeStream = composer.compile().createReadStream()
+                    session.writeStream.write(mimeStream, () => {
+                        setImmediate(processMessage)
+                    })
+
+                } catch (err) {
+                    console.error('IMAP onFetch', err)
+                    logError(err.message)
+                }
+
+
+                /*delete message.data
                 delete messageData.headerLines
 
-                if(messageData.headers /*&& messageData.headers['content-transfer-encoding']==='quoted-printable'*/){
+                if(messageData.headers ){
                     delete messageData.headers['content-transfer-encoding']
                     delete messageData.headers['content-type']
                 }
@@ -657,7 +688,7 @@ const startListening = async (db, context) => {
                     sendError(error.message)
                     console.error('error building email', error)
                     setImmediate(processMessage)
-                }
+                }*/
             }
             setImmediate(processMessage)
         })
