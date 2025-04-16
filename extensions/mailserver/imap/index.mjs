@@ -591,6 +591,7 @@ const startListening = async (db, context) => {
                     logger.debug('[%s] imap changedSince skip message with uid "%s"', session.id, message.uid)
                     return setImmediate(processMessage)
                 }
+                const messageData = JSON.parse(JSON.stringify(message.data))
 
                 delete message.data
                 delete messageData.headerLines
