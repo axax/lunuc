@@ -650,6 +650,12 @@ const startListening = async (db, context) => {
                             })
                         )
                         if(stream) {
+
+                            if(session?.writeStream?.connection?.compression &&
+                            !session?.writeStream?.connection?._socket){
+                                session.writeStream.connection.compression=false
+                            }
+
                             stream.on('error', (err) => {
                                 logError(err.message)
                             })
