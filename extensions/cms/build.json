@@ -250,6 +250,7 @@
           },
           "type": "UserGroup",
           "multi": true,
+          "bulkEditable": true,
           "fields": [
             "name"
           ],
