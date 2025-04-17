@@ -16,7 +16,7 @@ import {
     getFolderForMailAccountById,
     deleteMessagesForFolderByUids, getMailAccountFromMailData
 } from '../util/dbhelper.mjs'
-import {replaceAddresseObjectsToString} from '../util/index.mjs'
+import {getCircularReplacer, replaceAddresseObjectsToString} from '../util/index.mjs'
 import Util from '../../../api/util/index.mjs'
 import MemoryNotifier from './MemoryNotifier.js'
 import MailComposer from 'nodemailer/lib/mail-composer'
@@ -614,7 +614,7 @@ const startListening = async (db, context) => {
                 replaceAddresseObjectsToString(messageData)
 
 
-                _app_.errorDebug = {folderId, options, session}
+                _app_.errorDebug = JSON.parse(JSON.stringify( {folderId, options, session}, getCircularReplacer()))
 
                 const logError = (message)=>{
                     GenericResolver.createEntity(db, {context:context}, 'Log', {
