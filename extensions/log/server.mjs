@@ -26,7 +26,11 @@ Hook.on('schema', ({schemas}) => {
 let uncaughtExceptionCount=0, unhandledRejectionCount=0
 process.on('uncaughtException', (error, origin) => {
 
-    uncaughtExceptionCount++
+    if(error?.stack?.indexOf('imap-composer.js')>=0) {
+        //ignore
+    }else{
+        uncaughtExceptionCount++
+    }
 
     if(mydb && error) {
         GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {
