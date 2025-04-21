@@ -277,8 +277,8 @@ class JsonDom extends React.Component {
 
     shouldComponentUpdate(props, state) {
         const resolvedDataChanged = this.props.resolvedData !== props.resolvedData
-        const searchChanged = this.props.location.search !== props.location.search ||
-            this.props.location.hash !== props.location.hash
+        const searchChanged = this.props.location && (this.props.location.search !== props.location.search ||
+            this.props.location.hash !== props.location.hash)
 
         const scriptChanged = (this.props.script !== props.script)
         const resourcesChanged = (this.props.resources !== props.resources)
@@ -393,11 +393,13 @@ class JsonDom extends React.Component {
         }
 
         this.checkResources()
-        this._historyUnlisten = this.props.history.listen((e) => {
-            const before = {pathname: this.scope.pathname, params: this.scope.params, hashParams: this.scope.params}
-            this.addLocationToScope()
-            this.runJsEvent('urlchange', false, before)
-        })
+        if(this.props.history) {
+            this._historyUnlisten = this.props.history.listen((e) => {
+                const before = {pathname: this.scope.pathname, params: this.scope.params, hashParams: this.scope.params}
+                this.addLocationToScope()
+                this.runJsEvent('urlchange', false, before)
+            })
+        }
 
         this.renderPostRender()
         this.checkMetaTags(this.props)
@@ -628,7 +630,7 @@ class JsonDom extends React.Component {
     }
 
     getMainStyleId({uniqueStyle, slug, style}){
-        let id = 'jsondomstyle', isUniqueStyle = false, needParsing = style && style.indexOf('${')>=0
+        let id = 'jsondomstyle', isUniqueStyle = false, needParsing = isString(style) && style.indexOf('${')>=0
 
         if(uniqueStyle || !needParsing){
             isUniqueStyle = true
@@ -1214,6 +1216,8 @@ class JsonDom extends React.Component {
                         }
 
                     }
+
+
                     if ($c || $toHtml) {
                         eleProps.dangerouslySetInnerHTML = {__html: $c || c.replace(/(?:\r\n|\r|\n)/g, '<br>')}
                     }
@@ -1231,7 +1235,6 @@ class JsonDom extends React.Component {
                         (!!window.IntersectionObserver || eleProps.inlineSvg)) {
 
 
-console.log(eleProps)
                         h.push(React.createElement(
                             ElementWatch,
                             {

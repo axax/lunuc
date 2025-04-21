@@ -89,8 +89,8 @@ import Grid from '@mui/material/Grid'
 export const Row = ({...rest}) => {
     return <Grid container {...rest} />
 }
-export const Col = ({...rest}) => {
-    return <Grid item {...rest} />
+export const Col = ({xs,sm,md,lg,xl,...rest}) => {
+    return <Grid size={{xs, sm, md, lg, xl}} {...rest} />
 }
 
 // Drawer layouts

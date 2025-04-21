@@ -46,7 +46,7 @@ class CmsViewContainer extends React.Component {
             cmsPage.modifiedAt !== cmsPageOld.modifiedAt ||
             cmsPage.resolvedData !== cmsPageOld.resolvedData ||
             (
-                cmsPage.urlSensitiv && /*cmsPage.urlSensitiv!=='false' &&*/ (
+                cmsPage.urlSensitiv && props.location && /*cmsPage.urlSensitiv!=='false' &&*/ (
                     props.location.search !== this.props.location.search ||
                     props.location.hash !== this.props.location.hash)
             ) ||

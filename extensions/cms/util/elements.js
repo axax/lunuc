@@ -1021,6 +1021,7 @@ const baseElements = [
             $c: '',
             $inlineEditor: {
                 elementKey: 'richText',
+                richText:true,
                 options: {
                     $c: {
                         trKey: '__uid__'

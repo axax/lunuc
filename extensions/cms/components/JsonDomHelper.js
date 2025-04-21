@@ -2,7 +2,6 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import {
     SimpleDialog,
-    SimpleMenu,
     SettingsInputComponentIcon,
     EditIcon,
     LaunchIcon,
@@ -27,9 +26,10 @@ import {
     addComponent,
     removeComponent,
     isTargetAbove,
-    copyComponent, recalculatePixelValue
+    copyComponent,
+    recalculatePixelValue, highlighterHandler, getHighlightPosition, checkIfElementOrParentHasDataKey
 } from '../util/jsonDomUtil'
-import {DROPAREA_ACTIVE, DROPAREA_OVERLAP, DROPAREA_OVER, ALLOW_DROP, JsonDomDraggable, onJsonDomDrag, onJsonDomDragEnd} from '../util/jsonDomDragUtil'
+import {DROPAREA_OVER, ALLOW_DROP, JsonDomDraggable, onJsonDomDrag, onJsonDomDragEnd} from '../util/jsonDomDragUtil'
 import config from 'gen/config-client'
 import {getJsonDomElements, MEDIA_PROJECTION, replaceUidPlaceholder} from '../util/elements'
 import {deepMergeOptional, deepMerge} from '../../../util/deepMerge.mjs'
@@ -38,157 +38,21 @@ import {client} from '../../../client/middleware/graphql'
 import {openWindow} from '../../../client/util/window'
 import {convertRawValuesFromPicker} from '../../../client/util/picker'
 import {showTooltip} from '../../../client/util/tooltip'
-import styled from '@emotion/styled'
 import {CAPABILITY_ADMIN_OPTIONS} from '../../../util/capabilities.mjs'
 import {_t} from '../../../util/i18n.mjs'
+import {
+    StyledDropArea,
+    StyledInfoBox,
+    StyledToolbarMenu,
+    StyledToolbarButton,
+    StyledHighlighter,
+    StyledPicker,
+    StyledHorizontalDivider, StyledRichTextBar
+} from './jsondomhelper/JsonDomStyledElements'
+import CmsViewContainer from "../containers/CmsViewContainer";
 
 const {DEFAULT_LANGUAGE} = config
 const CONVERTABLE_ELEMENTS = ['image','layout-1-2','layout-1-3','layout-1-4','layout-1-6','headline','p','richText']
-
-
-const StyledHighlighter = styled('span')(({ color, selected }) => ({
-    zIndex: 999,
-    position: 'fixed',
-    bottom: 0,
-    left: 0,
-    minWidth: '10px',
-    minHeight: '10px',
-    display: 'flex',
-    border: '1px dashed rgba(0,0,0,0.3)',
-    pointerEvents: 'none',
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...(selected && {
-        border: '2px solid #8b3dff',
-    }),
-    ...(color==='yellow' && {
-        background: 'rgba(245, 245, 66,0.05)',
-        boxShadow: '0px 0px 6px 2px rgba(0,0,0,0.4), 0px 0px 5px 0px rgba(235,252,0,1)'
-    }),
-    ...(color==='red' && {
-        background: 'rgba(245, 66, 66,0.1)',
-        boxShadow: '0px 0px 6px 2px rgba(0,0,0,0.2), 0px 0px 5px 0px rgba(245, 66, 66,1)'
-    }),
-    ...(color==='blue' && {
-        boxShadow: '0px 0px 6px 2px rgba(0,0,0,0.4), 0px 0px 5px 0px rgba(84, 66, 245,1)',
-        background: 'rgba(84, 66, 245,0.1)',
-        color: 'black',
-        fontWeight: 'bold',
-        fontSize: '0.9rem',
-        textShadow: '1px 1px 2px white'
-    }),
-}))
-
-const StyledDropArea = styled('span')({
-    transition: 'visibility .5s ease-out, opacity .5s ease-out',
-    opacity: 0,
-    zIndex: 999,
-    display: 'flex',
-    justifyContent:'center',
-    alignItems:'center',
-    visibility: 'hidden',
-    position: 'absolute',
-    fontWeight: 'normal',
-    borderRadius: '5px',
-    background: '#000000',
-    padding: '5px',
-    maxWidth: '100%',
-    margin: '-28px 0 0 0 !important',
-    border: '1px dashed #c1c1c1',
-    height: '32px',
-    color: '#fff',
-    textAlign: 'center',
-    fontSize: '0.9rem',
-    '> span':{
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-    },
-    /*'&:after': {
-        top: '100%',
-        left: '50%',
-        border: 'solid transparent',
-        content: '""',
-        height: 0,
-        width: 0,
-        position: 'absolute',
-        pointerEvents: 'none',
-        borderColor: 'rgba(0, 0, 0, 0)',
-        borderTopColor: '#000',
-        borderWidth: '10px',
-        marginLeft: '-10px'
-    },*/
-    [`&.${DROPAREA_ACTIVE}`]:{
-        visibility: 'visible',
-        opacity: 0.8
-    },
-    [`&.${DROPAREA_OVERLAP}`]:{
-        position: 'relative',
-        marginTop: '0px !important'
-    },
-    [`&.${DROPAREA_OVER}`]:{
-        zIndex: 1000,
-        opacity: '1 !important',
-        visibility: 'visible !important',
-        background: 'red',
-        '&:after': {
-            borderTopColor: 'red'
-        }
-    },
-    [`*`]:{
-        pointerEvents: 'none'
-    }
-})
-
-
-const StyledPicker = styled('div')({
-    cursor: 'pointer',
-    pointerEvents: 'auto'
-})
-
-const StyledToolbarButton = styled('div')({
-    zIndex: 1000,
-    position: 'fixed',
-    maxHeight: '200px'
-})
-
-const StyledToolbarMenu = styled(SimpleMenu)({
-    position: 'absolute',
-    left: '-2.2rem',
-    top: 'calc(50% - 1.5rem)'
-})
-
-const StyledInfoBox = styled('div')({
-    position: 'absolute',
-    top:'-16px',
-    color:'#ffffff',
-    background: '#000000',
-    padding: '2px 3px',
-    fontSize:'11px',
-    lineHeight:1,
-    zIndex: 1001,
-    whiteSpace:'nowrap'
-})
-
-const StyledHorizontalDivider = styled('div')({
-    position: 'absolute',
-    height: '4px',
-    width:'100%',
-    pointerEvents: 'auto',
-    fontSize:'0.8rem',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    color:'rgb(100,100,100)',
-    background: 'rgba(66, 164, 245,0.09)',
-    /*borderBottom:'solid 2px #000000',*/
-    right: 0,
-    top: '100%',
-    left: 0,
-    cursor: 'ns-resize',
-    zIndex: 1002,
-})
-
 const deleteDialogActions = [
     {
         key: 'cancel',
@@ -201,95 +65,6 @@ const deleteDialogActions = [
         type: 'primary'
     }]
 
-const getHighlightPosition = (node)=>  {
-    let childMaxTop = 0,
-        childMaxLeft = 0,
-        childMinTop = Infinity,
-        childMinLeft = Infinity,
-        allAbs = node.childNodes.length>0
-
-    if(node.tagName==='SELECT') {
-        allAbs=false
-    }else{
-        for (const childNode of node.childNodes) {
-
-            if (childNode.nodeType === Node.ELEMENT_NODE) {
-                const style = window.getComputedStyle(childNode)
-                if (style.display !== 'none' && style.opacity > 0) {
-                    const rect = childNode.getBoundingClientRect()
-                    childMinLeft = Math.min(rect.left, childMinLeft)
-                    childMaxLeft = Math.max(rect.left + (rect.width ?? 0), childMaxLeft)
-                    childMinTop = Math.min(rect.top, childMinTop)
-                    childMaxTop = Math.max(rect.top + (rect.height ?? 0), childMaxTop)
-                } else {
-                    allAbs = false
-                }
-                if (style.position !== 'absolute') {
-                    allAbs = false
-                }
-            } else {
-                allAbs = false
-            }
-        }
-    }
-
-    if(!allAbs) {
-        const rect = node.getBoundingClientRect()
-        childMinLeft = Math.min(rect.left, childMinLeft)
-        childMaxLeft = Math.max(rect.left + (rect.width ?? 0), childMaxLeft)
-        childMinTop = Math.min(rect.top, childMinTop)
-        childMaxTop = Math.max(rect.top + (rect.height ?? 0), childMaxTop)
-    }
-
-    const computedStyle = window.getComputedStyle(node)
-    return {
-        hovered: true,
-        height: childMaxTop - childMinTop,
-        width: childMaxLeft - childMinLeft,
-        top: childMinTop,
-        left: childMinLeft,
-        marginBottom: computedStyle.marginBottom
-    }
-}
-
-
-let aftershockTimeout
-const highlighterHandler = (e, observer, after) => {
-    const hightlighters = document.querySelectorAll('[data-highlighter]')
-    if (hightlighters && hightlighters.length > 0) {
-        hightlighters.forEach(hightlighter => {
-            const key = hightlighter.getAttribute('data-highlighter')
-            const node = document.querySelector('[_key="' + key + '"]')
-
-            if (node) {
-                const pos = getHighlightPosition(node)
-                hightlighter.style.top = pos.top + 'px'
-                hightlighter.style.left = pos.left + 'px'
-                hightlighter.style.width = pos.width + 'px'
-                hightlighter.style.height = pos.height + 'px'
-
-                const toolbar = document.querySelector('[data-toolbar="' + key + '"]')
-                if (toolbar) {
-                    toolbar.style.top = pos.top + 'px'
-                    toolbar.style.left = pos.left + 'px'
-                    toolbar.style.height = pos.height + 'px'
-                }
-
-            }
-        })
-    }
-    if (!after) {
-        clearTimeout(aftershockTimeout)
-        aftershockTimeout = setTimeout(() => {
-            highlighterHandler(e, observer, true)
-            for (let i = 0; i < 25; i++) {
-                setTimeout(() => {
-                    highlighterHandler(e, observer, true)
-                }, i * 20)
-            }
-        }, 50)
-    }
-}
 
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Alt') {
@@ -371,6 +146,7 @@ class JsonDomHelper extends React.Component {
             props._json !== this.props._json ||
             props.children !== this.props.children ||
             state.hovered !== this.state.hovered ||
+            state.richTextBarHover !== this.state.richTextBarHover ||
             state.addChildDialog !== this.state.addChildDialog ||
             state.deleteConfirmDialog !== this.state.deleteConfirmDialog ||
             state.deleteSelectionConfirmDialog !== this.state.deleteSelectionConfirmDialog ||
@@ -414,7 +190,6 @@ class JsonDomHelper extends React.Component {
 
     onHelperMouseOut(e) {
         const {hovered, dragging} = this.state
-
         if (hovered || dragging) {
             e.stopPropagation()
         }
@@ -428,7 +203,6 @@ class JsonDomHelper extends React.Component {
         if (dragging) {
             return
         }
-
         if (hovered) {
             this.helperTimeoutOut = setTimeout(() => {
                 if(!this.state.dividerHovered) {
@@ -456,18 +230,14 @@ class JsonDomHelper extends React.Component {
     onToolbarMouseOut(e) {
         e.stopPropagation()
         if (!this.state.toolbarMenuOpen) {
-            let el = e.toElement || e.relatedTarget
-            while (el && el.parentNode && el.parentNode !== window) {
-                if (el.dataset.toolbar || el.dataset.picker) {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    return false
-                }
-                el = el.parentNode
+            if(!checkIfElementOrParentHasDataKey(e.toElement || e.relatedTarget,['data-toolbar', 'data-picker'])) {
+                setTimeout(() => {
+                    this.setState({toolbarHovered: false})
+                }, 100)
+            }else{
+                e.preventDefault()
+                e.stopPropagation()
             }
-            setTimeout(() => {
-                this.setState({toolbarHovered: false})
-            }, 100)
         }
     }
 
@@ -774,7 +544,7 @@ class JsonDomHelper extends React.Component {
 
     render() {
         const {_WrappedComponent, _json, _cmsActions, _onTemplateChange, _onDataResolverPropertyChange, children, _tagName, _options, _inlineEditor, _dynamic, onChange, onClick, ...rest} = this.props
-        const {hovered, toolbarHovered, toolbarMenuOpen, addChildDialog, deleteConfirmDialog, deleteSelectionConfirmDialog, deleteSourceConfirmDialog} = this.state
+        const {hovered, toolbarHovered, richTextBarHover, toolbarMenuOpen, addChildDialog, deleteConfirmDialog, deleteSelectionConfirmDialog, deleteSourceConfirmDialog} = this.state
 
         if(!rest._key){
             return
@@ -782,7 +552,7 @@ class JsonDomHelper extends React.Component {
         const menuItems = [],
             isCms = _tagName === 'Cms',
             isInLoop = rest._key.indexOf('$loop') >= 0 && !Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE),
-            isElementActive = !JsonDomHelper.disableEvents && (hovered || toolbarHovered || toolbarMenuOpen),
+            isElementActive = !JsonDomHelper.disableEvents && (hovered || richTextBarHover || toolbarHovered || toolbarMenuOpen),
             isSelected = JsonDomHelper.selected.indexOf(this)>=0
 
 
@@ -908,7 +678,6 @@ class JsonDomHelper extends React.Component {
 
                     <StyledInfoBox>{(_t(`elements.key.${elementKey}`,null,elementKey)) + (rest.id?` (${rest.id})`:(rest.slug?` (${rest.slug})`:''))}</StyledInfoBox>
 
-
                     {menuItems.length > 0 && <StyledToolbarMenu
                         anchorReference={this.state.mouseY ? "anchorPosition" : "anchorEl"}
                         anchorPosition={
@@ -936,6 +705,15 @@ class JsonDomHelper extends React.Component {
             if (isSelected || _options.highlight !== false) {
                 const highligherColor = _dynamic ? 'red' : isCms || _options.picker ? 'blue' : 'yellow'
                 let marginBottomStyle = subJson?.p?.style?.marginBottom?.trim()
+                const hasRichTextBar = !!_options.richText // && rest['data-element-key'] === 'richText'
+                //console.log(ReactDOM.findDOMNode(this))
+                if(hasRichTextBar){
+                    events.contentEditable = true
+                    events.onInput=(e)=>{
+                        setPropertyByPath(e.target.innerHTML,'$c',subJson)
+                        _onTemplateChange(_json, true)
+                    }
+                }
 
                 highlighter = <StyledHighlighter
                     key={rest._key + '.highlighter'}
@@ -969,6 +747,17 @@ class JsonDomHelper extends React.Component {
                             }
                         }}>{isCms && subJson && subJson.p ? subJson.p.id || subJson.p.slug :
                         <ImageIcon/>}</StyledPicker> : ''}
+                    {hasRichTextBar && <StyledRichTextBar
+                        data-richtext-toolbar={rest._key}
+                        onMouseOver={()=>{
+                            this.setState({richTextBarHover:true})
+                        }}
+                        onMouseLeave={(e)=>{
+                            this.setState({richTextBarHover:false})
+                            if(checkIfElementOrParentHasDataKey(e.toElement || e.relatedTarget,['data-element-key'],'richText')) {
+                                this.setState({hovered:true})
+                            }
+                        }}><CmsViewContainer _props={{toolsOnly:true,setBackgroundColor:false}} slug="core/wysiwyg" dynamic={true}/></StyledRichTextBar>}
                     <StyledHorizontalDivider style={{height:this.state.marginBottomNew || this.state.marginBottom}}
                                              onMouseDown={(e)=>{
                                                  this.setState({dividerMousePos:e.pageY})

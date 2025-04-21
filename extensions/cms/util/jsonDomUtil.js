@@ -142,7 +142,7 @@ export const classNameByPath = (path, extraClassName) => {
 }
 
 
-export const recalculatePixelValue = (currentValue, newValue, currentValuePx) => {
+export const recalculatePixelValue = (currentValue='', newValue, currentValuePx) => {
     if (currentValue.endsWith('vh')) {
         newValue = `${(parseFloat(newValue) / window.innerHeight * 100).toFixed(2)}vh`
     } else if (currentValue.endsWith('rem')) {
@@ -188,4 +188,120 @@ export const recalculatePixelValue = (currentValue, newValue, currentValuePx) =>
         newValue = Math.round(parseFloat(newValue) * 100) / 100 + 'px'
     }
     return newValue
+}
+
+export const getHighlightPosition = (node)=>  {
+    let childMaxTop = 0,
+        childMaxLeft = 0,
+        childMinTop = Infinity,
+        childMinLeft = Infinity,
+        allAbs = node.childNodes.length>0
+
+    if(node.tagName==='SELECT') {
+        allAbs=false
+    }else{
+        for (const childNode of node.childNodes) {
+
+            if (childNode.nodeType === Node.ELEMENT_NODE) {
+                const style = window.getComputedStyle(childNode)
+                if (style.display !== 'none' && style.opacity > 0) {
+                    const rect = childNode.getBoundingClientRect()
+                    childMinLeft = Math.min(rect.left, childMinLeft)
+                    childMaxLeft = Math.max(rect.left + (rect.width ?? 0), childMaxLeft)
+                    childMinTop = Math.min(rect.top, childMinTop)
+                    childMaxTop = Math.max(rect.top + (rect.height ?? 0), childMaxTop)
+                } else {
+                    allAbs = false
+                }
+                if (style.position !== 'absolute') {
+                    allAbs = false
+                }
+            } else {
+                allAbs = false
+            }
+        }
+    }
+
+    if(!allAbs) {
+        const rect = node.getBoundingClientRect()
+        childMinLeft = Math.min(rect.left, childMinLeft)
+        childMaxLeft = Math.max(rect.left + (rect.width ?? 0), childMaxLeft)
+        childMinTop = Math.min(rect.top, childMinTop)
+        childMaxTop = Math.max(rect.top + (rect.height ?? 0), childMaxTop)
+    }
+
+    const computedStyle = window.getComputedStyle(node)
+    return {
+        hovered: true,
+        height: childMaxTop - childMinTop,
+        width: childMaxLeft - childMinLeft,
+        top: childMinTop,
+        left: childMinLeft,
+        marginBottom: computedStyle.marginBottom
+    }
+}
+
+
+let aftershockTimeout
+export const highlighterHandler = (e, observer, after) => {
+    const hightlighters = document.querySelectorAll('[data-highlighter]')
+    if (hightlighters && hightlighters.length > 0) {
+        hightlighters.forEach(hightlighter => {
+            const key = hightlighter.getAttribute('data-highlighter')
+            const node = document.querySelector('[_key="' + key + '"]')
+
+            if (node) {
+                const pos = getHighlightPosition(node)
+                hightlighter.style.top = pos.top + 'px'
+                hightlighter.style.left = pos.left + 'px'
+                hightlighter.style.width = pos.width + 'px'
+                hightlighter.style.height = pos.height + 'px'
+
+                const toolbar = document.querySelector('[data-toolbar="' + key + '"]')
+                if (toolbar) {
+                    toolbar.style.top = pos.top + 'px'
+                    toolbar.style.left = pos.left + 'px'
+                    toolbar.style.height = pos.height + 'px'
+                }
+
+                const toolbarRichtext = document.querySelector('[data-richtext-toolbar="' + key + '"]')
+                if (toolbarRichtext) {
+                    const rect = node.getBoundingClientRect()
+                    let top = rect.top - 130
+                    if(top<0){
+                        toolbarRichtext.style.top = (Math.abs(top)-65) + 'px'
+                    }
+                    /*toolbarRichtext.style.top = pos.top + 'px'
+                    toolbarRichtext.style.left = pos.left + 'px'
+                    toolbarRichtext.style.height = pos.height + 'px'*/
+                }
+
+            }
+        })
+    }
+    if (!after) {
+        clearTimeout(aftershockTimeout)
+        aftershockTimeout = setTimeout(() => {
+            highlighterHandler(e, observer, true)
+            for (let i = 0; i < 25; i++) {
+                setTimeout(() => {
+                    highlighterHandler(e, observer, true)
+                }, i * 20)
+            }
+        }, 50)
+    }
+}
+
+export const checkIfElementOrParentHasDataKey = (el, attrKeys = [], value) => {
+    while (el && el.parentNode && el.parentNode !== window) {
+        for (const key of attrKeys) {
+            const attrValue = el.getAttribute(key)
+            console.log(key,attrValue)
+            if (value && attrValue === value || !value && attrValue !== null && attrValue !== undefined) {
+                return true
+            }
+        }
+        el = el.parentNode
+    }
+    return false
 }
