@@ -9,6 +9,7 @@ const DEFAULT_TAB = 'elements.generalTab',
     MARGIN_TAB = 'elements.marginTab',
     TRANSLATION_TAB = 'elements.translationTab',
     MISC_TAB = 'elements.miscTab',
+    VISIBILITY_TAB = 'elements.visibilityTab',
     MEDIA_PROJECTION = ['_id', 'size', 'name', 'group', 'src', 'mimeType', {'info': ['width', 'height']}]
 
 
@@ -161,7 +162,7 @@ const observeOptions = () => ({
         type: 'Boolean',
         value: false,
         label: 'Überwachung aktivieren',
-        tab: 'Sichtbarkeit',
+        tab: VISIBILITY_TAB,
         role: CAPABILITY_MANAGE_CMS_PAGES
     },
     '$observe_waitVisible': {
@@ -169,7 +170,7 @@ const observeOptions = () => ({
         type: 'Boolean',
         value: false,
         label: 'Sichtbarkeit überwachen (Rendering wenn in Viewport)',
-        tab: 'Sichtbarkeit',
+        tab: VISIBILITY_TAB,
         role: CAPABILITY_MANAGE_CMS_PAGES
     },
     '$observe_backgroundImage': {
@@ -177,7 +178,7 @@ const observeOptions = () => ({
         type: 'Boolean',
         value: false,
         label: 'Nur Hintergrundbild (Bild erst laden wenn sichtbar)',
-        tab: 'Sichtbarkeit',
+        tab: VISIBILITY_TAB,
         role: CAPABILITY_MANAGE_CMS_PAGES
     },
     '$observe_passProps': {
@@ -185,26 +186,26 @@ const observeOptions = () => ({
         type: 'Boolean',
         value: false,
         label: 'Attribute beibehalten',
-        tab: 'Sichtbarkeit',
+        tab: VISIBILITY_TAB,
         role: CAPABILITY_MANAGE_CMS_PAGES
     },
     '$observe_initialClass': {
         fullWidth: true,
         label: 'Initial Klasse',
-        tab: 'Sichtbarkeit',
+        tab: VISIBILITY_TAB,
         role: CAPABILITY_MANAGE_CMS_PAGES
     },
     '$observe_visibleClass': {
         fullWidth: true,
         label: 'Sichtbar Klasse',
-        tab: 'Sichtbarkeit',
+        tab: VISIBILITY_TAB,
         role: CAPABILITY_MANAGE_CMS_PAGES
     },
     '$observe_threshold': {
         fullWidth: true,
         label: 'Threshold',
         type: 'Float',
-        tab: 'Sichtbarkeit',
+        tab: VISIBILITY_TAB,
         role: CAPABILITY_MANAGE_CMS_PAGES
     },
     '$observe_flipMode': {
@@ -212,7 +213,7 @@ const observeOptions = () => ({
         type: 'Boolean',
         value: false,
         label: 'Ein-/Ausblenden',
-        tab: 'Sichtbarkeit',
+        tab: VISIBILITY_TAB,
         role: CAPABILITY_MANAGE_CMS_PAGES
     },
 })
@@ -463,7 +464,9 @@ const marginOptions = key => ({
 
 const condition = () => ({
     $is: {
-        label: 'Bedingung'
+        label: 'Bedingung',
+        tab: VISIBILITY_TAB,
+        fullWidth:true
     }
 })
 
@@ -1010,7 +1013,8 @@ const baseElements = [
             ...marginOptions('p_'),
             ...classTextOptions('p_'),
             ...classOptions('p_'),
-            ...observeOptions()
+            ...observeOptions(),
+            ...condition(),
         }
     },
     {

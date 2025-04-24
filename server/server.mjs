@@ -21,7 +21,7 @@ import {proxyToApiServer, proxyWsToApiServer} from './util/apiProxy.mjs'
 //import heapdump from 'heapdump'
 import {clientAddress} from '../util/host.mjs'
 import Cache from '../util/cache.mjs'
-import {decodeURIComponentSafe, doScreenCapture} from './util/index.mjs'
+import {decodeURIComponentSafe, doScreenCapture, regexRedirectUrl} from './util/index.mjs'
 import {createSimpleEtag} from './util/etag.mjs'
 import {getDynamicConfig} from '../util/config.mjs'
 import {
@@ -37,6 +37,8 @@ const config = getDynamicConfig()
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
 const ROOT_DIR = path.resolve(), SERVER_DIR = path.join(ROOT_DIR, './server')
 const ABS_UPLOAD_DIR = path.join(ROOT_DIR, UPLOAD_DIR)
+const API_PREFIXES = config.API_PREFIX?(Array.isArray(config.API_PREFIX)? config.API_PREFIX : [config.API_PREFIX]):[]
+
 
 // Use Httpx
 const USE_HTTPX = process.env.LUNUC_HTTPX === 'false' ? false : true
@@ -411,7 +413,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 return
             }
 
-            if (urlPathname.startsWith('/graphql') || urlPathname.startsWith('/' + API_PREFIX)) {
+            if (urlPathname.startsWith('/graphql') || API_PREFIXES.some(prefix => urlPathname.startsWith('/'+prefix + '/'))) {
                 // there is also /graphql/upload
                 proxyToApiServer(req, res, {host, path:parsedUrl.path})
             } else {
@@ -473,10 +475,10 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     await resolveUploadedFile(urlPathname, parsedUrl, req, res)
                 } else {
 
-
+                    let redirect
                     if (hostrule.redirects) {
 
-                        let redirect = hostrule.redirects[urlPathname+parsedUrl.search]
+                        redirect = hostrule.redirects[urlPathname+parsedUrl.search]
                         if(!redirect) {
                             redirect = hostrule.redirects[urlPathname]
                         }
@@ -491,19 +493,23 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                         if (!redirect) {
                             redirect = hostrule.redirects['*']
                         }
-                        if (redirect) {
-
-                            redirect = redirect.replace(/%pathname%/g, parsedUrl.pathname || '/').replace(/%search%/g, parsedUrl.search || '')
-
-                            const agent = req.headers['user-agent']
-                            if( !agent || agent.indexOf('www.letsencrypt.org') < 0 ) {
-                                res.writeHead(301, {'Location': redirect})
-                                res.end()
-                                return true
-                            }
-                        }
-
                     }
+                    if(!redirect && hostrule.regexRedirects){
+                        redirect = regexRedirectUrl(urlPathname+parsedUrl.search, hostrule.regexRedirects)
+                    }
+                    if (redirect) {
+
+                        redirect = redirect.replace(/%pathname%/g, parsedUrl.pathname || '/').replace(/%search%/g, parsedUrl.search || '')
+
+                        console.log(`Hostrule redirect to ${redirect}`)
+                        const agent = req.headers['user-agent']
+                        if( !agent || agent.indexOf('www.letsencrypt.org') < 0 ) {
+                            res.writeHead(301, {'Location': redirect})
+                            res.end()
+                            return true
+                        }
+                    }
+
                     hostrule.headers = {...hostrules.general.headers, ...hostrule.headers}
                     const headers = {...hostrule.headers.common,...hostrule.headers[urlPathname]}
                     if (hostrule.fileMapping && hostrule.fileMapping[urlPathname]) {

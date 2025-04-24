@@ -244,7 +244,7 @@
     "UPLOAD_URL": "/uploads",
     "LANGUAGES": ["de","en","fr","it"],
     "DEFAULT_LANGUAGE": "de",
-    "API_PREFIX": "lunucapi",
+    "API_PREFIX": ["a","api","lunucapi"],
     "PRETTYURL_SEPERATOR": "-",
     "HTML_HEAD": "<noscript><meta http-equiv=\"refresh\" content=\"0; url=/lunucapi/system/noscript?url=<%=encodedUrl%>\"></noscript>"
   }

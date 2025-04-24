@@ -95,3 +95,28 @@ export const decodeURIComponentSafe = (string) => {
     }
     return decodeURIComponent(string.replace(/%(?![0-9][0-9a-fA-F]+)/g, '%25'))
 }
+
+
+export const regexRedirectUrl = (url, redirectMap) => {
+    for (const [pattern, redirectTemplate] of Object.entries(redirectMap)) {
+        // Escape special regex characters in pattern, except for capturing groups
+        const escapedPattern = pattern
+            .replace(/[.+?^${}()|[\]\\]/g, '\\$&') // Escape special chars
+            .replace(/\*/g, '.*?') // Convert * to non-greedy match
+
+        // Create regex from pattern, preserving capturing groups
+        const regex = new RegExp(`^${escapedPattern}$`)
+
+        // Test if URL matches pattern
+        const match = url.match(regex)
+        if (match) {
+            // Replace {1}, {2}, etc. with captured groups
+            let newUrl = redirectTemplate
+            match.slice(1).forEach((group, index) => {
+                newUrl = newUrl.replace(`{${index + 1}}`, group || '')
+            })
+            return newUrl
+        }
+    }
+    return null // No match found
+}

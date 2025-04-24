@@ -19,7 +19,7 @@ export default () => {
 
     Hook.on('TypeCreateEditAction', function ({type, action, dataToEdit}) {
         if (type === 'Api' && action && action.key === 'openApi') {
-            const win = window.open(`/${config.API_PREFIX}/${dataToEdit.slug}`, '_blank')
+            const win = window.open(`/${Array.isArray(config.API_PREFIX)?config.API_PREFIX[0]:config.API_PREFIX}/${dataToEdit.slug}`, '_blank')
             win.focus()
         }
     })

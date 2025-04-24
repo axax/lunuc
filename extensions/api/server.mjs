@@ -83,55 +83,58 @@ const checkBasicAuth = (req, res, auth)=>  {
 // Hook when db is ready
 Hook.on('appready', ({app, db}) => {
 
-    app.use('/' + config.API_PREFIX, async (req, res) => {
+    const API_PREFIXES = config.API_PREFIX?(Array.isArray(config.API_PREFIX)? config.API_PREFIX : [config.API_PREFIX]):[]
 
-        const startTime = new Date().getTime()
-        const slug = url.parse(req.url).pathname.substring(1).split(`/${config.PRETTYURL_SEPERATOR}/`)[0]
+    API_PREFIXES.forEach(apiPath=>{
+        app.use('/' + apiPath, async (req, res) => {
 
-        console.log(`Api request: ${slug}`)
+            const startTime = new Date().getTime()
+            const slug = url.parse(req.url).pathname.substring(1).split(`/${config.PRETTYURL_SEPERATOR}/`)[0]
 
-        try {
-            const api = await getApi({slug, db})
+            console.log(`Api request: ${slug}`)
 
-            if (!api) {
-                res.writeHead(404, {'content-type': 'application/json'})
-                res.end(`{"status":"notfound","message":"Api for '${slug}' not found"}`)
-            } else {
+            try {
+                const api = await getApi({slug, db})
 
-
-                if(api.basicAuth && !checkBasicAuth(req, res, {login:api.baUser, password: api.baPassword})) {
-                    return
-                }
-
-                const result = await runApiScript({api, db, req, res, startTime})
-
-                if (!result.error && result.responseStatus && result.responseStatus.ignore) {
-
-                } else if (result.error) {
-                    Hook.call('ExtensionApiError', {db, req, error: result.error, slug})
-
-                    res.writeHead(500, {'content-type': 'application/json'})
-                    res.end(`{"status":"error","message":"${result.error.message}"}`)
+                if (!api) {
+                    res.writeHead(404, {'content-type': 'application/json'})
+                    res.end(`{"status":"notfound","message":"Api for '${slug}' not found"}`)
                 } else {
-                    const data = await result.data
 
-                    if (data && data._error) {
-                        Hook.call('ExtensionApiError', {db, req, error: data._error, slug})
+
+                    if(api.basicAuth && !checkBasicAuth(req, res, {login:api.baUser, password: api.baPassword})) {
+                        return
+                    }
+
+                    const result = await runApiScript({api, db, req, res, startTime})
+
+                    if (!result.error && result.responseStatus && result.responseStatus.ignore) {
+
+                    } else if (result.error) {
+                        Hook.call('ExtensionApiError', {db, req, error: result.error, slug})
+
                         res.writeHead(500, {'content-type': 'application/json'})
-                        res.end(`{"status":"error","message":"${data._error.message}"}`)
+                        res.end(`{"status":"error","message":"${result.error.message}"}`)
                     } else {
-                        res.writeHead(res.responseCode || 200, {'content-type': api.mimeType || 'application/json'})
-                        res.end(data ? data.toString() : data)
+                        const data = await result.data
+
+                        if (data && data._error) {
+                            Hook.call('ExtensionApiError', {db, req, error: data._error, slug})
+                            res.writeHead(500, {'content-type': 'application/json'})
+                            res.end(`{"status":"error","message":"${data._error.message}"}`)
+                        } else {
+                            res.writeHead(res.responseCode || 200, {'content-type': api.mimeType || 'application/json'})
+                            res.end(data ? data.toString() : data)
+                        }
                     }
                 }
-
+            }catch (e){
+                console.log(e)
             }
 
-        }catch (e){
-            console.log(e)
-        }
-
+        })
     })
+
 })
 
 
