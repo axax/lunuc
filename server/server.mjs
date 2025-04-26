@@ -495,7 +495,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                         }
                     }
                     if(!redirect && hostrule.regexRedirects){
-                        redirect = regexRedirectUrl(urlPathname+parsedUrl.search, hostrule.regexRedirects)
+                        redirect = regexRedirectUrl(urlPathname+(parsedUrl.search || ''), hostrule.regexRedirects)
                     }
                     if (redirect) {
 
