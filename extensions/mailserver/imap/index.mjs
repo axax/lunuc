@@ -614,7 +614,6 @@ const startListening = async (db, context) => {
                 replaceAddresseObjectsToString(messageData)
 
 
-                _app_.errorDebug = JSON.parse(JSON.stringify( {folderId, options, session}, getCircularReplacer()))
 
                 const logError = (message)=>{
                     GenericResolver.createEntity(db, {context:context}, 'Log', {
@@ -649,7 +648,7 @@ const startListening = async (db, context) => {
                                 )
                             })
                         )
-                        if(stream) {
+                        if(stream && session?.writeStream?.connection?._closed!==true) {
 
                             stream.on('error', (err) => {
                                 logError(err.message)
@@ -658,11 +657,13 @@ const startListening = async (db, context) => {
                                 logError(err.message)
                             })
 
+                            _app_.errorDebug = JSON.parse(JSON.stringify( {folderId, options, session}, getCircularReplacer()))
+
                             session.writeStream.write(stream, () => {
                                 setImmediate(processMessage)
                             })
                         }else{
-                            logError(`stream is null`)
+                            logError(`stream is null or closed`)
                         }
                     })
                 }catch (error){

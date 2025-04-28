@@ -1039,7 +1039,7 @@ class CmsViewEditorContainer extends React.Component {
                     name: _t('CmsViewEditorContainer.genQrCode'),
                     icon: 'qrcode',
                     onClick: () => {
-                        fetch(`/lunucapi/su?url=${encodeURIComponent(location.href)}`).then(response => response.json().then(
+                        fetch(`/${Array.isArray(config.API_PREFIX)?config.API_PREFIX[0]:config.API_PREFIX}/s?url=${encodeURIComponent(location.href)}&name=${encodeURIComponent(_t(cmsPage.name))}`).then(response => response.json().then(
                             json=>{
                                 if(json.shortUrl){
                                     window.open(`/core/qrcode?content=${location.origin}${encodeURIComponent(json.shortUrl)}&preview=true`, '_blank').focus();

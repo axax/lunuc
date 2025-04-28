@@ -74,8 +74,8 @@
     "@codemirror/search": "^6.5.10",
     "@codemirror/state": "^6.5.2",
     "@codemirror/theme-one-dark": "^6.1.2",
-    "@codemirror/view": "^6.36.5",
-    "@distube/ytdl-core": "^4.16.8",
+    "@codemirror/view": "^6.36.6",
+    "@distube/ytdl-core": "^4.16.9",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^7.0.2",
@@ -91,14 +91,14 @@
     "exif-reader": "^2.0.2",
     "express": "^4.21.2",
     "express-graphql": "^0.12.0",
-    "formidable": "^3.5.3",
-    "graphql": "^16.10.0",
+    "formidable": "^3.5.4",
+    "graphql": "^16.11.0",
     "graphql-subscriptions": "^3.0.0",
     "graphql-tools": "^9.0.18",
     "jsonwebtoken": "^9.0.2",
-    "langchain": "^0.3.23",
+    "langchain": "^0.3.24",
     "mailparser": "^3.7.2",
-    "mongodb": "^6.15.0",
+    "mongodb": "^6.16.0",
     "network": "^0.7.0",
     "node-cron": "^3.0.3",
     "nodemailer": "^6.10.1",
@@ -117,7 +117,7 @@
     "zip-local": "^0.3.5"
   },
   "optionalDependencies": {
-    "@aws-sdk/client-lambda": "^3.787.0",
+    "@aws-sdk/client-lambda": "^3.798.0",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@ffprobe-installer/ffprobe": "^2.1.2",
     "@google-cloud/storage": "^7.16.0",
@@ -136,13 +136,13 @@
     "ftp-srv": "^4.6.3",
     "jwk-to-pem": "^2.0.7",
     "lexical": "^0.30.0",
-    "lighthouse": "^12.5.1",
+    "lighthouse": "^12.6.0",
     "mail-notifier": "^0.5.0",
     "mssql": "^11.0.1",
     "natural": "^8.0.1",
-    "nodemon": "^3.1.9",
+    "nodemon": "^3.1.10",
     "ollama": "^0.5.15",
-    "puppeteer": "^24.6.1",
+    "puppeteer": "^24.7.2",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "smtp-server": "^3.13.6",
@@ -178,7 +178,7 @@
     "react-test-renderer": "^19.1.0",
     "style-loader": "^4.0.0",
     "terser-webpack-plugin": "^5.3.14",
-    "webpack": "^5.99.6",
+    "webpack": "^5.99.7",
     "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^6.0.1",
     "webpack-dev-server": "^5.2.1"
@@ -186,6 +186,6 @@
   "overrides": {
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "graphql": "^16.10.0"
+    "graphql": "^16.11.0"
   }
 }
