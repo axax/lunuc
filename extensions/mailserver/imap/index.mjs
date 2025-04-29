@@ -620,7 +620,7 @@ const startListening = async (db, context) => {
                         location: 'mailserver',
                         type: 'imapError',
                         message: message,
-                        meta: messageData
+                        meta: {messageData,debug:JSON.parse(JSON.stringify( {folderId, options, session}, getCircularReplacer()))}
                     })
                 }
 
@@ -648,7 +648,7 @@ const startListening = async (db, context) => {
                                 )
                             })
                         )
-                        if(stream && session?.writeStream?.connection?._closed!==true) {
+                        if(stream && session?.writeStream?.connection?._closing!==true) {
 
                             stream.on('error', (err) => {
                                 logError(err.message)
