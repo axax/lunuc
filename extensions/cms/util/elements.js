@@ -10,6 +10,7 @@ const DEFAULT_TAB = 'elements.generalTab',
     TRANSLATION_TAB = 'elements.translationTab',
     MISC_TAB = 'elements.miscTab',
     VISIBILITY_TAB = 'elements.visibilityTab',
+    EVENT_TAB = 'elements.eventTab',
     MEDIA_PROJECTION = ['_id', 'size', 'name', 'group', 'src', 'mimeType', {'info': ['width', 'height']}]
 
 
@@ -1078,9 +1079,8 @@ const baseElements = [
                 tab: DEFAULT_TAB
             },
             ...classIconListOptions('p_'),
-            ...classOptions('p_'),
             p_target: {
-                fullWidth: true,
+                fullWidth: false,
                 value: '',
                 label: 'Target',
                 enum: [
@@ -1103,6 +1103,7 @@ const baseElements = [
                 ],
                 tab: DEFAULT_TAB
             },
+            ...classOptions('p_'),
             p_gotop: {
                 fullWidth: true,
                 defaultValue: true,
@@ -1110,7 +1111,15 @@ const baseElements = [
                 label: 'Scroll top',
                 tab: DEFAULT_TAB
             },
-            ...marginOptions('p_')
+            ...marginOptions('p_'),
+            p_onClick: {
+                fullWidth: true,
+                defaultValue: true,
+                uitype: 'json',
+                type: 'Object',
+                label: 'onClick',
+                tab: EVENT_TAB
+            }
         },
         defaults: {
             $inlineEditor: {
