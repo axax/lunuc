@@ -202,10 +202,14 @@ const startListening = async (db, context) => {
                 const fromMail = session?.envelope?.mailFrom?.address
                 console.debug('SMTP onData', fromMail, session)
 
+                let transportError
+
                 //stream.pipe(process.stdout); // print message to console
                 stream.on("end", () => {
                     let err;
-                    if (stream.sizeExceeded) {
+                    if(transportError){
+                        return callback(transportError)
+                    }else if (stream.sizeExceeded) {
                         err = new Error("Message exceeds fixed maximum message size")
                         err.responseCode = 552
                         return callback(err)
@@ -221,7 +225,7 @@ const startListening = async (db, context) => {
                         const transporter = nodemailerDirectTransport({
                             name: session.servername
                         })
-                        console.log('onData send', data, settings.dkim)
+                        //console.log('onData send', data, settings.dkim)
 
                         const transporterResult = nodemailer.createTransport(transporter)
                         try {
@@ -233,15 +237,14 @@ const startListening = async (db, context) => {
                                 bcc: data?.bcc?.value,
                                 from: data?.from?.text || fromMail
                             })
-                        }catch (e){
-                            console.log(`error sending email to ${data?.to?.text} from ${fromMail}`, e)
+                        }catch (error){
+                            console.log(`error sending email to ${data?.to?.text} from ${fromMail}`, error)
                             GenericResolver.createEntity(db, {context:context}, 'Log', {
                                 location: 'mailserver',
                                 type: 'smtpError',
                                 message: e.message,
-                                meta: {data, fromMail}
+                                meta: {data, fromMail, error}
                             })
-
                         }
 
                     } else {
@@ -270,9 +273,9 @@ const startListening = async (db, context) => {
 
                             const inbox = await getFolderForMailAccount(db, mailAccount._id, isSpam?'Junk':'INBOX')
 
-                            if(isSpam){
+                            /*if(isSpam){
                                 data.subject = "***SPAM***" + (data.subject || '')
-                            }
+                            }*/
 
                             await mailserverResolver(db).Mutation.createMailAccountMessage({
                                 mailAccount: mailAccount._id,
@@ -320,9 +323,15 @@ const startListening = async (db, context) => {
 
                                     try {
                                         await transporterResult.sendMail(message)
-                                    }catch (e){
+                                    }catch (error){
                                         console.log(`error forward email to ${rcpt.address} from ${mailAccount.username}@${mailAccount.host}`)
-                                        console.log(e)
+                                        console.log(error)
+                                        GenericResolver.createEntity(db, {context:context}, 'Log', {
+                                            location: 'mailserver',
+                                            type: 'smtpErrorForward',
+                                            message: error.message,
+                                            meta: {message, error}
+                                        })
                                     }
                                 }
 
