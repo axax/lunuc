@@ -242,7 +242,7 @@ const startListening = async (db, context) => {
                             GenericResolver.createEntity(db, {context:context}, 'Log', {
                                 location: 'mailserver',
                                 type: 'smtpError',
-                                message: e.message,
+                                message: error.message,
                                 meta: {data, fromMail, error}
                             })
                         }
