@@ -202,14 +202,13 @@ const startListening = async (db, context) => {
                 const fromMail = session?.envelope?.mailFrom?.address
                 console.debug('SMTP onData', fromMail, session)
 
-                const endWithError = ({message, code, errors})=>{
+                const endWithError = (error)=>{
                     let err
-                    if(errors && errors.length>0){
-                        err = new Error(errors[0].response)
-                        err.responseCode = errors[0].responseCode
+                    if(error.errors){
+                        err = error
                     }else {
-                        err = new Error(message)
-                        err.responseCode = code
+                        err = new Error(error.message)
+                        err.responseCode = error.code
                     }
                     return callback(err)
                 }
