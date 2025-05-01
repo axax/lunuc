@@ -202,26 +202,32 @@ const startListening = async (db, context) => {
                 const fromMail = session?.envelope?.mailFrom?.address
                 console.debug('SMTP onData', fromMail, session)
 
-                let transportError
-
-                //stream.pipe(process.stdout); // print message to console
-                stream.on("end", () => {
+                const endWithError = ({message, code, errors})=>{
                     let err
-                    if(transportError?.errors?.length>0){
-                        err = new Error(transportError.errors[0].response)
-                        err.responseCode = transportError.errors[0].responseCode
-                        return callback(err)
-                    }else if (stream.sizeExceeded) {
+                    if(errors && errors.length>0){
+                        err = new Error(errors[0].response)
+                        err.responseCode = errors[0].responseCode
+                    }else {
+                        err = new Error(message)
+                        err.responseCode = code
+                    }
+                    callback(err)
+                }
+                //stream.pipe(process.stdout); // print message to console
+               /*stream.on("end", () => {
+                    if (stream.sizeExceeded) {
                         err = new Error("Message exceeds fixed maximum message size")
                         err.responseCode = 552
                         return callback(err)
                     }
-                    callback(null, "Message queued")
-                })
+                })*/
 
                 simpleParser(stream, {keepCidLinks:true}, async (err, data) => {
-                    if (err) {
+                    if (stream.sizeExceeded) {
+                        return endWithError({message:'Message exceeds fixed maximum message size',code:552})
+                    }else if (err) {
                         console.log("Error:", err)
+                        return endWithError({message:err.message,code:451})
                     } else if (session.user) {
                         // send email
                         const transporter = nodemailerDirectTransport({
@@ -240,14 +246,14 @@ const startListening = async (db, context) => {
                                 from: data?.from?.text || fromMail
                             })
                         }catch (error){
-                            transportError = error
                             console.log(`error sending email to ${data?.to?.text} from ${fromMail}`, error)
-                            GenericResolver.createEntity(db, {context:context}, 'Log', {
+                            await GenericResolver.createEntity(db, {context:context}, 'Log', {
                                 location: 'mailserver',
                                 type: 'smtpError',
                                 message: error.message,
                                 meta: {error, data, fromMail}
                             })
+                            return endWithError(error)
                         }
 
                     } else {
@@ -327,15 +333,15 @@ const startListening = async (db, context) => {
                                     try {
                                         await transporterResult.sendMail(message)
                                     }catch (error){
-                                        transportError = error
                                         console.log(`error forward email to ${rcpt.address} from ${mailAccount.username}@${mailAccount.host}`)
                                         console.log(error)
-                                        GenericResolver.createEntity(db, {context:context}, 'Log', {
+                                        await GenericResolver.createEntity(db, {context:context}, 'Log', {
                                             location: 'mailserver',
                                             type: 'smtpErrorForward',
                                             message: error.message,
                                             meta: {error,message}
                                         })
+                                        return endWithError(error)
                                     }
                                 }
 
@@ -343,8 +349,10 @@ const startListening = async (db, context) => {
 
                         } else {
                             console.warn(`no mail account for`, data?.to?.text)
+                            return endWithError({message:`no mail account for ${data?.to?.text}`,code:551})
                         }
                     }
+                    callback(null, "Message queued")
                 })
 
             }
