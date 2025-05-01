@@ -206,9 +206,11 @@ const startListening = async (db, context) => {
 
                 //stream.pipe(process.stdout); // print message to console
                 stream.on("end", () => {
-                    let err;
-                    if(transportError){
-                        return callback(transportError)
+                    let err
+                    if(transportError?.errors?.length>0){
+                        err = new Error(transportError.errors[0].response)
+                        err.responseCode = transportError.errors[0].responseCode
+                        return callback(err)
                     }else if (stream.sizeExceeded) {
                         err = new Error("Message exceeds fixed maximum message size")
                         err.responseCode = 552
@@ -238,12 +240,13 @@ const startListening = async (db, context) => {
                                 from: data?.from?.text || fromMail
                             })
                         }catch (error){
+                            transportError = error
                             console.log(`error sending email to ${data?.to?.text} from ${fromMail}`, error)
                             GenericResolver.createEntity(db, {context:context}, 'Log', {
                                 location: 'mailserver',
                                 type: 'smtpError',
                                 message: error.message,
-                                meta: {data, fromMail, error}
+                                meta: {error, data, fromMail}
                             })
                         }
 
@@ -324,13 +327,14 @@ const startListening = async (db, context) => {
                                     try {
                                         await transporterResult.sendMail(message)
                                     }catch (error){
+                                        transportError = error
                                         console.log(`error forward email to ${rcpt.address} from ${mailAccount.username}@${mailAccount.host}`)
                                         console.log(error)
                                         GenericResolver.createEntity(db, {context:context}, 'Log', {
                                             location: 'mailserver',
                                             type: 'smtpErrorForward',
                                             message: error.message,
-                                            meta: {message, error}
+                                            meta: {error,message}
                                         })
                                     }
                                 }
