@@ -211,7 +211,7 @@ const startListening = async (db, context) => {
                         err = new Error(message)
                         err.responseCode = code
                     }
-                    callback(err)
+                    return callback(err)
                 }
                 //stream.pipe(process.stdout); // print message to console
                /*stream.on("end", () => {
