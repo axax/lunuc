@@ -10,6 +10,8 @@ import {isTemporarilyBlocked} from '../../../server/util/requestBlocker.mjs'
 import Util from '../../../api/util/index.mjs'
 import {detectSpam} from './spam.mjs'
 import {dynamicSettings} from '../../../api/util/settings.mjs'
+import GenericResolver from "../../../api/resolver/generic/genericResolver.mjs";
+import {getCircularReplacer} from "../util/index.mjs";
 
 
 /*
@@ -233,6 +235,13 @@ const startListening = async (db, context) => {
                             })
                         }catch (e){
                             console.log(`error sending email to ${data?.to?.text} from ${fromMail}`, e)
+                            GenericResolver.createEntity(db, {context:context}, 'Log', {
+                                location: 'mailserver',
+                                type: 'smtpError',
+                                message: e.message,
+                                meta: {data, fromMail}
+                            })
+
                         }
 
                     } else {

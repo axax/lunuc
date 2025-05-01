@@ -1,4 +1,5 @@
 import dns2 from 'dns2'
+import dns from 'dns'
 import Hook from '../../util/hook.cjs'
 import schemaGen from './gensrc/schema'
 import resolverGen from './gensrc/resolver'
@@ -39,6 +40,10 @@ Hook.on('appready', async ({db, context}) => {
     dnsServerContext.settings = (await Util.getKeyValueGlobal(db, context, 'DnsSettings', true)) || {}
 
     if (!dnsServerContext.settings.execfilter || Util.execFilter(dnsServerContext.settings.execfilter)) {
+
+        if(dnsServerContext?.settings?.internalDnsServers?.length>0) {
+            dns.setServers(dnsServerContext.settings.internalDnsServers)
+        }
 
         // refresh settings every minute
         setInterval(async () => {

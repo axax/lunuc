@@ -151,12 +151,14 @@ export default () => {
 
             if (structure && structure.columns) {
 
+                const structureColumns = structure.columns.slice(0)
+
                 const dataFieldIndex = columns.findIndex(f=>f.id==='data')
                 if(dataFieldIndex>=0 && !structure.titleTemplate){
                     columns.splice(dataFieldIndex, 1)
                 }
 
-                structure.columns.reverse().forEach(col=>{
+                structureColumns.reverse().forEach(col=>{
                     columns.splice(1, 0, {
                         title: col.label || col.field,
                         id: 'data_'+col.field,
