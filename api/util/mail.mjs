@@ -153,11 +153,12 @@ ${finalHtml}
 
             const transporterResult = nodemailer.createTransport(transporter)
             mailResponse = await transporterResult.sendMail(message)
+
             break
         } catch (e) {
-            console.log('sendMail', e)
-            mailResponse = e.message
-            if (currentMailSettings.second) {
+            console.log('sendMail Error', e)
+            mailResponse = e
+            if (currentMailSettings.second && currentMailSettings.useSecond!==false) {
                 currentMailSettings = currentMailSettings.second
             } else {
                 break

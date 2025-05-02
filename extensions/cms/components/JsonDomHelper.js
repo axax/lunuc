@@ -52,7 +52,7 @@ import {
 import CmsViewContainer from "../containers/CmsViewContainer";
 
 const {DEFAULT_LANGUAGE} = config
-const CONVERTABLE_ELEMENTS = ['image','layout-1-2','layout-1-3','layout-1-4','layout-1-6','headline','p','richText']
+const CONVERTABLE_ELEMENTS = ['image','layout-1-2','layout-1-3','layout-1-4','layout-1-6','headline','p','richText','link']
 const deleteDialogActions = [
     {
         key: 'cancel',
@@ -1297,9 +1297,9 @@ class JsonDomHelper extends React.Component {
         }
 
         const items = []
-        if (['richText','p','headline'].indexOf(_options.elementKey)>=0) {
+        if (['richText','p','headline','link'].indexOf(_options.elementKey)>=0) {
 
-            if (['richText', 'headline'].indexOf(_options.elementKey) >= 0) {
+            if (['richText', 'headline', 'link'].indexOf(_options.elementKey) >= 0) {
                 items.push({
                     name: _t('elements.key.p'),
                     icon: 'subject',
@@ -1310,7 +1310,7 @@ class JsonDomHelper extends React.Component {
                     }
                 })
             }
-            if (['p', 'headline'].indexOf(_options.elementKey) >= 0) {
+            if (['p', 'headline', 'link'].indexOf(_options.elementKey) >= 0) {
                 items.push({
                     name: _t('elements.key.richText'),
                     icon: 'wysiwyg',
@@ -1323,7 +1323,7 @@ class JsonDomHelper extends React.Component {
                 })
             }
 
-            if (['richText', 'p'].indexOf(_options.elementKey) >= 0) {
+            if (['richText', 'p', 'link'].indexOf(_options.elementKey) >= 0) {
                 items.push({
                     name: _t('elements.key.headline'),
                     icon: 'format',
@@ -1332,6 +1332,19 @@ class JsonDomHelper extends React.Component {
                         subJson.t = 'h1'
                         delete subJson.$c
                         changeToType('headline')
+                    }
+                })
+            }
+
+            if (['richText', 'p', 'headline'].indexOf(_options.elementKey) >= 0) {
+                items.push({
+                    name: _t('elements.key.link'),
+                    icon: 'link',
+                    onClick: () => {
+                        subJson.c = subJson.c || (subJson.$c ? subJson.$c.replace(/<[^>]*>/g, '') : '')
+                        subJson.t = 'Link'
+                        delete subJson.$c
+                        changeToType('link')
                     }
                 })
             }
