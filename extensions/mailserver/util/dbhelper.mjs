@@ -129,17 +129,28 @@ export const deleteMessagesForFolderByUids = async (db, folder, uids) => {
 }
 
 
-export const getMailAccountFromMailData = async (db, data) => {
-    let mailAccount
-    if (data?.to?.value && data.to.value.length > 0) {
-        for (const mailValue of data.to.value) {
-            if (mailValue && mailValue.address) {
-                mailAccount = await getMailAccountByEmail(db, mailValue.address)
-                if(mailAccount){
-                    break
-                }
+function addEmailAddresses(mailValues, allEmailAdrs) {
+    if (mailValues?.value?.length > 0) {
+        for (const mailValue of mailValues.value) {
+            if (mailValue?.address && allEmailAdrs.indexOf(mailValue.address) < 0) {
+                allEmailAdrs.push(mailValue.address)
             }
         }
     }
-    return mailAccount
+}
+
+export const getMailAccountsFromMailData = async (db, data) => {
+    const mailAccounts = []
+    const allEmailAdrs = []
+    addEmailAddresses(data?.to, allEmailAdrs)
+    addEmailAddresses(data?.cc, allEmailAdrs)
+    addEmailAddresses(data?.bcc, allEmailAdrs)
+
+    for (const mailAdr of allEmailAdrs) {
+        const mailAccount = await getMailAccountByEmail(db, mailAdr)
+        if(mailAccount){
+            mailAccounts.push(mailAccount)
+        }
+    }
+    return mailAccounts
 }

@@ -1,6 +1,37 @@
 import {getType} from '../../../util/types.mjs'
 import {ObjectId} from 'mongodb'
 import {getFieldsFromGraphqlInfoSelectionSet} from '../../util/graphql.js'
+import {replacePlaceholders} from "../../../util/placeholders.mjs";
+import {isString} from '../../../client/util/json.mjs'
+
+export const resolveDynamicFieldQuery = async (db, field, item, setItem) => {
+    const dyn = field.dynamic
+    if (dyn.action === 'count') {
+        const query = Object.assign({}, dyn.query)
+        if (query) {
+            Object.keys(query).forEach(k => {
+                if(isString(query[k])){
+                    if (query[k] === '_id') {
+                        query[k] = item._id
+                    }  else if(query[k].startsWith('${')){
+                        query[k] = replacePlaceholders(query[k],item)
+                        if(!isNaN(query[k])){
+                            query[k] = {$in:[query[k],parseInt(query[k])]}
+                        }
+                    }
+                }else if (query[k].$in && query[k].$in[0] === '_id') {
+                    query[k] = Object.assign({}, query[k])
+                    query[k].$in = [...query[k].$in]
+                    query[k].$in[0] = item._id
+                }
+            })
+        }
+        //console.log(dyn.type, query)
+        //let d = new Date().getTime()
+        setItem[field.name] = await db.collection(dyn.type).count(query)
+        //console.log(`time ${new Date().getTime()-d}ms`)
+    }
+}
 
 export default async function (response, {typeName, db, graphqlInfo}){
 
@@ -98,25 +129,7 @@ export default async function (response, {typeName, db, graphqlInfo}){
                             }
 
                             hasField = true
-
-                            if (dyn.action === 'count') {
-                                const query = Object.assign({}, dyn.query)
-                                if (query) {
-                                    Object.keys(query).forEach(k => {
-                                        if (query[k] === '_id') {
-                                            query[k] = item._id
-                                        } else if (query[k].$in && query[k].$in[0] === '_id') {
-                                            query[k] = Object.assign({}, query[k])
-                                            query[k].$in = [...query[k].$in]
-                                            query[k].$in[0] = item._id
-                                        }
-                                    })
-                                }
-                                //console.log(dyn.type, query)
-                                //let d = new Date().getTime()
-                                item[field.name] = await db.collection(dyn.type).count(query)
-                                //console.log(`time ${new Date().getTime()-d}ms`)
-                            }
+                            await resolveDynamicFieldQuery(db, field, item, item)
                         }
                     }
 

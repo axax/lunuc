@@ -11,6 +11,7 @@ import {matchExpr} from '../../client/util/json.mjs'
 import {findProjection} from '../../util/project.mjs'
 import {getGenericTypeDefinitionWithStructure} from './util/index.mjs'
 import {getType} from "../../util/types.mjs";
+import {resolveDynamicFieldQuery} from "../../api/resolver/generic/postQueryConverter.mjs";
 
 
 // Hook to add mongodb resolver
@@ -680,13 +681,11 @@ async function postCheckResult(def, result, db, context, otherOptions) {
         }
 
         if (field.dynamic) {
-            if (!field.dynamic.genericType) {
-                console.warn('field.dynamic.genericType is missing')
-            } else {
+            for (let j = 0; j < result.results.length; j++) {
+                const item = result.results[j]
+                item.data = JSON.parse(item.data)
 
-                for (let j = 0; j < result.results.length; j++) {
-                    const item = result.results[j]
-                    const data = JSON.parse(item.data)
+                if (field.dynamic.genericType) {
                     const subData = await GenericResolver.entities(db, context, 'GenericData', ['_id', {definition: ['_id']}, 'data'],
                         {
                             filter: `definition.name==${field.dynamic.genericType}${field.dynamic.filter ? ' && ' + ClientUtil.replacePlaceholders(field.dynamic.filter, item) : ''}`,
@@ -700,11 +699,12 @@ async function postCheckResult(def, result, db, context, otherOptions) {
                         subItem.__typename = field.type
                     })
 
-                    data[field.name] = subData.results
-                    item.data = JSON.stringify(data)
+                    item.data[field.name] = subData.results
+                }else{
+                    await resolveDynamicFieldQuery(db, field, item, item.data)
                 }
+                item.data = JSON.stringify(item.data)
             }
-
         }
     }
 

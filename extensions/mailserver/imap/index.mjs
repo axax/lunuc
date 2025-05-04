@@ -14,7 +14,7 @@ import {
     getMessagesForFolder,
     getMessagesForFolderByUids,
     getFolderForMailAccountById,
-    deleteMessagesForFolderByUids, getMailAccountFromMailData
+    deleteMessagesForFolderByUids
 } from '../util/dbhelper.mjs'
 import {getCircularReplacer, replaceAddresseObjectsToString} from '../util/index.mjs'
 import Util from '../../../api/util/index.mjs'

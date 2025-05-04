@@ -7,7 +7,7 @@ import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import {ObjectId} from 'mongodb'
 import {
     getFolderForMailAccount,
-    getFolderForMailAccountById, getMailAccountFromMailData
+    getFolderForMailAccountById, getMailAccountsFromMailData
 } from './util/dbhelper.mjs'
 import {isExtensionEnabled} from '../../gensrc/extensions-private.mjs'
 
@@ -72,13 +72,13 @@ Hook.on(['typeBeforeCreate'], async ({db, type, data}) => {
     if(type==='MailAccountFolder'){
 
     }else if(type==='MailAccountMessage'){
-        let mailAccount
+        let mailAccounts
         if(data.mailAccount){
-            mailAccount = await db.collection('MailAccount').findOne({_id: data.mailAccount})
+            mailAccounts = [await db.collection('MailAccount').findOne({_id: data.mailAccount})]
         } else {
-            mailAccount = await getMailAccountFromMailData(db, data.data)
+            mailAccounts = await getMailAccountsFromMailData(db, data.data)
         }
-        if(mailAccount){
+        for(const mailAccount of mailAccounts){
             data.mailAccount = mailAccount._id
 
             let mailAccountFolder

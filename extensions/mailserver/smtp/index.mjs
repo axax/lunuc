@@ -3,7 +3,7 @@ import {getBestMatchingHostRule, getHostRules} from '../../../util/hostrules.mjs
 import {simpleParser} from 'mailparser'
 import mailserverResolver from '../gensrc/resolver.mjs'
 import config from '../../../gensrc/config.mjs'
-import {getFolderForMailAccount, getMailAccountByEmail, getMailAccountFromMailData} from '../util/dbhelper.mjs'
+import {getFolderForMailAccount, getMailAccountByEmail, getMailAccountsFromMailData} from '../util/dbhelper.mjs'
 import nodemailerDirectTransport from 'nodemailer-direct-transport'
 import nodemailer from 'nodemailer'
 import {isTemporarilyBlocked} from '../../../server/util/requestBlocker.mjs'
@@ -11,7 +11,7 @@ import Util from '../../../api/util/index.mjs'
 import {detectSpam} from './spam.mjs'
 import {dynamicSettings} from '../../../api/util/settings.mjs'
 import GenericResolver from "../../../api/resolver/generic/genericResolver.mjs";
-import {getCircularReplacer} from "../util/index.mjs";
+import {decodeHtmlEntities} from "../util/index.mjs";
 
 
 /*
@@ -269,83 +269,84 @@ const startListening = async (db, context) => {
                         }
 
                         // email received
-                        let mailAccount = await getMailAccountFromMailData(db, data)
-                        if (mailAccount && mailAccount.active) {
+                        let mailAccounts = await getMailAccountsFromMailData(db, data)
+                        if(mailAccounts.length>0){
+                            for(const mailAccount of mailAccounts) {
+                                const sender = data.headers.get('sender') || data.headers.get('from') || {}
 
-                            const sender = data.headers.get('sender') || data.headers.get('from') || {}
-
-                            const {isSpam, spamScore} = await detectSpam(db, context, {
-                                threshold: mailAccount.spamThreshold,
-                                sender:sender.text,
-                                text:data.subject+(data.text || data.html)})
-
-                            const inbox = await getFolderForMailAccount(db, mailAccount._id, isSpam?'Junk':'INBOX')
-
-                            /*if(isSpam){
-                                data.subject = "***SPAM***" + (data.subject || '')
-                            }*/
-
-                            await mailserverResolver(db).Mutation.createMailAccountMessage({
-                                mailAccount: mailAccount._id,
-                                mailAccountFolder: inbox._id,
-                                data,
-                                spamScore
-                            }, {context}, false)
-
-                            const contentType = data.headers.get('content-type') || {}
-
-                            if(mailAccount.redirect && contentType?.params?.[`report-type`]!=='delivery-status'){
-
-                                // send email
-                                const transporter = nodemailerDirectTransport({
-                                    name: `mail.${mailAccount.host}`,
+                                const {isSpam, spamScore} = await detectSpam(db, context, {
+                                    threshold: mailAccount.spamThreshold,
+                                    sender: sender.text,
+                                    text: data.subject + (data.html ? decodeHtmlEntities(removeHtmlTags(data.html)) : data.text)
                                 })
 
-                                const transporterResult = nodemailer.createTransport(transporter)
+                                const inbox = await getFolderForMailAccount(db, mailAccount._id, isSpam ? 'Junk' : 'INBOX')
 
-                                const recipients = mailAccount.redirect.split(',')
+                                /*if(isSpam){
+                                    data.subject = "***SPAM***" + (data.subject || '')
+                                }*/
+
+                                await mailserverResolver(db).Mutation.createMailAccountMessage({
+                                    mailAccount: mailAccount._id,
+                                    mailAccountFolder: inbox._id,
+                                    data,
+                                    spamScore
+                                }, {context}, false)
+
+                                const contentType = data.headers.get('content-type') || {}
+
+                                if (mailAccount.redirect && contentType?.params?.[`report-type`] !== 'delivery-status') {
+
+                                    // send email
+                                    const transporter = nodemailerDirectTransport({
+                                        name: `mail.${mailAccount.host}`,
+                                    })
+
+                                    const transporterResult = nodemailer.createTransport(transporter)
+
+                                    const recipients = mailAccount.redirect.split(',')
 
 
-                                let replyTo = data?.from?.value && data.from.value.length > 0?data.from.value[0]:{}
+                                    let replyTo = data?.from?.value && data.from.value.length > 0 ? data.from.value[0] : {}
 
-                                for (const rcpt of recipients) {
-                                    console.log('onData send forward', rcpt, replyTo)
+                                    for (const rcpt of recipients) {
+                                        console.log('onData send forward', rcpt, replyTo)
 
-                                    const message = {
-                                       /* cc: data.cc,
-                                        bcc: data.bcc,*/
-                                        /*envelope: {
-                                            from: `<${replyTo.address}>`,
-                                            to: rcpt
-                                        },*/
-                                        inReplyTo: data.messageId,
-                                        replyTo: replyTo.address,
-                                        from: `${mailAccount.username}@${mailAccount.host}`,
-                                        to: rcpt,
-                                        subject: `${data.subject}`,
-                                        text: data.text, //'Plaintext version of the message'
-                                        html: data.html,
-                                        attachments: data.attachments,
-                                        dkim: settings.dkim
+                                        const message = {
+                                            /* cc: data.cc,
+                                             bcc: data.bcc,*/
+                                            /*envelope: {
+                                                from: `<${replyTo.address}>`,
+                                                to: rcpt
+                                            },*/
+                                            inReplyTo: data.messageId,
+                                            replyTo: replyTo.address,
+                                            from: `${mailAccount.username}@${mailAccount.host}`,
+                                            to: rcpt,
+                                            subject: `${data.subject}`,
+                                            text: data.text, //'Plaintext version of the message'
+                                            html: data.html,
+                                            attachments: data.attachments,
+                                            dkim: settings.dkim
+                                        }
+
+                                        try {
+                                            await transporterResult.sendMail(message)
+                                        } catch (error) {
+                                            console.log(`error forward email to ${rcpt.address} from ${mailAccount.username}@${mailAccount.host}`)
+                                            console.log(error)
+                                            await GenericResolver.createEntity(db, {context: context}, 'Log', {
+                                                location: 'mailserver',
+                                                type: 'smtpErrorForward',
+                                                message: error.message,
+                                                meta: {error, message}
+                                            })
+                                            return endWithError(error)
+                                        }
                                     }
 
-                                    try {
-                                        await transporterResult.sendMail(message)
-                                    }catch (error){
-                                        console.log(`error forward email to ${rcpt.address} from ${mailAccount.username}@${mailAccount.host}`)
-                                        console.log(error)
-                                        await GenericResolver.createEntity(db, {context:context}, 'Log', {
-                                            location: 'mailserver',
-                                            type: 'smtpErrorForward',
-                                            message: error.message,
-                                            meta: {error,message}
-                                        })
-                                        return endWithError(error)
-                                    }
                                 }
-
                             }
-
                         } else {
                             console.warn(`no mail account for`, data?.to?.text)
                             return endWithError({message:`no mail account for ${data?.to?.text}`,code:551})
