@@ -15,6 +15,8 @@ export const resolveDynamicFieldQuery = async (db, field, item, setItem) => {
                         query[k] = item._id
                     }  else if(query[k].startsWith('${')){
                         query[k] = replacePlaceholders(query[k],item)
+
+                        console.log( query[k],item)
                         if(!isNaN(query[k])){
                             query[k] = {$in:[query[k],parseInt(query[k])]}
                         }
@@ -26,7 +28,6 @@ export const resolveDynamicFieldQuery = async (db, field, item, setItem) => {
                 }
             })
         }
-        //console.log(dyn.type, query)
         //let d = new Date().getTime()
         setItem[field.name] = await db.collection(dyn.type).count(query)
         //console.log(`time ${new Date().getTime()-d}ms`)

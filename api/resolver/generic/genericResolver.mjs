@@ -234,9 +234,7 @@ const GenericResolver = {
             }
         }
 
-        if(!options.skipHook || options.skipHook.indexOf('enhanceTypeMatch')<0) {
-            Hook.call('enhanceTypeMatch', {type: typeName, context, match})
-        }
+        Hook.call('enhanceTypeMatch', {type: typeName, context, match})
 
         //console.log(`1 time ${new Date() - startTime}ms`)
 

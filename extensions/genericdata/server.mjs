@@ -584,7 +584,7 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions
             if (def && def.structure) {
                 const struct = def.structure
 
-                if (struct.access && struct.access.read) {
+                if (struct.access && struct.access.read && !otherOptions.skipGenericTypeAccessFilter) {
                     const accessMatch = await Util.getAccessFilter(db, context, struct.access.read)
                     if (accessMatch.createdBy) {
                         match.createdBy = accessMatch.createdBy
@@ -685,7 +685,9 @@ async function postCheckResult(def, result, db, context, otherOptions) {
                 const item = result.results[j]
                 if(item?.data) {
 
-                    const dataToSet = item.data.constructor === Object ? item.data : parseOrElse(item.data, {})
+                    // make sure date is an Object not a serialized string Object
+                    const wasObject = item.data.constructor === Object
+                    item.data = wasObject ? item.data : parseOrElse(item.data, {})
 
                     if (field.dynamic.genericType) {
                         const subData = await GenericResolver.entities(db, context, 'GenericData', ['_id', {definition: ['_id']}, 'data'],
@@ -701,12 +703,13 @@ async function postCheckResult(def, result, db, context, otherOptions) {
                             subItem.__typename = field.type
                         })
 
-                        dataToSet[field.name] = subData.results
+                        item.data[field.name] = subData.results
                     } else {
-                        await resolveDynamicFieldQuery(db, field, item, dataToSet)
+                        await resolveDynamicFieldQuery(db, field, item, item.data)
                     }
-                    if(item.data.constructor !== Object ) {
-                        item.data = JSON.stringify(dataToSet)
+                    if(!wasObject) {
+                        // make it a string again if it was a string initially
+                        item.data = JSON.stringify(item.data)
                     }
                 }
             }
