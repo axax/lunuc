@@ -51,7 +51,12 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
                 if(slugContext && (slug + '/').indexOf(slugContext + '/') !== 0)
                 {
                     const modSlug = slugContext + (slug.length > 0 ? '/' : '') + slug
-                    if (slugFallback) {
+
+                    if(slugFallback?.constructor!==Object){
+                        slugFallback = {default:slugFallback===true}
+                    }
+
+                    if (slugFallback.default===true || (Array.isArray(slugFallback.exceptions) && slugFallback.exceptions.indexOf(slug)>=0)) {
                         slugMatch = {$or: [{slug: modSlug}, {slug}]}
                     } else {
                         slugMatch = {slug: modSlug}
