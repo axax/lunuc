@@ -684,7 +684,9 @@ async function postCheckResult(def, result, db, context, otherOptions) {
             for (let j = 0; j < result.results.length; j++) {
                 const item = result.results[j]
                 if(item?.data) {
-                    item.data = item.data.constructor === Object ? item.data : parseOrElse(item.data, {})
+
+                    const dataToSet = item.data.constructor === Object ? item.data : parseOrElse(item.data, {})
+
                     if (field.dynamic.genericType) {
                         const subData = await GenericResolver.entities(db, context, 'GenericData', ['_id', {definition: ['_id']}, 'data'],
                             {
@@ -699,11 +701,13 @@ async function postCheckResult(def, result, db, context, otherOptions) {
                             subItem.__typename = field.type
                         })
 
-                        item.data[field.name] = subData.results
+                        dataToSet[field.name] = subData.results
                     } else {
-                        await resolveDynamicFieldQuery(db, field, item, item.data)
+                        await resolveDynamicFieldQuery(db, field, item, dataToSet)
                     }
-                    item.data = JSON.stringify(item.data)
+                    if(item.data.constructor !== Object ) {
+                        item.data = JSON.stringify(item.data)
+                    }
                 }
             }
         }
