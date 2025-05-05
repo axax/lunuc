@@ -50,11 +50,18 @@ export default () => {
                     if (window.opener) {
                         d.data = image
                     } else {
+
+                        let uploadUrl = `${UPLOAD_URL}/${item._id}/${PRETTYURL_SEPERATOR}/${item.name}`
+
+                        if(mimeType.length > 1 && uploadUrl.indexOf('.')<0){
+                            uploadUrl += `.${mimeType[1]}`
+                        }
+
                         d.data =
                             <a target="_blank" onDoubleClick={(e) => {
                                 e.preventDefault()
                             }} rel="noopener noreferrer"
-                               href={item.src || `${UPLOAD_URL}/${item._id}/${PRETTYURL_SEPERATOR}/${item.name}`}>
+                               href={item.src || uploadUrl}>
                                 {image}
                             </a>
                     }
