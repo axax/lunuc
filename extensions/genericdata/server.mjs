@@ -7,7 +7,7 @@ import GenericResolver from '../../api/resolver/generic/genericResolver.mjs'
 import Util from '../../api/util/index.mjs'
 import ClientUtil from '../../client/util/index.mjs'
 import {ObjectId} from 'mongodb'
-import {matchExpr} from '../../client/util/json.mjs'
+import {matchExpr, parseOrElse} from '../../client/util/json.mjs'
 import {findProjection} from '../../util/project.mjs'
 import {getGenericTypeDefinitionWithStructure} from './util/index.mjs'
 import {getType} from "../../util/types.mjs";
@@ -683,27 +683,30 @@ async function postCheckResult(def, result, db, context, otherOptions) {
         if (field.dynamic) {
             for (let j = 0; j < result.results.length; j++) {
                 const item = result.results[j]
-                item.data = JSON.parse(item.data)
+                if(item?.data) {
+                    item.data = parseOrElse(item.data, false)
+                    if(item.data) {
+                        if (field.dynamic.genericType) {
+                            const subData = await GenericResolver.entities(db, context, 'GenericData', ['_id', {definition: ['_id']}, 'data'],
+                                {
+                                    filter: `definition.name==${field.dynamic.genericType}${field.dynamic.filter ? ' && ' + ClientUtil.replacePlaceholders(field.dynamic.filter, item) : ''}`,
+                                    limit: 1000,
+                                    includeCount: false,
+                                    meta: field.dynamic.genericType
+                                })
 
-                if (field.dynamic.genericType) {
-                    const subData = await GenericResolver.entities(db, context, 'GenericData', ['_id', {definition: ['_id']}, 'data'],
-                        {
-                            filter: `definition.name==${field.dynamic.genericType}${field.dynamic.filter ? ' && ' + ClientUtil.replacePlaceholders(field.dynamic.filter, item) : ''}`,
-                            limit: 1000,
-                            includeCount: false,
-                            meta: field.dynamic.genericType
-                        })
+                            subData.results.forEach(subItem => {
+                                subItem.data = JSON.parse(subItem.data)
+                                subItem.__typename = field.type
+                            })
 
-                    subData.results.forEach(subItem => {
-                        subItem.data = JSON.parse(subItem.data)
-                        subItem.__typename = field.type
-                    })
-
-                    item.data[field.name] = subData.results
-                }else{
-                    await resolveDynamicFieldQuery(db, field, item, item.data)
+                            item.data[field.name] = subData.results
+                        } else {
+                            await resolveDynamicFieldQuery(db, field, item, item.data)
+                        }
+                        item.data = JSON.stringify(item.data)
+                    }
                 }
-                item.data = JSON.stringify(item.data)
             }
         }
     }
