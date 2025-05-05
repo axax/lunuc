@@ -706,7 +706,7 @@ async function postCheckResult(def, result, db, context, otherOptions) {
                         await resolveDynamicFieldQuery(db, field, item, dataToSet)
                     }
                     if(item.data.constructor !== Object ) {
-                        item.data = JSON.stringify(item.data)
+                        item.data = JSON.stringify(dataToSet)
                     }
                 }
             }
