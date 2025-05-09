@@ -16,7 +16,6 @@ import TemplateEditor from '../components/TemplateEditor'
 import ScriptEditor from '../components/ScriptEditor'
 import ResourceEditor from '../components/ResourceEditor'
 import {
-    Typography,
     DrawerLayout,
     MenuList,
     MenuListItem,
@@ -27,11 +26,10 @@ import {
     SimpleMenu,
     Divider,
     UIProvider,
-    Checkbox,
     ReplayIcon
 } from 'ui/admin'
 import {
-    LogoutIcon, PreviewIcon, SettingsIcon, SaveIcon
+    LogoutIcon, PreviewIcon
 } from 'gensrc/ui/admin/icons'
 import Drawer from '@mui/material/Drawer'
 import DisplaySettingsIcon from '@mui/icons-material/DisplaySettings'
@@ -76,8 +74,9 @@ import styled from '@emotion/styled'
 import PrettyErrorMessage from '../components/PrettyErrorMessage'
 import {useKeyValuesGlobal, setKeyValue} from '../../../client/util/keyvalue'
 import {downloadAs} from '../../../client/util/download'
-import FileDrop from "../../../client/components/FileDrop";
-import {csvToJson} from "../../../client/util/csv.mjs";
+import FileDrop from '../../../client/components/FileDrop'
+import {csvToJson} from '../../../client/util/csv.mjs'
+import GenericSettings from '../../../client/components/GenericSettings'
 
 const StyledBox = styled(Box)(({theme})=>({
     display: 'flex',
@@ -236,7 +235,6 @@ class CmsViewEditorContainer extends React.Component {
 
             result.EditorOptions = metaJson.EditorOptions
             result.EditorPageOptions = metaJson.EditorPageOptions
-            result.PageOptionsDefinition = metaJson.PageOptionsDefinition
             result.PageOptions = metaJson.PageOptions
         }
         if (!result.EditorOptions) {
@@ -358,7 +356,6 @@ class CmsViewEditorContainer extends React.Component {
             props._props !== this.props._props ||
             state.template !== this.state.template ||
             state.showPageSettings !== this.state.showPageSettings ||
-            state.showPageSettingsConfig !== this.state.showPageSettingsConfig ||
             state.script !== this.state.script ||
             state.dataResolver !== this.state.dataResolver ||
             state.style !== this.state.style ||
@@ -403,14 +400,12 @@ class CmsViewEditorContainer extends React.Component {
             style,
             EditorOptions,
             EditorPageOptions,
-            PageOptionsDefinition,
             PageOptions,
             dataResolver,
             serverScript,
             manual,
             simpleDialog,
-            showPageSettings,
-            showPageSettingsConfig,
+            showPageSettings
         } = this.state
 
         if (!cmsPage) {
@@ -1094,54 +1089,11 @@ class CmsViewEditorContainer extends React.Component {
                         disableEnforceFocus={true} open={showPageSettings}
                         onClose={() => {
                             this.setState({showPageSettings: false})
-                        }}> {showPageSettings && <div style={{padding: '1rem'}}>
-                    <Typography key="pageOptionTitle" mb={2}
-                                variant="subtitle1">{_t('CmsViewEditorContainer.pagesettings')}</Typography>
-                    {canMangeCmsTemplate && <Checkbox
-                        sx={{position:'absolute', right: 0, top:0}}
-                        onChange={(e)=>{
-                            this.setState({showPageSettingsConfig: e.target.checked})
-                        }}
-                        icon={<SettingsIcon />}
-                        checkedIcon={<SettingsIcon />}
-                    />}
-
-                    {showPageSettingsConfig?
-                        <CodeEditor lineNumbers
-                                    type="json"
-                                    onChange={(json)=>{
-                                        clearTimeout(this._pageOptionDefTimeout)
-                                        this._pageOptionDefTimeout=setTimeout(()=>{
-                                            this.setState({PageOptionsDefinition:json})
-
-                                            this.props.setKeyValue({
-                                                key: 'PageOptionsDefinition-' + pageName,
-                                                value: json,
-                                                global: true
-                                            })
-
-                                        },1000)
-                                    }}>{PageOptionsDefinition || []}</CodeEditor>
-
-                        :
-                        PageOptionsDefinition ?
-                        <GenericForm key="pageOptionForm" primaryButton={true}
-                                     caption={_t('CmsViewEditorContainer.save')} onClick={(formData) => {
-                            this.setState({PageOptions: formData})
-
-
-                            this.props.setKeyValue({
-                                key: 'PageOptions-' + pageName,
-                                value: formData,
-                                global: true,
-                                callback: () => {
-                                    location.href = location.href.split('#')[0]
-                                }
-                            })
-
-                        }} fields={PageOptionsDefinition.reduce((obj, item) => {
-                            return {...obj, [item.name]: item}
-                        }, {})} values={PageOptions || {}}/> : _t('CmsViewEditorContainer.noOptions')}</div>}
+                        }}> {showPageSettings && <GenericSettings keyValues={'PageOptions-' + pageName}
+                                                                  keyDefinition={'PageOptionsDefinition-' + pageName}
+                                                                  onSaveValues={()=>{
+                                                                      location.href = location.href.split('#')[0]
+                                                                  }}/>}
                 </Drawer>
                 <DrawerLayout sidebar={!loadingState && sidebar}
                               open={EditorOptions.drawerOpen}

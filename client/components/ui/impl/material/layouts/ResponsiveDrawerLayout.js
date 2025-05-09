@@ -128,6 +128,9 @@ const MenuList = (props) => {
                 }
                 const isOpen = open[i] || (open[i]==undefined && item.open)
                 return [<ListItem onClick={() => {
+                    if(item.onClick) {
+                        item.onClick()
+                    }
                     if(item.items){
                         onMenuChange(item, !isOpen)
                         setOpen(Object.assign({}, open,{[i]:!isOpen}))

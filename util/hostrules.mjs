@@ -153,10 +153,9 @@ export const hostListFromString = (host) =>{
 /*console.log(hostListFromString('main.onyou.ch'))
 console.log(hostListFromString('www.onyou.ch'))*/
 
-export const getBestMatchingHostRule = (host) => {
+export const getBestMatchingHostRule = (host, withCertContext=true, fallbackToGeneral = false) => {
     const hostsChecks = hostListFromString(host)
-    const hostrules = getHostRules(true)
-
+    const hostrules = getHostRules(withCertContext)
     for (let i = 0; i < hostsChecks.length; i++) {
         const currentHost = hostsChecks[i]
         const hostrule = hostrules[currentHost]
@@ -166,6 +165,9 @@ export const getBestMatchingHostRule = (host) => {
             }
             return {hostrule, host: currentHost}
         }
+    }
+    if(fallbackToGeneral){
+        return {hostrule: hostrules.general, host}
     }
     return {}
 }

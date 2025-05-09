@@ -42,6 +42,9 @@ import {deepMergeOptional} from '../../../util/deepMerge.mjs'
 import {getImageSrc} from '../../util/media'
 import GlobalSearch from './GlobalSearch'
 import Util from "../../util/index.mjs";
+import GenericSettings from '../GenericSettings'
+import Drawer from '@mui/material/Drawer'
+import {replacePlaceholders} from '../../../util/placeholders.mjs'
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../CodeEditor')}/>
 
@@ -49,13 +52,13 @@ const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName
 registerTrs(translations, 'AdminTranslations')
 
 
-const genMenuEntry = (item, path) => {
+const genMenuEntry = (item, path, options) => {
     if (!item) {
         return
     }
 
     if (item.constructor === Array) {
-        return item.map((singleItem, index) => genMenuEntry(singleItem, path + '.' + index))
+        return item.map((singleItem, index) => genMenuEntry(singleItem, path + '.' + index, options))
     }
 
     if (item.divider || item.subheader) {
@@ -63,9 +66,18 @@ const genMenuEntry = (item, path) => {
     }
     const Icon = getIconByKey(item.icon, SettingsIcon)
 
-    let to
+    let to, onClick
 
-    if (item.to) {
+    if(item.type==='form'){
+        onClick = ()=>{
+            if(options.setGenericSettings){
+                options.setGenericSettings({open:true,
+                    keyDefinition:replacePlaceholders(item.keyDefinition,{}),
+                    keyValues:replacePlaceholders(item.keyValues,{})
+                })
+            }
+        }
+    }else if (item.to) {
         to = item.to
     } else if (item.name) {
         to = `${ADMIN_BASE_URL}/types/GenericData?fixType=GenericData&title=${encodeURIComponent(item.label || item.name)}${item.sort?'&s='+item.sort:''}&meta=${item.name}${item.baseFilter ? '&baseFilter=' + encodeURIComponent(item.baseFilter) : ''}`
@@ -76,11 +88,12 @@ const genMenuEntry = (item, path) => {
     return {
         name: item.label || item.type,
         to,
+        onClick,
         auth: true,
         icon: item.badge?<Badge badgeContent={item.badge.count} color="error">
             <Icon/>
         </Badge>:<Icon />,
-        items: genMenuEntry(item.items, path + '.items'),
+        items: genMenuEntry(item.items, path + '.items', options),
         path,
         open: item.open
     }
@@ -126,6 +139,7 @@ const BaseLayout = props => {
     const userKeys = useKeyValues(keys, useKeySettings)
 
     const [openMenuEditor, setOpenMenuEditor] = React.useState(undefined)
+    const [genericSettings, setGenericSettings] = React.useState({})
 
     const handleOpenMenuEditor = () => {
         setOpenMenuEditor(true)
@@ -206,12 +220,12 @@ const BaseLayout = props => {
                         if (!existingItem.items) {
                             existingItem.items = []
                         }
-                        existingItem.items.push(...genMenuEntry(item.items, 'items.' + i))
+                        existingItem.items.push(...genMenuEntry(item.items, 'items.' + i,{setGenericSettings}))
                     }
 
                 } else {
                     // add new menu item
-                    menuItems.push(genMenuEntry(item, 'items.' + i))
+                    menuItems.push(genMenuEntry(item, 'items.' + i,{setGenericSettings}))
                 }
 
             })
@@ -221,7 +235,7 @@ const BaseLayout = props => {
             menuItems.push({divider: true, auth: true})
 
             settings.menu.genericTypes.forEach((item, i) => {
-                menuItems.push(genMenuEntry(item, 'genericTypes.' + i))
+                menuItems.push(genMenuEntry(item, 'genericTypes.' + i,{setGenericSettings}))
             })
         }
 
@@ -357,6 +371,24 @@ const BaseLayout = props => {
             {!userKeys.loading && <NetworkStatusHandler/>}
             {children}
         </ResponsiveDrawerLayout>
+        <Drawer anchor="right"
+                sx={{
+                    zIndex: 1300,
+                    '& .MuiDrawer-paper': {
+                        maxWidth: '100vw',
+                        minWidth: '50vw'
+                    },
+                }}
+                disableEnforceFocus={true}
+                open={genericSettings.open}
+                onClose={() => {
+                    setGenericSettings({})
+                }}> {genericSettings.open && <GenericSettings keyValues={genericSettings.keyValues}
+                                                          keyDefinition={genericSettings.keyDefinition}
+                                                          onSaveValues={()=>{
+                                                              location.href = location.href.split('#')[0]
+                                                          }}/>}
+        </Drawer>
         {openMenuEditor !== undefined && <SimpleDialog
             fullWidth={true}
             fullScreenMobile={true}

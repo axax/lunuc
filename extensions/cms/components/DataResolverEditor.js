@@ -29,6 +29,15 @@ class DataResolverEditor extends React.Component {
                             event: 'visit'
                         }
                     })
+            }else if(this.wizardForm.state.fields.resolverType==='keyvalue') {
+                const keyvalue = this.wizardForm.state.fields.keyvalue
+
+                json.push({
+                        key:'keyValues',
+                        keyValueGlobals:[keyvalue.keyValuesGlobal],
+                        keyValues:[keyvalue.keyValues],
+                        subscribe:keyvalue.subscribe
+                    })
             }else if(this.wizardForm.state.fields.resolverType==='tr') {
                 json.push(
                     {
@@ -118,44 +127,40 @@ class DataResolverEditor extends React.Component {
                         resolverType:{
                             name: 'resolverType',
                             label: 'Resolver Type',
-                            enum: [{value:'type', name:'Type'},{value:'genericType', name:'Generic Type'},{value:'track', name:'Tracking'},{value:'tr', name:'Translations'}],
+                            enum: [{value:'type', name:'Type'},{value:'keyvalue', name:'KeyValue'},{value:'genericType', name:'Generic Type'},{value:'track', name:'Tracking'},{value:'tr', name:'Translations'}],
                             fullWidth: true,
                             value:'type'
                         },
-                        type:{
+                        keyvalue:{
                             uistate: {
-                                visible: 'resolverType==type'
+                                visible: 'resolverType==keyvalue'
                             },
                             uitype:'wrapper',
-                            label:'Add type',
-                            name:'genericType',
+                            name:'keyvalue',
                             multi:false,
                             titleTemplate: 'Generic Type ${this.context ? this.context.type || "": ""}',
                             subFields:[
                                 {
-                                    name: 'name',
-                                    label: 'Name',
-                                    enum: '$TYPES',
+                                    name: 'keyValuesGlobal',
+                                    label: 'KeyValuesGlobal',
                                     fullWidth: true
                                 },
                                 {
-                                    name: 'filter',
-                                    label: 'Filter',
+                                    name: 'keyValues',
+                                    label: 'KeyValues',
                                     fullWidth: true
                                 },
                                 {
-                                    name: 'limit',
-                                    label: 'Limit',
-                                    type: 'Float',
-                                    defaultValue:10,
-                                    uitype:'number',
-                                    fullWidth: true
+                                    name:'subscribe',
+                                    type:'Boolean',
+                                    fullWidth: true,
+                                    label: 'Subscribe'
                                 },
                                 {
-                                    name: 'subscribe',
-                                    label: 'Subscribe',
-                                    type: 'Boolean',
-                                    fullWidth: true
+                                    name:'public',
+                                    type:'Boolean',
+                                    fullWidth: true,
+                                    label: 'Public'
                                 }
                             ]
                         },

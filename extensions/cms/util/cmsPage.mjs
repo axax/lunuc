@@ -4,8 +4,8 @@ import DomAdminUtil from '../../../client/util/domAdmin.mjs'
 import {getHostFromHeaders} from '../../../util/host.mjs'
 import Cache from '../../../util/cache.mjs'
 import {preprocessCss} from './cssPreprocessor.mjs'
-import {getHostRules, hostListFromString} from '../../../util/hostrules.mjs'
-import Hook from "../../../util/hook.cjs";
+import {getBestMatchingHostRule} from '../../../util/hostrules.mjs'
+import Hook from '../../../util/hook.cjs'
 
 
 export const getCmsPageCacheKey = ({_version, slug, host, inEditor})=>{
@@ -32,39 +32,23 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
     }
 
     let slugMatch = {slug}
+    let hostrule
 
     if (checkHostrules) {
 
-        const hostsChecks = hostListFromString(host)
-        const hostrules = getHostRules(false)
+        hostrule = getBestMatchingHostRule(host, false, true).hostrule
+        if(hostrule.slugContext && (slug + '/').indexOf(hostrule.slugContext + '/') !== 0)
+        {
+            const modSlug = hostrule.slugContext + (slug.length > 0 ? '/' : '') + slug
+            let slugFallback = hostrule.slugFallback
+            if(slugFallback?.constructor!==Object){
+                slugFallback = {default:slugFallback===true}
+            }
 
-        for (let i = 0; i < hostsChecks.length; i++) {
-            const currentHost = hostsChecks[i]
-            const hostrule = hostrules[currentHost] || hostrules.general
-            if (hostrule){
-                let slugContext = hostrule.slugContext,
-                    slugFallback = hostrule.slugFallback
-                if(hostrule.subDomains && hostrule.subDomains[host]){
-                    slugContext = hostrule.subDomains[host].slugContext
-                    slugFallback = hostrule.subDomains[host].slugFallback
-                }
-                if(slugContext && (slug + '/').indexOf(slugContext + '/') !== 0)
-                {
-                    const modSlug = slugContext + (slug.length > 0 ? '/' : '') + slug
-
-                    if(slugFallback?.constructor!==Object){
-                        slugFallback = {default:slugFallback===true}
-                    }
-
-                    if (slugFallback.default===true || (Array.isArray(slugFallback.exceptions) && slugFallback.exceptions.indexOf(slug)>=0)) {
-                        slugMatch = {$or: [{slug: modSlug}, {slug}]}
-                    } else {
-                        slugMatch = {slug: modSlug}
-                    }
-                    break
-                }else if(hostrule.ignoreTopDomain){
-                    break
-                }
+            if (slugFallback.default===true || (Array.isArray(slugFallback.exceptions) && slugFallback.exceptions.indexOf(slug)>=0)) {
+                slugMatch = {$or: [{slug: modSlug}, {slug}]}
+            } else {
+                slugMatch = {slug: modSlug}
             }
         }
     }
@@ -183,6 +167,7 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
         }else{
             console.warn(`CmsPage not found ${slug}. host=${host} match=${JSON.stringify(match)}`)
         }
+        cmsPages.usedHostrule = hostrule
     }
     return cmsPages
 }
