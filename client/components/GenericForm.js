@@ -13,7 +13,6 @@ import {
     SimpleTabPanel,
     SimpleTabs,
     InputAdornment,
-    Input,
     DeleteIcon,
     ExpandLessIconButton,
     ExpandMoreIconButton,
@@ -31,7 +30,7 @@ import Expandable from 'client/components/Expandable'
 import {_t} from '../../util/i18n.mjs'
 import Util from '../util/index.mjs'
 import DomUtil from '../util/dom.mjs'
-import {isString, matchExpr, propertyByPath, setPropertyByPath} from '../util/json.mjs'
+import {isString, matchExpr, parseOrElse, propertyByPath, setPropertyByPath} from '../util/json.mjs'
 import JsonEditor from '../../extensions/cms/components/JsonEditor'
 import {Query} from '../middleware/graphql'
 import {getTypeQueries, getTypes} from 'util/types.mjs'
@@ -41,6 +40,8 @@ import theme from './ui/impl/material/theme'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import {showTooltip, hideTooltip} from '../util/tooltip'
 import {translateText} from '../util/translate.mjs'
+import {QUERY_KEY_VALUES_GLOBAL} from '../util/keyvalue'
+import {replacePlaceholders} from '../../util/placeholders.mjs'
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ './CodeEditor')}/>
 
@@ -76,6 +77,32 @@ function matchObjectValueFromList(value, field, list) {
         return ''
     }
     return value
+}
+
+function convertFieldValueToDate(value, field) {
+    if (value === 0 || value === null || value === undefined) {
+        value = ''
+    } else if (!field.multi) {
+        try {
+            value = new Date(value.constructor === String && !isNaN(value) ? parseFloat(value) : value).toISOString()
+        } catch (e) {
+            console.log(e, value)
+            if (!field.required) {
+                value = ''
+            }
+        }
+    }
+    return value;
+}
+
+function convertArrayToObjectByAttr(subFields, attrName) {
+    if (Array.isArray(subFields)) {
+        return subFields.reduce((acc, cur, i) => {
+            acc[cur[attrName]] = cur
+            return acc
+        }, {})
+    }
+    return subFields
 }
 
 class GenericForm extends React.Component {
@@ -344,7 +371,7 @@ class GenericForm extends React.Component {
 
     }
 
-    loadColorpicker(id) {
+   /* loadColorpicker(id) {
         if(!this._colorPickerLoaded) {
             this._colorPickerLoaded = true
             DomUtil.addScript('https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js', {
@@ -405,7 +432,7 @@ class GenericForm extends React.Component {
             })
 
         })
-    }
+    }*/
 
     newStateForField(prevState, {name, value, originalValue, localized}) {
         const newState = Object.assign({}, {fields: {}, fieldsDirty:{}}, prevState)
@@ -545,9 +572,7 @@ class GenericForm extends React.Component {
 
     render() {
         const {fields, primaryButton, caption, subForm} = this.props
-
         const fieldKeys = Object.keys(fields), formFields = [], tabs = [], formFieldsNoTabs = []
-
 
         let expandableField, expandableData, datePolyfill = false
         for (let fieldIndex = 0; fieldIndex < fieldKeys.length; fieldIndex++) {
@@ -573,20 +598,7 @@ class GenericForm extends React.Component {
             }
             if (field.uitype === 'date' || field.uitype === 'datetime') {
                 //iso date without ms
-                if(value===0 || value === null || value === undefined){
-                    value = ''
-                }else {
-                    if(!field.multi) {
-                        try {
-                            value = new Date(value.constructor===String && !isNaN(value)?parseFloat(value):value).toISOString()
-                        } catch (e) {
-                            console.log(e, value)
-                            if (!field.required) {
-                                value = ''
-                            }
-                        }
-                    }
-                }
+                value = convertFieldValueToDate(value, field)
                 datePolyfill = true
             }
 
@@ -605,25 +617,22 @@ class GenericForm extends React.Component {
                 currentFormFields = formFieldsNoTabs
             }
 
-            if (field.autoIncrement) {
-                if (!value) {
-                    //
-                    autoIncrement(field.autoIncrement, json => {
-                        if (json.status === 'success') {
-                            const newState = this.newStateForField(this.state, {
-                                name: field.name,
+            if (field.autoIncrement && !value) {
+                autoIncrement(field.autoIncrement, json => {
+                    if (json.status === 'success') {
+                        const newState = this.newStateForField(this.state, {
+                            name: field.name,
+                            value: json.nr
+                        })
+                        newState.fieldErrors[field.name] = false
+                        this.handleInputChange({
+                            target: {
+                                name:  field.name,
                                 value: json.nr
-                            })
-                            newState.fieldErrors[field.name] = false
-                            this.handleInputChange({
-                                target: {
-                                    name:  field.name,
-                                    value: json.nr
-                                }
-                            })
-                        }
-                    })
-                }
+                            }
+                        })
+                    }
+                })
             }
 
             if (field.newLine) {
@@ -631,193 +640,30 @@ class GenericForm extends React.Component {
             }
             const uitype = field.uitype || (field.enum ? 'select' : 'text')
 
-
-            if (field.subFields) {
-                let subFields = field.subFields
-
-                if (subFields.constructor === Array) {
-                    subFields = subFields.reduce((acc, cur, i) => {
-                        acc[cur.name] = cur
-                        return acc
-                    }, {})
-                }
-
-                if (field.multi) {
-
-
-                    let subFieldValues = []
-                    if (value && value.constructor === Array) {
-
-                        value.forEach(val => {
-                            subFieldValues.push(Object.assign({}, val))
-                        })
-                    }
-                    subFieldValues.forEach((values, index) => {
-                        const valueFieldKey = fieldKey + '-' + index
-                        let title = ''
-                        if (field.titleTemplate) {
-                            title = Util.replacePlaceholders(field.titleTemplate, {_index:index,...values})
-                        } else {
-                            Object.keys(values).map(k => {
-                                if (title && values[k]) {
-                                    title += ' / '
-                                }
-                                title += values[k] || ''
+            if(field.dynamicSubFields){
+                const keys = JSON.parse(replacePlaceholders(field.dynamicSubFields,{user:_app_.user}))
+                if(keys?.length>0) {
+                    currentFormFields.push(<Query key="query" query={QUERY_KEY_VALUES_GLOBAL}
+                                                  variables={{keys}}
+                                                  fetchPolicy="cache-and-network">
+                        {({loading, error, data}) => {
+                            if (loading) return 'Loading...'
+                            if (error) return `Error! ${error.message}`
+                            const dynamicFormFieldResponse = []
+                            const dynamicFormFields = []
+                            data.keyValueGlobals.results.forEach(kv=>{
+                                const v = JSON.parse(kv.value)
+                                dynamicFormFields.push(...v)
                             })
-                        }
-
-                        const expandedKey = `expanded-${field.name}-${fieldKey}`
-                        currentFormFields.push(
-                            <Expandable title={title}
-                                        draggable={true}
-                                        index={index}
-                                        passThrough={field.accordion===false}
-                                        key={expandedKey}
-                                        onPositionChange={(sourceIndex,targetIndex)=>{
-                                            const newValue = subFieldValues.slice(0),
-                                                element = newValue.splice(sourceIndex, 1) [0]
-
-                                            newValue.splice(targetIndex, 0, element)
-
-                                            this.handleInputChange({
-                                                target: {
-                                                    name: fieldKey,
-                                                    value: newValue
-                                                }
-                                            })
-                                        }}
-                                        onChange={(e) => {
-                                            this.setState({[expandedKey]: valueFieldKey})
-                                        }}
-                                        expanded={this.state[expandedKey] === valueFieldKey}>
-                                <GenericForm onChange={(e) => {
-                                    const {fields} = this.props
-                                    const subField = subFields[e.name.split('.')[0]]
-
-                                    setPropertyByPath(e.value,e.name,values)
-
-                                    if(subField.localized) {
-                                        // mark as localized
-                                        values[subField.name]._localized = true
-                                    }
-
-
-                                    this.handleInputChange({
-                                        target: {
-                                            name: fieldKey,
-                                            value: subFieldValues
-                                        }
-                                    })
-
-                                }} primaryButton={false} values={values} updateOnValueChange={true} key={valueFieldKey} subForm={true}
-                                             fields={subFields}/>
-                                <Button key={'delete' + valueFieldKey}
-                                        color="error"
-                                        size="small"
-                                        startIcon={<DeleteIcon />}
-                                        onClick={() => {
-                                            subFieldValues.splice(index, 1)
-                                            this.handleInputChange({
-                                                target: {
-                                                    name: fieldKey,
-                                                    value: subFieldValues
-                                                }
-                                            })
-                                        }}
-                                        variant="contained">{_t('GenericForm.delete')}</Button>
-                                <Button key={'clone' + valueFieldKey}
-                                        color="secondary"
-                                        startIcon={<ContentCopyIcon />}
-                                        size="small"
-                                        onClick={() => {
-                                            const clone = Object.assign({},subFieldValues[index])
-                                            subFieldValues.push(clone)
-                                            this.handleInputChange({
-                                                target: {
-                                                    name: fieldKey,
-                                                    value: subFieldValues
-                                                }
-                                            })
-                                        }}
-                                        variant="contained">{_t('GenericForm.clone')}</Button>
-
-                            </Expandable>)
-                    })
-                    currentFormFields.push(<Button key={fieldKey}
-                                                   color={field.addButtonColor || 'primary'}
-                                                   variant="contained"
-                                                   size="small"
-                                                   style={field.style}
-                                                   onClick={() => {
-
-                                                       const initData = {}
-                                                       let c = 0
-                                                       const next = () => {
-                                                           if (c == 0) {
-
-                                                               subFieldValues.push(initData)
-
-                                                               this.handleInputChange({
-                                                                   target: {
-                                                                       name: fieldKey,
-                                                                       value: subFieldValues
-                                                                   }
-                                                               })
-                                                           }
-
-                                                       }
-
-                                                       Object.keys(subFields).forEach(k => {
-                                                           if (subFields[k].autoIncrement && !initData[k]) {
-                                                               c++
-                                                               autoIncrement(subFields[k].autoIncrement, json => {
-                                                                   if (json.status === 'success') {
-                                                                       initData[k] = json.nr
-                                                                   }
-                                                                   c--
-                                                                   next()
-                                                               })
-                                                           }
-                                                       })
-
-                                                       next()
-
-                                                   }}>{field.addButton || field.label}</Button>)
-
-                } else {
-
-
-                    let values, wasString = false
-                    if (value && value.constructor === String) {
-                        wasString = true
-                        try {
-                            values = JSON.parse(value)
-                        } catch (e) {
-                        }
-                    } else {
-                        values = value
-                    }
-
-                    if (!values) {
-                        values = {}
-                    }
-
-                    currentFormFields.push(<GenericForm onChange={(e) => {
-                        values[e.name] = e.value
-                        this.handleInputChange({
-                            target: {
-                                name: fieldKey,
-                                value: wasString ? JSON.stringify(values) : values
-                            }
-                        })
-
-                    }} primaryButton={false} values={values} updateOnValueChange={true} key={fieldKey} subForm={true}
-                                                        fields={subFields}/>)
-
+                            this.renderSubFields(field, value, fieldKey, dynamicFormFieldResponse, dynamicFormFields)
+                            return dynamicFormFieldResponse
+                        }}
+                    </Query>)
+                }else{
+                    this.renderSubFields(field, value, fieldKey, currentFormFields)
                 }
-
-
-                currentFormFields.push(<br key={'brMeta' + fieldKey}/>)
+            }else if (field.subFields) {
+                this.renderSubFields(field, value, fieldKey, currentFormFields)
             }
 
 
@@ -977,6 +823,179 @@ class GenericForm extends React.Component {
             </Wrapper>
         )
     }
+
+    renderSubFields(field, value, fieldKey, currentFormFields, extraFields) {
+        const subFields = {...convertArrayToObjectByAttr(field.subFields, 'name'),...convertArrayToObjectByAttr(extraFields, 'name')}
+
+        if (field.multi) {
+
+            let subFieldValues = []
+            if (value && value.constructor === Array) {
+
+                value.forEach(val => {
+                    subFieldValues.push(Object.assign({}, val))
+                })
+            }
+            subFieldValues.forEach((values, index) => {
+                const valueFieldKey = fieldKey + '-' + index
+                let title = ''
+                if (field.titleTemplate) {
+                    title = Util.replacePlaceholders(field.titleTemplate, {_index: index, ...values})
+                } else {
+                    Object.keys(values).map(k => {
+                        if (title && values[k]) {
+                            title += ' / '
+                        }
+                        title += values[k] || ''
+                    })
+                }
+
+                const expandedKey = `expanded-${field.name}-${fieldKey}`
+                currentFormFields.push(
+                    <Expandable title={title}
+                                draggable={true}
+                                index={index}
+                                passThrough={field.accordion === false}
+                                key={expandedKey}
+                                onPositionChange={(sourceIndex, targetIndex) => {
+                                    const newValue = subFieldValues.slice(0),
+                                        element = newValue.splice(sourceIndex, 1) [0]
+
+                                    newValue.splice(targetIndex, 0, element)
+
+                                    this.handleInputChange({
+                                        target: {
+                                            name: fieldKey,
+                                            value: newValue
+                                        }
+                                    })
+                                }}
+                                onChange={(e) => {
+                                    this.setState({[expandedKey]: valueFieldKey})
+                                }}
+                                expanded={this.state[expandedKey] === valueFieldKey}>
+                        <GenericForm onChange={(e) => {
+                            const subField = subFields[e.name.split('.')[0]]
+
+                            setPropertyByPath(e.value, e.name, values)
+
+                            if (subField.localized) {
+                                // mark as localized
+                                values[subField.name]._localized = true
+                            }
+
+
+                            this.handleInputChange({
+                                target: {
+                                    name: fieldKey,
+                                    value: subFieldValues
+                                }
+                            })
+
+                        }} primaryButton={false} values={values} updateOnValueChange={true} key={valueFieldKey}
+                                     subForm={true}
+                                     fields={subFields}/>
+                        <Button key={'delete' + valueFieldKey}
+                                color="error"
+                                size="small"
+                                startIcon={<DeleteIcon/>}
+                                onClick={() => {
+                                    subFieldValues.splice(index, 1)
+                                    this.handleInputChange({
+                                        target: {
+                                            name: fieldKey,
+                                            value: subFieldValues
+                                        }
+                                    })
+                                }}
+                                variant="contained">{_t('GenericForm.delete')}</Button>
+                        <Button key={'clone' + valueFieldKey}
+                                color="secondary"
+                                startIcon={<ContentCopyIcon/>}
+                                size="small"
+                                onClick={() => {
+                                    const clone = Object.assign({}, subFieldValues[index])
+                                    subFieldValues.push(clone)
+                                    this.handleInputChange({
+                                        target: {
+                                            name: fieldKey,
+                                            value: subFieldValues
+                                        }
+                                    })
+                                }}
+                                variant="contained">{_t('GenericForm.clone')}</Button>
+
+                    </Expandable>)
+            })
+            currentFormFields.push(<Button key={fieldKey}
+                                           color={field.addButtonColor || 'primary'}
+                                           variant="contained"
+                                           size="small"
+                                           style={field.style}
+                                           onClick={() => {
+
+                                               const initData = {}
+                                               let c = 0
+                                               const next = () => {
+                                                   if (c == 0) {
+
+                                                       subFieldValues.push(initData)
+
+                                                       this.handleInputChange({
+                                                           target: {
+                                                               name: fieldKey,
+                                                               value: subFieldValues
+                                                           }
+                                                       })
+                                                   }
+
+                                               }
+
+                                               Object.keys(subFields).forEach(k => {
+                                                   if (subFields[k].autoIncrement && !initData[k]) {
+                                                       c++
+                                                       autoIncrement(subFields[k].autoIncrement, json => {
+                                                           if (json.status === 'success') {
+                                                               initData[k] = json.nr
+                                                           }
+                                                           c--
+                                                           next()
+                                                       })
+                                                   }
+                                               })
+
+                                               next()
+
+                                           }}>{field.addButton || field.label}</Button>)
+
+        } else {
+
+
+            let values, wasString = isString(value)
+            if (wasString) {
+                values = parseOrElse(value, {})
+            } else {
+                values = value || {}
+            }
+
+            currentFormFields.push(<GenericForm onChange={(e) => {
+                values[e.name] = e.value
+                this.handleInputChange({
+                    target: {
+                        name: fieldKey,
+                        value: wasString ? JSON.stringify(values) : values
+                    }
+                })
+
+            }} primaryButton={false} values={values} updateOnValueChange={true} key={fieldKey} subForm={true}
+                                                fields={subFields}/>)
+
+        }
+
+
+        currentFormFields.push(<br key={'brMeta' + fieldKey}/>)
+    }
+
 
     createInputField({uitype, field, value, currentFormFields, fieldKey, fieldIndex, languageCode, translateButton}) {
         const {onKeyDown, autoFocus} = this.props
@@ -1149,7 +1168,7 @@ class GenericForm extends React.Component {
             currentFormFields.push(<FileDrop key={fieldKey} className={field.className} value={value}/>)
 
 
-        } else if (uitype === 'color_picker') {
+       /* } else if (uitype === 'color_picker') {
 
             currentFormFields.push(<FormControl key={'control' + fieldKey}
                                                 className={field.className}
@@ -1161,7 +1180,7 @@ class GenericForm extends React.Component {
                                                                                              id={fieldKey}
                                                                                              value={value}/></FormControl>)
 
-            this.loadColorpicker(fieldKey)
+            this.loadColorpicker(fieldKey)*/
 
 
         } else if (uitype === 'type_picker') {

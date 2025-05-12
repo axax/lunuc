@@ -11,6 +11,7 @@ const DEFAULT_TAB = 'elements.generalTab',
     MISC_TAB = 'elements.miscTab',
     VISIBILITY_TAB = 'elements.visibilityTab',
     EVENT_TAB = 'elements.eventTab',
+    EXTENDED_TAB = 'elements.extendedTab',
     MEDIA_PROJECTION = ['_id', 'size', 'name', 'group', 'src', 'mimeType', {'info': ['width', 'height']}]
 
 
@@ -460,6 +461,23 @@ const marginOptions = key => ({
     [`${key}style_padding`]: {
         label: 'Innen abstand',
         tab: MARGIN_TAB
+    }
+})
+
+const eventOptions = key => ({
+    [`${key}onClick`]: {
+        fullWidth: true,
+        uitype: 'json',
+        type: 'Object',
+        label: 'onClick',
+        tab: EVENT_TAB
+    },
+    [`${key}onChange`]: {
+        fullWidth: true,
+        uitype: 'json',
+        type: 'Object',
+        label: 'onChange',
+        tab: EVENT_TAB
     }
 })
 
@@ -971,8 +989,20 @@ const baseElements = [
                     {
                         name: 'time',
                         value: 'time'
+                    },
+                    {
+                        name: 'label',
+                        value: 'label'
                     }
                 ]
+            },
+            p_for: {
+                label: 'For',
+                fullWidth: false,
+                tab: DEFAULT_TAB,
+                uistate: {
+                    visible: 't==label'
+                }
             },
             c: {
                 label: 'Text',
@@ -990,7 +1020,7 @@ const baseElements = [
                 label: 'Text (HTML)',
                 fullWidth: true,
                 uitype: 'textarea',
-                tab: 'Erweitert',
+                tab: EXTENDED_TAB,
                 role: CAPABILITY_MANAGE_CMS_TEMPLATE
             },
             p_style_textAlign: {
@@ -1112,14 +1142,7 @@ const baseElements = [
                 tab: DEFAULT_TAB
             },
             ...marginOptions('p_'),
-            p_onClick: {
-                fullWidth: true,
-                defaultValue: true,
-                uitype: 'json',
-                type: 'Object',
-                label: 'onClick',
-                tab: EVENT_TAB
-            }
+            ...eventOptions('p_')
         },
         defaults: {
             $inlineEditor: {
@@ -1681,7 +1704,7 @@ const baseElements = [
     },
     {
         tagName: 'Redirect',
-        name: 'Weiterleitung',
+        name: _t('elements.key.redirect'),
         icon: 'replay',
         options: {
             p_to: {
@@ -1696,6 +1719,49 @@ const baseElements = [
             },
             p: {
                 ['data-element-key']: 'redirect'
+            }
+        }
+    },
+    {
+        tagName: 'input',
+        name: _t('elements.key.formElement'),
+        icon: 'input',
+        options: {
+            t: {
+                tabPosition: 0,
+                tab: DEFAULT_TAB,
+                label: 'Tag',
+                defaultValue:'input',
+                enum: ['input','textarea']
+            },
+            p_type: {
+                tab: DEFAULT_TAB,
+                label: 'type',
+                enum: ['text','number','email']
+            },
+            p_name:{
+                label: 'Name',
+                tab: DEFAULT_TAB
+            },
+            p_placeholder:{
+                label: 'Placeholder',
+                tab: DEFAULT_TAB
+            },
+            ...classOptions('p_'),
+            p_binding:{
+                defaultValue:true,
+                type:'Boolean',
+                label: 'Binding',
+                tab: DEFAULT_TAB
+            },
+            ...eventOptions('p_')
+        },
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'formElement'
+            },
+            p: {
+                ['data-element-key']: 'formElement'
             }
         }
     },

@@ -220,7 +220,8 @@
         "VisibilityOff",
         "AccountTree",
         "Refresh",
-        "QrCode2"
+        "QrCode2",
+        "Input"
       ],
       "theme":{
         "colors":{

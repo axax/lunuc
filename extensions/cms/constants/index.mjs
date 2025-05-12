@@ -504,7 +504,7 @@ div[data-isempty=true]{
   }
   
   &[data-is-invisible="true"]{
-    background-color: yellow;
+    background-color: yellow !important;
   }
 }
 

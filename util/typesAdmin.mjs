@@ -493,7 +493,8 @@ Hook.on('Types', ({types}) => {
                 tab: 'Meta',
                 alwaysLoad: false,
                 vagueSearchable: true,
-                hideColumnInTypes: true
+                hideColumnInTypes: true,
+                dynamicSubFields:'${user.setting?JSON.stringify(user.setting.map(s=>"DynamicUserFields-"+s._id)):"[]"}'
             },
             {
                 name: 'lastLogin',

@@ -548,7 +548,8 @@ const startListening = async (db, context) => {
         }
 
         let entries = []
-        const messages = await getMessagesForFolder(db,folder._id)
+        const messages = await getMessagesForFolder(db,folder._id,{uid: { $in: options.messages}})
+
         if (options.markAsSeen) {
             // mark all matching messages as seen
             messages.forEach(message => {
