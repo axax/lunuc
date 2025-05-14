@@ -94,24 +94,20 @@ export const getMessageUidsForFolderId = async (db, mailAccountFolderId, query =
     return await db.collection('MailAccountMessage').distinct('uid',{mailAccountFolder: mailAccountFolderId, ...query})
 }
 
-export const getMessagesForFolder = async (db, mailAccountFolderId, match = {}) => {
-    return await db.collection('MailAccountMessage').find({mailAccountFolder: mailAccountFolderId, ...match}).toArray()
-}
-export const getMessagesForFolderByUids = async (db, mailAccountFolderId, uids, fields) => {
+export const getMessagesForFolder = async (db, mailAccountFolderId, match = {}, project) => {
     const aggr = [
         {
             $match: {
-                uid: { $in: uids },
-                mailAccountFolder: mailAccountFolderId
+                mailAccountFolder: mailAccountFolderId,
+                ...match
             }
         }
     ]
-    if(fields!=='ALL'){
-        aggr.push({ $project: { uid: 1, flags: 1, modseq: 1, _id:1}})
+    if(project){
+        aggr.push({ $project: project})
     }
     return await db.collection('MailAccountMessage').aggregate( aggr ).toArray()
 }
-
 
 export const deleteMessagesForFolderByUids = async (db, folder, uids) => {
     if(folder.uidList) {

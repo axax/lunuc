@@ -12,7 +12,6 @@ import {
     getFolderForMailAccount,
     getMessageUidsForFolderId,
     getMessagesForFolder,
-    getMessagesForFolderByUids,
     getFolderForMailAccountById,
     deleteMessagesForFolderByUids
 } from '../util/dbhelper.mjs'
@@ -336,7 +335,7 @@ const startListening = async (db, context) => {
             return callback(null, 'NONEXISTENT')
         }
 
-        const messages = await getMessagesForFolderByUids(db,folder._id,update.messages)
+        const messages = await getMessagesForFolder(db,folder._id,{uid: { $in: update.messages }}, { uid: 1, flags: 1, modseq: 1, _id:1})
 
         let condstoreEnabled = !!session.selected.condstoreEnabled
 
@@ -494,7 +493,7 @@ const startListening = async (db, context) => {
             return callback(null, 'TRYCREATE')
         }
 
-        const sourceMessages = await getMessagesForFolderByUids(db,sourceFolder._id,update.messages,'ALL')
+        const sourceMessages = await getMessagesForFolder(db,sourceFolder._id,{uid: { $in: update.messages }})
 
         let sourceUid = sourceMessages.map(f=>f.uid)
         let destinationUid = []
@@ -547,15 +546,22 @@ const startListening = async (db, context) => {
             return callback(null, 'NONEXISTENT')
         }
 
-        let entries = []
-        const match = {}
+        let entries = [], match = {}, project
         if(options.changedSince){
             match.modseq= { $gt: options.changedSince }
         }
         if(options.messages){
             match.uid = { $in: options.messages}
         }
-        const messages = await getMessagesForFolder(db,folder._id,match)
+        if(options.query){
+            // [{"query":"FLAGS","item":"flags","original":{"type":"ATOM","value":"FLAGS"}},{"query":"UID","item":"uid","original":{"type":"ATOM","value":"UID"}},{"query":"MODSEQ","item":"modseq","original":{"type":"ATOM","value":"MODSEQ"}}]
+            project = {_id:1}
+            options.query.forEach(q=>{
+                project[q.item] = 1
+            })
+        }
+
+        const messages = await getMessagesForFolder(db,folder._id,match, project)
 
         console.log(`imap ${messages.length} found`, match)
 
