@@ -548,7 +548,16 @@ const startListening = async (db, context) => {
         }
 
         let entries = []
-        const messages = await getMessagesForFolder(db,folder._id,{uid: { $in: options.messages}})
+        const match = {}
+        if(options.changedSince){
+            match.modseq= { $gt: options.changedSince }
+        }
+        if(options.messages){
+            match.uid = { $in: options.messages}
+        }
+        const messages = await getMessagesForFolder(db,folder._id,match)
+
+        console.log(`imap ${messages.length} found`, match)
 
         if (options.markAsSeen) {
             // mark all matching messages as seen
