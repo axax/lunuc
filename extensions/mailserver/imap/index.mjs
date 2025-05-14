@@ -553,7 +553,7 @@ const startListening = async (db, context) => {
         if(options.messages){
             match.uid = { $in: options.messages}
         }
-        if(options.query){
+        if(options.metadataOnly && options.query){
             // [{"query":"FLAGS","item":"flags","original":{"type":"ATOM","value":"FLAGS"}},{"query":"UID","item":"uid","original":{"type":"ATOM","value":"UID"}},{"query":"MODSEQ","item":"modseq","original":{"type":"ATOM","value":"MODSEQ"}}]
             project = {_id:1}
             options.query.forEach(q=>{
@@ -606,86 +606,109 @@ const startListening = async (db, context) => {
                     logger.debug('[%s] imap changedSince skip message with uid "%s"', session.id, message.uid)
                     return setImmediate(processMessage)
                 }
-                const messageData = JSON.parse(JSON.stringify(message.data))
 
-                delete message.data
-                delete messageData.headerLines
+                if(message.data) {
 
-                if(messageData.headers ){
-                    delete messageData.headers['content-transfer-encoding']
-                    delete messageData.headers['content-type']
-                }
+                    const messageData = JSON.parse(JSON.stringify(message.data))
 
-                if(Array.isArray(messageData.attachments)){
-                    messageData.attachments.forEach(attachment=>{
-                        if(attachment.encoding==='quoted-printable'){
-                            delete attachment.encoding
-                        }
-                        if(attachment?.headers['content-transfer-encoding']==='quoted-printable'){
-                            delete attachment.headers['content-transfer-encoding']
-                        }
+                    delete message.data
+                    delete messageData.headerLines
+
+                    if (messageData.headers) {
+                        delete messageData.headers['content-transfer-encoding']
+                        delete messageData.headers['content-type']
+                    }
+
+                    if (Array.isArray(messageData.attachments)) {
+                        messageData.attachments.forEach(attachment => {
+                            if (attachment.encoding === 'quoted-printable') {
+                                delete attachment.encoding
+                            }
+                            if (attachment?.headers['content-transfer-encoding'] === 'quoted-printable') {
+                                delete attachment.headers['content-transfer-encoding']
+                            }
+                        })
+                    }
+
+                    replaceAddresseObjectsToString(messageData)
+
+
+                    const logError = (message) => {
+                        GenericResolver.createEntity(db, {context: context}, 'Log', {
+                            location: 'mailserver',
+                            type: 'imapError',
+                            message: message,
+                            meta: {
+                                messageData,
+                                debug: JSON.parse(JSON.stringify({folderId, options, session}, getCircularReplacer()))
+                            }
+                        })
+                    }
+
+                    try {
+                        /*const mailComposer = new MailComposer({
+                            headers: messageData.headers,
+                            text: messageData.text,
+                            html: messageData.html,
+                            attachments: messageData.attachments
+                        })*/
+                        const mailComposer = new MailComposer(messageData)
+
+
+                        mailComposer.compile().build((err, mailMessage) => {
+                            let stream = imapHandler.compileStream(
+                                session.formatResponse('FETCH', message.uid, {
+                                    query: options.query,
+                                    values: session.getQueryResponse(
+                                        options.query,
+                                        {
+                                            ...message,
+                                            mimeTree: parseMimeTree(mailMessage),
+                                            idate: new Date(messageData.date)
+                                        }
+                                    )
+                                })
+                            )
+                            if (stream && session?.writeStream?.connection?._closing !== true) {
+
+                                stream.on('error', (err) => {
+                                    logError(err.message)
+                                })
+                                session.writeStream.on('error', (err) => {
+                                    logError(err.message)
+                                })
+
+                                session.writeStream.write(stream, () => {
+                                    setImmediate(processMessage)
+                                })
+                            } else {
+                                logError(`stream is null or closed`)
+                            }
+                        })
+                    } catch (error) {
+                        logError(error.message)
+                        console.error('error building email', error)
+                        setImmediate(processMessage)
+                    }
+                }else{
+                    const stream = imapHandler.compileStream(
+                        session.formatResponse('FETCH', message.uid, {
+                            query: options.query,
+                            values: session.getQueryResponse(
+                                options.query,
+                                {
+                                    ...message
+                                }
+                            )
+                        })
+                    )
+
+                    stream.on('error', (err) => {
+                        logError(err.message)
                     })
-                }
-
-                replaceAddresseObjectsToString(messageData)
-
-
-
-                const logError = (message)=>{
-                    GenericResolver.createEntity(db, {context:context}, 'Log', {
-                        location: 'mailserver',
-                        type: 'imapError',
-                        message: message,
-                        meta: {messageData,debug:JSON.parse(JSON.stringify( {folderId, options, session}, getCircularReplacer()))}
+                    session.writeStream.write(stream, () => {
+                        setImmediate(processMessage)
                     })
-                }
-
-                try {
-                    /*const mailComposer = new MailComposer({
-                        headers: messageData.headers,
-                        text: messageData.text,
-                        html: messageData.html,
-                        attachments: messageData.attachments
-                    })*/
-                    const mailComposer = new MailComposer(messageData)
-
-
-                    mailComposer.compile().build((err, mailMessage) => {
-                        let stream = imapHandler.compileStream(
-                            session.formatResponse('FETCH', message.uid, {
-                                query: options.query,
-                                values: session.getQueryResponse(
-                                    options.query,
-                                    {
-                                        ...message,
-                                        mimeTree: parseMimeTree(mailMessage),
-                                        idate: new Date(messageData.date)
-                                    }
-                                )
-                            })
-                        )
-                        if(stream && session?.writeStream?.connection?._closing!==true) {
-
-                            stream.on('error', (err) => {
-                                logError(err.message)
-                            })
-                            session.writeStream.on('error', (err) => {
-                                logError(err.message)
-                            })
-
-                            _app_.errorDebug = JSON.parse(JSON.stringify( {folderId, options, session}, getCircularReplacer()))
-
-                            session.writeStream.write(stream, () => {
-                                setImmediate(processMessage)
-                            })
-                        }else{
-                            logError(`stream is null or closed`)
-                        }
-                    })
-                }catch (error){
-                    logError(error.message)
-                    console.error('error building email', error)
-                    setImmediate(processMessage)
                 }
             }
             setImmediate(processMessage)
