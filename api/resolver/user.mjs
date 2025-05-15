@@ -751,7 +751,7 @@ export const userResolver = (db) => ({
             if (result.ok !== 1) {
                 throw new ApiError('User could not be changed')
             }
-            Hook.call('typeUpdated', {type: 'User', data, db, context, payload})
+            Hook.call('typeUpdated', {type: 'User', data:user, db, context, payload})
 
 
             // clear cache
