@@ -745,7 +745,7 @@ export const userResolver = (db) => ({
             }
 
             const payload = {}
-            await HookAsync.call('typeBeforeUpdate', {type: 'User', data: user, db, context, payload})
+            await HookAsync.call('typeBeforeUpdate', {type: 'User', params: match, data: user, db, context, payload})
 
             const result = await userCollection.findOneAndUpdate(match, {$set: user}, {returnOriginal: false, includeResultMetadata: true})
             if (result.ok !== 1) {
