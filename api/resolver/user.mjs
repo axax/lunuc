@@ -25,6 +25,7 @@ import {
     clearInvalidLoginAttempt,
     hasTooManyInvalidLoginAttempts
 } from '../util/loginBlocker.mjs'
+import HookAsync from '../../util/hookAsync.mjs'
 
 
 export const createUser = async ({username, role, junior, group, setting, password, language, email, emailConfirmed, blocked, requestNewPassword, meta, domain, picture, db, context}, opts) => {
@@ -743,10 +744,14 @@ export const userResolver = (db) => ({
                 }
             }
 
+            const payload = {}
+            await HookAsync.call('typeBeforeUpdate', {type: 'User', data: user, db, context, payload})
+
             const result = await userCollection.findOneAndUpdate(match, {$set: user}, {returnOriginal: false, includeResultMetadata: true})
             if (result.ok !== 1) {
                 throw new ApiError('User could not be changed')
             }
+            Hook.call('typeUpdated', {type: 'User', data, db, context, payload})
 
 
             // clear cache
