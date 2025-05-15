@@ -83,7 +83,7 @@ class SimpleSelect extends React.Component {
                 }}
                 input={<Input/>}
                 renderValue={selected => (
-                    selected.constructor === Array ?
+                    selected && selected.constructor === Array ?
                         <StyledChips>
                             {selected.map(value => (
                                 <StyledChip key={value} label={matchSingleValue(value, items)}/>
