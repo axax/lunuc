@@ -66,6 +66,24 @@ import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
 }, async (err, data) => {
     console.log('xxxxx',data,err)
 })*/
+
+const mongoDbMatchProjectFromIMapData = (options) => {
+    let match = {}, project
+    if (options.changedSince) {
+        match.modseq = {$gt: options.changedSince}
+    }
+    if (options.messages) {
+        match.uid = {$in: options.messages}
+    }
+    if (options.metadataOnly && options.query) {
+        // [{"query":"FLAGS","item":"flags","original":{"type":"ATOM","value":"FLAGS"}},{"query":"UID","item":"uid","original":{"type":"ATOM","value":"UID"}},{"query":"MODSEQ","item":"modseq","original":{"type":"ATOM","value":"MODSEQ"}}]
+        project = {_id: 1}
+        options.query.forEach(q => {
+            project[q.item] = 1
+        })
+    }
+    return {match, project}
+}
 const startListening = async (db, context) => {
 
     const settings = {}
@@ -546,21 +564,8 @@ const startListening = async (db, context) => {
             return callback(null, 'NONEXISTENT')
         }
 
-        let entries = [], match = {}, project
-        if(options.changedSince){
-            match.modseq= { $gt: options.changedSince }
-        }
-        if(options.messages){
-            match.uid = { $in: options.messages}
-        }
-        if(options.metadataOnly && options.query){
-            // [{"query":"FLAGS","item":"flags","original":{"type":"ATOM","value":"FLAGS"}},{"query":"UID","item":"uid","original":{"type":"ATOM","value":"UID"}},{"query":"MODSEQ","item":"modseq","original":{"type":"ATOM","value":"MODSEQ"}}]
-            project = {_id:1}
-            options.query.forEach(q=>{
-                project[q.item] = 1
-            })
-        }
-
+        let entries = []
+        const {match, project} = mongoDbMatchProjectFromIMapData(options)
         const messages = await getMessagesForFolder(db,folder._id,match, project)
 
         console.log(`imap ${messages.length} found`, match)
@@ -725,8 +730,12 @@ const startListening = async (db, context) => {
             logger.debug('[%s] folder with id %s NONEXISTENT', session.id, folderId)
             return callback(null, 'NONEXISTENT');
         }
-        // TODO: Improve query --> don't select all messages
-        const messages = await getMessagesForFolder(db,folder._id)
+
+        console.log('imap search', options)
+        const {match, project} = mongoDbMatchProjectFromIMapData(options)
+        const messages = await getMessagesForFolder(db,folder._id,match, project)
+
+
         logger.debug('[%s] folder %s number of messages found %s', session.id, folder.path, messages.length)
 
         let highestModseq = 0

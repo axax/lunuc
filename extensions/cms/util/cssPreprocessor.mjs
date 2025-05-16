@@ -87,7 +87,6 @@ export const preprocessCss = (ncss, sub) => {
 
     }
     console.log(`css preprocessed in ${new Date() - startTime}ms`)*/
-console.log(result)
     return result
 
 }

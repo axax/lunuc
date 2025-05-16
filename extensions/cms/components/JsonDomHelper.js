@@ -158,7 +158,8 @@ class JsonDomHelper extends React.Component {
             state.width !== this.state.width ||
             state.marginBottomNew !== this.state.marginBottomNew ||
             state.toolbarHovered !== this.state.toolbarHovered ||
-            state.mouseX !== this.state.mouseX
+            state.mouseX !== this.state.mouseX ||
+            Util.shallowCompare(props.props, this.props.props, {compareArray:true})
     }
 
     helperTimeoutOut = null
@@ -555,7 +556,6 @@ class JsonDomHelper extends React.Component {
             isElementActive = !JsonDomHelper.disableEvents && (hovered || richTextBarHover || toolbarHovered || toolbarMenuOpen),
             isSelected = JsonDomHelper.selected.indexOf(this)>=0
 
-
         let hasJsonToEdit = !!_json, subJson, toolbar, highlighter,
             overrideEvents = {}, parsedSource
 
@@ -676,7 +676,7 @@ class JsonDomHelper extends React.Component {
                     onMouseOut={this.onToolbarMouseOut.bind(this)}
                     style={{top: this.state.top, left: this.state.left, height: this.state.height}}>
 
-                    <StyledInfoBox>{(_t(`elements.key.${elementKey}`,null,elementKey)) + (rest.id?` (${rest.id})`:(rest.slug?` (${rest.slug})`:''))}</StyledInfoBox>
+                    <StyledInfoBox>{(_t(`elements.key.${elementKey}`,null,elementKey)) + (rest.id?` (${rest.id.replace(/\$\.\w+\{[^}]*\}/g, '')})`:(rest.slug?` (${rest.slug})`:''))}</StyledInfoBox>
 
                     {menuItems.length > 0 && <StyledToolbarMenu
                         anchorReference={this.state.mouseY ? "anchorPosition" : "anchorEl"}

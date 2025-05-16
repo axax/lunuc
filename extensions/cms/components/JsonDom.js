@@ -186,7 +186,7 @@ class JsonDom extends React.Component {
                         }
                     }, 100)
 
-                    if (onClick) {
+                    if (typeof onClick === 'function') {
                         onClick(e)
                     }
 
@@ -562,7 +562,7 @@ class JsonDom extends React.Component {
             if (!this.error) {
                 scope.data = this.resolvedDataJson
                 if(_props) {
-                    scope.props = _props
+                    scope.props = Object.assign({},_props)
                 }
                 scope.dataState = {loading, isNew}
 
