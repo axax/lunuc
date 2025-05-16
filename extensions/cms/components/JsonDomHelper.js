@@ -559,7 +559,7 @@ class JsonDomHelper extends React.Component {
         let hasJsonToEdit = !!_json, subJson, toolbar, highlighter,
             overrideEvents = {}, parsedSource
 
-        const events = {
+        const helperEvents = {
             onContextMenu: (e) => {
                 e.preventDefault()
                 if (menuItems.length > 0 || isCms) {
@@ -587,14 +587,16 @@ class JsonDomHelper extends React.Component {
                     this.deselectSelected()
                     if(overrideEvents.onClick){
                         overrideEvents.onClick(e)
+                    }else if(onClick){
+                        onClick(e)
                     }
                 }
             }
         }
 
         if (_options.highlight !== false) {
-            events.onMouseOver = this.onHelperMouseOver.bind(this)
-            events.onMouseOut = this.onHelperMouseOut.bind(this)
+            helperEvents.onMouseOver = this.onHelperMouseOver.bind(this)
+            helperEvents.onMouseOut = this.onHelperMouseOut.bind(this)
         }
         if (_options.allowDrop === undefined) {
             _options.allowDrop = ALLOW_DROP.indexOf(_tagName) >= 0 && !this.props.dangerouslySetInnerHTML
@@ -628,11 +630,11 @@ class JsonDomHelper extends React.Component {
         }
         const isDraggable = !isInLoop && hasJsonToEdit && _options.allowDrag !== false
         if (isDraggable) {
-            events.draggable = 'true'
-            events.onDragEnd = this.onDragEnd.bind(this)
-            events.onDrag = onJsonDomDrag.bind(this)
-            events.onDrop = this.onDrop.bind(this)
-            events.onMouseDown = (e) => {
+            helperEvents.draggable = 'true'
+            helperEvents.onDragEnd = this.onDragEnd.bind(this)
+            helperEvents.onDrag = onJsonDomDrag.bind(this)
+            helperEvents.onDrop = this.onDrop.bind(this)
+            helperEvents.onMouseDown = (e) => {
                 if (e.target.tagName === 'SELECT') {
                     const rect = e.target.getBoundingClientRect()
                     showTooltip('Formelement mit gedrückter alt Taste verschieben', {
@@ -644,7 +646,7 @@ class JsonDomHelper extends React.Component {
             }
         }
 
-        events.onDragStart = e => {
+        helperEvents.onDragStart = e => {
             if (isDraggable) {
                 this.onDragStart(e)
             } else {
@@ -676,7 +678,7 @@ class JsonDomHelper extends React.Component {
                     onMouseOut={this.onToolbarMouseOut.bind(this)}
                     style={{top: this.state.top, left: this.state.left, height: this.state.height}}>
 
-                    <StyledInfoBox>{(_t(`elements.key.${elementKey}`,null,elementKey)) + (rest.id?` (${rest.id.replace(/\$\.\w+\{[^}]*\}/g, '')})`:(rest.slug?` (${rest.slug})`:''))}</StyledInfoBox>
+                    <StyledInfoBox>{(_t(`elements.key.${elementKey}`,null,elementKey)) + (rest.id?` (${rest.id})`:(rest.slug?` (${rest.slug})`:''))}</StyledInfoBox>
 
                     {menuItems.length > 0 && <StyledToolbarMenu
                         anchorReference={this.state.mouseY ? "anchorPosition" : "anchorEl"}
@@ -708,8 +710,8 @@ class JsonDomHelper extends React.Component {
                 const hasRichTextBar = !!_options.richText // && rest['data-element-key'] === 'richText'
                 //console.log(ReactDOM.findDOMNode(this))
                 if(hasRichTextBar){
-                    events.contentEditable = true
-                    events.onInput=(e)=>{
+                    helperEvents.contentEditable = true
+                    helperEvents.onInput=(e)=>{
                         setPropertyByPath(e.target.innerHTML,'$c',subJson)
                         _onTemplateChange(_json, true)
                     }
@@ -730,7 +732,7 @@ class JsonDomHelper extends React.Component {
                         data-picker={rest._key}
                         onMouseOver={this.onToolbarMouseOver.bind(this)}
                         onMouseOut={this.onToolbarMouseOut.bind(this)}
-                        onContextMenu={events.onContextMenu.bind(this)}
+                        onContextMenu={helperEvents.onContextMenu.bind(this)}
                         onClick={(e) => {
                             e.stopPropagation()
                             if(_options.openOnClick===false){
@@ -797,10 +799,9 @@ class JsonDomHelper extends React.Component {
 
         let comp
         if (isCms) {
-            comp = <div _key={rest._key} key={rest._key} {...events}>
+            comp = <div _key={rest._key} key={rest._key} {...helperEvents}>
                 <_WrappedComponent
                     onChange={overrideEvents.onChange || onChange}
-                    onClick={overrideEvents.onClick || onClick}
                     {...rest}
                     children={kids}/>
             </div>
@@ -814,11 +815,10 @@ class JsonDomHelper extends React.Component {
             comp = <_WrappedComponent
                 onDoubleClick={overrideEvents.onDoubleClick}
                 onChange={overrideEvents.onChange || onChange}
-                onClick={overrideEvents.onClick || onClick}
                 _inlineeditor={_inlineEditor ? _inlineEditor.toString() : ''}
                 data-isempty={isEmpty}
                 key={rest._key}
-                {...events}
+                {...helperEvents}
                 {...rest}
                 children={kids}/>
         }
@@ -1258,7 +1258,7 @@ class JsonDomHelper extends React.Component {
 
             if(slug !== null && slug !== undefined) {
                 menuItems.push({
-                    name: _t('JsonDomHelper.openComponent', {slug: subJson.p.id || slug}),
+                    name: _t('JsonDomHelper.openComponent', {slug: subJson.p.id?subJson.p.id.replace(/\$\.\w+\{[^}]*\}/g, ''):slug}),
                     icon: <LaunchIcon/>,
                     divider:true,
                     onClick: () => {
