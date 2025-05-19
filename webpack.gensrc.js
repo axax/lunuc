@@ -5,10 +5,27 @@ const path = require('path')
 
 let APP_CONFIG
 
+const APP_CONFIG_DEFAULT = require('./buildconfig.json')
+
 if (fs.existsSync('/etc/lunuc/buildconfig.json')) {
     APP_CONFIG = require('/etc/lunuc/buildconfig.json')
-} else {
-    APP_CONFIG = require('./buildconfig.json')
+
+    // add missing icons from default
+    if(APP_CONFIG_DEFAULT?.ui?.icons){
+        if(!APP_CONFIG.ui){
+            APP_CONFIG.ui = {}
+        }
+        if(!APP_CONFIG.ui.icons){
+            APP_CONFIG.ui.icons = []
+        }
+        APP_CONFIG_DEFAULT.ui.icons.forEach(icon=>{
+            if(APP_CONFIG.ui.icons.indexOf(icon)<0){
+                APP_CONFIG.ui.icons.push(icon)
+            }
+        })
+    }
+}else{
+    APP_CONFIG = APP_CONFIG_DEFAULT
 }
 
 const EXTENSION_PATH = './extensions/'

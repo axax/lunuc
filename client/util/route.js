@@ -58,24 +58,24 @@ export class RouteHistory {
 
         const newPath = Util.addUrlContext(url)
 
-        const index = this._urlStack.indexOf(newPath)
+        if(this._callBlockers(newPath)) {
+            const index = this._urlStack.indexOf(newPath)
 
-        if(index===0){
-            //ignore
-            return
-        }else if (index > 0) {
-            this._urlStack.splice(index, 1);
-        }
+            if(index===0){
+                //ignore
+                return
+            }else if (index > 0) {
+                this._urlStack.splice(index, 1);
+            }
 
-        this._urlStack.unshift(url)
-        if (this._urlStack.length > 10) {
-            this._urlStack = this._urlStack.slice(0, 9)
-        }
+            this._urlStack.unshift(url)
+            if (this._urlStack.length > 10) {
+                this._urlStack = this._urlStack.slice(0, 9)
+            }
 
 //        this._last = window.location.pathname
 // encodeURI again as it gets decoded in react routing
 //this.history._push(encodeURI(newPath), state)
-        if(this._callBlockers(newPath)) {
             if (!ignoreState) {
                 if (replace) {
                     window.history.replaceState({}, '', newPath)

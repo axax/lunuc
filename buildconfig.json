@@ -221,7 +221,8 @@
         "AccountTree",
         "Refresh",
         "QrCode2",
-        "Input"
+        "Input",
+        "AddToQueue"
       ],
       "theme":{
         "colors":{

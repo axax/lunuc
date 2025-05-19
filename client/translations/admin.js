@@ -39,6 +39,7 @@ export const translations = {
         'TypesContainer.create': 'Erstellen',
         'TypesContainer.manageVersion': 'Versionen verwalten',
         'TypesContainer.refresh': 'Aktualisieren',
+        'TypesContainer.queryTime': 'Abfragezeit %aggregateTime%ms / %totalTime%ms',
         'ManageCollectionClones.canNotBeDeleted': 'Diese Version kann nicht gelöscht werden',
         'ManageCollectionClones.areYouSureToDelete': 'Sind Sie sicher, dass Sie diese Version löschen möchten?',
         'Types.selectType': 'Bitte “%type%“ wählen',
@@ -112,7 +113,9 @@ export const translations = {
         'CodeEditor.openPage': 'Seite öffnen',
         'CodeEditor.reformatCode': 'Automatisch formatieren',
         'CodeEditor.aiAssistent':'KI Assistent',
-        'GlobalSearch.placeholder':'Schnellsuche'
+        'GlobalSearch.placeholder':'Schnellsuche',
+        'TypeEdit.closeConfirmText':'Möchten Sie die Änderung speichern?',
+        'TypeEdit.closeConfirmTitle':'Daten Speichern'
     },
     en: {
         'FilesContainer.deleteFile':'Delete File',
@@ -153,6 +156,7 @@ export const translations = {
         'TypesContainer.create': 'Create',
         'TypesContainer.manageVersion': 'Manage versions',
         'TypesContainer.refresh': 'Refresh',
+        'TypesContainer.queryTime': 'Query time %aggregateTime%ms / %totalTime%ms',
         'ManageCollectionClones.canNotBeDeleted': 'Can not be deleted',
         'ManageCollectionClones.areYouSureToDelete': 'Are you sure you want to delete this version?',
         'Types.selectType': 'Select a %type%',
@@ -226,6 +230,8 @@ export const translations = {
         'CodeEditor.aiAssistent':'AI assistent',
         'CodeEditor.openPage': 'Open page',
         'CodeEditor.reformatCode': 'Reformat',
-        'GlobalSearch.placeholder':'Quick search'
+        'GlobalSearch.placeholder':'Quick search',
+        'TypeEdit.closeConfirmText':'Would you like to save the change?',
+        'TypeEdit.closeConfirmTitle':'Save data'
     }
 }

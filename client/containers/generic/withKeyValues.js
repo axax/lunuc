@@ -203,7 +203,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                             const variables = {keys: keysGlobal}
                             // Read the data from our cache for this query.
                             const storeData = proxy.readQuery({query: QUERY_SET_KEY_VALUE_GLOBAL, variables}),
-                                storekeyValueGlobals = Object.assign({}, storeData.keyValueGlobals)
+                                storekeyValueGlobals = Object.assign({}, storeData?.keyValueGlobals)
 
                             if (!storekeyValueGlobals.results) {
                                 storekeyValueGlobals.results = []

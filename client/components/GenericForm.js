@@ -1034,12 +1034,14 @@ class GenericForm extends React.Component {
 
         } else if (uitype === 'wrapper') {
             // do nothing for now
-        } else if (['json', 'jsonEditor', 'editor', 'jseditor', 'css'].indexOf(uitype) >= 0) {
+        } else if (['json', 'jsonEditor', 'editor', 'jseditor', 'css', 'htmlEditor'].indexOf(uitype) >= 0) {
             let highlight, jsonStr
 
 
             if (uitype === 'css') {
                 highlight = 'css'
+            } else if (uitype === 'htmlEditor') {
+                highlight = 'html'
             } else if (uitype === 'jseditor') {
                 highlight = 'js'
             } else if (uitype === 'json') {

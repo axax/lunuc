@@ -85,6 +85,9 @@ export const start = (done) => {
                 }
             }))
 
+            // fix graphql limit of 100kb body size
+            app.use(bodyParser.json({limit: '10000mb'}))
+
             // delay response
             /*  app.use(function (req, res, next) {
                setTimeout(next, 1000)
@@ -119,9 +122,6 @@ export const start = (done) => {
                     rootValue[key] = resolvers[key]
                 }
             })
-
-            // fix graphql limit of 100kb body size
-            app.use(bodyParser.json({limit: '10000mb'}))
 
             // to upload large files
            // app.use(bodyParser.raw({ limit : '10gb', type : '*/*'}))

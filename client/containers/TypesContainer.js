@@ -253,7 +253,7 @@ class TypesContainer extends React.Component {
             settingsChanged
     }
 
-    renderTable(columns) {
+    renderTable(columns, typeSettings) {
         const {data, selectedRows} = this.state
         if (data) {
 
@@ -617,11 +617,11 @@ class TypesContainer extends React.Component {
 
 
             Hook.call('TypeTableAction', {type, actions, multiSelectActions, pageParams: this.pageParams, data}, this)
-
             return <SimpleTable key="typeTable"
                                 style={{marginBottom: '5rem'}}
                                 title=""
                                 tableRenderer={this.tableRenderer}
+                                tableRenderOption={typeSettings.tableRenderOption}
                                 onRowClick={this.handleRowClick.bind(this)}
                                 dataSource={dataSource}
                                 columns={columnsFiltered}
@@ -672,12 +672,12 @@ class TypesContainer extends React.Component {
             confirmCloneColDialog,
             manageColDialog,
             dataToBulkEdit,
-            confirmDialog
+            confirmDialog,
+            createEditDialogOption
         } = this.state
         const {title} = this.props
         const {type, fixType} = this.pageParams
         const columns = this.getTableColumns(type)
-
         if (!this.types[type]) {
             return <>
                 <Typography variant="subtitle1" color="error">Type {type} does not
@@ -805,7 +805,8 @@ class TypesContainer extends React.Component {
                 updateData: this.updateData.bind(this),
                 createData: this.createData.bind(this),
                 dataToEdit,
-                meta: {TypeContainer: this}
+                meta: {TypeContainer: this},
+                ...(createEditDialogOption && createEditDialogOption.constructor === Object ? createEditDialogOption: {})
             }
         }
 
@@ -926,7 +927,7 @@ class TypesContainer extends React.Component {
                 <Typography mb={2} mt={0.5} color="text.disabled" component="div" key="searchHint"
                             variant="caption">{this.searchHint()}</Typography>
             </div>,
-            this.renderTable(columns),
+            this.renderTable(columns, typeSettings),
             <SimpleDialog key="deleteDialog" open={confirmDialog.open} onClose={this.handleConfirmDialog}
                           actions={[{key: 'yes', label: _t('core.yes')}, {
                               key: 'no',
@@ -1070,7 +1071,7 @@ class TypesContainer extends React.Component {
         const {data} = this.state
         if (data && data.meta) {
             const meta = JSON.parse(data.meta)
-            return `Abfragezeit ${meta.aggregateTime}ms / ${meta.totalTime}ms${meta.debugInfo && meta.debugInfo.length > 0 ? ' - ' + meta.debugInfo.map(f=>f.message).join(' | ') : ''}`
+            return _t('TypesContainer.queryTime', meta) + (meta.debugInfo && meta.debugInfo.length > 0 ? ' - ' + meta.debugInfo.map(f=>f.message).join(' | '):'')
         }
         return ' '
     }

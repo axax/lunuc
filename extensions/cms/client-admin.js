@@ -98,7 +98,7 @@ export default () => {
 
     Hook.on('TypeTableColumns', ({type, columns}) => {
         if (type === 'CmsPage') {
-            columns.splice(1, 0, {title: 'Vorschau', id: 'preview'})
+            columns.splice(1, 0, {title: _t('CmsViewEditorContainer.preview'), id: 'preview'})
         }
     })
 
@@ -148,6 +148,15 @@ export default () => {
     // add some extra data to the table
     Hook.on('TypeTableAction', function ({type, actions, pageParams, data}) {
         if (type === 'CmsPage') {
+            actions.unshift({
+                name: _t('CmsMenu.addFromHtml'),
+                onClick: () => {
+                    this.setState({createEditDialog: true, createEditDialogOption: {key:'addFromHtml'}})
+                },
+                icon:'addQueue'
+            })
+
+
             const isImageView = pageParams.view==='image'
             if(isImageView){
                 this.tableRenderer = ()=>{
@@ -213,22 +222,37 @@ export default () => {
 
 
     Hook.on('TypeCreateEdit', function ({type, props, formFields, dataToEdit, meta, parentRef}) {
-
         if (type === 'CmsPage') {
+            if (meta.TypeContainer.state?.createEditDialogOption?.key === 'convertingHtml'){
+                props.title = _t('CmsPageEdit.convertHtml')
+                props.actions = []
+                props.children = <> <CircularProgress color="success" size={40}/>loading....</>
+            }else if (meta.TypeContainer.state?.createEditDialogOption?.key === 'addFromHtml'){
+                const newFields = {html:{uitype:'htmlEditor',name:'html'}}
+                props.actions = [{key: 'cancel',label: _t('core.cancel')},{key: 'convertHtml', label: _t('CmsPageEdit.convertHtml'), type: 'primary'}]
+                props.children = <>
+                    <GenericForm key="CmsPageForm" autoFocus onRef={ref => {
+                        if (ref) {
+                            parentRef.createEditForm = ref
+                        }
+                    }} onBlur={event => {
+                        Hook.call('TypeCreateEditBlur', {type, event})
+                    }} primaryButton={false} fields={newFields}/>
+                </>
+            }else {
+                const newFields = Object.assign({}, formFields)
 
-            const newFields = Object.assign({}, formFields)
+                delete newFields.template
+                delete newFields.script
+                delete newFields.serverScript
+                delete newFields.manual
+                delete newFields.dataResolver
+                delete newFields.style
 
-            delete newFields.template
-            delete newFields.script
-            delete newFields.serverScript
-            delete newFields.manual
-            delete newFields.dataResolver
-            delete newFields.style
-
-            // override default
-            props.children = [dataToEdit && <Typography key="CmsPageLabel" variant="subtitle1" gutterBottom>
-                <Link
-                    to={cmsPageEditorUrl(dataToEdit.slug, meta.TypeContainer.pageParams._version)}>
+                // override default
+                props.children = [dataToEdit && <Typography key="CmsPageLabel" variant="subtitle1" gutterBottom>
+                    <Link
+                        to={cmsPageEditorUrl(dataToEdit.slug, meta.TypeContainer.pageParams._version)}>
                         <span
                             style={{
                                 fontWeight: 'bold',
@@ -236,18 +260,48 @@ export default () => {
                                 color: '#663366',
                                 textDecoration: 'underline'
                             }}>{_t('CmsPageEdit.goToEditor')}</span></Link>
-            </Typography>,
-                <GenericForm key="CmsPageForm" autoFocus onRef={ref => {
-                    if(ref) {
-                        parentRef.createEditForm = ref
-                    }
-                }} onBlur={event => {
-                    Hook.call('TypeCreateEditBlur', {type, event})
-                }} primaryButton={false} fields={newFields} values={dataToEdit}/>]
+                </Typography>,
+                    <GenericForm key="CmsPageForm" autoFocus onRef={ref => {
+                        if (ref) {
+                            parentRef.createEditForm = ref
+                        }
+                    }} onBlur={event => {
+                        Hook.call('TypeCreateEditBlur', {type, event})
+                    }} primaryButton={false} fields={newFields} values={dataToEdit}/>]
+            }
         }
     })
 
+    Hook.on('TypeCreateEditAction', async ({type, action, dataToEdit, meta, createEditForm}) => {
+        if (type === 'CmsPage' && action) {
+           if(action.key === 'convertHtml') {
+               meta.TypeContainer.setState({createEditDialogOption: {key:'convertingHtml',disableEscapeKeyDown:true}})
+               fetch('/lunucapi/url/html', {
+                   method: 'POST',
+                   headers: {
+                       'Content-Type': 'application/json'
+                   },
+                   body: JSON.stringify({html:createEditForm.state.fields.html, mode:'createTemplate'})
+               })
+                   .then(response => {
+                       if (!response.ok) {
+                           throw new Error(`Server error: ${response.status}`);
+                       }
+                       return response.json();
+                   })
+                   .then(data => {
+                       console.log("Success:", data);
+                       meta.TypeContainer.setState({createEditDialogOption: false})
 
+                   })
+                   .catch(error => {
+                       console.error("Error:", error);
+                       meta.TypeContainer.setState({createEditDialogOption: false})
+                   });
+
+           }
+        }
+    })
     // add a click event
     /*Hook.on('TypeTableEntryClick', ({type, item, container}) => {
      if (type === 'CmsPage') {

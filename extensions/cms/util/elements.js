@@ -1733,12 +1733,15 @@ const baseElements = [
                 tab: DEFAULT_TAB,
                 label: 'Tag',
                 defaultValue:'input',
-                enum: ['input','textarea']
+                enum: ['input','textarea','button']
             },
             p_type: {
                 tab: DEFAULT_TAB,
                 label: 'type',
-                enum: ['text','number','email']
+                enum: ['text','number','email'],
+                uistate: {
+                    visible: 't==input'
+                }
             },
             p_name:{
                 label: 'Name',
@@ -1749,6 +1752,13 @@ const baseElements = [
                 tab: DEFAULT_TAB
             },
             ...classOptions('p_'),
+            c:{
+                label: 'Button label',
+                tab: DEFAULT_TAB,
+                uistate: {
+                    visible: 't==button'
+                }
+            },
             p_binding:{
                 defaultValue:true,
                 type:'Boolean',

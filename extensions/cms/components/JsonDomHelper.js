@@ -747,7 +747,7 @@ class JsonDomHelper extends React.Component {
                             } else {
                                 this.openPicker(_options)
                             }
-                        }}>{isCms && subJson && subJson.p ? subJson.p.id || subJson.p.slug :
+                        }}>{isCms && subJson && subJson.p ? (subJson.p.id ? subJson.p.id.replace(/\$\.\w+\{[^}]*\}/g, ''): subJson.p.slug) :
                         <ImageIcon/>}</StyledPicker> : ''}
                     {hasRichTextBar && <StyledRichTextBar
                         data-richtext-toolbar={rest._key}
@@ -1381,16 +1381,25 @@ class JsonDomHelper extends React.Component {
             })
         } else {
             items.push({
-                name: 'Custom container',
+                name: _t('elements.key.custom'),
                 onClick: () => {
                     changeToType('custom')
-                }
+                },
+                icon: 'widgets'
             })
             items.push({
-                name: 'Headline',
+                name: _t('elements.key.headline'),
+                icon: 'format',
                 onClick: () => {
                     changeToType('headline')
                 }
+            })
+            items.push({
+                name: _t('elements.key.formElement'),
+                onClick: () => {
+                    changeToType('formElement')
+                },
+                icon:'input'
             })
         }
 

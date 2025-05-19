@@ -18,6 +18,8 @@ import SimpleMenu from './SimpleMenu'
 import theme from './theme'
 import {_t} from 'util/i18n.mjs'
 import styled from '@emotion/styled'
+import Util from '../../../../util/index.mjs'
+import {parseStyles} from '../../../../util/style'
 
 const StyledScrollArea = styled.div`
     width: 100%;
@@ -60,7 +62,7 @@ class SimpleTable extends React.Component {
     }
 
     render() {
-        const {tableRenderer, style, title, actions, header, count, rowsPerPage, page, orderDirection, orderBy, onChangePage, onChangeRowsPerPage, onRowClick, columns, dataSource, footer} = this.props
+        const {tableRenderer, tableRenderOption, style, title, actions, header, count, rowsPerPage, page, orderDirection, orderBy, onChangePage, onChangeRowsPerPage, onRowClick, columns, dataSource, footer} = this.props
 
         const numSelected = 0
         return <Paper style={style}>
@@ -131,9 +133,18 @@ class SimpleTable extends React.Component {
                     {dataSource &&
                     <TableBody>
                         {dataSource.map((entry, i) => {
+
+                            let entryStyle
+                            if(tableRenderOption && tableRenderOption.rowStyle){
+                                const styleString = Util.replacePlaceholders(tableRenderOption.rowStyle, {Util, data:entry})
+                                if(styleString) {
+                                    entryStyle= parseStyles(styleString)
+                                }
+                            }
+
                             return (
                                 <StyledTableRow
-                                    style={entry.style}
+                                    style={entryStyle || entry.style}
                                     hover onClick={(e) => {
                                     if (onRowClick) {
                                         onRowClick(e, i)

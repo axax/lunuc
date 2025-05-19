@@ -171,7 +171,7 @@ export default () => {
         }
     })
 
-    Hook.on('TypeCreateEdit', ({type, props, meta, formFields, dataToEdit, parentRef}) => {
+    Hook.on('TypeCreateEdit', ({type, props, meta, formFields, dataToEdit, askForSaving, parentRef}) => {
         if (type === 'GenericData') {
             if (!dataToEdit) {
                 // create empty object
@@ -366,7 +366,7 @@ export default () => {
                                         primaryButton={false}
                                         fields={newFields}
                                         trigger={structure.trigger}
-                                        values={newDataToEdit}/>
+                                        values={askForSaving?dataToEdit:newDataToEdit}/>
                 }
             } else {
 
