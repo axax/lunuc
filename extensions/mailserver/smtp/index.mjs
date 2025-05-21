@@ -11,7 +11,7 @@ import Util from '../../../api/util/index.mjs'
 import {detectSpam} from './spam.mjs'
 import {dynamicSettings} from '../../../api/util/settings.mjs'
 import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
-import {decodeHtmlEntities, removeHtmlTags} from '../util/index.mjs'
+import {decodeHtmlEntities, removeStyleAndScriptTags} from '../util/index.mjs'
 
 
 /*
@@ -277,7 +277,7 @@ const startListening = async (db, context) => {
                                 const {isSpam, spamScore} = await detectSpam(db, context, {
                                     threshold: mailAccount.spamThreshold,
                                     sender: sender.text,
-                                    text: data.subject + (data.html ? decodeHtmlEntities(removeHtmlTags(data.html)) : '') + data.text
+                                    text: data.subject + (data.html ? decodeHtmlEntities(removeStyleAndScriptTags(data.html)) : '') + data.text
                                 })
 
                                 const inbox = await getFolderForMailAccount(db, mailAccount._id, isSpam ? 'Junk' : 'INBOX')

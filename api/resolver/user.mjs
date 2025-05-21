@@ -375,7 +375,7 @@ export const userResolver = (db) => ({
 
             return {status: 'done'}
         },
-        forgotPassword: async ({username, url, subject, fromEmail, fromName, domain}, req) => {
+        forgotPassword: async ({username, url, subject, fromEmail, fromName, domain, template}, req) => {
 
             const {context} = req
             const userCollection = db.collection('User')
@@ -396,19 +396,19 @@ export const userResolver = (db) => ({
             })
 
             if (user) {
-                sendMail(db, context, {
+                await sendMail(db, context, {
                     from: fromEmail,
                     fromName,
                     slug: 'core/forgot-password/mail',
                     recipient: user.email,
                     subject: subject || 'Password reset',
-                    body: `{"url":"${url}?token=${resetToken}","name":"${user.username}"}`,
+                    body: `{"url":"${url}?token=${resetToken}","name":"${user.username}","template":"${template||''}"}`,
                     req
                 })
             } else {
                 const ip = clientAddress(req)
 
-                GenericResolver.createEntity(db, {context}, 'Log', {
+                await GenericResolver.createEntity(db, {context}, 'Log', {
                     location: 'forgotPassword',
                     type: 'invalidUser',
                     message: `User ${username} does not exist`,

@@ -24,6 +24,12 @@ export const removeHtmlTags = (html) => {
     return html.replace(/<\/?[^>]+(>|$)/g, '')
 }
 
+export const removeStyleAndScriptTags = (html) => {
+    // Single regex to remove both <style> and <script> tags with their content
+    return html.replace(/<(style|script)[^>]*>[\s\S]*?<\/\1>/gi, '')
+}
+
+
 export const decodeHtmlEntities = (input) => {
     const entitiesMap = {
         '&amp;': '&',

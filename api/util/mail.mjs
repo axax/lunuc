@@ -38,6 +38,11 @@ export const sendMail = async (db, context, {settings, recipient, from, fromName
 
     let finalHtml
     if (slug && 'undefined' != typeof (Hook.hooks['cmsTemplateRenderer']) && Hook.hooks['cmsTemplateRenderer'].length) {
+
+        if(html && !context.html){
+            // pass it as context to the template
+            context.html = html
+        }
         finalHtml = await Hook.hooks['cmsTemplateRenderer'][0].callback({
             context,
             db,
