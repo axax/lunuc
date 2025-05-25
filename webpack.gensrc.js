@@ -11,16 +11,19 @@ if (fs.existsSync('/etc/lunuc/buildconfig.json')) {
     APP_CONFIG = require('/etc/lunuc/buildconfig.json')
 
     // add missing icons from default
-    if(APP_CONFIG_DEFAULT?.ui?.icons){
+    if(APP_CONFIG_DEFAULT?.ui?.[0]?.icons){
         if(!APP_CONFIG.ui){
-            APP_CONFIG.ui = {}
+            APP_CONFIG.ui = []
         }
-        if(!APP_CONFIG.ui.icons){
-            APP_CONFIG.ui.icons = []
+        if(!APP_CONFIG.ui.length===0){
+            APP_CONFIG.ui.push({})
         }
-        APP_CONFIG_DEFAULT.ui.icons.forEach(icon=>{
-            if(APP_CONFIG.ui.icons.indexOf(icon)<0){
-                APP_CONFIG.ui.icons.push(icon)
+        if(!APP_CONFIG.ui[0].icons){
+            APP_CONFIG.ui[0].icons = []
+        }
+        APP_CONFIG_DEFAULT.ui[0].icons.forEach(icon=>{
+            if(APP_CONFIG.ui[0].icons.indexOf(icon)<0){
+                APP_CONFIG.ui[0].icons.push(icon)
             }
         })
     }

@@ -356,7 +356,7 @@ export default db => ({
         }
     },
     Mutation: {
-        createCmsPage: async ({slug,ownerGroup,template,style,script, ...rest}, req) => {
+        createCmsPage: async ({slug,ownerGroup,template,style,script,resources, ...rest}, req) => {
             await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_MANAGE_CMS_CONTENT)
 
             if (!slug) slug = ''
@@ -369,7 +369,8 @@ export default db => ({
                 dataResolver: DEFAULT_DATA_RESOLVER,
                 template: template || DEFAULT_TEMPLATE,
                 script: script || DEFAULT_SCRIPT,
-                style: style || DEFAULT_STYLE
+                style: style || DEFAULT_STYLE,
+                resources: resources
             })
         },
         updateCmsPage: async ({_id, _meta, slug, realSlug, query, props, createdBy, ownerGroup, ...rest}, req, options) => {

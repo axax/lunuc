@@ -106,7 +106,11 @@ const convertHtmlAndSet = ({html, style, script, meta, typeEdit}) => {
             if (!data.template || data.error) {
                 setError(meta, data.error || '')
             } else {
-                typeEdit.handleSaveData({key: 'save_close'}, {template: data.template, style: data.style, script: data.script})
+                let resources
+                if(data.resources){
+                    resources = JSON.stringify(data.resources.filter(url=>url.startsWith('http')))
+                }
+                typeEdit.handleSaveData({key: 'save_close'}, {template: data.template, style: data.style, script: data.script, resources})
             }
 
         })
@@ -358,6 +362,14 @@ export default () => {
                     }
 
                     if (html) {
+
+                        meta.TypeContainer.setState({
+                            createEditDialogOption: {
+                                key: 'convertingHtml',
+                                disableEscapeKeyDown: true
+                            }
+                        })
+
                         convertHtmlAndSet({
                             html,
                             style: await getFileContent('/dist/style.css'),

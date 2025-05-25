@@ -163,7 +163,7 @@
         },
         {
           "name": "resources",
-          "hidden": true,
+          "hideColumnInTypes": true,
           "searchable": true,
           "access": {
             "ui": {

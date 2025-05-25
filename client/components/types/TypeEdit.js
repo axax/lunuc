@@ -224,6 +224,9 @@ class TypeEdit extends React.Component {
             } else if (field.type === "Object" && editedData[key] && editedData[key].constructor === Object) {
                 editedData[key] = JSON.stringify(editedData[key])
             }
+            if(editedData[key]===undefined && field.defaultValue!==undefined){
+                editedData[key] = field.defaultValue
+            }
         })
 
         // we need another object with the already resolved references for the ui
