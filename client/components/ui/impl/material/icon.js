@@ -94,7 +94,10 @@ import {
     RefreshIcon,
     QrCode2Icon,
     InputIcon,
-    AddToQueueIcon
+    AddToQueueIcon,
+    FolderZipIcon,
+    EditNoteIcon,
+    PlaylistAddIcon
 } from 'gensrc/ui/admin/icons'
 
 const iconComponents = {
@@ -192,7 +195,10 @@ const iconComponents = {
     tree:AccountTreeIcon,
     qrcode:QrCode2Icon,
     input:InputIcon,
-    addQueue:AddToQueueIcon
+    addQueue:AddToQueueIcon,
+    folderZip:FolderZipIcon,
+    addList:PlaylistAddIcon,
+    editList:EditNoteIcon
 }
 
 export const getIconByKey = (key, defaultIcon) => {

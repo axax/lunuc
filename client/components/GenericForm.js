@@ -1076,6 +1076,7 @@ class GenericForm extends React.Component {
 
             currentFormFields.push(<FormControl key={'control' + fieldKey}
                                                 className={field.className}
+                                                error={!!this.state.fieldErrors[fieldKey]}
                                                 sx={getSxProps({fullWidth:true})}>
                 <InputLabel key={'label' + fieldKey}
                             onMouseEnter={(e)=>{
@@ -1087,7 +1088,6 @@ class GenericForm extends React.Component {
                                 hideTooltip()
                             }}
                             shrink>{field.label + (languageCode ? ' [' + languageCode + ']' : '')}</InputLabel>
-
                 {uitype == 'jsonEditor' ? <JsonEditor onChange={(newValue) => this.handleInputChange({
                         target: {
                             dataset: {
@@ -1099,7 +1099,7 @@ class GenericForm extends React.Component {
                     })} componentTemplate={field.componentTemplate} propertyTemplate={field.propertyTemplate}>{value}</JsonEditor> :
 
                     <CodeEditor
-                        style={{border: '1px solid #eeeeee',margin: '24px 0'}}
+                        style={{border: '1px solid #eeeeee',margin: '16px 0'}}
                         readOnly={field.readOnly}
                         key={fieldKey}
                         forceJson={field.type === 'Object'}
@@ -1113,6 +1113,8 @@ class GenericForm extends React.Component {
                             }
                         })} lineNumbers type={highlight}>{jsonStr ? jsonStr : value}</CodeEditor>
                 }
+
+                <FormHelperText error>{this.state.fieldErrors[fieldKey]}</FormHelperText>
             </FormControl>)
 
         } else if (uitype === 'html') {
@@ -1169,7 +1171,18 @@ class GenericForm extends React.Component {
 
             currentFormFields.push(<FileDrop key={fieldKey} className={field.className} value={value}/>)
 
-
+        } else if (uitype === 'upload'){
+            currentFormFields.push(<FileDrop onZipExtraction={(zipFiles)=>{
+                this.handleInputChange({
+                    target: {
+                        dataset: {
+                            language: languageCode
+                        },
+                        name: fieldKey,
+                        value: zipFiles
+                    }
+                })
+            }} accept={field.accept || '*/*'} key={fieldKey} className={field.className} value={value}/>)
        /* } else if (uitype === 'color_picker') {
 
             currentFormFields.push(<FormControl key={'control' + fieldKey}

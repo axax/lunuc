@@ -3,6 +3,7 @@ import Util from '../../api/util/index.mjs'
 import fs from 'fs'
 import {processById} from '../preprocessor/preprocessor.mjs'
 import config from '../../gensrc/config.mjs'
+import {isString} from '../../client/util/json.mjs'
 
 const {STATIC_DIR, STATIC_PRIVATE_DIR, STATIC_TEMPLATE_DIR} = config
 const ROOT_DIR = path.resolve()
@@ -48,23 +49,27 @@ export const createOrDeleteStaticFile = async (staticFile, {db, force}) => {
                     content = staticFile.content
                 }
 
-                const regex = /^data:.+\/(.+);base64,(.*)$/
+                if(isString(content)) {
+                    const regex = /^data:.+\/(.+);base64,(.*)$/
 
-                const matches = content.match(regex)
-                if (matches && matches.length === 3) {
-                    content = Buffer.from(matches[2], 'base64')
-                }
-
-                fs.writeFile(filePath, content, function (err) {
-                    if (err) {
-                        console.log('error writing file in createOrDeleteStaticFile', err)
+                    const matches = content.match(regex)
+                    if (matches && matches.length === 3) {
+                        content = Buffer.from(matches[2], 'base64')
                     }
-                })
 
-                fs.unlink(filePath + '.br', () => {
-                })
-                fs.unlink(filePath + '.gz', () => {
-                })
+                    fs.writeFile(filePath, content, function (err) {
+                        if (err) {
+                            console.log('error writing file in createOrDeleteStaticFile', err)
+                        }
+                    })
+
+                    fs.unlink(filePath + '.br', () => {
+                    })
+                    fs.unlink(filePath + '.gz', () => {
+                    })
+                }else{
+                    console.warn(`Error creating staticfile ${staticFile.name}`)
+                }
             }
         } else {
 

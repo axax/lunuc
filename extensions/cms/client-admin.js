@@ -26,6 +26,7 @@ import {translations as adminTranslations} from 'client/translations/admin'
 import Expandable from '../../client/components/Expandable'
 import SimpleImageList from '../../client/components/ui/impl/material/SimpleImageList'
 
+
 registerTrs(translations, 'CmsViewEditorContainer')
 registerTrs(adminTranslations, 'AdminTranslations')
 
@@ -72,6 +73,47 @@ const getImageFromCmsPageItem = (item) => {
     } else {
         return `/lunucapi/system/genimage?width=120&height=80&text=Kein Bild&fontsize=1em`
     }
+}
+
+const setError = (meta, msg) => {
+    meta.TypeContainer.setState({
+        createEditDialog: false,
+        createEditDialogOption: false,
+        simpleDialog: {
+            title: _t('CmsPageEdit.errorConvertingHtml'),
+            actions: [{key: 'close', label: 'Ok'}],
+            children: msg
+        }
+    })
+}
+
+const convertHtmlAndSet = ({html, style, script, meta, typeEdit}) => {
+    fetch('/lunucapi/url/html', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({html,style,script, mode: 'createTemplate'})
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Success:", data)
+            if (!data.template || data.error) {
+                setError(meta, data.error || '')
+            } else {
+                typeEdit.handleSaveData({key: 'save_close'}, {template: data.template, style: data.style, script: data.script})
+            }
+
+        })
+        .catch(error => {
+            console.error("Error:", error)
+            setError(meta, error.message)
+        })
 }
 
 export default () => {
@@ -156,6 +198,14 @@ export default () => {
                 icon:'addQueue'
             })
 
+            actions.unshift({
+                name: _t('CmsMenu.addFromZip'),
+                onClick: () => {
+                    this.setState({createEditDialog: true, createEditDialogOption: {key:'addFromZip'}})
+                },
+                icon:'folderZip'
+            })
+
 
             const isImageView = pageParams.view==='image'
             if(isImageView){
@@ -223,13 +273,23 @@ export default () => {
 
     Hook.on('TypeCreateEdit', function ({type, props, formFields, dataToEdit, meta, parentRef}) {
         if (type === 'CmsPage') {
-            if (meta.TypeContainer.state?.createEditDialogOption?.key === 'convertingHtml'){
+            const dialogKey = meta.TypeContainer.state?.createEditDialogOption?.key
+            if ( dialogKey === 'convertingHtml'){
                 props.title = _t('CmsPageEdit.convertHtml')
                 props.actions = []
-                props.children = <> <CircularProgress color="success" size={40}/>loading....</>
-            }else if (meta.TypeContainer.state?.createEditDialogOption?.key === 'addFromHtml'){
-                const newFields = {html:{uitype:'htmlEditor',name:'html'}}
-                props.actions = [{key: 'cancel',label: _t('core.cancel')},{key: 'convertHtml', label: _t('CmsPageEdit.convertHtml'), type: 'primary'}]
+                props.children = <><CircularProgress color="success" size={40}/>loading....</>
+            }else if (dialogKey === 'addFromZip' || dialogKey === 'addFromHtml'){
+                const newFields = {author:formFields.author,slug:formFields.slug,name:formFields.name}
+
+                if(dialogKey === 'addFromZip'){
+                    newFields.zip={accept:'zip,application/octet-stream,application/zip,application/x-zip,application/x-zip-compressed',uitype:'upload',required:true,label:'ZIP File',name:'zip',tab:'elements.generalTab'}
+                    props.actions = [{key: 'cancel',label: _t('core.cancel')},{key: 'loadZip', label: _t('CmsPageEdit.loadZip'), type: 'primary'}]
+
+                }else{
+                    newFields.html={uitype:'htmlEditor',required:true,label:'HTML',name:'html',tab:'elements.generalTab'}
+                    props.actions = [{key: 'cancel',label: _t('core.cancel')},{key: 'convertHtml', label: _t('CmsPageEdit.convertHtml'), type: 'primary'}]
+                }
+
                 props.children = <>
                     <GenericForm key="CmsPageForm" autoFocus onRef={ref => {
                         if (ref) {
@@ -272,41 +332,64 @@ export default () => {
         }
     })
 
-    Hook.on('TypeCreateEditAction', async ({type, action, dataToEdit, meta, createEditForm}) => {
+    Hook.on('TypeCreateEditAction', async ({type, action, typeEdit, meta, createEditForm}) => {
         if (type === 'CmsPage' && action) {
-           if(action.key === 'convertHtml') {
-               meta.TypeContainer.setState({createEditDialogOption: {key:'convertingHtml',disableEscapeKeyDown:true}})
-               fetch('/lunucapi/url/html', {
-                   method: 'POST',
-                   headers: {
-                       'Content-Type': 'application/json'
-                   },
-                   body: JSON.stringify({html:createEditForm.state.fields.html, mode:'createTemplate'})
-               })
-                   .then(response => {
-                       if (!response.ok) {
-                           throw new Error(`Server error: ${response.status}`);
-                       }
-                       return response.json();
-                   })
-                   .then(data => {
-                       console.log("Success:", data);
-                       meta.TypeContainer.setState({createEditDialogOption: false})
+            if (action.key === 'loadZip') {
+                const formValidation = createEditForm.validate(createEditForm.state, true, {changeTab: true})
+                if (!formValidation.isValid) {
+                    console.warn('validation error', formValidation)
+                    return
+                }
+                const files = createEditForm?.state?.fields?.zip?.files || {}
+                const fileNames = Object.keys(files)
+                if(fileNames.length>0) {
+                    const getFileContent = async (fileName) => {
+                        const file = fileNames.find(file => file.indexOf(fileName) >= 0)
+                        return file ? await files[file].async('string') : ''
+                    }
+                    const html = await getFileContent('/dist/index.html')
+                    if(!createEditForm.state.fields.slug){
+                        createEditForm.handleInputChange({
+                            target: {
+                                name: 'slug',
+                                value: fileNames[0].substring(0,fileNames[0].indexOf('/'))
+                            }
+                        })
+                    }
 
-                   })
-                   .catch(error => {
-                       console.error("Error:", error);
-                       meta.TypeContainer.setState({createEditDialogOption: false})
-                   });
+                    if (html) {
+                        convertHtmlAndSet({
+                            html,
+                            style: await getFileContent('/dist/style.css'),
+                            script: await getFileContent('/dist/script.js'),
+                            meta, typeEdit
+                        })
+                    }
+                }
+            } else if (action.key === 'convertHtml' || action.key === 'loadZip') {
+                const formValidation = createEditForm.validate(createEditForm.state, true, {changeTab: true})
+                if (!formValidation.isValid) {
+                    console.warn('validation error', formValidation)
+                    return
+                }
 
-           }
+                meta.TypeContainer.setState({
+                    createEditDialogOption: {
+                        key: 'convertingHtml',
+                        disableEscapeKeyDown: true
+                    }
+                })
+
+                convertHtmlAndSet({html:createEditForm.state.fields.html, meta, typeEdit})
+
+            }
         }
     })
-    // add a click event
-    /*Hook.on('TypeTableEntryClick', ({type, item, container}) => {
-     if (type === 'CmsPage') {
-     const {_version} = container.pageParams
-     container.props.history.push('/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + (item.slug ? item.slug.split(';')[0] : ''))
-     }
-     })*/
+             // add a click event
+             /*Hook.on('TypeTableEntryClick', ({type, item, container}) => {
+              if (type === 'CmsPage') {
+              const {_version} = container.pageParams
+              container.props.history.push('/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + (item.slug ? item.slug.split(';')[0] : ''))
+              }
+              })*/
 }

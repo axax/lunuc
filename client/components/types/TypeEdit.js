@@ -49,9 +49,9 @@ class TypeEdit extends React.Component {
     }
 
     componentDidMount() {
-        const blocker = _app_.history.block(() => {
+        this.blocker = _app_.history.block(() => {
+            this.blocker()
             if(this.needsAskForSaving()){
-                blocker()
                 return false
             }
             return true
@@ -59,6 +59,7 @@ class TypeEdit extends React.Component {
     }
 
     componentWillUnmount() {
+        this.blocker()
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
@@ -175,7 +176,7 @@ class TypeEdit extends React.Component {
         return false
     }
 
-    handleSaveData = (action) => {
+    handleSaveData = (action, extraDataToSave) => {
         const {type,meta} = this.props
         const {dataToEdit} = this.state
         if(action && (action.key === undefined || action.key === 'Escape') && this.needsAskForSaving()){
@@ -194,7 +195,7 @@ class TypeEdit extends React.Component {
                 }
                 return
             }
-            this.saveDataIfNeeded(action,Object.assign({}, this.createEditForm.state.fields))
+            this.saveDataIfNeeded(action,Object.assign({}, this.createEditForm.state.fields,extraDataToSave))
 
         } else if (action && (action.key === 'cancel' || action.key === 'Escape')) {
             this.closeModal(action)

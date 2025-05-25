@@ -76,6 +76,14 @@ export const sendFileFromDir = async (req, res, {send404 = false, filename, head
         }
 
         const stat = fs.statSync(filename)
+
+
+        const etag = createSimpleEtag({content: filename, stat})
+        if (req.headers['if-none-match'] === etag) {
+            res.status(304).end()
+            return true
+        }
+
         const headersExtended = {
             'Vary': 'Accept-Encoding',
             'Last-Modified': stat.mtime.toUTCString(),
@@ -83,7 +91,7 @@ export const sendFileFromDir = async (req, res, {send404 = false, filename, head
             'Cache-Control': 'public, max-age=31536000', /* 604800 (a week) */
             'Content-Length': stat.size,
             'Content-Type': parsedUrl?MimeType.takeOrDetect(modImage.mimeType, parsedUrl):MimeType.detectByFileName(filename),
-            'ETag': `"${createSimpleEtag({content: filename, stat})}"`,
+            'ETag': `"${etag}"`,
             ...headers
         }
 

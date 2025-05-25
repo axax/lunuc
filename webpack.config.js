@@ -290,14 +290,14 @@ if (DEV_MODE) {
                 target: `http://0.0.0.0:${API_PORT}`
             },
             {
-                context: ['/' + APP_VALUES.API_PREFIX],
-                target: `http://0.0.0.0:${API_PORT}`
-            },
-            {
                 context:['/lunucws'],
                 target: `ws://0.0.0.0:${API_PORT}`,
                 ws: true
-            }
+            },
+            ...((Array.isArray(APP_VALUES.API_PREFIX)?APP_VALUES.API_PREFIX:[APP_VALUES.API_PREFIX]).map(prefix=>({
+                    context: ['/' + prefix + '/'],
+                    target: `http://0.0.0.0:${API_PORT}`
+            })))
         ],
         client: {
             logging: 'info'

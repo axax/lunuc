@@ -250,12 +250,17 @@ const sendFileFromTemplateDir = (req, res, urlPathname, headers, parsedUrl, host
                 config,
                 pathname: urlPathname
             })
+            const etag = createSimpleEtag({content})
+            if (req.headers['if-none-match'] === etag) {
+                res.status(304).end()
+                return
+            }
 
             const headerExtra = {
                 'Cache-Control': 'public, max-age=604800',
                 'Content-Type': mimeType,
                 'Last-Modified': stats.mtime.toUTCString(),
-                'ETag': `"${createSimpleEtag({content})}"`,
+                'ETag': `"${etag}"`,
                 ...headers
             }
             res.writeHead(200, headerExtra)

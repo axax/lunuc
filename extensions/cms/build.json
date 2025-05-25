@@ -16,7 +16,7 @@
           "index": 1,
           "unique": true,
           "fullWidth": true,
-          "tab": "Allgemein",
+          "tab": "elements.generalTab",
           "validatePattern":"^([a-zA-Z0-9/\\-_öäü]+)$"
         },
         {
@@ -26,7 +26,7 @@
           "localized": true,
           "index": 1,
           "fullWidth": true,
-          "tab": "Allgemein"
+          "tab": "elements.generalTab"
         },
         {
           "name": "author",
@@ -34,7 +34,7 @@
           "index": 1,
           "bulkEditable": true,
           "fullWidth": true,
-          "Tab": "Allgemein"
+          "Tab": "elements.generalTab"
         },
         {
           "name": "keyword",
@@ -44,7 +44,7 @@
           "index": 1,
           "fullWidth": true,
           "hideColumnInTypes": true,
-          "Tab": "Allgemein"
+          "Tab": "elements.generalTab"
         },
         {
           "name": "description",
@@ -54,7 +54,7 @@
           "index": 1,
           "fullWidth": true,
           "hideColumnInTypes": true,
-          "Tab": "Allgemein"
+          "Tab": "elements.generalTab"
         },
         {
           "name": "hostRule",
@@ -76,6 +76,7 @@
           "bulkEditable": true,
           "hideColumnInTypes": true,
           "index": 1,
+          "defaultValue": true,
           "compoundIndex": [
             {
               "unique": false,
@@ -129,12 +130,12 @@
         },
         {
           "name": "template",
-          "hidden": true,
+          "hideColumnInTypes": true,
           "searchable": true
         },
         {
           "name": "script",
-          "hidden": true,
+          "hideColumnInTypes": true,
           "searchable": true
         },
         {
@@ -172,7 +173,7 @@
         },
         {
           "name": "style",
-          "hidden": true,
+          "hideColumnInTypes": true,
           "searchable": true,
           "vagueSearchable": true
         },

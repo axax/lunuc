@@ -596,12 +596,12 @@ class TypesContainer extends React.Component {
                     divider:true,
                     name: _t('TypesContainer.createNewVersion'), onClick: () => {
                         this.setState({confirmCloneColDialog: true})
-                    }
+                    }, icon:'addList'
                 })
                 actions.push({
                     name: _t('TypesContainer.manageVersion'), onClick: () => {
                         this.setState({manageColDialog: true})
-                    }
+                    }, icon:'editList'
                 })
             }
 

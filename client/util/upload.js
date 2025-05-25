@@ -101,7 +101,7 @@ const UploadUtil = {
     validateFiles: ({files, accept, maxFileSize}) => {
         const results = {validFiles: [], invalidFiles: []}
         if (files) {
-            const accepts = accept.split('|'), acceptsType = [], acceptsExt = []
+            const accepts = accept.split(/[|,]/), acceptsType = [], acceptsExt = []
             accepts.forEach(i => {
                 const a = i.split('/')
                 if (a.length > 1) {

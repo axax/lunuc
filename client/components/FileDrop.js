@@ -6,6 +6,7 @@ import {_t, registerTrs} from 'util/i18n.mjs'
 import {theme} from 'ui/admin'
 import config from 'gen/config-client'
 import styled from '@emotion/styled'
+import DomUtil from '../util/dom.mjs'
 
 const {UPLOAD_URL} = config
 
@@ -145,7 +146,8 @@ class FileDrop extends React.Component {
             errorMessage: null,
             successMessage: null,
             conversionOri: props.conversion,
-            conversion: props.conversion || [{qualitiy: IMAGE_QUALITY, maxWidth: IMAGE_MAX_WIDTH}]
+            conversion: props.conversion || [{qualitiy: IMAGE_QUALITY, maxWidth: IMAGE_MAX_WIDTH}],
+            zipFiles: null
         }
     }
 
@@ -164,7 +166,7 @@ class FileDrop extends React.Component {
 
     render() {
         const {style, multi, label, accept, className, name, onChange, imagePreview, deleteButton} = this.props
-        const {isHover, images, uploading, uploadCompleted, errorMessage, successMessage, uploadingFile, uploadQueue} = this.state
+        const {isHover, images, uploading, uploadCompleted, errorMessage, successMessage, uploadingFile, uploadQueue, zipFiles} = this.state
         return <StyledUploader isHover={isHover} style={style} className={className}>
             <input multiple={!!multi}
                    type="file"
@@ -201,6 +203,8 @@ class FileDrop extends React.Component {
             {uploading && <Typography variant="body2">uploading {uploadingFile} ({uploadCompleted}%{uploadQueue.length>0?' / '+uploadQueue.length+' in queue':''})...</Typography>}
             {uploading && <StyledLinearProgress variant="determinate" value={uploadCompleted}/>}
 
+            {zipFiles ? <ul style={{textAlign:'left'}}>{Object.keys(zipFiles.files).map((filename) => <li>${filename}</li>)}</ul> : null}
+
         </StyledUploader>
     }
 
@@ -219,7 +223,7 @@ class FileDrop extends React.Component {
     }
 
     handelDrop(e) {
-        const {onFileContent, onDataUrl, onFiles, onChange, name, accept, uploadTo, resizeImages, maxSize} = this.props
+        const {onFileContent, onDataUrl, onFiles, onChange, onZipExtraction, name, accept, uploadTo, resizeImages, maxSize} = this.props
         const {conversion} = this.state
         this.setDragState(e, false)
 
@@ -278,6 +282,24 @@ class FileDrop extends React.Component {
                     reader.onload = function (e) {
                         onDataUrl(file, e.target.result)
                     }
+                }
+
+                if(onZipExtraction){
+                    DomUtil.addScript('/jszip/jszip.min.js', {
+                        id: 'jszip',
+                        onload: () => {
+
+                            const reader = new FileReader()
+                            reader.onload = (e) => {
+                                JSZip.loadAsync(e.target.result).then((zipFiles)=> {
+                                    this.setState({zipFiles})
+                                    onZipExtraction(zipFiles)
+                                })
+                            }
+                            reader.readAsArrayBuffer(file)
+
+                        }
+                    },{ignoreIfExist:true})
                 }
 
             }
