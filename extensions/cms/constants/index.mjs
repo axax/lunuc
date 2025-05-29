@@ -88,74 +88,122 @@ on('beforerunscript',()=>{
 \t// this is called before the script is executed
 })`
 
-export const DEFAULT_STYLE = `//!#Basic
-.page{
-    img{
-        max-width: 100%;
-    }
-    .entry{
-        border-bottom: solid 1px #c1c1c1;
-        padding-bottom:1rem;
-        margin-bottom:2rem;
-    }
+export const DEFAULT_STYLE = `//!#Environment
+\${this.set('breakpointMobile',scope.PageOptions && scope.PageOptions.breakpointMobile ? scope.PageOptions.breakpointMobile + 'px' : '25.813rem')}
+\${this.set('breakpointTablet',scope.PageOptions && scope.PageOptions.breakpointTablet ? scope.PageOptions.breakpointTablet + 'px' : '48rem')}
+\${this.set('breakpointDesktop',scope.PageOptions && scope.PageOptions.breakpointDesktop ? scope.PageOptions.breakpointDesktop + 'px' : '62rem')}
+
+:root{
+    --breakpoint-mobile:\${this.get('breakpointMobile')};
+    --breakpoint-tablet:\${this.get('breakpointTablet')};
+    --breakpoint-desktop:\${this.get('breakpointDesktop')};
+    
+    --grid-template-columns-xs:1;
+    --grid-template-columns-sm:2;
+    --grid-template-columns-md:3;
+    --grid-template-columns-lg:4;
+    
+    --width-xs: 100%;
+    --width-sm: 50%;
+    --width-md: 33.33%;
+    --width-lg: 25%;
 }
 
+//!#Custom
+#page{
+  img{
+    max-width: 100%;
+  }
+  .entry{
+    border-bottom: solid 1px #c1c1c1;
+    padding-bottom:1rem;
+    margin-bottom:2rem;
+  }
+}
+//!#General
+html,body{
+  margin:0;
+  padding:0;
+}
+*, *:before, *:after {
+  box-sizing: border-box;
+}
+.indented,
+.indented-small,
+.indented-large{
+    display:block;
+    max-width:100%;
+    width: 100%;
+    padding: 0 1rem;
+    margin:0 auto;
+}
+@media screen and (min-width: \${this.get('breakpointDesktop')}){
+  /* large desktop */
+  #page{
+    .indented{
+      width:\${this.get('breakpointDesktop')};
+    }    
+    .indented-small{
+      width:calc(\${this.get('breakpointDesktop')} - 12%);
+    }
+    .indented-large{
+      width:calc(\${this.get('breakpointDesktop')} + 12%);
+    }
+  }
+}
 
 //!#Grid
 [data-element-key="grid"]{
-\tdisplay:grid; 
+  display:grid;
   column-gap: 1rem;
   row-gap: 1rem;
   grid-template-columns: var(--grid-template-columns-xs);
 }
-
-
-
 .row {
-\tdisplay: flex;
-\tbox-sizing: border-box;
-\tflex-wrap: wrap;
-\tflex: 0 1 auto;
-\tflex-direction: row;
-\tmargin-right: -0.5rem;
-\tmargin-left: -0.5rem;\t
+  display: flex;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  flex: 0 1 auto;
+  flex-direction: row;
+  margin-right: -0.5rem;
+  margin-left: -0.5rem;
   &.vcenter{
     align-items: center;
-  }\t
-\t&.eh{
-\t\t.col{
-\t\t\talign-self: stretch;\t\t\t\t
-\t\t}
-\t}
-\t&.flex-end{
-\t\talign-items: flex-end;
-\t}
-\t&.row-space-3{\t
-\t\tmargin-left: -1.5rem;
-\t\tmargin-right: -1.5rem;
-\t\t> .col{
-    \tpadding-bottom: 1.5rem;
-\t\t\tpadding-right: 1.5rem;
-\t\t\tpadding-left: 1.5rem;
-\t\t}
-\t}\t
-\t&.row-space-4{\t
-\t\tmargin-left: -2rem;
-\t\tmargin-right: -2rem;
-\t\t> .col{
-\t\t\tpadding-right: 2rem;
-\t\t\tpadding-left: 2rem;
-\t\t}
-\t} 
-\t&.row-space-6{\t
-\t\tmargin-left: -1.5rem;
-\t\tmargin-right: -1.5rem;
-\t\t> .col{
-\t\t\tpadding-right: 1.5rem;
-\t\t\tpadding-left: 1.5rem;
-\t\t}
-\t}
-\t.col {    
+  }
+  &.eh{
+    .col{
+      align-self: stretch;
+    }
+  }
+  &.flex-end{
+    align-items: flex-end;
+  }
+  &.row-space-3{
+    margin-left: -1.5rem;
+    margin-right: -1.5rem;
+    > .col{
+      padding-bottom: 1.5rem;
+      padding-right: 1.5rem;
+      padding-left: 1.5rem;
+    }
+  }
+  &.row-space-4{
+    margin-left: -2rem;
+    margin-right: -2rem;
+    > .col{
+      padding-right: 2rem;
+      padding-left: 2rem;
+    }
+  }
+  &.row-space-6{
+    margin-left: -1.5rem;
+    margin-right: -1.5rem;
+    > .col{
+      padding-right: 1.5rem;
+      padding-left: 1.5rem;
+    }
+  }
+  .col {
     box-sizing: border-box;
     flex: 0 0 auto;
     padding-right: 0.5rem;
@@ -163,9 +211,9 @@ export const DEFAULT_STYLE = `//!#Basic
     padding-bottom: 1rem;
     width: 100%;
     position: relative;
-\t\t&:empty{
-\t\t\tpadding-bottom: 0;
-\t\t}
+    &:empty{
+      padding-bottom: 0;
+    }
     &.col-xs-1 {
       max-width: 8.3333333333%;
       flex: 0 0 8.3333333333%;
@@ -218,15 +266,14 @@ export const DEFAULT_STYLE = `//!#Basic
       max-width: var(--width-xs);
       flex: 0 0 var(--width-xs);
     }
-\t}
+  }
 }
-
-@media (min-width: \${scope.PageOptions && scope.PageOptions.breakpointMobile ? scope.PageOptions.breakpointMobile + 'px' : '25.813rem'}) {
+@media (min-width: \${this.get('breakpointMobile')}) {
   [data-element-key="grid"]{
     grid-template-columns: var(--grid-template-columns-sm);
   }
-\t.row{\t
-    &.row-space-6{\t
+  .row{
+    &.row-space-6{
       margin-left: -1.5rem;
       margin-right: -1.5rem;
       > .col{
@@ -234,78 +281,76 @@ export const DEFAULT_STYLE = `//!#Basic
         padding-left: 1.5rem;
       }
     }
-\t\t&.row-sm-reverse{
-\t\t\tflex-direction: row-reverse;
-\t\t}
-\t\t.col{
-\t\t\t&.col-sm-1 {
+    &.row-sm-reverse{
+      flex-direction: row-reverse;
+    }
+    .col{
+      &.col-sm-1 {
         max-width: 8.3333333333%;
         flex: 0 0 8.3333333333%;
-    \t}
-\t\t\t&.col-sm-2 {
+      }
+      &.col-sm-2 {
         max-width: 16.6666666667%;
         flex: 0 0 16.6666666667%;
-    \t}
-\t\t\t&.col-sm-3 {
+      }
+      &.col-sm-3 {
         max-width: 25%;
         flex: 0 0 25%;
-    \t}
-\t\t\t&.col-sm-4 {
+      }
+      &.col-sm-4 {
         max-width: 33.3333333333%;
         flex: 0 0 33.3333333333%;
-    \t}
-\t\t\t&.col-sm-5 {
+      }
+      &.col-sm-5 {
         max-width: 41.6666666667%;
         flex: 0 0 41.6666666667%;
-   \t\t}
-\t\t\t&.col-sm-6 {
+      }
+      &.col-sm-6 {
         max-width: 50%;
         flex: 0 0 50%;
-   \t \t}
-\t\t\t&.col-sm-7 {
+      }
+      &.col-sm-7 {
         max-width: 58.3333333333%;
         flex: 0 0 58.3333333333%;
-    \t}
-\t\t\t&.col-sm-8 {
+      }
+      &.col-sm-8 {
         max-width: 66.6666666667%;
         flex: 0 0 66.6666666667%;
-    \t}
-\t\t\t&.col-sm-9 {
+      }
+      &.col-sm-9 {
         max-width: 75%;
         flex: 0 0 75%;
-    \t}
-\t\t\t&.col-sm-10 {
+      }
+      &.col-sm-10 {
         max-width: 83.3333333333%;
         flex: 0 0 83.3333333333%;
-    \t}
-\t\t\t&.col-sm-11 {
+      }
+      &.col-sm-11 {
         max-width: 91.6666666667%;
         flex: 0 0 91.6666666667%;
-    \t}
-\t\t\t&.col-sm-12 {
+      }
+      &.col-sm-12 {
         max-width: 100%;
         flex: 0 0 100%;
-    \t}
-
-\t\t\t&.col-sm-push{
+      }
+      &.col-sm-push{
         max-width: none;
         flex: 0 0 0%;
-\t\t\t\tmargin-left: auto;
-\t\t\t}
+        margin-left: auto;
+      }
       &.col-x{
         max-width: var(--width-sm);
         flex: 0 0 var(--width-sm);
       }
-\t\t}\t\t
-\t}
+    }
+  }
 }
-
-@media (min-width: \${scope.PageOptions && scope.PageOptions.breakpointTablet ? scope.PageOptions.breakpointTablet + 'px' : '48rem'}) {
+@media (min-width: \${this.get('breakpointTablet')}) {
   [data-element-key="grid"]{
     grid-template-columns: var(--grid-template-columns-md);
   }
-\t.row{
-    &.row-space-6{\t
+  .row{
+    &.row-space-6{
       margin-left: -2rem;
       margin-right: -2rem;
       > .col{
@@ -313,77 +358,76 @@ export const DEFAULT_STYLE = `//!#Basic
         padding-left: 2rem;
       }
     }
-\t\t.col{
-\t\t\t&.col-md-1 {
+    .col{
+      &.col-md-1 {
         max-width: 8.3333333333%;
         flex: 0 0 8.3333333333%;
-    \t}\t\t\t
-\t\t\t&.col-md-1-5 {
+      }
+      &.col-md-1-5 {
         max-width: 20%;
         flex: 0 0 20%;
-    \t}\t
-\t\t\t&.col-md-3-5 {
+      }
+      &.col-md-3-5 {
         max-width: 60%;
         flex: 0 0 60%;
-    \t}
-\t\t\t&.col-md-2 {
+      }
+      &.col-md-2 {
         max-width: 16.6666666667%;
         flex: 0 0 16.6666666667%;
-    \t}
-\t\t\t&.col-md-3 {
+      }
+      &.col-md-3 {
         max-width: 25%;
         flex: 0 0 25%;
-    \t}
-\t\t\t&.col-md-4 {
+      }
+      &.col-md-4 {
         max-width: 33.3333333333%;
         flex: 0 0 33.3333333333%;
-    \t}
-\t\t\t&.col-md-5 {
+      }
+      &.col-md-5 {
         max-width: 41.6666666667%;
         flex: 0 0 41.6666666667%;
-   \t\t}
-\t\t\t&.col-md-6 {
+      }
+      &.col-md-6 {
         max-width: 50%;
         flex: 0 0 50%;
-   \t \t}
-\t\t\t&.col-md-7 {
+      }
+      &.col-md-7 {
         max-width: 58.3333333333%;
         flex: 0 0 58.3333333333%;
-    \t}
-\t\t\t&.col-md-8 {
+      }
+      &.col-md-8 {
         max-width: 66.6666666667%;
         flex: 0 0 66.6666666667%;
-    \t}
-\t\t\t&.col-md-9 {
+      }
+      &.col-md-9 {
         max-width: 75%;
         flex: 0 0 75%;
-    \t}
-\t\t\t&.col-md-10 {
+      }
+      &.col-md-10 {
         max-width: 83.3333333333%;
         flex: 0 0 83.3333333333%;
-    \t}
-\t\t\t&.col-md-11 {
+      }
+      &.col-md-11 {
         max-width: 91.6666666667%;
         flex: 0 0 91.6666666667%;
-    \t}
-\t\t\t&.col-md-12 {
+      }
+      &.col-md-12 {
         max-width: 100%;
         flex: 0 0 100%;
-    \t}
+      }
       &.col-x{
         max-width: var(--width-md);
         flex: 0 0 var(--width-md);
       }
-\t\t}
-\t}
+    }
+  }
 }
-
-@media (min-width: \${scope.PageOptions && scope.PageOptions.breakpointDesktop ? scope.PageOptions.breakpointDesktop + 'px' : '62rem'}) {
+@media (min-width: \${this.get('breakpointDesktop')}) {
   [data-element-key="grid"]{
     grid-template-columns: var(--grid-template-columns-lg);
   }
-\t.row{
-    &.row-space-6{\t
+  .row{
+    &.row-space-6{
       margin-left: -2.6rem;
       margin-right: -2.6rem;
       > .col{
@@ -391,68 +435,67 @@ export const DEFAULT_STYLE = `//!#Basic
         padding-left: 2.6rem;
       }
     }
-\t\t.col{
-\t\t\t&.col-lg-1 {
+    .col{
+      &.col-lg-1 {
         max-width: 8.3333333333%;
         flex: 0 0 8.3333333333%;
-    \t}
-\t\t\t&.col-lg-2 {
+      }
+      &.col-lg-2 {
         max-width: 16.6666666667%;
         flex: 0 0 16.6666666667%;
-    \t}
-\t\t\t&.col-lg-3 {
+      }
+      &.col-lg-3 {
         max-width: 25%;
         flex: 0 0 25%;
-    \t}
-\t\t\t&.col-lg-4 {
+      }
+      &.col-lg-4 {
         max-width: 33.3333333333%;
         flex: 0 0 33.3333333333%;
-    \t}
-\t\t\t&.col-lg-5 {
+      }
+      &.col-lg-5 {
         max-width: 41.6666666667%;
         flex: 0 0 41.6666666667%;
-   \t\t}
-\t\t\t&.col-lg-6 {
+      }
+      &.col-lg-6 {
         max-width: 50%;
         flex: 0 0 50%;
-   \t \t}
-\t\t\t&.col-lg-7 {
+      }
+      &.col-lg-7 {
         max-width: 58.3333333333%;
         flex: 0 0 58.3333333333%;
-    \t}
-\t\t\t&.col-lg-8 {
+      }
+      &.col-lg-8 {
         max-width: 66.6666666667%;
         flex: 0 0 66.6666666667%;
-    \t}
-\t\t\t&.col-lg-9 {
+      }
+      &.col-lg-9 {
         max-width: 75%;
         flex: 0 0 75%;
-    \t}
-\t\t\t&.col-lg-10 {
+      }
+      &.col-lg-10 {
         max-width: 83.3333333333%;
         flex: 0 0 83.3333333333%;
-    \t}
-\t\t\t&.col-lg-11 {
+      }
+      &.col-lg-11 {
         max-width: 91.6666666667%;
         flex: 0 0 91.6666666667%;
-    \t}
-\t\t\t&.col-lg-12 {
+      }
+      &.col-lg-12 {
         max-width: 100%;
         flex: 0 0 100%;
-    \t}
+      }
       &.col-x{
         max-width: var(--width-lg);
         flex: 0 0 var(--width-lg);
       }
-\t\t}
-\t}
+    }
+  }
 }
 //!#Editor
 //<!!#REMOVE
 main[data-layout-content=true]{
-\tbackground-color:#fff;
+  background-color:#fff;
 }
-
 h1[data-isempty=true],
 h2[data-isempty=true],
 h3[data-isempty=true],
@@ -464,57 +507,53 @@ p[data-isempty=true],
 a[data-isempty=true],
 section[data-isempty=true],
 div[data-isempty=true]{
-\tmin-height:1rem;
-\tdisplay:block;
-\tcontent:'empty';
-\tbackground: rgba(255,0,0,0.2);
+  min-height:1rem;
+  display:block;
+  content:'empty';
+  background: rgba(255,0,0,0.2);
 }
-
-[_inlineeditor=true]{\t
+[_inlineeditor=true]{
   &.row,
-\t&[data-element-key="container"],
-\t&[data-element-key="background"],
-\t&[data-element-key="query"],
-\t&[data-element-key="grid"],
-\t&[data-element-key="custom"]{
-\t\tpadding:0.5rem !important;
-\t\tbackground: rgba(0,0,0,0.02);
-\t\t> .col[_inlineeditor=true]{
-\t\t\tborder:dashed 1px rgba(0,0,0,0.1);
-\t\t}
-\t}
+  &[data-element-key="container"],
+  &[data-element-key="background"],
+  &[data-element-key="query"],
+  &[data-element-key="grid"],
+  &[data-element-key="custom"]{
+    padding:0.5rem !important;
+    background: rgba(0,0,0,0.02);
+    > .col[_inlineeditor=true]{
+      border:dashed 1px rgba(0,0,0,0.1);
+    }
+  }
   &[data-element-key="customElement"],
   &[data-element-key="custom"]{
     background: repeating-linear-gradient(
-      135deg,
-      rgba(255, 0, 0,0.05),
-      rgba(255, 0, 0,0.05) 10px,
-      transparent 10px,
-      transparent 20px
+    135deg,
+    rgba(255, 0, 0,0.05),
+    rgba(255, 0, 0,0.05) 10px,
+    transparent 10px,
+    transparent 20px
     );
   }
   &[data-element-key="query"]{
-  \tbackground: repeating-linear-gradient(
-      45deg,
-      rgba(0, 0, 0,0.1),
-      rgba(0, 0, 0,0.1) 10px,
-      transparent 10px,
-      transparent 20px
+    background: repeating-linear-gradient(
+    45deg,
+    rgba(0, 0, 0,0.1),
+    rgba(0, 0, 0,0.1) 10px,
+    transparent 10px,
+    transparent 20px
     );
   }
-  
   &[data-is-invisible="true"]{
     background-color: yellow !important;
   }
 }
-
 img[_inlineeditor=true]{
-\tmin-width:1rem;
-\tmin-height:1rem;
+  min-width:1rem;
+  min-height:1rem;
 }
 //!!#REMOVE>
-
 [data-is-invisible="true"]:not([_inlineeditor=true]){
-  display:none !important; 
+  display:none !important;
 }
 `

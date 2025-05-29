@@ -97,7 +97,10 @@ import {
     AddToQueueIcon,
     FolderZipIcon,
     EditNoteIcon,
-    PlaylistAddIcon
+    PlaylistAddIcon,
+    VisibilityIcon,
+    VisibilityOffIcon,
+    AssignmentIcon
 } from 'gensrc/ui/admin/icons'
 
 const iconComponents = {
@@ -198,7 +201,10 @@ const iconComponents = {
     addQueue:AddToQueueIcon,
     folderZip:FolderZipIcon,
     addList:PlaylistAddIcon,
-    editList:EditNoteIcon
+    editList:EditNoteIcon,
+    visibility:VisibilityIcon,
+    visibilityOff: VisibilityOffIcon,
+    assignment: AssignmentIcon
 }
 
 export const getIconByKey = (key, defaultIcon) => {

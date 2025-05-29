@@ -112,6 +112,7 @@ export const translations = {
         'CodeEditor.repeatSelection':'Auswahl wiederholen',
         'CodeEditor.openPage': 'Seite öffnen',
         'CodeEditor.reformatCode': 'Automatisch formatieren',
+        'CodeEditor.openInNewWindow':'In einem neuen Fenster öffnen',
         'CodeEditor.aiAssistent':'KI Assistent',
         'GlobalSearch.placeholder':'Schnellsuche',
         'TypeEdit.closeConfirmText':'Möchten Sie die Änderung speichern?',
@@ -230,6 +231,7 @@ export const translations = {
         'CodeEditor.aiAssistent':'AI assistent',
         'CodeEditor.openPage': 'Open page',
         'CodeEditor.reformatCode': 'Reformat',
+        'CodeEditor.openInNewWindow':'Open in new window',
         'GlobalSearch.placeholder':'Quick search',
         'TypeEdit.closeConfirmText':'Would you like to save the change?',
         'TypeEdit.closeConfirmTitle':'Save data'

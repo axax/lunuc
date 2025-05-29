@@ -224,7 +224,8 @@
         "Input",
         "AddToQueue",
         "FolderZip",
-        "EditNote"
+        "EditNote",
+        "Assignment"
       ],
       "theme":{
         "colors":{

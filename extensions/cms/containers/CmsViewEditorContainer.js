@@ -47,7 +47,8 @@ import {translateText} from '../../../client/util/translate.mjs'
 import {
     CAPABILITY_MANAGE_CMS_CONTENT,
     CAPABILITY_MANAGE_CMS_TEMPLATE,
-    CAPABILITY_VIEW_CMS_EDITOR
+    CAPABILITY_VIEW_CMS_EDITOR,
+    DEFAULT_STYLE
 } from '../constants/index.mjs'
 import {
     propertyByPath,
@@ -210,6 +211,7 @@ class CmsViewEditorContainer extends React.Component {
             description,
             template,
             templateChangeCount:0,
+            styleChangeCount:0,
             dataResolverChangeCount:0,
             resources,
             script,
@@ -376,6 +378,7 @@ class CmsViewEditorContainer extends React.Component {
             state.simpleDialog !== this.state.simpleDialog ||
             state.addNewSite !== this.state.addNewSite ||
             state.serverScript !== this.state.serverScript ||
+            state.styleChangeCount !== this.state.styleChangeCount ||
             state.manual !== this.state.manual ||
             state.EditorOptions !== this.state.EditorOptions ||
             Util.shallowCompare(state.EditorPageOptions, this.state.EditorPageOptions,
@@ -737,10 +740,26 @@ class CmsViewEditorContainer extends React.Component {
                         <CodeEditor showFab
                                     lineNumbers
                                     fileSplit
-                                    identifier={slug}
+                                    identifier={`style-${slug}-${this.state.styleChangeCount}`}
                                     fileIndex={EditorPageOptions.styleFileIndex}
                                     onFileChange={this.handleSettingChange.bind(this, 'styleFileIndex', true)}
                                     type="css"
+                                    actions={[
+                                        {
+                                            divider:true,
+                                            icon: 'assignment',
+                                            name: 'From template',
+                                            items:[
+                                                {
+                                                    name: 'Layout style',
+                                                    onClick: ()=>{
+                                                        this.setCmsPageValue({key:'style', timeoutSetState: 0, timeoutUpdate: 0, setStateCallback:()=>{
+                                                            this.setState({styleChangeCount:this.state.styleChangeCount+1})}},DEFAULT_STYLE)
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    ]}
                                     onScroll={this.handleSettingChange.bind(this, 'styleScroll', true)}
                                     scrollPosition={EditorPageOptions.styleScroll}
                                     onChange={this.setCmsPageValue.bind(this, {key:'style', timeoutSetState: 1000, timeoutUpdate: 5000})}>{style}</CodeEditor>

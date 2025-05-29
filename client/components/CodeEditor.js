@@ -1,6 +1,6 @@
 import React, {useState, useImperativeHandle, forwardRef, memo, useRef, useEffect} from 'react'
 import CodeMirrorWrapper from './codemirror6/CodeMirrorWrapper'
-import {SimpleMenu,SimpleDialog,LaunchIcon,ViewListIcon} from 'ui/admin'
+import {SimpleMenu,SimpleDialog} from 'ui/admin'
 import GenericForm from './GenericForm'
 import RenderInNewWindow from './layout/RenderInNewWindow'
 import {generateContextMenu} from './codemirror6/contextMenu'
@@ -82,17 +82,17 @@ function CodeEditor(props,ref){
 
     const allActions = [
         {
-            icon: <ViewListIcon/>,
+            icon: 'view',
             name: _t('CodeEditor.reformatCode')+' (Alt-Cmd-L)',
             onClick: ()=>{formatCode(editorViewRef.current, type)}
         },
         {
-            icon: <LaunchIcon/>,
-            name: 'Open in new window',
+            icon: 'launch',
+            name:  _t('CodeEditor.openInNewWindow'),
             onClick: () => {
                 setRenderInWindow(true)
             }
-        },
+        }
     ]
 
     if (actions) {
@@ -111,6 +111,8 @@ function CodeEditor(props,ref){
             }
         }
         allActions.push({
+            divider:true,
+            icon:(showFileSplit ? 'visibilityOff' : 'visibility'),
             name: (showFileSplit ? 'Hide' : 'Show') + ' File split', onClick: () => {
                 // to keep value in state
                 setStateValue(putFilesTogether(files, finalFileIndex, editorViewRef.current.state.doc.toString()))
