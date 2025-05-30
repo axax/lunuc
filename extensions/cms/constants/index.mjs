@@ -128,26 +128,42 @@ html,body{
 *, *:before, *:after {
   box-sizing: border-box;
 }
-.indented,
-.indented-small,
-.indented-large{
+#page{
+  img{
+    max-width:100%;
+  }
+  .strong{
+    font-weight: bold;
+  }
+  .indented,
+  .indented-small,
+  .indented-large{
+    overflow: auto;
     display:block;
     max-width:100%;
     width: 100%;
     padding: 0 1rem;
     margin:0 auto;
+  }
+}
+@media screen and (max-width: \${this.get('breakpointTablet')}){
+  #page{
+    .hide-mobile{
+      display:none;
+    }
+  }
 }
 @media screen and (min-width: \${this.get('breakpointDesktop')}){
   /* large desktop */
   #page{
     .indented{
-      width:\${this.get('breakpointDesktop')};
+      width:\${this.get('breakpointDesktop') + 12rem};
     }    
     .indented-small{
-      width:calc(\${this.get('breakpointDesktop')} - 12%);
+      width:calc(\${this.get('breakpointDesktop')});
     }
     .indented-large{
-      width:calc(\${this.get('breakpointDesktop')} + 12%);
+      width:calc(\${this.get('breakpointDesktop')} + 24rem);
     }
   }
 }

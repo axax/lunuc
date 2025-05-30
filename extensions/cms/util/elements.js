@@ -464,6 +464,27 @@ const marginOptions = key => ({
     }
 })
 
+const alignmentOptions = key => ({
+    [`${key}style_textAlign`]: {
+        label: _t('elements.alignment'),
+        enum: [
+            {
+                name: _t('elements.left'),
+                value: 'left'
+            },
+            {
+                name: _t('elements.right'),
+                value: 'right'
+            },
+            {
+                name: _t('elements.center'),
+                value: 'center'
+            },
+        ],
+        tab: DEFAULT_TAB
+    }
+})
+
 const eventOptions = key => ({
     [`${key}onClick`]: {
         fullWidth: true,
@@ -1023,24 +1044,7 @@ const baseElements = [
                 tab: EXTENDED_TAB,
                 role: CAPABILITY_MANAGE_CMS_TEMPLATE
             },
-            p_style_textAlign: {
-                label: 'Ausrichtung',
-                enum: [
-                    {
-                        name: 'Links',
-                        value: 'left'
-                    },
-                    {
-                        name: 'Rechts',
-                        value: 'right'
-                    },
-                    {
-                        name: 'Zentriert',
-                        value: 'center'
-                    },
-                ],
-                tab: DEFAULT_TAB
-            },
+            ...alignmentOptions('p_'),
             ...marginOptions('p_'),
             ...classTextOptions('p_'),
             ...classOptions('p_'),
@@ -1564,6 +1568,7 @@ const baseElements = [
                 tab: DEFAULT_TAB,
                 tabPosition: 0
             },
+            ...alignmentOptions('p_'),
             ...marginOptions('p_'),
             ...classTextOptions('p_'),
             ...classOptions('p_'),
@@ -2101,14 +2106,14 @@ const baseElements = [
                 template: '${_comp?.$set?.image?.options?.background?_comp.$set.image.options.background:""}' +
                     '${this.context._id?' +
                     '(_comp?.$set?.image?.options?.background?\', \':\'\')' +
-                    '+\'url(\\\'\'+_app_.config.UPLOAD_URL+\'/${window.innerWidth>\'+(_comp.$set.image.mobileBreak || 767)+\'?\\\'\'+_id+\'\\\':\\\'\'+(_comp.$set.image.mobileImage?_comp.$set.image.mobileImage[0]._id:_id)+\'\\\'}/-/\'+encodeURIComponent(name)+\'?format=\'+(_comp.$set.image.options.webp?\'webp\':\'\')' +
-                    '+\'&quality=\'+(_comp.$set.image.options.quality || \'\')' +
-                    '+\'&width=\'+(_comp.$set.image.options.resize.width || \'\')' +
-                    '+\'&height=\'+(_comp.$set.image.options.resize.height || \'\')' +
-                    '+(_comp.$set.image.options.flip?\'&flip=\'+_comp.$set.image.options.flip: \'\')' +
-                    '+(_comp.$set.image.options.flop?\'&flop=\'+_comp.$set.image.options.flop: \'\')' +
-                    '+(_comp.$set.image.options.noenlarge?\'&noenlarge=true\': \'\')' +
-                    '+(_comp.$set.image.options.position?\'&position=\'+_comp.$set.image.options.position: \'\')+\'\\\')\':\'\'}',
+                    '+\'url(\\\'\'+_app_.config.UPLOAD_URL+\'/${window.innerWidth>\'+(_comp.$set.image.mobileBreak || 767)+\'?\\\'\'+_id+\'\\\':\\\'\'+(_comp.$set.image.mobileImage?_comp.$set.image.mobileImage[0]._id:_id)+\'\\\'}/-/\'+encodeURIComponent(name)+\'?format=\'+(_comp.$set?.image?.options?.webp?\'webp\':\'\')' +
+                    '+\'&quality=\'+(_comp?.$set?.image?.options?.quality || \'\')' +
+                    '+\'&width=\'+(_comp?.$set?.image?.options?.resize?.width || \'\')' +
+                    '+\'&height=\'+(_comp?.$set?.image?.options?.resize?.height || \'\')' +
+                    '+(_comp?.$set?.image?.options?.flip?\'&flip=\'+_comp?.$set?.image?.options?.flip: \'\')' +
+                    '+(_comp?.$set?.image?.options?.flop?\'&flop=\'+_comp?.$set?.image?.options?.flop: \'\')' +
+                    '+(_comp?.$set?.image?.options?.noenlarge?\'&noenlarge=true\': \'\')' +
+                    '+(_comp?.$set?.image?.options?.position?\'&position=\'+_comp?.$set?.image?.options?.position: \'\')+\'\\\')\':\'\'}',
                 tab: DEFAULT_TAB,
                 tabPosition: 0
             },

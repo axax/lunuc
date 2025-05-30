@@ -75,7 +75,6 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/theme-one-dark": "^6.1.2",
     "@codemirror/view": "^6.37.0",
-    "@distube/ytdl-core": "^4.16.10",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^7.1.0",
@@ -147,7 +146,8 @@
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "smtp-server": "^3.13.7",
     "xlsx": "^0.18.5",
-    "xml2js": "^0.6.2"
+    "xml2js": "^0.6.2",
+    "@distube/ytdl-core": "^4.16.10"
   },
   "devDependencies": {
     "@babel/cli": "^7.27.2",
