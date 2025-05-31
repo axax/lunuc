@@ -82,6 +82,10 @@ const startFtpServer = async (db)=> {
                     absdir = path.join(ROOT_DIR, ftpUser.root.substring(8))
                 }
 
+                if(ftpUser.root && ftpUser.root.startsWith('@upload/')){
+                    absdir = path.join(config.UPLOAD_DIR_ABSPATH, ftpUser.root.substring(7))
+                }
+
                 if(ensureDirectoryExistence(absdir)) {
                     console.log(absdir)
                     return resolve({root: absdir})

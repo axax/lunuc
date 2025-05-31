@@ -555,6 +555,7 @@ const imgFigureOptions = key => ({
     [`${key}wrapper`]: {
         label: 'Bild mit Beschreibung (Figure / Zoom)',
         type: 'Boolean',
+        defaultValue:false,
         tab: MISC_TAB
     },
     [`${key}figureClassName`]: {
