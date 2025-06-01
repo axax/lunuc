@@ -532,7 +532,8 @@ const Util = {
         let restString = ''
         if (filter) {
             let operator = 'or'
-            const matches = filter.match(/(?:[^\s"\\]+|"(?:(?:[^"\\]|\\.)*?)")+/g) ///
+            const matches = filter.match(/(?:(?:\\[^]|[^\s"\\])+|"(?:(?:[^"\\]|\\.)*?)")+/g) ///
+            /* name!~/Rasselbande|Hemingway|die\sDrei|Feel|Reber|Music\sVideo/i && mimeType=audio */
             /* 'group==5ed25740fa5ea8681ef58a99 && mimeType=audio && info.format.tags.artist=="Globi"' */
             if(matches) {
                 matches.forEach(item => {
