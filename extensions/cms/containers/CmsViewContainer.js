@@ -33,7 +33,7 @@ class CmsViewContainer extends React.Component {
             }
         }
 
-        if ((!cmsPage && props.loading) || props.aboutToChange) {
+        if ((!cmsPage && props.loading) || props.aboutToChange || props?._parentRef?.props?.loading) {
             // if there is still no cmsPage and it is still loading
             // there is no need to update
             return false

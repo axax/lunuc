@@ -15,7 +15,8 @@ export const translations = {
         'Media.cleanupMedia': 'Media Varianten löschen',
         'Media.overrideExistingMedia': 'Ich möchte die bestehende Datei unwiderruflich überschrieben',
         'TypesContainer.deleteOnlyFile': 'Nur Datei löschen',
-        'TypesContainer.deleteConfirmTextOnlyFile': 'Beachten Sie, dass nur die physische Datei und nicht der Medieneintrag gelöscht wird.'
+        'TypesContainer.deleteConfirmTextOnlyFile': 'Beachten Sie, dass nur die physische Datei und nicht der Medieneintrag gelöscht wird.',
+        'TypesContainer.downloadAsZip':'Als Zip herunterladen'
     },
     en: {
         'Media.editImage': 'Edit image',
@@ -33,6 +34,7 @@ export const translations = {
         'Media.cleanupMedia': 'CleanUp Medias',
         'Media.overrideExistingMedia': 'I would like to overwrite the existing file irrevocably',
         'TypesContainer.deleteOnlyFile': 'Delete only file',
-        'TypesContainer.deleteConfirmTextOnlyFile': 'Please note that only the physical file and not the media entry is deleted.'
+        'TypesContainer.deleteConfirmTextOnlyFile': 'Please note that only the physical file and not the media entry is deleted.',
+        'TypesContainer.downloadAsZip':'Download as zip'
     }
 }

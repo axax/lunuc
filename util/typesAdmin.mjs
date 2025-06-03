@@ -578,7 +578,7 @@ Hook.on('TypeCreateEdit', function ({type, props, dataToEdit}) {
             const fileName = dataToEdit.value.substring(6)
             props.children = [props.children, <>
                 <hr/>
-                <Query query="query getTokenLink($filePath:String!){getTokenLink(filePath:$filePath){token}}"
+                <Query query="query getTokenLink($filePath:String){getTokenLink(filePath:$filePath){token}}"
                        fetchPolicy="no-cache"
                        variables={{filePath:`%BACKUP_DIR%/keyvalues/${fileName}`}}>
                     {({loading, error, data}) => {

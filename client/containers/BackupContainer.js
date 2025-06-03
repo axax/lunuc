@@ -263,7 +263,7 @@ class BackupContainer extends React.Component {
                 <SimpleDialog open={linkDialog.open} onClose={this.handleLinkDialog.bind(this)}
                               actions={[{key: 'close', label: 'Close'}]}
                               title={'Secure Link for '+linkDialog.fileName}>
-                    {linkDialog.filePath && <Query query="query getTokenLink($filePath:String!){getTokenLink(filePath:$filePath){token}}"
+                    {linkDialog.filePath && <Query query="query getTokenLink($filePath:String){getTokenLink(filePath:$filePath){token}}"
                            fetchPolicy="no-cache"
                            variables={{filePath:linkDialog.filePath+linkDialog.fileName}}>
                         {({loading, error, data}) => {

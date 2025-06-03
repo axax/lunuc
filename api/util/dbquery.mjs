@@ -159,7 +159,14 @@ export const addFilterToMatch = async ({db, debugInfo, filterKey, filterValue, t
             } else if (!isNaN(filterValue)) {
                 matchExpression = {[comparator]: parseFloat(filterValue)}
             } else if (filterValue && filterValue.constructor === String && filterValue.startsWith('[') && filterValue.endsWith(']')) {
-                matchExpression = {'$in': filterValue.substring(1, filterValue.length - 1).split(',')}
+                matchExpression = {
+                    '$in': filterValue.substring(1, filterValue.length - 1).split(',').map(f=>{
+                        if(f.startsWith('"') && f.endsWith('"')){
+                            return f.slice(1, -1)
+                        }
+                        return f
+                    })
+                }
             } else {
                 matchExpression = {[comparator]: filterValue}
             }

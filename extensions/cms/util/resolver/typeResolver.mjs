@@ -15,6 +15,12 @@ export const typeResolver = async ({segment, resolvedData, scope, db, req, conte
 
      cache = defines cache policy
      includeCount = whether to return the total number of results
+
+     group example:
+    "g": {
+      "_id": "$data.titel"
+    },
+
      */
 
     if ($if) {

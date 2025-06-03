@@ -11,6 +11,17 @@ import {PassThrough} from 'stream'
 import {transcodeAndStreamVideo, transcodeVideoOptions} from './transcodeVideo.mjs'
 import {getGatewayIp} from '../../util/gatewayIp.mjs'
 import Cache from '../../util/cache.mjs'
+import archiver from 'archiver'
+import path from 'path'
+import {dbConnection, MONGO_URL} from '../../api/database.mjs'
+import {getDynamicConfig} from '../../util/config.mjs'
+import {ObjectId} from 'mongodb'
+
+const config = getDynamicConfig()
+
+const {UPLOAD_DIR} = config
+const ROOT_DIR = path.resolve(), SERVER_DIR = path.join(ROOT_DIR, '../server')
+const ABS_UPLOAD_DIR = path.join(ROOT_DIR, UPLOAD_DIR)
 
 const LUNUC_SERVER_NODES = process.env.LUNUC_SERVER_NODES || ''
 
@@ -253,4 +264,39 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
         res.write(finalContent)
         res.end()
     }
+}
+
+
+
+export const zipAndSendMedias = (res, decoded) => {
+
+    dbConnection(MONGO_URL, async (err, db) => {
+
+        if (!db) {
+            console.error(err)
+            res.status(500).send({error: err.message})
+        } else {
+            // Set the headers to indicate a file attachment of type zip
+            res.setHeader('Content-Disposition', 'attachment; filename=files.zip')
+            res.setHeader('Content-Type', 'application/zip')
+
+            // Create a zip archive and pipe it to the response
+            const archive = archiver('zip', {zlib: {level: 9}})
+            archive.pipe(res)
+
+            const medias = await db.collection('Media').find({ _id: { $in: decoded.mediaIds.map(id=>new ObjectId(id)) } }).toArray()
+            // Add files to the archive (can be from disk, buffers, or strings)
+            for (const media of medias) {
+                archive.file(path.join(ABS_UPLOAD_DIR, media._id.toString()), {name: media.name})
+            }
+
+            // Handle errors
+            archive.on('error', err => {
+                res.status(500).send({error: err.message});
+            })
+
+            // Finalize the archive (this sends the zip to the client)
+            archive.finalize()
+        }
+    })
 }

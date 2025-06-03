@@ -116,7 +116,7 @@ export const systemSchemaRaw = `
     	importCollection (collection: String!, json: String!, meta: String): ImportCollectionResult
     	bulkEdit (collection: String!, _id: [ID]!, data: String!, action: String): BulkEditResult,
     	exportQuery (type: String!, query: String): ExportQueryResult
-        getTokenLink(filePath:String!): TokenLinkResult
+        getTokenLink(filePath:String,mediaIds: [ID]): TokenLinkResult
         getAllCollectionIndexes: CollectionIndexResult
     }
     

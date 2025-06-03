@@ -100,7 +100,8 @@ import {
     PlaylistAddIcon,
     VisibilityIcon,
     VisibilityOffIcon,
-    AssignmentIcon
+    AssignmentIcon,
+    DownloadIcon
 } from 'gensrc/ui/admin/icons'
 
 const iconComponents = {
@@ -204,7 +205,8 @@ const iconComponents = {
     editList:EditNoteIcon,
     visibility:VisibilityIcon,
     visibilityOff: VisibilityOffIcon,
-    assignment: AssignmentIcon
+    assignment: AssignmentIcon,
+    download: DownloadIcon
 }
 
 export const getIconByKey = (key, defaultIcon) => {

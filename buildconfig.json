@@ -225,7 +225,8 @@
         "AddToQueue",
         "FolderZip",
         "EditNote",
-        "Assignment"
+        "Assignment",
+        "Download"
       ],
       "theme":{
         "colors":{

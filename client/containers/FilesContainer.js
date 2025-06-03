@@ -75,7 +75,7 @@ fi`
         if(file){
             const ext = file.slice((file.lastIndexOf(".") - 1 >>> 0) + 2).toLowerCase()
             if(fileSize>10000 || EXTENSIONS_TO_EDIT.indexOf(ext)<0){
-                fileEditor = <Query query="query getTokenLink($filePath:String!){getTokenLink(filePath:$filePath){token}}" fetchPolicy="no-cache"
+                fileEditor = <Query query="query getTokenLink($filePath:String){getTokenLink(filePath:$filePath){token}}" fetchPolicy="no-cache"
                                     variables={{filePath:`/${space+dir}/${file}`}}>
                     {({loading, error, data}) => {
                         if (loading) return 'Loading...'

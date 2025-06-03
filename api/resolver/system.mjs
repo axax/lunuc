@@ -424,13 +424,13 @@ export const systemResolver = (db) => ({
 
             return {result: mongoExport({type, query})}
         },
-        getTokenLink: async ({filePath}, {context}) => {
+        getTokenLink: async ({filePath,mediaIds}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_ADMIN_OPTIONS)
 
-            filePath = filePath.replace(/%(\w+)%/g, (all, key) => {
+            filePath = filePath?filePath.replace(/%(\w+)%/g, (all, key) => {
                 return config[key] !== undefined ? config[key] : all
-            })
-            const payload = {filePath}
+            }):''
+            const payload = {filePath, mediaIds}
             const token = jwt.sign(payload, SECRET_KEY, {expiresIn: '5h'})
             return {token}
         },

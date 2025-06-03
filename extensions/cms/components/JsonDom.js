@@ -483,7 +483,7 @@ class JsonDom extends React.Component {
 
             if((value || key==='description') && !document.head.querySelector(`meta[name=${key}]`)){
                 let content = ''
-                if(value.constructor === Object){
+                if(value.constructor === Object && value[_app_.lang]){
                     content = value[_app_.lang]
                 }else if(key==='description') {
                     const textLoop = (nodes) => {
@@ -509,7 +509,7 @@ class JsonDom extends React.Component {
                         }
                     }
                     textLoop(document.body.querySelectorAll('h1,h2,h3,h4'))
-                }else{
+                }else if(isString(value)){
                     content = value
                 }
                 if (content) {

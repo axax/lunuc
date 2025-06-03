@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react'
+import React, {useState, useEffect} from 'react'
 import Util from '../util/index.mjs'
 import Hook from '../../util/hook.cjs'
 import {deepMerge} from "../../util/deepMerge.mjs";
@@ -655,8 +655,6 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = CACHE
 
     const cacheDeletedAt = checkCache && response.data && !response.errors && !currentData ? Date.now(): response.cacheDeletedAt
 
-    const prevDeps = useRef({ cacheKey,cacheDeletedAt })
-
     useEffect(() => {
 
         let controller
@@ -694,7 +692,7 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = CACHE
         }
 
         return () => {
-            if (controller && cacheKey !== prevDeps.current.cacheKey) {
+            if (controller) {
                 console.log('Abort request in useQuery')
                 controller.abort()
             }

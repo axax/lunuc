@@ -81,6 +81,7 @@
     "@mui/material": "^7.1.0",
     "@mui/styles": "^6.4.11",
     "ajv": "^8.17.1",
+    "archiver": "^7.0.1",
     "bcryptjs": "^3.0.2",
     "body-parser": "^2.2.0",
     "cheerio": "^1.0.0",
@@ -117,6 +118,7 @@
   },
   "optionalDependencies": {
     "@aws-sdk/client-lambda": "^3.817.0",
+    "@distube/ytdl-core": "^4.16.10",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@ffprobe-installer/ffprobe": "^2.1.2",
     "@google-cloud/storage": "^7.16.0",
@@ -146,8 +148,7 @@
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "smtp-server": "^3.13.7",
     "xlsx": "^0.18.5",
-    "xml2js": "^0.6.2",
-    "@distube/ytdl-core": "^4.16.10"
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
     "@babel/cli": "^7.27.2",

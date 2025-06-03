@@ -19,6 +19,14 @@ const ImageIcon = (props) => <Async {...props} expose="ImageIcon" load={import(/
 
 registerTrs(translations, 'MediaTranslations')
 
+const downloadLink = (url,name) => {
+    const a = document.createElement('a')
+    a.setAttribute('href', url)
+    a.setAttribute('download', name)
+    a.setAttribute('target', '_blank')
+    a.click()
+}
+
 export default () => {
     let fileToUpload
     // add an extra column for Media at the beginning
@@ -74,7 +82,8 @@ export default () => {
     Hook.on('TypeTableAction', function ({type, multiSelectActions, actions}) {
         if (type === 'Media') {
 
-            multiSelectActions.unshift({name: 'Download', value: 'download'})
+            multiSelectActions.unshift({name: 'Download', value: 'download', icon:'download'})
+            multiSelectActions.unshift({name: _t('TypesContainer.downloadAsZip'), value: 'downloadZip', icon:'folderZip'})
 
 
             if(Util.hasCapability({userData: _app_.user}, CAPABILITY_ADMIN_OPTIONS)){
@@ -131,15 +140,22 @@ export default () => {
 
 
     Hook.on('TypeTableMultiSelectAction', function ({action, data, selectedRows, meta}) {
-        if(action === 'download'){
+        if(action === 'downloadZip'){
+            client.query({
+                query: `query getTokenLink($mediaIds:[ID]){getTokenLink(mediaIds:$mediaIds){token}}`,
+                variables: {
+                    mediaIds: Object.keys(selectedRows)
+                }}).then(response => {
+                    console.log(response)
+                if (response.data && response.data.getTokenLink) {
+                    downloadLink(`${location.origin}/tokenlink/${response.data.getTokenLink.token}/-/medias.zip`,'medias.zip')
+                }
+            }).catch((error)=>{})
+        }else if(action === 'download'){
             Object.keys(selectedRows).forEach(id=>{
                 const item = data.results.find(f=>f._id===id)
                 if(item) {
-                    const a = document.createElement("a")
-                    a.setAttribute('href', `${UPLOAD_URL}/${item._id}`)
-                    a.setAttribute('download', item.name)
-                    a.setAttribute('target', '_blank')
-                    a.click()
+                    downloadLink(`${UPLOAD_URL}/${item._id}`,item.name)
                 }
             })
             //downloadAll(files)

@@ -29,7 +29,8 @@ import {
     parseAndSendFile,
     sendError,
     sendFile,
-    sendFileFromDir
+    sendFileFromDir,
+    zipAndSendMedias
 } from './util/file.mjs'
 
 const config = getDynamicConfig()
@@ -373,7 +374,6 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
 }
 
 
-
 // Initialize http api
 const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req, res) {
 
@@ -427,10 +427,16 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     token = token.substring(0,token.indexOf('/'))
                     jwt.verify(token, SECRET_KEY, async (err, decoded) => {
                         if (!err) {
-                            if(!await sendFileFromDir(req, res, {filename: path.join(ROOT_DIR, decoded.filePath),
-                                neverCompress:true, headers: {}, parsedUrl})){
+
+                            if(decoded.mediaIds){
+                                zipAndSendMedias(res, decoded)
+                            }else if (!await sendFileFromDir(req, res, {
+                                filename: path.join(ROOT_DIR, decoded.filePath),
+                                neverCompress: true, headers: {}, parsedUrl
+                            })) {
                                 sendError(res, 404)
                             }
+
                         } else {
                             console.error(err)
                             sendError(res, 404)
