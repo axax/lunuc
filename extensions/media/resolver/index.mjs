@@ -156,7 +156,7 @@ export default db => ({
                         searchQuery = {picture:new ObjectId(_id)}
                     }else{
                         const typeDefinition = getType(name)
-                        if (typeDefinition && typeDefinition.wildcardIndex) {
+                        if (typeDefinition && typeDefinition.wildcardTextIndex) {
                             searchQuery = {$text: {$search: _id}}
                         } else {
                             searchQuery = {$where}

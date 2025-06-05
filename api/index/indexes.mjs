@@ -111,6 +111,10 @@ export const createAllIndexes = async (db) => {
 
         if(type.wildcardIndex){
             console.log(`Creating wildcard index for ${typeName}`)
+            db.collection(typeName).createIndex({ '$**': 1 })
+        }
+        if(type.wildcardTextIndex){
+            console.log(`Creating wildcard text index for ${typeName}`)
             db.collection(typeName).createIndex({ '$**': 'text' })
         }
     }

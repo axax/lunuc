@@ -6,7 +6,7 @@
       "collectionClonable": true,
       "entryClonable": true,
       "mutationResult": "CmsPage",
-      "wildcardIndex": true,
+      "wildcardTextIndex": true,
       "fields": [
         {
           "name": "slug",

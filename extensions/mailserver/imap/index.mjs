@@ -674,7 +674,7 @@ const startListening = async (db, context) => {
                                     )
                                 })
                             )
-                            if (stream && session?.writeStream?.connection?._closing !== true) {
+                            if (stream && session?.socket?.writable && !session?.socket?.destroyed) {
 
                                 stream.on('error', (err) => {
                                     logError(err.message)

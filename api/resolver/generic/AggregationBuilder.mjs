@@ -399,7 +399,7 @@ export default class AggregationBuilder {
         this.debugInfo = []
 
         const typeDefinition = getType(this.type) || {}
-        const {projectResult, includeCount, includeUserFilter} = this.options
+        const {projectResult, includeCount, includeUserFilter, returnDocumentSize} = this.options
 
         // limit and offset
         const limit = this.getLimit(),
@@ -606,7 +606,7 @@ export default class AggregationBuilder {
         dataFacetQuery.push({$sort: facetSort})
 
         // project
-        if (projectResult) {
+        if (projectResult || returnDocumentSize) {
             // also remove id if it is not explicitly set
             if (!projectResultData._id) {
                 projectResultData._id = 0
@@ -624,6 +624,9 @@ export default class AggregationBuilder {
                         projectResultData[k] = this.options.project[k]
                     }
                 })
+            }
+            if(returnDocumentSize) {
+                projectResultData.size_bytes = {$bsonSize: '$$ROOT'}
             }
             dataFacetQuery.push({$project: projectResultData})
         }
@@ -659,6 +662,7 @@ export default class AggregationBuilder {
         }
         dataQuery.push(addFields)
 
+        //console.log(JSON.stringify(dataQuery,null,4))
 
         return {dataQuery, countQuery, debugInfo: this.debugInfo}
 

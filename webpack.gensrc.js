@@ -188,6 +188,8 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
                     delete type.entryClonable
                     delete type.genResolver
                     delete type.mutationResult
+                    delete type.wildcardTextIndex
+                    delete type.wildcardIndex
                     for(const field of type.fields){
                         delete field.index
                         delete field.tab

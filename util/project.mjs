@@ -51,16 +51,18 @@ export const performFieldProjection = (projection, data, level = 0)=>{
 
 
 export const findProjection = (key, projection) => {
-    for (let i = 0; i < projection.length; i++) {
-        const pro = projection[i]
-        if (pro) {
-            if (pro.constructor === Object) {
+    if(projection) {
+        for (let i = 0; i < projection.length; i++) {
+            const pro = projection[i]
+            if (pro) {
+                if (pro.constructor === Object) {
 
-                if (Object.keys(pro)[0] === key) {
-                    return {index:i, data:pro[key]}
+                    if (Object.keys(pro)[0] === key) {
+                        return {index: i, data: pro[key]}
+                    }
+                } else if (pro === key) {
+                    return {index: i, data: key}
                 }
-            }else if(pro===key){
-                return {index:i, data:key}
             }
         }
     }

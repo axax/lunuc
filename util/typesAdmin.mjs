@@ -292,7 +292,7 @@ Hook.on('Types', ({types}) => {
         name: 'KeyValue',
         usedBy: ['core'],
         entryClonable: true,
-        wildcardIndex: true,
+        wildcardTextIndex: true,
         fields: [
             {
                 clone: "${key}_copy",

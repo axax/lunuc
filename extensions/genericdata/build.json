@@ -20,7 +20,6 @@
       "name": "GenericData",
       "entryClonable": true,
       "addMetaDataInQuery": true,
-      "wildcardIndex": true,
       "fields": [
         {
           "name": "data",
