@@ -110,7 +110,7 @@ const StyledContent = styled('main')(({ theme, fixed, open }) => ({
     boxSizing: 'border-box',
     width: '100%',
     flexGrow: 1,
-    backgroundColor: theme.palette.background.default,
+    /*backgroundColor: theme.palette.background.default,*/
     padding: 24,
     minHeight: 'calc(100vh - 56px)',
     marginTop: 56,
