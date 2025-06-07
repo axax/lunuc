@@ -47,7 +47,7 @@ const StyledAppBar = styled(AppBar)({
 const StyledDrawerContent = styled.main`
     position: relative;
     box-sizing: border-box;
-    background-color: ${theme.palette.background.default};
+    /*background-color: ${theme.palette.background.default};*/
     width: 100%;
     padding: ${theme.spacing(3)};
     height: calc(100% - 56px);

@@ -114,6 +114,8 @@ export const translations = {
         'CodeEditor.reformatCode': 'Automatisch formatieren',
         'CodeEditor.openInNewWindow':'In einem neuen Fenster öffnen',
         'CodeEditor.aiAssistent':'KI Assistent',
+        'CodeEditor.newFileSplit':'Neuer Dateisplit',
+        'CodeEditor.editFileSplitName':'Umbenennen',
         'GlobalSearch.placeholder':'Schnellsuche',
         'TypeEdit.closeConfirmText':'Möchten Sie die Änderung speichern?',
         'TypeEdit.closeConfirmTitle':'Daten Speichern'
@@ -232,6 +234,8 @@ export const translations = {
         'CodeEditor.openPage': 'Open page',
         'CodeEditor.reformatCode': 'Reformat',
         'CodeEditor.openInNewWindow':'Open in new window',
+        'CodeEditor.newFileSplit':'New file split',
+        'CodeEditor.editFileSplitName':'Rename',
         'GlobalSearch.placeholder':'Quick search',
         'TypeEdit.closeConfirmText':'Would you like to save the change?',
         'TypeEdit.closeConfirmTitle':'Save data'

@@ -24,14 +24,14 @@ function endsWithAny(str, chars) {
     return chars.includes(lastChar)
 }
 
-export function generateContextMenu({type,clickEvent, editorView, propertyTemplates, templates, setEditData}) {
+export function generateContextMenu({type,clickEvent, editorView, propertyTemplates, templates, setEditData, fileSplit}) {
     let contextMenuItems = []
 
    if (editorView) {
 
+       const pos = editorView.posAtCoords({x: clickEvent.clientX, y: clickEvent.clientY})
+       const lineInfo = editorView.state.doc.lineAt(pos)
        if(type==='json') {
-           const pos = editorView.posAtCoords({x: clickEvent.clientX, y: clickEvent.clientY})
-           const lineInfo = editorView.state.doc.lineAt(pos)
            const text = lineInfo.text.trim()
            const textNext = getTextAtLineNumber(editorView, lineInfo.number + 1)
            const lineData = {number: lineInfo.number, text,
@@ -182,6 +182,14 @@ export function generateContextMenu({type,clickEvent, editorView, propertyTempla
                name: _t('CodeEditor.repeatSelection'),
                onClick: () => {
                    winAndReplace(`/system/repeater?preview=true&content=${encodeURIComponent(selectedContent)}`)
+               }
+           })
+       }
+       if (fileSplit) {
+           contextMenuItems.push({
+               icon:'add',
+               name: _t('CodeEditor.newFileSplit'), onClick: () => {
+                   setEditData({fileSplit:true,fields:{name:{fullWidth:true,label:'Name',required:true}},lineInfo})
                }
            })
        }

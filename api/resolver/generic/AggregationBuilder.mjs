@@ -59,7 +59,7 @@ export default class AggregationBuilder {
                 return sort.split(',').reduce((acc, val) => {
                     const a = val.trim().split(' ')
                     let fieldName = a[0]
-                    if (fieldName.indexOf('.') < 0 && typeFields[fieldName] && typeFields[fieldName].localized) {
+                    if (fieldName.indexOf('.') < 0 && typeFields && typeFields[fieldName] && typeFields[fieldName].localized) {
                         fieldName += '.' + lang
                     }
                     return {...acc, [fieldName]: (a.length > 1 && a[1].toLowerCase() == "desc" ? -1 : 1)}
@@ -357,7 +357,7 @@ export default class AggregationBuilder {
         }
 
         // extend it with default definition
-        if (typeFields[fieldDefinition.name]) {
+        if (typeFields && typeFields[fieldDefinition.name]) {
             fieldDefinition.existsInDefinition=true
             Object.keys(typeFields[fieldDefinition.name]).forEach(key=>{
                 if(fieldDefinition[key]===undefined){
@@ -798,7 +798,7 @@ export default class AggregationBuilder {
                 if (fieldName !== '_id' && !createdFieldMatches[fieldName]) {
                     createdFieldMatches[fieldName] = true
                     groups[fieldName] = {'$first': '$' + fieldName}
-                    if (typeFields[fieldName]) {
+                    if (typeFields && typeFields[fieldName]) {
                         await this.createFilterForField(fieldDefinition, match, {filters})
                         await this.createFilterForField(fieldDefinition, resultMatch, {filters: resultFilters})
                         await this.createFilterForField(fieldDefinition, lookupMatch, {filters: lookupFilters})

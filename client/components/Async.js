@@ -29,9 +29,12 @@ class Async extends React.Component {
                 const hasForcedReload = localStorage.getItem('forced-reload')
                 if(!hasForcedReload){
                     // try to force reload one time
-                    unregisterAllServiceworker()
-                    localStorage.setItem('forced-reload', true)
-                    window.location.reload(true)
+                    unregisterAllServiceworker(()=>{
+                        localStorage.setItem('forced-reload', true)
+                        const url = new URL(window.location.href)
+                        url.searchParams.set('_ts', Date.now())
+                        window.location.href = url.href
+                    })
                 }else {
                     Hook.call('AsyncError', {error: e})
                 }

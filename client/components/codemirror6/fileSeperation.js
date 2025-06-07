@@ -1,5 +1,6 @@
 import styled from '@emotion/styled'
 
+export const SPLIT_SIGN = '//!#'
 export const StyledFile = styled('a')(({ active }) => ({
     display: 'inline-block',
     padding: '0.5rem',
@@ -15,13 +16,13 @@ export const StyledFile = styled('a')(({ active }) => ({
 }))
 
 export function seperateFiles(value){
-    const fileContents = value.split('\n//!#')
+    const fileContents = value.split(`\n${SPLIT_SIGN}`)
     const files = []
     if (fileContents.length > 1) {
         fileContents.forEach((file, i) => {
             let filename = 'main'
             if (i === 0) {
-                if (value.indexOf('//!#') === 0) {
+                if (value.indexOf(SPLIT_SIGN) === 0) {
                     fileContents[i] = fileContents[i].substring(fileContents[i].indexOf('\n') + 1)
                     filename = getFirstLine(value).substring(4)
                 }
@@ -41,7 +42,7 @@ export function putFilesTogether(files, finalFileIndex, codeAsString) {
     if (files && files.length > 0) {
         fullCodeAsString = ''
         files.forEach((file, i) => {
-            fullCodeAsString += '//!#' + file.filename + '\n'
+            fullCodeAsString += SPLIT_SIGN + file.filename + '\n'
             if (i !== finalFileIndex) {
                 fullCodeAsString += file.content.trim() + '\n'
             } else {

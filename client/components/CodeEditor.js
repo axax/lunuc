@@ -5,7 +5,7 @@ import GenericForm from './GenericForm'
 import RenderInNewWindow from './layout/RenderInNewWindow'
 import {generateContextMenu} from './codemirror6/contextMenu'
 import {replaceLineWithText, formatCode} from './codemirror6/utils'
-import {StyledFile,seperateFiles,putFilesTogether} from './codemirror6/fileSeperation'
+import {StyledFile, seperateFiles, putFilesTogether, SPLIT_SIGN} from './codemirror6/fileSeperation'
 import styled from '@emotion/styled'
 import Util from '../util/index.mjs'
 import {_t} from '../../util/i18n.mjs'
@@ -109,7 +109,10 @@ function CodeEditor(props,ref){
                 }
                 finalValue = files[finalFileIndex].content
             }
+        }else{
+            finalFileIndex = 0
         }
+
         allActions.push({
             divider:true,
             icon:(showFileSplit ? 'visibilityOff' : 'visibility'),
@@ -131,6 +134,17 @@ function CodeEditor(props,ref){
                                     if (onFileChange) {
                                         onFileChange(i)
                                     }
+                                }}
+                                onContextMenu={(clickEvent) => {
+                                    clickEvent.preventDefault()
+                                    setContextMenu({left: clickEvent.clientX, top: clickEvent.clientY, items:[
+                                            {
+                                                icon:'edit',
+                                                name: _t('CodeEditor.editFileSplitName'), onClick: () => {
+                                                    setEditData({fileSplit:true,file,fields:{name:{fullWidth:true,label:'Name',required:true}}, values:{name:file.filename}})
+                                                }
+                                            }
+                                        ]})
                                 }}
                                 active={i === finalFileIndex}>{file.filename}</StyledFile>)})}</div>}
         <CodeMirrorWrapper mergeView={mergeView} mergeValue={mergeValue}
@@ -179,6 +193,7 @@ function CodeEditor(props,ref){
                     clickEvent.preventDefault()
                     setContextMenu(generateContextMenu({
                         type,
+                        fileSplit,
                         clickEvent,
                         editorView,
                         propertyTemplates,
@@ -203,10 +218,29 @@ function CodeEditor(props,ref){
         {editData && <SimpleDialog fullWidth={true} maxWidth="md" key="newSiteDialog" open={true}
                                    onClose={(action) => {
                                        if (action.key === 'ok') {
+
                                            const formValidation = editDataFormRef.current.validate()
                                            if (formValidation.isValid) {
-                                               replaceLineWithText(editorViewRef.current, editData.lineData.number,`"${editData.key}":"${Util.escapeForJson(editDataFormRef.current.state.fields.data).replace(/\\/g, '\\\\\\')}"${editData.lineData.endsWithComma ? ',' : ''}`)
-                                               formatCode(editorViewRef.current)
+                                               if (editData.fileSplit) {
+                                                   if(editData.file){
+                                                       let content = putFilesTogether(files, finalFileIndex, editorViewRef.current.state.doc.toString())
+                                                       const regex = new RegExp(`^${SPLIT_SIGN}${editData.file.filename}$`, 'gm');
+                                                       setStateValue(content.replace(regex, SPLIT_SIGN+Util.escapeForJson(editDataFormRef.current.state.fields.name)))
+                                                   }else {
+                                                       editorViewRef.current.dispatch({
+                                                           changes: {
+                                                               from: editData.lineInfo.to,
+                                                               to: editData.lineInfo.to,
+                                                               insert: `${editData.lineInfo.text.length > 0 ? '\n' : ''}${SPLIT_SIGN}${Util.escapeForJson(editDataFormRef.current.state.fields.name)}`
+                                                           }
+                                                       })
+                                                       setStateValue(putFilesTogether(files, finalFileIndex, editorViewRef.current.state.doc.toString()))
+                                                       setFileIndex(files && files.length > 0 ? finalFileIndex + 1 : 1)
+                                                   }
+                                               } else {
+                                                   replaceLineWithText(editorViewRef.current, editData.lineData.number, `"${editData.key}":"${Util.escapeForJson(editDataFormRef.current.state.fields.data).replace(/\\/g, '\\\\\\')}"${editData.lineData.endsWithComma ? ',' : ''}`)
+                                                   formatCode(editorViewRef.current)
+                                               }
                                            }
                                        }
                                        setEditData(false)
@@ -221,7 +255,7 @@ function CodeEditor(props,ref){
                                        type: 'primary'
                                    }]}
                                    title={'Edit'}>
-            <GenericForm ref={editDataFormRef} primaryButton={false} values={{data: editData.value}} fields={{
+            <GenericForm ref={editDataFormRef} primaryButton={false} values={editData.values || {data: editData.value}} fields={editData.fields || {
                              data: {fullWidth: true,label: editData.key,uitype: editData.uitype}}}/></SimpleDialog>}
     </StyledRoot>
 

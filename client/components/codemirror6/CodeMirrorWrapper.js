@@ -61,6 +61,7 @@ const CodeMirrorWrapper = (props) => {
                 parent: editor.current,
                 collapseUnchanged: { margin: 3, minSize: 3 },
                 highlightChanges:true,
+                mergeScroll: true,
                 revertControls:'a-to-b'
             })
         }else {

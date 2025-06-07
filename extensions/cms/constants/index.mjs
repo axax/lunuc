@@ -145,6 +145,17 @@ html,body{
     padding: 0 1rem;
     margin:0 auto;
   }
+  
+  .animation {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+    transform-origin: top;
+    transition: opacity 1s, transform 1s;
+  }
+  .fade-in-up {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 @media screen and (max-width: \${this.get('breakpointTablet')}){
   #page{
