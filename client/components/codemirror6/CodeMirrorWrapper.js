@@ -14,8 +14,10 @@ const CodeMirrorWrapper = (props) => {
     const editor = useRef()
 
     const defaultThemeOption = EditorView.theme({
+
         '&': {
             height: '30rem',
+            backgroundColor:'#ffffff',
             ...style
         },
         '& .cm-scroller': {

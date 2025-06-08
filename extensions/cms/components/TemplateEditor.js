@@ -119,7 +119,7 @@ class TemplateEditor extends React.Component {
     }
 
     render() {
-        const {component, fabButtonStyle, onScroll, scrollPosition, identifier} = this.props
+        const {component, fabButtonStyle, onScroll, scrollPosition, onFullSize, identifier} = this.props
         const {data, type, error} = this.state
         const currentTab = (!component && this.state.tab === 2 ? 0 : this.state.tab) || 0
 
@@ -142,6 +142,7 @@ class TemplateEditor extends React.Component {
                 <CodeEditor onScroll={onScroll}
                             scrollPosition={scrollPosition}
                             fabButtonStyle={fabButtonStyle}
+                            onFullSize={onFullSize}
                             onChange={this.handleChange.bind(this)}
                             error={error}
                             identifier={identifier}

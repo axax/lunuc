@@ -670,16 +670,19 @@ class CmsViewEditorContainer extends React.Component {
                     <CmsElement disabled={!EditorOptions.inlineEditor}
                                 advanced={canMangeCmsTemplate}/>
                 </StyledBox>}
-                {EditorOptions.bottomNavigation===2 && canMangeCmsTemplate && <StyledBox>
+                {EditorOptions.bottomNavigation===2 && canMangeCmsTemplate && <StyledBox data-layout-expandable="true">
                     <Expandable title="Data resolver"
                         icon="storage"
+                        id="dataResolverExpandable"
                         disableGutters
                         onChange={this.handleSettingChange.bind(this, 'dataResolverExpanded', true)}
                         expanded={EditorPageOptions.dataResolverExpanded}>
                         <DataResolverEditor onScroll={this.handleSettingChange.bind(this, 'dataResolverScroll', true)}
                                             scrollPosition={EditorPageOptions.dataResolverScroll}
+                                            /*height={EditorPageOptions.dataResolverHeight}*/
                                             identifier={`dataResolver${cmsPage._id}-${this.state.dataResolverChangeCount}`}
                                             onCleanUpTranslations={this.handleCleanUpTranslations.bind(this)}
+                                            onFullSize={this.fullSizeMode.bind(this,'dataResolver')}
                                             onChange={(str, reload)=>{
                                                 this.handleDataResolverChange(str,false,!reload)
                                             }}>{dataResolver}</DataResolverEditor>
@@ -687,6 +690,7 @@ class CmsViewEditorContainer extends React.Component {
                     <Expandable title="Server Script"
                         icon="code"
                         disableGutters
+                        id="serverScriptExpandable"
                         onChange={this.handleSettingChange.bind(this, 'serverScriptExpanded', true)}
                         expanded={EditorPageOptions.serverScriptExpanded}>
                         <ScriptEditor
@@ -694,12 +698,14 @@ class CmsViewEditorContainer extends React.Component {
                             identifier={'serverScript' + cmsPage._id}
                             onScroll={this.handleSettingChange.bind(this, 'serverScriptScroll', true)}
                             scrollPosition={EditorPageOptions.serverScriptScroll}
+                            onFullSize={this.fullSizeMode.bind(this,'serverScript')}
                             onChange={this.setCmsPageValue.bind(this, {key:'serverScript', timeoutSetState: 0, timeoutUpdate: 5000})}>{serverScript}</ScriptEditor>
                     </Expandable>
 
                     <Expandable title="Template"
                                 icon="html"
                                 disableGutters
+                                id="templateExpandable"
                                 onChange={this.handleSettingChange.bind(this, 'templateExpanded', true)}
                                 expanded={EditorPageOptions.templateExpanded}>
                         <TemplateEditor
@@ -711,6 +717,7 @@ class CmsViewEditorContainer extends React.Component {
                                 this.saveCmsPage()
                                 this.handleSettingChange('templateTab', true, tab)
                             }}
+                            onFullSize={this.fullSizeMode.bind(this,'template')}
                             onChange={(str)=>{
                                 this.handleTemplateChange(str,false,false,true)
                             }}>{template}</TemplateEditor>
@@ -719,6 +726,7 @@ class CmsViewEditorContainer extends React.Component {
                     <Expandable title="Script"
                                 icon="js"
                                 disableGutters
+                                id="scriptExpandable"
                                 onChange={this.handleSettingChange.bind(this, 'scriptExpanded', true)}
                                 expanded={EditorPageOptions.scriptExpanded}>
                         <ScriptEditor
@@ -727,6 +735,7 @@ class CmsViewEditorContainer extends React.Component {
                             fileIndex={EditorPageOptions.scriptFileIndex}
                             onFileChange={this.handleSettingChange.bind(this, 'scriptFileIndex', true)}
                             scrollPosition={EditorPageOptions.scriptScroll}
+                            onFullSize={this.fullSizeMode.bind(this,'script')}
                             onChange={this.setCmsPageValue.bind(this, {key:'script', timeoutSetState: 500, timeoutUpdate: 5000})}>{script}</ScriptEditor>
 
 
@@ -735,6 +744,7 @@ class CmsViewEditorContainer extends React.Component {
                     <Expandable title="Style"
                                 icon="css"
                                 disableGutters
+                                id="styleExpandable"
                                 onChange={this.handleSettingChange.bind(this, 'styleExpanded', true)}
                                 expanded={EditorPageOptions.styleExpanded}>
                         <CodeEditor showFab
@@ -762,6 +772,7 @@ class CmsViewEditorContainer extends React.Component {
                                     ]}
                                     onScroll={this.handleSettingChange.bind(this, 'styleScroll', true)}
                                     scrollPosition={EditorPageOptions.styleScroll}
+                                    onFullSize={this.fullSizeMode.bind(this,'style')}
                                     onChange={this.setCmsPageValue.bind(this, {key:'style', timeoutSetState: 1000, timeoutUpdate: 5000})}>{style}</CodeEditor>
 
                         <SimpleSwitch
@@ -1401,6 +1412,23 @@ class CmsViewEditorContainer extends React.Component {
         Object.keys(jsonDom.componentRefs).forEach(key => {
             this.findAndUpdateResolvedData(jsonDom.componentRefs[key].comp, resolverKey, type, optimisticData, dataToEdit)
         })
+    }
+
+    fullSizeMode(key, editorView) {
+        const el = document.getElementById(`${key}Expandable`)
+        const elHeader = document.getElementById(`drawerLayoutHeader`)
+        if(el && elHeader) {
+            const rectEl = el.getBoundingClientRect()
+            const rectElHeader = elHeader.getBoundingClientRect()
+            const rect = editorView.dom.getBoundingClientRect()
+            const offsetTop = rect.top - rectEl.top
+            const offsetBottom = rectEl.bottom - rect.bottom
+            const maxHeight = document.documentElement.clientHeight - offsetTop - offsetBottom - rectElHeader.height*2 // 2x header and footer have same height
+            console.log(offsetTop, offsetBottom)
+            editorView.dom.style.height = `${maxHeight}px`
+            el.scrollIntoView({behavior: 'smooth'})
+            //this.handleSettingChange(`${key}Height`)
+        }
     }
 
     handleSettingChange(key, pageSetting = false, any, callback) {

@@ -137,9 +137,6 @@ class JsonDom extends React.Component {
         },
         'Link': ({to, href, target, gotop, native, onClick, tracking, scrollOffset, scrollStep, scrollTimeout, ...rest}) => {
             let url = to || href || ''
-            if(url._localized){
-                url = _t(url)
-            }
             if(!isString(url)){
                 return null
             }
@@ -1075,7 +1072,11 @@ class JsonDom extends React.Component {
 
                     if (p) {
                         // remove properties with empty values unless they start with $
+                        // translate localized properties
                         Object.keys(p).forEach(elKey => {
+                            if(p[elKey]?._localized){
+                                p[elKey] = _t(p[elKey])
+                            }
                             if (elKey === '#') {
                                 // ignore
                             } else if (elKey.startsWith('$')) {

@@ -52,6 +52,7 @@ class Expandable extends React.Component {
         const MyExpansionPanel = <ExpansionPanel disableGutters={disableGutters}
                                                  expanded={this.state.expanded}
                                                  onChange={this.handleExpansion.bind(this)}
+                                                 id={this.props.id}
                                                 heading={<Grid
                                                 draggable={draggable}
                                                 onDragStart={(e) => {

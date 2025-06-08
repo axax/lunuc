@@ -34,9 +34,24 @@ const StyledRoot = styled('div')(({ error, inWindow}) => ({
     })
 }))
 
+const StyledEditorResizer = styled('div')({
+    position: 'absolute',
+    height: '4px',
+    background: 'black',
+    right: 0,
+    left:0,
+    bottom: 0,
+    cursor: 'ns-resize',
+    zIndex: 999,
+    opacity: 0,
+    '&:hover': {
+        opacity: 1
+    }
+})
+
 
 function CodeEditor(props,ref){
-    const {hasContextMenu, mergeView, mergeValue, children, height, onScroll, onFileChange, showFab, fabButtonStyle, actions, onChange, onError, onBlur, lineNumbers, type, style, className, error, templates, propertyTemplates, fileSplit, identifier, readOnly} = props
+    const {hasContextMenu, mergeView, mergeValue, children, onScroll, onFullSize, onFileChange, showFab, fabButtonStyle, actions, onChange, onError, onBlur, lineNumbers, type, style, className, error, templates, propertyTemplates, fileSplit, identifier, readOnly} = props
 
     if(!identifier){
         console.warn('CodeEditor identifier is missing')
@@ -50,6 +65,7 @@ function CodeEditor(props,ref){
     const [showFileSplit, setShowFileSplit] = useState(true)
     const [scrollPositions] = useState(Object.assign({}, props.scrollPosition))
     const [stateValue,setStateValue] = useState(children || '')
+    const [height,setHeight] = useState(props.height)
     const [stateIdentifier,setStateIdentifier] = useState(identifier)
     const [isDataJson] = useState(props.forceJson || children && (children.constructor === Object || children.constructor === Array))
     const editorViewRef = useRef()
@@ -67,10 +83,37 @@ function CodeEditor(props,ref){
         getStateError: () => stateError
     }))
 
+
+    const mouseMove = e => {
+        if (editorViewRef.resizerState) {
+            const currentHeight = editorViewRef.current.dom.getBoundingClientRect().height
+
+            const newHeight = currentHeight + (e.pageY - editorViewRef.resizerState.pageY)
+            editorViewRef.resizerState.pageY = e.pageY
+            if(newHeight>150) {
+                editorViewRef.current.dom.style.height = `${newHeight}px`
+            }
+        }
+    }
+
+    const mouseUp = e => {
+        if(editorViewRef.resizerState) {
+            delete editorViewRef.resizerState
+            setHeight(editorViewRef.current.dom.getBoundingClientRect().height+'px')
+        }
+    }
+
     useEffect(() => {
         setStateValue(children || '')
         setStateIdentifier(identifier)
-        return () => {}
+
+        document.addEventListener('mousemove', mouseMove)
+        document.addEventListener('mouseup', mouseUp)
+
+        return () => {
+            document.removeEventListener('mousemove', mouseMove)
+            document.removeEventListener('mouseup', mouseUp)
+        }
     }, [identifier])
 
 
@@ -202,7 +245,7 @@ function CodeEditor(props,ref){
                     }))
                 }
             }}
-            style={{height:height ? height : (renderInWindow ? '100%':'30rem')}}
+            style={{height:renderInWindow ? '100%': (height ? height : '30rem')}}
             firstVisibleLine={scrollPositions[finalFileIndex] ? scrollPositions[finalFileIndex].firstVisibleLine : 0}
             value={finalValue}/>
         {showFab && <SimpleMenu key="menu" mini fab color="secondary" style={{
@@ -211,11 +254,11 @@ function CodeEditor(props,ref){
             bottom: '8px',
             right: '8px', ...fabButtonStyle
         }} items={allActions}/>}
-        {contextMenu && contextMenu.items.length > 0 && <SimpleMenu anchorReference={"anchorPosition"} anchorPosition={contextMenu} noButton={true} open={contextMenu}
+        {contextMenu && contextMenu.items.length > 0 && <SimpleMenu disablePortal={renderInWindow} anchorReference={"anchorPosition"} anchorPosition={contextMenu} noButton={true} open={contextMenu}
             onClose={() => {setContextMenu(false)}}
             mini items={contextMenu.items}/>}
         {hasError && <div style={{color: 'red'}}>{error ? error + ' ' : ''}{stateError ? stateError.message : ''}</div>}
-        {editData && <SimpleDialog fullWidth={true} maxWidth="md" key="newSiteDialog" open={true}
+        {editData && <SimpleDialog disablePortal={renderInWindow} fullWidth={true} maxWidth="md" key="newSiteDialog" open={true}
                                    onClose={(action) => {
                                        if (action.key === 'ok') {
 
@@ -257,6 +300,15 @@ function CodeEditor(props,ref){
                                    title={'Edit'}>
             <GenericForm ref={editDataFormRef} primaryButton={false} values={editData.values || {data: editData.value}} fields={editData.fields || {
                              data: {fullWidth: true,label: editData.key,uitype: editData.uitype}}}/></SimpleDialog>}
+        <StyledEditorResizer onMouseDown={(e)=>{
+            editorViewRef.resizerState = {pageY:e.pageY}
+        }} onDblclick={(e)=>{
+            if(onFullSize) {
+                onFullSize(editorViewRef.current)
+                setHeight(editorViewRef.current.dom.getBoundingClientRect().height+'px')
+            }
+
+        }}/>
     </StyledRoot>
 
     if(renderInWindow){
