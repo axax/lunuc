@@ -4,7 +4,6 @@ import {getFormFieldsByType} from '../../../util/typesAdmin.mjs'
 import config from '../../../gensrc/config.mjs'
 import Hook from '../../../util/hook.cjs'
 import {addFilterToMatch, addSearchStringToMatch} from '../../util/dbquery.mjs'
-import GenericResolver from './genericResolver.mjs'
 
 
 export default class AggregationBuilder {

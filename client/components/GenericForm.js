@@ -157,7 +157,7 @@ class GenericForm extends React.Component {
                     } else {
                         fieldValue = props.values[fieldKey]
                     }
-                } else if(field.defaultValue && field.value === undefined){
+                } else if(field.defaultValue!==undefined && field.value === undefined){
                     fieldValue = field.defaultValue
                 } else {
                     // value must be null instead of undefined
@@ -1399,7 +1399,7 @@ class GenericForm extends React.Component {
                                               type={isDateOrTime?'text':uitype}
                                               multiline={uitype === 'textarea'}
                                               placeholder={field.placeholder}
-                                              value={value===0 && field.type==='Float'?0:value || field.defaultValue || ''}
+                                              value={(value===0 && field.type==='Float'?0:value) || field.defaultValue || ''}
                                               name={fieldKey}
                                               onKeyDown={(e) => {
                                                   onKeyDown && onKeyDown(e, value)

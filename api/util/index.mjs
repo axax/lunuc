@@ -14,6 +14,8 @@ import {ensureDirectoryExistence} from '../../util/fileUtil.mjs'
 import path from 'path'
 import fs from "fs";
 import {pubsubHooked} from '../subscription.mjs'
+import {performFieldProjection} from '../../util/project.mjs'
+import {deepMerge} from "../../util/deepMerge.mjs";
 const PASSWORD_MIN_LENGTH = 8
 
 const ROOT_DIR = path.resolve()
@@ -64,15 +66,23 @@ const Util = {
         }
 
     },
-    setKeyValue: async (db, context, key, value) => {
-        if (Util.isUserLoggedIn(context)) {
+    setKeyValue: async (db, context, key, value, options) => {
+        if (Util.isUserLoggedIn(context) || (options && options.allowAnonymousUser)) {
 
-            Cache.clearStartWith('KeyValue_' + context.id + '_' + key)
+            const finalContext = await Util.userOrAnonymousContext(db, context)
 
-            return db.collection('KeyValue').updateOne({
-                createdBy: new ObjectId(context.id),
+            Cache.clearStartWith('KeyValue_' + finalContext.id + '_' + key)
+
+            const createdBy= new ObjectId(finalContext.id)
+            let aggregation = {$set: {createdBy, key, value}}
+
+            if(options && options.aggregation){
+                aggregation = options.aggregation
+            }
+            return await db.collection('KeyValue').updateOne({
+                createdBy,
                 key
-            }, {$set: {createdBy: new ObjectId(context.id), key, value}}, {upsert: true})
+            }, aggregation, {upsert: true})
         }
     },
     setKeyValueGlobal: async (db, context, key, value, options) => {
@@ -135,19 +145,22 @@ const Util = {
         return map[key]
     },
     keyvalueMap: async (db, context, keys, options) => {
-        if (!Util.isUserLoggedIn(context)) {
+
+        const allOptions = Object.assign({cache: false, parse: false}, options)
+
+        if (!Util.isUserLoggedIn(context) && !allOptions.allowAnonymousUser) {
             // return empty map if no user is logged in
             return {}
         }
-        const allOptions = Object.assign({cache: false, parse: false}, options)
+        const finalContext = await Util.userOrAnonymousContext(db, context)
 
-        const cacheKeyPrefix = 'KeyValue_' + context.id + '_'
+        const cacheKeyPrefix = 'KeyValue_' + finalContext.id + '_'
 
         // check if all keys are in the cache
-        if (allOptions.cache) {
+        if (allOptions.cache && !allOptions.projection) {
             let map = {}
             for (const k of keys) {
-                const fromCache = Cache.get(cacheKeyPrefix + k + allOptions.parse)
+                const fromCache = Cache.get(cacheKeyPrefix + k + allOptions.parse + allOptions)
                 if (fromCache) {
                     map[k] = fromCache
                 } else {
@@ -160,11 +173,10 @@ const Util = {
                 return map
             }
         }
-
         const keyvalues = (await db.collection('KeyValue').find({
-            createdBy: new ObjectId(context.id),
+            createdBy: new ObjectId(finalContext.id),
             key: {$in: keys}
-        }).toArray())
+        }).project(allOptions.projection).toArray())
 
         return keyvalues.reduce((map, obj) => {
             map[obj.key] = obj.value
@@ -181,11 +193,9 @@ const Util = {
                 v = obj.value
             }
             map[obj.key] = v
-            if (allOptions.cache) {
+            if (allOptions.cache && !allOptions.projection) {
                 Cache.set(cacheKeyPrefix + obj.key + allOptions.parse, v)
             }
-
-
             return map
         }, {})
 
