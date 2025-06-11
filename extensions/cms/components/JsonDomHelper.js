@@ -20,7 +20,7 @@ import {
 import JsonDomAddElementDialog from './jsondomhelper/JsonDomAddElementDialog'
 import AddToBody from './AddToBody'
 import Util from 'client/util/index.mjs'
-import {propertyByPath, setPropertyByPath} from '../../../client/util/json.mjs'
+import {isString, propertyByPath, setPropertyByPath} from '../../../client/util/json.mjs'
 import {
     getComponentByKey,
     addComponent,
@@ -1663,7 +1663,7 @@ class JsonDomHelper extends React.Component {
                                     }
 
                                     groupData[groupProp] = `$\{Util.escapeForJson(_t('${groupData.trKey}'))\}`
-                                    if (val !== null) {
+                                    if(isString(val)){
                                         // update translation
                                         _onDataResolverPropertyChange({
                                             value: Util.escapeForJson(val.replace(/\n/g, '')),
