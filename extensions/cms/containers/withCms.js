@@ -54,11 +54,7 @@ export default function (WrappedComponent) {
                     if (!dynamic) {
 
                         // add meta tag here instead of in the ErrorPage. It is faster, because for the ErrorPage we need to load extra bundles
-                        DomUtil.createAndAddTag('meta', 'head', {
-                            name: 'robots',
-                            content: 'noindex,nofollow',
-                            id: 'errorPageNoindex'
-                        })
+                        DomUtil.noIndexNoFollow()
 
                         if (this.props.networkStatus === 8) {
                             console.log('Network status = 8')
@@ -259,7 +255,7 @@ export default function (WrappedComponent) {
                 return {
                     variables: getGqlVariables(ownProps),
                     hiddenVariables,
-                    fetchPolicy: ownProps.fetchPolicy || (isEditMode(ownProps) ? 'network-only' : 'cache-and-network') // cache-first
+                    fetchPolicy: ownProps.fetchPolicy || (isEditMode(ownProps) ? 'network-only' : _app_.defaultFetchPolicy || 'cache-and-network') // cache-first
                 }
             },
             props: ({data: {loading, cmsPage, variables, fetchMore, refetch, networkStatus}, ownProps}) => {

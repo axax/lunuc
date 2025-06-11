@@ -596,8 +596,8 @@ const Util = {
         }
         return arr
     },
-    createDummySvg(width, height) {
-        return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='${width}' height='${height}' viewBox='0 0 ${width} ${height}'><rect fill='#dedfe0' width='${width}' height='${height}'/></svg>`)
+    createDummySvg(width, height, color) {
+        return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='${width}' height='${height}' viewBox='0 0 ${width} ${height}'><rect fill='${color || '#dedfe0'}' width='${width}' height='${height}'/></svg>`)
     }
 }
 export default Util

@@ -196,8 +196,9 @@ const getHeaders = (lang, headersExtra={}) => {
 }
 
 const getCacheKey = ({query, variables, lang = _app_.lang}) => {
-    return query + lang + (variables ? JSON.stringify(variables) : '')
+    return query + lang + (variables ? Object.keys(variables).filter(key => variables[key]).sort().map(key=>key + '-' + variables[key]).join('|') : '')
 }
+
 
 const getFetchMore = ({prevData, type, query, variables, fetchPolicy}) => {
     return (opt) => {
@@ -366,7 +367,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  qu
 
 let CACHE_QUERIES = {}, CACHE_ITEMS = {}, QUERY_WATCHER = {}
 
-//_app_.CACHE_QUERIES = CACHE_QUERIES
+_app_.CACHE_QUERIES = CACHE_QUERIES
 
 export const client = {
     query: ({query, variables, fetchPolicy, timeout, id}) => {
@@ -400,6 +401,7 @@ export const client = {
         if (!cacheKey) {
             cacheKey = getCacheKey({query, variables})
         }
+        console.log('xxxxxx',cacheKey)
         CACHE_QUERIES[cacheKey] = data
         const update = QUERY_WATCHER[cacheKey] || QUERY_WATCHER[oldCacheKey]
 
@@ -628,7 +630,7 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = CACHE
     if (checkCache) {
         currentData = client.readQuery({cacheKey})
     }
-    const initialLoading = _app_.ssr || skip || (fetchPolicy === CACHE_FIRST && currentData) ? false : true
+    const initialLoading = _app_.ssr || skip || (fetchPolicy === CACHE_FIRST && currentData ? false : true)
 
     const initialData = {
         cacheKey,

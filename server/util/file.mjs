@@ -16,6 +16,8 @@ import path from 'path'
 import {dbConnection, MONGO_URL} from '../../api/database.mjs'
 import {getDynamicConfig} from '../../util/config.mjs'
 import {ObjectId} from 'mongodb'
+import {getCmsPageQuery} from '../../extensions/cms/util/cmsView.mjs'
+import {SESSION_HEADER, AUTH_HEADER} from '../../api/constants/index.mjs'
 
 const config = getDynamicConfig()
 
@@ -219,6 +221,7 @@ export const sendError = (res, code) => {
 }
 
 
+const PRELOAD_DATA_PLACEHOLDER = '<%=preloadData%>';
 export const parseAndSendFile = (req, res, {filename, headers, statusCode, parsedUrl}) => {
 
 
@@ -236,17 +239,74 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
     }
 
     /* there is currently only one use case */
-    const finalContent = data.content.replace('<%=encodedUrl%>', encodeURIComponent(parsedUrl.href))
+    let finalContent = data.content.replace('<%=encodedUrl%>', encodeURIComponent(parsedUrl.href))
 
+    const preloadPlaceHolderIndex = data.content.indexOf(PRELOAD_DATA_PLACEHOLDER)
+
+    if(preloadPlaceHolderIndex >= 0) {
+        // make first graphql request and return result
+        const startTime = Date.now(),
+            query = getCmsPageQuery({dynamic: false}),
+            variables = {
+                dynamic: false,
+                slug: parsedUrl.pathname.substring(1).split(config.PRETTYURL_SEPERATOR)[0],
+                query: parsedUrl.search ? parsedUrl.search.substring(1) : ''
+            }
+
+        fetch('http:/localhost:3000/graphql', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Cookie': req.headers.cookie,
+                [SESSION_HEADER]:req.headers[SESSION_HEADER],
+                [AUTH_HEADER]:req.headers[AUTH_HEADER]
+            },
+            body: JSON.stringify({
+                query,
+                variables: Object.assign({},variables,{meta: JSON.stringify({referer: req.headers.referer})})
+            }),
+        }).then(response => response.json()) // Parse JSON response
+            .then(result => {
+                let additionalContent = `/*time${Date.now()-startTime}ms*/\n`
+                if (result?.data?.cmsPage) {
+                    console.log('Success:', result);
+                    additionalContent+=`
+_app_.defaultFetchPolicy = 'cache-first'                    
+_app_.onClientReady = (client)=>{
+    client.writeQuery({
+        query: '${query}',
+        variables: ${JSON.stringify(variables)},
+        data: ${JSON.stringify(result.data)}
+    })
+}`
+
+                } else {
+                    statusCode = 404
+                    additionalContent = `_app_.show404=true`
+                }
+                finalContent = finalContent.replace(PRELOAD_DATA_PLACEHOLDER,additionalContent)
+                compressContentAndSend(req, res, finalContent, statusCode, data, headers)
+            })
+            .catch(error => {
+                console.error('parseAndSendFile Error:', error)
+                compressContentAndSend(req, res, finalContent, statusCode, data, headers)
+            })
+    }else {
+        compressContentAndSend(req, res, finalContent, statusCode, data, headers)
+    }
+}
+
+const compressContentAndSend = (req, res, finalContent, statusCode, data, headers)=>  {
     // Check if the client accepts gzip
     if (req.headers['accept-encoding'] && req.headers['accept-encoding'].includes('gzip')) {
         zlib.gzip(finalContent, (err, compressed) => {
             if (!err) {
                 res.writeHead(statusCode, {
                     'Last-Modified': data.mtime.toUTCString(),
-                    'Content-Length':compressed.length,
+                    'Content-Length': compressed.length,
                     ...headers,
-                    'Content-Encoding': 'gzip'})
+                    'Content-Encoding': 'gzip'
+                })
                 res.write(compressed)
                 res.end()
             } else {
@@ -259,13 +319,13 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
         // If gzip is not accepted, send the uncompressed data
         res.writeHead(statusCode, {
             'Last-Modified': data.mtime.toUTCString(),
-            'Content-Length':finalContent.length,
-            ...headers})
+            'Content-Length': finalContent.length,
+            ...headers
+        })
         res.write(finalContent)
         res.end()
     }
 }
-
 
 
 export const zipAndSendMedias = (res, decoded) => {

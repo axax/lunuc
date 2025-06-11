@@ -593,7 +593,7 @@ class GenericForm extends React.Component {
             }
 
             let value = this.state.fieldsTmp[fieldKey] || this.state.fields[fieldKey]
-            if (field.replaceBreaks && value) {
+            if (field.replaceBreaks && isString(value)) {
                 value = value.replace(/<br>/g, '\n')
             }
             if (field.uitype === 'date' || field.uitype === 'datetime') {

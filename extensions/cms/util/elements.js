@@ -1414,15 +1414,15 @@ const baseElements = [
                                                         $inlineEditor: false,
                                                         $is: '$.item{item.title?true:false}',
                                                         t: 'div.slide-title',
-                                                        $c: '$.item{_e(item.title)}'
+                                                        $c: '$.item{_e(_t(item.title))}'
 
                                                     },
                                                     {
                                                         $inlineEditor: false,
                                                         t: 'SmartImage',
                                                         p: {
-                                                            caption: "$.item{Util.escapeForJson(item.text)}",
-                                                            src: "$.item{Util.escapeForJson(item.image)}"
+                                                            caption: "$.item{_e(_t(item.text))}",
+                                                            src: "$.item{_e(item.image)}"
                                                         }
                                                     }
                                                 ]
@@ -1522,13 +1522,15 @@ const baseElements = [
                     label: 'Title',
                     fullWidth: true,
                     replaceBreaks: true,
-                    uitype: 'textarea'
+                    uitype: 'textarea',
+                    localized:true
                 },
                 text: {
                     tab: 'Slides',
                     expandable: false,
                     label: 'Text',
                     uitype: 'html',
+                    localized:true
                 }
             }
         },
@@ -1538,7 +1540,6 @@ const baseElements = [
             $set_0_chunkOptions_randomize: {type: 'Boolean', value: '1', label: 'Slides zufällig sortieren'},
             ...classOptions('p_'),
             ...marginOptions('p_'),
-            ...trOptions('$inlineEditor_groupOptions_$set\\_0\\_value_text_'),
             ...imageOptions('c_1_c_$for_c_c_1_$for_c_c_1_p_'),
             ...lazyImageOptions('c_1_c_$for_c_c_1_$for_c_c_1_$observe_'),
             ...invisibleOptions('p_')

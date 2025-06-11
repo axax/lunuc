@@ -79,7 +79,7 @@ Hook.on('typeLoaded', async ({type,cacheKey,db, req, context, result, dataQuery,
       //const stackTrace = Error().stack.substring(6).replace(/\n/g,'').split('    at ').filter(n => n.trim())
 
 
-      GenericResolver.createEntity(mydb, {context}, 'Log', {
+      await GenericResolver.createEntity(mydb, {context}, 'Log', {
           location: collectionName,
           type: 'slowQuery',
           message: JSON.stringify(explanation, null, 2),

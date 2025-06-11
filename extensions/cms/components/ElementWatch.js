@@ -81,6 +81,7 @@ class ElementWatch extends React.Component {
 
                 const lazyImage = $observe.lazyImage,
                     o = eleProps.options
+                const hasValidLazyImage = lazyImage && (lazyImage.width || lazyImage.height)
 
                 let w, h
                 if (o && o.resize && o.resize.width && o.resize.height) {
@@ -89,14 +90,14 @@ class ElementWatch extends React.Component {
                 } else if (eleProps.width && eleProps.height) {
                     w = eleProps.width
                     h = eleProps.height
-                }else if(!lazyImage){
+                }else if(!hasValidLazyImage){
                     const data = Util.getImageObject(eleProps.src)
                     if(data.width && data.height){
                         w = data.width
                         h = data.height
                     }
                 }
-                if (lazyImage) {
+                if (hasValidLazyImage) {
                     tmpSrc = Util.getImageObject(eleProps.src, {
                         quality: lazyImage.quality || 25,
                         resize: {
@@ -106,7 +107,7 @@ class ElementWatch extends React.Component {
                         webp: true
                     })
                 } else if (w && h) {
-                    tmpSrc = Util.createDummySvg(w,h)
+                    tmpSrc = Util.createDummySvg(w,h,o.dummyColor || _app_.JsonDom.dummyImageColor)
                 }
 
                 if (tmpSrc) {

@@ -35,6 +35,13 @@ const DomUtil = {
             }
         }, opts)
     },
+    noIndexNoFollow(){
+        DomUtil.createAndAddTag('meta', 'head', {
+            name: 'robots',
+            content: 'noindex,nofollow',
+            id: 'noIndexNoFollow'
+        })
+    },
     createAndAddTag(name, target, attrs, opts) {
         if (_app_.ssr) {
             //TODO: implmentation for server side rendering

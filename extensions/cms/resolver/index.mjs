@@ -115,6 +115,7 @@ export default db => ({
                 dynamic
             })
 
+            // TODO: implement access restrictions
             if(resolvedData.access ){
                 if(resolvedData.access.read === false){
                     throw new Error('No access rights')

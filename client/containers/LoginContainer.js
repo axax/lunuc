@@ -14,11 +14,7 @@ class LoginContainer extends React.Component {
 
     constructor(props) {
         super(props)
-        DomUtil.createAndAddTag('meta', 'head', {
-            name: 'robots',
-            content: 'noindex, nofollow',
-            id: 'metaTagNoIndex'
-        })
+        DomUtil.noIndexNoFollow()
 
         const {domain, username} = Util.extractQueryParams(window.location.search.substring(1))
 

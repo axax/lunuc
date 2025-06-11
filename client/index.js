@@ -7,6 +7,7 @@ import config from 'gen/config-client'
 import DomUtil from 'client/util/dom.mjs'
 import Util from 'client/util/index.mjs'
 import {unregisterAllServiceworker} from './util/serviceWorkerUtil.mjs'
+import {client} from './middleware/graphql'
 
 const hasStorageSupport = () => {
     try {
@@ -171,7 +172,9 @@ function mainInit() {
             console.warn('Push is not supported')
         }
 
-
+        if(_app_.onClientReady){
+            _app_.onClientReady(client)
+        }
     } else {
         console.warn('Service Worker is not supported')
     }

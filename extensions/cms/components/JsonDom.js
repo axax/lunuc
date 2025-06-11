@@ -1718,6 +1718,7 @@ class JsonDom extends React.Component {
     }
 
     show404 = () =>{
+        DomUtil.noIndexNoFollow()
         this.stopRendering = true
         window.location.href = _app_.redirect404
     }

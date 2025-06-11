@@ -39,15 +39,7 @@ class ErrorPage extends React.Component {
         this.titleOri = document.title
         document.title = `${code} ${title}`
 
-
-        if (!document.getElementById('errorPageNoindex')) {
-            DomUtil.createAndAddTag('meta', 'head', {
-                name: 'robots',
-                content: 'noindex, nofollow',
-                id: 'errorPageNoindex'
-            })
-        }
-
+        DomUtil.noIndexNoFollow()
 
         this.css = document.createElement("style")
         this.css.type = "text/css"
@@ -250,7 +242,7 @@ hr:after {
     componentWillUnmount() {
         document.title = this.titleOri
         document.body.removeChild(this.css)
-        DomUtil.removeElements('#errorPageNoindex', null, document.head)
+        DomUtil.removeElements('#noIndexNoFollow', null, document.head)
     }
 
     render() {
