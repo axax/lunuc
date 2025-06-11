@@ -107,7 +107,7 @@ class ElementWatch extends React.Component {
                         webp: true
                     })
                 } else if (w && h) {
-                    tmpSrc = Util.createDummySvg(w,h,o.dummyColor || _app_.dummyImageColor)
+                    tmpSrc = Util.createDummySvg(w,h,o && o.dummyColor ? o.dummyColor :  _app_.JsonDom.dummyImageColor)
                 }
 
                 if (tmpSrc) {
