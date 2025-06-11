@@ -22,7 +22,7 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
 
     const {slug, editmode, checkHostrules, inEditor, _version, ignorePublicState} = params
 
-    let host = headers && headers['x-host-rule'] ? headers['x-host-rule'].split(':')[0] : getHostFromHeaders(headers)
+    let host = getHostFromHeaders(headers)
 
     if (!host) {
         host = ''

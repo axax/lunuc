@@ -17,7 +17,7 @@ import {dbConnection, MONGO_URL} from '../../api/database.mjs'
 import {getDynamicConfig} from '../../util/config.mjs'
 import {ObjectId} from 'mongodb'
 import {getCmsPageQuery} from '../../extensions/cms/util/cmsView.mjs'
-import {SESSION_HEADER, AUTH_HEADER} from '../../api/constants/index.mjs'
+import {SESSION_HEADER, AUTH_HEADER, HOSTRULE_HEADER} from '../../api/constants/index.mjs'
 
 const config = getDynamicConfig()
 
@@ -222,7 +222,7 @@ export const sendError = (res, code) => {
 
 
 const PRELOAD_DATA_PLACEHOLDER = '<%=preloadData%>';
-export const parseAndSendFile = (req, res, {filename, headers, statusCode, parsedUrl}) => {
+export const parseAndSendFile = (req, res, {filename, headers, statusCode, parsedUrl, remoteAddress, host}) => {
 
 
     let data = Cache.get('IndexFile' + filename)
@@ -258,6 +258,9 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
             headers: {
                 'Content-Type': 'application/json',
                 'Cookie': req.headers.cookie,
+                'User-Agent': req.headers['user-agent'],
+                ['x-track-ip']: remoteAddress,
+                [HOSTRULE_HEADER]:host,
                 [SESSION_HEADER]:req.headers[SESSION_HEADER],
                 [AUTH_HEADER]:req.headers[AUTH_HEADER]
             },

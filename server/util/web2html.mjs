@@ -1,5 +1,6 @@
 import puppeteer from 'puppeteer'
 import {isTemporarilyBlocked} from './requestBlocker.mjs'
+import {HOSTRULE_HEADER} from '../../api/constants/index.mjs'
 
 const MAX_PAGES_IN_PUPPETEER = 8
 
@@ -87,7 +88,8 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
             await page.setCookie(...cookiesToSet)
         }
 
-        await page.setExtraHTTPHeaders({'x-host-rule': host})
+        await page.setExtraHTTPHeaders({HOSTRULE_HEADER: host})
+
         page.on('request', (request) => {
             if (['image', 'stylesheet', 'font', 'manifest', 'other'].indexOf(request.resourceType()) !== -1 ||
                 request.frame().url() !== page.mainFrame().url() /* in iframe */) {
@@ -96,7 +98,6 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
                 const headers = request.headers()
                 headers['x-track-referer'] = referer
                 headers['x-track-ip'] = remoteAddress
-                headers['x-track-host'] = host
                 headers['x-track-is-bot'] = isBot
                 headers['x-track-user-agent'] = agent
                 request.continue({headers})

@@ -226,7 +226,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
             indexfile = path.join(BUILD_DIR, '/index.min.html')
         }
         //        sendFile(req, res, {headers, filename: indexfile, statusCode})
-        parseAndSendFile(req, res, {filename:indexfile, headers, statusCode, parsedUrl, host})
+        parseAndSendFile(req, res, {filename:indexfile, headers, statusCode, parsedUrl, host, remoteAddress})
     }
 }
 
@@ -385,9 +385,9 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             req.isHttps = req.connection.encrypted || req.socket.encrypted
 
             // check with and without www
-            const hostRuleHost = req.headers['x-host-rule'] ? req.headers['x-host-rule'].split(':')[0] : host
+            //const hostRuleHost = req.headers[HOSTRULE_HEADER] ? req.headers[HOSTRULE_HEADER].split(':')[0] : host
             const hostrules = getHostRules(true)
-            const hostrule = {...hostrules.general, ...getBestMatchingHostRule(hostRuleHost).hostrule}
+            const hostrule = {...hostrules.general, ...getBestMatchingHostRule(host).hostrule}
 
             const parsedUrl = url.parse(req.url, true)
 
@@ -400,7 +400,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
             //small security check
             if (hostrule.blockedIps && hostrule.blockedIps.indexOf(remoteAddress)>=0) {
-                console.log(`ip ${remoteAddress} is blocked in hostrule for ${hostRuleHost}`)
+                console.log(`ip ${remoteAddress} is blocked in hostrule for ${host}`)
                 sendError(res, 403)
                 return
             }

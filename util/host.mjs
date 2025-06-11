@@ -2,11 +2,13 @@
 Util to extract hostname from http headers
  */
 
+import {HOSTRULE_HEADER} from '../api/constants/index.mjs'
+
 export const getHostFromHeaders= (headers) => {
     let host
     if (headers) {
-        if( headers['x-track-host']) {
-            host = headers['x-track-host'].split(':')[0]
+        if( headers[HOSTRULE_HEADER]) {
+            host = headers[HOSTRULE_HEADER].split(':')[0]
         }else if( headers['x-forwarded-host']){
             host = headers['x-forwarded-host'].split(':')[0]
         }else if( headers[':authority']){
