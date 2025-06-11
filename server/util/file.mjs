@@ -19,6 +19,7 @@ import {ObjectId} from 'mongodb'
 import {getCmsPageQuery} from '../../extensions/cms/util/cmsView.mjs'
 import {SESSION_HEADER, AUTH_HEADER, HOSTRULE_HEADER} from '../../api/constants/index.mjs'
 import Util from '../../client/util/index.mjs'
+import {parseCookies} from "../../api/util/parseCookies.mjs";
 
 const config = getDynamicConfig()
 
@@ -246,14 +247,20 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
 
     if(preloadPlaceHolderIndex >= 0) {
         // make first graphql request and return result
-        const startTime = Date.now(),
-            query = getCmsPageQuery({dynamic: false}),
-            pathname = parsedUrl.pathname.substring(1).split(config.PRETTYURL_SEPERATOR)[0],
-            contextLanguage = Util.urlContext(pathname)
+        const cookies = parseCookies(req)
+        if(cookies.auth || req.headers[AUTH_HEADER]){
+            // we don't preload data a auth data exists
+            finalContent = finalContent.replace(PRELOAD_DATA_PLACEHOLDER, '/*preload disabled*/')
+            compressContentAndSend(req, res, finalContent, statusCode, data, headers)
+        }else {
+            const startTime = Date.now(),
+                query = getCmsPageQuery({dynamic: false}),
+                pathname = parsedUrl.pathname.substring(1).split(config.PRETTYURL_SEPERATOR)[0],
+                contextLanguage = Util.urlContext(pathname)
 
             let slug = Util.removeTrailingSlash(contextLanguage ? pathname.substring(contextLanguage.length + 1) : pathname)
-            if(slug.startsWith('[admin]')){
-                slug=slug.substring(8)
+            if (slug.startsWith('[admin]')) {
+                slug = slug.substring(8)
             }
             console.log(slug)
             const variables = {
@@ -262,27 +269,28 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
                 query: parsedUrl.search ? parsedUrl.search.substring(1) : ''
             }
 
-        fetch('http:/localhost:3000/graphql', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Cookie': req.headers.cookie,
-                'User-Agent': req.headers['user-agent'],
-                ['x-track-ip']: remoteAddress,
-                [HOSTRULE_HEADER]:host,
-                [SESSION_HEADER]:req.headers[SESSION_HEADER],
-                [AUTH_HEADER]:req.headers[AUTH_HEADER]
-            },
-            body: JSON.stringify({
-                query,
-                variables: Object.assign({},variables,{meta: JSON.stringify({referer: req.headers.referer})})
-            }),
-        }).then(response => response.json()) // Parse JSON response
-            .then(result => {
-                let additionalContent = `/*time${Date.now()-startTime}ms*/\n`
-                if (result?.data?.cmsPage) {
-                    console.log('Success:', result);
-                    additionalContent+=`
+            fetch('http:/localhost:3000/graphql', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'User-Agent': req.headers['user-agent'],
+                    ['x-track-ip']: remoteAddress,
+                    [HOSTRULE_HEADER]: host,
+                    [SESSION_HEADER]: req.headers[SESSION_HEADER],
+                    /* cookies and auth_header not needed at the moment*/
+                    'Cookie': req.headers.cookie,
+                    [AUTH_HEADER]: req.headers[AUTH_HEADER]
+                },
+                body: JSON.stringify({
+                    query,
+                    variables: Object.assign({}, variables, {meta: JSON.stringify({referer: req.headers.referer})})
+                }),
+            }).then(response => response.json()) // Parse JSON response
+                .then(result => {
+                    let additionalContent = `/*time${Date.now() - startTime}ms*/\n`
+                    if (result?.data?.cmsPage) {
+                        console.log('Success:', result);
+                        additionalContent += `
 _app_.defaultFetchPolicy = 'cache-first'                    
 _app_.onClientReady = (client)=>{
     client.writeQuery({
@@ -292,17 +300,18 @@ _app_.onClientReady = (client)=>{
     })
 }`
 
-                } else {
-                    statusCode = 404
-                    additionalContent = `_app_.show404=true`
-                }
-                finalContent = finalContent.replace(PRELOAD_DATA_PLACEHOLDER,additionalContent)
-                compressContentAndSend(req, res, finalContent, statusCode, data, headers)
-            })
-            .catch(error => {
-                console.error('parseAndSendFile Error:', error)
-                compressContentAndSend(req, res, finalContent, statusCode, data, headers)
-            })
+                    } else {
+                        statusCode = 404
+                        additionalContent = `_app_.show404=true`
+                    }
+                    finalContent = finalContent.replace(PRELOAD_DATA_PLACEHOLDER, additionalContent)
+                    compressContentAndSend(req, res, finalContent, statusCode, data, headers)
+                })
+                .catch(error => {
+                    console.error('parseAndSendFile Error:', error)
+                    compressContentAndSend(req, res, finalContent, statusCode, data, headers)
+                })
+        }
     }else {
         compressContentAndSend(req, res, finalContent, statusCode, data, headers)
     }
