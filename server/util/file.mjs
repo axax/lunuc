@@ -255,10 +255,10 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
         }else {
             const startTime = Date.now(),
                 query = getCmsPageQuery({dynamic: false}),
-                pathname = parsedUrl.pathname.substring(1).split(config.PRETTYURL_SEPERATOR)[0],
-                contextLanguage = Util.urlContext(pathname)
+                cleanPathname = parsedUrl.pathname.substring(1).split(config.PRETTYURL_SEPERATOR)[0],
+                contextLanguage = Util.urlContext(parsedUrl.pathname)
 
-            let slug = Util.removeTrailingSlash(contextLanguage ? pathname.substring(contextLanguage.length + 1) : pathname)
+            let slug = Util.removeTrailingSlash(contextLanguage ? cleanPathname.substring(contextLanguage.length + 1) : cleanPathname)
             if (slug.startsWith('[admin]')) {
                 slug = slug.substring(8)
             }
