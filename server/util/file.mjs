@@ -248,13 +248,14 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
         // make first graphql request and return result
         const startTime = Date.now(),
             query = getCmsPageQuery({dynamic: false}),
-            pathname = parsedUrl.pathname.split(config.PRETTYURL_SEPERATOR)[0],
+            pathname = parsedUrl.pathname.substring(1).split(config.PRETTYURL_SEPERATOR)[0],
             contextLanguage = Util.urlContext(pathname)
 
             let slug = Util.removeTrailingSlash(contextLanguage ? pathname.substring(contextLanguage.length + 1) : pathname)
             if(slug.startsWith('[admin]')){
                 slug=slug.substring(8)
             }
+            console.log(slug)
             const variables = {
                 dynamic: false,
                 slug,
