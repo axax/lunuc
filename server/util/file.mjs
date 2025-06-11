@@ -18,6 +18,7 @@ import {getDynamicConfig} from '../../util/config.mjs'
 import {ObjectId} from 'mongodb'
 import {getCmsPageQuery} from '../../extensions/cms/util/cmsView.mjs'
 import {SESSION_HEADER, AUTH_HEADER, HOSTRULE_HEADER} from '../../api/constants/index.mjs'
+import Util from '../../client/util/index.mjs'
 
 const config = getDynamicConfig()
 
@@ -247,9 +248,16 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
         // make first graphql request and return result
         const startTime = Date.now(),
             query = getCmsPageQuery({dynamic: false}),
-            variables = {
+            pathname = parsedUrl.pathname.split(config.PRETTYURL_SEPERATOR)[0],
+            contextLanguage = Util.urlContext(pathname)
+
+            let slug = Util.removeTrailingSlash(contextLanguage ? pathname.substring(contextLanguage.length + 1) : pathname)
+            if(slug.startsWith('[admin]')){
+                slug=slug.substring(8)
+            }
+            const variables = {
                 dynamic: false,
-                slug: parsedUrl.pathname.substring(1).split(config.PRETTYURL_SEPERATOR)[0],
+                slug,
                 query: parsedUrl.search ? parsedUrl.search.substring(1) : ''
             }
 
