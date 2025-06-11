@@ -262,7 +262,6 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
             if (slug.startsWith('[admin]')) {
                 slug = slug.substring(8)
             }
-            console.log(slug)
             const variables = {
                 dynamic: false,
                 slug,
@@ -289,7 +288,6 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
                 .then(result => {
                     let additionalContent = `/*time${Date.now() - startTime}ms*/\n`
                     if (result?.data?.cmsPage) {
-                        console.log('Success:', result);
                         additionalContent += `
 _app_.defaultFetchPolicy = 'cache-first'                    
 _app_.onClientReady = (client)=>{
