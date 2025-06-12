@@ -58,10 +58,6 @@ self.addEventListener('fetch', event => {
         return
     }
 
-    if (req.headers.has('x-no-serviceworker-cache')) {
-        return
-    }
-
     // Skip cross-origin requests, like those for Google Analytics.
     if (req.method == 'GET' && (req.url.startsWith(self.location.origin) ||
             HOSTS.some((host) => req.url.startsWith(host))
@@ -74,7 +70,8 @@ self.addEventListener('fetch', event => {
                 return resp && !resp.redirected ? resp : fetch(req).then((response) => {
                     let responseClone = response.clone()
                     caches.open(RUNTIME).then((cache) => {
-                        if(responseClone && responseClone.status===200) {
+                        if(responseClone && responseClone.status===200 &&
+                            !response.headers.has('x-no-serviceworker-cache')) {
                             cache.put(req, responseClone)
                         }
                     })
