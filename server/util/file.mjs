@@ -258,7 +258,7 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
             slug = slug.substring(8)
         }
 
-        if(cookies.auth || req.headers[AUTH_HEADER] || slug.startsWith(config.ADMIN_BASE_URL)){
+        if(cookies.auth || req.headers[AUTH_HEADER] || slug.startsWith(config.ADMIN_BASE_URL.slice(1))){
             // we don't preload data a auth data exists
             finalContent = finalContent.replace(PRELOAD_DATA_PLACEHOLDER, '/*preload disabled*/')
             compressContentAndSend(req, res, finalContent, statusCode, data, headers)
