@@ -6,7 +6,6 @@ const RUNTIME = 'runtime-v${BUILD_NUMBER}'
 
 // A list of local resources we always want to be cached.
 const PRECACHE_URLS = [
-    '/', // Alias for index.html
     'main.bundle.js?v=${BUILD_NUMBER}',
     'manifest.json?v=${BUILD_NUMBER}',
     'favicon.ico'
