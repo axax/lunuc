@@ -247,21 +247,23 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
 
     if(preloadPlaceHolderIndex >= 0) {
         // make first graphql request and return result
-        const cookies = parseCookies(req)
-        if(cookies.auth || req.headers[AUTH_HEADER]){
+        const startTime = Date.now(),
+            cookies = parseCookies(req),
+            query = getCmsPageQuery({dynamic: false}),
+            cleanPathname = parsedUrl.pathname.substring(1).split(`/${config.PRETTYURL_SEPERATOR}/`)[0],
+            contextLanguage = Util.urlContext(parsedUrl.pathname)
+
+        let slug = Util.removeTrailingSlash(contextLanguage ? cleanPathname.substring(contextLanguage.length + 1) : cleanPathname)
+        if (slug.startsWith('[admin]')) {
+            slug = slug.substring(8)
+        }
+
+        if(cookies.auth || req.headers[AUTH_HEADER] || slug.startsWith(config.ADMIN_BASE_URL)){
             // we don't preload data a auth data exists
             finalContent = finalContent.replace(PRELOAD_DATA_PLACEHOLDER, '/*preload disabled*/')
             compressContentAndSend(req, res, finalContent, statusCode, data, headers)
         }else {
-            const startTime = Date.now(),
-                query = getCmsPageQuery({dynamic: false}),
-                cleanPathname = parsedUrl.pathname.substring(1).split(`/${config.PRETTYURL_SEPERATOR}/`)[0],
-                contextLanguage = Util.urlContext(parsedUrl.pathname)
 
-            let slug = Util.removeTrailingSlash(contextLanguage ? cleanPathname.substring(contextLanguage.length + 1) : cleanPathname)
-            if (slug.startsWith('[admin]')) {
-                slug = slug.substring(8)
-            }
             const variables = {
                 dynamic: false,
                 slug,
