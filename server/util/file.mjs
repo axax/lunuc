@@ -298,6 +298,7 @@ _app_.onClientReady = (client)=>{
     })
 }`
 
+                        headers['x-no-serviceworker-cache'] = true
                     } else {
                         statusCode = 404
                         additionalContent = `_app_.show404=true`

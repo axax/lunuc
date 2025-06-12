@@ -49,29 +49,33 @@ self.addEventListener('activate', (event) => {
 // If no response is found, it populates the runtime cache with the response
 // from the network before returning it to the page.
 self.addEventListener('fetch', event => {
-
-    if (event.request.cache === 'only-if-cached' && event.request.mode !== 'same-origin') {
+    const req = event.request
+    if (req.cache === 'only-if-cached' && req.mode !== 'same-origin') {
         return
     }
 
-    if (event.request.url==='/graphql' || event.request.url.indexOf('/uploads/') >= 0 || event.request.url.indexOf('/lunucapi/') >= 0) {
+    if (req.url==='/graphql' || req.url.indexOf('/uploads/') >= 0 || req.url.indexOf('/lunucapi/') >= 0) {
+        return
+    }
+
+    if (req.headers.has('x-no-serviceworker-cache')) {
         return
     }
 
     // Skip cross-origin requests, like those for Google Analytics.
-    if (event.request.method == 'GET' && (event.request.url.startsWith(self.location.origin) ||
-            HOSTS.some((host) => event.request.url.startsWith(host))
+    if (req.method == 'GET' && (req.url.startsWith(self.location.origin) ||
+            HOSTS.some((host) => req.url.startsWith(host))
         )) {
 
 
         event.respondWith(
-            caches.match(event.request).then((resp) => {
+            caches.match(req).then((resp) => {
 
-                return resp && !resp.redirected ? resp : fetch(event.request).then((response) => {
+                return resp && !resp.redirected ? resp : fetch(req).then((response) => {
                     let responseClone = response.clone()
                     caches.open(RUNTIME).then((cache) => {
                         if(responseClone && responseClone.status===200) {
-                            cache.put(event.request, responseClone)
+                            cache.put(req, responseClone)
                         }
                     })
                     return response
