@@ -255,7 +255,7 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
         }else {
             const startTime = Date.now(),
                 query = getCmsPageQuery({dynamic: false}),
-                cleanPathname = parsedUrl.pathname.substring(1).split(config.PRETTYURL_SEPERATOR)[0],
+                cleanPathname = parsedUrl.pathname.substring(1).split(`/${config.PRETTYURL_SEPERATOR}/`)[0],
                 contextLanguage = Util.urlContext(parsedUrl.pathname)
 
             let slug = Util.removeTrailingSlash(contextLanguage ? cleanPathname.substring(contextLanguage.length + 1) : cleanPathname)

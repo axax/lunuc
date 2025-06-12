@@ -375,30 +375,28 @@ const Util = {
         let h, w, params = ''
         if (resize) {
 
-            if (resize.width) {
-                w = resize.width
-            }
-            if (resize.height) {
-                h = resize.height
-            }
             if (resize === 'auto' || resize.responsive) {
                 const ww = window.innerWidth
-                if (!w || w > ww) {
-                    if (ww <= 720) {
-                        w = 720
-                    } else if (ww <= 1024) {
-                        w = 1024
-                    } else if (ww <= 1200) {
-                        w = 1200
-                    } else if (ww <= 1400) {
-                        w = 1400
-                    } else {
-                        w = 1600
-                    }
-
-                    if (h) {
-                        h = Math.ceil((w / resize.width) * h)
-                    }
+                if (ww <= 720) {
+                    w = 720
+                } else if (ww <= 1024) {
+                    w = 1024
+                } else if (ww <= 1200) {
+                    w = 1200
+                } else if (ww <= 1400) {
+                    w = 1400
+                } else {
+                    w = 1600
+                }
+                if (resize.width<w) {
+                    w = resize.width
+                }
+            }else{
+                if (resize.width) {
+                    w = resize.width
+                }
+                if (resize.height) {
+                    h = resize.height
                 }
             }
             if (w) {

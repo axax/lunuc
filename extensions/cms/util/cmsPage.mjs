@@ -24,12 +24,9 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
 
     let host = getHostFromHeaders(headers)
 
-    if (!host) {
-        host = ''
-    }
-    if (host.startsWith('www.')) {
+    /*if (host.startsWith('www.')) {
         host = host.substring(4)
-    }
+    }*/
 
     let slugMatch = {slug}
     let hostrule

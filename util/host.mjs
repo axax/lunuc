@@ -5,7 +5,7 @@ Util to extract hostname from http headers
 import {HOSTRULE_HEADER} from '../api/constants/index.mjs'
 
 export const getHostFromHeaders= (headers) => {
-    let host
+    let host=''
     if (headers) {
         if( headers[HOSTRULE_HEADER]) {
             host = headers[HOSTRULE_HEADER].split(':')[0]
@@ -22,12 +22,8 @@ export const getHostFromHeaders= (headers) => {
             }
         }
 
-        if (!host) {
-            if (headers.host) {
-                host = headers.host.split(':')[0]
-            } else {
-                host = ''
-            }
+        if (!host && headers.host) {
+            host = headers.host.split(':')[0]
         }
     }
     return host
