@@ -105,7 +105,7 @@ const findActiveItem = (props) => {
     }
     return maybeItem
 }
-
+console.log(theme)
 
 const MenuList = (props) => {
     const {items, depth, onMenuChange} = props
@@ -138,11 +138,9 @@ const MenuList = (props) => {
                     if(item.to) {
                         _app_.history.push(item.to)
                     }
-                }}
-                                  key={i}
-                                  button>
+                }} key={i} button style={(activeItem === item ? {backgroundColor:theme.palette.primary[50]} : {})}>
                     {
-                        item.icon && <ListItemIcon>
+                        item.icon && <ListItemIcon sx={(activeItem === item ? {}: {})}>
                             {item.icon.constructor === String ?
                                 <div dangerouslySetInnerHTML={{__html: item.icon}}/> : item.icon}
                         </ListItemIcon>
@@ -150,7 +148,7 @@ const MenuList = (props) => {
                     <ListItemText disableTypography
                                   primary={<Typography variant="subtitle1"
                                                        component="h3"
-                                                       style={{fontWeight:(activeItem === item ? 'bold' : 'normal')}}>{item.name}</Typography>}/>
+                                                       style={(activeItem === item ? {fontWeight:'bold'} : {})}>{item.name}</Typography>}/>
 
                     {item.actions}
                     {item.items && (isOpen ? <ExpandLess /> : <ExpandMore />)}
@@ -198,7 +196,7 @@ const ResponsiveDrawer = React.memo((props) => {
                             aria-label="open drawer"
                             onClick={handleDrawerToggle}
                             sx={{display: { xs: 'block', lg: 'none' } }}
-                        ><MenuIcon/>
+                        ><MenuIcon />
                         </IconButton>
                         <Typography sx={{display: { flex: 1 } }} variant="h6" color="inherit" noWrap>
                             {title}

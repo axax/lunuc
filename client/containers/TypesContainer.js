@@ -65,6 +65,7 @@ import {
     CAPABILITY_MANAGE_COLLECTION
 } from '../../util/capabilities.mjs'
 import SelectCollection from '../components/types/SelectCollection'
+import {parseOrElse} from "../util/json.mjs";
 
 const CodeEditor = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
@@ -91,6 +92,10 @@ const StyledTableScript = styled('span')({
     fontSize: '85%'
 })
 
+
+function getFieldTitle(type, field) {
+    return _t(`${type}.field.${field.name}`, null, (field.label || field.name) + (field.localized ? ' [' + _app_.lang + ']' : ''));
+}
 
 class TypesContainer extends React.Component {
 
@@ -257,7 +262,7 @@ class TypesContainer extends React.Component {
         const {data, selectedRows} = this.state
         if (data) {
 
-            const {type, page, limit, sort, _version, view} = this.pageParams
+            const {type, page, limit, sort, _version} = this.pageParams
             const fields = this.types[type].fields, dataSource = []
 
             const columnsFiltered = [], columnsMap = {}
@@ -618,7 +623,6 @@ class TypesContainer extends React.Component {
 
             Hook.call('TypeTableAction', {type, actions, multiSelectActions, pageParams: this.pageParams, data}, this)
             return <SimpleTable key="typeTable"
-                                style={{marginBottom: '5rem'}}
                                 title=""
                                 tableRenderer={this.tableRenderer}
                                 tableRenderOption={typeSettings.tableRenderOption}
@@ -676,7 +680,7 @@ class TypesContainer extends React.Component {
             createEditDialogOption
         } = this.state
         const {title} = this.props
-        const {type, fixType} = this.pageParams
+        const {type, fixType,_version} = this.pageParams
         const columns = this.getTableColumns(type)
         if (!this.types[type]) {
             return <>
@@ -907,25 +911,24 @@ class TypesContainer extends React.Component {
                         </Paper>
                     </Col>
                 </Row>
-                {
-                    prettyFilter && <div style={{margin: '1rem 0'}}>
-                        <Typography variant="caption">Filter: </Typography>
-                        <Chip
-                            label={this.prettyFilterLabel(prettyFilter)}
-                            onClick={() => {
-                                this.setState({viewFilterDialog: true})
-                            }}
-                            onDelete={() => {
-                                this.goTo({page: 1, prettyFilter: ''})
-                            }}
-                            deleteIcon={<DeleteIcon/>}
-                            variant="outlined"
-                        />
-                    </div>
-
-                }
                 <Typography mb={2} mt={0.5} color="text.disabled" component="div" key="searchHint"
                             variant="caption">{this.searchHint()}</Typography>
+
+                <div style={{margin: '0 0 0.5rem 0'}}>
+                    <Typography variant="caption">Filter: </Typography>
+                    <Chip
+                        size="small"
+                        label={prettyFilter ? this.prettyFilterLabel(prettyFilter) : _t('TypesContainer.noActiveFilter')}
+                        onClick={() => {
+                            this.setState({viewFilterDialog: true})
+                        }}
+                        onDelete={prettyFilter ? () => {
+                            this.goTo({page: 1, prettyFilter: ''})
+                        } : null}
+                        deleteIcon={<DeleteIcon/>}
+                        variant="outlined"
+                    />
+                </div>
             </div>,
             this.renderTable(columns, typeSettings),
             <SimpleDialog key="deleteDialog" open={confirmDialog.open} onClose={this.handleConfirmDialog}
@@ -1060,7 +1063,7 @@ class TypesContainer extends React.Component {
             </AppBar>
         ]
 
-        Hook.call('TypesContainerRender', {type, content}, this)
+        Hook.call('TypesContainerRender', {type, content,_version}, this)
 
         console.info(`render ${this.constructor.name} in ${new Date() - startTime}ms`)
 
@@ -1207,7 +1210,7 @@ class TypesContainer extends React.Component {
         typeDefinition.fields.forEach(field => {
             if (!field.hidden && field.name !== 'createdBy') {
                 typeColumns.push({
-                    title: _t(`${type}.field.${field.name}`, null, (field.label || field.name) + (field.localized ? ' [' + _app_.lang + ']' : '')),
+                    title: getFieldTitle(type, field),
                     id: field.name,
                     sortable: true
                 })
@@ -1753,13 +1756,9 @@ class TypesContainer extends React.Component {
     }
 
     getPrettyFilter() {
-        let prettyFilter
-        if (this.pageParams.prettyFilter) {
-            try {
-                prettyFilter = JSON.parse(this.pageParams.prettyFilter)
-            } catch (e) {
-
-            }
+        let prettyFilter = parseOrElse(this.pageParams.prettyFilter,{})
+        if(Object.keys(prettyFilter).length===0){
+            return false
         }
         return prettyFilter
     }
@@ -1816,6 +1815,7 @@ class TypesContainer extends React.Component {
     }
 
     prettyFilterLabel(prettyFilter) {
+        const {type} = this.pageParams
         let newFilter = []
 
         let payload = {prettyFilter}
@@ -1833,7 +1833,7 @@ class TypesContainer extends React.Component {
             }
             return str
         }
-
+        const typeDefinition = this.types[type]
         Object.keys(payload.prettyFilter).forEach(fieldKey => {
             if (!fieldKey.startsWith('__operator.')) {
                 const value = payload.prettyFilter[fieldKey]
@@ -1849,7 +1849,14 @@ class TypesContainer extends React.Component {
                     } else {
                         const operator = payload.prettyFilter['__operator.' + fieldKey] || '='
 
-                        newFilter.push(<span>{fieldKey}{operator}</span>)
+                        let fieldName = fieldKey
+                        if(typeDefinition?.fields){
+                            const field = typeDefinition.fields.find(f=>f.name===fieldKey)
+                            if(field){
+                                fieldName = getFieldTitle(type,field)
+                            }
+                        }
+                        newFilter.push(<span>{fieldName}{operator}</span>)
                         if (Array.isArray(value)) {
                             if (value.length > 0) {
                                 value.forEach(item => {

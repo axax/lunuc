@@ -173,7 +173,7 @@ class BackupContainer extends React.Component {
                                         this.setState({linkDialog: {
                                                 open:true,
                                                 fileName: i.name,
-                                                filePath:'%BACKUP_DIR%/dbdumps/',
+                                                filePath:'/backups/dbdumps/',
                                                 downloadName: 'db.backup.gz'
                                         }})
                                     },
@@ -208,7 +208,7 @@ class BackupContainer extends React.Component {
                                     this.setState({linkDialog: {
                                         open:true,
                                         fileName: i.name,
-                                        filePath:'%BACKUP_DIR%/mediadumps/',
+                                        filePath:'/backups/mediadumps/',
                                         downloadName: 'medias.backup.gz'
                                     }})
                                 },
@@ -244,7 +244,7 @@ class BackupContainer extends React.Component {
                                     this.setState({linkDialog: {
                                         open:true,
                                         fileName: i.name,
-                                        filePath:'%BACKUP_DIR%/hostruledumps/',
+                                        filePath:'/backups/hostruledumps/',
                                         downloadName: 'hostrule.backup.gz'
                                     }})
                                 },

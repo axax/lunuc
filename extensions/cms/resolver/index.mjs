@@ -26,6 +26,17 @@ const createScopeForDataResolver = (query, _props) => {
     return scope
 }
 
+
+const setPageOptionsAsMeta = async (db, context, result)=>{
+    const pageName = result.realSlug.split('/')[0]
+    const pageOptions = await Util.keyValueGlobalMap(db, context, ['PageOptions-' + pageName], {parse: true})
+
+    const meta = {
+        PageOptions: pageOptions['PageOptions-' + pageName]
+    }
+    result.meta = JSON.stringify(meta)
+}
+
 const cmsPageStatus = {}, globalScope = {}
 
 export default db => ({
@@ -180,15 +191,6 @@ export default db => ({
             }
 
 
-            const setPageOptions = async ()=>{
-                const pageName = result.realSlug.split('/')[0]
-                const pageOptions = await Util.keyValueGlobalMap(db, context, ['PageOptions-' + pageName], {parse: true})
-
-                const meta = {
-                    PageOptions: pageOptions['PageOptions-' + pageName]
-                }
-                result.meta = JSON.stringify(meta)
-            }
 
             if (editable && editmode) {
                 // return all data if user is loggedin, and in editmode and has the capability to mange cms pages
@@ -210,7 +212,7 @@ export default db => ({
 
                     result.meta = JSON.stringify(meta)
                 }else if( loadPageOptions ){
-                    await setPageOptions()
+                    await setPageOptionsAsMeta()
                 }
 
                 if (await Util.userHasCapability(db, context, CAPABILITY_MANAGE_CMS_PAGES)) {
@@ -230,12 +232,11 @@ export default db => ({
                     result.description = {[context.lang]: description[context.lang]}
                 }
                 if( loadPageOptions ){
-                    await setPageOptions()
+                    await setPageOptionsAsMeta(db, context, result)
                 }
             }
             console.debug(`CMS: resolver for ${slug} got data in ${(new Date()).getTime() - startTime}ms`)
 
-            //TODO: only experimental
             if(meta === 'fetchMore'){
                 delete result.dataResolver
                 delete result.serverScript
@@ -269,6 +270,73 @@ export default db => ({
             }
 
             return {user: cmsPageStatus[slug].user, data: JSON.stringify(data)}
+        },
+        cmsPageGroups: async ({path ='', _version}, req) => {
+            const {context} = req
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_CMS_PAGES)
+
+            const data = await db.collection('CmsPage').aggregate([
+                {
+                    $match: {
+                        slug: { $regex: `^${path}` } // Only include slugs containing at least one "/"
+                    }
+                },
+                {
+                    $project: {
+                        name: {
+                            $substrBytes: [
+                                "$slug",
+                                path.length,
+                                { $subtract: [{$indexOfBytes: ["$slug", "/", path.length] }, path.length ] }
+
+                            ]
+                        },
+                        public:1,
+                        slug: 1, // Keep the original slug for reference
+                    }
+                },
+                {
+                    $sort: { name: 1, _id: 1 } // Ensure a consistent "first" entry by sorting
+                },
+                {
+                    $group: {
+                        _id: "$name",
+                        childrenCount: { $sum: 1 },
+                        firstPublic: { $first: "$public" },
+                        firstSlug: { $first: "$slug" } // Or use "$$ROOT" for the whole doc
+                    }
+                },
+                {
+                    $project: {
+                        name: "$_id",
+                        childrenCount: 1,
+                        firstSlug: 1,
+                        firstPublic: 1,
+                        _id: 0
+                    }
+                },
+                {
+                    $addFields: {
+                        path: path,
+                    }
+                },
+                {
+                    // set count to zero if there are no children
+                    $addFields: {
+                        childrenCount: {
+                            $cond: [
+                                { $eq: ["$firstSlug", { $concat: [ path, "$name" ] }] },
+                                0,
+                                "$childrenCount"
+                            ]
+                        }
+                    }
+                },
+                {
+                    $sort: { childrenCount: -1,name: 1 } // 1 for ascending, -1 for descending
+                }
+            ]).toArray()
+            return data
         },
         cmsServerMethod: async ({slug, methodName, args, query, props, dynamic, _version}, req) => {
 

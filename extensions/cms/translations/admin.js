@@ -126,7 +126,11 @@ export const translations = {
         'JsonDomHelper.delete.selected.question':'ASind Sie ganz sicher, dass Sie alle ausgwählten Elemente löschen möchten?',
         'Cms.field.disableRendering': 'Rendering deaktivieren',
         'CmsViewEditorContainer.editParentComponent':'Übergeordnete Komponente bearbeiten',
-        'TemplateEditor.insertFromHtml':'Von HTML hinzufügen'
+        'TemplateEditor.insertFromHtml':'Von HTML hinzufügen',
+        'TypesContainers.showFileExplorer':'Datei-Explorer einblenden',
+        'TypesContainers.hideFileExplorer':'Datei-Explorer ausblenden',
+        'TypesContainers.listView':'Listenansicht anzeigen',
+        'TypesContainers.imageView': 'Bildansicht anzeigen'
     },
     en: {
         'CmsViewEditorContainer.save': 'Save',
@@ -253,6 +257,10 @@ export const translations = {
         'JsonDomHelper.selection.delete':'Delete selected elements',
         'GenericData.field.disableRendering': 'Disable rendering',
         'CmsViewEditorContainer.editParentComponent':'Edit parent component',
-        'TemplateEditor.insertFromHtml':'Insert from HTML'
+        'TemplateEditor.insertFromHtml':'Insert from HTML',
+        'TypesContainers.showFileExplorer':'Show File Explorer',
+        'TypesContainers.hideFileExplorer':'Hide File Explorer',
+        'TypesContainers.listView':'Show list view',
+        'TypesContainers.imageView': 'Show image view'
     }
 }

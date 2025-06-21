@@ -226,7 +226,8 @@
         "FolderZip",
         "EditNote",
         "Assignment",
-        "Download"
+        "Download",
+        "Article"
       ],
       "theme":{
         "colors":{

@@ -401,7 +401,6 @@ export const client = {
         if (!cacheKey) {
             cacheKey = getCacheKey({query, variables})
         }
-        console.log('xxxxxx',cacheKey)
         CACHE_QUERIES[cacheKey] = data
         const update = QUERY_WATCHER[cacheKey] || QUERY_WATCHER[oldCacheKey]
 

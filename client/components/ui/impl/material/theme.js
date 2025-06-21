@@ -1,11 +1,16 @@
 import {createTheme} from '@mui/material'
-import {blue} from '@mui/material/colors'
+import {blue, grey} from '@mui/material/colors'
 
-const defaultTheme = createTheme({
+export const defaultTheme = createTheme({
     palette: {
         primary: blue,
-        mode: 'light'
+        mode: 'light',
         /* secondary: amber*/
+        /*background: {
+            default:'rgb(249,249,249)',
+            dark: '#f4f6f8',
+            paper: common.white
+        }*/
     },
     typography: {
         display4: {
@@ -116,11 +121,24 @@ const defaultTheme = createTheme({
         MuiAppBar: {
             styleOverrides: {
                 colorPrimary: {
-                    background: `linear-gradient(to right bottom, ${blue[300]}, ${blue.A700})`
+                    background: `linear-gradient(to right bottom, ${blue[300]}, ${blue.A400})`
+                }
+            }
+        },
+        MuiDrawer: {
+            styleOverrides: {
+                paper: {
+                    //backgroundColor: 'rgb(252,252,252)'
                 }
             }
         }
     }
+})
+
+export const darkTheme = createTheme({
+    palette: {
+        mode: 'dark',
+    },
 })
 
 export default defaultTheme

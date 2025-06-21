@@ -65,7 +65,7 @@ class SimpleTable extends React.Component {
         const {tableRenderer, tableRenderOption, style, title, actions, header, count, rowsPerPage, page, orderDirection, orderBy, onChangePage, onChangeRowsPerPage, onRowClick, columns, dataSource, footer} = this.props
 
         const numSelected = 0
-        return <Paper style={style}>
+        return <Paper elevation={1} style={style}>
 
             { (header || title || actions ?
                 <Toolbar

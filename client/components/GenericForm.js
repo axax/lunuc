@@ -1102,6 +1102,7 @@ class GenericForm extends React.Component {
                         style={{border: '1px solid #eeeeee',margin: '16px 0'}}
                         readOnly={field.readOnly}
                         key={fieldKey}
+                        fileSplit={true}
                         forceJson={field.type === 'Object'}
                         onChange={(newValue) => this.handleInputChange({
                             target: {

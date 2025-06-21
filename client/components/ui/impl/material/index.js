@@ -7,7 +7,7 @@ import {ThemeProvider} from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 
 
-import theme from './theme'
+import {defaultTheme as theme, darkTheme} from './theme'
 
 export {theme}
 
@@ -85,6 +85,8 @@ export ContentBlock from './ContentBlock'
 
 // grid
 import Grid from '@mui/material/Grid'
+
+export Grid from '@mui/material/Grid'
 
 export const Row = ({...rest}) => {
     return <Grid container {...rest} />

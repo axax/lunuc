@@ -892,7 +892,15 @@ const baseElements = [
             },
             ...classOptions('p_'),
             ...imageOptions('p_'),
-            ...lazyImageOptions('$observe_')
+            ...lazyImageOptions('$observe_'),
+            c_0_p_width: {
+                template: '${_comp.$set.width||""}',
+                invisible:true
+            },
+            c_0_p_height: {
+                template: '${_comp.$set.height||""}',
+                invisible:true
+            }
         }
     },
     {

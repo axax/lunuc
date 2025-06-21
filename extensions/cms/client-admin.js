@@ -17,7 +17,9 @@ import {
     Typography,
     WebIcon,
     CircularProgress,
-    LinearProgress
+    LinearProgress,
+    Paper,
+    Grid
 } from 'ui/admin'
 import {translations} from './translations/admin'
 import TypesContainer from 'client/containers/TypesContainer'
@@ -25,6 +27,9 @@ import GenericForm from 'client/components/GenericForm'
 import {translations as adminTranslations} from 'client/translations/admin'
 import Expandable from '../../client/components/Expandable'
 import SimpleImageList from '../../client/components/ui/impl/material/SimpleImageList'
+import {client} from '../../client/middleware/graphql'
+import SimpleFileExplorer from '../../client/components/ui/impl/material/SimpleFileExplorer'
+import {parseOrElse} from "../../client/util/json.mjs";
 
 
 registerTrs(translations, 'CmsViewEditorContainer')
@@ -120,6 +125,45 @@ const convertHtmlAndSet = ({html, style, script, meta, typeEdit}) => {
         })
 }
 
+function CmsFileExplorer({_version,onClick,showFile,defaultExpandedItems}) {
+    return <SimpleFileExplorer defaultExpandedItems={defaultExpandedItems} onItemClick={(event, item, isExpanded) => {
+        if (item.fileType !== 'folder') {
+            _app_.history.push(cmsPageEditorUrl(item.path + item.name, _version))
+        } else {
+            onClick(item, isExpanded)
+        }
+    }}
+   onFetch={({id}) => {
+       return new Promise((resolve, reject) => {
+           client.query({
+               query: `query cmsPageGroups($path:String,$_version:String){cmsPageGroups(path:$path,_version:$_version){firstSlug firstPublic path name childrenCount}}`,
+               fetchPolicy: 'cache-and-network',
+               variables: {
+                   path: id,
+                   _version,
+                   limit: 1000,
+                   page: 1
+               }
+           }).then(response => {
+               if (response?.data?.cmsPageGroups) {
+                   resolve(response.data.cmsPageGroups.filter(item=>showFile || item.childrenCount > 0).map(item => ({
+                       ...item,
+                       id: item.path + item.name + '/',
+                       label: item.name,
+                       icon: item.childrenCount > 0 ? 'folder' : 'doc',
+                       fileType: item.childrenCount > 0 ? 'folder' : 'file'
+                   })))
+               } else {
+                   response([])
+               }
+           }).catch(error => {
+               reject(error)
+           })
+       })
+
+   }}></SimpleFileExplorer>
+}
+
 export default () => {
 
     Hook.on('JsonDom', ({components}) => {
@@ -156,8 +200,11 @@ export default () => {
                     const item = data.results[i]
                     if( item ) {
                         d.preview =  <Link style={{display:'block', lineHeight: '0'}} to={cmsPageEditorUrl(item.slug, container.pageParams._version)}>
-                            <img style={{}} width={120} height={80}
-                                         src={getImageFromCmsPageItem(item)}/>
+                            <img style={{}}
+                                 width={120} height={80}
+                                 id={'img-'+item._id}
+                                 key={'key-'+item._id}
+                                 src={getImageFromCmsPageItem(item)}/>
                         </Link>
 
                         d.slug = <Link
@@ -224,12 +271,22 @@ export default () => {
                 delete this.tableRenderer
             }
             actions.push({
-                    name: isImageView?'List view':'Image view',
+                    name: isImageView?_t('TypesContainers.listView'):_t('TypesContainers.imageView'),
                     onClick: () => {
                         this.goTo({view: isImageView?'':'image'})
                     },
                     icon:isImageView?'view':'image'
                 })
+
+            const typeSettings = this.getSettingsForType(type, this.pageParams.meta)
+
+            actions.push({
+                name: typeSettings.showFileExplorer?_t('TypesContainers.hideFileExplorer'):_t('TypesContainers.showFileExplorer'),
+                onClick: () => {
+                    this.setSettingsForType(type, {showFileExplorer: !typeSettings.showFileExplorer})
+                },
+                icon:typeSettings.showFileExplorer?'tree':'tree'
+            })
         }
     })
 
@@ -395,6 +452,75 @@ export default () => {
                 convertHtmlAndSet({html:createEditForm.state.fields.html, meta, typeEdit})
 
             }
+        }
+    })
+
+
+    Hook.on('TypesContainerRender', function ({type, content, _version}) {
+        if (type === 'CmsPage') {
+
+            const allPaths = []
+
+            if(this.pageParams.prettyFilter) {
+                const prettyFilter = parseOrElse(this.pageParams.prettyFilter,{})
+                if(prettyFilter.slug) {
+                    const parts = prettyFilter.slug.substring(2).split('/')
+                    let path = ''
+                    for (let i = 0; i < parts.length; i++) {
+
+                        path += parts[i] + '/'
+                        if (allPaths.indexOf(path) < 0) {
+                            allPaths.push(path)
+                        }
+                    }
+                }
+            }
+
+
+            const typeSettings = this.getSettingsForType(type, this.pageParams.meta)
+            if(typeSettings.showFileExplorer!==false) {
+                content[3] = <Grid container alignItems="stretch" spacing={2}>
+                    <Grid style={{minHeight: '100%', display: 'flex'}} size={2}>
+                        <Paper sx={{width: '100%'}}><CmsFileExplorer
+                            defaultExpandedItems={allPaths}
+                            showFile={true} _version={_version} onClick={(item, isExpanded) => {
+                            const prettyFilter = parseOrElse(this.pageParams.prettyFilter,{})
+                            if(isExpanded) {
+                                prettyFilter.slug =  `~^${item.path + item.name}`
+                            }else {
+                                delete prettyFilter.slug
+                            }
+
+                            this.goTo({prettyFilter: JSON.stringify(prettyFilter)})
+                        }}/>
+                        </Paper>
+                    </Grid>
+                    <Grid style={{minHeight: '100%', display: 'flex'}} size={10}>
+                        {content[3]}
+                    </Grid>
+                </Grid>
+            }
+
+            /*content.splice(3, 0, <Query
+                query={}
+                fetchPolicy="cache-and-network"
+                variables={{
+                    _version,
+                    limit:1000,
+                    page:1
+                }}>
+                {({loading, error, data}) => {
+                    if (loading) return <p>Loading...</p>
+                    if (error) return `Error! ${error.message}`
+                    return data.cmsPageGroups.map(ds=>(<img style={{}}
+                                              width={30} height={20}
+                                                            onClick={()=>{
+
+                                                                this.goTo({baseFilter:`slug=~^${ds.prefix}`})
+                                                            }}
+                                              src={getImageFromCmsPageItem({slug:ds.firstSlug,public:ds.firstPublic})}/>))
+                }}
+            </Query>)*/
         }
     })
              // add a click event

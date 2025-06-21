@@ -686,8 +686,6 @@ const startListening = async (db, context) => {
                                 session.writeStream.write(stream, () => {
                                     setImmediate(processMessage)
                                 })
-                            } else {
-                                logError(`stream is null or closed`)
                             }
                         })
                     } catch (error) {
