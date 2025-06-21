@@ -93,3 +93,18 @@ export const getGqlVariables = props => {
 
     return variables
 }
+
+
+export const removePrettyUrlPart = (slug) => {
+    const pos = slug.indexOf('/' + config.PRETTYURL_SEPERATOR + '/')
+    if (pos >= 0) {
+        slug = slug.substring(0, pos)
+    } else if (slug.startsWith(config.PRETTYURL_SEPERATOR + '/')) {
+        slug = ''
+    }
+
+    if (slug.endsWith('/')) {
+        slug = slug.substring(0, slug.length - 1)
+    }
+    return slug
+}

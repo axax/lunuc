@@ -16,7 +16,7 @@ import path from 'path'
 import {dbConnection, MONGO_URL} from '../../api/database.mjs'
 import {getDynamicConfig} from '../../util/config.mjs'
 import {ObjectId} from 'mongodb'
-import {getCmsPageQuery} from '../../extensions/cms/util/cmsView.mjs'
+import {getCmsPageQuery, removePrettyUrlPart} from '../../extensions/cms/util/cmsView.mjs'
 import {SESSION_HEADER, AUTH_HEADER, HOSTRULE_HEADER} from '../../api/constants/index.mjs'
 import Util from '../../client/util/index.mjs'
 import {parseCookies} from "../../api/util/parseCookies.mjs";
@@ -257,6 +257,8 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
         if (slug.startsWith('[admin]')) {
             slug = slug.substring(8)
         }
+
+        slug = removePrettyUrlPart(slug)
 
         if(cookies.auth || req.headers[AUTH_HEADER] || slug.startsWith(config.ADMIN_BASE_URL.slice(1))){
             // we don't preload data a auth data exists

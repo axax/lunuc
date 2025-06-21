@@ -2,7 +2,7 @@ import React from 'react'
 import Hook from 'util/hook.cjs'
 import config from 'gen/config-client'
 
-const {ADMIN_BASE_URL, PRETTYURL_SEPERATOR} = config
+const {ADMIN_BASE_URL} = config
 import {
     CAPABILITY_VIEW_CMS_EDITOR,
     CAPABILITY_MANAGE_CMS_PAGES,
@@ -13,6 +13,7 @@ import Async from 'client/components/Async'
 import CmsViewContainer from './containers/CmsViewContainer'
 import JsonDom from './components/JsonDom'
 import {render} from 'react-dom'
+import {removePrettyUrlPart} from './util/cmsView.mjs'
 
 const TypesContainer = (props) => <Async {...props}
                                          load={import(/* webpackChunkName: "admin" */ '../../client/containers/TypesContainer')}/>
@@ -77,18 +78,7 @@ export default () => {
                     delete route.layout
                     delete route.layoutProps
                 }
-
-
-                const pos = slug.indexOf('/' + PRETTYURL_SEPERATOR + '/')
-                if (pos >= 0) {
-                    slug = slug.substring(0, pos)
-                }else if(slug.startsWith(PRETTYURL_SEPERATOR+'/')){
-                    slug = ''
-                }
-
-                if(slug.endsWith('/')){
-                    slug = slug.substring(0,slug.length-1)
-                }
+                slug = removePrettyUrlPart(slug)
 
                 if (slug.split('/')[0] !== container.adminBaseUrlPlain) {
                     cmsViewProps.slug=slug
