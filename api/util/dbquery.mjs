@@ -1,5 +1,8 @@
 import {ObjectId} from 'mongodb'
 import ClientUtil from '../../client/util/index.mjs'
+import {getType} from '../../util/types.mjs'
+import Util from './index.mjs'
+import {CAPABILITY_MANAGE_SAME_GROUP} from '../../util/capabilities.mjs'
 
 export const comparatorMap = {
     ':': '$regex',
@@ -345,5 +348,68 @@ export const extendWithOwnerGroupMatch = (typeDefinition, context, match, userFi
             }
         }
     }
+    return match
+}
+
+
+export const createMatchForCurrentUser = async ({typeName, db, context, operation}) => {
+    let match
+
+    if(!operation){
+        operation='read'
+    }
+
+    if( typeName === 'UserRole'){
+        match={name:{$in:['subscriber',context.role]}}
+        const typeDefinition = getType(typeName)
+        match = extendWithOwnerGroupMatch(typeDefinition, context, match, true)
+    }else if (typeName === 'User') {
+
+        // special handling for type User
+        match = {_id: {$in: await Util.userAndJuniorIds(db, context.id)}}
+
+        if (context.group && context.group.length > 0) {
+            // if user has capability to manage subscribers
+            // show subscribers that are in the same group
+            const userCanManageSameGroup = await Util.userHasCapability(db, context, CAPABILITY_MANAGE_SAME_GROUP)
+
+            if (userCanManageSameGroup) {
+                match = {$or: [match, {group: {$in: context.group.map(f => new ObjectId(f))}}]}
+            }
+        }
+
+    } else {
+        const typeDefinition = getType(typeName)
+        let userFilter = true
+        if (typeDefinition) {
+            if (typeDefinition.noUserRelation) {
+                userFilter = false
+            }
+            if (typeDefinition.access && typeDefinition.access[operation]) {
+                if (await Util.userHasCapability(db, context, typeDefinition.access[operation])) {
+                    match = {}
+                    if (typeDefinition.access[operation].type === 'roleAndUser') {
+                        if (userFilter) {
+                            match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
+                        }
+                        match = extendWithOwnerGroupMatch(typeDefinition, context, match, userFilter)
+                    }
+                    // user has general rights to access type
+                    return match
+                } else/* if (typeDefinition.noUserRelation)*/ {
+                    // user has no permission to access type
+                    return
+                }
+            }
+        }
+
+        if (userFilter) {
+            match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
+        }
+
+        match = extendWithOwnerGroupMatch(typeDefinition, context, match, userFilter)
+
+    }
+
     return match
 }

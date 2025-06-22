@@ -17,6 +17,8 @@ import {
 import renderReact from '../renderReact.mjs'
 import {createRequireForScript} from '../../../util/require.mjs'
 import {DEFAULT_DATA_RESOLVER, DEFAULT_SCRIPT, DEFAULT_STYLE, DEFAULT_TEMPLATE} from '../constants/cmsDefaults.mjs'
+import {CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities.mjs'
+import {createMatchForCurrentUser} from '../../../api/util/dbquery.mjs'
 
 const PORT = (process.env.PORT || 3000)
 
@@ -276,11 +278,19 @@ export default db => ({
             const {context} = req
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_CMS_PAGES)
 
+            const userCanManageOtherUsers = await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
+
+            let match = {}
+            if (!userCanManageOtherUsers) {
+                // only select items that belong to the current user or the user has permission to read
+                match = await createMatchForCurrentUser({typeName:'CmsPage', db, context})
+            }
+
+            match.slug = { $regex: `^${path}` } // Only include slugs containing at least one "/"
+
             const data = await db.collection('CmsPage').aggregate([
                 {
-                    $match: {
-                        slug: { $regex: `^${path}` } // Only include slugs containing at least one "/"
-                    }
+                    $match: match
                 },
                 {
                     $project: {

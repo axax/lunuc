@@ -11,7 +11,7 @@ import HookAsync from '../../../util/hookAsync.mjs'
 import AggregationBuilder from './AggregationBuilder.mjs'
 import Cache from '../../../util/cache.mjs'
 import {_t} from '../../../util/i18nServer.mjs'
-import {extendWithOwnerGroupMatch} from '../../util/dbquery.mjs'
+import {createMatchForCurrentUser} from '../../util/dbquery.mjs'
 import postQueryConvert from './postQueryConverter.mjs'
 
 const buildCollectionName = async (db, context, typeName, _version) => {
@@ -26,67 +26,6 @@ const buildCollectionName = async (db, context, typeName, _version) => {
     return typeName + (_version && _version !== 'default' ? '_' + _version : '')
 }
 
-const createMatchForCurrentUser = async ({typeName, db, context, operation}) => {
-    let match
-
-    if(!operation){
-        operation='read'
-    }
-
-    if( typeName === 'UserRole'){
-        match={name:{$in:['subscriber',context.role]}}
-        const typeDefinition = getType(typeName)
-        match = extendWithOwnerGroupMatch(typeDefinition, context, match, true)
-    }else if (typeName === 'User') {
-
-        // special handling for type User
-        match = {_id: {$in: await Util.userAndJuniorIds(db, context.id)}}
-
-        if (context.group && context.group.length > 0) {
-            // if user has capability to manage subscribers
-            // show subscribers that are in the same group
-            const userCanManageSameGroup = await Util.userHasCapability(db, context, CAPABILITY_MANAGE_SAME_GROUP)
-
-            if (userCanManageSameGroup) {
-                match = {$or: [match, {group: {$in: context.group.map(f => new ObjectId(f))}}]}
-            }
-        }
-
-    } else {
-        const typeDefinition = getType(typeName)
-        let userFilter = true
-        if (typeDefinition) {
-            if (typeDefinition.noUserRelation) {
-                userFilter = false
-            }
-            if (typeDefinition.access && typeDefinition.access[operation]) {
-                if (await Util.userHasCapability(db, context, typeDefinition.access[operation])) {
-                    match = {}
-                    if (typeDefinition.access[operation].type === 'roleAndUser') {
-                        if (userFilter) {
-                            match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
-                        }
-                        match = extendWithOwnerGroupMatch(typeDefinition, context, match, userFilter)
-                    }
-                    // user has general rights to access type
-                    return match
-                } else/* if (typeDefinition.noUserRelation)*/ {
-                    // user has no permission to access type
-                    return
-                }
-            }
-        }
-
-        if (userFilter) {
-            match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
-        }
-
-        match = extendWithOwnerGroupMatch(typeDefinition, context, match, userFilter)
-
-    }
-
-    return match
-}
 
 async function resolveReferences(typeName, result, db, context) {
 
