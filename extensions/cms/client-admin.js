@@ -478,7 +478,7 @@ export default () => {
 
 
             const typeSettings = this.getSettingsForType(type, this.pageParams.meta)
-            if(typeSettings.showFileExplorer!==false) {
+            if(typeSettings.showFileExplorer===true) {
                 content[3] = <Grid container alignItems="stretch" spacing={2}>
                     <Grid style={{minHeight: '100%',display: 'flex'}} size={2}>
                         <Paper sx={{width: '100%'}}><CmsFileExplorer
