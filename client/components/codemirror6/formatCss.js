@@ -11,6 +11,13 @@ export const formatCss = (cssCode, run=0) => {
     let inCmd = 0
     lines.forEach((line) => {
         const trimmedLine = line.trim()
+
+        // Handle `@import` and similar at-rule statements
+        if (trimmedLine.startsWith('@import') || trimmedLine.startsWith('@charset')) {
+            formattedCode += (formattedCode && !formattedCode.endsWith('\n') ? '\n' : '') + trimmedLine + '\n'
+            return
+        }
+
         let newLine = '',
             indentOffset = 0
         for (let i = 0; i < trimmedLine.length; i++) {

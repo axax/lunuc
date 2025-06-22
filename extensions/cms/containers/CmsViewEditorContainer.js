@@ -47,8 +47,7 @@ import {translateText} from '../../../client/util/translate.mjs'
 import {
     CAPABILITY_MANAGE_CMS_CONTENT,
     CAPABILITY_MANAGE_CMS_TEMPLATE,
-    CAPABILITY_VIEW_CMS_EDITOR,
-    DEFAULT_STYLE
+    CAPABILITY_VIEW_CMS_EDITOR
 } from '../constants/index.mjs'
 import {
     propertyByPath,
@@ -78,6 +77,7 @@ import {downloadAs} from '../../../client/util/download'
 import FileDrop from '../../../client/components/FileDrop'
 import {csvToJson} from '../../../client/util/csv.mjs'
 import GenericSettings from '../../../client/components/GenericSettings'
+import {DEFAULT_STYLE} from '../constants/cmsDefaults.mjs'
 
 const StyledBox = styled(Box)(({theme})=>({
     display: 'flex',

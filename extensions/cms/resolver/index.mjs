@@ -5,7 +5,7 @@ import ClientUtil from '../../../client/util/index.mjs'
 import {getCmsPage, getCmsPageCacheKey} from '../util/cmsPage.mjs'
 import {resolveData} from '../util/dataResolver.mjs'
 import {pubsub, pubsubHooked} from '../../../api/subscription.mjs'
-import {DEFAULT_DATA_RESOLVER, DEFAULT_TEMPLATE, DEFAULT_SCRIPT, DEFAULT_STYLE, CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_CONTENT} from '../constants/index.mjs'
+import {CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_CONTENT} from '../constants/index.mjs'
 import Cache from '../../../util/cache.mjs'
 import {withFilter} from 'graphql-subscriptions'
 import {getHostFromHeaders} from '../../../util/host.mjs'
@@ -16,6 +16,7 @@ import {
 } from '../util/cmsView.mjs'
 import renderReact from '../renderReact.mjs'
 import {createRequireForScript} from '../../../util/require.mjs'
+import {DEFAULT_DATA_RESOLVER, DEFAULT_SCRIPT, DEFAULT_STYLE, DEFAULT_TEMPLATE} from '../constants/cmsDefaults.mjs'
 
 const PORT = (process.env.PORT || 3000)
 

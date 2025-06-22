@@ -35,14 +35,6 @@ export const getType = (typeName) => {
     const types = getTypes()
     return types[typeName]
 }
-export const getFieldOfType = (typeName, fieldName) => {
-    const types = getTypes()
-    let field
-    if(types[typeName]){
-        field = types[typeName].fields.find(f=>f.name==fieldName)
-    }
-    return field
-}
 
 export const getSubscribeQuery = (typeName) =>{
     const type = getType(typeName)

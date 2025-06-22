@@ -1,5 +1,5 @@
 import {deepMergeOptional} from './deepMerge.mjs'
-import {getFieldOfType} from "./types.mjs";
+import {getTypes} from './types.mjs'
 import config from '../gensrc/config.mjs'
 
 const toObject = (any) => {
@@ -10,6 +10,17 @@ const toObject = (any) => {
     }
     return any
 }
+
+const getFieldOfType = (typeName, fieldName) => {
+    const types = getTypes()
+    let field
+    if(types[typeName]){
+        field = types[typeName].fields.find(f=>f.name==fieldName)
+    }
+    return field
+}
+
+
 export const performFieldProjection = (projection, data, level = 0)=>{
     if(!data){
         return
