@@ -4,8 +4,6 @@ import {buildASTSchema} from 'graphql'
 import {graphqlHTTP} from 'express-graphql'
 import bodyParser from 'body-parser'
 import {createServer} from 'http'
-import {SubscriptionServer} from 'subscriptions-transport-ws'
-import {execute, subscribe} from 'graphql'
 import {schemaString} from './schema/index.mjs'
 import {resolver} from './resolver/index.mjs'
 import {dbConnection, dbPreparation, MONGO_URL, BACKUP_MONGO_URL} from './database.mjs'
@@ -14,10 +12,8 @@ import {formatError} from './error.mjs'
 import {handleUpload, handleMediaDumpUpload, handleDbDumpUpload, handleHostruleDumpUpload} from './upload.mjs'
 import Hook from '../util/hook.cjs'
 import compression from 'compression'
-import {pubsub} from './subscription.mjs'
-import {decodeToken} from './util/jwt.mjs'
-import {HEADER_TIMEOUT, SESSION_HEADER, USE_COOKIES} from './constants/index.mjs'
-import {parseCookies} from './util/parseCookies.mjs'
+import {createSubscriptionServer, pubsub} from './subscription.mjs'
+import {HEADER_TIMEOUT} from './constants/index.mjs'
 import {createUsers} from './data/initialData.mjs'
 
 
@@ -143,12 +139,7 @@ export const start = (done) => {
                     }
                 })(req, res, next).then(() => {
                     if (req.context) {
-                        req.context.responded = true
-                        if (req.context.delayedPubsubs) {
-                            for (const pub of req.context.delayedPubsubs) {
-                                pubsub.publish(pub.triggerName, pub.payload)
-                            }
-                        }
+
                     }
                 }).catch((e) => {
                     res.writeHead(500, {'content-type': 'application/json'})
@@ -196,37 +187,8 @@ export const start = (done) => {
             // attach index reference to server
             server._db = db
 
-            const subscriptionServer = SubscriptionServer.create(
-                {
-                    schema,
-                    execute,
-                    subscribe,
-                    rootValue,
-                    onConnect: (connectionParams, webSocket, context) => {
+            createSubscriptionServer({server, schema, rootValue})
 
-                        // const host = webSocket.upgradeReq.headers.host
-                    },
-                    onOperation: ({payload}, params, ws) => {
-                        let context
-                        if (USE_COOKIES) {
-                            const cookies = parseCookies(ws.upgradeReq)
-                            context = decodeToken(cookies.auth)
-                            context.session = cookies.session
-                        } else {
-                            context = decodeToken(payload.auth)
-                            context.session = payload.session
-                        }
-                        context.lang = payload.lang
-
-                        // now if auth is needed we can check if the context is available
-                        context.variables = payload.variables
-                        return {context, schema}
-                    }
-                },
-                {
-                    server
-                }
-            )
 
         }
     }))

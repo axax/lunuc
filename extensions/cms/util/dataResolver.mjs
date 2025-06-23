@@ -401,6 +401,7 @@ async function resolveRequest(segment, resolvedData, context, addDataResolverSub
             pubsubDelayed.publish('cmsPageData', {
                 userId: context.id,
                 session: context.session,
+                clientId: context.clientId,
                 cmsPageData: {resolvedData: JSON.stringify({[dataKey]: result})}
             }, context)
 
@@ -412,6 +413,7 @@ async function resolveRequest(segment, resolvedData, context, addDataResolverSub
             pubsubDelayed.publish('cmsPageData', {
                 userId: context.id,
                 session: context.session,
+                clientId: context.clientId,
                 cmsPageData: {resolvedData: JSON.stringify({[dataKey]: result})}
             }, context)
         })

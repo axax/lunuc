@@ -33,6 +33,7 @@ function addCanonicalTag(href) {
 function mainInit() {
     _app_.contextPath = ''
     _app_.user = {}
+    _app_.clientId = Date.now().toString(36) + Math.random().toString(36).substring(2, 9)
 
     // translation map
     _app_.tr = {}

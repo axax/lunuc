@@ -73,7 +73,7 @@ export const contextByRequest = (req, res) => {
         }
 
 
-        context.session = cookies.session || crypto.randomBytes(16).toString("hex")
+        context.session = cookies.session || crypto.randomBytes(16).toString('hex')
 
         if (!cookies.session && res) {
             // Set cookies
@@ -87,7 +87,7 @@ export const contextByRequest = (req, res) => {
         // now if auth is needed we can check if the context is available
         context = decodeToken(req.headers[AUTH_HEADER])
 
-        context.session = req.headers[SESSION_HEADER] || crypto.randomBytes(16).toString("hex")
+        context.session = req.headers[SESSION_HEADER] || crypto.randomBytes(16).toString('hex')
 
         if (!req.headers[SESSION_HEADER] && res) {
             res.header(SESSION_HEADER, context.session)
@@ -97,6 +97,6 @@ export const contextByRequest = (req, res) => {
 
     // add the requested language to the context
     context.lang = lang || DEFAULT_LANGUAGE
-
+    context.clientId = req.headers['x-client-id']
     return context
 }

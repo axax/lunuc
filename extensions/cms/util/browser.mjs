@@ -68,6 +68,7 @@ async function processWebsiteData(processData) {
     pubsubDelayed.publish('cmsPageData', {
         userId: context.id,
         session: context.session,
+        clientId: context.clientId,
         cmsPageData: {resolvedData: JSON.stringify({[dataKey]: data})}
     }, context)
 }

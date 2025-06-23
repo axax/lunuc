@@ -136,7 +136,7 @@ const setUpWs = () => {
 
                 for (let i = 0; i < openWsSubscription.length; i++) {
                     const sub = openWsSubscription[i]
-                    wsCurrentConnection.send(JSON.stringify({type: 'start', id: sub.id, payload: sub.payload}))
+                    wsCurrentConnection.send(JSON.stringify({type: 'start', id: sub.id, clientId: _app_.clientId, payload: sub.payload}))
                 }
 
                 return false
@@ -180,6 +180,7 @@ const getHeaders = (lang, headersExtra={}) => {
         'Content-Language': lang || _app_.lang,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'x-client-id': _app_.clientId,
         ...headersExtra
     }
 
@@ -519,7 +520,8 @@ export const client = {
                     extensions,
                     lang: _app_.lang,
                     auth: Util.getAuthToken(), // auth is only set when USE_COOKIES is false
-                    session: _app_.session // session is only set when USE_COOKIES is false
+                    session: _app_.session, // session is only set when USE_COOKIES is false
+                    clientId: _app_.clientId
                 }
                 createWsSubscription(id, subId, payload, next)
                 return {
