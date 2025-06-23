@@ -1,7 +1,7 @@
 import {PubSub} from 'graphql-subscriptions'
 import Hook from '../util/hook.cjs'
 import {SubscriptionServer} from 'subscriptions-transport-ws'
-import {execute, subscribe} from 'graphql/index'
+import {execute, subscribe} from 'graphql'
 import {USE_COOKIES} from './constants/index.mjs'
 import {parseCookies} from './util/parseCookies.mjs'
 import {decodeToken} from './util/jwt.mjs'
