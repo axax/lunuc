@@ -105,7 +105,6 @@ const findActiveItem = (props) => {
     }
     return maybeItem
 }
-console.log(theme)
 
 const MenuList = (props) => {
     const {items, depth, onMenuChange} = props

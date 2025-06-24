@@ -271,6 +271,7 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
                 slug,
                 query: parsedUrl.search ? parsedUrl.search.substring(1) : ''
             }
+            const clientId = Date.now().toString(36) + Math.random().toString(36).substring(2, 9)
 
             fetch('http:/localhost:3000/graphql', {
                 method: 'POST',
@@ -278,6 +279,7 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
                     'Content-Type': 'application/json',
                     'User-Agent': req.headers['user-agent'],
                     ['x-track-ip']: remoteAddress,
+                    ['x-client-id']: clientId,
                     [HOSTRULE_HEADER]: host,
                     [SESSION_HEADER]: req.headers[SESSION_HEADER],
                     /* cookies and auth_header not needed at the moment*/
@@ -293,14 +295,16 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
                     let additionalContent = `/*time${Date.now() - startTime}ms*/\n`
                     if (result?.data?.cmsPage) {
                         additionalContent += `
-_app_.defaultFetchPolicy = 'cache-first'                    
+_app_.clientId = '${clientId}'
+_app_.defaultFetchPolicy = '${result.data.cmsPage.subscriptions?'cache-first':'cache-first'}'                 
 _app_.onClientReady = (client)=>{
     client.writeQuery({
         query: '${query}',
         variables: ${JSON.stringify(variables)},
         data: ${JSON.stringify(result.data)}
     })
-}`
+}
+`
 
                         headers['x-no-serviceworker-cache'] = true
                     } else {

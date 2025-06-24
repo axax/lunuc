@@ -268,7 +268,10 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  qu
                 }
 
                 resolve(resolveData)
-
+                if(resolveData.data && resolveData.data.cmsPage && resolveData.data.cmsPage.subscriptions) {
+                    // only setup subscription if needed
+                    setUpWs()
+                }
                 return
             }
         }
