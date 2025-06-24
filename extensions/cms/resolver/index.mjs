@@ -532,10 +532,7 @@ export default db => ({
     Subscription: {
         cmsPageData: withFilter(() => pubsub.asyncIterableIterator('cmsPageData'),
             (payload, context) => {
-                const isValid = payload &&
-                    payload.session === context.session &&
-                    context.clientId === payload.clientId //payload.userId === context.id
-                return isValid
+                return payload && context.clientId === payload.clientId
             }
         ),
         cmsCustomData: withFilter(() => pubsub.asyncIterableIterator('cmsCustomData'),
