@@ -391,6 +391,9 @@ const Util = {
                 if (resize.width<w) {
                     w = resize.width
                 }
+                if(resize.width && resize.height){
+                    h = Math.ceil((w / resize.width) * resize.height)
+                }
             }else{
                 if (resize.width) {
                     w = resize.width
