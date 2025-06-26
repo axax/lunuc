@@ -645,6 +645,7 @@ const startListening = async (db, context) => {
 
                     try {
                         const mimeTree = convertSimpleParserToMimeTree(message.data)
+                        const idate = new Date(message.data.date)
                         delete message.data
                         console.log('yyyyyy', mimeTree)
                         let stream = imapHandler.compileStream(
@@ -655,7 +656,7 @@ const startListening = async (db, context) => {
                                     {
                                         ...message,
                                         mimeTree: mimeTree,
-                                        idate: new Date(message.data.date)
+                                        idate
                                     }
                                 )
                             })
