@@ -67,6 +67,46 @@ import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
     console.log('xxxxx',data,err)
 })*/
 
+function convertSimpleParserToMimeTree(parsed) {
+    const root = {
+        headers: Object.fromEntries(parsed.headers),
+        children: []
+    };
+
+    // Handle multipart/alternative for text and html
+    if (parsed.text && parsed.html) {
+        const altNode = {
+            headers: { 'Content-Type': 'multipart/alternative' },
+            children: [
+                { headers: { 'Content-Type': 'text/plain' }, content: parsed.text },
+                { headers: { 'Content-Type': 'text/html' }, content: parsed.html }
+            ]
+        };
+        root.children.push(altNode);
+    } else if (parsed.text) {
+        root.children.push({ headers: { 'Content-Type': 'text/plain' }, content: parsed.text });
+    } else if (parsed.html) {
+        root.children.push({ headers: { 'Content-Type': 'text/html' }, content: parsed.html });
+    }
+
+    // Add attachments
+    if (parsed.attachments) {
+        for (const att of parsed.attachments) {
+            root.children.push({
+                headers: {
+                    'Content-Type': att.contentType,
+                    'Content-Disposition': att.contentDisposition || 'attachment',
+                    'Content-Transfer-Encoding': att.transferEncoding || 'base64',
+                    'Filename': att.filename
+                },
+                content: att.content // Buffer
+            });
+        }
+    }
+
+    return root;
+}
+
 const mongoDbMatchProjectFromIMapData = (options) => {
     let match = {}, project
     if (options.changedSince) {
@@ -614,9 +654,49 @@ const startListening = async (db, context) => {
 
                 if(message.data) {
 
-                    const messageData = JSON.parse(JSON.stringify(message.data))
+                    //const messageData = JSON.parse(JSON.stringify(message.data))
+                    const logError = (message) => {
+                        GenericResolver.createEntity(db, {context: context}, 'Log', {
+                            location: 'mailserver',
+                            type: 'imapError',
+                            message: message,
+                            meta: {
+                                messageData: message.data,
+                                debug: JSON.parse(JSON.stringify({folderId, options, session}, getCircularReplacer()))
+                            }
+                        })
+                    }
 
-                    delete message.data
+                    const mimeTree = convertSimpleParserToMimeTree(message.data)
+
+                    let stream = imapHandler.compileStream(
+                        session.formatResponse('FETCH', message.uid, {
+                            query: options.query,
+                            values: session.getQueryResponse(
+                                options.query,
+                                {
+                                    ...message,
+                                    mimeTree: mimeTree,
+                                    idate: new Date(message.data.date)
+                                }
+                            )
+                        })
+                    )
+                    if (stream && session?.socket?.writable && !session?.socket?.destroyed) {
+
+                        stream.on('error', (err) => {
+                            logError(err.message)
+                        })
+                        session.writeStream.on('error', (err) => {
+                            logError(err.message)
+                        })
+
+                        session.writeStream.write(stream, () => {
+                            setImmediate(processMessage)
+                        })
+                    }
+
+                    /*delete message.data
                     delete messageData.headerLines
 
                     if (messageData.headers) {
@@ -651,12 +731,6 @@ const startListening = async (db, context) => {
                     }
 
                     try {
-                        /*const mailComposer = new MailComposer({
-                            headers: messageData.headers,
-                            text: messageData.text,
-                            html: messageData.html,
-                            attachments: messageData.attachments
-                        })*/
                         const mailComposer = new MailComposer(messageData)
 
 
@@ -674,8 +748,6 @@ const startListening = async (db, context) => {
                                     )
                                 })
                             )
-                            console.log('xxxxxx',JSON.stringify(mailMessage))
-                            console.log('yyyyyy',parseMimeTree(mailMessage))
                             if (stream && session?.socket?.writable && !session?.socket?.destroyed) {
 
                                 stream.on('error', (err) => {
@@ -694,7 +766,7 @@ const startListening = async (db, context) => {
                         logError(error.message)
                         console.error('error building email', error)
                         setImmediate(processMessage)
-                    }
+                    }*/
                 }else{
                     const stream = imapHandler.compileStream(
                         session.formatResponse('FETCH', message.uid, {
