@@ -620,8 +620,8 @@ const startListening = async (db, context) => {
                     delete messageData.headerLines
 
                     if (messageData.headers) {
-                        delete messageData.headers['content-transfer-encoding']
-                        delete messageData.headers['content-type']
+                        //delete messageData.headers['content-transfer-encoding']
+                        //delete messageData.headers['content-type']
                     }
 
                     if (Array.isArray(messageData.attachments)) {
