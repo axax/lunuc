@@ -67,9 +67,50 @@ import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
     console.log('xxxxx',data,err)
 })*/
 
+
+function flattenHeaders(parsedHeader) {
+
+    const headers = {};
+
+    for (const [key, value] of Object.entries(parsedHeader)) {
+        // Normalize key for matching (handle both camelCase and hyphen-case)
+        const lowerKey = key.toLowerCase();
+
+        if (lowerKey === 'content-type' && value && typeof value === 'object') {
+            // Handle content-type with parameters
+            let ct = value.value || '';
+            if (value.params) {
+                const params = Object.entries(value.params)
+                    .map(([k, v]) => `${k}="${v}"`).join('; ');
+                if (params) ct += `; ${params}`;
+            }
+            headers['Content-Type'] = ct;
+        } else if (lowerKey === 'date' && value) {
+            // Format date as RFC2822
+            headers['Date'] = new Date(value).toUTCString();
+        } else if (typeof value === 'object' && value !== null && value.text) {
+            // If object has .text, use it
+            headers[headerCase(key)] = value.text;
+        } else {
+            // Fallback: string representation
+            headers[headerCase(key)] = String(value);
+        }
+    }
+
+    return headers;
+}
+
+// Helper to capitalize and hyphenate header keys (e.g. 'replyTo' -> 'Reply-To')
+function headerCase(str) {
+    return str
+        .replace(/([a-z])([A-Z])/g, '$1-$2')
+        .replace(/^./, c => c.toUpperCase())
+        .replace(/-(.)/g, (_, c) => '-' + c.toUpperCase());
+}
+
 function convertSimpleParserToMimeTree(parsed) {
     const root = {
-        headers: Object.fromEntries(parsed.headers),
+        headers: flattenHeaders(parsed.headers),
         children: []
     };
 
@@ -667,33 +708,39 @@ const startListening = async (db, context) => {
                         })
                     }
 
-                    const mimeTree = convertSimpleParserToMimeTree(message.data)
+                    try {
+                        const mimeTree = convertSimpleParserToMimeTree(message.data)
 
-                    let stream = imapHandler.compileStream(
-                        session.formatResponse('FETCH', message.uid, {
-                            query: options.query,
-                            values: session.getQueryResponse(
-                                options.query,
-                                {
-                                    ...message,
-                                    mimeTree: mimeTree,
-                                    idate: new Date(message.data.date)
-                                }
-                            )
-                        })
-                    )
-                    if (stream && session?.socket?.writable && !session?.socket?.destroyed) {
+                        let stream = imapHandler.compileStream(
+                            session.formatResponse('FETCH', message.uid, {
+                                query: options.query,
+                                values: session.getQueryResponse(
+                                    options.query,
+                                    {
+                                        ...message,
+                                        mimeTree: mimeTree,
+                                        idate: new Date(message.data.date)
+                                    }
+                                )
+                            })
+                        )
+                        if (stream && session?.socket?.writable && !session?.socket?.destroyed) {
 
-                        stream.on('error', (err) => {
-                            logError(err.message)
-                        })
-                        session.writeStream.on('error', (err) => {
-                            logError(err.message)
-                        })
+                            stream.on('error', (err) => {
+                                logError(err.message)
+                            })
+                            session.writeStream.on('error', (err) => {
+                                logError(err.message)
+                            })
 
-                        session.writeStream.write(stream, () => {
-                            setImmediate(processMessage)
-                        })
+                            session.writeStream.write(stream, () => {
+                                setImmediate(processMessage)
+                            })
+                        }
+                    } catch (error) {
+                        logError(error.message)
+                        console.error('error building email', error)
+                        setImmediate(processMessage)
                     }
 
                     /*delete message.data
