@@ -29,88 +29,23 @@ import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
 // sudo ufw allow 993
 
 
-//console.log(parseMimeTree())
-/*simpleParser('MIME-Version: 1.0\r\n' +
-    'From: andris@kreata.ee\r\n' +
-    'To: andris@tr.ee\r\n' +
-    'Content-Type: multipart/mixed;\r\n' +
-    " boundary='----mailcomposer-?=_1-1328088797399'\r\n" +
-    'Message-Id: <testmessage-for-bug>;\r\n' +
-    '\r\n' +
-    '------mailcomposer-?=_1-1328088797399\r\n' +
-    'Content-Type: message/rfc822\r\n' +
-    'Content-Transfer-Encoding: 7bit\r\n' +
-    '\r\n' +
-    'MIME-Version: 1.0\r\n' +
-    'From: andris@kreata.ee\r\n' +
-    'To: andris@pangalink.net\r\n' +
-    'In-Reply-To: <test1>\r\n' +
-    '\r\n' +
-    'Hello world 1!\r\n' +
-    '------mailcomposer-?=_1-1328088797399\r\n' +
-    'Content-Type: message/rfc822\r\n' +
-    'Content-Transfer-Encoding: 7bit\r\n' +
-    '\r\n' +
-    'MIME-Version: 1.0\r\n' +
-    'From: andris@kreata.ee\r\n' +
-    'To: andris@pangalink.net\r\n' +
-    '\r\n' +
-    'Hello world 2!\r\n' +
-    '------mailcomposer-?=_1-1328088797399\r\n' +
-    'Content-Type: text/html; charset=utf-8\r\n' +
-    'Content-Transfer-Encoding: quoted-printable\r\n' +
-    '\r\n' +
-    '<b>Hello world 3!</b>\r\n' +
-    '------mailcomposer-?=_1-1328088797399--\r\n', {
-    skipHtmlToText:true
-}, async (err, data) => {
-    console.log('xxxxx',data,err)
-})*/
-
-
-function flattenHeaders(parsedHeader) {
-
+function headerLinesToMimeTreeHeaders(headerLines) {
     const headers = {};
-
-    for (const [key, value] of Object.entries(parsedHeader)) {
-        // Normalize key for matching (handle both camelCase and hyphen-case)
-        const lowerKey = key.toLowerCase();
-
-        if (lowerKey === 'content-type' && value && typeof value === 'object') {
-            // Handle content-type with parameters
-            let ct = value.value || '';
-            if (value.params) {
-                const params = Object.entries(value.params)
-                    .map(([k, v]) => `${k}="${v}"`).join('; ');
-                if (params) ct += `; ${params}`;
-            }
-            headers['Content-Type'] = ct;
-        } else if (lowerKey === 'date' && value) {
-            // Format date as RFC2822
-            headers['Date'] = new Date(value).toUTCString();
-        } else if (typeof value === 'object' && value !== null && value.text) {
-            // If object has .text, use it
-            headers[headerCase(key)] = value.text;
-        } else {
-            // Fallback: string representation
-            headers[headerCase(key)] = String(value);
+    for (const { key, line } of headerLines) {
+        // Extract the value after the first colon and optional whitespace
+        const idx = line.indexOf(':');
+        if (idx !== -1) {
+            const name = line.slice(0, idx).trim();
+            const value = line.slice(idx + 1).replace(/^\s+/, ''); // Remove leading whitespace
+            headers[name] = value;
         }
     }
-
     return headers;
-}
-
-// Helper to capitalize and hyphenate header keys (e.g. 'replyTo' -> 'Reply-To')
-function headerCase(str) {
-    return str
-        .replace(/([a-z])([A-Z])/g, '$1-$2')
-        .replace(/^./, c => c.toUpperCase())
-        .replace(/-(.)/g, (_, c) => '-' + c.toUpperCase());
 }
 
 function convertSimpleParserToMimeTree(parsed) {
     const root = {
-        headers: flattenHeaders(parsed.headers),
+        headers: headerLinesToMimeTreeHeaders(parsed.headerLines),
         children: []
     };
 
@@ -710,7 +645,8 @@ const startListening = async (db, context) => {
 
                     try {
                         const mimeTree = convertSimpleParserToMimeTree(message.data)
-
+                        delete message.data
+                        console.log('yyyyyy', mimeTree)
                         let stream = imapHandler.compileStream(
                             session.formatResponse('FETCH', message.uid, {
                                 query: options.query,
