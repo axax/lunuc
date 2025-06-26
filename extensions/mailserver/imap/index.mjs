@@ -46,6 +46,7 @@ function headerLinesToMimeTreeHeaders(headerLines) {
 function convertSimpleParserToMimeTree(parsed) {
     const root = {
         headers: headerLinesToMimeTreeHeaders(parsed.headerLines),
+        parsedHeader: parsed.headers,
         children: []
     };
 
@@ -75,6 +76,7 @@ function convertSimpleParserToMimeTree(parsed) {
                     'Content-Transfer-Encoding': att.transferEncoding || 'base64',
                     'Filename': att.filename
                 },
+                parsedHeader: att.headers,
                 content: att.content // Buffer
             });
         }
@@ -630,57 +632,15 @@ const startListening = async (db, context) => {
 
                 if(message.data) {
 
-                    //const messageData = JSON.parse(JSON.stringify(message.data))
-                    const logError = (message) => {
-                        GenericResolver.createEntity(db, {context: context}, 'Log', {
-                            location: 'mailserver',
-                            type: 'imapError',
-                            message: message,
-                            meta: {
-                                messageData: message.data,
-                                debug: JSON.parse(JSON.stringify({folderId, options, session}, getCircularReplacer()))
-                            }
-                        })
-                    }
+                    /*
 
-                    try {
                         const mimeTree = convertSimpleParserToMimeTree(message.data)
                         const idate = new Date(message.data.date)
                         delete message.data
-                        console.log('yyyyyy', mimeTree)
-                        let stream = imapHandler.compileStream(
-                            session.formatResponse('FETCH', message.uid, {
-                                query: options.query,
-                                values: session.getQueryResponse(
-                                    options.query,
-                                    {
-                                        ...message,
-                                        mimeTree: mimeTree,
-                                        idate
-                                    }
-                                )
-                            })
-                        )
-                        if (stream && session?.socket?.writable && !session?.socket?.destroyed) {
+                     */
+                    const messageData = JSON.parse(JSON.stringify(message.data))
 
-                            stream.on('error', (err) => {
-                                logError(err.message)
-                            })
-                            session.writeStream.on('error', (err) => {
-                                logError(err.message)
-                            })
-
-                            session.writeStream.write(stream, () => {
-                                setImmediate(processMessage)
-                            })
-                        }
-                    } catch (error) {
-                        logError(error.message)
-                        console.error('error building email', error)
-                        setImmediate(processMessage)
-                    }
-
-                    /*delete message.data
+                    delete message.data
                     delete messageData.headerLines
 
                     if (messageData.headers) {
@@ -715,6 +675,12 @@ const startListening = async (db, context) => {
                     }
 
                     try {
+                        /*const mailComposer = new MailComposer({
+                            headers: messageData.headers,
+                            text: messageData.text,
+                            html: messageData.html,
+                            attachments: messageData.attachments
+                        })*/
                         const mailComposer = new MailComposer(messageData)
 
 
@@ -744,13 +710,15 @@ const startListening = async (db, context) => {
                                 session.writeStream.write(stream, () => {
                                     setImmediate(processMessage)
                                 })
+                            } else {
+                                logError(`stream is null or closed`)
                             }
                         })
                     } catch (error) {
                         logError(error.message)
                         console.error('error building email', error)
                         setImmediate(processMessage)
-                    }*/
+                    }
                 }else{
                     const stream = imapHandler.compileStream(
                         session.formatResponse('FETCH', message.uid, {
