@@ -13,7 +13,7 @@ import {
 } from '../../util/capabilities.mjs'
 import {sendMail} from '../util/mail.mjs'
 import crypto from 'crypto'
-import {clientAddress} from '../../util/host.mjs'
+import {clientAddress, getHostFromHeaders} from '../../util/host.mjs'
 import {setAuthCookies, removeAuthCookies} from '../util/sessionContext.mjs'
 import {_t} from '../../util/i18nServer.mjs'
 import Hook from '../../util/hook.cjs'
@@ -388,6 +388,11 @@ export const userResolver = (db) => ({
                 findMatch.domain = domain
             }
 
+            if(!url){
+                const host = getHostFromHeaders(req.headers)
+                url = `${(req.isHttps ? 'https://' : 'http://') + (host === 'localhost' ? host + ':8080' : host)}/admin/login`
+            }
+
             const user = await userCollection.findOneAndUpdate(findMatch, {
                 $set: {
                     passwordReset: new Date().getTime(),
@@ -675,7 +680,9 @@ export const userResolver = (db) => ({
                     errors.push({key: 'passwordError', message: 'Invalid Password: \n' + err.join('\n')})
                 } else {
                     user.password = Util.hashPassword(password)
-                    user.requestNewPassword = false
+                    if(user.requestNewPassword===undefined) {
+                        user.requestNewPassword = false
+                    }
                 }
             }
 

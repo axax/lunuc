@@ -16,7 +16,7 @@ class LoginContainer extends React.Component {
         super(props)
         DomUtil.noIndexNoFollow()
 
-        const {domain, username} = Util.extractQueryParams(window.location.search.substring(1))
+        const {domain, username, token, resetToken} = Util.extractQueryParams(window.location.search.substring(1))
 
         this.state = {
             redirectToReferrer: false,
@@ -25,7 +25,9 @@ class LoginContainer extends React.Component {
             username: username || '',
             password: '',
             newPassword:'',
-            resetToken:'',
+            resetToken:token || resetToken || '',
+            forgotPassword: false,
+            forgotPasswordSent: false,
             passwordVisible:false,
             domain: domain ? domain : _app_.login ? _app_.login.defaultDomain : ''
         }
@@ -73,6 +75,33 @@ class LoginContainer extends React.Component {
                     // make sure translations are loaded
                     window.location = this.getFromUrl()
 
+                } else {
+                    this.setState({error: response.data.newPassword.error})
+                }
+            }
+        }).catch((response) => {
+            this.setState({loading: false, error: response.error.message})
+        })
+    }
+
+    forgotPassword = (e) =>{
+        e.preventDefault()
+
+        this.setState({loading: true, error: null})
+
+
+        client.query({
+            fetchPolicy: 'no-cache',
+            query: 'query forgotPassword($username:String!){forgotPassword(username:$username){status}}',
+            variables: {
+                username: this.state.username
+            }
+        }).then(response => {
+            this.setState({loading: false, })
+            if (response.data && response.data.forgotPassword) {
+
+                if (!response.data.forgotPassword.error) {
+                    this.setState({forgotPasswordSent: true})
                 } else {
                     this.setState({error: response.data.newPassword.error})
                 }
@@ -146,7 +175,7 @@ class LoginContainer extends React.Component {
         const {signupLink, showSignupLink} = this.props
         const from = this.getFromUrl()
 
-        const {resetToken, redirectToReferrer, loading, username, password, newPassword, domain, error, passwordVisible} = this.state
+        const {resetToken, forgotPassword, forgotPasswordSent, redirectToReferrer, loading, username, password, newPassword, domain, error, passwordVisible} = this.state
 
         if (redirectToReferrer) {
             return <Redirect to={from} push={true}/>
@@ -160,58 +189,52 @@ class LoginContainer extends React.Component {
         return <Row style={{marginTop: '5rem'}}>
             <Col xs={1} sm={2} md={4}></Col>
             <Col xs={10} sm={8} md={4}>
-                <Card sx={{mb:2}}>
-                    {resetToken ?
-                        <form noValidate autoComplete="off" action="/graphql/login" method="post">
-                            <Typography variant="h3" gutterBottom>{_t('Login.changePasswordTitle')}</Typography>
+                {resetToken && <Card sx={{mb:2}}>
+                    <form noValidate autoComplete="off" action="/graphql/newPassword" method="post">
+                        <Typography variant="h3" gutterBottom>{_t('Login.changePasswordTitle')}</Typography>
 
-                            <Typography gutterBottom>{_t('Login.changePasswordSubtitle')}</Typography>
-
-                            <input value={from}
-                                   type="hidden"
-                                   name="forward"/>
-
-                            <TextField label={_t('Login.newPassword')}
-                                       autoFocus
-                                       inputRef={(input) => {
-                                           if(input != null) {
-                                               input.focus()
-                                           }
-                                       }}
-                                       error={!!error}
-                                       helperText={error}
-                                       disabled={!!loading}
-                                       fullWidth
-                                       value={newPassword}
-                                       onChange={this.handleInputChange}
-                                       onKeyPress={(ev) => {
-                                           if (ev.key === 'Enter') {
-                                               this.changePassword(ev)
-                                           }
-                                       }}
-                                       type="password"
-                                       name="newPassword" required/>
-
-
-                            <div style={{textAlign: 'right'}}>
-                                <SimpleButton variant="contained" color="primary"
-                                              showProgress={loading}
-                                              type="submit"
-                                              onClick={this.changePassword.bind(this)}>{_t('Login.changePasswordButton')}</SimpleButton>
-                            </div>
-                        </form>
-                        :
-                        <form noValidate autoComplete="off" action="/graphql/login" method="post">
-                        <Typography variant="h3" gutterBottom>{_t('Login.title')}</Typography>
-
-                        <Typography gutterBottom>{_t('Login.subtitle', {pathname: from})}</Typography>
-
+                        <Typography gutterBottom>{_t('Login.changePasswordSubtitle')}</Typography>
 
                         <input value={from}
                                type="hidden"
                                name="forward"/>
 
-                        <TextField label={_t('Login.username')}
+                        <TextField label={_t('Login.newPassword')}
+                                   autoFocus
+                                   inputRef={(input) => {
+                                       if(input != null) {
+                                           input.focus()
+                                       }
+                                   }}
+                                   error={!!error}
+                                   helperText={error}
+                                   disabled={!!loading}
+                                   fullWidth
+                                   value={newPassword}
+                                   onChange={this.handleInputChange}
+                                   onKeyPress={(ev) => {
+                                       if (ev.key === 'Enter') {
+                                           this.changePassword(ev)
+                                       }
+                                   }}
+                                   type="password"
+                                   name="newPassword" required/>
+
+
+                        <div style={{textAlign: 'right'}}>
+                            <SimpleButton variant="contained" color="primary"
+                                          showProgress={loading}
+                                          type="submit"
+                                          onClick={this.changePassword.bind(this)}>{_t('Login.changePasswordButton')}</SimpleButton>
+                        </div>
+                    </form>
+                </Card>}
+
+                {forgotPassword && <Card sx={{mb:2}}>
+                    <form noValidate autoComplete="off" action="/graphql/forgotPassword" method="post">
+                        <Typography variant="h3" gutterBottom>{_t('Login.forgotPassword')}</Typography>
+
+                        {forgotPasswordSent ? <>{_t('Login.forgotPasswordSent')}</>: <><TextField label={_t('Login.username')}
                                    error={!!error}
                                    disabled={!!loading}
                                    autoComplete="username"
@@ -222,52 +245,98 @@ class LoginContainer extends React.Component {
                                    type="text"
                                    name="username" required/>
 
+                        <div style={{display:'flex',justifyContent: 'space-between'}}>
 
-                        <TextField label={_t('Login.password')}
-                                   error={!!error}
-                                   helperText={error}
-                                   disabled={!!loading}
-                                   fullWidth
-                                   autoComplete="current-password"
-                                   value={password}
-                                   onChange={this.handleInputChange}
-                                   onKeyPress={(ev) => {
-                                       if (ev.key === 'Enter') {
-                                           this.login(ev)
-                                       }
-                                   }}
-                                   InputProps={{endAdornment: passwordVisible ? <VisibilityOffIconButton onClick={()=>{
-                                           this.setState({passwordVisible:false})
-                                       }} /> : <VisibilityIconButton onClick={()=>{
-                                       this.setState({passwordVisible:true})
-                                       }}/>}}
-                                   type={passwordVisible?'text':'password'}
-                                   name="password" required/>
+                            <SimpleButton onClick={()=>{
+                                this.setState({forgotPassword:false, forgotPasswordSent:false})
+                            }}>Login</SimpleButton>
 
-                        {(!_app_.login || !_app_.login.hideDomain) ?
-                        <TextField label={_t('Login.domain')}
-                                   error={!!error}
-                                   disabled={!!loading}
-                                   fullWidth
-                                   autoFocus
-                                   value={domain}
-                                   onChange={this.handleInputChange}
-                                   type="text"
-                                   name="domain"/>:''}
-
-                        <div style={{textAlign: 'right'}}>
                             <SimpleButton variant="contained" color="primary"
                                           showProgress={loading}
                                           type="submit"
-                                          onClick={this.login.bind(this)}>Login</SimpleButton>
-                        </div>
-                        {showSignupLink && <Typography>Don&apos;t have an account? <Link
-                            to={signupLink || config.ADMIN_BASE_URL + '/signup'}>Sign
-                            up</Link></Typography>}
+                                          onClick={this.forgotPassword.bind(this)}>{_t('Login.sendForgotPassword')}</SimpleButton>
+
+                        </div></>}
+
                     </form>
-                    }
-                </Card>
-                {loginAlternatives}
+
+                </Card>}
+
+                {!resetToken && !forgotPassword &&
+                    <><Card sx={{mb:2}}><form noValidate autoComplete="off" action="/graphql/login" method="post">
+                    <Typography variant="h3" gutterBottom>{_t('Login.title')}</Typography>
+
+                    <Typography gutterBottom>{_t('Login.subtitle', {pathname: from})}</Typography>
+
+
+                    <input value={from}
+                           type="hidden"
+                           name="forward"/>
+
+                    <TextField label={_t('Login.username')}
+                               error={!!error}
+                               disabled={!!loading}
+                               autoComplete="username"
+                               fullWidth
+                               autoFocus
+                               value={username}
+                               onChange={this.handleInputChange}
+                               type="text"
+                               name="username" required/>
+
+
+                    <TextField label={_t('Login.password')}
+                               error={!!error}
+                               helperText={error}
+                               disabled={!!loading}
+                               fullWidth
+                               autoComplete="current-password"
+                               value={password}
+                               onChange={this.handleInputChange}
+                               onKeyPress={(ev) => {
+                                   if (ev.key === 'Enter') {
+                                       this.login(ev)
+                                   }
+                               }}
+                               InputProps={{endAdornment: passwordVisible ? <VisibilityOffIconButton onClick={()=>{
+                                       this.setState({passwordVisible:false})
+                                   }} /> : <VisibilityIconButton onClick={()=>{
+                                   this.setState({passwordVisible:true})
+                                   }}/>}}
+                               type={passwordVisible?'text':'password'}
+                               name="password" required/>
+
+                    {(!_app_.login || !_app_.login.hideDomain) ?
+                    <TextField label={_t('Login.domain')}
+                               error={!!error}
+                               disabled={!!loading}
+                               fullWidth
+                               autoFocus
+                               value={domain}
+                               onChange={this.handleInputChange}
+                               type="text"
+                               name="domain"/>:''}
+
+                    <div style={{display:'flex',justifyContent: 'space-between'}}>
+
+                        <SimpleButton onClick={()=>{
+                            this.setState({forgotPassword:true})
+
+                        }}>{_t('Login.forgotPassword')}</SimpleButton>
+
+                        <SimpleButton variant="contained" color="primary"
+                                      showProgress={loading}
+                                      type="submit"
+                                      onClick={this.login.bind(this)}>Login</SimpleButton>
+
+                    </div>
+                    {showSignupLink && <Typography>Don&apos;t have an account? <Link
+                        to={signupLink || config.ADMIN_BASE_URL + '/signup'}>Sign
+                        up</Link></Typography>}
+                    </form></Card>
+                    {loginAlternatives}</>
+
+                }
             </Col>
             <Col xs={1} sm={2} md={4}>
             </Col>

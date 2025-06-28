@@ -111,7 +111,7 @@ export const userSchemaRaw = `
         me: User
         login(username: String!, password: String!, domain: String): Token
         logout: LogoutResult
-        forgotPassword(username: String!,domain: String, url: String!, subject: String, fromEmail: String, fromName: String, template: String): ForgotPasswordResult
+        forgotPassword(username: String!,domain: String, url: String, subject: String, fromEmail: String, fromName: String, template: String): ForgotPasswordResult
         newPassword(token:String!, password:String!, passwordConfirm:String): NewPasswordResult
         confirmEmail(token:String!): ConfirmEmailResult
         sendConformationEmail(mailTemplate: String!, mailSubject: String!, mailUrl: String!,fromEmail: String,fromName: String,replyTo: String): ConfirmEmailResult

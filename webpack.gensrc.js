@@ -284,6 +284,7 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
 }
 input LocalizedStringInput {
     ${APP_CONFIG.options.LANGUAGES.join(': String\n\t')}: String
+    _localized: Boolean
 }
 input LocalizedRefInput {
     ${APP_CONFIG.options.LANGUAGES.join(': [ID]\n\t')}: [ID]
