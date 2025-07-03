@@ -20,84 +20,42 @@ export const preprocessCss = (nestedCss) => {
 
 
 /**
- * Recursively flattens a CSS string. This version is optimized to build the
- * result string using an array and join, avoiding inefficient concatenation in a loop.
+ * Recursively flattens a CSS string. This version is optimized to use a single-pass
+ * parser for efficiency.
  * @param {string} css - The CSS string to process.
- * @param {string} [parentSelector=''] - The selector of the parent context, used for nesting.
+ * @param {string} [parentSelector=''] - The selector of the parent context.
  * @returns {string} The processed, flattened CSS for the given context.
  */
 function flatten(css, parentSelector = '') {
-    const resultParts = []; // Use an array for efficient string building
-    let i = 0;
+    const resultParts = [];
+    const { properties, rules } = parseCssBlocks(css);
 
-    // Loop through the CSS string to find and process each rule block.
-    while (i < css.length) {
-        const selectorEnd = css.indexOf('{', i);
-        if (selectorEnd === -1) {
-            break;
-        }
-
-        // Find the matching '}' for the current block, correctly handling nested blocks.
-        let braceCount = 1;
-        let blockEnd = -1;
-        for (let j = selectorEnd + 1; j < css.length; j++) {
-            if (css[j] === '{') {
-                braceCount++;
-            } else if (css[j] === '}') {
-                braceCount--;
-                if (braceCount === 0) {
-                    blockEnd = j;
-                    break;
-                }
-            }
-        }
-
-        if (blockEnd === -1) {
-            console.error("Malformed CSS: Unterminated block.");
-            break;
-        }
-
-        const selector = css.substring(i, selectorEnd).trim();
-        const blockContent = css.substring(selectorEnd + 1, blockEnd);
-
-        if (selector.startsWith('@')) {
-            if (selector.startsWith('@media') || selector.startsWith('@supports')) {
-                const innerCss = flatten(blockContent, parentSelector);
-                if (innerCss) {
-                    resultParts.push(`${selector} {\n${innerCss}}\n`);
-                }
-            } else {
-                resultParts.push(`${selector} {${blockContent}}\n`);
-            }
-        } else if (selector) {
-            const newSelector = buildSelector(parentSelector, selector);
-            const {
-                properties,
-                nestedCss
-            } = separatePropertiesAndNestedRules(blockContent);
-
-            if (properties) {
-                const propsArray = splitProperties(properties);
-                if (propsArray.length > 0) {
-                    const formattedProps = propsArray.map(p => `  ${p.trim()};`).join('\n');
-                    resultParts.push(`${newSelector} {\n${formattedProps}\n}\n`);
-                }
-            }
-
-            if (nestedCss) {
-                resultParts.push(flatten(nestedCss, newSelector));
-            }
-        }
-
-        i = blockEnd + 1;
-    }
-
-    const remainingCss = css.substring(i).trim();
-    if (remainingCss && parentSelector) {
-        const propsArray = splitProperties(remainingCss);
+    // 1. Process any direct properties found at this level.
+    if (properties && parentSelector) {
+        const propsArray = splitProperties(properties);
         if (propsArray.length > 0) {
             const formattedProps = propsArray.map(p => `  ${p.trim()};`).join('\n');
             resultParts.push(`${parentSelector} {\n${formattedProps}\n}\n`);
+        }
+    }
+
+    // 2. Process all the nested rule blocks found at this level.
+    for (const rule of rules) {
+        if (rule.selector.startsWith('@')) {
+            if (rule.selector.startsWith('@media') || rule.selector.startsWith('@supports')) {
+                // For these at-rules, recurse, passing the parent selector down.
+                const innerCss = flatten(rule.content, parentSelector);
+                if (innerCss) {
+                    resultParts.push(`${rule.selector} {\n${innerCss}}\n`);
+                }
+            } else {
+                // Other at-rules like @keyframes are preserved as-is.
+                resultParts.push(`${rule.selector} {${rule.content}}\n`);
+            }
+        } else {
+            // For standard selectors, build the new selector and recurse.
+            const newSelector = buildSelector(parentSelector, rule.selector);
+            resultParts.push(flatten(rule.content, newSelector));
         }
     }
 
@@ -105,16 +63,72 @@ function flatten(css, parentSelector = '') {
 }
 
 /**
+ * A highly efficient and robust single-pass parser that separates a CSS string into
+ * its top-level properties and a list of rule blocks.
+ * @param {string} css - The CSS content to parse.
+ * @returns {{properties: string, rules: Array<{selector: string, content: string}>}}
+ */
+function parseCssBlocks(css) {
+    const propertiesParts = [];
+    const rules = [];
+    let braceLevel = 0;
+    let lastBreak = 0;
+    let currentRule = null;
+
+    for (let i = 0; i < css.length; i++) {
+        if (css[i] === '{') {
+            if (braceLevel === 0) {
+                // Start of a new top-level rule.
+                // The text from lastBreak to here is the selector and any preceding properties.
+                const precedingText = css.substring(lastBreak, i);
+                const lastSemicolon = precedingText.lastIndexOf(';');
+
+                let selector;
+                if (lastSemicolon !== -1) {
+                    propertiesParts.push(precedingText.substring(0, lastSemicolon + 1));
+                    selector = precedingText.substring(lastSemicolon + 1).trim();
+                } else {
+                    selector = precedingText.trim();
+                }
+
+                // We have the selector, create a new rule object to be populated.
+                currentRule = { selector: selector, startIndex: i + 1 };
+            }
+            braceLevel++;
+        } else if (css[i] === '}') {
+            braceLevel--;
+            if (braceLevel === 0 && currentRule) {
+                // We have closed the top-level rule we were in.
+                const content = css.substring(currentRule.startIndex, i);
+                rules.push({ selector: currentRule.selector, content: content });
+                currentRule = null;
+                lastBreak = i + 1;
+            }
+        }
+    }
+
+    // Any remaining text after the last rule block is properties.
+    if (lastBreak < css.length) {
+        propertiesParts.push(css.substring(lastBreak));
+    }
+
+    return {
+        properties: propertiesParts.join(' ').trim(),
+        rules: rules
+    };
+}
+
+
+/**
  * Splits a string of CSS properties into an array of individual properties.
- * This function correctly handles semicolons inside strings (e.g., in data URIs)
- * and parentheses (e.g., in `url()`).
+ * This function correctly handles semicolons inside strings and parentheses.
  * @param {string} propertiesString - A string containing one or more CSS properties.
  * @returns {string[]} An array of property strings.
  */
 function splitProperties(propertiesString) {
     const properties = [];
     let currentProp = '';
-    let inString = null; // Can be ' or "
+    let inString = null;
     let parenLevel = 0;
 
     for (let i = 0; i < propertiesString.length; i++) {
@@ -152,77 +166,29 @@ function splitProperties(propertiesString) {
     return properties;
 }
 
-
-/**
- * Separates properties from nested rules within a CSS block's content. This version
- * is optimized to build strings using arrays and join.
- * @param {string} blockContent - The string from inside a CSS rule's braces.
- * @returns {{properties: string, nestedCss: string}} An object containing the properties and the nested rules.
- */
-function separatePropertiesAndNestedRules(blockContent) {
-    let properties = '';
-    let nestedCss = '';
-    let braceLevel = 0;
-    let lastBreak = 0;
-
-    for (let i = 0; i < blockContent.length; i++) {
-        const char = blockContent[i];
-
-        if (char === '{') {
-            if (braceLevel === 0) {
-                // Extract properties chunk before this nested block
-                const chunk = blockContent.slice(lastBreak, i);
-                const lastSemicolon = chunk.lastIndexOf(';');
-
-                if (lastSemicolon !== -1) {
-                    properties += chunk.slice(0, lastSemicolon + 1);
-                    lastBreak += lastSemicolon + 1;
-                }
-            }
-            braceLevel++;
-        } else if (char === '}') {
-            braceLevel--;
-            if (braceLevel === 0) {
-                // Extract nested block including braces
-                nestedCss += blockContent.slice(lastBreak, i + 1) + '\n';
-                lastBreak = i + 1;
-            }
-        }
-    }
-
-    // Append any remaining properties after last nested block
-    if (lastBreak < blockContent.length) {
-        properties += blockContent.slice(lastBreak);
-    }
-
-    return {
-        properties,
-        nestedCss: nestedCss.trim()
-    };
-}
-
 /**
  * Combines a parent selector with a child selector.
- * Handles comma-separated lists and the '&' parent reference.
- * E.g., parent='.a, .b', child='&:hover' -> '.a:hover, .b:hover'
- * E.g., parent='.a', child='.c, .d' -> '.a .c, .a .d'
- *
  * @param {string} parent - The parent selector.
  * @param {string} child - The child/nested selector.
  * @returns {string} The combined, flattened selector.
  */
 function buildSelector(parent, child) {
-    if (!parent.trim()) return child
-    let result = '',
-        pParts = parent.split(','),
-        cParts = child.split(',')
-    for (let i = 0; i < pParts.length; i++) {
-        let p = pParts[i].trim()
-        for (let j = 0; j < cParts.length; j++) {
-            let c = cParts[j].trim()
-            result && (result += ', ')
-            result += c.includes('&') ? c.replace('&', p) : p + ' ' + c
-        }
-    }
-    return result
+    if (!parent.trim()) return child;
+
+    const parentParts = parent.split(',').map(p => p.trim());
+    const childParts = child.split(',').map(c => c.trim());
+
+    const newSelectors = [];
+
+    parentParts.forEach(p => {
+        childParts.forEach(c => {
+            if (c.includes('&')) {
+                newSelectors.push(c.replace(/&/g, p));
+            } else {
+                newSelectors.push(`${p} ${c}`);
+            }
+        });
+    });
+
+    return newSelectors.join(', ');
 }
