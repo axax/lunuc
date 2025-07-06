@@ -19,6 +19,7 @@ import {createRequireForScript} from '../../../util/require.mjs'
 import {DEFAULT_DATA_RESOLVER, DEFAULT_SCRIPT, DEFAULT_STYLE, DEFAULT_TEMPLATE} from '../constants/cmsDefaults.mjs'
 import {CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities.mjs'
 import {createMatchForCurrentUser} from '../../../api/util/dbquery.mjs'
+import {parseOrElse} from '../../../client/util/json.mjs'
 
 const PORT = (process.env.PORT || 3000)
 
@@ -94,6 +95,8 @@ export default db => ({
         cmsPage: async ({slug, query, props, nosession, editmode, dynamic, inEditor, meta, _version}, req) => {
             const startTime = (new Date()).getTime()
             const {context, headers} = req
+
+            meta = parseOrElse(meta,{})
 
             let editable = Util.isUserLoggedIn(context)
             let cmsPages = await getCmsPage({db, context, slug, _version, checkHostrules: !dynamic, inEditor, headers, editmode})
@@ -208,14 +211,14 @@ export default db => ({
                     const pageOptions = await Util.keyValueGlobalMap(db, context, ['PageOptionsDefinition-' + pageName, 'PageOptions-' + pageName], {parse: true})
                     const editorOptions = await Util.keyvalueMap(db, context, [settingKeyPrefix, settingKeyPrefix + '-' + result.realSlug], {parse: true})
 
-                    const meta = {
+                    const pageDataMeta = {
                         PageOptionsDefinition: pageOptions['PageOptionsDefinition-' + pageName],
                         PageOptions: pageOptions['PageOptions-' + pageName],
                         EditorPageOptions: editorOptions[settingKeyPrefix + '-' + result.realSlug],
                         EditorOptions: editorOptions[settingKeyPrefix]
                     }
 
-                    result.meta = JSON.stringify(meta)
+                    result.meta = JSON.stringify(pageDataMeta)
                 }else if( loadPageOptions ){
                     await setPageOptionsAsMeta()
                 }
@@ -242,7 +245,7 @@ export default db => ({
             }
             console.debug(`CMS: resolver for ${slug} got data in ${(new Date()).getTime() - startTime}ms`)
 
-            if(meta === 'fetchMore'){
+            if(meta === 'fetchMore' || meta.isFetchMore){
                 delete result.dataResolver
                 delete result.serverScript
                 delete result.manual

@@ -249,7 +249,7 @@ export default function (WrappedComponent) {
                 if (!ownProps.dynamic) {
                     const urlStack = ownProps.history._urlStack
                     hiddenVariables = {
-                        meta: JSON.stringify({referer: urlStack && urlStack.length > 1 ? urlStack[1] : document.referrer})
+                        meta: JSON.stringify({isRefetch: ownProps.isRefetch, referer: urlStack && urlStack.length > 1 ? urlStack[1] : document.referrer})
                     }
                 }
                 return {
