@@ -24,7 +24,7 @@ export function actAsReverseProxy(req, res, parsedUrl, hostrule) {
 
     const filteredHeaders = Object.fromEntries(
         Object.entries(req.headers).filter(
-            ([name]) => !name.startsWith(':')
+            ([name]) => !name.startsWith(':') && !name.startsWith('keep-alive')
         )
     );
 
