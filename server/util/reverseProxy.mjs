@@ -1,3 +1,4 @@
+import https from 'https'
 import http from 'http'
 
 
@@ -19,8 +20,9 @@ export function isUrlValidForPorxing(urlPathname, hostrule) {
 }
 export function actAsReverseProxy(req, res, parsedUrl, hostrule) {
 
+    const isHttps = hostrule.reverseProxy.ssl || req.isHttps
 
-    const filteredHeaders = Object.fromEntries(
+    const filteredHeaders = isHttps?req.headers:Object.fromEntries(
         Object.entries(req.headers).filter(
             ([name]) => !name.startsWith(':')
         )
@@ -31,10 +33,11 @@ export function actAsReverseProxy(req, res, parsedUrl, hostrule) {
         port: parsedUrl.port || '8080',
         path: req.url,
         method: req.method || 'GET',
-        headers: filteredHeaders
+        headers: filteredHeaders,
+        rejectUnauthorized: false
     }
 
-    const proxyReq = http.request(options, (proxyRes) => {
+    const proxyReq = (isHttps?https:http).request(options, (proxyRes) => {
         // Forward response headers and status code
         res.writeHead(proxyRes.statusCode, proxyRes.headers)
         // Pipe the response data
@@ -46,6 +49,7 @@ export function actAsReverseProxy(req, res, parsedUrl, hostrule) {
 
     // Handle errors
     proxyReq.on('error', (err) => {
+        console.log('Proxy error',err)
         res.writeHead(502)
         res.end('Proxy error')
     })
