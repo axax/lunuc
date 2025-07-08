@@ -31,7 +31,7 @@ add Reverse-DNS (PTR-Record) -> service provider
  */
 
 let serverPorts = {}
-const MAX_EMAIL_SIZE = 200000000 // 200 MB
+const MAX_EMAIL_SIZE = 500000000 // 500 MB
 
 const startListening = async (db, context) => {
     const settings = {}

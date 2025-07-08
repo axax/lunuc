@@ -1,5 +1,6 @@
 import https from 'https'
 import http from 'http'
+import {HOSTRULE_HEADER} from '../../api/constants/index.mjs'
 
 
 
@@ -18,15 +19,17 @@ export function isUrlValidForPorxing(urlPathname, hostrule) {
     }
     return false
 }
-export function actAsReverseProxy(req, res, parsedUrl, hostrule) {
+export function actAsReverseProxy(req, res, {parsedUrl, hostrule, host}) {
 
     const isHttps = hostrule.reverseProxy.ssl===false?false:req.isHttps
 
     const filteredHeaders = Object.fromEntries(
         Object.entries(req.headers).filter(
-            ([name]) => !name.startsWith(':') && !name.startsWith('keep-alive')
+            ([name]) => name && !name.startsWith(':') && !name.toLowerCase().startsWith('keep-alive')
         )
-    );
+    )
+
+    filteredHeaders[HOSTRULE_HEADER] = host
 
     const options = {
         hostname: hostrule.reverseProxy.ip,

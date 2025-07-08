@@ -422,7 +422,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
             //hostrule.reverseProxy = {ip:'157.173.127.37'}
             if(isUrlValidForPorxing(urlPathname, hostrule)){
-                actAsReverseProxy(req,res,parsedUrl,hostrule)
+                actAsReverseProxy(req,res,{parsedUrl,hostrule, host})
             }else if (urlPathname.startsWith('/graphql') || API_PREFIXES.some(prefix => urlPathname.startsWith('/'+prefix + '/'))) {
                 // there is also /graphql/upload
                 proxyToApiServer(req, res, {host, path:parsedUrl.path})
