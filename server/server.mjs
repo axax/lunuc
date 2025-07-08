@@ -32,7 +32,7 @@ import {
     sendFileFromDir,
     zipAndSendMedias
 } from './util/file.mjs'
-import {actAsReverseProxy} from './util/reverseProxy.mjs'
+import {actAsReverseProxy, isUrlValidForPorxing} from './util/reverseProxy.mjs'
 
 const config = getDynamicConfig()
 
@@ -421,7 +421,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             }
 
             //hostrule.reverseProxy = {ip:'157.173.127.37'}
-            if(hostrule.reverseProxy){
+            if(isUrlValidForPorxing(urlPathname, hostrule)){
                 actAsReverseProxy(req,res,parsedUrl,hostrule)
             }else if (urlPathname.startsWith('/graphql') || API_PREFIXES.some(prefix => urlPathname.startsWith('/'+prefix + '/'))) {
                 // there is also /graphql/upload

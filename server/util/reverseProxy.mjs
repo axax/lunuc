@@ -1,5 +1,22 @@
 import http from 'http'
 
+
+
+export function isUrlValidForPorxing(urlPathname, hostrule) {
+    if(hostrule.reverseProxy){
+        if(hostrule.reverseProxy.exceptions){
+            for(const exception of hostrule.reverseProxy.exceptions){
+                const regex = new RegExp(exception)
+                if (regex.test(urlPathname)) {
+                    // URL matches an exception pattern, skip validation
+                    return false
+                }
+            }
+        }
+        return true
+    }
+    return false
+}
 export function actAsReverseProxy(req, res, parsedUrl, hostrule) {
     const options = {
         hostname: hostrule.reverseProxy.ip,
