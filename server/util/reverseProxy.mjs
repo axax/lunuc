@@ -20,7 +20,7 @@ export function isUrlValidForPorxing(urlPathname, hostrule) {
 }
 export function actAsReverseProxy(req, res, parsedUrl, hostrule) {
 
-    const isHttps = hostrule.reverseProxy.ssl || req.isHttps
+    const isHttps = hostrule.reverseProxy.ssl===false?false:req.isHttps
 
     const filteredHeaders = Object.fromEntries(
         Object.entries(req.headers).filter(
