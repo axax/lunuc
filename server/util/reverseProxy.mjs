@@ -22,7 +22,7 @@ export function actAsReverseProxy(req, res, parsedUrl, hostrule) {
         hostname: hostrule.reverseProxy.ip,
         port: parsedUrl.port || '8080',
         path: req.url,
-        method: req.method,
+        method: req.method || 'GET',
         headers: req.headers
     }
 
