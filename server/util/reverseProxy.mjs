@@ -25,7 +25,7 @@ export function actAsReverseProxy(req, res, {parsedUrl, hostrule, host}) {
 
     const filteredHeaders = Object.fromEntries(
         Object.entries(req.headers).filter(
-            ([name]) => name && !name.startsWith(':') && !name.toLowerCase().startsWith('keep-alive')
+            ([name]) => name && !name.startsWith(':')
         )
     )
 
@@ -42,7 +42,14 @@ export function actAsReverseProxy(req, res, {parsedUrl, hostrule, host}) {
 
     const proxyReq = (isHttps?https:http).request(options, (proxyRes) => {
         // Forward response headers and status code
-        res.writeHead(proxyRes.statusCode, proxyRes.headers)
+
+        const filteredProxyHeaders = Object.fromEntries(
+            Object.entries(proxyRes.headers).filter(
+                ([name]) => name && !name.toLowerCase().startsWith('keep-alive')
+            )
+        )
+
+        res.writeHead(proxyRes.statusCode, filteredProxyHeaders)
         // Pipe the response data
         proxyRes.pipe(res, { end: true })
     })
