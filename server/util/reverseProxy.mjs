@@ -18,12 +18,20 @@ export function isUrlValidForPorxing(urlPathname, hostrule) {
     return false
 }
 export function actAsReverseProxy(req, res, parsedUrl, hostrule) {
+
+
+    const filteredHeaders = Object.fromEntries(
+        Object.entries(req.headers).filter(
+            ([name]) => !name.startsWith(':')
+        )
+    );
+
     const options = {
         hostname: hostrule.reverseProxy.ip,
         port: parsedUrl.port || '8080',
         path: req.url,
         method: req.method || 'GET',
-        headers: req.headers
+        headers: filteredHeaders
     }
 
     const proxyReq = http.request(options, (proxyRes) => {
