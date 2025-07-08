@@ -22,7 +22,7 @@ export function actAsReverseProxy(req, res, parsedUrl, hostrule) {
 
     const isHttps = hostrule.reverseProxy.ssl || req.isHttps
 
-    const filteredHeaders = isHttps?req.headers:Object.fromEntries(
+    const filteredHeaders = Object.fromEntries(
         Object.entries(req.headers).filter(
             ([name]) => !name.startsWith(':')
         )
