@@ -31,21 +31,23 @@ export async function actAsReverseProxy(req, res, { parsedUrl, hostrule, host })
         )
     )
     filteredHeaders[HOSTRULE_HEADER] = host
-
+console.log(filteredHeaders)
     if(isHttps) {
         // HTTP/2 requires special pseudo-headers
         const http2Headers = {
             ':method': req.method || 'GET',
             ':path': req.url,
-            ':authority': hostrule.reverseProxy.ip + ':' + (parsedUrl.port || '8080'),
-            ':scheme': isHttps ? 'https' : 'http',
+            ':authority': hostrule.reverseProxy.ip + (parsedUrl.port?':'+parsedUrl.port:''),
+            ':scheme': 'https',
             ...filteredHeaders
         }
+
+        console.log(http2Headers)
 
         // Try HTTP/2 first
         try {
             const session = http2.connect(
-                `${isHttps ? 'https' : 'http'}://${hostrule.reverseProxy.ip}:${parsedUrl.port || '8080'}`,
+                `https://${hostrule.reverseProxy.ip}${parsedUrl.port?':'+parsedUrl.port:''}`,
                 {rejectUnauthorized: false}
             );
 
@@ -89,9 +91,9 @@ export async function actAsReverseProxy(req, res, { parsedUrl, hostrule, host })
     // Fallback to HTTP/1.1 or HTTPS
     const options = {
         hostname: hostrule.reverseProxy.ip,
-        port: parsedUrl.port || '8080',
+        port: parsedUrl.port,
         path: req.url,
-        method: req.method || 'GET',
+        method: req.method,
         headers: filteredHeaders,
         rejectUnauthorized: false
     };
