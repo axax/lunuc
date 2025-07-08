@@ -31,11 +31,17 @@ function flatten(css, parentSelector = '') {
     const { properties, rules } = parseCssBlocks(css);
 
     // 1. Process any direct properties found at this level.
-    if (properties && parentSelector) {
-        const propsArray = splitProperties(properties);
-        if (propsArray.length > 0) {
-            const formattedProps = propsArray.map(p => `  ${p.trim()};`).join('\n');
-            resultParts.push(`${parentSelector} {\n${formattedProps}\n}\n`);
+    if (properties) {
+
+        if(parentSelector) {
+            const propsArray = splitProperties(properties);
+            if (propsArray.length > 0) {
+                const formattedProps = propsArray.map(p => `  ${p.trim()};`).join('\n');
+                resultParts.push(`${parentSelector} {\n${formattedProps}\n}\n`);
+            }
+        }else{
+            // for @import
+            resultParts.push(`${properties}\n`)
         }
     }
 
