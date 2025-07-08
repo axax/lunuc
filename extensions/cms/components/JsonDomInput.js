@@ -20,7 +20,9 @@ class JsonDomInput extends React.Component {
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (nextProps.value !== prevState.valueOri || nextProps.checked !== prevState.checkedOri || nextProps.time !== prevState.time) {
+        if (nextProps.value !== prevState.valueOri ||
+            nextProps.checked !== prevState.checkedOri ||
+            nextProps.time !== prevState.time) {
             return JsonDomInput.getStateFromProps(nextProps)
         }
         // it is importent to return the prevState here

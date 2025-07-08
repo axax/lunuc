@@ -7,6 +7,7 @@
         {
           "unique": true,
           "name": "username",
+          "clone": "${username}_copy",
           "index": 1
         },
         {

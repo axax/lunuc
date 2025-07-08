@@ -1,0 +1,27 @@
+import http from 'http'
+
+export function actAsReverseProxy(req, res, parsedUrl, hostrule) {
+    const options = {
+        hostname: hostrule.reverseProxy.ip,
+        port: parsedUrl.port || '8080',
+        path: req.url,
+        method: req.method,
+        headers: req.headers
+    }
+
+    const proxyReq = http.request(options, (proxyRes) => {
+        // Forward response headers and status code
+        res.writeHead(proxyRes.statusCode, proxyRes.headers)
+        // Pipe the response data
+        proxyRes.pipe(res, { end: true })
+    })
+
+    // Pipe the request body
+    req.pipe(proxyReq, { end: true })
+
+    // Handle errors
+    proxyReq.on('error', (err) => {
+        res.writeHead(502)
+        res.end('Proxy error')
+    })
+}

@@ -32,6 +32,7 @@ import {
     sendFileFromDir,
     zipAndSendMedias
 } from './util/file.mjs'
+import {actAsReverseProxy} from './util/reverseProxy.mjs'
 
 const config = getDynamicConfig()
 
@@ -374,6 +375,7 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
 }
 
 
+
 // Initialize http api
 const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req, res) {
 
@@ -418,7 +420,10 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 return
             }
 
-            if (urlPathname.startsWith('/graphql') || API_PREFIXES.some(prefix => urlPathname.startsWith('/'+prefix + '/'))) {
+            //hostrule.reverseProxy = {ip:'157.173.127.37'}
+            if(hostrule.reverseProxy){
+                actAsReverseProxy(req,res,parsedUrl,hostrule)
+            }else if (urlPathname.startsWith('/graphql') || API_PREFIXES.some(prefix => urlPathname.startsWith('/'+prefix + '/'))) {
                 // there is also /graphql/upload
                 proxyToApiServer(req, res, {host, path:parsedUrl.path})
             } else {
