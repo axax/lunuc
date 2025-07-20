@@ -196,8 +196,8 @@ const getHeaders = (lang, headersExtra={}) => {
     return headers
 }
 
-const getCacheKey = ({query, variables, lang = _app_.lang}) => {
-    return query + lang + (variables ? Object.keys(variables).filter(key => variables[key]).sort().map(key=>key + '-' + variables[key]).join('|') : '')
+const getCacheKey = ({query, variables, lang = _app_.lang, userId = _app_.user._id}) => {
+    return query + lang + (userId?'-'+userId+'-':'') + (variables ? Object.keys(variables).filter(key => variables[key]).sort().map(key=>key + '-' + variables[key]).join('|') : '')
 }
 
 
