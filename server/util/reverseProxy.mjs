@@ -2,6 +2,7 @@ import http from 'http'
 import https from 'https'
 import http2 from 'http2'
 import {HOSTRULE_HEADER} from '../../api/constants/index.mjs'
+import config from '../../gensrc/config.mjs'
 
 
 
@@ -31,30 +32,31 @@ export async function actAsReverseProxy(req, res, { parsedUrl, hostrule, host })
         )
     )
     filteredHeaders[HOSTRULE_HEADER] = host
-console.log(filteredHeaders)
-    if(isHttps) {
+
+    const port = hostrule.reverseProxy.port || parsedUrl.port
+
+    if(isHttps && hostrule.reverseProxy.http2 !== false) {
         // HTTP/2 requires special pseudo-headers
         const http2Headers = {
             ':method': req.method || 'GET',
             ':path': req.url,
-            ':authority': hostrule.reverseProxy.ip + (parsedUrl.port?':'+parsedUrl.port:''),
+            ':authority': hostrule.reverseProxy.ip + (port?':'+port:''),
             ':scheme': 'https',
             ...filteredHeaders
         }
 
-        console.log(http2Headers)
-
         // Try HTTP/2 first
         try {
             const session = http2.connect(
-                `https://${hostrule.reverseProxy.ip}${parsedUrl.port?':'+parsedUrl.port:''}`,
+                `https://${hostrule.reverseProxy.ip}${port?':'+port:''}`,
                 {rejectUnauthorized: false}
             );
 
             session.on('error', err => {
+                console.log(err)
                 throw err; // Fallback to HTTP/1.1
             });
-
+            delete http2Headers.cookie
             const proxyReq = session.request(http2Headers);
 
             proxyReq.on('response', (headers, flags) => {
@@ -91,15 +93,23 @@ console.log(filteredHeaders)
     // Fallback to HTTP/1.1 or HTTPS
     const options = {
         hostname: hostrule.reverseProxy.ip,
-        port: parsedUrl.port,
+        port: port,
         path: req.url,
         method: req.method,
         headers: filteredHeaders,
         rejectUnauthorized: false
     };
 
+    const removeHeaderKeys = ['transfer-encoding','keep-alive']
     const proxyReq = (isHttps ? https : http).request(options, proxyRes => {
-        res.writeHead(proxyRes.statusCode || proxyRes[':status'], proxyRes.headers)
+        const filteredProxyHeaders = Object.fromEntries(
+            Object.entries(proxyRes.headers).filter(
+                ([name]) => name && removeHeaderKeys.indexOf(name)<0
+            )
+        )
+        filteredProxyHeaders['X-Reverse-Proxy'] = config.APP_NAME
+
+        res.writeHead(proxyRes.statusCode || proxyRes[':status'], filteredProxyHeaders)
         if (proxyRes.pipe) {
             proxyRes.pipe(res, {end: true})
         } else {
