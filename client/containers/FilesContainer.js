@@ -37,10 +37,10 @@ const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName
 
 class FilesContainer extends React.Component {
 
-    static spaces = [{value:'./',name:'Application'},
+    static spaces = [{value:'.',name:'Application'},
         {value:config.HOSTRULES_ABSPATH,name:'Hostrules'},
         {value:config.WEBROOT_ABSPATH,name:'Webroot'},
-        {value:'/etc/lunuc/',name:'Config (etc)'},
+        {value:'/etc/lunuc',name:'Config (etc)'},
         ]
     constructor(props) {
         super(props)
@@ -136,34 +136,39 @@ fi`
 
                         if(e.key==='save') {
                             if(nameFileDialog.input.checkValidity()) {
+                                let currentCommand
+                                if(nameFileDialog.isRenaming){
+                                    currentCommand = `mv "${space}${dir}/${nameFileDialog.fileName}" "${space}${dir}/${nameFileDialog.input.value}"`
+                                }else {
+                                    currentCommand = `${nameFileDialog.isFolder?'mkdir':'touch'} "${space}${dir}/${nameFileDialog.input.value}"`
+                                }
                                 client.query({
                                     fetchPolicy: 'no-cache',
                                     query: COMMAND_QUERY,
                                     variables: {
                                         sync: true,
-                                        command: `${nameFileDialog.isFolder?'mkdir':'touch'} "${space}${dir}/${nameFileDialog.input.value}"`
+                                        command:currentCommand
                                     }
-
                                 }).then(response => {
                                     console.log(response)
-                                    _app_.dispatcher.addNotification({key: 'fileChange', message: `${nameFileDialog.isFolder?'Folder':'File'} "${nameFileDialog.input.value}" created`})
+                                    _app_.dispatcher.addNotification({key: 'fileChange', message: `${nameFileDialog.isFolder?'Folder':'File'} "${nameFileDialog.input.value}" saved`})
                                     client.clearCache({query:COMMAND_QUERY,variables:{sync: true, command}})
                                     console.log('before refresh')
-                                    this.setState({nameFileDialog: {open: false}})
-
+                                    this.setState({nameFileDialog: {...nameFileDialog,open: false}})
                                 })
                             }
                         }else {
-                            this.setState({nameFileDialog: {open: false}})
+                            this.setState({nameFileDialog: {...nameFileDialog,open: false}})
                         }
 
-
-
                     }} actions={[{key: 'cancel', label: _t('core.cancel')}, {key: 'save', label: _t('core.save'), type: 'primary'}]}
-                                  title={_t(nameFileDialog.isFolder?'FilesContainer.createFolder':'FilesContainer.createFile')}>
+                                  title={_t('FilesContainer.'+ (nameFileDialog.isRenaming ? 'renameFile':(nameFileDialog.isFolder?'createFolder':'createFile')))}>
 
                         <StyledTextField inputRef={(ref)=>{
                             nameFileDialog.input = ref
+                            if(ref && nameFileDialog.fileName) {
+                                nameFileDialog.input.value = nameFileDialog.fileName
+                            }
                         }} inputProps={{pattern: '[a-zA-Z0-9._-]{1,15}'}} placeholder="Name" required={true}></StyledTextField>
 
                     </SimpleDialog>
@@ -172,8 +177,8 @@ fi`
                         fullWidth={true}
                         value={space}
                         onChange={(e, v) => {
-                            this.setState({space:e.target.value})
-                            history.push(`${location.origin+location.pathname}?space=${e.target.value}&dir=${this.state.dir}`)
+                            this.setState({space:e.target.value,dir:''})
+                            history.push(`${location.origin+location.pathname}?space=${e.target.value}&dir=`)
                         }}
                         items={FilesContainer.spaces}
                     />
@@ -203,10 +208,8 @@ fi`
                            variables={{sync: true, command}}>
                         {({loading, error, data}) => {
                             if (loading) {
-                                this._loading = true
                                 return 'Loading...'
                             }
-                            this._loading = false
                             if (error) return `Error! ${error.message}`
                             if (!data.run) return 'No data'
 
@@ -287,6 +290,13 @@ fi`
                                                            this.setState({confirmDeletionDialog:{open:true, fileName:payload.primary}})
                                                        },
                                                        icon: 'delete'
+                                                   },
+                                                   {
+                                                       name: _t('FilesContainer.renameFile'),
+                                                       onClick: (e, payload)=>{
+                                                           this.setState({nameFileDialog:{open:true, isRenaming:true, fileName:payload.primary}})
+                                                       },
+                                                       icon: 'edit'
                                                    }
                                                ]}
                                                count={listItems.length}/>

@@ -65,7 +65,8 @@ class SystemContainer extends React.Component {
                 }}
             >
                 <SimpleTab key="extensions" label="Extensions"/>
-                <SimpleTab key="cache" label="Cache / Indexes"/>
+                <SimpleTab key="database" label="Database / Indexes"/>
+                <SimpleTab key="cache" label="Cache"/>
             </SimpleTabs>
 
             <SimpleTabPanel value={tabValue} index={0}>
@@ -112,11 +113,21 @@ class SystemContainer extends React.Component {
             </SimpleTabPanel>
             <SimpleTabPanel value={tabValue} index={1}>
 
-                <Typography variant="h4" component="h2" gutterBottom>Cache</Typography>
+                <Typography variant="h4" component="h2" gutterBottom>Database</Typography>
 
-                <Button color="secondary" onClick={e => {
-                    client.resetStore()
-                }} variant="contained">Clear API cache</Button>
+                <Query key="query" query="query{systemInfo{dbUrl}}"
+                       fetchPolicy="cache-and-network">
+                    {({loading, error, data}) => {
+                        if (loading) return 'Loading...'
+                        if (error) return `Error! ${error.message}`
+                        return <dl>
+                            <dt>Database URL:</dt>
+                            <dd>{data.systemInfo.dbUrl}</dd>
+                        </dl>
+
+                    }}
+                </Query>
+
 
                 <Typography variant="h4" component="h2" gutterBottom sx={{mt:2}}>Indexes</Typography>
 
@@ -143,6 +154,12 @@ class SystemContainer extends React.Component {
                     }}
                 </Query>
 
+            </SimpleTabPanel>
+            <SimpleTabPanel value={tabValue} index={2}>
+                <Typography variant="h4" component="h2" gutterBottom>Cache</Typography>
+                <Button color="secondary" onClick={e => {
+                    client.resetStore()
+                }} variant="contained">Clear API cache</Button>
             </SimpleTabPanel>
             {message && <SimpleDialog open={true} onClose={()=>{
                 this.setState({message:''})

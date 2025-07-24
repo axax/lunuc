@@ -276,6 +276,7 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
             fetch('http:/localhost:3000/graphql', {
                 method: 'POST',
                 headers: {
+                    'Content-Language':contextLanguage,
                     'Content-Type': 'application/json',
                     'User-Agent': req.headers['user-agent'],
                     ['x-track-ip']: remoteAddress,

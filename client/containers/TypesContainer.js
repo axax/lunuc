@@ -624,6 +624,7 @@ class TypesContainer extends React.Component {
             Hook.call('TypeTableAction', {type, actions, multiSelectActions, pageParams: this.pageParams, data}, this)
             return <SimpleTable key="typeTable"
                                 title=""
+                                style={{flex:1}}
                                 tableRenderer={this.tableRenderer}
                                 tableRenderOption={typeSettings.tableRenderOption}
                                 onRowClick={this.handleRowClick.bind(this)}

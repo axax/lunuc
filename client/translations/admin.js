@@ -125,6 +125,7 @@ export const translations = {
         'TypeEdit.closeConfirmTitle':'Daten Speichern'
     },
     en: {
+        'FilesContainer.renameFile':'Rename',
         'FilesContainer.deleteFile':'Delete File',
         'FilesContainer.createFile':'Create file',
         'FilesContainer.createFolder':'Create folder',

@@ -92,7 +92,7 @@ const createWsSubscription = (id, subId, payload, next) => {
         })
 
         if (isConnected(wsCurrentConnection)) {
-            wsCurrentConnection.send(JSON.stringify({type: 'start', id, payload}))
+            wsCurrentConnection.send(JSON.stringify({type: 'start', clientId: _app_.clientId, id, payload}))
         }
     }
 

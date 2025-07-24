@@ -25,7 +25,8 @@ import {setPropertyByPath} from '../../client/util/json.mjs'
 import Hook from '../../util/hook.cjs'
 import {createAllIndexes} from '../index/indexes.mjs'
 import jwt from 'jsonwebtoken'
-import {AUTH_EXPIRES_IN, SECRET_KEY} from '../constants/index.mjs'
+import {SECRET_KEY} from '../constants/index.mjs'
+import {MONGO_URL} from '../database.mjs'
 
 const {UPLOAD_DIR} = config
 
@@ -113,7 +114,6 @@ export const systemResolver = (db) => ({
                 if (!command) {
                     throw new Error('No command to execute.')
                 }
-
                 if (sync) {
                     response = execSync(command, {encoding: 'utf8'})
                 } else {
@@ -448,6 +448,10 @@ export const systemResolver = (db) => ({
                 })
             }
             return {results}
+        },
+        systemInfo: async () =>{
+
+            return {dbUrl:MONGO_URL}
         }
     },
     Mutation: {

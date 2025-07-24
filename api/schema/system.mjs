@@ -102,8 +102,13 @@ export const systemSchemaRaw = `
     type TokenLinkResult{
         token: String
     }
+    
+    type SystemInfoResult{
+        dbUrl: String
+    }
         
     type Query {
+        systemInfo: SystemInfoResult
         searchInCollections(search: String!): SearchInCollectionsResult
         brokenReferences(type: String!, field: String): BrokenReferencesResult
     	run(command: String!, scope: String, id: String, sync: Boolean): RunResult
