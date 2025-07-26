@@ -30,7 +30,7 @@ import {userHasAccessToObject} from '../../../api/util/access.mjs'
 const createScopeForDataResolver = (query, _props) => {
     const queryParams = query ? ClientUtil.extractQueryParams(query) : {}
     const props = (_props ? JSON.parse(_props) : {})
-    const scope = {params: queryParams, props, userHasRightsToChangePage:false}
+    const scope = {params: queryParams, props}
     return scope
 }
 
@@ -122,10 +122,10 @@ export default db => ({
                 page: {
                     slug,
                     slugContext:cmsPages?.usedHostrule?.slugContext,
-                    host: getHostFromHeaders(headers), meta, referer: req.headers['referer'], lang: context.lang
+                    host: getHostFromHeaders(headers), meta, referer: req.headers['referer'], lang: context.lang,
+                    userHasRightsToChangePage
                 },
-                editmode,
-                userHasRightsToChangePage
+                editmode
             }
 
             const {resolvedData, subscriptions} = await resolveData({
@@ -495,8 +495,7 @@ export default db => ({
             if (rest.dataResolver) {
                 const scope = {
                     ...createScopeForDataResolver(query, props),
-                    userHasRightsToChangePage:true,
-                    page: {slug, realSlug: rest.slug, host: getHostFromHeaders(headers)}
+                    page: {slug, realSlug: rest.slug, host: getHostFromHeaders(headers), userHasRightsToChangePage:true}
                 }
                 const {resolvedData, subscriptions} = await resolveData({
                     db,
