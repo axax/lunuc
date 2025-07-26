@@ -61,7 +61,9 @@ export const typeDataToLabel = (item, pickerField) => {
         if (value) {
             if (value[_app_.lang]) {
                 label.push(value[_app_.lang])
-            } else {
+            } else if(value.constructor === Object) {
+                label.push(JSON.stringify(value))
+            }else{
                 label.push(value)
             }
         }

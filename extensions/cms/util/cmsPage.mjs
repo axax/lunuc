@@ -76,6 +76,7 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
 
         cmsPages = await GenericResolver.entities(db, {headers,context}, 'CmsPage',
             ['slug',
+                'ownerGroup',
                 'name',
                 'keyword',
                 'author',
@@ -102,7 +103,7 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
                 match,
                 limit: 1,
                 includeCount: false,
-                noUserLookup: true,
+                noLookupFields: ['createdBy','ownerGroup'],
                 _version
             })
 

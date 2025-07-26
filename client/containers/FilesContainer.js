@@ -50,7 +50,7 @@ class FilesContainer extends React.Component {
             dir: params.dir || '',
             searchText: '',
             filterText:'',
-            space: props.space || params.space || './',
+            space: props.space || params.space || '.',
             confirmDeletionDialog:{open:false},
             nameFileDialog:{open:false}
         }

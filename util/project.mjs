@@ -80,6 +80,15 @@ export const findProjection = (key, projection) => {
     return {}
 }
 
+function getSingleFieldQuery(type, field) {
+    const fieldDefinition = getFieldOfType(type, field)
+    if (fieldDefinition && fieldDefinition.localized) {
+        return `${field}{${config.LANGUAGES.join(' ')}}`
+    } else {
+        return field
+    }
+}
+
 export const projectionToQueryString = (projection, type) => {
     let queryString = '{_id __typename'
 
@@ -91,15 +100,9 @@ export const projectionToQueryString = (projection, type) => {
             const dotIndex = field.indexOf('.')
             if(dotIndex>=0){
                 const parts = field.split('.')
-                const fieldDefinition = getFieldOfType(type, parts[0])
-                if(fieldDefinition && fieldDefinition.localized){
-                    queryString += `${parts[0]}{${config.LANGUAGES.join(' ')}}`
-                }else {
-                    queryString += parts[0]
-                }
-
+                queryString += getSingleFieldQuery(type, parts[0])
             }else {
-                queryString += field
+                queryString += getSingleFieldQuery(type, field)
             }
         } else {
             Object.keys(field).forEach(key => {

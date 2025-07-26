@@ -1297,7 +1297,16 @@ class JsonDomHelper extends React.Component {
         }
 
         const items = []
-        if (['richText','p','headline','link'].indexOf(_options.elementKey)>=0) {
+        if (['button','input','select'].indexOf(subJson.t)>=0) {
+            items.push({
+                name: _t('elements.key.formElement'),
+                icon: 'subject',
+                onClick: () => {
+                    delete subJson.p['data-element-key']
+                    changeToType('formElement')
+                }
+            })
+        }else if (['richText','p','headline','link'].indexOf(_options.elementKey)>=0) {
 
             if (['richText', 'headline', 'link'].indexOf(_options.elementKey) >= 0) {
                 items.push({

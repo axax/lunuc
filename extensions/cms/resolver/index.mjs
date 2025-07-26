@@ -5,7 +5,11 @@ import ClientUtil from '../../../client/util/index.mjs'
 import {getCmsPage, getCmsPageCacheKey} from '../util/cmsPage.mjs'
 import {resolveData} from '../util/dataResolver.mjs'
 import {pubsub, pubsubHooked} from '../../../api/subscription.mjs'
-import {CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_CONTENT} from '../constants/index.mjs'
+import {
+    CAPABILITY_MANAGE_CMS_PAGES,
+    CAPABILITY_MANAGE_CMS_CONTENT,
+    CAPABILITY_VIEW_CMS_EDITOR
+} from '../constants/index.mjs'
 import Cache from '../../../util/cache.mjs'
 import {withFilter} from 'graphql-subscriptions'
 import {getHostFromHeaders} from '../../../util/host.mjs'
@@ -20,8 +24,8 @@ import {DEFAULT_DATA_RESOLVER, DEFAULT_SCRIPT, DEFAULT_STYLE, DEFAULT_TEMPLATE} 
 import {CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities.mjs'
 import {createMatchForCurrentUser} from '../../../api/util/dbquery.mjs'
 import {parseOrElse} from '../../../client/util/json.mjs'
+import {userHasAccessToObject} from '../../../api/util/access.mjs'
 
-const PORT = (process.env.PORT || 3000)
 
 const createScopeForDataResolver = (query, _props) => {
     const queryParams = query ? ClientUtil.extractQueryParams(query) : {}
@@ -95,16 +99,12 @@ export default db => ({
         cmsPage: async ({slug, query, props, nosession, editmode, dynamic, inEditor, meta, _version}, req) => {
             const startTime = (new Date()).getTime()
             const {context, headers} = req
-
             meta = parseOrElse(meta,{})
 
-            let editable = Util.isUserLoggedIn(context)
             let cmsPages = await getCmsPage({db, context, slug, _version, checkHostrules: !dynamic, inEditor, headers, editmode})
             //console.log(`get cms ${slug} in ${(new Date()).getTime() - startTime}ms`)
             if (!cmsPages.results || cmsPages.results.length === 0) {
-
                 Hook.call('trackMail', {req, event: '404', slug, db, context, data: query, meta})
-
                 throw new Error('Cms page doesn\'t exist')
             }
 
@@ -112,6 +112,11 @@ export default db => ({
                 _id, createdBy, template, script, style, resources, dataResolver, parseResolvedData, alwaysLoadAssets, loadPageOptions, ssrStyle, uniqueStyle, publicEdit, compress,
                 ssr, modifiedAt, urlSensitiv, name, keyword, author, description, serverScript, manual, disableRendering
             } = cmsPages.results[0]
+
+
+            let userCanPotentiallyChangePage = editmode && Util.isUserLoggedIn(context) && await Util.userHasCapability(db, context, CAPABILITY_VIEW_CMS_EDITOR)
+            const userHasRightsToChangePage = userCanPotentiallyChangePage && (await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS) || userHasAccessToObject(context, cmsPages.results[0]))
+
             const scope = {
                 ...createScopeForDataResolver(query, props),
                 page: {
@@ -119,9 +124,9 @@ export default db => ({
                     slugContext:cmsPages?.usedHostrule?.slugContext,
                     host: getHostFromHeaders(headers), meta, referer: req.headers['referer'], lang: context.lang
                 },
-                editmode
+                editmode,
+                userHasRightsToChangePage
             }
-            const ispublic = cmsPages.results[0].public
 
             const {resolvedData, subscriptions} = await resolveData({
                 db,
@@ -134,23 +139,21 @@ export default db => ({
                 dynamic
             })
 
-            // TODO: implement access restrictions
+            // access restrictions based on data resolver
             if(resolvedData.access ){
                 if(resolvedData.access.read === false){
                     throw new Error('No access rights')
                 }
                 if(resolvedData.access.edit === false){
-                    editable = false
+                    userCanPotentiallyChangePage = false
                 }
             }
-
 
             let html
             if (ssr) {
 
                 // Server side rendering
                 try {
-
                     html = await renderReact({
                         req,
                         template,
@@ -169,12 +172,13 @@ export default db => ({
             }
 
 
+            // Public date to return
             const result = {
                 _id,
                 modifiedAt,
                 createdBy,
                 ssr,
-                public: ispublic,
+                public: cmsPages.results[0].public,
                 online: !_version || _version === 'default',
                 slug,
                 realSlug: cmsPages.results[0].slug,
@@ -193,15 +197,13 @@ export default db => ({
                 compress,
                 subscriptions,
                 urlSensitiv,
-                editable,
+                editable: userCanPotentiallyChangePage, // if false editor is not shown
                 author,
                 disableRendering
             }
 
-
-
-            if (editable && editmode) {
-                // return all data if user is loggedin, and in editmode and has the capability to mange cms pages
+            if (userCanPotentiallyChangePage) {
+                // return data that the user needs to see the editor view completely. no sensitive data may be visible here
                 result.name = name
                 result.keyword = keyword
                 result.description = description
@@ -223,14 +225,15 @@ export default db => ({
                     await setPageOptionsAsMeta()
                 }
 
-                if (await Util.userHasCapability(db, context, CAPABILITY_MANAGE_CMS_PAGES)) {
+                if (userHasRightsToChangePage && await Util.userHasCapability(db, context, CAPABILITY_MANAGE_CMS_PAGES)) {
+                    //dataResolver and serverScript may contain sensitive data, therefore only visible to authorised users
                     result.dataResolver = dataResolver
                     result.serverScript = serverScript
                     result.manual = manual
                 }
             } else {
 
-                // if user is not looged in return only slug and rendered html
+                // if user is not logged in return only slug and rendered html
                 // never return sensitiv data here
                 result.name = {[context.lang]: name[context.lang]}
                 if(keyword) {
@@ -245,7 +248,7 @@ export default db => ({
             }
             console.debug(`CMS: resolver for ${slug} got data in ${(new Date()).getTime() - startTime}ms`)
 
-            if(meta === 'fetchMore' || meta.isFetchMore){
+            if(meta === 'fetchMore' || meta.isFetchMore || meta.isRefetch){
                 delete result.dataResolver
                 delete result.serverScript
                 delete result.manual

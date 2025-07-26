@@ -1748,7 +1748,7 @@ const baseElements = [
                 tab: DEFAULT_TAB,
                 label: 'Tag',
                 defaultValue:'input',
-                enum: ['input','textarea','button']
+                enum: ['input','textarea','button','select']
             },
             p_type: {
                 tab: DEFAULT_TAB,
@@ -1766,10 +1766,16 @@ const baseElements = [
                 label: 'Placeholder',
                 tab: DEFAULT_TAB
             },
+            p_required:{
+                label: 'Required',
+                type: 'Boolean',
+                tab: DEFAULT_TAB
+            },
             ...classOptions('p_'),
             c:{
                 label: 'Button label',
                 tab: DEFAULT_TAB,
+                localized:true,
                 uistate: {
                     visible: 't==button'
                 }

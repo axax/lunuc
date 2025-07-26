@@ -473,13 +473,12 @@ export default class AggregationBuilder {
         if (!projectResult) {
             // also return extra fields
             if (!typeDefinition.noUserRelation && !groups.createdBy) {
-                if(!this.options.noUserLookup) {
+                if(!this.options.noLookupFields || this.options.noLookupFields.indexOf('createdBy')<0) {
                     this.createAndAddLookup({type: 'User', name: 'createdBy', multi: false}, lookups, {})
                     groups.createdBy = this.createGroup({name: 'createdBy', multi: false})
                 }else{
                     groups.createdBy = {'$first': '$createdBy'}
                 }
-
             }
             groups.modifiedAt = {'$first': '$modifiedAt'}
         }
@@ -778,13 +777,13 @@ export default class AggregationBuilder {
                 // }
 
 
-                if (refFields && refFields.length === 1 && refFields[0] === '_id') {
-                    // it is only the id lookup doesn't make sense
+                if ((refFields && refFields.length === 1 && refFields[0] === '_id') ||
+                    (this.options.noLookupFields && this.options.noLookupFields.indexOf(fieldName)>=0)) {
+                    // lookup is not needed
                     projectResultData[fieldName + '._id'] = '$' + fieldName
                     groups[fieldName] = {'$first': '$' + fieldName}
                 } else {
                     const {lookup} = this.createAndAddLookup(fieldDefinition, lookups, {usePipeline})
-
                     if (lookup && lookup.$lookup.pipeline) {
                         lookup.$lookup.pipeline.push({$project: projectPipeline})
                     }

@@ -96,11 +96,13 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
 
                         resolvedData.access = {}
                         Object.keys(segment.access).forEach(key => {
-                            const usernames = segment.access[key].username
-                            if (usernames.indexOf(context.username) < 0) {
+                            const usernames = segment.access[key]?.username
+                            if (usernames && usernames.indexOf(context.username) < 0) {
                                 if (!(segment.access[key].anonymous && !context.id)) {
                                     resolvedData.access[key] = false
                                 }
+                            }else{
+                                resolvedData.access[key] = segment.access[key]
                             }
                         })
                     }
