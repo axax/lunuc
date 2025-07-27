@@ -62,9 +62,9 @@ const extendHostrulesWithCert = (hostrule, domainname) => {
     }
 
     if(hostrule.subDomains){
-        for(const subDomain in hostrule.subDomains){
-            if(subDomain.createSSLCert) {
-                extendHostrulesWithCert(hostrule.subDomains[subDomain], subDomain)
+        for (const [key, value] of Object.entries(hostrule.subDomains)) {
+            if(value.createSSLCert) {
+                extendHostrulesWithCert(value, key)
             }
         }
     }
