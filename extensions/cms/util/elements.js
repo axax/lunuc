@@ -1619,16 +1619,12 @@ const baseElements = [
                 tab: DEFAULT_TAB
             },
             ...marginOptions('p_'),
-            ...classOptions('p_')
+            ...classOptions('p_'),
+            ...condition(),
         },
         defaults: {
             $inlineEditor: {
-                elementKey: 'iframe',
-                options: {
-                    c: {
-                        trKey: '__uid__'
-                    }
-                }
+                elementKey: 'iframe'
             },
             p: {
                 ['data-element-key']: 'iframe',
