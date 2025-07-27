@@ -1,5 +1,4 @@
 import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
-import React from 'react'
 import Util from '../../../api/util/index.mjs'
 import ClientUtil from '../../../client/util/index.mjs'
 import {getCmsPage, getCmsPageCacheKey} from '../util/cmsPage.mjs'
@@ -248,7 +247,7 @@ export default db => ({
             }
             console.debug(`CMS: resolver for ${slug} got data in ${(new Date()).getTime() - startTime}ms`)
 
-            if(meta === 'fetchMore' || meta.isFetchMore || meta.isRefetch){
+            if(meta === 'fetchMore' || meta.isFetchMore /* || meta.isRefetch*/){
                 delete result.dataResolver
                 delete result.serverScript
                 delete result.manual
