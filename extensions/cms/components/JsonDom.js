@@ -818,7 +818,13 @@ class JsonDom extends React.Component {
     parseRec(a, rootKey, scope) {
         if (!a) return null
         if (isString(a)) return a
-        if (a.constructor === Object) return this.parseRec([a], rootKey, scope)
+        if (a.constructor === Object){
+            if(a._localized){
+                return this.parseRec(_t(a), rootKey, scope)
+            }else{
+                return this.parseRec([a], rootKey, scope)
+            }
+        }
         if (a.constructor !== Array) return ''
         let h = []
         a.forEach((item, aIdx) => {
