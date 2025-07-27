@@ -60,6 +60,14 @@ const extendHostrulesWithCert = (hostrule, domainname) => {
             }
         }
     }
+
+    if(hostrule.subDomains){
+        for(const subDomain in hostrule.subDomains){
+            if(subDomain.createSSLCert) {
+                extendHostrulesWithCert(hostrule.subDomains[subDomain], subDomain)
+            }
+        }
+    }
 }
 
 const loadHostRules = (dir, withCertContext, hostrules, isDefault) => {
