@@ -85,11 +85,6 @@ export default () => {
 
 
                                     meta.TypeContainer.setState({simpleDialog: false})
-
-
-                                }else{
-
-
                                 }
 
                             }else {

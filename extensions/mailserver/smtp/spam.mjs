@@ -53,22 +53,23 @@ export const detectSpam = async (db, context, {text, sender, threshold}) => {
 
         const containsWord = spamFilter.senderBlacklist.some(word => senderLowerCase.includes(word))
         if(containsWord){
-            return {spamScore:threshold, isSpam: true}
+            return {spamScore:threshold, isSpam: true, reason: `"${senderLowerCase}" is in senderBlacklist`}
         }
     }
 
     const lowerCaseText = ClientUtil.removeControlChars(text.toLowerCase())
 
     let totalScore = 0
-
+    const foundKeywords = []
     if(spamFilter.keywords) {
         for (const [keyword, score] of Object.entries(spamFilter.keywords)) {
             if (lowerCaseText.includes(keyword)) {
+                foundKeywords.push(keyword)
                 totalScore += score
             }
         }
     }
-    return {spamScore:totalScore, isSpam: totalScore >= threshold}
+    return {spamScore:totalScore, isSpam: totalScore >= threshold, reason: `Found keywords: ${foundKeywords.join(', ')}`}
 }
 
 // Example usage:

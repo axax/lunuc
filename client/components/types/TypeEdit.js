@@ -83,7 +83,7 @@ class TypeEdit extends React.Component {
         return this.state.open !== nextState.open ||
             this.state.askForSaving !== nextState.askForSaving ||
             this.state.dataToEdit !== nextState.dataToEdit ||
-            this.props.meta !== nextProps.meta
+            Util.shallowCompare(this.props.meta, nextProps.meta)
     }
 
     render() {

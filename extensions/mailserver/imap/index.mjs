@@ -588,6 +588,24 @@ const startListening = async (db, context) => {
 
         console.log(`imap ${messages.length} found`, match)
 
+        let messageData
+        const logError = (message) => {
+            GenericResolver.createEntity(db, {context: context}, 'Log', {
+                location: 'mailserver',
+                type: 'imapError',
+                message: message,
+                meta: {
+                    messageData,
+                    debug: JSON.parse(JSON.stringify({folderId, options, session}, getCircularReplacer()))
+                }
+            })
+        }
+
+        session.writeStream.on('error', (err) => {
+            logError(err.message)
+        })
+
+
         if (options.markAsSeen) {
             // mark all matching messages as seen
             messages.forEach(message => {
@@ -638,7 +656,7 @@ const startListening = async (db, context) => {
                         const idate = new Date(message.data.date)
                         delete message.data
                      */
-                    const messageData = JSON.parse(JSON.stringify(message.data))
+                    messageData = JSON.parse(JSON.stringify(message.data))
 
                     delete message.data
                     delete messageData.headerLines
@@ -661,19 +679,6 @@ const startListening = async (db, context) => {
 
                     replaceAddresseObjectsToString(messageData)
 
-
-                    const logError = (message) => {
-                        GenericResolver.createEntity(db, {context: context}, 'Log', {
-                            location: 'mailserver',
-                            type: 'imapError',
-                            message: message,
-                            meta: {
-                                messageData,
-                                debug: JSON.parse(JSON.stringify({folderId, options, session}, getCircularReplacer()))
-                            }
-                        })
-                    }
-
                     try {
                         /*const mailComposer = new MailComposer({
                             headers: messageData.headers,
@@ -682,7 +687,6 @@ const startListening = async (db, context) => {
                             attachments: messageData.attachments
                         })*/
                         const mailComposer = new MailComposer(messageData)
-
 
                         mailComposer.compile().build((err, mailMessage) => {
                             let stream = imapHandler.compileStream(
@@ -701,9 +705,6 @@ const startListening = async (db, context) => {
                             if (stream && session?.socket?.writable && !session?.socket?.destroyed) {
 
                                 stream.on('error', (err) => {
-                                    logError(err.message)
-                                })
-                                session.writeStream.on('error', (err) => {
                                     logError(err.message)
                                 })
 

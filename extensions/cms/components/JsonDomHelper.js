@@ -795,7 +795,7 @@ class JsonDomHelper extends React.Component {
             }
         }
 
-        let kids = this.addDropAreasToChildren({children, hasJsonToEdit, isInLoop, _options})
+        let kids = this.addDropAreasToChildren({children, hasJsonToEdit, isInLoop, _options, helperEvents})
 
         let comp
         if (isCms) {
@@ -1439,9 +1439,9 @@ class JsonDomHelper extends React.Component {
         })
     }
 
-    addDropAreasToChildren({children, hasJsonToEdit, isInLoop, _options}) {
+    addDropAreasToChildren({children, hasJsonToEdit, isInLoop, _options, helperEvents}) {
         let kids
-        if ((!children || children.constructor !== String) && hasJsonToEdit && !isInLoop && _options.allowDrop && _options.dropArea !== false) {
+        if (!helperEvents.contentEditable && (!children || children.constructor !== String) && hasJsonToEdit && !isInLoop && _options.allowDrop && _options.dropArea !== false) {
             kids = []
             if (children && children.length) {
 

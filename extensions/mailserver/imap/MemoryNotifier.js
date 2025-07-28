@@ -22,7 +22,7 @@ class MemoryNotifier extends EventEmitter {
         };
 
         this._listeners = new EventEmitter();
-        this._listeners.setMaxListeners(0);
+        this._listeners.setMaxListeners(50);
 
         this._sessionFolders = {}
 

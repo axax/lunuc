@@ -936,7 +936,7 @@ class CmsViewEditorContainer extends React.Component {
                                             }
                                             return true
                                         }else if (e.key === 'export') {
-                                            saveTrsAsCsv(editorRef.getData())
+                                            saveTrsAsCsv(editorRef.getValue())
                                             return
                                         }else if(e.key==='save' && editedData) {
                                             setKeyValue({key,value:editedData,clearCache:true, global:true}).then(()=>{
