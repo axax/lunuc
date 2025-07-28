@@ -7,6 +7,7 @@ import {deepMergeToFirst} from 'util/deepMerge.mjs'
 import Util from '../../api/util/index.mjs'
 import {parseOrElse} from '../../client/util/json.mjs'
 import {getGatewayIp} from '../../util/gatewayIp.mjs'
+import {settings} from "../../.eslintrc.js";
 
 dns2.Packet.TYPE['HTTPS'] = 65
 const dnsServerContext = {
@@ -75,6 +76,11 @@ Hook.on('appready', async ({db, context}) => {
         dnsServerContext.server = dns2.createServer({
             udp: true,
             handle: async (request, send, rinfo) => {
+
+                if(dnsServerContext?.settings?.blockedIps?.includes(rinfo.address)){
+                    return
+                }
+
                 const response = dns2.Packet.createResponseFromRequest(request)
                 const [question] = request.questions
 
