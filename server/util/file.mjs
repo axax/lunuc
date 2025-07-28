@@ -291,7 +291,7 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
                     [TRACK_IS_BOT_HEADER]: req.headers[TRACK_IS_BOT_HEADER] || '',
                     [TRACK_USER_AGENT_HEADER]: req.headers[TRACK_USER_AGENT_HEADER] || '',
                     [CLIENT_ID_HEADER]: clientId,
-                    [HOSTRULE_HEADER]: host,
+                    [HOSTRULE_HEADER]: req.headers[HOSTRULE_HEADER] || host,
                     [SESSION_HEADER]: req.headers[SESSION_HEADER],
                     /* cookies and auth_header not needed at the moment*/
                     'Cookie': req.headers.cookie,
