@@ -17,7 +17,13 @@ import {dbConnection, MONGO_URL} from '../../api/database.mjs'
 import {getDynamicConfig} from '../../util/config.mjs'
 import {ObjectId} from 'mongodb'
 import {getCmsPageQuery, removePrettyUrlPart} from '../../extensions/cms/util/cmsView.mjs'
-import {SESSION_HEADER, AUTH_HEADER, HOSTRULE_HEADER} from '../../api/constants/index.mjs'
+import {
+    SESSION_HEADER,
+    AUTH_HEADER,
+    HOSTRULE_HEADER,
+    TRACK_IP_HEADER,
+    CLIENT_ID_HEADER, TRACK_REFERER_HEADER, TRACK_IS_BOT_HEADER, TRACK_USER_AGENT_HEADER
+} from '../../api/constants/index.mjs'
 import Util from '../../client/util/index.mjs'
 import {parseCookies} from "../../api/util/parseCookies.mjs";
 
@@ -279,8 +285,11 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
                     'Content-Language':contextLanguage,
                     'Content-Type': 'application/json',
                     'User-Agent': req.headers['user-agent'],
-                    ['x-track-ip']: remoteAddress,
-                    ['x-client-id']: clientId,
+                    [TRACK_IP_HEADER]: req.headers[TRACK_IP_HEADER] || remoteAddress,
+                    [TRACK_REFERER_HEADER]: req.headers[TRACK_REFERER_HEADER] || '',
+                    [TRACK_IS_BOT_HEADER]: req.headers[TRACK_IS_BOT_HEADER] || '',
+                    [TRACK_USER_AGENT_HEADER]: req.headers[TRACK_USER_AGENT_HEADER] || '',
+                    [CLIENT_ID_HEADER]: clientId,
                     [HOSTRULE_HEADER]: host,
                     [SESSION_HEADER]: req.headers[SESSION_HEADER],
                     /* cookies and auth_header not needed at the moment*/

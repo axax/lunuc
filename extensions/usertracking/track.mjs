@@ -3,12 +3,13 @@ import Util from '../../api/util/index.mjs'
 import Hook from '../../util/hook.cjs'
 import {pubsub} from '../../api/subscription.mjs'
 import {DEFAULT_BOT_REGEX} from '../../util/userAgent.mjs'
+import {TRACK_IS_BOT_HEADER, TRACK_REFERER_HEADER, TRACK_USER_AGENT_HEADER} from '../../api/constants/index.mjs'
 
 export const trackUser = async ({req, event, slug, db, context, data, meta, path}) => {
 
     const ip = clientAddress(req)
 
-    if (ip && (req.headers['x-track-user-agent'] || (ip !== '::1' && ip !== '127.0.0.1'))) {
+    if (ip && (req.headers[TRACK_USER_AGENT_HEADER] || (ip !== '::1' && ip !== '127.0.0.1'))) {
         const host = getHostFromHeaders(req.headers)
 
         let referer
@@ -34,13 +35,13 @@ export const trackUser = async ({req, event, slug, db, context, data, meta, path
 
         const properties = Util.systemProperties()
         const date = new Date()
-        const agent = req.headers['x-track-user-agent'] || req.headers['user-agent'] || '';
+        const agent = req.headers[TRACK_USER_AGENT_HEADER] || req.headers['user-agent'] || '';
 
         const insertData = {
             ip: ip,
             agent,
-            isBot: req.headers['x-track-is-bot'] === 'true' ? true : DEFAULT_BOT_REGEX.test(agent),
-            referer: req.headers['x-referer'] || referer,
+            isBot: req.headers[TRACK_IS_BOT_HEADER] === 'true' ? true : DEFAULT_BOT_REGEX.test(agent),
+            referer: req.headers[TRACK_REFERER_HEADER] || referer,
             data,
             /*headers: req.headers,*/
             event,

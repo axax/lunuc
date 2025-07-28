@@ -7,6 +7,7 @@ import {trackUser} from './track.mjs'
 import React from 'react'
 import Util from '../../api/util/index.mjs'
 import url from 'url'
+import {TRACK_USER_AGENT_HEADER} from '../../api/constants/index.mjs'
 
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
@@ -52,7 +53,7 @@ Hook.on('typeBeforeCreate', ({type, data, req}) => {
             data.ip = clientAddress(req)
         }
         if (!data.agent) {
-            data.agent = req.headers['x-track-user-agent'] || req.headers['user-agent']
+            data.agent = req.headers[TRACK_USER_AGENT_HEADER] || req.headers['user-agent']
         }
         if (!data.referer) {
             data.referer = req.headers['referer']

@@ -12,7 +12,7 @@ import {ensureDirectoryExistence} from '../util/fileUtil.mjs'
 import {getBestMatchingHostRule, getHostRules, getRootCertContext} from '../util/hostrules.mjs'
 import {contextByRequest} from '../api/util/sessionContext.mjs'
 import {parseUserAgent} from '../util/userAgent.mjs'
-import {SECRET_KEY, USE_COOKIES} from '../api/constants/index.mjs'
+import {SECRET_KEY, TRACK_IP_HEADER, USE_COOKIES} from '../api/constants/index.mjs'
 import {parseCookies} from '../api/util/parseCookies.mjs'
 import {isTemporarilyBlocked} from './util/requestBlocker.mjs'
 import {parseWebsite} from './util/web2html.mjs'
@@ -285,7 +285,7 @@ const hasHttpsWwwRedirect = ({parsedUrl, hostrule, host, req, res, remoteAddress
         }
 
         if (!config.DEV_MODE && !req.isHttps) {
-            if (process.env.LUNUC_FORCE_HTTPS === 'true' && !req.headers['x-track-ip']) {
+            if (process.env.LUNUC_FORCE_HTTPS === 'true' && !req.headers[TRACK_IP_HEADER]) {
 
                 const agent = req.headers['user-agent']
 
@@ -420,7 +420,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 return
             }
 
-            //hostrule.reverseProxy = {ip:'157.173.127.37'}
+           // hostrule.reverseProxy = {ip:'localhost',port:9002,http2:false}
             if(isUrlValidForPorxing(urlPathname, hostrule)){
                 actAsReverseProxy(req,res,{parsedUrl,hostrule, host})
             }else if (urlPathname.startsWith('/graphql') || API_PREFIXES.some(prefix => urlPathname.startsWith('/'+prefix + '/'))) {

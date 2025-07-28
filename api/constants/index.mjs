@@ -1,6 +1,12 @@
 export const AUTH_HEADER = 'authorization'
 export const SESSION_HEADER = 'x-session'
 export const HOSTRULE_HEADER = 'x-host-rule'
+export const CLIENT_ID_HEADER = 'x-client-id'
+export const TRACK_REFERER_HEADER = 'x-track-referer'
+export const TRACK_IP_HEADER = 'x-track-ip'
+export const TRACK_IS_BOT_HEADER = 'x-track-is-bot'
+export const TRACK_USER_AGENT_HEADER = 'x-track-user-agent'
+
 export const USE_COOKIES = true
 export const CONTENT_LANGUAGE_HEADER = 'content-language'
 export const AUTH_SCHEME = 'JWT'

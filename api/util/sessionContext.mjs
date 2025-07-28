@@ -2,7 +2,7 @@ import {
     AUTH_EXPIRES_IN,
     AUTH_EXPIRES_IN_COOKIE,
     AUTH_HEADER,
-    AUTH_SCHEME,
+    AUTH_SCHEME, CLIENT_ID_HEADER,
     CONTENT_LANGUAGE_HEADER, SECRET_KEY,
     SESSION_HEADER,
     USE_COOKIES
@@ -97,6 +97,6 @@ export const contextByRequest = (req, res) => {
 
     // add the requested language to the context
     context.lang = lang || DEFAULT_LANGUAGE
-    context.clientId = req.headers['x-client-id']
+    context.clientId = req.headers[CLIENT_ID_HEADER]
     return context
 }

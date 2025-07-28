@@ -16,6 +16,7 @@ import {fileURLToPath} from 'url'
 import {typeResolver} from './resolver/typeResolver.mjs'
 import {resolveFrom} from './resolver/resolveFrom.mjs'
 import {resolveReduce} from './resolver/resolveReduce.mjs'
+import {TRACK_USER_AGENT_HEADER} from '../../../api/constants/index.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -361,7 +362,7 @@ function resolveSystemData(segment, req, resolvedData) {
     }
     if (segment.system.client) {
         data.client = {
-            agent: req.headers['x-track-user-agent'] || req.header('user-agent'), // User Agent we get from headers
+            agent: req.headers[TRACK_USER_AGENT_HEADER] || req.header('user-agent'), // User Agent we get from headers
             referrer: req.header('referrer'), //  Likewise for referrer
             ip: req.header('x-forwarded-for') || req.connection.remoteAddress, // Get IP - allow for proxy
             screen: { // Get screen info that we passed in url post data

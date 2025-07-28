@@ -6,6 +6,12 @@ import GenericResolver from '../../api/resolver/generic/genericResolver.mjs'
 import {getHostFromHeaders} from '../../util/host.mjs'
 import config from '../../gensrc/config.mjs'
 import os from 'os'
+import {
+    TRACK_IP_HEADER,
+    TRACK_IS_BOT_HEADER,
+    TRACK_REFERER_HEADER,
+    TRACK_USER_AGENT_HEADER
+} from '../../api/constants/index.mjs'
 
 let mydb
 Hook.on('dbready', ({db}) => {
@@ -90,8 +96,8 @@ Hook.on('typeLoaded', async ({type,cacheKey,db, req, context, result, dataQuery,
               type,
               host,
               cacheKey,
-              agent: headers['x-track-user-agent'] || headers['user-agent'] || '',
-              referer: headers['referer'],
+              agent: headers[TRACK_USER_AGENT_HEADER] || headers['user-agent'] || '',
+              referer: headers[TRACK_REFERER_HEADER] || headers['referer'],
               query: dataQuery
           }
       })

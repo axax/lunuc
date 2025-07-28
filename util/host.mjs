@@ -2,7 +2,7 @@
 Util to extract hostname from http headers
  */
 
-import {HOSTRULE_HEADER} from '../api/constants/index.mjs'
+import {HOSTRULE_HEADER, TRACK_IP_HEADER} from '../api/constants/index.mjs'
 
 export const getHostFromHeaders= (headers) => {
     let host=''
@@ -34,8 +34,8 @@ export const getHostFromHeaders= (headers) => {
 export const clientAddress = (req) => {
     let ip = ''
     if(req.headers) {
-        if (req.headers['x-track-ip']) {
-            ip = req.headers['x-track-ip'].split(',')[0]
+        if (req.headers[TRACK_IP_HEADER]) {
+            ip = req.headers[TRACK_IP_HEADER].split(',')[0]
         } else if (req.headers['x-forwarded-for']) {
             ip = req.headers['x-forwarded-for'].split(',')[0]
         }

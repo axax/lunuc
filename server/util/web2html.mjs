@@ -1,6 +1,11 @@
 import puppeteer from 'puppeteer'
 import {isTemporarilyBlocked} from './requestBlocker.mjs'
-import {HOSTRULE_HEADER} from '../../api/constants/index.mjs'
+import {
+    TRACK_IP_HEADER,
+    TRACK_IS_BOT_HEADER,
+    TRACK_REFERER_HEADER,
+    TRACK_USER_AGENT_HEADER
+} from '../../api/constants/index.mjs'
 
 const MAX_PAGES_IN_PUPPETEER = 8
 
@@ -96,10 +101,10 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
                 request.abort()
             } else {
                 const headers = request.headers()
-                headers['x-track-referer'] = referer
-                headers['x-track-ip'] = remoteAddress
-                headers['x-track-is-bot'] = isBot
-                headers['x-track-user-agent'] = agent
+                headers[TRACK_REFERER_HEADER] = referer
+                headers[TRACK_IP_HEADER] = remoteAddress
+                headers[TRACK_IS_BOT_HEADER] = isBot
+                headers[TRACK_USER_AGENT_HEADER] = agent
                 request.continue({headers})
             }
         })
