@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer'
 import {isTemporarilyBlocked} from './requestBlocker.mjs'
 import {
+    HOSTRULE_HEADER,
     TRACK_IP_HEADER,
     TRACK_IS_BOT_HEADER,
     TRACK_REFERER_HEADER,
@@ -93,7 +94,7 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
             await page.setCookie(...cookiesToSet)
         }
 
-        await page.setExtraHTTPHeaders({HOSTRULE_HEADER: host})
+        await page.setExtraHTTPHeaders({[HOSTRULE_HEADER]: host})
 
         page.on('request', (request) => {
             if (['image', 'stylesheet', 'font', 'manifest', 'other'].indexOf(request.resourceType()) !== -1 ||
