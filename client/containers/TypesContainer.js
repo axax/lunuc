@@ -344,6 +344,17 @@ class TypesContainer extends React.Component {
                                 dynamic[field.name] =
                                     <img style={{height: '40px'}}
                                          src={fieldValue}/>
+                            }else if(field.uitype==='ip'){
+
+                                dynamic[field.name] = <a target="_blank" rel="noreferrer" href={`/system/iplocation?ip=${fieldValue}&preview=true`}>
+                                <span
+                                    style={{
+                                        fontWeight: 'bold',
+                                        cursor: 'pointer',
+                                        color: '#663366',
+                                        textDecoration: 'underline'
+                                    }}>{fieldValue}</span></a>
+
                             } else if (['json', 'editor', 'jseditor'].indexOf(field.uitype) >= 0) {
                                 if (fieldValue && fieldValue.constructor === String) {
                                     if (fieldValue.length > 50) {

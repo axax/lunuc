@@ -13,7 +13,8 @@
         {
           "name": "ip",
           "index": 1,
-          "tab": "Allgemein"
+          "tab": "Allgemein",
+          "uitype": "ip"
         },
         {
           "name": "agent",

@@ -51,7 +51,8 @@
         },
         {
           "name": "lastIp",
-          "type": "String"
+          "type": "String",
+          "uitype": "ip"
         },
         {
           "name": "lastUsed",
