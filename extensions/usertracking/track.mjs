@@ -3,7 +3,12 @@ import Util from '../../api/util/index.mjs'
 import Hook from '../../util/hook.cjs'
 import {pubsub} from '../../api/subscription.mjs'
 import {DEFAULT_BOT_REGEX} from '../../util/userAgent.mjs'
-import {TRACK_IS_BOT_HEADER, TRACK_REFERER_HEADER, TRACK_USER_AGENT_HEADER} from '../../api/constants/index.mjs'
+import {
+    TRACK_IS_BOT_HEADER,
+    TRACK_REFERER_HEADER,
+    TRACK_URL_HEADER,
+    TRACK_USER_AGENT_HEADER
+} from '../../api/constants/index.mjs'
 
 export const trackUser = async ({req, event, slug, db, context, data, meta, path}) => {
 
@@ -31,7 +36,7 @@ export const trackUser = async ({req, event, slug, db, context, data, meta, path
             referer = ''//req.headers['referer']
         }
 
-        let finalPath = path || req.url
+        let finalRequestUrl = req.headers[TRACK_URL_HEADER] || path || req.url
 
         const properties = Util.systemProperties()
         const date = new Date()
@@ -48,7 +53,7 @@ export const trackUser = async ({req, event, slug, db, context, data, meta, path
             host: host,
             server: properties.hostname,
             slug,
-            path: finalPath?finalPath.split('?')[0]:'',
+            path: finalRequestUrl?finalRequestUrl.split('?')[0]:'',
             day: date.getDate(),
             month: date.getMonth() + 1,
             year: date.getFullYear(),

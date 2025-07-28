@@ -22,7 +22,7 @@ import {
     AUTH_HEADER,
     HOSTRULE_HEADER,
     TRACK_IP_HEADER,
-    CLIENT_ID_HEADER, TRACK_REFERER_HEADER, TRACK_IS_BOT_HEADER, TRACK_USER_AGENT_HEADER
+    CLIENT_ID_HEADER, TRACK_REFERER_HEADER, TRACK_IS_BOT_HEADER, TRACK_USER_AGENT_HEADER, TRACK_URL_HEADER
 } from '../../api/constants/index.mjs'
 import Util from '../../client/util/index.mjs'
 import {parseCookies} from "../../api/util/parseCookies.mjs";
@@ -286,6 +286,7 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
                     'Content-Type': 'application/json',
                     'User-Agent': req.headers['user-agent'],
                     [TRACK_IP_HEADER]: req.headers[TRACK_IP_HEADER] || remoteAddress,
+                    [TRACK_URL_HEADER]: req.headers[TRACK_URL_HEADER] || req.url,
                     [TRACK_REFERER_HEADER]: req.headers[TRACK_REFERER_HEADER] || '',
                     [TRACK_IS_BOT_HEADER]: req.headers[TRACK_IS_BOT_HEADER] || '',
                     [TRACK_USER_AGENT_HEADER]: req.headers[TRACK_USER_AGENT_HEADER] || '',

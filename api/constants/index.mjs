@@ -4,6 +4,7 @@ export const HOSTRULE_HEADER = 'x-host-rule'
 export const CLIENT_ID_HEADER = 'x-client-id'
 export const TRACK_REFERER_HEADER = 'x-track-referer'
 export const TRACK_IP_HEADER = 'x-track-ip'
+export const TRACK_URL_HEADER = 'x-track-url'
 export const TRACK_IS_BOT_HEADER = 'x-track-is-bot'
 export const TRACK_USER_AGENT_HEADER = 'x-track-user-agent'
 
