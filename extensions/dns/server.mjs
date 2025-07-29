@@ -77,9 +77,15 @@ Hook.on('appready', async ({db, context}) => {
             udp: true,
             handle: async (request, send, rinfo) => {
 
-                if(dnsServerContext?.settings?.blockedIps?.includes(rinfo.address)){
-                    return
+                if(dnsServerContext?.settings?.blockedIps){
+                    for(const blockedIp of dnsServerContext.settings.blockedIps){
+                        if(rinfo.address.startsWith(blockedIp)){
+                            return
+                        }
+                    }
                 }
+
+
 
                 const response = dns2.Packet.createResponseFromRequest(request)
                 const [question] = request.questions
