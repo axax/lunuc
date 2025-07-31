@@ -3,7 +3,7 @@ import {getType} from '../../../util/types.mjs'
 import {getFormFieldsByType} from '../../../util/typesAdmin.mjs'
 import config from '../../../gensrc/config.mjs'
 import Hook from '../../../util/hook.cjs'
-import {addFilterToMatch, addSearchStringToMatch} from '../../util/dbquery.mjs'
+import {addFilterToMatch, addSearchStringToMatch, makeAllMatchAnAndMatch} from '../../util/dbquery.mjs'
 
 
 export default class AggregationBuilder {
@@ -418,19 +418,10 @@ export default class AggregationBuilder {
             projectResultData = {}
 
         if(this.options.search){
+            makeAllMatchAnAndMatch(match)
             addSearchStringToMatch(this.options.search, match)
         }
-
-        if (match) {
-            // all the passed matches must be and
-            Object.keys(match).forEach(k => {
-                if (k == '$and') {
-                    return
-                }
-                match.$and.push({[k]: match[k]})
-                delete match[k]
-            })
-        }
+        makeAllMatchAnAndMatch(match)
 
         const aggHook = Hook.hooks['AggregationBuilderBeforeQuery']
         if (aggHook && aggHook.length) {

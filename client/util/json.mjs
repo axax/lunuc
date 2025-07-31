@@ -72,23 +72,27 @@ export function matchExpr(expr, scope) {
                     return true
                 }
             } else if (m2 === '>') {
-                if (!(prop > parseFloat(m3))) {
+                const v = Array.isArray(m3)?m3[m3.length-1]:m3
+                if (!(prop > parseFloat(v))) {
                     return true
                 }
             } else if (m2 === '>=') {
-                if (!(prop >= parseFloat(m3))) {
+                const v = Array.isArray(m3)?m3[m3.length-1]:m3
+                if (!(prop >= parseFloat(v))) {
                     return true
                 }
             } else if (m2 === '<') {
-                if (!(prop < parseFloat(m3))) {
+                const v = Array.isArray(m3)?m3[0]:m3
+                if (!(prop < parseFloat(v))) {
                     return true
                 }
             } else if (m2 === '<=') {
-                if (!(prop <= parseFloat(m3))) {
+                const v = Array.isArray(m3)?m3[0]:m3
+                if (!(prop <= parseFloat(v))) {
                     return true
                 }
             } else if (m2 === ' in ' || m2 === ' nin ') {
-                if (prop && prop.constructor === Array) {
+                if (Array.isArray(prop)) {
                     let exists = false
                     for (let i = 0; i < prop.length; i++) {
                         if (m3.indexOf('"' + prop[i] + '"') >= 0 || m3 === prop[i]) {

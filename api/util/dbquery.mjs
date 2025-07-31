@@ -413,3 +413,17 @@ export const createMatchForCurrentUser = async ({typeName, db, context, operatio
 
     return match
 }
+
+
+export const makeAllMatchAnAndMatch = (match) => {
+    if (match) {
+        // all the passed matches must be and
+        Object.keys(match).forEach(k => {
+            if (k === '$and') {
+                return
+            }
+            match.$and.push({[k]: match[k]})
+            delete match[k]
+        })
+    }
+}

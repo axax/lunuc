@@ -24,8 +24,6 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
 
     let host = getHostFromHeaders(headers)
 
-    console.log('xxxxx',host)
-
     /*if (host.startsWith('www.')) {
         host = host.substring(4)
     }*/

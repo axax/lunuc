@@ -2379,7 +2379,8 @@ const advancedElements = [
             ...condition(),
             ...marginOptions('p_'),
             ...classOptions('p_'),
-            ...observeOptions()
+            ...observeOptions(),
+            ...invisibleOptions('p_')
         },
         trigger: {
             change: [`
