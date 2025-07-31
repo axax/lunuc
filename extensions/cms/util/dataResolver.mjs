@@ -121,7 +121,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     await typeResolver({segment, resolvedData, scope, db, req, context, subscriptions})
 
                 } else if (segment.request) {
-                    addDataResolverSubscription = await resolveRequest(segment, resolvedData, context, addDataResolverSubscription)
+                    addDataResolverSubscription = await resolveRequest({segment, resolvedData, req, context, addDataResolverSubscription})
 
                 } else if (segment.tr) {
 
@@ -376,7 +376,7 @@ function resolveSystemData(segment, req, resolvedData) {
 }
 
 
-async function resolveRequest(segment, resolvedData, context, addDataResolverSubsription) {
+async function resolveRequest({segment, resolvedData, context, addDataResolverSubsription, req}) {
     console.log(`resolve request ${segment.request.url}`)
     const dataKey = segment.key || 'request'
     const cacheKey = createCacheKey(segment, 'request')
@@ -392,6 +392,11 @@ async function resolveRequest(segment, resolvedData, context, addDataResolverSub
     }
 
     if (segment.async !== false) {
+
+        if(segment.request?.headers?.cookie==="FROM_CURRENT_REQUEST"){
+            segment.request.headers.cookie = req.headers.cookie
+        }
+
         request(segment.request).then((body) => {
             const result = {body}
             if (segment.meta) {
