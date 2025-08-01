@@ -145,6 +145,10 @@ const DomUtil = {
                     }
                 })
 
+                if(options && options.callback){
+                    observer.callback = options.callback({observer})
+                }
+
                 observer.observe(doc, {
                     childList: true,
                     subtree: true

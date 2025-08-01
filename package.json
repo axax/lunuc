@@ -80,7 +80,7 @@
     "@mui/icons-material": "^7.2.0",
     "@mui/material": "^7.2.0",
     "@mui/styles": "^6.5.0",
-    "@mui/x-tree-view": "^8.9.0",
+    "@mui/x-tree-view": "^8.9.2",
     "ajv": "^8.17.1",
     "archiver": "^7.0.1",
     "bcryptjs": "^3.0.2",
@@ -104,9 +104,9 @@
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.5",
     "nodemailer-direct-transport": "^3.3.2",
-    "preact": "^10.26.9",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "preact": "^10.27.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
     "react-draggable": "^4.5.0",
     "react-jss": "^10.10.0",
     "sharp": "^0.34.3",
@@ -114,11 +114,11 @@
     "subscriptions-transport-ws": "^0.11.0",
     "telegraf": "^4.16.3",
     "web-push": "^3.6.7",
-    "wildduck": "^1.45.10",
+    "wildduck": "^1.45.11",
     "zip-local": "^0.3.5"
   },
   "optionalDependencies": {
-    "@aws-sdk/client-lambda": "^3.851.0",
+    "@aws-sdk/client-lambda": "^3.858.0",
     "@distube/ytdl-core": "^4.16.12",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@ffprobe-installer/ffprobe": "^2.1.2",
@@ -175,17 +175,17 @@
     "less-loader": "^12.3.0",
     "mini-css-extract-plugin": "^2.9.2",
     "prop-types": "^15.8.1",
-    "react-test-renderer": "^19.1.0",
+    "react-test-renderer": "^19.1.1",
     "style-loader": "^4.0.0",
     "terser-webpack-plugin": "^5.3.14",
-    "webpack": "^5.100.2",
+    "webpack": "^5.101.0",
     "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^6.0.1",
     "webpack-dev-server": "^5.2.2"
   },
   "overrides": {
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
     "graphql": "^16.11.0"
   }
 }
