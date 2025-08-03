@@ -28,7 +28,7 @@ import {
 import HookAsync from '../../util/hookAsync.mjs'
 
 
-export const createUser = async ({username, role, junior, group, setting, password, language, email, emailConfirmed, blocked, requestNewPassword, meta, domain, picture, db, context}, opts) => {
+export const createUser = async ({username, role, junior, group, setting, password, language, email, emailConfirmed, blocked, requestNewPassword, meta, domain, hostrule, picture, db, context}, opts) => {
 
     if (!opts) {
         opts = {override: false, skipCheck: false}
@@ -151,6 +151,9 @@ export const createUser = async ({username, role, junior, group, setting, passwo
         dataToInsert.domain = domain
     }
 
+    if (hostrule) {
+        dataToInsert.hostrule = hostrule
+    }
 
     let insertResult
     if (!opts.override || !userExists) {
@@ -234,7 +237,7 @@ export const userResolver = (db) => ({
                 }
                 options.sort = 'customOrder desc'
             }
-            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'signupToken', 'language', 'picture', 'email', 'meta', 'domain', 'emailConfirmed', 'blocked', 'requestNewPassword', 'role$UserRole', 'junior$[User]', 'group$[UserGroup]', 'setting$[UserSetting]', 'lastLogin', 'lastActive'], options)
+            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'signupToken', 'language', 'picture', 'email', 'meta', 'domain', 'hostrule', 'emailConfirmed', 'blocked', 'requestNewPassword', 'role$UserRole', 'junior$[User]', 'group$[UserGroup]', 'setting$[UserSetting]', 'lastLogin', 'lastActive'], options)
         },
         userRoles: async ({limit, page, offset, filter, sort}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
@@ -474,7 +477,7 @@ export const userResolver = (db) => ({
         }
     },
     Mutation: {
-        createUser: async ({username, password, email, language, meta, domain, picture, emailConfirmed, blocked, requestNewPassword, role, junior, group, setting}, {context}) => {
+        createUser: async ({username, password, email, language, meta, domain, hostrule, picture, emailConfirmed, blocked, requestNewPassword, role, junior, group, setting}, {context}) => {
 
 
             if(!await Util.userHasAccessRights(db,context,{typeName:'User', access:'create'})){
@@ -492,6 +495,7 @@ export const userResolver = (db) => ({
                 language,
                 meta,
                 domain,
+                hostrule,
                 email,
                 emailConfirmed,
                 blocked,
@@ -605,7 +609,7 @@ export const userResolver = (db) => ({
                 return result
             }
         },
-        updateUser: async ({_id, username, email, password, picture, language, emailConfirmed, blocked, requestNewPassword, role, junior, meta, domain, group, setting}, {context}) => {
+        updateUser: async ({_id, username, email, password, picture, language, emailConfirmed, blocked, requestNewPassword, role, junior, meta, domain, hostrule, group, setting}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
             if(!await Util.userHasAccessRights(db,context,{typeName:'User', access:'update'})){
@@ -622,6 +626,10 @@ export const userResolver = (db) => ({
 
             if (domain !== undefined) {
                 user.domain = domain
+            }
+
+            if (hostrule !== undefined) {
+                user.hostrule = hostrule
             }
 
             if (language !== undefined) {

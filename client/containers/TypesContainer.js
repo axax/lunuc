@@ -927,7 +927,7 @@ class TypesContainer extends React.Component {
                             variant="caption">{this.searchHint()}</Typography>
 
                 <div style={{margin: '0 0 0.5rem 0'}}>
-                    <Typography variant="caption">Filter: </Typography>
+                    <Typography variant="caption" color="info">Filter: </Typography>
                     <Chip
                         size="small"
                         label={prettyFilter ? this.prettyFilterLabel(prettyFilter) : _t('TypesContainer.noActiveFilter')}

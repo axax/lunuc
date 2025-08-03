@@ -51,6 +51,7 @@ export const userSchemaRaw = `
         note: [Note]
         meta: String
         domain: String
+        hostrule: String
         signupToken: String
         language: String
         role: UserRole
@@ -146,6 +147,7 @@ export const userSchemaRaw = `
             role: ID
             meta: String
             domain: String
+            hostrule: String
             language: String
             junior: [ID]
             group: [ID]
@@ -179,6 +181,7 @@ export const userSchemaRaw = `
             role: ID
             meta: String
             domain: String
+            hostrule: String
             junior: [ID]
             group: [ID]
             setting: [ID]

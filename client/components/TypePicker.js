@@ -58,11 +58,11 @@ const StyledChips = styled('div')(({ theme }) => ({
     width: '100%',
     flexWrap: 'wrap',
     marginTop: theme.spacing(1),
-    marginBottom: theme.spacing(0)
+    marginBottom: theme.spacing(1)
 }))
 
 const StyledChip = styled(Chip)(({ theme, isMulti }) => ({
-    margin: theme.spacing(2) + ' 0px 0px 0px',
+    margin: theme.spacing(isMulti?0:2) + ' 0px 0px 0px',
    /* '&:first-of-type': {
         marginLeft: 0
     },*/
@@ -395,6 +395,7 @@ class TypePicker extends React.Component {
 
                             } else {
                                 components.push(<StyledChip
+                                                      isMulti={multi}
                                                       draggable={true}
                                                       data-index={singleValueIndex}
                                                       onDragStart={(e) => {

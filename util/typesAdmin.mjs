@@ -451,19 +451,6 @@ Hook.on('Types', ({types}) => {
                 vagueSearchable:false
             },
             {
-                name: 'domain',
-                fullWidth: true,
-                required: false,
-                alwaysUpdate: true,
-                hideColumnInTypes: true,
-                tab: 'Allgemein',
-                access: {
-                    ui: {
-                        role: CAPABILITY_MANAGE_USER_GROUP
-                    }
-                }
-            },
-            {
                 fullWidth: true,
                 name: 'picture',
                 type: 'Media',
@@ -561,10 +548,36 @@ Hook.on('Types', ({types}) => {
                 fields: ['name'],
                 tab: _t('Types.accessControl'),
                 multi:true,
-                fullWidth:true,
+                fullWidth:false,
                 hideColumnInTypes: true,
                 vagueSearchable:false
-            }
+            },
+            {
+                name: 'domain',
+                fullWidth: false,
+                required: false,
+                alwaysUpdate: true,
+                hideColumnInTypes: true,
+                tab: _t('Types.accessControl'),
+                access: {
+                    ui: {
+                        role: CAPABILITY_MANAGE_USER_GROUP
+                    }
+                }
+            },
+            {
+                name: 'hostrule',
+                fullWidth: false,
+                required: false,
+                alwaysUpdate: false,
+                hideColumnInTypes: true,
+                tab: _t('Types.accessControl'),
+                access: {
+                    ui: {
+                        role: CAPABILITY_MANAGE_USER_GROUP
+                    }
+                }
+            },
         ]
     }
 })

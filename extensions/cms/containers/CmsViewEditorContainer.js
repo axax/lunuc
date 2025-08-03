@@ -330,6 +330,7 @@ class CmsViewEditorContainer extends React.Component {
         if (slugChanged) {
             JsonDomHelper.disableEvents = false
             this.watchCmsPageStatus(true)
+            this.templateChangeHistory = []
         }
 
         if (props.aboutToChange) {

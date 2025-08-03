@@ -561,6 +561,7 @@ class JsonDomHelper extends React.Component {
 
         const helperEvents = {
             onContextMenu: (e) => {
+                e.stopPropagation()
                 e.preventDefault()
                 if (menuItems.length > 0 || isCms) {
                     e.stopPropagation()
@@ -917,7 +918,6 @@ class JsonDomHelper extends React.Component {
                 onClick: () => {
                     const allSubJsons = JsonDomHelper.selected.map(element=>{
                         subJson = getComponentByKey(element.props._key, element.props._json)
-                        console.log(subJson)
                         return subJson
                     })
                     navigator.clipboard.writeText(JSON.stringify(allSubJsons, null, 2))

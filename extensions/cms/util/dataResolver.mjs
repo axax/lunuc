@@ -17,6 +17,8 @@ import {typeResolver} from './resolver/typeResolver.mjs'
 import {resolveFrom} from './resolver/resolveFrom.mjs'
 import {resolveReduce} from './resolver/resolveReduce.mjs'
 import {TRACK_USER_AGENT_HEADER} from '../../../api/constants/index.mjs'
+import {getBestMatchingHostRule, getHostRules} from '../../../util/hostrules.mjs'
+import Util from '../../../api/util/index.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -152,7 +154,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     }
                     subscriptions.push(segment.subscription)
                 } else if (segment.system) {
-                    resolveSystemData(segment, req, resolvedData)
+                    await resolveSystemData({segment, req, resolvedData, context, db})
                 } else if (segment.keyValueGlobals) {
 
                     // if user don't have capability to manage keys he can only see the public ones
@@ -323,7 +325,7 @@ const createCacheKey = (segment, name) => {
     return cacheKey
 }
 
-function resolveSystemData(segment, req, resolvedData) {
+const resolveSystemData = async ({segment, req, resolvedData, context, db}) => {
     const data = {}
     if (segment.system.properties) {
         data.properties = ApiUtil.systemProperties()
@@ -369,6 +371,19 @@ function resolveSystemData(segment, req, resolvedData) {
                 width: req.params.width,
                 height: req.params.height
             }
+        }
+    }
+    if (segment.system.hostrules) {
+        if(segment.system.hostrules?.restriction?.type==='user' && !await ApiUtil.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)){
+            const user = await Util.userById(db,context.id)
+            data.hostrules = {}
+            if(user?.hostrule) {
+                user.hostrule.split(',').forEach(rule=>{
+                    data.hostrules[rule] = getBestMatchingHostRule(rule,false,false)
+                })
+            }
+        }else {
+            data.hostrules = getHostRules()
         }
     }
     resolvedData._meta.system = segment.key || 'system'

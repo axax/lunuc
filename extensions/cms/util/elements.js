@@ -1689,6 +1689,7 @@ const baseElements = [
         },
         defaults: {
             $inlineEditor: {
+                allowDrop: false,
                 elementKey: 'code',
                 options: {
                     c: {
@@ -1706,7 +1707,7 @@ const baseElements = [
                     c: '',
                     p: {
                         height: 'auto',
-                        controlled: true,
+                        identifier: 'code${Date.now()}',
                         readOnly: 'nocursor',
                         lineNumbers: true
                     }

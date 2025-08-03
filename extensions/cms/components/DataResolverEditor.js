@@ -29,6 +29,37 @@ class DataResolverEditor extends React.Component {
                             event: 'visit'
                         }
                     })
+            }else if(this.wizardForm.state.fields.resolverType==='system') {
+                json.push(
+                    {
+                        system: {
+                            properties: true,
+                            ls:[{
+                                key:'dir',
+                                path:'/'
+                            }],
+                            cache:{
+                                data:false,
+                                count:true,
+                                size:true,
+                                sizePerKey:true
+                            },
+                            client:true,
+                            hostrules:{
+                                restriction:{
+                                    type: 'user'
+                                }
+                            }
+                        }
+                    })
+            }else if(this.wizardForm.state.fields.resolverType==='request') {
+                json.push(
+                    {
+                        request: {
+                            url: 'http://127.0.0.1:8080/lunucapi/getamovie',
+                            headers:{cookie:'FROM_CURRENT_REQUEST'}
+                        }
+                    })
             }else if(this.wizardForm.state.fields.resolverType==='keyvalue') {
                 const keyvalue = this.wizardForm.state.fields.keyvalue
 
@@ -127,7 +158,7 @@ class DataResolverEditor extends React.Component {
                         resolverType:{
                             name: 'resolverType',
                             label: 'Resolver Type',
-                            enum: [{value:'type', name:'Type'},{value:'keyvalue', name:'KeyValue'},{value:'genericType', name:'Generic Type'},{value:'track', name:'Tracking'},{value:'tr', name:'Translations'}],
+                            enum: [{value:'type', name:'Type'},{value:'keyvalue', name:'KeyValue'},{value:'genericType', name:'Generic Type'},{value:'track', name:'Tracking'},{value:'request', name:'Request'},{value:'system', name:'System'},{value:'tr', name:'Translations'}],
                             fullWidth: true,
                             value:'type'
                         },

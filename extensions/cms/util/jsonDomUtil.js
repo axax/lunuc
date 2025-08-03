@@ -296,7 +296,6 @@ export const checkIfElementOrParentHasDataKey = (el, attrKeys = [], value) => {
     while (el && el.parentNode && el.parentNode !== window) {
         for (const key of attrKeys) {
             const attrValue = el.getAttribute(key)
-            console.log(key,attrValue)
             if (value && attrValue === value || !value && attrValue !== null && attrValue !== undefined) {
                 return true
             }
