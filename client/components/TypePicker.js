@@ -68,9 +68,7 @@ const StyledChip = styled(Chip)(({ theme, isMulti }) => ({
     },*/
     position: 'relative',
     ...(isMulti && {
-        margin: theme.spacing(1) + ' 0',
-        width: '15%',
-        position: 'relative'
+        margin: theme.spacing(1) + ' 0'
     }),
 }))
 
