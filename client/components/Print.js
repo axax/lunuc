@@ -473,6 +473,13 @@ class Print extends React.PureComponent {
 
     }
 
+    getParentByTagName(el, tagName) {
+        while (el && el.tagName !== tagName) {
+            el = el.parentElement
+        }
+        return el
+    }
+
     setBreakRec(node, {offsetTop, paddingBottom, paddingTop, rootNode, manualBreakSelector}) {
         const {forceManuelBreak, noBreakClassName} = this.props
         const innerPageHeight = PAGE_HEIGHT - paddingTop - paddingBottom
@@ -508,7 +515,12 @@ class Print extends React.PureComponent {
                 if (!noBreak && (newOffsetTop - offsetTop)>innerPageHeight/2 &&
                     (childNode.tagName === 'TD' || childNode.tagName === 'TH' || childNode.tagName === 'TR')) {
                     // special treatment for breaks within a table
-                    offsetTop = this.createPageBreakTd(childNode)
+                    const table = this.getParentByTagName(childNode, 'TABLE')
+                    if(newOffsetTop - this.offsetTop(table)<50){
+                        offsetTop = this.createPageBreakDiv(table)
+                    }else {
+                        offsetTop = this.createPageBreakTd(childNode)
+                    }
                 } else if (!noBreak && !manualBreakSelector && childNode.hasChildNodes() && childNode.childNodes[0].nodeType !== Node.TEXT_NODE) {
                     offsetTop = this.setBreakRec(childNode, {manualBreakSelector, offsetTop, PAGE_HEIGHT, paddingBottom, paddingTop, rootNode: rootNode || node})
                 } else {
