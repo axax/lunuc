@@ -491,6 +491,7 @@ class Print extends React.PureComponent {
             const newOffsetTop = this.offsetTop(childNode),
                 pos = newOffsetTop - offsetTop + this.outerHeight(childNode),
                 dif = pos - innerPageHeight
+
             if (forceManuelBreak && manualBreakSelector) {
                 offsetTop = this.createPageBreakDiv(childNode)
             } else if (dif >= 20) {
@@ -504,7 +505,8 @@ class Print extends React.PureComponent {
                 }
 
                 // A break is needed
-                if (!noBreak && (childNode.tagName === 'TD' || childNode.tagName === 'TH' || childNode.tagName === 'TR')) {
+                if (!noBreak && (newOffsetTop - offsetTop)>innerPageHeight/2 &&
+                    (childNode.tagName === 'TD' || childNode.tagName === 'TH' || childNode.tagName === 'TR')) {
                     // special treatment for breaks within a table
                     offsetTop = this.createPageBreakTd(childNode)
                 } else if (!noBreak && !manualBreakSelector && childNode.hasChildNodes() && childNode.childNodes[0].nodeType !== Node.TEXT_NODE) {
