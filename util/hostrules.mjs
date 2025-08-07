@@ -90,6 +90,7 @@ const loadHostRules = (dir, withCertContext, hostrules, isDefault) => {
                         console.log(e)
                     }
                     if(hostrule) {
+                        hostrule._filename = filename
                         hostrule._basedir = dir
                         hostrule._lastModified = stats.mtime
 
@@ -169,7 +170,7 @@ export const getBestMatchingHostRule = (host, withCertContext=true, fallbackToGe
         const hostrule = hostrules[currentHost]
         if (hostrule) {
             if(hostrule.subDomains && hostrule.subDomains[host]){
-                return {hostrule: {...hostrule,...hostrule.subDomains[host]}, host: currentHost}
+                return {hostrule: {...hostrule,...hostrule.subDomains[host],_subDomain:host}, host: currentHost}
             }
             return {hostrule, host: currentHost}
         }

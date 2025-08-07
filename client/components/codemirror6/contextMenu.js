@@ -3,6 +3,8 @@ import {EditIcon, CodeIcon, AddIcon, AutoFixHighIcon,RepeatIcon,AutoAwesomeIcon}
 import {_t} from '../../../util/i18n.mjs'
 import {formatCode} from './utils'
 import {openWindow} from '../../util/window'
+import {fixAndParseJSON} from '../../util/fixJson.mjs'
+import {BuildIcon} from '../../../gensrc/ui/admin'
 
 const getTextAtLineNumber = (editorView, number) => {
     try {
@@ -136,15 +138,30 @@ export function generateContextMenu({type,clickEvent, editorView, propertyTempla
                ]
            }
        }
+      if(editorView.hasError){
+           contextMenuItems.push({
+               icon: <BuildIcon/>,
+               name: _t('CodeEditor.tryToAutoFixErrors'),
+               onClick: () => {
 
-       contextMenuItems.push({
+                   const jsonData = fixAndParseJSON(editorView.state.doc.toString())
+                   if(jsonData.fixed){
+                       editorView.dispatch({
+                           changes: {from: 0, to: editorView.state.doc.length, insert: JSON.stringify(jsonData.json,null,2)}
+                       })
+                   }
+               }
+           })
+        }
+
+        contextMenuItems.push({
            divider:true,
            icon: <AutoFixHighIcon/>,
            name: _t('CodeEditor.reformatCode')+' (Alt-Cmd-L)',
            onClick: () => {
                formatCode(editorView, type)
            }
-       })
+        })
 
        const selectedContent = editorView.state.sliceDoc(editorView.state.selection.main.from, editorView.state.selection.main.to)
 

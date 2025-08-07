@@ -785,7 +785,7 @@ class GenericForm extends React.Component {
         }
 
         return (
-            <Wrapper style={this.props.style}>
+            <Wrapper style={this.props.style} id={this.props.id}>
                 {tabs.length === 0 && formFields}
                 {formFieldsNoTabs.length > 0 && formFieldsNoTabs}
                 {tabs.length > 0 && <StyledTabContainer>
@@ -1024,17 +1024,16 @@ class GenericForm extends React.Component {
 
         }else if (uitype === 'htmlParser') {
             let html
-            if(field.replacePlaceholders){
-                html =  Util.replacePlaceholders(field.html, {data:this.state.fields, Util})
-            }else{
+            if (field.replacePlaceholders) {
+                html = Util.replacePlaceholders(field.html, {data: this.state.fields, Util})
+            } else {
                 html = field.html
             }
 
             currentFormFields.push(<span className={field.className} dangerouslySetInnerHTML={{__html: html}}/>)
-
         } else if (uitype === 'wrapper') {
             // do nothing for now
-        } else if (['json', 'jsonEditor', 'editor', 'jseditor', 'css', 'htmlEditor'].indexOf(uitype) >= 0) {
+        } else if (['json', 'jsonEditor', 'editor', 'jseditor', 'css', 'htmlEditor','keyvalue'].indexOf(uitype) >= 0) {
             let highlight, jsonStr
 
 
@@ -1101,6 +1100,7 @@ class GenericForm extends React.Component {
                     <CodeEditor
                         style={{border: '1px solid #eeeeee',margin: '16px 0'}}
                         readOnly={field.readOnly}
+                        identifier={(this.props.id || '') + '-' + fieldKey}
                         key={fieldKey}
                         fileSplit={true}
                         forceJson={field.type === 'Object'}

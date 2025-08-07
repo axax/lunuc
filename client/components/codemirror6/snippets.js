@@ -14,6 +14,7 @@ export const jsSnippets = ()=> {
             snippetCompletion('on(\'beforerender\',()=>{\n\t\n})', {label: 'beforerender event'}),
             snippetCompletion(`console.log(\${scope.data})`, {label: 'console.log'}),
             snippetCompletion('e.stopPropagation()', {label: 'stopPropagation()'}),
+            snippetCompletion(`setKeyValue({key:'\${key}',global:true,value:\${value},callback:()=>{})`, {label: 'setKeyValue()'}),
             snippetCompletion('on(\'click\',(p,e)=>{\n\tif(p.action===\'click\'){\n\t\tconsole.log(e)\n\t}\n})', {label: 'on click event'}),
             snippetCompletion('on(\'change\',(p,e)=>{\n\tif(p.action===\'change\'){\n\t\tconsole.log(e)\n\t}\n})', {label: 'on change event'}),
             snippetCompletion('DomUtil.waitForElement(\'.selector\').then(()=>{\n\t\n})', {label: 'waitForElement'}),

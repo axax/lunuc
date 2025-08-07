@@ -119,9 +119,11 @@ function CodeEditor(props,ref){
 
 
     let finalValue = isDataJson && stateValue.constructor !== String ? JSON.stringify(stateValue, null, 2) : stateValue
-    const hasError = (error || stateError)
-
-    console.log(`Render CodeEditor with height=${height || ''} and identifier=${stateIdentifier} fileIndex=${fileIndex}`)
+    const hasError = !!(error || stateError)
+    if(editorViewRef.current) {
+        editorViewRef.current.hasError = hasError
+    }
+    console.log(`Render CodeEditor with height=${height || ''} and identifier=${stateIdentifier} fileIndex=${fileIndex} hasError=${hasError} isDataJson=${isDataJson} type=${type}`)
 
     const allActions = [
         {
@@ -166,7 +168,6 @@ function CodeEditor(props,ref){
             }
         })
     }
-
     const comp = <StyledRoot error={hasError} inWindow={renderInWindow} className={className} style={style}>
         {files && <div>{files.map((file, i) => {
                 return (<StyledFile key={'file' + i}
