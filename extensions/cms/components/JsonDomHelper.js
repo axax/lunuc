@@ -1246,6 +1246,16 @@ class JsonDomHelper extends React.Component {
                             icon: <FileCopyIcon/>,
                             items: subItems
                         })
+
+                        if(Util.hasCapability(_app_.user, CAPABILITY_ADMIN_OPTIONS)) {
+                            menuItems.push({
+                                name: _t('JsonDomHelper.element.new.component'),
+                                icon: 'contentCut',
+                                onClick: () => {
+                                    alert('to implement')
+                                }
+                            })
+                        }
                     }
                 }
             }

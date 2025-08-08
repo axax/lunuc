@@ -227,7 +227,8 @@
         "EditNote",
         "Assignment",
         "Download",
-        "Article"
+        "Article",
+        "ContentCut"
       ],
       "theme":{
         "colors":{

@@ -11,6 +11,9 @@ import {
     SimpleMenu,
     SimpleDialog,
     SimpleMobileStepper,
+    SimpleTabs,
+    SimpleTab,
+    SimpleTabPanel,
     Switch,
     Divider,
     ResponsiveDrawerLayout,
@@ -44,6 +47,9 @@ const cmsPageEditorUrl = (slug, _version) => {
 const addAdminComponents = (components) => {
     /* Admin Elements */
     components['AdminExpandable'] = Expandable
+    components['AdminSimpleTabs'] = SimpleTabs
+    components['AdminSimpleTab'] = SimpleTab
+    components['AdminSimpleTabPanel'] = SimpleTabPanel
     components['AdminButton'] = SimpleButton
     components['AdminCircularProgress'] = CircularProgress
     components['AdminLinearProgress'] = LinearProgress

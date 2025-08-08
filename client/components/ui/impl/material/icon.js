@@ -102,7 +102,8 @@ import {
     VisibilityOffIcon,
     AssignmentIcon,
     DownloadIcon,
-    ArticleIcon
+    ArticleIcon,
+    ContentCutIcon
 } from 'gensrc/ui/admin/icons'
 
 const iconComponents = {
@@ -208,7 +209,8 @@ const iconComponents = {
     visibilityOff: VisibilityOffIcon,
     assignment: AssignmentIcon,
     download: DownloadIcon,
-    doc: ArticleIcon
+    doc: ArticleIcon,
+    contentCut: ContentCutIcon
 }
 
 export const getIconByKey = (key, defaultIcon) => {
