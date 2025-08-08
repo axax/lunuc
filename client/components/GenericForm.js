@@ -4,6 +4,8 @@ import {
     Divider,
     Button,
     TextField,
+    Slider,
+    Typography,
     SimpleSwitch,
     SimpleSelect,
     InputLabel,
@@ -1171,6 +1173,15 @@ class GenericForm extends React.Component {
         } else if (uitype === 'image') {
 
             currentFormFields.push(<FileDrop key={fieldKey} className={field.className} value={value}/>)
+
+        } else if (uitype === 'slider') {
+
+
+            currentFormFields.push(<FormControl key={'control' + fieldKey} className={field.className} sx={getSxProps(field)}>
+                <Typography gutterBottom>{field.label + (languageCode ? ' [' + languageCode + ']' : '')}</Typography>
+                <Slider name={fieldKey}
+                onChange={this.handleInputChange}
+                defaultValue={field.defaultValue || 50} max={field.max || 100} min={field.min || 0} value={value} aria-label="Default" valueLabelDisplay="auto" /></FormControl>)
 
         } else if (uitype === 'upload'){
             currentFormFields.push(<FileDrop onZipExtraction={(zipFiles)=>{

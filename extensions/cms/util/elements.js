@@ -62,6 +62,15 @@ Nicht empfolen für SVG Bilder, da diese dabei in PNG umgewandelt werden. Im Tab
         label: 'In Format umwandeln',
         tab: IMAGE_OPTIMIZATION_TAB
     },
+    [`${key}options_removebg_tolerance`]: {
+        type: 'number',
+        uitype:'slider',
+        max:300,
+        min:0,
+        defaultValue:0,
+        label: _t('elements.image.removebg'),
+        tab: IMAGE_OPTIMIZATION_TAB
+    },
     [`${key}options_webp`]: {
         type: 'Boolean',
         newLine: true,

@@ -417,28 +417,19 @@ const Util = {
                 params += `&height=${h}`
             }
         }
-        if (options.quality) {
-            params += `&quality=${options.quality}`
-        }
 
         if (options.format) {
             params += '&format=' + options.format
         } else if (options.webp) {
             params += '&format=webp'
-        }
+        };
 
-        if (options.flop) {
-            params += '&flop=true'
-        }
-        if (options.flip) {
-            params += '&flip=true'
-        }
-        if (options.position) {
-            params += '&position=' + options.position
-        }
-        if (options.noenlarge) {
-            params += '&noenlarge=' + options.noenlarge
-        }
+        ['quality','removebg','flop','flip','position','noenlarge'].forEach(key=>{
+            if(options[key]){
+                params += `&${key}=${options[key].constructor === Object ? JSON.stringify(options[key]) : options[key]}`
+            }
+        })
+
         if (params && options.addParams!==false) {
             data.src += (data.src.indexOf('?')>=0?'&':'?') + params.substring(1)
         }
