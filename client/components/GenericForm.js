@@ -829,6 +829,12 @@ class GenericForm extends React.Component {
     renderSubFields(field, value, fieldKey, currentFormFields, extraFields) {
         const subFields = {...convertArrayToObjectByAttr(field.subFields, 'name'),...convertArrayToObjectByAttr(extraFields, 'name')}
 
+        if(field.readOnly){
+            Object.keys(subFields).forEach(key=>{
+                subFields[key].readOnly = true
+            })
+        }
+
         if (field.multi) {
 
             let subFieldValues = []
@@ -842,7 +848,8 @@ class GenericForm extends React.Component {
                 const valueFieldKey = fieldKey + '-' + index
                 let title = ''
                 if (field.titleTemplate) {
-                    title = Util.replacePlaceholders(field.titleTemplate, {_index: index, ...values})
+                    // replace $\{ in case it is escaped in template
+                    title = Util.replacePlaceholders(field.titleTemplate.replaceAll('$\\{','${'), {_index: index, ...values})
                 } else {
                     Object.keys(values).map(k => {
                         if (title && values[k]) {
@@ -900,6 +907,7 @@ class GenericForm extends React.Component {
                         <Button key={'delete' + valueFieldKey}
                                 color="error"
                                 size="small"
+                                disabled={field.readOnly}
                                 startIcon={<DeleteIcon/>}
                                 onClick={() => {
                                     subFieldValues.splice(index, 1)
@@ -915,6 +923,7 @@ class GenericForm extends React.Component {
                                 color="secondary"
                                 startIcon={<ContentCopyIcon/>}
                                 size="small"
+                                disabled={field.readOnly}
                                 onClick={() => {
                                     const clone = Object.assign({}, subFieldValues[index])
                                     subFieldValues.push(clone)
@@ -933,6 +942,7 @@ class GenericForm extends React.Component {
                                            color={field.addButtonColor || 'primary'}
                                            variant="contained"
                                            size="small"
+                                           disabled={field.readOnly}
                                            style={field.style}
                                            onClick={() => {
 
@@ -1292,7 +1302,7 @@ class GenericForm extends React.Component {
                             error={!!this.state.fieldErrors[fieldKey]}
                             hint={this.state.fieldErrors[fieldKey]}
                             multi={field.multi}
-                            label={field.label}
+                            label={field.label || field.name}
                             sx={getSxProps(field)}
                             InputLabelProps={{
                                 shrink: true,
@@ -1482,3 +1492,47 @@ GenericForm.propTypes = {
 }
 
 export default GenericForm
+
+async function generateManifestIcons(inputImagePath, outputDir, options = {}) {
+    try {
+        // Default icon sizes commonly used in manifest.json
+        const defaultIconSizes = [
+            { size: 36, name: 'icon-36x36.png' },
+            { size: 48, name: 'icon-48x48.png' },
+            { size: 72, name: 'icon-72x72.png' },
+            { size: 96, name: 'icon-96x96.png' },
+            { size: 144, name: 'icon-144x144.png' },
+            { size: 192, name: 'icon-192x192.png' },
+            { size: 512, name: 'icon-512x512.png' },
+        ];
+
+        // Merge default sizes with user-provided sizes (if any)
+        const iconSizes = options.iconSizes || defaultIconSizes;
+
+        // Create output directory if it doesn't exist
+        if(Util.ensureDirectoryExistence(path.dirname(outputDir))){
+            // Process each icon size
+            const iconPromises = iconSizes.map(async ({ size, name }) => {
+                const outputPath = path.join(outputDir, name);
+                await sharp(inputImagePath)
+                    .resize(size, size, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+                    .png() // Ensure PNG output for transparency
+                    .toFile(outputPath);
+                console.log(`Generated icon: ${outputPath}`);
+                return { src: name, sizes: `${size}x${size}`, type: 'image/png' };
+            });
+
+            // Generate all icons
+            const icons = await Promise.all(iconPromises);
+
+
+            return { success: true,icons}
+        }else{
+            return { success: false}
+        }
+    } catch (error) {
+        console.error('Error generating manifest icons:', error);
+        throw error;
+    }
+}
+
