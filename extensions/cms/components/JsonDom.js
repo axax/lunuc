@@ -441,7 +441,8 @@ class JsonDom extends React.Component {
                     dispatchEvent(new Event('load'))
                 }
             }, 0)
-
+        }else{
+            this.node = ReactDOM.findDOMNode(this)
         }
     }
 
