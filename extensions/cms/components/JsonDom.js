@@ -949,14 +949,15 @@ class JsonDom extends React.Component {
                                     scope,
                                     Util,
                                     serverMethod: (name, args) => {
+                                        const cacheKey = loopOrFor.cacheKey || d
                                         if (!this.serverMethodMap) {
                                             this.serverMethodMap = {}
                                         }
-                                        if (this.serverMethodMap[d]) {
-                                            return this.serverMethodMap[d]
+                                        if (this.serverMethodMap[cacheKey]) {
+                                            return this.serverMethodMap[cacheKey]
                                         }
                                         this.props.serverMethod(name, args, (response) => {
-                                            this.serverMethodMap[d] = JSON.parse(response.data.cmsServerMethod.result)
+                                            this.serverMethodMap[cacheKey] = JSON.parse(response.data.cmsServerMethod.result)
                                             this.forceUpdate()
                                         })
                                     }

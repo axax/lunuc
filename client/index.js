@@ -22,6 +22,10 @@ const hasStorageSupport = () => {
 _app_.noStorage = !hasStorageSupport()
 
 function addCanonicalTag(href) {
+    href = href.replace('__ssr=1','')
+    if(href.endsWith('?')){
+        href = href.substring(0,href.length-1)
+    }
     DomUtil.createAndAddTag('link', 'head', {
         id: 'canonicalTag',
         rel: 'canonical',
@@ -107,13 +111,12 @@ function mainInit() {
     document.documentElement.setAttribute('lang', _app_.lang)
 
 
-    // has trailing slash --> set canonical link
-    const cleanPathnameWithoutTrailingSlash = Util.removeTrailingSlash(cleanPathname)
-    if (cleanPathnameWithoutTrailingSlash !== cleanPathname) {
-        addCanonicalTag(loc.origin + cleanPathnameWithoutTrailingSlash + loc.search + loc.hash)
-    }
-
-    if (contextLanguage === DEFAULT_LANGUAGE) {
+    // trailing slash,
+    // default language,
+    // __ssr parameter --> set canonical link
+    if (Util.removeTrailingSlash(cleanPathname) !== cleanPathname ||
+        contextLanguage === DEFAULT_LANGUAGE ||
+        loc.search.indexOf('__ssr=1') >= 0) {
         // set canonical link
         addCanonicalTag(loc.origin + (basePath === '/' ? '' : basePath))
     }
