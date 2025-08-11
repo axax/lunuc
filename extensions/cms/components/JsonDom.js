@@ -958,8 +958,10 @@ class JsonDom extends React.Component {
                                         }
                                         this.props.serverMethod(name, args, (response) => {
                                             this.serverMethodMap[cacheKey] = JSON.parse(response.data.cmsServerMethod.result)
+                                            this.serverMethodMap[d] = this.serverMethodMap[cacheKey]
                                             this.forceUpdate()
                                         })
+                                        return this.serverMethodMap[d]
                                     }
                                 })
                             } catch (e) {
