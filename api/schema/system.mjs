@@ -111,7 +111,7 @@ export const systemSchemaRaw = `
         systemInfo: SystemInfoResult
         searchInCollections(search: String!): SearchInCollectionsResult
         brokenReferences(type: String!, field: String): BrokenReferencesResult
-    	run(command: String!, scope: String, id: String, sync: Boolean): RunResult
+    	run(command: String!, scope: String, id: String, sync: Boolean, timeout: String): RunResult
     	killRun(id: String!): RunResult
     	sendMail(recipient: String!, subject: String, body: String, slug: String, from: String, replyTo: String): MailResult
     	backups(type: String!): BackupResult

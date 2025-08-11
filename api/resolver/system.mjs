@@ -54,8 +54,8 @@ export const systemResolver = (db) => ({
             killExec(id)
             return {id}
         },
-        run: async ({command, scope, id, sync}, {context}) => {
-            let performCheck = true, response = ''
+        run: async ({command, scope, id, sync, timeout}, {context}) => {
+            let response = ''
 
             const currentId = id || (context.id + String((new Date()).getTime()))
 
@@ -172,17 +172,19 @@ export const systemResolver = (db) => ({
                     execs[currentId].isRunning = true
 
                     clearTimeout(execs[currentId].execTimeout)
-                    execs[currentId].execTimeout = setTimeout(function () {
-                        killExec(currentId)
-                        pubsub.publish('subscribeRun', {
-                            userId: context.id,
-                            subscribeRun: {
-                                event: 'error',
-                                error: 'Execution timeout reached. Console has been reseted',
-                                id: currentId
-                            }
-                        })
-                    }, 600000)
+                    if(timeout!==0) {
+                        execs[currentId].execTimeout = setTimeout(function () {
+                            killExec(currentId)
+                            pubsub.publish('subscribeRun', {
+                                userId: context.id,
+                                subscribeRun: {
+                                    event: 'error',
+                                    error: 'Execution timeout reached. Console has been reseted',
+                                    id: currentId
+                                }
+                            })
+                        }, timeout || 600000)
+                    }
                 }
             }
 

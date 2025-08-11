@@ -154,8 +154,14 @@ class GenericForm extends React.Component {
                 }
             } else {
                 if (props.values) {
-                    if (field.type === 'Object' && props.values[fieldKey] && props.values[fieldKey].constructor === Object) {
-                        fieldValue = Object.assign({}, props.values[fieldKey])
+                    if (field.type === 'Object' && props.values[fieldKey]) {
+                        if(props.values[fieldKey].constructor === Object) {
+                            fieldValue = Object.assign({}, props.values[fieldKey])
+                        }else if(Array.isArray(props.values[fieldKey])){
+                            fieldValue = JSON.parse(JSON.stringify(props.values[fieldKey]))
+                        }else{
+                            fieldValue = props.values[fieldKey]
+                        }
                     } else {
                         fieldValue = props.values[fieldKey]
                     }
