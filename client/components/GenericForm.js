@@ -855,7 +855,7 @@ class GenericForm extends React.Component {
                 let title = ''
                 if (field.titleTemplate) {
                     // replace $\{ in case it is escaped in template
-                    title = Util.replacePlaceholders(field.titleTemplate.replaceAll('$\\{','${'), {_index: index, ...values})
+                    title = Util.replacePlaceholders(field.titleTemplate.replaceAll('$\\{','${'), {_index: index, Util, ...values})
                 } else {
                     Object.keys(values).map(k => {
                         if (title && values[k]) {

@@ -37,6 +37,9 @@ const Util = {
         }
         return str
     },
+    removeHtmlTags: str => {
+        return str.replace(/<[^>]*>/g, '')
+    },
     escapeForJson: (str, options) => {
         if (str === undefined || str === null) return ''
         if (!isString(str))
@@ -50,9 +53,11 @@ const Util = {
             if (options.regex) {
                 str = Util.escapeRegex(str)
             }
-
             if (options.removeControlChars) {
                 str = Util.removeControlChars(str)
+            }
+            if (options.removeHtmlTags){
+                str = Util.removeHtmlTags(str)
             }
         }
 
@@ -192,7 +197,7 @@ const Util = {
                     delete obj[prop]
                 }
             } else if (obj[prop] !== null) {
-                if (obj[prop].constructor === Array) {
+                if (Array.isArray(obj[prop])) {
                     if (options.emptyArray && obj[prop].length === 0) {
                         //remove empty arrays
                         delete obj[prop]

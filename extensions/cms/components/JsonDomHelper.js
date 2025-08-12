@@ -1347,7 +1347,7 @@ class JsonDomHelper extends React.Component {
                     name: _t('elements.key.headline'),
                     icon: 'format',
                     onClick: () => {
-                        subJson.c = subJson.c || (subJson.$c?subJson.$c.replace(/<[^>]*>/g, ''):'')
+                        subJson.c = subJson.c || (subJson.$c? Util.removeHtmlTags(subJson.$c):'')
                         subJson.t = 'h1'
                         delete subJson.$c
                         changeToType('headline')
@@ -1360,7 +1360,7 @@ class JsonDomHelper extends React.Component {
                     name: _t('elements.key.link'),
                     icon: 'link',
                     onClick: () => {
-                        subJson.c = subJson.c || (subJson.$c ? subJson.$c.replace(/<[^>]*>/g, '') : '')
+                        subJson.c = subJson.c || (subJson.$c ? Util.removeHtmlTags(subJson.$c) : '')
                         subJson.t = 'Link'
                         delete subJson.$c
                         changeToType('link')
