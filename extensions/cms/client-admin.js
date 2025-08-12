@@ -33,7 +33,7 @@ import SimpleImageList from '../../client/components/ui/impl/material/SimpleImag
 import {client} from '../../client/middleware/graphql'
 import SimpleFileExplorer from '../../client/components/ui/impl/material/SimpleFileExplorer'
 import {parseOrElse} from "../../client/util/json.mjs";
-
+import Util from '../../client/util/index.mjs'
 
 registerTrs(translations, 'CmsViewEditorContainer')
 registerTrs(adminTranslations, 'AdminTranslations')
@@ -198,6 +198,7 @@ export default () => {
         }
     })
 
+    //_app_.slugContext = 'proflight'
     // add some extra data to the table
     Hook.on('TypeTable', ({type, dataSource, data, container}) => {
         if (type === 'CmsPage' && window.toolbar.visible) {
@@ -205,7 +206,9 @@ export default () => {
                 if (d.slug) {
                     const item = data.results[i]
                     if( item ) {
-                        d.preview =  <Link style={{display:'block', lineHeight: '0'}} to={cmsPageEditorUrl(item.slug, container.pageParams._version)}>
+                        const slugWithoutSlugContext = Util.removeSlugContext('/'+item.slug).substring(1)
+
+                        d.preview =  <Link style={{display:'block', lineHeight: '0'}} to={cmsPageEditorUrl(slugWithoutSlugContext, container.pageParams._version)}>
                             <img style={{}}
                                  width={120} height={80}
                                  id={'img-'+item._id}
@@ -214,14 +217,14 @@ export default () => {
                         </Link>
 
                         d.slug = <Link
-                            to={cmsPageEditorUrl(item.slug, container.pageParams._version)}>
+                            to={cmsPageEditorUrl(slugWithoutSlugContext, container.pageParams._version)}>
                         <span
                             style={{
                                 fontWeight: 'bold',
                                 cursor: 'pointer',
                                 color: '#663366',
                                 textDecoration: 'underline'
-                            }}>{item.slug || <WebIcon/>}</span></Link>
+                            }}>{slugWithoutSlugContext || <WebIcon/>}</span></Link>
                     }
                 }
             })
@@ -341,6 +344,11 @@ export default () => {
     Hook.on('TypeCreateEdit', function ({type, props, formFields, dataToEdit, meta, parentRef}) {
         if (type === 'CmsPage') {
             const dialogKey = meta.TypeContainer.state?.createEditDialogOption?.key
+
+            if(dataToEdit.slug){
+                dataToEdit.slug = Util.removeSlugContext('/'+dataToEdit.slug).substring(1)
+            }
+
             if ( dialogKey === 'convertingHtml'){
                 props.title = _t('CmsPageEdit.convertHtml')
                 props.actions = []
@@ -398,6 +406,17 @@ export default () => {
             }
         }
     })
+
+
+    Hook.on('TypeCreateEditBeforeSave', function ({type,editedData}) {
+        if (type === 'CmsPage') {
+            if (editedData.slug && _app_.slugContext) {
+                editedData.slug = Util.removeTrailingSlash(_app_.slugContext+'/' + editedData.slug)
+            }
+        }
+    })
+
+
 
     Hook.on('TypeCreateEditAction', async ({type, action, typeEdit, meta, createEditForm}) => {
         if (type === 'CmsPage' && action) {

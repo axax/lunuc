@@ -9,14 +9,17 @@ import GenericForm from '../../../client/components/GenericForm'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants/index.mjs'
 import {_t} from '../../../util/i18n.mjs'
 
-export default function CmsAddNewSite(props){
+export function CmsAddNewSite(props) {
     const {addNewSite, cmsPage, onClose} = props
 
-    if(!cmsPage){
+    if (!cmsPage) {
         return null
     }
 
     const canMangeCmsTemplate = Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE)
+    if (addNewSite.slug) {
+        addNewSite.slug = Util.removeSlugContext('/' + addNewSite.slug).substring(1)
+    }
 
     const [defaultValues, setDefaultValues] = React.useState(addNewSite)
     const [form, setForm] = React.useState(null)
@@ -36,14 +39,10 @@ export default function CmsAddNewSite(props){
                                          if (slug.startsWith('/')) {
                                              slug = slug.substring(1)
                                          }
-                                         if (!canMangeCmsTemplate && cmsPage.realSlug) {
-                                             //prefix needs to be same as current page
-                                             const prefix = cmsPage.realSlug.split('/')[0]
-                                             if (!slug.startsWith(prefix + '/')) {
-                                                 slug = prefix + '/' + slug
-                                             }
+                                         if (_app_.slugContext) {
+                                             slug = Util.removeTrailingSlash(_app_.slugContext + '/' + slug)
                                          }
-                                         const name = Object.assign({},values.name)
+                                         const name = Object.assign({}, values.name)
                                          delete name.__typename
                                          delete name._localized
                                          client.mutate({
@@ -67,7 +66,7 @@ export default function CmsAddNewSite(props){
                                          })
                                      }
                                  }
-                             } else if(addNewSite.slugNoExist){
+                             } else if (addNewSite.slugNoExist) {
                                  window.history.back()
                              } else {
                                  onClose()
@@ -82,7 +81,7 @@ export default function CmsAddNewSite(props){
                              label: _t('CmsAddNewSite.create'),
                              type: 'primary'
                          }]}
-                         title={addNewSite.slugNoExist ? _t('CmsAddNewSite.createPageIfNotExist',{slug:addNewSite.slugNoExist})  :_t('CmsAddNewSite.createPage')}>
+                         title={addNewSite.slugNoExist ? _t('CmsAddNewSite.createPageIfNotExist', {slug: addNewSite.slug}) : _t('CmsAddNewSite.createPage')}>
 
 
         <GenericForm onRef={setForm}
@@ -98,6 +97,9 @@ export default function CmsAddNewSite(props){
                              } else {
                                  values.slug = formField.value[0].slug
                              }
+                             if (values.slug) {
+                                 values.slug = Util.removeSlugContext('/' + values.slug).substring(1)
+                             }
                              if (fields.name) {
                                  values.name = fields.name
                              } else {
@@ -110,21 +112,21 @@ export default function CmsAddNewSite(props){
                          _id: {
                              uitype: 'type_picker',
                              type: 'CmsPage',
-                             placeholder: 'Vorlage auswählen',
+                             placeholder: _t('CmsAddNewSite.selectTemplate'),
                              fullWidth: true,
-                             label: 'Vorlage',
+                             label: _t('CmsAddNewSite.template'),
                              searchFields: ['name'],
                              required: true,
                              filter: !canMangeCmsTemplate ? 'isTemplate=true' : ''
                          },
                          slug: {
                              fullWidth: true,
-                             label: 'Url Pfad',
+                             label: _t('CmsAddNewSite.urlPath'),
                              required: true
                          },
                          name: {
                              fullWidth: true,
-                             label: 'Titel',
+                             label: _t('CmsAddNewSite.title'),
                              localized: true
                          }
                      }}/>
