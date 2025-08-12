@@ -87,7 +87,7 @@ const loadHostRules = (dir, withCertContext, hostrules, isDefault) => {
                     try {
                         hostrule = hostrules[domainname] = JSON.parse(content)
                     }catch (e){
-                        console.log(e)
+                        console.warn('Error in hostrule',domainname,e)
                     }
                     if(hostrule) {
                         hostrule._filename = filename
