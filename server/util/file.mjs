@@ -258,9 +258,9 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
 
     if(data.content.indexOf(APP_DATA_PLACEHOLDER)>=0){
         const appData = `_app_ = {redirect404:'/404',start:new Date(),detectLang:${(hostrule?.detectLang !== false)},lang:'${hostrule?.defaultLanguage || config.DEFAULT_LANGUAGE}',languages:['${(hostrule?.languages || config.LANGUAGES).join("','")}'],slugContext:'${hostrule?.slugContext || ''}',login:{hideDomain:${(hostrule?.hideDomain === true)}, defaultDomain:'${(hostrule?.defaultDomain || '')}'}}`
-        finalContent = data.content.replace(APP_DATA_PLACEHOLDER, appData)
+        finalContent = finalContent.replace(APP_DATA_PLACEHOLDER, appData)
     }
-    const preloadPlaceHolderIndex = data.content.indexOf(PRELOAD_DATA_PLACEHOLDER)
+    const preloadPlaceHolderIndex = finalContent.indexOf(PRELOAD_DATA_PLACEHOLDER)
 
     if(preloadPlaceHolderIndex >= 0) {
         // make first graphql request and return result
