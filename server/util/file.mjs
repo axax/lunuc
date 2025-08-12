@@ -229,8 +229,10 @@ export const sendError = (res, code) => {
 }
 
 
-const PRELOAD_DATA_PLACEHOLDER = '<%=preloadData%>';
-export const parseAndSendFile = (req, res, {filename, headers, statusCode, parsedUrl, remoteAddress, host}) => {
+const PRELOAD_DATA_PLACEHOLDER = '<%=preloadData%>'
+const APP_DATA_PLACEHOLDER = '<%=appData%>'
+const HEAD_DATA_PLACEHOLDER = '<%=appHead%>'
+export const parseAndSendFile = (req, res, {filename, headers, statusCode, parsedUrl, remoteAddress, host, hostrule}) => {
 
 
     let data = Cache.get('IndexFile' + filename)
@@ -246,9 +248,18 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
         Cache.set('IndexFile'+filename, data)
     }
 
-    /* there is currently only one use case */
-    let finalContent = data.content.replace('<%=encodedUrl%>', encodeURIComponent(parsedUrl.href))
+    /*
 
+        Add meta data to the html head with the placeholder HEAD_DATA_PLACEHOLDER:
+        <meta name="theme-color" content="${APP_COLOR}">
+        <meta name="author" content="lunuc.com">
+    */
+    let finalContent = data.content.replace('<%=encodedUrl%>', encodeURIComponent(parsedUrl.href)).replace(HEAD_DATA_PLACEHOLDER, hostrule?.htmlHead || '')
+
+    if(data.content.indexOf(APP_DATA_PLACEHOLDER)>=0){
+        const appData = `_app_ = {redirect404:'/404',start:new Date(),detectLang:${(hostrule?.detectLang !== false)},lang:'${hostrule?.defaultLanguage || config.DEFAULT_LANGUAGE}',languages:['${(hostrule?.languages || config.LANGUAGES).join("','")}'],slugContext:'${hostrule?.slugContext || ''}',login:{hideDomain:${(hostrule?.hideDomain === true)}, defaultDomain:'${(hostrule?.defaultDomain || '')}'}}`
+        finalContent = data.content.replace(APP_DATA_PLACEHOLDER, appData)
+    }
     const preloadPlaceHolderIndex = data.content.indexOf(PRELOAD_DATA_PLACEHOLDER)
 
     if(preloadPlaceHolderIndex >= 0) {

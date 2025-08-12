@@ -1051,14 +1051,15 @@ class CmsViewEditorContainer extends React.Component {
                     name: _t('CmsViewEditorContainer.preview'),
                     icon: <PreviewIcon/>,
                     onClick: () => {
-                        window.open(location.pathname + '?preview=true', '_blank').focus();
+
+                        window.open(Util.baseUrl(location.pathname,{...Util.extractQueryParams(),preview:true}), '_blank').focus();
                     }
                 },
                 {
                     name: _t('CmsViewEditorContainer.previewResponsive'),
                     icon: 'devices',
                     onClick: () => {
-                        window.open(`/system/responsive-viewer?url=${encodeURIComponent('/'+cmsPage.realSlug)}&preview=true`, '_blank').focus();
+                        window.open(`/system/responsive-viewer?url=${encodeURIComponent(Util.baseUrl(location.pathname,{...Util.extractQueryParams(),preview:true}))}&preview=true`, '_blank').focus();
                     }
                 },
                 {

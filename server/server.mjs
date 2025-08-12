@@ -226,8 +226,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
             // default index
             indexfile = path.join(BUILD_DIR, '/index.min.html')
         }
-        //        sendFile(req, res, {headers, filename: indexfile, statusCode})
-        parseAndSendFile(req, res, {filename:indexfile, headers, statusCode, parsedUrl, host, remoteAddress})
+        parseAndSendFile(req, res, {filename:indexfile, headers, statusCode, parsedUrl, host, remoteAddress, hostrule})
     }
 }
 
