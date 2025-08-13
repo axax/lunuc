@@ -384,7 +384,11 @@ export default class AggregationBuilder {
                 if (subField.constructor === Object) {
                     const keys = Object.keys(subField)
                     if(keys[0]) {
-                        this.projectByField(fieldName + '.' + keys[0], subField[keys[0]], projectResultData)
+                        if(subField[keys[0]].$map){
+                            projectResultData[fieldName + '.' + keys[0]] = subField[keys[0]]
+                        }else {
+                            this.projectByField(fieldName + '.' + keys[0], subField[keys[0]], projectResultData)
+                        }
                     }
                 } else {
                     projectResultData[fieldName + '.' + subField] = 1

@@ -18,7 +18,7 @@ export async function addGenericTypeLookup(field, otherOptions, projection, db, 
 }
 
 
-function checkIfLookupIsNeeded(field,projection) {
+function checkIfLookupIsNeededOrMapId(field,projection) {
     const dataProjection = findProjection('data', projection)
     let fieldProjection, lookupIsNeeded = true
     if (Array.isArray(dataProjection.data)) {
@@ -26,9 +26,18 @@ function checkIfLookupIsNeeded(field,projection) {
         const projectionResult = findProjection(field.name, dataProjection.data)
         if (Array.isArray(projectionResult.data)) {
             const fieldNames = projectionResult.data.filter(f => f.constructor === Object ? Object.keys(f)[0] : f)
-            console.log(field.name,fieldNames)
-            if (fieldNames.length === 0 || (fieldNames.length === 1 && fieldNames[0] === '_id')) {
-                // lookup is not needed because there are no fields or only _id is projected
+            if (fieldNames.length === 0) {
+                // lookup is not needed because there are no fields
+                lookupIsNeeded = false
+            }else if(fieldNames.length === 1 && fieldNames[0] === '_id'){
+                // lookup is not needed because there is only _id to project
+                // $map to property _id instead of lookup
+                dataProjection.data[projectionResult.index][field.name] = {
+                    $map: {input: '$data.'+field.name,  // the original array
+                            as: 'p',                 // name of each array element
+                    in: { _id: '$$p'}       // wrap it in {_id: value}
+                    }
+                }
                 lookupIsNeeded = false
             } else {
                 fieldProjection = projectionResult
@@ -48,7 +57,7 @@ function checkIfLookupIsNeeded(field,projection) {
 function addGenericTypeLookupForWrapperFields(field, otherOptions, projection) {
 
     //check if lookup is needed at all
-    let {lookupIsNeeded} = checkIfLookupIsNeeded(field, projection)
+    let {lookupIsNeeded} = checkIfLookupIsNeededOrMapId(field, projection)
     if (!lookupIsNeeded) {
         return
     }
@@ -108,7 +117,7 @@ function addGenericTypeLookupForWrapperFields(field, otherOptions, projection) {
 function addGenericTypeLookupForType(field, otherOptions, projection) {
 
     //check if lookup is needed at all
-    let {lookupIsNeeded} = checkIfLookupIsNeeded(field, projection)
+    let {lookupIsNeeded} = checkIfLookupIsNeededOrMapId(field, projection)
     if (!lookupIsNeeded) {
         return
     }
@@ -225,7 +234,8 @@ function addGenericTypeLookupForType(field, otherOptions, projection) {
 
 async function addGenericTypeLookupForGenericType(field, otherOptions, projection, db, key) {
     //check if lookup is needed at all
-    let {lookupIsNeeded, fieldProjection} = checkIfLookupIsNeeded(field, projection)
+    let {lookupIsNeeded, fieldProjection} = checkIfLookupIsNeededOrMapId(field, projection)
+
     if (!lookupIsNeeded) {
         return
     }
