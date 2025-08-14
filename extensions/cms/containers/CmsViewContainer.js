@@ -306,7 +306,7 @@ class CmsViewContainer extends React.Component {
                     variables: subscription.variables
                 }).subscribe({
                     next(supscriptionData) {
-                        if (subscription.callback!==false) {
+                        if (subscription.callback!==false && _this._subscriptionCallback) {
                             // callback to JsonDom Script
                             _this._subscriptionCallback(supscriptionData)
                         }
