@@ -345,7 +345,7 @@ export default () => {
         if (type === 'CmsPage') {
             const dialogKey = meta.TypeContainer.state?.createEditDialogOption?.key
 
-            if(dataToEdit.slug){
+            if(dataToEdit?.slug){
                 dataToEdit.slug = Util.removeSlugContext('/'+dataToEdit.slug).substring(1)
             }
 
