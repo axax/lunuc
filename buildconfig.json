@@ -228,7 +228,8 @@
         "Assignment",
         "Download",
         "Article",
-        "ContentCut"
+        "ContentCut",
+        "Layers"
       ],
       "theme":{
         "colors":{

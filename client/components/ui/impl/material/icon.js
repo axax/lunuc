@@ -103,7 +103,8 @@ import {
     AssignmentIcon,
     DownloadIcon,
     ArticleIcon,
-    ContentCutIcon
+    ContentCutIcon,
+    LayersIcon
 } from 'gensrc/ui/admin/icons'
 
 const iconComponents = {
@@ -210,7 +211,8 @@ const iconComponents = {
     assignment: AssignmentIcon,
     download: DownloadIcon,
     doc: ArticleIcon,
-    contentCut: ContentCutIcon
+    contentCut: ContentCutIcon,
+    layers: LayersIcon
 }
 
 export const getIconByKey = (key, defaultIcon) => {

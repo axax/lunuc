@@ -15,7 +15,8 @@ import {
     MoveDownIcon,
     MoveUpIcon,
     LowPriorityIcon,
-    TransformIcon
+    TransformIcon,
+    LayersIcon
 } from 'ui/admin'
 import JsonDomAddElementDialog from './jsondomhelper/JsonDomAddElementDialog'
 import AddToBody from './AddToBody'
@@ -904,6 +905,38 @@ class JsonDomHelper extends React.Component {
     createContextMenu({isCms, subJson, menuItems, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange, overrideEvents, onChange, _options, _dynamic, rest, _json, isInLoop, isSelected}) {
 
         if(isSelected){
+            menuItems.push({
+                name: _t('JsonDomHelper.selection.wrap'),
+                icon: <LayersIcon/>,
+                onClick: () => {
+
+                    const firstElement = JsonDomHelper.selected.shift()
+                    const firstChildJson = getComponentByKey(firstElement.props._key, firstElement.props._json)
+                    const firstChildJsonClone = Object.assign({},firstChildJson)
+                    const customElement = getJsonDomElements('custom')
+                    Object.getOwnPropertyNames(firstChildJson).forEach(prop => delete firstChildJson[prop])
+
+                    Object.keys(customElement.defaults).forEach(key=>{
+                        firstChildJson[key] = customElement.defaults[key]
+                    })
+                    firstChildJson.c = [firstChildJsonClone]
+
+                    const allSubJsons = JsonDomHelper.selected.map(element=>{
+                        subJson = getComponentByKey(element.props._key, element.props._json)
+                        return subJson
+                    })
+
+                    firstChildJson.c.push(...allSubJsons)
+
+                    // remove selected items
+                    const keys = JsonDomHelper.selected.map(sel=>sel.props._key)
+                    keys.sort().reverse().forEach(key=>{
+                        this.removeByKey(key)
+                    })
+                    this.deselectSelected()
+                    this.props._onTemplateChange(_json, true)
+                }
+            })
             menuItems.push({
                 name: _t('JsonDomHelper.selection.delete'),
                 icon: <DeleteIcon/>,
