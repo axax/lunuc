@@ -34,6 +34,7 @@ import {client} from '../../client/middleware/graphql'
 import SimpleFileExplorer from '../../client/components/ui/impl/material/SimpleFileExplorer'
 import {parseOrElse} from "../../client/util/json.mjs";
 import Util from '../../client/util/index.mjs'
+import {CAPABILITY_MANAGE_OTHER_USERS} from '../../util/capabilities.mjs'
 
 registerTrs(translations, 'CmsViewEditorContainer')
 registerTrs(adminTranslations, 'AdminTranslations')
@@ -410,7 +411,9 @@ export default () => {
 
     Hook.on('TypeCreateEditBeforeSave', function ({type,editedData}) {
         if (type === 'CmsPage') {
-            if (editedData.slug && _app_.slugContext) {
+            const userCanManageOtherUser = Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_OTHER_USERS)
+
+            if (!userCanManageOtherUser && editedData.slug && _app_.slugContext) {
                 editedData.slug = Util.removeTrailingSlash(_app_.slugContext+'/' + editedData.slug)
             }
         }

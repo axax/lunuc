@@ -390,6 +390,10 @@ const classTextOptions = key => ({
             {
                 value: ' small ',
                 name: 'Klein'
+            },
+            {
+                value: ' blockquote ',
+                name: 'Blockquote'
             }
         ]
     }
