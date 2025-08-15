@@ -21,7 +21,7 @@ import {
 import JsonDomAddElementDialog from './jsondomhelper/JsonDomAddElementDialog'
 import AddToBody from './AddToBody'
 import Util from 'client/util/index.mjs'
-import {isString, propertyByPath, setPropertyByPath} from '../../../client/util/json.mjs'
+import {isString, propertyByPath, setPropertyByPath, sortJsonKeysDesc} from '../../../client/util/json.mjs'
 import {
     getComponentByKey,
     addComponent,
@@ -829,8 +829,8 @@ class JsonDomHelper extends React.Component {
                 <SimpleDialog fullWidth={true} maxWidth="sm" key="deleteSelectionConfirm" open={true}
                               onClose={(e) => {
                                   if (e.key === 'delete') {
-                                      const keys = JsonDomHelper.selected.map(sel=>sel.props._key)
-                                      keys.sort().reverse().forEach(key=>{
+                                      const keys = sortJsonKeysDesc(JsonDomHelper.selected.map(sel=>sel.props._key))
+                                      keys.forEach(key=>{
                                           this.removeByKey(key)
                                       })
                                       _onTemplateChange(_json, true)
@@ -927,10 +927,10 @@ class JsonDomHelper extends React.Component {
                     })
 
                     firstChildJson.c.push(...allSubJsons)
-
                     // remove selected items
-                    const keys = JsonDomHelper.selected.map(sel=>sel.props._key)
-                    keys.sort().reverse().forEach(key=>{
+                    const keys = sortJsonKeysDesc(JsonDomHelper.selected.map(sel=>sel.props._key))
+                    keys.forEach(key=>{
+                        console.log(key)
                         this.removeByKey(key)
                     })
                     this.deselectSelected()

@@ -231,3 +231,29 @@ export const findObjectsByAttributeValue = (obj, attr, attrValue, options = {}) 
     traverse(obj)
     return results
 }
+
+
+/*
+0.1.0.1
+0.0.0.10
+0.0.0.9
+0.0.0.8
+--> 0.1.0.1, 0.0.0.10, 0.0.0.9, 0.0.0.8
+ */
+const parsePart = (part) => {
+    const num = Number(part)
+    return isNaN(num) ? 0 : num
+}
+export const sortJsonKeysDesc = (keys) => {
+    return keys.sort((a, b) => {
+        const aParts = a.split('.').map(parsePart)
+        const bParts = b.split('.').map(parsePart)
+
+        const len = Math.max(aParts.length, bParts.length)
+        for (let i = 0; i < len; i++) {
+            const diff = (bParts[i] || 0) - (aParts[i] || 0) // descending
+            if (diff !== 0) return diff
+        }
+        return 0
+    })
+}
