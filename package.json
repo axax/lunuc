@@ -144,14 +144,14 @@
     "natural": "^8.1.0",
     "nodemon": "^3.1.10",
     "ollama": "^0.5.17",
+    "pdf-img-convert": "^2.0.0",
     "puppeteer": "^24.16.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "smtp-server": "^3.14.0",
-    "xlsx": "^0.18.5",
-    "xml2js": "^0.6.2",
     "to-ico": "^1.1.5",
-    "pdf-to-img": "^4.5.0"
+    "xlsx": "^0.18.5",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
     "@babel/cli": "^7.28.0",
