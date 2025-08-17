@@ -12,12 +12,16 @@ import {decodeToken} from './jwt.mjs'
 import crypto from 'crypto'
 import config from '../../gensrc/config.mjs'
 import jwt from 'jsonwebtoken'
+import {getHostFromHeaders} from '../../util/host.mjs'
+import {getBestMatchingHostRule} from '../../util/hostrules.mjs'
 
 const {DEFAULT_LANGUAGE} = config
 
-export const setAuthCookies = (userData, res) => {
+export const setAuthCookies = (userData, req, res) => {
 
+    const {hostrule} = getBestMatchingHostRule(getHostFromHeaders(req.headers))
     res.cookie('auth', AUTH_SCHEME + ' ' + userData.token, {
+        domain: hostrule?.authCookieDomain,
         httpOnly: true,
         expires: true,
         maxAge: AUTH_EXPIRES_IN_COOKIE,
@@ -25,6 +29,7 @@ export const setAuthCookies = (userData, res) => {
     })
     if (userData.user) {
         res.cookie('authRole', userData.user.role.name, {
+            domain: hostrule?.authCookieDomain,
             httpOnly: false,
             expires: true,
             maxAge: AUTH_EXPIRES_IN_COOKIE,
@@ -67,7 +72,7 @@ export const contextByRequest = (req, res) => {
                 const token = jwt.sign(payload, SECRET_KEY, {expiresIn: AUTH_EXPIRES_IN})
 
                 console.log('renew token')
-                setAuthCookies({token}, res)
+                setAuthCookies({token}, req, res)
 
             }
         }

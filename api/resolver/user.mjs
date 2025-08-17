@@ -351,7 +351,7 @@ export const userResolver = (db) => ({
                 clearInvalidLoginAttempt(ip)
 
                 if (USE_COOKIES) {
-                    setAuthCookies(result, req.res)
+                    setAuthCookies(result, req, req.res)
 
                     // delete token because it is handled by cookies
                     delete result.token
@@ -599,7 +599,7 @@ export const userResolver = (db) => ({
 
 
                 if (USE_COOKIES && result.token) {
-                    setAuthCookies(result, req.res)
+                    setAuthCookies(result, req, req.res)
 
                     // delete token because it is handled by cookies
                     delete result.token

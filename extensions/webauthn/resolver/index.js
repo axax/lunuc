@@ -133,7 +133,7 @@ export default (db) => ({
             const result = {token, user}
 
             if (USE_COOKIES) {
-                setAuthCookies(result, req.res)
+                setAuthCookies(result, req, req.res)
                 // delete token because it is handled by cookies
                 delete result.token
             }
