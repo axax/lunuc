@@ -151,7 +151,7 @@
     "to-ico": "^1.1.5",
     "xlsx": "^0.18.5",
     "xml2js": "^0.6.2",
-    "pdf-img-convert": "^2.0.0"
+    "pdf2pic": "^3.2.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.28.3",

@@ -179,7 +179,7 @@ if (!window.LUNUC_PREPARSED) {
         morePolyfill = !window.fetch || !window.AbortController || !window.Event,
         noneBasicEs6 = morePolyfill && (() => {
             try {
-                new Function('(a={x:1})=>{const {x}=a;let b=1;return `${a}`}')
+                new Function('(a={x:1})=>{const {x}=a;let b=1;return `${a?.b}`}')
                 return false
             } catch (err) {
                 console.log(err)

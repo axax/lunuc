@@ -106,7 +106,7 @@ const DomUtil = {
                     allowReturnOutsideFunction: true
                 },
                 presets: [
-                    ['es2015', {modules: false, loose: true}]
+                    ['env', {modules: false, loose: true}]
                 ]
             })
             console.log(`Js to es5 in ${new Date().getTime() - startTime}ms for ${code.substring(0, 60)}...`)
