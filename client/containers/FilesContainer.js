@@ -372,7 +372,7 @@ fi`
                 query: COMMAND_QUERY,
                 variables: {
                     sync: true,
-                    command: `printf %s "${Util.escapeDoubleQuotes(content.replace(/\$/g, '\\$').replace(/`/g, '\\`'))}" > "${file}"`
+                    command: `printf %s "${Util.escapeDoubleQuotes(content.replace(/\$/g, '\\$').replace(/`/g, '\\`').replace(/\\/g, '\\\\'))}" > "${file}"`
                 }
 
             }).then(response => {
