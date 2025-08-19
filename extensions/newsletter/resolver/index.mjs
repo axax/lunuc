@@ -12,7 +12,7 @@ import {replaceRelativeUrls} from '../../../api/util/toAbsoluteUrls.mjs'
 
 export default db => ({
     Query: {
-        sendNewsletter: async ({testReceiver, mailing, subject, template, text, html, batchSize, host, list, unsubscribeHeader, users}, req) => {
+        sendNewsletter: async ({testReceiver, mailing, subject, template, text, html, batchSize, host, list, exclude, unsubscribeHeader, users}, req) => {
             await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_SEND_NEWSLETTER)
 
             if(host){
@@ -70,13 +70,21 @@ export default db => ({
                 })
             }else {
 
-                if(list) {
+                if(Array.isArray(list)) {
+
                     subscribers = await db.collection('NewsletterSubscriber').find(
                         {
                             state: 'subscribed',
-                            list: {$in: list.map(l => l.constructor === String ? new ObjectId(l) : l)}
+                            /* exclude and list array can be like:
+                            ["id1","id2"]
+                            [ObjectId, ObjectId]
+                            [{_id:ObjectId},{_id:ObjectId}]
+                             */
+                            list: {$in:  list.map(l => l?.constructor === String ? new ObjectId(l) : l?._id || l)},
+                            _id: {$nin: Array.isArray(exclude) ? exclude.map(l => l?.constructor === String ? new ObjectId(l) : l?._id || l) : []}
                         }
                     ).toArray()
+
                 }
                 if (users) {
                     users.forEach(user => {

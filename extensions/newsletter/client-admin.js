@@ -131,7 +131,7 @@ export default () => {
                 }
                 client.query({
                     fetchPolicy: 'network-only',
-                    query: 'query sendNewsletter($mailing: ID!, $subject: LocalizedStringInput!,$template: String, $list:[ID],$users:[ID],$unsubscribeHeader:Boolean,$batchSize: Float, $host: String, $text: LocalizedStringInput, $html: LocalizedStringInput){sendNewsletter(mailing:$mailing,subject:$subject,template:$template,list:$list,users:$users,unsubscribeHeader:$unsubscribeHeader,batchSize:$batchSize,host:$host,text:$text,html:$html){status}}',
+                    query: 'query sendNewsletter($mailing: ID!, $subject: LocalizedStringInput!,$template: String, $list:[ID],$exclude:[ID],$users:[ID],$unsubscribeHeader:Boolean,$batchSize: Float, $host: String, $text: LocalizedStringInput, $html: LocalizedStringInput){sendNewsletter(mailing:$mailing,subject:$subject,template:$template,list:$list,exclude:$exclude,users:$users,unsubscribeHeader:$unsubscribeHeader,batchSize:$batchSize,host:$host,text:$text,html:$html){status}}',
                     variables: {
                         mailing: dataToEdit._id,
                         subject: fieldsForSend.subject,
@@ -141,6 +141,7 @@ export default () => {
                         html: fieldsForSend.html,
                         template: template ? template.slug : undefined,
                         list: fieldsForSend.list,
+                        exclude: fieldsForSend.exclude,
                         users: fieldsForSend.users,
                         unsubscribeHeader: fieldsForSend.unsubscribeHeader
                     }

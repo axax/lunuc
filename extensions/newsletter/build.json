@@ -147,6 +147,17 @@
           "tab": "general"
         },
         {
+          "name": "exclude",
+          "type": "NewsletterSubscriber",
+          "hideColumnInTypes": true,
+          "fullWidth": true,
+          "multi": true,
+          "fields": [
+            "email"
+          ],
+          "tab": "general"
+        },
+        {
           "name": "users",
           "type": "User",
           "hideColumnInTypes": true,
