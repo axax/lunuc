@@ -39,21 +39,34 @@ export const setAuthCookies = (userData, req, res) => {
 }
 export const removeAuthCookies = (req, res) => {
     const {hostrule} = getBestMatchingHostRule(getHostFromHeaders(req.headers))
-
     res.cookie('auth', null, {
-        domain: hostrule?.authCookieDomain,
         httpOnly: true,
         expires: new Date(0),
         maxAge: 0,
-        sameSite:'Strict'
+        sameSite: 'Strict'
     })
     res.cookie('authRole', null, {
-        domain: hostrule?.authCookieDomain,
         httpOnly: true,
         expires: new Date(0),
         maxAge: 0,
-        sameSite:'Strict'
+        sameSite: 'Strict'
     })
+    if(hostrule?.authCookieDomain) {
+        res.cookie('auth', null, {
+            domain: hostrule.authCookieDomain,
+            httpOnly: true,
+            expires: new Date(0),
+            maxAge: 0,
+            sameSite: 'Strict'
+        })
+        res.cookie('authRole', null, {
+            domain: hostrule.authCookieDomain,
+            httpOnly: true,
+            expires: new Date(0),
+            maxAge: 0,
+            sameSite: 'Strict'
+        })
+    }
 }
 
 export const contextByRequest = (req, res) => {
