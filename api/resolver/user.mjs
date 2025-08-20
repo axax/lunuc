@@ -374,7 +374,7 @@ export const userResolver = (db) => ({
             return result
         },
         logout: async (props, req) => {
-            removeAuthCookies(req.res)
+            removeAuthCookies(req, req.res)
 
             return {status: 'done'}
         },
