@@ -2,7 +2,7 @@ import {getType, getTypes, getTypeQueries} from '../../util/types.mjs'
 import DomUtil from './dom.mjs'
 import config from '../../gensrc/config-client.js'
 import {replacePlaceholders} from '../../util/placeholders.mjs'
-import {propertyByPath, setPropertyByPath, isString} from './json.mjs'
+import {propertyByPath, setPropertyByPath, isString, findObjectsByAttributeValue} from './json.mjs'
 import {_t} from '../../util/i18n.mjs'
 
 /**
@@ -18,6 +18,7 @@ const Util = {
     propertyByPath: propertyByPath,
     getTypeQueries: getTypeQueries,
     replacePlaceholders: replacePlaceholders,
+    findObjectsByAttributeValue,
     escapeDoubleQuotes: (str) => {
         if (isString(str)) {
             return str.replace(/"/g, '\\"')

@@ -201,6 +201,7 @@ export const parseOrElse = (str, elseValue) => {
 
 export const findObjectsByAttributeValue = (obj, attr, attrValue, options = {}) => {
     let results = []
+    const isAttrValueArray = Array.isArray(attrValue)
 
     function traverse(obj, parentObj, keyIndex) {
         if (typeof obj === 'object' && obj !== null) {
@@ -211,7 +212,7 @@ export const findObjectsByAttributeValue = (obj, attr, attrValue, options = {}) 
                 }
             } else {
                 // Handle objects
-                if (obj[attr] === attrValue) {
+                if ((isAttrValueArray && attrValue.indexOf(obj[attr])>=0) || obj[attr] === attrValue) {
                     if(options.returnParent) {
                         results.push({data:obj, parent:parentObj, keyIndex})
 
