@@ -1310,7 +1310,10 @@ class JsonDom extends React.Component {
             scope.bindings = this.bindings
 
             this.addLocationToScope()
-
+        }
+        if(!scope.dynamic && scope.inEditor){
+            // expose current scope for debugging purposes
+            _app_.JsonDom.scope = {data:scope.data}
         }
         return scope
     }

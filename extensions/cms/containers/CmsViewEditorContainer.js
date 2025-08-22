@@ -78,6 +78,7 @@ import FileDrop from '../../../client/components/FileDrop'
 import {csvToJson} from '../../../client/util/csv.mjs'
 import GenericSettings from '../../../client/components/GenericSettings'
 import {DEFAULT_STYLE} from '../constants/cmsDefaults.mjs'
+import CmsPageTools from '../components/CmsPageTools'
 
 const StyledBox = styled(Box)(({theme})=>({
     display: 'flex',
@@ -539,6 +540,7 @@ class CmsViewEditorContainer extends React.Component {
                                                editCmsData: this.editCmsData.bind(this)
                                            }}
                                            {...props} />,
+            EditorOptions.devTools && <CmsPageTools style={{left:EditorOptions.drawerOpen?EditorOptions.drawerWidth:0}} />,
             !props.dynamic && <ErrorHandler key="errorHandler" snackbar/>,
             !props.dynamic && <NotificationHandler />,
             <NetworkStatusHandler key="networkStatus"/>,
@@ -1090,6 +1092,13 @@ class CmsViewEditorContainer extends React.Component {
                                               checked={!!EditorOptions.fixedLayout}
                                               onChange={this.handleSettingChange.bind(this, 'fixedLayout', false)}
                                               label={_t('CmsViewEditorContainer.fixed')}/>
+                },
+                {
+                    divider:true,
+                    component:  <SimpleSwitch key="devToolsLayoutSwitch" color="default"
+                                              checked={!!EditorOptions.devTools}
+                                              onChange={this.handleSettingChange.bind(this, 'devTools', false)}
+                                              label={_t('CmsViewEditorContainer.devTools')}/>
                 })
 
             toolbarRight.push(
