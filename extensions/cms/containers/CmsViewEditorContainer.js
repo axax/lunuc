@@ -540,7 +540,14 @@ class CmsViewEditorContainer extends React.Component {
                                                editCmsData: this.editCmsData.bind(this)
                                            }}
                                            {...props} />,
-            EditorOptions.devTools && <CmsPageTools style={{left:EditorOptions.drawerOpen?EditorOptions.drawerWidth:0}} />,
+            EditorOptions.devTools && <CmsPageTools style={{left:EditorOptions.drawerOpen?EditorOptions.drawerWidth:0}}
+            boxHeight={EditorOptions.devToolsBoxHeight}
+            onBoxHeightChange={(height)=>{
+                clearTimeout(this.boxHeightTimeout)
+                this.boxHeightTimeout = setTimeout(()=>{
+                    this.handleSettingChange( 'devToolsBoxHeight', false, height)
+                },1000)
+            }} />,
             !props.dynamic && <ErrorHandler key="errorHandler" snackbar/>,
             !props.dynamic && <NotificationHandler />,
             <NetworkStatusHandler key="networkStatus"/>,

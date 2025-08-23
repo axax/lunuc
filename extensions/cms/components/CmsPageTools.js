@@ -4,6 +4,7 @@ import styled from '@emotion/styled'
 import theme from '../../../client/components/ui/impl/material/theme'
 import ConsoleCapture from './ConsoleCapture'
 import {getCircularReplacer} from '../../mailserver/util/index.mjs'
+import ResizableDivider from "../../../client/components/ResizableDivider";
 
 
 const StyledBox = styled.div`
@@ -20,7 +21,8 @@ const StyledButtonGroup = styled.div`
 `
 const StyledInfoBox = styled.div`
     width: 100%;
-    height: 30vh;
+    height: ${({height})=> height}px;
+    max-height: 80vh;
     border: 1px solid #333;
     padding: 0;
     font-family: monospace;
@@ -41,12 +43,8 @@ const StyledButton = styled.button`
 
 export default function CmsPageTools(props){
 
-    const {onChange, cmsPage, style} = props
-
-    const [showScope, setShowScope] = React.useState(false)
-    const [showConsole, setShowConsole] = React.useState(false)
-    const [showServerConsole, setShowServerConsole] = React.useState(false)
-    const [showAiAssistent, setShowAiAssistent] = React.useState(false)
+    const [tab, setTab] = React.useState(false)
+    const [boxHeight, setBoxHeight] = React.useState(props.boxHeight || 200)
 
    /* const hiddeAll = ()=>{
         setShowConsole(false)
@@ -54,25 +52,39 @@ export default function CmsPageTools(props){
         setShowServerConsole(false)
         setShowAiAssistent(false)
     }*/
+    const toggleTab = (name)=>{
+        if(tab===name){
+            setTab(false)
+        }else{
+            setTab(name)
+        }
+    }
     return <StyledBox style={props.style}>
+        {tab && <ResizableDivider direction="vertical" onResize={(newPosition)=>{
+            const newHeight = Math.max(boxHeight - newPosition,50)
+            setBoxHeight(newHeight)
+            if(props.onBoxHeightChange){
+                props.onBoxHeightChange(newHeight)
+            }
+        }}/>}
         <StyledButtonGroup>
-            <StyledButton selected={showConsole} onClick={() => setShowConsole(!showConsole)}>
+            <StyledButton selected={tab === 'console'} onClick={() => toggleTab('console')}>
                 Console
             </StyledButton>
-            <StyledButton selected={showScope} onClick={() => setShowScope(!showScope)}>
+            <StyledButton selected={tab === 'scope'} onClick={() => toggleTab('scope')}>
                 Scope
             </StyledButton>
-            <StyledButton selected={showServerConsole} onClick={() => setShowServerConsole(!showServerConsole)}>
+            <StyledButton selected={tab === 'serverConsole'} onClick={() => toggleTab('serverConsole')}>
                 Server Console
             </StyledButton>
-            <StyledButton selected={showAiAssistent} onClick={() => setShowAiAssistent(!showAiAssistent)}>
+            <StyledButton selected={tab === 'aiAssistent'} onClick={() => toggleTab('aiAssistent')}>
                 AI Assistent
             </StyledButton>
         </StyledButtonGroup>
-        {showConsole && <StyledInfoBox><ConsoleCapture /></StyledInfoBox>}
-        {showScope && <StyledInfoBox>{JSON.stringify(_app_.JsonDom.scope, getCircularReplacer(), 2)}</StyledInfoBox>}
-        {showServerConsole && <iframe src="/system/console?preview=true&embedded=true&cmd=luapi" style={{width:'100%', height:'100%', border:'none'}}/>}
-        {showAiAssistent && <iframe src="/system/aiassistent?preview=true" style={{width:'100%', height:'100%', border:'none'}}/>}
+        {tab==='console' && <StyledInfoBox height={boxHeight}><ConsoleCapture /></StyledInfoBox>}
+        {tab==='scope' && <StyledInfoBox height={boxHeight}>{JSON.stringify(_app_.JsonDom.scope, getCircularReplacer(), 2)}</StyledInfoBox>}
+        {tab==='serverConsole' && <StyledInfoBox  height={boxHeight} style={{overflow:'hidden'}}><iframe src="/system/console?preview=true&embedded=true&cmd=luapi" style={{width:'100%', height:'100%', border:'none'}}/></StyledInfoBox>}
+        {tab==='aiAssistent' && <StyledInfoBox  height={boxHeight} style={{overflow:'hidden'}}><iframe src="/system/aiassistent?preview=true" style={{width:'100%', height:'100%', border:'none'}}/></StyledInfoBox>}
     </StyledBox>
 
 }
