@@ -59,7 +59,7 @@ export default function CmsPageTools(props){
             setTab(name)
         }
     }
-    const aiAssistenUrl = `/system/aiassistent?preview=true&slug=${props.cmsPage.slug}`
+    const aiAssistenUrl = `/system/aiassistent?preview=true&slug=${props?.cmsPage?.slug || ''}`
     return <StyledBox style={props.style}>
         {tab && <ResizableDivider direction="vertical" onResize={(newPosition)=>{
             const newHeight = Math.max(boxHeight - newPosition,50)
