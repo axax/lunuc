@@ -542,6 +542,7 @@ class CmsViewEditorContainer extends React.Component {
                                            {...props} />,
             EditorOptions.devTools && <CmsPageTools style={{left:EditorOptions.drawerOpen?EditorOptions.drawerWidth:0}}
             boxHeight={EditorOptions.devToolsBoxHeight}
+            slug={props.slug}
             onBoxHeightChange={(height)=>{
                 clearTimeout(this.boxHeightTimeout)
                 this.boxHeightTimeout = setTimeout(()=>{
