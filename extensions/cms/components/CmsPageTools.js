@@ -59,6 +59,7 @@ export default function CmsPageTools(props){
             setTab(name)
         }
     }
+    const aiAssistenUrl = `/system/aiassistent?preview=true&slug=${props.cmsPage.slug}`
     return <StyledBox style={props.style}>
         {tab && <ResizableDivider direction="vertical" onResize={(newPosition)=>{
             const newHeight = Math.max(boxHeight - newPosition,50)
@@ -84,7 +85,7 @@ export default function CmsPageTools(props){
         {tab==='console' && <StyledInfoBox height={boxHeight}><ConsoleCapture /></StyledInfoBox>}
         {tab==='scope' && <StyledInfoBox height={boxHeight}>{JSON.stringify(_app_.JsonDom.scope, getCircularReplacer(), 2)}</StyledInfoBox>}
         {tab==='serverConsole' && <StyledInfoBox  height={boxHeight} style={{overflow:'hidden'}}><iframe src="/system/console?preview=true&embedded=true&cmd=luapi" style={{width:'100%', height:'100%', border:'none'}}/></StyledInfoBox>}
-        {tab==='aiAssistent' && <StyledInfoBox  height={boxHeight} style={{overflow:'hidden'}}><iframe src="/system/aiassistent?preview=true" style={{width:'100%', height:'100%', border:'none'}}/></StyledInfoBox>}
+        {tab==='aiAssistent' && <StyledInfoBox  height={boxHeight} style={{overflow:'hidden'}}><iframe src={aiAssistenUrl} style={{width:'100%', height:'100%', border:'none'}}/></StyledInfoBox>}
     </StyledBox>
 
 }
