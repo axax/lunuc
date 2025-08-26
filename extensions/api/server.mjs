@@ -46,6 +46,9 @@ const runApiScript = ({api, db, req, res, startTime}) => {
                     end: (...args) => {
                          parentPort.postMessage({httpResponse:{method:'end',args}})
                     },
+                    write: (...args) => {
+                         parentPort.postMessage({httpResponse:{method:'write',args}})
+                    },
                     writeHead: (...args) => {
                          parentPort.postMessage({httpResponse:{method:'writeHead',args}})
                     },
