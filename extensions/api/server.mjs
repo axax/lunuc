@@ -5,8 +5,10 @@ import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import url from 'url'
 import config from '../../gensrc/config.mjs'
 import Cache from '../../util/cache.mjs'
-import {createRequireForScript} from '../../util/require.mjs'
-import Util from "../../api/util/index.mjs";
+import {createRequireForScript, createScriptForWorker} from '../../util/require.mjs'
+import Util from '../../api/util/index.mjs'
+import {Worker} from 'node:worker_threads'
+import {isTemporarilyBlocked} from '../../server/util/requestBlocker.mjs'
 
 const CACHE_PREFIX = 'ExtensionsApi-'
 
@@ -32,24 +34,91 @@ const getApi = async ({slug, db}) => {
 
 const runApiScript = ({api, db, req, res, startTime}) => {
     return new Promise(resolve => {
-
         try {
-            const requireContext = createRequireForScript(import.meta.url)
-            const tpl = new Function(`
-            
-            ${requireContext.script}
-            
-            this.responseStatus = {}
-            const data = (async () => {
-                try{
-                    ${api.script}
-                }catch(error){
-                    this.resolve({error})
-                    return {_error:error}
+
+            if(api.workerThread){
+                const scriptContext = createScriptForWorker(import.meta.url)
+                const worker = new Worker(` 
+                ${scriptContext.script}     
+                
+                this.req = this.context.req                 
+                this.res = {
+                    end: (...args) => {
+                         parentPort.postMessage({httpResponse:{method:'end',args}})
+                    },
+                    writeHead: (...args) => {
+                         parentPort.postMessage({httpResponse:{method:'writeHead',args}})
+                    }
                 }
-            })()
-            this.resolve({data, responseStatus: this.responseStatus})`)
-            tpl.call({resolve, require: requireContext.require, db, context: req.context, req, res, startTime})
+                this.responseStatus = {}
+                const getReturnValue = async () => {
+                    try{                
+                        ${api.script}                    
+                    }catch(error){
+                        return {error}
+                    }
+                }                
+                (async () => {
+                    const data = await getReturnValue()
+                    parentPort.postMessage({returnValue:{data,responseStatus: this.responseStatus}})
+                    if(this.db){
+                        this.db.client.close()
+                    }
+                })()
+  
+                `, {eval: true, workerData: {context:{
+                    req:{
+                        url:req.url,
+                        query:req.query,
+                        context: req.context
+                    }}}})
+
+                let returnValue = {}
+
+                worker.on('message', msg => {
+                    if(msg.clearCache){
+                        console.log(`Worker-thread: clearCache ${msg.clearCache}`)
+                        Cache.clearStartWith(msg.clearCache)
+                    }else if(msg.console) {
+                        console[msg.console.type]('Worker-thread:', ...msg.console.args)
+                    }else if(msg.returnValue){
+                        returnValue = msg.returnValue
+                    }else if(msg.httpResponse){
+                        res[msg.httpResponse.method](...msg.httpResponse.args)
+                    }else{
+                        console.log(`Worker-thread: ${msg}`)
+                    }
+                })
+
+                worker.on('error', (error) => {
+                    resolve({error})
+                })
+                worker.on('exit', (code) => {
+                    if (code !== 0) {
+                        //args.error(`Worker stopped with exit code ${code}`)
+                    }
+                    console.log(returnValue)
+                    resolve(returnValue)
+                })
+            }else {
+                const requireContext = createRequireForScript(import.meta.url)
+
+                const tpl = new Function(`
+                
+                ${requireContext.script}
+                
+                this.responseStatus = {}
+                const data = (async () => {
+                    try{
+                        ${api.script}
+                    }catch(error){
+                        this.resolve({error})
+                        return {_error:error}
+                    }
+                })()
+                this.resolve({data, responseStatus: this.responseStatus})`)
+                tpl.call({resolve, require: requireContext.require, db, context: req.context, req, res, startTime})
+            }
         } catch (error) {
             resolve({error})
         }
@@ -101,6 +170,11 @@ Hook.on('appready', ({app, db}) => {
                     res.end(`{"status":"notfound","message":"Api for '${slug}' not found"}`)
                 } else {
 
+                    if(api.workerThread && isTemporarilyBlocked({requestTimeInMs: 5000, requestPerTime: 10,requestBlockForInMs:30000, key:'apiScript'})){
+                        res.writeHead(503, {'content-type': 'application/json'})
+                        res.end(`{"status":"Service Unavailable","message":"Too many requests. Please try again later."}`)
+                        return
+                    }
 
                     if(api.basicAuth && !checkBasicAuth(req, res, {login:api.baUser, password: api.baPassword})) {
                         return
