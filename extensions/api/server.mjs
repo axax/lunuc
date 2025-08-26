@@ -48,14 +48,20 @@ const runApiScript = ({api, db, req, res, startTime}) => {
                     },
                     writeHead: (...args) => {
                          parentPort.postMessage({httpResponse:{method:'writeHead',args}})
+                    },
+                    contentType: (...args) => {
+                         parentPort.postMessage({httpResponse:{method:'contentType',args}})
+                    },
+                    header: (...args) => {
+                         parentPort.postMessage({httpResponse:{method:'header',args}})
                     }
                 }
                 this.responseStatus = {}
                 const getReturnValue = async () => {
                     try{                
                         ${api.script}                    
-                    }catch(error){
-                        return {error}
+                    }catch(_error){
+                        return {_error}
                     }
                 }                
                 (async () => {
@@ -181,7 +187,7 @@ Hook.on('appready', ({app, db}) => {
                     }
 
                     const result = await runApiScript({api, db, req, res, startTime})
-
+console.log(result)
                     if (!result.error && result.responseStatus && result.responseStatus.ignore) {
 
                     } else if (result.error) {
