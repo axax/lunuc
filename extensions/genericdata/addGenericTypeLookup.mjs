@@ -30,12 +30,15 @@ function checkIfLookupIsNeededOrMapId(field,projection) {
                 // lookup is not needed because there are no fields
                 lookupIsNeeded = false
             }else if(fieldNames.length === 1 && fieldNames[0] === '_id'){
-                // lookup is not needed because there is only _id to project
-                // $map to property _id instead of lookup
-                dataProjection.data[projectionResult.index][field.name] = {
-                    $map: {input: '$data.'+field.name,  // the original array
+                if(!field.metaFields){
+                    // lookup is not needed because there is only _id to project
+                    // $map to property _id instead of lookup
+                    dataProjection.data[projectionResult.index][field.name] = {
+                        $map: {
+                            input: '$data.' + field.name,  // the original array
                             as: 'p',                 // name of each array element
-                    in: { _id: '$$p'}       // wrap it in {_id: value}
+                            in: {_id: '$$p'}       // wrap it in {_id: value}
+                        }
                     }
                 }
                 lookupIsNeeded = false

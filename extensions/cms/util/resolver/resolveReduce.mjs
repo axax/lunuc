@@ -26,9 +26,12 @@ function addFacetValue(currentFacet, facetValue) {
     }
 }
 
-const createFacets = (facets, data, beforeFilter) => {
+const createFacets = (facets, data, beforeFilter, facetKey) => {
     if (facets && data) {
         facets.forEach(facet=>{
+            if(facetKey && facetKey !== facet.key){
+                return
+            }
             let currentFacet = facet
             const facetValue = data[facet.key]
             if(beforeFilter){
@@ -140,7 +143,9 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
         loopFacet,
         newArray = []
 
-    const activeFilters = re.loop.filter && re.loop.filter.filter(f => isNotFalse(f.is))
+    const activeFilters = re.loop.filter && re.loop.filter.filter(f => isNotFalse(f.is)).map(f=>{
+        return f.expr ? {...f, facetKey:f.expr.split(/[ =!<>]/)[0].substring(6)} : f
+    })
 
     let cacheKey
     if(re.loop.cache && isNotFalse(re.loop.cache.$is) && !re.loop.reduce &&
@@ -168,10 +173,11 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
         if (filter) {
 
             if (filter.or && loopFacet) {
-                createFacets(loopFacet, value[key])
+                createFacets(loopFacet, value[key], false, filter.facetKey)
             }
 
             if (re.assign) {
+                // remove item from result
                 if (isObject) {
                     delete value[key]
                 } else {
