@@ -206,6 +206,7 @@ export default db => ({
                 result.name = name
                 result.keyword = keyword
                 result.description = description
+                result.manual = manual
 
                 if (!dynamic) {
                     const pageName = result.realSlug.split('/')[0]
@@ -224,11 +225,10 @@ export default db => ({
                     await setPageOptionsAsMeta()
                 }
 
-                if (userHasRightsToChangePage && await Util.userHasCapability(db, context, CAPABILITY_MANAGE_CMS_PAGES)) {
+                if (userHasRightsToChangePage) {
                     //dataResolver and serverScript may contain sensitive data, therefore only visible to authorised users
                     result.dataResolver = dataResolver
                     result.serverScript = serverScript
-                    result.manual = manual
                 }
             } else {
 
