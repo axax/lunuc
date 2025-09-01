@@ -1,16 +1,15 @@
 import cronjobUtil from '../cronjobUtil.mjs'
 import Util from '../../../api/util/index.mjs'
-import {CAPABILITY_RUN_SCRIPT} from '../../../util/capabilities.mjs'
+import {CAPABILITY_MANAGE_OTHER_USERS, CAPABILITY_RUN_SCRIPT} from '../../../util/capabilities.mjs'
 import {ObjectId} from 'mongodb'
+import {userHasAccessToObject} from '../../../api/util/access.mjs'
 
 export default db => ({
     Query: {
         runCronJob: async ({meta,...props}, {context}) => {
-            await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_SCRIPT)
+
             let result
-
             let metaJson = {}
-
             if(meta){
                 metaJson = JSON.parse(meta)
             }
@@ -20,6 +19,12 @@ export default db => ({
                 if(cronJob){
                     props.script = cronJob.script
                 }
+                if(!userHasAccessToObject(context, cronJob)){
+                    // throw an error if use has no access to run this cronjob
+                    await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
+                }
+            }else{
+                await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_SCRIPT)
             }
 
 
