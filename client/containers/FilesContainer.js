@@ -188,6 +188,7 @@ fi`
                         disabled={false} fullWidth
                         placeholder="Search"
                         name="searchText"
+                        value={searchText}
                         onKeyPress={(e) => {
                             if (e.key === 'Enter') {
                                 this.setState({searchText: e.target.value})
@@ -198,6 +199,7 @@ fi`
                         helperText={'Filter'}
                         disabled={false} fullWidth
                         placeholder="Filter"
+                        value={filterText}
                         name="filterText"
                         onChange={(e) => {
                             this.setState({filterText: e.target.value})
@@ -372,7 +374,7 @@ fi`
                 query: COMMAND_QUERY,
                 variables: {
                     sync: true,
-                    command: `printf %s "${Util.escapeDoubleQuotes(content.replace(/\$/g, '\\$').replace(/`/g, '\\`').replace(/\\/g, '\\\\'))}" > "${file}"`
+                    command: `printf %s "${Util.escapeDoubleQuotes(content.replace(/\\/g, '\\\\').replace(/\$/g, '\\$').replace(/`/g, '\\`'))}" > "${file}"`
                 }
 
             }).then(response => {

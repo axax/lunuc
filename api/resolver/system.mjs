@@ -115,7 +115,10 @@ export const systemResolver = (db) => ({
                     throw new Error('No command to execute.')
                 }
                 if (sync) {
-                    response = execSync(command, {encoding: 'utf8'})
+                    response = execSync(command, {
+                        encoding: 'utf8',
+                        shell: '/bin/bash'
+                    })
                 } else {
                     /*execs[id] = spawn(command, options, (err, stdout, stderr) => {
                      console.log(stdout)
