@@ -239,7 +239,18 @@ const Util = {
             query = window && window.location.search.substring(1)
         }
 
-        const a = (options.decodeURI === false ? query : decodeURI(query)).split('&'), b = {}
+        const a = (options.decodeURI === false ? query : decodeURI(query)).split('&'),
+            b = {}
+
+        const decodeAndSet = (key, str) => {
+            try {
+                b[key] = decodeURIComponent(str)
+            } catch (e) {
+                console.error(e)
+                b[key] = str
+            }
+        }
+
         for (let i = 0; i < a.length; ++i) {
             const p = a[i].split('=', 2)
             const key = p[0].trim()
@@ -254,11 +265,11 @@ const Util = {
                         } else if (str === 'false') {
                             b[key] = false
                         } else {
-                            b[key] = decodeURIComponent(str)
+                            decodeAndSet(key, str)
                         }
 
                     } else {
-                        b[key] = decodeURIComponent(str)
+                        decodeAndSet(key, str)
                     }
                 }
             }
