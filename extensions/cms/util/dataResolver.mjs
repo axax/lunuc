@@ -204,6 +204,10 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                                 resolvedData.user.email = user.email
                             }
 
+                            if (segment.user.hostrule) {
+                                resolvedData.user.hostrule = user.hostrule
+                            }
+
                             if (segment.user.roles) {
                                 resolvedData.user.roles = await ApiUtil.getUserRoles(db, user.role)
                             }

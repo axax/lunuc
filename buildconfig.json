@@ -229,7 +229,8 @@
         "Download",
         "Article",
         "ContentCut",
-        "Layers"
+        "Layers",
+        "OpenWith"
       ],
       "theme":{
         "colors":{

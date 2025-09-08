@@ -630,9 +630,11 @@ class JsonDomHelper extends React.Component {
                 onChange={onChange}
                 {...rest}>{children}</_WrappedComponent>
         }
+        const hasRichTextBar = !!_options.richText // && rest['data-element-key'] === 'richText'
         const isDraggable = !isInLoop && hasJsonToEdit && _options.allowDrag !== false
+
         if (isDraggable) {
-            helperEvents.draggable = 'true'
+            helperEvents.draggable = true
             helperEvents.onDragEnd = this.onDragEnd.bind(this)
             helperEvents.onDrag = onJsonDomDrag.bind(this)
             helperEvents.onDrop = this.onDrop.bind(this)
@@ -649,9 +651,10 @@ class JsonDomHelper extends React.Component {
         }
 
         helperEvents.onDragStart = e => {
-            if (isDraggable) {
+            if (isDraggable && (!this.focusTime || (Date.now() - this.focusTime) < 500)) {
                 this.onDragStart(e)
             } else {
+                e.preventDefault()
                 e.stopPropagation()
             }
         }
@@ -669,7 +672,7 @@ class JsonDomHelper extends React.Component {
             if(isElementActive) {
                 this.createContextMenu({
                     isCms, subJson, menuItems, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange,
-                    overrideEvents, onChange, _options, _dynamic, rest, _json, isInLoop, isSelected
+                    overrideEvents, onChange, _options, _dynamic, rest, _json, isInLoop, isSelected, hasRichTextBar
                 })
 
                 const elementKey = rest['data-element-key'] || _tagName
@@ -709,10 +712,14 @@ class JsonDomHelper extends React.Component {
             if (isSelected || _options.highlight !== false) {
                 const highligherColor = _dynamic ? 'red' : isCms || _options.picker ? 'blue' : 'yellow'
                 let marginBottomStyle = subJson?.p?.style?.marginBottom?.trim()
-                const hasRichTextBar = !!_options.richText // && rest['data-element-key'] === 'richText'
-                //console.log(ReactDOM.findDOMNode(this))
                 if(hasRichTextBar){
                     helperEvents.contentEditable = true
+                    helperEvents.onFocus = (e) => {
+                        this.focusTime = Date.now()
+                    }
+                    helperEvents.onBlur = (e) => {
+                        delete this.focusTime
+                    }
                     helperEvents.onInput=(e)=>{
                         setPropertyByPath(e.target.innerHTML,'$c',subJson)
                         _onTemplateChange(_json, true)
@@ -756,9 +763,12 @@ class JsonDomHelper extends React.Component {
                         onMouseOver={()=>{
                             this.setState({richTextBarHover:true})
                         }}
+                        onContextMenu={helperEvents.onContextMenu.bind(this)}
                         onMouseLeave={(e)=>{
                             this.setState({richTextBarHover:false})
-                            if(checkIfElementOrParentHasDataKey(e.toElement || e.relatedTarget,['data-element-key'],'richText')) {
+                            const parentTargetEl = checkIfElementOrParentHasDataKey(e.toElement || e.relatedTarget,['data-element-key'],'richText')
+                            const parentSrcEl = checkIfElementOrParentHasDataKey(ReactDOM.findDOMNode(this),['data-element-key'],'richText')
+                            if(parentTargetEl === parentSrcEl) {
                                 this.setState({hovered:true})
                             }
                         }}><CmsViewContainer _props={{toolsOnly:true,setBackgroundColor:false}} slug="core/wysiwyg" dynamic={true}/></StyledRichTextBar>}
@@ -793,7 +803,8 @@ class JsonDomHelper extends React.Component {
                                              onMouseOut={(e)=>{
                                                  this.setState({dividerHovered: false,dividerMousePos:false, marginBottomNew:false})
                                                  this.onHelperMouseOut(e)
-                                             }}>{this.state.marginBottom!='0px'?(Math.round(parseFloat(this.state.marginBottomNew || this.state.marginBottom) * 100) / 100 + 'px')+(marginBottomStyle && this.state.marginBottom!=marginBottomStyle?` = ${marginBottomStyle}`:''):''}</StyledHorizontalDivider></StyledHighlighter>
+                                             }}>{this.state.marginBottom!='0px'?(Math.round(parseFloat(this.state.marginBottomNew || this.state.marginBottom) * 100) / 100 + 'px')+(marginBottomStyle && this.state.marginBottom!=marginBottomStyle?` = ${marginBottomStyle}`:''):''}</StyledHorizontalDivider>
+                </StyledHighlighter>
             }
         }
 
@@ -902,7 +913,7 @@ class JsonDomHelper extends React.Component {
         }
     }
 
-    createContextMenu({isCms, subJson, menuItems, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange, overrideEvents, onChange, _options, _dynamic, rest, _json, isInLoop, isSelected}) {
+    createContextMenu({isCms, subJson, menuItems, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange, overrideEvents, onChange, _options, _dynamic, rest, _json, isInLoop, isSelected, hasRichTextBar}) {
 
         if(isSelected){
             menuItems.push({
@@ -1050,13 +1061,16 @@ class JsonDomHelper extends React.Component {
 
                     if (jsonElement && (isCms || jsonElement.options || jsonElement.groupOptions || (subJson && subJson.$inlineEditor && subJson.$inlineEditor.options))) {
 
-                        overrideEvents.onDoubleClick = () => {
+                        const doEditElement = ()=>{
                             this.handleEditElement({jsonElement, subJson, isCms, json: _json, key: rest._key})
+                        }
+                        if(!hasRichTextBar) {
+                            overrideEvents.onDoubleClick = doEditElement
                         }
                         menuItems.push({
                             name: _options.menuTitle.edit || _t('JsonDomHelper.elementSettings'),
                             icon: <SettingsInputComponentIcon/>,
-                            onClick: overrideEvents.onDoubleClick
+                            onClick: doEditElement
                         })
                     }
                 }

@@ -561,6 +561,9 @@ div[data-isempty=true]{
     transparent 10px,
     transparent 20px
     );
+  }  
+  &[data-element-key="richText"]{
+    padding-left: 1px;
   }
   &[data-is-invisible="true"]{
     background-color: yellow !important;

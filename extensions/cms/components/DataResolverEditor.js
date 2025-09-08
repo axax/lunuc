@@ -60,6 +60,17 @@ class DataResolverEditor extends React.Component {
                             headers:{cookie:'FROM_CURRENT_REQUEST'}
                         }
                     })
+            }else if(this.wizardForm.state.fields.resolverType==='user') {
+                json.push(
+                    {
+                        user: {
+                            email: this.wizardForm.state.fields.user.email,
+                            group: this.wizardForm.state.fields.user.group,
+                            roles: this.wizardForm.state.fields.user.roles,
+                            meta: this.wizardForm.state.fields.user.meta,
+                            hostrule: this.wizardForm.state.fields.user.hostrule,
+                        }
+                    })
             }else if(this.wizardForm.state.fields.resolverType==='keyvalue') {
                 const keyvalue = this.wizardForm.state.fields.keyvalue
 
@@ -158,9 +169,53 @@ class DataResolverEditor extends React.Component {
                         resolverType:{
                             name: 'resolverType',
                             label: 'Resolver Type',
-                            enum: [{value:'type', name:'Type'},{value:'keyvalue', name:'KeyValue'},{value:'genericType', name:'Generic Type'},{value:'track', name:'Tracking'},{value:'request', name:'Request'},{value:'system', name:'System'},{value:'tr', name:'Translations'}],
+                            enum: [{value:'type', name:'Type'},{value:'keyvalue', name:'KeyValue'},
+                                {value:'genericType', name:'Generic Type'},
+                                {value:'track', name:'Tracking'},
+                                {value:'user', name:'User'},
+                                {value:'request', name:'Request'},{value:'system', name:'System'},{value:'tr', name:'Translations'}],
                             fullWidth: true,
                             value:'type'
+                        },
+                        user:{
+                            uistate: {
+                                visible: 'resolverType==user'
+                            },
+                            uitype:'wrapper',
+                            name:'user',
+                            multi:false,
+                            subFields:[
+                                {
+                                    name:'email',
+                                    type:'Boolean',
+                                    fullWidth: true,
+                                    label: 'Include email'
+                                },
+                                {
+                                    name:'roles',
+                                    type:'Boolean',
+                                    fullWidth: true,
+                                    label: 'Include roles'
+                                },
+                                {
+                                    name:'group',
+                                    type:'Boolean',
+                                    fullWidth: true,
+                                    label: 'Include groups'
+                                },
+                                {
+                                    name:'meta',
+                                    type:'Boolean',
+                                    fullWidth: true,
+                                    label: 'Include meta data'
+                                },
+                                {
+                                    name:'hostrule',
+                                    type:'Boolean',
+                                    fullWidth: true,
+                                    label: 'Include hostrule'
+                                }
+                            ]
                         },
                         keyvalue:{
                             uistate: {
@@ -169,7 +224,6 @@ class DataResolverEditor extends React.Component {
                             uitype:'wrapper',
                             name:'keyvalue',
                             multi:false,
-                            titleTemplate: 'Generic Type ${this.context ? this.context.type || "": ""}',
                             subFields:[
                                 {
                                     name: 'keyValuesGlobal',
