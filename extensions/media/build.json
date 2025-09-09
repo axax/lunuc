@@ -152,6 +152,11 @@
             "name"
           ],
           "index": 1
+        },
+        {
+          "name": "modifiedAt",
+          "type": "Float",
+          "index": 1
         }
       ]
     },

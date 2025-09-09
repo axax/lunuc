@@ -9,6 +9,7 @@ import {createRequireForScript, createScriptForWorker} from '../../util/require.
 import Util from '../../api/util/index.mjs'
 import {Worker} from 'node:worker_threads'
 import {isTemporarilyBlocked} from '../../server/util/requestBlocker.mjs'
+import {isString} from '../../client/util/json.mjs'
 
 const CACHE_PREFIX = 'ExtensionsApi-'
 
@@ -190,7 +191,6 @@ Hook.on('appready', ({app, db}) => {
                     }
 
                     const result = await runApiScript({api, db, req, res, startTime})
-console.log(result)
                     if (!result.error && result.responseStatus && result.responseStatus.ignore) {
 
                     } else if (result.error) {
@@ -207,7 +207,7 @@ console.log(result)
                             res.end(`{"status":"error","message":"${data._error.message}"}`)
                         } else {
                             res.writeHead(res.responseCode || 200, {'content-type': api.mimeType || 'application/json'})
-                            res.end(data ? data.toString() : data)
+                            res.end(data ? (isString(data) ? data : JSON.stringify(data)) : data)
                         }
                     }
                 }
