@@ -125,6 +125,8 @@ export const start = (done) => {
             // only allow post methode
             app.post('/graphql', (req, res, next) => {
 
+                console.log(req.body)
+
                 graphqlHTTP({
                     schema,
                     rootValue,
