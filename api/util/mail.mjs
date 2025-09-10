@@ -43,15 +43,20 @@ export const sendMail = async (db, context, {settings, recipient, from, fromName
             // pass it as context to the template
             context.html = html
         }
-        finalHtml = await Hook.hooks['cmsTemplateRenderer'][0].callback({
-            context,
-            db,
-            recipient,
-            subject,
-            body,
-            slug,
-            req
-        })
+
+        try {
+            finalHtml = await Hook.hooks['cmsTemplateRenderer'][0].callback({
+                context,
+                db,
+                recipient,
+                subject,
+                body,
+                slug,
+                req
+            })
+        }catch (e){
+            throw new Error(e.message)
+        }
 
         finalHtml = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>

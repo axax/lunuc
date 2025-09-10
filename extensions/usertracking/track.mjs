@@ -9,6 +9,7 @@ import {
     TRACK_URL_HEADER,
     TRACK_USER_AGENT_HEADER
 } from '../../api/constants/index.mjs'
+import {isString} from '../../client/util/json.mjs'
 
 export const trackUser = async ({req, event, slug, db, context, data, meta, path}) => {
 
@@ -19,14 +20,18 @@ export const trackUser = async ({req, event, slug, db, context, data, meta, path
 
         let referer
         if (meta) {
-            let metaJson
             try {
-                if (meta.constructor !== Object && (meta.startsWith('{') || meta.startsWith('['))) {
+                let metaJson
+                if (meta.constructor === Object){
+                    metaJson = meta
+                } else if(isString(meta) && (meta.startsWith('{') || meta.startsWith('['))) {
                     metaJson = JSON.parse(meta)
                 } else {
                     metaJson = meta
                 }
-                referer = metaJson.referer
+                if(metaJson.referer) {
+                    referer = metaJson.referer
+                }
             } catch (e) {
                 console.log(e, meta)
             }
