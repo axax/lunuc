@@ -425,7 +425,14 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             }else if (urlPathname.startsWith('/graphql') || API_PREFIXES.some(prefix => urlPathname.startsWith('/'+prefix + '/'))) {
                 // there is also /graphql/upload
                 if(remoteAddress === '91.108.234.83'){
-                    console.log('hacker', JSON.stringify(req.body), JSON.stringify(req.headers))
+                    const body = await new Promise((resolve, reject) => {
+                        const chunks = [];
+                        req.on('data', chunk => chunks.push(chunk));
+                        req.on('error', err => reject(err));
+                        req.on('end', () => resolve(Buffer.concat(chunks).toString()));
+                    });
+
+                    console.log('hacker', body, JSON.stringify(req.headers))
                     sendError(res, 404)
                 }else {
 
