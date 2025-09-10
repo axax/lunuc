@@ -128,7 +128,14 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
         },{host, agent, isBot, remoteAddress})
 
 
-        await page.goto(urlToFetch, {waitUntil: 'networkidle2'})
+
+        try{
+            await page.goto(urlToFetch, {waitUntil: 'networkidle2'})
+        }catch(e){
+            console.warn('parseWebsite:', e)
+        }
+
+
 
         let html = await page.content()
         html = html.replace('</head>', '<script>window.LUNUC_PREPARSED=true</script></head>')

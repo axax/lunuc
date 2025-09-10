@@ -38,6 +38,11 @@
     {
       "name": "BotCommand",
       "entryClonable": true,
+      "access": {
+        "create": {
+          "capability": "admin_options"
+        }
+      },
       "fields": [
         {
           "name": "name",

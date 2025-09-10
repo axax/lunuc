@@ -357,7 +357,7 @@ const Util = {
 
         let capability
         if (access.constructor === Object) {
-            capability = access.role
+            capability = access.capability || access.role
         } else {
             capability = access
         }

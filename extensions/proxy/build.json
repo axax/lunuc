@@ -6,6 +6,11 @@
     {
       "name": "ProxyUser",
       "entryClonable": true,
+      "access": {
+        "create": {
+          "capability": "admin_options"
+        }
+      },
       "fields": [
         {
           "unique": true,

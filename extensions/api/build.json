@@ -1,6 +1,11 @@
 {
   "types": [
     {
+      "access": {
+        "create": {
+          "capability": "admin_options"
+        }
+      },
       "name": "Api",
       "entryClonable": true,
       "fields": [

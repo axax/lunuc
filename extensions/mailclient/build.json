@@ -5,6 +5,11 @@
   "types": [
     {
       "name": "MailClient",
+      "access": {
+        "create": {
+          "capability": "admin_options"
+        }
+      },
       "fields": [
         {
           "name": "username",
