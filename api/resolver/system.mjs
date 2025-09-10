@@ -27,6 +27,7 @@ import {createAllIndexes} from '../index/indexes.mjs'
 import jwt from 'jsonwebtoken'
 import {SECRET_KEY} from '../constants/index.mjs'
 import {MONGO_URL} from '../database.mjs'
+import {isTemporarilyBlocked} from '../../server/util/requestBlocker.mjs'
 
 const {UPLOAD_DIR} = config
 
@@ -195,6 +196,11 @@ export const systemResolver = (db) => ({
         },
         sendMail: async (data, {context}) => {
             //Util.checkIfUserIsLoggedIn(context)
+
+            if(isTemporarilyBlocked({requestTimeInMs: 2000, requestPerTime: 2,requestBlockForInMs:6000, key:'graphqlSendMail'})){
+                return {response: JSON.stringify({error: 'Too many requests. Please try again later.'})}
+            }
+
             const response = await sendMail(db, context, data)
             return {response: JSON.stringify(response)}
         },
