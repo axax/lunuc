@@ -55,7 +55,7 @@ export const sendMail = async (db, context, {settings, recipient, from, fromName
                 req
             })
         }catch (e){
-            throw new Error(e.message)
+            return {error: e.message}
         }
 
         finalHtml = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
