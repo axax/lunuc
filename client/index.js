@@ -83,7 +83,7 @@ function mainInit() {
                     lang = (navigator.language || navigator.userLanguage).substr(0, 2)
                 }
                 if (!lang || LANGUAGES.indexOf(lang) < 0) {
-                    lang = DEFAULT_LANGUAGE
+                    lang = _app_.defaultLang || DEFAULT_LANGUAGE
                 }
             }
             _app_.lang = lang

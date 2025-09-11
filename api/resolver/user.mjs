@@ -151,7 +151,7 @@ export const createUser = async ({username, role, junior, group, setting, passwo
         dataToInsert.domain = domain
     }
 
-    if (hostrule) {
+    if (hostrule && await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
         dataToInsert.hostrule = hostrule
     }
 
@@ -624,14 +624,6 @@ export const userResolver = (db) => ({
             const errors = []
             const userCollection = db.collection('User')
 
-            if (domain !== undefined) {
-                user.domain = domain
-            }
-
-            if (hostrule !== undefined) {
-                user.hostrule = hostrule
-            }
-
             if (language !== undefined) {
                 user.language = language
             }
@@ -735,6 +727,17 @@ export const userResolver = (db) => ({
             }
 
             const userCanManageOthers = await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
+
+
+            if( userCanManageOthers ) {
+                if (domain !== undefined) {
+                    user.domain = domain
+                }
+
+                if (hostrule !== undefined) {
+                    user.hostrule = hostrule
+                }
+            }
 
 
             const match = {_id: new ObjectId(_id)}
