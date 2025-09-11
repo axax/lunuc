@@ -184,6 +184,12 @@ function buildSelector(parent, child) {
     const parentParts = parent.split(',').map(p => p.trim());
     const childParts = child.split(',').map(c => c.trim());
 
+    // If :root is one of the selectors in the child string, it should not be nested.
+    // In this case, we return the child selector as-is, treating it as a top-level rule.
+    if (childParts.some(c => c === ':root')) {
+        return child;
+    }
+
     const newSelectors = [];
 
     parentParts.forEach(p => {

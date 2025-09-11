@@ -284,7 +284,7 @@ export const systemResolver = (db) => ({
             return response
         },
         collections: async ({filter}, {context}) => {
-            Util.checkIfUserIsLoggedIn(context)
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
 
             return {results: await getCollections({db, filter})}
         },
@@ -431,7 +431,8 @@ export const systemResolver = (db) => ({
 
             return {result}
         },
-        exportQuery: async ({type, query}) => {
+        exportQuery: async ({type, query}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_ADMIN_OPTIONS)
 
             return {result: mongoExport({type, query})}
         },
@@ -477,7 +478,7 @@ export const systemResolver = (db) => ({
             return createBackup(type, optionsAsJson)
         },
         removeBackup: async ({type, name}, {context}) => {
-            Util.checkIfUserIsLoggedIn(context)
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_BACKUPS)
 
             return removeBackup(type, name)
         },
