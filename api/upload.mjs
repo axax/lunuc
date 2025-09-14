@@ -161,7 +161,9 @@ export const handleMediaDumpUpload = db => async (req, res) => {
         if (authContext) {
 
             /* Process the uploads */
-            const form = formidable({maxFileSize: 1014 * 1024 * 1024, keepExtensions: false})
+            const form = formidable({
+                maxFileSize: 1014 * 1024 * 1024,
+                keepExtensions: false})
 
             res.writeHead(200, {'content-type': 'application/json'})
 
@@ -266,14 +268,16 @@ export const handleDbDumpUpload = (db, client) => async (req, res) => {
     if (authContext) {
 
         /* Process the uploads */
-        const form = formidable({maxFileSize: 1014 * 1024 * 1024 * 10, keepExtensions: false})
+        const form = formidable({
+            maxFileSize: 10 * 1024 * 1024 * 1024, // 10GB
+            maxTotalFileSize: 10 * 1024 * 1024 * 1024, // 10GB,
+            keepExtensions: false})
 
 
         res.writeHead(200, {'content-type': 'application/json'})
 
         form.on('file', function (field, file) {
 
-            console.log(client.s.url, file.filepath)
             // --drop --> drops collections before
             const response = execSync(`mongorestore --nsInclude=lunuc.* --noIndexRestore --uri="${client.s.url}" --drop --gzip --archive="${file.filepath}"`)
             console.log('restoreDbDump', response)

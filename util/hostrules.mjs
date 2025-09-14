@@ -70,43 +70,47 @@ const extendHostrulesWithCert = (hostrule, domainname) => {
     }
 }
 
-const loadHostRules = (dir, withCertContext, hostrules, isDefault) => {
 
+const loadSingleHostrule = ({domainname, hostruleFilePath, isDefault, hostrules, withCertContext}) => {
+    const stats = fs.statSync(hostruleFilePath)
+    // only read file if it has changed
+    if (!hostrules[domainname] || (!isDefault && stats.mtime > hostrules[domainname]._lastModified)) {
+
+        const content = fs.readFileSync(hostruleFilePath)
+        let hostrule
+        try {
+            hostrule = hostrules[domainname] = JSON.parse(content)
+        } catch (e) {
+            console.warn('Error in hostrule', domainname, e)
+        }
+        if (hostrule) {
+            hostrule._filename = path.basename(hostruleFilePath)
+            hostrule._basedir = path.dirname(hostruleFilePath)
+            hostrule._lastModified = stats.mtime
+
+            if (!hostrule.paths) {
+                hostrule.paths = []
+            }
+
+            if (hostrule.botregex) {
+                hostrule.botregex = new RegExp(hostrule.botregex)
+            }
+        }
+    }
+
+    if (hostrules[domainname] && withCertContext) {
+        extendHostrulesWithCert(hostrules[domainname], domainname)
+    }
+}
+
+const loadHostRules = (dir, withCertContext, hostrules, isDefault) => {
     if (fs.existsSync(dir)) {
         fs.readdirSync(dir).forEach(filename => {
             if (filename.endsWith('.json')) {
                 const domainname = filename.substring(0, filename.length - 5),
-                    absFilePaht = path.join(dir, filename),
-                    stats = fs.statSync(absFilePaht)
+                    hostruleFilePath = path.join(dir, filename)
 
-                // only read file if it has changed
-                if (!hostrules[domainname] || (!isDefault && stats.mtime > hostrules[domainname]._lastModified)) {
-
-                    const content = fs.readFileSync(absFilePaht)
-                    let hostrule
-                    try {
-                        hostrule = hostrules[domainname] = JSON.parse(content)
-                    }catch (e){
-                        console.warn('Error in hostrule',domainname,e)
-                    }
-                    if(hostrule) {
-                        hostrule._filename = filename
-                        hostrule._basedir = dir
-                        hostrule._lastModified = stats.mtime
-
-                        if (!hostrule.paths) {
-                            hostrule.paths = []
-                        }
-
-                        if (hostrule.botregex) {
-                            hostrule.botregex = new RegExp(hostrule.botregex)
-                        }
-                    }
-                }
-
-                if (hostrules[domainname] && withCertContext) {
-                    extendHostrulesWithCert(hostrules[domainname], domainname)
-                }
+                loadSingleHostrule({domainname, hostruleFilePath, isDefault, hostrules, withCertContext})
             }
         })
 
@@ -126,21 +130,39 @@ const loadAllHostrules = (withCertContext, hostrules = {}, refresh = false) => {
 }
 
 let _loadedHostRules = {},
-    _loadedHostRulesTime = 0,
+    _loadedHostRulesTime = {all:0},
     _loadedHostRulesWithCertContext = false
-export const getHostRules =(withCertContext)=>{
-    if(_loadedHostRulesTime > 0 &&
-        (new Date().getTime() - _loadedHostRulesTime < 60000) &&
+export const getHostRules =(withCertContext, hostToCheck)=>{
+
+    if(hostToCheck && !_loadedHostRules[hostToCheck] &&
+        (!_loadedHostRulesTime[hostToCheck] || new Date().getTime() - _loadedHostRulesTime[hostToCheck] < 20000)){
+
+        const hostruleFilePath = path.join(HOSTRULES_ABSPATH,hostToCheck+'.json')
+
+        if (fs.existsSync(hostruleFilePath)) {
+            // newly created hostrules
+            loadSingleHostrule({
+                isDefault: false,
+                domainname: hostToCheck,
+                hostruleFilePath,
+                hostrules: _loadedHostRules,
+                withCertContext
+            })
+        }
+        return _loadedHostRules
+    }else if( _loadedHostRulesTime.all > 0 &&
+        (new Date().getTime() - _loadedHostRulesTime.all < 60000) &&
         (!withCertContext || _loadedHostRulesWithCertContext)){
+
         return _loadedHostRules
     }
-    loadAllHostrules(_loadedHostRulesWithCertContext || withCertContext, _loadedHostRules,_loadedHostRulesTime > 0 )
+    loadAllHostrules(_loadedHostRulesWithCertContext || withCertContext, _loadedHostRules,_loadedHostRulesTime.all > 0 )
 
 
     if(withCertContext){
         _loadedHostRulesWithCertContext = true
     }
-    _loadedHostRulesTime = new Date().getTime()
+    _loadedHostRulesTime.all = new Date().getTime()
 
     return _loadedHostRules
 }
@@ -163,8 +185,8 @@ export const hostListFromString = (host) =>{
 console.log(hostListFromString('www.onyou.ch'))*/
 
 export const getBestMatchingHostRule = (host, withCertContext=true, fallbackToGeneral = false) => {
+    const hostrules = getHostRules(withCertContext, host)
     const hostsChecks = hostListFromString(host)
-    const hostrules = getHostRules(withCertContext)
     for (let i = 0; i < hostsChecks.length; i++) {
         const currentHost = hostsChecks[i]
         const hostrule = hostrules[currentHost]

@@ -489,7 +489,7 @@ const resolveTranslations = (resolvedData, segment, context) => {
         if (segment.forceLanguage) {
             resolvedData.tr = Object.assign(resolvedData.tr, segment.tr[segment.forceLanguage])
         } else if (segment.defaultLanguage) {
-            resolvedData.tr = Object.assign(resolvedData.tr, segment.tr[segment.defaultLanguage], segment.tr[context.lang])
+            resolvedData.tr = Object.assign(resolvedData.tr, segment.tr[_app_.defaultLang],segment.tr[segment.defaultLanguage], segment.tr[context.lang])
         } else {
             resolvedData.tr = Object.assign(resolvedData.tr, segment.tr[context.lang])
         }

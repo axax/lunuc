@@ -14,8 +14,6 @@ import {ensureDirectoryExistence} from '../../util/fileUtil.mjs'
 import path from 'path'
 import fs from "fs";
 import {pubsubHooked} from '../subscription.mjs'
-import {performFieldProjection} from '../../util/project.mjs'
-import {deepMerge} from "../../util/deepMerge.mjs";
 const PASSWORD_MIN_LENGTH = 8
 
 const ROOT_DIR = path.resolve()
