@@ -134,27 +134,29 @@ let _loadedHostRules = {},
     _loadedHostRulesWithCertContext = false
 export const getHostRules =(withCertContext, hostToCheck)=>{
 
-    if(hostToCheck && !_loadedHostRules[hostToCheck] &&
-        (!_loadedHostRulesTime[hostToCheck] || new Date().getTime() - _loadedHostRulesTime[hostToCheck] < 20000)){
+    if(_loadedHostRulesTime.all > 0) {
+        if (hostToCheck &&
+            !_loadedHostRules[hostToCheck] &&
+            (!_loadedHostRulesTime[hostToCheck] || new Date().getTime() - _loadedHostRulesTime[hostToCheck] < 20000)) {
 
-        const hostruleFilePath = path.join(HOSTRULES_ABSPATH,hostToCheck+'.json')
+            const hostruleFilePath = path.join(HOSTRULES_ABSPATH, hostToCheck + '.json')
 
-        if (fs.existsSync(hostruleFilePath)) {
-            // newly created hostrules
-            loadSingleHostrule({
-                isDefault: false,
-                domainname: hostToCheck,
-                hostruleFilePath,
-                hostrules: _loadedHostRules,
-                withCertContext
-            })
+            if (fs.existsSync(hostruleFilePath)) {
+                // newly created hostrules
+                loadSingleHostrule({
+                    isDefault: false,
+                    domainname: hostToCheck,
+                    hostruleFilePath,
+                    hostrules: _loadedHostRules,
+                    withCertContext
+                })
+            }
+            return _loadedHostRules
+        } else if ((new Date().getTime() - _loadedHostRulesTime.all < 60000) &&
+            (!withCertContext || _loadedHostRulesWithCertContext)) {
+
+            return _loadedHostRules
         }
-        return _loadedHostRules
-    }else if( _loadedHostRulesTime.all > 0 &&
-        (new Date().getTime() - _loadedHostRulesTime.all < 60000) &&
-        (!withCertContext || _loadedHostRulesWithCertContext)){
-
-        return _loadedHostRules
     }
     loadAllHostrules(_loadedHostRulesWithCertContext || withCertContext, _loadedHostRules,_loadedHostRulesTime.all > 0 )
 
