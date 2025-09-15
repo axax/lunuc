@@ -1299,7 +1299,28 @@ class JsonDomHelper extends React.Component {
                                 name: _t('JsonDomHelper.element.new.component'),
                                 icon: 'contentCut',
                                 onClick: () => {
-                                    alert('to implement')
+                                    fetch('/lunucapi/system/create-component',{ method: "POST",
+                                        headers: {
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify({
+                                            template: JSON.stringify(_json)
+                                        })})
+                                        .then(response => {
+                                            if (!response.ok) {
+                                                throw new Error(`Response status: ${response.status}`)
+                                            }
+                                            return response.json()
+                                        })
+                                        .then(data => {
+                                            _app_.dispatcher.addNotification({horizontal:'right',
+                                                autoHideDuration:2200,
+                                                closeButton:false,
+                                                message: _t('JsonDomHelper.element.new.component')+': '+data.slug})
+                                        })
+                                        .catch(error => {
+                                            console.error(error.message)
+                                        })
                                 }
                             })
                         }
