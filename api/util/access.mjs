@@ -1,6 +1,6 @@
 
 export const userHasAccessToObject =(context, item) =>{
-    const createdByIdAsString = item.createdBy?item.createdBy.toString():''
+    const createdByIdAsString = item.createdBy?(item.createdBy._id?item.createdBy._id.toString():item.createdBy.toString()):''
     if(createdByIdAsString === context.id){
         return true
     }
