@@ -1304,7 +1304,7 @@ class JsonDomHelper extends React.Component {
                                             'Content-Type': 'application/json'
                                         },
                                         body: JSON.stringify({
-                                            template: JSON.stringify(_json)
+                                            template: JSON.stringify(subJson)
                                         })})
                                         .then(response => {
                                             if (!response.ok) {
