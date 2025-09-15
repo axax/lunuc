@@ -34,7 +34,7 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
     if (checkHostrules) {
 
         hostrule = getBestMatchingHostRule(host, false, true).hostrule
-        if(hostrule.slugContext && (slug + '/').indexOf(hostrule.slugContext + '/') !== 0)
+        if(hostrule && hostrule.slugContext && (slug + '/').indexOf(hostrule.slugContext + '/') !== 0)
         {
             const modSlug = hostrule.slugContext + (slug.length > 0 ? '/' : '') + slug
             let slugFallback = hostrule.slugFallback
