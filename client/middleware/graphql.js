@@ -390,7 +390,7 @@ export const client = {
             query &&
             variables &&
             data.cmsPage &&
-            (!data.cmsPage.urlSensitiv || data.cmsPage.urlSensitiv === 'client') &&
+            ['full',true].indexOf(data.cmsPage.urlSensitiv)<0 &&
             variables.query) {
 
             oldCacheKey = cacheKey || getCacheKey({query, variables})

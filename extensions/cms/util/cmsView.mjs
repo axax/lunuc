@@ -84,8 +84,8 @@ export const getGqlVariables = props => {
             variables.nosession = kv
         }
     }
-    // add query if page is url sensitiv
-    if (urlSensitiv === true  || (!dynamic && urlSensitiv === undefined && (urlSensitivMap[slug] || urlSensitivMap[slug] === undefined))) {
+    // add query if page is url sensitiv or it is initial call
+    if (['full',true].indexOf(urlSensitiv)>=0 || (!dynamic && urlSensitivMap[slug] === undefined)) {
         const q = window.location.search.substring(1)
         if (q)
             variables.query = q

@@ -183,7 +183,7 @@ export default () => {
             if(content.length>0) {
                 content.splice(0, content.length)
             }
-            content.push(<CmsViewContainer key="widgets" user={_app_.user} match={match} dynamic={true} urlSensitiv={true}
+            content.push(<CmsViewContainer key="widgets" user={_app_.user} match={match} dynamic={true} urlSensitiv={'full'}
                                            location={location} history={history} slug={'system/widget'}/>)
         }
     })

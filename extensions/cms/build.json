@@ -101,8 +101,21 @@
         },
         {
           "name": "urlSensitiv",
-          "label": "Url sensitiv",
-          "hidden": true
+          "label": "Refresh behavior",
+          "defaultValue": "default",
+          "enum": [
+            "default",
+            "full",
+            "client",
+            "none"
+          ],
+          "bulkEditable": true,
+          "index": 1,
+          "access": {
+            "ui": {
+              "role": "manage_cms_template"
+            }
+          }
         },
         {
           "name": "parseResolvedData",

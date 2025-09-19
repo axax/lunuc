@@ -46,7 +46,7 @@ class CmsViewContainer extends React.Component {
             cmsPage.modifiedAt !== cmsPageOld.modifiedAt ||
             cmsPage.resolvedData !== cmsPageOld.resolvedData ||
             (
-                cmsPage.urlSensitiv && props.location && /*cmsPage.urlSensitiv!=='false' &&*/ (
+                ['full','client',true].indexOf(cmsPage.urlSensitiv)>=0 && props.location && (
                     props.location.search !== this.props.location.search ||
                     props.location.hash !== this.props.location.hash)
             ) ||
@@ -118,6 +118,7 @@ class CmsViewContainer extends React.Component {
             description={cmsPage.description}
             keywords={cmsPage.keyword}
             author={cmsPage.author}
+            urlSensitiv={cmsPage.urlSensitiv}
             editMode={editMode}
             inlineEditor={(cmsPage.publicEdit || Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_CONTENT)) && settings && !!settings.inlineEditor}
             slug={cmsPage.realSlug}

@@ -293,13 +293,13 @@ class JsonDom extends React.Component {
             propsChanged ||
             slugChanged ||
             userChanged ||
-            props.children !== this.props.children ||
+            (props.children !== this.props.children && props.urlSensitiv!=='none') ||
             this.props.loading !== props.loading
 
         if (updateIsNeeded) {
 
-            /*   console.log(`
-           for ${props.slug}
+        /*       console.log(`
+           for ${props.slug} ${props.urlSensitiv}
                resolvedDataChanged=${resolvedDataChanged}
                searchChanged=${searchChanged}
                scriptChanged=${scriptChanged}

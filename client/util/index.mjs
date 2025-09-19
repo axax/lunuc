@@ -443,6 +443,9 @@ const Util = {
 
         ['quality','removebg','flop','flip','position','noenlarge'].forEach(key=>{
             if(options[key]){
+                if(key==='removebg' && options[key].tolerance<=0){
+                    return
+                }
                 params += `&${key}=${options[key].constructor === Object ? JSON.stringify(options[key]) : options[key]}`
             }
         })

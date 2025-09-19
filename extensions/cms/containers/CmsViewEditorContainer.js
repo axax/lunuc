@@ -387,7 +387,7 @@ class CmsViewEditorContainer extends React.Component {
                 {ignoreKeys:['styleScroll','dataResolverScroll','serverScriptScroll','templateScroll','scriptScroll','manualScroll']}) ||
             state.cmsStatusData !== this.state.cmsStatusData ||
             (
-                !!props.cmsPage.urlSensitiv && this.props.location && (
+                ['full','client',true].indexOf(props.cmsPage.urlSensitiv)>=0 && this.props.location && (
                     props.location.search !== this.props.location.search ||
                     props.location.hash !== this.props.location.hash)
             )

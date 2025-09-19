@@ -13,16 +13,17 @@ export default function CmsPageOptions(props){
         {canMangeCmsTemplate ? <React.Fragment>
                 <SimpleSelect
                     fullWidth={true}
-                    label="Url sensitive (refresh component on url or props change)"
-                    value={values.urlSensitiv == 'true' ? 'full' : values.urlSensitiv}
+                    label={_t('CmsViewEditorContainer.urlSensitivLabel')}
+                    value={values.urlSensitiv}
                     sx={{ mt: 0, mb: 2 }}
                     onChange={(e) => {
                         onChange('urlSensitiv', null, e.target.value)
                     }}
-                    items={[{name: 'None', value: ''}, {
-                        name: 'Full',
-                        value: 'full'
-                    }, {name: 'Client (nothing is sent to the server)', value: 'client'}]}
+                    items={[{name: 'Default (Refresh on $children element change)', value: 'default'},
+                        {name: 'Client (Refresh on url, props or $children change but nothing is sent to the server)', value: 'client'},
+                        {name: 'Full (Refresh on url, props or $children change)',value: 'full'},
+                        {name: 'None (Never refresh)',value: 'none'}
+                    ]}
                 /><br/>
                 <SimpleSwitch
                     label="SSR (Server side Rendering)"

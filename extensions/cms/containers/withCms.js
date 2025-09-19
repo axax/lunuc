@@ -238,7 +238,7 @@ export default function (WrappedComponent) {
                     _app_.lang===prevLang &&
                     prevData.cmsPage &&
                     prevData.cmsPage.slug === props.slug &&
-                    (!prevData.cmsPage.urlSensitiv || prevData.cmsPage.urlSensitiv==='client') &&
+                    ['full',true].indexOf(prevData.cmsPage.urlSensitiv)<0 &&
                     !props.isRefetch) {
                     return true
                 }
@@ -272,7 +272,7 @@ export default function (WrappedComponent) {
                         // we define a new state here when component is reused with a new slug
                         result.aboutToChange = true
                     }
-                    urlSensitivMap[cmsPage.slug] = cmsPage.urlSensitiv && cmsPage.urlSensitiv!=='client'
+                    urlSensitivMap[cmsPage.slug] = ['full',true].indexOf(cmsPage.urlSensitiv)>=0
                 }
                 return result
             }
