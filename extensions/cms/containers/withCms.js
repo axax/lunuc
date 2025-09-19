@@ -255,7 +255,9 @@ export default function (WrappedComponent) {
                 return {
                     variables: getGqlVariables(ownProps),
                     hiddenVariables,
-                    fetchPolicy: ownProps.fetchPolicy || (isEditMode(ownProps) ? 'network-only' : _app_.defaultFetchPolicy || 'cache-and-network') // cache-first
+                    fetchPolicy: ownProps.fetchPolicy ||
+                        (isEditMode(ownProps) ? 'network-only' : _app_.defaultFetchPolicy ||
+                            (['full','client',true,undefined].indexOf(urlSensitivMap[ownProps.slug])?'cache-and-network':'cache-first')) // cache-first
                 }
             },
             props: ({data: {loading, cmsPage, variables, fetchMore, refetch, networkStatus}, ownProps}) => {
@@ -272,7 +274,7 @@ export default function (WrappedComponent) {
                         // we define a new state here when component is reused with a new slug
                         result.aboutToChange = true
                     }
-                    urlSensitivMap[cmsPage.slug] = ['full',true].indexOf(cmsPage.urlSensitiv)>=0
+                    urlSensitivMap[cmsPage.slug] = cmsPage.urlSensitiv
                 }
                 return result
             }

@@ -103,11 +103,11 @@
           "name": "urlSensitiv",
           "label": "Refresh behavior",
           "defaultValue": "default",
+          "hideColumnInTypes": true,
           "enum": [
             "default",
             "full",
-            "client",
-            "none"
+            "client"
           ],
           "bulkEditable": true,
           "index": 1,

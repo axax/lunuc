@@ -293,7 +293,7 @@ class JsonDom extends React.Component {
             propsChanged ||
             slugChanged ||
             userChanged ||
-            (props.children !== this.props.children && props.urlSensitiv!=='none') ||
+            (props.children !== this.props.children) ||
             this.props.loading !== props.loading
 
         if (updateIsNeeded) {

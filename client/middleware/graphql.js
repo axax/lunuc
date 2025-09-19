@@ -574,11 +574,12 @@ export const graphql = (query, operationOptions = {}) => {
                 } else {
                     finalProps = this.props
                 }
+                const prevData = this.prevRespone.data
+
                 const options = operationOptions.options ? (typeof operationOptions.options === 'function' ? operationOptions.options(finalProps) : operationOptions.options) : {},
                     variables = options.variables,
-                    skip = operationOptions.skip ? (typeof operationOptions.skip === 'function' ? operationOptions.skip(finalProps, this.prevRespone.data, this.prevRespone.lang) : operationOptions.skip) : false
+                    skip = operationOptions.skip ? (typeof operationOptions.skip === 'function' ? operationOptions.skip(finalProps, prevData, this.prevRespone.lang) : operationOptions.skip) : false
 
-                const prevData = this.prevRespone.data
                 return <Query skip={skip} query={finalQuery} variables={variables}
                               hiddenVariables={options.hiddenVariables}
                               fetchPolicy={options.fetchPolicy}>{(res) => {

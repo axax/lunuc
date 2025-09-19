@@ -19,10 +19,9 @@ export default function CmsPageOptions(props){
                     onChange={(e) => {
                         onChange('urlSensitiv', null, e.target.value)
                     }}
-                    items={[{name: 'Default (Refresh on $children element change)', value: 'default'},
-                        {name: 'Client (Refresh on url, props or $children change but nothing is sent to the server)', value: 'client'},
-                        {name: 'Full (Refresh on url, props or $children change)',value: 'full'},
-                        {name: 'None (Never refresh)',value: 'none'}
+                    items={[{name: 'Default (No refresh)', value: 'default'},
+                        {name: 'Client (Refresh on url and props change without request to the server)', value: 'client'},
+                        {name: 'Full (Refresh on url and props change with request to the server)',value: 'full'}
                     ]}
                 /><br/>
                 <SimpleSwitch
