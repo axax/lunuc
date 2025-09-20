@@ -519,7 +519,7 @@ export default () => {
                                 delete prettyFilter.slug
                             }
 
-                            this.goTo({prettyFilter: JSON.stringify(prettyFilter)})
+                            this.goTo({prettyFilter: JSON.stringify(prettyFilter), page: 1})
                         }}/>
                         </Paper>
                     </Grid>
