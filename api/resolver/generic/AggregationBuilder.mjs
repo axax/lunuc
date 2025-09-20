@@ -622,6 +622,15 @@ export default class AggregationBuilder {
                 projectResultData.size_bytes = {$bsonSize: '$$ROOT'}
             }
             dataFacetQuery.push({$project: projectResultData})
+            if(this.options.afterProject) {
+                if (this.options.afterProject.constructor === Array) {
+                    for (let i = this.options.afterProject.length - 1; i >= 0; i--) {
+                        dataFacetQuery.push(this.options.afterProject[i])
+                    }
+                } else {
+                    dataFacetQuery.push(this.options.afterProject)
+                }
+            }
         }
 
         const facet = {

@@ -655,7 +655,8 @@ const baseElements = [
             ...classOptions('p_'),
             ...imageOptions('p_'),
             ...sizeOptions('p_'),
-            ...lazyImageOptions('$observe_')
+            ...lazyImageOptions('$observe_'),
+            ...observeOptions()
         }
     },
     {
@@ -1255,7 +1256,8 @@ const baseElements = [
             ...classOptions('p_'),
             ...imageOptions('c_0_p_'),
             ...sizeOptions('c_0_p_'),
-            ...lazyImageOptions('c_0_$observe_')
+            ...lazyImageOptions('c_0_$observe_'),
+            ...observeOptions()
         },
         defaults: {
             $inlineEditor: {

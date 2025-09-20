@@ -236,6 +236,7 @@ export const userResolver = (db) => ({
                     }
                 }
                 options.sort = 'customOrder desc'
+                options.afterProject = [{$sort:{customOrder: -1}}]
             }
             return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'signupToken', 'language', 'picture', 'email', 'meta', 'domain', 'hostrule', 'emailConfirmed', 'blocked', 'requestNewPassword', 'role$UserRole', 'junior$[User]', 'group$[UserGroup]', 'setting$[UserSetting]', 'lastLogin', 'lastActive'], options)
         },
