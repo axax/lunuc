@@ -160,6 +160,7 @@ class JsonDomHelper extends React.Component {
             state.marginBottomNew !== this.state.marginBottomNew ||
             state.toolbarHovered !== this.state.toolbarHovered ||
             state.mouseX !== this.state.mouseX ||
+            props.className !== this.props.className ||
             Util.shallowCompare(props.props, this.props.props, {compareArray:true})
     }
 

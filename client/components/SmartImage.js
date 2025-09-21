@@ -46,7 +46,10 @@ class SmartImage extends React.Component {
         if (this.state.src !== state.src) {
             this.checkVisibility()
         }
-        return this.state.src !== state.src || state.isVisible !== this.state.isVisible || state.hasError !== this.state.hasError || state.loaded !== this.state.loaded
+        return this.state.src !== state.src ||
+            state.isVisible !== this.state.isVisible ||
+            state.hasError !== this.state.hasError ||
+            state.loaded !== this.state.loaded
     }
 
     render() {

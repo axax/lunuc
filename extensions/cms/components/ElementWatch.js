@@ -38,8 +38,8 @@ class ElementWatch extends React.Component {
             inFlipMode:false,
             hasError:false,
             key: jsonDom.instanceId + '_' + _key,
-            madeVisible: state && state.madeVisible && (tagName !== 'SmartImage' || props.jsonDom.props.inEditor)? true : ElementWatch.hasLoaded[tagSrc],
-            initialVisible: tagName === 'SmartImage' ? false : ($observe.initialClass && !$observe.waitVisible) || !$observe.waitVisible
+            madeVisible: state && state.madeVisible && tagName !== 'SmartImage'? true : ElementWatch.hasLoaded[tagSrc],
+            initialVisible: tagName === 'SmartImage' ? false : !$observe.waitVisible
         }
     }
 
@@ -231,7 +231,8 @@ class ElementWatch extends React.Component {
 
     makeVisible(ele) {
         const {tagSrc} = this.state
-        const {$observe, eleProps, tagName} = this.props
+        const {$observe, eleProps, tagName, jsonDom} = this.props
+
         if (this.state.initialVisible) {
             if($observe.visibleClass) {
                 setTimeout(()=>{
@@ -240,6 +241,11 @@ class ElementWatch extends React.Component {
             }
         } else {
             ele.setAttribute('data-loading', true)
+            const madeVisibleDelay = ()=>{
+                setTimeout(()=>{
+                    this.setState({madeVisible: true})
+                }, $observe.delay || 0)
+            }
             if (tagName === 'SmartImage') {
                 if (eleProps.inlineSvg) {
                     this.fetchSvg()
@@ -254,10 +260,10 @@ class ElementWatch extends React.Component {
 
                     const onEnd = () => {
                         clearTimeout(timeout)
-                        if (!$observe.waitVisible) {
+                        if (!$observe.waitVisible || jsonDom.props.inEditor) { // jsonDom.props.inEditor check prevents flickering in cms editor
                             ElementWatch.hasLoaded[tagSrc] = true
                         }
-                        this.setState({madeVisible: true})
+                        madeVisibleDelay()
                     }
 
                     img.onerror = ()=>{
@@ -271,13 +277,10 @@ class ElementWatch extends React.Component {
 
             } else {
 
-                if (tagSrc && !$observe.waitVisible) {
+                if (tagSrc && (!$observe.waitVisible || jsonDom.props.inEditor)) {
                     ElementWatch.hasLoaded[tagSrc] = true
                 }
-                setTimeout(()=>{
-                    this.setState({madeVisible: true})
-                }, $observe.delay || 0)
-
+                madeVisibleDelay()
             }
         }
     }

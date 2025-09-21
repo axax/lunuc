@@ -182,7 +182,7 @@ const observeOptions = () => ({
         fullWidth: true,
         type: 'Boolean',
         value: false,
-        label: 'Sichtbarkeit überwachen (Rendering wenn in Viewport)',
+        label: _t('elements.observe.waitVisible'),
         tab: VISIBILITY_TAB,
         role: CAPABILITY_MANAGE_CMS_PAGES,
         uistate:{
@@ -210,6 +210,16 @@ const observeOptions = () => ({
     '$observe_threshold': {
         fullWidth: true,
         label: 'Threshold',
+        type: 'Float',
+        tab: VISIBILITY_TAB,
+        role: CAPABILITY_MANAGE_CMS_PAGES,
+        uistate:{
+            visible: '$observe_if==true'
+        }
+    },
+    '$observe_delay': {
+        fullWidth: true,
+        label: 'Delay (in ms)',
         type: 'Float',
         tab: VISIBILITY_TAB,
         role: CAPABILITY_MANAGE_CMS_PAGES,
