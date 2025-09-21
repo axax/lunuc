@@ -46,7 +46,7 @@ class ElementWatch extends React.Component {
     componentDidUpdate(prevProps, prevState, snapshot) {
 
         if (prevState.tagSrc !== this.state.tagSrc ||
-            (this.props.tagName === 'SmartImage' && !this.state.madeVisible && prevState.madeVisible) ||
+            (!this.state.madeVisible && prevState.madeVisible) ||
             (prevProps.$observe.flipMode && this.state.madeVisible && !this.state.inFlipMode)) {
             this.initObserver()
         }
@@ -233,19 +233,21 @@ class ElementWatch extends React.Component {
         const {tagSrc} = this.state
         const {$observe, eleProps, tagName, jsonDom} = this.props
 
+        const madeVisibleDelay = ()=>{
+            setTimeout(()=>{
+                this.setState({madeVisible: true})
+            }, $observe.delay || 0)
+        }
         if (this.state.initialVisible) {
             if($observe.visibleClass) {
-                setTimeout(()=>{
-                    ele.classList.add(...$observe.visibleClass.split(' '))
-                }, $observe.delay || 0)
+                madeVisibleDelay()
+                /*setTimeout(()=>{
+                    this.setState({madeVisible: true})
+                  //  ele.classList.add(...$observe.visibleClass.split(' '))
+                }, $observe.delay || 0)*/
             }
         } else {
             ele.setAttribute('data-loading', true)
-            const madeVisibleDelay = ()=>{
-                setTimeout(()=>{
-                    this.setState({madeVisible: true})
-                }, $observe.delay || 0)
-            }
             if (tagName === 'SmartImage') {
                 if (eleProps.inlineSvg) {
                     this.fetchSvg()
