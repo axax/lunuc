@@ -75,6 +75,11 @@ class ElementWatch extends React.Component {
 
         if (!initialVisible && !madeVisible && !observeBgImage && (!tagSrc || !ElementWatch.hasLoaded[tagSrc])) {
 
+            let allClassNames = eleProps.className || ''
+            if ($observe.initialClass && $observe.waitVisible) {
+                allClassNames += ' ' + $observe.initialClass
+            }
+
             if (tagName === 'SmartImage' && eleProps) {
 
                 let tmpSrc
@@ -117,6 +122,7 @@ class ElementWatch extends React.Component {
                             width:w,
                             height:h,
                             ...eleProps,
+                            className:allClassNames,
                             options: null,
                             src: tmpSrc,
                             alt: (tagImg.alt || eleProps.alt),
@@ -131,10 +137,10 @@ class ElementWatch extends React.Component {
 
             }
 
-            const propsToPass = {}
+            const propsToPass = {className:allClassNames}
             if($observe.passProps) {
                 Object.keys(eleProps).forEach(key => {
-                    if (key.startsWith('data') || key === 'className' || key=='style') {
+                    if (key.startsWith('data') || key=='style') {
                         propsToPass[key] = eleProps[key]
                     }
                 })

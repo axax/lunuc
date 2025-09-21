@@ -172,7 +172,8 @@ const observeOptions = () => ({
         fullWidth: true,
         type: 'Boolean',
         value: false,
-        label: 'Überwachung aktivieren',
+        defaultValue:true,
+        label: _t('elements.observe.enable'),
         tab: VISIBILITY_TAB,
         role: CAPABILITY_MANAGE_CMS_PAGES
     },
@@ -181,22 +182,6 @@ const observeOptions = () => ({
         type: 'Boolean',
         value: false,
         label: 'Sichtbarkeit überwachen (Rendering wenn in Viewport)',
-        tab: VISIBILITY_TAB,
-        role: CAPABILITY_MANAGE_CMS_PAGES
-    },
-    '$observe_backgroundImage': {
-        fullWidth: true,
-        type: 'Boolean',
-        value: false,
-        label: 'Nur Hintergrundbild (Bild erst laden wenn sichtbar)',
-        tab: VISIBILITY_TAB,
-        role: CAPABILITY_MANAGE_CMS_PAGES
-    },
-    '$observe_passProps': {
-        fullWidth: true,
-        type: 'Boolean',
-        value: false,
-        label: 'Attribute beibehalten',
         tab: VISIBILITY_TAB,
         role: CAPABILITY_MANAGE_CMS_PAGES
     },
@@ -216,6 +201,22 @@ const observeOptions = () => ({
         fullWidth: true,
         label: 'Threshold',
         type: 'Float',
+        tab: VISIBILITY_TAB,
+        role: CAPABILITY_MANAGE_CMS_PAGES
+    },
+    '$observe_backgroundImage': {
+        fullWidth: true,
+        type: 'Boolean',
+        value: false,
+        label: 'Nur Hintergrundbild (Bild erst laden wenn sichtbar)',
+        tab: VISIBILITY_TAB,
+        role: CAPABILITY_MANAGE_CMS_PAGES
+    },
+    '$observe_passProps': {
+        fullWidth: true,
+        type: 'Boolean',
+        value: false,
+        label: 'Attribute beibehalten',
         tab: VISIBILITY_TAB,
         role: CAPABILITY_MANAGE_CMS_PAGES
     },
