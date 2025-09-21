@@ -169,6 +169,7 @@ const invisibleOptions = key => ({
 
 const observeOptions = () => ({
     '$observe_if': {
+        divider:true,
         fullWidth: true,
         type: 'Boolean',
         value: false,
@@ -183,26 +184,38 @@ const observeOptions = () => ({
         value: false,
         label: 'Sichtbarkeit überwachen (Rendering wenn in Viewport)',
         tab: VISIBILITY_TAB,
-        role: CAPABILITY_MANAGE_CMS_PAGES
+        role: CAPABILITY_MANAGE_CMS_PAGES,
+        uistate:{
+            visible: '$observe_if==true'
+        }
     },
     '$observe_initialClass': {
         fullWidth: true,
         label: 'Initial Klasse',
         tab: VISIBILITY_TAB,
-        role: CAPABILITY_MANAGE_CMS_PAGES
+        role: CAPABILITY_MANAGE_CMS_PAGES,
+        uistate:{
+            visible: '$observe_if==true'
+        }
     },
     '$observe_visibleClass': {
         fullWidth: true,
         label: 'Sichtbar Klasse',
         tab: VISIBILITY_TAB,
-        role: CAPABILITY_MANAGE_CMS_PAGES
+        role: CAPABILITY_MANAGE_CMS_PAGES,
+        uistate:{
+            visible: '$observe_if==true'
+        }
     },
     '$observe_threshold': {
         fullWidth: true,
         label: 'Threshold',
         type: 'Float',
         tab: VISIBILITY_TAB,
-        role: CAPABILITY_MANAGE_CMS_PAGES
+        role: CAPABILITY_MANAGE_CMS_PAGES,
+        uistate:{
+            visible: '$observe_if==true'
+        }
     },
     '$observe_backgroundImage': {
         fullWidth: true,
@@ -210,7 +223,10 @@ const observeOptions = () => ({
         value: false,
         label: 'Nur Hintergrundbild (Bild erst laden wenn sichtbar)',
         tab: VISIBILITY_TAB,
-        role: CAPABILITY_MANAGE_CMS_PAGES
+        role: CAPABILITY_MANAGE_CMS_PAGES,
+        uistate:{
+            visible: '$observe_if==true'
+        }
     },
     '$observe_passProps': {
         fullWidth: true,
@@ -218,7 +234,10 @@ const observeOptions = () => ({
         value: false,
         label: 'Attribute beibehalten',
         tab: VISIBILITY_TAB,
-        role: CAPABILITY_MANAGE_CMS_PAGES
+        role: CAPABILITY_MANAGE_CMS_PAGES,
+        uistate:{
+            visible: '$observe_if==true'
+        }
     },
     '$observe_flipMode': {
         fullWidth: true,

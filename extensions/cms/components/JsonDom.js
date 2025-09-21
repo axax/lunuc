@@ -1233,7 +1233,6 @@ class JsonDom extends React.Component {
                     if ($c || $toHtml) {
                         eleProps.dangerouslySetInnerHTML = {__html: $c || c.replace(/(?:\r\n|\r|\n)/g, '<br>')}
                     }
-
                     if (_app_.JsonDom.elementWatch != false &&
                         (
                             (
@@ -1241,7 +1240,7 @@ class JsonDom extends React.Component {
                                 eleProps.src &&
                                 (!$observe || !isFalse($observe.if))
                             ) ||
-                            ($observe && !isFalse($observe.if))
+                            ($observe && !isFalse($observe.if) && ($observe.waitVisible || $observe.initialClass))
                         ) &&
                         !(eleProps.loading==='lazy' && hasNativeLazyLoadSupport) &&
                         (!!window.IntersectionObserver || eleProps.inlineSvg)) {

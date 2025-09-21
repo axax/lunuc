@@ -38,13 +38,15 @@ class ElementWatch extends React.Component {
             inFlipMode:false,
             hasError:false,
             key: jsonDom.instanceId + '_' + _key,
-            madeVisible: state && state.madeVisible && tagName !== 'SmartImage'? true : ElementWatch.hasLoaded[tagSrc],
+            madeVisible: state && state.madeVisible && (tagName !== 'SmartImage' || props.jsonDom.props.inEditor)? true : ElementWatch.hasLoaded[tagSrc],
             initialVisible: tagName === 'SmartImage' ? false : ($observe.initialClass && !$observe.waitVisible) || !$observe.waitVisible
         }
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
+
         if (prevState.tagSrc !== this.state.tagSrc ||
+            (this.props.tagName === 'SmartImage' && !this.state.madeVisible && prevState.madeVisible) ||
             (prevProps.$observe.flipMode && this.state.madeVisible && !this.state.inFlipMode)) {
             this.initObserver()
         }
@@ -76,7 +78,7 @@ class ElementWatch extends React.Component {
         if (!initialVisible && !madeVisible && !observeBgImage && (!tagSrc || !ElementWatch.hasLoaded[tagSrc])) {
 
             let allClassNames = eleProps.className || ''
-            if ($observe.initialClass && $observe.waitVisible) {
+            if ($observe.initialClass) {
                 allClassNames += ' ' + $observe.initialClass
             }
 
@@ -207,7 +209,7 @@ class ElementWatch extends React.Component {
             fetch(tagSrc).then((response) => response.blob()).then((blob) => {
                 const reader = new FileReader()
 
-                reader.addEventListener("load", () => {
+                reader.addEventListener('load', () => {
                     loadedSvgData.data = reader.result
                     ElementWatch.hasLoaded[tagSrc] = true
                     this.setState({madeVisible: true})
