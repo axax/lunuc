@@ -126,10 +126,9 @@ class ElementWatch extends React.Component {
                             options: null,
                             src: tmpSrc,
                             alt: (tagImg.alt || eleProps.alt),
-                            key: key + 'watch',
                             'data-has-error': hasError,
                             'data-element-watch-key': key,
-                            _key
+                            key
                         },
                         ($c ? null : jsonDom.parseRec(c, _key, scope))
                     )
@@ -137,11 +136,11 @@ class ElementWatch extends React.Component {
 
             }
 
-            const propsToPass = {className:allClassNames}
+            const propsToPass = {className:allClassNames, key}
             if($observe.passProps) {
-                Object.keys(eleProps).forEach(key => {
-                    if (key.startsWith('data') || key=='style') {
-                        propsToPass[key] = eleProps[key]
+                Object.keys(eleProps).forEach(propKey => {
+                    if (propKey.startsWith('data') || propKey=='style') {
+                        propsToPass[propKey] = eleProps[propKey]
                     }
                 })
             }
@@ -150,6 +149,7 @@ class ElementWatch extends React.Component {
                         style={{minHeight: eleProps.style && eleProps.style.minHeight ? eleProps.style.minHeight:'1rem', minWidth: '1rem'}} {...propsToPass}></div>
         } else {
             const newEleProps = Object.assign({},eleProps, {
+                key,
                 'data-has-error': hasError,
                 'data-made-visible': madeVisible,
                 'data-element-watch':true})
