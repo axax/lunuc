@@ -215,8 +215,11 @@ class JsonDom extends React.Component {
                                           _parentRef={_this}
                                           fetchPolicy='cache-first'
                                           dynamic={true} {...rest}/>
+
             if(style || className){
-                return <div style={style} className={className}>{cvc}</div>
+                return <div style={style}
+                            data-element-watch-key={rest['data-element-watch-key']||''}
+                            className={className}>{cvc}</div>
             }
 
             return cvc

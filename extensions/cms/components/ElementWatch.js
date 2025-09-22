@@ -309,6 +309,8 @@ class ElementWatch extends React.Component {
                 }, {rootMargin: $observe.rootMargin || '0px 0px 0px 0px', threshold: $observe.threshold || 0})
                 observer.observe(ele)
             }
+        }else{
+            console.warn(`element is missing for observer`, key, this.props)
         }
     }
 }
