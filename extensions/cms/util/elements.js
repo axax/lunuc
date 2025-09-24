@@ -1595,7 +1595,8 @@ const baseElements = [
             ...marginOptions('p_'),
             ...imageOptions('c_1_c_$for_c_c_1_$for_c_c_1_p_'),
             ...lazyImageOptions('c_1_c_$for_c_c_1_$for_c_c_1_$observe_'),
-            ...invisibleOptions('p_')
+            ...invisibleOptions('p_'),
+            ...observeOptions()
         }
     },
     {

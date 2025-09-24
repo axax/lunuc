@@ -931,7 +931,7 @@ class GenericForm extends React.Component {
                                 size="small"
                                 disabled={field.readOnly}
                                 onClick={() => {
-                                    const clone = Object.assign({}, subFieldValues[index])
+                                    const clone = JSON.parse(JSON.stringify(subFieldValues[index]))
                                     subFieldValues.push(clone)
                                     this.handleInputChange({
                                         target: {
