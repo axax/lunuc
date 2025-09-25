@@ -103,7 +103,7 @@ export default db => ({
             let cmsPages = await getCmsPage({db, context, slug, _version, checkHostrules: !dynamic, inEditor, headers, editmode})
             //console.log(`get cms ${slug} in ${(new Date()).getTime() - startTime}ms`)
             if (!cmsPages.results || cmsPages.results.length === 0) {
-                Hook.call('trackMail', {req, event: '404', slug, db, context, data: query, meta})
+                Hook.call('track404', {req, event: '404', slug, db, context, data: query, meta})
                 throw new Error('Cms page doesn\'t exist')
             }
 

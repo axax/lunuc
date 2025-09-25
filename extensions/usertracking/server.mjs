@@ -19,20 +19,12 @@ Hook.on('schema', ({schemas}) => {
     schemas.push(schema)
 })
 
-Hook.on('trackMail', ({req, event, slug, db, context, data, meta}) => {
+Hook.on('track404', ({req, event, slug, db, context, data, meta}) => {
     trackUser({req, event, context, db, slug, data, meta})
 })
 
 Hook.on('cmsCustomResolver', async ({db, segment, context, req, scope, editmode, dynamic}) => {
     if (segment.track && req && (segment.track.force || (!editmode && !dynamic))) {
-
-        let path
-        if(req.headers['referer']){
-            // is from graphql
-            const parsedUrl = url.parse(req.headers['referer'], true)
-            path = parsedUrl.pathname
-        }
-
         trackUser({
             req,
             event: segment.track.event,
@@ -40,8 +32,7 @@ Hook.on('cmsCustomResolver', async ({db, segment, context, req, scope, editmode,
             db,
             slug: scope.page.slug,
             data: scope.params,
-            meta: scope.page.meta,
-            path
+            meta: scope.page.meta
         })
     }
 })

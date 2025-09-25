@@ -13,6 +13,17 @@ import {isString} from '../../client/util/json.mjs'
 import {dynamicSettings} from '../../api/util/settings.mjs'
 
 
+function getPathFromHeader(req) {
+    if(req.headers[TRACK_URL_HEADER]){
+        return req.headers[TRACK_URL_HEADER]
+    }else if (req.headers['referer']) {
+        // is from graphql
+        const parsedUrl = url.parse(req.headers['referer'], true)
+        return parsedUrl.pathname
+    }
+    return req.url
+}
+
 const USER_TRACKING_SETTINGS = {}
 
 // Hook when db is ready
@@ -21,8 +32,7 @@ Hook.on('appready', async ({context, db}) => {
 })
 
 
-export const trackUser = async ({req, event, slug, db, context, data, meta, path}) => {
-
+export const trackUser = async ({req, event, slug, db, context, data, meta}) => {
     const ip = clientAddress(req)
     if (ip && (req.headers[TRACK_USER_AGENT_HEADER] || (ip !== '::1' && ip !== '127.0.0.1'))) {
         const host = getHostFromHeaders(req.headers)
@@ -50,7 +60,7 @@ export const trackUser = async ({req, event, slug, db, context, data, meta, path
             referer = ''//req.headers['referer']
         }
 
-        let finalRequestUrl = req.headers[TRACK_URL_HEADER] || path || req.url
+        let finalRequestUrl =  getPathFromHeader(req)
 
         const properties = Util.systemProperties()
         const date = new Date()
