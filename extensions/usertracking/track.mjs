@@ -10,11 +10,20 @@ import {
     TRACK_USER_AGENT_HEADER
 } from '../../api/constants/index.mjs'
 import {isString} from '../../client/util/json.mjs'
+import {dynamicSettings} from '../../api/util/settings.mjs'
+
+
+const USER_TRACKING_SETTINGS = {}
+
+// Hook when db is ready
+Hook.on('appready', async ({context, db}) => {
+    await dynamicSettings({db, context, settings: USER_TRACKING_SETTINGS, key:'UserTrackingSettings'})
+})
+
 
 export const trackUser = async ({req, event, slug, db, context, data, meta, path}) => {
 
     const ip = clientAddress(req)
-
     if (ip && (req.headers[TRACK_USER_AGENT_HEADER] || (ip !== '::1' && ip !== '127.0.0.1'))) {
         const host = getHostFromHeaders(req.headers)
 
@@ -53,7 +62,6 @@ export const trackUser = async ({req, event, slug, db, context, data, meta, path
             isBot: req.headers[TRACK_IS_BOT_HEADER] === 'true' ? true : DEFAULT_BOT_REGEX.test(agent),
             referer: req.headers[TRACK_REFERER_HEADER] || referer,
             data,
-            /*headers: req.headers,*/
             event,
             host: host,
             server: properties.hostname,
@@ -63,6 +71,10 @@ export const trackUser = async ({req, event, slug, db, context, data, meta, path
             month: date.getMonth() + 1,
             year: date.getFullYear(),
             createdBy: await Util.userOrAnonymousId(db, context)
+        }
+
+        if(USER_TRACKING_SETTINGS.includeRequestHeader){
+            insertData.headers = req.headers
         }
 
         Hook.call('tracking', {insertData, db, context})
