@@ -6,7 +6,6 @@ import {clientAddress, getHostFromHeaders} from '../../util/host.mjs'
 import {trackUser} from './track.mjs'
 import React from 'react'
 import Util from '../../api/util/index.mjs'
-import url from 'url'
 import {TRACK_USER_AGENT_HEADER} from '../../api/constants/index.mjs'
 
 // Hook to add mongodb resolver

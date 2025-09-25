@@ -1,6 +1,7 @@
 import {clientAddress, getHostFromHeaders} from '../../util/host.mjs'
 import Util from '../../api/util/index.mjs'
 import Hook from '../../util/hook.cjs'
+import url from 'url'
 import {pubsub} from '../../api/subscription.mjs'
 import {DEFAULT_BOT_REGEX} from '../../util/userAgent.mjs'
 import {
