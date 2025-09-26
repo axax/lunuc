@@ -1628,7 +1628,8 @@ const baseElements = [
             ...marginOptions('p_'),
             ...classTextOptions('p_'),
             ...classOptions('p_'),
-            ...condition()
+            ...condition(),
+            ...observeOptions()
         }
     },
     {

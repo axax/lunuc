@@ -107,7 +107,7 @@ function mainInit() {
     document.documentElement.setAttribute('lang', _app_.lang)
 
     // set canonical link
-    addCanonicalTag(loc.origin + (basePath === '/' ? '' : basePath))
+    addCanonicalTag(loc.origin + (_app_.lang && _app_.lang !== DEFAULT_LANGUAGE?'/'+_app_.lang:'') + (basePath === '/' ? '' : basePath))
 
     if (hasMultiLanguages) {
 
