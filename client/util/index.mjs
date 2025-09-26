@@ -529,6 +529,8 @@ const Util = {
             }
             if(lang !== config.DEFAULT_LANGUAGE) {
                 path = '/' + lang + path
+            }else if(!path){
+                path = '/'
             }
         }
         return path + loc.search + loc.hash
