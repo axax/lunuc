@@ -90,7 +90,7 @@ export const createUser = async ({username, role, junior, group, setting, passwo
 
     let roleId
     if(role){
-        if (await Util.userHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)) {
+        if (opts.skipCheck || await Util.userHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)) {
             roleId = new ObjectId(role)
         }else{
             const roleEntry = await Util.getUserRoles(db, role)
@@ -559,7 +559,6 @@ export const userResolver = (db) => ({
 
             const newUserData = {username, email, password, meta, domain}
             if (Hook.hooks['beforeSignUp'] && Hook.hooks['beforeSignUp'].length) {
-                let c = Hook.hooks['beforeSignUp'].length
                 for (let i = 0; i < Hook.hooks['beforeSignUp'].length; ++i) {
                     await Hook.hooks['beforeSignUp'][i].callback({
                         context,
