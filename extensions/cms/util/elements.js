@@ -317,6 +317,7 @@ const classLayoutColumnOptions = (count, options) => {
                 label: `Spalte ${i}: ${col.long}`,
                 value: options[col.short] ? ` col-${col.short}-${options[col.short]} ` : ' ',
                 tab: 'Responsive',
+                tabPosition: 0,
                 enum: enumA
             }
         }
@@ -429,11 +430,11 @@ const classTextOptions = key => ({
     }
 })
 
-const classLayoutOptions = key => ({
+const classLayoutOptions = (key,{tabPosition=0}) => ({
     [`${key}className@space`]: {
         label: 'Abstand zwischen Spalten',
         tab: DEFAULT_TAB,
-        tabPosition: 0,
+        tabPosition: tabPosition,
         enum: [
             {
                 value: ' row-space-2 ',
@@ -486,23 +487,23 @@ const classLayoutOptions = key => ({
 
 const marginOptions = key => ({
     [`${key}style_marginTop`]: {
-        label: 'Abstand oben',
+        label: _t('elements.marginTop'),
         tab: MARGIN_TAB
     },
     [`${key}style_marginBottom`]: {
-        label: 'Abstand unten',
+        label: _t('elements.marginBottom'),
         tab: MARGIN_TAB
     },
     [`${key}style_marginLeft`]: {
-        label: 'Abstand links',
+        label: _t('elements.marginLeft'),
         tab: MARGIN_TAB
     },
     [`${key}style_marginRight`]: {
-        label: 'Abstand recht',
+        label: _t('elements.marginRight'),
         tab: MARGIN_TAB
     },
     [`${key}style_padding`]: {
-        label: 'Innen abstand',
+        label: _t('elements.padding'),
         tab: MARGIN_TAB
     }
 })
@@ -997,6 +998,7 @@ const baseElements = [
         icon: 'format',
         defaults: {
             $inlineEditor: {
+                contentEditable: true,
                 elementKey: 'headline',
                 options: {
                     c: {
@@ -1606,6 +1608,7 @@ const baseElements = [
         defaults: {
             $c: 'Paragraph',
             $inlineEditor: {
+                contentEditable: true,
                 elementKey: 'p',
                 options: {
                     $c: {
@@ -1911,7 +1914,7 @@ const baseElements = [
         options: {
             ...marginOptions('p_'),
             ...classLayoutColumnOptions(2, {lg: 6, md: 6, sm: 6, xs: 12}),
-            ...classLayoutOptions('p_'),
+            ...classLayoutOptions('p_',{tabPosition: 1}),
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
             ...invisibleOptions('p_'),
@@ -1950,7 +1953,7 @@ const baseElements = [
         options: {
             ...marginOptions('p_'),
             ...classLayoutColumnOptions(3, {lg: 4, md: 4, sm: 4, xs: 12}),
-            ...classLayoutOptions('p_'),
+            ...classLayoutOptions('p_',{tabPosition: 1}),
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
             ...invisibleOptions('p_'),
@@ -1994,7 +1997,7 @@ const baseElements = [
         options: {
             ...marginOptions('p_'),
             ...classLayoutColumnOptions(4, {lg: 3, md: 3, sm: 3, xs: 6}),
-            ...classLayoutOptions('p_'),
+            ...classLayoutOptions('p_',{tabPosition: 1}),
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
             ...invisibleOptions('p_'),
@@ -2097,7 +2100,7 @@ const baseElements = [
         options: {
             ...marginOptions('p_'),
             ...classLayoutColumnOptions(6, {md: 2, sm: 3, xs: 6}),
-            ...classLayoutOptions('p_'),
+            ...classLayoutOptions('p_',{tabPosition: 1}),
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
             ...invisibleOptions('p_'),
@@ -2647,7 +2650,7 @@ const advancedElements = [
                 label: 'Tag'
             },
             $c: {
-                tab: DEFAULT_TAB,
+                tab: 'HTML',
                 label: 'Plain HTML',
                 fullWidth:true,
                 uitype:'editor'

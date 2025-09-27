@@ -508,7 +508,7 @@ export default () => {
             const typeSettings = this.getSettingsForType(type, this.pageParams.meta)
             if(typeSettings.showFileExplorer===true) {
                 content[3] = <Grid container alignItems="stretch" spacing={2}>
-                    <Grid style={{minHeight: '100%',display: 'flex'}} size={2}>
+                    <Grid style={{minHeight: '100%',display: 'flex'}} size={{ xs: 12, sm: 2 }}>
                         <Paper sx={{width: '100%'}}><CmsFileExplorer
                             defaultExpandedItems={allPaths}
                             showFile={true} _version={_version} onClick={(item, isExpanded) => {
@@ -523,7 +523,7 @@ export default () => {
                         }}/>
                         </Paper>
                     </Grid>
-                    <Grid style={{minHeight: '100%', display: 'flex'}} size={10}>
+                    <Grid style={{minHeight: '100%', display: 'flex'}} size={{ xs: 12, sm: 10 }}>
                         {content[3]}
                     </Grid>
                 </Grid>

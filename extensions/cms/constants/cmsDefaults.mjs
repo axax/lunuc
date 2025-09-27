@@ -80,11 +80,13 @@ on('beforerunscript',()=>{
 \t// this is called before the script is executed
 })`
 export const DEFAULT_STYLE = `//!#Environment
-\${this.set('breakpointMobile',scope.PageOptions && scope.PageOptions.breakpointMobile ? scope.PageOptions.breakpointMobile + 'px' : '25.813rem')}
-\${this.set('breakpointTablet',scope.PageOptions && scope.PageOptions.breakpointTablet ? scope.PageOptions.breakpointTablet + 'px' : '48rem')}
-\${this.set('breakpointDesktop',scope.PageOptions && scope.PageOptions.breakpointDesktop ? scope.PageOptions.breakpointDesktop + 'px' : '62rem')}
+\${this.set('breakpointMobile',scope?.PageOptions?.breakpointMobile ? scope.PageOptions.breakpointMobile + 'px' : '25.813rem')}
+\${this.set('breakpointTablet',scope?.PageOptions?.breakpointTablet ? scope.PageOptions.breakpointTablet + 'px' : '48rem')}
+\${this.set('breakpointDesktop',scope?.PageOptions?.breakpointDesktop ? scope.PageOptions.breakpointDesktop + 'px' : '62rem')}
 
 :root{
+    --color-grey: \${scope?.PageOptions?.grey || '#c1c1c1'};
+    
     --breakpoint-mobile:\${this.get('breakpointMobile')};
     --breakpoint-tablet:\${this.get('breakpointTablet')};
     --breakpoint-desktop:\${this.get('breakpointDesktop')};
@@ -159,13 +161,13 @@ html,body{
   /* large desktop */
   #page{
     .indented{
-      width:\${this.get('breakpointDesktop') + 12rem};
+      width:calc(var(--breakpoint-mobile) + 12rem);
     }    
     .indented-small{
-      width:calc(\${this.get('breakpointDesktop')});
+      width:var(--breakpoint-tablet);
     }
     .indented-large{
-      width:calc(\${this.get('breakpointDesktop')} + 24rem);
+      width:calc(var(--breakpoint-desktop) + 24rem);
     }
   }
 }
@@ -505,6 +507,105 @@ html,body{
       &.col-x{
         max-width: var(--width-lg);
         flex: 0 0 var(--width-lg);
+      }
+    }
+  }
+}
+//!#Slider
+[data-element-key='slider'] {
+  --slide-count:1;
+  overflow:hidden;
+  margin-bottom:2rem;
+  padding-bottom:calc(1.2vw + 2.6rem + 3px);
+  position:relative;
+  > input {
+    display: none;
+    \${Array(20).fill().map((item, i) => \`
+    &:nth-of-type(\${i+1}):checked {
+      ~ ul > li {
+        transform:translateX(calc(-\${i} * 100%));
+        &:nth-of-type(\${i+1}) {
+        z-index:1
+      }
+    }
+    ~ .arrownav {
+      > label:nth-of-type(\${i*2+1}) {
+        display:block;
+        left:calc(-2.2rem + -1.6vw);
+      }
+      > label:nth-of-type(\${i*2+2}) {
+        display:block;
+        transform: rotate(180deg);
+        right:calc(-2.2rem + -1.6vw);
+      }
+    }
+    }
+    \`).join('')}
+  }
+  > ul {
+    min-height: 2rem;
+    position:relative;
+    list-style:none;
+    margin:0;
+    padding:0;
+    > li {
+      width:calc(100% / var(--slide-count));
+      top:0;
+      position:absolute;
+      transition: transform 0.3s;
+      &:first-child{
+        position:relative;
+      }
+      > img,
+      > figure,
+      > a{
+        display:block;
+        position:relative;
+        width: 100%;
+        margin:0;
+        text-decoration:none;
+      }
+      > img,
+      > a,
+      > a > figure,
+      > figure{
+        margin:0;
+        > img{
+          display: block;
+          width: 100%;
+        }
+        > figcaption{
+        }
+      }
+    }
+  }
+  > nav{
+    display:none;
+  }
+  > .arrownav{
+    margin-top:1rem;
+    position:absolute;
+    z-index:2;
+    right: calc(2.4rem + 1.6vw + 1px);
+    > label{
+      display:none;
+      z-index:5;
+      position:absolute;
+      border-radius: 50%;
+      border: solid 1px --var(--color-grey);
+      height:calc(1vw + 2.2rem);
+      width:calc(1vw + 2.2rem);
+      cursor:pointer;
+      border:none;
+      background-color:transparent;
+      background-repeat: no-repeat;
+      background-position: center center;
+      background-size: calc(0.4vw + 1.8rem);
+      background-image: url("/icons/arrow-left.svg?color=ffffff");
+      transition: background 0.2s linear;
+      &:hover{
+        background-color:#000000;
+        background-image: url("/icons/arrow-left.svg?color=ffffff");
       }
     }
   }

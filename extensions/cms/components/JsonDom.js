@@ -676,6 +676,8 @@ class JsonDom extends React.Component {
                     })
                 } catch (error) {
                     parsedStyle = style
+
+                    this.emitJsonError(error, {loc: 'Style'})
                     Hook.call('JsonDomStyleError', {error, style, slug: this.props.slug, editMode: this.props.editMode})
                     console.log(error)
                 }

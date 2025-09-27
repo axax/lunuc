@@ -632,6 +632,7 @@ class JsonDomHelper extends React.Component {
                 {...rest}>{children}</_WrappedComponent>
         }
         const hasRichTextBar = !!_options.richText // && rest['data-element-key'] === 'richText'
+        const isContentEditable = hasRichTextBar || _options.contentEditable
         const isDraggable = !isInLoop && hasJsonToEdit && _options.allowDrag !== false
 
         if (isDraggable) {
@@ -713,7 +714,7 @@ class JsonDomHelper extends React.Component {
             if (isSelected || _options.highlight !== false) {
                 const highligherColor = _dynamic ? 'red' : isCms || _options.picker ? 'blue' : 'yellow'
                 let marginBottomStyle = subJson?.p?.style?.marginBottom?.trim()
-                if(hasRichTextBar){
+                if(isContentEditable){
                     helperEvents.contentEditable = true
                     helperEvents.onFocus = (e) => {
                         this.focusTime = Date.now()
@@ -802,8 +803,21 @@ class JsonDomHelper extends React.Component {
                                                  this.setState({dividerHovered:true})
                                              }}
                                              onMouseOut={(e)=>{
-                                                 this.setState({dividerHovered: false,dividerMousePos:false, marginBottomNew:false})
-                                                 this.onHelperMouseOut(e)
+                                                 const mouseReleased = ()=>{
+                                                     this.setState({
+                                                         dividerHovered: false,
+                                                         dividerMousePos: false,
+                                                         marginBottomNew: false
+                                                     })
+                                                     this.onHelperMouseOut(e)
+                                                     document.removeEventListener('mouseup',mouseReleased)
+                                                 }
+                                                 if(e.buttons===1) {
+                                                     // button still pressed
+                                                     document.addEventListener('mouseup',mouseReleased)
+                                                 }else {
+                                                     mouseReleased()
+                                                 }
                                              }}>{this.state.marginBottom!='0px'?(Math.round(parseFloat(this.state.marginBottomNew || this.state.marginBottom) * 100) / 100 + 'px')+(marginBottomStyle && this.state.marginBottom!=marginBottomStyle?` = ${marginBottomStyle}`:''):''}</StyledHorizontalDivider>
                 </StyledHighlighter>
             }
@@ -1618,7 +1632,7 @@ class JsonDomHelper extends React.Component {
                     uitype: 'button',
                     key,
                     group: newJsonElement.groupOptions[key],
-                    label: 'Hinzufügen',
+                    label: _t('core.add'),
                     action: 'add',
                     newLine: true,
                     tab: 'Slides',
@@ -1663,7 +1677,7 @@ class JsonDomHelper extends React.Component {
                                 delete optData.expandable
                                 newJsonElement.options['!' + key + '!delete!' + idx] = {
                                     uitype: 'button',
-                                    label: 'Löschen',
+                                    label: _t('core.delete'),
                                     action: 'delete',
                                     key,
                                     group: newJsonElement.groupOptions[key],
