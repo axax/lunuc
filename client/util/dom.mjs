@@ -99,7 +99,7 @@ const DomUtil = {
         if (code && typeof window !== 'undefined' && window.Babel) {
             const startTime = new Date().getTime()
             const getPreset = () => {
-                if(code.indexOf('.?')>=0){
+                if(code.indexOf('?.')>=0){
                     //optional chaining
                     return 'env'
                 }
