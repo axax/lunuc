@@ -96,8 +96,15 @@ const DomUtil = {
         return styleString
     },
     toES5: (code) => {
-        if (typeof window !== 'undefined' && window.Babel) {
+        if (code && typeof window !== 'undefined' && window.Babel) {
             const startTime = new Date().getTime()
+            const getPreset = () => {
+                if(code.indexOf('.?')>=0){
+                    //optional chaining
+                    return 'env'
+                }
+                return 'es2015'
+            }
             const result = Babel.transform(code, {
                 sourceMap: false,
                 highlightCode: false,
@@ -106,7 +113,7 @@ const DomUtil = {
                     allowReturnOutsideFunction: true
                 },
                 presets: [
-                    ['env', {modules: false, loose: true}]
+                    [getPreset(), {modules: false, loose: true}]
                 ]
             })
             console.log(`Js to es5 in ${new Date().getTime() - startTime}ms for ${code.substring(0, 60)}...`)
