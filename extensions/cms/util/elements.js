@@ -998,7 +998,7 @@ const baseElements = [
         icon: 'format',
         defaults: {
             $inlineEditor: {
-                contentEditable: true,
+                contentEditable: false,
                 elementKey: 'headline',
                 options: {
                     c: {
@@ -1542,6 +1542,11 @@ const baseElements = [
                                     },
                                     {
                                         $inlineEditor: false,
+                                        t: 'div.slide-count',
+                                        c: '$.slide{slide._index+1} | $.slide{this.scope.__sliderData.length}'
+                                    },
+                                    {
+                                        $inlineEditor: false,
                                         t: 'label',
                                         p: {
                                             htmlFor: '__uid__$.slide{slide._index+1>=this.scope.__sliderData.length?0:slide._index+1}'
@@ -1608,7 +1613,7 @@ const baseElements = [
         defaults: {
             $c: 'Paragraph',
             $inlineEditor: {
-                contentEditable: true,
+                contentEditable: false,
                 elementKey: 'p',
                 options: {
                     $c: {
@@ -1626,6 +1631,12 @@ const baseElements = [
                 replaceBreaks: true,
                 tab: DEFAULT_TAB,
                 tabPosition: 0
+            },
+            p_contentEditable: {
+                label: _t('elements.key.contentEditable'),
+                fullWidth: true,
+                type: 'Boolean',
+                tab: DEFAULT_TAB
             },
             ...alignmentOptions('p_'),
             ...marginOptions('p_'),

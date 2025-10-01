@@ -3,14 +3,12 @@ import Cache from '../../../../util/cache.mjs'
 
 
 function createFacetSliderMinMax(value, facetData) {
-    if (facetData.min === undefined || facetData.min > value) {
-        if (!isNaN(value)) {
-            facetData.min = value
+    if (!isNaN(value)) {
+        if (facetData.min === undefined || facetData.min > value) {
+            facetData.min = value;
         }
-    }
-    if (facetData.max === undefined || facetData.max < value) {
-        if (!isNaN(value)) {
-            facetData.max = value
+        if (facetData.max === undefined || facetData.max < value) {
+            facetData.max = value;
         }
     }
 }
@@ -26,45 +24,33 @@ function addFacetValue(currentFacet, facetValue) {
     }
 }
 
-const createFacets = (facets, data, beforeFilter, facetKey) => {
+const createFacets = (facets, data, beforeFilter) => {
     if (facets && data) {
-        facets.forEach(facet=>{
-            if(facetKey && facetKey !== facet.key){
-                return
-            }
-            let currentFacet = facet
+        for (let i = 0; i < facets.length; i++) {
+            const facet = facets[i]
+            const currentFacet = beforeFilter ? (facet.beforeFilter = facet.beforeFilter || {}) : facet
             const facetValue = data[facet.key]
-            if(beforeFilter){
-                if(!facet.beforeFilter) {
-                    facet.beforeFilter = {}
-                }
-                currentFacet = facet.beforeFilter
-            }
             if (facet.type === 'slider') {
-
-                if(facetValue && facetValue.constructor === Array){
-                    facetValue.forEach(value=>{
-                        createFacetSliderMinMax(value, currentFacet)
-                    })
-                }else{
+                if (Array.isArray(facetValue)) {
+                    for (let j = 0; j < facetValue.length; j++) {
+                        createFacetSliderMinMax(facetValue[j], currentFacet)
+                    }
+                } else {
                     createFacetSliderMinMax(facetValue, currentFacet)
                 }
-
             } else {
                 if (!currentFacet.values) {
                     currentFacet.values = {}
                 }
-
-
-                if(Array.isArray(facetValue)){
-                    facetValue.forEach(fv=>{
-                        addFacetValue(currentFacet, fv)
-                    })
-                }else{
+                if (Array.isArray(facetValue)) {
+                    for (let j = 0; j < facetValue.length; j++) {
+                        addFacetValue(currentFacet, facetValue[j])
+                    }
+                } else {
                     addFacetValue(currentFacet, facetValue || '')
                 }
             }
-        })
+        }
     }
 }
 
@@ -173,7 +159,8 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
         if (filter) {
 
             if (filter.or && loopFacet) {
-                createFacets(loopFacet, value[key], false, filter.facetKey)
+                const filteredFacets = filter.facetKey ? loopFacet.filter(facet => facet.key === filter.facetKey) : loopFacet
+                createFacets(filteredFacets, value[key], false)
             }
 
             if (re.assign) {
@@ -208,10 +195,15 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
     } else {
         if (value.constructor === Object) {
 
-            for (const key of Object.keys(value)) {
+            const keys = Object.keys(value)
+            debugInfo.messages.push(`loop through object data ${keys.length}`)
+
+            for (const key of keys) {
                 inLoop(key, true)
             }
         } else if (value.constructor === Array) {
+            debugInfo.messages.push(`loop through array data ${value.length} with filter ${JSON.stringify(activeFilters)}`)
+
             for (let i = value.length - 1; i >= 0; i--) {
                 inLoop(i)
             }
@@ -483,7 +475,7 @@ export const resolveReduce = (reducePipe, rootData, currentData, {debugLog, dept
 
 
 const checkFilter = (filters, value, key) => {
-    if(filters) {
+    if(filters && filters.length>0) {
         for (let i = 0; i < filters.length; i++) {
             const filter = filters[i]
 
