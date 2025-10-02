@@ -10,7 +10,7 @@ import {MergeView} from '@codemirror/merge'
 
 
 const CodeMirrorWrapper = (props) => {
-    const {mergeView, darkMode, onFirstVisibleLineChange, onEditorView, onContextMenu, style, onChange, onBlur, type, lineNumbers, identifier, value, mergeValue, readOnly} = props
+    const {controlled, mergeView, darkMode, onFirstVisibleLineChange, onEditorView, onContextMenu, style, onChange, onBlur, type, lineNumbers, identifier, value, mergeValue, readOnly} = props
     const editor = useRef()
 
     const defaultThemeOption = EditorView.theme({
@@ -78,7 +78,7 @@ const CodeMirrorWrapper = (props) => {
         return () => {
             view.destroy()
         }
-    }, [identifier])
+    }, [identifier, (controlled ? value : null)])
 
     if(mergeView){
         return <><div style={{display:'flex',width:'100%'}}>

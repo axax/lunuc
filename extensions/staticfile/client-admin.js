@@ -40,7 +40,15 @@ export default () => {
                                                         onDataUrl={(file,dataUrl) => {
 
                                                             const form = parentRef.createEditForm
-                                                            form.setState({fields: {...form.state.fields, content:dataUrl}})
+
+                                                            form.handleInputChange({
+                                                                target: {
+                                                                    name: 'content',
+                                                                    value: dataUrl
+                                                                }
+                                                            })
+
+                                                            //form.setState({fields: {...form.state.fields, content:dataUrl}})
                                                         }}/>]
         }
     })

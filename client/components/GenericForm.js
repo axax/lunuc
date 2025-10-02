@@ -1118,8 +1118,9 @@ class GenericForm extends React.Component {
                     <CodeEditor
                         style={{border: '1px solid #eeeeee',margin: '16px 0'}}
                         readOnly={field.readOnly}
-                        identifier={(this.props.id || '') + '-' + fieldKey + (field.forceUpdateOnDataChange?'-'+Date.now():'')}
+                        identifier={(this.props.id || '') + '-' + fieldKey}
                         key={fieldKey}
+                        controlled={field.controlled}
                         fileSplit={true}
                         forceJson={field.type === 'Object'}
                         onChange={(newValue) => this.handleInputChange({

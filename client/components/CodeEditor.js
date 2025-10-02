@@ -51,7 +51,7 @@ const StyledEditorResizer = styled('div')({
 
 
 function CodeEditor(props,ref){
-    const {hasContextMenu, mergeView, mergeValue, children, onScroll, onFullSize, onFileChange, showFab, fabButtonStyle, actions, onChange, onError, onBlur, lineNumbers, type, style, className, error, templates, propertyTemplates, fileSplit, identifier, readOnly} = props
+    const {controlled, hasContextMenu, mergeView, mergeValue, children, onScroll, onFullSize, onFileChange, showFab, fabButtonStyle, actions, onChange, onError, onBlur, lineNumbers, type, style, className, error, templates, propertyTemplates, fileSplit, identifier, readOnly} = props
 
     if(!identifier){
         console.warn('CodeEditor identifier is missing')
@@ -114,8 +114,7 @@ function CodeEditor(props,ref){
             document.removeEventListener('mousemove', mouseMove)
             document.removeEventListener('mouseup', mouseUp)
         }
-    }, [identifier])
-
+    }, [identifier,(controlled ? children : null)])
 
 
     let finalValue = isDataJson && stateValue.constructor !== String ? JSON.stringify(stateValue, null, 2) : stateValue
@@ -191,7 +190,7 @@ function CodeEditor(props,ref){
                                         ]})
                                 }}
                                 active={i === finalFileIndex}>{file.filename}</StyledFile>)})}</div>}
-        <CodeMirrorWrapper mergeView={mergeView} mergeValue={mergeValue}
+        <CodeMirrorWrapper mergeView={mergeView} mergeValue={mergeValue} controlled={controlled}
             identifier={`${stateIdentifier}${showFileSplit?'-'+finalFileIndex:''}`}
             onChange={(codeAsString)=>{
                 let fullCodeAsString = putFilesTogether(files, finalFileIndex, codeAsString)
@@ -320,5 +319,5 @@ function CodeEditor(props,ref){
 }
 
 export default memo(forwardRef(CodeEditor), (prev, next)=>{
-    return prev.identifier === next.identifier && prev.height === next.height
+    return prev.identifier === next.identifier && prev.height === next.height && (!next.controlled || prev.children === next.children)
 })
