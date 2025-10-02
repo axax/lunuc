@@ -46,6 +46,7 @@
         {
           "name": "content",
           "uitype": "editor",
+          "forceUpdateOnDataChange": true,
           "highlight": "${mimeType.indexOf('application/javascript')>=0?'js':''}",
           "alwaysLoad": false,
           "vagueSearchable": false,

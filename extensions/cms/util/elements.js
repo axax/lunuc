@@ -1136,7 +1136,8 @@ const baseElements = [
             },
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
-            ...marginOptions('p_')
+            ...marginOptions('p_'),
+            ...invisibleOptions('p_')
         }
     },
     {

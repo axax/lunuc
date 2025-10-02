@@ -104,6 +104,7 @@ export const translations = {
         'elements.key.layout-1-6': 'Layout 1/6',
         'elements.key.redirect': 'Weiterleitung',
         'elements.key.formElement': 'Formular Element',
+        'elements.key.contentEditable': 'Inhalt direkt bearbeitbar',
         'elements.image.removebg': 'Hintergund entfernen (Toleranz)',
         'elements.observe.enable': 'Überwachung aktivieren',
         'elements.observe.waitVisible':'Element erst renderen wenn es in den viewport kommt',
@@ -146,7 +147,9 @@ export const translations = {
         'TypesContainers.showFileExplorer':'Datei-Explorer einblenden',
         'TypesContainers.hideFileExplorer':'Datei-Explorer ausblenden',
         'TypesContainers.listView':'Listenansicht anzeigen',
-        'TypesContainers.imageView': 'Bildansicht anzeigen'
+        'TypesContainers.imageView': 'Bildansicht anzeigen',
+        'CmsPage.blankPage': 'Leere Seite',
+        'CmsPage.defaultLayout': 'Standard Layout Seite'
     },
     en: {
         'CmsViewEditorContainer.save': 'Save',
@@ -251,6 +254,7 @@ export const translations = {
         'elements.key.layout-1-6': 'Layout 1/6',
         'elements.key.redirect': 'Redirect',
         'elements.key.formElement': 'Form element',
+        'elements.key.contentEditable': 'Content directly editable',
         'elements.image.removebg': 'Remove background (tolerance)',
         'elements.observe.enable': 'Enable monitoring',
         'elements.observe.waitVisible':'Only render the element when it enters the viewport.',
@@ -293,6 +297,8 @@ export const translations = {
         'TypesContainers.showFileExplorer':'Show File Explorer',
         'TypesContainers.hideFileExplorer':'Hide File Explorer',
         'TypesContainers.listView':'Show list view',
-        'TypesContainers.imageView': 'Show image view'
+        'TypesContainers.imageView': 'Show image view',
+        'CmsPage.blankPage': 'Blank site',
+        'CmsPage.defaultLayout': 'Default layout page'
     }
 }
