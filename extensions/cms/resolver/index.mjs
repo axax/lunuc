@@ -443,22 +443,32 @@ export default db => ({
         }
     },
     Mutation: {
-        createCmsPage: async ({slug,ownerGroup,template,style,script,resources, ...rest}, req) => {
+        createCmsPage: async ({slug,ownerGroup,template,style,script,resources,meta, ...rest}, req) => {
             await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_MANAGE_CMS_CONTENT)
 
             if (!slug) slug = ''
             slug = encodeURI(slug.trim())
 
-            return await GenericResolver.createEntity(db, req, 'CmsPage', {
+            const data = {
                 slug,
                 ...rest,
                 ownerGroup:(ownerGroup?ownerGroup.reduce((o,id)=>{o.push(new ObjectId(id));return o},[]):ownerGroup),
                 dataResolver: DEFAULT_DATA_RESOLVER,
-                template: template || DEFAULT_TEMPLATE,
-                script: script || DEFAULT_SCRIPT,
-                style: style || DEFAULT_STYLE,
                 resources: resources
-            })
+            }
+
+            const metaJson = parseOrElse(meta,{})
+            if(metaJson.selectedTemplate === 'defaultLayout'){
+                data.template = DEFAULT_TEMPLATE
+                data.script = DEFAULT_SCRIPT
+                data.style = DEFAULT_STYLE
+            }else{
+                data.template = template
+                data.script = script
+                data.style = style
+            }
+
+            return await GenericResolver.createEntity(db, req, 'CmsPage', data)
         },
         updateCmsPage: async ({_id, _meta, slug, realSlug, query, props, createdBy, ownerGroup, ...rest}, req, options) => {
             const {context, headers} = req

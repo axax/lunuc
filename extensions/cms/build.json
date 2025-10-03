@@ -252,7 +252,8 @@
         {
           "name": "meta",
           "type": "Object",
-          "hidden": true
+          "hidden": true,
+          "includeInQuery": true
         },
         {
           "name": "ownerGroup",

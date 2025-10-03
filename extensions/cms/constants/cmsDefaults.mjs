@@ -128,6 +128,9 @@ html,body{
   .strong{
     font-weight: bold;
   }
+  .relative{
+    position: relative;
+  }
   .indented,
   .indented-small,
   .indented-large{

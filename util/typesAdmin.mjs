@@ -91,25 +91,26 @@ const getCreatedByField = (options= {})=>{
  *
  * @returns {Object} an object
  */
-export const getFormFieldsByType = (type) => {
-    if (typeFormFields[type]) return typeFormFields[type]
+export const getFormFieldsByType = (type, includeHidden) => {
+    const key = `${type}${includeHidden?'_hidden':''}`
+    if (typeFormFields[key]) return typeFormFields[key]
 
     const types = getTypes()
     if (!types[type]) {
         return null
         //throw new Error('Cannot find type "'+type+'" in getFormFieldsByType')
     }
-    typeFormFields[type] = {}
+    typeFormFields[key] = {}
     if (!types[type].noUserRelation /*&& Util.hasCapability({userData: _app_.user}, 'manage_other_users')*/) {
         // add field so the createdBy User can be changed
-        typeFormFields[type].createdBy = getCreatedByField()
+        typeFormFields[key].createdBy = getCreatedByField()
     }
     types[type].fields.map(field => {
-        if (field.name !== 'modifiedAt') {
-            typeFormFields[type][field.name] = enhanceField(field, type)
+        if (field.name !== 'modifiedAt' && (includeHidden || !field.hidden)) {
+            typeFormFields[key][field.name] = enhanceField(field, type)
         }
     })
-    return typeFormFields[type]
+    return typeFormFields[key]
 }
 
 const enhanceField = (field, type) => {
@@ -210,7 +211,7 @@ export const addAlwaysUpdateData = (data, changedData, type) => {
  * @returns {Object} an new object with only ids for references
  */
 export const referencesToIds = (data, type) => {
-    const formFields = getFormFieldsByType(type)
+    const formFields = getFormFieldsByType(type, true)
     const newData = {}
 
     Object.keys(data).map(key => {
@@ -245,6 +246,8 @@ export const referencesToIds = (data, type) => {
                 }
             } else if (item && item.constructor === Object && fieldDefinition.reference) {
                 newData[key] = item._id
+            } else if (item && item.constructor === Object && fieldDefinition.type==='Object') {
+                newData[key] = JSON.stringify(item)
             } else {
                 newData[key] = item
             }

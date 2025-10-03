@@ -304,7 +304,7 @@ const classLayoutColumnOptions = (count, options) => {
 
             const enumA = []
 
-            for (let k = 1; k < 13; k++) {
+            for (let k = 1; k <= 12; k++) {
                 enumA.push({
                     value: ` col-${col.short}-${k} `,
                     name: k
@@ -1684,6 +1684,7 @@ const baseElements = [
             ...marginOptions('p_'),
             ...classOptions('p_'),
             ...condition(),
+            ...observeOptions()
         },
         defaults: {
             $inlineEditor: {

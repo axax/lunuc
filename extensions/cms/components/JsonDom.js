@@ -299,9 +299,10 @@ class JsonDom extends React.Component {
             (props.children !== this.props.children) ||
             this.props.loading !== props.loading
 
+
         if (updateIsNeeded) {
 
-        /*       console.log(`
+        /*       console.log(`xxxxx
            for ${props.slug} ${props.urlSensitiv}
                resolvedDataChanged=${resolvedDataChanged}
                searchChanged=${searchChanged}
@@ -421,7 +422,7 @@ class JsonDom extends React.Component {
 
     // is called after render
     componentDidUpdate(prevProps, prevState) {
-        if (this.props.style !== prevProps.style) {
+        if (this.props.slug !== prevProps.slug || this.props.style !== prevProps.style) {
             this.addStyle(this.props)
         }
 
@@ -1359,22 +1360,26 @@ class JsonDom extends React.Component {
     getJsonRaw(props, ignoreError) {
         if (this.jsonRaw) return this.jsonRaw
         const {template} = props
+        if(!template){
+            this.jsonRaw = {}
+        }else {
 
-        if (template.trim().startsWith('<')) {
-            console.warn("Not supported for html content")
-            return null
-        }
-        try {
-            /*
-             jsonRaw is the unmodified json for editing
-             */
-            this.jsonRaw = JSON.parse(template)
-        } catch (e) {
-            console.log(e, template)
-            if (!ignoreError) {
-                this.error = {type: 'template parse raw', e, code: template}
-            }else{
-                this.jsonRaw = {}
+            if (template.trim().startsWith('<')) {
+                console.warn("Not supported for html content")
+                return null
+            }
+            try {
+                /*
+                 jsonRaw is the unmodified json for editing
+                 */
+                this.jsonRaw = JSON.parse(template)
+            } catch (e) {
+                console.log(e, template)
+                if (!ignoreError) {
+                    this.error = {type: 'template parse raw', e, code: template}
+                } else {
+                    this.jsonRaw = {}
+                }
             }
         }
         return this.jsonRaw

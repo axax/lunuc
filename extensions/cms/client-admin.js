@@ -346,7 +346,7 @@ export default () => {
         if (type === 'CmsPage') {
             const dialogKey = meta.TypeContainer.state?.createEditDialogOption?.key
 
-            if(dataToEdit?.slug){
+            if(dataToEdit?.slug && !Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_OTHER_USERS)){
                 dataToEdit.slug = Util.removeSlugContext('/'+dataToEdit.slug).substring(1)
             }
 
@@ -385,6 +385,15 @@ export default () => {
                 delete newFields.dataResolver
                 delete newFields.style
 
+
+                newFields.selectedTemplate = {
+                    enum:[
+                        {name:_t('CmsPage.blankPage'),value:'blank'},
+                        {name:_t('CmsPage.defaultLayout'),value:'defaultLayout'}
+                    ],
+                    defaultValue:'blank',
+                    required:false,label:'Template',name:'selectedTemplate',tab:'elements.generalTab'}
+
                 // override default
                 props.children = [dataToEdit && <Typography key="CmsPageLabel" variant="subtitle1" gutterBottom>
                     <Link
@@ -412,9 +421,12 @@ export default () => {
     Hook.on('TypeCreateEditBeforeSave', function ({type,editedData}) {
         if (type === 'CmsPage') {
             const userCanManageOtherUser = Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_OTHER_USERS)
-
             if (!userCanManageOtherUser && editedData.slug && _app_.slugContext) {
                 editedData.slug = Util.removeTrailingSlash(_app_.slugContext+'/' + editedData.slug)
+            }
+            if(editedData.selectedTemplate){
+                editedData.meta = {selectedTemplate:editedData.selectedTemplate}
+                delete editedData.selectedTemplate
             }
         }
     })

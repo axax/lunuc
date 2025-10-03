@@ -8,6 +8,7 @@ import {client} from '../../../client/middleware/graphql'
 import GenericForm from '../../../client/components/GenericForm'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants/index.mjs'
 import {_t} from '../../../util/i18n.mjs'
+import {CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities.mjs'
 
 export function CmsAddNewSite(props) {
     const {addNewSite, cmsPage, onClose} = props
@@ -17,7 +18,8 @@ export function CmsAddNewSite(props) {
     }
 
     const canMangeCmsTemplate = Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE)
-    if (addNewSite.slug) {
+    const canManageOtherUsers = Util.hasCapability(_app_.user, CAPABILITY_MANAGE_OTHER_USERS)
+    if (addNewSite.slug && !canManageOtherUsers) {
         addNewSite.slug = Util.removeSlugContext('/' + addNewSite.slug).substring(1)
     }
 
@@ -97,7 +99,7 @@ export function CmsAddNewSite(props) {
                              } else {
                                  values.slug = formField.value[0].slug
                              }
-                             if (values.slug) {
+                             if (values.slug && !canManageOtherUsers) {
                                  values.slug = Util.removeSlugContext('/' + values.slug).substring(1)
                              }
                              if (fields.name) {

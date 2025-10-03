@@ -214,7 +214,7 @@ class TypeEdit extends React.Component {
     saveDataIfNeeded(action, editedData) {
         const {dataToEdit} = this.state
         const {type, updateData, createData} = this.props
-        const formFields = getFormFieldsByType(type)
+        const formFields = getFormFieldsByType(type, true)
 
         // convert array to single value for not multivalue references
         Object.keys(formFields).forEach(key => {
