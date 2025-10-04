@@ -744,11 +744,11 @@ class JsonDom extends React.Component {
         if(removeMarked && isLoading){
             return
         }
-        console.log(`remove dom elements for ${this.props.slug} ${this.instanceId}`, removeMarked, isLoading)
         //DomUtil.removeElements(`[data-json-dom-id="${this.instanceId}"]`)
 
         // remove instanceId from data attribute
         const els = document.querySelectorAll(`[data-json-dom-id${removeMarked?'-delete':'~'}="${this.instanceId}"]`)
+        console.log(`remove ${els.length} dom elements for ${this.props.slug} ${this.instanceId}`, removeMarked, isLoading)
         els.forEach(el=>{
             if(isLoading){
                 // mark only for deletion
@@ -1188,7 +1188,9 @@ class JsonDom extends React.Component {
 
                     let eleType = JsonDom.components[tagName] || this.extendedComponents[tagName] || tagName
 
-                    eleProps.key = this.props.slug+key
+                    //eleProps.key = this.props.slug+key
+                    eleProps.key = key
+
                     if (t === 'Cms') {
                         // if we have a cms component in another cms component the location props gets not refreshed
                         // that's way we pass it directly to the reactElement as a prop

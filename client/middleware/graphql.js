@@ -699,7 +699,7 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = CACHE
 
         return () => {
             if (controller) {
-                console.log('Abort request in useQuery')
+                console.log('Abort request in useQuery',variables.slug)
                 controller.abort()
             }
         }

@@ -168,7 +168,7 @@ class TypeEdit extends React.Component {
     }
 
     needsAskForSaving = () => {
-        if(this.createEditForm && Object.keys(this.createEditForm.state.fieldsDirty).length>0){
+        if(this.props.open && this.createEditForm && Object.keys(this.createEditForm.state.fieldsDirty).length>0){
             const {dataToEdit} = this.state
             this.setState({askForSaving:true, forceSave:true, dataToEdit: Object.assign({}, dataToEdit, this.createEditForm.state.fields)})
             return true
