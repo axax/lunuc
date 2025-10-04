@@ -48,6 +48,7 @@ class CmsViewContainer extends React.Component {
             (
                 ['full','client',true].indexOf(cmsPage.urlSensitiv)>=0 && props.location && (
                     props.location.search !== this.props.location.search ||
+                    props.location.pathname !== this.props.location.pathname ||
                     props.location.hash !== this.props.location.hash)
             ) ||
             props.user !== this.props.user ||

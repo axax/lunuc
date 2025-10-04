@@ -277,8 +277,11 @@ class JsonDom extends React.Component {
 
     shouldComponentUpdate(props, state) {
         const resolvedDataChanged = this.props.resolvedData !== props.resolvedData
-        const searchChanged = this.props.location && (this.props.location.search !== props.location.search ||
-            this.props.location.hash !== props.location.hash)
+        const searchChanged = this.props.location && (
+            this.props.location.search !== props.location.search ||
+            this.props.location.hash !== props.location.hash ||
+            this.props.location.pathname !== props.location.pathname
+        )
 
         const scriptChanged = (this.props.script !== props.script)
         const resourcesChanged = (this.props.resources !== props.resources)
@@ -286,7 +289,8 @@ class JsonDom extends React.Component {
 
         const propsChanged = this.props.inlineEditor !== props.inlineEditor || Util.shallowCompare(props._props, this.props._props, {compareArray:true}),
             slugChanged = this.props.slug !== props.slug,
-            userChanged = this.props.user !== props.user
+            userChanged = this.props.user !== props.user,
+            childrenChanged = this.props.children !== props.children
 
         const updateIsNeeded = resolvedDataChanged ||
             searchChanged ||
@@ -296,13 +300,13 @@ class JsonDom extends React.Component {
             propsChanged ||
             slugChanged ||
             userChanged ||
-            (props.children !== this.props.children) ||
+            childrenChanged ||
             this.props.loading !== props.loading
 
         if (updateIsNeeded) {
 
-            //console.log('xxxxxx',this.props.slug)
-        /*       console.log(`xxxxx
+            //console.log('xxxxxx', this.props.children, props.children)
+            /*   console.log(`xxxxx
            for ${props.slug} ${props.urlSensitiv}
                resolvedDataChanged=${resolvedDataChanged}
                searchChanged=${searchChanged}
@@ -311,9 +315,10 @@ class JsonDom extends React.Component {
                templateChanged=${templateChanged}
                propsChanged=${propsChanged}
                slugChanged=${slugChanged}
-               childrenChange=${props.children !== this.props.children}
+               childrenChange=${childrenChanged}
                userChanged=${this.props.user !== props.user }
                loadingChanged=${ this.props.loading !== props.loading}
+               location.pathname=${props.location.pathname}
            `)*/
             // reset parsing error
             this.error = null
@@ -337,7 +342,7 @@ class JsonDom extends React.Component {
             if(!props.loading) {
                 this.removeAddedDomElements(false,true)
             }
-            if (slugChanged || searchChanged || templateChanged || propsChanged || scriptChanged) {
+            if (slugChanged || searchChanged || templateChanged || propsChanged || scriptChanged || childrenChanged) {
                 this.json = this.jsonRaw = null
                 this.updateScope = {renewProps: propsChanged || slugChanged}
             } else if (userChanged) {
@@ -1188,8 +1193,8 @@ class JsonDom extends React.Component {
 
                     let eleType = JsonDom.components[tagName] || this.extendedComponents[tagName] || tagName
 
-                    eleProps.key = this.props.slug+key
-                    //eleProps.key = key
+                    //eleProps.key = this.props.slug+key
+                    eleProps.key = key
 
                     if (t === 'Cms') {
                         // if we have a cms component in another cms component the location props gets not refreshed
