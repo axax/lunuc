@@ -299,9 +299,9 @@ class JsonDom extends React.Component {
             (props.children !== this.props.children) ||
             this.props.loading !== props.loading
 
-
         if (updateIsNeeded) {
 
+            //console.log('xxxxxx',this.props.slug)
         /*       console.log(`xxxxx
            for ${props.slug} ${props.urlSensitiv}
                resolvedDataChanged=${resolvedDataChanged}
@@ -1188,8 +1188,8 @@ class JsonDom extends React.Component {
 
                     let eleType = JsonDom.components[tagName] || this.extendedComponents[tagName] || tagName
 
-                    //eleProps.key = this.props.slug+key
-                    eleProps.key = key
+                    eleProps.key = this.props.slug+key
+                    //eleProps.key = key
 
                     if (t === 'Cms') {
                         // if we have a cms component in another cms component the location props gets not refreshed
