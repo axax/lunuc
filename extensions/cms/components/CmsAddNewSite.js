@@ -41,9 +41,11 @@ export function CmsAddNewSite(props) {
                                          if (slug.startsWith('/')) {
                                              slug = slug.substring(1)
                                          }
-                                         if (_app_.slugContext) {
-                                             slug = Util.removeTrailingSlash(_app_.slugContext + '/' + slug)
+                                         if (_app_.slugContext && !canManageOtherUsers) {
+                                             slug = _app_.slugContext + '/' + slug
                                          }
+                                         slug = Util.removeTrailingSlash(slug)
+
                                          const name = Object.assign({}, values.name)
                                          delete name.__typename
                                          delete name._localized
