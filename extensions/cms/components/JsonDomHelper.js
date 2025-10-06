@@ -492,7 +492,7 @@ class JsonDomHelper extends React.Component {
             data-drop-area
             data-tag-name={rest._tagName}
             data-fill={fill || ''}
-            key={`${rest._key}.dropArea.${index}`}><span>Hier plazieren <small>{label?'('+label+')':''}</small></span></StyledDropArea>
+            key={`${rest._key}.dropArea.${index}${fill?'-fill':''}`}><span>Hier plazieren <small>{label?'('+label+')':''}</small></span></StyledDropArea>
     }
 
     openPicker(options) {
@@ -1536,7 +1536,8 @@ class JsonDomHelper extends React.Component {
         let kids
         if (!helperEvents.contentEditable && (!children || children.constructor !== String) && hasJsonToEdit && !isInLoop && _options.allowDrop && _options.dropArea !== false) {
             kids = []
-            if (children && children.length) {
+
+            if (children && children.length>0) {
 
                 let index = -1
                 for (let i = 0; i < children.length; i++) {
