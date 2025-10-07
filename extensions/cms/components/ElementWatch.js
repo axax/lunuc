@@ -13,15 +13,15 @@ class ElementWatch extends React.Component {
 
 
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (prevState.oriSrc !== nextProps.eleProps.src) {
+        if (prevState.oriSrc !== nextProps.eleProps.src ||
+        prevState.href !== nextProps?.jsonDom?.location?.href) {
             return ElementWatch.propsToState(nextProps, prevState)
         }
         return null
     }
 
-    static propsToState(props, state) {
-        const {tagName, eleProps, $observe, jsonDom, _key} = props
-
+    static propsToState(props, state = {}) {
+        const {tagName, eleProps, $observe, _key} = props
 
         let tagSrc, tagImg
         if (tagName === 'SmartImage') {
@@ -30,15 +30,27 @@ class ElementWatch extends React.Component {
         } else {
             tagSrc = eleProps.id || _key
         }
+
+        const href = props?.jsonDom?.props?.location?.href
+        const hasMadeVisibleClass = $observe.initialClass && $observe.visibleClass && href !== state.href
+
+        if(hasMadeVisibleClass){
+            ElementWatch.hasLoaded[tagSrc] = false
+        }
+
+        const isAlreadyMadeVisible = state.madeVisible && tagName !== 'SmartImage'? true : ElementWatch.hasLoaded[tagSrc]
+
+
         return {
+            href,
             oriSrc: eleProps.src,
             tagSrc,
             tagImg,
             inViewport:false,
             inFlipMode:false,
             hasError:false,
-            key: jsonDom.instanceId + '_' + _key,
-            madeVisible: state && state.madeVisible && tagName !== 'SmartImage'? true : ElementWatch.hasLoaded[tagSrc],
+            key: _key,
+            madeVisible: isAlreadyMadeVisible && !hasMadeVisibleClass,
             initialVisible: tagName === 'SmartImage' ? false : !$observe.waitVisible
         }
     }
