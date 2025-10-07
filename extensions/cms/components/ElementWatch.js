@@ -14,7 +14,7 @@ class ElementWatch extends React.Component {
 
     static getDerivedStateFromProps(nextProps, prevState) {
         if (prevState.oriSrc !== nextProps.eleProps.src ||
-        prevState.href !== nextProps?.jsonDom?.location?.href) {
+            (prevState.href !== nextProps?.jsonDom?.props?.location?.href)) {
             return ElementWatch.propsToState(nextProps, prevState)
         }
         return null
