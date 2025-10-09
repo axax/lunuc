@@ -100,7 +100,7 @@ export const getTypeQueries = (typeName, queryFields, opts) => {
     if (fields) {
         fields.map(({clone, name, type, required, multi, reference, localized, readOnly, hidden, alwaysLoad, ...rest}) => {
 
-            if (hidden && !rest.includeInQuery) return
+            if (hidden && !rest.includeInQuery || rest.uitype === 'htmlParser') return
             const excludeSelect = alwaysLoad === false && opts && opts.loadAll === false
 
             if (insertParams !== '' && !readOnly) {

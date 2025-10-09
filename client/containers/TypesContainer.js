@@ -1220,7 +1220,7 @@ class TypesContainer extends React.Component {
         })
 
         typeDefinition.fields.forEach(field => {
-            if (!field.hidden && field.name !== 'createdBy') {
+            if (!field.hidden && field.name !== 'createdBy' && field.uitype !== 'htmlParser') {
                 typeColumns.push({
                     title: getFieldTitle(type, field),
                     id: field.name,

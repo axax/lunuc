@@ -138,7 +138,7 @@ export default function JsonDomAddElementDialog(props){
                        ),
                    }}/>}
 
-        {aiAssistent.answer && <CodeEditor controlled lineNumbers type="html" height="auto" identifier={`aiAnswer${aiAssistent.answer.length}`}>
+        {aiAssistent.answer && <CodeEditor lineNumbers type="html" height="auto" identifier={`aiAnswer${aiAssistent.answer.length}`}>
             {aiAssistent.answer}
         </CodeEditor>}
 

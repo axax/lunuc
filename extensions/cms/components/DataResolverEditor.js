@@ -297,7 +297,7 @@ class DataResolverEditor extends React.Component {
                                icon: <CleaningServicesIcon/>,
                                onClick: this.props.onCleanUpTranslations
                            }
-                       ]} lineNumbers controlled type="json" {...this.props}/>
+                       ]} lineNumbers type="json" {...this.props}/>
         </>
     }
 }

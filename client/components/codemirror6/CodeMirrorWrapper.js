@@ -12,18 +12,30 @@ import {MergeView} from '@codemirror/merge'
 const CodeMirrorWrapper = (props) => {
     const {controlled, mergeView, darkMode, onFirstVisibleLineChange, onEditorView, onContextMenu, style, onChange, onBlur, type, lineNumbers, identifier, value, mergeValue, readOnly} = props
     const editor = useRef()
+    const editorViewRef = useRef()
 
     const defaultThemeOption = EditorView.theme({
 
         '&': {
             height: '30rem',
-            backgroundColor:'#ffffff',
+            backgroundColor: '#ffffff',
             ...style
         },
         '& .cm-scroller': {
             height: '100% !important',
         },
     })
+
+    if (controlled){
+        React.useEffect(() => {
+            if(editorViewRef.current) {
+                console.log(value)
+                editorViewRef.current.dispatch({
+                    changes: {from: 0, to: editorViewRef.current.state.doc.length, insert: value}
+                })
+            }
+        }, [value])
+    }
 
     useEffect(() => {
         const extensions = [defaultThemeOption,
@@ -69,7 +81,7 @@ const CodeMirrorWrapper = (props) => {
         }else {
             view = new EditorView({state: EditorState.create({doc:value,extensions}), parent: editor.current})
         }
-
+        editorViewRef.current = view
         if (onEditorView) {
             onEditorView(view)
         }
@@ -78,7 +90,7 @@ const CodeMirrorWrapper = (props) => {
         return () => {
             view.destroy()
         }
-    }, [identifier, (controlled ? value : null)])
+    }, [identifier])
 
     if(mergeView){
         return <><div style={{display:'flex',width:'100%'}}>

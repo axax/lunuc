@@ -167,13 +167,12 @@ const invisibleOptions = key => ({
     },
 })
 
-const observeOptions = () => ({
+const observeOptions = (defaultValue={}) => ({
     '$observe_if': {
         divider:true,
         fullWidth: true,
         type: 'Boolean',
-        value: false,
-        defaultValue:true,
+        defaultValue:!!defaultValue.if,
         label: _t('elements.observe.enable'),
         tab: VISIBILITY_TAB,
         role: CAPABILITY_MANAGE_CMS_PAGES
@@ -687,7 +686,7 @@ const baseElements = [
             ...imageOptions('p_'),
             ...sizeOptions('p_'),
             ...lazyImageOptions('$observe_'),
-            ...observeOptions()
+            ...observeOptions({if: true})
         }
     },
     {
@@ -1290,8 +1289,7 @@ const baseElements = [
             ...classOptions('p_'),
             ...imageOptions('c_0_p_'),
             ...sizeOptions('c_0_p_'),
-            ...lazyImageOptions('c_0_$observe_'),
-            ...observeOptions()
+            ...lazyImageOptions('c_0_$observe_')
         },
         defaults: {
             $inlineEditor: {

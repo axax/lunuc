@@ -581,6 +581,18 @@ Hook.on('Types', ({types}) => {
                     }
                 }
             },
+            {
+                name:'objects',
+                uitype: 'htmlParser',
+                replacePlaceholders:true,
+                html:'<iframe src="/system/user-objects?id=${valuesOri._id}" frameborder="0" width="100%" height="300px" />',
+                tab: _t('User.tab.objects'),
+                access: {
+                    ui: {
+                        role: CAPABILITY_MANAGE_OTHER_USERS
+                    }
+                }
+            }
         ]
     }
 })

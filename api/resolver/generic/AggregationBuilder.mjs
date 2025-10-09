@@ -410,7 +410,7 @@ export default class AggregationBuilder {
             page = this.getPage(),
             sort = this.getSort(),
             facetSort = sort._id ? sort : Object.assign({}, sort, {_id:-1}),
-            typeFields = getFormFieldsByType(this.type),
+            typeFields = getFormFieldsByType(this.type, true),
             filters = this.getParsedFilter(this.options.filter),
             resultFilters = this.getParsedFilter(this.options.resultFilter),
             lookupFilters = this.getParsedFilter(this.options.lookupFilter)
