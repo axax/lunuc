@@ -19,7 +19,7 @@ export function CmsAddNewSite(props) {
 
     const canMangeCmsTemplate = Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE)
     const canManageOtherUsers = Util.hasCapability(_app_.user, CAPABILITY_MANAGE_OTHER_USERS)
-    if (addNewSite.slug && canManageOtherUsers) {
+    if (addNewSite.slug && !canManageOtherUsers) {
         addNewSite.slug = Util.removeSlugContext('/' + addNewSite.slug).substring(1)
     }
 
@@ -101,7 +101,7 @@ export function CmsAddNewSite(props) {
                              } else {
                                  values.slug = formField.value[0].slug
                              }
-                             if (values.slug && canManageOtherUsers) {
+                             if (values.slug && !canManageOtherUsers) {
                                  values.slug = Util.removeSlugContext('/' + values.slug).substring(1)
                              }
                              if (fields.name) {

@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import ManageCollectionClones from '../components/types/ManageCollectionClones'
 import SyncCollectionDialog from '../components/types/SyncCollectionDialog'
 import {
+    SimpleList,
     FileCopyIcon,
     DeleteIcon,
     EditIcon,
@@ -29,7 +30,8 @@ import {
     Divider,
     Paper,
     CloudUploadIcon,
-    SyncIcon
+    SyncIcon,
+    Grid
 } from 'ui/admin'
 import Util from 'client/util/index.mjs'
 import TypeEdit from 'client/components/types/TypeEdit'
@@ -849,6 +851,7 @@ class TypesContainer extends React.Component {
             savedQueries = []
         }
 
+        console.log(getFieldsForBulkEdit(type))
         const content = [
             !title && !this.pageParams.title ? null :
                 <Typography key="typeTitle" variant="h3"
@@ -994,7 +997,9 @@ class TypesContainer extends React.Component {
                                   this.setState({dataToBulkEdit: false})
                               }
                           }}
-                          actions={[{key: 'execute', label: _t('TypesContainer.bulkEditExecute')}, {
+                          actions={[
+                              (dataToBulkEdit.fields && Object.keys(dataToBulkEdit.fields).length>0?{key: 'execute', label: _t('TypesContainer.bulkEditExecute')}:null),
+                              {
                               key: 'cancel',
                               label: _t('core.cancel'),
                               type: 'primary'
@@ -1006,11 +1011,34 @@ class TypesContainer extends React.Component {
                             onBlur={(e, bulkEditScript) => {
                                 this.setState({bulkEditScript})
                             }}>{this.props.keyValueMap.TypesContainerBulkEdit}</CodeEditor> :
-                    <GenericForm key="genericForm" autoFocus onRef={ref => {
-                        if(ref) {
-                            dataToBulkEdit.form = ref
-                        }
-                    }} primaryButton={false} values={dataToBulkEdit.values} fields={getFieldsForBulkEdit(type)}/>}
+                    <Grid container spacing={2}>
+                        <Grid size={4}>
+                            <SimpleList items={Object.entries(getFieldsForBulkEdit(type)).map(([k,v])=>({
+                                primary:v.label,secondary:v.name,checkbox:true
+                            }))}
+                            onCheck={(checked)=>{
+                                const fields = getFieldsForBulkEdit(type)
+                                const fieldsKeys = Object.keys(fields)
+                                const filteredFields = {}
+                                for(let idx of checked) {
+                                    filteredFields[fieldsKeys[idx]] = fields[fieldsKeys[idx]]
+                                }
+
+                                this.setState({dataToBulkEdit: {...dataToBulkEdit,fields:filteredFields} })
+
+                                console.log(filteredFields)
+                            }}
+                            />
+                        </Grid>
+                        <Grid size={8}>
+
+                            {dataToBulkEdit.fields && <GenericForm key="genericForm" autoFocus onRef={ref => {
+                                if(ref) {
+                                    dataToBulkEdit.form = ref
+                                }
+                            }} primaryButton={false} values={dataToBulkEdit.values} fields={dataToBulkEdit.fields}/>}
+                        </Grid>
+                    </Grid>}
 
             </SimpleDialog>,
             confirmCloneColDialog !== undefined &&

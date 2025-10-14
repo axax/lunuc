@@ -1061,8 +1061,7 @@ class CmsViewEditorContainer extends React.Component {
                     name: _t('CmsViewEditorContainer.preview'),
                     icon: <PreviewIcon/>,
                     onClick: () => {
-
-                        window.open(Util.baseUrl(location.pathname,{...Util.extractQueryParams(),preview:true}), '_blank').focus();
+                        window.open(Util.baseUrl('',{...Util.extractQueryParams(),preview:true}), '_blank').focus();
                     }
                 },
                 {
