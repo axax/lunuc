@@ -48,6 +48,9 @@ const MarkDown = (props) => <Async {...props}
 const ShadowRoot = (props) => <Async {...props}
                                    load={import(/* webpackChunkName: "shadowroot" */ '../../../client/components/ShadowRoot')}/>
 
+const AddToBody = (props) => <Async {...props}
+                                   load={import(/* webpackChunkName: "addtobody" */ './AddToBody')}/>
+
 
 
 const hasNativeLazyLoadSupport = !_app_.ssr && window.HTMLImageElement && 'loading' in HTMLImageElement.prototype
@@ -91,6 +94,7 @@ class JsonDom extends React.Component {
         FileDrop,
         MarkDown,
         ShadowRoot,
+        AddToBody,
         'SmartImage': ({src, options, caption, wrapper, inlineSvg, svgData, tagName, figureStyle, figureClassName, figureCaptionClassName, figureProps, ...props}) => {
             const imgTag = () => {
                 let imageData = Util.getImageObject(src, options)
