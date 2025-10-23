@@ -996,8 +996,8 @@ const baseElements = [
         name: _t('elements.key.headline'),
         icon: 'format',
         defaults: {
+            $contentEditable: false,
             $inlineEditor: {
-                contentEditable: false,
                 elementKey: 'headline',
                 options: {
                     c: {
@@ -1085,18 +1085,24 @@ const baseElements = [
                 uitype: 'textarea',
                 tab: DEFAULT_TAB
             },
-            $toHtml: {
-                label: 'Zeilenumbrüche behalten',
-                fullWidth: true,
-                type: 'Boolean',
-                tab: DEFAULT_TAB
-            },
             $c: {
                 label: 'Text (HTML)',
                 fullWidth: true,
                 uitype: 'textarea',
                 tab: EXTENDED_TAB,
                 role: CAPABILITY_MANAGE_CMS_TEMPLATE
+            },
+            $toHtml: {
+                label: _t('elements.key.keepLineBreaks'),
+                fullWidth: false,
+                type: 'Boolean',
+                tab: DEFAULT_TAB
+            },
+            $contentEditable: {
+                label: _t('elements.key.contentEditable'),
+                fullWidth: false,
+                type: 'Boolean',
+                tab: DEFAULT_TAB
             },
             ...alignmentOptions('p_'),
             ...marginOptions('p_'),
@@ -1473,6 +1479,7 @@ const baseElements = [
 
                                                     },
                                                     {
+                                                        $is:'$.item{item.image?true:false}',
                                                         $inlineEditor: false,
                                                         t: 'SmartImage',
                                                         p: {
@@ -1598,6 +1605,7 @@ const baseElements = [
             ['p_data-slide-timeout']: {value: '7000', label: 'Anzeigezeit in ms pro Slide'},
             $set_0_chunk: {value: '1', label: 'Anzahl pro Seite'},
             $set_0_chunkOptions_randomize: {type: 'Boolean', value: '1', label: 'Slides zufällig sortieren'},
+            $set_0_chunkOptions_fill: {type: 'Boolean', value: '1', label: 'Unvollständige Slides auffüllen'},
             ...classOptions('p_'),
             ...marginOptions('p_'),
             ...imageOptions('c_1_c_$for_c_c_1_$for_c_c_1_p_'),
@@ -1612,8 +1620,8 @@ const baseElements = [
         name: _t('elements.key.p'),
         defaults: {
             $c: 'Paragraph',
+            $contentEditable: false,
             $inlineEditor: {
-                contentEditable: false,
                 elementKey: 'p',
                 options: {
                     $c: {
@@ -1632,7 +1640,7 @@ const baseElements = [
                 tab: DEFAULT_TAB,
                 tabPosition: 0
             },
-            p_contentEditable: {
+            $contentEditable: {
                 label: _t('elements.key.contentEditable'),
                 fullWidth: true,
                 type: 'Boolean',

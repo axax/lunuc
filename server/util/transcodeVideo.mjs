@@ -9,7 +9,8 @@ import path from 'path'
 const config = getDynamicConfig()
 
 const ROOT_DIR = path.resolve(),
-    SERVER_DIR = path.join(ROOT_DIR, './server')
+    SERVER_DIR = path.join(ROOT_DIR, './server'),
+    ABS_UPLOAD_DIR = path.join(ROOT_DIR, config.UPLOAD_DIR)
 
 const noCacheHeaders = {
     'Cache-Control': 'no-cache, no-store, must-revalidate',

@@ -847,7 +847,7 @@ class JsonDom extends React.Component {
 
                 if (!item) return
 
-                const {t, k, p, c, x, $c, $toHtml, $if, $is, $ifexist, $observe, $for, $loop, $inlineEditor, $set} = item
+                const {t, k, p, c, x, $c, $toHtml, $contentEditable, $if, $is, $ifexist, $observe, $for, $loop, $inlineEditor, $set} = item
                 /*
                  t = type
                  k = key
@@ -1244,6 +1244,9 @@ class JsonDom extends React.Component {
                             eleType = JsonDomHelper
                         }
 
+                        if ($contentEditable) {
+                            eleProps.contentEditable = true
+                        }
                     }
 
 

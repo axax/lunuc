@@ -144,7 +144,7 @@ export function setPropertyByPath(value, path, obj, separator = '.') {
             if (obj[finalPath] == undefined) {
                 if (!isNaN(finalPath)) {
                     if (obj.constructor !== Array) {
-                        obj = objLast[finalPathLast] = []
+                        obj = objLast[finalPathLast] = [obj]
                     }
                 }
                 obj[finalPath] = {}
