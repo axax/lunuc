@@ -3,7 +3,7 @@ import Hook from 'util/hook.cjs'
 import Async from 'client/components/Async'
 import config from 'gen/config-client'
 import Util from '../../client/util/index.mjs'
-import {Button} from 'ui/admin'
+import {Button, Tooltip, AutoAwesomeIcon} from 'ui/admin'
 const {UPLOAD_URL, ADMIN_BASE_URL, PRETTYURL_SEPERATOR} = config
 import {_t, registerTrs} from 'util/i18n.mjs'
 import UploadUtil from '../../client/util/upload'
@@ -46,15 +46,25 @@ export default () => {
 
                         d.size = formatBytes(item.size)
                     }
-                    const mimeType = item.mimeType ? item.mimeType.split('/') : ['file'],
-                        image =
-                            (mimeType[0] === 'image' ?
-                                    <img style={{maxWidth: '6rem', maxHeight: '6rem', objectFit: 'cover'}}
+                    const mimeType = item.mimeType ? item.mimeType.split('/') : ['file']
+
+                    let image = (mimeType[0] === 'image' ?
+                                    <img style={{display:'block',maxWidth: '6rem', maxHeight: '6rem', objectFit: 'cover', borderRadius: '0.25rem' }}
                                          src={item.src || `${UPLOAD_URL}/${item._id}/${PRETTYURL_SEPERATOR}/${item.name}${item.mimeType.indexOf('svg')<0?'?format=webp&quality=50&width=96&remoteserver=false':'?remoteserver=false'}`}/>
                                     :
                                     <div className="file-icon"
                                          data-type={mimeType.length > 1 ? mimeType[1] : 'doc'}></div>
                             )
+                    if(item.imageScene){
+                        image = <Tooltip title={item.imageScene} placement="top" style={{display:'block',position:'relative'}}>
+                            {image}
+                            <AutoAwesomeIcon style={{padding:'1px',background:'rgba(0,0,0,0.8)',borderRadius:'50%',
+                                width:'18px',height:'18px',position:'absolute',
+                                left:'-8px',top:'-5px',color:'#fff',opacity:1}} icon="image"/>
+                        </Tooltip>
+                    }
+
+
                     if (window.opener) {
                         d.data = image
                     } else {

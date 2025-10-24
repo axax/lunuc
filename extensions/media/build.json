@@ -11,7 +11,7 @@
           "required": true,
           "fullWidth": true,
           "index": 1,
-          "tab": "Allgemein"
+          "tab": "elements.generalTab"
         },
         {
           "name": "src",
@@ -31,7 +31,7 @@
           "multi": true,
           "index": 1,
           "bulkEditable": true,
-          "tab": "Allgemein",
+          "tab": "elements.generalTab",
           "compoundIndex": [{
             "unique": false,
             "fields": {
@@ -157,6 +157,18 @@
           "name": "modifiedAt",
           "type": "Float",
           "index": 1
+        },
+        {
+          "tab": "elements.generalTab",
+          "name": "imageScene",
+          "readOnly": true,
+          "invisible": true,
+          "hideColumnInTypes": true,
+          "searchable": true,
+          "dynamic": {
+            "action": "alias",
+            "path": "info.qwen25vl7b.scene"
+          }
         }
       ]
     },
@@ -168,14 +180,14 @@
           "name": "name",
           "required": true,
           "index": 1,
-          "tab": "Allgemein"
+          "tab": "elements.generalTab"
         },
         {
           "name": "group",
           "type": "MediaGroup",
           "multi": true,
           "index": 1,
-          "tab": "Allgemein"
+          "tab": "elements.generalTab"
         },
         {
           "name": "ownerGroup",

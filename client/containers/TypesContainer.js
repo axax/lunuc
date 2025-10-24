@@ -1248,7 +1248,9 @@ class TypesContainer extends React.Component {
         })
 
         typeDefinition.fields.forEach(field => {
-            if (!field.hidden && field.name !== 'createdBy' && field.uitype !== 'htmlParser') {
+            if ((!field.hidden || field.includeInQuery) &&
+                field.name !== 'createdBy' &&
+                field.uitype !== 'htmlParser') {
                 typeColumns.push({
                     title: getFieldTitle(type, field),
                     id: field.name,
@@ -2038,7 +2040,6 @@ class TypesContainer extends React.Component {
         Hook.call('TypeTableBeforeEdit', {type, data, variables, fieldsToLoad})
 
         if (fieldsToLoad.length > 0) {
-
             const queries = getTypeQueries(type, fieldsToLoad)
             client.query({
                 fetchPolicy: 'network-only',

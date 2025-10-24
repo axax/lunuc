@@ -13,8 +13,10 @@ export const translations = {
         'Media.field.group': 'Gruppe',
         'Media.field.ownerGroup': 'Besitzergruppe',
         'Media.field.modifiedAt': 'Geändert am',
+        'Media.field.imageScene': 'Media Beschreibung (KI generiert)',
         'Media.cleanupMedia': 'Media Varianten löschen',
         'Media.overrideExistingMedia': 'Ich möchte die bestehende Datei unwiderruflich überschrieben',
+        'Media.mediaPreview': 'Voransicht',
         'TypesContainer.deleteOnlyFile': 'Nur Datei löschen',
         'TypesContainer.deleteConfirmTextOnlyFile': 'Beachten Sie, dass nur die physische Datei und nicht der Medieneintrag gelöscht wird.',
         'TypesContainer.downloadAsZip':'Als Zip herunterladen'
@@ -33,8 +35,10 @@ export const translations = {
         'Media.field.group': 'Group',
         'Media.field.ownerGroup': 'Owner group',
         'Media.field.modifiedAt': 'Modified at',
+        'Media.field.imageScene': 'Media description (AI generated)',
         'Media.cleanupMedia': 'CleanUp Medias',
         'Media.overrideExistingMedia': 'I would like to overwrite the existing file irrevocably',
+        'Media.mediaPreview': 'Preview',
         'TypesContainer.deleteOnlyFile': 'Delete only file',
         'TypesContainer.deleteConfirmTextOnlyFile': 'Please note that only the physical file and not the media entry is deleted.',
         'TypesContainer.downloadAsZip':'Download as zip'

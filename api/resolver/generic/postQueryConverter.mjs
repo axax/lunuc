@@ -2,7 +2,7 @@ import {getType} from '../../../util/types.mjs'
 import {ObjectId} from 'mongodb'
 import {getFieldsFromGraphqlInfoSelectionSet} from '../../util/graphql.js'
 import {replacePlaceholders} from "../../../util/placeholders.mjs";
-import {isString} from '../../../client/util/json.mjs'
+import {isString, parseOrElse, propertyByPath} from '../../../client/util/json.mjs'
 
 export const resolveDynamicFieldQuery = async (db, field, item, setItem) => {
     const dyn = field.dynamic
@@ -31,6 +31,12 @@ export const resolveDynamicFieldQuery = async (db, field, item, setItem) => {
         //let d = new Date().getTime()
         setItem[field.name] = await db.collection(dyn.type).count(query)
         //console.log(`time ${new Date().getTime()-d}ms`)
+    }else if(dyn.action==='alias'){
+        const aliasField = dyn.path.split('.')[0]
+        if(item[aliasField]){
+            const json = parseOrElse(item[aliasField],{})
+            setItem[field.name] = propertyByPath(dyn.path,{[aliasField]:json})
+        }
     }
 }
 
@@ -115,9 +121,7 @@ export default async function (response, {typeName, db, graphqlInfo}){
                             item[field.name] = ''
                         }
 
-                        const dyn = field.dynamic
-
-                        if (dyn) {
+                        if (field.dynamic) {
 
                             if(graphqlInfo && graphqlInfo.fieldNodes && graphqlInfo.fieldNodes.length>0) {
 

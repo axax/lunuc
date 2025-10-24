@@ -122,10 +122,9 @@ export const MediaEditorWrapper = ({children, dataToEdit, meta}) => {
                         })
                     }
                 })
-
             }
-            }>{_t('Media.editImage')}</Button></>
-
+            }>{_t('Media.editImage')}</Button>
+            <p>{dataToEdit.imageScene}</p></>
 
     } else if (dataToEdit.mimeType && dataToEdit.mimeType.indexOf('video') === 0) {
         let src = mediaData.src
@@ -154,7 +153,7 @@ export const MediaEditorWrapper = ({children, dataToEdit, meta}) => {
                 setTabValue(newValue)
             }}>
             <SimpleTab key="tab0" label="Einstellungen"/>
-            <SimpleTab key="tab1" label="Voransicht"/>
+            <SimpleTab key="tab1" label={_t('Media.mediaPreview')} onClick={() => {}}/>
             <SimpleTab key="tab2" label="Upload"/>
         </SimpleTabs>
         <SimpleTabPanel style={{flexGrow:1,marginTop:'-24px',maxWidth: 'calc(100% - 10rem)'}} key="tabPanel0" value={tabValue} index={0}>
