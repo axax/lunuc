@@ -165,6 +165,7 @@
           "invisible": true,
           "hideColumnInTypes": true,
           "searchable": true,
+          "alwaysLoad": true,
           "dynamic": {
             "action": "alias",
             "path": "info.qwen25vl7b.scene"
