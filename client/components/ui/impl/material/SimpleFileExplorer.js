@@ -243,6 +243,9 @@ export default function FileExplorer({onFetch, onItemClick, defaultExpandedItems
     if(error){
         return error.message
     }
+    if(!data){
+        return
+    }
     return (
         <RichTreeView
             defaultExpandedItems={defaultExpandedItems}
