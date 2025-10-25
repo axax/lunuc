@@ -1820,7 +1820,7 @@ const baseElements = [
             p_type: {
                 tab: DEFAULT_TAB,
                 label: 'type',
-                enum: ['text','number','email'],
+                enum: ['text','number','email','checkbox','radio','password','file','submit','reset','hidden','range','color','date','datetime-local','month','time','week','image','button','reset','submit'],
                 uistate: {
                     visible: 't==input'
                 }

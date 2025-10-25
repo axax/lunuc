@@ -57,6 +57,21 @@ const hasNativeLazyLoadSupport = !_app_.ssr && window.HTMLImageElement && 'loadi
 
 const SCRIPT_UTIL_PART = ',Util=this.Util,_e=Util.escapeForJson,_i=Util.tryCatch.bind(this),_t=this._t.bind('
 
+const MAP_TEMPLATE_REPLACEMENTS = {
+    '\\': '\\\\',
+    '"###': '',
+    '###"': '',
+    '#BACKSLASH#': '\\'
+}
+
+// Build a single combined regex using alternation for all keys
+const TEMPLATE_REPLACE_REGEX = new RegExp(
+    Object.keys(MAP_TEMPLATE_REPLACEMENTS)
+        .map(Util.escapeRegex)
+        .join('|'),
+    'g'
+)
+
 /*function isString(variable) {
     return typeof variable === 'string'
 }
@@ -1426,7 +1441,7 @@ class JsonDom extends React.Component {
         } else if (str.indexOf('{') == 0 || str.indexOf('[') == 0) {
             //It is json
             // replace control character
-            str = str.replace(/\\/g, '\\\\').replace(/"###|###"/g, '')
+            str = str.replace(TEMPLATE_REPLACE_REGEX, m => MAP_TEMPLATE_REPLACEMENTS[m])
         } else {
             //Is other
             str = JSON.stringify({
