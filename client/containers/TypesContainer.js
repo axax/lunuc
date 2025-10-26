@@ -67,7 +67,8 @@ import {
     CAPABILITY_MANAGE_COLLECTION
 } from '../../util/capabilities.mjs'
 import SelectCollection from '../components/types/SelectCollection'
-import {parseOrElse} from "../util/json.mjs";
+import {parseOrElse} from '../util/json.mjs'
+import {isFieldVisibleForCurrentUser} from '../util/user.mjs'
 
 const CodeEditor = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
@@ -1135,7 +1136,7 @@ class TypesContainer extends React.Component {
 
         // check if field is hidden by default
         const formFields = getFormFieldsByType(type)
-        if (formFields && formFields[id] && formFields[id].hideColumnInTypes) {
+        if (formFields && formFields[id] && formFields[id].hideColumnInTypesByDefault) {
             return false
         }
 
@@ -1248,9 +1249,12 @@ class TypesContainer extends React.Component {
         })
 
         typeDefinition.fields.forEach(field => {
-            if ((!field.hidden || field.includeInQuery) &&
+            if (!field.hidden &&
                 field.name !== 'createdBy' &&
-                field.uitype !== 'htmlParser') {
+                field.uitype !== 'htmlParser' &&
+                !field.hideColumnInTypes &&
+                isFieldVisibleForCurrentUser(field)
+            ) {
                 typeColumns.push({
                     title: getFieldTitle(type, field),
                     id: field.name,

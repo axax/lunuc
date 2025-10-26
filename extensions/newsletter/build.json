@@ -57,7 +57,7 @@
         {
           "name": "location",
           "index": 1,
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "compoundIndex": [
             {
               "unique": true,
@@ -70,12 +70,12 @@
         },
         {
           "name": "token",
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "type": "String"
         },
         {
           "name": "unsubscribeMailing",
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "type": "NewsletterMailing"
         },
         {
@@ -87,7 +87,7 @@
         },
         {
           "name": "ownerGroup",
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "type": "UserGroup",
           "multi": true,
           "fields": [
@@ -149,7 +149,7 @@
         {
           "name": "exclude",
           "type": "NewsletterSubscriber",
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "fullWidth": true,
           "multi": true,
           "fields": [
@@ -160,7 +160,7 @@
         {
           "name": "users",
           "type": "User",
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "fullWidth": true,
           "multi": true,
           "fields": [
@@ -174,7 +174,7 @@
           "copyLastValue": true,
           "description": "Es besteht die Möglichkeit, entweder ein Seitentemplate auszuwählen oder den Inhalt direkt an dieser Stelle einzugeben.",
           "type": "CmsPage",
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "fields": ["_id","name","slug"]
         },
         {
@@ -199,7 +199,7 @@
           "tab": "content",
           "localized": false,
           "fullWidth": true,
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "copyLastValue": true,
           "access": {
             "ui": {
@@ -210,7 +210,7 @@
         {
           "name": "genericData",
           "type": "GenericData",
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "fullWidth": true,
           "multi": true,
           "filter": "${fields.dataFilter || ''}",
@@ -231,7 +231,7 @@
           "type": "Media",
           "multi": true,
           "localized": true,
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "fields": [
             "name",
             "mimeType",
@@ -247,13 +247,13 @@
               "role": "manage_types"
             }
           },
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "localized": false
         },
         {
           "name": "unsubscribeHeader",
           "type": "Boolean",
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "access": {
             "ui": {
               "role": "manage_types"
@@ -270,14 +270,14 @@
               "role": "manage_types"
             }
           },
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "type": "Float"
         },
         {
           "tab": "send",
           "name": "perHour",
           "copyLastValue": true,
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "access": {
             "ui": {
               "role": "manage_types"
@@ -294,7 +294,7 @@
               "role": "manage_types"
             }
           },
-          "hideColumnInTypes": true
+          "hideColumnInTypesByDefault": true
         },
         {
           "tab": "send",
@@ -305,7 +305,7 @@
               "role": "manage_types"
             }
           },
-          "hideColumnInTypes": true
+          "hideColumnInTypesByDefault": true
         },
         {
           "name": "mailSettings",
@@ -317,7 +317,7 @@
           "copyLastValue": true,
           "type": "Object",
           "alwaysLoad": false,
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "uitype": "json",
           "tab": "Optional"
         },
@@ -328,7 +328,7 @@
           "description": "Wenn aktiv wird der Versand im Hintergrund ausgeführt",
           "type": "Boolean",
           "index": 1,
-          "hideColumnInTypes": true
+          "hideColumnInTypesByDefault": true
         },
         {
           "tab": "stats",
@@ -348,7 +348,7 @@
           "tab": "stats",
           "name": "mailCount",
           "readOnly": true,
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "dynamic": {
             "type": "NewsletterSent",
             "action": "count",

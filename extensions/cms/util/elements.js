@@ -114,9 +114,10 @@ const lazyImageOptions = key => ({
 
 const trOptions = key => ({
     [`${key}tr`]: {
-        label: 'Sprachabhängig',
+        label: _t('elements.languageDependent'),
         type: 'Boolean',
         tab: TRANSLATION_TAB,
+        defaultValue: _app_.languages && _app_.languages.length > 1,
         role: CAPABILITY_MANAGE_CMS_PAGES
     },
     [`${key}trGlobal`]: {
@@ -686,7 +687,8 @@ const baseElements = [
             ...imageOptions('p_'),
             ...sizeOptions('p_'),
             ...lazyImageOptions('$observe_'),
-            ...observeOptions({if: true})
+            ...observeOptions({if: true}),
+            ...condition()
         }
     },
     {
@@ -1265,6 +1267,8 @@ const baseElements = [
             c_1_c: {
                 fullWidth: true,
                 value: '',
+                localized: true,
+                localizedFallback: true,
                 placeholder: 'Text eingeben',
                 label: 'Text',
                 tab: MISC_TAB
@@ -1274,6 +1278,8 @@ const baseElements = [
                 value: '',
                 placeholder: 'Mouseover text',
                 label: 'Text hover',
+                localized: true,
+                localizedFallback: true,
                 tab: MISC_TAB
             },
             p_target: {

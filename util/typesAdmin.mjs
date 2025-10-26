@@ -366,7 +366,7 @@ Hook.on('Types', ({types}) => {
             },
             {
                 name: 'ownerGroup',
-                hideColumnInTypes: false,
+                hideColumnInTypesByDefault: false,
                 access: {
                     ui: {
                         role: 'manage_user_group'
@@ -387,7 +387,7 @@ Hook.on('Types', ({types}) => {
                 fields: ['name'],
                 multi:true,
                 fullWidth:true,
-                hideColumnInTypes: true,
+                hideColumnInTypesByDefault: true,
                 vagueSearchable:false
             }
         ]
@@ -450,7 +450,7 @@ Hook.on('Types', ({types}) => {
                 fullWidth: false,
                 type: 'Boolean',
                 tab: 'Allgemein',
-                hideColumnInTypes: true,
+                hideColumnInTypesByDefault: true,
                 vagueSearchable:false
             },
             {
@@ -466,7 +466,7 @@ Hook.on('Types', ({types}) => {
             {
                 name: 'emailConfirmed',
                 type: 'Boolean',
-                hideColumnInTypes: true,
+                hideColumnInTypesByDefault: true,
                 vagueSearchable:false
             },
             {
@@ -499,7 +499,7 @@ Hook.on('Types', ({types}) => {
                 uitype: 'datetime',
                 readOnly: true,
                 vagueSearchable:false,
-                hideColumnInTypes: true
+                hideColumnInTypesByDefault: true
             },
             {
                 name: 'role',
@@ -521,7 +521,7 @@ Hook.on('Types', ({types}) => {
                 multi: true,
                 fields: ['username'],
                 tab: _t('Types.accessControl'),
-                hideColumnInTypes: true,
+                hideColumnInTypesByDefault: true,
                 access: {
                     ui: {
                         role: CAPABILITY_MANAGE_USER_GROUP
@@ -536,7 +536,7 @@ Hook.on('Types', ({types}) => {
                 multi: true,
                 fields: ['name'],
                 tab: _t('Types.accessControl'),
-                hideColumnInTypes: true,
+                hideColumnInTypesByDefault: true,
                 access: {
                     ui: {
                         role: CAPABILITY_MANAGE_USER_GROUP
@@ -560,7 +560,7 @@ Hook.on('Types', ({types}) => {
                 fullWidth: false,
                 required: false,
                 alwaysUpdate: true,
-                hideColumnInTypes: true,
+                hideColumnInTypesByDefault: true,
                 tab: _t('Types.accessControl'),
                 access: {
                     ui: {
@@ -573,7 +573,7 @@ Hook.on('Types', ({types}) => {
                 fullWidth: false,
                 required: false,
                 alwaysUpdate: false,
-                hideColumnInTypes: true,
+                hideColumnInTypesByDefault: true,
                 tab: _t('Types.accessControl'),
                 access: {
                     ui: {

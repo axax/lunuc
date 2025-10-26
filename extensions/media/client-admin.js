@@ -55,8 +55,11 @@ export default () => {
                                     <div className="file-icon"
                                          data-type={mimeType.length > 1 ? mimeType[1] : 'doc'}></div>
                             )
-                    if(item.imageScene){
-                        image = <Tooltip title={item.imageScene} placement="top" style={{display:'block',position:'relative'}}>
+                    if(item.imageKeyword || item.imageScene){
+                        image = <Tooltip title={<>
+                            <p>{item.imageScene || ''}</p>
+                            <p><small>Keywords: <strong>{item.imageKeyword || ''}</strong></small></p>
+                        </>} placement="top" style={{display:'block',position:'relative'}}>
                             {image}
                             <AutoAwesomeIcon style={{padding:'1px',background:'rgba(0,0,0,0.8)',borderRadius:'50%',
                                 width:'18px',height:'18px',position:'absolute',

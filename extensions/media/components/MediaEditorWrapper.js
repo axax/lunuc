@@ -124,7 +124,8 @@ export const MediaEditorWrapper = ({children, dataToEdit, meta}) => {
                 })
             }
             }>{_t('Media.editImage')}</Button>
-            <p>{dataToEdit.imageScene}</p></>
+            <p>{dataToEdit.imageScene || ''}</p>
+            <p><small>Keywords: <strong>{dataToEdit.imageKeyword || ''}</strong></small></p></>
 
     } else if (dataToEdit.mimeType && dataToEdit.mimeType.indexOf('video') === 0) {
         let src = mediaData.src

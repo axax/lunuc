@@ -33,6 +33,7 @@ import {_t} from '../../util/i18n.mjs'
 import Util from '../util/index.mjs'
 import DomUtil from '../util/dom.mjs'
 import {isString, matchExpr, parseOrElse, propertyByPath, setPropertyByPath} from '../util/json.mjs'
+import {isFieldVisibleForCurrentUser} from '../util/user.mjs'
 import JsonEditor from '../../extensions/cms/components/JsonEditor'
 import {Query} from '../middleware/graphql'
 import {getTypeQueries, getTypes} from 'util/types.mjs'
@@ -205,7 +206,8 @@ class GenericForm extends React.Component {
                     tabs.push(field.tab)
                 }
             }
-            if ((field.required || field.validatePattern) && (!field.uistate || !field.uistate.visible || !matchExpr(field.uistate.visible, state.fields))) {
+            if ((field.required || field.validatePattern) &&
+                (!field.uistate || !field.uistate.visible || !matchExpr(field.uistate.visible, state.fields))) {
 
                 if(field.validatePattern){
 
@@ -593,10 +595,7 @@ class GenericForm extends React.Component {
             }
 
 
-            if ((field.role && !Util.hasCapability(_app_.user, field.role)) ||
-                (field.uistate && field.uistate.visible && matchExpr(field.uistate.visible, this.state.fields)) ||
-                (field.access && field.access.ui && field.access.ui.role && !Util.hasCapability(_app_.user, field.access.ui.role))
-            ){
+            if (!isFieldVisibleForCurrentUser(field)){
                 continue
             }
 

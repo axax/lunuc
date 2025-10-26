@@ -43,7 +43,7 @@
           "uitype": "textarea",
           "index": 1,
           "fullWidth": true,
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "Tab": "elements.generalTab"
         },
         {
@@ -53,7 +53,7 @@
           "uitype": "textarea",
           "index": 1,
           "fullWidth": true,
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "Tab": "elements.generalTab"
         },
         {
@@ -62,7 +62,7 @@
           "required": false,
           "index": 1,
           "vagueSearchable": false,
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "access": {
             "ui": {
               "role": "manage_cms_template"
@@ -74,7 +74,7 @@
           "label": "Public",
           "type": "Boolean",
           "bulkEditable": true,
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "index": 1,
           "defaultValue": true,
           "compoundIndex": [

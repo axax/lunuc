@@ -18,7 +18,7 @@
           "fullWidth": true,
           "tab": "Optionen",
           "vagueSearchable": false,
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "access": {
             "ui": {
               "role": "manage_types"
@@ -99,7 +99,7 @@
           "name": "classifyImage",
           "type": "Boolean",
           "tab": "Optionen",
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "vagueSearchable": false,
           "access": {
             "ui": {
@@ -111,7 +111,7 @@
           "name": "useCdn",
           "type": "Boolean",
           "tab": "Optionen",
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "vagueSearchable": false,
           "access": {
             "ui": {
@@ -123,7 +123,7 @@
           "name": "private",
           "type": "Boolean",
           "tab": "Optionen",
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "vagueSearchable": false,
           "access": {
             "ui": {
@@ -135,12 +135,12 @@
           "name": "conversion",
           "tab": "Optionen",
           "type": "MediaConversion",
-          "hideColumnInTypes": true
+          "hideColumnInTypesByDefault": true
         },
         {
           "name": "ownerGroup",
           "bulkEditable": true,
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "access": {
             "ui": {
               "role": "manage_user_group"
@@ -163,12 +163,25 @@
           "name": "imageScene",
           "readOnly": true,
           "invisible": true,
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "searchable": true,
           "alwaysLoad": true,
           "dynamic": {
             "action": "alias",
             "path": "info.qwen25vl7b.scene"
+          }
+        },
+        {
+          "tab": "elements.generalTab",
+          "name": "imageKeyword",
+          "readOnly": true,
+          "invisible": true,
+          "hideColumnInTypesByDefault": true,
+          "searchable": true,
+          "alwaysLoad": true,
+          "dynamic": {
+            "action": "alias",
+            "path": "info.qwen25vl7b.keyword"
           }
         }
       ]
@@ -192,7 +205,7 @@
         },
         {
           "name": "ownerGroup",
-          "hideColumnInTypes": true,
+          "hideColumnInTypesByDefault": true,
           "access": {
             "ui": {
               "role": "manage_user_group"
