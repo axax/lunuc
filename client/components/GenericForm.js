@@ -595,7 +595,8 @@ class GenericForm extends React.Component {
             }
 
 
-            if (!isFieldVisibleForCurrentUser(field)){
+            if (!isFieldVisibleForCurrentUser(field) ||
+                (field.uistate && field.uistate.visible && matchExpr(field.uistate.visible, this.state.fields))){
                 continue
             }
 
