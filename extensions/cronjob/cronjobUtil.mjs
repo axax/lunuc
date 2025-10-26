@@ -12,12 +12,28 @@ import Hook from "../../util/hook.cjs";
 import Cache from "../../util/cache.mjs";
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
+const RUNNING_CRONJOBS = []
+
 const cronjobUtil = {
     runCronJob: async (props, callback) => {
 
         const {cronjobId, script, scriptLanguage, context, db, noEntry} = props
 
         const result = {scriptLog: '', scriptDebug: '', scriptError: ''}
+
+
+        if(RUNNING_CRONJOBS.includes(cronjobId)){
+            console.log(`Run cronjob with id ${cronjobId} already running`)
+            result.scriptError = 'Run cronjob with id '+cronjobId+' already running'
+
+            if (callback) {
+                callback(result)
+            }
+            return result
+        }
+
+        console.log(`Run cronjob with id ${cronjobId} started`)
+        RUNNING_CRONJOBS.push(cronjobId)
 
         let dbResult
         if( !noEntry ) {
@@ -39,6 +55,9 @@ const cronjobUtil = {
         }
 
         const end = () => {
+            const index = RUNNING_CRONJOBS.indexOf(cronjobId)
+            if (index > -1) RUNNING_CRONJOBS.splice(index, 1)
+
             result.endTime = (new Date()).getTime()
             if( !noEntry ) {
                 GenericResolver.updateEnity(db, context, 'CronJobExecution', {

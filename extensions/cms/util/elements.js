@@ -547,7 +547,7 @@ const eventOptions = key => ({
 
 const condition = () => ({
     $is: {
-        label: 'Bedingung',
+        label: _t('elements.condition'),
         tab: VISIBILITY_TAB,
         fullWidth:true
     }
@@ -1208,7 +1208,8 @@ const baseElements = [
                 tab: DEFAULT_TAB
             },
             ...marginOptions('p_'),
-            ...eventOptions('p_')
+            ...eventOptions('p_'),
+            ...condition()
         },
         defaults: {
             $inlineEditor: {

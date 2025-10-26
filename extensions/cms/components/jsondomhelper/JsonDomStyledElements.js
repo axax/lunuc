@@ -163,4 +163,24 @@ export const StyledHorizontalDivider = styled('div')({
     left: 0,
     cursor: 'ns-resize',
     zIndex: 1002,
+    overflow:'hidden'
+})
+
+export const StyledVerticalDivider = styled('div')({
+    position: 'absolute',
+    height: '4px',
+    width:'100%',
+    pointerEvents: 'auto',
+    fontSize:'0.8rem',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    color:'rgb(100,100,255)',
+    background: 'rgba(66, 164, 245,0.09)',
+    /*borderBottom:'solid 2px #000000',*/
+    right: 0,
+    top: '100%',
+    left: 0,
+    cursor: 'ns-resize',
+    zIndex: 1002,
 })
