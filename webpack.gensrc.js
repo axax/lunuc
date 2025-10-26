@@ -197,6 +197,7 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
                         delete field.validatePattern
                         delete field.fullWidth
                         delete field.hideColumnInTypes
+                        delete field.hideColumnInTypesByDefault
                         delete field.vagueSearchable
                         delete field.vagueSearchable
                         delete field.access
