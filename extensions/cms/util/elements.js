@@ -611,7 +611,6 @@ const imgFigureOptions = key => ({
         uitype: 'html',
         fullWidth: true,
         localized: true,
-        localizedFallback: true,
         tab: MISC_TAB
     }
 })
@@ -1261,14 +1260,12 @@ const baseElements = [
                 placeholder: 'Url Titel eingeben',
                 label: 'Url Titel',
                 localized: true,
-                localizedFallback: true,
                 tab: DEFAULT_TAB
             },
             c_1_c: {
                 fullWidth: true,
                 value: '',
                 localized: true,
-                localizedFallback: true,
                 placeholder: 'Text eingeben',
                 label: 'Text',
                 tab: MISC_TAB
@@ -1279,7 +1276,6 @@ const baseElements = [
                 placeholder: 'Mouseover text',
                 label: 'Text hover',
                 localized: true,
-                localizedFallback: true,
                 tab: MISC_TAB
             },
             p_target: {
@@ -2370,8 +2366,7 @@ const advancedElements = [
                     tab: 'Einträge',
                     label: 'Überschrift',
                     fullWidth: true,
-                    localized: true,
-                    localizedFallback: true
+                    localized: true
                 },
                 img: {
                     fullWidth: true,
@@ -2385,7 +2380,6 @@ const advancedElements = [
                     tab: 'Einträge',
                     expandable: false,
                     localized: true,
-                    localizedFallback: true,
                     label: 'Text',
                     uitype: 'html',
                 }
