@@ -147,7 +147,7 @@ const classOptions = (key, tab) => ({
         tab: tab || DEFAULT_TAB
     },
     [`${key}className`]: {
-        label: 'CSS Klassname',
+        label: _t('elements.cssClass'),
         tab: tab || DEFAULT_TAB
     },
     [`${key}style@custom`]: {
@@ -162,8 +162,8 @@ const invisibleOptions = key => ({
         fullWidth: true,
         type: 'Boolean',
         value: false,
-        placeholder: 'Ausblenden',
-        label: 'Ausblenden',
+        placeholder: _t('elements.hideElement'),
+        label:  _t('elements.hideElement'),
         tab: DEFAULT_TAB
     },
 })
@@ -597,13 +597,9 @@ const sizeOptions = key => ({
 
 const imgFigureOptions = key => ({
     [`${key}wrapper`]: {
-        label: 'Bild mit Beschreibung (Figure / Zoom)',
+        label: _t('elements.imageWithCaption'),
         type: 'Boolean',
         defaultValue:false,
-        tab: MISC_TAB
-    },
-    [`${key}figureClassName`]: {
-        label: 'Figure Klassenname',
         tab: MISC_TAB
     },
     [`${key}caption`]: {
@@ -611,6 +607,10 @@ const imgFigureOptions = key => ({
         uitype: 'html',
         fullWidth: true,
         localized: true,
+        tab: MISC_TAB
+    },
+    [`${key}figureClassName`]: {
+        label: 'Figure Klassenname',
         tab: MISC_TAB
     }
 })
@@ -1262,22 +1262,6 @@ const baseElements = [
                 localized: true,
                 tab: DEFAULT_TAB
             },
-            c_1_c: {
-                fullWidth: true,
-                value: '',
-                localized: true,
-                placeholder: 'Text eingeben',
-                label: 'Text',
-                tab: MISC_TAB
-            },
-            ['p_data-hover-text']: {
-                fullWidth: true,
-                value: '',
-                placeholder: 'Mouseover text',
-                label: 'Text hover',
-                localized: true,
-                tab: MISC_TAB
-            },
             p_target: {
                 fullWidth: true,
                 value: '',
@@ -1293,6 +1277,26 @@ const baseElements = [
                 tab: DEFAULT_TAB
             },
             ...imgFigureOptions('c_0_p_'),
+            [`c_0_p_className`]: {
+                label: _t('elements.cssClassImage'),
+                tab: MISC_TAB
+            },
+            c_1_c: {
+                fullWidth: true,
+                value: '',
+                localized: true,
+                placeholder: 'Text unter dem Bild',
+                label: 'Text',
+                tab: MISC_TAB
+            },
+            ['p_data-hover-text']: {
+                fullWidth: true,
+                value: '',
+                placeholder: 'Text unter dem Bild (mouseover)',
+                label: 'Text hover',
+                localized: true,
+                tab: MISC_TAB
+            },
             ...invisibleOptions('p_'),
             ...marginOptions('p_'),
             ...classOptions('p_'),
