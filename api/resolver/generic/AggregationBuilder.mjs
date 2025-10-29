@@ -801,10 +801,8 @@ export default class AggregationBuilder {
                     if (fieldDefinition.dynamic?.action === 'alias') {
                         if(fieldDefinition.dynamic.path){
                             const aliasField = fieldDefinition.dynamic.path.split('.')[0]
-                            if(!createdFieldMatches[aliasField]) {
-                                groups[aliasField] = {'$first': '$' + aliasField}
-                                await this.createFilterForField({...fieldDefinition,name: fieldDefinition.dynamic.path}, match, {filters})
-                            }
+                            groups[aliasField] = {'$first': '$' + aliasField}
+                            await this.createFilterForField({...fieldDefinition,name: fieldDefinition.dynamic.path}, match, {filters})
 
                             createdFieldMatches[fieldName] = true
                         }
