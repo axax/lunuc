@@ -82,7 +82,7 @@ export const removeComponent = (key, json) => {
 }
 
 
-export const copyComponent = (key, json) => {
+export const copyComponent = (key, json, options = {}) => {
 
     const source = getComponentByKey(key, json)
 
@@ -94,7 +94,7 @@ export const copyComponent = (key, json) => {
         } else {
             index++
         }
-        addComponent({key: parentKey, json, index, component: source, newKeys:true})
+        addComponent({key: parentKey, json, index, component: source, newKeys:!options.keepTrKey})
         return true
     }
     return false

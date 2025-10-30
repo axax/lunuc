@@ -51,6 +51,7 @@ import {
     StyledHorizontalDivider, StyledRichTextBar
 } from './jsondomhelper/JsonDomStyledElements'
 import CmsViewContainer from "../containers/CmsViewContainer";
+import {SimpleSwitch} from "../../../client/components/ui/impl/material";
 
 const {DEFAULT_LANGUAGE} = config
 const CONVERTABLE_ELEMENTS = ['image','layout-1-2','layout-1-3','layout-1-4','layout-1-6','headline','p','richText','link']
@@ -115,6 +116,7 @@ class JsonDomHelper extends React.Component {
         toolbarMenuOpen: false,
         addChildDialog: null,
         deleteConfirmDialog: false,
+        copyOptionsDialog: false,
         deleteSelectionConfirmDialog: false
     }
 
@@ -150,6 +152,7 @@ class JsonDomHelper extends React.Component {
             state.richTextBarHover !== this.state.richTextBarHover ||
             state.addChildDialog !== this.state.addChildDialog ||
             state.deleteConfirmDialog !== this.state.deleteConfirmDialog ||
+            state.copyOptionsDialog !== this.state.copyOptionsDialog ||
             state.deleteSelectionConfirmDialog !== this.state.deleteSelectionConfirmDialog ||
             state.deleteSourceConfirmDialog !== this.state.deleteSourceConfirmDialog ||
             state.dragging !== this.state.dragging ||
@@ -354,9 +357,19 @@ class JsonDomHelper extends React.Component {
     handleCopyClick(e) {
         e.stopPropagation()
         e.preventDefault()
-        const {_onTemplateChange, _key, _json} = this.props
+        const {_key, _json} = this.props
 
-        if(copyComponent(_key, _json)){
+        const source = getComponentByKey(_key, _json)
+        if(source?.$inlineEditor?.options?.c?.tr){
+            this.setState({copyOptionsDialog: {}})
+        }else {
+            this.handleCopyClickFinal()
+        }
+    }
+
+    handleCopyClickFinal (options = {}){
+        const {_onTemplateChange, _key, _json} = this.props
+        if (copyComponent(_key, _json, options)) {
             _onTemplateChange(_json, true)
             this.setState({toolbarHovered: false, hovered: false, dragging: false})
         }
@@ -547,7 +560,7 @@ class JsonDomHelper extends React.Component {
 
     render() {
         const {_WrappedComponent, _json, _cmsActions, _onTemplateChange, _onDataResolverPropertyChange, children, _tagName, _options, _inlineEditor, _dynamic, onChange, onClick, ...rest} = this.props
-        const {hovered, toolbarHovered, richTextBarHover, toolbarMenuOpen, addChildDialog, deleteConfirmDialog, deleteSelectionConfirmDialog, deleteSourceConfirmDialog} = this.state
+        const {hovered, toolbarHovered, richTextBarHover, toolbarMenuOpen, addChildDialog, deleteConfirmDialog, copyOptionsDialog, deleteSelectionConfirmDialog, deleteSourceConfirmDialog} = this.state
 
         if(!rest._key){
             return
@@ -873,13 +886,36 @@ class JsonDomHelper extends React.Component {
             )]
         } else {
             return <React.Fragment>{comp}
+                {(copyOptionsDialog &&
+                    <SimpleDialog fullWidth={true} maxWidth="sm" key="copyOptionsDialog" open={true}
+                                  onClose={(e) => {
+                                      if (e.key === 'yes') {
+                                          this.handleCopyClickFinal({keepTrKey:copyOptionsDialog.keepTrKey})
+                                      }
+                                      this.setState({copyOptionsDialog: null})
+                                  }}
+                                  actions={[{key: 'cancel',label: _t('core.cancel'),type: 'secondary'},
+                                            {key: 'yes',label: _t('core.ok'),type: 'primary'}]}
+                                  title={_t('JsonDomHelper.copy.element')}>
+
+                        <SimpleSwitch
+                            label={_t('JsonDomHelper.copy.element.new.translation.key')}
+                            defaultChecked={true}
+                            onChange={(checked)=>{
+                                copyOptionsDialog.keepTrKey = checked
+                                console.log(copyOptionsDialog)
+                            }}
+                        />
+
+
+                    </SimpleDialog>
+                )}
                 {(deleteConfirmDialog &&
                     <SimpleDialog fullWidth={true} maxWidth="sm" key="deleteConfirmation" open={true}
                                   onClose={(e) => {
                                       if (e.key === 'delete') {
                                           this.handleDeleteClick()
                                       }
-
                                       this.setState({deleteConfirmDialog: null})
                                       this.enableEvents()
                                   }}
