@@ -21,7 +21,13 @@ import {
 import JsonDomAddElementDialog from './jsondomhelper/JsonDomAddElementDialog'
 import AddToBody from './AddToBody'
 import Util from 'client/util/index.mjs'
-import {isString, propertyByPath, setPropertyByPath, sortJsonKeysDesc} from '../../../client/util/json.mjs'
+import {
+    findObjectsByAttributeValue,
+    isString,
+    propertyByPath,
+    setPropertyByPath,
+    sortJsonKeysDesc
+} from '../../../client/util/json.mjs'
 import {
     getComponentByKey,
     addComponent,
@@ -360,7 +366,8 @@ class JsonDomHelper extends React.Component {
         const {_key, _json} = this.props
 
         const source = getComponentByKey(_key, _json)
-        if(source?.$inlineEditor?.options?.c?.tr){
+        const trs = findObjectsByAttributeValue(source, 'tr', true)
+        if(trs.length > 0){
             this.setState({copyOptionsDialog: {}})
         }else {
             this.handleCopyClickFinal()
