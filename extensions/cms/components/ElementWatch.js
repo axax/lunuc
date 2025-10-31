@@ -23,10 +23,11 @@ class ElementWatch extends React.Component {
     static propsToState(props, state = {}) {
         const {tagName, eleProps, $observe, _key} = props
 
-        let tagSrc, tagImg
+        let tagSrc, tagImg, isVideo = false
         if (tagName === 'SmartImage') {
             tagImg = Util.getImageObject(eleProps.src, eleProps.options)
             tagSrc = tagImg.src + (eleProps.inlineSvg?'#inlinesvg':'')
+            isVideo = tagImg?.mimeType?.startsWith('video/')
         } else {
             tagSrc = eleProps.id || _key
         }
@@ -51,7 +52,7 @@ class ElementWatch extends React.Component {
             hasError:false,
             key: _key,
             madeVisible: isAlreadyMadeVisible && !hasMadeVisibleClass,
-            initialVisible: tagName === 'SmartImage' ? false : !$observe.waitVisible
+            initialVisible: tagName === 'SmartImage' ? isVideo : !$observe.waitVisible
         }
     }
 

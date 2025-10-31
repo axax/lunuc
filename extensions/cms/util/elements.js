@@ -1491,7 +1491,8 @@ const baseElements = [
                                                         t: 'SmartImage',
                                                         p: {
                                                             caption: "$.item{_e(_t(item.text))}",
-                                                            src: "$.item{_e(item.image)}"
+                                                            src: "$.item{_e(item.image)}",
+                                                            className: "$.item{_e(_t(item.className))}",
                                                         }
                                                     }
                                                 ]
@@ -1583,7 +1584,7 @@ const baseElements = [
                     label: 'Bild',
                     uitype: 'type_picker',
                     type: 'Media',
-                    filter: 'mimeType=image',
+                    filter: 'mimeType=~video|image',
                     projection: MEDIA_PROJECTION
                 },
                 link: {
@@ -1616,6 +1617,10 @@ const baseElements = [
             ...classOptions('p_'),
             ...marginOptions('p_'),
             ...imageOptions('c_1_c_$for_c_c_1_$for_c_c_1_p_'),
+            c_1_c_$for_c_c_1_$for_c_c_1_p_className: {
+                label: _t('elements.cssClassImage'),
+                tab: DEFAULT_TAB
+            },
             ...lazyImageOptions('c_1_c_$for_c_c_1_$for_c_c_1_$observe_'),
             ...invisibleOptions('p_'),
             ...observeOptions()

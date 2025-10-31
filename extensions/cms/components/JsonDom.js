@@ -114,10 +114,15 @@ class JsonDom extends React.Component {
             const imgTag = () => {
                 let imageData = Util.getImageObject(src, options)
                 imageData['data-smartimage'] = true
-
                 if (svgData) {
                     return <span data-inline-svg={true} {...props} dangerouslySetInnerHTML={{__html: svgData}}/>
-                } else {
+                } else if(imageData?.mimeType?.startsWith('video/')) {
+                    return <video width={imageData.width} height={imageData.height}
+                                  poster={location.origin+imageData.posterSrc}
+                                  autoplay muted loop>
+                        <source src={imageData.src} type={imageData.mimeType} />
+                    </video>
+                }else{
                     const Tag = tagName || 'img'
                     return <Tag {...imageData} {...props} />
                 }

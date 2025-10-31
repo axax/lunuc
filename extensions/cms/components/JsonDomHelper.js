@@ -1723,6 +1723,7 @@ class JsonDomHelper extends React.Component {
                                     uitype: 'button',
                                     label: _t('core.delete'),
                                     action: 'delete',
+                                    color: 'error',
                                     key,
                                     group: newJsonElement.groupOptions[key],
                                     index: idx,

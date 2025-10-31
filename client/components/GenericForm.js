@@ -1178,7 +1178,7 @@ class GenericForm extends React.Component {
 
             currentFormFields.push(<Button key={fieldKey}
                                            className={field.className}
-                                           color="primary"
+                                           color={field.color || 'primary'}
                                            variant="contained"
                                            style={field.style}
                                            onClick={() => {

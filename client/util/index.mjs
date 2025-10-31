@@ -371,7 +371,6 @@ const Util = {
         } else {
             data.src = image.src
         }
-
         if(!data.alt){
             data.alt = data.src.split('/').pop().split('?')[0]
         }
@@ -435,11 +434,20 @@ const Util = {
             }
         }
 
+
+        if (image.mimeType) {
+            data.mimeType = image.mimeType
+            if(image.mimeType.startsWith('video/')){
+                data.posterSrc = `${data.src}?transcode=${encodeURIComponent(JSON.stringify({screenshot:{time:15,size:data.width+'x'+data.height}}))}&ext=png`
+            }
+        }
+
+
         if (options.format) {
             params += '&format=' + options.format
         } else if (options.webp) {
             params += '&format=webp'
-        };
+        }
 
         ['quality','removebg','flop','flip','position','noenlarge'].forEach(key=>{
             if(options[key]){

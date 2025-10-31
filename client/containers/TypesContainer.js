@@ -999,7 +999,7 @@ class TypesContainer extends React.Component {
                               }
                           }}
                           actions={[
-                              (dataToBulkEdit.fields && Object.keys(dataToBulkEdit.fields).length>0?{key: 'execute', label: _t('TypesContainer.bulkEditExecute')}:null),
+                              (dataToBulkEdit.action==='editScript' || (dataToBulkEdit.fields && Object.keys(dataToBulkEdit.fields).length>0)?{key: 'execute', label: _t('TypesContainer.bulkEditExecute')}:null),
                               {
                               key: 'cancel',
                               label: _t('core.cancel'),
