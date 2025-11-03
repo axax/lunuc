@@ -36,6 +36,9 @@ export const resolveDynamicFieldQuery = async (db, field, item, setItem) => {
         if(item[aliasField]){
             const json = parseOrElse(item[aliasField],{})
             setItem[field.name] = propertyByPath(dyn.path,{[aliasField]:json})
+            if(setItem[field.name] && setItem[field.name].constructor !== String){
+                setItem[field.name] = JSON.stringify(setItem[field.name])
+            }
         }
     }
 }
