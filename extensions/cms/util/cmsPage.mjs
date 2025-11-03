@@ -12,6 +12,25 @@ export const getCmsPageCacheKey = ({_version, slug, host, inEditor})=>{
     return 'cmsPage-' + (_version ? _version + '-' : '') + slug + (host ? '-' + host : '') + (inEditor ? '-inEditor': '')
 }
 
+const paths = [
+    "generated/component/*",
+    "core/qrcode",
+    "system/responsive-viewer",
+    "system/hostrules",
+    "system/console",
+    "system/aiassistent"
+];
+
+function pathMatches(path, pathPatterns) {
+    return pathPatterns.some(pattern => {
+        if (pattern.endsWith('*')) {
+            const prefix = pattern.slice(0, -1) // remove trailing '*'
+            return path.startsWith(prefix)
+        }
+        return path === pattern // exact match if no '*'
+    })
+}
+
 export const getCmsPage = async ({db, context, headers, ...params}) => {
 
     if (Hook.hooks['beforeCmsPage'] && Hook.hooks['beforeCmsPage'].length) {
@@ -42,7 +61,7 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
                 slugFallback = {default:slugFallback===true}
             }
 
-            if (slugFallback.default===true || (Array.isArray(slugFallback.exceptions) && slugFallback.exceptions.indexOf(slug)>=0)) {
+            if (slugFallback.default===true || (Array.isArray(slugFallback.exceptions) && pathMatches(slug, slugFallback.exceptions))) {
                 slugMatch = {$or: [{slug: modSlug}, {slug}]}
             } else {
                 slugMatch = {slug: modSlug}
