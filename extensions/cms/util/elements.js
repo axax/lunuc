@@ -1552,7 +1552,8 @@ const baseElements = [
                                         $inlineEditor: false,
                                         t: 'label',
                                         p: {
-                                            htmlFor: '__uid__$.slide{slide._index==0?this.scope.__sliderData.length-1:slide._index-1}'
+                                            htmlFor: '__uid__$.slide{slide._index==0?this.scope.__sliderData.length-1:slide._index-1}',
+                                            rel:'prev'
                                         }
                                     },
                                     {
@@ -1564,7 +1565,8 @@ const baseElements = [
                                         $inlineEditor: false,
                                         t: 'label',
                                         p: {
-                                            htmlFor: '__uid__$.slide{slide._index+1>=this.scope.__sliderData.length?0:slide._index+1}'
+                                            htmlFor: '__uid__$.slide{slide._index+1>=this.scope.__sliderData.length?0:slide._index+1}',
+                                            rel:'next'
                                         }
                                     }
                                 ]

@@ -99,7 +99,11 @@ const cronjobUtil = {
             const worker = new Worker(` 
             ${scriptContext.script}            
             (async () => {
-                ${script}
+            
+                const runScript = async () => {
+                    ${script}
+                }
+                await runScript();
                 
                 if(this.db){
                     await this.db.client.close()
@@ -143,7 +147,10 @@ const cronjobUtil = {
                 ${requireContext.script}
                 (async () => {
                     try {
-                        ${script}
+                        const runScript = async () => {
+                            ${script}
+                        }
+                        await runScript();
                     } catch(e) {
                         this.error(e.message+' '+e.stack + ${args.cronjobId?"' -> in "+args.cronjobId+"'":''});
                     }
