@@ -108,6 +108,24 @@ function saveTrsAsCsv(data) {
     }
 }
 
+
+const translatePageTitle = async ({title,overrideTranslations, onChange}) =>{
+    if(!title || !title[config.DEFAULT_LANGUAGE]){
+        return
+    }
+    for(const lang of config.LANGUAGES){
+        if ((overrideTranslations || !title[lang]) && lang !== config.DEFAULT_LANGUAGE) {
+            const res = await translateText({text: title[config.DEFAULT_LANGUAGE], toIso:lang, fromIso: config.DEFAULT_LANGUAGE})
+            if(res.text){
+                title[lang] = res.text
+                if(onChange){
+                    onChange('title', null, title)
+                }
+            }
+        }
+    }
+}
+
 const translateInDataResolver = async ({source, base, path='', overrideTranslations=false, onChange}) => {
     if (!source || source.constructor !== Object) {
         return
@@ -230,7 +248,8 @@ class CmsViewEditorContainer extends React.Component {
             publicEdit,
             compress,
             addNewSite: null,
-            ignoreStatus: false
+            ignoreStatus: false,
+            translatePageTitle:true
         }
 
         if (meta) {
@@ -960,7 +979,6 @@ class CmsViewEditorContainer extends React.Component {
                             })
                         }
                     })
-
                 if(canMangeCmsContent) {
                     moreMenu.push({
                             divider: true,
@@ -969,12 +987,19 @@ class CmsViewEditorContainer extends React.Component {
                             this.setState({
                                 simpleDialog: {
                                     title: _t('CmsViewEditorContainer.autotranslate'),
-                                    text: <SimpleSwitch key="overrideTranslationsSwitch" color="primary"
+                                    text: <><SimpleSwitch key="translatePageTitleSwitch" color="primary"
+                                                          defaultChecked={this.state.translatePageTitle}
+                                                          onChange={(e)=>{
+                                                              this.setState({translatePageTitle:!this.state.translatePageTitle})
+                                                          }}
+                                                          label={_t('CmsViewEditorContainer.translatePageTitle')}/>
+                                        <SimpleSwitch key="overrideTranslationsSwitch" color="primary"
                                                         defaultChecked={this.state.overrideTranslations}
                                                         onChange={(e)=>{
                                                             this.setState({overrideTranslations:!this.state.overrideTranslations})
                                                         }}
-                                                        label={_t('CmsViewEditorContainer.overrideTranslations')}/>,
+                                                        label={_t('CmsViewEditorContainer.overrideTranslations')}/>
+                                    </>,
                                     maxWidth:'sm',
                                     actions: [
                                         {
@@ -995,6 +1020,13 @@ class CmsViewEditorContainer extends React.Component {
                                                     onChange:()=>{
                                                         this.handleDataResolverChange(JSON.stringify(dataResolver, null, 2))
                                                     }})
+                                            }
+
+                                            if(this.state.translatePageTitle){
+                                                await translatePageTitle({
+                                                    title:cmsPage.name,
+                                                    overrideTranslations: this.state.overrideTranslations,
+                                                    onChange:this.handleFlagChange})
                                             }
 
                                             await translateInTemplate({

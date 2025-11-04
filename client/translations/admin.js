@@ -123,6 +123,8 @@ export const translations = {
         'CodeEditor.aiAssistent':'KI Assistent',
         'CodeEditor.newFileSplit':'Neuer Dateisplit',
         'CodeEditor.editFileSplitName':'Umbenennen',
+        'CodeEditor.hideFileSplit':'Dateisplit ausblenden',
+        'CodeEditor.showFileSplit':'Dateisplit anzeigen',
         'GlobalSearch.placeholder':'Schnellsuche',
         'TypeEdit.closeConfirmText':'Möchten Sie die Änderung speichern?',
         'TypeEdit.closeConfirmTitle':'Daten Speichern'
@@ -250,6 +252,8 @@ export const translations = {
         'CodeEditor.reformatCode': 'Reformat',
         'CodeEditor.openInNewWindow':'Open in new window',
         'CodeEditor.newFileSplit':'New file split',
+        'CodeEditor.hideFileSplit':'Hide file split',
+        'CodeEditor.showFileSplit':'Show file split',
         'CodeEditor.editFileSplitName':'Rename',
         'GlobalSearch.placeholder':'Quick search',
         'TypeEdit.closeConfirmText':'Would you like to save the change?',

@@ -160,7 +160,7 @@ function CodeEditor(props,ref){
         allActions.push({
             divider:true,
             icon:(showFileSplit ? 'visibilityOff' : 'visibility'),
-            name: (showFileSplit ? 'Hide' : 'Show') + ' File split', onClick: () => {
+            name: (showFileSplit ? _t('CodeEditor.hideFileSplit') : _t('CodeEditor.showFileSplit')), onClick: () => {
                 // to keep value in state
                 setStateValue(putFilesTogether(files, finalFileIndex, editorViewRef.current.state.doc.toString()))
                 setShowFileSplit(!showFileSplit)
@@ -236,9 +236,11 @@ function CodeEditor(props,ref){
                     clickEvent.preventDefault()
                     setContextMenu(generateContextMenu({
                         type,
-                        fileSplit,
+                        fileSplit,files, finalFileIndex,
+                        setShowFileSplit,setStateValue,
                         clickEvent,
                         editorView,
+                        showFileSplit,
                         propertyTemplates,
                         templates,
                         setEditData

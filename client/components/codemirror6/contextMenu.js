@@ -5,6 +5,7 @@ import {formatCode} from './utils'
 import {openWindow} from '../../util/window'
 import {fixAndParseJSON} from '../../util/fixJson.mjs'
 import {BuildIcon} from '../../../gensrc/ui/admin'
+import {putFilesTogether} from './fileSeperation'
 
 const getTextAtLineNumber = (editorView, number) => {
     try {
@@ -26,7 +27,9 @@ function endsWithAny(str, chars) {
     return chars.includes(lastChar)
 }
 
-export function generateContextMenu({type,clickEvent, editorView, propertyTemplates, templates, setEditData, fileSplit}) {
+export function generateContextMenu({type,clickEvent, editorView, propertyTemplates, templates, setEditData,
+                                        fileSplit, showFileSplit, files, finalFileIndex,
+                                        setShowFileSplit,setStateValue}) {
     let contextMenuItems = []
 
    if (editorView) {
@@ -204,9 +207,19 @@ export function generateContextMenu({type,clickEvent, editorView, propertyTempla
        }
        if (fileSplit) {
            contextMenuItems.push({
+               divider:true,
                icon:'add',
                name: _t('CodeEditor.newFileSplit'), onClick: () => {
                    setEditData({fileSplit:true,fields:{name:{fullWidth:true,label:'Name',required:true}},lineInfo})
+               }
+           })
+
+           contextMenuItems.push({
+               icon:(showFileSplit ? 'visibilityOff' : 'visibility'),
+               name: (showFileSplit ? _t('CodeEditor.hideFileSplit') : _t('CodeEditor.showFileSplit')), onClick: () => {
+                   // to keep value in state
+                   setStateValue(putFilesTogether(files, finalFileIndex, editorView.state.doc.toString()))
+                   setShowFileSplit(!showFileSplit)
                }
            })
        }
