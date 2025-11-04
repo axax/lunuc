@@ -1,10 +1,12 @@
-import React from 'react'
+import React, {useCallback, useEffect} from 'react'
 import {_t} from '../../../util/i18n.mjs'
 import styled from '@emotion/styled'
 import theme from '../../../client/components/ui/impl/material/theme'
 import ConsoleCapture from './ConsoleCapture'
 import {getCircularReplacer} from '../../mailserver/util/index.mjs'
 import ResizableDivider from "../../../client/components/ResizableDivider";
+import {propertyByPath, setPropertyByPath} from "../../../client/util/json.mjs";
+import {deepMerge} from "../../../util/deepMerge.mjs";
 
 
 const StyledBox = styled.div`
@@ -46,12 +48,56 @@ export default function CmsPageTools(props){
     const [tab, setTab] = React.useState(false)
     const [boxHeight, setBoxHeight] = React.useState(props.boxHeight || 200)
 
-   /* const hiddeAll = ()=>{
-        setShowConsole(false)
-        setShowScope(false)
-        setShowServerConsole(false)
-        setShowAiAssistent(false)
-    }*/
+
+    const handleMessage = useCallback((event) => {
+        if(event.data.key === 'aiassistent'){
+
+            const template = JSON.parse(props.template),
+                path = event.data.path.substring(9)
+            console.log(template)
+            let data = propertyByPath(path, template)
+            let newData = event.data.data
+
+            if(Array.isArray(newData)){
+                if(newData.length === 1){
+                    newData = newData[0]
+                }
+            }
+
+
+            if(data){
+                if(Array.isArray(data)) {
+                    newData = [newData,...data]
+                }else if(data.constructor === Object){
+                    newData = deepMerge(newData,data)
+                }else{
+                    newData = [newData,data]
+                }
+            }
+            setPropertyByPath(newData, path, template)
+
+            props.onTemplateChange(template,true)
+
+            // Optionally verify event.origin here for security
+            console.log("Received data from iframe:", event.data);
+        }
+    }, []);
+
+    useEffect(() => {
+        window.addEventListener('message', handleMessage)
+        // Cleanup to remove the listener when the component unmounts
+        return () => {
+            window.removeEventListener('message', handleMessage)
+        }
+    }, [handleMessage])
+
+
+    /* const hiddeAll = ()=>{
+         setShowConsole(false)
+         setShowScope(false)
+         setShowServerConsole(false)
+         setShowAiAssistent(false)
+     }*/
     const toggleTab = (name)=>{
         if(tab===name){
             setTab(false)
@@ -79,7 +125,7 @@ export default function CmsPageTools(props){
                 Server Console
             </StyledButton>
             <StyledButton selected={tab === 'aiAssistent'} onClick={() => toggleTab('aiAssistent')}>
-                AI Assistent
+                {_t('CodeEditor.aiAssistent')}
             </StyledButton>
         </StyledButtonGroup>
         {tab==='console' && <StyledInfoBox height={boxHeight}><ConsoleCapture /></StyledInfoBox>}
