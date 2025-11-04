@@ -119,7 +119,7 @@ const translatePageTitle = async ({title,overrideTranslations, onChange}) =>{
             if(res.text){
                 title[lang] = res.text
                 if(onChange){
-                    onChange('title', null, title)
+                    onChange('name', null, title)
                 }
             }
         }
@@ -1026,7 +1026,7 @@ class CmsViewEditorContainer extends React.Component {
                                                 await translatePageTitle({
                                                     title:cmsPage.name,
                                                     overrideTranslations: this.state.overrideTranslations,
-                                                    onChange:this.handleFlagChange})
+                                                    onChange:this.handleFlagChange.bind(this)})
                                             }
 
                                             await translateInTemplate({
