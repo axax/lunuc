@@ -45,16 +45,18 @@ const StyledButton = styled.button`
 
 export default function CmsPageTools(props){
 
-    const [tab, setTab] = React.useState(false)
+    const [tab, setTab] = React.useState(props.tab)
     const [boxHeight, setBoxHeight] = React.useState(props.boxHeight || 200)
 
 
     const handleMessage = useCallback((event) => {
         if(event.data.key === 'aiassistent'){
 
-            const template = JSON.parse(props.template),
-                path = event.data.path.substring(9)
-            console.log(template)
+            const template = JSON.parse(props.template)
+            let path = event.data.path
+            if(path.startsWith('template.')){
+                path = path.substring(9)
+            }
             let data = propertyByPath(path, template)
             let newData = event.data.data
 
@@ -71,7 +73,7 @@ export default function CmsPageTools(props){
                 }else if(data.constructor === Object){
                     newData = deepMerge(newData,data)
                 }else{
-                    newData = [newData,data]
+                    newData = data
                 }
             }
             setPropertyByPath(newData, path, template)
@@ -99,10 +101,14 @@ export default function CmsPageTools(props){
          setShowAiAssistent(false)
      }*/
     const toggleTab = (name)=>{
-        if(tab===name){
-            setTab(false)
-        }else{
-            setTab(name)
+        let newTab = name
+        if(tab===newTab){
+            newTab = false
+        }
+        setTab(newTab)
+
+        if(props.onTab){
+            props.onTab(newTab)
         }
     }
     const aiAssistenUrl = `/system/aiassistent?preview=true&slug=${props.slug || ''}`

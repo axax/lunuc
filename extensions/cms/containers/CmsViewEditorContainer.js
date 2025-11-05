@@ -561,9 +561,13 @@ class CmsViewEditorContainer extends React.Component {
                                            {...props} />,
             EditorOptions.devTools && <CmsPageTools style={{left:EditorOptions.drawerOpen?EditorOptions.drawerWidth:0}}
             boxHeight={EditorOptions.devToolsBoxHeight}
+            tab={EditorOptions.devToolsTab}
             slug={props.slug}
             template={template}
             onTemplateChange={this.handleTemplateChange.bind(this)}
+            onTab={(tab)=>{
+                this.handleSettingChange( 'devToolsTab', false, tab)
+            }}
             onBoxHeightChange={(height)=>{
                 clearTimeout(this.boxHeightTimeout)
                 this.boxHeightTimeout = setTimeout(()=>{
@@ -1183,6 +1187,7 @@ class CmsViewEditorContainer extends React.Component {
                               drawerWidth={EditorOptions.drawerWidth}
                               onDrawerOpenClose={this.drawerOpenClose}
                               onDrawerWidthChange={this.drawerWidthChange}
+                              contentStyle={{marginBottom:EditorOptions.devToolsTab?EditorOptions.devToolsBoxHeight:0}}
                               toolbarLeft={<IconButton
                                   onClick={()=>{
                                       this.props.history.push(config.ADMIN_BASE_URL + '/cms' + (_app_._cmsLastSearch ? _app_._cmsLastSearch : ''))

@@ -236,9 +236,9 @@ class DrawerLayout extends React.Component {
 
 
     render() {
-        const {title, sidebar, toolbarLeft, toolbarRight, children, fixedLayout} = this.props
+        const {title, sidebar, toolbarLeft, toolbarRight, children, fixedLayout, contentStyle} = this.props
         const {open, drawerWidth, dragEntered} = this.state
-        const contentFixed = {}
+        const contentFixed = {...contentStyle}
         if (open) {
             contentFixed.marginLeft = drawerWidth + 'px'
             contentFixed.width = 'calc(100% - ' + drawerWidth + 'px)'
