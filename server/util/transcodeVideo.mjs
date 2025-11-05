@@ -265,7 +265,7 @@ export const transcodeAndStreamVideo = async ({options, headers, req, res, filen
         await sendFileFromDir(req,res,{filename:SERVER_DIR+'/loading.mp4',headers:{...headers,...noCacheHeaders}})
 
     } else {
-        headers['Transfer-Encoding'] = 'chunked'
+        //headers['Transfer-Encoding'] = 'chunked'
         headers['Accept-Ranges'] = 'bytes'
         res.writeHead(200, headers)
         video.pipe(res, {end: true})
