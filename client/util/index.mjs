@@ -439,6 +439,9 @@ const Util = {
             data.mimeType = image.mimeType
             if(image.mimeType.startsWith('video/')){
                 data.posterSrc = `${data.src}?transcode=${encodeURIComponent(JSON.stringify({screenshot:{time:1,size:data.width+'x'+data.height}}))}&ext=png`
+                if(options.videoTranscode){
+                   params += `&transcode=${options.videoTranscode}&ext=mp4`
+                }
             }
         }
 
