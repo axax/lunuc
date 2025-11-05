@@ -394,57 +394,60 @@ const Util = {
             isVideo = image.mimeType.startsWith('video/')
         }
 
+        if (resize) {
+            if (resize === 'auto' || resize.responsive) {
+                const ww = window.innerWidth
+                if (ww <= 720) {
+                    w = 720
+                } else if (ww <= 1024) {
+                    w = 1024
+                } else if (ww <= 1200) {
+                    w = 1200
+                } else if (ww <= 1400) {
+                    w = 1400
+                } else {
+                    w = 1600
+                }
+                if (resize.width < w) {
+                    w = resize.width
+                }
+                if (resize.width && resize.height) {
+                    h = Math.ceil((w / resize.width) * resize.height)
+                }
+            } else {
+                if (resize.width) {
+                    w = resize.width
+                }
+                if (resize.height) {
+                    h = resize.height
+                }
+            }
+            if (w) {
+                if (!h && data.height && data.width) {
+                    data.height = Math.ceil((w / data.width) * data.height)
+                }
+                data.width = w
+                if(!isVideo) {
+                    params += `&width=${w}`
+                }
+            }
+            if (h) {
+                if (!w && data.height && data.width) {
+                    data.width = Math.ceil((h / data.height) * data.width)
+                }
+                data.height = h
+                if(!isVideo) {
+                    params += `&height=${h}`
+                }
+            }
+        }
+
         if(isVideo) {
-            data.posterSrc = `${data.src}?transcode=${encodeURIComponent(JSON.stringify({screenshot:{time:1,size:data.width+'x'+data.height}}))}&ext=png`
+            data.posterSrc = `${data.src}?transcode=${encodeURIComponent(JSON.stringify({screenshot:{time:1,size:data.width+'x?'}}))}&ext=png`
             if(options.videoTranscode){
                 params += `&transcode=${options.videoTranscode}&ext=mp4`
             }
         }else{
-
-            if (resize) {
-
-                if (resize === 'auto' || resize.responsive) {
-                    const ww = window.innerWidth
-                    if (ww <= 720) {
-                        w = 720
-                    } else if (ww <= 1024) {
-                        w = 1024
-                    } else if (ww <= 1200) {
-                        w = 1200
-                    } else if (ww <= 1400) {
-                        w = 1400
-                    } else {
-                        w = 1600
-                    }
-                    if (resize.width < w) {
-                        w = resize.width
-                    }
-                    if (resize.width && resize.height) {
-                        h = Math.ceil((w / resize.width) * resize.height)
-                    }
-                } else {
-                    if (resize.width) {
-                        w = resize.width
-                    }
-                    if (resize.height) {
-                        h = resize.height
-                    }
-                }
-                if (w) {
-                    if (!h && data.height && data.width) {
-                        data.height = Math.ceil((w / data.width) * data.height)
-                    }
-                    data.width = w
-                    params += `&width=${w}`
-                }
-                if (h) {
-                    if (!w && data.height && data.width) {
-                        data.width = Math.ceil((h / data.height) * data.width)
-                    }
-                    data.height = h
-                    params += `&height=${h}`
-                }
-            }
 
             if (options.format) {
                 params += '&format=' + options.format
