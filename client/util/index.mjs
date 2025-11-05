@@ -380,7 +380,7 @@ const Util = {
             data.height = image.info.height
         }
 
-        if (_app_.ssr && !data.src.startsWith('https://') && !data.src.startsWith('http://')) {
+        if (_app_.ssr && !/^https?:\/\//.test(data.src)) {
             try {
                 data.src = new URL(data.src, location.origin).href
             } catch (e) {
@@ -388,78 +388,79 @@ const Util = {
             }
         }
 
-        let h, w, params = ''
-        if (resize) {
-
-            if (resize === 'auto' || resize.responsive) {
-                const ww = window.innerWidth
-                if (ww <= 720) {
-                    w = 720
-                } else if (ww <= 1024) {
-                    w = 1024
-                } else if (ww <= 1200) {
-                    w = 1200
-                } else if (ww <= 1400) {
-                    w = 1400
-                } else {
-                    w = 1600
-                }
-                if (resize.width<w) {
-                    w = resize.width
-                }
-                if(resize.width && resize.height){
-                    h = Math.ceil((w / resize.width) * resize.height)
-                }
-            }else{
-                if (resize.width) {
-                    w = resize.width
-                }
-                if (resize.height) {
-                    h = resize.height
-                }
-            }
-            if (w) {
-                if(!h && data.height && data.width){
-                    data.height = Math.ceil((w / data.width) * data.height)
-                }
-                data.width = w
-                params += `&width=${w}`
-            }
-            if (h) {
-                if(!w && data.height && data.width){
-                    data.width = Math.ceil((h / data.height) * data.width)
-                }
-                data.height = h
-                params += `&height=${h}`
-            }
-        }
-
-
+        let h, w, params = '', isVideo = false
         if (image.mimeType) {
             data.mimeType = image.mimeType
-            if(image.mimeType.startsWith('video/')){
-                data.posterSrc = `${data.src}?transcode=${encodeURIComponent(JSON.stringify({screenshot:{time:1,size:data.width+'x'+data.height}}))}&ext=png`
-                if(options.videoTranscode){
-                   params += `&transcode=${options.videoTranscode}&ext=mp4`
-                }
-            }
+            isVideo = image.mimeType.startsWith('video/')
         }
 
-
-        if (options.format) {
-            params += '&format=' + options.format
-        } else if (options.webp) {
-            params += '&format=webp'
-        }
-
-        ['quality','removebg','flop','flip','position','noenlarge'].forEach(key=>{
-            if(options[key]){
-                if(key==='removebg' && options[key].tolerance<=0){
-                    return
-                }
-                params += `&${key}=${options[key].constructor === Object ? JSON.stringify(options[key]) : options[key]}`
+        if(isVideo) {
+            data.posterSrc = `${data.src}?transcode=${encodeURIComponent(JSON.stringify({screenshot:{time:1,size:data.width+'x'+data.height}}))}&ext=png`
+            if(options.videoTranscode){
+                params += `&transcode=${options.videoTranscode}&ext=mp4`
             }
-        })
+        }else{
+
+            if (resize) {
+
+                if (resize === 'auto' || resize.responsive) {
+                    const ww = window.innerWidth
+                    if (ww <= 720) {
+                        w = 720
+                    } else if (ww <= 1024) {
+                        w = 1024
+                    } else if (ww <= 1200) {
+                        w = 1200
+                    } else if (ww <= 1400) {
+                        w = 1400
+                    } else {
+                        w = 1600
+                    }
+                    if (resize.width < w) {
+                        w = resize.width
+                    }
+                    if (resize.width && resize.height) {
+                        h = Math.ceil((w / resize.width) * resize.height)
+                    }
+                } else {
+                    if (resize.width) {
+                        w = resize.width
+                    }
+                    if (resize.height) {
+                        h = resize.height
+                    }
+                }
+                if (w) {
+                    if (!h && data.height && data.width) {
+                        data.height = Math.ceil((w / data.width) * data.height)
+                    }
+                    data.width = w
+                    params += `&width=${w}`
+                }
+                if (h) {
+                    if (!w && data.height && data.width) {
+                        data.width = Math.ceil((h / data.height) * data.width)
+                    }
+                    data.height = h
+                    params += `&height=${h}`
+                }
+            }
+
+            if (options.format) {
+                params += '&format=' + options.format
+            } else if (options.webp) {
+                params += '&format=webp'
+            }
+
+            ['quality', 'removebg', 'flop', 'flip', 'position', 'noenlarge'].forEach(key => {
+                if (options[key]) {
+                    if (key === 'removebg' && options[key].tolerance <= 0) {
+                        return
+                    }
+                    params += `&${key}=${options[key].constructor === Object ? JSON.stringify(options[key]) : options[key]}`
+                }
+            })
+        }
 
         if (params && options.addParams!==false) {
             data.src += (data.src.indexOf('?')>=0?'&':'?') + params.substring(1)
