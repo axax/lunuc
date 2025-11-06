@@ -13,6 +13,7 @@ import {
 import {getComponentByKey, addComponent, removeComponent} from '../util/jsonDomUtil'
 import {_t} from '../../../util/i18n.mjs'
 import styled from '@emotion/styled'
+import {parseOrElse} from "../../../client/util/json.mjs";
 
 const INDENT = 30
 
@@ -152,8 +153,12 @@ class JsonDomEditor extends React.Component {
             const props = []
             Object.keys(json).forEach(k => {
                 let value = json[k] || '', valueOri = json[k]
-                if (!itemLabel && value.constructor === String) {
-                    itemLabel += value
+                if (!itemLabel) {
+                    if(value._localized) {
+                        itemLabel += _t(value)
+                    }else if(value.constructor === String){
+                        itemLabel += value
+                    }
                 }
                 props.push(<tr key={key + '.' + k}>
                     <td style={{fontWeight: 'bold', background: '#ffdbfb'}}
@@ -177,7 +182,7 @@ class JsonDomEditor extends React.Component {
                             onBlur={(e) => {
                                 let newValue = e.target.innerText.trim()
                                 const comp = getComponentByKey(key, this.state.json)
-                                comp[k] = newValue
+                                comp[k] = parseOrElse(newValue)
                                 this.updateJson(this.state.json)
                             }}>{value.constructor===String?value:JSON.stringify(value, null, 2)}</td>
                     }
@@ -253,7 +258,7 @@ class JsonDomEditor extends React.Component {
                         </table>
                     </div>
                     {['input', 'textarea'].indexOf(itemLabel) < 0 || json.c ? this.renderJsonRec(json.c, key, level) :
-                        <ListItem style={{paddingLeft: INDENT * level + 65}}
+                        <ListItem style={{paddingLeft: INDENT * level + 45}}
                                   key={key + '.c'}>Type {itemLabel} can not have
                             children</ListItem>}
                 </Collapse>,

@@ -272,21 +272,32 @@ export default class AggregationBuilder {
                 // if it is an object only add filter if searchable is explicitly set to true
                 if (type !== 'Object' || vagueSearchable === true) {
 
-                    for (const restFilter of filters.rest) {
+                    for (let i = 0;i<filters.rest.length;i++) {
+                        const restFilter = filters.rest[i]
                         hasAtLeastOneMatch = true
+
+                        const restMatch = {}
                         if (await addFilterToMatch({
                             filterKey,
                             subQuery,
                             filterValue: restFilter.value,
-                            filterOptions: restFilter,
+                            filterOptions: {...restFilter,operator:'or'},
                             type,
                             multi,
-                            match,
+                            match: restMatch,
                             db:this.db,
                             debugInfo: this.debugInfo
                         })) {
                             hasAtLeastOneMatch = true
                         }
+
+                        if(!match.$$restQuery){
+                            match.$$restQuery = []
+                        }
+                        if(!match.$$restQuery[i]){
+                            match.$$restQuery.push({$:[], operator:restFilter.operator})
+                        }
+                        match.$$restQuery[i].$.push(restMatch)
                     }
                 }
             }
@@ -462,8 +473,7 @@ export default class AggregationBuilder {
                 fields.push('createdBy')
             }
         }
-
-        await this.createQueriesForFields(fields, projectResultData, match, filters, groups, lookups, typeFields, resultMatch, resultFilters, lookupMatch, lookupFilters);
+        await this.createQueriesForFields(fields, projectResultData, match, filters, groups, lookups, typeFields, resultMatch, resultFilters, lookupMatch, lookupFilters)
 
         if (!projectResult) {
             // also return extra fields
@@ -676,6 +686,24 @@ export default class AggregationBuilder {
         await this.addMissingFieldsFromFilters(filters, fields, match);
 
         await this.createQueriesForFieldsRecursiv(fields, projectResultData, match, filters, groups, lookups, typeFields, resultMatch, resultFilters, lookupMatch, lookupFilters)
+
+
+        if(match.$$restQuery){
+            //match.$and.push(match.$$restQuery)
+            const restPart = {$or:[],$and:[]}
+            for(let i=0;i<match.$$restQuery.length;i++) {
+                const restQuery = match.$$restQuery[i]
+
+                if(restQuery.operator==='or') {
+                    restPart.$or.push(...restQuery.$)
+                }else{
+                    restPart.$and.push({$or:restQuery.$})
+                }
+            }
+            this.cleanupMatch(restPart)
+            match.$and.push(restPart)
+            delete match.$$restQuery
+        }
     }
 
     async createQueriesForFieldsRecursiv(fields, projectResultData,
