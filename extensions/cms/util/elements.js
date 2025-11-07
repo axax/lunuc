@@ -253,7 +253,7 @@ const observeOptions = (defaultValue={}) => ({
         fullWidth: true,
         type: 'Boolean',
         value: false,
-        label: 'Ein-/Ausblenden',
+        label: _t('elements.observe.filpFlop'),
         tab: VISIBILITY_TAB,
         role: CAPABILITY_MANAGE_CMS_PAGES
     },

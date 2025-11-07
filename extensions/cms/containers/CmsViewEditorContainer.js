@@ -53,7 +53,7 @@ import {
     propertyByPath,
     setPropertyByPath,
     findSegmentByKeyOrPath,
-    findObjectsByAttributeValue
+    findObjectsByAttributeValue, isTrue
 } from '../../../client/util/json.mjs'
 import GenericForm from '../../../client/components/GenericForm'
 import {_t} from '../../../util/i18n.mjs'
@@ -623,7 +623,7 @@ class CmsViewEditorContainer extends React.Component {
             <DataEditDialog key="dataEditDialog"/>]
 
         if (!canViewCmsEditor || props.dynamic) {
-            if ((cmsPage && cmsPage.publicEdit) || props.forceEditMode===true || props.forceEditMode==='true') {
+            if ((cmsPage && cmsPage.publicEdit) || isTrue(props.forceEditMode) || isTrue(props.forceInlineEditor)) {
                 return <UIProvider>{inner}</UIProvider>
             }
             return inner

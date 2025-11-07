@@ -42,6 +42,7 @@ export function assignIfObjectOrArray(obj) {
 }
 
 export const isFalse = value => value==='false' || value===false
+export const isTrue = value => value==='true' || value===true
 
 export const isString = (variable) => typeof variable === 'string'
 

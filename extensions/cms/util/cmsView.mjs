@@ -2,6 +2,7 @@ import Util from '../../../client/util/index.mjs'
 import {CAPABILITY_VIEW_CMS_EDITOR} from '../constants/index.mjs'
 import {NO_SESSION_KEY_VALUES} from '../../../client/constants/index.mjs'
 import config from '../../../gensrc/config-client.js'
+import {isTrue} from '../../../client/util/json.mjs'
 
 //map with slugs that are url sensitive
 export const urlSensitivMap = {}
@@ -20,7 +21,7 @@ export const getCmsPageQuery = (props, state)=>{
     if(state && state.refetchOptions && state.refetchOptions.extendData){
         return CMS_PAGE_QUERY_BASE+'resolvedData}}'
     }
-    return props.dynamic?CMS_PAGE_QUERY:CMS_PAGE_QUERY_FULL
+    return props.dynamic && !isTrue(props.forceInlineEditor)?CMS_PAGE_QUERY:CMS_PAGE_QUERY_FULL
 }
 
 export const isPreview = () => {
@@ -33,10 +34,12 @@ export const isEditMode = (props) => {
 
 
     if(cmsPage) {
-        if(forceEditMode===true || forceEditMode === 'true'){
-            return true
-        }
-        if (cmsPage.publicEdit) {
+        /*
+        forceEditMode enables editing of GenericData within a dynamically added CMS component.
+        forceInlineEditor allows editing of the template inside a dynamically added CMS component.
+        publicEdit is set on the page itself and allows editing of the template inside a dynamically added CMS component.
+         */
+        if(isTrue(forceEditMode) || isTrue(props.forceInlineEditor) || cmsPage.publicEdit) {
             return true
         } else if (!cmsPage.editable) {
             return false

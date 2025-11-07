@@ -147,7 +147,7 @@ class CmsViewContainer extends React.Component {
             _props={_props}
             {...props}>{children}</JsonDom>
 
-        console.info(`render ${this.constructor.name} for ${slug} (loading=${this.props.loading}) in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime() - _app_.start.getTime()}ms`)
+        console.info(`render ${this.constructor.name} editMode=${editMode} for ${slug} (loading=${this.props.loading}) in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime() - _app_.start.getTime()}ms`)
         return content
     }
 

@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom'
 import Hook from 'util/hook.cjs'
 import {_t} from 'util/i18n.mjs'
 import Util from 'client/util/index.mjs'
-import {propertyByPath, matchExpr, parseOrElse, isFalse, isString} from '../../../client/util/json.mjs'
+import {propertyByPath, matchExpr, parseOrElse, isFalse, isString, isTrue} from '../../../client/util/json.mjs'
 import {scrollByHash} from '../util/urlUtil'
 import {getComponentByKey} from '../util/jsonDomUtilClient'
 import DomUtil from 'client/util/dom.mjs'
@@ -240,8 +240,10 @@ class JsonDom extends React.Component {
                                           fetchPolicy='cache-first'
                                           dynamic={true} {...rest}/>
 
-            if(style || className){
+            if(style || className || rest['data-is-invisible']){
                 return <div style={style}
+                            _inlineEditor={_this.props.inlineEditor}
+                            data-is-invisible={rest['data-is-invisible']||''}
                             data-element-watch-key={rest['data-element-watch-key']||''}
                             className={className}>{cvc}</div>
             }
@@ -1249,10 +1251,10 @@ class JsonDom extends React.Component {
                         if (this.props.inlineEditor || ($inlineEditor && $inlineEditor.mode === 'source')) {
                             eleProps._json = this.getJsonRaw(this.props, true)
                         }
-
                         if (eleProps._json) {
                             eleProps._dynamic = !this.props.publicEdit && this.props.dynamic
                             eleProps._tagName = tagName
+                            eleProps._forceInlineEditor = isTrue(this.props.forceInlineEditor)
                             eleProps._inlineEditor = this.props.inlineEditor
                             eleProps._options = $inlineEditor || {}
                             eleProps._WrappedComponent = eleType

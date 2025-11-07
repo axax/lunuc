@@ -566,9 +566,8 @@ class JsonDomHelper extends React.Component {
     }
 
     render() {
-        const {_WrappedComponent, _json, _cmsActions, _onTemplateChange, _onDataResolverPropertyChange, children, _tagName, _options, _inlineEditor, _dynamic, onChange, onClick, ...rest} = this.props
+        const {_WrappedComponent, _json, _cmsActions, _onTemplateChange, _onDataResolverPropertyChange, children, _tagName, _options, _inlineEditor, _forceInlineEditor, _dynamic, onChange, onClick,  ...rest} = this.props
         const {hovered, toolbarHovered, richTextBarHover, toolbarMenuOpen, addChildDialog, deleteConfirmDialog, copyOptionsDialog, deleteSelectionConfirmDialog, deleteSourceConfirmDialog} = this.state
-
         if(!rest._key){
             return
         }
@@ -645,7 +644,7 @@ class JsonDomHelper extends React.Component {
 
         }
 
-        if(!parsedSource && _dynamic){
+        if(!parsedSource && _dynamic && !_forceInlineEditor){
             return <_WrappedComponent
                 onClick={onClick}
                 onChange={onChange}
@@ -732,7 +731,7 @@ class JsonDomHelper extends React.Component {
                 </StyledToolbarButton>
             }
             if (isSelected || _options.highlight !== false) {
-                const highligherColor = _dynamic ? 'red' : isCms || _options.picker ? 'blue' : 'yellow'
+                const highligherColor = _dynamic && !_forceInlineEditor ? 'red' : isCms || _options.picker ? 'blue' : 'yellow'
                 let marginBottomStyle = subJson?.p?.style?.marginBottom?.trim()
                 if(isContentEditable){
                     helperEvents.contentEditable = true
@@ -847,6 +846,9 @@ class JsonDomHelper extends React.Component {
 
         let comp
         if (isCms) {
+            if(rest.forceInlineEditor){
+                helperEvents['data-force-inline-editor'] = true
+            }
             comp = <div _key={rest._key} key={rest._key} {...helperEvents}>
                 <_WrappedComponent
                     onChange={overrideEvents.onChange || onChange}
