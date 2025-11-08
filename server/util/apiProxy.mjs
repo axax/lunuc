@@ -24,7 +24,7 @@ export const proxyToApiServer = (req, res, {host, path})=> {
         path: path,
         method: req.method,
         headers: newHeaders,
-        timeout: 3600000, /* 1h */
+        timeout: 7200000, /* 2h */
     }, (proxyRes) => {
         delete proxyRes.headers['keep-alive']
         delete proxyRes.headers['transfer-encoding']
@@ -35,6 +35,12 @@ export const proxyToApiServer = (req, res, {host, path})=> {
             if (!res.finished) {
                 res.end()
             }
+        })
+
+        proxyRes.on('aborted', () => {
+            console.warn('Proxy response aborted')
+            res.end()
+            res.destroy() // Abort the response as well
         })
 
         res.writeHead(proxyRes.statusCode, proxyRes.headers)
