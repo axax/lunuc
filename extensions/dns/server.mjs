@@ -219,9 +219,9 @@ Hook.on('appready', async ({db, context}) => {
 // Hook when the type CronJob has changed
 Hook.on('typeUpdated_DnsHost', ({result}) => {
     if (result.name && dnsServerContext.hosts[result.name]) {
-
-        dnsServerContext.hosts[result.name].group = result.group
-
+        if(result.group !== undefined) {
+            dnsServerContext.hosts[result.name].group = result.group
+        }
         dnsServerContext.hosts[result.name].response = parseOrElse(result.response)
 
         if (result.block !== undefined) {

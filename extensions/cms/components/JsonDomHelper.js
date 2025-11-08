@@ -692,7 +692,7 @@ class JsonDomHelper extends React.Component {
 
             if(isElementActive) {
                 this.createContextMenu({
-                    isCms, subJson, menuItems, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange,
+                    isCms, subJson, menuItems, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange,_forceInlineEditor,
                     overrideEvents, onChange, _options, _dynamic, rest, _json, isInLoop, isSelected, hasRichTextBar
                 })
 
@@ -973,7 +973,7 @@ class JsonDomHelper extends React.Component {
         }
     }
 
-    createContextMenu({isCms, subJson, menuItems, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange, overrideEvents, onChange, _options, _dynamic, rest, _json, isInLoop, isSelected, hasRichTextBar}) {
+    createContextMenu({isCms, subJson, menuItems, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange, overrideEvents, onChange, _options, _dynamic, _forceInlineEditor, rest, _json, isInLoop, isSelected, hasRichTextBar}) {
 
         if(isSelected){
             menuItems.push({
@@ -1115,7 +1115,7 @@ class JsonDomHelper extends React.Component {
 
             }
 
-            if (!_dynamic) {
+            if (!_dynamic || _forceInlineEditor) {
                 if (_options.menu.edit !== false && _options.elementKey) {
                     const jsonElement = getJsonDomElements(_options.elementKey)
 

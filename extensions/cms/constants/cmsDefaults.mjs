@@ -183,333 +183,101 @@ html,body{
   grid-template-columns: var(--grid-template-columns-xs);
 }
 .row {
-  display: flex;
+  display: grid;
+  // This sets up a n-column grid by default (mobile-first).
+  grid-template-columns: repeat(\${this.get('numberOfGridColumns')}, 1fr);
+  
+  gap: 1rem; // Default row and column gap
   box-sizing: border-box;
-  flex-wrap: wrap;
-  flex: 0 1 auto;
-  flex-direction: row;
-  margin-right: -0.5rem;
-  margin-left: -0.5rem;
-  &.vcenter{
+  &.vcenter {
     align-items: center;
   }
-  &.eh{
-    .col{
+  &.eh {
+    > .col { // Using direct child selector for specificity
       align-self: stretch;
     }
   }
-  &.flex-end{
+  &.flex-end {
     align-items: flex-end;
   }
-  &.row-space-3{
-    margin-left: -1.5rem;
-    margin-right: -1.5rem;
-    > .col{
-      padding-bottom: 1.5rem;
-      padding-right: 1.5rem;
-      padding-left: 1.5rem;
-    }
+
+  &.row-sm-reverse {
+    direction: rtl; /* reverse item order */
   }
-  &.row-space-4{
-    margin-left: -2rem;
-    margin-right: -2rem;
-    > .col{
-      padding-right: 2rem;
-      padding-left: 2rem;
-    }
-  }
-  &.row-space-6{
-    margin-left: -1.5rem;
-    margin-right: -1.5rem;
-    > .col{
-      padding-right: 1.5rem;
-      padding-left: 1.5rem;
-    }
-  }
+
   .col {
+    direction: ltr; /* keep content text direction normal */
     box-sizing: border-box;
-    flex: 0 0 auto;
-    padding-right: 0.5rem;
-    padding-left: 0.5rem;
-    padding-bottom: 1rem;
-    width: 100%;
     position: relative;
-    &:empty{
-      padding-bottom: 0;
-    }
-    &.col-xs-1 {
-      max-width: 8.3333333333%;
-      flex: 0 0 8.3333333333%;
-    }
-    &.col-xs-2 {
-      max-width: 16.6666666667%;
-      flex: 0 0 16.6666666667%;
-    }
-    &.col-xs-3 {
-      max-width: 25%;
-      flex: 0 0 25%;
-    }
-    &.col-xs-4 {
-      max-width: 33.3333333333%;
-      flex: 0 0 33.3333333333%;
-    }
-    &.col-xs-5 {
-      max-width: 41.6666666667%;
-      flex: 0 0 41.6666666667%;
-    }
-    &.col-xs-6 {
-      max-width: 50%;
-      flex: 0 0 50%;
-    }
-    &.col-xs-7 {
-      max-width: 58.3333333333%;
-      flex: 0 0 58.3333333333%;
-    }
-    &.col-xs-8 {
-      max-width: 66.6666666667%;
-      flex: 0 0 66.6666666667%;
-    }
-    &.col-xs-9 {
-      max-width: 75%;
-      flex: 0 0 75%;
-    }
-    &.col-xs-10 {
-      max-width: 83.3333333333%;
-      flex: 0 0 83.3333333333%;
-    }
-    &.col-xs-11 {
-      max-width: 91.6666666667%;
-      flex: 0 0 91.6666666667%;
-    }
-    &.col-xs-12 {
-      max-width: 100%;
-      flex: 0 0 100%;
-    }
-    &.col-x{
-      max-width: var(--width-xs);
-      flex: 0 0 var(--width-xs);
+    // Default to full width on mobile by spanning all n columns.
+    grid-column: span \${this.get('numberOfGridColumns')};
+
+    \${Array(this.get('numberOfGridColumns')).fill().map((_,i) => \`
+      &.col-xs-\${i+1} { grid-column: span \${i+1}; }
+    \`)}
+
+    &.col-x {
+      // This custom property now needs to be a span number, e.g., --grid-span-xs: 4;
+      grid-column: span var(--grid-span-xs, \${this.get('numberOfGridColumns')});
     }
   }
 }
+
+// --- MEDIA QUERIES ---
+
 @media (min-width: \${this.get('breakpointMobile')}) {
-  [data-element-key="grid"]{
-    grid-template-columns: var(--grid-template-columns-sm);
-  }
-  .row{
-    &.row-space-6{
-      margin-left: -1.5rem;
-      margin-right: -1.5rem;
-      > .col{
-        padding-right: 1.5rem;
-        padding-left: 1.5rem;
-      }
+  .row {    
+    &.row-space-4 {
+      gap: 2rem;
     }
-    &.row-sm-reverse{
-      flex-direction: row-reverse;
+    &.row-space-6 {
+      column-gap: 3rem;
     }
-    .col{
-      &.col-sm-1 {
-        max-width: 8.3333333333%;
-        flex: 0 0 8.3333333333%;
-      }
-      &.col-sm-2 {
-        max-width: 16.6666666667%;
-        flex: 0 0 16.6666666667%;
-      }
-      &.col-sm-3 {
-        max-width: 25%;
-        flex: 0 0 25%;
-      }
-      &.col-sm-4 {
-        max-width: 33.3333333333%;
-        flex: 0 0 33.3333333333%;
-      }
-      &.col-sm-5 {
-        max-width: 41.6666666667%;
-        flex: 0 0 41.6666666667%;
-      }
-      &.col-sm-6 {
-        max-width: 50%;
-        flex: 0 0 50%;
-      }
-      &.col-sm-7 {
-        max-width: 58.3333333333%;
-        flex: 0 0 58.3333333333%;
-      }
-      &.col-sm-8 {
-        max-width: 66.6666666667%;
-        flex: 0 0 66.6666666667%;
-      }
-      &.col-sm-9 {
-        max-width: 75%;
-        flex: 0 0 75%;
-      }
-      &.col-sm-10 {
-        max-width: 83.3333333333%;
-        flex: 0 0 83.3333333333%;
-      }
-      &.col-sm-11 {
-        max-width: 91.6666666667%;
-        flex: 0 0 91.6666666667%;
-      }
-      &.col-sm-12 {
-        max-width: 100%;
-        flex: 0 0 100%;
-      }
-      &.col-sm-push{
-        max-width: none;
-        flex: 0 0 0%;
-        margin-left: auto;
-      }
-      &.col-x{
-        max-width: var(--width-sm);
-        flex: 0 0 var(--width-sm);
+    &.row-sm-reverse {
+      direction: ltr; /* reverse item order */
+    }
+    .col {
+      \${Array(this.get('numberOfGridColumns')).fill().map((_,i) => \`
+        &.col-sm-\${i+1} { grid-column: span \${i+1}; }
+      \`)}
+      &.col-x {
+        grid-column: span var(--grid-span-sm, \${this.get('numberOfGridColumns')});
       }
     }
   }
 }
+
 @media (min-width: \${this.get('breakpointTablet')}) {
-  [data-element-key="grid"]{
-    grid-template-columns: var(--grid-template-columns-md);
-  }
-  .row{
-    &.row-space-6{
-      margin-left: -2rem;
-      margin-right: -2rem;
-      > .col{
-        padding-right: 2rem;
-        padding-left: 2rem;
-      }
+  .row {    
+    &.row-space-4 {
+      gap: 3rem;
     }
-    .col{
-      &.col-md-1 {
-        max-width: 8.3333333333%;
-        flex: 0 0 8.3333333333%;
-      }
-      &.col-md-1-5 {
-        max-width: 20%;
-        flex: 0 0 20%;
-      }
-      &.col-md-3-5 {
-        max-width: 60%;
-        flex: 0 0 60%;
-      }
-      &.col-md-2 {
-        max-width: 16.6666666667%;
-        flex: 0 0 16.6666666667%;
-      }
-      &.col-md-3 {
-        max-width: 25%;
-        flex: 0 0 25%;
-      }
-      &.col-md-4 {
-        max-width: 33.3333333333%;
-        flex: 0 0 33.3333333333%;
-      }
-      &.col-md-5 {
-        max-width: 41.6666666667%;
-        flex: 0 0 41.6666666667%;
-      }
-      &.col-md-6 {
-        max-width: 50%;
-        flex: 0 0 50%;
-      }
-      &.col-md-7 {
-        max-width: 58.3333333333%;
-        flex: 0 0 58.3333333333%;
-      }
-      &.col-md-8 {
-        max-width: 66.6666666667%;
-        flex: 0 0 66.6666666667%;
-      }
-      &.col-md-9 {
-        max-width: 75%;
-        flex: 0 0 75%;
-      }
-      &.col-md-10 {
-        max-width: 83.3333333333%;
-        flex: 0 0 83.3333333333%;
-      }
-      &.col-md-11 {
-        max-width: 91.6666666667%;
-        flex: 0 0 91.6666666667%;
-      }
-      &.col-md-12 {
-        max-width: 100%;
-        flex: 0 0 100%;
-      }
-      &.col-x{
-        max-width: var(--width-md);
-        flex: 0 0 var(--width-md);
+    &.row-space-6 {
+      column-gap: 4rem;
+    }
+    .col {
+      \${Array(this.get('numberOfGridColumns')).fill().map((_,i) => \`
+        &.col-md-\${i+1} { grid-column: span \${i+1}; }
+      \`)}
+      &.col-x {
+        grid-column: span var(--grid-span-md, \${this.get('numberOfGridColumns')});
       }
     }
   }
 }
+
 @media (min-width: \${this.get('breakpointDesktop')}) {
-  [data-element-key="grid"]{
-    grid-template-columns: var(--grid-template-columns-lg);
-  }
-  .row{
-    &.row-space-6{
-      margin-left: -2.6rem;
-      margin-right: -2.6rem;
-      > .col{
-        padding-right: 2.6rem;
-        padding-left: 2.6rem;
-      }
+  .row {
+    &.row-space-6 {
+      column-gap: 5.2rem;
     }
-    .col{
-      &.col-lg-1 {
-        max-width: 8.3333333333%;
-        flex: 0 0 8.3333333333%;
-      }
-      &.col-lg-2 {
-        max-width: 16.6666666667%;
-        flex: 0 0 16.6666666667%;
-      }
-      &.col-lg-3 {
-        max-width: 25%;
-        flex: 0 0 25%;
-      }
-      &.col-lg-4 {
-        max-width: 33.3333333333%;
-        flex: 0 0 33.3333333333%;
-      }
-      &.col-lg-5 {
-        max-width: 41.6666666667%;
-        flex: 0 0 41.6666666667%;
-      }
-      &.col-lg-6 {
-        max-width: 50%;
-        flex: 0 0 50%;
-      }
-      &.col-lg-7 {
-        max-width: 58.3333333333%;
-        flex: 0 0 58.3333333333%;
-      }
-      &.col-lg-8 {
-        max-width: 66.6666666667%;
-        flex: 0 0 66.6666666667%;
-      }
-      &.col-lg-9 {
-        max-width: 75%;
-        flex: 0 0 75%;
-      }
-      &.col-lg-10 {
-        max-width: 83.3333333333%;
-        flex: 0 0 83.3333333333%;
-      }
-      &.col-lg-11 {
-        max-width: 91.6666666667%;
-        flex: 0 0 91.6666666667%;
-      }
-      &.col-lg-12 {
-        max-width: 100%;
-        flex: 0 0 100%;
-      }
-      &.col-x{
-        max-width: var(--width-lg);
-        flex: 0 0 var(--width-lg);
+    .col {
+      \${Array(this.get('numberOfGridColumns')).fill().map((_,i) => \`
+        &.col-lg-\${i+1} { grid-column: span \${i+1}; }
+      \`)}
+
+      &.col-x {
+        grid-column: span var(--grid-span-lg, \${this.get('numberOfGridColumns')});
       }
     }
   }
@@ -517,10 +285,14 @@ html,body{
 //!#Slider
 [data-element-key='slider'] {
   --slide-count:1;
-  overflow:hidden;
+  --arrownav-height: calc(2.5rem + 2vh);
+  overflow: hidden;
   margin-bottom:2rem;
-  padding-bottom:calc(1.2vw + 2.6rem + 3px);
   position:relative;
+
+  /* for nav bottom*/
+  padding-bottom: calc(var(--arrownav-height) * 1.6);
+
   > input {
     display: none;
     \${Array(20).fill().map((item, i) => \`
@@ -528,20 +300,23 @@ html,body{
       ~ ul > li {
         transform:translateX(calc(-\${i} * 100%));
         &:nth-of-type(\${i+1}) {
-        z-index:1
+          z-index:1
+        }
       }
-    }
-    ~ .arrownav {
-      > label:nth-of-type(\${i*2+1}) {
-        display:block;
-        left:calc(-2.2rem + -1.6vw);
+      ~ .arrownav {
+        > .slide-count:nth-of-type(\${i+1}){
+          display:block;
+        }
+        > label:nth-of-type(\${i*2+1}) {
+          display:block;
+          left:calc(-2.2rem + -1.6vw);
+        }
+        > label:nth-of-type(\${i*2+2}) {
+          display:block;
+          transform: rotate(180deg);
+          right:calc(-2.2rem + -1.6vw);
+        }
       }
-      > label:nth-of-type(\${i*2+2}) {
-        display:block;
-        transform: rotate(180deg);
-        right:calc(-2.2rem + -1.6vw);
-      }
-    }
     }
     \`).join('')}
   }
@@ -565,6 +340,7 @@ html,body{
         display:block;
         position:relative;
         width: 100%;
+        height:auto;
         margin:0;
         text-decoration:none;
       }
@@ -586,29 +362,37 @@ html,body{
     display:none;
   }
   > .arrownav{
-    margin-top:1rem;
     position:absolute;
     z-index:2;
-    right: calc(2.4rem + 1.6vw + 1px);
+    top:calc(100% - var(--arrownav-height));
+    right: 2vw;
+    height:var(--arrownav-height);
+    border: solid 1px #000000;      
+    border-radius: calc(var(--arrownav-height) / 2.25);
+    display: flex;
+    align-items: center;
+    background-color: #ffffff;
+    > .slide-count{
+      display:none;    
+      letter-spacing: 1px;
+    }
     > label{
       display:none;
-      z-index:5;
-      position:absolute;
-      border-radius: 50%;
       border: solid 1px --var(--color-grey);
-      height:calc(1vw + 2.2rem);
-      width:calc(1vw + 2.2rem);
+      height:calc(100% - 0.5rem);
+      width: calc(var(--arrownav-height) - 0.5rem);
+      margin: 0.5rem;
       cursor:pointer;
       border:none;
+      border-radius: 50%;
       background-color:transparent;
       background-repeat: no-repeat;
       background-position: center center;
-      background-size: calc(0.4vw + 1.8rem);
-      background-image: url("/icons/arrow-left.svg?color=ffffff");
-      transition: background 0.2s linear;
+      background-size: calc(var(--arrownav-height) * 0.4);
+      background-image: url("/icons/arrow-left.svg");
+      transition: background var(--transition-duration) linear;
       &:hover{
-        background-color:#000000;
-        background-image: url("/icons/arrow-left.svg?color=ffffff");
+        background-color:var(--color-main);
       }
     }
   }
@@ -617,6 +401,9 @@ html,body{
 //<!!#REMOVE
 main[data-layout-content=true]{
   background-color:#fff;
+}
+[data-force-inline-editor=true]{
+  padding:0.75rem;
 }
 h1[data-isempty=true],
 h2[data-isempty=true],
