@@ -28,15 +28,66 @@ export const proxyToApiServer = (req, res, {host, path})=> {
     }, (proxyRes) => {
         delete proxyRes.headers['keep-alive']
         delete proxyRes.headers['transfer-encoding']
+
+        // Check if the response stream from the server closed normally
+        proxyRes.on('end', () => {
+            // Ensure the client response stream is closed as well if not already
+            if (!res.finished) {
+                res.end()
+            }
+        })
+
         res.writeHead(proxyRes.statusCode, proxyRes.headers)
         proxyRes.pipe(res)
     })
 
     req.pipe(proxyReq)
 
+    // a) Handle errors from the **API Server** connection (DNS, connection refused, timeout)
     proxyReq.on('error', (err) => {
-        console.error('Proxy error:', err)
-        sendError(res, 502)
+        console.error('Proxy error connecting to API:', err.message);
+        // Clean up the client response if headers haven't been sent
+        if (!res.headersSent) {
+            sendError(res, 502, `Bad Gateway: Could not connect to API server. ${err.message}`)
+        } else {
+            // If data was already streaming, just destroy the connection
+            res.destroy()
+        }
+        // Destroy the request stream to stop sending data
+        proxyReq.destroy()
+    })
+
+    // b) Handle timeouts from the **API Server** connection
+    proxyReq.on('timeout', () => {
+        console.error('Proxy request timeout')
+        proxyReq.destroy() // Destroy the connection
+        if (!res.headersSent) {
+            sendError(res, 504, 'Gateway Timeout: API server did not respond in time.')
+        } else {
+            res.destroy()
+        }
+    })
+
+    // c) Handle client request closure/error **before** piping is complete (client disconnects early)
+    req.on('aborted', () => {
+        console.warn('Client aborted request.')
+        proxyReq.destroy() // Abort the proxy request as well
+    })
+
+    req.on('error', (err) => {
+        console.error('Client request error:', err.message)
+        proxyReq.destroy() // Abort the proxy request
+    })
+
+    // d) Handle client response closure/error **during** piping (client closes connection mid-stream)
+    res.on('close', () => {
+        //console.warn('Client connection closed.')
+        proxyReq.destroy() // Abort the proxy request
+    })
+
+    res.on('error', (err) => {
+        console.error('Client response error:', err.message)
+        proxyReq.destroy() // Abort the proxy request
     })
 }
 

@@ -424,20 +424,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 actAsReverseProxy(req,res,{parsedUrl,hostrule, host})
             }else if (urlPathname.startsWith('/graphql') || API_PREFIXES.some(prefix => urlPathname.startsWith('/'+prefix + '/'))) {
                 // there is also /graphql/upload
-                if(remoteAddress === '91.108.234.83'){
-                    const body = await new Promise((resolve, reject) => {
-                        const chunks = [];
-                        req.on('data', chunk => chunks.push(chunk));
-                        req.on('error', err => reject(err));
-                        req.on('end', () => resolve(Buffer.concat(chunks).toString()));
-                    });
-
-                    console.log('hacker', body, JSON.stringify(req.headers))
-                    sendError(res, 404)
-                }else {
-
-                    proxyToApiServer(req, res, {host, path: parsedUrl.path})
-                }
+                proxyToApiServer(req, res, {host, path: parsedUrl.path})
             } else {
                 if (urlPathname.startsWith( '/tokenlink/')) {
                     let token = urlPathname.substring(11)

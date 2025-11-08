@@ -211,12 +211,13 @@ export const sendFile = (req, res, {headers, filename, fileStat, neverCompress =
     }
 }
 
-export const sendError = (res, code) => {
-    let msg = ''
-    if (code === 404) {
-        msg = 'Not Found'
-    } else if (code === 403) {
-        msg = 'Not Allowed'
+export const sendError = (res, code, msg = '') => {
+    if(!msg) {
+        if (code === 404) {
+            msg = 'Not Found'
+        } else if (code === 403) {
+            msg = 'Not Allowed'
+        }
     }
 
     try {

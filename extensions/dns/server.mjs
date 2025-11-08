@@ -353,8 +353,11 @@ const isHostBlocked = (hostname) => {
 
 const insertBuffer = async () => {
     if (dnsServerContext.database) {
-        await dnsServerContext.database.collection('DnsHost').bulkWrite(Object.values(dnsServerContext.dbBuffer), {ordered: false})
-        dnsServerContext.dbBuffer = {}
+        const values = Object.values(dnsServerContext.dbBuffer)
+        if(values.length>0) {
+            await dnsServerContext.database.collection('DnsHost').bulkWrite(values, {ordered: false})
+            dnsServerContext.dbBuffer = {}
+        }
     }
 }
 
