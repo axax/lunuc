@@ -2455,6 +2455,12 @@ const advancedElements = [
                 multi: false,
                 fullWidth: true
             },
+            p_forceInlineEditor: {
+                tab: 'elements.cmsComponent',
+                type: 'Boolean',
+                newLine: true,
+                label: _t('elements.forceInlineEditor')
+            },
             p_slug: {
                 tab: DEFAULT_TAB,
                 label: 'Slug (deprecated)'
