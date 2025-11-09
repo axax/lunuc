@@ -27,6 +27,7 @@ export const getDynamicConfig = (refreshOnly) => {
         }
 
         if (fileStats && fileStats.mtime > configFileLastMtime) {
+            configFileLastMtime = fileStats.mtime
             fs.readFile(configFilePath, 'utf8', (err, data) => {
                 if (err){
                     console.error(`Error reading file ${configFilePath}`)
