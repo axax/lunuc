@@ -230,7 +230,7 @@ const Util = {
 
         const keyvalues = (await db.collection('KeyValueGlobal').find(match).toArray())
 
-        console.log(`load KeyValueGlobal "${keys.join(',')}" ${new Date() - _app_.start}ms`)
+        console.debug(`load KeyValueGlobal "${keys.join(',')}" ${new Date() - _app_.start}ms`)
         return keyvalues.reduce((map, obj) => {
             let finalValue
 

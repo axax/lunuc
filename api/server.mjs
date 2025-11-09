@@ -12,10 +12,23 @@ import {formatError} from './error.mjs'
 import {handleUpload, handleMediaDumpUpload, handleDbDumpUpload, handleHostruleDumpUpload} from './upload.mjs'
 import Hook from '../util/hook.cjs'
 import compression from 'compression'
-import {createSubscriptionServer, pubsub} from './subscription.mjs'
+import {createSubscriptionServer} from './subscription.mjs'
 import {HEADER_TIMEOUT} from './constants/index.mjs'
 import {createUsers} from './data/initialData.mjs'
 
+import {getDynamicConfig} from '../util/config.mjs'
+
+const dynamicConfig = getDynamicConfig()
+
+// Save original console.debug function
+const originalDebug = console.debug
+
+// Override console.debug
+console.debug = (...args) => {
+    if (dynamicConfig.DEBUG) {
+        originalDebug(...args);
+    }
+}
 
 const PORT = (process.env.PORT || 3000)
 

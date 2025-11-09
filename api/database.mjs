@@ -70,13 +70,15 @@ export const dbConnection = (dburl, cb) => {
         console.log(`Start connecting to db ${dburl}... ${new Date() - _app_.start}ms`)
 
         client.connect().then( async client => {
-                console.log(`Connection to db ${dburl} (driver version ${client.options.metadata.driver.version}) established. 🚀 ${new Date() - _app_.start}ms`)
+                const metadata = (typeof client.options.metadata.then === 'function') ? await client.options.metadata : client.options.metadata
+
+                console.log(`Connection to db ${dburl} (driver version ${metadata.driver.version}) established. 🚀 ${new Date() - _app_.start}ms`)
                 const parts = urlParts[0].split('/')
                 const db = client.db(parts[parts.length - 1])
-                db._metadata = client.options.metadata
+                db._metadata = metadata
 
                 const adminDb = db.admin()
-                db._versionInt = parseInt(client.options.metadata.driver.version)
+                db._versionInt = parseInt(metadata.driver.version)
                 const info = await adminDb.serverStatus()
                 db._version = info.version
                 db._versionInt = parseInt(info.version)

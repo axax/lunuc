@@ -271,7 +271,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     }
 
                 } else {
-                    console.log('call cmsCustomResolver', segment)
+                    console.debug('call cmsCustomResolver', segment)
 
                     if (Hook.hooks['cmsCustomResolver'] && Hook.hooks['cmsCustomResolver'].length) {
                         let c = Hook.hooks['cmsCustomResolver'].length
