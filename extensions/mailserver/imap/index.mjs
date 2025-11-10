@@ -120,6 +120,7 @@ const startListening = async (db, context) => {
         port: 993,
         logger:createDefaultLogger(settings),
         markAsSeen:true,
+        ignoreSTARTTLS:true,
         /*secured: false,
         disableSTARTTLS: true,
         ignoreSTARTTLS: true,
@@ -134,7 +135,16 @@ const startListening = async (db, context) => {
 
             if(hostrule && hostrule.certContext){
                 console.log(`imap server certContext for ${host}`)
-                cb(null, hostrule.certContext)
+
+                const newCertContext = {
+                    ...hostrule.certContext,
+                    minVersion: 'TLSv1.2',
+                    maxVersion: 'TLSv1.3',
+                    ciphers: 'TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256',
+                    honorCipherOrder: true
+                }
+
+                cb(null, newCertContext)
             }else{
                 cb(null,getRootCertContext())
             }

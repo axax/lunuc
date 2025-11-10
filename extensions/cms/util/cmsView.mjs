@@ -12,7 +12,7 @@ export const settingKeyPrefix = 'CmsViewContainerSettings'
 
 // the graphql query is also need to access and update the cache when data arrive from a subscription
 const CMS_PAGE_QUERY_BASE =`query cmsPage($slug:String!,$query:String,$meta:String,$props:String,$nosession:String,$editmode:Boolean,$inEditor:Boolean,$dynamic:Boolean,$_version:String){cmsPage(slug:$slug,query:$query,meta:$meta,props:$props,nosession:$nosession,inEditor:$inEditor,editmode:$editmode,dynamic:$dynamic,_version:$_version){`
-const CMS_PAGE_QUERY = `${CMS_PAGE_QUERY_BASE}slug realSlug urlSensitiv author keyword{__typename ${config.LANGUAGES.join(' ')}} description{__typename ${config.LANGUAGES.join(' ')}} template script resources resolvedData style html meta subscriptions publicEdit disableRendering ssrStyle uniqueStyle alwaysLoadAssets parseResolvedData}}`
+const CMS_PAGE_QUERY = `${CMS_PAGE_QUERY_BASE}slug realSlug urlSensitiv author keyword{__typename ${config.LANGUAGES.join(' ')}} description{__typename ${config.LANGUAGES.join(' ')}} template script resources resolvedData style html meta subscriptions publicEdit disableRendering ssrStyle uniqueStyle alwaysLoadAssets parseResolvedData, fetchPolicy}}`
 
 const CMS_PAGE_QUERY_FULL = `${CMS_PAGE_QUERY.substring(0,CMS_PAGE_QUERY.length-2)} editable name{__typename ${config.LANGUAGES.join(' ')}} serverScript manual dataResolver ssr public online loadPageOptions compress _id modifiedAt createdBy{_id username} status}}`
 

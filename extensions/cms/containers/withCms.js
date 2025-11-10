@@ -256,8 +256,9 @@ export default function (WrappedComponent) {
                     variables: getGqlVariables(ownProps),
                     hiddenVariables,
                     fetchPolicy: ownProps.fetchPolicy ||
-                        (isEditMode(ownProps) ? 'network-only' : _app_.defaultFetchPolicy ||
-                            (['full','client',true,undefined].indexOf(urlSensitivMap[ownProps.slug])>=0?'cache-and-network':'cache-first')) // cache-first
+                        (isEditMode(ownProps) ? 'network-only' :
+                            (_app_.defaultFetchPolicy && _app_.defaultFetchPolicy[ownProps.slug]?_app_.defaultFetchPolicy[ownProps.slug]:
+                            (['full','client',true,undefined].indexOf(urlSensitivMap[ownProps.slug])>=0?'cache-and-network':'cache-first'))) // cache-first
                 }
             },
             props: ({data: {loading, cmsPage, variables, fetchMore, refetch, networkStatus}, ownProps}) => {

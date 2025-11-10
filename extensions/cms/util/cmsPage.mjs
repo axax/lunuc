@@ -9,7 +9,7 @@ import Hook from '../../../util/hook.cjs'
 
 
 export const getCmsPageCacheKey = ({_version, slug, host, inEditor})=>{
-    return 'cmsPage-' + (_version ? _version + '-' : '') + slug + (host ? '-' + host : '') + (inEditor ? '-inEditor': '')
+    return 'cmsPage-' + (_version ? _version + '-' : 'default-') + slug + (host ? '-' + host : '') + (inEditor ? '-inEditor': '')
 }
 
 const paths = [
@@ -111,6 +111,7 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
                 'public',
                 'urlSensitiv',
                 'parseResolvedData',
+                'fetchPolicy',
                 'alwaysLoadAssets',
                 'loadPageOptions',
                 'ssrStyle',

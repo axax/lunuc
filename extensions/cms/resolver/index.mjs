@@ -50,7 +50,7 @@ export default db => ({
     Query: {
         cmsPages: async ({limit, page, offset, filter, sort, _version}, {headers, context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            const fields = ['public', 'slug', 'hostRule', 'name', 'author','keyword', 'description', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'loadPageOptions', 'ssrStyle', 'uniqueStyle', 'publicEdit', 'compress', 'isTemplate','ownerGroup$[UserGroup]','disableRendering']
+            const fields = ['public', 'slug', 'hostRule', 'name', 'author','keyword', 'description', 'urlSensitiv', 'fetchPolicy', 'parseResolvedData', 'alwaysLoadAssets', 'loadPageOptions', 'ssrStyle', 'uniqueStyle', 'publicEdit', 'compress', 'isTemplate','ownerGroup$[UserGroup]','disableRendering']
 
             if (filter) {
 
@@ -108,7 +108,7 @@ export default db => ({
             }
 
             const {
-                _id, createdBy, template, script, style, resources, dataResolver, parseResolvedData, alwaysLoadAssets, loadPageOptions, ssrStyle, uniqueStyle, publicEdit, compress,
+                _id, createdBy, template, script, style, resources, dataResolver, parseResolvedData, fetchPolicy, alwaysLoadAssets, loadPageOptions, ssrStyle, uniqueStyle, publicEdit, compress,
                 ssr, modifiedAt, urlSensitiv, name, keyword, author, description, serverScript, manual, disableRendering
             } = cmsPages.results[0]
 
@@ -190,6 +190,7 @@ export default db => ({
                 resolvedData: JSON.stringify(resolvedData),
                 parseResolvedData,
                 alwaysLoadAssets,
+                fetchPolicy,
                 loadPageOptions,
                 ssrStyle,
                 uniqueStyle,
@@ -490,6 +491,7 @@ export default db => ({
             const cacheKey = getCmsPageCacheKey({_version, slug: rest.slug})
 
             Cache.clearStartWith(cacheKey)
+            console.log(cacheKey)
 
             const result = await GenericResolver.updateEnity(db, context, 'CmsPage', {
                 _id,

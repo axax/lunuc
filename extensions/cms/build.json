@@ -16,6 +16,7 @@
           "index": 1,
           "unique": true,
           "fullWidth": true,
+          "alwaysUpdate": true,
           "tab": "elements.generalTab",
           "validatePattern":"^([a-zA-Z0-9/\\-_öäü]+)$"
         },
@@ -88,18 +89,6 @@
           ]
         },
         {
-          "name": "isTemplate",
-          "label": "Template",
-          "type": "Boolean",
-          "hideColumnInTypes": true,
-          "index": 1,
-          "access": {
-            "ui": {
-              "role": "manage_cms_template"
-            }
-          }
-        },
-        {
           "name": "urlSensitiv",
           "label": "Refresh behavior",
           "defaultValue": "default",
@@ -108,6 +97,25 @@
             "default",
             "full",
             "client"
+          ],
+          "bulkEditable": true,
+          "index": 1,
+          "access": {
+            "ui": {
+              "role": "manage_cms_template"
+            }
+          }
+        },
+        {
+          "name": "fetchPolicy",
+          "label": "Fetch Policy",
+          "defaultValue": "cache-first",
+          "hideColumnInTypes": true,
+          "enum": [
+            "cache-first",
+            "cache-and-network",
+            "network-only",
+            "no-cache"
           ],
           "bulkEditable": true,
           "index": 1,
@@ -272,7 +280,20 @@
           "index": 1
         },
         {
+          "name": "isTemplate",
+          "label": "Template",
+          "type": "Boolean",
+          "hideColumnInTypes": true,
+          "index": 1,
+          "access": {
+            "ui": {
+              "role": "manage_cms_template"
+            }
+          }
+        },
+        {
           "name": "disableRendering",
+          "label": "Disable rendering",
           "type": "Boolean",
           "hideColumnInTypes": true,
           "access": {

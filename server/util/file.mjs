@@ -317,9 +317,12 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
                 .then(result => {
                     let additionalContent = `/*time${Date.now() - startTime}ms*/\n`
                     if (result?.data?.cmsPage) {
+                        if(!result.data.cmsPage.fetchPolicy){
+                            result.data.cmsPage.fetchPolicy = 'cache-first'
+                        }
                         additionalContent += `
 _app_.clientId = '${clientId}'
-_app_.defaultFetchPolicy = '${result.data.cmsPage.subscriptions?'cache-first':'cache-first'}'                 
+_app_.defaultFetchPolicy = {['${result.data.cmsPage.slug}']:'${result.data.cmsPage.fetchPolicy || (result.data.cmsPage.subscriptions?'cache-first':'cache-first')}'}                
 _app_.onClientReady = (client)=>{
     client.writeQuery({
         query: '${query}',
