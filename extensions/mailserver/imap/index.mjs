@@ -673,10 +673,13 @@ const startListening = async (db, context) => {
 
                     if (messageData.headers) {
                         delete messageData.headers['content-transfer-encoding']
-                        delete messageData.headers['content-type']
 
-                        if(messageData.html){
-                            messageData.headers['content-type']='text/html'
+                        if(settings.resetBodyContentType) {
+                            delete messageData.headers['content-type']
+
+                            if (messageData.html) {
+                                messageData.headers['content-type'] = 'text/html; charset=utf-8'
+                            }
                         }
                     }
 
