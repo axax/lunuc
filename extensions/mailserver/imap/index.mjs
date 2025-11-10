@@ -127,7 +127,7 @@ const startListening = async (db, context) => {
         useProxy: false,*/
         ignoredHosts: [],
         maxMessage: 25 * 1024 * 1024,
-        enableCompression: true,
+        enableCompression: !!settings.enableCompression,
         SNICallback: (domain, cb) => {
             console.log('IMAP SNICallback',domain)
 
