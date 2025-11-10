@@ -666,7 +666,35 @@ const startListening = async (db, context) => {
                         const idate = new Date(message.data.date)
                         delete message.data
                      */
-                    messageData = JSON.parse(JSON.stringify(message.data))
+
+
+                    // Extract fields from parsed email
+                    messageData = {
+                        from: message.data.from?.text,            // 'From' header
+                        sender: message.data.sender?.text,        // 'Sender' header
+                        to: message.data.to?.text,                // 'To' header
+                        replyTo: message.data.replyTo?.text,      // 'Reply-To' header
+                        inReplyTo: message.data.inReplyTo,        // 'In-Reply-To' header
+                        references: message.data.references,      // 'References' header
+                        messageId: message.data.messageId,        // Custom Message-ID header
+                        cc: message.data.cc?.text,
+                        bcc: message.data.bcc?.text,
+                        subject: message.data.subject,
+                        text: message.data.text,
+                        html: message.data.html,
+                        date: message.data.date ? message.data.date.toUTCString() : undefined, // important for preserving sent date
+                       // alternatives: message.data.alternatives,
+                        attachments: message.data.attachments.map(att => ({
+                            filename: att.filename,
+                            content: att.content,
+                            contentType: att.contentType,
+                            cid: att.cid,
+                            contentDisposition: att.contentDisposition,
+                        })),
+                    }
+
+
+                   /* messageData = JSON.parse(JSON.stringify(message.data))
 
                     delete message.data
                     delete messageData.headerLines
@@ -694,7 +722,7 @@ const startListening = async (db, context) => {
                         })
                     }
 
-                    replaceAddresseObjectsToString(messageData)
+                    replaceAddresseObjectsToString(messageData)*/
 
                     try {
                         /*const mailComposer = new MailComposer({
