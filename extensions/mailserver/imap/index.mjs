@@ -24,6 +24,7 @@ import {simpleParser} from 'mailparser'
 import {createDefaultLogger} from './logger.mjs'
 import {dynamicSettings} from '../../../api/util/settings.mjs'
 import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
+import Hook from '../../../util/hook.cjs'
 
 // open port 993 on your server
 // sudo ufw allow 993
@@ -734,6 +735,9 @@ const startListening = async (db, context) => {
                         const mailComposer = new MailComposer(messageData)
 
                         mailComposer.compile().build((err, mailMessage) => {
+
+                            Hook.call('imapOnFetchMailComposed', {messageData, mailMessage, folderId, options, session})
+
                             let stream = imapHandler.compileStream(
                                 session.formatResponse('FETCH', message.uid, {
                                     query: options.query,

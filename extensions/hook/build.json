@@ -40,7 +40,8 @@
             "OnMail",
             "beforeMailSend",
             "beforeCmsPage",
-            "enhanceTypeMatch"
+            "enhanceTypeMatch",
+            "imapOnFetchMailComposed"
           ],
           "index": 1
         },
