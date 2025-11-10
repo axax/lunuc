@@ -187,12 +187,17 @@ export const hostListFromString = (host) =>{
 console.log(hostListFromString('www.onyou.ch'))*/
 
 export const getBestMatchingHostRule = (host, withCertContext=true, fallbackToGeneral = false) => {
-    const hostrules = getHostRules(withCertContext, host)
+    let hostrules = getHostRules(withCertContext, host)
     const hostsChecks = hostListFromString(host)
     for (let i = 0; i < hostsChecks.length; i++) {
         const currentHost = hostsChecks[i]
         const hostrule = hostrules[currentHost]
         if (hostrule) {
+            if(withCertContext) {
+                // check again with current host in case cert was not loaded before
+                hostrules = getHostRules(withCertContext, currentHost)
+            }
+
             if(hostrule.subDomains && hostrule.subDomains[host]){
                 return {hostrule: {...hostrule,...hostrule.subDomains[host],_subDomain:host}, host: currentHost}
             }

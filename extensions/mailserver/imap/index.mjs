@@ -137,15 +137,7 @@ const startListening = async (db, context) => {
             if(hostrule && hostrule.certContext){
                 console.log(`imap server certContext for ${host}`)
 
-                const newCertContext = {
-                    ...hostrule.certContext,
-                    minVersion: 'TLSv1.2',
-                    maxVersion: 'TLSv1.3',
-                    ciphers: 'TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256',
-                    honorCipherOrder: true
-                }
-
-                cb(null, newCertContext)
+                cb(null, hostrule.certContext)
             }else{
                 cb(null,getRootCertContext())
             }
@@ -683,7 +675,7 @@ const startListening = async (db, context) => {
                         subject: message.data.subject,
                         text: message.data.text,
                         html: message.data.html,
-                        date: message.data.date ? message.data.date.toUTCString() : undefined, // important for preserving sent date
+                        date: message.data.date, // important for preserving sent date
                        // alternatives: message.data.alternatives,
                         attachments: message.data.attachments.map(att => ({
                             filename: att.filename,
