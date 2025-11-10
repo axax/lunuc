@@ -675,7 +675,7 @@ const startListening = async (db, context) => {
                         subject: message.data.subject,
                         text: message.data.text,
                         html: message.data.html,
-                        date: message.data.date, // important for preserving sent date
+                        date: new Date(message.data.date).toUTCString(), // important for preserving sent date
                        // alternatives: message.data.alternatives,
                         attachments: message.data.attachments.map(att => ({
                             filename: att.filename,
