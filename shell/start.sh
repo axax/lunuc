@@ -12,6 +12,7 @@ cd ..
 
 git pull
 npm install --legacy-peer-deps
+npm run postinstall
 npm run build
 
 echo "restart "$restart
