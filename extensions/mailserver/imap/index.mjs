@@ -675,6 +675,7 @@ const startListening = async (db, context) => {
                         subject: message.data.subject,
                         text: message.data.text,
                         html: message.data.html,
+                        encoding: '8bit',
                         date: new Date(message.data.date).toUTCString(), // important for preserving sent date
                        // alternatives: message.data.alternatives,
                         attachments: message.data.attachments.map(att => ({
@@ -728,7 +729,9 @@ const startListening = async (db, context) => {
 
                         mailComposer.compile().build((err, mailMessage) => {
 
-                            Hook.call('imapOnFetchMailComposed', {messageData, mailMessage, folderId, options, session})
+                            const mimeTree = parseMimeTree(mailMessage)
+
+                            Hook.call('imapOnFetchMailComposed', {mimeTree, messageData, mailMessage, folderId, options, session})
 
                             let stream = imapHandler.compileStream(
                                 session.formatResponse('FETCH', message.uid, {
@@ -737,7 +740,7 @@ const startListening = async (db, context) => {
                                         options.query,
                                         {
                                             ...message,
-                                            mimeTree: parseMimeTree(mailMessage),
+                                            mimeTree: mimeTree,
                                             idate: new Date(messageData.date)
                                         }
                                     )
