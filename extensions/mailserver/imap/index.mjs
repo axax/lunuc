@@ -741,7 +741,6 @@ const startListening = async (db, context) => {
 
                     try {
 
-                        Hook.call('imapOnFetchMailComposed', {mimeTree, messageData, mailMessage, folderId, options, session})
 
                         const queryRequest = {
                             ...message,
@@ -756,6 +755,9 @@ const startListening = async (db, context) => {
                         }else{
                             queryRequest.mimeTree = parseMimeTree(buildRFC822Email(messageData))
                         }
+
+                        Hook.call('imapOnFetchMailComposed', {queryRequest, messageData, folderId, options, session})
+
 
                         let stream = imapHandler.compileStream(
                             session.formatResponse('FETCH', message.uid, {
