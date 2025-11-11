@@ -858,6 +858,7 @@ const startListening = async (db, context) => {
         console.log('imap search', options)
         const {match, project} = mongoDbMatchProjectFromIMapData(options)
 
+        project.modseq = 1
 
         const messages = await getMessagesForFolder(db,folder._id,match, project)
 

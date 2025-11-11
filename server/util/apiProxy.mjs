@@ -97,6 +97,7 @@ const executeProxyRequest = (originalReq, originalRes, options, bufferedBody) =>
         path: path,
         method: originalReq.method,
         headers: newHeaders,
+        rejectUnauthorized: false,
         requestTimeout:2000,
         timeout: 7200000, /* 2h */
     }, (proxyRes) => {
@@ -153,8 +154,8 @@ const executeProxyRequest = (originalReq, originalRes, options, bufferedBody) =>
                         host,
                         path,
                         server: urlObj.hostname, // Use the new hostname
-                        port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80), // Use port from URL or default
-                        secure: urlObj.protocol === 'https:',
+                        port: 443,//urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80), // Use port from URL or default
+                        secure: true, //urlObj.protocol === 'https:',
                         tries: tries + 1 // Pass the incremented count
                     }, bufferedBody)
                     return
