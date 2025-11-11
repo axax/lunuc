@@ -29,6 +29,67 @@ import Hook from '../../../util/hook.cjs'
 // open port 993 on your server
 // sudo ufw allow 993
 
+function buildRFC822Email(message) {
+    const headers = [];
+
+    if (message.from) headers.push(`From: ${message.from}`);
+    if (message.sender) headers.push(`Sender: ${message.sender}`);
+    if (message.to) headers.push(`To: ${message.to}`);
+    if (message.replyTo) headers.push(`Reply-To: ${message.replyTo}`);
+    if (message.inReplyTo) headers.push(`In-Reply-To: ${message.inReplyTo}`);
+    if (message.references) headers.push(`References: ${message.references}`);
+    if (message.messageId) headers.push(`Message-ID: ${message.messageId}`);
+    if (message.cc) headers.push(`Cc: ${message.cc}`);
+    if (message.bcc) headers.push(`Bcc: ${message.bcc}`);
+    if (message.subject) headers.push(`Subject: ${message.subject}`);
+    if (message.date) headers.push(`Date: ${message.date}`);
+
+    // Standard MIME headers for multipart message with alternatives and attachments
+    const boundaryMain = "==BOUNDARY_MAIN_" + Date.now();
+    headers.push("MIME-Version: 1.0");
+    headers.push(`Content-Type: multipart/mixed; boundary="${boundaryMain}"`);
+
+    // Start composing the body
+    let body = `--${boundaryMain}\r\n`;
+
+    // Multipart alternative for text and html
+    const boundaryAlt = "==BOUNDARY_ALT_" + Date.now();
+    body += `Content-Type: multipart/alternative; boundary="${boundaryAlt}"\r\n\r\n`;
+
+    // Plain text part
+    if (message.text) {
+        body += `--${boundaryAlt}\r\nContent-Type: text/plain; charset="utf-8"\r\nContent-Transfer-Encoding: 8bit\r\n\r\n`;
+        body += `${message.text}\r\n\r\n`;
+    }
+
+    // HTML part
+    if (message.html) {
+        body += `--${boundaryAlt}\r\nContent-Type: text/html; charset="utf-8"\r\nContent-Transfer-Encoding: 8bit\r\n\r\n`;
+        body += `${message.html}\r\n\r\n`;
+    }
+
+    body += `--${boundaryAlt}--\r\n`;
+
+    // Attachments
+    if (message.attachments && message.attachments.length > 0) {
+        message.attachments.forEach(att => {
+            body += `--${boundaryMain}\r\n`;
+            body += `Content-Type: ${att.contentType}; name="${att.filename}"\r\n`;
+            body += `Content-Disposition: ${att.contentDisposition || "attachment"}; filename="${att.filename}"\r\n`;
+            body += `Content-Transfer-Encoding: base64\r\n`;
+            if (att.cid) {
+                body += `Content-ID: <${att.cid}>\r\n`;
+            }
+            body += `\r\n${att.content.toString('base64')}\r\n\r\n`;
+        });
+    }
+
+    body += `--${boundaryMain}--\r\n`;
+
+    // Combine headers and body with separator line between headers and body
+    return headers.join("\r\n") + "\r\n\r\n" + body;
+}
+
 
 function headerLinesToMimeTreeHeaders(headerLines) {
     const headers = {};
@@ -631,7 +692,7 @@ const startListening = async (db, context) => {
 
         this.notifier.addEntries(session,folder, entries,() => {
             let pos = 0;
-            let processMessage = () => {
+            let processMessage = async () => {
                 if (pos >= messages.length) {
                     // once messages are processed show relevant updates
                     this.notifier.fire(session.user.id, null)
@@ -653,14 +714,6 @@ const startListening = async (db, context) => {
 
                 if(message.data) {
 
-                    /*
-
-                        const mimeTree = convertSimpleParserToMimeTree(message.data)
-                        const idate = new Date(message.data.date)
-                        delete message.data
-                     */
-
-
                     // Extract fields from parsed email
                     messageData = {
                         from: message.data.from?.text,            // 'From' header
@@ -675,7 +728,6 @@ const startListening = async (db, context) => {
                         subject: message.data.subject,
                         text: message.data.text,
                         html: message.data.html,
-                        encoding: '8bit',
                         date: new Date(message.data.date).toUTCString(), // important for preserving sent date
                        // alternatives: message.data.alternatives,
                         attachments: message.data.attachments.map(att => ({
@@ -687,78 +739,44 @@ const startListening = async (db, context) => {
                         })),
                     }
 
-
-                   /* messageData = JSON.parse(JSON.stringify(message.data))
-
-                    delete message.data
-                    delete messageData.headerLines
-
-                    if (messageData.headers) {
-                        delete messageData.headers['content-transfer-encoding']
-
-                        if(settings.resetBodyContentType) {
-                            delete messageData.headers['content-type']
-
-                            if (messageData.html) {
-                                messageData.headers['content-type'] = 'text/html; charset=utf-8'
-                            }
-                        }
-                    }
-
-                    if (Array.isArray(messageData.attachments)) {
-                        messageData.attachments.forEach(attachment => {
-                            if (attachment.encoding === 'quoted-printable') {
-                                delete attachment.encoding
-                            }
-                            if (attachment?.headers['content-transfer-encoding'] === 'quoted-printable') {
-                                delete attachment.headers['content-transfer-encoding']
-                            }
-                        })
-                    }
-
-                    replaceAddresseObjectsToString(messageData)*/
-
                     try {
-                        /*const mailComposer = new MailComposer({
-                            headers: messageData.headers,
-                            text: messageData.text,
-                            html: messageData.html,
-                            attachments: messageData.attachments
-                        })*/
-                        const mailComposer = new MailComposer(messageData)
 
-                        mailComposer.compile().build((err, mailMessage) => {
+                        Hook.call('imapOnFetchMailComposed', {mimeTree, messageData, mailMessage, folderId, options, session})
 
-                            const mimeTree = parseMimeTree(mailMessage)
+                        const queryRequest = {
+                            ...message,
+                            idate: new Date(messageData.date)
+                        }
 
-                            Hook.call('imapOnFetchMailComposed', {mimeTree, messageData, mailMessage, folderId, options, session})
+                        if(settings.useMailComposer){
+                            const mailComposer = new MailComposer(messageData)
+                            const mailMessage = await mailComposer.compile().build()
 
-                            let stream = imapHandler.compileStream(
-                                session.formatResponse('FETCH', message.uid, {
-                                    query: options.query,
-                                    values: session.getQueryResponse(
-                                        options.query,
-                                        {
-                                            ...message,
-                                            mimeTree: mimeTree,
-                                            idate: new Date(messageData.date)
-                                        }
-                                    )
-                                })
-                            )
-                            if (stream && session?.socket?.writable && !session?.socket?.destroyed) {
+                            queryRequest.mimeTree = parseMimeTree(mailMessage)
+                        }else{
+                            queryRequest.mimeTree = parseMimeTree(buildRFC822Email(messageData))
+                        }
 
-                                stream.on('error', (err) => {
-                                    logError(err.message)
-                                })
+                        let stream = imapHandler.compileStream(
+                            session.formatResponse('FETCH', message.uid, {
+                                query: options.query,
+                                values: session.getQueryResponse(
+                                    options.query,
+                                    queryRequest
+                                )
+                            })
+                        )
 
-                                session.writeStream.write(stream, () => {
-                                    setImmediate(processMessage)
-                                })
-                           /* } else {
-                                logError(`stream is null or closed`)*/
-                            }
-                        })
+                        if (stream && session?.socket?.writable && !session?.socket?.destroyed) {
+                            stream.on('error', (err) => {
+                                logError(err.message)
+                            })
+
+                            session.writeStream.write(stream, () => {
+                                setImmediate(processMessage)
+                            })
+                        }
+
                     } catch (error) {
                         logError(error.message)
                         console.error('error building email', error)
