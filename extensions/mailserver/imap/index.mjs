@@ -751,37 +751,64 @@ const startListening = async (db, context) => {
                             idate: new Date(messageData.date)
                         }
 
-                        if(settings.useMailComposer){
+                       // if(settings.useMailComposer){
                             const mailComposer = new MailComposer(messageData)
-                            const mailMessage = await mailComposer.compile().build()
 
-                            queryRequest.mimeTree = parseMimeTree(mailMessage)
-                        }else{
-                            queryRequest.mimeTree = parseMimeTree(buildRFC822Email(messageData))
-                        }
+                            mailComposer.compile().build((err, mailMessage) => {
 
-                        Hook.call('imapOnFetchMailComposed', {queryRequest, messageData, folderId, options, session})
+                                queryRequest.mimeTree = parseMimeTree(mailMessage)
+
+                                Hook.call('imapOnFetchMailComposed', {queryRequest, messageData, folderId, options, session})
 
 
-                        let stream = imapHandler.compileStream(
-                            session.formatResponse('FETCH', message.uid, {
-                                query: options.query,
-                                values: session.getQueryResponse(
-                                    options.query,
-                                    queryRequest
+                                let stream = imapHandler.compileStream(
+                                    session.formatResponse('FETCH', message.uid, {
+                                        query: options.query,
+                                        values: session.getQueryResponse(
+                                            options.query,
+                                            queryRequest
+                                        )
+                                    })
                                 )
-                            })
-                        )
 
-                        if (stream && session?.socket?.writable && !session?.socket?.destroyed) {
-                            stream.on('error', (err) => {
-                                logError(err.message)
+                                if (stream && session?.socket?.writable && !session?.socket?.destroyed) {
+                                    stream.on('error', (err) => {
+                                        logError(err.message)
+                                    })
+
+                                    session.writeStream.write(stream, () => {
+                                        setImmediate(processMessage)
+                                    })
+                                }
                             })
 
-                            session.writeStream.write(stream, () => {
-                                setImmediate(processMessage)
-                            })
-                        }
+
+                      /*  }else{
+                            queryRequest.mimeTree = parseMimeTree(buildRFC822Email(messageData))
+                            Hook.call('imapOnFetchMailComposed', {queryRequest, messageData, folderId, options, session})
+
+
+                            let stream = imapHandler.compileStream(
+                                session.formatResponse('FETCH', message.uid, {
+                                    query: options.query,
+                                    values: session.getQueryResponse(
+                                        options.query,
+                                        queryRequest
+                                    )
+                                })
+                            )
+
+                            if (stream && session?.socket?.writable && !session?.socket?.destroyed) {
+                                stream.on('error', (err) => {
+                                    logError(err.message)
+                                })
+
+                                session.writeStream.write(stream, () => {
+                                    setImmediate(processMessage)
+                                })
+                            }
+
+                        }*/
 
                     } catch (error) {
                         logError(error.message)
