@@ -155,12 +155,16 @@ const mongoDbMatchProjectFromIMapData = (options) => {
     if (options.messages) {
         match.uid = {$in: options.messages}
     }
-    if (options.metadataOnly && options.query) {
+    if (options.metadataOnly && options.query ) {
         // [{"query":"FLAGS","item":"flags","original":{"type":"ATOM","value":"FLAGS"}},{"query":"UID","item":"uid","original":{"type":"ATOM","value":"UID"}},{"query":"MODSEQ","item":"modseq","original":{"type":"ATOM","value":"MODSEQ"}}]
+        // [{"query":"UID","item":"uid","original":{"type":"ATOM","value":"UID"}},{"query":"RFC822.SIZE","item":"rfc822.size","original":{"type":"ATOM","value":"RFC822.SIZE"}},{"query":"BODYSTRUCTURE","item":"bodystructure","original":{"type":"ATOM","value":"BODYSTRUCTURE"}}]
         project = {_id: 1}
         options.query.forEach(q => {
             project[q.item] = 1
         })
+        if(project.bodystructure || project.body || project.content || project['rfc822.size']){
+            project.data = 1
+        }
     }
     return {match, project}
 }
@@ -797,12 +801,15 @@ const startListening = async (db, context) => {
                         })
                     )
 
-                    stream.on('error', (err) => {
-                        logError(err.message)
-                    })
-                    session.writeStream.write(stream, () => {
-                        setImmediate(processMessage)
-                    })
+                    if (stream && session?.socket?.writable && !session?.socket?.destroyed) {
+
+                        stream.on('error', (err) => {
+                            logError(err.message)
+                        })
+                        session.writeStream.write(stream, () => {
+                            setImmediate(processMessage)
+                        })
+                    }
                 }
             }
             setImmediate(processMessage)
