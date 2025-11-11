@@ -76,11 +76,11 @@ function buildRFC822Email(message) {
             body += `--${boundaryMain}\r\n`;
             body += `Content-Type: ${att.contentType}; name="${att.filename}"\r\n`;
             body += `Content-Disposition: ${att.contentDisposition || "attachment"}; filename="${att.filename}"\r\n`;
-            body += `Content-Transfer-Encoding: base64\r\n`;
+            body += `Content-Transfer-Encoding: ${att.encoding || att?.headers?.['content-transfer-encoding'] || 'base64'}\r\n`;
             if (att.cid) {
                 body += `Content-ID: <${att.cid}>\r\n`;
             }
-            body += `\r\n${att.content.toString('base64')}\r\n\r\n`;
+            body += `\r\n${att.content}\r\n\r\n`;
         });
     }
 
