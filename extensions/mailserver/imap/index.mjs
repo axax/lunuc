@@ -56,16 +56,16 @@ function buildRFC822Email(message) {
     const boundaryAlt = "==BOUNDARY_ALT_" + Date.now();
     body += `Content-Type: multipart/alternative; boundary="${boundaryAlt}"\r\n\r\n`;
 
-    // Plain text part
-    if (message.text) {
-        body += `--${boundaryAlt}\r\nContent-Type: text/plain; charset="utf-8"\r\nContent-Transfer-Encoding: 8bit\r\n\r\n`;
-        body += `${message.text}\r\n\r\n`;
-    }
-
     // HTML part
     if (message.html) {
         body += `--${boundaryAlt}\r\nContent-Type: text/html; charset="utf-8"\r\nContent-Transfer-Encoding: 8bit\r\n\r\n`;
         body += `${message.html}\r\n\r\n`;
+    }
+
+    // Plain text part
+    if (message.text) {
+        body += `--${boundaryAlt}\r\nContent-Type: text/plain; charset="utf-8"\r\nContent-Transfer-Encoding: 8bit\r\n\r\n`;
+        body += `${message.text}\r\n\r\n`;
     }
 
     body += `--${boundaryAlt}--\r\n`;
@@ -696,7 +696,7 @@ const startListening = async (db, context) => {
 
         this.notifier.addEntries(session,folder, entries,() => {
             let pos = 0;
-            let processMessage = async () => {
+            let processMessage = () => {
                 if (pos >= messages.length) {
                     // once messages are processed show relevant updates
                     this.notifier.fire(session.user.id, null)
@@ -752,7 +752,7 @@ const startListening = async (db, context) => {
                         }
 
                        // if(settings.useMailComposer){
-                            const mailComposer = new MailComposer(messageData)
+                            const mailComposer = new MailComposer(JSON.parse(JSON.stringify(messageData)))
 
                             mailComposer.compile().build((err, mailMessage) => {
 
