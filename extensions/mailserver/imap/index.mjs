@@ -739,6 +739,7 @@ const startListening = async (db, context) => {
                             content: att.content,
                             contentType: att.contentType,
                             cid: att.cid,
+                            encoding: att.encoding,
                             contentDisposition: att.contentDisposition,
                         })): [],
                     }
