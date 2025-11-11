@@ -12,7 +12,7 @@ export const decodeToken = (token) => {
                 if (!err) {
                     result = decoded
                 } else {
-                    console.error(err)
+                    console.error('decodeToken error', err)
                 }
             })
         }

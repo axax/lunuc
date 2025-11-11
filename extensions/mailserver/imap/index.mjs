@@ -155,7 +155,7 @@ const mongoDbMatchProjectFromIMapData = (options) => {
     if (options.messages) {
         match.uid = {$in: options.messages}
     }
-    if (options.metadataOnly && options.query ) {
+    if ( options.query ) {
         // [{"query":"FLAGS","item":"flags","original":{"type":"ATOM","value":"FLAGS"}},{"query":"UID","item":"uid","original":{"type":"ATOM","value":"UID"}},{"query":"MODSEQ","item":"modseq","original":{"type":"ATOM","value":"MODSEQ"}}]
         // [{"query":"UID","item":"uid","original":{"type":"ATOM","value":"UID"}},{"query":"RFC822.SIZE","item":"rfc822.size","original":{"type":"ATOM","value":"RFC822.SIZE"}},{"query":"BODYSTRUCTURE","item":"bodystructure","original":{"type":"ATOM","value":"BODYSTRUCTURE"}}]
         project = {_id: 1}
@@ -857,6 +857,8 @@ const startListening = async (db, context) => {
 
         console.log('imap search', options)
         const {match, project} = mongoDbMatchProjectFromIMapData(options)
+
+
         const messages = await getMessagesForFolder(db,folder._id,match, project)
 
 
