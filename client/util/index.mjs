@@ -443,7 +443,7 @@ const Util = {
         }
 
         if(isVideo) {
-            data.posterSrc = `${data.src}?transcode=${encodeURIComponent(JSON.stringify({screenshot:{time:1,size:data.width+'x?'}}))}&ext=png`
+            data.posterSrc = `${data.src}?transcode=${encodeURIComponent(JSON.stringify({screenshot:{time:options.posterTime || 0,size:data.width+'x?'}}))}&ext=png`
             if(options.videoTranscode){
                 params += `&transcode=${options.videoTranscode}&ext=mp4`
             }
