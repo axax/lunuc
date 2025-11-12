@@ -93,6 +93,10 @@ export const transcodeAndStreamVideo = async ({options, headers, req, res, filen
         return true
     }
 
+    if(options.keep) {
+        fs.closeSync(fs.openSync(options.filename+ '.temp', 'w'))
+    }
+
     ffmpeg.setFfprobePath(ffprobeInstaller.path)
     ffmpeg.setFfmpegPath( ffmpegInstaller.path)
 
@@ -122,8 +126,7 @@ export const transcodeAndStreamVideo = async ({options, headers, req, res, filen
     const outputOptions = []
 
     if (!options.nostream) {
-        outputOptions.push('-movflags frag_keyframe+empty_moov+faststart')
-        outputOptions.push('-frag_duration 3600')
+        outputOptions.push('-movflags +faststart')
     }
     if (options.crf) {
         outputOptions.push('-crf ' + options.crf)

@@ -147,7 +147,7 @@ const executeProxyRequest = (originalReq, originalRes, options, bufferedBody) =>
                         continue
                     }
                     const urlObj = new URL(s)
-                    console.log(`Retrying on server: ${urlObj.hostname} (Attempt ${tries})`)
+                    console.log(`Retrying on server: ${urlObj.hostname} (attempt=${tries} server=${urlObj.hostname} port=${urlObj.port} protocol=${urlObj.protocol} path=${path})`)
 
                     // Recursively call the function for the retry
                     executeProxyRequest(originalReq, originalRes, {

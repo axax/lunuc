@@ -783,7 +783,7 @@ const startListening = async (db, context) => {
                                     })
 
                                     session.writeStream.write(stream, () => {
-                                        setTimeout(processMessage,200)
+                                        setImmediate(processMessage)
                                     })
                                 }else{
                                     console.log('socket is not ready anymore', session)
