@@ -674,6 +674,21 @@ const startListening = async (db, context) => {
         })
 
 
+        session.socket.on('error', (err) => {
+            console.log('imap socket error'. err)
+        })
+        session.socket.on('close', () => {
+            console.log('imap socket close')
+        })
+        session.socket.on('end', () => {
+            console.log('imap socket end', session.socket)
+        })
+
+        session.socket.on('timeout', () => {
+            console.log('imap socket timeout')
+        })
+
+
         if (options.markAsSeen) {
             // mark all matching messages as seen
             messages.forEach(message => {
