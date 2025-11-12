@@ -674,21 +674,6 @@ const startListening = async (db, context) => {
         })
 
 
-        session.socket.on('error', (err) => {
-            console.log('imap socket error'. err)
-        })
-        session.socket.on('close', () => {
-            console.log('imap socket close')
-        })
-        session.socket.on('end', () => {
-            console.log('imap socket end', session.socket)
-        })
-
-        session.socket.on('timeout', () => {
-            console.log('imap socket timeout')
-        })
-
-
         if (options.markAsSeen) {
             // mark all matching messages as seen
             messages.forEach(message => {
@@ -793,10 +778,13 @@ const startListening = async (db, context) => {
                                     })
 
                                     session.writeStream.write(stream, () => {
-                                        setImmediate(processMessage)
+                                        setTimeout(processMessage,200)
                                     })
+                                }else{
+                                    console.log('socket is not ready anymore', session)
                                 }
                             })
+
 
 
                       /*  }else{
@@ -832,6 +820,7 @@ const startListening = async (db, context) => {
                         setImmediate(processMessage)
                     }
                 }else{
+                    console.log(`imap fetch without data ${message.uid}`)
                     const stream = imapHandler.compileStream(
                         session.formatResponse('FETCH', message.uid, {
                             query: options.query,
