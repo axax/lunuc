@@ -87,7 +87,7 @@ export const transcodeAndStreamVideo = async ({options, headers, req, res, filen
     delete headers.ETag
     delete headers['Cache-Control']
 
-    if(options.keep && !options.nostream && fs.existsSync(options.filename+ '.temp'))
+    if(options.keep && fs.existsSync(options.filename+ '.temp'))
     {
         await sendFileFromDir(req,res,{filename: SERVER_DIR+'/loading.mp4',headers:{...headers,...noCacheHeaders}})
         return true
