@@ -117,7 +117,8 @@ class JsonDom extends React.Component {
                 if (svgData) {
                     return <span data-inline-svg={true} {...props} dangerouslySetInnerHTML={{__html: svgData}}/>
                 } else if(imageData?.mimeType?.startsWith('video/')) {
-                    return <video width={imageData.width} height={imageData.height}
+                    return <video key={'video-'+props._key}
+                                  width={imageData.width} height={imageData.height}
                                   poster={location.origin+imageData.posterSrc}
                                   autoplay loop muted playsinline>
                         <source src={imageData.src} type={imageData.mimeType} />
