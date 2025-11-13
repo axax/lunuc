@@ -88,6 +88,9 @@ const executeProxyRequest = (originalReq, originalRes, options, bufferedBody) =>
     newHeaders['x-forwarded-for'] = originalReq.socket.remoteAddress
     newHeaders['x-forwarded-proto'] = originalReq.isHttps ? 'https' : 'http'
     newHeaders['x-forwarded-host'] = host
+    if(tries>0){
+        newHeaders['x-forwarded-server'] = server
+    }
 
 
     // 2. Create the Outgoing Request Stream

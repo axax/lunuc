@@ -283,33 +283,33 @@ const hasHttpsWwwRedirect = ({parsedUrl, hostrule, host, req, res, remoteAddress
             newhost = 'www.' + newhost
         }
 
-        if (!config.DEV_MODE && !req.isHttps) {
-            if (process.env.LUNUC_FORCE_HTTPS === 'true' && !req.headers[TRACK_IP_HEADER]) {
+        if (!config.DEV_MODE && !req.isHttp  && !req.headers['x-forwarded-server'] &&
+            process.env.LUNUC_FORCE_HTTPS === 'true' && !req.headers[TRACK_IP_HEADER]) {
 
-                const agent = req.headers['user-agent']
+            const agent = req.headers['user-agent']
 
-                // don't force redirect for letsencrypt
-                if( agent && agent.indexOf('www.letsencrypt.org') < 0 ) {
+            // don't force redirect for letsencrypt
+            if( agent && agent.indexOf('www.letsencrypt.org') < 0 ) {
 
-                    const {browser, version} = parseUserAgent(agent)
+                const {browser, version} = parseUserAgent(agent)
 
-                    if ((hostrule.allowInsecure && hostrule.allowInsecure[parsedUrl.pathname]) ||
-                        (browser === 'netscape') ||
-                        (browser === 'safari' && version <= 6) ||
-                        (browser === 'firefox' && version <= 26) ||
-                        (browser === 'chrome' && version <= 49) ||
-                        (browser === 'opera' && version <= 15) ||
-                        (browser === 'msie' && version <= 10)) {
-                        // for browser that doesn't support tls 1.2
-                    } else {
-                        console.log(`${remoteAddress}: Redirect to https ${newhost} / user-agent: ${agent} / browser=${browser} / version=${version}`)
+                if ((hostrule.allowInsecure && hostrule.allowInsecure[parsedUrl.pathname]) ||
+                    (browser === 'netscape') ||
+                    (browser === 'safari' && version <= 6) ||
+                    (browser === 'firefox' && version <= 26) ||
+                    (browser === 'chrome' && version <= 49) ||
+                    (browser === 'opera' && version <= 15) ||
+                    (browser === 'msie' && version <= 10)) {
+                    // for browser that doesn't support tls 1.2
+                } else {
+                    console.log(`${remoteAddress}: Redirect to https ${newhost} / user-agent: ${agent} / browser=${browser} / version=${version}`)
 
-                        res.writeHead(301, {'Location': 'https://' + newhost + req.url})
-                        res.end()
-                        return true
-                    }
+                    res.writeHead(301, {'Location': 'https://' + newhost + req.url})
+                    res.end()
+                    return true
                 }
             }
+
         }
 
         if (newhost != host) {
