@@ -384,6 +384,9 @@ const resolveSystemData = async ({segment, req, resolvedData, context, db}) => {
             if(user?.hostrule) {
                 user.hostrule.split(',').forEach(rule=>{
                     data.hostrules[rule] = getBestMatchingHostRule(rule,false,false)
+                    if(data.hostrules[rule]._subDomain) {
+                        delete data.hostrules[rule].subDomains
+                    }
                 })
             }
         }else {

@@ -1926,7 +1926,7 @@ class TypesContainer extends React.Component {
     runFilter(f) {
         const {type} = this.pageParams
         this.setSettingsForType(type, {filter: f})
-        this.goTo({page: 1, filter: f, prettyFilter: undefined})
+        this.goTo({page: 1, filter: f})
     }
 
     handleFilterTimeout = null

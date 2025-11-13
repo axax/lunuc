@@ -196,8 +196,9 @@ const getHeaders = (lang, headersExtra={}) => {
     return headers
 }
 
-const getCacheKey = ({query, variables, lang = _app_.lang, userId = _app_.user._id}) => {
-    return query + lang + (userId?'-'+userId+'-':'') + (variables ? Object.keys(variables).filter(key => variables[key]).sort().map(key=>key + '-' + variables[key]).join('|') : '')
+const getCacheKey = ({query, variables = {}, lang = _app_.lang, userId = _app_.user._id}) => {
+    const {slug, ...rest} = variables
+    return (slug !== undefined ? slug + '|' : query) + lang + (userId?'-'+userId+'-':'') + Object.keys(rest).filter(key => rest[key] ).sort().map(key=>key + '-' + rest[key]).join('|')
 }
 
 
@@ -377,12 +378,15 @@ export const client = {
     query: ({query, variables, fetchPolicy, timeout, id}) => {
         return finalFetch({id, timeout, query, variables, fetchPolicy})
     },
-    clearCacheWith:({start, contain}) =>{
+    clearCacheWith:({start}) =>{
+        const clearedKeys= []
         Object.keys(CACHE_QUERIES).forEach(key=>{
-            if(key.startsWith(start) && key.indexOf(contain)>=0){
+            if(key.startsWith(start)){
+                clearedKeys.push(key)
                 delete CACHE_QUERIES[key]
             }
         })
+        return clearedKeys
     },
     writeQuery: ({query, variables, data, cacheKey}) => {
         let oldCacheKey

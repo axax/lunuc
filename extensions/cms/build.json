@@ -285,11 +285,7 @@
           "type": "Boolean",
           "hideColumnInTypes": true,
           "index": 1,
-          "access": {
-            "ui": {
-              "role": "manage_cms_template"
-            }
-          }
+          "clone": false
         },
         {
           "name": "disableRendering",

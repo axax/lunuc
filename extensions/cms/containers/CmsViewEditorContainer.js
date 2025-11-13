@@ -1657,11 +1657,14 @@ const CmsViewEditorContainerWithGql = compose(
                                 newData.resolvedData = updateCmsPage.resolvedData
                                 newData.subscriptions = updateCmsPage.subscriptions
                             }
-                            client.writeQuery({query: getCmsPageQuery(ownProps), variables, data: {...data, cmsPage: newData}})
-                            if(!ownProps.dynamic){
+
+                            if(!ownProps.dynamic || variables.editmode){
                                 // clear caches for dynamic use
-                                client.clearCacheWith({start:getCmsPageQuery({dynamic:true}),contain:`"slug":"${ownProps.slug}"`})
+                                client.clearCacheWith({start:ownProps.slug+'|'})
                             }
+
+                            client.writeQuery({query: getCmsPageQuery(ownProps), variables, data: {...data, cmsPage: newData}})
+
                         }
                         if (cb) {
                             cb()

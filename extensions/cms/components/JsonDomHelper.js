@@ -291,7 +291,7 @@ class JsonDomHelper extends React.Component {
         e.preventDefault()
         JsonDomHelper.disableEvents = true
 
-        const {_json, _onTemplateChange} = this.props
+        const {_json} = this.props
         e.currentTarget.classList.remove(DROPAREA_OVER)
 
         if (JsonDomDraggable.props) {

@@ -32,14 +32,19 @@ export const isPreview = () => {
 export const isEditMode = (props) => {
     const {dynamic, cmsPage, forceEditMode} = props
 
+    /*
+    forceEditMode enables editing of GenericData within a dynamically added CMS component.
+    forceInlineEditor allows editing of the template inside a dynamically added CMS component.
+    cmsPage.publicEdit is set on the page itself and allows editing of the template inside a dynamically added CMS component.
+     */
+
+    if(isTrue(props.forceInlineEditor)){
+        return true
+    }
 
     if(cmsPage) {
-        /*
-        forceEditMode enables editing of GenericData within a dynamically added CMS component.
-        forceInlineEditor allows editing of the template inside a dynamically added CMS component.
-        publicEdit is set on the page itself and allows editing of the template inside a dynamically added CMS component.
-         */
-        if(isTrue(forceEditMode) || isTrue(props.forceInlineEditor) || cmsPage.publicEdit) {
+        // with cmsPage
+        if(isTrue(forceEditMode) || cmsPage.publicEdit) {
             return true
         } else if (!cmsPage.editable) {
             return false

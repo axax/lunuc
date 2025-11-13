@@ -526,12 +526,13 @@ export default () => {
                             showFile={true} _version={_version} onClick={(item, isExpanded) => {
                             const prettyFilter = parseOrElse(this.pageParams.prettyFilter,{})
                             if(isExpanded) {
+
                                 prettyFilter.slug =  `~^${item.path + item.name}`
                             }else {
                                 delete prettyFilter.slug
                             }
 
-                            this.goTo({prettyFilter: JSON.stringify(prettyFilter), page: 1})
+                            this.goTo({prettyFilter: JSON.stringify(prettyFilter), page: 1, filter: ''})
                         }}/>
                         </Paper>
                     </Grid>
