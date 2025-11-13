@@ -283,7 +283,7 @@ const hasHttpsWwwRedirect = ({parsedUrl, hostrule, host, req, res, remoteAddress
             newhost = 'www.' + newhost
         }
 
-        if (!config.DEV_MODE && !req.isHttp  && !req.headers['x-forwarded-server'] &&
+        if (!config.DEV_MODE && !req.isHttps  && !req.headers['x-forwarded-server'] &&
             process.env.LUNUC_FORCE_HTTPS === 'true' && !req.headers[TRACK_IP_HEADER]) {
 
             const agent = req.headers['user-agent']
