@@ -740,7 +740,7 @@ const startListening = async (db, context) => {
                             content: att.content,
                             contentType: att.contentType,
                             cid: att.cid,
-                            encoding: att.encoding,
+                            encoding: att.encoding!=='quoted-printable' ? att.encoding : undefined,
                             contentDisposition: att.contentDisposition,
                         })): [],
                     }
