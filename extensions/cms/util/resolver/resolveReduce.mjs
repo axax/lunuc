@@ -14,7 +14,7 @@ function createFacetSliderMinMax(value, facetData) {
         if(!facetData.otherValues){
             facetData.otherValues = []
         }
-        if(!facetData.includes(value)){
+        if(!facetData.otherValues.includes(value)){
             facetData.otherValues.push(value)
         }
     }
