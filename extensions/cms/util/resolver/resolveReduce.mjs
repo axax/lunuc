@@ -5,10 +5,17 @@ import Cache from '../../../../util/cache.mjs'
 function createFacetSliderMinMax(value, facetData) {
     if (!isNaN(value)) {
         if (facetData.min === undefined || facetData.min > value) {
-            facetData.min = value;
+            facetData.min = value === null ? 0 : value
         }
         if (facetData.max === undefined || facetData.max < value) {
-            facetData.max = value;
+            facetData.max = value
+        }
+    }else{
+        if(!facetData.otherValues){
+            facetData.otherValues = []
+        }
+        if(!facetData.includes(value)){
+            facetData.otherValues.push(value)
         }
     }
 }
