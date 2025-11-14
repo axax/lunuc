@@ -25,15 +25,15 @@ Nicht empfolen für SVG Bilder, da diese dabei in PNG umgewandelt werden. Im Tab
     [`${key}options_quality`]: {
         type: 'number',
         newLine: true,
-        label: 'Qualität (Wert zwischen 1 und 100)',
+        label: _t('elements.image.quality'),
         tab: IMAGE_OPTIMIZATION_TAB
     },
     [`${key}options_resize_width`]: {
-        label: 'Breite in Pixel',
+        label: _t('elements.image.resizeWidth'),
         tab: IMAGE_OPTIMIZATION_TAB
     },
     [`${key}options_resize_height`]: {
-        label: 'Höhe in Pixel',
+        label: _t('elements.image.resizeHeight'),
         tab: IMAGE_OPTIMIZATION_TAB
     },
     [`${key}options_position`]: {
@@ -1437,7 +1437,8 @@ const baseElements = [
                                     name: '__uid__',
                                     defaultValue: '$.slide{slide._index}',
                                     id: '__uid__$.slide{slide._index}',
-                                    defaultChecked: "$.slide{slide._index===0?'checked':''}"
+                                    defaultChecked: "$.slide{slide._index===0?'checked':''}",
+                                    'data-slide-timeout': "$.slide{slide.data && slide.data.length>0 && !isNaN(slide.data[0].timeout)?slide.data[0].timeout:''}"
                                 }
                             }
                     }
@@ -1454,6 +1455,7 @@ const baseElements = [
                                 t: 'li',
                                 p: {
                                     ['data-slide-count']: '$.slide{this.scope.__sliderData.length}',
+                                    ['data-slide-timeout']: "$.slide{isNaN(slide.timeout)?'':slide.timeout}",
                                     style: {
                                         left: "$.slide{slide._index*100}%"
                                     }
@@ -1526,6 +1528,9 @@ const baseElements = [
                                 c: {
                                     $inlineEditor: false,
                                     t: 'li',
+                                    p: {
+                                        "style": "$.slide{slide.data && slide.data.length>0? && !isNaN(slide.data[0].timeout)?'--timeout:'+slide.data[0].timeout+'ms':''}"
+                                    },
                                     c: {
                                         $inlineEditor: false,
                                         t: 'label',
@@ -1604,15 +1609,24 @@ const baseElements = [
                 },
                 text: {
                     tab: 'Slides',
-                    expandable: false,
                     label: 'Text',
                     uitype: 'html',
                     localized:true
-                }
+                },
+                timeout: {
+                    tab: 'Slides',
+                    label: _t('elements.slider.timeout'),
+                    fullWidth: true,
+                    expandable: false
+                },
             }
         },
         options: {
-            ['p_data-slide-timeout']: {value: '7000', label: 'Anzeigezeit in ms pro Slide'},
+            ['p_data-slide-timeout']: {tab:DEFAULT_TAB,value: '7000', label: _t('elements.slider.timeout')},
+            'p_style@timeout': {value: '7000',
+                invisible:true,
+                template:'${_comp.p["data-slide-timeout"]?"--timeout:"+_comp.p["data-slide-timeout"]+"ms;":""}'
+            },
             $set_0_chunk: {value: '1', label: 'Anzahl pro Seite'},
             $set_0_chunkOptions_randomize: {type: 'Boolean', value: '1', label: 'Slides zufällig sortieren'},
             $set_0_chunkOptions_fill: {type: 'Boolean', value: '1', label: 'Unvollständige Slides auffüllen'},

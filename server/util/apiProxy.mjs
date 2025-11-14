@@ -5,6 +5,7 @@ import {Socket} from 'net'
 import {Readable} from 'stream'
 import {clientAddress} from '../../util/host.mjs'
 import {getGatewayIp} from '../../util/gatewayIp.mjs'
+import {HOSTRULE_HEADER} from '../../api/constants/index.mjs'
 
 const API_PORT = (process.env.API_PORT || process.env.LUNUC_API_PORT || 3000)
 const API_HOST = 'localhost'
@@ -89,6 +90,7 @@ const executeProxyRequest = (originalReq, originalRes, options, bufferedBody) =>
     newHeaders['x-forwarded-proto'] = originalReq.isHttps ? 'https' : 'http'
     newHeaders['x-forwarded-host'] = host
     if(tries>0){
+        newHeaders[HOSTRULE_HEADER] = host
         newHeaders['x-forwarded-server'] = server
     }
 
