@@ -28,8 +28,7 @@ const CodeMirrorWrapper = (props) => {
 
     if (controlled){
         React.useEffect(() => {
-            if(editorViewRef.current) {
-                console.log(value)
+            if(editorViewRef.current && editorViewRef.current.state.doc.toString() !== value) {
                 editorViewRef.current.dispatch({
                     changes: {from: 0, to: editorViewRef.current.state.doc.length, insert: value}
                 })

@@ -381,19 +381,24 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
     try {
         const remoteAddress=clientAddress(req)
         if(!isTemporarilyBlocked({req, key:remoteAddress})) {
-            const host = getHostFromHeaders(req.headers)
+            const host = getHostFromHeaders(req.headers),
+                parsedUrl = url.parse(req.url, true)
 
-            req.isHttps = req.connection.encrypted || req.socket.encrypted
+            req.isHttps = req.socket.encrypted
+
+            console.log(`${req.method} ${remoteAddress}: ${req.isHttps?'https':'http'}://${host}${parsedUrl.href} - ${req.headers['user-agent']}`)
 
             // check with and without www
-            //const hostRuleHost = req.headers[HOSTRULE_HEADER] ? req.headers[HOSTRULE_HEADER].split(':')[0] : host
-            const hostrules = getHostRules(true)
-            const hostrule = {...hostrules.general, ...getBestMatchingHostRule(host).hostrule}
+            const bestHostruleData = getBestMatchingHostRule(host)
 
-            const parsedUrl = url.parse(req.url, true)
+            if(!bestHostruleData.hostrule && net.isIP(remoteAddress) === 0) {
+                console.log(`no hostrule found for ${host}`)
+                sendError(res, 404)
+                return
+            }
 
-            console.log(`${req.method} ${remoteAddress}: ${host}${parsedUrl.href} - ${req.headers['user-agent']}`)
-
+            const allHostrules = getHostRules(true),
+                hostrule = {...allHostrules.general, ...bestHostruleData.hostrule}
 
             if (hostrule.certDir && hasHttpsWwwRedirect( {parsedUrl, hostrule, host, req, res, remoteAddress})) {
                 return
@@ -401,7 +406,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
             //small security check
             if (hostrule.blockedIps && hostrule.blockedIps.indexOf(remoteAddress)>=0) {
-                console.log(`ip ${remoteAddress} is blocked in hostrule for ${host}`)
+                console.log(`ip ${remoteAddress} is blocked by hostrule for ${host}`)
                 sendError(res, 403)
                 return
             }
@@ -413,13 +418,20 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 urlPathname = decodeURIComponentSafe(parsedUrl.pathname)
             }
 
-            //small security check
-            if (urlPathname.indexOf('../') >= 0) {
-                sendError(res, 403)
-                return
+
+            if( hostrule.blockUrlPathRegex) {
+                const patternFromString = new RegExp(hostrule.blockUrlPathRegex)
+
+                if(patternFromString.test(parsedUrl.pathname)){
+                    console.log(`url path ${parsedUrl.pathname} blocked by hostrule regex for ${host}`)
+                    sendError(res, 404)
+                    return
+                }
             }
 
-           // hostrule.reverseProxy = {ip:'localhost',port:9002,http2:false}
+
+
+            // hostrule.reverseProxy = {ip:'localhost',port:9002,http2:false}
             if(isUrlValidForPorxing(urlPathname, hostrule)){
                 actAsReverseProxy(req,res,{parsedUrl,hostrule, host})
             }else if (urlPathname.startsWith('/graphql') || API_PREFIXES.some(prefix => urlPathname.startsWith('/'+prefix + '/'))) {
@@ -525,8 +537,10 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                         }
                     }
 
-                    hostrule.headers = {...hostrules.general.headers, ...hostrule.headers}
+                    // extend hostrule header with general headers
+                    hostrule.headers = {...allHostrules.general.headers, ...hostrule.headers}
                     const headers = {...hostrule.headers.common,...hostrule.headers[urlPathname]}
+
                     if (hostrule.fileMapping && hostrule.fileMapping[urlPathname]) {
                         const mappedFile = path.join(hostrule._basedir, hostrule.fileMapping[urlPathname])
                         //console.log('mapped file: ' + mappedFile)

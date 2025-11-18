@@ -1,5 +1,5 @@
 {
-  "headers":{
+  "headers": {
     "/serviceworker.js": {
       "Cache-Control": "max-age=0, no-cache, no-store, must-revalidate"
     },
@@ -23,6 +23,12 @@
   "paths": [
     "/Volumes/ELEMENTS/webroot/media"
   ],
-  "regexRedirects":{
-  }
+  "redirects": {
+    "/from-my-url": "/to-my-url"
+  },
+  "__regexRedirects": {
+    "/de/\\\\?product_cat=(.*)": "/produkte",
+    "/de/\\\\?product=(.*)": "/produkte"
+  },
+  "blockUrlPathRegex": "(\\/wp-admin\\/|\\/wp-includes\\/|\\/\\.\\.\\/|\\/wp-content\\/|\\/cgi-bin\\/|\\.php$|\\.cgi$|\\.aspx$)"
 }

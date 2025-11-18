@@ -50,7 +50,8 @@ export const DEFAULT_TEMPLATE = `{
     }    
   ]
 }`
-export const DEFAULT_SCRIPT = `// 1. access scope data
+export const DEFAULT_SCRIPT = `//!#main
+// 1. access scope data
 // scope.page.slug
 // scope.data
 // 2. handle events
@@ -78,13 +79,197 @@ on('urlchange',()=>{
 
 on('beforerunscript',()=>{
 \t// this is called before the script is executed
-})`
+})
+//!#General
+scope.notouch = !('ontouchstart' in window || navigator.maxTouchPoints)
+const onScroll=()=>{
+  if( !scope.editMode && !scope.inEditor ){
+    const el = document.body, cn = 'is-scroll'
+    if (el && el.classList) {
+      const co = window.pageYOffset      
+      if (co>100 ){
+        el.classList.add(cn)
+      }else{
+        el.classList.remove(cn)
+      }
+    }
+  }
+}
+let resizeTimeout
+let prevWindowWidth = window.innerWidth
+const onResize =(e) => {
+  if(window.innerWidth !== prevWindowWidth){
+    prevWindowWidth = window.innerWidth
+    clearTimeout(resizeTimeout)
+    resizeTimeout = setTimeout(()=>{
+      root.refresh(true)
+    },250)
+  }
+}
+on('mount',()=>{
+  window.addEventListener('scroll',onScroll)
+  window.addEventListener('resize',onResize)
+})
+on('unmount',()=>{
+  window.removeEventListener('scroll',onScroll)
+  window.removeEventListener('resize',onResize)
+})
+//!#Slider
+/*slider */
+on('mount',()=>{
+  waitForSlider()
+})
+
+let isWaitingForSlider = false
+const waitForSlider = () => {
+  if(!isWaitingForSlider){
+    isWaitingForSlider = true
+    DomUtil.waitForElement('[data-element-key="slider"]:not([data-has-started="true"])').then((el)=>{
+      isWaitingForSlider = false
+      startSliders()
+      setTimeout(()=>{
+        waitForSlider()
+      },2000)
+    }).catch(()=>{
+      isWaitingForSlider = false
+      setTimeout(()=>{
+        waitForSlider()
+      },2000)
+    })
+  }
+}
+
+const getElementIndex = (node) => {
+  var index = 0;
+  if(node){
+    while ( (node = node.previousElementSibling) ) {
+      index++
+    }
+  }
+  return index
+}
+const sliderClick =(e)=>{
+  let node = e.target, timeoutId, timeout
+  while ( !timeoutId && node && node.getAttribute) {
+    timeoutId = node.getAttribute('data-timeout-id')
+    if(!timeoutId){
+      node = node.parentNode
+    }
+  }
+  if(!node || !node.getAttribute){
+    return
+  }
+  if(node.getAttribute('data-click')){
+    node.setAttribute('data-click','')
+    return
+  }
+  startSlider(node)
+}
+const findSlider = (child)=>{
+  while(child && child.getAttribute('data-element-key')!=='slider'){
+    child  = child.parentNode
+  }
+  return child
+}
+const sliderTouch = (e) =>{
+  const slider = findSlider(e.target)
+  slider.setAttribute('data-timeout-touchstartx', e.changedTouches[0].screenX)
+  slider.setAttribute('data-timeout-touchstarty', e.changedTouches[0].screenY)
+}
+const sliderTouchEnd = (e) => {
+  const slider = findSlider(e.target)
+  const slides = slider.querySelectorAll('input')
+  const slide=slider.querySelector('input:checked')
+  let slideIdx = getElementIndex(slide)
+  const touchendX = e.changedTouches[0].screenX
+  const touchendY = e.changedTouches[0].screenY
+  const touchstartX = slider.getAttribute('data-timeout-touchstartx')
+  const touchstartY = slider.getAttribute('data-timeout-touchstarty')
+  let direction = ''
+  const delx = touchendX - touchstartX
+  const dely = touchendY - touchstartY
+  if(Math.abs(delx) > Math.abs(dely)){
+    if(delx > 0) {
+      slideIdx--
+      if(slideIdx < 0){
+        slideIdx = slides.length - 1
+      }
+    }else{
+      slideIdx++
+      if(slideIdx >= slides.length){
+        slideIdx = 0
+      }
+    }
+    console.log(slideIdx, slides)
+    clearTimeout(slider.getAttribute('data-timeout-id'))
+    slides[slideIdx].click()    
+  }
+}
+const startSlider = (slider) => {
+  if(slider){
+    slider.removeEventListener('click',sliderClick)
+    slider.addEventListener('click',sliderClick)
+    clearTimeout(slider.getAttribute('data-timeout-id'))
+    
+    const slide=slider.querySelector('input:checked')
+    
+    let timeout = parseInt(slide.getAttribute('data-slide-timeout'))
+
+    if(isNaN(timeout)){
+      timeout = parseInt(slider.getAttribute('data-slide-timeout'))
+    }
+    
+    if(!isNaN(timeout) && timeout>0){
+      const slides = slider.querySelectorAll('input')
+      if(slides.length>1){
+        let idx = getElementIndex(slide)
+        idx++
+        if(idx>=slides.length){
+          idx = 0
+        }
+        const timeoutId= setTimeout(()=>{
+          slides[idx].click()
+        },timeout)
+        slider.setAttribute('data-timeout-id', timeoutId)
+      }
+    }
+    
+    /* swipe */
+    slider.removeEventListener('touchstart', sliderTouch, false)
+    slider.addEventListener('touchstart', sliderTouch, false)
+    slider.removeEventListener('touchend', sliderTouchEnd , false)
+    slider.addEventListener('touchend', sliderTouchEnd , false)
+  }
+}
+const startSliders = (currentSlider) => {
+  const sliders = document.querySelectorAll('[data-element-key="slider"]')
+  if( sliders && sliders.forEach){
+    for(let i = 0; i< sliders.length; i++){
+      const slider = sliders[i]
+      if(!slider.getAttribute('data-has-started')){
+        slider.setAttribute('data-has-started', true)
+        startSlider(slider)
+      }
+    }
+  }
+}
+/* end slider */`
+
 export const DEFAULT_STYLE = `//!#Environment
-\${this.set('breakpointMobile',scope?.PageOptions?.breakpointMobile ? scope.PageOptions.breakpointMobile + 'px' : '25.813rem')}
-\${this.set('breakpointTablet',scope?.PageOptions?.breakpointTablet ? scope.PageOptions.breakpointTablet + 'px' : '48rem')}
-\${this.set('breakpointDesktop',scope?.PageOptions?.breakpointDesktop ? scope.PageOptions.breakpointDesktop + 'px' : '62rem')}
+\${this.set('numberOfGridColumns', scope?.PageOptions?.numberOfGridColumns || 12)}
+\${this.set('defaultFontFamily',scope?.PageOptions?.defaultFontFamily || 'FunnelDisplay')}
+\${this.set('breakpointMobile',scope?.PageOptions?.breakpointMobile ? scope.PageOptions.breakpointMobile + 'px' : '768px')}
+\${this.set('breakpointTablet',scope?.PageOptions?.breakpointTablet ? scope.PageOptions.breakpointTablet + 'px' : '1024px')}
+\${this.set('breakpointDesktop',scope?.PageOptions?.breakpointDesktop ? scope.PageOptions.breakpointDesktop + 'px' : '1540px')}
 
 :root{
+    --default-font-size: calc(0.9rem + 0.2vw);
+    --default-font-color: rgb(0,0,0);
+    --default-font-family: \${this.get('defaultFontFamily')}, serif;
+    --default-transition-duration:0.25s;
+  
+    --color-main: \${scope?.PageOptions?.main || 'rgb(17, 95, 105)'};
+    --color-main-dark: color-mix(in oklab, var(--color-main), black 30%);
     --color-grey: \${scope?.PageOptions?.grey || '#c1c1c1'};
     
     --breakpoint-mobile:\${this.get('breakpointMobile')};
@@ -101,19 +286,99 @@ export const DEFAULT_STYLE = `//!#Environment
     --width-md: 33.33%;
     --width-lg: 25%;
 }
-
-//!#Custom
+//!#General
 #page{
-  img{
-    max-width: 100%;
+
+  /* Default font settings */
+  line-height:1.4;
+  font-display: swap;
+  font-family: var(--default-font-family);
+  font-size: var(--default-font-size);
+  color: var(--default-font-color);
+
+  p,h1,.h1,h2,.h2,h3,.h3,h4,.h4,h5,.h5,h6,.h6{
+    margin-top: 0;
+    font-weight: 200;
   }
-  .entry{
-    border-bottom: solid 1px #c1c1c1;
-    padding-bottom:1rem;
-    margin-bottom:2rem;
+  h1,.h1{
+    font-size: calc(var(--default-font-size) * 4);
+    line-height: 1.2;
+    margin-top:0;
+    margin-bottom: calc(2rem + 1.5vh);
+  }
+  h2,.h2{
+    font-size: calc(var(--default-font-size) * 2);
+    line-height: 1.2;
+    margin-bottom: calc(1.5rem + 1vh);
+  }
+  h3,.h3{
+    font-size: calc(var(--default-font-size) * 1.2);
+    line-height: 1.2;
+    margin-bottom: calc(1rem + 0.5vh);
+  }
+
+  img{
+    max-width:100%;
+    height:auto;
+  }
+
+  //<!!#EXTRACT_CLASSES
+  .smaller{
+    font-size: calc(var(--default-font-size) * 0.85);
+  }
+  strong, .strong{
+    font-weight: bold;
+  }
+  .center{
+    text-align: center;
+  }
+  
+  a.link-animation,
+  .link-animation a{
+    text-decoration:none;
+    position: relative;
+    color: var(--default-font-color);
+    &:after {
+      transform: scaleX(0);
+      content: '';
+      display: block;
+      position: absolute;
+      height:2px;
+      top: 100%;
+      left:0;
+      right:0;
+      background-color: var(--default-font-color);
+      transition: transform var(--default-transition-duration) ease;
+    }
+    &:hover{
+      &:after {
+        transform: scaleX(1);
+        background-color: var(--default-font-color);
+      }
+    }
+  }
+  //!!#EXTRACT_CLASSES>
+  
+  .animation {
+      opacity: 0;
+      transform: translateY(15vh) scale(1);
+      transform-origin: center center;
+      transition: opacity calc(var(--default-transition-duration) * 4), transform calc(var(--default-transition-duration) * 4);
+  }
+  .fade-in-up {
+      opacity: 1;
+      transform: translateY(0) scale(1);
   }
 }
-//!#General
+
+@media screen and (max-width: \${this.get('breakpointMobile')}){
+  #page{
+    .hide-mobile{
+      display:none !important;
+    }
+  }
+}
+//!#Layout
 html,body{
   margin:0;
   padding:0;
@@ -121,60 +386,94 @@ html,body{
 *, *:before, *:after {
   box-sizing: border-box;
 }
-#page{
-  img{
-    max-width:100%;
-  }
-  .strong{
-    font-weight: bold;
-  }
-  .relative{
-    position: relative;
-  }
-  .indented,
-  .indented-small,
-  .indented-large{
-    overflow: auto;
-    display:block;
-    max-width:100%;
-    width: 100%;
-    padding: 0 1rem;
-    margin:0 auto;
-  }
-  
-  .animation {
-    opacity: 0;
-    transform: translateY(30px) scale(0.9);
-    transform-origin: top;
-    transition: opacity 1s, transform 1s;
-  }
-  .fade-in-up {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+
+@font-face {
+  font-family: "\${this.get('defaultFontFamily')}";
+  src: url("/fonts/\${this.get('defaultFontFamily')}-Light.ttf") format("truetype");
 }
-@media screen and (max-width: \${this.get('breakpointTablet')}){
-  #page{
-    .hide-mobile{
-      display:none;
-    }
-  }
+
+@font-face {
+  font-family: "\${this.get('defaultFontFamily')}";
+  src: url("/fonts/\${this.get('defaultFontFamily')}-Bold.ttf") format("truetype");
+  font-weight: 500;
 }
-@media screen and (min-width: \${this.get('breakpointDesktop')}){
-  /* large desktop */
-  #page{
-    .indented{
-      width:calc(var(--breakpoint-mobile) + 12rem);
-    }    
-    .indented-small{
-      width:var(--breakpoint-tablet);
-    }
-    .indented-large{
-      width:calc(var(--breakpoint-desktop) + 24rem);
+
+body{
+  &.is-scroll{
+    #page {
+      --header-height: min(calc(6rem + 3vh), 6rem);
+      #header{
+        background: rgb(255,255,255);
+        box-shadow: 0 2px 10px -2px rgb(0 0 0 / 45%);
+        opacity: 0;
+        &:hover{
+          opacity: 1;
+        }
+      }
     }
   }
 }
 
+#page{
+  --header-height: min(calc(6rem + 3vh), 10rem);
+  
+  #header{
+    display: flex;
+    align-items: center;
+    position: \${scope.inEditor?'relative':'fixed'};
+    z-index: 2;
+    top:0;
+    width:100%;
+    height: var(--header-height);    
+    transition: height var(--default-transition-duration) ease-in, opacity var(--default-transition-duration) ease-in;
+
+    #headerLogo{     
+      > img{
+        height: calc(var(--header-height) * 0.55);
+        transition: height var(--default-transition-duration) ease-in;
+      }
+    }
+  }
+  #main{
+    margin-top: \${scope.inEditor?'0':'var(--header-height)'};
+    min-height: 50vh;
+    img{
+      border-radius: 0.4rem;
+    }
+  }
+  #footer{
+    #footerLogo > img{
+      width:max(16vw, 18rem);
+    }
+  }  
+
+  .indented,
+  .indented-small,
+  .indented-large{
+    overflow: visible;
+    display:block;
+    max-width:calc(100% - 2rem);
+    width: 100%;
+    padding: 0 1rem;
+    margin:0 auto;
+  }
+}
+
+
+@media screen and (min-width: \${this.get('breakpointTablet')}){
+  /* large desktop */
+  #page{
+    .indented-small{
+      width:var(--breakpoint-mobile);
+    }
+    .indented{
+      width:calc(var(--breakpoint-tablet) * 1.3);
+    }    
+    .indented-large{
+      width:calc(var(--breakpoint-desktop) * 1.2);
+    }
+  }
+}
 //!#Grid
 [data-element-key="grid"]{
   display:grid;
@@ -202,7 +501,7 @@ html,body{
   }
 
   &.row-sm-reverse {
-    direction: rtl; /* reverse item order */
+    direction: ltr; /* reverse item order */
   }
 
   .col {
@@ -234,7 +533,7 @@ html,body{
       column-gap: 3rem;
     }
     &.row-sm-reverse {
-      direction: ltr; /* reverse item order */
+      direction: rtl; /* reverse item order */
     }
     .col {
       \${Array(this.get('numberOfGridColumns')).fill().map((_,i) => \`
@@ -468,4 +767,58 @@ img[_inlineeditor=true]{
 [data-is-invisible="true"]:not([_inlineeditor=true]){
   display:none !important;
 }
-`
+[data-element-key="background"]{
+  display: flow-root; /* prevent margin collapse */
+}
+//!#Custom
+#page{
+  
+  .button{
+    cursor:pointer;
+    text-align:center;
+    display:inline-block;
+    text-decoration: none;
+    background-color: var(--color-main);
+    box-shadow: inset 0 0 0 0.0625rem var(--color-main);
+    color: #fff;
+    font-size: var(--default-font-size);
+    font-weight: 600;
+    padding: 1rem 2.5rem;
+    transition: color var(--default-transition-duration) linear;
+    transition-property: color, background-color, box-shadow;
+    &:hover {
+      color:#fff;
+      background-color: var(--color-main-dark);
+      box-shadow: inset 0 0 0 0.0625rem var(--color-main-dark);
+    }
+    &:before{
+      display: none;
+    }
+    &.small{
+      min-width: 7.5rem;
+      padding: .8125rem;
+    }
+    &.secondary{
+      background-color: transparent;
+      box-shadow: inset 0 0 0 0.0625rem rgba(36,28,21,.4);
+      color: #241c15;
+      &:hover{
+        box-shadow: inset 0 0 0 0.0625rem #241c15;
+        color: #241c15;
+      }
+    }
+    &.plain{
+      background: none;
+      border: none;
+      box-shadow:none;
+      color: var(--color-main);
+      font-weight: 500;
+      padding-left: 0;
+      padding-right: 0;
+      &:hover{
+        color: var(--color-main-dark);
+        text-decoration: underline;
+      }
+    }
+  }
+}`
