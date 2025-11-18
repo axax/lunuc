@@ -391,7 +391,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             // check with and without www
             const bestHostruleData = getBestMatchingHostRule(host)
 
-            if(!bestHostruleData.hostrule && net.isIP(remoteAddress) === 0) {
+            if(!bestHostruleData._exactMatch && net.isIP(remoteAddress) === 0) {
                 console.log(`no hostrule found for ${host}`)
                 sendError(res, 404)
                 return

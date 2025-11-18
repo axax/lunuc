@@ -199,9 +199,9 @@ export const getBestMatchingHostRule = (host, withCertContext=true, fallbackToGe
             }
 
             if(hostrule.subDomains && hostrule.subDomains[host]){
-                return {hostrule: {...hostrule,...hostrule.subDomains[host],_subDomain:host}, host: currentHost}
+                return {hostrule: {...hostrule,...hostrule.subDomains[host],_subDomain:host, _exactMatch:true}, host: currentHost}
             }
-            return {hostrule, host: currentHost}
+            return {hostrule, host: currentHost, _exactMatch: currentHost === host || host === 'www.' + currentHost}
         }
     }
     if(fallbackToGeneral){
