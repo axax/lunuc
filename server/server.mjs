@@ -502,7 +502,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     await resolveUploadedFile(urlPathname, parsedUrl, req, res)
                 } else {
 
-                    let redirect
+                    let redirect, redirectStatusCode = 301
                     if (hostrule.redirects) {
 
                         redirect = hostrule.redirects[urlPathname+parsedUrl.search]
@@ -522,7 +522,13 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                         }
                     }
                     if(!redirect && hostrule.regexRedirects){
-                        redirect = regexRedirectUrl(urlPathname+(parsedUrl.search || ''), hostrule.regexRedirects)
+                        const redirectResponse = regexRedirectUrl(urlPathname+(parsedUrl.search || ''), hostrule.regexRedirects)
+                        if(redirectResponse.url){
+                            redirect = redirectResponse.url
+                            if(redirectResponse.statusCode) {
+                                redirectStatusCode = redirectResponse.statusCode
+                            }
+                        }
                     }
                     if (redirect) {
 
@@ -531,7 +537,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                         console.log(`Hostrule redirect to ${redirect}`)
                         const agent = req.headers['user-agent']
                         if( !agent || agent.indexOf('www.letsencrypt.org') < 0 ) {
-                            res.writeHead(301, {'Location': redirect})
+                            res.writeHead(redirectStatusCode, {'Location': redirect})
                             res.end()
                             return true
                         }

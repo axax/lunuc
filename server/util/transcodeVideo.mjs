@@ -70,6 +70,10 @@ export const transcodeVideoOptions = (parsedUrl, filename) => {
         }
     })
 
+    if(options.screenshot){
+        modfilename += '.'+(parsedUrl.query.ext || 'jpg')
+    }
+
     options.filename = modfilename
 
     options.exists = fs.existsSync(modfilename)
@@ -118,7 +122,7 @@ export const transcodeAndStreamVideo = async ({options, headers, req, res, filen
             count: 1,
             folder: ABS_UPLOAD_DIR,
             filename:options.filename.replace(/^.*[\\\/]/, '')
-        })
+        }).outputOptions(`-q:v ${options.screenshot.quality || 10}`)
         return true
     }
 

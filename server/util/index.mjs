@@ -112,12 +112,12 @@ export const regexRedirectUrl = (url, redirectMap) => {
 
         if (match) {
             // Replace {1}, {2}, etc. with captured groups
-            let newUrl = redirectTemplate
+            let newUrl = redirectTemplate.constructor === Object ? redirectTemplate.url : redirectTemplate
             match.slice(1).forEach((group, index) => {
                 newUrl = newUrl.replace(`{${index + 1}}`, group || '')
             })
-            return newUrl
+            return {url:newUrl, statusCode:redirectTemplate.constructor === Object ? redirectTemplate.statusCode : null}
         }
     }
-    return null // No match found
+    return {} // No match found
 }
