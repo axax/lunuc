@@ -38,7 +38,7 @@ export const isEditMode = (props) => {
     cmsPage.publicEdit is set on the page itself and allows editing of the template inside a dynamically added CMS component.
      */
 
-    if(isTrue(props.forceInlineEditor)){
+    if(isTrue(props.forceInlineEditor) && props.inEditor){
         return true
     }
 
