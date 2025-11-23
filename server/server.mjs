@@ -424,7 +424,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
                 if(patternFromString.test(parsedUrl.pathname)){
                     console.log(`url path ${parsedUrl.pathname} blocked by hostrule regex for ${host}`)
-                    sendError(res, 404)
+                    sendError(res, 403)
                     return
                 }
             }

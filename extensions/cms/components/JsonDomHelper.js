@@ -566,10 +566,15 @@ class JsonDomHelper extends React.Component {
     }
 
     render() {
-        const {_WrappedComponent, _json, _cmsActions, _onTemplateChange, _onDataResolverPropertyChange, children, _tagName, _options, _inlineEditor, _forceInlineEditor, _dynamic, onChange, onClick,  ...rest} = this.props
+        const {_WrappedComponent, _json, _cmsActions, _onTemplateChange, _onDataResolverPropertyChange, children, _tagName, _inlineEditor, _forceInlineEditor, _dynamic, onChange, onClick,  ...rest} = this.props
+
         const {hovered, toolbarHovered, richTextBarHover, toolbarMenuOpen, addChildDialog, deleteConfirmDialog, copyOptionsDialog, deleteSelectionConfirmDialog, deleteSourceConfirmDialog} = this.state
         if(!rest._key){
             return
+        }
+        let _options = this.props._options
+        if(_options === true){
+            _options = {}
         }
         const menuItems = [],
             isCms = _tagName === 'Cms',

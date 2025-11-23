@@ -120,6 +120,7 @@ class JsonDom extends React.Component {
                     return <video key={'video-'+props._key}
                                   width={imageData.width} height={imageData.height}
                                   poster={location.origin+imageData.posterSrc}
+                                  fetchpriority="high"
                                   autoplay loop muted playsinline>
                         <source src={imageData.src} type={imageData.mimeType} />
                     </video>
