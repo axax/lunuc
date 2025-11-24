@@ -230,7 +230,8 @@
         "Article",
         "ContentCut",
         "Layers",
-        "OpenWith"
+        "OpenWith",
+        "OpenInNew"
       ],
       "theme":{
         "colors":{

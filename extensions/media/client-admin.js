@@ -3,7 +3,7 @@ import Hook from 'util/hook.cjs'
 import Async from 'client/components/Async'
 import config from 'gen/config-client'
 import Util from '../../client/util/index.mjs'
-import {Button, Tooltip, AutoAwesomeIcon} from 'ui/admin'
+import {Button, Tooltip, AutoAwesomeIcon, OpenInNewIcon} from 'ui/admin'
 const {UPLOAD_URL, ADMIN_BASE_URL, PRETTYURL_SEPERATOR} = config
 import {_t, registerTrs} from 'util/i18n.mjs'
 import UploadUtil from '../../client/util/upload'
@@ -151,6 +151,65 @@ export default () => {
         }
     })
 
+
+    const createDataUrlFromUrl = async (url, mimeType = null) => {
+        try {
+            const response = await fetch(url)
+
+
+            // If mimeType is 'image/svg+xml', return the raw SVG text instead of base64
+            if (mimeType === 'image/svg+xml') {
+                const text = await response.text()
+                return `data:${mimeType};utf8,${encodeURIComponent(text)}`
+            }
+
+
+            const blob = await response.blob()
+            const reader = new FileReader()
+            return new Promise((resolve, reject) => {
+                reader.onloadend = () => {
+                    if (mimeType) {
+                        // Replace the MIME type in the data URL
+                        const dataUrl = reader.result
+                        const newUrl = dataUrl.replace(/^data:[^;]+/, `data:${mimeType}`)
+                        resolve(newUrl)
+                    } else {
+                        resolve(reader.result)
+                    }
+                };
+                reader.onerror = reject
+                reader.readAsDataURL(blob)
+            })
+        } catch (error) {
+            throw new Error(`Failed to create data URL from URL: ${error.message}`)
+        }
+    }
+
+    // add an entry actions
+    Hook.on('TypeTableEntryAction', ({type, actions, item, container}) => {
+        if (type === 'Media') {
+            actions.push({
+                divider:true,
+                name: _t('Media.toDataUrl'),
+                onClick: async () => {
+                    const dataUrl = await createDataUrlFromUrl(item.src || `${UPLOAD_URL}/${item._id}/${PRETTYURL_SEPERATOR}/${item.name}`, item.mimeType)
+                    console.log(dataUrl)
+
+                    container.setState({simpleDialog: {
+                            title:_t('Media.toDataUrl'),
+                            maxWidth:'lg',
+                            fullWidth:true,
+                            children:<textarea style={{
+                                width: '100%',
+                                height: '50vh'
+                            }}>{dataUrl}</textarea>,
+                            action:'ignore', open:true}})
+
+                },
+                icon: <OpenInNewIcon/>
+            })
+        }
+    })
 
     Hook.on('TypeTableMultiSelectAction', function ({action, data, selectedRows, meta}) {
         if(action === 'downloadZip'){
