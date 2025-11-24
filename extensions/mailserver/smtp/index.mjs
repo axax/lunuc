@@ -200,6 +200,7 @@ const startListening = async (db, context) => {
             },
             onData: (stream, session, callback) => {
                 const fromMail = session?.envelope?.mailFrom?.address
+
                 console.debug('SMTP onData', fromMail, session)
 
                 const endWithError = (error)=>{
@@ -237,12 +238,17 @@ const startListening = async (db, context) => {
                         const transporterResult = nodemailer.createTransport(transporter)
                         try {
                             await transporterResult.sendMail({
-                                ...data,
-                                dkim: settings.dkim,
+                                inReplyTo: data.messageId,
+                                subject: data.subject,
+                                text: data.text, //'Plaintext version of the message'
+                                html: data.html,
+                                attachments: data.attachments,
                                 to: data?.to?.value,
+                                replyTo: data?.replyTo?.value,
                                 cc: data?.cc?.value,
                                 bcc: data?.bcc?.value,
-                                from: data?.from?.text || fromMail
+                                from: data?.from?.text || fromMail,
+                                dkim: settings.dkim
                             })
                         }catch (error){
                             console.log(`error sending email to ${data?.to?.text} from ${fromMail}`, error)
