@@ -95,6 +95,10 @@ const loadSingleHostrule = ({domainname, hostruleFilePath, isDefault, hostrules,
             if (hostrule.botregex) {
                 hostrule.botregex = new RegExp(hostrule.botregex)
             }
+
+            if (hostrule.noJsRenderingBotRegex) {
+                hostrule.noJsRenderingBotRegex = new RegExp(hostrule.noJsRenderingBotRegex)
+            }
         }
     }
 

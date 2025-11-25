@@ -4,8 +4,7 @@
 export const DEFAULT_BOT_REGEX = /(?!(^spiderweb\/))(leakix.net|bot|GoogleOther|Google-Apps-Script|crawl|slurp|spider|mediapartners|facebookexternalhit|Xing|WhatsApp|NetcraftSurveyAgent|\(compatible; ITools;)/i
 export const DEFAULT_BOT_WITH_NO_JS_SUPPORT_REGEX = /YandexBot|Frog SEO Spider|Iframely|AhrefsSiteAudit|SeekportBot|SeobilityBot|DuckDuckBot|localsearch|facebookexternalhit|LinkedInBot|Xing|WhatsApp|TelegramBot|\(compatible; ITools;/i
 export const parseUserAgent = (agent,
-                               botRegex = DEFAULT_BOT_REGEX,
-                               via) => {
+    {botRegex = DEFAULT_BOT_REGEX, noJsRenderingBotRegex = DEFAULT_BOT_WITH_NO_JS_SUPPORT_REGEX, via}) => {
 
 
     if(via && via.indexOf('archive.org_bot') >= 0){
@@ -19,7 +18,7 @@ export const parseUserAgent = (agent,
         result.isBot = botRegex.test(agentLower)
 
         if (result.isBot) {
-            result.noJsRendering = DEFAULT_BOT_WITH_NO_JS_SUPPORT_REGEX.test(agentLower)
+            result.noJsRendering = noJsRenderingBotRegex.test(agentLower)
         }else{
 
 
