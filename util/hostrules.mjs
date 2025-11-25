@@ -71,6 +71,19 @@ const extendHostrulesWithCert = (hostrule, domainname) => {
 }
 
 
+function replaceToRegExp(hostrule) {
+    if(!hostrule){
+        return
+    }
+    if (hostrule.botRegex) {
+        hostrule.botRegex = new RegExp(hostrule.botRegex, 'i')
+    }
+
+    if (hostrule.noJsRenderingBotRegex) {
+        hostrule.noJsRenderingBotRegex = new RegExp(hostrule.noJsRenderingBotRegex, 'i')
+    }
+}
+
 const loadSingleHostrule = ({domainname, hostruleFilePath, isDefault, hostrules, withCertContext}) => {
     const stats = fs.statSync(hostruleFilePath)
     // only read file if it has changed
@@ -91,13 +104,12 @@ const loadSingleHostrule = ({domainname, hostruleFilePath, isDefault, hostrules,
             if (!hostrule.paths) {
                 hostrule.paths = []
             }
+            replaceToRegExp(hostrule)
 
-            if (hostrule.botRegex) {
-                hostrule.botRegex = new RegExp(hostrule.botRegex,'i')
-            }
-
-            if (hostrule.noJsRenderingBotRegex) {
-                hostrule.noJsRenderingBotRegex = new RegExp(hostrule.noJsRenderingBotRegex,'i')
+            if(hostrule.subDomains){
+                for(const subDomain of Object.values(hostrule.subDomains)){
+                    replaceToRegExp(subDomain)
+                }
             }
         }
     }

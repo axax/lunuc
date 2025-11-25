@@ -8,10 +8,10 @@ export const parseUserAgent = (agent, setting = {}) => {
 
     let {botRegex, noJsRenderingBotRegex, via} = setting
 
-    if(!botRegex){
+    if(!botRegex || !botRegex.test){
         botRegex = DEFAULT_BOT_REGEX
     }
-    if(!noJsRenderingBotRegex){
+    if(!noJsRenderingBotRegex || !noJsRenderingBotRegex.test){
         noJsRenderingBotRegex = DEFAULT_BOT_WITH_NO_JS_SUPPORT_REGEX
     }
 
