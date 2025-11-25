@@ -1721,7 +1721,7 @@ class JsonDom extends React.Component {
             attr = name
         }
         attr.data = {jsonDomId: this.instanceId}
-
+        attr.id=`metaTag${name}-${this.instanceId}`
 
         DomUtil.createAndAddTag('meta', 'head', attr)
     }
