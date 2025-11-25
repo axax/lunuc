@@ -1,8 +1,8 @@
 // /WhatsApp|TelegramBot|AhrefsBot|Applebot|x28-job-bot|bingbot|msnbot|YandexBot|PetalBot|Googlebot|facebookexternalhit|LinkedInBot|Twitterbot|Xing|AdsBot/
 
 // exception if it starts with spiderweb/ because that is a browser
-export const DEFAULT_BOT_REGEX = /(?!(^spiderweb\/))(leakix.net|bot|GoogleOther|Google-Apps-Script|crawl|slurp|spider|mediapartners|facebookexternalhit|Xing|WhatsApp|NetcraftSurveyAgent|\(compatible; ITools;)/i
-export const DEFAULT_BOT_WITH_NO_JS_SUPPORT_REGEX = /YandexBot|Frog SEO Spider|Iframely|AhrefsSiteAudit|SeekportBot|SeobilityBot|DuckDuckBot|localsearch|facebookexternalhit|LinkedInBot|Xing|WhatsApp|TelegramBot|\(compatible; ITools;/i
+export const DEFAULT_BOT_REGEX = /(?!(^spiderweb\/))(leakix.net|bot|ChatGPT|GoogleOther|Google-Apps-Script|crawl|slurp|spider|mediapartners|facebookexternalhit|Xing|WhatsApp|NetcraftSurveyAgent|\(compatible; ITools;)/i
+export const DEFAULT_BOT_WITH_NO_JS_SUPPORT_REGEX = /YandexBot|SEBot-WA|Bytespider|OAI-SearchBot|GPTBot|ClaudeBot|PerplexityBot|Meta-ExternalAgent|meta-webindexer|Frog SEO Spider|Iframely|AhrefsSiteAudit|SeekportBot|SeobilityBot|DuckDuckBot|localsearch|facebookexternalhit|LinkedInBot|Xing|WhatsApp|TelegramBot|\(compatible; ITools;/i
 export const parseUserAgent = (agent, setting = {}) => {
 
 

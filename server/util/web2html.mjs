@@ -27,7 +27,7 @@ const wasBrowserKilled = async (browser) => {
 
 export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, remoteAddress, cookies}) => {
 
-    if(isTemporarilyBlocked({requestTimeInMs: 3000, requestPerTime: 8,requestBlockForInMs:30000, key:'parseWebsite'})){
+    if(isTemporarilyBlocked({requestTimeInMs: 3000, requestPerTime: 15,requestBlockForInMs:30000, key:'parseWebsite'})){
         return {html: '503 Service Unavailable', statusCode: 503}
     }
 
@@ -50,7 +50,19 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
                     '--disable-dev-shm-usage',
-                    '--no-zygote' /* Disables the use of a zygote process for forking child processes. Instead, child processes will be forked and exec'd directly.*/
+                    '--no-zygote', /* Disables the use of a zygote process for forking child processes. Instead, child processes will be forked and exec'd directly.*/
+                    '--disable-setuid-sandbox', // Companion to --no-sandbox
+                    '--disable-dev-shm-usage', // Recommended for Linux environments to prevent out-of-memory issues
+
+                    // Disables images loading, which is a major bandwidth/memory saver
+                    '--blink-settings=imagesEnabled=false',
+
+                    // Reduces resource usage by disabling unnecessary features
+                    '--disable-gpu', // Disables GPU acceleration
+                    '--disable-software-rasterizer', // Further reduce rendering complexity
+                    '--disable-web-security', // Might be useful for some cross-origin crawling, but use with caution
+                    '--disable-features=IsolateOrigins,site-per-process', // Reduces memory and CPU usage
+                    '--disable-popup-blocking' // Prevents unnecessary pop-ups from slowing things down
                 ]
             })
         }
@@ -80,7 +92,7 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
         }, 20000)
 
 
-        await page.setDefaultTimeout(15000)
+        await page.setDefaultTimeout(10000)
         await page.setRequestInterception(true)
 
 
