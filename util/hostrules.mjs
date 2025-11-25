@@ -92,12 +92,12 @@ const loadSingleHostrule = ({domainname, hostruleFilePath, isDefault, hostrules,
                 hostrule.paths = []
             }
 
-            if (hostrule.botregex) {
-                hostrule.botregex = new RegExp(hostrule.botregex)
+            if (hostrule.botRegex) {
+                hostrule.botRegex = new RegExp(hostrule.botRegex,'i')
             }
 
             if (hostrule.noJsRenderingBotRegex) {
-                hostrule.noJsRenderingBotRegex = new RegExp(hostrule.noJsRenderingBotRegex)
+                hostrule.noJsRenderingBotRegex = new RegExp(hostrule.noJsRenderingBotRegex,'i')
             }
         }
     }

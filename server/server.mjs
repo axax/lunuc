@@ -113,7 +113,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
 
     const statusCode = (hostrule.statusCode && hostrule.statusCode[urlPathname] ? hostrule.statusCode[urlPathname] : 200)
 
-    let {isBot, noJsRendering} = parseUserAgent(agent, {botRegex: hostrule.botregex, noJsRenderingBotRegex: hostrule.noJsRenderingBotRegex})
+    let {isBot, noJsRendering} = parseUserAgent(agent, {botRegex: hostrule.botRegex, noJsRenderingBotRegex: hostrule.noJsRenderingBotRegex})
 
     if (noJsRendering || parsedUrl.query.__ssr==='1') {
 
