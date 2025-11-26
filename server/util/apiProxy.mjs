@@ -5,7 +5,7 @@ import {Socket} from 'net'
 import {Readable} from 'stream'
 import {clientAddress} from '../../util/host.mjs'
 import {getGatewayIp} from '../../util/gatewayIp.mjs'
-import {HOSTRULE_HEADER} from '../../api/constants/index.mjs'
+import {FORWARDED_FOF_HEADER, HOSTRULE_HEADER} from '../../api/constants/index.mjs'
 
 const API_PORT = (process.env.API_PORT || process.env.LUNUC_API_PORT || 3000)
 const API_HOST = 'localhost'
@@ -81,12 +81,11 @@ export const proxyWsToApiServer = (req, socket, head) => {
 const executeProxyRequest = (originalReq, originalRes, options, bufferedBody) => {
     const { host, path, server, port, secure, tries } = options
 
-    // 1. Prepare Headers (same as your original logic)
     const newHeaders = Object.fromEntries(
         Object.entries(originalReq.headers).filter(([key]) => !/^:/.test(key))
     )
 
-    newHeaders['x-forwarded-for'] = originalReq.socket.remoteAddress
+    newHeaders[FORWARDED_FOF_HEADER] = clientAddress(originalReq)
     newHeaders['x-forwarded-proto'] = originalReq.isHttps ? 'https' : 'http'
     newHeaders['x-forwarded-host'] = host
     if(tries>0){
@@ -95,7 +94,7 @@ const executeProxyRequest = (originalReq, originalRes, options, bufferedBody) =>
     }
 
 
-    // 2. Create the Outgoing Request Stream
+    // Create the Outgoing Request Stream
     const proxyReq = (secure ? https : http).request({
         hostname: server || API_HOST,
         port: port || API_PORT,

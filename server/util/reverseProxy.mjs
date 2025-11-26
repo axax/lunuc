@@ -1,8 +1,9 @@
 import http from 'http'
 import https from 'https'
 import http2 from 'http2'
-import {HOSTRULE_HEADER} from '../../api/constants/index.mjs'
+import {FORWARDED_FOF_HEADER, HOSTRULE_HEADER} from '../../api/constants/index.mjs'
 import config from '../../gensrc/config.mjs'
+import {clientAddress} from "../../util/host.mjs";
 
 
 
@@ -32,6 +33,8 @@ export async function actAsReverseProxy(req, res, { parsedUrl, hostrule, host })
         )
     )
     filteredHeaders[HOSTRULE_HEADER] = host
+    filteredHeaders[FORWARDED_FOF_HEADER] = clientAddress(req)
+    filteredHeaders['x-used-proxy'] = true
 
     const port = hostrule.reverseProxy.port || parsedUrl.port
 
@@ -62,7 +65,9 @@ export async function actAsReverseProxy(req, res, { parsedUrl, hostrule, host })
             proxyReq.on('response', (headers, flags) => {
                 // Convert HTTP/2 headers to HTTP/1.1
                 const status = headers[':status'] || 502;
-                const respHeaders = {};
+                const respHeaders = {
+                    'X-Reverse-Proxy': config.APP_NAME
+                }
                 for (const [key, value] of Object.entries(headers)) {
                     if (!key.startsWith(':')) respHeaders[key] = value;
                 }

@@ -8,6 +8,8 @@ export const TRACK_URL_HEADER = 'x-track-url'
 export const TRACK_IS_BOT_HEADER = 'x-track-is-bot'
 export const TRACK_USER_AGENT_HEADER = 'x-track-user-agent'
 
+export const FORWARDED_FOF_HEADER = 'x-forwarded-for'
+
 export const USE_COOKIES = true
 export const CONTENT_LANGUAGE_HEADER = 'content-language'
 export const AUTH_SCHEME = 'JWT'

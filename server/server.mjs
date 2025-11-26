@@ -377,6 +377,13 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             const host = getHostFromHeaders(req.headers),
                 parsedUrl = url.parse(req.url, true)
 
+            if(!host) {
+                console.log(`no host found in request: ${req.method} ${remoteAddress}`, req.url, req.headers)
+                sendError(res, 403)
+                return
+            }
+
+
             req.isHttps = req.socket.encrypted
 
             console.log(`${req.method} ${remoteAddress}: ${req.isHttps?'https':'http'}://${host}${parsedUrl.href} - ${req.headers['user-agent']}`)
