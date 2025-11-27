@@ -85,6 +85,21 @@ process.on('uncaughtException', (error) => {
     console.log("Node NOT Exiting...");
 })
 
+
+const createSortedQueryString = (query) => {
+
+    // Convert to sorted array and build string
+    const sortedParams = Object.entries(query)
+        .filter(([key, value]) => key !== '__ssr')
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+
+    if(sortedParams.length===0) return ''
+
+    return '?'+sortedParams.join('&')
+}
+
+
 const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, host, parsedUrl}) => {
 
     const agent = req.headers['user-agent']
@@ -123,12 +138,16 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
             res.end()
             return
         }
-        // return rendered html for bing as they are not able to render js properly
-        const baseUrl = `http://localhost:${PORT}`
-        const urlToFetch = baseUrl + urlPathname + (parsedUrl.search ? parsedUrl.search : '').replace('?__ssr=1','').replace('&__ssr=1','')
 
+        const baseUrl = `http://localhost:${PORT}`
+        const queryString = createSortedQueryString(parsedUrl.query)
+
+        const urlToFetch = baseUrl + urlPathname + queryString
         const cacheFileDir = path.join(SERVER_DIR, 'cache', host.replace(/\W/g, ''))
-        const cacheFileName = cacheFileDir + '/' + urlToFetch.replace(/\W/g, '') + '.html'
+
+        const rawUrlPath = Util.removeTrailingSlash(urlPathname.split(config.PRETTYURL_SEPERATOR)[0]).substring(1) || 'index'
+
+        const cacheFileName = `${cacheFileDir}/${rawUrlPath.replace(/\//g, '-').replace(/[^\w-]/g, '')}${queryString?'@'+queryString.replace(/\W/g, ''):''}.html`
 
         const errorFile = Cache.get('ErrorFile'+cacheFileName)
         if(errorFile){
@@ -649,6 +668,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 //TODO: Move this to an extension as it doesn't belong here
 import stream from './stream.js'
 import {Server} from 'socket.io'
+import Util from "../client/util/index.mjs";
 
 
 let ioHttp = new Server(app.http)
