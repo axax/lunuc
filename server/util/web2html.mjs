@@ -139,7 +139,7 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
                     if (!_app_.JsonDom) {
                         _app_.JsonDom = {}
                     }
-                    _app_.JsonDom.elementWatch = false // dont wait for elements to be visible
+                    _app_.JsonDom.elementWatchForceVisible = true
                 }
             })
         },{host, agent, isBot, remoteAddress})
