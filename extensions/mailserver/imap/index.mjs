@@ -748,7 +748,10 @@ const startListening = async (db, context) => {
                     if(message.data.headers) {
                         ['x-spam-reason', 'x-spam-score'].forEach(headerKey => {
                             if (message.data.headers[headerKey]) {
-                                messageData[headerKey.toLowerCase()] = message.data.headers[headerKey]
+                                if (!messageData.headers){
+                                    messageData.headers = {}
+                                }
+                                messageData.headers[headerKey.toLowerCase()] = message.data.headers[headerKey]
                             }
                         })
                     }
