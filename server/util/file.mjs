@@ -233,6 +233,7 @@ export const sendError = (res, code, msg = '') => {
 const PRELOAD_DATA_PLACEHOLDER = '<%=preloadData%>'
 const APP_DATA_PLACEHOLDER = '<%=appData%>'
 const HEAD_DATA_PLACEHOLDER = '<%=appHead%>'
+const PAGE_TITLE_PLACEHOLDER = '<%=pageTitle%>'
 export const parseAndSendFile = (req, res, {filename, headers, statusCode, parsedUrl, remoteAddress, host, hostrule}) => {
 
 
@@ -320,6 +321,10 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
                         if(!result.data.cmsPage.fetchPolicy){
                             result.data.cmsPage.fetchPolicy = 'cache-first'
                         }
+                        if(result.data.cmsPage.name) {
+                            finalContent = finalContent.replace(PAGE_TITLE_PLACEHOLDER, result.data.cmsPage.name[contextLanguage || config.DEFAULT_LANGUAGE] || '')
+                        }
+
                         additionalContent += `
 _app_.clientId = '${clientId}'
 _app_.defaultFetchPolicy = {['${result.data.cmsPage.slug}']:'${result.data.cmsPage.fetchPolicy || (result.data.cmsPage.subscriptions?'cache-first':'cache-first')}'}                

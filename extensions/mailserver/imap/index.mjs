@@ -745,6 +745,15 @@ const startListening = async (db, context) => {
                         })): [],
                     }
 
+                    if(message.data.headers) {
+                        ['x-spam-reason', 'x-spam-score'].forEach(headerKey => {
+                            if (message.data.headers[headerKey]) {
+                                messageData[headerKey.toLowerCase()] = message.data.headers[headerKey]
+                            }
+                        })
+                    }
+
+
                     if(messageData.date==='Invalid Date'){
                         messageData.date = new Date().toUTCString()
                     }
@@ -758,7 +767,7 @@ const startListening = async (db, context) => {
                         }
 
                        // if(settings.useMailComposer){
-                            const mailComposer = new MailComposer(JSON.parse(JSON.stringify(messageData)))
+                            const mailComposer = new MailComposer(messageData)
 
                             mailComposer.compile().build((err, mailMessage) => {
 
