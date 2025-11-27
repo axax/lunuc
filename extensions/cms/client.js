@@ -27,13 +27,15 @@ const TypesContainer = (props) => <Async {...props}
 
 export default () => {
 
-    _app_.JsonDom = {
-        render: (props) =>{
-            render(
-                <JsonDom {...props}/>,
-                document.body
-            )
-        }
+    if(!_app_.JsonDom){
+        _app_.JsonDom = {}
+    }
+
+    _app_.JsonDom.render = (props) =>{
+        render(
+            <JsonDom {...props}/>,
+            document.body
+        )
     }
 
     // Hook to add user capabilities

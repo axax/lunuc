@@ -16,7 +16,7 @@ import createCache from '@emotion/cache'
 
 const emotionCache = createCache({
     key: 'emotion-cache-no-speedy',
-    speedy: !_app_.ssr && !window._elementWatchForceVisible,
+    speedy: !_app_.ssr && !window._lunucWebParser,
 })
 
 // Theme provider

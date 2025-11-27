@@ -131,12 +131,17 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
             }
         })
 
-
-
         await page.evaluateOnNewDocument((data) => {
-            window._elementWatchForceVisible = true
             window._disableWsConnection = true
             window._lunucWebParser = data
+            window.addEventListener('appReady', () => {
+                if(window._app_) {
+                    if (!_app_.JsonDom) {
+                        _app_.JsonDom = {}
+                    }
+                    _app_.JsonDom.elementWatch = false // dont wait for elements to be visible
+                }
+            })
         },{host, agent, isBot, remoteAddress})
 
 

@@ -306,22 +306,18 @@ class ElementWatch extends React.Component {
 
         const ele = document.querySelector(`[data-element-watch-key='${key}']`)
         if (ele) {
-            if (_app_.JsonDom._elementWatchForceVisible || window._elementWatchForceVisible) {
-                this.makeVisible(ele)
-            } else {
-                let observer = new IntersectionObserver((entries, observer) => {
-                    entries.forEach(entry => {
+            let observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
 
-                        if($observe.flipMode && madeVisible) {
-                            this.setState({inFlipMode:true, inViewport:entry.isIntersecting})
-                        }else if (entry.isIntersecting) {
-                            observer.unobserve(entry.target)
-                            this.makeVisible(ele)
-                        }
-                    })
-                }, {rootMargin: $observe.rootMargin || '0px 0px 0px 0px', threshold: $observe.threshold || 0})
-                observer.observe(ele)
-            }
+                    if($observe.flipMode && madeVisible) {
+                        this.setState({inFlipMode:true, inViewport:entry.isIntersecting})
+                    }else if (entry.isIntersecting) {
+                        observer.unobserve(entry.target)
+                        this.makeVisible(ele)
+                    }
+                })
+            }, {rootMargin: $observe.rootMargin || '0px 0px 0px 0px', threshold: $observe.threshold || 0})
+            observer.observe(ele)
         }else{
             console.warn(`element is missing for observer`, key, this.props)
         }

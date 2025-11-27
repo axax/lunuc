@@ -326,16 +326,15 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
                         }
 
                         additionalContent += `
-_app_.clientId = '${clientId}'
-_app_.defaultFetchPolicy = {['${result.data.cmsPage.slug}']:'${result.data.cmsPage.fetchPolicy || (result.data.cmsPage.subscriptions?'cache-first':'cache-first')}'}                
-_app_.onClientReady = (client)=>{
-    client.writeQuery({
+window.addEventListener('appReady', (event) => {
+    _app_.clientId = '${clientId}'
+    _app_.defaultFetchPolicy = {['${result.data.cmsPage.slug}']:'${result.data.cmsPage.fetchPolicy || (result.data.cmsPage.subscriptions?'cache-first':'cache-first')}'}     
+    event.detail.client.writeQuery({
         query: '${query}',
         variables: ${JSON.stringify(variables)},
         data: ${JSON.stringify(result.data)}
     })
-}
-`
+})`
 
                         headers['x-no-serviceworker-cache'] = true
                     } else {

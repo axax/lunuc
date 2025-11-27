@@ -101,7 +101,7 @@ export default db => ({
             meta = parseOrElse(meta,{})
 
             let cmsPages = await getCmsPage({db, context, slug, _version, checkHostrules: !dynamic, inEditor, headers, editmode})
-            //console.log(`get cms ${slug} in ${(new Date()).getTime() - startTime}ms`)
+
             if (!cmsPages.results || cmsPages.results.length === 0) {
                 Hook.call('track404', {req, event: '404', slug, db, context, data: query, meta})
                 throw new Error('Cms page doesn\'t exist')
@@ -148,29 +148,6 @@ export default db => ({
                 }
             }
 
-            let html
-            if (ssr) {
-
-                // Server side rendering
-                try {
-                    html = await renderReact({
-                        req,
-                        template,
-                        script,
-                        style,
-                        slug:'_ssr',
-                        resolvedData,
-                        context,
-                        scope
-                    })
-
-                } catch (e) {
-                    console.log(e)
-                    html = e.message
-                }
-            }
-
-
             // Public date to return
             const result = {
                 _id,
@@ -181,11 +158,9 @@ export default db => ({
                 online: !_version || _version === 'default',
                 slug,
                 realSlug: cmsPages.results[0].slug,
-                template,
                 script,
                 resources,
                 style,
-                html,
                 publicEdit,
                 resolvedData: JSON.stringify(resolvedData),
                 parseResolvedData,
@@ -201,6 +176,30 @@ export default db => ({
                 author,
                 disableRendering
             }
+
+            if (ssr) {
+
+                // Server side rendering
+                try {
+                    result.html = await renderReact({
+                        req,
+                        template,
+                        script,
+                        style,
+                        slug:'_ssr',
+                        resolvedData,
+                        context,
+                        scope
+                    })
+
+                } catch (e) {
+                    console.log(e)
+                    result.html = e.message
+                }
+            }else{
+                result.template = template
+            }
+
 
             if (userCanPotentiallyChangePage) {
                 // return data that the user needs to see the editor view completely. no sensitive data may be visible here
@@ -257,6 +256,7 @@ export default db => ({
                 delete result.style
                 delete result.name
             }
+            console.debug(`get cms ${slug} in ${(new Date()).getTime() - startTime}ms`)
 
             return result
         },

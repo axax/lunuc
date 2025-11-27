@@ -98,6 +98,9 @@ function mainInit() {
         _app_.lang = DEFAULT_LANGUAGE
     }
 
+    // Dispatch the custom event on window
+    window.dispatchEvent(new CustomEvent('appReady',{detail:{client}}))
+
     if(_app_.renderApp !== false) {
         const root = createRoot(document.getElementById('app'))
         root.render(<App/>)
@@ -166,9 +169,6 @@ function mainInit() {
             console.warn('Push is not supported')
         }
 
-        if(_app_.onClientReady){
-            _app_.onClientReady(client)
-        }
     } else {
         console.warn('Service Worker is not supported')
     }
