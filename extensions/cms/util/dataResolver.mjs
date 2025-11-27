@@ -344,7 +344,7 @@ const resolveSystemData = async ({segment, req, resolvedData, context, db}) => {
                 const dir = ls.abspath || path.join(__dirname, ls.path)
                 fs.readdirSync(dir).forEach(file => {
                     files.push(file)
-                })
+                },{ recursive: !!ls.recursive, withFileTypes: !!ls.withFileTypes })
                 data.ls[ls.key] = files
             } else {
                 console.warn('key for ls is missing')

@@ -7,6 +7,7 @@ export const TRACK_IP_HEADER = 'x-track-ip'
 export const TRACK_URL_HEADER = 'x-track-url'
 export const TRACK_IS_BOT_HEADER = 'x-track-is-bot'
 export const TRACK_USER_AGENT_HEADER = 'x-track-user-agent'
+export const WEB_PARSER_HEADER = 'x-web-parser'
 
 export const FORWARDED_FOF_HEADER = 'x-forwarded-for'
 

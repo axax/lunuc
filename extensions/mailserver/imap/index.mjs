@@ -30,66 +30,6 @@ import Util from '../../../client/util/index.mjs'
 // open port 993 on your server
 // sudo ufw allow 993
 
-function buildRFC822Email(message) {
-    const headers = [];
-
-    if (message.from) headers.push(`From: ${message.from}`);
-    if (message.sender) headers.push(`Sender: ${message.sender}`);
-    if (message.to) headers.push(`To: ${message.to}`);
-    if (message.replyTo) headers.push(`Reply-To: ${message.replyTo}`);
-    if (message.inReplyTo) headers.push(`In-Reply-To: ${message.inReplyTo}`);
-    if (message.references) headers.push(`References: ${message.references}`);
-    if (message.messageId) headers.push(`Message-ID: ${message.messageId}`);
-    if (message.cc) headers.push(`Cc: ${message.cc}`);
-    if (message.bcc) headers.push(`Bcc: ${message.bcc}`);
-    if (message.subject) headers.push(`Subject: ${message.subject}`);
-    if (message.date) headers.push(`Date: ${message.date}`);
-
-    // Standard MIME headers for multipart message with alternatives and attachments
-    const boundaryMain = "==BOUNDARY_MAIN_" + Date.now();
-    headers.push("MIME-Version: 1.0");
-    headers.push(`Content-Type: multipart/mixed; boundary="${boundaryMain}"`);
-
-    // Start composing the body
-    let body = `--${boundaryMain}\r\n`;
-
-    // Multipart alternative for text and html
-    const boundaryAlt = "==BOUNDARY_ALT_" + Date.now();
-    body += `Content-Type: multipart/alternative; boundary="${boundaryAlt}"\r\n\r\n`;
-
-    // HTML part
-    if (message.html) {
-        body += `--${boundaryAlt}\r\nContent-Type: text/html; charset="utf-8"\r\nContent-Transfer-Encoding: 8bit\r\n\r\n`;
-        body += `${message.html}\r\n\r\n`;
-    }
-
-    // Plain text part
-    if (message.text) {
-        body += `--${boundaryAlt}\r\nContent-Type: text/plain; charset="utf-8"\r\nContent-Transfer-Encoding: 8bit\r\n\r\n`;
-        body += `${message.text}\r\n\r\n`;
-    }
-
-    body += `--${boundaryAlt}--\r\n`;
-
-    // Attachments
-    if (message.attachments && message.attachments.length > 0) {
-        message.attachments.forEach(att => {
-            body += `--${boundaryMain}\r\n`;
-            body += `Content-Type: ${att.contentType}; name="${att.filename}"\r\n`;
-            body += `Content-Disposition: ${att.contentDisposition || "attachment"}; filename="${att.filename}"\r\n`;
-            body += `Content-Transfer-Encoding: ${att.encoding || att?.headers?.['content-transfer-encoding'] || 'base64'}\r\n`;
-            if (att.cid) {
-                body += `Content-ID: <${att.cid}>\r\n`;
-            }
-            body += `\r\n${att.content}\r\n\r\n`;
-        });
-    }
-
-    body += `--${boundaryMain}--\r\n`;
-
-    // Combine headers and body with separator line between headers and body
-    return headers.join("\r\n") + "\r\n\r\n" + body;
-}
 
 
 function headerLinesToMimeTreeHeaders(headerLines) {
@@ -770,7 +710,7 @@ const startListening = async (db, context) => {
                         }
 
                        // if(settings.useMailComposer){
-                            const mailComposer = new MailComposer(messageData)
+                            const mailComposer = new MailComposer(JSON.parse(JSON.stringify(messageData)))
 
                             mailComposer.compile().build((err, mailMessage) => {
 
@@ -926,3 +866,67 @@ const stopListening = () => {
 }
 
 export default {startListening, stopListening}
+
+/*
+
+function buildRFC822Email(message) {
+    const headers = [];
+
+    if (message.from) headers.push(`From: ${message.from}`);
+    if (message.sender) headers.push(`Sender: ${message.sender}`);
+    if (message.to) headers.push(`To: ${message.to}`);
+    if (message.replyTo) headers.push(`Reply-To: ${message.replyTo}`);
+    if (message.inReplyTo) headers.push(`In-Reply-To: ${message.inReplyTo}`);
+    if (message.references) headers.push(`References: ${message.references}`);
+    if (message.messageId) headers.push(`Message-ID: ${message.messageId}`);
+    if (message.cc) headers.push(`Cc: ${message.cc}`);
+    if (message.bcc) headers.push(`Bcc: ${message.bcc}`);
+    if (message.subject) headers.push(`Subject: ${message.subject}`);
+    if (message.date) headers.push(`Date: ${message.date}`);
+
+    // Standard MIME headers for multipart message with alternatives and attachments
+    const boundaryMain = "==BOUNDARY_MAIN_" + Date.now();
+    headers.push("MIME-Version: 1.0");
+    headers.push(`Content-Type: multipart/mixed; boundary="${boundaryMain}"`);
+
+    // Start composing the body
+    let body = `--${boundaryMain}\r\n`;
+
+    // Multipart alternative for text and html
+    const boundaryAlt = "==BOUNDARY_ALT_" + Date.now();
+    body += `Content-Type: multipart/alternative; boundary="${boundaryAlt}"\r\n\r\n`;
+
+    // HTML part
+    if (message.html) {
+        body += `--${boundaryAlt}\r\nContent-Type: text/html; charset="utf-8"\r\nContent-Transfer-Encoding: 8bit\r\n\r\n`;
+        body += `${message.html}\r\n\r\n`;
+    }
+
+    // Plain text part
+    if (message.text) {
+        body += `--${boundaryAlt}\r\nContent-Type: text/plain; charset="utf-8"\r\nContent-Transfer-Encoding: 8bit\r\n\r\n`;
+        body += `${message.text}\r\n\r\n`;
+    }
+
+    body += `--${boundaryAlt}--\r\n`;
+
+    // Attachments
+    if (message.attachments && message.attachments.length > 0) {
+        message.attachments.forEach(att => {
+            body += `--${boundaryMain}\r\n`;
+            body += `Content-Type: ${att.contentType}; name="${att.filename}"\r\n`;
+            body += `Content-Disposition: ${att.contentDisposition || "attachment"}; filename="${att.filename}"\r\n`;
+            body += `Content-Transfer-Encoding: ${att.encoding || att?.headers?.['content-transfer-encoding'] || 'base64'}\r\n`;
+            if (att.cid) {
+                body += `Content-ID: <${att.cid}>\r\n`;
+            }
+            body += `\r\n${att.content}\r\n\r\n`;
+        });
+    }
+
+    body += `--${boundaryMain}--\r\n`;
+
+    // Combine headers and body with separator line between headers and body
+    return headers.join("\r\n") + "\r\n\r\n" + body;
+}
+ */

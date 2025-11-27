@@ -36,12 +36,12 @@ function flatten(css, parentSelector = '') {
         if(parentSelector) {
             const propsArray = splitProperties(properties);
             if (propsArray.length > 0) {
-                const formattedProps = propsArray.map(p => `  ${p.trim()};`).join('\n');
-                resultParts.push(`${parentSelector} {\n${formattedProps}\n}\n`);
+                const formattedProps = propsArray.map(p => `${p.trim()};`).join('');
+                resultParts.push(`${parentSelector}{${formattedProps}}`);
             }
         }else{
             // for @import
-            resultParts.push(`${properties}\n`)
+            resultParts.push(`${properties}`)
         }
     }
 
@@ -52,11 +52,11 @@ function flatten(css, parentSelector = '') {
                 // For these at-rules, recurse, passing the parent selector down.
                 const innerCss = flatten(rule.content, parentSelector);
                 if (innerCss) {
-                    resultParts.push(`${rule.selector} {\n${innerCss}}\n`);
+                    resultParts.push(`${rule.selector}{${innerCss}}`);
                 }
             } else {
                 // Other at-rules like @keyframes are preserved as-is.
-                resultParts.push(`${rule.selector} {${rule.content}}\n`);
+                resultParts.push(`${rule.selector}{${rule.content}}`);
             }
         } else {
             // For standard selectors, build the new selector and recurse.

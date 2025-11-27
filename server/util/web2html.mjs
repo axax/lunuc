@@ -5,7 +5,7 @@ import {
     TRACK_IP_HEADER,
     TRACK_IS_BOT_HEADER,
     TRACK_REFERER_HEADER,
-    TRACK_USER_AGENT_HEADER
+    TRACK_USER_AGENT_HEADER, WEB_PARSER_HEADER
 } from '../../api/constants/index.mjs'
 
 const MAX_PAGES_IN_PUPPETEER = 8
@@ -106,7 +106,7 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
             await page.setCookie(...cookiesToSet)
         }
 
-        await page.setExtraHTTPHeaders({[HOSTRULE_HEADER]: host})
+        await page.setExtraHTTPHeaders({[HOSTRULE_HEADER]: host,[WEB_PARSER_HEADER]: 'true' })
 
         page.on('request', (request) => {
             if (['image', 'stylesheet', 'font', 'manifest', 'other'].indexOf(request.resourceType()) !== -1 ||
