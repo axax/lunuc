@@ -279,6 +279,7 @@ class ElementWatch extends React.Component {
                             ElementWatch.hasLoaded[tagSrc] = true
                         }
                         madeVisibleDelay()
+                        ele.setAttribute('data-loading', false)
                     }
 
                     img.onerror = ()=>{
