@@ -80,8 +80,12 @@ export const StyledDropArea = styled('span')({
         opacity: 0.8
     },
     [`&.${DROPAREA_OVERLAP}`]:{
-        position: 'relative',
-        marginTop: '0px !important'
+        opacity: 0.3,
+        height: '24px',
+        marginTop:'10px',
+        fontSize: '0.8rem',
+       /* position: 'relative',
+        marginTop: '0px !important'*/
     },
     [`&.${DROPAREA_OVER}`]:{
         zIndex: 1000,

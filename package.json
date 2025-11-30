@@ -96,7 +96,7 @@
     "formidable": "^3.5.4",
     "graphql": "^16.12.0",
     "graphql-subscriptions": "^3.0.0",
-    "graphql-tools": "^9.0.24",
+    "graphql-tools": "^9.0.25",
     "jsonwebtoken": "^9.0.2",
     "langchain": "^1.1.1",
     "mailparser": "^3.9.0",

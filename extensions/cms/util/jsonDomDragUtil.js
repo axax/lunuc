@@ -14,9 +14,42 @@ export const JsonDomDraggable = {
     clientY: 0
 }
 
+
+const getDistanceToDiv = (mouseX, mouseY, divElement) => {
+    // 1. Get the div's bounding box
+    const rect = divElement.getBoundingClientRect()
+
+    // Div boundaries
+    const L = rect.left
+    const T = rect.top
+    const R = rect.right
+    const B = rect.bottom
+
+    // 2. Find the closest point (Px, Py) on the div to the mouse (Mx, My)
+
+    // Clamp mouse X to the div's X-range
+    const closestX = Math.max(L, Math.min(mouseX, R))
+
+    // Clamp mouse Y to the div's Y-range
+    const closestY = Math.max(T, Math.min(mouseY, B))
+
+    // 3. Calculate the distance between the mouse and the closest point
+    const deltaX = mouseX - closestX
+    const deltaY = mouseY - closestY
+
+    // Euclidean distance formula: sqrt(dx^2 + dy^2)
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+
+    return distance
+}
+
 export const onJsonDomDrag = (e) => {
     e.stopPropagation()
-    if (e.clientY > 0 && Math.abs(e.clientY - JsonDomDraggable.clientY) > 25) {
+
+    const mouseMoveDifference = Math.hypot(e.clientX - JsonDomDraggable.clientX, e.clientY - JsonDomDraggable.clientY )
+
+
+    if (e.clientY > 0 && mouseMoveDifference > 10) {
 
         JsonDomDraggable.clientX = e.clientX
         JsonDomDraggable.clientY = e.clientY
@@ -64,49 +97,44 @@ export const onJsonDomDrag = (e) => {
 
                         const allowDropFrom = ALLOW_DROP_FROM[tagName]
                         if (!allowDropFrom || allowDropFrom.indexOf(dragableProps._tagName) >= 0) {
-                            const pos = DomUtilAdmin.elemOffset(node)
-                            const distanceTop = Math.abs(JsonDomDraggable.clientY - pos.top)
-                            const distanceMiddle = Math.abs(JsonDomDraggable.clientY - (pos.top + node.offsetHeight / 2))
-                            const distanceBottom = Math.abs(JsonDomDraggable.clientY - (pos.top + node.offsetHeight))
 
+                            let nodeForWidth = ['DIV'].indexOf(node.tagName) < 0 ? node.parentNode : node
+                            let computedStyle = window.getComputedStyle(nodeForWidth, null)
+                            let fillHeight = !!tag.dataset.fill
 
-                            if (distanceTop < 100 || distanceMiddle < 100 || distanceBottom < 100) {
+                            if(computedStyle.display==='grid' && nodeForWidth !== node){
+                                nodeForWidth = node
+                                computedStyle = window.getComputedStyle(nodeForWidth, null)
+                                fillHeight = true
+                                tag.style.writingMode = 'vertical-rl'
+                            }
 
-                                let nodeForWidth = ['DIV'].indexOf(node.tagName) < 0 ? node.parentNode : node
-                                let computedStyle = window.getComputedStyle(nodeForWidth, null)
-                                let fillHeight = !!tag.dataset.fill
+                            const elementWidth = nodeForWidth.clientWidth - parseFloat(computedStyle.paddingLeft) + parseFloat(computedStyle.paddingRight)
 
-                                if(computedStyle.display==='grid' && nodeForWidth !== node){
-                                    nodeForWidth = node
-                                    computedStyle = window.getComputedStyle(nodeForWidth, null)
-                                    fillHeight = true
-                                    tag.style.writingMode = 'vertical-rl'
+                            tag.style.width = (elementWidth) + 'px'
+                            if(fillHeight) {
+                                let elementHeight = nodeForWidth.dataset.oriHeight || nodeForWidth.clientHeight
+                                if(!nodeForWidth.dataset.oriHeight){
+                                    elementHeight -= parseFloat(computedStyle.paddingTop) + parseFloat(computedStyle.paddingBottom)
+                                    nodeForWidth.dataset.oriHeight = elementHeight
                                 }
+                                if(elementHeight<20){
+                                    elementHeight=32
+                                }
+                                tag.style.height = (elementHeight) + 'px'
+                            }
 
-                                let elementWidth = nodeForWidth.clientWidth
-                                elementWidth -= parseFloat(computedStyle.paddingLeft) + parseFloat(computedStyle.paddingRight)
+                            const distance = getDistanceToDiv(JsonDomDraggable.clientX, JsonDomDraggable.clientY, tag)
 
-
+                            if (distance < 100 ) {
                                 tag.classList.add(DROPAREA_ACTIVE)
-                                tag.style.width = (elementWidth) + 'px'
-                                if(fillHeight) {
-                                    let elementHeight = nodeForWidth.dataset.oriHeight || nodeForWidth.clientHeight
-                                    if(!nodeForWidth.dataset.oriHeight){
-                                        elementHeight -= parseFloat(computedStyle.paddingTop) + parseFloat(computedStyle.paddingBottom)
-                                        nodeForWidth.dataset.oriHeight = elementHeight
-                                    }
-                                    if(elementHeight<20){
-                                        elementHeight=32
-                                    }
-                                    tag.style.height = (elementHeight) + 'px'
-                                }
-                                allTags.push(tag)
 
+                                allTags.push({tag,distance})
                             } else {
-                                if (distanceTop > 200 && distanceMiddle > 200 && distanceBottom > 200) {
+                                if (distance > 200) {
                                     tag.classList.remove(DROPAREA_ACTIVE)
                                 } else {
-                                    allTags.push(tag)
+                                    allTags.push({tag,distance})
                                 }
                             }
                         }
@@ -118,13 +146,21 @@ export const onJsonDomDrag = (e) => {
             // check for overlapping elements
             for (let y = 0; y < allTags.length; y++) {
                 for (let z = 0; z < allTags.length; z++) {
-                    if (allTags[y] !== allTags[z]) {
-                        const rect = allTags[y].getBoundingClientRect()
-                        const rect2 = allTags[z].getBoundingClientRect()
+                    if (allTags[y].tag !== allTags[z].tag) {
+                        const rect = allTags[y].tag.getBoundingClientRect()
+                        const rect2 = allTags[z].tag.getBoundingClientRect()
                         if (!(rect.right < rect2.left ||
                             rect.left > rect2.right ||
                             rect.bottom < rect2.top ||
                             rect.top > rect2.bottom)) {
+
+                            /*if(allTags[z].distance<allTags[y].distance){
+
+                                elementsWithOverlap.push(allTags[y])
+                            }else{
+
+                                elementsWithOverlap.push(allTags[y])
+                            }*/
 
                             elementsWithOverlap.push(allTags[z])
                             elementsWithOverlap.push(allTags[y])
@@ -135,7 +171,7 @@ export const onJsonDomDrag = (e) => {
             }
 
             elementsWithOverlap.forEach((el,idx)=>{
-                el.classList.add(DROPAREA_OVERLAP)
+                el.tag.classList.add(DROPAREA_OVERLAP)
             })
 
 

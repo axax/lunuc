@@ -205,7 +205,7 @@ class CmsViewContainer extends React.Component {
                         if (fileType.startsWith('css')) {
                             DomUtil.addStyle(resource, finalAttrs)
                             loadNext(index+1)
-                        } else if (fileType.startsWith('js')) {
+                        } else if (fileType.startsWith('js') || fileType.startsWith('mjs')) {
                             if(finalAttrs.async === false){
                                 finalAttrs.onload = ()=>{
                                     loadNext(index+1)

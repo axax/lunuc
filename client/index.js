@@ -33,7 +33,7 @@ function addCanonicalTag(href) {
 function mainInit() {
     _app_.contextPath = ''
     _app_.user = {}
-    if(!_app_.clientId) {
+    if (!_app_.clientId) {
         _app_.clientId = Date.now().toString(36) + Math.random().toString(36).substring(2, 9)
     }
     // translation map
@@ -58,7 +58,7 @@ function mainInit() {
     }
 
     // remove double slashes
-    const pathname= loc.pathname
+    const pathname = loc.pathname
     const cleanPathname = pathname.replace(/\/\/+/g, '/')
     if (cleanPathname !== pathname && loc.protocol !== 'file:') {
         window.location = loc.origin + cleanPathname + loc.search + loc.hash
@@ -98,8 +98,10 @@ function mainInit() {
         _app_.lang = DEFAULT_LANGUAGE
     }
 
-    // Dispatch the custom event on window
-    window.dispatchEvent(new CustomEvent('appReady',{detail:{client}}))
+    if (typeof window.CustomEvent === 'function') {
+        // Dispatch the custom event on window
+        window.dispatchEvent(new CustomEvent('appReady', {detail: {client}}))
+    }
 
     if(_app_.renderApp !== false) {
         const root = createRoot(document.getElementById('app'))

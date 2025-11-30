@@ -58,7 +58,7 @@ export default db => ({
 
             return {status: `${idsRemoved.length} ${idsRemoved.length > 1 ? 'files' : 'file'} removed`}
         },
-        findReferencesForMedia: async ({limit, ids}, {context}) => {
+        findReferencesForMedia: async ({limit, ids, match={}}, {context}) => {
 
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
 
@@ -133,7 +133,7 @@ export default db => ({
             }
             if(!ids){
                 const mediaIds = await db.collection('Media').find(
-                    {},
+                    match,
                     {'_id':1})
                     .sort({'references.lastChecked':1}).limit(limit || 10).toArray()
                 ids = mediaIds.map(f=>f._id.toString())

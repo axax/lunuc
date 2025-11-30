@@ -74,16 +74,13 @@ class Routes extends React.Component {
         Hook.call('Routes', {routes: this.routes, container: this})
         this.routes.sort((a, b) => b.path.length - a.path.length)
         scrollByHash(location.href, {scrollStep:100000})
-    }
-
-    componentDidMount() {
         _app_.history.listen(()=>{
             this.forceUpdate()
         })
     }
 
-    render() {
 
+    render() {
         const user = _app_.user
         const capabilities = (user.role && user.role.capabilities) || []
         if(_app_.redirect404 === location.pathname || _app_.show404){

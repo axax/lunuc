@@ -24,7 +24,10 @@ export const formatCss = (cssCode, run=0) => {
             const char = trimmedLine[i]
             if(char===';'){
                 newLine+=char
-                if(!inCmd && i<trimmedLine.length-1) {
+                // not in url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.4142132 11.1213207"><path d="M9.707 11.121l-9.707-9.707 1.414-1.414 8.293 8.293 8.293-8.293 1.414 1.414z"/></svg>');
+                const isInUrl = newLine.indexOf('url(')>=0
+
+                if(!inCmd && !isInUrl && i<trimmedLine.length-1) {
                     // if not last char
                     newLine += '\n' + ' '.repeat((indentLevel) * indentSize)
                 }

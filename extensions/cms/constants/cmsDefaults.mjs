@@ -763,6 +763,35 @@ img[_inlineeditor=true]{
   min-width:1rem;
   min-height:1rem;
 }
+[data-element-key="screenshot"]{
+  &:has(img[data-loading="true"]){
+    position: relative;
+    &:before {
+      content:'';
+      display: block;
+      width: 48px;
+      height: 48px;
+      position: absolute;
+      top:50%;
+      left:50%;
+      transform: translate(-50%,-50%);
+      border: 5px solid #FFF;
+      border-bottom-color: #FF3D00;
+      border-radius: 50%;
+      display: inline-block;
+      box-sizing: border-box;
+      animation: screenshotLoader 1s linear infinite;
+    }
+  }
+  @keyframes screenshotLoader {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+  } 
+}
 //!!#REMOVE>
 [data-is-invisible="true"]:not([_inlineeditor=true]){
   display:none !important;
@@ -770,6 +799,10 @@ img[_inlineeditor=true]{
 [data-element-key="background"]{
   display: flow-root; /* prevent margin collapse */
 }
+[data-element-key="screenshot"]{
+  display: inline-block;
+}
+
 //!#Custom
 #page{
   
