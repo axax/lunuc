@@ -1338,8 +1338,8 @@ class JsonDom extends React.Component {
                     scope.PageOptions = metaJson.PageOptions
                     scope.PageExtensions = metaJson.PageExtensions
                 } else {
-                    // might be deprecated
                     scope.PageOptions = props.meta.PageOptions
+                    scope.PageExtensions = props.meta.PageExtensions
                 }
             }
             if (!scope.PageOptions) {
