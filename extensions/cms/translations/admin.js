@@ -1,4 +1,5 @@
 import React from "react";
+import CmsDataEditDialog from "../components/CmsDataEditDialog";
 
 export const translations = {
     de: {
@@ -164,7 +165,9 @@ export const translations = {
         'TypesContainers.listView':'Listenansicht anzeigen',
         'TypesContainers.imageView': 'Bildansicht anzeigen',
         'CmsPage.blankPage': 'Leere Seite',
-        'CmsPage.defaultLayout': 'Standard Layout Seite'
+        'CmsPage.defaultLayout': 'Standard Layout Seite',
+        'CmsDataEditDialog.notEditable':'Daten nicht bearbeitbar',
+        'CmsDataEditDialog.noAccess':'Sie haben vermutlich keine Berechtigung diese Daten zu bearbeiten'
     },
     en: {
         'CmsViewEditorContainer.save': 'Save',
@@ -329,6 +332,8 @@ export const translations = {
         'TypesContainers.listView':'Show list view',
         'TypesContainers.imageView': 'Show image view',
         'CmsPage.blankPage': 'Blank site',
-        'CmsPage.defaultLayout': 'Default layout page'
+        'CmsPage.defaultLayout': 'Default layout page',
+        'CmsDataEditDialog.notEditable':'Data not editable',
+        'CmsDataEditDialog.noAccess':'You probably do not have permission to edit this data.'
     }
 }

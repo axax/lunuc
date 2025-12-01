@@ -27,23 +27,6 @@ export default function SimpleAutosuggest(props) {
         })
     }
 
-    /* React.useEffect(() => {
-         let active = true
-
-         if (!loading) {
-             return undefined
-         }
-
-         return () => {
-             active = false
-         }
-     }, [loading])*/
-
-    /*React.useEffect(() => {
-        if (!open) {
-            //setOptions([])
-        }
-    }, [open])*/
     const getData = (searchData)=>{
         if(!props.apiUrl) {
             return
@@ -102,6 +85,7 @@ export default function SimpleAutosuggest(props) {
 
     return (
         <Autocomplete
+            className={props.className}
             autoHighlight={true}
             autoComplete={true}
             onFocus={()=>{
@@ -181,8 +165,15 @@ export default function SimpleAutosuggest(props) {
                 return <TextField
                     onClick={props.onClick}
                     placeholder={props.placeholder}
+                    label={props.label}
+                    name={props.name}
                     {...params}
+                    sx={{margin:0}}
+                    InputLabelProps={{
+                        shrink: props.labelShrink
+                    }}
                     InputProps={{
+                        name:props.name,
                         ...params.InputProps,
                         endAdornment: (
                             <React.Fragment>

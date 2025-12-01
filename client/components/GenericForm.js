@@ -45,6 +45,7 @@ import {showTooltip, hideTooltip} from '../util/tooltip'
 import {translateText} from '../util/translate.mjs'
 import {QUERY_KEY_VALUES_GLOBAL} from '../util/keyvalue'
 import {replacePlaceholders} from '../../util/placeholders.mjs'
+import {SimpleAutosuggest} from './ui/impl/material'
 
 const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ './CodeEditor')}/>
 
@@ -55,6 +56,7 @@ const StyledTabContainer = styled('div')(({ theme }) => ({
 
 const getSxProps = field => ({
     margin: 1,
+    display: 'inline-flex',
     width: 'calc(100% - ' + theme.spacing(2) + ')',
     ...(!field.fullWidth && {
         [theme.breakpoints.up('md')]: {
@@ -896,6 +898,9 @@ class GenericForm extends React.Component {
 
                             if (subField.localized) {
                                 // mark as localized
+                                if(!values[subField.name]) {
+                                    values[subField.name] = {}
+                                }
                                 values[subField.name]._localized = true
                             }
 
@@ -1313,12 +1318,12 @@ class GenericForm extends React.Component {
                             sx={getSxProps(field)}
                             InputLabelProps={{
                                 shrink: true,
-                                onMouseEnter:e=>{
-                                    if(field.label && field.name && field.label !== field.name) {
+                                onMouseEnter: e => {
+                                    if (field.label && field.name && field.label !== field.name) {
                                         showTooltip(field.name, e)
                                     }
                                 },
-                                onMouseLeave:()=>{
+                                onMouseLeave: () => {
                                     hideTooltip()
                                 }
                             }}
@@ -1328,12 +1333,12 @@ class GenericForm extends React.Component {
 
             } else {
 
-                if(field.$enum){
+                if (field.$enum) {
                     field.enum = new Function('const state = this.state;return ' + field.$enum).call({
-                        state:this.state
+                        state: this.state
                     })
                 }
-                if(field.enum==='$TYPES'){
+                if (field.enum === '$TYPES') {
                     field.enum = Object.keys(getTypes())
                 }
 
@@ -1353,18 +1358,45 @@ class GenericForm extends React.Component {
                     sx={getSxProps(field)}
                     InputLabelProps={{
                         shrink: true,
-                        onMouseEnter:e=>{
-                            if(field.label && field.name && field.label !== field.name) {
+                        onMouseEnter: e => {
+                            if (field.label && field.name && field.label !== field.name) {
                                 showTooltip(field.name, e)
                             }
                         },
-                        onMouseLeave:()=>{
+                        onMouseLeave: () => {
                             hideTooltip()
                         }
                     }}
                     value={value}/>)
             }
-
+        } else if (field.uitype === 'autosuggest') {
+                currentFormFields.push(<SimpleAutosuggest
+                    className={field.className}
+                    name={fieldKey}
+                    value={value}
+                    sx={getSxProps(field)}
+                    readOnly={field.readOnly}
+                    placeholder={field.placeholder}
+                    label={(field.label || field.name) + (languageCode ? ' [' + languageCode + ']' : '')}
+                    labelShrink={true}
+                    freeSolo
+                    search
+                    historyKey={"GenericForm.autosuggest." + fieldKey}
+                    apiUrl={(searchData)=>{
+                        return `/lunucapi/autosuggest?field=${field.name}&definition=${this.props.values?.definition?._id||''}&s=%search%`
+                    }}
+                    filterOptions={(options)=>options}
+                    nameRender={(item, key)=>{
+                        let name = item.name || item.key
+                        if(name && name[_app_.lang]){
+                            name = name[_app_.lang]
+                        }
+                        return `${name}`
+                    }}
+                    onBlur={this.handleBlur}
+                    onChange={this.handleInputChange}
+                    onInputChange={this.handleInputChange}
+                    onClick={()=>{}}/>)
 
         } else if (field.type === 'Boolean') {
             currentFormFields.push(<SimpleSwitch key={fieldKey}
