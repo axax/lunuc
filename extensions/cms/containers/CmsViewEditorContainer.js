@@ -452,7 +452,7 @@ class CmsViewEditorContainer extends React.Component {
         const isSmallScreen = window.innerWidth < 1000
 
         // extend with value from state because they are more update to date
-        const cmsPageWithState = Object.assign({}, cmsPage, {script, style, template, meta: {PageOptions}})
+        const cmsPageWithState = Object.assign({}, cmsPage, {script, style, template, meta: {PageOptions, PageExtensions}})
 
         console.log(`render CmsViewEditorContainer ${this.props.slug} (loading=${loadingState})`, cmsPage)
 
