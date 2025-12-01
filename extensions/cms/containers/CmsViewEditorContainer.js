@@ -41,7 +41,6 @@ import BottomNavigationAction from '@mui/material/BottomNavigationAction'
 import Paper from '@mui/material/Paper'
 import Box from '@mui/material/Box'
 import NetworkStatusHandler from 'client/components/layout/NetworkStatusHandler'
-import {getTypeQueries} from 'util/types.mjs'
 import Util from '../../../client/util/index.mjs'
 import {translateText} from '../../../client/util/translate.mjs'
 import {
@@ -55,15 +54,13 @@ import {
     findSegmentByKeyOrPath,
     findObjectsByAttributeValue, isTrue
 } from '../../../client/util/json.mjs'
-import GenericForm from '../../../client/components/GenericForm'
 import {_t} from '../../../util/i18n.mjs'
 import config from 'gen/config-client'
 import {getFormFieldsByType} from '../../../util/typesAdmin.mjs'
 import Hook from '../../../util/hook.cjs'
-import {client, Query, graphql} from '../../../client/middleware/graphql'
+import {client, graphql} from '../../../client/middleware/graphql'
 import Async from '../../../client/components/Async'
 import CmsRevision from '../components/CmsRevision'
-import OpenTypeEdit from '../components/OpenTypeEdit'
 import {CmsAddNewSite} from '../components/CmsAddNewSite'
 import CmsElement from '../components/CmsElement'
 import JsonDomHelper from '../components/JsonDomHelper'
@@ -79,6 +76,7 @@ import {csvToJson} from '../../../client/util/csv.mjs'
 import GenericSettings from '../../../client/components/GenericSettings'
 import {DEFAULT_STYLE} from '../constants/cmsDefaults.mjs'
 import CmsPageTools from '../components/CmsPageTools'
+import CmsDataEditDialog from '../components/CmsDataEditDialog'
 
 const StyledBox = styled(Box)(({theme})=>({
     display: 'flex',
@@ -258,12 +256,21 @@ class CmsViewEditorContainer extends React.Component {
             result.EditorOptions = metaJson.EditorOptions
             result.EditorPageOptions = metaJson.EditorPageOptions
             result.PageOptions = metaJson.PageOptions
+            result.PageExtensionsDefinition = metaJson.PageExtensionsDefinition
+            result.PageExtensions = metaJson.PageExtensions
+
         }
         if (!result.EditorOptions) {
             result.EditorOptions = DEFAULT_EDITOR_SETTINGS
         }
         if (!result.EditorPageOptions) {
             result.EditorPageOptions = {}
+        }
+        if (!result.PageExtensionsDefinition) {
+            result.PageExtensionsDefinition = {}
+        }
+        if (!result.PageExtensions) {
+            result.PageExtensions = {}
         }
 
 
@@ -425,6 +432,8 @@ class CmsViewEditorContainer extends React.Component {
             EditorOptions,
             EditorPageOptions,
             PageOptions,
+            PageExtensionsDefinition,
+            PageExtensions,
             dataResolver,
             serverScript,
             manual,
@@ -451,98 +460,6 @@ class CmsViewEditorContainer extends React.Component {
             canMangeCmsContent = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_CONTENT),
             canMangeCmsTemplate = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_TEMPLATE)
 
-        let cmsEditDataProps
-
-        if (cmsEditData && !cmsEditData.type) {
-            cmsEditDataProps = this.getDataResolverProperty(cmsEditData)
-        }
-
-
-        const DataEditDialog = () => {
-            if (cmsEditData) {
-                if (cmsEditData.type) {
-
-                    if (cmsEditData._id) {
-                        return <Query key="dataEditor"
-                                      query={getTypeQueries(cmsEditData.type).query}
-                                      variables={{
-                                          filter: `_id=${cmsEditData._id}`,
-                                          meta: cmsEditData.genericType || cmsEditData.resolverKey
-                                      }}
-                                      fetchPolicy="network-only">
-
-                            {({loading, error, data}) => {
-                                if (loading) {
-                                    return 'Loading...'
-                                }
-
-                                if (error) return `Error! ${error.message}`
-
-                                const keys = Object.keys(data)
-                                let finalData
-                                if (keys.length > 0) {
-                                    finalData = data[keys[0]]
-                                }
-
-                                if (!finalData || finalData.results.length === 0) {
-
-                                    this.setState({
-                                        cmsEditData: null,
-                                        simpleDialog: {
-                                            title: "Keine Daten",
-                                            text: "Sie haben vermutlich keine Berechtigung diese Daten zu bearbeiten"
-                                        }
-                                    })
-                                    return null
-                                }
-
-                                return <OpenTypeEdit
-                                    onClose={this.handleEditDataClose.bind(this)}
-                                    cmsEditData={cmsEditData}
-                                    data={finalData}/>
-                            }}
-                        </Query>
-                    } else {
-                        return <OpenTypeEdit
-                            onClose={this.handleEditDataClose.bind(this)}
-                            cmsEditData={cmsEditData}/>
-                    }
-                } else {
-
-                    let formRef
-                    return <SimpleDialog fullWidth={true} maxWidth="sm" key="propertyEditor" open={true}
-                                         onClose={(e) => {
-                                             if (e.key === 'save' && formRef) {
-                                                 const field = formRef.state.fields.field
-                                                 this.handleDataResolverPropertySave({
-                                                     value: field,
-                                                     path: cmsEditData._id,
-                                                     instantSave: true
-                                                 })
-                                             }
-                                             this.editCmsData(null)
-                                         }}
-                                         actions={[{
-                                             key: 'cancel',
-                                             label: _t('core.cancel'),
-                                             type: 'secondary'
-                                         },
-                                             {
-                                                 key: 'save',
-                                                 label: _t('core.save'),
-                                                 type: 'primary'
-                                             }]}
-                                         title="Bearbeitung">
-
-                        <GenericForm primaryButton={false} onRef={(e) => {
-                            formRef = e
-                        }} fields={cmsEditDataProps}/>
-
-
-                    </SimpleDialog>
-                }
-            }
-        }
 
         const inner = [
             <WrappedComponent key="cmsView"
@@ -620,7 +537,10 @@ class CmsViewEditorContainer extends React.Component {
                     this.editTemplate(cmsTemplateEditData.key.substring(0, cmsTemplateEditData.key.lastIndexOf('.')), cmsTemplateEditData.json, cmsTemplateEditData.scope)
                 }}>{_t('CmsViewEditorContainer.editParentComponent')}</Button>
             </SimpleDialog>,
-            <DataEditDialog key="dataEditDialog"/>]
+            <CmsDataEditDialog
+                editor={this}
+                cmsEditData={cmsEditData}
+                key="dataEditDialog"/>]
 
         if (!canViewCmsEditor || props.dynamic) {
             if ((cmsPage && cmsPage.publicEdit) || isTrue(props.forceEditMode) || isTrue(props.forceInlineEditor)) {
@@ -658,6 +578,9 @@ class CmsViewEditorContainer extends React.Component {
 
                         <CmsPageSeo cmsPage={cmsPage}
                                     values={this.state}
+                                    extension={{
+                                        definition: PageExtensionsDefinition.seo,
+                                        values: PageExtensions.seo}}
                                     onChange={this.handleFlagChange}/>
                     </Expandable>}
 
@@ -1261,40 +1184,6 @@ class CmsViewEditorContainer extends React.Component {
         }
     }
 
-    getDataResolverProperty(cmsEditData) {
-        const path = cmsEditData._id
-        const {segment} = this.findSegmentInDataResolverByKeyOrPath({path})
-
-
-        if (segment) {
-            try {
-                let props
-                if (cmsEditData.props) {
-
-                    if (cmsEditData.props.constructor === Object) {
-                        props = cmsEditData.props
-                    } else {
-                        const correctJson = cmsEditData.props.replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": ');
-                        props = JSON.parse(correctJson)
-                    }
-                }
-                const newProps = {value: propertyByPath(path, segment)}
-                if (newProps.value.constructor === Object || newProps.value.constructor === Array) {
-                    newProps.uitype = 'json'
-                }
-                return {field: {...newProps, ...props}}
-
-            } catch (e) {
-                console.log(e)
-                return {field: {value: '', error: true, helperText: e.message}}
-            }
-
-
-        }
-        return {field: {value: ''}}
-    }
-
-
     findSegmentInDataResolverByKeyOrPath({path, key}) {
         if (!this._tmpDataResolver) {
             if (this.state.dataResolver) {
@@ -1427,20 +1316,6 @@ class CmsViewEditorContainer extends React.Component {
         const {cmsTemplateEditData} = this.state
         this.setCmsPageValue( {key:'template'}, this.state.template)
         this.editTemplate(null, cmsTemplateEditData.component, cmsTemplateEditData.scope)
-    }
-
-    handleEditDataClose(action, {optimisticData, dataToEdit, type}) {
-        const {cmsEditData} = this.state
-
-        if (optimisticData) {
-            if (!dataToEdit) {
-                window.location.href = window.location.href
-                return
-            } else {
-                this.findAndUpdateResolvedData(cmsEditData._jsonDom.scope.root, cmsEditData.resolverKey || type, type, optimisticData, dataToEdit)
-            }
-        }
-        this.editCmsData(null)
     }
 
     findAndUpdateResolvedData(jsonDom, resolverKey, type, optimisticData, dataToEdit) {

@@ -1,15 +1,17 @@
 import React from 'react'
 import {
     TextField,
-    SimpleSwitch,
-    Divider
 } from 'ui/admin'
 import {_t} from '../../../util/i18n.mjs'
+import GenericForm from '../../../client/components/GenericForm'
+import {setKeyValue} from '../../../client/util/keyvalue'
+import {setPropertyByPath} from '../../../client/util/json.mjs'
 
 export default function CmsPageSeo(props){
 
-    const {onChange, cmsPage, values} = props
+    const {onChange, cmsPage, values, extension} = props
 
+    let saveTimeout
     return <>
         <TextField key="pageTitle"
                    name="pageTitle"
@@ -66,6 +68,19 @@ export default function CmsPageSeo(props){
                    sx={{ mt: 0, mb: 2 }}
                    value={values.description ? values.description[_app_.lang] : ''}
                    fullWidth={true}/>
+        {extension.definition && <GenericForm onChange={(e,p) => {
+            if(!extension.values){
+                extension.values = {}
+            }
+            setPropertyByPath(e.value,e.name,extension.values)
+            clearTimeout(saveTimeout)
+            saveTimeout = setTimeout(()=>{
+                setKeyValue({key: 'PageExtensions-' + cmsPage.realSlug,value:{seo:extension.values},clearCache:true, global:true}).then(()=>{
+                })
+            },250)
+
+        }} primaryButton={false} fields={extension.definition} values={extension.values}></GenericForm>}
+
 
     </>
 

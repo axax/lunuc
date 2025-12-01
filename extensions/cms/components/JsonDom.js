@@ -1258,7 +1258,7 @@ class JsonDom extends React.Component {
                             eleProps._tagName = tagName
                             eleProps._forceInlineEditor = isTrue(this.props.forceInlineEditor)
                             eleProps._inlineEditor = this.props.inlineEditor
-                            eleProps._options = $inlineEditor || {}
+                            eleProps._options = $inlineEditor && $inlineEditor.constructor === Object ? $inlineEditor : {}
                             eleProps._WrappedComponent = eleType
                             eleProps._scope = scope
                             eleProps._cmsActions = this.props.cmsEditorActions
@@ -1336,7 +1336,9 @@ class JsonDom extends React.Component {
                 if (isString(props.meta)) {
                     const metaJson = JSON.parse(props.meta)
                     scope.PageOptions = metaJson.PageOptions
+                    scope.PageExtensions = metaJson.PageExtensions
                 } else {
+                    // might be deprecated
                     scope.PageOptions = props.meta.PageOptions
                 }
             }

@@ -36,10 +36,11 @@ const createScopeForDataResolver = (query, _props) => {
 
 const setPageOptionsAsMeta = async (db, context, result)=>{
     const pageName = result.realSlug.split('/')[0]
-    const pageOptions = await Util.keyValueGlobalMap(db, context, ['PageOptions-' + pageName], {parse: true})
+    const pageOptions = await Util.keyValueGlobalMap(db, context, ['PageOptions-' + pageName,'PageExtensions-' + result.realSlug], {parse: true})
 
     const meta = {
-        PageOptions: pageOptions['PageOptions-' + pageName]
+        PageOptions: pageOptions['PageOptions-' + pageName],
+        PageExtensions: pageOptions['PageExtensions-' + result.realSlug]
     }
     result.meta = JSON.stringify(meta)
 }
@@ -210,15 +211,28 @@ export default db => ({
 
                 if (!dynamic) {
                     const pageName = result.realSlug.split('/')[0]
-                    const pageOptions = await Util.keyValueGlobalMap(db, context, ['PageOptionsDefinition-' + pageName, 'PageOptions-' + pageName], {parse: true})
-                    const editorOptions = await Util.keyvalueMap(db, context, [settingKeyPrefix, settingKeyPrefix + '-' + result.realSlug], {parse: true})
+                    const globalOptions = await Util.keyValueGlobalMap(db, context, [
+                        'PageOptionsDefinition-' + pageName, /* Options definition for general page (root slug) */
+                        'PageOptions-' + pageName,  /* Options values for general page (root slug) */
+                        'PageExtensionsDefinition-' + result.realSlug, /* Page extension definition for the current page */
+                        'PageExtensions-' + result.realSlug /* Page extension value for the current page */
+
+                    ], {parse: true})
+                    const editorOptions = await Util.keyvalueMap(db, context, [
+                        settingKeyPrefix,  /* CmsViewEditor options */
+                        settingKeyPrefix + '-' + result.realSlug /* CmsViewEditor options for the current slug */
+                    ], {parse: true})
 
                     const pageDataMeta = {
-                        PageOptionsDefinition: pageOptions['PageOptionsDefinition-' + pageName],
-                        PageOptions: pageOptions['PageOptions-' + pageName],
+                        PageOptionsDefinition: globalOptions['PageOptionsDefinition-' + pageName],
+                        PageOptions: globalOptions['PageOptions-' + pageName],
                         EditorPageOptions: editorOptions[settingKeyPrefix + '-' + result.realSlug],
-                        EditorOptions: editorOptions[settingKeyPrefix]
+                        EditorOptions: editorOptions[settingKeyPrefix],
+                        PageExtensionsDefinition: globalOptions['PageExtensionsDefinition-' + result.realSlug],
+                        PageExtensions: globalOptions['PageExtensions-' + result.realSlug]
                     }
+
+                    console.log('PageExtensionsDefinition-' + '-' + result.realSlug, pageDataMeta)
 
                     result.meta = JSON.stringify(pageDataMeta)
                 }else if( loadPageOptions ){

@@ -367,7 +367,7 @@ const Util = {
             data.alt = image.name
         }
         if (!image.src) {
-            data.src = _app_.config.UPLOAD_URL + '/' + image._id + '/' + config.PRETTYURL_SEPERATOR + '/' + image.name
+            data.src = _app_.config.UPLOAD_URL + '/' + image._id + (image.name ? '/' + config.PRETTYURL_SEPERATOR + '/' + image.name : '')
         } else {
             data.src = image.src
         }
