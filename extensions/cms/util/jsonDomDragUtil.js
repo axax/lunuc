@@ -1,5 +1,5 @@
 import ReactDOM from 'react-dom'
-import DomUtilAdmin from '../../../client/util/domAdmin.mjs'
+import { css } from '@emotion/react'
 
 export const DROPAREA_ACTIVE = 'jdh-da-active'
 export const DROPAREA_OVERLAP = 'jdh-da-overlap'
@@ -43,6 +43,23 @@ const getDistanceToDiv = (mouseX, mouseY, divElement) => {
     return distance
 }
 
+
+// 1. Function to create the overlay element only once
+function createOverlay(id) {
+    // Check if the overlay already exists to prevent duplicates
+    let overlay = document.getElementById(id)
+
+    if (!overlay) {
+        overlay = document.createElement('div')
+        overlay.id = id
+        overlay.style.position = 'fixed'
+        overlay.style.backgroundColor = 'rgba(255, 0, 0, 0.5)'
+        document.body.appendChild(overlay)
+    }
+
+    return overlay
+}
+
 export const onJsonDomDrag = (e) => {
     e.stopPropagation()
 
@@ -51,11 +68,29 @@ export const onJsonDomDrag = (e) => {
 
     if (e.clientY > 0 && mouseMoveDifference > 10) {
 
+
+
+        /*const keyTags = document.querySelectorAll('[_key]')
+        keyTags.forEach((tag)=>{
+            const dropArea = createOverlay('forkey'+tag.getAttribute('_key'))
+
+            // getBoundingClientRect returns the size and position relative to the viewport.
+            const rect = tag.getBoundingClientRect();
+
+            // Apply the calculated dimensions and position
+            dropArea.style.top = rect.top + 'px';
+            dropArea.style.left = rect.left + 'px';
+            dropArea.style.width = rect.width + 'px';
+            dropArea.style.height = rect.height + 'px';
+        })*/
+
+
         JsonDomDraggable.clientX = e.clientX
         JsonDomDraggable.clientY = e.clientY
         clearTimeout(JsonDomDraggable.onDragTimeout)
 
         const draggable = ReactDOM.findDOMNode(JsonDomDraggable.element)
+
         JsonDomDraggable.onDragTimeout = setTimeout(() => {
 
             if (!JsonDomDraggable.element) {
@@ -113,10 +148,10 @@ export const onJsonDomDrag = (e) => {
 
                             tag.style.width = (elementWidth) + 'px'
                             if(fillHeight) {
-                                let elementHeight = nodeForWidth.dataset.oriHeight || nodeForWidth.clientHeight
-                                if(!nodeForWidth.dataset.oriHeight){
+                                let elementHeight = node.dataset.oriHeight || node.clientHeight
+                                if(!node.dataset.oriHeight){
                                     elementHeight -= parseFloat(computedStyle.paddingTop) + parseFloat(computedStyle.paddingBottom)
-                                    nodeForWidth.dataset.oriHeight = elementHeight
+                                    node.dataset.oriHeight = elementHeight
                                 }
                                 if(elementHeight<20){
                                     elementHeight=32
