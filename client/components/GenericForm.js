@@ -1382,7 +1382,7 @@ class GenericForm extends React.Component {
                     labelShrink={true}
                     freeSolo
                     search
-                    historyKey={"GenericForm.autosuggest." + fieldKey}
+                    /*historyKey={"GenericForm.autosuggest." + fieldKey}*/
                     apiUrl={(searchData)=>{
                         return `/lunucapi/autosuggest?field=${field.name}&definition=${this.props.values?.definition?._id||''}&s=%search%`
                     }}
