@@ -157,7 +157,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
             res.writeHead(errorFile.statusCode, headers)
             res.write('Error '+errorFile.statusCode)
             res.end()
-            doTrackingEvent(req, {event:'404'})
+            doTrackingEvent(req, {event:'404', host})
             return
         }
 
@@ -185,7 +185,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
                 if (modeTime > now) {
                     // TODO request is not tracked
                     
-                    doTrackingEvent(req, {event:'visit'})
+                    doTrackingEvent(req, {event:'visit',host})
                     
                     console.log(`cache is not updated for ${cacheFileName}`)
                     return
