@@ -35,6 +35,8 @@ const ABS_UPLOAD_DIR = path.join(ROOT_DIR, UPLOAD_DIR)
 
 const LUNUC_SERVER_NODES = process.env.LUNUC_SERVER_NODES || ''
 
+const API_PORT = (process.env.API_PORT || process.env.LUNUC_API_PORT || 3000)
+
 const downloadUrl = ( url ) => {
     return new Promise ( ( resolve ) => {
         const request = http.get( url )
@@ -292,7 +294,7 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
             }
             const clientId = Date.now().toString(36) + Math.random().toString(36).substring(2, 9)
 
-            fetch('http:/localhost:3000/graphql', {
+            fetch(`http://localhost:${API_PORT}/graphql`, {
                 method: 'POST',
                 headers: {
                     'Content-Language':contextLanguage,
@@ -305,7 +307,7 @@ export const parseAndSendFile = (req, res, {filename, headers, statusCode, parse
                     [TRACK_USER_AGENT_HEADER]: req.headers[TRACK_USER_AGENT_HEADER] || '',
                     [CLIENT_ID_HEADER]: clientId,
                     [HOSTRULE_HEADER]: req.headers[HOSTRULE_HEADER] || host,
-                    [SESSION_HEADER]: req.headers[SESSION_HEADER],
+                    [SESSION_HEADER]: req.headers[SESSION_HEADER] || '',
                     /* cookies and auth_header not needed at the moment*/
                     'Cookie': req.headers.cookie,
                     [AUTH_HEADER]: req.headers[AUTH_HEADER]

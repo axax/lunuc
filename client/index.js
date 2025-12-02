@@ -177,17 +177,28 @@ function mainInit() {
 }
 
 if (!window.LUNUC_PREPARSED) {
-    const
-        morePolyfill = !window.fetch || !window.AbortController || !window.Event || typeof String.prototype.replaceAll !== 'function',
-        noneBasicEs6 = morePolyfill && (() => {
+    const morePolyfill = !window.fetch || !window.AbortController || !window.Event || typeof String.prototype.replaceAll !== 'function'
+
+    _app_.lacksBasicEs6 = morePolyfill && (() => {
+        try {
+            new Function('(a={x:1})=>{const {x}=a;let b=1;')
+            return false
+        } catch (err) {
+            console.log(err)
+            return true
+        }
+    })()
+
+    const lacksOptionalChaining = _app_.lacksBasicEs6 || (() => {
             try {
-                new Function('(a={x:1})=>{const {x}=a;let b=1;return `${a?.b}`}')
+                new Function('window?.b')
                 return false
             } catch (err) {
                 console.log(err)
                 return true
             }
         })()
+
 
     let maxCounter = 0, counter = 0
     const onload = () => {
@@ -214,7 +225,7 @@ if (!window.LUNUC_PREPARSED) {
         }
     }
 
-    if (noneBasicEs6) {
+    if (_app_.lacksBasicEs6 || lacksOptionalChaining) {
         maxCounter++
         // Load polyfill and bable to support old browsers
         DomUtil.addScript('/babel.min.js', {

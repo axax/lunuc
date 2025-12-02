@@ -98,13 +98,13 @@ const DomUtil = {
     toES5: (code) => {
         if (code && typeof window !== 'undefined' && window.Babel) {
             const startTime = new Date().getTime()
-            const getPreset = () => {
-                if(code.indexOf('?.')>=0){
-                    //optional chaining
-                    return 'env'
-                }
-                return 'es2015'
+            const hasOptionalChaining = code.indexOf('?.')>=0
+
+            if(!hasOptionalChaining && !_app_.lacksBasicEs6){
+                // skip Bable transform as it supports basic es6
+                return code
             }
+
             const result = Babel.transform(code, {
                 sourceMap: false,
                 highlightCode: false,
@@ -113,9 +113,10 @@ const DomUtil = {
                     allowReturnOutsideFunction: true
                 },
                 presets: [
-                    [getPreset(), {modules: false, loose: true}]
+                    [hasOptionalChaining?'env':'es2015', {modules: false, loose: true}]
                 ]
             })
+
             console.log(`Js to es5 in ${new Date().getTime() - startTime}ms for ${code.substring(0, 60)}...`)
             return result.code
         }

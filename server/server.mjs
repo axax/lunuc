@@ -33,6 +33,8 @@ import {
     zipAndSendMedias
 } from './util/file.mjs'
 import {actAsReverseProxy, isUrlValidForPorxing} from './util/reverseProxy.mjs'
+import Util from '../client/util/index.mjs'
+import {doTrackingEvent} from './util/tracking.mjs'
 
 const config = getDynamicConfig()
 
@@ -155,6 +157,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
             res.writeHead(errorFile.statusCode, headers)
             res.write('Error '+errorFile.statusCode)
             res.end()
+            doTrackingEvent(req, {event:'404'})
             return
         }
 
@@ -181,6 +184,9 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
 
                 if (modeTime > now) {
                     // TODO request is not tracked
+                    
+                    doTrackingEvent(req, {event:'visit'})
+                    
                     console.log(`cache is not updated for ${cacheFileName}`)
                     return
                 }
@@ -668,7 +674,6 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 //TODO: Move this to an extension as it doesn't belong here
 import stream from './stream.js'
 import {Server} from 'socket.io'
-import Util from "../client/util/index.mjs";
 
 
 let ioHttp = new Server(app.http)

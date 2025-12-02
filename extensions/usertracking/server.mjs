@@ -1,5 +1,7 @@
-import schema from './gensrc/schema.mjs'
-import resolver from './gensrc/resolver.mjs'
+import schema from './schema/index.mjs'
+import resolver from './resolver/index.mjs'
+import genSchema from './gensrc/schema.mjs'
+import genResolver from './gensrc/resolver.mjs'
 import Hook from '../../util/hook.cjs'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import {clientAddress, getHostFromHeaders} from '../../util/host.mjs'
@@ -10,11 +12,12 @@ import {TRACK_USER_AGENT_HEADER} from '../../api/constants/index.mjs'
 
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
-    deepMergeToFirst(resolvers, resolver(db))
+    deepMergeToFirst(resolvers, resolver(db), genResolver(db))
 })
 
 // Hook to add mongodb schema
 Hook.on('schema', ({schemas}) => {
+    schemas.push(genSchema)
     schemas.push(schema)
 })
 
