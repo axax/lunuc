@@ -491,6 +491,7 @@ class GenericForm extends React.Component {
         if (fields[name]) {
             value = checkFieldType(originalValue, fields[name])
         }
+        console.log('handleInputChange',e)
 
         const newState = this.newStateForField(this.state, {
             name,
@@ -1394,8 +1395,9 @@ class GenericForm extends React.Component {
                         return `${name}`
                     }}
                     onBlur={this.handleBlur}
-                    onChange={this.handleInputChange}
-                    onInputChange={this.handleInputChange}
+                    onInputChange={async (e,value)=>{
+                       await this.handleInputChange({target:{name:fieldKey,value}})
+                    }}
                     onClick={()=>{}}/>)
 
         } else if (field.type === 'Boolean') {

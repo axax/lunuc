@@ -122,7 +122,9 @@ export default function SimpleAutosuggest(props) {
 
                         setKeyValue({key: settingKey, value: settings})
                     }
-                    props.onChange(e, item, text)
+                    if(props.onChange) {
+                        props.onChange(e, item, text)
+                    }
                 }else{
                     setText(item.name)
                     setTimeout(()=> {
