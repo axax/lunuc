@@ -602,10 +602,9 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     }
 
                     // special url
-                    const pos = urlPathname.indexOf('/' + config.PRETTYURL_SEPERATOR + '/' + config.PRETTYURL_SEPERATOR + '/')
+                    const pos = parsedUrl.pathname.indexOf('/' + config.PRETTYURL_SEPERATOR + '/' + config.PRETTYURL_SEPERATOR + '/')
                     if (pos >= 0) {
-                        const decodedStr = decodeURIComponent(decodeURIComponent(urlPathname.substring(pos + 5).split('/')[0]))
-
+                        const decodedStr = decodeURIComponent(decodeURIComponent(parsedUrl.pathname.substring(pos + 5).split('/')[0]))
                         try {
                             const data = JSON.parse(decodedStr)
                             const screenShotDir = path.join(ABS_UPLOAD_DIR, 'screenshots')
