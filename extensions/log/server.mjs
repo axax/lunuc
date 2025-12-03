@@ -97,7 +97,7 @@ Hook.on('typeLoaded', async ({type,cacheKey,db, req, context, result, dataQuery,
               host,
               cacheKey,
               agent: headers[TRACK_USER_AGENT_HEADER] || headers['user-agent'] || '',
-              referer: headers[TRACK_REFERER_HEADER] || headers['referer'],
+              referer: headers[TRACK_REFERER_HEADER] || headers['referer'] || '',
               query: dataQuery
           }
       })

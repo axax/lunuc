@@ -114,7 +114,7 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
                 request.abort()
             } else {
                 const headers = request.headers()
-                headers[TRACK_REFERER_HEADER] = referer
+                headers[TRACK_REFERER_HEADER] = referer || ''
                 headers[TRACK_IP_HEADER] = remoteAddress
                 headers[TRACK_IS_BOT_HEADER] = isBot
                 headers[TRACK_USER_AGENT_HEADER] = agent

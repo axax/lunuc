@@ -71,7 +71,7 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
             ip: ip,
             agent,
             isBot: req.headers[TRACK_IS_BOT_HEADER] === 'true' ? true : DEFAULT_BOT_REGEX.test(agent),
-            referer: req.headers[TRACK_REFERER_HEADER] || referer,
+            referer: req.headers[TRACK_REFERER_HEADER] || referer || '',
             data,
             event,
             host: host,

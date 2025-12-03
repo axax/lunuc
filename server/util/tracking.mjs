@@ -15,7 +15,7 @@ export const doTrackingEvent = async (req, {event, host}) => {
         headers: {
             ...newHeaders,
             [HOSTRULE_HEADER]: req.headers[HOSTRULE_HEADER] || host,
-            [TRACK_REFERER_HEADER]:req.headers.referer,
+            [TRACK_REFERER_HEADER]:req.headers.referer || '',
             [TRACK_URL_HEADER]:req.url,
             [TRACK_IP_HEADER]:clientAddress(req),
             'x-from-client-server':true,
