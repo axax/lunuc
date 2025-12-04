@@ -189,7 +189,7 @@ if (!window.LUNUC_PREPARSED) {
         }
     })()
 
-    const lacksOptionalChaining = _app_.lacksBasicEs6 || (() => {
+    _app_.lacksOptionalChaining = _app_.lacksBasicEs6 || (() => {
             try {
                 new Function('window?.b')
                 return false
@@ -225,10 +225,10 @@ if (!window.LUNUC_PREPARSED) {
         }
     }
 
-    if (_app_.lacksBasicEs6 || lacksOptionalChaining) {
+    if (_app_.lacksBasicEs6 || _app_.lacksOptionalChaining) {
         maxCounter++
         // Load polyfill and bable to support old browsers
-        DomUtil.addScript('/babel.min.js', {
+        DomUtil.addScript('/legacyjs.js', {
             async: true,
             onload
         })

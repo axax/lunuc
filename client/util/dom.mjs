@@ -96,29 +96,11 @@ const DomUtil = {
         return styleString
     },
     toES5: (code) => {
-        if (code && typeof window !== 'undefined' && window.Babel) {
+        if (code && _app_.toLegacyJs) {
             const startTime = new Date().getTime()
-            const hasOptionalChaining = code.indexOf('?.')>=0
-
-            if(!hasOptionalChaining && !_app_.lacksBasicEs6){
-                // skip Bable transform as it supports basic es6
-                return code
-            }
-
-            const result = Babel.transform(code, {
-                sourceMap: false,
-                highlightCode: false,
-                sourceType: 'script',
-                parserOpts: {
-                    allowReturnOutsideFunction: true
-                },
-                presets: [
-                    [hasOptionalChaining?'env':'es2015', {modules: false, loose: true}]
-                ]
-            })
-
+            const result = _app_.toLegacyJs(code)
             console.log(`Js to es5 in ${new Date().getTime() - startTime}ms for ${code.substring(0, 60)}...`)
-            return result.code
+            return result
         }
         return code
     },

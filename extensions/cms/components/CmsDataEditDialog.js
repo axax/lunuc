@@ -118,7 +118,7 @@ export default function CmsDataEditDialog({cmsEditData, editor}) {
                                              instantSave: true
                                          })
                                      }
-                                     editCmsData(null)
+                                     editor.editCmsData(null)
                                  }}
                                  actions={[{
                                      key: 'cancel',
