@@ -199,7 +199,7 @@ if (!window.LUNUC_PREPARSED) {
             }
         })()
 
-    _app_.lacksOptionalChaining = _app_.lacksBasicEs6 = true
+   // _app_.lacksOptionalChaining = _app_.lacksBasicEs6 = true
 
 
 
