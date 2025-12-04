@@ -197,6 +197,9 @@ export default db => ({
                     console.log(e)
                     result.html = e.message
                 }
+                if(editmode){
+                    result.template = template
+                }
             }else{
                 result.template = template
             }
@@ -505,8 +508,6 @@ export default db => ({
             const cacheKey = getCmsPageCacheKey({_version, slug: rest.slug})
 
             Cache.clearStartWith(cacheKey)
-            console.log(cacheKey)
-
             const result = await GenericResolver.updateEnity(db, context, 'CmsPage', {
                 _id,
                 ownerGroup:(ownerGroup?ownerGroup.reduce((o,id)=>{o.push(new ObjectId(id));return o},[]):ownerGroup),

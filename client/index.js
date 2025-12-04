@@ -199,6 +199,9 @@ if (!window.LUNUC_PREPARSED) {
             }
         })()
 
+    _app_.lacksOptionalChaining = _app_.lacksBasicEs6 = true
+
+
 
     let maxCounter = 0, counter = 0
     const onload = () => {
