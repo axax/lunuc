@@ -399,10 +399,10 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
     req.setTimeout(0)
     req.socket.setTimeout(0)
     req.on('aborted', () => {
-        console.log('in createServer request aborted')
+        console.log('in createServer request aborted', req.url)
     })
     req.on('error', (err) => {
-        console.log('in createServer error', err)
+        console.log('in createServer error', req.url, err)
     })
 
     try {

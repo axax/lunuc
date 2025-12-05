@@ -48,10 +48,10 @@ const createServer = (opts, handler) => {
             }
         )
 
-        socket.on('timeout', () => {
+       /* socket.on('timeout', () => {
             console.log('Net Server: Socket timeout')
             //socket.destroy();
-        })
+        })*/
 
     })
 
