@@ -204,7 +204,8 @@ export const sendFile = (req, res, {headers, filename, fileStat, neverCompress =
                 ...headers})
 
             const fileStream = fs.createReadStream(filename, streamOption)
-            fileStream.pipe(res)
+            fileStream.on('error', (err) => console.error('sendFile: Stream error:', err))
+            fileStream.pipe(res).on('error', (err) => console.error('sendFile: Pipe error:', err))
 
         }
     } catch (err) {

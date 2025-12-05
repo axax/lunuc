@@ -42,11 +42,16 @@ const createServer = (opts, handler) => {
         })
 
         socket.on('error', (err) => {
-                console.log('Caught httpx server socket error: ')
+                console.log('Net Server: Caught httpx server socket error: ')
                 console.log(err.stack)
                 //socket.destroy()
             }
         )
+
+        socket.on('timeout', () => {
+            console.log('Net Server: Socket timeout')
+            //socket.destroy();
+        })
 
     })
 
@@ -56,7 +61,8 @@ const createServer = (opts, handler) => {
 
     server.http.headersTimeout = HEADER_TIMEOUT
     server.https.headersTimeout = HEADER_TIMEOUT
-
+    server.http.requestTimeout = 0
+    server.https.requestTimeout = 0
 
     server.on('error', err => {
         console.log('net err', err)

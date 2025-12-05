@@ -396,6 +396,15 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
 // Initialize http api
 const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req, res) {
 
+    req.setTimeout(0)
+    req.socket.setTimeout(0)
+    req.on('aborted', () => {
+        console.log('in createServer request aborted')
+    })
+    req.on('error', (err) => {
+        console.log('in createServer error', err)
+    })
+
     try {
         const remoteAddress=clientAddress(req)
         if(!isTemporarilyBlocked({req, key:remoteAddress})) {
