@@ -201,16 +201,17 @@ class JsonDom extends React.Component {
                         return false
                     }
 
-                    setTimeout(() => {
-                        if (gotop) {
-                            window.scrollTo(0, 0)
-                        } else {
-                            scrollByHash(url, {scrollOffset, scrollStep, scrollTimeout})
-                        }
-                    }, 100)
-
                     if (typeof onClick === 'function') {
                         onClick(e)
+                    }
+                    if(!e.defaultPrevented){
+                        setTimeout(() => {
+                            if (gotop) {
+                                window.scrollTo(0, 0)
+                            } else {
+                                scrollByHash(url, {scrollOffset, scrollStep, scrollTimeout})
+                            }
+                        }, 100)
                     }
 
                 }} to={Util.addUrlContext(url)} {...rest}/>

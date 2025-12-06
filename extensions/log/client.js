@@ -36,6 +36,8 @@ export default () => {
         })
     })
 
+    _app_.sendError = sendError
+
     // CSP violation error
     document.addEventListener("securitypolicyviolation", (e) => {
         sendError({
