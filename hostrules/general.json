@@ -30,5 +30,5 @@
     "/de/\\\\?product_cat=(.*)": "/produkte",
     "/de/\\\\?product=(.*)": "/produkte"
   },
-  "blockUrlPathRegex": "(\\/.DS_Store|\\/.env|\\/.git|\\/.aws|\\/.svn|\\/index.php\\/|\\/wp-json|\\/wp-admin\\/|\\/wp-includes\\/|\\/\\.\\.\\/|\\/wp-content\\/|\\/cgi-bin\\/|\\.php$|\\.cgi$|\\.aspx$)"
+  "blockUrlPathRegex": "(\\/.DS_Store|\\/.env|\\/.git|\\/.aws|\\/.svn|\\/index.php\\/|\\/wp-json|\\/wp-admin\\/|\\/wp-includes\\/|\\/\\.\\.\\/|%2F\\.\\.%2F|\\/wp-content\\/|\\/cgi-bin\\/|\\.php$|\\.cgi$|\\.aspx$)"
 }
