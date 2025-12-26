@@ -171,10 +171,14 @@ function getOrCreateDropArea(tag, {create, isChild, index}) {
            /* if (dropArea.dataset.key) {
                 label += dropArea.dataset.key
             }*/
-            if (tag.id) {
-                label += '#' + tag.id
-            } else if (tag.className) {
-                label += tag.className
+            let finalTag = isChild ? tag.parentNode : tag
+            if (finalTag.id) {
+                label += '#' + finalTag.id
+            } else if (finalTag.className) {
+                label += finalTag.className
+            }
+            if(isChild){
+                label += ' - ' + index
             }
         }
 

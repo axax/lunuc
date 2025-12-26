@@ -1162,6 +1162,12 @@ const baseElements = [
                 tab: DEFAULT_TAB,
                 tabPosition: 0
             },
+            $toHtml: {
+                label: _t('elements.key.keepLineBreaks'),
+                fullWidth: false,
+                type: 'Boolean',
+                tab: DEFAULT_TAB
+            },
             p_href: {
                 fullWidth: true,
                 value: '',
