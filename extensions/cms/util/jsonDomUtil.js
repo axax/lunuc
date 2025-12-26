@@ -123,25 +123,6 @@ export const isTargetAbove = (sourceKey, targetKey) => {
     return isTargetAbove
 }
 
-
-export const classNameByPath = (path, extraClassName) => {
-    let className = 'JsonDom'
-    if (path != undefined && path.constructor === String) {
-
-        const p = path.split('/')
-        let classPath = ''
-        for (let i = 0; i < p.length; i++) {
-            if (classPath) classPath += '-'
-            classPath += p[i]
-            className += ' Cms-' + classPath
-        }
-    }
-    if (extraClassName)
-        className += ' ' + extraClassName
-    return className
-}
-
-
 export const recalculatePixelValue = (currentValue='', newValue, currentValuePx) => {
     if (currentValue.endsWith('vh')) {
         newValue = `${(parseFloat(newValue) / window.innerHeight * 100).toFixed(2)}vh`

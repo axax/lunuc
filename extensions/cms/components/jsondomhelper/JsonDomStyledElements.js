@@ -1,5 +1,4 @@
 import styled from '@emotion/styled'
-import {DROPAREA_ACTIVE, DROPAREA_OVER, DROPAREA_OVERLAP} from '../../util/jsonDomDragUtil'
 import {SimpleMenu} from '../../../../client/components/ui/impl/material'
 
 
@@ -36,70 +35,8 @@ export const StyledHighlighter = styled('span')(({ color, selected }) => ({
     }),
 }))
 
-export const StyledDropArea = styled('span')({
-    transition: 'visibility .5s ease-out, opacity .5s ease-out',
-    opacity: 0,
-    zIndex: 999,
-    display: 'flex',
-    justifyContent:'center',
-    alignItems:'center',
-    visibility: 'hidden',
-    position: 'absolute',
-    fontWeight: 'normal',
-    borderRadius: '5px',
-    background: '#000000',
-    padding: '5px',
-    maxWidth: '100%',
-    margin: '-28px 0 0 0 !important',
-    border: '1px dashed #c1c1c1',
-    height: '32px',
-    color: '#fff',
-    textAlign: 'center',
-    fontSize: '0.9rem',
-    '> span':{
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-    },
-    /*'&:after': {
-        top: '100%',
-        left: '50%',
-        border: 'solid transparent',
-        content: '""',
-        height: 0,
-        width: 0,
-        position: 'absolute',
-        pointerEvents: 'none',
-        borderColor: 'rgba(0, 0, 0, 0)',
-        borderTopColor: '#000',
-        borderWidth: '10px',
-        marginLeft: '-10px'
-    },*/
-    [`&.${DROPAREA_ACTIVE}`]:{
-        visibility: 'visible',
-        opacity: 0.8
-    },
-    [`&.${DROPAREA_OVERLAP}`]:{
-        opacity: 0.3,
-        height: '24px',
-        marginTop:'10px',
-        fontSize: '0.8rem',
-       /* position: 'relative',
-        marginTop: '0px !important'*/
-    },
-    [`&.${DROPAREA_OVER}`]:{
-        zIndex: 1000,
-        opacity: '1 !important',
-        visibility: 'visible !important',
-        background: 'red',
-        '&:after': {
-            borderTopColor: 'red'
-        }
-    },
-    [`*`]:{
-        pointerEvents: 'none'
-    }
-})
+
+
 
 
 export const StyledPicker = styled('div')({

@@ -110,7 +110,7 @@ class JsonDom extends React.Component {
         MarkDown,
         ShadowRoot,
         AddToBody,
-        'SmartImage': ({src, options, caption, wrapper, inlineSvg, svgData, tagName, figureStyle, figureClassName, figureCaptionClassName, figureProps, ...props}) => {
+        'SmartImage': ({src, options, caption, wrapper, inlineSvg, svgData, tagName, figureCaptionClassName, figureProps, ...props}) => {
             const imgTag = () => {
                 let imageData = Util.getImageObject(src, options)
                 imageData['data-smartimage'] = true
@@ -132,9 +132,13 @@ class JsonDom extends React.Component {
 
             /*TODO remove  figureStyle, figureClassName use figureProps instead */
             if (caption || wrapper) {
-                const _key = props._key
-                delete props._key
-                return <figure style={figureStyle} _key={_key} className={figureClassName} {...figureProps}>
+                const propsToCopyToFigure = ['figureStyle', 'figureClassName', '_key','data-allow-drop','data-element-key','data-tag-name']
+                const copiedFigureProps = {}
+                propsToCopyToFigure.forEach(key=>{
+                    copiedFigureProps[key] = props[key]
+                    delete props[key]
+                })
+                return <figure {...copiedFigureProps} {...figureProps}>
                     {imgTag()}
                     {caption && <figcaption className={figureCaptionClassName} dangerouslySetInnerHTML={{__html: _t(caption)}}/>}
                 </figure>

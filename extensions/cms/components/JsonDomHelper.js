@@ -36,7 +36,7 @@ import {
     copyComponent,
     recalculatePixelValue, highlighterHandler, getHighlightPosition, checkIfElementOrParentHasDataKey
 } from '../util/jsonDomUtil'
-import {DROPAREA_OVER, ALLOW_DROP, JsonDomDraggable, onJsonDomDrag, onJsonDomDragEnd} from '../util/jsonDomDragUtil'
+import {ALLOW_DROP, JsonDomDraggable, onJsonDomDrag, onJsonDomDragEnd} from '../util/jsonDomDragUtil'
 import config from 'gen/config-client'
 import {getJsonDomElements, MEDIA_PROJECTION, replaceUidPlaceholder} from '../util/elements'
 import {deepMergeOptional, deepMerge} from '../../../util/deepMerge.mjs'
@@ -48,7 +48,6 @@ import {showTooltip} from '../../../client/util/tooltip'
 import {CAPABILITY_ADMIN_OPTIONS} from '../../../util/capabilities.mjs'
 import {_t} from '../../../util/i18n.mjs'
 import {
-    StyledDropArea,
     StyledInfoBox,
     StyledToolbarMenu,
     StyledToolbarButton,
@@ -56,8 +55,8 @@ import {
     StyledPicker,
     StyledHorizontalDivider, StyledRichTextBar
 } from './jsondomhelper/JsonDomStyledElements'
-import CmsViewContainer from "../containers/CmsViewContainer";
-import {SimpleSwitch} from "../../../client/components/ui/impl/material";
+import CmsViewContainer from '../containers/CmsViewContainer'
+import {SimpleSwitch} from '../../../client/components/ui/impl/material'
 
 const {DEFAULT_LANGUAGE} = config
 const CONVERTABLE_ELEMENTS = ['image','layout-1-2','layout-1-3','layout-1-4','layout-1-6','headline','p','richText','link']
@@ -109,6 +108,7 @@ class JsonDomHelper extends React.Component {
     static altKeyDown = false
     static mutationObserver = false
     static selected = []
+    static instances = {}
 
     state = {
         hovered: false,
@@ -131,6 +131,7 @@ class JsonDomHelper extends React.Component {
     }
 
     componentDidMount() {
+        JsonDomHelper.instances[this.props._key] = this
         if (!JsonDomHelper.mutationObserver) {
             JsonDomHelper.mutationObserver = new MutationObserver(highlighterHandler)
         }
@@ -144,11 +145,14 @@ class JsonDomHelper extends React.Component {
                 subtree: true
             })
         }
+    }
 
+    componentWillUnmount() {
+        delete JsonDomHelper.instances[this.props._key]
     }
 
     shouldComponentUpdate(props, state) {
-        if (JsonDomDraggable.element && JsonDomDraggable.element != this) {
+        if (JsonDomDraggable.element && JsonDomDraggable.element !== this) {
             return false
         }
         return props.dangerouslySetInnerHTML !== this.props.dangerouslySetInnerHTML ||
@@ -254,6 +258,14 @@ class JsonDomHelper extends React.Component {
     }
 
     onDragStart(e) {
+      /*  const ghost = ReactDOM.findDOMNode(this).cloneNode(true);
+        ghost.style.background = '#ff6b6b';
+        document.body.appendChild(ghost);
+
+        e.dataTransfer.setDragImage(ghost, 10, 10); // Offset from cursor
+
+        // Clean up after a tick
+        setTimeout(() => document.body.removeChild(ghost), 0);*/
         e.stopPropagation()
         if (JsonDomHelper.disableEvents) {
             return
@@ -267,53 +279,6 @@ class JsonDomHelper extends React.Component {
 
     onDragEnd(e) {
         e.stopPropagation()
-        this.resetDragState()
-    }
-
-    onDragEnterDropArea(e) {
-        e.stopPropagation()
-        e.preventDefault()
-        e.currentTarget.classList.add(DROPAREA_OVER)
-    }
-
-    onDragOverDropArea(e) {
-        e.stopPropagation()
-        e.preventDefault()
-    }
-
-    onDragLeaveDropArea(e) {
-        e.stopPropagation()
-        e.currentTarget.classList.remove(DROPAREA_OVER)
-    }
-
-    onDrop(e) {
-        e.stopPropagation()
-        e.preventDefault()
-        JsonDomHelper.disableEvents = true
-
-        const {_json} = this.props
-        e.currentTarget.classList.remove(DROPAREA_OVER)
-
-        if (JsonDomDraggable.props) {
-            let sourceKey = JsonDomDraggable.props._key,
-                targetKey = e.currentTarget.getAttribute('data-key'),
-                targetIndex = parseInt(e.currentTarget.getAttribute('data-index'))
-
-            if (targetKey) {
-                // 1. get element from json structure by key
-                const source = getComponentByKey(sourceKey, _json)
-                if (source) {
-                    this.moveElementFromTo(sourceKey, targetKey, targetIndex, _json, source)
-                } else{
-                    this.setState({addChildDialog: {
-                            payload: {dropIndex: targetIndex},
-                            currentElement: JsonDomDraggable.props.element
-                    }})
-                }
-
-            }
-        }
-        this.enableEvents()
         this.resetDragState()
     }
 
@@ -486,35 +451,6 @@ class JsonDomHelper extends React.Component {
         removeComponent(key, _json)
     }
 
-    getDropArea(rest, index, fill) {
-        let label = ''
-        if(Util.hasCapability(_app_.user, CAPABILITY_ADMIN_OPTIONS)) {
-            if (rest['data-element-key']) {
-                label += rest['data-element-key']
-            }
-            if (rest['id']) {
-                label += '#' + rest['id']
-            } else if (rest['className']) {
-                label += '.' + rest['className']
-            }
-        }
-
-        return <StyledDropArea
-            onMouseOver={(e) => {
-                e.stopPropagation()
-            }}
-            onDragEnter={this.onDragEnterDropArea.bind(this)}
-            onDragOver={this.onDragOverDropArea.bind(this)}
-            onDragLeave={this.onDragLeaveDropArea.bind(this)}
-            onDrop={this.onDrop.bind(this)}
-            data-key={rest._key}
-            data-index={index}
-            data-drop-area
-            data-tag-name={rest._tagName}
-            data-fill={fill || ''}
-            key={`${rest._key}.dropArea.${index}${fill?'-fill':''}`}><span>Hier plazieren <small>{label?'('+label+')':''}</small></span></StyledDropArea>
-    }
-
     openPicker(options) {
         const picker = options.picker
         const {_onTemplateChange, _key, _json} = this.props
@@ -566,16 +502,15 @@ class JsonDomHelper extends React.Component {
     }
 
     render() {
-        const {_WrappedComponent, _json, _cmsActions, _onTemplateChange, _onDataResolverPropertyChange, children, _tagName, _inlineEditor, _forceInlineEditor, _dynamic, onChange, onClick,  ...rest} = this.props
+        const {_WrappedComponent, _json, _cmsActions, _onTemplateChange, _onDataResolverPropertyChange, children, _tagName, _inlineEditor, _forceInlineEditor, _dynamic, onChange, onClick,
+            _scope, _options, _editmode, _this, /* don't add attrs to dom element */
+            ...rest} = this.props
 
         const {hovered, toolbarHovered, richTextBarHover, toolbarMenuOpen, addChildDialog, deleteConfirmDialog, copyOptionsDialog, deleteSelectionConfirmDialog, deleteSourceConfirmDialog} = this.state
         if(!rest._key){
             return
         }
-        let _options = this.props._options
-        if(_options === true){
-            _options = {}
-        }
+
         const menuItems = [],
             isCms = _tagName === 'Cms',
             isInLoop = rest._key.indexOf('$loop') >= 0 && !Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE),
@@ -663,7 +598,6 @@ class JsonDomHelper extends React.Component {
             helperEvents.draggable = true
             helperEvents.onDragEnd = this.onDragEnd.bind(this)
             helperEvents.onDrag = onJsonDomDrag.bind(this)
-            helperEvents.onDrop = this.onDrop.bind(this)
             helperEvents.onMouseDown = (e) => {
                 if (e.target.tagName === 'SELECT') {
                     const rect = e.target.getBoundingClientRect()
@@ -847,7 +781,8 @@ class JsonDomHelper extends React.Component {
             }
         }
 
-        let kids = this.addDropAreasToChildren({children, hasJsonToEdit, isInLoop, _options, helperEvents})
+        helperEvents['data-allow-drop'] = (!isCms && !helperEvents.contentEditable && (!children || children.constructor !== String) && hasJsonToEdit && !isInLoop && _options.allowDrop && _options.dropArea !== false)
+        helperEvents['data-tag-name'] = _tagName
 
         let comp
         if (isCms) {
@@ -857,8 +792,9 @@ class JsonDomHelper extends React.Component {
             comp = <div _key={rest._key} key={rest._key} {...helperEvents}>
                 <_WrappedComponent
                     onChange={overrideEvents.onChange || onChange}
+                    _this={_this}
                     {...rest}
-                    children={kids}/>
+                    children={children}/>
             </div>
         } else {
             let isEmpty = false
@@ -875,7 +811,7 @@ class JsonDomHelper extends React.Component {
                 key={rest._key}
                 {...helperEvents}
                 {...rest}
-                children={kids}/>
+                children={children}/>
         }
         if (toolbar || isSelected) {
             return [comp, <AddToBody key="hover">{highlighter}{toolbar}</AddToBody>,(deleteSelectionConfirmDialog &&
@@ -1582,40 +1518,6 @@ class JsonDomHelper extends React.Component {
         })
     }
 
-    addDropAreasToChildren({children, hasJsonToEdit, isInLoop, _options, helperEvents}) {
-        let kids
-        if (!helperEvents.contentEditable && (!children || children.constructor !== String) && hasJsonToEdit && !isInLoop && _options.allowDrop && _options.dropArea !== false) {
-            kids = []
-
-            if (children && children.length>0) {
-
-                let index = -1
-                for (let i = 0; i < children.length; i++) {
-                    if(children[i]) {
-                        if (children[i].key) {
-                            index = parseInt(children[i].key.substring(children[i].key.lastIndexOf('.') + 1))
-
-                            if (!_options.excludeDrop || _options.excludeDrop.indexOf(index) < 0) {
-                                kids.push(this.getDropArea(this.props, index))
-                            }
-                        }
-                        kids.push(children[i])
-                    }
-                }
-                if (index > -1) {
-                    kids.push(this.getDropArea(this.props, index + 1))
-                }
-
-            } else {
-                kids.push(this.getDropArea(this.props, 0,true))
-            }
-
-        } else {
-            return children
-        }
-        return kids
-    }
-
     deselectSelected(){
         if(JsonDomHelper.selected.length===0){
             return
@@ -1866,7 +1768,7 @@ class JsonDomHelper extends React.Component {
                             }
                             setPropertyByPath(`$\{_t('${currentOpt.trKey}'${currentOpt.trContext?','+currentOpt.trContext:''})\}`, key, comp, '_')
 
-                        } else if(val!=null && val!=undefined){
+                        } else if(val!==null && val!==undefined){
                             setPropertyByPath(val, key, comp, '_')
                         }
                     }
