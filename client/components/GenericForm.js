@@ -1384,7 +1384,11 @@ class GenericForm extends React.Component {
                     search
                     /*historyKey={"GenericForm.autosuggest." + fieldKey}*/
                     apiUrl={(searchData)=>{
-                        return `/lunucapi/autosuggest?field=${field.name}&definition=${this.props.values?.definition?._id||''}&s=%search%`
+                        if(field.autosuggestUrl){
+                            return Util.replacePlaceholders(field.autosuggestUrl, this)
+                        }else {
+                            return `/lunucapi/autosuggest?field=${field.name}&definition=${this.props.values?.definition?._id || ''}&s=%search%`
+                        }
                     }}
                     filterOptions={(options)=>options}
                     nameRender={(item, key)=>{

@@ -28,6 +28,7 @@ export default function JsonDomAddElementDialog(props){
 
     const [form, setForm] = React.useState(null)
     const [aiAssistent, setAiAssistent] = React.useState({promt:''})
+
     return <SimpleDialog fullWidth={true}
                          maxWidth="lg"
                          key="dialogProps"
@@ -144,6 +145,7 @@ export default function JsonDomAddElementDialog(props){
 
         {currentElement && currentElement.options &&
             <GenericForm primaryButton={false}
+                         slug={props.slug}
                          onPosChange={({field, newIndex}) => {
                              const curKey = '!' + field.key + '!'
                              const newCurrentElement = Object.assign({},currentElement)

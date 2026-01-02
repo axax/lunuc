@@ -898,6 +898,7 @@ class JsonDomHelper extends React.Component {
                     </SimpleDialog>
                 )}
                 {(addChildDialog && <JsonDomAddElementDialog {...addChildDialog}
+                    slug={_scope.page.slug}
                     onSelectParent={({key})=>{
                         const parentKey = key.substring(0, key.lastIndexOf('.'))
                         if(parentKey) {
