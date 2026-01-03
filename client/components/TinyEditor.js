@@ -30,10 +30,12 @@ class TinyEditor extends React.Component {
         const readOnlyChanged = props.readOnly !== this.props.readOnly
         if (readOnlyChanged) {
             this.isInit = false
-        } else if (this.state.value !== state.value) {
-
+        } else if (this.props.children!==props.children) {
+            const editor = tinymce.get('TinyEditor' + this.instanceId)
+            if(editor) {
+                editor.setContent(props.children)
+            }
         }
-
         return readOnlyChanged || props.error !== this.props.error
     }
 

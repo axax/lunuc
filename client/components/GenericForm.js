@@ -895,16 +895,17 @@ class GenericForm extends React.Component {
                         <GenericForm onChange={(e) => {
                             const subField = subFields[e.name.split('.')[0]]
 
-                            setPropertyByPath(e.value, e.name, values)
-
                             if (subField.localized) {
                                 // mark as localized
                                 if(!values[subField.name]) {
                                     values[subField.name] = {}
+                                }else if(isString(values[subField.name])){
+                                    values[subField.name] = {[config.DEFAULT_LANGUAGE]:values[subField.name]}
                                 }
                                 values[subField.name]._localized = true
                             }
 
+                            setPropertyByPath(e.value, e.name, values)
 
                             this.handleInputChange({
                                 target: {
