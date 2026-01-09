@@ -135,7 +135,13 @@ class JsonDom extends React.Component {
                 const propsToCopyToFigure = ['figureStyle', 'figureClassName', '_key','data-allow-drop','data-element-key','data-tag-name']
                 const copiedFigureProps = {}
                 propsToCopyToFigure.forEach(key=>{
-                    copiedFigureProps[key] = props[key]
+                    let newKey = key
+                    if(newKey.startsWith('figure')){
+                        newKey = newKey.substring(6)
+                        newKey = newKey[0].toLowerCase() + newKey.slice(1)
+                    }
+                    copiedFigureProps[newKey] = props[key]
+
                     delete props[key]
                 })
                 return <figure {...copiedFigureProps} {...figureProps}>
