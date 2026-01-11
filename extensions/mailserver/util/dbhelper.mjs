@@ -162,7 +162,7 @@ export const getMailAccountsFromMailData = async (db, data) => {
 }
 
 export const getAttachmentContentFromFile = (attachment)=>{
-    if(attachment.content && attachment.content.startsWith('@FILE:')){
+    if(attachment.content && attachment.content.startsWith && attachment.content.startsWith('@FILE:')){
         const fileAbs = path.join(ATTACHMENT_DIR_ABS, attachment.content.substring(6))
         return fs.readFileSync(fileAbs, 'utf8')
     }
