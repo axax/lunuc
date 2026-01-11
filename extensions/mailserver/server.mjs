@@ -81,8 +81,8 @@ Hook.on(['typeBeforeCreate'], async ({db, type, data}) => {
         }
 
         if(mailAccount) {
-            if (data && data.attachments) {
-                data.attachments.forEach(attachment => {
+            if (data.data && data.data.attachments) {
+                data.data.attachments.forEach(attachment => {
                     replaceAttachmentInMailData(attachment, mailAccount)
                 })
             }
