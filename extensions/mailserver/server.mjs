@@ -74,7 +74,7 @@ Hook.on(['typeBeforeCreate'], async ({db, type, data}) => {
     }else if(type==='MailAccountMessage'){
         let mailAccount
         if(data.mailAccount){
-            mailAccount = [await db.collection('MailAccount').findOne({_id: data.mailAccount})]
+            mailAccount = await db.collection('MailAccount').findOne({_id: data.mailAccount})
         } else {
             const mailAccounts = await getMailAccountsFromMailData(db, data.data)
             mailAccount = mailAccounts.length>0?mailAccounts[0]:null
