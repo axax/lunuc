@@ -1,5 +1,15 @@
 import ApiUtil from '../../../api/util/index.mjs'
-import MailserverResolver from "../gensrc/resolver.mjs";
+import config from '../../gensrc/config.mjs'
+
+import path from 'path'
+import fs from 'fs'
+import Util from '../../../api/util/index.mjs'
+
+const ROOT_DIR = path.resolve()
+const BACKUP_DIR_ABS = path.join(ROOT_DIR, config.BACKUP_DIR)
+const ATTACHMENT_DIR_ABS = path.join(BACKUP_DIR_ABS, 'attachments')
+const MAX_ATTACHMENT_SIZE_FOR_DB = 100000 // 100kb
+
 
 
 export const getMailAccountByEmail = async (db, address)=> {
@@ -149,4 +159,29 @@ export const getMailAccountsFromMailData = async (db, data) => {
         }
     }
     return mailAccounts
+}
+
+export const getAttachmentContentFromFile = (attachment)=>{
+    if(attachment.content && attachment.content.startsWith('@FILE:')){
+        const fileAbs = path.join(ATTACHMENT_DIR_ABS, attachment.content.substring(6))
+        return fs.readFileSync(fileAbs, 'utf8')
+    }
+    return attachment.content
+}
+
+export  const replaceAttachmentInMailData = (attachment, mailAccount) => {
+    if (attachment.content && attachment.content.length > MAX_ATTACHMENT_SIZE_FOR_DB && Util.ensureDirectoryExistence(ATTACHMENT_DIR_ABS)) {
+        console.warn(`attachment ${attachment.filename} is too big (${attachment.content.length} bytes) for db`)
+
+        const fileName = `${mailAccount._id}_${attachment.checksum}_${attachment.content.length}_${attachment.filename}.txt`
+        const fileAbs = path.join(ATTACHMENT_DIR_ABS, fileName)
+        try {
+            if (!fs.existsSync(fileAbs)) {
+                fs.writeFileSync(fileAbs, attachment.content)
+            }
+            attachment.content = `@FILE:${fileName}`
+        } catch (e) {
+            console.warn('Error writing attachment to file: ', e)
+        }
+    }
 }

@@ -13,7 +13,7 @@ import {
     getMessageUidsForFolderId,
     getMessagesForFolder,
     getFolderForMailAccountById,
-    deleteMessagesForFolderByUids
+    deleteMessagesForFolderByUids, getAttachmentContentFromFile
 } from '../util/dbhelper.mjs'
 import {getCircularReplacer} from '../util/index.mjs'
 import ApiUtil from '../../../api/util/index.mjs'
@@ -677,7 +677,7 @@ const startListening = async (db, context) => {
                        // alternatives: message.data.alternatives,
                         attachments: Array.isArray(message.data.attachments) ? message.data.attachments.map(att => ({
                             filename: att.filename,
-                            content: att.content,
+                            content: getAttachmentContentFromFile(att),
                             contentType: att.contentType,
                             cid: att.cid,
                             encoding: att.encoding!=='quoted-printable' ? att.encoding : undefined,
