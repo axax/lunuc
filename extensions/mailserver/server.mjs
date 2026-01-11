@@ -7,7 +7,7 @@ import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import {ObjectId} from 'mongodb'
 import {
     getFolderForMailAccount,
-    getFolderForMailAccountById, getMailAccountsFromMailData
+    getFolderForMailAccountById, getMailAccountsFromMailData, replaceAttachmentInMailData
 } from './util/dbhelper.mjs'
 import {isExtensionEnabled} from '../../gensrc/extensions-private.mjs'
 
@@ -72,23 +72,31 @@ Hook.on(['typeBeforeCreate'], async ({db, type, data}) => {
     if(type==='MailAccountFolder'){
 
     }else if(type==='MailAccountMessage'){
-        let mailAccounts
+        let mailAccount
         if(data.mailAccount){
-            mailAccounts = [await db.collection('MailAccount').findOne({_id: data.mailAccount})]
+            mailAccount = [await db.collection('MailAccount').findOne({_id: data.mailAccount})]
         } else {
-            mailAccounts = await getMailAccountsFromMailData(db, data.data)
+            const mailAccounts = await getMailAccountsFromMailData(db, data.data)
+            mailAccount = mailAccounts.length>0?mailAccounts[0]:null
         }
-        for(const mailAccount of mailAccounts){
+
+        if(mailAccount) {
+            if (data && data.attachments) {
+                data.attachments.forEach(attachment => {
+                    replaceAttachmentInMailData(attachment, mailAccount)
+                })
+            }
+
             data.mailAccount = mailAccount._id
 
             let mailAccountFolder
-            if(data.mailAccountFolder){
-                mailAccountFolder = await getFolderForMailAccountById(db,mailAccount._id,data.mailAccountFolder)
+            if (data.mailAccountFolder) {
+                mailAccountFolder = await getFolderForMailAccountById(db, mailAccount._id, data.mailAccountFolder)
             } else {
                 mailAccountFolder = await getFolderForMailAccount(db, mailAccount._id, 'INBOX')
             }
 
-            if(mailAccountFolder) {
+            if (mailAccountFolder) {
                 data.mailAccountFolder = mailAccountFolder._id
 
                 // is modseq really needed here?
@@ -97,7 +105,12 @@ Hook.on(['typeBeforeCreate'], async ({db, type, data}) => {
 
                 data.uid = mailAccountFolder.uidNext
                 mailAccountFolder.uidNext++
-                await db.collection('MailAccountFolder').updateOne({_id: mailAccountFolder._id}, {$set: {uidNext: mailAccountFolder.uidNext,modifyIndex:mailAccountFolder.modifyIndex}})
+                await db.collection('MailAccountFolder').updateOne({_id: mailAccountFolder._id}, {
+                    $set: {
+                        uidNext: mailAccountFolder.uidNext,
+                        modifyIndex: mailAccountFolder.modifyIndex
+                    }
+                })
             }
         }
     }
