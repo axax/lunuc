@@ -170,10 +170,13 @@ export const getAttachmentContentFromFile = (attachment)=>{
 }
 
 export  const replaceAttachmentInMailData = (attachment, mailAccount) => {
-    if (attachment.content && attachment.content.length > MAX_ATTACHMENT_SIZE_FOR_DB && Util.ensureDirectoryExistence(ATTACHMENT_DIR_ABS)) {
-        console.warn(`attachment ${attachment.filename} is too big (${attachment.content.length} bytes) for db`)
 
-        const fileName = `${mailAccount._id}_${attachment.checksum}_${attachment.content.length}_${attachment.filename}.txt`
+    if (attachment.content &&
+        attachment.size > MAX_ATTACHMENT_SIZE_FOR_DB &&
+        Util.ensureDirectoryExistence(ATTACHMENT_DIR_ABS)) {
+        console.warn(`attachment ${attachment.filename} is too big (${attachment.size} bytes) for db`)
+
+        const fileName = `${mailAccount._id}_${attachment.checksum}_${attachment.size}_${attachment.filename}.txt`
         const fileAbs = path.join(ATTACHMENT_DIR_ABS, fileName)
         try {
             if (!fs.existsSync(fileAbs)) {
