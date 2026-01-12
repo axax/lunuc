@@ -82,9 +82,10 @@ export default function SimpleAutosuggest(props) {
 
 
     }
-
+    const finalValue = props.multipleSeparator ? text.split(props.multipleSeparator).filter(f=>f) : text
     return (
         <Autocomplete
+            multiple={!!props.multipleSeparator}
             className={props.className}
             autoHighlight={true}
             autoComplete={true}
@@ -93,7 +94,7 @@ export default function SimpleAutosuggest(props) {
             }}
             fullWidth={props.fullWidth}
             sx={props.sx}
-            value={text}
+            value={finalValue}
             freeSolo={props.freeSolo}
             clearOnEscape={true}
             open={open}
@@ -103,7 +104,23 @@ export default function SimpleAutosuggest(props) {
             onClose={() => {
                 setOpen(false)
             }}
-            onBlur={props.onBlur}
+            onBlur={(e)=>{
+                const value = e.target.value
+                if(value && props.multipleSeparator){
+                    if(finalValue.indexOf(value)<0){
+                        finalValue.push(value)
+                        const newText= finalValue.join(props.multipleSeparator)
+                       // setText(newText)
+                        //e.target.value = ''
+                        if(props.onChange) {
+                            props.onChange(e,newText , value)
+                        }
+                    }
+                }
+                if(props.onBlur) {
+                    props.onBlur(e)
+                }
+            }}
             onChange={(e, item)=>{
                 if(!item){
                     return
@@ -122,6 +139,11 @@ export default function SimpleAutosuggest(props) {
 
                         setKeyValue({key: settingKey, value: settings})
                     }
+
+                    if(props.multipleSeparator){
+                        item = item.map(i=>i.name?i.name:i).join(props.multipleSeparator)
+                        setText(item)
+                    }
                     if(props.onChange) {
                         props.onChange(e, item, text)
                     }
@@ -130,14 +152,15 @@ export default function SimpleAutosuggest(props) {
                     setTimeout(()=> {
                         setOpen(true)
                     },0)
-
                 }
             }}
-            onInputChange={(event, text)=>{
-                setText(text)
-                getData({text})
+            onInputChange={(event, newInput)=>{
+                getData({text: newInput})
+                if(!props.multipleSeparator){
+                    setText(newInput)
+                }
                 if(props.onInputChange){
-                    props.onInputChange(event, text)
+                    props.onInputChange(event, newInput)
                 }
             }}
             isOptionEqualToValue={(option, value) => option.name === value.name}

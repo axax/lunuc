@@ -150,6 +150,7 @@ const classOptions = (key, tab) => ({
         label: _t('elements.cssClass'),
         tab: tab || DEFAULT_TAB,
         uitype: 'autosuggest',
+        multipleSeparator:' ',
         autosuggestUrl: '/lunucapi/autosuggest/classnames?slug=${props.slug}&s=%search%'
     },
     [`${key}style@custom`]: {

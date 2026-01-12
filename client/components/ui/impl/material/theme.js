@@ -64,6 +64,10 @@ export const defaultTheme = createTheme({
             styleOverrides: {
                 popper: {
                     zIndex: '99999 !important'
+                },
+                tag:{
+                    margin:'2px',
+                    height: '27px'
                 }
             }
         },

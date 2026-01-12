@@ -491,7 +491,6 @@ class GenericForm extends React.Component {
         if (fields[name]) {
             value = checkFieldType(originalValue, fields[name])
         }
-        console.log('handleInputChange',e)
 
         const newState = this.newStateForField(this.state, {
             name,
@@ -1373,6 +1372,7 @@ class GenericForm extends React.Component {
             }
         } else if (field.uitype === 'autosuggest') {
                 currentFormFields.push(<SimpleAutosuggest
+                    multipleSeparator={field.multipleSeparator}
                     className={field.className}
                     name={fieldKey}
                     value={value}
@@ -1401,7 +1401,14 @@ class GenericForm extends React.Component {
                     }}
                     onBlur={this.handleBlur}
                     onInputChange={async (e,value)=>{
-                       await this.handleInputChange({target:{name:fieldKey,value}})
+                        if(!field.multipleSeparator) {
+                            await this.handleInputChange({target: {name: fieldKey, value}})
+                        }
+                    }}
+                    onChange={async (e, value)=>{
+                        if(field.multipleSeparator){
+                            await this.handleInputChange({target:{name:fieldKey,value}})
+                        }
                     }}
                     onClick={()=>{}}/>)
 
