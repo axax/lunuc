@@ -456,7 +456,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             if( hostrule.blockUrlPathRegex) {
                 const patternFromString = new RegExp(hostrule.blockUrlPathRegex)
 
-                if(patternFromString.test(parsedUrl.pathname)){
+                if(patternFromString.test(parsedUrl.pathname) && (!hostrule.redirects || !hostrule.redirects[parsedUrl.pathname])){
                     console.log(`url path ${parsedUrl.pathname} blocked by hostrule regex for ${host}`)
                     sendError(res, 403)
                     return
