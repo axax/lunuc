@@ -134,7 +134,7 @@ function CustomLabel({ icon: Icon, expandable, children, ...other }) {
     );
 }
 
-const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, ref) {
+export const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, ref) {
     const { id, itemId, label, disabled, children, ...other } = props;
 
     const {

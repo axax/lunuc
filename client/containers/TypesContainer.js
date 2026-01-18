@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import ManageCollectionClones from '../components/types/ManageCollectionClones'
 import SyncCollectionDialog from '../components/types/SyncCollectionDialog'
 import {
-    SimpleList,
     FileCopyIcon,
     DeleteIcon,
     EditIcon,
@@ -30,8 +29,7 @@ import {
     Divider,
     Paper,
     CloudUploadIcon,
-    SyncIcon,
-    Grid
+    SyncIcon
 } from 'ui/admin'
 import Util from 'client/util/index.mjs'
 import TypeEdit from 'client/components/types/TypeEdit'
@@ -45,7 +43,7 @@ import {
     checkFieldType,
     getFormFieldsByType,
     typeDataToLabel,
-    addAlwaysUpdateData, hasFieldsForBulkEdit, getFieldsForBulkEdit, referencesToIds
+    addAlwaysUpdateData, hasFieldsForBulkEdit
 } from 'util/typesAdmin.mjs'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {getImageTag} from 'client/util/media'
@@ -53,13 +51,11 @@ import {deepMerge} from 'util/deepMerge.mjs'
 import DomUtil from 'client/util/dom.mjs'
 import {downloadAs} from 'client/util/download.js'
 import {_t} from 'util/i18n.mjs'
-
 const {ADMIN_BASE_URL, LANGUAGES} = config
 import {COLLECTIONS_QUERY} from '../constants/index.mjs'
 import GenericForm from '../components/GenericForm'
 import {client, clearFetchById} from '../middleware/graphql'
 import json2csv from 'util/json2csv'
-import Async from '../components/Async'
 import styled from '@emotion/styled'
 import {
     CAPABILITY_BULK_EDIT,
@@ -69,9 +65,7 @@ import {
 import SelectCollection from '../components/types/SelectCollection'
 import {parseOrElse} from '../util/json.mjs'
 import {isFieldVisibleForCurrentUser} from '../util/user.mjs'
-
-const CodeEditor = (props) => <Async {...props}
-                                     load={import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
+import BulkEdit from '../components/BulkEdit'
 
 
 const DEFAULT_RESULT_LIMIT = 10
@@ -852,7 +846,6 @@ class TypesContainer extends React.Component {
             savedQueries = []
         }
 
-        console.log(getFieldsForBulkEdit(type))
         const content = [
             !title && !this.pageParams.title ? null :
                 <Typography key="typeTitle" variant="h3"
@@ -956,92 +949,7 @@ class TypesContainer extends React.Component {
                           title={confirmDialog.title}>
                 {confirmDialog.text}
             </SimpleDialog>,
-            dataToBulkEdit &&
-            <SimpleDialog fullWidth={true}
-                          maxWidth="md"
-                          key="bulkeditDialog"
-                          open={true}
-                          onClose={(action) => {
-                              if (action.key === 'execute') {
-
-                                  let data
-                                  if(dataToBulkEdit.action==='editScript') {
-                                      data = this.state.bulkEditScript || this.props.keyValueMap.TypesContainerBulkEdit
-                                      this.props.setKeyValue({key: 'TypesContainerBulkEdit', value: data})
-                                  }else {
-                                      const editedDataWithRefs = referencesToIds(dataToBulkEdit.form.state.fields, type)
-                                      data = JSON.stringify(editedDataWithRefs)
-                                  }
-
-                                  client.query({
-                                      fetchPolicy: 'network-only',
-                                      query: `query bulkEdit($collection:String!,$_id:[ID]!,$data:String!,$action:String){bulkEdit(collection:$collection,_id:$_id,data:$data,action:$action){result}}`,
-                                      variables: {
-                                          collection: type,
-                                          _id: dataToBulkEdit.items,
-                                          action: dataToBulkEdit.action,
-                                          data:data
-                                      }
-                                  }).then(response => {
-                                      if (response.data.bulkEdit) {
-                                          this.setState({dataToBulkEdit:false,simpleDialog: {children: JSON.stringify(response.data.bulkEdit)}})
-
-                                          // refresh
-                                          this.getData(this.pageParams, false)
-
-
-                                      }
-                                  })
-
-
-                              } else {
-                                  this.setState({dataToBulkEdit: false})
-                              }
-                          }}
-                          actions={[
-                              (dataToBulkEdit.action==='editScript' || (dataToBulkEdit.fields && Object.keys(dataToBulkEdit.fields).length>0)?{key: 'execute', label: _t('TypesContainer.bulkEditExecute')}:null),
-                              {
-                              key: 'cancel',
-                              label: _t('core.cancel'),
-                              type: 'primary'
-                          }]}
-                          title={_t('TypesContainer.bulkEdit')}>
-
-                {dataToBulkEdit.action==='editScript' ? <CodeEditor lineNumbers
-                            type="js"
-                            onBlur={(e, bulkEditScript) => {
-                                this.setState({bulkEditScript})
-                            }}>{this.props.keyValueMap.TypesContainerBulkEdit}</CodeEditor> :
-                    <Grid container spacing={2}>
-                        <Grid size={4}>
-                            <SimpleList items={Object.entries(getFieldsForBulkEdit(type)).map(([k,v])=>({
-                                primary:v.label,secondary:v.name,checkbox:true
-                            }))}
-                            onCheck={(checked)=>{
-                                const fields = getFieldsForBulkEdit(type)
-                                const fieldsKeys = Object.keys(fields)
-                                const filteredFields = {}
-                                for(let idx of checked) {
-                                    filteredFields[fieldsKeys[idx]] = fields[fieldsKeys[idx]]
-                                }
-
-                                this.setState({dataToBulkEdit: {...dataToBulkEdit,fields:filteredFields} })
-
-                                console.log(filteredFields)
-                            }}
-                            />
-                        </Grid>
-                        <Grid size={8}>
-
-                            {dataToBulkEdit.fields && <GenericForm key="genericForm" autoFocus onRef={ref => {
-                                if(ref) {
-                                    dataToBulkEdit.form = ref
-                                }
-                            }} primaryButton={false} values={dataToBulkEdit.values} fields={dataToBulkEdit.fields}/>}
-                        </Grid>
-                    </Grid>}
-
-            </SimpleDialog>,
+            dataToBulkEdit && <BulkEdit dataToBulkEdit={dataToBulkEdit} type={type} parentContainer={this} setKeyValue={this.props.setKeyValue}/>,
             confirmCloneColDialog !== undefined &&
             <SimpleDialog key="confirmClonCol" open={confirmCloneColDialog} onClose={this.handleCloneClollection}
                           actions={[{key: 'cancel', label: _t('core.cancel')}, {
@@ -2160,4 +2068,4 @@ TypesContainer.propTypes = {
     keyValueMap: PropTypes.object
 }
 
-export default withKeyValues(TypesContainer, ['TypesContainerSettings', 'TypesContainerBulkEdit'])
+export default withKeyValues(TypesContainer, ['TypesContainerSettings'])
