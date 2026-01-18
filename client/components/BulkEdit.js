@@ -21,6 +21,7 @@ import { TreeItemLabelInput } from '@mui/x-tree-view/TreeItemLabelInput';
 import {SimpleDialog} from './ui/impl/material'
 import {_t} from 'util/i18n.mjs'
 import {parseOrElse} from '../util/json.mjs'
+import CircularProgress from '@mui/material/CircularProgress'
 
 const CodeEditor = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
@@ -120,7 +121,8 @@ const BulkEdit = ({ dataToBulkEdit, type, parentContainer, setKeyValue}) => {
     const [bulkEditScriptIndex, setBulkEditScriptIndex] = useState(0)
     const [bulkEditFields, setBulkEditFields] = useState()
     const [bulkEditForm, setBulkEditForm] = useState()
-    const [scripts, setScripts] = useState([{id:'Main Script',script:''}])
+    const [scripts, setScripts] = useState([])
+    const [loading, setLoading] = useState(true)
 
 
     const saveScripts = (scripts)=>{
@@ -132,6 +134,7 @@ const BulkEdit = ({ dataToBulkEdit, type, parentContainer, setKeyValue}) => {
     }
 
     useEffect(() => {
+
 
         client.query({
             fetchPolicy: 'cache-and-network',
@@ -145,13 +148,16 @@ const BulkEdit = ({ dataToBulkEdit, type, parentContainer, setKeyValue}) => {
                 }
                 setScripts(values)
             }
+            setLoading(false)
         }).catch((error)=>{
-
+            setLoading(false)
         })
     }, [])
+    if(loading){
+        return <CircularProgress color="inherit" size={20}/>
+    }
 
     const scriptData = scripts[bulkEditScriptIndex]
-    console.log('xxxx',scriptData)
 
     return <SimpleDialog fullWidth={true}
                          maxWidth="lg"
