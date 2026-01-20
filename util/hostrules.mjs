@@ -29,7 +29,6 @@ const certDirs = (domainname) => {
 
 const extendHostrulesWithCert = (hostrule, domainname) => {
 
-    hostrule._certLastChecked = Date.now()
     let certDir
     const hostsChecks = hostListFromString(hostrule.certDomain || domainname)
 
@@ -174,7 +173,7 @@ export const getHostRules =(withCertContext, hostToCheck)=>{
             (!withCertContext || _loadedHostRulesWithCertContext)) {
 
             if(withCertContext && _loadedHostRules[hostToCheck] &&
-                !_loadedHostRules[hostToCheck]._certLastChecked) {
+                !_loadedHostRules[hostToCheck].certContext) {
                 extendHostrulesWithCert(_loadedHostRules[hostToCheck], hostToCheck)
             }
 
