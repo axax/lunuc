@@ -159,6 +159,7 @@ export const getHostRules =(withCertContext, hostToCheck)=>{
 
             if (fs.existsSync(hostruleFilePath)) {
                 // newly created hostrules
+                console.debug(`Hostrules: load single rule for ${hostToCheck}`)
                 loadSingleHostrule({
                     isDefault: false,
                     domainname: hostToCheck,
