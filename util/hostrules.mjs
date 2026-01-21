@@ -148,6 +148,11 @@ const loadAllHostrules = (withCertContext, hostrules = {}, refresh = false) => {
 let _loadedHostRules = {},
     _loadedHostRulesTime = {all:0},
     _loadedHostRulesWithCertContext = false
+export const resetHostRules = () => {
+    _loadedHostRules = {}
+    _loadedHostRulesTime = {all:0}
+    _loadedHostRulesWithCertContext = false
+}
 export const getHostRules =(withCertContext, hostToCheck)=>{
 
     if(_loadedHostRulesTime.all > 0) {
@@ -171,12 +176,6 @@ export const getHostRules =(withCertContext, hostToCheck)=>{
             return _loadedHostRules
         } else if ((new Date().getTime() - _loadedHostRulesTime.all < 60000) &&
             (!withCertContext || _loadedHostRulesWithCertContext)) {
-
-            if(withCertContext && _loadedHostRules[hostToCheck] &&
-                !_loadedHostRules[hostToCheck].certContext) {
-                extendHostrulesWithCert(_loadedHostRules[hostToCheck], hostToCheck)
-            }
-
             return _loadedHostRules
         }
     }

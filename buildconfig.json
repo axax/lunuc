@@ -256,6 +256,7 @@
     "LANGUAGES": ["de","en","fr","it"],
     "DEFAULT_LANGUAGE": "de",
     "API_PREFIX": ["a","api","lunucapi"],
+    "SERVER_COMMAND_PREFIX": "lunucservercommand",
     "PRETTYURL_SEPERATOR": "-",
     "HTML_HEAD": "<noscript><meta http-equiv=\"refresh\" content=\"0; url=/lunucapi/system/noscript?url=<%=encodedUrl%>\"></noscript>"
   }

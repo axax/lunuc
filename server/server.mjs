@@ -9,7 +9,7 @@ import MimeType from '../util/mime.mjs'
 import {getHostFromHeaders} from '../util/host.mjs'
 import {replacePlaceholders} from '../util/placeholders.mjs'
 import {ensureDirectoryExistence} from '../util/fileUtil.mjs'
-import {getBestMatchingHostRule, getHostRules, getRootCertContext} from '../util/hostrules.mjs'
+import {getBestMatchingHostRule, getHostRules, getRootCertContext, resetHostRules} from '../util/hostrules.mjs'
 import {contextByRequest} from '../api/util/sessionContext.mjs'
 import {parseUserAgent} from '../util/userAgent.mjs'
 import {SECRET_KEY, TRACK_IP_HEADER, USE_COOKIES} from '../api/constants/index.mjs'
@@ -463,11 +463,22 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 }
             }
 
-
-
             // hostrule.reverseProxy = {ip:'localhost',port:9002,http2:false}
-            if(isUrlValidForPorxing(urlPathname, hostrule)){
-                actAsReverseProxy(req,res,{parsedUrl,hostrule, host})
+            if(isUrlValidForPorxing(urlPathname, hostrule)) {
+                actAsReverseProxy(req, res, {parsedUrl, hostrule, host})
+            }else if( urlPathname.startsWith(`/${config.SERVER_COMMAND_PREFIX}/`)) {
+                const context = contextByRequest(req)
+                if (context.id && context.role === 'administrator') {
+                    const command = urlPathname.substring(`/${config.SERVER_COMMAND_PREFIX}/`.length)
+                    console.log(`client server execute command ${command}`)
+                    if (command === 'refreshhostrules') {
+                        resetHostRules()
+                        sendError(res, 200)
+                    }
+                } else {
+                    sendError(res, 403)
+                }
+                
             }else if (urlPathname.startsWith('/graphql') || API_PREFIXES.some(prefix => urlPathname.startsWith('/'+prefix + '/'))) {
                 // there is also /graphql/upload
                 proxyToApiServer(req, res, {host, path: parsedUrl.path})
@@ -500,8 +511,10 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                         const backup_dir = path.join(ROOT_DIR, BACKUP_DIR)
                         const filename = path.join(backup_dir, urlPathname.substring(BACKUP_URL.length))
 
-                        if(!await sendFileFromDir(req, res, {filename: filename,
-                            neverCompress:true, headers: {}, parsedUrl})){
+                        if (!await sendFileFromDir(req, res, {
+                            filename: filename,
+                            neverCompress: true, headers: {}, parsedUrl
+                        })) {
                             sendError(res, 404)
                         }
                     } else {
