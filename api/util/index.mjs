@@ -208,7 +208,7 @@ const Util = {
         if (allOptions.cache) {
             let map = {}
             for (const k of keys) {
-                const fromCache = Cache.get(cacheKeyPrefix + k + allOptions.parse + allOptions.public)
+                const fromCache = Cache.get(cacheKeyPrefix + k + allOptions.parse + allOptions.public + allOptions.includeMetaData)
                 if (fromCache) {
                     map[k] = fromCache
                 } else {
@@ -251,10 +251,16 @@ const Util = {
             } else {
                 finalValue = obj.value
             }
-            map[obj.key] = finalValue
-            if (allOptions.cache) {
-                Cache.set(cacheKeyPrefix + obj.key + allOptions.parse + allOptions.public, finalValue)
+
+            if(allOptions.includeMetaData){
+                map[obj.key] = {...obj, value: finalValue}
+            }else {
+                map[obj.key] = finalValue
             }
+            if (allOptions.cache) {
+                Cache.set(cacheKeyPrefix + obj.key + allOptions.parse + allOptions.public + allOptions.includeMetaData, map[obj.key])
+            }
+
             return map
         }, {})
 

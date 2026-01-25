@@ -165,7 +165,8 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     const map = await ApiUtil.keyValueGlobalMap(db, context, segment.keyValueGlobals, {
                         public: onlyPublic,
                         cache: true,
-                        parse: true
+                        parse: true,
+                        includeMetaData: segment.includeMetaData
                     })
 
                     resolvedData[dataKey] = map

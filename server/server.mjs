@@ -157,7 +157,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
             res.writeHead(errorFile.statusCode, headers)
             res.write('Error '+errorFile.statusCode)
             res.end()
-            doTrackingEvent(req, {event:'404', host})
+            await doTrackingEvent(req, {event:'404', host})
             return
         }
 

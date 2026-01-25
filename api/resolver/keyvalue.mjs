@@ -10,7 +10,7 @@ import {withFilter} from "graphql-subscriptions";
 import {pubsub, pubsubHooked} from "../subscription.mjs";
 import Hook from "../../util/hook.cjs";
 
-const updateKeyValueGlobal = async ({_id, key, value, ispublic, createdBy}, {context}, db) => {
+const updateKeyValueGlobal = async ({_id, key, value, ispublic, createdBy, ownerGroup}, {context}, db) => {
 
     let res
     try {
@@ -31,6 +31,9 @@ const updateKeyValueGlobal = async ({_id, key, value, ispublic, createdBy}, {con
             dataToUpdate.ispublic = ispublic
         }
 
+        if(ownerGroup !== undefined){
+            dataToUpdate.ownerGroup = ownerGroup?ownerGroup.reduce((o,id)=>{o.push(new ObjectId(id));return o},[]):ownerGroup
+        }
 
         res = await GenericResolver.updateEnity(db, context, 'KeyValueGlobal', dataToUpdate, {
             capability: CAPABILITY_MANAGE_TYPES,
@@ -171,9 +174,14 @@ export const keyvalueResolver = (db) => ({
         cloneKeyValue: async (data, {context}) => {
             return GenericResolver.cloneEntity(db, context, 'KeyValue', data)
         },
-        createKeyValueGlobal: async ({key, value, ispublic}, req) => {
+        createKeyValueGlobal: async ({key, value, ispublic, ownerGroup}, req) => {
             await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_MANAGE_TYPES)
-            return await GenericResolver.createEntity(db, req, 'KeyValueGlobal', {key, value, ispublic})
+            return await GenericResolver.createEntity(db, req, 'KeyValueGlobal', {
+                key,
+                value,
+                ispublic,
+                ownerGroup:(ownerGroup?ownerGroup.reduce((o,id)=>{o.push(new ObjectId(id));return o},[]):ownerGroup),
+            })
         },
         updateKeyValueGlobal: async (data, req) => {
             return await updateKeyValueGlobal(data, req, db)

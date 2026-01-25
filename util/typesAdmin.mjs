@@ -293,6 +293,24 @@ export const checkFieldType = (value, field) => {
 
 Hook.on('Types', ({types}) => {
 
+    const ownerGroup ={
+                name: 'ownerGroup',
+                hideColumnInTypesByDefault: false,
+                access: {
+                    ui: {
+                        role: 'manage_user_group'
+                    }
+                },
+                type: 'UserGroup',
+                multi: true,
+                fields: [
+                    'name'
+                ],
+                index: 1,
+                reference: true
+            }
+
+
     types.KeyValue = {
         name: 'KeyValue',
         usedBy: ['core'],
@@ -336,7 +354,8 @@ Hook.on('Types', ({types}) => {
             {
                 name: 'ispublic',
                 type: 'Boolean'
-            }
+            },
+            ownerGroup
         ]
     }
 
@@ -364,22 +383,7 @@ Hook.on('Types', ({types}) => {
                 multi: true,
                 enum: getAllCapabilites()
             },
-            {
-                name: 'ownerGroup',
-                hideColumnInTypesByDefault: false,
-                access: {
-                    ui: {
-                        role: 'manage_user_group'
-                    }
-                },
-                type: 'UserGroup',
-                multi: true,
-                fields: [
-                    'name'
-                ],
-                index: 1,
-                reference: true
-            },
+            ownerGroup,
             {
                 name: 'setting',
                 type: 'UserSetting',
