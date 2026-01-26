@@ -6,6 +6,7 @@ import fs from 'fs'
 import { fileURLToPath } from 'url'
 import {ObjectId} from 'mongodb'
 import {getType} from '../../../util/types.mjs'
+import {sendMail} from '../../../api/util/mail.mjs'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const {UPLOAD_DIR} = config
@@ -198,6 +199,43 @@ export default db => ({
                     fs.unlinkSync(fileName)
                 }
                 result.push({_id: id,status: fileExist ? 'deleted' : 'nofile'})
+            }
+            return result
+        },
+        sendAsAttachment: async ({_id,email}, req) => {
+            await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_ADMIN_OPTIONS)
+
+            const result = []
+
+            const attachments = []
+            // delete original files
+            for(const id of _id) {
+
+                const item = await db.collection('Media').findOne({_id:new ObjectId(id)},  { projection: { name: 1 } } )
+                if(item) {
+                    const fileName = path.join(__dirname, `../../../${UPLOAD_DIR}/${id}`)
+                    const fileExist = fs.existsSync(fileName)
+                    if (fileExist) {
+                        attachments.push( {
+                            filename: item.name,
+                            path: fileName
+                        })
+                        result.push({_id: id, status: 'attached'})
+                    }else{
+                        result.push({_id: id, status: 'no file'})
+                    }
+                }else{
+                    result.push({_id: id, status: 'not found'})
+                }
+            }
+            if(attachments.length>0) {
+                await sendMail(db, req.context, {
+                    body: attachments.map(a=>a.filename).join(', '),
+                    attachments,
+                    recipient: email,
+                    subject: 'Medias from lunuc',
+                    req
+                })
             }
             return result
         }

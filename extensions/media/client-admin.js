@@ -14,6 +14,7 @@ import {formatBytes} from '../../client/util/format.mjs'
 import {MediaEditorWrapper} from './components/MediaEditorWrapper.js'
 import {MediaUploader} from './components/MediaUploader'
 import {QuickMediaUploader} from './components/QuickMediaUploader'
+import GenericForm from '../../client/components/GenericForm'
 
 const ImageIcon = (props) => <Async {...props} expose="ImageIcon" load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 
@@ -97,6 +98,7 @@ export default () => {
 
             multiSelectActions.unshift({name: 'Download', value: 'download', icon:'download'})
             multiSelectActions.unshift({name: _t('TypesContainer.downloadAsZip'), value: 'downloadZip', icon:'folderZip'})
+            multiSelectActions.unshift({name: _t('TypesContainer.sendAsAttachment'), value: 'sendEmailAttachment', icon:'mail'})
 
 
             if(Util.hasCapability({userData: _app_.user}, CAPABILITY_ADMIN_OPTIONS)){
@@ -238,6 +240,36 @@ export default () => {
                     text:<>{(dataToDelete.length > 1 ? _t('TypesContainer.deleteConfirmTextMulti') : _t('TypesContainer.deleteConfirmText'))}
                         <p><strong>{_t('TypesContainer.deleteConfirmTextOnlyFile')}</strong></p></>,
                     action:'deleteOnlyFile', open:true,payload:dataToDelete}})
+        }else if(action === 'sendEmailAttachment'){
+            this.setState({simpleDialog: {
+                    actions: [{key: 'cancel', label: _t('core.cancel')},{key: 'yes', label: _t('core.ok')}],
+                    onClose: (action) => {
+                        if(action.key==='yes'){
+                            console.log(this.emailForm)
+                           client.query({
+                                query: `query sendAsAttachment($_id:[ID],$email:String!){sendAsAttachment(_id: $_id, email:$email){_id status}}`,
+                                variables: {
+                                    email:this.emailForm.state.fields.email,
+                                    _id: Object.keys(selectedRows)
+                                }}).then(response => {
+                                if (response.data && response.data.sendAsAttachment) {
+                                    this.setState({simpleDialog: {children: JSON.stringify(response.data.sendAsAttachment)}})
+                                }
+                            }).catch((error)=>{})
+                        }
+                        this.setState({simpleDialog: false})
+                    },
+                    title:_t('TypesContainer.sendAsAttachment'),
+                    children:<> <GenericForm onRef={(e) => {
+                        this.emailForm = e
+                    }} primaryButton={false}
+                                         fields={{
+                                             email: {
+                                                 fullWidth: true,
+                                                 required:true,
+                                                 label: 'Email'
+                                             }
+                                         }}/></>, open:true}})
         }
     })
 

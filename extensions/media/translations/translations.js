@@ -21,11 +21,13 @@ export const translations = {
         'Media.toDataUrl': 'Data URL erstellen',
         'TypesContainer.deleteOnlyFile': 'Nur Datei löschen',
         'TypesContainer.deleteConfirmTextOnlyFile': 'Beachten Sie, dass nur die physische Datei und nicht der Medieneintrag gelöscht wird.',
-        'TypesContainer.downloadAsZip':'Als Zip herunterladen'
+        'TypesContainer.downloadAsZip':'Als Zip herunterladen',
+        'TypesContainer.sendAsAttachment':'Als Email Anhang senden'
     },
     en: {
         'Media.editImage': 'Edit image',
         'Media.clearVariants': 'Clear variants',
+        'Media.send': 'Clear variants',
         'Media.uploadMedia': 'Upload medias',
         'Media.selectGroup': 'Select a group',
         'Media.selectConversion': 'Select a conversion',
@@ -45,6 +47,7 @@ export const translations = {
         'Media.toDataUrl': 'Create data URL',
         'TypesContainer.deleteOnlyFile': 'Delete only file',
         'TypesContainer.deleteConfirmTextOnlyFile': 'Please note that only the physical file and not the media entry is deleted.',
-        'TypesContainer.downloadAsZip':'Download as zip'
+        'TypesContainer.downloadAsZip':'Download as zip',
+        'TypesContainer.sendAsAttachment':'Send as email attachment'
     }
 }

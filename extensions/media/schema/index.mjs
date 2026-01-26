@@ -19,5 +19,6 @@ export default `
     	cleanUpMedia(ids:[String]): CleanUpMediaResult
     	findReferencesForMedia(limit: String, ids:[ID]): FindReferencesForMediaResult
         deleteOnlyMediaFiles (_id:[ID]):[MediaStatus]
+        sendAsAttachment(_id:[ID],email:String):[MediaStatus]
     }
 `
