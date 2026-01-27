@@ -57,6 +57,7 @@ const STATIC_TEMPLATE_DIR = path.join(ROOT_DIR, './' + config.STATIC_TEMPLATE_DI
 
 const DEFAULT_CERT_DIR = process.env.LUNUC_CERT_DIR || SERVER_DIR
 
+const CACHED_FILES_VALIDATION_TIME = 86400000 * 5 // a day in miliseconds = 86400000
 
 const options = {
     allowHTTP1: true,
@@ -100,6 +101,7 @@ const createSortedQueryString = (query) => {
 
     return '?'+sortedParams.join('&')
 }
+
 
 
 const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, host, parsedUrl}) => {
@@ -180,13 +182,10 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
                 // only update cache if file is old enough
                 const statsFile = fs.statSync(cacheFileName)
                 const now = new Date().getTime(),
-                    modeTime = new Date(statsFile.mtime).getTime() + 86400000; // a day in miliseconds = 86400000
+                    modeTime = new Date(statsFile.mtime).getTime() + CACHED_FILES_VALIDATION_TIME
 
                 if (modeTime > now) {
-                    // TODO request is not tracked
-                    
-                    doTrackingEvent(req, {event:'visit',host})
-                    
+                    await doTrackingEvent(req, {event:'visit',host})
                     console.log(`cache is not updated for ${cacheFileName}`)
                     return
                 }
