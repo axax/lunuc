@@ -419,8 +419,9 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
             req.isHttps = req.socket.encrypted
 
-            console.log(`${req.method} ${remoteAddress}: ${req.isHttps?'https':'http'}://${host}${parsedUrl.href} - ${req.headers['user-agent']}`)
-
+            if(!req.headers[TRACK_IP_HEADER]) {
+                console.log(`${req.method} ${remoteAddress}: ${req.isHttps ? 'https' : 'http'}://${host}${parsedUrl.href} - ${req.headers['user-agent']}`)
+            }
             // check with and without www
             const bestHostruleData = getBestMatchingHostRule(host)
 

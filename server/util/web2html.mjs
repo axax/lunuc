@@ -8,7 +8,7 @@ import {
     TRACK_USER_AGENT_HEADER, WEB_PARSER_HEADER
 } from '../../api/constants/index.mjs'
 
-const MAX_PAGES_IN_PUPPETEER = 8
+const MAX_PAGES_IN_PUPPETEER = 10
 
 let parseWebsiteBrowser
 const wasBrowserKilled = async (browser) => {
