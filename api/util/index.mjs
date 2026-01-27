@@ -209,9 +209,9 @@ const Util = {
             let map = {}
             for (const k of keys) {
                 const fromCache = Cache.get(cacheKeyPrefix + k + allOptions.parse + allOptions.public + allOptions.includeMetaData)
-                if (fromCache) {
+                if (fromCache !== undefined) {
                     map[k] = fromCache
-                } else if(!options.ignoreNoCacheKeys){
+                } else if(!allOptions.ignoreNoCacheKeys){
                     map = false
                     break
                 }
