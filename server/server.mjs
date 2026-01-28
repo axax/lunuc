@@ -36,6 +36,8 @@ import {actAsReverseProxy, isUrlValidForPorxing} from './util/reverseProxy.mjs'
 import Util from '../client/util/index.mjs'
 import {doTrackingEvent} from './util/tracking.mjs'
 
+import {isRateLimited} from './util/rateLimiter.mjs'
+
 const config = getDynamicConfig()
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
@@ -390,8 +392,6 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
     }
 }
 
-
-
 // Initialize http api
 const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req, res) {
 
@@ -406,285 +406,300 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
     try {
         const remoteAddress=clientAddress(req)
-        if(!isTemporarilyBlocked({req, key:remoteAddress})) {
-            const host = getHostFromHeaders(req.headers),
-                parsedUrl = url.parse(req.url, true)
+        if(isTemporarilyBlocked({req, key:remoteAddress})) {
+            return
+        }
 
-            if(!host) {
-                console.log(`no host found in request: ${req.method} ${remoteAddress}`, req.url, req.headers)
+        const host = getHostFromHeaders(req.headers), parsedUrl = url.parse(req.url, true)
+
+        if (!host) {
+            console.log(`no host found in request: ${req.method} ${remoteAddress}`, req.url, req.headers)
+            sendError(res, 403)
+            return
+        }
+
+
+        req.isHttps = req.socket.encrypted
+
+        if (!req.headers[TRACK_IP_HEADER]) {
+            console.log(`${req.method} ${remoteAddress}: ${req.isHttps ? 'https' : 'http'}://${host}${parsedUrl.href} - ${req.headers['user-agent']}`)
+        }
+        // check with and without www
+        const bestHostruleData = getBestMatchingHostRule(host)
+
+        if (!bestHostruleData._exactMatch && net.isIP(host) === 0 && host !== 'localhost') {
+            console.log(`no hostrule found for ${host}`)
+            sendError(res, 404)
+            return
+        }
+
+        const allHostrules = getHostRules(true),
+            hostrule = {...allHostrules.general, ...bestHostruleData.hostrule}
+
+        if (isRateLimited(req, hostrule)) {
+            console.log(`rate limited for ${remoteAddress} ${req.headers['user-agent']}`)
+            sendError(res, 429)
+            return
+        }
+
+        if (hostrule.certDir && hasHttpsWwwRedirect({parsedUrl, hostrule, host, req, res, remoteAddress})) {
+            return
+        }
+
+        //small security check
+        if (hostrule.blockedIps && hostrule.blockedIps.indexOf(remoteAddress) >= 0) {
+            console.log(`ip ${remoteAddress} is blocked by hostrule for ${host}`)
+            sendError(res, 403)
+            return
+        }
+
+        let urlPathname
+        try {
+            urlPathname = decodeURIComponent(parsedUrl.pathname)
+        } catch (e) {
+            urlPathname = decodeURIComponentSafe(parsedUrl.pathname)
+        }
+
+
+        if (hostrule.blockUrlPathRegex) {
+            const patternFromString = new RegExp(hostrule.blockUrlPathRegex)
+
+            if (patternFromString.test(parsedUrl.pathname) && (!hostrule.redirects || !hostrule.redirects[parsedUrl.pathname])) {
+                console.log(`url path ${parsedUrl.pathname} blocked by hostrule regex for ${host}`)
                 sendError(res, 403)
                 return
             }
+        }
 
-
-            req.isHttps = req.socket.encrypted
-
-            if(!req.headers[TRACK_IP_HEADER]) {
-                console.log(`${req.method} ${remoteAddress}: ${req.isHttps ? 'https' : 'http'}://${host}${parsedUrl.href} - ${req.headers['user-agent']}`)
-            }
-            // check with and without www
-            const bestHostruleData = getBestMatchingHostRule(host)
-
-            if(!bestHostruleData._exactMatch && net.isIP(host) === 0 && host !== 'localhost') {
-                console.log(`no hostrule found for ${host}`)
-                sendError(res, 404)
-                return
-            }
-
-            const allHostrules = getHostRules(true),
-                hostrule = {...allHostrules.general, ...bestHostruleData.hostrule}
-
-            if (hostrule.certDir && hasHttpsWwwRedirect( {parsedUrl, hostrule, host, req, res, remoteAddress})) {
-                return
-            }
-
-            //small security check
-            if (hostrule.blockedIps && hostrule.blockedIps.indexOf(remoteAddress)>=0) {
-                console.log(`ip ${remoteAddress} is blocked by hostrule for ${host}`)
-                sendError(res, 403)
-                return
-            }
-
-            let urlPathname
-            try {
-                urlPathname = decodeURIComponent(parsedUrl.pathname)
-            } catch (e) {
-                urlPathname = decodeURIComponentSafe(parsedUrl.pathname)
-            }
-
-
-            if( hostrule.blockUrlPathRegex) {
-                const patternFromString = new RegExp(hostrule.blockUrlPathRegex)
-
-                if(patternFromString.test(parsedUrl.pathname) && (!hostrule.redirects || !hostrule.redirects[parsedUrl.pathname])){
-                    console.log(`url path ${parsedUrl.pathname} blocked by hostrule regex for ${host}`)
-                    sendError(res, 403)
-                    return
+        // hostrule.reverseProxy = {ip:'localhost',port:9002,http2:false}
+        if (isUrlValidForPorxing(urlPathname, hostrule)) {
+            await actAsReverseProxy(req, res, {parsedUrl, hostrule, host})
+        } else if (urlPathname.startsWith(`/${config.SERVER_COMMAND_PREFIX}/`)) {
+            const context = contextByRequest(req)
+            if (context.id && context.role === 'administrator') {
+                const command = urlPathname.substring(`/${config.SERVER_COMMAND_PREFIX}/`.length)
+                console.log(`client server execute command ${command}`)
+                if (command === 'refreshhostrules') {
+                    resetHostRules()
+                    sendError(res, 200)
                 }
-            }
-
-            // hostrule.reverseProxy = {ip:'localhost',port:9002,http2:false}
-            if(isUrlValidForPorxing(urlPathname, hostrule)) {
-                actAsReverseProxy(req, res, {parsedUrl, hostrule, host})
-            }else if( urlPathname.startsWith(`/${config.SERVER_COMMAND_PREFIX}/`)) {
-                const context = contextByRequest(req)
-                if (context.id && context.role === 'administrator') {
-                    const command = urlPathname.substring(`/${config.SERVER_COMMAND_PREFIX}/`.length)
-                    console.log(`client server execute command ${command}`)
-                    if (command === 'refreshhostrules') {
-                        resetHostRules()
-                        sendError(res, 200)
-                    }
-                } else {
-                    sendError(res, 403)
-                }
-                
-            }else if (urlPathname.startsWith('/graphql') || API_PREFIXES.some(prefix => urlPathname.startsWith('/'+prefix + '/'))) {
-                // there is also /graphql/upload
-                proxyToApiServer(req, res, {host, path: parsedUrl.path})
             } else {
-                if (urlPathname.startsWith( '/tokenlink/')) {
-                    let token = urlPathname.substring(11)
-                    token = token.substring(0,token.indexOf('/'))
-                    jwt.verify(token, SECRET_KEY, async (err, decoded) => {
-                        if (!err) {
+                sendError(res, 403)
+            }
 
-                            if(decoded.mediaIds){
-                                zipAndSendMedias(res, decoded)
-                            }else if (!await sendFileFromDir(req, res, {
-                                filename: path.join(ROOT_DIR, decoded.filePath),
-                                neverCompress: true, headers: {}, parsedUrl
-                            })) {
-                                sendError(res, 404)
-                            }
+        } else if (urlPathname.startsWith('/graphql') || API_PREFIXES.some(prefix => urlPathname.startsWith('/' + prefix + '/'))) {
+            // there is also /graphql/upload
+           await proxyToApiServer(req, res, {host, path: parsedUrl.path})
+        } else {
+            if (urlPathname.startsWith('/tokenlink/')) {
+                let token = urlPathname.substring(11)
+                token = token.substring(0, token.indexOf('/'))
+                jwt.verify(token, SECRET_KEY, async (err, decoded) => {
+                    if (!err) {
 
-                        } else {
-                            console.error(err)
-                            sendError(res, 404)
-                        }
-                    })
-
-                }else if (urlPathname.startsWith(BACKUP_URL + '/')) {
-                    const context = contextByRequest(req)
-                    if (context.id && context.role === 'administrator') {
-                        // only allow download if valid jwt token is set
-                        const backup_dir = path.join(ROOT_DIR, BACKUP_DIR)
-                        const filename = path.join(backup_dir, urlPathname.substring(BACKUP_URL.length))
-
-                        if (!await sendFileFromDir(req, res, {
-                            filename: filename,
+                        if (decoded.mediaIds) {
+                            zipAndSendMedias(res, decoded)
+                        } else if (!await sendFileFromDir(req, res, {
+                            filename: path.join(ROOT_DIR, decoded.filePath),
                             neverCompress: true, headers: {}, parsedUrl
                         })) {
                             sendError(res, 404)
                         }
-                    } else {
-                        sendError(res, 403)
-                    }
-                }else if (urlPathname === '/createheapdump') {
-                    const context = contextByRequest(req)
-                    if (context.id && context.role === 'administrator') {
-
-                        const backup_dir = path.join(ROOT_DIR, BACKUP_DIR+'/heapdump/')
-
-                        if (ensureDirectoryExistence(backup_dir)) {
-                            const filename = Date.now() + '.heapsnapshot'
-                            const filepath = path.join(backup_dir, filename)
-
-                            /*heapdump.writeSnapshot(filepath, (e) => {
-                                console.log(e)
-                            })*/
-                            res.writeHead(200, {'Content-Type': 'text/html'})
-                            res.write(`<a download href='${BACKUP_URL}/heapdump/${filename}'>${filename}</a>`)
-                            res.end()
-                        }else{
-                            sendError('cannot create dir', 500)
-                        }
 
                     } else {
-                        sendError(res, 403)
-                    }
-
-
-                } else if (urlPathname.startsWith(UPLOAD_URL + '/')) {
-                    await resolveUploadedFile(urlPathname, parsedUrl, req, res)
-                } else {
-
-                    let redirect, redirectStatusCode = 301
-                    if (hostrule.redirects) {
-
-                        redirect = hostrule.redirects[urlPathname+parsedUrl.search]
-                        if(!redirect) {
-                            redirect = hostrule.redirects[urlPathname]
-                        }
-                        if (!redirect) {
-                            if (urlPathname.endsWith('/')) {
-                                redirect = hostrule.redirects[urlPathname.slice(0, -1)]
-                            } else {
-                                redirect = hostrule.redirects[urlPathname + '/']
-                            }
-                        }
-
-                        if (!redirect) {
-                            redirect = hostrule.redirects['*']
-                        }
-                    }
-                    if(!redirect && hostrule.regexRedirects){
-                        const redirectResponse = regexRedirectUrl(urlPathname+(parsedUrl.search || ''), hostrule.regexRedirects)
-                        if(redirectResponse.url){
-                            redirect = redirectResponse.url
-                            if(redirectResponse.statusCode) {
-                                redirectStatusCode = redirectResponse.statusCode
-                            }
-                        }
-                    }
-                    if (redirect) {
-
-                        redirect = redirect.replace(/%pathname%/g, parsedUrl.pathname || '/').replace(/%search%/g, parsedUrl.search || '')
-
-                        console.log(`Hostrule redirect to ${redirect}`)
-                        const agent = req.headers['user-agent']
-                        if( !agent || agent.indexOf('www.letsencrypt.org') < 0 ) {
-                            res.writeHead(redirectStatusCode, {'Location': redirect})
-                            res.end()
-                            return true
-                        }
-                    }
-
-                    // extend hostrule header with general headers
-                    hostrule.headers = {...allHostrules.general.headers, ...hostrule.headers}
-                    const headers = {...hostrule.headers.common,...hostrule.headers[urlPathname]}
-
-                    if (hostrule.fileMapping && hostrule.fileMapping[urlPathname]) {
-                        const mappedFile = path.join(hostrule._basedir, hostrule.fileMapping[urlPathname])
-                        //console.log('mapped file: ' + mappedFile)
-                        if (await sendFileFromDir(req, res, {filename: mappedFile, headers, parsedUrl})) {
-                            return
-                        }
-                    } else if (urlPathname.length > 1 && fs.existsSync(STATIC_TEMPLATE_DIR + urlPathname)) {
-                        sendFileFromTemplateDir(req, res, urlPathname, headers, parsedUrl, host )
-                        return
-                    }
-
-                    if(hostrule.webRoot){
-                        // if a webRoot is defined, only this path is checked for matching files
-                        const indexFile = hostrule.indexFile || 'index.html'
-                        if (await sendFileFromDir(req, res, {filename: path.join(WEBROOT_ABSPATH, hostrule.webRoot, urlPathname!=='/'?urlPathname:indexFile), headers})) {
-                            return
-                        }
+                        console.error(err)
                         sendError(res, 404)
-                        return
-                    }else if(urlPathname!=='/'){
-                        const pathsToCheck = [...hostrule.paths, STATIC_DIR, WEBROOT_ABSPATH, BUILD_DIR]
+                    }
+                })
 
-                        for(const curPath of pathsToCheck){
-                            if (await sendFileFromDir(req, res, {filename: path.join(curPath, urlPathname), headers, parsedUrl})) {
-                                return
-                            }
+            } else if (urlPathname.startsWith(BACKUP_URL + '/')) {
+                const context = contextByRequest(req)
+                if (context.id && context.role === 'administrator') {
+                    // only allow download if valid jwt token is set
+                    const backup_dir = path.join(ROOT_DIR, BACKUP_DIR)
+                    const filename = path.join(backup_dir, urlPathname.substring(BACKUP_URL.length))
+
+                    if (!await sendFileFromDir(req, res, {
+                        filename: filename,
+                        neverCompress: true, headers: {}, parsedUrl
+                    })) {
+                        sendError(res, 404)
+                    }
+                } else {
+                    sendError(res, 403)
+                }
+            } else if (urlPathname === '/createheapdump') {
+                const context = contextByRequest(req)
+                if (context.id && context.role === 'administrator') {
+
+                    const backup_dir = path.join(ROOT_DIR, BACKUP_DIR + '/heapdump/')
+
+                    if (ensureDirectoryExistence(backup_dir)) {
+                        const filename = Date.now() + '.heapsnapshot'
+                        const filepath = path.join(backup_dir, filename)
+
+                        /*heapdump.writeSnapshot(filepath, (e) => {
+                            console.log(e)
+                        })*/
+                        res.writeHead(200, {'Content-Type': 'text/html'})
+                        res.write(`<a download href='${BACKUP_URL}/heapdump/${filename}'>${filename}</a>`)
+                        res.end()
+                    } else {
+                        sendError('cannot create dir', 500)
+                    }
+
+                } else {
+                    sendError(res, 403)
+                }
+
+
+            } else if (urlPathname.startsWith(UPLOAD_URL + '/')) {
+                await resolveUploadedFile(urlPathname, parsedUrl, req, res)
+            } else {
+
+                let redirect, redirectStatusCode = 301
+                if (hostrule.redirects) {
+
+                    redirect = hostrule.redirects[urlPathname + parsedUrl.search]
+                    if (!redirect) {
+                        redirect = hostrule.redirects[urlPathname]
+                    }
+                    if (!redirect) {
+                        if (urlPathname.endsWith('/')) {
+                            redirect = hostrule.redirects[urlPathname.slice(0, -1)]
+                        } else {
+                            redirect = hostrule.redirects[urlPathname + '/']
                         }
                     }
 
-                    // special url
-                    const pos = parsedUrl.pathname.indexOf('/' + config.PRETTYURL_SEPERATOR + '/' + config.PRETTYURL_SEPERATOR + '/')
-                    if (pos >= 0) {
-                        const decodedStr = decodeURIComponent(decodeURIComponent(parsedUrl.pathname.substring(pos + 5).split('/')[0]))
-                        try {
-                            const data = JSON.parse(decodedStr)
-                            const screenShotDir = path.join(ABS_UPLOAD_DIR, 'screenshots')
+                    if (!redirect) {
+                        redirect = hostrule.redirects['*']
+                    }
+                }
+                if (!redirect && hostrule.regexRedirects) {
+                    const redirectResponse = regexRedirectUrl(urlPathname + (parsedUrl.search || ''), hostrule.regexRedirects)
+                    if (redirectResponse.url) {
+                        redirect = redirectResponse.url
+                        if (redirectResponse.statusCode) {
+                            redirectStatusCode = redirectResponse.statusCode
+                        }
+                    }
+                }
+                if (redirect) {
 
-                            if (data.screenshot && ensureDirectoryExistence(screenShotDir)) {
-                                //{"screenshot":{"url":"https:/stackoverflow.com/questions/4374822/remove-all-special-characters-with-regexp","options":{"height":300}}}
-                                //console.log(decodeURI(urlPathname.substring(pos+5)))
+                    redirect = redirect.replace(/%pathname%/g, parsedUrl.pathname || '/').replace(/%search%/g, parsedUrl.search || '')
 
-                                const filename = decodedStr.replace(/[^\w]/gi, '') + '.png'
+                    console.log(`Hostrule redirect to ${redirect}`)
+                    const agent = req.headers['user-agent']
+                    if (!agent || agent.indexOf('www.letsencrypt.org') < 0) {
+                        res.writeHead(redirectStatusCode, {'Location': redirect})
+                        res.end()
+                        return true
+                    }
+                }
 
-                                const absFilename = path.join(screenShotDir, filename)
+                // extend hostrule header with general headers
+                hostrule.headers = {...allHostrules.general.headers, ...hostrule.headers}
+                const headers = {...hostrule.headers.common, ...hostrule.headers[urlPathname]}
 
-                                if (!fs.existsSync(absFilename)) {
-                                    let url = data.screenshot.url
-                                    if (url.indexOf('/') === 0) {
-                                        url = /*(req.isHttps ? 'https://' : 'http://') + hostRuleHost*/ 'http://127.0.0.1:'+PORT + url
+                if (hostrule.fileMapping && hostrule.fileMapping[urlPathname]) {
+                    const mappedFile = path.join(hostrule._basedir, hostrule.fileMapping[urlPathname])
+                    //console.log('mapped file: ' + mappedFile)
+                    if (await sendFileFromDir(req, res, {filename: mappedFile, headers, parsedUrl})) {
+                        return
+                    }
+                } else if (urlPathname.length > 1 && fs.existsSync(STATIC_TEMPLATE_DIR + urlPathname)) {
+                    sendFileFromTemplateDir(req, res, urlPathname, headers, parsedUrl, host)
+                    return
+                }
+
+                if (hostrule.webRoot) {
+                    // if a webRoot is defined, only this path is checked for matching files
+                    const indexFile = hostrule.indexFile || 'index.html'
+                    if (await sendFileFromDir(req, res, {
+                        filename: path.join(WEBROOT_ABSPATH, hostrule.webRoot, urlPathname !== '/' ? urlPathname : indexFile),
+                        headers
+                    })) {
+                        return
+                    }
+                    sendError(res, 404)
+                    return
+                } else if (urlPathname !== '/') {
+                    const pathsToCheck = [...hostrule.paths, STATIC_DIR, WEBROOT_ABSPATH, BUILD_DIR]
+
+                    for (const curPath of pathsToCheck) {
+                        if (await sendFileFromDir(req, res, {
+                            filename: path.join(curPath, urlPathname),
+                            headers,
+                            parsedUrl
+                        })) {
+                            return
+                        }
+                    }
+                }
+
+                // special url
+                const pos = parsedUrl.pathname.indexOf('/' + config.PRETTYURL_SEPERATOR + '/' + config.PRETTYURL_SEPERATOR + '/')
+                if (pos >= 0) {
+                    const decodedStr = decodeURIComponent(decodeURIComponent(parsedUrl.pathname.substring(pos + 5).split('/')[0]))
+                    try {
+                        const data = JSON.parse(decodedStr)
+                        const screenShotDir = path.join(ABS_UPLOAD_DIR, 'screenshots')
+
+                        if (data.screenshot && ensureDirectoryExistence(screenShotDir)) {
+                            //{"screenshot":{"url":"https:/stackoverflow.com/questions/4374822/remove-all-special-characters-with-regexp","options":{"height":300}}}
+                            //console.log(decodeURI(urlPathname.substring(pos+5)))
+
+                            const filename = decodedStr.replace(/[^\w]/gi, '') + '.png'
+
+                            const absFilename = path.join(screenShotDir, filename)
+
+                            if (!fs.existsSync(absFilename)) {
+                                let url = data.screenshot.url
+                                if (url.indexOf('/') === 0) {
+                                    url = /*(req.isHttps ? 'https://' : 'http://') + hostRuleHost*/ 'http://127.0.0.1:' + PORT + url
+                                }
+                                const result = await doScreenCapture(url, absFilename, data.screenshot.options)
+                                if (result.statusCode != 200) {
+                                    if (result.statusCode === 302) {
+                                        res.writeHead(result.statusCode, {'Location': result.location})
+                                        res.end()
+                                    } else {
+                                        sendError(res, result.statusCode)
                                     }
-                                    const result = await doScreenCapture(url, absFilename, data.screenshot.options)
-                                    if(result.statusCode!=200){
-                                        if(result.statusCode===302){
-                                            res.writeHead(result.statusCode, {'Location': result.location})
-                                            res.end()
-                                        }else {
-                                            sendError(res, result.statusCode)
-                                        }
-                                        return
-                                    }
-
+                                    return
                                 }
 
-                                await resolveUploadedFile(`${UPLOAD_URL}/screenshots/${filename}`, parsedUrl, req, res)
-
-
-                            } else {
-                                sendError(res, 404)
                             }
 
-                        } catch (e) {
-                            console.log(decodedStr)
+                            await resolveUploadedFile(`${UPLOAD_URL}/screenshots/${filename}`, parsedUrl, req, res)
 
 
-                            console.error(e)
-                            sendError(res, 500)
-                        }
-
-                    } else {
-
-                        const ext = path.extname(urlPathname)
-                        if(!ext || urlPathname.indexOf('/'+config.PRETTYURL_SEPERATOR+'/')>=0) {
-                            // file extension is not allowed here
-                            await sendIndexFile({req, res, remoteAddress, urlPathname, hostrule, host, parsedUrl})
-                        }else{
+                        } else {
                             sendError(res, 404)
                         }
+
+                    } catch (e) {
+                        console.log(decodedStr)
+
+
+                        console.error(e)
+                        sendError(res, 500)
+                    }
+
+                } else {
+
+                    const ext = path.extname(urlPathname)
+                    if (!ext || urlPathname.indexOf('/' + config.PRETTYURL_SEPERATOR + '/') >= 0) {
+                        // file extension is not allowed here
+                        await sendIndexFile({req, res, remoteAddress, urlPathname, hostrule, host, parsedUrl})
+                    } else {
+                        sendError(res, 404)
                     }
                 }
             }
         }
+
     } catch (e) {
         console.log(e)
         sendError(res, 500)
