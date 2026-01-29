@@ -36,7 +36,7 @@ const createScopeForDataResolver = (query, _props) => {
 
 const setPageOptionsAsMeta = async (db, context, result)=>{
     const pageName = result.realSlug.split('/')[0]
-    const pageOptions = await Util.keyValueGlobalMap(db, context, ['PageOptions-' + pageName,'PageExtensions-' + result.realSlug], {parse: true, ignoreNoCacheKeys:true})
+    const pageOptions = await Util.keyValueGlobalMap(db, context, ['PageOptions-' + pageName,'PageExtensions-' + result.realSlug], {parse: true})
 
     const meta = {
         PageOptions: pageOptions['PageOptions-' + pageName],

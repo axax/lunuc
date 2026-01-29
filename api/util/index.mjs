@@ -211,7 +211,7 @@ const Util = {
                 const fromCache = Cache.get(cacheKeyPrefix + k + allOptions.parse + allOptions.public + allOptions.includeMetaData)
                 if (fromCache !== undefined) {
                     map[k] = fromCache
-                } else if(!allOptions.ignoreNoCacheKeys){
+                } else {
                     map = false
                     break
                 }
