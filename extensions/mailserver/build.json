@@ -212,7 +212,16 @@
           "label": "uid",
           "type": "Float",
           "uitype": "number",
-          "index": 1
+          "index": 1,
+          "compoundIndex": [
+            {
+              "unique": false,
+              "fields": {
+                "mailAccountFolder": 1,
+                "uid": 1
+              }
+            }
+          ]
         },
         {
           "name": "data",

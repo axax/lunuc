@@ -252,6 +252,10 @@ const Util = {
                 finalValue = obj.value
             }
 
+            if(finalValue===undefined){
+                finalValue = null
+            }
+
             if(allOptions.includeMetaData){
                 map[obj.key] = {...obj, value: finalValue}
             }else {
