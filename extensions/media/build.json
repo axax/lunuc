@@ -217,6 +217,13 @@
             "name"
           ],
           "index": 1
+        },
+        {
+          "name": "autoClean",
+          "type": "Boolean",
+          "defaultValue": true,
+          "index": 1,
+          "tab": "elements.generalTab"
         }
       ]
     },

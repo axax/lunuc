@@ -154,7 +154,12 @@ export default db => ({
                     console.log(`search ${_id} in ${name}`)
                     let searchQuery
                     if(name==='User') {
-                        searchQuery = {picture:new ObjectId(_id)}
+                        searchQuery = {
+                            $or: [
+                                { picture: ObjectId(_id) },
+                                { meta: { $regex: _id, $options: 'i' } }
+                            ]
+                        }
                     }else{
                         const typeDefinition = getType(name)
                         if (typeDefinition && typeDefinition.wildcardTextIndex) {
