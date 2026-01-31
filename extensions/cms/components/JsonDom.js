@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {useContext} from 'react'
 import ReactDOM from 'react-dom'
 import Hook from 'util/hook.cjs'
 import {_t} from 'util/i18n.mjs'
@@ -20,6 +20,7 @@ import ElementWatch from './ElementWatch'
 import {CAPABILITY_MANAGE_CMS_PAGES} from '../constants/index.mjs'
 import {getKeyValuesFromLS} from '../../../client/util/keyvalue'
 import {createManifest} from '../util/manifest.mjs'
+import {AppContext} from '../../../client/components/AppContext'
 
 const JsonDomHelper = (props) => <Async {...props}
                                         load={import(/* webpackChunkName: "jsondom" */ './JsonDomHelper')}/>
@@ -50,7 +51,6 @@ const ShadowRoot = (props) => <Async {...props}
 
 const AddToBody = (props) => <Async {...props}
                                    load={import(/* webpackChunkName: "addtobody" */ './AddToBody')}/>
-
 
 
 const hasNativeLazyLoadSupport = !_app_.ssr && window.HTMLImageElement && 'loading' in HTMLImageElement.prototype
@@ -110,7 +110,7 @@ class JsonDom extends React.Component {
         MarkDown,
         ShadowRoot,
         AddToBody,
-        'SmartImage': ({src, options, caption, wrapper, inlineSvg, svgData, tagName, figureCaptionClassName, figureProps, ...props}) => {
+        SmartImage: ({src, options, caption, wrapper, inlineSvg, svgData, tagName, figureCaptionClassName, figureProps, ...props}) => {
             const imgTag = () => {
                 let imageData = Util.getImageObject(src, options)
                 imageData['data-smartimage'] = true
@@ -152,18 +152,18 @@ class JsonDom extends React.Component {
             return imgTag()
         },
         Print,
-        'input': props => {
+        input: props => {
             const {binding, ...rest} = props
             if (!props.name || binding === false) {
                 return <input {...rest} />
             }
             return <JsonDomInput {...rest} />
         },
-        'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
-        'QuillEditor': (props) => <QuillEditor {...props}/>,
-        'CodeEditor': (props) => <CodeEditor {...props}/>,
-        'select': (props) => <JsonDomInput select={true} {...props}/>,
-        'Redirect': ({to, push, _this,...props}) => {
+        textarea: (props) => <JsonDomInput textarea={true} {...props}/>,
+        QuillEditor: (props) => <QuillEditor {...props}/>,
+        CodeEditor: (props) => <CodeEditor {...props}/>,
+        select: (props) => <JsonDomInput select={true} {...props}/>,
+        Redirect: ({to, push, _this,...props}) => {
             if (_this && Util.hasCapability(_this.props.user, CAPABILITY_MANAGE_CMS_PAGES)) {
                 _this.emitJsonError({message: 'Redirect prevented for user'}, {loc: 'Redirect'})
                 return <div {...props}>Redirect: {to}</div>
@@ -171,7 +171,7 @@ class JsonDom extends React.Component {
                 return <Redirect to={Util.removeSlugContext(to)} push={push}/>
             }
         },
-        'Link': ({to, href, target, gotop, native, onClick, tracking, scrollOffset, scrollStep, scrollTimeout, ...rest}) => {
+        Link: ({to, href, target, gotop, native, onClick, tracking, scrollOffset, scrollStep, scrollTimeout, ...rest}) => {
             let url = to || href || ''
             if(!isString(url)){
                 return null
@@ -227,7 +227,7 @@ class JsonDom extends React.Component {
                 }} to={Util.addUrlContext(url)} {...rest}/>
             }
         },
-        'Cms': ({props, _this, style, className, component, slug, ...rest}) => {
+        Cms: ({props, _this, style, className, component, slug, ...rest}) => {
 
             if(component && component.length > 0){
                 slug = component[0].slug
@@ -263,7 +263,7 @@ class JsonDom extends React.Component {
 
             return cvc
         },
-        'ContentEditable': ({_this, onChange, ...props}) => {
+        ContentEditable: ({_this, onChange, ...props}) => {
             return <ContentEditable key={props._key}
                                     onChange={(v) => _this.onContentEditableChange(props._key, v)} {...props} />
         }
@@ -671,6 +671,10 @@ class JsonDom extends React.Component {
             return <div>Error in <strong>{this.error.type}</strong>: {this.error.e?this.error.e.message:''}
                 <PrettyErrorMessage {...this.error}/></div>
         } else {
+
+            if(scope.GlobalContext) {
+                scope.GlobalContext = useContext(AppContext)
+            }
             return content
         }
     }

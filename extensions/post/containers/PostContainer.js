@@ -13,11 +13,134 @@ import {_t} from 'util/i18n.mjs'
 
 const DEFAULT_RESULT_LIMIT = 10
 
-const PostEditor = (props) => <Async {...props}
-                                     load={import(/* webpackChunkName: "post" */ '../components/PostEditor')}/>
+const PostEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "post" */ '../components/PostEditor')}/>
 
-const DraftJsPostEditor = (props) => <Async {...props}
-                                     load={import(/* webpackChunkName: "post" */ '../components/post/PostEditor')}/>
+
+
+function draftToLexical(draft) {
+    const rootChildren = [];
+    let currentList = null;
+    if(!draft.blocks){
+        return draft
+    }
+
+    draft.blocks.forEach((block) => {
+        // 1. Handle Lists
+        if(block.type === 'unordered-list-item' || block.type === 'ordered-list-item') {
+            const listType = block.type === 'unordered-list-item' ? 'bullet' : 'number';
+
+            // If no list started or the type changed, create a new list container
+            if (!currentList || currentList.listType !== listType) {
+                currentList = {
+                    children: [],
+                    direction: "ltr",
+                    format: "",
+                    indent: 0,
+                    type: "list",
+                    version: 1,
+                    listType: listType,
+                    start: 1,
+                    tag: listType === 'bullet' ? 'ul' : 'ol'
+                };
+                rootChildren.push(currentList);
+            }
+
+            currentList.children.push(createListItemNode(block));
+        } else {
+            // 2. Handle Non-list items
+            currentList = null; // Break the list grouping
+
+            if (block.type.startsWith('header-')) {
+                rootChildren.push(createHeaderNode(block));
+            } else {
+                rootChildren.push(createParagraphNode(block));
+            }
+        }
+    });
+
+    return {
+        root: {
+            children: rootChildren,
+            direction: "ltr",
+            format: "",
+            indent: 0,
+            type: "root",
+            version: 1
+        }
+    };
+}
+
+// Helper to handle inline styles (BOLD, ITALIC, etc.)
+function createTextNodes(block) {
+    if (!block.inlineStyleRanges.length) {
+        return [{
+            detail: 0,
+            format: 0,
+            mode: "normal",
+            style: "",
+            text: block.text,
+            type: "text",
+            version: 1
+        }];
+    }
+
+    // Simplification: In a production app, you'd need a more complex
+    // range-splitter for overlapping styles. For this data:
+    let formatValue = 0;
+    if (block.inlineStyleRanges.some(s => s.style === 'BOLD')) formatValue += 1;
+    if (block.inlineStyleRanges.some(s => s.style === 'ITALIC')) formatValue += 2;
+
+    return [{
+        detail: 0,
+        format: formatValue,
+        mode: "normal",
+        style: "",
+        text: block.text,
+        type: "text",
+        version: 1
+    }];
+}
+
+function createListItemNode(block) {
+    return {
+        children: createTextNodes(block),
+        direction: "ltr",
+        format: "",
+        indent: 0,
+        type: "listitem",
+        version: 1,
+        value: 1
+    };
+}
+
+function createHeaderNode(block) {
+    const tag = block.type.replace('header-', 'h');
+    return {
+        children: createTextNodes(block),
+        direction: "ltr",
+        format: "",
+        indent: 0,
+        type: "heading",
+        version: 1,
+        tag: tag
+    };
+}
+
+function createParagraphNode(block) {
+    return {
+        children: createTextNodes(block),
+        direction: "ltr",
+        format: "",
+        indent: 0,
+        type: "paragraph",
+        version: 1
+    };
+}
+
+
+
+
+
 
 
 class PostContainer extends React.Component {
@@ -103,16 +226,17 @@ class PostContainer extends React.Component {
     }
 
     render() {
-        const {posts, match, history} = this.props
-        const selectedPostId = match.params.id
+        const {posts, match} = this.props
 
         if (!posts)
             return null
 
+        const selectedPostId = match.params.id
+
         let selectedPost = false
         const listItems = (posts.results ? posts.results.reduce((a, post) => {
             if (post._id === selectedPostId) {
-                selectedPost = post
+                selectedPost = Object.assign({},post)
             }
             a.push({
                 selected: post._id === selectedPostId,
@@ -127,7 +251,13 @@ class PostContainer extends React.Component {
             return a
         }, []) : [])
 
+if(selectedPost && selectedPost.editor!='lexical'){
+    console.log(selectedPost)
+    selectedPost.editor = 'lexical'
+    selectedPost.body = draftToLexical(JSON.parse(selectedPost.body))
 
+
+}
         return <>
                 <Typography variant="h3" gutterBottom>Posts</Typography>
                 <Row spacing={3}>
@@ -159,9 +289,6 @@ class PostContainer extends React.Component {
                                 <PostEditor onChange={this.handleBodyChange.bind(this, selectedPost)}
                                             post={selectedPost}/>}
 
-                                {(!selectedPost.editor || selectedPost.editor==='darftjs') &&
-                                <DraftJsPostEditor onChange={this.handleBodyChange.bind(this, selectedPost)} imageUpload={true}
-                                            post={selectedPost}/>}
 
 
                                 <small>Post ID: {selectedPostId}</small>
@@ -259,11 +386,11 @@ const PostContainerWithGql = compose(
             }
         }),
     }),
-    graphql(`mutation updatePost($_id: ID!,$body: String, $title: String){updatePost(_id:$_id,body:$body,title:$title){_id body title createdBy{_id username} status}}`, {
+    graphql(`mutation updatePost($_id: ID!,$body: String, $title: String, $editor: String){updatePost(_id:$_id,body:$body,title:$title,editor:$editor){_id body title createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
             updatePost: ({_id, body, editor, title}) => {
                 return mutate({
-                    variables: {_id, body, title},
+                    variables: {_id, body, editor, title},
                     optimisticResponse: {
                         __typename: 'Mutation',
                         // Optimistic message

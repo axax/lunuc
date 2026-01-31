@@ -235,8 +235,6 @@ export default db => ({
                         PageExtensions: globalOptions['PageExtensions-' + result.realSlug]
                     }
 
-                    console.log('PageExtensionsDefinition-' + '-' + result.realSlug, pageDataMeta)
-
                     result.meta = JSON.stringify(pageDataMeta)
                 }else if( loadPageOptions ){
                     await setPageOptionsAsMeta()

@@ -11,12 +11,14 @@
         },
         {
           "name": "body",
-          "uitype": "editor"
+          "uitype": "richtext",
+          "type": "Object",
+          "hidden": true,
+          "includeInQuery": true
         },
         {
           "name": "editor",
           "enum": [
-            "darftjs",
             "lexical"
           ]
         }

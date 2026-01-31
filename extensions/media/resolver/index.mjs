@@ -157,7 +157,8 @@ export default db => ({
                         searchQuery = {
                             $or: [
                                 { picture: new ObjectId(_id) },
-                                { meta: { $regex: _id, $options: 'i' } }
+                                { 'meta.cv._id': _id },
+                                { 'meta.docs._id': _id }
                             ]
                         }
                     }else{

@@ -123,8 +123,8 @@ class GenericForm extends React.Component {
             fieldsTmp: {},
             fieldsDirty: {}, /* only set when fields has changed */
             valuesOri: props.values,
-            showTranslations: prevState.showTranslations || {},
-            tabValue: prevState.tabValue ? prevState.tabValue : 0
+            showTranslations: prevState && prevState.showTranslations ? prevState.showTranslations: {},
+            tabValue: prevState && prevState.tabValue ? prevState.tabValue : 0
         }
 
         Object.keys(props.fields).map(fieldKey => {

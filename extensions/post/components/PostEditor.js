@@ -57,8 +57,8 @@ const editorConfig = {
 function RestorePlugin({ post, readOnly }){
     const [editor] = useLexicalComposerContext()
     useEffect(() => {
-        if (post && editor ) {
-            const initialEditorState = editor.parseEditorState(post.body && post.body.constructor===String?JSON.parse(post.body):post.body)
+        if (post && editor && post.body) {
+            const initialEditorState = editor.parseEditorState(post.body.constructor===String?JSON.parse(post.body):post.body)
             editor.setEditorState(initialEditorState)
         }
     }, [post, editor, readOnly])
@@ -68,26 +68,25 @@ function RestorePlugin({ post, readOnly }){
 
 export default React.memo((props) => {
 
-    const {post, onChange, debug, style} = props
+    const {post, onChange, debug} = props
     console.log(`render post editor for ${post && post._id}`)
 
     return (
-        <LexicalComposer ref={(ref)=>{
+        <LexicalComposer key={post._id} ref={(ref)=>{
             /*const node = ReactDOM.findDOMNode(ref)
             node.ref = ref*/
-        }} initialConfig={editorConfig}>
-            <div className="editor-container">
+        }} initialConfig={{...editorConfig,editable:!!onChange}}>
+             <div className="editor-container">
                 <ToolbarPlugin />
                 <div className="editor-inner">
                     <RestorePlugin post={post} readOnly={false} />
                     <RichTextPlugin
-
                         contentEditable={<ContentEditable className="editor-input" />}
                         placeholder={<Placeholder />}
                     />
                     <HistoryPlugin />
                     {debug && <TreeViewPlugin />}
-                    <AutoFocusPlugin />
+                    <AutoFocusPlugin defaultSelection="rootStart"/>
                     <CodeHighlightPlugin />
                     <ListPlugin />
                     <LinkPlugin />
@@ -95,7 +94,6 @@ export default React.memo((props) => {
                     <ListMaxIndentLevelPlugin maxDepth={7} />
                     <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
                     <OnChangePlugin ignoreSelectionChange={true} ignoreHistoryMergeTagChange={true} onChange={(editorState, x)=>{
-                        //  console.log(JSON.stringify(editorState.toJSON()), post.body)
                         if(onChange) {
                             onChange(editorState.toJSON())
                         }
@@ -105,6 +103,5 @@ export default React.memo((props) => {
         </LexicalComposer>
     )
 }, (prevProps, nextProps) => {
-
-    return prevProps.post && nextProps.post && prevProps.post._id === nextProps.post._id
+    return prevProps.post && nextProps.post && prevProps.post._id === nextProps.post._id && prevProps.identifier === nextProps.identifier
 })

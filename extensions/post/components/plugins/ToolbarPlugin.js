@@ -16,7 +16,6 @@ import {
 } from "lexical";
 import { $isLinkNode, TOGGLE_LINK_COMMAND } from "@lexical/link";
 import {
-    $isParentElementRTL,
     $wrapNodes,
     $isAtNodeEnd
 } from "@lexical/selection";
@@ -157,8 +156,10 @@ function FloatingLinkEditor({ editor }) {
             editor.registerCommand(
                 SELECTION_CHANGE_COMMAND,
                 () => {
-                    updateLinkEditor();
-                    return true;
+                    editor.getEditorState().read(() => {
+                        updateLinkEditor();
+                    });
+                    return false; // Usually false so other plugins can see selection change
                 },
                 LowPriority
             )
@@ -427,7 +428,7 @@ export default function ToolbarPlugin() {
         false
     );
     const [codeLanguage, setCodeLanguage] = useState("");
-    const [isRTL, setIsRTL] = useState(false);
+    //const [isRTL, setIsRTL] = useState(false);
     const [isLink, setIsLink] = useState(false);
     const [isBold, setIsBold] = useState(false);
     const [isItalic, setIsItalic] = useState(false);
@@ -436,49 +437,44 @@ export default function ToolbarPlugin() {
     const [isCode, setIsCode] = useState(false);
 
     const updateToolbar = useCallback(() => {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-            const anchorNode = selection.anchor.getNode();
-            const element =
-                anchorNode.getKey() === "root"
+        editor.update(() => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) {
+                const anchorNode = selection.anchor.getNode();
+                const element = anchorNode.getKey() === "root"
                     ? anchorNode
                     : anchorNode.getTopLevelElementOrThrow();
-            const elementKey = element.getKey();
-            const elementDOM = editor.getElementByKey(elementKey);
-            if (elementDOM !== null) {
-                setSelectedElementKey(elementKey);
-                if ($isListNode(element)) {
-                    const parentList = $getNearestNodeOfType(anchorNode, ListNode);
-                    const type = parentList ? parentList.getTag() : element.getTag();
-                    setBlockType(type);
-                } else {
-                    const type = $isHeadingNode(element)
-                        ? element.getTag()
-                        : element.getType();
-                    setBlockType(type);
-                    if ($isCodeNode(element)) {
-                        setCodeLanguage(element.getLanguage() || getDefaultCodeLanguage());
+                const elementKey = element.getKey();
+                const elementDOM = editor.getElementByKey(elementKey);
+
+                if (elementDOM !== null) {
+                    setSelectedElementKey(elementKey);
+                    if ($isListNode(element)) {
+                        const parentList = $getNearestNodeOfType(anchorNode, ListNode);
+                        const type = parentList ? parentList.getTag() : element.getTag();
+                        setBlockType(type);
+                    } else {
+                        const type = $isHeadingNode(element)
+                            ? element.getTag()
+                            : element.getType();
+                        setBlockType(type);
+                        if ($isCodeNode(element)) {
+                            setCodeLanguage(element.getLanguage() || getDefaultCodeLanguage());
+                        }
                     }
                 }
-            }
-            // Update text format
-            setIsBold(selection.hasFormat("bold"));
-            setIsItalic(selection.hasFormat("italic"));
-            setIsUnderline(selection.hasFormat("underline"));
-            setIsStrikethrough(selection.hasFormat("strikethrough"));
-            setIsCode(selection.hasFormat("code"));
-            setIsRTL($isParentElementRTL(selection));
 
-            // Update links
-            const node = getSelectedNode(selection);
-            const parent = node.getParent();
-            if ($isLinkNode(parent) || $isLinkNode(node)) {
-                setIsLink(true);
-            } else {
-                setIsLink(false);
+                // Update text format
+                setIsBold(selection.hasFormat("bold"));
+                setIsItalic(selection.hasFormat("italic"));
+                setIsUnderline(selection.hasFormat("underline"));
+                setIsStrikethrough(selection.hasFormat("strikethrough"));
+                setIsCode(selection.hasFormat("code"));
+
             }
-        }
+        });
     }, [editor]);
+
 
     useEffect(() => {
         return mergeRegister(
@@ -490,7 +486,9 @@ export default function ToolbarPlugin() {
             editor.registerCommand(
                 SELECTION_CHANGE_COMMAND,
                 (_payload, newEditor) => {
-                    updateToolbar();
+                    newEditor.getEditorState().read(() => {
+                        updateToolbar();
+                    });
                     return false;
                 },
                 LowPriority
@@ -537,6 +535,9 @@ export default function ToolbarPlugin() {
         }
     }, [editor, isLink]);
 
+    if(!editor.isEditable()) {
+        return null
+    }
     return (
         <div className="toolbar" ref={toolbarRef}>
             <button

@@ -11,10 +11,8 @@ import {registerTrs} from '../../util/i18n.mjs'
 import {translations} from './translations/admin'
 registerTrs(translations, 'Post')
 
-const PostRenderer = (props) => <Async readOnly={true} {...props}
-                                       load={import(/* webpackChunkName: "post" */ './components/post/PostEditor')}/>
-const EditIcon = (props) => <Async {...props} expose="EditIcon"
-                                   load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+const PostRenderer = (props) => <Async readOnly={true} {...props} load={import(/* webpackChunkName: "post" */ './components/PostEditor')}/>
+const EditIcon = (props) => <Async {...props} expose="EditIcon" load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 
 export default () => {
 
@@ -33,12 +31,9 @@ export default () => {
                 key={field.name}
                 onBlur={this.handleBlur}
                 onChange={(e) => {
-                    console.log(e, e.constructor)
-                    this.handleInputChange({target: {name: field.name, value: e}})
+                    this.handleInputChange({target: {name: field.name, value: JSON.stringify(e)}})
                 }}
-                readOnly={false}
-                imageUpload={false}
-                post={{body:value}}/>
+                post={{body:value,_id:field.name}}/>
         }
     })
 }

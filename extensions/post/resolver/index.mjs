@@ -89,22 +89,28 @@ export default db => ({
             if(editor!==undefined){
                 $set.editor = editor
             }
-
            // const search = Util.draftjsRawToFields(body)
             const result = await postCollection.findOneAndUpdate({_id: new ObjectId(_id)}, {
                 $set
             }, {returnOriginal: false, includeResultMetadata: true})
             if (result.ok !== 1) {
                 throw new ApiError('Post could not be changed')
+            }else {
+
+
+                await pubsub.publish('subscribePost', {
+                    userId: userContext.id,
+                    session: context.session,
+                    clientId: context.clientId,
+                    subscribePost: {action: 'update', data: [{_id, body, editor, title}]}
+                })
+
             }
-
-            pubsub.publish('subscribePost', {userId:userContext.id,subscribePost: {action: 'update', data: [{_id,body, title}]}})
-
-
             return {
                 _id,
                 title,
                 body,
+                editor,
                 createdBy: {
                     _id: new ObjectId(userContext.id),
                     username: userContext.username
@@ -141,7 +147,7 @@ export default db => ({
     Subscription:{
         subscribePost: withFilter(() => pubsub.asyncIterableIterator('subscribePost'),
             (payload, context) => {
-                if( payload ) {
+                if( payload && payload.clientId !== context.clientId) {
                     //return payload.userId === context.id
                     return true
                 }
