@@ -213,8 +213,8 @@ export const addFilterToMatch = async ({db, debugInfo, filterKey, filterValue, t
 
     if (subQuery) {
         // execute sub query
-        const ids = (await db.collection(subQuery.type).find({[subQuery.name]: matchExpression}).toArray()).map(item => item._id)
-        matchExpression = {$in: ids}
+        const ids = (await db.collection(subQuery.type).find({[subQuery.name]: matchExpression.$not ? matchExpression.$not : matchExpression}).toArray()).map(item => item._id)
+        matchExpression = {[matchExpression.$not ? '$nin': '$in']: ids}
     }
 
     if (!filterOptions || filterOptions.operator === 'or') {
