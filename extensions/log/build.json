@@ -27,6 +27,11 @@
           "tab": "General"
         },
         {
+          "name": "server",
+          "index": 1,
+          "tab": "General"
+        },
+        {
           "name": "meta",
           "type": "Object",
           "uitype": "json",

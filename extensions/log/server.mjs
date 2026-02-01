@@ -3,15 +3,14 @@ import schemaGen from './gensrc/schema.mjs'
 import resolverGen from './gensrc/resolver.mjs'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import GenericResolver from '../../api/resolver/generic/genericResolver.mjs'
-import {getHostFromHeaders} from '../../util/host.mjs'
+import {clientAddress, getHostFromHeaders} from '../../util/host.mjs'
 import config from '../../gensrc/config.mjs'
 import os from 'os'
 import {
-    TRACK_IP_HEADER,
-    TRACK_IS_BOT_HEADER,
     TRACK_REFERER_HEADER,
     TRACK_USER_AGENT_HEADER
 } from '../../api/constants/index.mjs'
+import Util from "../../api/util/index.mjs";
 
 let mydb
 Hook.on('dbready', ({db}) => {
@@ -30,7 +29,7 @@ Hook.on('schema', ({schemas}) => {
 
 
 let uncaughtExceptionCount=0, unhandledRejectionCount=0
-process.on('uncaughtException', (error, origin) => {
+process.on('uncaughtException', async (error, origin) => {
 
     if(error?.stack?.indexOf('imap-composer.js')>=0) {
         //ignore
@@ -39,7 +38,7 @@ process.on('uncaughtException', (error, origin) => {
     }
 
     if(mydb && error) {
-        GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {
+        await GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {
             type: 'uncaughtException',
             message: (error.message?error.message + '\n\n' + error.stack:JSON.stringify(error))+'\n\n'+origin,
             meta: {debug:error.debugData, globalDebug: _app_.errorDebug, systemName: os.hostname()}
@@ -54,12 +53,12 @@ process.on('uncaughtException', (error, origin) => {
 })
 
 
-process.on('unhandledRejection', (error) => {
+process.on('unhandledRejection', async (error) => {
     console.error(error)
 
     unhandledRejectionCount++
     if(mydb && error) {
-        GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {
+        await GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {
             type: 'unhandledRejection',
             message: error.message?error.message + '\n\n' + error.stack:JSON.stringify(error),
             meta: error.debugData
@@ -104,6 +103,14 @@ Hook.on('typeLoaded', async ({type,cacheKey,db, req, context, result, dataQuery,
   }
 })
 
+Hook.on('typeBeforeCreate', ({type, data}) => {
+    if (type === 'Log') {
+        if (!data.server) {
+            data.server = Util.systemProperties().hostname
+        }
+    }
+})
+
 Hook.on('OnMailError', async ({db, context, error}) => {
 
     let finalContent
@@ -113,7 +120,7 @@ Hook.on('OnMailError', async ({db, context, error}) => {
         finalContent = {lang: config.DEFAULT_LANGUAGE }
     }
 
-  GenericResolver.createEntity(db, {context:finalContent}, 'Log', {
+  await GenericResolver.createEntity(db, {context: finalContent}, 'Log', {
       location: 'mailclient',
       type: 'mailError',
       message: error.message,
@@ -122,16 +129,16 @@ Hook.on('OnMailError', async ({db, context, error}) => {
 })
 
 Hook.on('ExtensionApiError', async ({db, req, error, slug}) => {
-  GenericResolver.createEntity(db, req, 'Log', {
+  await GenericResolver.createEntity(db, req, 'Log', {
       location: 'extensionApi',
       type: 'apiError',
-      message: error.message+'\n'+error.stack,
+      message: error.message + '\n' + error.stack,
       meta: {slug, url: req.url}
   })
 })
 
 Hook.on('HookError', async ({db, entry, error}) => {
-    GenericResolver.createEntity(db, {context: {lang: 'en'}}, 'Log', {
+    await GenericResolver.createEntity(db, {context: {lang: 'en'}}, 'Log', {
         location: entry.name,
         type: 'hookError',
         message: error.message ? error.message + '\n\n' + error.stack : JSON.stringify(error),
@@ -140,7 +147,7 @@ Hook.on('HookError', async ({db, entry, error}) => {
 })
 
 Hook.on('BotError', async ({db, entry, error}) => {
-    GenericResolver.createEntity(db, {context: {lang: 'en'}}, 'Log', {
+    await GenericResolver.createEntity(db, {context: {lang: 'en'}}, 'Log', {
         location: entry.name,
         type: 'botError',
         message: error.message ? error.message + '\n\n' + error.stack : JSON.stringify(error),
@@ -150,7 +157,7 @@ Hook.on('BotError', async ({db, entry, error}) => {
 
 Hook.on('ServerScriptError', async ({slug, methodName, args, error}) => {
     if(mydb) {
-        GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {
+        await GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {
             location: slug,
             type: 'serverScriptError',
             message: error.message ? error.message + '\n\n' + error.stack : JSON.stringify(error),
@@ -159,7 +166,7 @@ Hook.on('ServerScriptError', async ({slug, methodName, args, error}) => {
     }
 })
 Hook.on('CronJobError', async ({db, context, scriptLanguage, script, cronjobId, error}) => {
-    GenericResolver.createEntity(db, {context: context}, 'Log', {
+    await GenericResolver.createEntity(db, {context: context}, 'Log', {
         location: cronjobId,
         type: 'cronJobError',
         message: error.message ? JSON.stringify(error.message) : JSON.stringify(error),
@@ -169,7 +176,7 @@ Hook.on('CronJobError', async ({db, context, scriptLanguage, script, cronjobId, 
 })
 
 Hook.on('invalidLogin', async ({context, db, username, ip, domain}) => {
-    GenericResolver.createEntity(db, {context}, 'Log', {
+    await GenericResolver.createEntity(db, {context}, 'Log', {
         location: 'login',
         type: 'invalidLogin',
         message: `invalid login attempt from ${username} with ip ${ip}`,
