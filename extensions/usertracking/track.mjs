@@ -13,11 +13,12 @@ import {
 import {isString, parseOrElse} from '../../client/util/json.mjs'
 import {dynamicSettings} from '../../api/util/settings.mjs'
 import {ObjectId} from 'mongodb'
+import GenericResolver from "../../api/resolver/generic/genericResolver.mjs";
 
 
 const USER_TRACKING_SETTINGS = {}
 
-const TRACKING_BUFFER = {entries: []}
+const TRACKING_BUFFER = {entries: [], bufferSize: 100, db: null}
 
 // Hook when db is ready
 Hook.on('appready', async ({context, db}) => {
@@ -29,21 +30,29 @@ Hook.on('appexit', async () => {
     await flushBufferIfNeeded(true)
 })
 
-
-const TRACKING_ENTRIES_BUFFER_SIZE = 100;
 const flushBufferIfNeeded = async (force) => {
 
-    if (TRACKING_BUFFER.entries.length ===  0 || (!force && TRACKING_BUFFER.entries.length < TRACKING_ENTRIES_BUFFER_SIZE)) {
+    if (TRACKING_BUFFER.entries.length ===  0 || (!force && TRACKING_BUFFER.entries.length < TRACKING_BUFFER.bufferSize)) {
         return
     }
 
-    const bulkOps = TRACKING_BUFFER.entries.map(doc => ({ insertOne: { document: doc } }))
-
     console.log(`inserted user tracking buffer entries: ${TRACKING_BUFFER.entries.length}`)
-    await TRACKING_BUFFER.db.collection('UserTracking').bulkWrite(bulkOps, {ordered: false})
-
+    const bulkOps = TRACKING_BUFFER.entries.map(doc => ({ insertOne: { document: doc } }))
     TRACKING_BUFFER.entries = []
 
+    try{
+        await TRACKING_BUFFER.db.collection('UserTracking').bulkWrite(bulkOps, {ordered: false})
+    } catch (error) {
+        if(error.result) {
+            console.log(`${error.result.nInserted} inserted successfully`)
+            console.log(`${error.result.writeErrors.length} duplicates skipped`)
+        }
+        await GenericResolver.createEntity(TRACKING_BUFFER.db, {context: {lang: 'en'}}, 'Log', {
+            type: 'bulkWrite',
+            message: error.message ? error.message + '\n\n' + error.stack : JSON.stringify(error),
+            meta: {result:error.result, bulkOps}
+        })
+    }
 }
 
 function forceString(data) {
@@ -109,7 +118,7 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
 
 
         // for real time tracking
-        pubsub.publish('subscribeUserTracking', {
+        await pubsub.publish('subscribeUserTracking', {
             userId: context.id,
             subscribeUserTracking: {action: 'create', data: [{...insertData,
                     data: forceString(insertData.data),
