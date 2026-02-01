@@ -689,6 +689,14 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
                 } else {
 
+                    // second more restrictiv check
+                    if(isTemporarilyBlocked({req,
+                        key:'index-'+remoteAddress,
+                        requestPerTime:5,
+                        requestTimeInMs:1000})) {
+                        return
+                    }
+
                     const ext = path.extname(urlPathname)
                     if (!ext || urlPathname.indexOf('/' + config.PRETTYURL_SEPERATOR + '/') >= 0) {
                         // file extension is not allowed here
