@@ -18,7 +18,7 @@ export const isTemporarilyBlocked = ({req, key, checkKeys, requestPerTime, reque
         requestBlockForInMs = DEFAULT_REQUEST_BLOCK_FOR_IN_MS
     }
 
-    if(blockedIps[key] || (checkKeys && checkKeys.some(ck=>blockedIps[ck]))){
+    if(blockedIps[key]){
         // block for X min
         if(Date.now()-blockedIps[key].start>requestBlockForInMs){
             delete blockedIps[key]
