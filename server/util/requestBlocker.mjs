@@ -6,7 +6,7 @@ const DEFAULT_REQUEST_TIME_IN_MS = 10000, /* 10s */
 const ipMap = {}, blockedIps = {}
 let reqCounter = 0
 
-export const isTemporarilyBlocked = ({req, key, requestPerTime, requestTimeInMs, requestBlockForInMs}) => {
+export const isTemporarilyBlocked = ({req, key, checkKeys, requestPerTime, requestTimeInMs, requestBlockForInMs}) => {
 
     if(!requestPerTime){
         requestPerTime = DEFAULT_REQUEST_MAX_PER_TIME
@@ -18,8 +18,8 @@ export const isTemporarilyBlocked = ({req, key, requestPerTime, requestTimeInMs,
         requestBlockForInMs = DEFAULT_REQUEST_BLOCK_FOR_IN_MS
     }
 
-    if(blockedIps[key]){
-        // block for 1 min
+    if(blockedIps[key] || (checkKeys && checkKeys.some(ck=>blockedIps[ck]))){
+        // block for X min
         if(Date.now()-blockedIps[key].start>requestBlockForInMs){
             delete blockedIps[key]
         }else {

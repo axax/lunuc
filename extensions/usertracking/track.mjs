@@ -18,7 +18,7 @@ import GenericResolver from "../../api/resolver/generic/genericResolver.mjs";
 
 const USER_TRACKING_SETTINGS = {}
 
-const TRACKING_BUFFER = {entries: [], bufferSize: 100, db: null}
+const TRACKING_BUFFER = {entries: [], bufferSize: 1000, db: null}
 
 // Hook when db is ready
 Hook.on('appready', async ({context, db}) => {

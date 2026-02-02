@@ -406,7 +406,9 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
     try {
         const remoteAddress=clientAddress(req)
-        if(isTemporarilyBlocked({req, key:remoteAddress})) {
+        if(isTemporarilyBlocked({req,
+            checkKeys:['index-'+remoteAddress],
+            key:remoteAddress})) {
             return
         }
 
@@ -691,9 +693,13 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
                     // second more restrictiv check
                     if(isTemporarilyBlocked({req,
-                        key:'index-'+remoteAddress,
-                        requestPerTime:5,
-                        requestTimeInMs:1000})) {
+                            key:'index-'+remoteAddress,
+                            requestPerTime:5,
+                            requestTimeInMs:1000}) ||
+                        isTemporarilyBlocked({req,
+                            key:'index-'+remoteAddress,
+                            requestPerTime:20,
+                            requestTimeInMs:10000})) {
                         return
                     }
 
