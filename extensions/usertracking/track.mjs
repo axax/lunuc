@@ -18,7 +18,7 @@ import GenericResolver from "../../api/resolver/generic/genericResolver.mjs";
 
 const USER_TRACKING_SETTINGS = {}
 
-const TRACKING_BUFFER = {entries: [], bufferSize: 1000, db: null}
+const TRACKING_BUFFER = {entries: [], bufferSize: 1000, db: null, time: Date.now()}
 
 // Hook when db is ready
 Hook.on('appready', async ({context, db}) => {
@@ -32,13 +32,16 @@ Hook.on('appexit', async () => {
 
 const flushBufferIfNeeded = async (force) => {
 
-    if (TRACKING_BUFFER.entries.length ===  0 || (!force && TRACKING_BUFFER.entries.length < TRACKING_BUFFER.bufferSize)) {
+    if (TRACKING_BUFFER.entries.length ===  0 ||
+        (Date.now() - TRACKING_BUFFER.time) > 60000 ||
+        (!force && TRACKING_BUFFER.entries.length < TRACKING_BUFFER.bufferSize)) {
         return
     }
 
     console.log(`inserted user tracking buffer entries: ${TRACKING_BUFFER.entries.length}`)
     const bulkOps = TRACKING_BUFFER.entries.map(doc => ({ insertOne: { document: doc } }))
     TRACKING_BUFFER.entries = []
+    TRACKING_BUFFER.time = Date.now()
 
     try{
         await TRACKING_BUFFER.db.collection('UserTracking').bulkWrite(bulkOps, {ordered: false})

@@ -46,14 +46,29 @@ export const StyledPicker = styled('div')({
 
 export const StyledToolbarButton = styled('div')({
     zIndex: 998,
-    position: 'fixed',
-    maxHeight: '200px'
+    position: 'fixed'
 })
 
 export const StyledToolbarMenu = styled(SimpleMenu)({
     position: 'absolute',
     left: '-2.2rem',
-    top: 'calc(50% - 1.5rem)'
+    top: 'calc(min(50% - 1.25rem,100px))',
+    '.MuiSvgIcon-root':{
+        fill:'#FF9500'
+    }
+
+})
+
+export const StyledDragBar = styled('div')({
+    borderBottomLeftRadius:'0.3rem',
+    borderTopLeftRadius:'0.3rem',
+    cursor: 'move',
+    background:'#FF9500',
+    opacity:1,
+    zIndex:1000,
+    border:'solid 1px rgba(255,255,255,0.1)',
+    position:'absolute', top:'-1px',
+    left:'-8px', width:'8px', height:'calc(100% + 2px)'
 })
 
 export const StyledRichTextBar = styled('div')({

@@ -53,7 +53,7 @@ import {
     StyledToolbarButton,
     StyledHighlighter,
     StyledPicker,
-    StyledHorizontalDivider, StyledRichTextBar
+    StyledHorizontalDivider, StyledRichTextBar,StyledDragBar
 } from './jsondomhelper/JsonDomStyledElements'
 import CmsViewContainer from '../containers/CmsViewContainer'
 import {SimpleSwitch} from '../../../client/components/ui/impl/material'
@@ -258,22 +258,78 @@ class JsonDomHelper extends React.Component {
     }
 
     onDragStart(e) {
-      /*  const ghost = ReactDOM.findDOMNode(this).cloneNode(true);
-        ghost.style.background = '#ff6b6b';
+
+        e.stopPropagation()
+
+        const domNode = ReactDOM.findDOMNode(this)
+
+        const rect = domNode.getBoundingClientRect();
+        const viewW = window.innerWidth;
+        const viewH = window.innerHeight;
+
+        // 1. Calculate Dynamic Scale
+        // We want the ghost to be no larger than 30% of the screen width/height
+        const maxW = viewW * 0.8;
+        const maxH = viewH * 0.8;
+
+        // Determine scale factor (but never scale UP, only down)
+        const scaleW = Math.min(1, maxW / rect.width);
+        const scaleH = Math.min(1, maxH / rect.height);
+        const fitScale = Math.min(scaleW, scaleH);
+
+        // 2. Calculate offset (pinned to mouse)
+        const offsetX = (e.clientX - rect.left) * fitScale;
+        const offsetY = (e.clientY - rect.top) * fitScale;
+
+        // 3. Create and Clean the Ghost
+        const ghost = domNode.cloneNode(true);
+
+        // 4. Recursive Style Sync
+        const syncStyles = (source, clone) => {
+            const sourceStyles = window.getComputedStyle(source);
+            for (const prop of sourceStyles) {
+                clone.style[prop] = sourceStyles.getPropertyValue(prop);
+            }
+            for (let i = 0; i < source.children.length; i++) {
+                if (clone.children[i]) syncStyles(source.children[i], clone.children[i]);
+            }
+        };
+        syncStyles(domNode, ghost);
+
+        // 5. Apply "Fitting" Styles
+        Object.assign(ghost.style, {
+            position: "absolute",
+            top: "-9999px",
+            left: "-9999px",
+            margin: "0",
+            zoom: `${fitScale}`,
+            backgroundColor: "rgba(220, 240, 255, 0.7)", // Light blue tint
+            border: "1px dotted #0078d7",               // Blue dotted border
+            boxShadow: "0 20px 50px rgba(0, 0, 0, 0.3)", // Heavy drop shadow
+            borderRadius: "8px",                        // Clean edges
+            filter: "blur(0.5px)",
+            boxSizing: "border-box",
+            pointerEvents: "none",
+            outline: "none",
+            width: `${rect.width}px`, // Keep original width so scaling math is easy
+            height: `${rect.height}px`
+        });
+
         document.body.appendChild(ghost);
 
-        e.dataTransfer.setDragImage(ghost, 10, 10); // Offset from cursor
+        // 6. Set Drag Image
+        e.dataTransfer.setDragImage(ghost, offsetX, offsetY);
 
-        // Clean up after a tick
-        setTimeout(() => document.body.removeChild(ghost), 0);*/
-        e.stopPropagation()
+        // 7. Cleanup
+        setTimeout(() => ghost.remove(), 0);
+
         if (JsonDomHelper.disableEvents) {
             return
         }
         if (!JsonDomDraggable.element) {
             JsonDomDraggable.element = this
             JsonDomDraggable.props = this.props
-            this.setState({toolbarHovered: false, hovered: false, dragging: true})
+            this.setState({toolbarHovered: e.target.dataset.dragbar, hovered: false, dragging: true})
         }
     }
 
@@ -642,6 +698,16 @@ class JsonDomHelper extends React.Component {
                     onMouseOver={this.onToolbarMouseOver.bind(this)}
                     onMouseOut={this.onToolbarMouseOut.bind(this)}
                     style={{top: this.state.top, left: this.state.left, height: this.state.height}}>
+
+
+                    <StyledDragBar onContextMenu={helperEvents.onContextMenu}
+                            data-dragbar={true}
+                            draggable={helperEvents.draggable}
+                         onDragStart={helperEvents.onDragStart}
+                         onDrag={helperEvents.onDrag}
+                         onDragEnd={helperEvents.onDragEnd}>
+
+                    </StyledDragBar>
 
                     <StyledInfoBox>{(_t(`elements.key.${elementKey}`,null,elementKey)) + (rest.id?` (${rest.id})`:(rest.slug?` (${rest.slug})`:''))}</StyledInfoBox>
 
