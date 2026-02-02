@@ -272,8 +272,11 @@ export const onJsonDomDrag = (e) => {
             for (let i = 0; i < targetElements.length; i++) {
                 const {domEl, isChild, prevSibling, nextSibling, index, isLastChild} = targetElements[i]
 
-
+                if(domEl.dataset.allowDropSelector && !draggable.matches(domEl.dataset.allowDropSelector)){
+                    continue
+                }
                 const allowDropFrom = ALLOW_DROP_FROM[domEl.dataset.tagName]
+
                 if (draggable === domEl || isChildOf(domEl, draggable) || !domEl.getAttribute('_key') ||
                     (!isChild && allowDropIn && allowDropIn.indexOf(domEl.dataset.tagName)<0) ||
                     (allowDropFrom && allowDropFrom.indexOf(dragableProps._tagName) < 0)) {

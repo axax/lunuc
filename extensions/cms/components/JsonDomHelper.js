@@ -703,11 +703,9 @@ class JsonDomHelper extends React.Component {
                     <StyledDragBar onContextMenu={helperEvents.onContextMenu}
                             data-dragbar={true}
                             draggable={helperEvents.draggable}
-                         onDragStart={helperEvents.onDragStart}
-                         onDrag={helperEvents.onDrag}
-                         onDragEnd={helperEvents.onDragEnd}>
-
-                    </StyledDragBar>
+                            onDragStart={helperEvents.onDragStart}
+                            onDrag={helperEvents.onDrag}
+                            onDragEnd={helperEvents.onDragEnd}/>
 
                     <StyledInfoBox>{(_t(`elements.key.${elementKey}`,null,elementKey)) + (rest.id?` (${rest.id})`:(rest.slug?` (${rest.slug})`:''))}</StyledInfoBox>
 
@@ -849,6 +847,9 @@ class JsonDomHelper extends React.Component {
 
         helperEvents['data-allow-drop'] = (!isCms && !helperEvents.contentEditable && (!children || children.constructor !== String) && hasJsonToEdit && !isInLoop && _options.allowDrop && _options.dropArea !== false)
         helperEvents['data-tag-name'] = _tagName
+        if(_options.allowDropSelector){
+            helperEvents['data-allow-drop-selector'] = _options.allowDropSelector
+        }
 
         let comp
         if (isCms) {
