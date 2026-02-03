@@ -33,9 +33,10 @@ Hook.on('appexit', async () => {
 const flushBufferIfNeeded = async (force) => {
 
     if (TRACKING_BUFFER.entries.length ===  0 ||
-        (Date.now() - TRACKING_BUFFER.time) > 60000 ||
         (!force && TRACKING_BUFFER.entries.length < TRACKING_BUFFER.bufferSize)) {
-        return
+        if((Date.now() - TRACKING_BUFFER.time) < 60000) {
+            return
+        }
     }
 
     console.log(`inserted user tracking buffer entries: ${TRACKING_BUFFER.entries.length}`)
