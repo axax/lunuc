@@ -187,10 +187,24 @@ export const getHighlightPosition = (node)=>  {
                 const style = window.getComputedStyle(childNode)
                 if (style.display !== 'none' && style.opacity > 0) {
                     const rect = childNode.getBoundingClientRect()
-                    childMinLeft = Math.min(rect.left, childMinLeft)
-                    childMaxLeft = Math.max(rect.left + (rect.width ?? 0), childMaxLeft)
-                    childMinTop = Math.min(rect.top, childMinTop)
-                    childMaxTop = Math.max(rect.top + (rect.height ?? 0), childMaxTop)
+                    const marginLeft = parseFloat(style.marginLeft);
+                    const marginRight = parseFloat(style.marginRight);
+                    const marginTop = parseFloat(style.marginTop);
+                    const marginBottom = parseFloat(style.marginBottom);
+
+                    const rectMargin = {
+                        left: rect.left - marginLeft,
+                        top: rect.top - marginTop,
+                        right: rect.right + marginRight,
+                        bottom: rect.bottom + marginBottom,
+                        width: rect.width + marginLeft + marginRight,
+                        height: rect.height + marginTop + marginBottom
+                    };
+
+                    childMinLeft = Math.min(rectMargin.left, childMinLeft)
+                    childMaxLeft = Math.max(rectMargin.left + (rectMargin.width ?? 0), childMaxLeft)
+                    childMinTop = Math.min(rectMargin.top, childMinTop)
+                    childMaxTop = Math.max(rectMargin.top + (rectMargin.height ?? 0), childMaxTop)
                 } else {
                     allAbs = false
                 }

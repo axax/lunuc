@@ -700,12 +700,12 @@ class JsonDomHelper extends React.Component {
                     style={{top: this.state.top, left: this.state.left, height: this.state.height}}>
 
 
-                    <StyledDragBar onContextMenu={helperEvents.onContextMenu}
+                    {isDraggable && <StyledDragBar onContextMenu={helperEvents.onContextMenu}
                             data-dragbar={true}
                             draggable={helperEvents.draggable}
                             onDragStart={helperEvents.onDragStart}
                             onDrag={helperEvents.onDrag}
-                            onDragEnd={helperEvents.onDragEnd}/>
+                            onDragEnd={helperEvents.onDragEnd}/>}
 
                     <StyledInfoBox>{(_t(`elements.key.${elementKey}`,null,elementKey)) + (rest.id?` (${rest.id})`:(rest.slug?` (${rest.slug})`:''))}</StyledInfoBox>
 
@@ -1098,7 +1098,7 @@ class JsonDomHelper extends React.Component {
                     })
                 }
 
-                if (_dynamic && _options.menu.edit !== false) {
+                if (_dynamic && _options.menu.edit !== false && this.props._scope.parent) {
 
                     const parent = this.props._scope.parent
                     const parentJson = parent.getJsonRaw(parent.props, true)
