@@ -230,6 +230,12 @@ const Util = {
 
         const keyvalues = (await db.collection('KeyValueGlobal').find(match).toArray())
 
+        for (const k of keys) {
+            if(keyvalues.find(kv=>kv.key===k)===undefined){
+                keyvalues.push({key: k, value: null})
+            }
+        }
+
         console.debug(`load KeyValueGlobal "${keys.join(',')}" ${new Date() - _app_.start}ms`)
         return keyvalues.reduce((map, obj) => {
             let finalValue
