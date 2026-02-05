@@ -557,35 +557,42 @@ class JsonDomHelper extends React.Component {
         })
     }
 
+    triggerContextMenu(e) {
+        if(this.isElementActive()) {
+            e.stopPropagation()
+            e.preventDefault()
+            this.setState({
+                toolbarMenuOpen: true,
+                toolbarHovered: true,
+                mouseX: e.clientX - 2,
+                mouseY: e.clientY - 4
+            })
+        }
+    }
+
+    isElementActive(){
+        return !JsonDomHelper.disableEvents && (this.state.hovered || this.state.toolbarHovered || this.state.richTextBarHover || this.state.toolbarMenuOpen)
+    }
+
     render() {
         const {_WrappedComponent, _json, _cmsActions, _onTemplateChange, _onDataResolverPropertyChange, children, _tagName, _inlineEditor, _forceInlineEditor, _dynamic, onChange, onClick,
             _scope, _options, _editmode, _this, /* don't add attrs to dom element */
             ...rest} = this.props
 
-        const {hovered, toolbarHovered, richTextBarHover, toolbarMenuOpen, addChildDialog, deleteConfirmDialog, copyOptionsDialog, deleteSelectionConfirmDialog, deleteSourceConfirmDialog} = this.state
+        const {toolbarMenuOpen, addChildDialog, deleteConfirmDialog, copyOptionsDialog, deleteSelectionConfirmDialog, deleteSourceConfirmDialog} = this.state
         if(!rest._key){
             return
         }
 
         const isCms = _tagName === 'Cms',
             isInLoop = rest._key.indexOf('$loop') >= 0 && !Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE),
-            isElementActive = !JsonDomHelper.disableEvents && (hovered || richTextBarHover || toolbarHovered || toolbarMenuOpen),
+            isElementActive = this.isElementActive(),
             isSelected = JsonDomHelper.selected.indexOf(this)>=0
 
         let hasJsonToEdit = !!_json, subJson, toolbar, highlighter,
             overrideEvents = {}, parsedSource
 
         const helperEvents = {
-            onContextMenu: (e) => {
-                e.stopPropagation()
-                e.preventDefault()
-                this.setState({
-                    toolbarMenuOpen: true,
-                    toolbarHovered: true,
-                    mouseX: e.clientX - 2,
-                    mouseY: e.clientY - 4
-                })
-            },
             onClick: (e) =>{
                 if(e.shiftKey){
                     e.stopPropagation()
@@ -678,21 +685,16 @@ class JsonDomHelper extends React.Component {
             }
         }
 
-
         if (isElementActive || isSelected) {
-
             if(isElementActive) {
-                let menuItems = []
+                const menuItems = this.createContextMenu({
+                    isCms, subJson, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange,_forceInlineEditor,
+                    overrideEvents, onChange, _options, _dynamic, rest, _json, isInLoop, isSelected, hasRichTextBar
+                })
 
-                if(toolbarMenuOpen){
-                    menuItems = this.createContextMenu({
-                        isCms, subJson, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange,_forceInlineEditor,
-                        overrideEvents, onChange, _options, _dynamic, rest, _json, isInLoop, isSelected, hasRichTextBar
-                    })
-                    if(menuItems.length === 0) {
-                        //close menu again as there are no menu items
-                        this.setState({toolbarMenuOpen: false, toolbarHovered: false})
-                    }
+                if(toolbarMenuOpen && menuItems.length === 0){
+                    //close menu again as there are no menu items
+                    this.setState({toolbarMenuOpen: false, toolbarHovered: false})
                 }
 
 
@@ -705,7 +707,7 @@ class JsonDomHelper extends React.Component {
                     style={{top: this.state.top, left: this.state.left, height: this.state.height}}>
 
 
-                    {isDraggable && <StyledDragBar onContextMenu={helperEvents.onContextMenu}
+                    {isDraggable && <StyledDragBar onContextMenu={this.triggerContextMenu.bind(this)}
                             data-dragbar={true}
                             draggable={helperEvents.draggable}
                             onDragStart={helperEvents.onDragStart}
@@ -714,7 +716,7 @@ class JsonDomHelper extends React.Component {
 
                     <StyledInfoBox>{(_t(`elements.key.${elementKey}`,null,elementKey)) + (rest.id?` (${rest.id})`:(rest.slug?` (${rest.slug})`:''))}</StyledInfoBox>
 
-                    {toolbarMenuOpen && <StyledToolbarMenu
+                    {menuItems.length>0 && <StyledToolbarMenu
                         anchorReference={this.state.mouseY ? "anchorPosition" : "anchorEl"}
                         anchorPosition={
                             this.state.mouseY && this.state.mouseX
@@ -731,8 +733,11 @@ class JsonDomHelper extends React.Component {
                                 mouseX: undefined
                             })
                         }}
+                        onOpen={()=>{
+                            this.setState({toolbarMenuOpen: true})
+                        }}
                         avatarIcon={true}
-                        mini items={menuItems}/>}
+                        mini items={menuItems}/> }
                 </StyledToolbarButton>
             }
             if (isSelected || _options.highlight !== false) {
@@ -767,7 +772,7 @@ class JsonDomHelper extends React.Component {
                         data-picker={rest._key}
                         onMouseOver={this.onToolbarMouseOver.bind(this)}
                         onMouseOut={this.onToolbarMouseOut.bind(this)}
-                        onContextMenu={helperEvents.onContextMenu.bind(this)}
+                        onContextMenu={this.triggerContextMenu.bind(this)}
                         onClick={(e) => {
                             e.stopPropagation()
                             if(_options.openOnClick===false){
@@ -789,7 +794,7 @@ class JsonDomHelper extends React.Component {
                         onMouseOver={()=>{
                             this.setState({richTextBarHover:true})
                         }}
-                        onContextMenu={helperEvents.onContextMenu.bind(this)}
+                        onContextMenu={this.triggerContextMenu.bind(this)}
                         onMouseLeave={(e)=>{
                             this.setState({richTextBarHover:false})
                             const parentTargetEl = checkIfElementOrParentHasDataKey(e.toElement || e.relatedTarget,['data-element-key'],'richText')
@@ -858,7 +863,7 @@ class JsonDomHelper extends React.Component {
             if(rest.forceInlineEditor){
                 helperEvents['data-force-inline-editor'] = true
             }
-            comp = <div _key={rest._key} key={rest._key} {...helperEvents}>
+            comp = <div _key={rest._key} key={rest._key} {...helperEvents} onContextMenu={this.triggerContextMenu.bind(this)}>
                 <_WrappedComponent
                     onChange={overrideEvents.onChange || onChange}
                     _this={_this}
@@ -875,6 +880,7 @@ class JsonDomHelper extends React.Component {
             comp = <_WrappedComponent
                 onDoubleClick={overrideEvents.onDoubleClick}
                 onChange={overrideEvents.onChange || onChange}
+                onContextMenu={this.triggerContextMenu.bind(this)}
                 _inlineeditor={_inlineEditor ? _inlineEditor.toString() : ''}
                 data-isempty={isEmpty}
                 key={rest._key}

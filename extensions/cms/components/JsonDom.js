@@ -263,9 +263,8 @@ class JsonDom extends React.Component {
 
             return cvc
         },
-        ContentEditable: ({_this, onChange, ...props}) => {
-            return <ContentEditable key={props._key}
-                                    onChange={(v) => _this.onContentEditableChange(props._key, v)} {...props} />
+        ContentEditable: ({onContentEditableChange, onChange, ...props}) => {
+            return <ContentEditable key={props._key} onChange={(v) => onContentEditableChange(props._key, v)} {...props} />
         }
     }
 
@@ -1120,6 +1119,7 @@ class JsonDom extends React.Component {
                         tagName = t.slice(0, -1) // remove last char
                         if (editMode && this.props.inlineEditor) {
                             eleProps.tag = tagName
+                            eleProps.onContentEditableChange = this.onContentEditableChange.bind(this)
                             tagName = 'ContentEditable'
                         }
                     } else {
