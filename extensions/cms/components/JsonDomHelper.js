@@ -567,8 +567,7 @@ class JsonDomHelper extends React.Component {
             return
         }
 
-        const menuItems = [],
-            isCms = _tagName === 'Cms',
+        const isCms = _tagName === 'Cms',
             isInLoop = rest._key.indexOf('$loop') >= 0 && !Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE),
             isElementActive = !JsonDomHelper.disableEvents && (hovered || richTextBarHover || toolbarHovered || toolbarMenuOpen),
             isSelected = JsonDomHelper.selected.indexOf(this)>=0
@@ -580,15 +579,12 @@ class JsonDomHelper extends React.Component {
             onContextMenu: (e) => {
                 e.stopPropagation()
                 e.preventDefault()
-                if (menuItems.length > 0 || isCms) {
-                    e.stopPropagation()
-                    this.setState({
-                        toolbarMenuOpen: true,
-                        toolbarHovered: true,
-                        mouseX: e.clientX - 2,
-                        mouseY: e.clientY - 4
-                    })
-                }
+                this.setState({
+                    toolbarMenuOpen: true,
+                    toolbarHovered: true,
+                    mouseX: e.clientX - 2,
+                    mouseY: e.clientY - 4
+                })
             },
             onClick: (e) =>{
                 if(e.shiftKey){
@@ -686,10 +682,19 @@ class JsonDomHelper extends React.Component {
         if (isElementActive || isSelected) {
 
             if(isElementActive) {
-                this.createContextMenu({
-                    isCms, subJson, menuItems, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange,_forceInlineEditor,
-                    overrideEvents, onChange, _options, _dynamic, rest, _json, isInLoop, isSelected, hasRichTextBar
-                })
+                let menuItems = []
+
+                if(toolbarMenuOpen){
+                    menuItems = this.createContextMenu({
+                        isCms, subJson, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange,_forceInlineEditor,
+                        overrideEvents, onChange, _options, _dynamic, rest, _json, isInLoop, isSelected, hasRichTextBar
+                    })
+                    if(menuItems.length === 0) {
+                        //close menu again as there are no menu items
+                        this.setState({toolbarMenuOpen: false, toolbarHovered: false})
+                    }
+                }
+
 
                 const elementKey = rest['data-element-key'] || _tagName
                 toolbar = <StyledToolbarButton
@@ -709,7 +714,7 @@ class JsonDomHelper extends React.Component {
 
                     <StyledInfoBox>{(_t(`elements.key.${elementKey}`,null,elementKey)) + (rest.id?` (${rest.id})`:(rest.slug?` (${rest.slug})`:''))}</StyledInfoBox>
 
-                    {menuItems.length > 0 && <StyledToolbarMenu
+                    {toolbarMenuOpen && <StyledToolbarMenu
                         anchorReference={this.state.mouseY ? "anchorPosition" : "anchorEl"}
                         anchorPosition={
                             this.state.mouseY && this.state.mouseX
@@ -717,9 +722,6 @@ class JsonDomHelper extends React.Component {
                                 : undefined
                         }
                         open={this.state.mouseY ? toolbarMenuOpen : undefined}
-                        onOpen={() => {
-                            this.setState({toolbarMenuOpen: true})
-                        }}
                         onClose={() => {
                             this.setState({
                                 hovered: false,
@@ -982,8 +984,8 @@ class JsonDomHelper extends React.Component {
         }
     }
 
-    createContextMenu({isCms, subJson, menuItems, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange, overrideEvents, onChange, _options, _dynamic, _forceInlineEditor, rest, _json, isInLoop, isSelected, hasRichTextBar}) {
-
+    createContextMenu({isCms, subJson, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange, overrideEvents, onChange, _options, _dynamic, _forceInlineEditor, rest, _json, isInLoop, isSelected, hasRichTextBar}) {
+        const menuItems = []
         if(isSelected){
             menuItems.push({
                 name: _t('JsonDomHelper.selection.wrap'),
@@ -1414,6 +1416,7 @@ class JsonDomHelper extends React.Component {
                 })
             }
         }
+        return menuItems
     }
 
     addConversionToMenu(subJson, _json, _options, menuItems) {

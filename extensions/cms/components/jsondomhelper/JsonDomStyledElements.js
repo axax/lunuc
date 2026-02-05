@@ -51,7 +51,7 @@ export const StyledToolbarButton = styled('div')({
 
 export const StyledToolbarMenu = styled(SimpleMenu)({
     position: 'absolute',
-    left: '-2.2rem',
+    left: '-2.45rem',
     top: 'calc(min(50% - 1.25rem,100px))',
     '.MuiSvgIcon-root':{
         fill:'#FF9500'

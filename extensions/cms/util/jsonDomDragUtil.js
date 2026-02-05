@@ -172,10 +172,13 @@ function getOrCreateDropArea(tag, {create, isChild, index}) {
                 label += dropArea.dataset.key
             }*/
             let finalTag = isChild ? tag.parentNode : tag
+
             if (finalTag.id) {
                 label += '#' + finalTag.id
             } else if (finalTag.className) {
                 label += finalTag.className
+            }else{
+                label += finalTag.dataset.tagName
             }
             if(isChild){
                 label += ' - ' + index
@@ -244,7 +247,7 @@ export const onJsonDomDrag = (e) => {
 
 
         const draggable = ReactDOM.findDOMNode(JsonDomDraggable.element)
-        const draggableIndex = Array.from(draggable.parentNode.children).indexOf(draggable)
+        const draggableIndex = Array.from(draggable.parentNode.querySelectorAll(':scope > [_key]')).indexOf(draggable)
 
         JsonDomDraggable.clientX = e.clientX
         JsonDomDraggable.clientY = e.clientY
@@ -275,7 +278,7 @@ export const onJsonDomDrag = (e) => {
                 if(domEl.dataset.allowDropSelector && !draggable.matches(domEl.dataset.allowDropSelector)){
                     continue
                 }
-                const allowDropFrom = ALLOW_DROP_FROM[domEl.dataset.tagName]
+                const allowDropFrom = ALLOW_DROP_FROM[isChild  ? domEl.parentNode.dataset.tagName : domEl.dataset.tagName ]
 
                 if (draggable === domEl || isChildOf(domEl, draggable) || !domEl.getAttribute('_key') ||
                     (!isChild && allowDropIn && allowDropIn.indexOf(domEl.dataset.tagName)<0) ||
@@ -285,18 +288,19 @@ export const onJsonDomDrag = (e) => {
 
                 const distance = getDistanceToDiv(JsonDomDraggable.clientX, JsonDomDraggable.clientY, domEl)
                 if (distance < 100) {
-                    if (domEl.children.length > 0 && !isChild) {
+                    const children = domEl.querySelectorAll(':scope > [_key]')
+                    if (children.length > 0 && !isChild) {
 
-                        for (let i = 0; i < domEl.children.length; i++) {
-                            targetElements.push({domEl: domEl.children[i],
-                                prevSibling:i>0?domEl.children[i-1]:null,
-                                nextSibling:i<domEl.children.length-1?domEl.children[i+1]:null,
+                        for (let i = 0; i < children.length; i++) {
+                            targetElements.push({domEl: children[i],
+                                prevSibling:i>0?children[i-1]:null,
+                                nextSibling:i<children.length-1?children[i+1]:null,
                                 isChild: true, index:i})
                         }
                         //last element
-                        targetElements.push({domEl: domEl.children[domEl.children.length-1],
-                            prevSibling:domEl.children.length>1?domEl.children[domEl.children.length-2]:null,
-                            isChild: true, index: domEl.children.length, isLastChild:true})
+                        targetElements.push({domEl: children[children.length-1],
+                            prevSibling:children.length>1?children[children.length-2]:null,
+                            isChild: true, index: children.length, isLastChild:true})
 
                     } else {
 
