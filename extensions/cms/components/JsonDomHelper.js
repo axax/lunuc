@@ -558,7 +558,7 @@ class JsonDomHelper extends React.Component {
     }
 
     triggerContextMenu(e) {
-        if(this.isElementActive()) {
+        if(this.isElementActive() || this.props._tagName === 'Cms') {
             e.stopPropagation()
             e.preventDefault()
             this.setState({
