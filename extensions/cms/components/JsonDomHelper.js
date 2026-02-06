@@ -1049,7 +1049,7 @@ class JsonDomHelper extends React.Component {
                         message: _t('JsonDomHelper.element.copied.to.clipboard',{length:allSubJsons.length})})
                 }
             })
-            return
+            return menuItems
         }
         if (hasJsonToEdit) {
             if (parsedSource) {
