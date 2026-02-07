@@ -90,7 +90,7 @@ console.log(`xxxxx time to check ${Date.now()-start}ms ${z}`)*/
 class JsonDom extends React.Component {
 
     /* Events that are listened to */
-    static events = ['onTouchStart','onTouchEnd','onTouchCancel','onTouchMove','onDragEnd', 'onDragStart', 'onError','onClose','onRef','onAnimationEnd','onMouseMove','onMouseOver', 'onMouseOut', 'onMouseEnter', 'onMouseLeave', 'onMouseDown', 'onMouseUp', 'onClick', 'onKeyDown', 'onKeyUp', 'onFocus', 'onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput', 'onForwardRef']
+    static events = ['onScroll', 'onTouchStart','onTouchEnd','onTouchCancel','onTouchMove','onDragEnd', 'onDragStart', 'onError','onClose','onRef','onAnimationEnd','onMouseMove','onMouseOver', 'onMouseOut', 'onMouseEnter', 'onMouseLeave', 'onMouseDown', 'onMouseUp', 'onClick', 'onKeyDown', 'onKeyUp', 'onFocus', 'onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput', 'onForwardRef']
 
     /*
      * Default components
