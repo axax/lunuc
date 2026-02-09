@@ -26,7 +26,7 @@ function addCanonicalTag(href) {
         id: 'canonicalTag',
         rel: 'canonical',
         href
-    })
+    },{ignoreIfExist:true})
 }
 
 
