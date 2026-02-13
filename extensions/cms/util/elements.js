@@ -1090,10 +1090,10 @@ const baseElements = [
                 tab: DEFAULT_TAB
             },
             $c: {
-                label: 'Text (HTML)',
+                label: 'Text (mit HTML)',
                 fullWidth: true,
                 uitype: 'textarea',
-                tab: EXTENDED_TAB,
+                tab: DEFAULT_TAB,
                 role: CAPABILITY_MANAGE_CMS_TEMPLATE
             },
             $toHtml: {
@@ -1864,6 +1864,10 @@ const baseElements = [
             },
             p_name:{
                 label: 'Name',
+                tab: DEFAULT_TAB
+            },
+            p_value:{
+                label: 'Value',
                 tab: DEFAULT_TAB
             },
             p_placeholder:{

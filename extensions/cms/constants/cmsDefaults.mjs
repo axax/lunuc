@@ -358,16 +358,26 @@ export const DEFAULT_STYLE = `//!#Environment
     }
   }
   //!!#EXTRACT_CLASSES>
-  
-  .animation {
-      opacity: 0;
+  .fade-in {
+    opacity: 0;
+    transform-origin: center center;
+    transition: opacity calc(var(--default-transition-duration) * 4), transform calc(var(--default-transition-duration) * 4);
+    &.up{
       transform: translateY(15vh) scale(1);
-      transform-origin: center center;
-      transition: opacity calc(var(--default-transition-duration) * 4), transform calc(var(--default-transition-duration) * 4);
-  }
-  .fade-in-up {
+    }
+    &.down{
+      transform: translateY(-15vh) scale(1);
+    }
+    &.right{
+      transform: translateX(15vw) scale(1);
+    }
+    &.left{
+      transform: translateX(-15vw) scale(1);
+    }
+    &.on{
       opacity: 1;
       transform: translateY(0) scale(1);
+    }
   }
 }
 
