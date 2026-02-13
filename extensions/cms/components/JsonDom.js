@@ -1322,7 +1322,7 @@ class JsonDom extends React.Component {
                         ))
                     } else {
 
-                        if(eleProps.id){
+                        if(eleProps.id && t === 'img'){
                             // Add the id to the key to force React to re-render when the ID changes.
                             eleProps.key = eleProps.id + eleProps.key
                         }
