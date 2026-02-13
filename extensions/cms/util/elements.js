@@ -1090,6 +1090,7 @@ const baseElements = [
                 tab: DEFAULT_TAB
             },
             $c: {
+                onlyShowIfData:true,
                 label: 'Text (mit HTML)',
                 fullWidth: true,
                 uitype: 'textarea',

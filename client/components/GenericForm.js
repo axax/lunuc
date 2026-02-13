@@ -596,13 +596,18 @@ class GenericForm extends React.Component {
                 continue
             }
 
-
             if (!isFieldVisibleForCurrentUser(field) ||
                 (field.uistate && field.uistate.visible && matchExpr(field.uistate.visible, this.state.fields))){
                 continue
             }
 
             let value = this.state.fieldsTmp[fieldKey] || this.state.fields[fieldKey]
+
+            if(field.onlyShowIfData && value===null){
+                continue
+            }
+
+
             if (field.replaceBreaks && isString(value)) {
                 value = value.replace(/<br>/g, '\n')
             }
