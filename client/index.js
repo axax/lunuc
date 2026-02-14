@@ -79,8 +79,9 @@ function mainInit() {
             if (contextLanguage) {
                 lang = contextLanguage
             } else {
-                if (_app_.detectLang) {
+                if (_app_.detectLang && sessionStorage.getItem('detectedLang')==null) {
                     lang = (navigator.language || navigator.userLanguage).substr(0, 2)
+                    sessionStorage.setItem('detectedLang', lang)
                 }
                 if (!lang || LANGUAGES.indexOf(lang) < 0) {
                     lang = _app_.defaultLang || DEFAULT_LANGUAGE
