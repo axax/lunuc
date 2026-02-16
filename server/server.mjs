@@ -35,6 +35,7 @@ import {
 import {actAsReverseProxy, isUrlValidForPorxing} from './util/reverseProxy.mjs'
 import Util from '../client/util/index.mjs'
 import {doTrackingEvent} from './util/tracking.mjs'
+import {getGatewayIp} from '../util/gatewayIp.mjs'
 
 import {isRateLimited} from './util/rateLimiter.mjs'
 
@@ -691,16 +692,24 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
                 } else {
 
-                    // second more restrictiv check
-                    if(isTemporarilyBlocked({req,
-                            key:'index-'+remoteAddress,
-                            requestPerTime:5,
-                            requestTimeInMs:1000}) ||
-                        isTemporarilyBlocked({req,
-                            key:'index-'+remoteAddress,
-                            requestPerTime:20,
-                            requestTimeInMs:10000})) {
-                        return
+
+                    const gatewayIp = await getGatewayIp()
+                    if(gatewayIp !== remoteAddress) {
+                        // second more restrictiv check
+                        if (isTemporarilyBlocked({
+                                req,
+                                key: 'index-' + remoteAddress,
+                                requestPerTime: 9,
+                                requestTimeInMs: 1000
+                            }) ||
+                            isTemporarilyBlocked({
+                                req,
+                                key: 'index-' + remoteAddress,
+                                requestPerTime: 25,
+                                requestTimeInMs: 10000
+                            })) {
+                            return
+                        }
                     }
 
                     const ext = path.extname(urlPathname)
