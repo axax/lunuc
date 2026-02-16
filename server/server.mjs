@@ -152,7 +152,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
         const urlToFetch = baseUrl + urlPathname + queryString
         const cacheFileDir = path.join(SERVER_DIR, 'cache', host.replace(/\W/g, ''))
 
-        const rawUrlPath = Util.removeTrailingSlash(queryString?urlPathname.split(config.PRETTYURL_SEPERATOR)[0]:urlPathname).substring(1) || 'index'
+        const rawUrlPath = Util.removeTrailingSlash(urlPathname).substring(1) || 'index'
 
         const cacheFileName = `${cacheFileDir}/${rawUrlPath.replace(/\//g, '-').replace(/[^\w-]/g, '')}${queryString?'@'+queryString.replace(/\W/g, ''):''}.html`
 
