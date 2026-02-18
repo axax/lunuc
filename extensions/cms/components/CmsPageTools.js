@@ -65,18 +65,42 @@ export default function CmsPageTools(props){
                     newData = newData[0]
                 }
             }
-
-
-            if(data){
-                if(Array.isArray(data)) {
-                    newData = [newData,...data]
-                }else if(data.constructor === Object){
-                    newData = deepMerge(newData,data)
-                }else{
-                    newData = data
+            let parentPath = path.slice(0, path.lastIndexOf('.'))
+            if(parentPath.endsWith('.c')){
+                parentPath = parentPath.substring(0, parentPath.lastIndexOf('.'))
+            }
+            const parentData = propertyByPath(parentPath, template)
+            if(parentData) {
+                if (event.data.operation === 'remove') {
+                    if (Array.isArray(parentData.c)) {
+                        const index = parentData.c.indexOf(data)
+                        if (index > -1) {
+                            parentData.c.splice(index, 1)
+                        }
+                    } else {
+                        parentData.c = {}
+                    }
+                } else if (event.data.operation === 'add') {
+                    if (!Array.isArray(parentData.c)) {
+                        parentData.c = [parentData.c]
+                    }
+                    const index = parentData.c.indexOf(data)
+                    if(event.data.location==='before'){
+                        parentData.c.splice(index, 0, newData)
+                    }else {
+                        parentData.c.splice(index<parentData.c.length-1?index+1:index, 0, newData)
+                    }
+                } else if (event.data.operation === 'update') {
+                    if (Array.isArray(parentData.c)) {
+                        const index = parentData.c.indexOf(data)
+                        if (index > -1) {
+                            parentData.c[index] = newData
+                        }
+                    } else {
+                        parentData.c = newData
+                    }
                 }
             }
-            setPropertyByPath(newData, path, template)
 
             props.onTemplateChange(template,true)
 
