@@ -29,10 +29,20 @@ const CodeMirrorWrapper = (props) => {
     if (controlled){
         React.useEffect(() => {
             if(editorViewRef.current && editorViewRef.current.state.doc.toString() !== value) {
-                editorViewRef.current._lastUpdate = Date.now()
-                editorViewRef.current.dispatch({
-                    changes: {from: 0, to: editorViewRef.current.state.doc.length, insert: value}
+                const view = editorViewRef.current
+                const oldPos = view.state.selection.main.head
+                const scrollInfo = view.scrollDOM.scrollTop;  // or view.scrollDOM.getBoundingClientRect()
+
+
+                view._lastUpdate = Date.now()
+                view.dispatch({
+                    changes: { from: 0, to: view.state.doc.length, insert: value },
+                    selection: { anchor: oldPos, head: oldPos }  // Retains cursor; adjust pos if needed (e.g., value.length for end)
                 })
+                requestAnimationFrame(() => {
+                    view.scrollDOM.scrollTop = scrollInfo;
+                    // OR for more precision: view.scrollTo(null, scrollInfo);
+                });
             }
         }, [value])
     }
