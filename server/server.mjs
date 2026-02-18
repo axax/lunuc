@@ -694,7 +694,8 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
 
                     const gatewayIp = await getGatewayIp()
-                    if(gatewayIp !== remoteAddress) {
+
+                    if(gatewayIp !== remoteAddress && remoteAddress !== '127.0.0.1') {
                         // second more restrictiv check
                         if (isTemporarilyBlocked({
                                 req,
