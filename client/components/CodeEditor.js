@@ -167,7 +167,6 @@ function CodeEditor(props,ref){
             }
         })
     }
-    let onChangeTimeout = false
     const comp = <StyledRoot error={hasError} inWindow={renderInWindow} className={className} style={style}>
         {files && <div>{files.map((file, i) => {
                 return (<StyledFile key={'file' + i}
@@ -194,31 +193,30 @@ function CodeEditor(props,ref){
         <CodeMirrorWrapper mergeView={mergeView} mergeValue={mergeValue} controlled={controlled}
             identifier={`${stateIdentifier}${showFileSplit?'-'+finalFileIndex:''}`}
             onChange={(codeAsString)=>{
-                clearTimeout(onChangeTimeout)
-                onChangeTimeout = setTimeout(()=>{
-                    let fullCodeAsString = putFilesTogether(files, finalFileIndex, codeAsString)
+                let fullCodeAsString = putFilesTogether(files, finalFileIndex, codeAsString)
 
-                    let asJson
-                    if (isDataJson || type === 'json') {
-                        try {
-                            asJson = JSON.parse(fullCodeAsString)
-                            setStateError(false)
-                        } catch (jsonError) {
-                            setStateError(jsonError)
-                            if (onError) {
-                                onError(jsonError, fullCodeAsString)
-                            }
+                let asJson
+                if (isDataJson || type === 'json') {
+                    try {
+                        asJson = JSON.parse(fullCodeAsString)
+                        setStateError(false)
+                    } catch (jsonError) {
+                        setStateError(jsonError)
+                        if (onError) {
+                            onError(jsonError, fullCodeAsString)
                         }
                     }
-                    if (onChange) {
-                        if (isDataJson) {
-                            // if input was an object output is an Object too
-                            onChange(asJson)
-                        } else {
-                            onChange(fullCodeAsString)
-                        }
+                }
+                if (onChange) {
+                    if (isDataJson) {
+                        // if input was an object output is an Object too
+                        setStateValue(asJson)
+                        onChange(asJson)
+                    } else {
+                        setStateValue(fullCodeAsString)
+                        onChange(fullCodeAsString)
                     }
-                },50)
+                }
             }}
             lineNumbers={lineNumbers}
             type={type} readOnly={readOnly}
@@ -325,6 +323,5 @@ function CodeEditor(props,ref){
 }
 
 export default memo(forwardRef(CodeEditor), (prev, next)=>{
-    console.log(prev.children === next.children, prev.children, next.children)
     return prev.identifier === next.identifier && prev.height === next.height && (!next.controlled || prev.children === next.children)
 })

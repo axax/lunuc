@@ -29,6 +29,7 @@ const CodeMirrorWrapper = (props) => {
     if (controlled){
         React.useEffect(() => {
             if(editorViewRef.current && editorViewRef.current.state.doc.toString() !== value) {
+                editorViewRef.current._lastUpdate = Date.now()
                 editorViewRef.current.dispatch({
                     changes: {from: 0, to: editorViewRef.current.state.doc.length, insert: value}
                 })
@@ -60,7 +61,8 @@ const CodeMirrorWrapper = (props) => {
                 }
             }),
             onChange && EditorView.updateListener.of((view) => {
-                if(view.docChanged) {
+                // prevent endless changes
+                if(view.docChanged && (!editorViewRef.current._lastUpdate || (Date.now() - editorViewRef.current._lastUpdate) > 100)) {
                     const codeAsString = view.state.doc.toString()
                     onChange(codeAsString)
                 }
