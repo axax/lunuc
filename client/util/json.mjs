@@ -174,6 +174,9 @@ export const findSegmentByKeyOrPath = ({json, key, path}) => {
     let segment, index = -1
     for (let i = 0; i < json.length; i++) {
         const subJson = json[i]
+        if(!subJson){
+            continue
+        }
         if (key) {
             if (subJson.key === key) {
                 index = i
