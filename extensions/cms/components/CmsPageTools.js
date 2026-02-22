@@ -84,7 +84,10 @@ export default function CmsPageTools(props){
                     if (!Array.isArray(parentData.c)) {
                         parentData.c = [parentData.c]
                     }
-                    const index = parentData.c.indexOf(data)
+                    let index = parentData.c.indexOf(data)
+                    if(index<0){
+                        index = 0
+                    }
                     if(event.data.location==='before'){
                         parentData.c.splice(index, 0, newData)
                     }else {

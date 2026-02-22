@@ -117,7 +117,7 @@ function CodeEditor(props,ref){
     }, [identifier,(controlled ? children : null)])
 
 
-    let finalValue = isDataJson && stateValue.constructor !== String ? JSON.stringify(stateValue, null, 2) : stateValue
+    let finalValue = isDataJson && stateValue && stateValue.constructor !== String ? JSON.stringify(stateValue, null, 2) : stateValue
     const hasError = !!(error || stateError)
     if(editorViewRef.current) {
         editorViewRef.current.hasError = hasError

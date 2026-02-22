@@ -1539,7 +1539,7 @@ const baseElements = [
                                     $inlineEditor: false,
                                     t: 'li',
                                     p: {
-                                        "style": "$.slide{slide.data && slide.data.length>0? && !isNaN(slide.data[0].timeout)?'--timeout:'+slide.data[0].timeout+'ms':''}"
+                                        "style": "$.slide{slide.data && slide.data.length>0 && !isNaN(slide.data[0].timeout)?'--timeout:'+slide.data[0].timeout+'ms':''}"
                                     },
                                     c: {
                                         $inlineEditor: false,
