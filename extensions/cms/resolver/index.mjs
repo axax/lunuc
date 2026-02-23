@@ -22,7 +22,7 @@ import {createRequireForScript} from '../../../util/require.mjs'
 import {DEFAULT_DATA_RESOLVER, DEFAULT_SCRIPT, DEFAULT_STYLE, DEFAULT_TEMPLATE} from '../constants/cmsDefaults.mjs'
 import {CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities.mjs'
 import {createMatchForCurrentUser} from '../../../api/util/dbquery.mjs'
-import {parseOrElse} from '../../../client/util/json.mjs'
+import {matchExpr, parseOrElse} from '../../../client/util/json.mjs'
 import {userHasAccessToObject} from '../../../api/util/access.mjs'
 
 
@@ -567,6 +567,10 @@ export default db => ({
         ),
         cmsCustomData: withFilter(() => pubsub.asyncIterableIterator('cmsCustomData'),
             (payload, context) => {
+                if(context.variables && context.variables.filter){
+                    const data = parseOrElse(payload.cmsCustomData.data,{})
+                    return !matchExpr(context.variables.filter, data)
+                }
                 return payload && payload.session === context.session && (!payload.clientId || context.clientId === payload.clientId)
             }
         ),

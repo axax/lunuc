@@ -72,7 +72,10 @@ GenSourceCode.prototype.apply = function (compiler) {
 
         const exteionsion = fs.readdirSync(EXTENSION_PATH)
 
-        let clientContent = GENSRC_HEADER, serverContent = GENSRC_HEADER, manifestJson = {},
+        let clientContent = GENSRC_HEADER,
+            serverContent = GENSRC_HEADER,
+            rootServerContent = GENSRC_HEADER,
+            manifestJson = {},
             clientAdminContent = GENSRC_HEADER
 
         let base = '\nconst settings = (_app_.localSettings && _app_.localSettings.extensions) || {}\n'
@@ -175,8 +178,9 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
                         if (fs.existsSync(EXTENSION_PATH + file + '/server.mjs')) {
                             serverContent += `import '.${EXTENSION_PATH}${file}/server.mjs'\n`
                         }
-
-
+                        if (fs.existsSync(EXTENSION_PATH + file + '/root-server.mjs')) {
+                            rootServerContent += `import '.${EXTENSION_PATH}${file}/root-server.mjs'\n`
+                        }
                     }
                 }
             }
@@ -248,6 +252,11 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
             }
         })
         fs.writeFile(GENSRC_PATH + "/extensions-server.mjs", serverContent, function (err) {
+            if (err) {
+                return console.log(err)
+            }
+        })
+        fs.writeFile(GENSRC_PATH + "/extensions-root-server.mjs", rootServerContent, function (err) {
             if (err) {
                 return console.log(err)
             }

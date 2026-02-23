@@ -175,6 +175,12 @@ const setUpWs = () => {
 
     }
 }
+const setUpWsIfNeeded = (data) => {
+    if (data && data.cmsPage && data.cmsPage.subscriptions) {
+        // only setup subscription if needed
+        setUpWs()
+    }
+}
 const getHeaders = (lang, headersExtra={}) => {
     const headers = {
         'Content-Language': lang || _app_.lang,
@@ -269,10 +275,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  qu
                 }
 
                 resolve(resolveData)
-                if(resolveData.data && resolveData.data.cmsPage && resolveData.data.cmsPage.subscriptions) {
-                    // only setup subscription if needed
-                    setUpWs()
-                }
+                setUpWsIfNeeded(resolveData.data)
                 return
             }
         }
@@ -314,10 +317,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  qu
                         reject(rejectData)
                     } else {
                         const resolveData = {...response, loading: false, networkStatus: NetworkStatus.ready}
-                        if(response.data && response.data.cmsPage && response.data.cmsPage.subscriptions) {
-                            // only setup subscription if needed
-                            setUpWs()
-                        }
+                        setUpWsIfNeeded(response.data)
                         if (type === RequestType.query) {
 
                             resolveData.fetchMore = getFetchMore({
@@ -506,6 +506,7 @@ export const client = {
         return res
     },
     subscribe: ({query, variables, extensions}) => {
+        setUpWs()
         subscribeCount++
 
         const shareKey = query + (variables ? JSON.stringify(variables) : '') + (extensions ? JSON.stringify(extensions) : '')
@@ -638,6 +639,7 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = CACHE
     const checkCache = _app_.ssr || skip || fetchPolicy === CACHE_FIRST || fetchPolicy === 'cache-and-network'
     if (checkCache) {
         currentData = client.readQuery({cacheKey})
+        setUpWsIfNeeded(currentData)
     }
     const initialLoading = (_app_.ssr || skip || (fetchPolicy === 'cache-first' && currentData)) ? false : true
     const initialData = {

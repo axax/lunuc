@@ -28,6 +28,6 @@ type Query {
 
 type Subscription{
     cmsPageData: CmsPage
-    cmsCustomData: CmsCustomData
+    cmsCustomData(filter:String): CmsCustomData
 }
 `

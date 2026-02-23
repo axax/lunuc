@@ -4,20 +4,20 @@ import url from 'url'
 import path from 'path'
 import net from 'net'
 import fs from 'fs'
-import jwt from 'jsonwebtoken'
+import '../gensrc/extensions-root-server.mjs'
 import MimeType from '../util/mime.mjs'
 import {getHostFromHeaders} from '../util/host.mjs'
 import {replacePlaceholders} from '../util/placeholders.mjs'
 import {ensureDirectoryExistence} from '../util/fileUtil.mjs'
 import {getBestMatchingHostRule, getHostRules, getRootCertContext, resetHostRules} from '../util/hostrules.mjs'
 import {contextByRequest} from '../api/util/sessionContext.mjs'
-import {parseUserAgent} from '../util/userAgent.mjs'
-import {SECRET_KEY, TRACK_IP_HEADER, USE_COOKIES} from '../api/constants/index.mjs'
+import {isLetsEncryptAgent, parseUserAgent} from '../util/userAgent.mjs'
+import {TRACK_IP_HEADER} from '../api/constants/index.mjs'
 import {parseCookies} from '../api/util/parseCookies.mjs'
 import {isTemporarilyBlocked} from './util/requestBlocker.mjs'
 import {parseWebsite} from './util/web2html.mjs'
-import {decodeToken} from '../api/util/jwt.mjs'
 import {proxyToApiServer, proxyWsToApiServer} from './util/apiProxy.mjs'
+import {verifyTokenAndResponse} from './util/tokenLink.mjs'
 //import heapdump from 'heapdump'
 import {clientAddress} from '../util/host.mjs'
 import Cache from '../util/cache.mjs'
@@ -25,18 +25,16 @@ import {decodeURIComponentSafe, doScreenCapture, regexRedirectUrl} from './util/
 import {createSimpleEtag} from './util/etag.mjs'
 import {getDynamicConfig} from '../util/config.mjs'
 import {
-    getFileFromOtherServer,
+    resolveUploadedFile,
     parseAndSendFile,
     sendError,
     sendFile,
-    sendFileFromDir,
-    zipAndSendMedias
+    sendFileFromDir
 } from './util/file.mjs'
 import {actAsReverseProxy, isUrlValidForPorxing} from './util/reverseProxy.mjs'
 import Util from '../client/util/index.mjs'
 import {doTrackingEvent} from './util/tracking.mjs'
 import {getGatewayIp} from '../util/gatewayIp.mjs'
-
 import {isRateLimited} from './util/rateLimiter.mjs'
 
 const config = getDynamicConfig()
@@ -44,7 +42,7 @@ const config = getDynamicConfig()
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
 const ROOT_DIR = path.resolve(), SERVER_DIR = path.join(ROOT_DIR, './server')
 const ABS_UPLOAD_DIR = path.join(ROOT_DIR, UPLOAD_DIR)
-const API_PREFIXES = config.API_PREFIX?(Array.isArray(config.API_PREFIX)? config.API_PREFIX : [config.API_PREFIX]):[]
+const API_PREFIXES = API_PREFIX?(Array.isArray(API_PREFIX)? API_PREFIX : [API_PREFIX]):[]
 
 
 // Use Httpx
@@ -346,56 +344,7 @@ const hasHttpsWwwRedirect = ({parsedUrl, hostrule, host, req, res, remoteAddress
     return false
 }
 
-async function resolveUploadedFile(uri, parsedUrl, req, res) {
 
-    // remove pretty url part
-    const pos = uri.indexOf('/' + config.PRETTYURL_SEPERATOR + '/')
-    let modUri
-    if (pos >= 0) {
-        modUri = uri.substring(0, pos)
-    } else {
-        modUri = uri
-    }
-
-    const urlWithoutUploadDir = modUri.substring(UPLOAD_URL.length + 1)
-    if(urlWithoutUploadDir.startsWith('private')){
-        sendError(res, 404)
-        return
-    }
-    const baseFilename = path.join(ABS_UPLOAD_DIR, urlWithoutUploadDir) //.replace(/\.\.\//g, ''))
-    let filename = baseFilename
-
-    if (!fs.existsSync(filename)) {
-        let context
-        if (USE_COOKIES) {
-            const cookies = parseCookies(req)
-            context = decodeToken(cookies.auth)
-            context.session = cookies.session
-        } else {
-            //context = decodeToken(payload.auth)
-            //context.session = payload.session
-        }
-        if (context && context.role === 'administrator') {
-            filename = path.join(ABS_UPLOAD_DIR, 'private' + urlWithoutUploadDir)
-        }
-    }
-
-
-    if (!fs.existsSync(filename) && (!parsedUrl || parsedUrl.query.remoteserver!=='false') ) {
-        if(await getFileFromOtherServer(modUri,baseFilename,res, req)){
-            return
-        }
-    }
-
-    if(!await sendFileFromDir(req, res,{filename, parsedUrl})){
-        console.log('not exists: ' + filename)
-        sendError(res, 404)
-    }
-}
-
-function isLetsEncryptAgent(agent) {
-    return agent.indexOf('www.letsencrypt.org') >= 0
-}
 
 // Initialize http api
 const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req, res) {
@@ -498,26 +447,12 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             // there is also /graphql/upload
            await proxyToApiServer(req, res, {host, path: parsedUrl.path})
         } else {
+
             if (urlPathname.startsWith('/tokenlink/')) {
+
                 let token = urlPathname.substring(11)
                 token = token.substring(0, token.indexOf('/'))
-                jwt.verify(token, SECRET_KEY, async (err, decoded) => {
-                    if (!err) {
-
-                        if (decoded.mediaIds) {
-                            zipAndSendMedias(res, decoded)
-                        } else if (!await sendFileFromDir(req, res, {
-                            filename: path.join(ROOT_DIR, decoded.filePath),
-                            neverCompress: true, headers: {}, parsedUrl
-                        })) {
-                            sendError(res, 404)
-                        }
-
-                    } else {
-                        console.error(err)
-                        sendError(res, 404)
-                    }
-                })
+                verifyTokenAndResponse(req,res,token,parsedUrl)
 
             } else if (urlPathname.startsWith(BACKUP_URL + '/')) {
                 const context = contextByRequest(req)
@@ -561,7 +496,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
 
             } else if (urlPathname.startsWith(UPLOAD_URL + '/')) {
-                await resolveUploadedFile(urlPathname, parsedUrl, req, res)
+                await resolveUploadedFile(req, res, urlPathname, parsedUrl)
             } else {
 
                 let redirect, redirectStatusCode = 301
@@ -667,7 +602,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                                     url = /*(req.isHttps ? 'https://' : 'http://') + hostRuleHost*/ 'http://127.0.0.1:' + PORT + url
                                 }
                                 const result = await doScreenCapture(url, absFilename, data.screenshot.options)
-                                if (result.statusCode != 200) {
+                                if (result.statusCode !== 200) {
                                     if (result.statusCode === 302) {
                                         res.writeHead(result.statusCode, {'Location': result.location})
                                         res.end()
@@ -733,18 +668,6 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
         sendError(res, 500)
     }
 })
-
-/* this is only used for video conference tool */
-//TODO: Move this to an extension as it doesn't belong here
-import stream from './stream.js'
-import {Server} from 'socket.io'
-
-
-let ioHttp = new Server(app.http)
-ioHttp.on('connection', stream)
-
-let ioHttps = new Server(app.https)
-ioHttps.on('connection', stream)
 
 
 //

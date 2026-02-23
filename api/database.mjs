@@ -43,6 +43,19 @@ export const dbPreparation = async (db, cb) => {
     cb(db)
 }
 
+const DbConnectionCache = {}
+export const dbConnectionCached = (dburl, cachKey, cb) =>{
+    if(DbConnectionCache[cachKey] /*&& DbConnectionCache[cachKey].client.topology && DbConnectionCache[cachKey].client.topology.isConnected()*/){
+        cb(null, DbConnectionCache[cachKey].db, DbConnectionCache[cachKey].client)
+    }else {
+        dbConnection(MONGO_URL, async (err, db, client) => {
+            if(!err){
+                DbConnectionCache[cachKey] = {db, client}
+            }
+            cb(err, db, client)
+        })
+    }
+}
 
 export const dbConnection = (dburl, cb) => {
     if (!dburl) {

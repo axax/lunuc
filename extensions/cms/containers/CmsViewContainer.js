@@ -25,7 +25,7 @@ class CmsViewContainer extends React.Component {
         const cmsPageOld = this.props.cmsPage
         if (cmsPage) {
             if (!cmsPageOld || (cmsPage.subscriptions !== cmsPageOld.subscriptions)) {
-                this.setUpSubscriptions(props)
+                this.setUpSubscriptionsInternal(props)
             }
 
             if (!cmsPageOld || cmsPage.resources !== cmsPageOld.resources) {
@@ -66,7 +66,7 @@ class CmsViewContainer extends React.Component {
     }
 
     componentDidMount() {
-        this.setUpSubscriptions(this.props)
+        this.setUpSubscriptionsInternal(this.props)
     }
 
     componentWillUnmount() {
@@ -104,6 +104,7 @@ class CmsViewContainer extends React.Component {
         const content = <JsonDom
             clientQuery={this.clientQuery.bind(this)}
             serverMethod={this.serverMethod.bind(this)}
+            setUpSubscriptions={this.setUpSubscriptions.bind(this)}
             setKeyValue={setKeyValue}
             getKeyValue={getKeyValue}
             updateResolvedData={updateResolvedData}
@@ -235,17 +236,20 @@ class CmsViewContainer extends React.Component {
         })
     }
 
-
-    setUpSubscriptions(props) {
+    setUpSubscriptionsInternal(props) {
         if (!props.cmsPage) return
 
         const {cmsPage: {subscriptions}} = props
 
         let subscriptionArray = parseOrElse(subscriptions, false)
 
-        if(!subscriptionArray){
+        if (!subscriptionArray) {
             return
         }
+        this.setUpSubscriptions(subscriptionArray)
+    }
+
+    setUpSubscriptions(subscriptionArray) {
 
         // remove subscriptions
         this.removeSubscriptions()

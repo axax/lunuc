@@ -11,26 +11,25 @@ import {PassThrough} from 'stream'
 import {transcodeAndStreamVideo, transcodeVideoOptions} from './transcodeVideo.mjs'
 import {getGatewayIp} from '../../util/gatewayIp.mjs'
 import Cache from '../../util/cache.mjs'
-import archiver from 'archiver'
 import path from 'path'
-import {dbConnection, MONGO_URL} from '../../api/database.mjs'
 import {getDynamicConfig} from '../../util/config.mjs'
-import {ObjectId} from 'mongodb'
 import {getCmsPageQuery, removePrettyUrlPart} from '../../extensions/cms/util/cmsView.mjs'
 import {
     SESSION_HEADER,
     AUTH_HEADER,
     HOSTRULE_HEADER,
     TRACK_IP_HEADER,
-    CLIENT_ID_HEADER, TRACK_REFERER_HEADER, TRACK_IS_BOT_HEADER, TRACK_USER_AGENT_HEADER, TRACK_URL_HEADER
+    CLIENT_ID_HEADER, TRACK_REFERER_HEADER, TRACK_IS_BOT_HEADER, TRACK_USER_AGENT_HEADER, TRACK_URL_HEADER, USE_COOKIES
 } from '../../api/constants/index.mjs'
 import Util from '../../client/util/index.mjs'
-import {parseCookies} from "../../api/util/parseCookies.mjs";
+import {parseCookies} from '../../api/util/parseCookies.mjs'
+import {decodeToken} from '../../api/util/jwt.mjs'
+import Hook from '../../util/hook.cjs'
 
 const config = getDynamicConfig()
 
 const {UPLOAD_DIR} = config
-const ROOT_DIR = path.resolve(), SERVER_DIR = path.join(ROOT_DIR, '../server')
+const ROOT_DIR = path.resolve()
 const ABS_UPLOAD_DIR = path.join(ROOT_DIR, UPLOAD_DIR)
 
 const LUNUC_SERVER_NODES = process.env.LUNUC_SERVER_NODES || ''
@@ -389,35 +388,61 @@ const compressContentAndSend = (req, res, finalContent, statusCode, data, header
 }
 
 
-export const zipAndSendMedias = (res, decoded) => {
+export const resolveUploadedFile = async (req, res, uri, parsedUrl) => {
 
-    dbConnection(MONGO_URL, async (err, db) => {
+    // remove pretty url part
+    const pos = uri.indexOf('/' + config.PRETTYURL_SEPERATOR + '/')
+    let modUri
+    if (pos >= 0) {
+        modUri = uri.substring(0, pos)
+    } else {
+        modUri = uri
+    }
 
-        if (!db) {
-            console.error(err)
-            res.status(500).send({error: err.message})
+    const urlWithoutUploadDir = modUri.substring(config.UPLOAD_URL.length + 1)
+    if(urlWithoutUploadDir.startsWith('private')){
+        sendError(res, 404)
+        return
+    }
+    const baseFilename = path.join(ABS_UPLOAD_DIR, urlWithoutUploadDir) //.replace(/\.\.\//g, ''))
+    let filename = baseFilename
+
+    if (!fs.existsSync(filename)) {
+        // check for private upload
+        let context
+        if (USE_COOKIES) {
+            const cookies = parseCookies(req)
+            context = decodeToken(cookies.auth)
+            context.session = cookies.session
         } else {
-            // Set the headers to indicate a file attachment of type zip
-            res.setHeader('Content-Disposition', 'attachment; filename=files.zip')
-            res.setHeader('Content-Type', 'application/zip')
-
-            // Create a zip archive and pipe it to the response
-            const archive = archiver('zip', {zlib: {level: 9}})
-            archive.pipe(res)
-
-            const medias = await db.collection('Media').find({ _id: { $in: decoded.mediaIds.map(id=>new ObjectId(id)) } }).toArray()
-            // Add files to the archive (can be from disk, buffers, or strings)
-            for (const media of medias) {
-                archive.file(path.join(ABS_UPLOAD_DIR, media._id.toString()), {name: media.name})
-            }
-
-            // Handle errors
-            archive.on('error', err => {
-                res.status(500).send({error: err.message});
-            })
-
-            // Finalize the archive (this sends the zip to the client)
-            archive.finalize()
+            //context = decodeToken(payload.auth)
+            //context.session = payload.session
         }
-    })
+        if (context && context.role) {
+            if (Hook.hooks['UploadedFilePrivateAccess']) {
+                for (let i = 0; i < Hook.hooks['UploadedFilePrivateAccess'].length; ++i) {
+                    if(await Hook.hooks['UploadedFilePrivateAccess'][i].callback({name:urlWithoutUploadDir, context})){
+                        filename = path.join(ABS_UPLOAD_DIR, 'private' + urlWithoutUploadDir)
+                        break
+                    }
+                }
+            }
+        }
+    }
+
+
+    if (!fs.existsSync(filename) && (!parsedUrl || parsedUrl.query.remoteserver!=='false') ) {
+        if(await getFileFromOtherServer(modUri,baseFilename,res, req)){
+            return
+        }
+    }
+
+    if(await sendFileFromDir(req, res,{filename, parsedUrl})) {
+        // track file access
+        Hook.call('UploadedFileAccess', {name:urlWithoutUploadDir, filename})
+    }else{
+        console.log('not exists: ' + filename)
+        sendError(res, 404)
+        Hook.call('UploadedFileAccessError', {name:urlWithoutUploadDir, filename})
+    }
 }

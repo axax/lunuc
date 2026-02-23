@@ -2607,6 +2607,7 @@ const advancedElements = [
                 value: {
                     t: 'Row.row-space-4.entry',
                     '$inlineEditor': {
+                        if:false,
                         mode: 'source',
                         menuTitle: {
                             source: '$.loop{loop.definition.name} bearbeiten',
@@ -2617,7 +2618,12 @@ const advancedElements = [
                             remove: false,
                             clone: false,
                             clipboard: false,
-                            addBelow: false
+                            addBelow: false,
+                            addSpace: false,
+                            convert: false,
+                            add: false,
+                            allowDrop:false,
+                            wrap:false
                         },
                         source: {
                             allowClone: true,
@@ -2695,7 +2701,11 @@ const advancedElements = [
             },
             ...condition(),
             ...marginOptions('p_'),
-            ...classOptions('p_')
+            ...classOptions('p_'),
+            t: {
+                tab: DEFAULT_TAB,
+                label: 'HTML Tag'
+            },
         }
     },
     {

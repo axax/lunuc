@@ -216,6 +216,9 @@ export const parseUserAgentRaw = (() => {
     }
 })()
 
+export const isLetsEncryptAgent = (agent) => {
+    return agent.indexOf('www.letsencrypt.org') >= 0
+}
 
 //console.log(parseUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'))
 //console.log(parseUserAgent('Mozilla/5.0 (compatible; ITools; Chrome/70.0.3538.102 Safari/537.36 Edge/18.19582)')) // search.ch
