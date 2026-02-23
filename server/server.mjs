@@ -639,13 +639,13 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                         if (isTemporarilyBlocked({
                                 req,
                                 key: 'index-' + remoteAddress,
-                                requestPerTime: 9,
+                                requestPerTime: 10,
                                 requestTimeInMs: 1000
                             }) ||
                             isTemporarilyBlocked({
                                 req,
                                 key: 'index-' + remoteAddress,
-                                requestPerTime: 25,
+                                requestPerTime: 50,
                                 requestTimeInMs: 10000
                             })) {
                             return
