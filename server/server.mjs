@@ -614,7 +614,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
                             }
 
-                            await resolveUploadedFile(`${UPLOAD_URL}/screenshots/${filename}`, parsedUrl, req, res)
+                            await resolveUploadedFile(req, res,`${UPLOAD_URL}/screenshots/${filename}`, parsedUrl)
 
 
                         } else {
