@@ -321,7 +321,7 @@ const BaseLayout = props => {
     console.log('Render BaseLayout')
 
     return <UIProvider>
-        <ResponsiveDrawerLayout title={settings.title || APP_NAME}
+        <ResponsiveDrawerLayout title={settings.title || ''}
                                 logo={settings.logo}
                                 contentStyle={props.contentStyle}
                                 menuItems={menuItems}

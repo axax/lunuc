@@ -15,7 +15,7 @@ import Typography from '@mui/material/Typography'
 import IconButton from '@mui/material/IconButton'
 import DeleteIcon from '@mui/icons-material/Delete'
 import SimpleMenu from './SimpleMenu'
-import theme from './theme'
+import { useTheme } from '@mui/material/styles'
 import {_t} from 'util/i18n.mjs'
 import styled from '@emotion/styled'
 import Util from '../../../../util/index.mjs'
@@ -39,10 +39,11 @@ const StyledSpacer = styled.div`
 const StyledTitle = styled.div`
     flex: 0 0 auto;
 `
-const StyledActions = styled.div`
-    color: ${theme.palette.text.secondary};
-    position:relative;
-`
+
+const StyledActions = styled('div')(({ theme }) => ({
+    color: theme.palette.text.secondary,
+    position:'relative'
+}))
 
 const StyledTableRow = styled(TableRow)(() => ({
     '&.MuiTableRow-hover:hover > .MuiTableCell-root':{
@@ -63,6 +64,7 @@ class SimpleTable extends React.Component {
 
     render() {
         const {tableRenderer, tableRenderOption, style, title, actions, header, count, rowsPerPage, page, orderDirection, orderBy, onChangePage, onChangeRowsPerPage, onRowClick, columns, dataSource, footer} = this.props
+        const theme = useTheme()
 
         const numSelected = 0
         return <Paper elevation={1} sx={{ maxWidth:'100%'}} style={style}>

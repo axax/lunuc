@@ -1,5 +1,4 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import {
     Divider,
     Button,
@@ -39,7 +38,7 @@ import {Query} from '../middleware/graphql'
 import {getTypeQueries, getTypes} from 'util/types.mjs'
 import Async from './Async'
 import styled from '@emotion/styled'
-import theme from './ui/impl/material/theme'
+import { useTheme } from '@mui/material/styles'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import {showTooltip, hideTooltip} from '../util/tooltip'
 import {translateText} from '../util/translate.mjs'
@@ -54,7 +53,7 @@ const StyledTabContainer = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.background.paper
 }))
 
-const getSxProps = field => ({
+const getSxProps = (field,theme) => ({
     margin: 1,
     display: 'inline-flex',
     width: 'calc(100% - ' + theme.spacing(2) + ')',
@@ -1027,6 +1026,7 @@ class GenericForm extends React.Component {
 
 
     createInputField({uitype, field, value, currentFormFields, fieldKey, fieldIndex, languageCode, translateButton}) {
+        const theme = useTheme()
         const {onKeyDown, autoFocus} = this.props
         let langButtonWasInserted = false
         if (!field.label) {
@@ -1105,7 +1105,7 @@ class GenericForm extends React.Component {
             currentFormFields.push(<FormControl key={'control' + fieldKey}
                                                 className={field.className}
                                                 error={!!this.state.fieldErrors[fieldKey]}
-                                                sx={getSxProps({fullWidth:true})}>
+                                                sx={getSxProps({fullWidth:true},theme)}>
                 <InputLabel key={'label' + fieldKey}
                             onMouseEnter={(e)=>{
                                 if(field.label && field.name && field.label !== field.name) {
@@ -1155,7 +1155,7 @@ class GenericForm extends React.Component {
             currentFormFields.push(<FormControl style={{zIndex: 1}}
                                                 key={'control' + fieldKey}
                                                 className={field.className}
-                                                sx={getSxProps({fullWidth:true})}>
+                                                sx={getSxProps({fullWidth:true},theme)}>
                 <InputLabel key={'label' + fieldKey}
                             onMouseEnter={(e)=>{
                                 if(field.label && field.name && field.label !== field.name) {
@@ -1205,7 +1205,7 @@ class GenericForm extends React.Component {
         } else if (uitype === 'slider') {
 
 
-            currentFormFields.push(<FormControl key={'control' + fieldKey} className={field.className} sx={getSxProps(field)}>
+            currentFormFields.push(<FormControl key={'control' + fieldKey} className={field.className} sx={getSxProps(field,theme)}>
                 <Typography gutterBottom>{field.label + (languageCode ? ' [' + languageCode + ']' : '')}</Typography>
                 <Slider name={fieldKey}
                 onChange={this.handleInputChange}
@@ -1261,7 +1261,7 @@ class GenericForm extends React.Component {
                 error={!!this.state.fieldErrors[fieldKey]}
                 helperText={this.state.fieldErrors[fieldKey]}
                 onChange={this.handleInputChange}
-                sx={getSxProps(field)}
+                sx={getSxProps(field,theme)}
                 fullWidth={field.fullWidth}
                 fileImport={field.fileImport}
                 key={fieldKey}
@@ -1321,7 +1321,7 @@ class GenericForm extends React.Component {
                             hint={this.state.fieldErrors[fieldKey]}
                             multi={field.multi}
                             label={field.label || field.name}
-                            sx={getSxProps(field)}
+                            sx={getSxProps(field,theme)}
                             InputLabelProps={{
                                 shrink: true,
                                 onMouseEnter: e => {
@@ -1361,7 +1361,7 @@ class GenericForm extends React.Component {
                     hint={this.state.fieldErrors[fieldKey]}
                     multi={field.multi}
                     label={field.label}
-                    sx={getSxProps(field)}
+                    sx={getSxProps(field,theme)}
                     InputLabelProps={{
                         shrink: true,
                         onMouseEnter: e => {
@@ -1381,7 +1381,7 @@ class GenericForm extends React.Component {
                     className={field.className}
                     name={fieldKey}
                     value={value}
-                    sx={getSxProps(field)}
+                    sx={getSxProps(field,theme)}
                     readOnly={field.readOnly}
                     placeholder={field.placeholder}
                     label={(field.label || field.name) + (languageCode ? ' [' + languageCode + ']' : '')}
@@ -1423,7 +1423,7 @@ class GenericForm extends React.Component {
                                                  label={field.label || field.placeholder}
                                                  name={fieldKey}
                                                  className={field.className}
-                                                 sx={getSxProps(field)}
+                                                 sx={getSxProps(field,theme)}
                                                  onChange={this.handleInputChange}
                                                  checked={value ? true : false}/>)
 
@@ -1448,7 +1448,7 @@ class GenericForm extends React.Component {
                                               id={fieldKey}
                                               className={field.className}
                                               label={(field.label || field.name) + (languageCode ? ' [' + languageCode + ']' : '')}
-                                              sx={getSxProps(field)}
+                                              sx={getSxProps(field,theme)}
                                               InputLabelProps={{
                                                   shrink: true,
                                                   onMouseEnter:e=>{
@@ -1534,63 +1534,4 @@ class GenericForm extends React.Component {
     }
 }
 
-GenericForm.propTypes = {
-    fields: PropTypes.object.isRequired,
-    values: PropTypes.object,
-    onClick: PropTypes.func,
-    onButtonClick: PropTypes.func,
-    onKeyDown: PropTypes.func,
-    onValidate: PropTypes.func,
-    onChange: PropTypes.func,
-    onPosChange: PropTypes.func,
-    onBlur: PropTypes.func,
-    caption: PropTypes.string,
-    primaryButton: PropTypes.bool,
-    autoFocus: PropTypes.bool
-}
-
 export default GenericForm
-
-async function generateManifestIcons(inputImagePath, outputDir, options = {}) {
-    try {
-        // Default icon sizes commonly used in manifest.json
-        const defaultIconSizes = [
-            { size: 36, name: 'icon-36x36.png' },
-            { size: 48, name: 'icon-48x48.png' },
-            { size: 72, name: 'icon-72x72.png' },
-            { size: 96, name: 'icon-96x96.png' },
-            { size: 144, name: 'icon-144x144.png' },
-            { size: 192, name: 'icon-192x192.png' },
-            { size: 512, name: 'icon-512x512.png' },
-        ];
-
-        // Merge default sizes with user-provided sizes (if any)
-        const iconSizes = options.iconSizes || defaultIconSizes;
-
-        // Create output directory if it doesn't exist
-        if(Util.ensureDirectoryExistence(path.dirname(outputDir))){
-            // Process each icon size
-            const iconPromises = iconSizes.map(async ({ size, name }) => {
-                const outputPath = path.join(outputDir, name);
-                await sharp(inputImagePath)
-                    .resize(size, size, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
-                    .png() // Ensure PNG output for transparency
-                    .toFile(outputPath);
-                console.log(`Generated icon: ${outputPath}`);
-                return { src: name, sizes: `${size}x${size}`, type: 'image/png' };
-            });
-
-            // Generate all icons
-            const icons = await Promise.all(iconPromises);
-
-
-            return { success: true,icons}
-        }else{
-            return { success: false}
-        }
-    } catch (error) {
-        console.error('Error generating manifest icons:', error);
-        throw error;
-    }
-}
-

@@ -18,7 +18,6 @@ const SearchWrapper = styled('div')(({ theme }) => ({
     },
     '.MuiInputBase-root':{
         color: 'inherit',
-        paddingBottom: '0 !important',
         borderRadius: theme.shape.borderRadius,
         backgroundColor: alpha(theme.palette.common.white, 0.15),
         '&:hover': {

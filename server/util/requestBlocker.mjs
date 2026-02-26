@@ -6,52 +6,41 @@ const DEFAULT_REQUEST_TIME_IN_MS = 10000, /* 10s */
 const ipMap = {}, blockedIps = {}
 let reqCounter = 0
 
-export const isTemporarilyBlocked = ({req, key, requestPerTime, requestTimeInMs, requestBlockForInMs}) => {
+export const isTemporarilyBlocked = ({
+                                         req,
+                                         key,
+                                         requestPerTime = DEFAULT_REQUEST_MAX_PER_TIME,
+                                         requestTimeInMs = DEFAULT_REQUEST_TIME_IN_MS,
+                                         requestBlockForInMs = DEFAULT_REQUEST_BLOCK_FOR_IN_MS
+                                     }) => {
+    const now = Date.now()
 
-    if(!requestPerTime){
-        requestPerTime = DEFAULT_REQUEST_MAX_PER_TIME
-    }
-    if(!requestTimeInMs){
-        requestTimeInMs = DEFAULT_REQUEST_TIME_IN_MS
-    }
-    if(!requestBlockForInMs){
-        requestBlockForInMs = DEFAULT_REQUEST_BLOCK_FOR_IN_MS
-    }
-
-    if(blockedIps[key]){
-        // block for X min
-        if(Date.now()-blockedIps[key].start>requestBlockForInMs){
+    if (blockedIps[key]) {
+        if (now - blockedIps[key].start > requestBlockForInMs) {
             delete blockedIps[key]
-        }else {
-            console.log(key + ' is temporarily blocked due to too many request in a short time')
-            if(req) {
-                req.connection.destroy()
-            }
+        } else {
+            console.log(`${key} is temporarily blocked due to too many requests in a short time`)
+            req?.connection?.destroy()
             return true
         }
     }
 
-    if(!ipMap[key] || Date.now()-ipMap[key].start>requestTimeInMs){
-        ipMap[key] = {start:Date.now(),count:0}
+    if (!ipMap[key] || now - ipMap[key].start > requestTimeInMs) {
+        ipMap[key] = { start: now, count: 0 }
     }
     ipMap[key].count++
 
-    if(ipMap[key].count>requestPerTime){
-        blockedIps[key] = {start:Date.now()}
+    if (ipMap[key].count > requestPerTime) {
+        blockedIps[key] = { start: now }
         delete ipMap[key]
-        if(req) {
-            req.connection.destroy()
-        }
+        req?.connection?.destroy()
         return true
     }
 
-    reqCounter++
-
-    if(reqCounter>100){
-        // clean up
+    if (++reqCounter > 100) {
         reqCounter = 0
-        for(const ip in ipMap){
-            if(Date.now()-ip.start > requestTimeInMs+1000){
+        for (const ip in ipMap) {
+            if (now - ipMap[ip].start > requestTimeInMs + 1000) {
                 delete ipMap[ip]
             }
         }

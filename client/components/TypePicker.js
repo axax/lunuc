@@ -1,10 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {
-    InputLabel,
     TextField,
     FormControl,
-    Paper,
+    Menu,
     MenuItem,
     Chip,
     Avatar,
@@ -39,37 +38,32 @@ import {_t} from '../../util/i18n.mjs'
 import FileDrop from './FileDrop'
 import {propertyByPath} from "../util/json.mjs";
 
-const StyledForm = styled(FormControl)({
+const StyledForm = styled(FormControl)(({fullWidth,theme})=>({
+    display:'inline-flex',
     position: 'relative',
     zIndex: 'auto',
-    /*marginLeft: 0,*/
-    minHeight: '69px'
-})
+    width: fullWidth ? `calc(100% - ${theme.spacing(2)})` : 'auto',
+    '> .MuiTextField-root':{
+        margin:0,
+        width: '100%'
+    }
+}))
 
-const StyledSuggestions = styled(Paper)({
-    position: 'absolute',
-    zIndex: 999,
-    top: '3rem',
-    maxWidth: '100%'
-})
-
-const StyledChips = styled('div')(({ theme }) => ({
+const StyledChips = styled('div')(({ theme, isMulti }) => ({
     display: 'flex',
     width: '100%',
     flexWrap: 'wrap',
     marginTop: theme.spacing(1),
-    marginBottom: theme.spacing(1)
+    marginBottom: isMulti?theme.spacing(1):0,
+    marginLeft:isMulti?0:theme.spacing(1),
 }))
 
-const StyledChip = styled(Chip)(({ theme, isMulti }) => ({
-    margin: theme.spacing(isMulti?0:2) + ' 0px 0px 0px',
-   /* '&:first-of-type': {
-        marginLeft: 0
-    },*/
-    position: 'relative',
-    ...(isMulti && {
-        margin: theme.spacing(1) + ' 0'
-    }),
+const StyledChip = styled(Chip)(({isMulti,theme}) => ({
+    marginRight:0,
+    marginLeft:0,
+    top: isMulti?0:theme.spacing(1),
+    left: isMulti?0:theme.spacing(1),
+    position: isMulti?'relative':'absolute',
 }))
 
 const StyledDropArea = styled('div')(({ theme }) => ({
@@ -141,7 +135,8 @@ class TypePicker extends React.Component {
             data: null,
             hasFocus: true,
             selIdx: 0,
-            textValue: ''
+            textValue: '',
+            anchorEl:null
         }
     }
 
@@ -160,6 +155,8 @@ class TypePicker extends React.Component {
             state.value !== this.state.value ||
             state.data !== this.state.data ||
             state.showContextMenu !== this.state.showContextMenu ||
+            state.anchorEl !== this.state.anchorEl ||
+            state.hasFocus !== this.state.hasFocus ||
             props.error !== this.props.error ||
             state.selIdx !== this.state.selIdx
     }
@@ -198,16 +195,16 @@ class TypePicker extends React.Component {
                 }, 500)
             }
         }
+        const isEnabled = (!value.length || multi) && !readOnly
+
         return <StyledForm fullWidth={fullWidth} className={className} sx={sx}>
-            {(!value.length || multi) && !readOnly ?
                 <TextField error={error}
-                           fullWidth={fullWidth}
-                           sx={{margin:0}}
+                           disabled={!isEnabled}
                            helperText={helperText}
                            value={textValue}
                            onChange={this.handleChange.bind(this)}
                            onKeyDown={this.handleKeyDown.bind(this)}
-                           onFocus={() => this.setState({hasFocus: true})}
+                           onFocus={(e) => this.setState({hasFocus: true, anchorEl:e.currentTarget})}
                            onBlur={this.handleBlur.bind(this)}
                            placeholder={placeholder}
                            label={label}
@@ -220,6 +217,7 @@ class TypePicker extends React.Component {
                                endAdornment: (
                                    <InputAdornment position="end">
                                        <IconButton
+                                           disabled={!isEnabled}
                                            edge="end"
                                            onClick={() => {
                                                openTypeWindow()
@@ -228,6 +226,7 @@ class TypePicker extends React.Component {
                                        </IconButton>
                                        {value.length>1 && <Tooltip title={_t('TypePicker.deleteSelection')} key="tooltipDelete">
                                            <IconButton
+                                               disabled={!isEnabled}
                                                edge="end"
                                                onClick={() => {
                                                    this.setState({value:[], textValue:''})
@@ -240,11 +239,18 @@ class TypePicker extends React.Component {
                                    </InputAdornment>
                                )
                            }}
-                /> : <InputLabel shrink
-                                 onMouseEnter={InputLabelProps && InputLabelProps.onMouseEnter}
-                                 onMouseLeave={InputLabelProps && InputLabelProps.onMouseLeave}>{label}</InputLabel>}
+                />
 
-            <StyledSuggestions square>
+            <Menu anchorEl={this.state.anchorEl}
+                    autoFocus={false}
+                   disableAutoFocus      // prevents Menu from stealing focus
+                   disableEnforceFocus   // allows focus to remain outside the Menu
+                   disableRestoreFocus
+                   PaperProps={{ style: { maxHeight: 300, margin:0 } }}
+                   onClose={()=>{
+                       this.setState({hasFocus:false})
+                   }}
+                   open={hasFocus && data && data.results && data.results.length > 0}>
 
                 {hasFocus && data && data.results && data.results.map((item, idx) =>
                     <MenuItem
@@ -262,7 +268,7 @@ class TypePicker extends React.Component {
                 )}
 
 
-            </StyledSuggestions>
+            </Menu>
 
             {fileImport && fileImport.key && <FileDrop key="fileDrop"
                       multi={false}
@@ -296,7 +302,7 @@ class TypePicker extends React.Component {
                           form.setState({fields: {...form.state.fields, content:dataUrl}})*/
                       }}
                       label={fileImport.label || 'Drop file here'} />}
-            <StyledChips>
+            {value && value.length>0 && <StyledChips isMulti={multi}>
                 {value.map((singleValue, singleValueIndex) => {
 
                         const components = []
@@ -392,8 +398,7 @@ class TypePicker extends React.Component {
                                 </Card>)
 
                             } else {
-                                components.push(<StyledChip
-                                                      isMulti={multi}
+                                components.push(<StyledChip isMulti={multi}
                                                       draggable={true}
                                                       data-index={singleValueIndex}
                                                       onDragStart={(e) => {
@@ -418,37 +423,45 @@ class TypePicker extends React.Component {
                             }
                         }
 
-                        components.push(<StyledDropArea key={'drop' + singleValueIndex}
-                                             data-index={singleValueIndex}
-                                             onDrop={(e) => {
-                                                 const targetIndex = parseInt(e.currentTarget.getAttribute('data-index')) + 1,
-                                                     sourceIndex = parseInt(e.dataTransfer.getData("text"))
-                                                 e.target.style.opacity = 0
+                        if(multi) {
+                            components.push(<StyledDropArea key={'drop' + singleValueIndex}
+                                                            data-index={singleValueIndex}
+                                                            onDrop={(e) => {
+                                                                const targetIndex = parseInt(e.currentTarget.getAttribute('data-index')) + 1,
+                                                                    sourceIndex = parseInt(e.dataTransfer.getData("text"))
+                                                                e.target.style.opacity = 0
 
-                                                 const newValue = this.state.value.slice(0),
-                                                     element = newValue.splice(sourceIndex, 1) [0]
+                                                                const newValue = this.state.value.slice(0),
+                                                                    element = newValue.splice(sourceIndex, 1) [0]
 
-                                                 newValue.splice(targetIndex > sourceIndex ? targetIndex - 1 : targetIndex, 0, element)
+                                                                newValue.splice(targetIndex > sourceIndex ? targetIndex - 1 : targetIndex, 0, element)
 
-                                                 this.setState({value: newValue})
-                                                 this.props.onChange({target: {value: newValue, name: this.props.name, dataset:this.props.dataset}})
+                                                                this.setState({value: newValue})
+                                                                this.props.onChange({
+                                                                    target: {
+                                                                        value: newValue,
+                                                                        name: this.props.name,
+                                                                        dataset: this.props.dataset
+                                                                    }
+                                                                })
 
-                                             }}
-                                             onDragOver={(e) => {
-                                                 e.preventDefault()
-                                                 e.dataTransfer.dropEffect = 'copy'
-                                                 e.target.style.opacity = 1
-                                             }}
-                                             onDragLeave={(e) => {
-                                                 e.target.style.opacity = 0
-                                             }}>Drop</StyledDropArea>)
+                                                            }}
+                                                            onDragOver={(e) => {
+                                                                e.preventDefault()
+                                                                e.dataTransfer.dropEffect = 'copy'
+                                                                e.target.style.opacity = 1
+                                                            }}
+                                                            onDragLeave={(e) => {
+                                                                e.target.style.opacity = 0
+                                                            }}>Drop</StyledDropArea>)
+                        }
 
                         return components
 
                     }
                 )
                 }
-            </StyledChips>
+            </StyledChips>}
             {showContextMenu && <SimpleMenu open={showContextMenu}
                         anchorReference={"anchorPosition"}
                         anchorPosition={showContextMenu}

@@ -630,6 +630,10 @@ class TypesContainer extends React.Component {
 
 
             Hook.call('TypeTableAction', {type, actions, multiSelectActions, pageParams: this.pageParams, data}, this)
+            const actionColumn = columnsFiltered.find(c => c.id === '_action')
+            if (actionColumn) {
+                actionColumn.title = <SimpleMenu items={actions}/>
+            }
             return <SimpleTable key="typeTable"
                                 title=""
                                 style={{flex:1}}
@@ -650,7 +654,7 @@ class TypesContainer extends React.Component {
                                                       }}
                                                       _version={_version} />
                                 }
-                                actions={actions}
+                                actions={actionColumn?null:actions}
                                 footer={<div style={{display: 'flex', alignItems: 'center', minHeight: '48px'}}>
                                     <p style={{marginRight: '2rem'}}>{_t('TypesContainer.selectedRows', {count: selectedLength})}</p>{selectedLength ?
                                     <SimpleSelect
@@ -924,7 +928,6 @@ class TypesContainer extends React.Component {
                             variant="caption">{this.searchHint()}</Typography>
 
                 <div style={{margin: '0 0 0.5rem 0'}}>
-                    <Typography variant="caption" color="info">Filter: </Typography>
                     <Chip
                         size="small"
                         label={prettyFilter ? this.prettyFilterLabel(prettyFilter) : _t('TypesContainer.noActiveFilter')}
@@ -1152,7 +1155,7 @@ class TypesContainer extends React.Component {
                 onChange={this.handleRowSelect.bind(this)}
             />,
             id: 'check',
-            cellStyle:{position:'sticky', zIndex:1, left:0, backgroundColor:'white', boxShadow:'inset -1px 0 0 rgb(234,234,234)'}
+            cellStyle:{position:'sticky', zIndex:1, left:0, boxShadow:'inset -1px 0 0 rgb(234,234,234)'}
 
         })
 
@@ -1190,7 +1193,7 @@ class TypesContainer extends React.Component {
             {
                 title: _t('TypesContainer.actions'),
                 id: '_action',
-                cellStyle:{position:'sticky', right:0, backgroundColor:'white', boxShadow:'inset 1px 0 0 rgb(234,234,234)'}
+                cellStyle:{position:'sticky', right:0, boxShadow:'inset 1px 0 0 rgb(234,234,234)'}
             })
 
         /* HOOK */
@@ -1778,7 +1781,7 @@ class TypesContainer extends React.Component {
 
         const getValues = (data) => {
             let str = ''
-            const keys = Object.keys(data)
+            const keys = Object.keys(data).filter(k => k !== '_localized')
             for (let i = 0; i < Math.min(keys.length, 3); i++) {
                 if (str) {
                     str += ' '

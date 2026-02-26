@@ -7,7 +7,7 @@ import {ThemeProvider} from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 
 
-import {defaultTheme as theme, darkTheme} from './theme'
+import {defaultTheme as theme} from './theme-iris'
 
 export {theme}
 
@@ -61,6 +61,7 @@ export LinearProgress from '@mui/material/LinearProgress'
 export CircularProgress from '@mui/material/CircularProgress'
 export MenuItem from '@mui/material/MenuItem'
 export Paper from '@mui/material/Paper'
+export Menu from '@mui/material/Menu'
 export Avatar from '@mui/material/Avatar'
 export Tabs from '@mui/material/Tabs'
 export Tab from '@mui/material/Tab'

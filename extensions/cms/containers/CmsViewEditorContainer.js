@@ -573,6 +573,7 @@ class CmsViewEditorContainer extends React.Component {
                     {canMangeCmsContent && <Expandable title={_t('CmsViewEditorContainer.seo')}
                                                        disableGutters
                                                        icon="google"
+                                                       className="accordion-flat"
                                                        onChange={this.handleSettingChange.bind(this, 'seoExpanded', true)}
                                                        expanded={EditorPageOptions.seoExpanded}>
 
@@ -586,7 +587,7 @@ class CmsViewEditorContainer extends React.Component {
 
                     {canMangeCmsContent && <Expandable title={_t('CmsViewEditorContainer.settings')}
                                 disableGutters
-                                icon="displaySetting"
+                                icon="displaySetting" className="accordion-flat"
                                 onChange={this.handleSettingChange.bind(this, 'settingsExpanded', true)}
                                 expanded={EditorPageOptions.settingsExpanded}>
 
@@ -600,7 +601,7 @@ class CmsViewEditorContainer extends React.Component {
 
                     {canMangeCmsContent && !loadingState && <Expandable title={_t('CmsViewEditorContainer.revisions')}
                                                   disableGutters
-                                                  icon="history"
+                                                  icon="history" className="accordion-flat"
                                                   onChange={this.handleSettingChange.bind(this, 'revisionsExpanded', true)}
                                                   expanded={EditorPageOptions.revisionsExpanded}>
 
@@ -618,7 +619,7 @@ class CmsViewEditorContainer extends React.Component {
 
                     <Expandable title={_t('CmsViewEditorContainer.pages')}
                                 disableGutters
-                                icon="web"
+                                icon="web" className="accordion-flat"
                                 onChange={this.handleSettingChange.bind(this, 'relatedPagesExpanded', true)}
                                 expanded={EditorPageOptions.relatedPagesExpanded}>
                         <CmsRelatedPages _version={_version} slug={slug} history={props.history} cmsPage={cmsPage}/>
@@ -631,7 +632,7 @@ class CmsViewEditorContainer extends React.Component {
                 </StyledBox>}
                 {EditorOptions.bottomNavigation===2 && canMangeCmsTemplate && <StyledBox data-layout-expandable="true">
                     <Expandable title="Data resolver"
-                        icon="storage"
+                        icon="storage" className="accordion-flat"
                         id="dataResolverExpandable"
                         disableGutters
                         onChange={this.handleSettingChange.bind(this, 'dataResolverExpanded', true)}
@@ -647,7 +648,7 @@ class CmsViewEditorContainer extends React.Component {
                                             }}>{dataResolver}</DataResolverEditor>
                     </Expandable>
                     <Expandable title="Server Script"
-                        icon="code"
+                        icon="code" className="accordion-flat"
                         disableGutters
                         id="serverScriptExpandable"
                         onChange={this.handleSettingChange.bind(this, 'serverScriptExpanded', true)}
@@ -662,7 +663,7 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>
 
                     <Expandable title="Template"
-                                icon="html"
+                                icon="html" className="accordion-flat"
                                 disableGutters
                                 id="templateExpandable"
                                 onChange={this.handleSettingChange.bind(this, 'templateExpanded', true)}
@@ -683,7 +684,7 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>
 
                     <Expandable title="Script"
-                                icon="js"
+                                icon="js" className="accordion-flat"
                                 disableGutters
                                 id="scriptExpandable"
                                 onChange={this.handleSettingChange.bind(this, 'scriptExpanded', true)}
@@ -701,7 +702,7 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>
 
                     <Expandable title="Style"
-                                icon="css"
+                                icon="css" className="accordion-flat"
                                 disableGutters
                                 id="styleExpandable"
                                 onChange={this.handleSettingChange.bind(this, 'styleExpanded', true)}
@@ -742,7 +743,7 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>
                     <Expandable title={_t('CmsViewEditorContainer.staticAssets')}
                                 disableGutters
-                                icon="link"
+                                icon="link" className="accordion-flat"
                                 onChange={this.handleSettingChange.bind(this, 'resourceExpanded', true)}
                                 expanded={EditorPageOptions.resourceExpanded}>
                         <ResourceEditor resources={resources}
@@ -750,7 +751,7 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>
 
                     <Expandable title="Manual Page"
-                                icon="support"
+                                icon="support" className="accordion-flat"
                                 disableGutters
                                 onChange={this.handleSettingChange.bind(this, 'manualExpanded', true)}
                                 expanded={EditorPageOptions.manualExpanded}>
@@ -1112,10 +1113,11 @@ class CmsViewEditorContainer extends React.Component {
                               onDrawerWidthChange={this.drawerWidthChange}
                               contentStyle={{marginBottom:EditorOptions.devToolsTab?EditorOptions.devToolsBoxHeight:0}}
                               toolbarLeft={<IconButton
+                                  sx={{mr:1}}
                                   onClick={()=>{
                                       this.props.history.push(config.ADMIN_BASE_URL + '/cms' + (_app_._cmsLastSearch ? _app_._cmsLastSearch : ''))
                                   }}
-                                  color="inherit"><ArrowBackIcon/></IconButton>}
+                                  color="primary"><ArrowBackIcon/></IconButton>}
                               toolbarRight={toolbarRight}
                               title={`${_t('CmsViewEditorContainer.editPage')} "${props.slug}"${cmsPage.online ? ' - Online' : ''}`}>
                     {inner}

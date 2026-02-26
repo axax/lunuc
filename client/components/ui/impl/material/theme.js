@@ -135,7 +135,14 @@ export const defaultTheme = createTheme({
                     //backgroundColor: 'rgb(252,252,252)'
                 }
             }
-        }
+        },
+        MuiTableCell: {
+            styleOverrides: {
+                root: {
+                    backgroundColor: 'white',
+                },
+            },
+        },
     }
 })
 

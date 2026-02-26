@@ -8,6 +8,7 @@ import Divider from '@mui/material/Divider'
 import MenuIcon from '@mui/icons-material/Menu'
 import List from '@mui/material/List'
 import ListItem from '@mui/material/ListItem'
+import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import React, {useState} from 'react'
@@ -16,7 +17,6 @@ import ExpandLess from '@mui/icons-material/ExpandLess'
 import ExpandMore from '@mui/icons-material/ExpandMore'
 import Collapse from '@mui/material/Collapse'
 import styled from '@emotion/styled'
-import theme from '../theme'
 import Box from '@mui/material/Box'
 
 const drawerWidth = 300;
@@ -36,32 +36,32 @@ const StyledAppFrame = styled.div`
     height: 100%;
 `
 
-const StyledAppBar = styled(AppBar)({
+const StyledAppBar = styled(AppBar)(({ theme }) => ({
     position: 'fixed',
     marginLeft: `${drawerWidth}px`,
     [theme.breakpoints.up('lg')]: {
         width: `calc(100% - ${drawerWidth}px)`,
     }
-})
+}))
 
-const StyledDrawerContent = styled.main`
-    position: relative;
-    box-sizing: border-box;
-    background-color: ${theme.palette.background.default};
-    width: 100%;
-    padding: ${theme.spacing(3)};
-    height: calc(100% - 56px);
-    margin-top: 56px;
-    margin-feft: 0;
-    ${theme.breakpoints.up('sm')} {
-        height: calc(100% - 64px);
-        margin-top: 64px;
+const StyledDrawerContent = styled('main')(({ theme }) => ({
+    position: 'relative',
+    boxSizing: 'border-box',
+    backgroundColor: theme.palette.background.default,
+    width: '100%',
+    padding: theme.spacing(3),
+    height: 'calc(100% - 56px)',
+    marginTop: '56px',
+    marginLeft: 0,
+    [theme.breakpoints.up('sm')]: {
+        height: 'calc(100% - 64px)',
+        marginTop: '64px'
+    },
+    [theme.breakpoints.up('lg')]: {
+        marginLeft: `${drawerWidth}px`,
+        width: `calc(100% - ${drawerWidth}px)`
     }
-    ${theme.breakpoints.up('lg')} {
-      margin-left: ${drawerWidth}px;
-      width: calc(100% - ${drawerWidth}px);
-    }
-`
+}))
 
 const findActiveItem = (props) => {
     let currentLink = Util.removeTrailingSlash(window.location.pathname)
@@ -126,41 +126,43 @@ const MenuList = (props) => {
                     </Box>
                 }
                 const isOpen = open[i] || (open[i]==undefined && item.open)
-                return [<ListItem onClick={() => {
-                    if(item.onClick) {
-                        item.onClick()
-                    }
-                    if(item.items){
-                        onMenuChange(item, !isOpen)
-                        setOpen(Object.assign({}, open,{[i]:!isOpen}))
-                    }
-                    if(item.to) {
-                        _app_.history.push(item.to)
-                    }
-                }} key={i} button style={(activeItem === item ? {backgroundColor:theme.palette.primary[50]} : {})}>
-                    {
-                        item.icon && <ListItemIcon sx={(activeItem === item ? {}: {})}>
-                            {item.icon.constructor === String ?
-                                <div dangerouslySetInnerHTML={{__html: item.icon}}/> : item.icon}
-                        </ListItemIcon>
-                    }
-                    <ListItemText disableTypography
-                                  primary={<Typography variant="subtitle1"
-                                                       component="h3"
-                                                       style={(activeItem === item ? {fontWeight:'bold'} : {})}>{item.name}</Typography>}/>
+                return <><ListItem key={'item-'+i}>
+                    <ListItemButton selected={activeItem === item } onClick={() => {
+                        if(item.onClick) {
+                            item.onClick()
+                        }
+                        if(item.items){
+                            onMenuChange(item, !isOpen)
+                            setOpen(Object.assign({}, open,{[i]:!isOpen}))
+                        }
+                        if(item.to) {
+                            _app_.history.push(item.to)
+                        }
+                    }} button key={'itemButton-'+i}>
+                        {
+                            item.icon && <ListItemIcon>
+                                {item.icon.constructor === String ?
+                                    <div dangerouslySetInnerHTML={{__html: item.icon}}/> : item.icon}
+                            </ListItemIcon>
+                        }
+                        <ListItemText disableTypography
+                                      primary={<Typography variant="subtitle1"
+                                                           component="h3">{item.name}</Typography>}/>
 
-                    {item.actions}
-                    {item.items && (isOpen ? <ExpandLess /> : <ExpandMore />)}
+                        {item.actions}
+                        {item.items && (isOpen ? <ExpandLess /> : <ExpandMore />)}
 
-                </ListItem>,
-                    item.items && <Collapse in={isOpen} timeout="auto" unmountOnExit>
+                    </ListItemButton></ListItem>
+                    {item.items?<Collapse in={isOpen} timeout="auto" unmountOnExit>
                         <MenuList items={item.items} onMenuChange={onMenuChange} depth={depth + 1}/>
-                    </Collapse>]
+                    </Collapse>:null}
+                </>
             }
         })}
     </List>
 
 }
+
 
 const ResponsiveDrawer = React.memo((props) => {
 
@@ -174,7 +176,7 @@ const ResponsiveDrawer = React.memo((props) => {
     const drawer = (
         <div key="drawer">
             <Toolbar sx={{ padding: '0.5rem !important'}}>
-                {logo && <img style={{maxHeight:'3rem', maxWidth:'calc(100% - 2rem)', height:'auto'}} src={logo}/>}
+                <img style={{maxHeight:'2.1rem', maxWidth:'calc(100% - 2rem)', height:'auto'}} src={logo || 'https://www.lunuc.com/lunuc-logo.svg'}/>
                 <div style={{marginLeft:'auto'}}>{headerLeft}</div>
             </Toolbar>
             <Divider/>
@@ -197,7 +199,7 @@ const ResponsiveDrawer = React.memo((props) => {
                             sx={{display: { xs: 'block', lg: 'none' } }}
                         ><MenuIcon />
                         </IconButton>
-                        <Typography sx={{display: { flex: 1 } }} variant="h6" color="inherit" noWrap>
+                        <Typography sx={{display: { flex: 1 } }} variant="subtitle" color="primary" noWrap>
                             {title}
                         </Typography>
                         {headerRight}

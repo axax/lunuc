@@ -1,6 +1,5 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import Input from '@mui/material/Input'
 import Chip from '@mui/material/Chip'
 import Select from '@mui/material/Select'
 import MenuItem from '@mui/material/MenuItem'
@@ -70,8 +69,9 @@ class SimpleSelect extends React.Component {
                             fullWidth={fullWidth}
                             style={style}
                             error={error}>
-            {label && <InputLabel htmlFor={name} {...InputLabelProps}>{label}</InputLabel>}
+            {label && <InputLabel htmlFor={name} shrink {...InputLabelProps}>{label}</InputLabel>}
             <Select
+                label={label}
                 displayEmpty={true}
                 multiple={multi}
                 value={value}
@@ -81,7 +81,6 @@ class SimpleSelect extends React.Component {
                     name,
                     id: name,
                 }}
-                input={<Input/>}
                 renderValue={selected => (
                     selected && selected.constructor === Array ?
                         <StyledChips>

@@ -269,7 +269,7 @@ class DrawerLayout extends React.Component {
                                 <MenuIcon/>
                             </StyledMenuButton>
                             {toolbarLeft}
-                            <Typography variant="h6" color="inherit" noWrap style={{flex: 1}}>
+                            <Typography variant="subtitle" color="primary" noWrap style={{flex: 1}}>
                                 {title}
                             </Typography>
                             {toolbarRight}

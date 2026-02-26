@@ -1,23 +1,22 @@
 import React, {useCallback, useEffect} from 'react'
 import {_t} from '../../../util/i18n.mjs'
 import styled from '@emotion/styled'
-import theme from '../../../client/components/ui/impl/material/theme'
 import ConsoleCapture from './ConsoleCapture'
 import {getCircularReplacer} from '../../mailserver/util/index.mjs'
-import ResizableDivider from "../../../client/components/ResizableDivider";
-import {propertyByPath, setPropertyByPath} from "../../../client/util/json.mjs";
-import {deepMerge} from "../../../util/deepMerge.mjs";
+import ResizableDivider from '../../../client/components/ResizableDivider'
+import {propertyByPath} from '../../../client/util/json.mjs'
 
 
-const StyledBox = styled.div`
-    position: fixed;
-    background:${theme.palette.grey[800]};
-    height:auto; 
-    z-index:1100;
-    right:0;
-    top: auto;
-    bottom: 0;
-`
+const StyledBox = styled('div')(({ theme }) => ({
+    position: 'fixed',
+    background: theme.palette.grey[800],
+    height:'auto',
+    zIndex:1100,
+    right:0,
+    top: 'auto',
+    bottom: 0
+}))
+
 const StyledButtonGroup = styled.div`
     border-bottom:'solid 1px #ffffff';
 `

@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import {CloudUploadIcon, Typography, LinearProgress} from 'ui/admin'
 import UploadUtil from 'client/util/upload'
 import {_t, registerTrs} from 'util/i18n.mjs'
-import {theme} from 'ui/admin'
 import config from 'gen/config-client'
 import styled from '@emotion/styled'
 import DomUtil from '../util/dom.mjs'
@@ -21,7 +20,7 @@ const DEFAULT_MAX_FILE_SIZE_MB = 20,
     DEFAULT_ACCEPT = 'image/*'
 
 
-const StyledUploader = styled('div')(({isHover}) => ({
+const StyledUploader = styled('div')(({isHover, theme}) => ({
     boxSizing: 'border-box',
     position: 'relative',
     maxWidth: '100%',
