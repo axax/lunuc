@@ -921,7 +921,7 @@ class GenericForm extends React.Component {
                                      subForm={true}
                                      fields={subFields}/>
                         <Button key={'delete' + valueFieldKey}
-                                color="error"
+                                color="secondary"
                                 size="small"
                                 disabled={field.readOnly}
                                 startIcon={<DeleteIcon/>}
@@ -936,7 +936,7 @@ class GenericForm extends React.Component {
                                 }}
                                 variant="contained">{_t('GenericForm.delete')}</Button>
                         <Button key={'clone' + valueFieldKey}
-                                color="secondary"
+                                color="primary"
                                 startIcon={<ContentCopyIcon/>}
                                 size="small"
                                 disabled={field.readOnly}
@@ -1508,7 +1508,7 @@ class GenericForm extends React.Component {
 
         if (!langButtonWasInserted && translateButton && languageCode === _app_.lang) {
             currentFormFields.splice(currentFormFields.length - 1, 0, <div key={'tr' + fieldKey}
-                                                                           style={{right: '3.55rem',
+                                                                           style={{right: '2.4rem',
                                                                                marginTop: '-0.5rem',
                                                                                position: 'absolute',
                                                                                zIndex: 2}}>{translateButton}</div>)
