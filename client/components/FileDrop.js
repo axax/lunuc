@@ -6,6 +6,7 @@ import {_t, registerTrs} from 'util/i18n.mjs'
 import config from 'gen/config-client'
 import styled from '@emotion/styled'
 import DomUtil from '../util/dom.mjs'
+import defaultTheme from './ui/impl/material/theme-iris'
 
 const {UPLOAD_URL} = config
 
@@ -31,11 +32,11 @@ const StyledUploader = styled('div')(({isHover, theme}) => ({
     border: '3px solid #eee',
     transition: 'all .2s ease',
     ...(isHover && {
-        border: '3px solid ' + theme.palette.primary.light,
+        border: '3px solid ' + theme.palette ? theme.palette.primary.light : defaultTheme.palette.primary.light,
         boxShadow: 'inset 0 0 0 6px #eee'
     }),
     '&:hover': {
-        borderColor: theme.palette.secondary.light
+        borderColor: theme.palette ? theme.palette.secondary.light : defaultTheme.palette.secondary.light,
     },
     '> input': {
         position: 'absolute',
