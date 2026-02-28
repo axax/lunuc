@@ -1807,52 +1807,5 @@ class JsonDom extends React.Component {
 
 }
 
-/*JsonDom.propTypes = {
-    template: PropTypes.string,
-    meta: PropTypes.any,
-    resolvedData: PropTypes.string,
-    resources: PropTypes.string,
-    script: PropTypes.string,
-    style: PropTypes.string,
-    unqiueStyle: PropTypes.bool,
-
-    slug: PropTypes.string,
-    user: PropTypes.object,
-
-    /!* states *!/
-    loading: PropTypes.bool,
-
-    /!* Methods *!/
-    setKeyValue: PropTypes.func,
-    getKeyValue: PropTypes.func,
-    updateResolvedData: PropTypes.func,
-    serverMethod: PropTypes.func,
-    clientQuery: PropTypes.func,
-    subscriptionCallback: PropTypes.func,
-    onTemplateChange: PropTypes.func, /!* Is fired when the json dom has changed *!/
-    onDataResolverPropertyChange: PropTypes.func, /!* Is fired when a property of the dataResolver has changed *!/
-    onError: PropTypes.func,
-    onFetchMore: PropTypes.func,
-
-    /!* editMode *!/
-    editMode: PropTypes.bool,
-    inEditor: PropTypes.bool,
-    inlineEditor: PropTypes.bool,
-    _key: PropTypes.string,
-
-    /!* properties that are passed from another component *!/
-    _props: PropTypes.object,
-    _parentRef: PropTypes.object,
-
-    /!* Routing *!/
-    history: PropTypes.object,
-    location: PropTypes.object,
-
-    children: PropTypes.any,
-    id: PropTypes.string,
-    /!* if dynamic is set to true that means it is a child of another JsonDom *!/
-    dynamic: PropTypes.bool
-}*/
-
 
 export default JsonDom

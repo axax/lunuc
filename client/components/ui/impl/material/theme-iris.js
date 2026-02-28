@@ -416,6 +416,11 @@ export const defaultTheme = createTheme({
         },
         MuiAutocomplete: {
             styleOverrides: {
+                root: {
+                    '& .MuiTextField-root': {
+                        width: '100%',
+                    }
+                },
                 popper: { zIndex: '99999 !important' },
                 inputRoot: {
                     padding: '4px 9px',

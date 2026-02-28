@@ -1,5 +1,4 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import {
     TextField,
     FormControl,
@@ -162,7 +161,7 @@ class TypePicker extends React.Component {
     }
 
     render() {
-        const {inputProps, InputLabelProps, placeholder, multi, showAlwaysAsImage, fileImport, error, helperText, className, sx, fullWidth, linkTemplate, pickerField, metaFields, type, filter, label, genericType, readOnly} = this.props
+        const {inputProps, InputProps, InputLabelProps, placeholder, multi, showAlwaysAsImage, fileImport, error, helperText, className, sx, fullWidth, linkTemplate, pickerField, metaFields, type, filter, label, genericType, readOnly} = this.props
         const {data, hasFocus, selIdx, value, textValue, showContextMenu} = this.state
         console.log(`render TypePicker | hasFocus=${hasFocus} | pickerField=${pickerField}`, data)
         const openTypeWindow = (value) => {
@@ -196,7 +195,6 @@ class TypePicker extends React.Component {
             }
         }
         const isEnabled = (!value.length || multi) && !readOnly
-
         return <StyledForm fullWidth={fullWidth} className={className} sx={sx}>
                 <TextField error={error}
                            disabled={!isEnabled}
@@ -214,7 +212,7 @@ class TypePicker extends React.Component {
                            }}
                            inputProps={inputProps}
                            InputProps={{
-                               endAdornment: (
+                               endAdornment: [
                                    <InputAdornment position="end">
                                        <IconButton
                                            disabled={!isEnabled}
@@ -236,8 +234,9 @@ class TypePicker extends React.Component {
                                                <DeleteIcon/>
                                            </IconButton>
                                        </Tooltip>}
-                                   </InputAdornment>
-                               )
+                                   </InputAdornment>,
+                                   (InputProps && InputProps.endAdornment)
+                               ]
                            }}
                 />
 
@@ -682,22 +681,4 @@ class TypePicker extends React.Component {
     }
 
 }
-
-TypePicker.propTypes = {
-    value: PropTypes.array,
-    pickerField: PropTypes.string,
-    queryFields: PropTypes.array,
-    searchFields: PropTypes.array,
-    metaFields: PropTypes.array,
-    projection: PropTypes.array,
-    placeholder: PropTypes.string,
-    filter: PropTypes.string,
-    error: PropTypes.bool,
-    helperText: PropTypes.string,
-    multi: PropTypes.bool,
-    name: PropTypes.string.isRequired,
-    type: PropTypes.string.isRequired,
-    onChange: PropTypes.func.isRequired
-}
-
 export default TypePicker

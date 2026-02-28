@@ -709,7 +709,7 @@ class GenericForm extends React.Component {
                 <Tooltip title={_t('GenericFrom.translation')} key={fieldKey + "tooltip2"}>
                     <TranslateIconButton key={fieldKey + "translation"}
                      onClick={() => {
-                         this.setState({showTranslations: Object.assign({}, this.state.showTranslations, {[fieldKey]: !showTranslations})})
+                         this.setState({showTranslations: Object.assign({}, this.state.showTranslations, {[fieldKey]: !this.state.showTranslations[fieldKey]})})
                      }}>
                     </TranslateIconButton>
                 </Tooltip>
@@ -1239,6 +1239,7 @@ class GenericForm extends React.Component {
 
 
         } else if (uitype === 'type_picker') {
+            langButtonWasInserted =true
             currentFormFields.push(<TypePicker
                 className={field.className}
                 keepTextValue={field.keepTextValue}
@@ -1257,6 +1258,12 @@ class GenericForm extends React.Component {
                     onMouseLeave:()=>{
                         hideTooltip()
                     }
+                }}
+                InputProps={{
+                    endAdornment: languageCode === _app_.lang &&
+                        <InputAdornment position="end">
+                            {translateButton}
+                        </InputAdornment>
                 }}
                 error={!!this.state.fieldErrors[fieldKey]}
                 helperText={this.state.fieldErrors[fieldKey]}
