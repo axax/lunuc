@@ -5,6 +5,9 @@ const {UPLOAD_URL} = config
 
 const getImageSrc = (item, size = 'thumbnail') => {
 
+    if(!item){
+        return ''
+    }
     if(item.constructor === Array) {
         if(item.length>0){
             item = item[0]
