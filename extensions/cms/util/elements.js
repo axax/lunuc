@@ -1220,8 +1220,8 @@ const baseElements = [
             },
             ...marginOptions('p_'),
             ...eventOptions('p_'),
-            ...condition(),
-            ...observeOptions()
+            ...observeOptions(),
+            ...condition()
         },
         defaults: {
             $inlineEditor: {
@@ -1689,8 +1689,8 @@ const baseElements = [
             ...marginOptions('p_'),
             ...classTextOptions('p_'),
             ...classOptions('p_'),
-            ...condition(),
-            ...observeOptions()
+            ...observeOptions(),
+            ...condition()
         }
     },
     {
@@ -1728,8 +1728,8 @@ const baseElements = [
             },
             ...marginOptions('p_'),
             ...classOptions('p_'),
-            ...condition(),
-            ...observeOptions()
+            ...observeOptions(),
+            ...condition()
         },
         defaults: {
             $inlineEditor: {
@@ -2494,10 +2494,10 @@ const advancedElements = [
                 tab: DEFAULT_TAB,
                 label: 'Slug (deprecated)'
             },
-            ...condition(),
             ...marginOptions('p_'),
             ...classOptions('p_'),
             ...observeOptions(),
+            ...condition(),
             ...invisibleOptions('p_')
         },
         trigger: {
@@ -2532,11 +2532,11 @@ const advancedElements = [
                 label: 'Tag'
             },
             ...styleIndented(),
-            ...condition(),
             ...marginOptions('p_'),
             ...classOptions('p_'),
             ...invisibleOptions('p_'),
-            ...observeOptions()
+            ...observeOptions(),
+            ...condition()
         }
     },
     {
@@ -2733,11 +2733,11 @@ const advancedElements = [
                 uitype:'editor'
             },
             ...styleIndented(),
-            ...condition(),
             ...marginOptions('p_'),
             ...classOptions('p_'),
             ...invisibleOptions('p_'),
-            ...observeOptions()
+            ...observeOptions(),
+            ...condition()
         }
     },
 

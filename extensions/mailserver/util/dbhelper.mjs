@@ -4,6 +4,8 @@ import config from '../../../gensrc/config.mjs'
 import path from 'path'
 import fs from 'fs'
 import Util from '../../../api/util/index.mjs'
+import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
+import os from "os";
 
 const ROOT_DIR = path.resolve()
 const BACKUP_DIR_ABS = path.join(ROOT_DIR, config.BACKUP_DIR)
@@ -161,16 +163,25 @@ export const getMailAccountsFromMailData = async (db, data) => {
     return mailAccounts
 }
 
-export const getAttachmentContentFromFile = (attachment)=>{
+export const getAttachmentContentFromFile = (attachment, {db, message})=>{
     if(attachment.content && attachment.content.startsWith && attachment.content.startsWith('@FILE:')){
         const fileAbs = path.join(ATTACHMENT_DIR_ABS, attachment.content.substring(6))
         console.log('reading attachment from file: ', fileAbs)
-        return fs.readFileSync(fileAbs, { encoding: attachment.encoding || 'base64' })
+        try {
+            return fs.readFileSync(fileAbs, {encoding: attachment.encoding || 'base64'})
+        }catch (error){
+            console.error('Error reading attachment from file: ', error)
+            GenericResolver.createEntity(db, {context: {lang: 'en'}}, 'Log', {
+                type: 'imap',
+                message: 'Error reading attachment from file: '+error.message,
+                meta: {message:{_id:message._id,attachment,fileAbs}}
+            })
+        }
     }
     return attachment.content
 }
 
-export  const replaceAttachmentInMailData = (attachment, mailAccount) => {
+export  const replaceAttachmentInMailData = (attachment, mailAccount, {db}) => {
 
     if (attachment.content &&
         attachment.size > MAX_ATTACHMENT_SIZE_FOR_DB &&
@@ -184,8 +195,13 @@ export  const replaceAttachmentInMailData = (attachment, mailAccount) => {
                 fs.writeFileSync(fileAbs, attachment.content)
             }
             attachment.content = `@FILE:${fileName}`
-        } catch (e) {
+        } catch (error) {
             console.warn('Error writing attachment to file: ', e)
+            GenericResolver.createEntity(db, {context: {lang: 'en'}}, 'Log', {
+                type: 'imap',
+                message: 'Error writing attachment to file: '+ error.message,
+                meta: {message:{attachment},fileAbs}
+            })
         }
     }
 }

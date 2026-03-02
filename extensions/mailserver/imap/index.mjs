@@ -677,7 +677,7 @@ const startListening = async (db, context) => {
                        // alternatives: message.data.alternatives,
                         attachments: Array.isArray(message.data.attachments) ? message.data.attachments.map(att => ({
                             filename: att.filename,
-                            content: getAttachmentContentFromFile(att),
+                            content: getAttachmentContentFromFile(att, {db, message}),
                             contentType: att.contentType,
                             cid: att.cid,
                             encoding: att.encoding!=='quoted-printable' ? att.encoding : undefined,
