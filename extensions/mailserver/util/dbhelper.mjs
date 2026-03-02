@@ -196,7 +196,7 @@ export  const replaceAttachmentInMailData = (attachment, mailAccount, {db}) => {
             }
             attachment.content = `@FILE:${fileName}`
         } catch (error) {
-            console.warn('Error writing attachment to file: ', e)
+            console.warn('Error writing attachment to file: ', error)
             GenericResolver.createEntity(db, {context: {lang: 'en'}}, 'Log', {
                 type: 'imap',
                 message: 'Error writing attachment to file: '+ error.message,
