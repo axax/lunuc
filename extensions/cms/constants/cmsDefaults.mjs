@@ -535,6 +535,9 @@ body{
 // --- MEDIA QUERIES ---
 
 @media (min-width: \${this.get('breakpointMobile')}) {
+  [data-element-key="grid"]{
+    grid-template-columns: var(--grid-template-columns-sm);
+  }
   .row {    
     &.row-space-4 {
       gap: 2rem;
@@ -557,6 +560,9 @@ body{
 }
 
 @media (min-width: \${this.get('breakpointTablet')}) {
+  [data-element-key="grid"]{
+    grid-template-columns: var(--grid-template-columns-md);
+  }
   .row {    
     &.row-space-4 {
       gap: 3rem;
@@ -576,6 +582,9 @@ body{
 }
 
 @media (min-width: \${this.get('breakpointDesktop')}) {
+  [data-element-key="grid"]{
+    grid-template-columns: var(--grid-template-columns-lg);
+  }
   .row {
     &.row-space-6 {
       column-gap: 5.2rem;

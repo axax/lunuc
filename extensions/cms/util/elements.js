@@ -1220,7 +1220,8 @@ const baseElements = [
             },
             ...marginOptions('p_'),
             ...eventOptions('p_'),
-            ...condition()
+            ...condition(),
+            ...observeOptions()
         },
         defaults: {
             $inlineEditor: {

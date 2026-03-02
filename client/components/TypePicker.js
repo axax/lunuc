@@ -253,7 +253,10 @@ class TypePicker extends React.Component {
 
                 {hasFocus && data && data.results && data.results.map((item, idx) =>
                     <MenuItem
-                        onClick={this.handlePick.bind(this, idx)}
+                        onClick={()=>{
+                            this.handlePick(idx)
+                            this.setState({hasFocus:false})
+                        }}
                         selected={selIdx === idx}
                         key={idx}
                         component="div"
@@ -589,14 +592,16 @@ class TypePicker extends React.Component {
         const {name, dataset, onChange, keepTextValue} = this.props
         const {value, textValue} = this.state
 
-        if( (!value || !value.length) && keepTextValue){
-            onChange({target: {value: textValue,name,dataset}})
-        }
-
         setTimeout(() => {
-            if (this.state.hasFocus)
+            if (this.state.hasFocus) {
+
+                if( (!value || !value.length) && keepTextValue){
+                    onChange({target: {value: textValue,name,dataset}})
+                }
+
                 this.setState({hasFocus: false})
-        }, 500)
+            }
+        }, 250)
     }
 
     handleKeyDown(e) {
