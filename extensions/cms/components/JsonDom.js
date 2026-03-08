@@ -193,7 +193,7 @@ class JsonDom extends React.Component {
                 url = location.origin + '/lunucapi/tracking?url=' + encodeURIComponent(url) + tracking
             }
 
-            if (isAbs || native || url.startsWith('tel:') || url.startsWith('mailto:')) {
+            if (isAbs || native || url.startsWith('tel:') || url.startsWith('mailto:') || url.startsWith('/uploads/')) {
                 return <a href={url} target={newTarget} rel={rel} onClick={(e) => {
 
                     if (onClick) {

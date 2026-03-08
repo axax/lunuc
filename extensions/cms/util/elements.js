@@ -2620,6 +2620,7 @@ const advancedElements = [
                             clone: false,
                             clipboard: false,
                             addBelow: false,
+                            addAbove:false,
                             addSpace: false,
                             convert: false,
                             add: false,

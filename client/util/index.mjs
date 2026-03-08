@@ -8,7 +8,7 @@ import {_t} from '../../util/i18n.mjs'
 /**
  * Object with general client helper methods. It is also accessible in the CMS Editor
  */
-const JSON_ESCAPE_MAP = {'\\': '\\\\', '\"': '\\\"', '\b': '\\b', '\f': '\\f', '\n': '\\n', '\r': '\\r', '\t': '\\t'}
+const JSON_ESCAPE_MAP = {'\\': '\\\\', '\"': '\\\"','"': '\\\"', '\b': '\\b', '\f': '\\f', '\n': '\\n', '\r': '\\r', '\t': '\\t'}
 const DATE_FORMATS = {}
 
 const Util = {
@@ -41,6 +41,19 @@ const Util = {
     removeHtmlTags: str => {
         return str.replace(/<[^>]*>/g, '')
     },
+    /* Converts a string into a URL-friendly slug for pretty URLs. */
+    slugify: (str) => {
+        return str
+            .toLowerCase()
+            .replace(/[àáâãäåæ]/g, 'a')
+            .replace(/[èéêë]/g, `e`)
+            .replace(/[ìíîï]/g, 'i')
+            .replace(/[òóôõöø]/g, 'o')
+            .replace(/[ùúûü]/g, 'u')
+            .replace(/[ýÿ]/g, 'y')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+    },
     escapeForJson: (str, options) => {
         if (str === undefined || str === null) return ''
         if (!isString(str))
@@ -60,9 +73,12 @@ const Util = {
             if (options.removeHtmlTags){
                 str = Util.removeHtmlTags(str)
             }
+            if(options.slugify){
+                str = Util.slugify(str)
+            }
         }
 
-        return str.replace(/[\\]|[\"]|[\b]|[\f]|[\n]|[\r]|[\t]/g, (matched) => {
+        return str.replace(/[\\]|[\"]|["]|[\b]|[\f]|[\n]|[\r]|[\t]/g, (matched) => {
             return JSON_ESCAPE_MAP[matched]
         })
 
