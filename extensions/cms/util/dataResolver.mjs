@@ -66,6 +66,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                 const tpl = new Function(`const {${Object.keys(scope).join(',')}} = this.scope
                                               const {data} = this
                                               const Util = this.ClientUtil
+                                              const _e = Util.escapeForJson
                                               const ApiUtil = this.ApiUtil
                                               const ObjectId = this.ObjectId
                                               return \`${JSON.stringify(segments[i])}\``)

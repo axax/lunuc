@@ -10,6 +10,7 @@ import Hook from '../../../util/hook.cjs'
 import {deepMerge} from '../../../util/deepMerge.mjs'
 import {CAPABILITY_MANAGE_CMS_CONTENT} from '../constants/index.mjs'
 import {findObjectsByAttributeValue, isString, parseOrElse, setPropertyByPath} from '../../../client/util/json.mjs'
+import {_t} from 'util/i18n.mjs'
 
 class CmsViewContainer extends React.Component {
     oriTitle = document.title
@@ -91,8 +92,12 @@ class CmsViewContainer extends React.Component {
                 return <div>Rendering is disabled</div>
             }
             // set page title
-            if (!dynamic && cmsPage.name)
-                document.title = cmsPage.name[_app_.lang]
+            if (!dynamic && cmsPage.name) {
+                const title = _t(cmsPage.name)
+                if(isString(title) && title.indexOf('${')<0) {
+                    document.title = title
+                }
+            }
         }
 
         if (cmsPage.ssr && !editMode) {

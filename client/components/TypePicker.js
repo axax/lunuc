@@ -621,7 +621,11 @@ class TypePicker extends React.Component {
 
     getData(filter, {callback, limit}) {
 
-        const {type, queryFields, pickerField, pickerSort} = this.props
+
+        const {type, queryFields, pickerField, pickerSort, genericType} = this.props
+        if(genericType){
+            filter = `&& definition.name==${genericType} && ${filter}`
+        }
         if (type) {
 
             const nameStartLower = type.charAt(0).toLowerCase() + type.slice(1) + 's'
