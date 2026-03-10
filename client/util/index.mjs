@@ -379,7 +379,11 @@ const Util = {
         if (!image) {
             return data
         }
-        if (image.name) {
+        if (image.alt) {
+            data.alt = _t(image.alt)
+        }
+
+        if (!data.alt && image.name) {
             data.alt = image.name
         }
         if (!image.src) {

@@ -199,12 +199,13 @@ const BulkEdit = ({ dataToBulkEdit, type, parentContainer, setKeyValue}) => {
                              }
                          }}
                          actions={[
-                             (dataToBulkEdit.action==='editScript' || (bulkEditFields && Object.keys(bulkEditFields).length>0)?{key: 'execute', label: _t('TypesContainer.bulkEditExecute')}:null),
                              {
                                  key: 'cancel',
                                  label: _t('core.cancel'),
                                  type: 'primary'
-                             }]}
+                             },
+                             (dataToBulkEdit.action==='editScript' || (bulkEditFields && Object.keys(bulkEditFields).length>0)?{key: 'execute', label: _t('TypesContainer.bulkEditExecute')}:null)
+                             ]}
                          title={_t('TypesContainer.bulkEdit')}>
 
         {dataToBulkEdit.action==='editScript' ?

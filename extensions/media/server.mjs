@@ -47,6 +47,13 @@ Hook.on('typeDeleted_Media', ({ids}) => {
     // delete files
     for(const id of ids) {
         const fileName = path.join(__dirname, '../../' + UPLOAD_DIR + '/' + id)
+        const fileNamePrivate = path.join(__dirname, '../../' + UPLOAD_DIR + '/private' + id)
+
+        if (fs.existsSync(fileNamePrivate)) {
+            console.log('delete file ' + fileNamePrivate)
+            fs.unlinkSync(fileNamePrivate)
+        }
+
         if (fs.existsSync(fileName)) {
             console.log('delete file ' + fileName)
             fs.unlinkSync(fileName)
