@@ -483,10 +483,17 @@ const GenericResolver = {
             throw new Error('Id is missing')
         }
 
-
         if(!await Util.userHasAccessRights(db,context,{typeName, access:'delete'})){
             throw new Error('Benutzer hat keine Berechtigung zum Löschen')
         }
+
+
+        if (Hook.hooks['typeBeforeDelete'] && Hook.hooks['typeBeforeDelete'].length) {
+            for (let i = 0; i < Hook.hooks['typeBeforeDelete'].length; ++i) {
+                await Hook.hooks['typeBeforeDelete'][i].callback({db, type: typeName, data})
+            }
+        }
+
 
         const collectionName = await buildCollectionName(db, context, typeName, _version)
 

@@ -121,7 +121,9 @@ class SimpleMenu extends React.Component {
                 }
             }
             return [item.divider && <Divider key={'divider' + i} light/>,
-                <MenuItem disabled={item.disabled} style={style} onClick={(e) => {
+                <MenuItem disabled={item.disabled} style={style}
+                  sx={item.danger ? { color: 'error.main' } : {}}
+                  onClick={(e) => {
                     if (item.items) {
                         this.setState({collapse: { ...collapse, [i]: {open: !(collapse[i] && collapse[i].open) }}})
                         // triggers repositioning of menu https://github.com/mui/material-ui/issues/10595

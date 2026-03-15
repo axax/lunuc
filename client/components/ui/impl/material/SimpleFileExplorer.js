@@ -14,12 +14,14 @@ import {
 } from '@mui/x-tree-view/TreeItem';
 import { TreeItemIcon } from '@mui/x-tree-view/TreeItemIcon';
 import { TreeItemProvider } from '@mui/x-tree-view/TreeItemProvider';
-import { TreeItemDragAndDropOverlay } from '@mui/x-tree-view/TreeItemDragAndDropOverlay';
 import { useTreeItemModel } from '@mui/x-tree-view/hooks';
-import {useEffect, useState} from "react";
-import CircularProgress from '@mui/material/CircularProgress'
-import {getIconByKey} from "./icon";
+import { useEffect, useState } from "react";
+import { getIconByKey } from "./icon";
 
+// ─── Module-level context ────────────────────────────────────────────────────
+export const TreeContextMenuContext = React.createContext(null);
+
+// ─── Dot icon ────────────────────────────────────────────────────────────────
 function DotIcon() {
     return (
         <Box
@@ -37,6 +39,7 @@ function DotIcon() {
     );
 }
 
+// ─── Styled components ───────────────────────────────────────────────────────
 const TreeItemRoot = styled('li')(({ theme }) => ({
     listStyle: 'none',
     margin: 0,
@@ -53,7 +56,7 @@ const TreeItemContent = styled('div')(({ theme }) => ({
     paddingRight: theme.spacing(1),
     paddingLeft: `calc(${theme.spacing(1)} + var(--TreeView-itemChildrenIndentation) * var(--TreeView-itemDepth))`,
     width: '100%',
-    boxSizing: 'border-box', // prevent width + padding to overflow
+    boxSizing: 'border-box',
     position: 'relative',
     display: 'flex',
     alignItems: 'center',
@@ -110,30 +113,43 @@ const TreeItemLabelText = styled(Typography)({
     fontWeight: 500,
 });
 
-function CustomLabel({ icon: Icon, expandable, children, ...other }) {
+// ─── Custom Label ─────────────────────────────────────────────────────────────
+function CustomLabel({ icon: Icon, image, expandable, children, ...other }) {
     return (
         <TreeItemLabel
             {...other}
-            sx={{
-                display: 'flex',
-                alignItems: 'center',
-            }}
+            sx={{ display: 'flex', alignItems: 'center' }}
         >
-            {Icon && (
+            {image ? (
+                <Box
+                    component="img"
+                    src={image}
+                    className="labelIcon"
+                    sx={{
+                        mr: 1,
+                        width: '1.5rem',
+                        height: '1.5rem',
+                        objectFit: 'cover',
+                        borderRadius: '3px',
+                        flexShrink: 0,
+                    }}
+                />
+            ) : Icon ? (
                 <Box
                     component={Icon}
                     className="labelIcon"
                     color="inherit"
-                    sx={{ mr: 1, fontSize: '1.2rem' }}
+                    sx={{ mr: 1, fontSize: '1.5rem' }}
                 />
-            )}
-
+            ) : null}
             <TreeItemLabelText variant="body2">{children}</TreeItemLabelText>
             {expandable && <DotIcon />}
         </TreeItemLabel>
     );
 }
 
+
+// ─── Custom Tree Item ─────────────────────────────────────────────────────────
 export const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, ref) {
     const { id, itemId, label, disabled, children, ...other } = props;
 
@@ -145,15 +161,96 @@ export const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, re
         getCheckboxProps,
         getLabelProps,
         getGroupTransitionProps,
-        getDragAndDropOverlayProps,
         status,
     } = useTreeItem({ id, itemId, children, label, disabled, rootRef: ref });
 
     const item = useTreeItemModel(itemId);
 
+    // Consume the module-level context via ref
+    const contextMenuRef = React.useContext(TreeContextMenuContext);
+    const { loadingItems } = React.useContext(TreeContextMenuContext).current;
+    const isLoading = loadingItems?.has(itemId);
+
+    // ── Drag-over visual state ─────────────────────────────────────
+    const [isDragOver, setIsDragOver] = useState(false);
+
+    const dndEnabled = contextMenuRef?.current?.enableDragAndDrop ?? false;
+
+    // ── Context menu ───────────────────────────────────────────────
+    const handleContextMenu = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!contextMenuRef?.current) return;
+        const { onContextMenu, findById, data } = contextMenuRef.current;
+        const fullItem = findById(data, itemId);
+        onContextMenu(event, fullItem);
+    };
+
+    // ── Drag handlers ──────────────────────────────────────────────
+    const handleDragStart = (event) => {
+        event.stopPropagation();
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', itemId);
+        contextMenuRef.current.setDraggedId(itemId);
+    };
+
+    const isValidDropTarget = () => {
+        const { draggedId, findById, data } = contextMenuRef.current;
+        if (!draggedId || draggedId === itemId) return false;
+        const target = findById(data, itemId);
+        return target?.fileType === 'folder' || target?.fileType === 'root';
+    };
+
+    const handleDragOver = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!isValidDropTarget()) return;
+        event.dataTransfer.dropEffect = 'move';
+    };
+
+    const handleDragEnter = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (isValidDropTarget()) setIsDragOver(true);
+    };
+
+    const handleDragLeave = (event) => {
+        // Only clear if we're leaving this element entirely (not entering a child)
+        if (!event.currentTarget.contains(event.relatedTarget)) {
+            setIsDragOver(false);
+        }
+    };
+
+    const handleDrop = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDragOver(false);
+
+        const { draggedId, onDrop } = contextMenuRef.current;
+        if (!draggedId || draggedId === itemId) return;
+
+        const { findById, data } = contextMenuRef.current;
+        const target = findById(data, itemId);
+        if (target?.fileType !== 'folder' && target?.fileType !== 'root') return;
+
+        onDrop(draggedId, itemId);
+        contextMenuRef.current.setDraggedId(null);
+    };
+
+    const handleDragEnd = () => {
+        setIsDragOver(false);
+        if (contextMenuRef?.current) {
+            contextMenuRef.current.setDraggedId(null);
+        }
+    };
+
     let icon;
+    let image;
     if (status.expandable) {
         icon = FolderRounded;
+    } else if (item.image) {
+        // image property takes priority over icon
+        image = item.image;
     } else if (item.icon) {
         icon = getIconByKey(item.icon);
     }
@@ -161,7 +258,22 @@ export const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, re
     return (
         <TreeItemProvider {...getContextProviderProps()}>
             <TreeItemRoot {...getRootProps(other)}>
-                <TreeItemContent {...getContentProps()}>
+                <TreeItemContent
+                    {...getContentProps()}
+                    onContextMenu={handleContextMenu}
+                    draggable={dndEnabled}
+                    onDragStart={dndEnabled ? handleDragStart : undefined}
+                    onDragOver={dndEnabled ? handleDragOver : undefined}
+                    onDragEnter={dndEnabled ? handleDragEnter : undefined}
+                    onDragLeave={dndEnabled ? handleDragLeave : undefined}
+                    onDrop={dndEnabled ? handleDrop : undefined}
+                    onDragEnd={dndEnabled ? handleDragEnd : undefined}
+                    style={isDragOver ? {
+                        outline: '2px solid var(--mui-palette-primary-main, #1976d2)',
+                        outlineOffset: '-2px',
+                        backgroundColor: 'var(--mui-palette-primary-dark, rgba(25, 118, 210, 0.2))',
+                    } : undefined}
+                >
                     <TreeItemIconContainer {...getIconContainerProps()}>
                         <TreeItemIcon status={status} />
                     </TreeItemIconContainer>
@@ -169,11 +281,15 @@ export const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, re
                     <CustomLabel
                         {...getLabelProps({
                             icon,
-                            expandable: status.expandable && status.expanded,
-                            ...(item.loading ? {children:<CircularProgress size={'sm'}/>}:{})
-                        })}>
+                            image,
+                            expandable: status.expandable && status.expanded
+                        })}
+                    >
+                        {isLoading
+                            ? 'Loading...'
+                            : label
+                        }
                     </CustomLabel>
-                    <TreeItemDragAndDropOverlay {...getDragAndDropOverlayProps()} />
                 </TreeItemContent>
                 {children && <CustomCollapse {...getGroupTransitionProps()} />}
             </TreeItemRoot>
@@ -181,98 +297,196 @@ export const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, re
     );
 });
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 const findById = (nodes, id) => {
+    if(!id || id==='root') return nodes[0]
     for (const node of nodes) {
-        if (node.id === id) {
-            return node;
-        }
-        if (node.children) {
+        if (node.id === id) return node;
+        if (node.children && node.id!=='root') {
             const found = findById(node.children, id);
-            if (found) {
-                return found;
-            }
+            if (found) return found;
         }
     }
     return null;
-}
+};
 
-export default function FileExplorer({onFetch, onItemClick, defaultExpandedItems}) {
+const removeItemById = (nodes, id) => {
+    for (let i = 0; i < nodes.length; i++) {
+        if (nodes[i].id === id) {
+            return nodes.splice(i, 1)[0];
+        }
+        if (nodes[i].children && nodes[i].id!=='root') {
+            const found = removeItemById(nodes[i].children, id);
+            if (found) return found;
+        }
+    }
+    return null;
+};
+
+// ─── File Explorer ────────────────────────────────────────────────────────────
+export default function FileExplorer({ onFetch, onItemClick, ContextMenu, onItemAction, defaultExpandedItems, enableDragAndDrop = false }) {
 
     const [data, setData] = useState(null);
     const [error, setError] = useState(null);
-    const [expandedItems, setExpandedItems] = useState([])
+    const [expandedItems, setExpandedItems] = useState([]);
+    const [contextMenu, setContextMenu] = useState(null); // { position, item }
+    const [draggedId, setDraggedId] = useState(null);
+    const [selectedItems, setSelectedItems] = useState([]);
+    const [loadingItems, setLoadingItems] = useState(new Set());
 
-    const fetchData = (props)=>{
+
+    // Stable ref passed via context so CustomTreeItem always has latest data
+    const contextMenuRef = React.useRef(null);
+    contextMenuRef.current = {
+        loadingItems,
+        onContextMenu: (event, item) => {
+            setSelectedItems([item.id]);
+            setContextMenu({
+                position: { top: event.clientY, left: event.clientX },
+                item,
+            });
+        },
+        findById,
+        data,
+        draggedId,
+        setDraggedId,
+        enableDragAndDrop,
+        onDrop: (sourceId, targetFolderId) => {
+            setData(prevData => {
+                const newData = prevData.splice(0);
+
+                // Remove the dragged item from wherever it currently lives
+                const draggedItem = removeItemById(newData, sourceId);
+                if (!draggedItem) return prevData;
+
+                // Insert into the target folder
+                if(targetFolderId==='root'){
+                    newData.splice(1, 0, draggedItem)
+                }else {
+                    const targetFolder = findById(newData, targetFolderId);
+                    if (!targetFolder) return prevData;
+                    if (!targetFolder.children) targetFolder.children = [];
+                    targetFolder.children.push(draggedItem);
+                }
+
+                // Mark folder as having fetched children so it doesn't re-fetch
+                //targetFolder.childrenFetched = true;
+
+                // Notify parent to persist the move
+                onItemAction?.({source: findById(newData, sourceId), itemId: sourceId, targetFolderId },{key:'move'});
+
+                return [...newData];
+            });
+        },
+    };
+
+    const fetchData = (props) => {
         return new Promise((resolve) => {
             onFetch(props).then((itemData) => {
-                let newData
+                let newData;
                 if (props.id && props.data) {
-                    newData = props.data.slice(0)
-                    const item = findById(props.data, props.id)
-                    item.children = itemData
-                    item.childrenFetched = true
+                    newData = props.data.slice(0);
+                    const item = findById(props.data, props.id);
+                    item.children = itemData;
+                    item.childrenFetched = true;
+                    itemData.forEach(child => {
+                        child.parent = item.id
+                    })
                 } else {
-                    newData = itemData
+                    newData = itemData;
                 }
-                resolve(newData)
+                resolve(newData);
             }).catch((error) => {
-                setError(error)
-                resolve(props.data)
-            })
-        })
-    }
+                setError(error);
+                resolve(props.data);
+            });
+        });
+    };
 
     useEffect(async () => {
-
-        if(!data){
-            const allPaths = ['']
-            if(defaultExpandedItems){
-                allPaths.push(...defaultExpandedItems)
+        if (!data) {
+            const allPaths = [''];
+            if (defaultExpandedItems) {
+                allPaths.push(...defaultExpandedItems);
             }
-            let currentData = data
-            const allPathSorted = allPaths.sort((a, b) => a.length - b.length)
+            let currentData = data;
+            const allPathSorted = allPaths.sort((a, b) => a.length - b.length);
 
-            for(const id of allPathSorted){
-                currentData = await fetchData({id, data:currentData})
+            for (const id of allPathSorted) {
+                currentData = await fetchData({ id, data: currentData });
             }
-            setData(currentData)
+            if(enableDragAndDrop) {
+                currentData.unshift({label: '.', id: 'root', fileType: 'root', children: currentData, icon: 'source', original:{createdBy:_app_.user}});
+            }
+            setData(currentData);
         }
-
     }, []);
 
-    if(error){
-        return error.message
-    }
-    if(!data){
-        return
-    }
+    if (error) return error.message;
+    if (!data) return null;
+
     return (
-        <RichTreeView
-            defaultExpandedItems={defaultExpandedItems}
-            items={data}
-            onExpandedItemsChange={(event, newExpandedItems) => {
-                setExpandedItems(newExpandedItems)
-            }}
-            getItemChildren={(item)=>{
-                if(item.children){
-                    return item.children
-                }
-                if(item.fileType==='folder') {
-                    return [{id: item.id + 'loader', label: '...', loading:true, disabled:true}]
-                }
-            }}
-            onItemClick={(event, id, xxx)=>{
-                const wasExpanded = expandedItems.includes(id)
-                console.log(`tree view id clicked: ${id}`)
-                const item = findById(data,id)
-                if(item.fileType === 'folder' && !item.childrenFetched) {
-                    fetchData({id, data})
-                }
-                onItemClick(event, item, !wasExpanded)
-            }}
-            sx={{ height: 'fit-content', flexGrow: 1, maxWidth: 400, overflowY: 'auto' }}
-            slots={{ item: CustomTreeItem }}
-            itemChildrenIndentation={24}
-        />
+        <TreeContextMenuContext.Provider value={contextMenuRef}>
+            <RichTreeView
+                controlled
+                selectedItems={selectedItems}
+                onSelectedItemsChange={(event, newSelected) => {
+                    setSelectedItems(newSelected);
+                }}
+                expandedItems={expandedItems}
+                items={data}
+                onExpandedItemsChange={(event, newExpandedItems) => {
+                    setExpandedItems(newExpandedItems);
+                }}
+                getItemChildren={(item) => {
+                    if (item.children && item.id!=='root') return item.children;
+                    return [];
+                }}
+                onItemClick={(event, id) => {
+                    if (id === 'root') return;
+
+                    const wasExpanded = expandedItems.includes(id);
+                    const item = findById(data, id);
+
+                    if (item.fileType === 'folder' && !item.childrenFetched && event.detail !== 2) {
+                        setLoadingItems(prev => new Set(prev).add(id));
+
+                        fetchData({ id, data }).then((newData) => {
+                            const fetchedItem = findById(newData, id);
+                            const hasChildren = fetchedItem?.children?.length > 0;
+
+                            setLoadingItems(prev => {
+                                const next = new Set(prev);
+                                next.delete(id);
+                                return next;
+                            });
+
+                            setData(newData);
+
+                            if (hasChildren && !wasExpanded) {
+                                setExpandedItems(prev => [...prev, id]);
+                            }
+                        });
+
+                        onItemClick(event, item, !wasExpanded);
+                        return;
+                    }
+
+                    onItemClick(event, item, !wasExpanded);
+                }}
+                sx={{ height: 'fit-content', flexGrow: 1, maxWidth: 'auto', overflowY: 'auto' }}
+                slots={{ item: CustomTreeItem }}
+                itemChildrenIndentation={24}
+            />
+            {ContextMenu && <ContextMenu
+                anchorPosition={contextMenu?.position}
+                item={contextMenu?.item}
+                onClose={() => setContextMenu(null)}
+                onAction={(event, item, action) => {
+                    console.log(action, findById(data, item.parent))
+                    onItemAction?.(item, action, findById(data, item.parent))
+                }}
+            />}
+        </TreeContextMenuContext.Provider>
     );
 }

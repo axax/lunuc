@@ -26,7 +26,11 @@ export const translations = {
         'TypesContainer.deleteOnlyFile': 'Nur Datei löschen',
         'TypesContainer.deleteConfirmTextOnlyFile': 'Beachten Sie, dass nur die physische Datei und nicht der Medieneintrag gelöscht wird.',
         'TypesContainer.downloadAsZip':'Als Zip herunterladen',
-        'TypesContainer.sendAsAttachment':'Als Email Anhang senden'
+        'TypesContainer.sendAsAttachment':'Als Email Anhang senden',
+        'MediaFileExplorer.newFolder':'Verzeichnis erstellen',
+        'MediaFileExplorer.newFile':'Media hochladen',
+        'MediaFileExplorer.delete':'Löschen',
+        'MediaFileExplorer.edit':'Bearbeiten'
     },
     en: {
         'Media.editImage': 'Edit image',
@@ -56,6 +60,10 @@ export const translations = {
         'TypesContainer.deleteOnlyFile': 'Delete only file',
         'TypesContainer.deleteConfirmTextOnlyFile': 'Please note that only the physical file and not the media entry is deleted.',
         'TypesContainer.downloadAsZip':'Download as zip',
-        'TypesContainer.sendAsAttachment':'Send as email attachment'
+        'TypesContainer.sendAsAttachment':'Send as email attachment',
+        'MediaFileExplorer.newFolder': 'Create directory',
+        'MediaFileExplorer.newFile': 'Upload media',
+        'MediaFileExplorer.delete': 'Delete',
+        'MediaFileExplorer.edit': 'Edit'
     }
 }

@@ -13,8 +13,11 @@ import {CAPABILITY_MANAGE_OTHER_USERS, CAPABILITY_ADMIN_OPTIONS} from '../../uti
 import {formatBytes} from '../../client/util/format.mjs'
 import {MediaEditorWrapper} from './components/MediaEditorWrapper.js'
 import {MediaUploader} from './components/MediaUploader'
-import {QuickMediaUploader} from './components/QuickMediaUploader'
 import GenericForm from '../../client/components/GenericForm'
+import ToggleButton from '@mui/material/ToggleButton'
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
+import {getIconByKey} from '../../client/components/ui/impl/material/icon'
+import MediaFileExplorer from './components/MediaFileExplorer'
 
 const ImageIcon = (props) => <Async {...props} expose="ImageIcon" load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 
@@ -26,6 +29,32 @@ const downloadLink = (url,name) => {
     a.setAttribute('download', name)
     a.setAttribute('target', '_blank')
     a.click()
+}
+
+
+function ViewToggleButton({onChange, value}) {
+    const [view, setView] = React.useState(value || 'table')
+
+    const handleChange = (event, view) => {
+        setView(view);
+        onChange(event,view)
+    };
+
+    const ViewIcon=getIconByKey('view')
+    const TreeIcon=getIconByKey('tree')
+    return (
+        <ToggleButtonGroup
+            color="primary"
+            value={view}
+            exclusive
+            size="small"
+            onChange={handleChange}
+            aria-label="Platform"
+        >
+            <ToggleButton value="tree"><TreeIcon/></ToggleButton>
+            <ToggleButton value="table"><ViewIcon/></ToggleButton>
+        </ToggleButtonGroup>
+    )
 }
 
 export default () => {
@@ -146,7 +175,7 @@ export default () => {
                     icon:'upload',
                     name: _t('Media.uploadMedia'), onClick: () => {
                         setTimeout(() => {
-                            this.setState({createEditDialog: true, createEditDialogOption: 'upload'})
+                            this.setState({createEditDialog: true, createEditDialogOption: {variant:'upload'}})
                         }, 300)
                     }
                 })
@@ -358,12 +387,12 @@ export default () => {
             fileToUpload = false
 
             // access data from TypeContainer
-            if (!dataToEdit && meta.TypeContainer.state.createEditDialogOption === 'upload') {
+            const createEditDialogOption = meta.TypeContainer.state.createEditDialogOption
+            if (createEditDialogOption?.variant === 'upload') {
 
-                // remove save button
-                props.actions.splice(1, 1)
+                props.actions = [{ key: 'cancel',label: _t('core.ok')}]
 
-                props.children = <MediaUploader meta={meta} type={type}/>
+                props.children = <MediaUploader TypeContainer={meta.TypeContainer} callback={createEditDialogOption.callback} dataToEdit={dataToEdit} type={type} />
             } else if (dataToEdit) {
 
                 props.children = <MediaEditorWrapper meta={meta} dataToEdit={dataToEdit}>{props.children}</MediaEditorWrapper>
@@ -377,7 +406,25 @@ export default () => {
         if (type === 'Media') {
 
 
-            content.splice(1, 1, <QuickMediaUploader key="quickMediaUploader" settings={this.settings} pageParams={this.pageParams} getData={this.getData.bind(this)}/>)
+
+         //   content.splice(1, 1, <QuickMediaUploader key="quickMediaUploader" settings={this.settings} pageParams={this.pageParams} getData={this.getData.bind(this)}/>)
+        }
+    })
+
+
+
+    Hook.on('TypesContainerBeforeRender', function ({type,typeSettings, renderOptions}) {
+        if (type === 'Media') {
+
+            renderOptions.stack.push(<ViewToggleButton onChange={(e,view)=>{
+                this.setSettingsForType(type, {view})
+            }} value={typeSettings.view} />)
+
+            if( typeSettings.view === 'tree'){
+                renderOptions.alternativeView = <MediaFileExplorer TypeContainerRef={this} />
+            }
+
+         //   content.splice(1, 1, <QuickMediaUploader key="quickMediaUploader" settings={this.settings} pageParams={this.pageParams} getData={this.getData.bind(this)}/>)
         }
     })
 

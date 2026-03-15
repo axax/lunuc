@@ -14,11 +14,30 @@ import {ensureDirectoryExistence} from '../../util/fileUtil.mjs'
 import path from 'path'
 import fs from "fs";
 import {pubsubHooked} from '../subscription.mjs'
+import crypto from 'crypto'
+import {SECRET_KEY} from '../constants/index.mjs'
 const PASSWORD_MIN_LENGTH = 8
 
 const ROOT_DIR = path.resolve()
 const BACKUP_DIR_ABS = path.join(ROOT_DIR, config.BACKUP_DIR)
 const KEYVALUE_DIR_ABS = path.join(BACKUP_DIR_ABS, 'keyvalues')
+
+
+const seed = crypto.createHash('sha256').update(SECRET_KEY).digest()
+const privateKey = crypto.createPrivateKey({
+    key: Buffer.concat([
+        Buffer.from('302e020100300506032b657004220420', 'hex'),
+        seed,
+    ]),
+    format: 'der',
+    type: 'pkcs8',
+})
+const publicKey = crypto.createPublicKey(privateKey)
+
+// new keys with every restart
+//const { privateKey, publicKey } = crypto.generateKeyPairSync('ed25519')
+
+
 
 function ownerGroupMatch(context) {
     return {ownerGroup: {$in: context.group.map(f => new ObjectId(f))}}
@@ -287,6 +306,38 @@ const Util = {
         }
 
         return bcrypt.hashSync(pw, hashedPw) === hashedPw
+    },
+    createToken:(data, expiresInSeconds)=> {
+        const payload = Buffer.from(JSON.stringify({
+            data,
+            exp: Math.floor(Date.now() / 1000) + expiresInSeconds,
+        })).toString('base64url')
+
+        const signature = crypto
+            .sign(null, Buffer.from(payload), privateKey)
+            .toString('base64url')
+
+        return `${payload}.${signature}`
+    },
+    verifyToken:(token) => {
+        const [payload, signature] = token.split('.')
+
+        const isValid = crypto.verify(
+            null,
+            Buffer.from(payload),
+            publicKey,
+            Buffer.from(signature, 'base64url')
+        )
+        if (!isValid) {
+            return {error:'Invalid signature'}
+        }
+
+        const { data, exp } = JSON.parse(Buffer.from(payload, 'base64url').toString())
+        if (Math.floor(Date.now() / 1000) > exp){
+            return {error:'Token expired'}
+        }
+
+        return {data}
     },
     validatePassword: (pw, {lang}) => {
         const err = []
@@ -641,3 +692,6 @@ for(let i = 0; i< 10000;i++){
     }
 }
 console.log('xxxxxxx', Date.now()-start)*/
+
+/*const token = Util.createToken({username: 'test', id: '1234567890'}, 60)
+console.log(Util.verifyToken(token))*/

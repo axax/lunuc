@@ -14,6 +14,11 @@ import {CAPABILITY_RUN_COMMAND} from '../../util/capabilities.mjs'
 import {uploadImageToStorage}  from './googleupload.mjs'
 import {createMediaEntry} from './util/index.mjs'
 import { fileURLToPath } from 'url'
+import {_t, registerTrs} from '../../util/i18nServer.mjs'
+
+import {translations} from './translations/translations-server.js'
+registerTrs(translations, 'MediaTranslations')
+
 import {
     CAPABILITY_MEDIA_REFERENCES
 } from './constants/index.mjs'
@@ -65,14 +70,26 @@ Hook.on('typeUpdated_Media', ({result}) => {
     addFilePrefix(result)
 })
 
+Hook.on('typeBeforeDelete', async ({db, type, data}) => {
+    if(type==='MediaGroup') {
+        let count = await db.collection('Media').count({group: {$in:[new ObjectId(data._id)]}})
+        if(count===0){
+            count = await db.collection('MediaGroup').count({group: {$in:[new ObjectId(data._id)]}})
+        }
+        if(count>0) {
+            throw new Error(_t('media.group.delete.error'))
+        }
+    }
+})
+
 const addFilePrefix = (result) => {
     const fileName = path.join(__dirname, '../../' + UPLOAD_DIR + '/' + result._id)
     const fileNamePrivate = path.join(__dirname, '../../' + UPLOAD_DIR + '/private' + result._id)
 
     try {
-        if (result.private) {
+        if (result.private && fs.existsSync(fileName)) {
             fs.renameSync(fileName, fileNamePrivate)
-        } else {
+        } else if(fs.existsSync(fileNamePrivate)){
             fs.renameSync(fileNamePrivate, fileName)
         }
     }catch (e) {

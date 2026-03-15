@@ -106,8 +106,10 @@ import {
     ContentCutIcon,
     LayersIcon
 } from 'gensrc/ui/admin/icons'
+import SourceIcon from '@mui/icons-material/Source'
 
 const iconComponents = {
+    source:SourceIcon,
     delete:DeleteIcon,
     refresh:RefreshIcon,
     magic:AutoFixHighIcon,

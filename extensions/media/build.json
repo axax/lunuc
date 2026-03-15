@@ -1,7 +1,7 @@
 {
   "types": [
     {
-      "description": "Media can either be an internal or an external source.",
+      "description": "",
       "name": "Media",
       "entryClonable": true,
       "onlyRequestedFields": true,

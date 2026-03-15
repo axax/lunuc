@@ -16,6 +16,7 @@ import {
     SimpleTable,
     Row,
     Col,
+    Stack,
     SimpleSwitch,
     SimpleMenu,
     AppBar,
@@ -850,6 +851,23 @@ class TypesContainer extends React.Component {
             savedQueries = []
         }
 
+        const renderOptions = {stack:[]}
+
+        Hook.call('TypesContainerBeforeRender', {type,renderOptions,typeSettings,_version}, this)
+
+        renderOptions.stack.unshift(<Chip
+            size="small"
+            label={prettyFilter ? this.prettyFilterLabel(prettyFilter) : _t('TypesContainer.noActiveFilter')}
+            onClick={() => {
+                this.setState({viewFilterDialog: true})
+            }}
+            onDelete={prettyFilter ? () => {
+                this.goTo({page: 1, prettyFilter: ''})
+            } : null}
+            deleteIcon={<DeleteIcon/>}
+            variant="outlined"
+        />)
+
         const content = [
             !title && !this.pageParams.title ? null :
                 <Typography key="typeTitle" variant="h3"
@@ -927,22 +945,22 @@ class TypesContainer extends React.Component {
                 <Typography mb={2} mt={0.5} color="text.disabled" component="div" key="searchHint"
                             variant="caption">{this.searchHint()}</Typography>
 
-                <div style={{margin: '0 0 0.5rem 0'}}>
-                    <Chip
-                        size="small"
-                        label={prettyFilter ? this.prettyFilterLabel(prettyFilter) : _t('TypesContainer.noActiveFilter')}
-                        onClick={() => {
-                            this.setState({viewFilterDialog: true})
-                        }}
-                        onDelete={prettyFilter ? () => {
-                            this.goTo({page: 1, prettyFilter: ''})
-                        } : null}
-                        deleteIcon={<DeleteIcon/>}
-                        variant="outlined"
-                    />
-                </div>
+
+                <Stack
+                    direction="row"
+                    spacing={2}
+                    sx={{
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        mb:1,
+                    }}
+                >
+
+                    {renderOptions.stack}
+
+                </Stack>
             </div>,
-            this.renderTable(columns, typeSettings),
+            renderOptions.alternativeView?renderOptions.alternativeView:this.renderTable(columns, typeSettings),
             <SimpleDialog key="deleteDialog" open={confirmDialog.open} onClose={this.handleConfirmDialog}
                           actions={[{key: 'yes', label: _t('core.yes')}, {
                               key: 'no',
@@ -1015,7 +1033,7 @@ class TypesContainer extends React.Component {
             </AppBar>
         ]
 
-        Hook.call('TypesContainerRender', {type, content,_version}, this)
+        Hook.call('TypesContainerRender', {type, content, _version}, this)
 
         console.info(`render ${this.constructor.name} in ${new Date() - startTime}ms`)
 
@@ -1438,8 +1456,13 @@ class TypesContainer extends React.Component {
     }
 
     createData(input, optimisticInput) {
-        const {type, page, limit, sort, filter, meta, _version} = this.pageParams
+        const {page, limit, sort, filter, meta, _version} = this.pageParams
         const user = _app_.user || {}
+
+        let type = this.pageParams.type
+        if(this.state.createEditDialogOption?.type){
+            type = this.state.createEditDialogOption.type
+        }
 
         if (type) {
             const queries = this.getTypeQueriesFiltered(type,  {loadAll: false})
@@ -1451,7 +1474,7 @@ class TypesContainer extends React.Component {
                 },
                 update: (store, {data, error}) => {
 
-                    if (error) {
+                    if (error || !data) {
                         return
                     }
 
@@ -1468,7 +1491,6 @@ class TypesContainer extends React.Component {
                         }, ...optimisticInput
                     }
                     this.enhanceOptimisticData(freshData)
-                    console.log(freshData, optimisticInput)
 
                     const storeKey = this.getStoreKey(type)
                     const variables = {limit, page, sort: this.extendSort(sort), meta, _version, filter: this.extendFilter(filter)}
@@ -1478,7 +1500,7 @@ class TypesContainer extends React.Component {
                         query: queries.query,
                         variables
                     })
-                    if (storeData[storeKey]) {
+                    if (storeData && storeData[storeKey]) {
                         const newData = {...storeData[storeKey], results: [...storeData[storeKey].results]}
 
                         if (freshData) {
@@ -1500,7 +1522,12 @@ class TypesContainer extends React.Component {
 
     updateData(changedData, optimisticData) {
 
-        const {type, page, limit, sort, filter, meta, _version} = this.pageParams
+        let {page, limit, sort, filter, meta, _version} = this.pageParams
+
+        let type = this.pageParams.type
+        if(this.state.createEditDialogOption?.type){
+            type = this.state.createEditDialogOption.type
+        }
 
         if (type) {
             const queries = this.getTypeQueriesFiltered(type,  {loadAll: false})
@@ -1544,7 +1571,7 @@ class TypesContainer extends React.Component {
     }
 
 
-    deleteData({type, page, limit, sort, filter, meta, _version}, ids) {
+    deleteData({type, page, limit, sort, filter, meta, _version}, ids, callback) {
         if (type && ids.length > 0) {
 
             const queries = this.getTypeQueriesFiltered(type, {loadAll: false}),
@@ -1562,7 +1589,7 @@ class TypesContainer extends React.Component {
                         query: queries.query,
                         variables
                     })
-                    if (storeData[storeKey]) {
+                    if (storeData && storeData[storeKey]) {
                         const newData = {...storeData[storeKey], results: [...storeData[storeKey].results]}
 
                         const refResults = newData.results
@@ -1597,6 +1624,9 @@ class TypesContainer extends React.Component {
 
                     }
 
+                    if(callback){
+                        callback({ids,data})
+                    }
                 },
             })
         }
@@ -1917,23 +1947,30 @@ class TypesContainer extends React.Component {
     }
 
 
-    handleDeleteDataClick = (dataToDelete) => {
+    handleDeleteDataClick = (dataToDelete, options = {}) => {
         this.setState({confirmDialog: {
-                action:'deleteEntries',
-                open:true,
-                title:_t('TypesContainer.deleteConfirmTitle'),
-                payload: dataToDelete,
-                text:dataToDelete.length > 1 ? _t('TypesContainer.deleteConfirmTextMulti') : _t('TypesContainer.deleteConfirmText')}})
+            action:'deleteEntries',
+            open:true,
+            title:_t('TypesContainer.deleteConfirmTitle'),
+            payload: dataToDelete,
+            text:dataToDelete.length > 1 ? _t('TypesContainer.deleteConfirmTextMulti') : _t('TypesContainer.deleteConfirmText'),
+            ...options}
+        })
     }
 
     handleSyncClick = (data) => {
         this.setState({viewSyncDialog: true, dataToSync: [data]})
     }
 
-    handleEditDataClick = (data) => {
+    handleEditDataClick = (data, options ={}) => {
 
         //load missing data if needed
-        const {type, _version} = this.pageParams
+        let {type, _version} = this.pageParams
+
+        if(options.type){
+            type = options.type
+        }
+        const callback = options.callback
 
         const typeDefinition = this.types[type]
         const typeData = this.types[type]
@@ -1966,7 +2003,8 @@ class TypesContainer extends React.Component {
                 fieldsToLoad.forEach(field => {
                     data[field] = response.data[storeKey].results[0][field]
                 })
-                this.setState({createEditDialog: true, dataToEdit: data})
+
+                this.setState({createEditDialog: true,createEditDialogOption:{type, title:type, callback}, dataToEdit: data})
 
             }).catch(error => {
                 console.log(error.message)
@@ -1974,7 +2012,7 @@ class TypesContainer extends React.Component {
             })
 
         } else {
-            this.setState({createEditDialog: true, dataToEdit: data})
+            this.setState({createEditDialog: true,createEditDialogOption:{type, title:type, callback}, dataToEdit: data})
         }
     }
 
@@ -2016,14 +2054,19 @@ class TypesContainer extends React.Component {
 
     handleConfirmDialog = (action) => {
         const {confirmDialog} = this.state
+        console.log('handleConfirmDialog', action, confirmDialog)
         if(action) {
+            const pageParams = Object.assign({},this.pageParams)
+            if(confirmDialog.type){
+                pageParams.type = confirmDialog.type
+            }
             if (confirmDialog.action === 'deleteEntries' && action.key === 'yes') {
-                this.deleteData(this.pageParams, confirmDialog.payload.reduce((acc, item) => {
+                this.deleteData(pageParams, confirmDialog.payload.reduce((acc, item) => {
                     acc.push(item._id)
                     return acc
-                }, []))
+                }, []), confirmDialog.callback)
             } else {
-                Hook.call('TypeContainerConfirmDialog', {type: this.pageParams.type, confirmDialog, action}, this)
+                Hook.call('TypeContainerConfirmDialog', {type: pageParams.type, confirmDialog, action}, this)
             }
         }
         this.setState({confirmDialog: {open:false}, selectAllRows: false, selectedRows: {}})

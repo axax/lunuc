@@ -266,6 +266,9 @@ class TypeEdit extends React.Component {
                     this.setState({dataToEdit: {...dataToEdit, ...optimisticData}})
                 }
             }
+            if(this.props.callback){
+                this.props.callback({errors, data, editedData})
+            }
         }
 
         const editedDataWithRefs = referencesToIds(editedData, type)
