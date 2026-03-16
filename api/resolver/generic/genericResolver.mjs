@@ -351,8 +351,9 @@ const GenericResolver = {
             }
         }
 
-        Util.checkIfUserIsLoggedIn(userContext)
-
+        if(!skipCheck) {
+            Util.checkIfUserIsLoggedIn(userContext)
+        }
 
         if (Hook.hooks['typeBeforeCreate'] && Hook.hooks['typeBeforeCreate'].length) {
             for (let i = 0; i < Hook.hooks['typeBeforeCreate'].length; ++i) {

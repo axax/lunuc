@@ -1,5 +1,4 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import DomUtil from 'client/util/dom.mjs'
 import Util from '../util/index.mjs'
 import config from 'gen/config-client'
@@ -14,6 +13,7 @@ class TinyEditor extends React.Component {
     static loadedStyles = []
 
     isInit = false
+    isEditorFocused = false
 
     constructor(props) {
         super(props)
@@ -32,7 +32,7 @@ class TinyEditor extends React.Component {
             this.isInit = false
         } else if (this.props.children!==props.children) {
             const editor = tinymce.get('TinyEditor' + this.instanceId)
-            if(editor) {
+            if(editor && !this.isEditorFocused) {
                 editor.setContent(props.children)
             }
         }
@@ -204,6 +204,9 @@ class TinyEditor extends React.Component {
                                 }
                             }
                         })
+
+                        editor.on('focus', () => { this.isEditorFocused = true })
+                        editor.on('blur',  () => { this.isEditorFocused = false })
                     },
                     content_css: "/css/tinymce.css"
                 })
@@ -264,17 +267,6 @@ class TinyEditor extends React.Component {
 
     }
 
-}
-
-
-TinyEditor.propTypes = {
-    children: PropTypes.any,
-    onChange: PropTypes.func,
-    className: PropTypes.string,
-    name: PropTypes.string,
-    style: PropTypes.object,
-    toolbar: PropTypes.array,
-    readOnly: PropTypes.any
 }
 
 export default TinyEditor
