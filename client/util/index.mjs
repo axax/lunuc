@@ -42,7 +42,7 @@ const Util = {
         return str.replace(/<[^>]*>/g, '')
     },
     /* Converts a string into a URL-friendly slug for pretty URLs. */
-    slugify: (str) => {
+    slugify: (str, options={}) => {
         return str
             .toLowerCase()
             .replace(/[àáâãäåæ]/g, 'a')
@@ -51,7 +51,7 @@ const Util = {
             .replace(/[òóôõöø]/g, 'o')
             .replace(/[ùúûü]/g, 'u')
             .replace(/[ýÿ]/g, 'y')
-            .replace(/[^a-z0-9]+/g, '-')
+            .replace(options && options.keepDots ? /[^a-z0-9.]+/g : /[^a-z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '')
     },
     escapeForJson: (str, options) => {
@@ -74,7 +74,7 @@ const Util = {
                 str = Util.removeHtmlTags(str)
             }
             if(options.slugify){
-                str = Util.slugify(str)
+                str = Util.slugify(str,options.slugify)
             }
         }
 
