@@ -1478,9 +1478,10 @@ class JsonDom extends React.Component {
             //Is other
             str = JSON.stringify({
                 t: 'MarkDown.JsonDom-markdown',
-                c: Util.escapeForJson(str).replace(/\`/g, '\\`')
-            })
+                c: Util.escapeForJson(str)
+            }).replace(/`/g, '\\`')
         }
+
         const code = DomUtil.toES5(`const {${Object.keys(scope).join(',')}}=this.scope${SCRIPT_UTIL_PART}data),_r=this.addToPostRender;return \`${str}\``)
         try {
             // Scope properties get destructed so they can be accessed directly by property name
