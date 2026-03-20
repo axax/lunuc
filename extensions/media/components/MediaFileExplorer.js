@@ -22,8 +22,7 @@ const createNewEntry= (item) => {
     };
 }
 
-const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems}) => {
-
+const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pageParams}) => {
 
     const editItem = (item) => {
         TypeContainerRef.handleEditDataClick(item.original,  {type: item.fileType==='folder'?'MediaGroup':'Media',
@@ -37,6 +36,7 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems}) =
     }
 
     return <SimpleFileExplorer defaultExpandedItems={defaultExpandedItems}
+       key={'mediaTree' + (pageParams.filter || '')}
        ContextMenu={ContextMenu}
        enableDragAndDrop={true}
        onItemAction={(item, action, parentItem) => {
@@ -112,7 +112,12 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems}) =
                item.singleClicked = false
                event.preventDefault()
                event.stopPropagation()
-               editItem(item)
+               if (window.opener && pageParams.opener) {
+                   window.resultValue = item.fileType==='folder'?item.children:item
+                   window.close()
+               }else {
+                   editItem(item)
+               }
                return
            }else if(item.fileType === 'doc') {
                item.singleClicked = true
@@ -126,19 +131,20 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems}) =
            }
         }}
        onFetch={async ({id}) => {
-           console.log('fetching', id)
+           console.log('fetching', id, pageParams.filter)
 
            const mediaQueries = TypeContainerRef.getTypeQueriesFiltered('Media', {loadAll: false})
            const mediaGroupQueries = TypeContainerRef.getTypeQueriesFiltered('MediaGroup', {loadAll: false})
            const [mediaGroupResponse, mediaResponse] = await Promise.all([
-               client.query({ query: mediaGroupQueries.query, fetchPolicy: 'cache-and-network',
-                   variables: { filter: `group==${id}`, limit: 1000 } }),
+               pageParams.filter ? null : client.query({ query: mediaGroupQueries.query, fetchPolicy: 'cache-and-network',
+                   variables: { filter: `group==${id}`, limit: 500 } }),
                client.query({ query: mediaQueries.query, fetchPolicy: 'cache-and-network',
-                   variables: { filter: `group==${id}`, limit: 1000 } })
+                   variables: { filter: (pageParams.filter ? pageParams.filter: `group==${id}` ), limit: 500 } })
            ])
 
            const mapItems = (data) =>
-               data.results?.map(item => createNewEntry({parent:id,...item})) ?? []
+               data?.results?.map(item => createNewEntry({parent:id,...item})) ?? []
+
 
            return [...mapItems(mediaGroupResponse?.data?.mediaGroups), ...mapItems(mediaResponse?.data?.medias)]
 

@@ -415,7 +415,7 @@ export default function FileExplorer({ onFetch, onItemClick, ContextMenu, onItem
             for (const id of allPathSorted) {
                 currentData = await fetchData({ id, data: currentData });
             }
-            if(enableDragAndDrop) {
+            if(enableDragAndDrop && currentData) {
                 currentData.unshift({label: '.', id: 'root', fileType: 'root', children: currentData, icon: 'source', original:{createdBy:_app_.user}});
             }
             setData(currentData);

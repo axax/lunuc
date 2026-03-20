@@ -13,14 +13,17 @@ export const QuickMediaUploader = (props) => {
 
     const {settings,pageParams,getData} = props
 
-    let info = ''
+    const media = settings.Media
+
     const [group, setGroup] = useState(
-        settings.Media && settings.Media.group ? settings.Media.group : []
+        media && media.group ? media.group : []
     )
 
+    const [conversion, setConversion] = useState(
+        media && media.conversion ? media.conversion : []
+    )
 
     let groupIds = null
-
     if (group.length > 0) {
         groupIds = []
         group.forEach((g) => {
@@ -29,11 +32,9 @@ export const QuickMediaUploader = (props) => {
 
     }
 
-    const media = settings.Media
-    let conversion = null
-    if (media && media.conversion && media.conversion.length > 0) {
-        conversion = JSON.parse(media.conversion[0].conversion)
-        info += ' Conversion=' + media.conversion[0].name
+    let currentJson = null
+    if (conversion.length > 0) {
+        currentJson = JSON.parse(conversion[0].conversion)
     }
 
 
@@ -47,7 +48,7 @@ export const QuickMediaUploader = (props) => {
                       imagePreview={false}
                       maxSize={10000}
                       data={{group: groupIds}}
-                      conversion={conversion}
+                      conversion={currentJson}
                       onSuccess={r => {
                           setTimeout(() => {
                               getData(pageParams, false)
@@ -56,12 +57,14 @@ export const QuickMediaUploader = (props) => {
         </Col>
         <Col md={3}>
 
+            <TypePicker value={conversion} onChange={(e) => {
+                setConversion(e.target.value)
+            }} name="conversion" placeholder={_t('Media.selectConversion')}
+                        type="MediaConversion"/>
             <TypePicker value={group} onChange={(e) => {
                 setGroup(e.target.value)
-            }} multi={true} name="group" placeholder={_t('Media.selectGroup')}
+            }} multi={false} name="group" placeholder={_t('Media.selectGroup')}
                         type="MediaGroup"/>
-            <br/>
-            <small>{info}</small>
         </Col>
     </Row>
 }

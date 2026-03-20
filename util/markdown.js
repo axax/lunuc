@@ -2,7 +2,7 @@ const parser = md => {
     const mdRules = [
 
         /* Nested Image in Link: [![alt](img.jpg)](link.html) */
-        [/\[!\[([^\]]*)\]\(([^)]*)\)\]\(([^)]*)\)/gm, "<a href='$3'><img src='$2' alt='$1' /></a>"],
+        [/\[!\[([^\]]*)\]\(([^)]*)\)\]\(([^)]*)\)/gm, "<a target='_blank' href='$3'><img src='$2' alt='$1' /></a>"],
 
         /* Image */
         [/!\[(.*)\]\((.*)\)/gm, "<img src='$2' alt='$1' />"],

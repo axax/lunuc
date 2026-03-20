@@ -853,7 +853,7 @@ class TypesContainer extends React.Component {
 
         const renderOptions = {stack:[]}
 
-        Hook.call('TypesContainerBeforeRender', {type,renderOptions,typeSettings,_version}, this)
+        Hook.call('TypesContainerBeforeRender', {type,renderOptions,typeSettings,_version,pageParams:this.pageParams}, this)
 
         renderOptions.stack.unshift(<Chip
             size="small"
@@ -1399,8 +1399,8 @@ class TypesContainer extends React.Component {
     }
 
     getData({type, page, limit, sort, filter, meta, _version}, cacheFirst, typeChanged) {
-
-        if (type) {
+        const typeSettings = this.getSettingsForType(type)
+        if (type && typeSettings.view!=='tree') {
             const queries = this.getTypeQueriesFiltered(type, {loadAll: false})
             if (queries) {
                 const storeKey = this.getStoreKey(type),

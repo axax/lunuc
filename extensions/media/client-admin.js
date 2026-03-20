@@ -18,6 +18,7 @@ import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import {getIconByKey} from '../../client/components/ui/impl/material/icon'
 import MediaFileExplorer from './components/MediaFileExplorer'
+import {QuickMediaUploader} from "./components/QuickMediaUploader";
 
 const ImageIcon = (props) => <Async {...props} expose="ImageIcon" load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 
@@ -404,27 +405,23 @@ export default () => {
 
     Hook.on('TypesContainerRender', function ({type, content}) {
         if (type === 'Media') {
-
-
-
-         //   content.splice(1, 1, <QuickMediaUploader key="quickMediaUploader" settings={this.settings} pageParams={this.pageParams} getData={this.getData.bind(this)}/>)
+            content.splice(1, 1, <QuickMediaUploader key="quickMediaUploader" settings={this.settings} pageParams={this.pageParams} getData={this.getData.bind(this)}/>)
         }
     })
 
 
 
-    Hook.on('TypesContainerBeforeRender', function ({type,typeSettings, renderOptions}) {
+    Hook.on('TypesContainerBeforeRender', function ({type,typeSettings, renderOptions, pageParams}) {
         if (type === 'Media') {
-
             renderOptions.stack.push(<ViewToggleButton onChange={(e,view)=>{
                 this.setSettingsForType(type, {view})
             }} value={typeSettings.view} />)
 
             if( typeSettings.view === 'tree'){
-                renderOptions.alternativeView = <MediaFileExplorer TypeContainerRef={this} />
+                renderOptions.alternativeView = <MediaFileExplorer pageParams={pageParams} TypeContainerRef={this} />
             }
 
-         //   content.splice(1, 1, <QuickMediaUploader key="quickMediaUploader" settings={this.settings} pageParams={this.pageParams} getData={this.getData.bind(this)}/>)
+            //content.splice(1, 1, <QuickMediaUploader key="quickMediaUploader" settings={this.settings} pageParams={this.pageParams} getData={this.getData.bind(this)}/>)
         }
     })
 
