@@ -445,7 +445,7 @@ class TypesContainer extends React.Component {
                         const entryActions = [{
                             name: _t('TypesContainer.editEntry'),
                             disabled: (item.status == 'deleting' || item.status == 'updating'),
-                            onClick: this.handleEditDataClick.bind(this, item),
+                            onClick: this.handleEditDataClick.bind(this, item, {}),
                             icon: <EditIcon/>
                         }]
 
@@ -1087,7 +1087,7 @@ class TypesContainer extends React.Component {
                 window.close()
             } else {
 
-                this.handleEditDataClick(item)
+                this.handleEditDataClick(item, {})
             }
         } else {
 
@@ -1976,7 +1976,7 @@ class TypesContainer extends React.Component {
         const typeData = this.types[type]
         let fieldsToLoad = []
 
-        if(typeDefinition.onlyRequestedFields){
+        if(typeDefinition && typeDefinition.onlyRequestedFields){
             fieldsToLoad= this.getFieldsActiveOrInactive(type,false)
         }
 
@@ -2089,7 +2089,7 @@ class TypesContainer extends React.Component {
         this.setState({viewSettingDialog: false})
         const {type} = this.pageParams
         const typeDefinition = this.types[type]
-        if(typeDefinition.onlyRequestedFields) {
+        if(typeDefinition && typeDefinition.onlyRequestedFields) {
             this.getData(this.pageParams, true)
         }
     }
