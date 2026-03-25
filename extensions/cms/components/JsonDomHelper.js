@@ -1756,6 +1756,10 @@ class JsonDomHelper extends React.Component {
                 let groupKeyMap = {}
                 Object.keys(fields).forEach(key => {
                     let val = fields[key]
+                    if(isString(val)){
+                        val = val.replace(/(?<![\$\\])\`/g, '\\`')
+                    }
+
                     if (key.startsWith('!')) {
                         // group Options
                         const parts = key.split('!'),

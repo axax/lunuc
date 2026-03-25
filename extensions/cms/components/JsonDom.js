@@ -58,6 +58,7 @@ const hasNativeLazyLoadSupport = !_app_.ssr && window.HTMLImageElement && 'loadi
 const SCRIPT_UTIL_PART = ',Util=this.Util,_e=Util.escapeForJson,_i=Util.tryCatch.bind(this),_t=this._t.bind('
 
 const MAP_TEMPLATE_REPLACEMENTS = {
+    '\\\\`': '\\`',
     '\\': '\\\\',
     '"###': '',
     '###"': '',
