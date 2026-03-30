@@ -48,7 +48,7 @@ const startListening = async (db, context) => {
             useXClient: true,
             hidePIPELINING: true,
             useXForward: true,
-            size: 10 * 1024 * 1024,
+            size: MAX_EMAIL_SIZE,
             authOptional: true,
             /*needsUpgrade:true,*/
             SNICallback: (domain, cb) => {

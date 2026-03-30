@@ -359,9 +359,10 @@ export const DEFAULT_STYLE = `//!#Environment
   }
   //!!#EXTRACT_CLASSES>
   .fade-in {
+    will-change: transform;
     opacity: 0;
     transform-origin: center center;
-    transition: opacity calc(var(--default-transition-duration) * 4), transform calc(var(--default-transition-duration) * 4);
+    transition: opacity calc(var(--default-transition-duration) * 4) cubic-bezier(0, 0, 0.2, 1), transform calc(var(--default-transition-duration) * 4) cubic-bezier(0, 0, 0.2, 1);
     &.up{
       transform: translateY(15vh) scale(1);
     }
@@ -376,7 +377,7 @@ export const DEFAULT_STYLE = `//!#Environment
     }
     &.on{
       opacity: 1;
-      transform: translateY(0) scale(1);
+      transform: translate(0,0) scale(1);
     }
   }
 }

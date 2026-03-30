@@ -30,7 +30,7 @@ console.debug = (...args) => {
     }
 }
 
-const PORT = (process.env.PORT || 3000)
+const PORT = (process.env.PORT || process.env.API_PORT || 3000)
 
 process.on('SIGINT', () => {
     console.log('Caught interrupt signal. Exit process')

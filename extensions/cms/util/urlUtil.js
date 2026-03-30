@@ -10,7 +10,7 @@ const manualScrollEvent = ()=>{
 const addScrollEvent = ()=>{
     if(manualScroll===undefined) {
         const ael = window.addEventListener
-        ael('mousewheel', manualScrollEvent)
+        ael('wheel', manualScrollEvent)
         ael('DOMMouseScroll', manualScrollEvent)
         ael('touchmove', manualScrollEvent)
     }
@@ -54,6 +54,7 @@ const scrollToElement = (el, options, tries = 0, winHash) => {
             newY -= step
         }
         win.scrollTo(0, newY)
+
         let tout
         if (scrollY !== win.scrollY) {
             tout = scrollTimeout || 10
