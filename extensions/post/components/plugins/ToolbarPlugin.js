@@ -36,9 +36,11 @@ import {
 import {
     $createCodeNode,
     $isCodeNode,
-    getDefaultCodeLanguage,
+    getDefaultCodeLanguage
+} from "@lexical/code-core";
+import {
     getCodeLanguages
-} from "@lexical/code";
+} from "@lexical/code-prism";
 
 const LowPriority = 1;
 
