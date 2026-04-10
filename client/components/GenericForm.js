@@ -898,7 +898,7 @@ class GenericForm extends React.Component {
                         <GenericForm onChange={(e) => {
                             const subField = subFields[e.name.split('.')[0]]
 
-                            if (subField.localized) {
+                            if (subField.localized && subField.name) {
                                 // mark as localized
                                 if(!values[subField.name]) {
                                     values[subField.name] = {}

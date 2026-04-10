@@ -12,7 +12,7 @@ import {_t, registerTrs} from '../../util/i18n.mjs'
 import {performFieldProjection} from '../../util/project.mjs'
 
 import {translations} from './translations/admin'
-import {setPropertyByPath} from '../../client/util/json.mjs'
+import {propertyByPath, setPropertyByPath} from '../../client/util/json.mjs'
 
 import {openWindow} from '../../client/util/window'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
@@ -71,7 +71,7 @@ export default () => {
                             }else if(col.format==='date'){
                                 row['data_' + col.field] =  Util.formattedDatetime(item.data[col.field],{hour:undefined, minute:undefined, second:undefined})
                             }else{
-                                row['data_' + col.field] = item.data[col.field]
+                                row['data_' + col.field] = propertyByPath(col.field,item.data)
                             }
                         })
 
@@ -157,7 +157,7 @@ export default () => {
                 if(dataFieldIndex>=0 && !structure.titleTemplate){
                     columns.splice(dataFieldIndex, 1)
                 }
-
+console.log(structureColumns)
                 structureColumns.reverse().forEach(col=>{
                     columns.splice(1, 0, {
                         title: col.label || col.field,

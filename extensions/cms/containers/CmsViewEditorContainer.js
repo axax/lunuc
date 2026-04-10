@@ -1048,6 +1048,31 @@ class CmsViewEditorContainer extends React.Component {
                     }
                 },
                 {
+                    name: _t('CmsViewEditorContainer.clearPageCache'),
+                    icon: 'refresh',
+                    onClick: () => {
+                        fetch(`/lunucapi/system/clear/cache?url=${encodeURIComponent(location.href)}`).then(response => response.json().then(
+                            json=>{
+                                this.setState({
+                                    simpleDialog: {
+                                        title: _t('CmsViewEditorContainer.pageCache'),
+                                        text: _t('CmsViewEditorContainer.pageCacheCleared'),
+                                        actions: [
+                                            {
+                                                key: 'ok',
+                                                label: _t('core.ok'),
+                                                type: 'primary'
+                                            }
+                                        ],
+                                        onClose: () => {
+                                            this.setState({simpleDialog: null})
+                                        }
+                                    }
+                                })
+                            }))
+                    }
+                },
+                {
                     divider: true,
                     icon: <LogoutIcon />,
                     name: _t('CmsViewEditorContainer.logout'),
