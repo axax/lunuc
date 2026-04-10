@@ -197,7 +197,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
         const pageData = await parseWebsite(urlToFetch, {host, agent, referer: req.headers.referer, isBot, remoteAddress, cookies})
 
         // remove script tags
-        pageData.html = pageData.html.replace(/<(script|noscript)[\s\S]*?<\/\1>/gi,'')
+        pageData.html = pageData.html.replace(/<(script|noscript)(?![^>]*type=["']application\/ld\+json["'])[\s\S]*?<\/\1>/gi, '')
 
         // replace host
         const re = new RegExp(baseUrl, 'g')
