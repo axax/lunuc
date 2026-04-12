@@ -363,6 +363,9 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
         if(isTemporarilyBlocked({req,
             checkKeys:['index-'+remoteAddress],
             key:remoteAddress})) {
+
+            sendError(res, 429)
+
             return
         }
 
@@ -648,6 +651,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                                 requestPerTime: 50,
                                 requestTimeInMs: 10000
                             })) {
+                            sendError(res, 429)
                             return
                         }
                     }
