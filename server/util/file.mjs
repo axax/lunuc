@@ -219,6 +219,8 @@ export const sendError = (res, code, msg = '') => {
             msg = 'Not Found'
         } else if (code === 403) {
             msg = 'Not Allowed'
+        } else if (code === 429) {
+            msg = 'Too Many Requests. Please try again later.'
         }
     }
 

@@ -1599,7 +1599,7 @@ class JsonDom extends React.Component {
             query += `${key}=${scope.params[key]}`
         }
 
-        const meta = options.meta || '{"isFetchMore":true}'
+        const meta = options.meta && options.meta!=='fetchMore'?options.meta:'{"isFetchMore":true}'
 
         this.props.onFetchMore({query, meta}, (res) => {
             let newData
