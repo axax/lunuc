@@ -134,7 +134,7 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
     let cacheKey
     if(re.loop.cache && isNotFalse(re.loop.cache.$is) && !re.loop.reduce &&
         (re.loop.cache.includeFilter || !activeFilters || activeFilters.length===0)){
-        cacheKey = `resolveReduce${re.path}-${JSON.stringify(re.loop)}`
+        cacheKey = `resolveReduce${re.loop.cache.keyPrefix ||''}-${re.path}-${JSON.stringify(re.loop)}`
         const fromCache = Cache.get(cacheKey)
         if(fromCache){
             Object.keys(fromCache).forEach(path=>{
