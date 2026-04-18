@@ -49,13 +49,15 @@ export const isString = (variable) => typeof variable === 'string'
 /*
 return true if expression is not valid
  */
+const EXPR_REGEX = /([\w|$|\.]*)(==|\!=|>=|<=|>|<| in | nin )(.*)/;
+
 export function matchExpr(expr, scope) {
     if (isFalse(expr)) {
         return true
     }
 
     if(isString(expr) && expr!=='true') {
-        const match = expr.match(/([\w|$|\.]*)(==|\!=|>=|<=|>|<| in | nin )(.*)/)
+        const match = expr.match(EXPR_REGEX)
 
         if (match && match.length === 4) {
             let prop
@@ -262,3 +264,11 @@ export const sortJsonKeysDesc = (keys) => {
         return 0
     })
 }
+
+
+// Quick sanity checks covering each operator
+/*console.log(matchExpr('foo==bar', { foo: 'bar' }))   // false
+console.log(matchExpr('foo==bar', { foo: 'baz' }))   // true
+console.log(matchExpr('x>5', { x: 10 }))            // false
+console.log(matchExpr('x>5', { x: 3 }))             // true*/
+// etc.
