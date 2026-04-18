@@ -66,16 +66,6 @@ const isNotFalse = ($is)=>{
     return $is !== false && $is !== 'false'
 }
 
-const addToArray = (newArray, value, options)=>{
-    if(options.key){
-        if(options.duplicates || !newArray.includes(value[options.key])){
-            newArray.push(value[options.key])
-        }
-    }else if(options.duplicates || !newArray.includes(value)){
-        newArray.push(value)
-    }
-}
-
 function getFacetAsArray(path, rootData) {
     let  loopFacet = propertyByPath(path, rootData)
     if(loopFacet){
@@ -134,7 +124,8 @@ function doSorting(re, currentData) {
 function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo) {
     let value = propertyByPath(re.path, currentData, '.', re.assign),
         loopFacet,
-        newArray = []
+        newArray = [],
+        newSet = new Set()
 
     const activeFilters = re.loop.filter && re.loop.filter.filter(f => isNotFalse(f.is)).map(f=>{
         return f.expr ? {...f, facetKey:f.expr.split(/[ =!<>]/)[0].substring(6)} : f
@@ -192,7 +183,12 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
             }
 
             if (re.loop.toArray) {
-                addToArray(newArray, value[key], re.loop.toArray)
+                const v = re.loop.toArray.key ? value[key][re.loop.toArray.key] : value[key]
+                if(re.loop.toArray.duplicates){
+                    newArray.push(v)
+                }else{
+                    newSet.add(v)
+                }
             }
         }
     }
@@ -217,6 +213,8 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
         }
     }
 
+
+
     const cacheData = {}
     if (loopFacet) {
         setFacetToObject(re.loop.facets.path, rootData, loopFacet)
@@ -229,6 +227,9 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
     }
 
     if (re.loop.toArray) {
+        if(newSet.size>0){
+            newArray = [...newSet]
+        }
         setPropertyByPath(newArray, re.loop.toArray.pathTo, rootData)
         cacheData[re.loop.toArray.pathTo] = newArray
     }
