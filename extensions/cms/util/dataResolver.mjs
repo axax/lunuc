@@ -28,6 +28,14 @@ const DEFAULT_PARAM_MAX_LENGTH = 100,
     DEFAULT_PARAM_NOT_ALLOWED_REGEX = new RegExp(DEFAULT_PARAM_NOT_ALLOWED_CHARS.join('|'), 'gi')
 
 
+function addDebugInfos(resolvedData, segment, startTime, startTimeSegment, debugLog) {
+    resolvedData[segment.debug.key || segment.debug] = {
+        totalTime: new Date().getTime() - startTime,
+        segmentTime: new Date().getTime() - startTimeSegment,
+        log: debugLog
+    }
+}
+
 export const resolveData = async ({db, context, dataResolver, scope, nosession, req, editmode, dynamic}) => {
     const startTime = new Date().getTime()
 
@@ -57,6 +65,10 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
             }
 
             for (let i = 0; i < segments.length; i++) {
+
+                const debugLog = []
+                const startTimeSegment = new Date().getTime()
+
                 let tempBrowser
                 if (segments[i].website) {
                     // exclude pipline from replacements
@@ -89,11 +101,12 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                 }
 
                 if (segment.if === false || segment.if === 'false') {
+                    if(segment.debug){
+                        debugLog.push({type:'info', message:'segment is skipped because if is false'})
+                        addDebugInfos(resolvedData, segment, startTime, startTimeSegment, debugLog)
+                    }
                     continue
                 }
-                const debugLog = []
-                const startTimeSegment = new Date().getTime()
-
 
                 if (segment.access) {
 
@@ -272,7 +285,6 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     if (addToWebsiteQueue({segment, scope, resolvedData, context, dataKey, cacheKey})) {
                         addDataResolverSubscription = true
                     }
-
                 } else {
                     console.debug('call cmsCustomResolver', segment)
 
@@ -294,7 +306,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                 }
 
                 if(segment.debug){
-                    resolvedData[segment.debug] = {totalTime:new Date().getTime() - startTimeSegment, log:debugLog}
+                    addDebugInfos(resolvedData, segment, startTime, startTimeSegment, debugLog)
                 }
             }
             delete resolvedData._data
