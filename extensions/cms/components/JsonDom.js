@@ -567,12 +567,14 @@ class JsonDom extends React.Component {
 
     render() {
         const {template, script, resolvedData, parseResolvedData, _props, _key, loading} = this.props
-        if (!template) {
-            console.warn('Template is missing.', this.props)
-            return this.parseRec([{}], 0, {})
-        }
+
         const startTime = (new Date()).getTime(),
             scope = this.getScope(this.props)
+
+        if (!template) {
+            console.warn('Template is missing.', this.props)
+            return this.parseRec([{}], 0, scope)
+        }
         let content
         if (!this.error) {
             let isNew = false

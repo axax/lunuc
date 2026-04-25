@@ -57,6 +57,7 @@
           "name": "noEntry",
           "hideColumnInTypes": true,
           "type": "Boolean",
+          "defaultValue": true,
           "index": 1
         },
         {
