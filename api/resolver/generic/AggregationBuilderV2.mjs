@@ -443,7 +443,7 @@ export default class AggregationBuilderV2 {
             )
 
            if (matches.match.length > 0) {
-               console.log('xxxxxx', JSON.stringify(matches.match, null, 2))
+               ///console.log('xxxxxx', JSON.stringify(matches.match, null, 2))
                 match.$and.push(...matches.match)
             }
             if (matches.resultMatch.length > 0) {

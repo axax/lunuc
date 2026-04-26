@@ -270,7 +270,7 @@ const GenericResolver = {
         otherOptions.limitCount= 10000
 
 
-        const finalAggregationBuilderOptions = aggregationBuilderOptions || (await Util.getKeyValueGlobal(db, null, "finalAggregationBuilderOptions", true)) || {}
+        const finalAggregationBuilderOptions = aggregationBuilderOptions || (await Util.getKeyValueGlobal(db, null, "AggregationBuilderOptions", true)) || {}
 
         let aggregationBuilder
         if(finalAggregationBuilderOptions.version === 2) {
