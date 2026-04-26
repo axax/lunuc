@@ -192,7 +192,7 @@ const GenericResolver = {
         }
         const startTime = new Date()
 
-        let {match, _version, cache, includeCount, postConvert, aggregateOptions, graphqlInfo, ...otherOptions} = options
+        let {match, _version, cache, includeCount, postConvert, aggregateOptions, aggregationBuilderOptions, graphqlInfo, ...otherOptions} = options
 
         const collectionName = await buildCollectionName(db, context, typeName, _version)
 
@@ -270,10 +270,10 @@ const GenericResolver = {
         otherOptions.limitCount= 10000
 
 
-        const AggregationBuilderOptions = (await Util.getKeyValueGlobal(db, null, "AggregationBuilderOptions", true)) || {}
+        const finalAggregationBuilderOptions = aggregationBuilderOptions || (await Util.getKeyValueGlobal(db, null, "finalAggregationBuilderOptions", true)) || {}
 
         let aggregationBuilder
-        if(AggregationBuilderOptions.version === 2) {
+        if(finalAggregationBuilderOptions.version === 2) {
 
             aggregationBuilder = new AggregationBuilderV2(typeName, data, db, {
                 match,
@@ -297,10 +297,10 @@ const GenericResolver = {
         const {dataQuery, debugInfo} = await aggregationBuilder.query()
 
 
-        if(AggregationBuilderOptions.logVersionDif) {
+        if(finalAggregationBuilderOptions.logVersionDif) {
 
             let aggregationBuilder2
-            if(AggregationBuilderOptions.version === 2) {
+            if(finalAggregationBuilderOptions.version === 2) {
 
                 aggregationBuilder2 = new AggregationBuilder(typeName, data, db, {
                     match,
@@ -328,7 +328,7 @@ const GenericResolver = {
                     location: 'aggregationBuilder',
                     type: 'v2different',
                     message: 'Query of V2 Version is different',
-                    meta: {version: AggregationBuilderOptions.version,dataQuery, dataQuery2: query2.dataQuery, otherOptions}
+                    meta: {version: finalAggregationBuilderOptions.version,dataQuery, dataQuery2: query2.dataQuery, otherOptions}
                 })
 
             }
