@@ -690,9 +690,9 @@ export default class AggregationBuilderV2 {
                 const operator = `$${groupFilter.operator || 'and'}`;
 
                 // Merge into current match level
-                this._mergeMatch(match, groupResult.match, operator, filters.operator);
-                this._mergeMatch(resultMatch, groupResult.resultMatch, operator, filters.operator);
-                this._mergeMatch(lookupMatch, groupResult.lookupMatch, operator, filters.operator);
+                this._mergeMatch(match, groupResult.match, operator, filters?.operator);
+                this._mergeMatch(resultMatch, groupResult.resultMatch, operator, resultFilters?.operator);
+                this._mergeMatch(lookupMatch, groupResult.lookupMatch, operator, lookupFilters?.operator);
             }
         }
 
@@ -715,6 +715,7 @@ export default class AggregationBuilderV2 {
      * Helper: Merges group results into the main match array
      */
     _mergeMatch(match, newMatch, operator, parentOperator) {
+        if(newMatch?.length === 0) return;
 
         const newMatchFlat = newMatch.length === 1
             ? newMatch[0]
