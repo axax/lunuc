@@ -602,6 +602,227 @@ const Util = {
     sleep: (time) => {
         return new Promise((resolve) => setTimeout(resolve, time))
     },
+    parseFilterV2: filter => {
+
+        const t0 = performance.now()
+
+
+        // temp fix for backwards compatibility
+        filter = filter.trim()
+        if(filter.startsWith('&&')){
+            filter = filter.replace('||', '&&');
+        }
+
+        if (!filter) return { parts: {}, rest: [], groups: [], _parseMs: 0 }
+
+        const tokenize = (str) => {
+            const tokens = []
+            const len = str.length
+            let i = 0
+
+            while (i < len) {
+                const c = str.charCodeAt(i)
+                if (c === 32 || c === 9 || c === 10 || c === 13) { i++; continue }
+
+                if (c === 40) {
+                    let depth = 1, j = i + 1
+                    while (j < len && depth > 0) {
+                        const cc = str.charCodeAt(j)
+                        if (cc === 40 && str.charCodeAt(j-1) !== 92) depth++
+                        else if (cc === 41 && str.charCodeAt(j-1) !== 92) depth--
+                        j++
+                    }
+                    if (depth > 0) {
+                        const inner = str.substring(i + 1)
+                        tokens.push(...tokenize(inner))
+                        break
+                    }
+                    tokens.push({ type: 'group', tokens: tokenize(str.substring(i + 1, j - 1)) })
+                    i = j
+                    continue
+                }
+
+                if (c === 41) { i++; continue }
+                if (c === 124 && str.charCodeAt(i+1) === 124) { tokens.push('||'); i += 2; continue }
+                if (c === 38  && str.charCodeAt(i+1) === 38)  { tokens.push('&&'); i += 2; continue }
+
+                const start = i
+                let inQuote = false
+                while (i < len) {
+                    const cc = str.charCodeAt(i)
+                    if (inQuote) {
+                        if (cc === 92) { i += 2; continue }
+                        if (cc === 34) { i++; inQuote = false; continue }
+                        i++
+                        continue
+                    }
+                    if (cc === 34) { inQuote = true; i++; continue }
+                    if (cc === 32 || cc === 9 || cc === 10 || cc === 13) break
+                    if (cc === 40 || cc === 41) break
+                    if (cc === 124 && str.charCodeAt(i+1) === 124) break
+                    if (cc === 38  && str.charCodeAt(i+1) === 38)  break
+                    i++
+                }
+                if (i > start) {
+                    const last = tokens[tokens.length - 1]
+                    if (last !== undefined && last !== '&&' && last !== '||') tokens.push('&&')
+                    tokens.push(str.substring(start, i))
+                } else i++
+            }
+            return tokens
+        }
+
+        const insertImplicitAnds = (tokens) => {
+            const result = []
+            for (let i = 0; i < tokens.length; i++) {
+                const cur = tokens[i]
+                const prev = result[result.length - 1]
+                if (prev !== undefined && prev !== '&&' && prev !== '||' && cur !== '&&' && cur !== '||') {
+                    result.push('&&')
+                }
+                result.push(cur)
+            }
+            return result
+        }
+
+        const parseAtom = (token) => {
+            const comparator = token.match(/==|>=|<=|!==|!=|=~|!~|=|>|<|:/)
+            if (comparator) {
+                let key = token.substring(0, comparator.index)
+                let value = token.substring(comparator.index + comparator[0].length)
+                let inDoubleQuotes = false
+                if (value.length > 1 && value.charCodeAt(0) === 34 && value.charCodeAt(value.length - 1) === 34) {
+                    value = value.substring(1, value.length - 1).replace(/\\"/g, '"')
+                    inDoubleQuotes = true
+                } else if (value === 'true') value = true
+                else if (value === 'false') value = false
+                return { key, value, comparator: comparator[0], inDoubleQuotes }
+            }
+            let value = token
+            if (value.length > 1 && value.charCodeAt(0) === 34 && value.charCodeAt(value.length - 1) === 34) {
+                value = value.substring(1, value.length - 1)
+            }
+            return { text: true, value }
+        }
+
+        let tokens, pos
+
+        const parsePrimary = () => {
+            while (pos < tokens.length) {
+                const token = tokens[pos]
+                if (token === '||' || token === '&&') return null
+                pos++
+                if (token.type === 'group') {
+                    const saved = [tokens, pos]
+                    tokens = insertImplicitAnds(token.tokens)
+                    pos = 0
+                    const result = parseOr()
+                    ;[tokens, pos] = saved
+                    return result
+                }
+                if (typeof token === 'string' && token.length > 0) return parseAtom(token)
+            }
+            return null
+        }
+
+        const parseAnd = () => {
+            let left = parsePrimary()
+            while (pos < tokens.length && tokens[pos] === '&&') {
+                pos++
+                const right = parsePrimary()
+                if (right === null) break
+                left = { and: [left, right] }
+            }
+            return left
+        }
+
+        const parseOr = () => {
+            let left = parseAnd()
+            while (pos < tokens.length && tokens[pos] === '||') {
+                pos++
+                const right = parseAnd()
+                if (right === null) break
+                left = { or: [left, right] }
+            }
+            return left
+        }
+
+        const flattenOr = (ast) => {
+            if (!ast?.or) return [ast]
+            return [...flattenOr(ast.or[0]), ...flattenOr(ast.or[1])]
+        }
+
+        const flattenAnd = (ast) => {
+            if (!ast?.and) return [ast]
+            return [...flattenAnd(ast.and[0]), ...flattenAnd(ast.and[1])]
+        }
+
+        const buildResult = (ast) => {
+            const parts = {}, rest = [], groups = []
+            const isOr = !!ast?.or
+            const branches = isOr ? flattenOr(ast) : [ast]
+
+            for (const branch of branches) {
+                if (!branch) continue
+
+                if (branch.and) {
+                    groups.push(buildAndGroup(branch, 'and'))
+                } else if (branch.or) {
+                    groups.push(buildResult(branch))
+                } else if (branch.text) {
+                    rest.push({ value: branch.value, comparator: '=' })
+                } else if (branch.key) {
+                    const entry = { value: branch.value, comparator: branch.comparator, inDoubleQuotes: branch.inDoubleQuotes }
+                    if (parts[branch.key]) {
+                        if (!Array.isArray(parts[branch.key])) parts[branch.key] = [parts[branch.key]]
+                        parts[branch.key].push(entry)
+                    } else {
+                        parts[branch.key] = entry
+                    }
+                }
+            }
+
+            // Auto-unwrap: Wenn nur eine Gruppe existiert und sonst nichts, eine Ebene hochziehen
+            if (groups.length === 1 && Object.keys(parts).length === 0 && rest.length === 0) {
+                return groups[0]
+            }
+
+            return { parts, rest, groups, operator: isOr ? 'or' : 'and' }
+        }
+
+        const buildAndGroup = (node, op = 'and') => {
+            const parts = {}, rest = [], groups = []
+            const branches = flattenAnd(node)
+
+            for (const n of branches) {
+                if (!n) continue
+                if (n.and) {
+                    groups.push(buildAndGroup(n, 'and'))
+                } else if (n.or) {
+                    groups.push(buildResult(n))
+                } else if (n.text) {
+                    rest.push({ value: n.value, comparator: '=' })
+                } else if (n.key) {
+                    const entry = { value: n.value, comparator: n.comparator, inDoubleQuotes: n.inDoubleQuotes }
+                    if (parts[n.key]) {
+                        if (!Array.isArray(parts[n.key])) parts[n.key] = [parts[n.key]]
+                        parts[n.key].push(entry)
+                    } else {
+                        parts[n.key] = entry
+                    }
+                }
+            }
+            return { parts, rest, groups, operator: op }
+        }
+
+        tokens = insertImplicitAnds(tokenize(filter))
+        pos = 0
+        const ast = parseOr()
+        const result = buildResult(ast)
+
+        result._parseMs = performance.now() - t0
+        return result
+    },
     parseFilter: filter => {
         const parts = {}, rest = []
         let restString = ''
@@ -695,3 +916,7 @@ console.log('xxxxxxx', Date.now()-start)*/
 
 /*const token = Util.createToken({username: 'test', id: '1234567890'}, 60)
 console.log(Util.verifyToken(token))*/
+
+
+//console.log(Util.parseFilter('info.qwen25vl7b.keyword=~haus|aa'))
+//console.log(Util.parseFilter('(_id==123 || data.parent==123) && definition.name==ThalRaumReservation'))

@@ -297,6 +297,8 @@ export default class AggregationBuilder {
                         if(!match.$$restQuery[i]){
                             match.$$restQuery.push({$:[], operator:restFilter.operator})
                         }
+
+                        this.cleanupMatch(restMatch)
                         match.$$restQuery[i].$.push(restMatch)
                     }
                 }
@@ -410,6 +412,7 @@ export default class AggregationBuilder {
 
     async query() {
 
+        this.startTimeAggregate = Date.now()
         this.debugInfo = []
 
         const typeDefinition = getType(this.type) || {}
@@ -675,6 +678,7 @@ export default class AggregationBuilder {
         dataQuery.push(addFields)
 
         //console.log(JSON.stringify(dataQuery,null,4))
+        console.log(`AggregationBuilder: Aggregation time for ${this.type} query ${Date.now()-this.startTimeAggregate}ms`)
 
         return {dataQuery, countQuery, debugInfo: this.debugInfo}
 
@@ -702,6 +706,7 @@ export default class AggregationBuilder {
             }
             this.cleanupMatch(restPart)
             match.$and.push(restPart)
+
             delete match.$$restQuery
         }
     }
@@ -899,19 +904,22 @@ export default class AggregationBuilder {
     }
 
     cleanupMatch(match) {
-        // get rid of single or
-        if (match.$or && match.$or.length === 1) {
-            match.$and.push(match.$or[0])
-            delete match.$or
+        // Unwrap single-element $or into $and
+        if (match.$or?.length === 1) {
+            match.$and = [...(match.$and ?? []), match.$or[0]];
+            delete match.$or;
         }
 
-        // get rid of empty $and
-        if (match.$and && match.$and.length == 0) {
-            delete match.$and
+        // Remove empty or missing $or
+        if (!match.$or?.length) delete match.$or;
+
+        // Unwrap single-element $and when it's the only key
+        if (match.$and?.length === 1 && Object.keys(match).length === 1) {
+            Object.assign(match, match.$and[0]);
+            delete match.$and;
         }
-        // get rid of empty $or
-        if (match.$or && match.$or.length == 0) {
-            delete match.$or
-        }
+
+        // Remove empty $and
+        if (match.$and?.length === 0) delete match.$and;
     }
 }

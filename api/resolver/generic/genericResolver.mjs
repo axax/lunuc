@@ -8,11 +8,52 @@ import {
 } from '../../../util/capabilities.mjs'
 import Hook from '../../../util/hook.cjs'
 import HookAsync from '../../../util/hookAsync.mjs'
+import AggregationBuilderV2 from './AggregationBuilderV2.mjs'
 import AggregationBuilder from './AggregationBuilder.mjs'
 import Cache from '../../../util/cache.mjs'
 import {_t} from '../../../util/i18nServer.mjs'
 import {createMatchForCurrentUser} from '../../util/dbquery.mjs'
 import postQueryConvert from './postQueryConverter.mjs'
+
+
+const isDeepEqualUnordered = (a, b) => {
+    // 1. Einfache Typen direkt vergleichen
+    if (a === b) return true;
+
+    // 2. Falls Typen unterschiedlich oder null, direkt false
+    if (typeof a !== 'object' || a === null || typeof b !== 'object' || b === null) {
+        return false;
+    }
+
+    // 3. Arrays verarbeiten
+    if (Array.isArray(a) && Array.isArray(b)) {
+        if (a.length !== b.length) return false;
+
+        // Trick: Jedes Element in 'a' muss ein Gegenstück in 'b' finden
+        // Wir kopieren b, um gefundene Übereinstimmungen zu markieren
+        const bCopy = [...b];
+        return a.every(itemA => {
+            const indexB = bCopy.findIndex(itemB => isDeepEqualUnordered(itemA, itemB));
+            if (indexB !== -1) {
+                bCopy.splice(indexB, 1); // Element "verbrauchen"
+                return true;
+            }
+            return false;
+        });
+    }
+
+    // 4. Normale Objekte verarbeiten
+    const keysA = Object.keys(a);
+    const keysB = Object.keys(b);
+
+    if (keysA.length !== keysB.length) return false;
+
+    return keysA.every(key =>
+        Object.prototype.hasOwnProperty.call(b, key) &&
+        isDeepEqualUnordered(a[key], b[key])
+    );
+};
+
 
 const buildCollectionName = async (db, context, typeName, _version) => {
 
@@ -226,21 +267,78 @@ const GenericResolver = {
             otherOptions.sort = otherOptions.sort.substring(1)
             finalAggregateOptions.collation =  {locale: context.lang}
         }
-
         otherOptions.limitCount= 10000
-        const aggregationBuilder = new AggregationBuilder(typeName, data, db, {
-            match,
-            includeCount: (includeCount !== false && !estimateCount),
-            lang: context.lang,
-            includeUserFilter: userCanManageOtherUsers,
-            ...otherOptions
-        })
 
-        const {dataQuery, countQuery, debugInfo} = await aggregationBuilder.query()
-         /*if (typeName.indexOf("GenericData") >= 0) {
-             console.log(otherOptions,JSON.stringify(dataQuery, null, 4))
-         }*/
-              //console.log(options,JSON.stringify(dataQuery, null, 4))
+
+        const AggregationBuilderOptions = (await Util.getKeyValueGlobal(db, null, "AggregationBuilderOptions", true)) || {}
+
+        let aggregationBuilder
+        if(AggregationBuilderOptions.version === 2) {
+
+            aggregationBuilder = new AggregationBuilderV2(typeName, data, db, {
+                match,
+                includeCount: (includeCount !== false && !estimateCount),
+                lang: context.lang,
+                includeUserFilter: userCanManageOtherUsers,
+                ...otherOptions
+            })
+        }else{
+            aggregationBuilder = new AggregationBuilder(typeName, data, db, {
+                match,
+                includeCount: (includeCount !== false && !estimateCount),
+                lang: context.lang,
+                includeUserFilter: userCanManageOtherUsers,
+                ...otherOptions
+            })
+        }
+
+
+
+        const {dataQuery, debugInfo} = await aggregationBuilder.query()
+
+
+        if(AggregationBuilderOptions.logVersionDif) {
+
+            let aggregationBuilder2
+            if(AggregationBuilderOptions.version === 2) {
+
+                aggregationBuilder2 = new AggregationBuilder(typeName, data, db, {
+                    match,
+                    includeCount: (includeCount !== false && !estimateCount),
+                    lang: context.lang,
+                    includeUserFilter: userCanManageOtherUsers,
+                    ...otherOptions
+                })
+            }else{
+                aggregationBuilder2 = new AggregationBuilderV2(typeName, data, db, {
+                    match,
+                    includeCount: (includeCount !== false && !estimateCount),
+                    lang: context.lang,
+                    includeUserFilter: userCanManageOtherUsers,
+                    ...otherOptions
+                })
+            }
+
+
+            const query2 = await aggregationBuilder2.query()
+
+            if (!isDeepEqualUnordered(dataQuery, query2.dataQuery)) {
+                console.log('Query of V2 Version is different')
+                await GenericResolver.createEntity(db, {context: context}, 'Log', {
+                    location: 'aggregationBuilder',
+                    type: 'v2different',
+                    message: 'Query of V2 Version is different',
+                    meta: {version: AggregationBuilderOptions.version,dataQuery, dataQuery2: query2.dataQuery, otherOptions}
+                })
+
+            }
+        }
+
+
+        if (typeName.indexOf("Media") >= 0) {
+         //   console.log(otherOptions,JSON.stringify(dataQuery, null, 4))
+        }
+            //  console.log(JSON.stringify(dataQuery, null, 4))
         const collection = db.collection(collectionName)
         const startTimeAggregate = new Date()
 

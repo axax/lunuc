@@ -195,6 +195,10 @@ Hook.on('appready', async ({db, context}) => {
             console.log('DNS: server closed')
         })
 
+        dnsServerContext.server.on('error', (e) => {
+            console.log('DNS: server error', e)
+        })
+
         dnsServerContext.server.listen({
             // Optionally specify port, address and/or the family of socket() for udp server:
             udp: {
