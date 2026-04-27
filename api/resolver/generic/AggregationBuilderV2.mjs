@@ -462,7 +462,7 @@ export default class AggregationBuilderV2 {
                 match.$and.push(...matches.match)
             }
             if (matches.resultMatch.length > 0) {
-                resultMatch.$and.push(...matches.lookupMatch)
+                resultMatch.$and.push(...matches.resultMatch)
             }
             if (matches.lookupMatch.length > 0) {
                 lookupMatch.$and.push(...matches.lookupMatch)
