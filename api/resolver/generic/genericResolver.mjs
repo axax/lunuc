@@ -15,6 +15,29 @@ import {_t} from '../../../util/i18nServer.mjs'
 import {createMatchForCurrentUser} from '../../util/dbquery.mjs'
 import postQueryConvert from './postQueryConverter.mjs'
 
+// ─── helpers (module-level, not inside the method) ──────────────────────────
+
+function resolveRequestContext(reqOrContext) {
+    if (reqOrContext.context && !reqOrContext.session) {
+        return { context: reqOrContext.context, req: reqOrContext }
+    }
+    return { context: reqOrContext, req: {} }
+}
+
+function parseCacheOptions(cache) {
+    if (!cache || cache === false) return null
+
+    if (cache === true)  return { cacheTime: 300000, cacheKey: null, cachePolicy: null }
+    if (!isNaN(cache))   return { cacheTime: cache,   cacheKey: null, cachePolicy: null }
+
+    // Object form
+    if (cache.if === 'false' || cache.if === false) return null
+    return {
+        cacheTime:   cache.expires === undefined ? 60000 : cache.expires,
+        cacheKey:    cache.key    || null,
+        cachePolicy: cache.policy || null,
+    }
+}
 
 const isDeepEqualUnordered = (a, b) => {
     // 1. Einfache Typen direkt vergleichen
@@ -177,243 +200,183 @@ export const prepareDataForUpdate = (typeName, data) => {
 
 const GenericResolver = {
     entities: async (db, reqOrContext, typeName, data, options) => {
-        let context, req
-        if(reqOrContext.context && !reqOrContext.session){
-            // it must be a request
-            context = reqOrContext.context
-            req = reqOrContext
-        } else{
-            context = reqOrContext
-            req = {}
-        }
+        const { context, req } = resolveRequestContext(reqOrContext)
 
-        if (!context.lang) {
-            throw new Error('lang on context is missing')
-        }
-        const startTime = new Date()
+        if (!context.lang) throw new Error('lang on context is missing')
 
-        let {match, _version, cache, includeCount, postConvert, aggregateOptions, aggregationBuilderOptions, graphqlInfo, ...otherOptions} = options
+        const startTime = performance.now()
+
+        const {
+            match: matchOption,
+            _version,
+            cache,
+            includeCount,
+            postConvert,
+            aggregateOptions,
+            aggregationBuilderOptions,
+            graphqlInfo,
+            ...otherOptions
+        } = options
 
         const collectionName = await buildCollectionName(db, context, typeName, _version)
-
         const userCanManageOtherUsers = await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
 
-        // Default match
+        // ── resolve match ──────────────────────────────────────────────────────
+        let match = matchOption
         if (!match) {
-            if (userCanManageOtherUsers) {
-                // the user has the right to read everything
-                match = {}
-            } else {
-                // only select items that belong to the current user or the user has permission to read
-                match = await createMatchForCurrentUser({typeName, db, context})
+            match = userCanManageOtherUsers
+                ? {}
+                : await createMatchForCurrentUser({ typeName, db, context })
 
-            }
-
-            if(!match){
-                throw new Error(`no permission to read data for type ${typeName}`)
-            }
+            if (!match) throw new Error(`no permission to read data for type ${typeName}`)
         }
 
-        Hook.call('enhanceTypeMatch', {type: typeName, context, match})
+        Hook.call('enhanceTypeMatch', { type: typeName, context, match })
 
-        //console.log(`1 time ${new Date() - startTime}ms`)
+        // ── cache (read) ───────────────────────────────────────────────────────
+        const cacheOpts = parseCacheOptions(cache)
+        let cacheKey = null
 
-        let cacheKey, cacheTime, cachePolicy
-        if (cache !== undefined && cache !== false) {
-            if (cache.constructor === Object) {
-                if (cache.if !== 'false' && cache.if !== false) {
-                    cacheTime = cache.expires === undefined ? 60000 : cache.expires
-                    cacheKey = cache.key
-                    cachePolicy = cache.policy
-                }
-            }else  if (cache === true) {
-                cacheTime = 300000
-            } else {
-                cacheTime = cache
-            }
-            if (!isNaN(cacheTime) && cacheTime > 0) {
-                if (!cacheKey) {
-                    //create cacheKey
-                    cacheKey = collectionName + (context.id || '') + (Object.keys(match).length>0?JSON.stringify(match):'') + context.lang + JSON.stringify(otherOptions)
-                }
-                if (cachePolicy !== 'cache-only') {
-                    const resultFromCache = Cache.get(cacheKey)
-                    if (resultFromCache) {
-                        console.debug(`GenericResolver: from cache for ${collectionName} complete: total time ${new Date() - startTime}ms`)
+        if (cacheOpts && !isNaN(cacheOpts.cacheTime) && cacheOpts.cacheTime > 0) {
+            cacheKey = cacheOpts.cacheKey ?? (
+                collectionName
+                + (context.id || '')
+                + (Object.keys(match).length > 0 ? JSON.stringify(match) : '')
+                + context.lang
+                + JSON.stringify(otherOptions)
+            )
 
-                        return resultFromCache
-                    }
+            if (cacheOpts.cachePolicy !== 'cache-only') {
+                const cached = Cache.get(cacheKey)
+                if (cached) {
+                    console.debug(`GenericResolver: from cache for ${collectionName} complete: total time ${Math.round(performance.now() - startTime)}ms`)
+                    return cached
                 }
             }
         }
 
-        if (Hook.hooks['beforeTypeLoaded'] && Hook.hooks['beforeTypeLoaded'].length) {
-            for (let i = 0; i < Hook.hooks['beforeTypeLoaded'].length; ++i) {
-                await Hook.hooks['beforeTypeLoaded'][i].callback({
-                    type: typeName, db, req, context, otherOptions, match, data
-                })
-            }
-        }
+        // ── hooks: before load ─────────────────────────────────────────────────
+        await HookAsync.call('beforeTypeLoaded', { type: typeName, db, req, context, otherOptions, match, data })
 
+        // ── build aggregation ──────────────────────────────────────────────────
         const estimateCount = includeCount !== false && !options.filter && Object.keys(match).length === 0
+        const finalAggregateOptions = { allowDiskUse: true, ...aggregateOptions }
 
-
-        const finalAggregateOptions = {allowDiskUse: true, ...aggregateOptions}
-
-        if(!finalAggregateOptions.collation &&
+        if (
+            !finalAggregateOptions.collation &&
             otherOptions?.sort?.constructor === String &&
-            otherOptions.sort.startsWith('$')){
-
+            otherOptions.sort.startsWith('$')
+        ) {
             otherOptions.sort = otherOptions.sort.substring(1)
-            finalAggregateOptions.collation =  {locale: context.lang}
-        }
-        otherOptions.limitCount= 10000
-
-
-        const finalAggregationBuilderOptions = aggregationBuilderOptions || (await Util.getKeyValueGlobal(db, null, "AggregationBuilderOptions", true)) || {}
-
-        let aggregationBuilder
-        if(finalAggregationBuilderOptions.version === 2) {
-
-            aggregationBuilder = new AggregationBuilderV2(typeName, data, db, {
-                match,
-                includeCount: (includeCount !== false && !estimateCount),
-                lang: context.lang,
-                includeUserFilter: userCanManageOtherUsers,
-                ...otherOptions
-            })
-        }else{
-            aggregationBuilder = new AggregationBuilder(typeName, data, db, {
-                match,
-                includeCount: (includeCount !== false && !estimateCount),
-                lang: context.lang,
-                includeUserFilter: userCanManageOtherUsers,
-                ...otherOptions
-            })
+            finalAggregateOptions.collation = { locale: context.lang }
         }
 
+        otherOptions.limitCount = 10000
 
+        const finalAggregationBuilderOptions =
+            aggregationBuilderOptions
+            ?? (await Util.getKeyValueGlobal(db, null, 'AggregationBuilderOptions', true))
+            ?? {}
 
-        const {dataQuery, debugInfo} = await aggregationBuilder.query()
+        const builderArgs = [typeName, data, db, {
+            match,
+            includeCount: includeCount !== false && !estimateCount,
+            lang: context.lang,
+            includeUserFilter: userCanManageOtherUsers,
+            ...otherOptions,
+        }]
 
+        const isV2 = finalAggregationBuilderOptions.version === 2
+        const aggregationBuilder = isV2
+            ? new AggregationBuilderV2(...builderArgs)
+            : new AggregationBuilder(...builderArgs)
 
-        if(finalAggregationBuilderOptions.logVersionDif) {
+        const { dataQuery, countQuery, debugInfo } = await aggregationBuilder.query()
 
-            let aggregationBuilder2
-            if(finalAggregationBuilderOptions.version === 2) {
+        // ── optional version-diff logging ──────────────────────────────────────
+        if (finalAggregationBuilderOptions.logVersionDif) {
+            const altBuilder = isV2
+                ? new AggregationBuilder(...builderArgs)
+                : new AggregationBuilderV2(...builderArgs)
 
-                aggregationBuilder2 = new AggregationBuilder(typeName, data, db, {
-                    match,
-                    includeCount: (includeCount !== false && !estimateCount),
-                    lang: context.lang,
-                    includeUserFilter: userCanManageOtherUsers,
-                    ...otherOptions
-                })
-            }else{
-                aggregationBuilder2 = new AggregationBuilderV2(typeName, data, db, {
-                    match,
-                    includeCount: (includeCount !== false && !estimateCount),
-                    lang: context.lang,
-                    includeUserFilter: userCanManageOtherUsers,
-                    ...otherOptions
-                })
-            }
+            const { dataQuery: altDataQuery } = await altBuilder.query()
 
-
-            const query2 = await aggregationBuilder2.query()
-
-            if (!isDeepEqualUnordered(dataQuery, query2.dataQuery)) {
+            if (!isDeepEqualUnordered(dataQuery, altDataQuery)) {
                 console.log('Query of V2 Version is different')
-                await GenericResolver.createEntity(db, {context: context}, 'Log', {
+                await GenericResolver.createEntity(db, { context }, 'Log', {
                     location: 'aggregationBuilder',
-                    type: 'v2different',
-                    message: 'Query of V2 Version is different',
-                    meta: {version: finalAggregationBuilderOptions.version,dataQuery, dataQuery2: query2.dataQuery, otherOptions}
+                    type:     'v2different',
+                    message:  'Query of V2 Version is different',
+                    meta: {
+                        version:    finalAggregationBuilderOptions.version,
+                        dataQuery,
+                        dataQuery2: altDataQuery,
+                        otherOptions,
+                    },
                 })
-
             }
         }
 
-
-        if (typeName.indexOf("Media") >= 0) {
-         //   console.log(otherOptions,JSON.stringify(dataQuery, null, 4))
-        }
-            //  console.log(JSON.stringify(dataQuery, null, 4))
+        // ── run aggregate ──────────────────────────────────────────────────────
         const collection = db.collection(collectionName)
-        const startTimeAggregate = new Date()
-
-
+        const startTimeAggregate = performance.now()
         const results = await collection.aggregate(dataQuery, finalAggregateOptions).toArray()
+
         let result
         if (results.length === 0) {
             result = {
-                page: aggregationBuilder.getPage(),
-                limit: aggregationBuilder.getLimit(),
-                offset: aggregationBuilder.getOffset(),
-                total: 0,
-                results: null
+                page:    aggregationBuilder.getPage(),
+                limit:   aggregationBuilder.getLimit(),
+                offset:  aggregationBuilder.getOffset(),
+                total:   0,
+                results: null,
             }
+        } else if (postConvert === false) {
+            result = results[0]
         } else {
-            if (postConvert === false) {
-                result = results[0]
-            } else {
-                result = await postQueryConvert(results[0], {typeName, db, context, graphqlInfo})
-            }
+            result = await postQueryConvert(results[0], { typeName, db, context, graphqlInfo })
         }
 
-        if(result.total===undefined) {
-            if (result.count && result.count.length > 0) {
+        // ── resolve total count ────────────────────────────────────────────────
+        if (result.total === undefined) {
+            if (result.count?.length > 0) {
                 result.total = result.count[0].count + (otherOptions.limitCount ? result.offset : 0)
             } else {
                 result.total = estimateCount ? await collection.estimatedDocumentCount() : 0
+
+                if (results.length > result.total) {
+                    console.log('estimatedDocumentCount is not accurate', result.total, results.length)
+                    const countResults = await collection.aggregate(countQuery, { allowDiskUse: true }).toArray()
+                    if (countResults.length > 0) result.total = countResults[0].count
+                }
             }
         }
         delete result.count
 
-        /*if (typeName==="Chat") {
-            console.log(JSON.stringify(result, null, 4),JSON.stringify(dataQuery, null, 4))
-        }*/
-        const aggregateTime = new Date() - startTimeAggregate
-        const totalTime = new Date() - startTime
+        // ── timing ─────────────────────────────────────────────────────────────
+        const aggregateTime = Math.round(performance.now() - startTimeAggregate)
+        const totalTime     = Math.round(performance.now() - startTime)
 
+        // ── hooks: after load ──────────────────────────────────────────────────
+        await HookAsync.call('typeLoaded', {
+            type: typeName, cacheKey, data, db, req, context,
+            otherOptions, result, dataQuery, collectionName, aggregateTime, debugInfo,
+        })
 
-        if (Hook.hooks['typeLoaded'] && Hook.hooks['typeLoaded'].length) {
-            for (let i = 0; i < Hook.hooks['typeLoaded'].length; ++i) {
-                await Hook.hooks['typeLoaded'][i].callback({
-                    type: typeName,
-                    cacheKey,
-                    data,
-                    db,
-                    req,
-                    context,
-                    otherOptions,
-                    result,
-                    dataQuery,
-                    collectionName,
-                    aggregateTime,
-                    debugInfo
-                })
-            }
-        }
-
+        // ── meta ───────────────────────────────────────────────────────────────
         if (otherOptions.returnMeta !== false) {
-            if(!result.meta){
-                result.meta = {}
+            result.meta = {
+                ...(result.meta ?? {}),
+                aggregateTime,
+                totalTime,
+                debugInfo,
             }
-
-            result.meta.aggregateTime = aggregateTime
-            result.meta.totalTime = totalTime
-            result.meta.debugInfo = debugInfo
-
         }
 
-        if(result.meta){
-            result.meta = JSON.stringify(result.meta)
-        }
+        if (result.meta) result.meta = JSON.stringify(result.meta)
 
-        if (cacheKey) {
-            Cache.set(cacheKey, result, cacheTime)
-        }
+        // ── cache (write) ──────────────────────────────────────────────────────
+        if (cacheKey) Cache.set(cacheKey, result, cacheOpts.cacheTime)
 
         console.debug(`GenericResolver: for ${collectionName} complete: aggregate time = ${aggregateTime}ms total time ${totalTime}ms`)
         return result

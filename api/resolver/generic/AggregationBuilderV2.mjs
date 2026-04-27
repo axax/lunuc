@@ -155,40 +155,43 @@ export default class AggregationBuilderV2 {
     async createFilterForField(
         { name, subQuery, reference, type, multi, localized, searchable, vagueSearchable },
         match,
-        { exact, filters }
+        { exact, filters, isLocalizedPart }
     ) {
         if (!filters || searchable === false) return
 
         // ── Localized fields: recurse per language and merge results into match.$or ──
         if (localized) {
-            const localizedMatch = {}
-
+            const localizedMatches = []
             for (const lang of config.LANGUAGES) {
                 await this.createFilterForField(
                     { name: `${name}.${lang}`, subQuery, reference },
-                    localizedMatch,
-                    { exact, filters }
+                    localizedMatches,
+                    { exact, filters, isLocalizedPart:true }
                 )
             }
 
             // Group per-language conditions and merge them into the parent match
-            if (localizedMatch?.$and?.length > 0) {
-                const allMatches = [
-                    ...(localizedMatch.$or ?? []),
-                    ...localizedMatch.$and
-                ]
+            if (localizedMatches.length > 0) {
 
-                // Group individual match conditions by their top-level key
-                const byLang = {}
-                allMatches.forEach(m => {
-                    const key = Object.keys(m)[0]
-                    if (!byLang[key]) byLang[key] = []
-                    byLang[key].push(m)
-                })
+                const localizedGroupMatches = {}, finalLocalizedMatch = []
 
-                match.push({$or:Object.keys(byLang).map(key => ({ $and: byLang[key] }))})
-            } else if (localizedMatch?.$or?.length > 0) {
-                match.push({$or:localizedMatch.$or})
+                for(const localizedMatch of localizedMatches) {
+                    if(localizedMatch.__filterKeyPart__) {
+                        if (!localizedGroupMatches[localizedMatch.__filterKeyPart__]) {
+                            localizedGroupMatches[localizedMatch.__filterKeyPart__] = []
+                        }
+                        localizedGroupMatches[localizedMatch.__filterKeyPart__].push(localizedMatch)
+                        delete localizedMatch.__filterKeyPart__
+                    }else{
+                        finalLocalizedMatch.push(localizedMatch)
+                    }
+                }
+
+                for (const localizedGroupMatch of Object.values(localizedGroupMatches)) {
+
+                    finalLocalizedMatch.push({$or:localizedGroupMatch})
+                }
+                match.push(...finalLocalizedMatch)
             }
             return
         }
@@ -198,14 +201,21 @@ export default class AggregationBuilderV2 {
 
         let filterPart = filters.parts[filterKey]
         if (!filterPart && reference)  filterPart = filters.parts[`${filterKey}._id`]
-        if (!filterPart && !exact)     filterPart = filters.parts[filterKey.split('.')[0]]
+
+        let filterKeyFirstPart
+        if (!filterPart && !exact){
+            filterKeyFirstPart = filterKey.split('.')[0]
+            if(isLocalizedPart) {
+                filterPart = filters.parts[filterKeyFirstPart]
+            }
+        }
 
         // ── Explicit filter on this specific field ──
         if (filterPart) {
             const filterPartArray = filterPart.constructor === Array ? filterPart : [filterPart]
 
             for (const filterPartItem of filterPartArray) {
-                await addFilterToMatchV2({
+                if(await addFilterToMatchV2({
                     filterKey: name,
                     subQuery,
                     filterValue: filterPartItem.value,
@@ -215,7 +225,12 @@ export default class AggregationBuilderV2 {
                     match,
                     db: this.db,
                     debugInfo: this.debugInfo
-                })
+                })){
+                    if(filterKeyFirstPart) {
+                        match[match.length-1].__filterKeyPart__ = `${filterKeyFirstPart}-${filterPartItem.value}`
+                    }
+                }
+
             }
 
         } else if (type === 'Object') {
@@ -443,7 +458,7 @@ export default class AggregationBuilderV2 {
             )
 
            if (matches.match.length > 0) {
-               ///console.log('xxxxxx', JSON.stringify(matches.match, null, 2))
+                //console.log('xxxxxx', JSON.stringify(matches.match, null, 2))
                 match.$and.push(...matches.match)
             }
             if (matches.resultMatch.length > 0) {
@@ -455,7 +470,6 @@ export default class AggregationBuilderV2 {
         }catch (e) {
             console.log('AggregationBuilderV2: error', e)
         }
-        //console.log('xxxxxx', JSON.stringify(match, null, 2))
 
         // Always include createdBy and modifiedAt unless the caller controls the projection
         if (!projectResult) {
