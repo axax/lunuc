@@ -123,6 +123,8 @@ export const translations = {
         'CodeEditor.aiAssistent':'KI Assistent',
         'CodeEditor.newFileSplit':'Neuer Dateisplit',
         'CodeEditor.editFileSplitName':'Umbenennen',
+        'CodeEditor.deleteFileSplitConfirmTitle':'Dateisplit löschen',
+        'CodeEditor.deleteFileSplitConfirm':'Sind Sie sicher, dass Sie den Dateispilt aufheben möchten "%filename%"?',
         'CodeEditor.hideFileSplit':'Dateisplit ausblenden',
         'CodeEditor.showFileSplit':'Dateisplit anzeigen',
         'GlobalSearch.placeholder':'Schnellsuche',
@@ -255,6 +257,9 @@ export const translations = {
         'CodeEditor.hideFileSplit':'Hide file split',
         'CodeEditor.showFileSplit':'Show file split',
         'CodeEditor.editFileSplitName':'Rename',
+        'CodeEditor.removeFileSplitName':'Remove file split',
+        'CodeEditor.deleteFileSplitConfirmTitle':'Confirm deletion',
+        'CodeEditor.deleteFileSplitConfirm':'Are you sure you want to remove this file split "%filename%"?',
         'GlobalSearch.placeholder':'Quick search',
         'TypeEdit.closeConfirmText':'Would you like to save the change?',
         'TypeEdit.closeConfirmTitle':'Save data'

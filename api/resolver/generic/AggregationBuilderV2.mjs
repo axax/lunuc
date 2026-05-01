@@ -373,7 +373,6 @@ export default class AggregationBuilderV2 {
             fieldDefinition.type = 'ID'
             fieldDefinition.existsInDefinition = true
         }
-
         return fieldDefinition
     }
 
@@ -458,8 +457,14 @@ export default class AggregationBuilderV2 {
             )
 
            if (matches.match.length > 0) {
-                //console.log('xxxxxx', JSON.stringify(matches.match, null, 2))
+              //  console.log('xxxxxx', JSON.stringify(matches.match, null, 2))
                 match.$and.push(...matches.match)
+
+               // TODO remove after V2 is default
+               if(match.$and.length===2 && match.$and[match.$and.length-1].$or) {
+                    match.$or = match.$and[match.$and.length-1].$or
+                    match.$and.pop()
+               }
             }
             if (matches.resultMatch.length > 0) {
                 resultMatch.$and.push(...matches.resultMatch)
@@ -913,12 +918,16 @@ export default class AggregationBuilderV2 {
         for (const key of Object.keys(filters.parts)) {
             const [topLevelField] = key.split('.')
 
-            const alreadyIncluded = fields.some(field =>
-                    field && (
-                        (field.constructor === String && field.split('$')[0] === topLevelField) ||
-                        (field.constructor === Object && Object.keys(field)[0] === topLevelField)
-                    )
-            )
+            const alreadyIncluded = fields.some(field => {
+                if (!field) return false
+                const fieldKey = typeof field === 'string'
+                    ? field.split('$')[0]
+                    : typeof field === 'object' && !Array.isArray(field)
+                        ? Object.keys(field)[0]
+                        : null
+                return fieldKey === key || fieldKey === topLevelField
+            })
+
             if (!alreadyIncluded) {
                 const fieldDefinition = this.createFieldDefinition(topLevelField, this.type)
                 //console.log(`add filter for ${key}`, fieldDefinition)
@@ -928,6 +937,7 @@ export default class AggregationBuilderV2 {
                     }
                 }else if (fieldDefinition.existsInDefinition) {
 
+                    console.log(`AggregationBuilderV2:`, key, filters, fields)
                     // TODO fileds.push might be better?
                     await this.createFilterForField(fieldDefinition, match, { filters })
                 }else{

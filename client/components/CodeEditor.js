@@ -167,6 +167,36 @@ function CodeEditor(props,ref){
             }
         })
     }
+
+    function triggerOnChange(fullCodeAsString) {
+        let asJson
+        if (isDataJson || type === 'json') {
+            try {
+                asJson = JSON.parse(fullCodeAsString)
+                setStateError(false)
+            } catch (jsonError) {
+                setStateError(jsonError)
+                if (onError) {
+                    onError(jsonError, fullCodeAsString)
+                }
+            }
+        }
+        if (isDataJson) {
+            // if input was an object output is an Object too
+            setStateValue(asJson)
+
+            if (onChange) {
+                onChange(asJson)
+            }
+        } else {
+            setStateValue(fullCodeAsString)
+
+            if (onChange) {
+                onChange(fullCodeAsString)
+            }
+        }
+    }
+
     const comp = <StyledRoot error={hasError} inWindow={renderInWindow} className={className} style={style}>
         {files && <div>{files.map((file, i) => {
                 return (<StyledFile key={'file' + i}
@@ -186,6 +216,12 @@ function CodeEditor(props,ref){
                                                 name: _t('CodeEditor.editFileSplitName'), onClick: () => {
                                                     setEditData({fileSplit:true,file,fields:{name:{fullWidth:true,label:'Name',required:true}}, values:{name:file.filename}})
                                                 }
+                                            },
+                                            {
+                                                icon:'delete',
+                                                name: _t('CodeEditor.removeFileSplitName'), onClick: () => {
+                                                    setEditData({deleteSplit:true,file})
+                                                }
                                             }
                                         ]})
                                 }}
@@ -193,30 +229,8 @@ function CodeEditor(props,ref){
         <CodeMirrorWrapper mergeView={mergeView} mergeValue={mergeValue} controlled={controlled}
             identifier={`${stateIdentifier}${showFileSplit?'-'+finalFileIndex:''}`}
             onChange={(codeAsString)=>{
-                let fullCodeAsString = putFilesTogether(files, finalFileIndex, codeAsString)
-
-                let asJson
-                if (isDataJson || type === 'json') {
-                    try {
-                        asJson = JSON.parse(fullCodeAsString)
-                        setStateError(false)
-                    } catch (jsonError) {
-                        setStateError(jsonError)
-                        if (onError) {
-                            onError(jsonError, fullCodeAsString)
-                        }
-                    }
-                }
-                if (onChange) {
-                    if (isDataJson) {
-                        // if input was an object output is an Object too
-                        setStateValue(asJson)
-                        onChange(asJson)
-                    } else {
-                        setStateValue(fullCodeAsString)
-                        onChange(fullCodeAsString)
-                    }
-                }
+                const fullCodeAsString = putFilesTogether(files, finalFileIndex, codeAsString)
+                triggerOnChange(fullCodeAsString)
             }}
             lineNumbers={lineNumbers}
             type={type} readOnly={readOnly}
@@ -262,7 +276,28 @@ function CodeEditor(props,ref){
             onClose={() => {setContextMenu(false)}}
             mini items={contextMenu.items}/>}
         {hasError && <div style={{color: 'red'}}>{error ? error + ' ' : ''}{stateError ? stateError.message : ''}</div>}
-        {editData && <SimpleDialog disablePortal={renderInWindow} fullWidth={true} maxWidth="md" key="newSiteDialog" open={true}
+        {editData &&
+            (editData.deleteSplit ?
+                <SimpleDialog disablePortal={renderInWindow} fullWidth={true} maxWidth="md" key="deleteDialog" open={true}
+                              actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
+                              title={_t('CodeEditor.deleteFileSplitConfirmTitle')}
+                              onClose={(action) => {
+                                  if (action.key === 'yes') {
+                                      if(editData.file){
+                                          let content = putFilesTogether(files, finalFileIndex, editorViewRef.current.state.doc.toString())
+                                          const regex = new RegExp(`^${SPLIT_SIGN}${editData.file.filename}$`, 'gm');
+                                          content = content.replace(regex, '')
+                                          setFileIndex(0)
+                                          triggerOnChange(content)
+                                      }
+
+                                  }
+                                  setEditData(false)
+                              }}>
+                    {_t('CodeEditor.deleteFileSplitConfirm', editData.file)}
+                </SimpleDialog>
+                :
+                <SimpleDialog disablePortal={renderInWindow} fullWidth={true} maxWidth="md" key="newSiteDialog" open={true}
                                    onClose={(action) => {
                                        if (action.key === 'ok') {
 
@@ -272,7 +307,9 @@ function CodeEditor(props,ref){
                                                    if(editData.file){
                                                        let content = putFilesTogether(files, finalFileIndex, editorViewRef.current.state.doc.toString())
                                                        const regex = new RegExp(`^${SPLIT_SIGN}${editData.file.filename}$`, 'gm');
-                                                       setStateValue(content.replace(regex, SPLIT_SIGN+Util.escapeForJson(editDataFormRef.current.state.fields.name)))
+                                                       content = content.replace(regex, SPLIT_SIGN+Util.escapeForJson(editDataFormRef.current.state.fields.name))
+                                                       triggerOnChange(content)
+
                                                    }else {
                                                        editorViewRef.current.dispatch({
                                                            changes: {
@@ -303,7 +340,7 @@ function CodeEditor(props,ref){
                                    }]}
                                    title={'Edit'}>
             <GenericForm ref={editDataFormRef} primaryButton={false} values={editData.values || {data: editData.value}} fields={editData.fields || {
-                             data: {fullWidth: true,label: editData.key,uitype: editData.uitype}}}/></SimpleDialog>}
+                             data: {fullWidth: true,label: editData.key,uitype: editData.uitype}}}/></SimpleDialog>)}
         <StyledEditorResizer onMouseDown={(e)=>{
             editorViewRef.resizerState = {pageY:e.pageY}
         }} onDblclick={(e)=>{
