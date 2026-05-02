@@ -35,7 +35,7 @@ import {projectionToQueryString} from '../../util/project.mjs'
 import styled from '@emotion/styled'
 import {_t} from '../../util/i18n.mjs'
 import FileDrop from './FileDrop'
-import {propertyByPath} from "../util/json.mjs";
+import {isString, propertyByPath} from '../util/json.mjs'
 
 const StyledForm = styled(FormControl)(({fullWidth,theme})=>({
     display:'inline-flex',
@@ -576,12 +576,17 @@ class TypePicker extends React.Component {
                 let filter = ''
                 if (searchFields.length > 0) {
                     searchFields.forEach(field => {
-                        filter += field + '=' + value + ' '
+                        if(filter){
+                            filter += ' || '
+                        }
+                        filter += field + '="' + value + '"'
                     })
-                } else {
+                } else if(isString(value)) {
                     filter = value
                 }
-
+                if(filter.indexOf('||')>=0){
+                    filter = `(${filter})`
+                }
                 this.pickTimeout = 0
                 this.getData(filter + (this.props.filter ? ' && ' + this.props.filter : ''), {})
             }, 250)
