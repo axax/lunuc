@@ -298,11 +298,11 @@ class LoginContainer extends React.Component {
                                        this.login(ev)
                                    }
                                }}
-                               InputProps={{endAdornment: passwordVisible ? <VisibilityOffIconButton onClick={()=>{
+                               slotProps={{input:{endAdornment: passwordVisible ? <VisibilityOffIconButton onClick={()=>{
                                        this.setState({passwordVisible:false})
                                    }} /> : <VisibilityIconButton onClick={()=>{
                                    this.setState({passwordVisible:true})
-                                   }}/>}}
+                                   }}/>}}}
                                type={passwordVisible?'text':'password'}
                                name="password" required/>
 

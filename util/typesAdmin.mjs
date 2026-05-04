@@ -136,9 +136,10 @@ const enhanceField = (field, type) => {
                 host = host.substring(4)
             }
             newField.defaultValue = host
+        }else if(field.defaultValue ==='$TOKEN'){
+            field.defaultValue = crypto.randomUUID()
         }
     }
-
 
     return Object.assign({}, field, newField)
 }

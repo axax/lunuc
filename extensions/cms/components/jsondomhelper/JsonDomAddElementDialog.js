@@ -115,28 +115,31 @@ export default function JsonDomAddElementDialog(props){
                        setCurrentElement(null)
                        setAiAssistent({...aiAssistent,promt: e.target.value})
                    }}
-                   InputProps={{
-                       endAdornment: (
-                           <InputAdornment position="end">
-                               <AutoAwesomeIconButton disabled={aiAssistent.running || !aiAssistent.promt} color="primary" onClick={()=>{
-                                   setAiAssistent({...aiAssistent,running:true})
-                                   const contextInstructions = `the answer must be plain html code without code marker and instructions`
-                                   fetch(`/lunucapi/system/llm?stream=true&contextInstructions=${encodeURIComponent(contextInstructions)}&content=${encodeURIComponent(aiAssistent.promt)}`).then(async response => {
-                                       const reader = response.body.getReader()
-                                       let answer = ''
-                                       while(true){
-                                           const chunk = await reader.read()
-                                           answer += new TextDecoder().decode(chunk.value)
-                                           setAiAssistent({...aiAssistent,running:!chunk.done,answer:answer})
-                                           if (chunk.done) {
-                                               break
+                   slotProps={{
+                       input: {
+                           endAdornment: (
+                               <InputAdornment position="end">
+                                   <AutoAwesomeIconButton disabled={aiAssistent.running || !aiAssistent.promt}
+                                                          color="primary" onClick={() => {
+                                       setAiAssistent({...aiAssistent, running: true})
+                                       const contextInstructions = `the answer must be plain html code without code marker and instructions`
+                                       fetch(`/lunucapi/system/llm?stream=true&contextInstructions=${encodeURIComponent(contextInstructions)}&content=${encodeURIComponent(aiAssistent.promt)}`).then(async response => {
+                                           const reader = response.body.getReader()
+                                           let answer = ''
+                                           while (true) {
+                                               const chunk = await reader.read()
+                                               answer += new TextDecoder().decode(chunk.value)
+                                               setAiAssistent({...aiAssistent, running: !chunk.done, answer: answer})
+                                               if (chunk.done) {
+                                                   break
+                                               }
                                            }
-                                       }
-                                   })
-                               }}>
-                               </AutoAwesomeIconButton>
-                           </InputAdornment>
-                       ),
+                                       })
+                                   }}>
+                                   </AutoAwesomeIconButton>
+                               </InputAdornment>
+                           )
+                       }
                    }}/>}
 
         {aiAssistent.answer && <CodeEditor lineNumbers type="html" height="auto" identifier={`aiAnswer${aiAssistent.answer.length}`}>

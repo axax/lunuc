@@ -16,9 +16,9 @@ export default function CmsPageSeo(props){
         <TextField key="pageTitle"
                    name="pageTitle"
                    label={_t('CmsViewEditorContainer.pageTitle')}
-                   InputLabelProps={{
+                   slotProps={{inputLabel:{
                        shrink: true,
-                   }}
+                   }}}
                    onChange={(e) => {
                        let value = {...cmsPage.name, [_app_.lang]: e.target.value}
                        onChange('name', null, value)
@@ -30,9 +30,9 @@ export default function CmsPageSeo(props){
         <TextField key="pageAuthor"
                    name="pageAuthor"
                    label={_t('CmsViewEditorContainer.pageAuthor')}
-                   InputLabelProps={{
+                   slotProps={{inputLabel:{
                        shrink: true,
-                   }}
+                   }}}
                    onChange={(e) => {
                        onChange('author', null, e.target.value)
                    }}
@@ -43,9 +43,9 @@ export default function CmsPageSeo(props){
         <TextField key="pageKeywords"
                    name="pageKeywords"
                    label={_t('CmsViewEditorContainer.pageKeywords')}
-                   InputLabelProps={{
+                   slotProps={{inputLabel:{
                        shrink: true,
-                   }}
+                   }}}
                    onChange={(e) => {
                        let value = {...cmsPage.keyword, [_app_.lang]: e.target.value}
                        onChange('keyword', null, value)
@@ -57,9 +57,9 @@ export default function CmsPageSeo(props){
         <TextField key="pageDescription"
                    name="pageDescription"
                    label={_t('CmsViewEditorContainer.pageDescription')}
-                   InputLabelProps={{
+                   slotProps={{inputLabel:{
                        shrink: true,
-                   }}
+                   }}}
                    multiline={true}
                    onChange={(e) => {
                        let value = {...cmsPage.description, [_app_.lang]: e.target.value}

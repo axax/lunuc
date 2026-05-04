@@ -161,9 +161,10 @@ class TypePicker extends React.Component {
     }
 
     render() {
-        const {inputProps, InputProps, InputLabelProps, placeholder, multi, showAlwaysAsImage, fileImport, error, helperText, className, sx, fullWidth, linkTemplate, pickerField, metaFields, type, filter, label, genericType, readOnly} = this.props
+        const {slotProps = {}, placeholder, multi, showAlwaysAsImage, fileImport, error, helperText, className, sx, fullWidth, linkTemplate, pickerField, metaFields, type, filter, label, genericType, readOnly} = this.props
         const {data, hasFocus, selIdx, value, textValue, showContextMenu} = this.state
         console.log(`render TypePicker | hasFocus=${hasFocus} | pickerField=${pickerField}`, data)
+
         const openTypeWindow = (value) => {
             let url
             if (linkTemplate) {
@@ -206,37 +207,39 @@ class TypePicker extends React.Component {
                            onBlur={this.handleBlur.bind(this)}
                            placeholder={placeholder}
                            label={label}
-                           InputLabelProps={{
-                               shrink: true,
-                               ...InputLabelProps
-                           }}
-                           inputProps={inputProps}
-                           InputProps={{
-                               endAdornment: [
-                                   <InputAdornment position="end">
-                                       <IconButton
-                                           disabled={!isEnabled}
-                                           edge="end"
-                                           onClick={() => {
-                                               openTypeWindow()
-                                           }}>
-                                           <SearchIcon/>
-                                       </IconButton>
-                                       {value.length>1 && <Tooltip title={_t('TypePicker.deleteSelection')} key="tooltipDelete">
+                           slotProps={{
+                               inputLabel: {
+                                   shrink: true,
+                                   ...slotProps.inputLabel
+                               },
+                               htmlInput: slotProps.htmlInput,
+                               input: {
+                                   endAdornment: [
+                                       <InputAdornment position="end">
                                            <IconButton
                                                disabled={!isEnabled}
                                                edge="end"
                                                onClick={() => {
-                                                   this.setState({value:[], textValue:''})
-                                                   this.props.onChange({target: {value:[], name: this.props.name, dataset:this.props.dataset}})
-
+                                                   openTypeWindow()
                                                }}>
-                                               <DeleteIcon/>
+                                               <SearchIcon/>
                                            </IconButton>
-                                       </Tooltip>}
-                                   </InputAdornment>,
-                                   (InputProps && InputProps.endAdornment)
-                               ]
+                                           {value.length>1 && <Tooltip title={_t('TypePicker.deleteSelection')} key="tooltipDelete">
+                                               <IconButton
+                                                   disabled={!isEnabled}
+                                                   edge="end"
+                                                   onClick={() => {
+                                                       this.setState({value:[], textValue:''})
+                                                       this.props.onChange({target: {value:[], name: this.props.name, dataset:this.props.dataset}})
+
+                                                   }}>
+                                                   <DeleteIcon/>
+                                               </IconButton>
+                                           </Tooltip>}
+                                       </InputAdornment>,
+                                       (slotProps.input && slotProps.input.endAdornment)
+                                   ]
+                               }
                            }}
                 />
 

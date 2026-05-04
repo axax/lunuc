@@ -511,6 +511,10 @@ export default class AggregationBuilderV2 {
             dataQuery.push(...(stages.constructor === Array ? stages : [stages]))
         }
 
+        if(this.options.skipFacetQuery){
+            return { dataQuery, debugInfo: this.debugInfo }
+        }
+
         if (hasResultMatch) {
             dataFacetQuery.push({ $match: resultMatch })
         }

@@ -5,12 +5,20 @@ export const translations = {
         'Api.field.basicAuth': 'Basic-Auth',
         'Api.field.baPassword': 'Passwort',
         'Api.field.baUser': 'Benutzername',
-        "Api.basicAuthTab":"Basic-Auth"
+        'Api.field.apiToken': 'API Token',
+        'ApiToken.field.token': 'Token',
+        'ApiToken.field.expires': 'Ablauf (ohne Angabe: unendlich)',
+        'ApiToken.field.scopes': 'Scopes',
+        "Api.securityTab":"Sicherheit"
     },
     en: {
         'Api.field.basicAuth': 'Basic-Auth',
         'Api.field.baPassword': 'Password',
         'Api.field.baUser': 'User',
-        "Api.basicAuthTab":"Basic-Auth"
+        'Api.field.apiToken': 'API Token',
+        'ApiToken.field.token': 'Token',
+        'ApiToken.field.expires': 'Expires (without date: infinite)',
+        'ApiToken.field.scopes': 'Scopes',
+        "Api.securityTab":"Security"
     }
 }

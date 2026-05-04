@@ -188,7 +188,9 @@ class TypeEdit extends React.Component {
                 console.warn('validation error',formValidation)
                 return
             }
-            if(Object.keys(this.createEditForm.state.fieldsDirty).length===0){
+
+            if(Object.keys(this.createEditForm.state.fieldsDirty).length===0 &&
+                (dataToEdit || Object.values(this.createEditForm.state.fields).filter(f=>f!==null).length===0)){
                 console.warn('nothing to save')
                 if (action.key === 'save_close') {
                     this.closeModal(action)

@@ -219,9 +219,7 @@ Hook.on('typeLoaded', async ({type, db, context, result, otherOptions}) => {
 
             if (def && def.structure && def.structure.fields) {
 
-
                 await postCheckResult(def, result, db, context, otherOptions)
-
             }
 
 
@@ -230,7 +228,7 @@ Hook.on('typeLoaded', async ({type, db, context, result, otherOptions}) => {
             }
 
             // remove definition on entries
-            if (otherOptions.removeDefinition !== false) {
+            if (otherOptions.removeDefinition !== false && result.results) {
                 result.results.forEach(item => {
                     delete item.definition
                 })

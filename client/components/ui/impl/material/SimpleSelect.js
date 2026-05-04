@@ -53,7 +53,7 @@ class SimpleSelect extends React.Component {
     }
 
     render() {
-        const {onChange, InputLabelProps, items, label, readOnly, className, multi, disabled, hint, fullWidth, error, style, sx} = this.props
+        const {onChange, slotProps = {}, items, label, readOnly, className, multi, disabled, hint, fullWidth, error, style, sx} = this.props
         const name = this.props.name || ('name_' + Math.random())
         let value = this.props.value===undefined?'':this.props.value
         if (value) {
@@ -69,7 +69,7 @@ class SimpleSelect extends React.Component {
                             fullWidth={fullWidth}
                             style={style}
                             error={error}>
-            {label && <InputLabel htmlFor={name} shrink {...InputLabelProps}>{label}</InputLabel>}
+            {label && <InputLabel htmlFor={name} shrink {...slotProps.inputLabel}>{label}</InputLabel>}
             <Select
                 label={label}
                 displayEmpty={true}
@@ -77,9 +77,11 @@ class SimpleSelect extends React.Component {
                 value={value}
                 readOnly={readOnly}
                 onChange={onChange}
-                inputProps={{
-                    name,
-                    id: name,
+                slotProps={{
+                    htmlInput: {
+                        name,
+                        id: name
+                    }
                 }}
                 renderValue={selected => (
                     selected && selected.constructor === Array ?

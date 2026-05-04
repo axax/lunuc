@@ -841,7 +841,7 @@ class GenericForm extends React.Component {
     renderSubFields(field, value, fieldKey, currentFormFields, extraFields) {
         const subFields = {...convertArrayToObjectByAttr(field.subFields, 'name'),...convertArrayToObjectByAttr(extraFields, 'name')}
 
-        if(field.readOnly){
+        if(field.readOnly || field.uiReadOnly){
             Object.keys(subFields).forEach(key=>{
                 subFields[key].readOnly = true
             })
@@ -923,7 +923,7 @@ class GenericForm extends React.Component {
                         <Button key={'delete' + valueFieldKey}
                                 color="secondary"
                                 size="small"
-                                disabled={field.readOnly}
+                                disabled={field.readOnly || field.uiReadOnly}
                                 startIcon={<DeleteIcon/>}
                                 onClick={() => {
                                     subFieldValues.splice(index, 1)
@@ -939,7 +939,7 @@ class GenericForm extends React.Component {
                                 color="primary"
                                 startIcon={<ContentCopyIcon/>}
                                 size="small"
-                                disabled={field.readOnly}
+                                disabled={field.readOnly || field.uiReadOnly}
                                 onClick={() => {
                                     const clone = JSON.parse(JSON.stringify(subFieldValues[index]))
                                     subFieldValues.push(clone)
@@ -958,7 +958,7 @@ class GenericForm extends React.Component {
                                            color={field.addButtonColor || 'primary'}
                                            variant="contained"
                                            size="small"
-                                           disabled={field.readOnly}
+                                           disabled={field.readOnly || field.uiReadOnly}
                                            style={field.style}
                                            onClick={() => {
 
@@ -1128,7 +1128,7 @@ class GenericForm extends React.Component {
 
                     <CodeEditor
                         style={{border: '1px solid #eeeeee',margin: '16px 0'}}
-                        readOnly={field.readOnly}
+                        readOnly={field.readOnly || field.uiReadOnly}
                         identifier={(this.props.id || '') + '-' + fieldKey}
                         key={fieldKey}
                         controlled={field.controlled}
@@ -1248,22 +1248,24 @@ class GenericForm extends React.Component {
                 dataset={{
                     'language': languageCode
                 }}
-                InputLabelProps={{
-                    shrink: true,
-                    onMouseEnter:e=>{
-                        if(field.label && field.name && field.label !== field.name) {
-                            showTooltip(field.name, e)
+                slotProps={{
+                    inputLabel:{
+                        shrink: true,
+                        onMouseEnter:e=>{
+                            if(field.label && field.name && field.label !== field.name) {
+                                showTooltip(field.name, e)
+                            }
+                        },
+                        onMouseLeave:()=>{
+                            hideTooltip()
                         }
                     },
-                    onMouseLeave:()=>{
-                        hideTooltip()
+                    input:{
+                        endAdornment: languageCode === _app_.lang &&
+                            <InputAdornment position="end">
+                                {translateButton}
+                            </InputAdornment>
                     }
-                }}
-                InputProps={{
-                    endAdornment: languageCode === _app_.lang &&
-                        <InputAdornment position="end">
-                            {translateButton}
-                        </InputAdornment>
                 }}
                 error={!!this.state.fieldErrors[fieldKey]}
                 helperText={this.state.fieldErrors[fieldKey]}
@@ -1274,7 +1276,7 @@ class GenericForm extends React.Component {
                 key={fieldKey}
                 name={fieldKey}
                 label={_t(field.label)+ (languageCode ? ' [' + languageCode + ']' : '')}
-                readOnly={field.readOnly}
+                readOnly={field.readOnly || field.uiReadOnly}
                 genericType={field.genericType}
                 filter={field.filter?Util.replacePlaceholders(field.filter, this.state):''}
                 linkTemplate={field.linkTemplate}
@@ -1320,7 +1322,7 @@ class GenericForm extends React.Component {
                         value = matchObjectValueFromList(value, field, items)
                         return <SimpleSelect
                             className={field.className}
-                            readOnly={field.readOnly}
+                            readOnly={field.readOnly || field.uiReadOnly}
                             key={fieldKey} name={fieldKey}
                             onChange={this.handleInputChange}
                             items={items}
@@ -1329,7 +1331,7 @@ class GenericForm extends React.Component {
                             multi={field.multi}
                             label={field.label || field.name}
                             sx={getSxProps(field,theme)}
-                            InputLabelProps={{
+                            slotProps={{inputLabel:{
                                 shrink: true,
                                 onMouseEnter: e => {
                                     if (field.label && field.name && field.label !== field.name) {
@@ -1339,7 +1341,7 @@ class GenericForm extends React.Component {
                                 onMouseLeave: () => {
                                     hideTooltip()
                                 }
-                            }}
+                            }}}
                             value={value}/>
                     }}
                 </Query>)
@@ -1369,7 +1371,7 @@ class GenericForm extends React.Component {
                     multi={field.multi}
                     label={field.label}
                     sx={getSxProps(field,theme)}
-                    InputLabelProps={{
+                    slotProps={{inputLabel:{
                         shrink: true,
                         onMouseEnter: e => {
                             if (field.label && field.name && field.label !== field.name) {
@@ -1379,7 +1381,7 @@ class GenericForm extends React.Component {
                         onMouseLeave: () => {
                             hideTooltip()
                         }
-                    }}
+                    }}}
                     value={value}/>)
             }
         } else if (field.uitype === 'autosuggest') {
@@ -1389,7 +1391,7 @@ class GenericForm extends React.Component {
                     name={fieldKey}
                     value={value}
                     sx={getSxProps(field,theme)}
-                    readOnly={field.readOnly}
+                    readOnly={field.readOnly || field.uiReadOnly}
                     placeholder={field.placeholder}
                     label={(field.label || field.name) + (languageCode ? ' [' + languageCode + ']' : '')}
                     labelShrink={true}
@@ -1426,7 +1428,7 @@ class GenericForm extends React.Component {
 
         } else if (field.type === 'Boolean') {
             currentFormFields.push(<SimpleSwitch key={fieldKey}
-                                                 readOnly={field.readOnly}
+                                                 readOnly={field.readOnly || field.uiReadOnly}
                                                  label={field.label || field.placeholder}
                                                  name={fieldKey}
                                                  className={field.className}
@@ -1456,30 +1458,32 @@ class GenericForm extends React.Component {
                                               className={field.className}
                                               label={(field.label || field.name) + (languageCode ? ' [' + languageCode + ']' : '')}
                                               sx={getSxProps(field,theme)}
-                                              InputLabelProps={{
-                                                  shrink: true,
-                                                  onMouseEnter:e=>{
-                                                      if(field.label && field.name && field.label !== field.name) {
-                                                          showTooltip(field.name, e)
+                                              slotProps={{
+                                                  inputLabel:{
+                                                      shrink: true,
+                                                      onMouseEnter:e=>{
+                                                          if(field.label && field.name && field.label !== field.name) {
+                                                              showTooltip(field.name, e)
+                                                          }
+                                                      },
+                                                      onMouseLeave:()=>{
+                                                          hideTooltip()
                                                       }
                                                   },
-                                                  onMouseLeave:()=>{
-                                                      hideTooltip()
+                                                  htmlInput:{
+                                                      readOnly: field.readOnly || field.uiReadOnly,
+                                                      step: field.step || '',
+                                                      min: field.min || '',
+                                                      max: field.max || '',
+                                                      'data-language': languageCode,
+                                                      'data-datetime-field': isDateOrTime
+                                                  },
+                                                  input:{
+                                                      endAdornment: languageCode === _app_.lang &&
+                                                          <InputAdornment position="end">
+                                                              {translateButton}
+                                                          </InputAdornment>
                                                   }
-                                              }}
-                                              inputProps={{
-                                                  readOnly: field.readOnly,
-                                                  step: field.step || '',
-                                                  min: field.min || '',
-                                                  max: field.max || '',
-                                                  'data-language': languageCode,
-                                                  'data-datetime-field': isDateOrTime
-                                              }}
-                                              InputProps={{
-                                                  endAdornment: languageCode === _app_.lang &&
-                                                      <InputAdornment position="end">
-                                                          {translateButton}
-                                                      </InputAdornment>
                                               }}
                                               helperText={this.state.fieldErrors[fieldKey]||(field.helperText?Util.replacePlaceholders(field.helperText, this.state.fields):'')}
                                               fullWidth={field.fullWidth}

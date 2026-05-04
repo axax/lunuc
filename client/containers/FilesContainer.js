@@ -169,7 +169,9 @@ fi`
                             if(ref && nameFileDialog.fileName) {
                                 nameFileDialog.input.value = nameFileDialog.fileName
                             }
-                        }} inputProps={{pattern: '[a-zA-Z0-9._-]{1,15}'}} placeholder="Name" required={true}></StyledTextField>
+                        }}
+                        slotProps={{htmlInput:{pattern: '[a-zA-Z0-9._-]{1,15}'}}}
+                        placeholder="Name" required={true}></StyledTextField>
 
                     </SimpleDialog>
                     <SimpleSelect

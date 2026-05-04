@@ -294,7 +294,7 @@ const GenericResolver = {
         const { dataQuery, countQuery, debugInfo } = await aggregationBuilder.query()
 
         // ── optional version-diff logging ──────────────────────────────────────
-        if (finalAggregationBuilderOptions.logVersionDif) {
+        if (finalAggregationBuilderOptions.logVersionDif && !otherOptions.skipFacetQuery) {
             const altBuilder = isV2
                 ? new AggregationBuilder(...builderArgs)
                 : new AggregationBuilderV2(...builderArgs)
@@ -320,38 +320,42 @@ const GenericResolver = {
         // ── run aggregate ──────────────────────────────────────────────────────
         const collection = db.collection(collectionName)
         const startTimeAggregate = performance.now()
-        const results = await collection.aggregate(dataQuery, finalAggregateOptions).toArray()
+        const queryResults = await collection.aggregate(dataQuery, finalAggregateOptions).toArray()
 
-        let result
-        if (results.length === 0) {
-            result = {
-                page:    aggregationBuilder.getPage(),
-                limit:   aggregationBuilder.getLimit(),
-                offset:  aggregationBuilder.getOffset(),
-                total:   0,
-                results: null,
-            }
-        } else if (postConvert === false) {
-            result = results[0]
-        } else {
-            result = await postQueryConvert(results[0], { typeName, db, context, graphqlInfo })
-        }
-
-        // ── resolve total count ────────────────────────────────────────────────
-        if (result.total === undefined) {
-            if (result.count?.length > 0) {
-                result.total = result.count[0].count + (otherOptions.limitCount ? result.offset : 0)
+        let queryResponse
+        if(otherOptions.skipFacetQuery) {
+            queryResponse = queryResults.length > 0 ? queryResults[0] : null
+        }else {
+            if (queryResults.length === 0) {
+                queryResponse = {
+                    page: aggregationBuilder.getPage(),
+                    limit: aggregationBuilder.getLimit(),
+                    offset: aggregationBuilder.getOffset(),
+                    total: 0,
+                    results: null,
+                }
+            } else if (postConvert === false) {
+                queryResponse = queryResults[0]
             } else {
-                result.total = estimateCount ? await collection.estimatedDocumentCount() : 0
+                queryResponse = await postQueryConvert(queryResults[0], {typeName, db, context, graphqlInfo})
+            }
 
-                if (result.results.length > result.total) {
-                    console.log('estimatedDocumentCount is not accurate', result.total, result.results.length)
-                    const countResults = await collection.aggregate(countQuery, { allowDiskUse: true }).toArray()
-                    if (countResults.length > 0) result.total = countResults[0].count
+            // ── resolve total count ────────────────────────────────────────────────
+            if (queryResponse.total === undefined) {
+                if (queryResponse.count?.length > 0) {
+                    queryResponse.total = queryResponse.count[0].count + (otherOptions.limitCount ? queryResponse.offset : 0)
+                } else {
+                    queryResponse.total = estimateCount ? await collection.estimatedDocumentCount() : 0
+
+                    if (queryResponse.results.length > queryResponse.total && countQuery) {
+                        console.log('estimatedDocumentCount is not accurate', queryResponse.total, queryResponse.results.length)
+                        const countResults = await collection.aggregate(countQuery, {allowDiskUse: true}).toArray()
+                        if (countResults.length > 0) queryResponse.total = countResults[0].count
+                    }
                 }
             }
+            delete queryResponse.count
         }
-        delete result.count
 
         // ── timing ─────────────────────────────────────────────────────────────
         const aggregateTime = Math.round(performance.now() - startTimeAggregate)
@@ -360,26 +364,26 @@ const GenericResolver = {
         // ── hooks: after load ──────────────────────────────────────────────────
         await HookAsync.call('typeLoaded', {
             type: typeName, cacheKey, data, db, req, context,
-            otherOptions, result, dataQuery, collectionName, aggregateTime, debugInfo,
+            otherOptions, result: queryResponse, dataQuery, collectionName, aggregateTime, debugInfo,
         })
 
         // ── meta ───────────────────────────────────────────────────────────────
         if (otherOptions.returnMeta !== false) {
-            result.meta = {
-                ...(result.meta ?? {}),
+            queryResponse.meta = {
+                ...(queryResponse.meta ?? {}),
                 aggregateTime,
                 totalTime,
                 debugInfo,
             }
         }
 
-        if (result.meta) result.meta = JSON.stringify(result.meta)
+        if (queryResponse.meta) queryResponse.meta = JSON.stringify(queryResponse.meta)
 
         // ── cache (write) ──────────────────────────────────────────────────────
-        if (cacheKey) Cache.set(cacheKey, result, cacheOpts.cacheTime)
+        if (cacheKey) Cache.set(cacheKey, queryResponse, cacheOpts.cacheTime)
 
         console.debug(`GenericResolver: for ${collectionName} complete: aggregate time = ${aggregateTime}ms total time ${totalTime}ms`)
-        return result
+        return queryResponse
     },
     createEntity: async (db, req, typeName, {_version, ...data}, options) => {
         const {context} = req

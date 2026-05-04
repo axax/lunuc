@@ -194,18 +194,20 @@ export default function SimpleAutosuggest(props) {
                     name={props.name}
                     {...params}
                     sx={{margin:0}}
-                    InputLabelProps={{
-                        shrink: props.labelShrink
-                    }}
-                    InputProps={{
-                        name:props.name,
-                        ...params.InputProps,
-                        endAdornment: (
-                            <React.Fragment>
-                                {loading ? <CircularProgress color="inherit" size={20}/> : null}
-                                {params.InputProps.endAdornment}
-                            </React.Fragment>
-                        ),
+                    slotProps={{
+                        inputLabel:{
+                            shrink: props.labelShrink
+                        },
+                        input:{
+                            name:props.name,
+                            ...params.slotProps.input,
+                            endAdornment: (
+                                <React.Fragment>
+                                    {loading ? <CircularProgress color="inherit" size={20}/> : null}
+                                    {params.slotProps.input.endAdornment}
+                                </React.Fragment>
+                            ),
+                        }
                     }}
                 />
             }}

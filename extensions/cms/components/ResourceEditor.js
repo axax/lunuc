@@ -69,8 +69,8 @@ class ResourceEditor extends React.Component {
                                    onChange={this.handleChange.bind(this, i)}
                                    fullWidth={true}
                                    placeholder="Enter a url"
-                                   InputProps={{endAdornment: <>{!isExternal && <EditIconButton onClick={this.handleEditClick.bind(this, item)}/>}
-                                           <DeleteIconButton onClick={this.handleRemoveClick.bind(this, i)}/></>}}/>
+                                   slotProps={{input:{endAdornment: <>{!isExternal && <EditIconButton onClick={this.handleEditClick.bind(this, item)}/>}
+                                           <DeleteIconButton onClick={this.handleRemoveClick.bind(this, i)}/></>}}}/>
                     </ListItem>
                 })
                 }

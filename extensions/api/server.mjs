@@ -190,6 +190,26 @@ Hook.on('appready', ({app, db}) => {
                         return
                     }
 
+                    if(api?.apiToken?.length>0){
+                        // check token
+                        const authHeader = req.headers['authorization'];
+                        const token = authHeader && authHeader.split(' ')[1];
+
+                        if (!token) {
+                            return res.status(401).json({ error: 'API Bearer Token missing' });
+                        }
+
+                        const result = await db.collection('ApiToken').findOne({ _id:{$in:api.apiToken}, token: token, $or: [
+                                { expires: { $exists: false } },
+                                { expires: null },
+                                { expires: { $gt: Date.now()} }
+                            ]})
+
+                        if (!result) {
+                            return res.status(401).json({ error: 'API Bearer Token is invalid or expired' });
+                        }
+                    }
+
                     const result = await runApiScript({api, db, req, res, startTime})
                     if (!result.error && result.responseStatus && result.responseStatus.ignore) {
 
