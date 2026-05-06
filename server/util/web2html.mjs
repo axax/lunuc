@@ -43,6 +43,7 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
             parseWebsiteBrowser = await puppeteer.launch({
                 headless:'new',
                 devtools: false,
+                protocolTimeout: 60000,
                 /*userDataDir: './server/myUserDataDir',*/
                 ignoreHTTPSErrors: true, /* deprecated */
                 acceptInsecureCerts:true,

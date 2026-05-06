@@ -176,6 +176,8 @@ Hook.on('appready', ({app, db}) => {
                 const api = await getApi({slug, db})
 
                 if (!api) {
+
+                    console.log(`LunuC API ${req.method} ${req.path} --> 404 not found`);
                     res.writeHead(404, {'content-type': 'application/json'})
                     res.end(`{"status":"notfound","message":"Api for '${slug}' not found"}`)
                 } else {
