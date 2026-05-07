@@ -2,9 +2,9 @@ import React, {useCallback, useEffect} from 'react'
 import {_t} from '../../../util/i18n.mjs'
 import styled from '@emotion/styled'
 import ConsoleCapture from './ConsoleCapture'
-import {getCircularReplacer} from '../../mailserver/util/index.mjs'
 import ResizableDivider from '../../../client/components/ResizableDivider'
 import {propertyByPath} from '../../../client/util/json.mjs'
+import JsonViewer from "./JsonViewer";
 
 
 const StyledBox = styled('div')(({ theme }) => ({
@@ -161,7 +161,8 @@ export default function CmsPageTools(props){
             </StyledButton>
         </StyledButtonGroup>
         {tab==='console' && <StyledInfoBox height={boxHeight}><ConsoleCapture /></StyledInfoBox>}
-        {tab==='scope' && <StyledInfoBox height={boxHeight}>{JSON.stringify(_app_.JsonDom.scope, getCircularReplacer(), 2)}</StyledInfoBox>}
+        {tab==='scope' && <StyledInfoBox height={boxHeight}><JsonViewer json={_app_.JsonDom.scope} />
+        </StyledInfoBox>}
         {tab==='serverConsole' && <StyledInfoBox  height={boxHeight} style={{overflow:'hidden'}}><iframe src="/system/console?preview=true&embedded=true&cmd=luapi" style={{width:'100%', height:'100%', border:'none'}}/></StyledInfoBox>}
         {tab==='aiAssistent' && <StyledInfoBox  height={boxHeight} style={{overflow:'hidden'}}><iframe src={aiAssistenUrl} style={{width:'100%', height:'100%', border:'none'}}/></StyledInfoBox>}
     </StyledBox>
