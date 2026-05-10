@@ -84,7 +84,7 @@
     "@mui/material": "^9.0.1",
     "@mui/x-tree-view": "^9.1.0",
     "ajv": "^8.20.0",
-    "archiver": "^7.0.1",
+    "archiver": "^8.0.0",
     "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.2",
     "cheerio": "^1.2.0",
@@ -121,7 +121,6 @@
     "zip-local": "^0.3.5"
   },
   "optionalDependencies": {
-    "ytdl-core-enhanced": "^2.3.0",
     "@aws-sdk/client-lambda": "^3.1045.0",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@ffprobe-installer/ffprobe": "^2.1.2",
@@ -148,7 +147,8 @@
     "smtp-server": "^3.18.4",
     "to-ico": "^1.1.5",
     "xlsx": "^0.18.5",
-    "xml2js": "^0.6.2"
+    "xml2js": "^0.6.2",
+    "youtubei.js": "^17.0.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.28.6",

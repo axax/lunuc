@@ -481,6 +481,7 @@ class CmsViewEditorContainer extends React.Component {
             tab={EditorOptions.devToolsTab}
             slug={props.slug}
             template={template}
+            setCmsPageValue={this.setCmsPageValue.bind(this)}
             onTemplateChange={this.handleTemplateChange.bind(this)}
             onTab={(tab)=>{
                 this.handleSettingChange( 'devToolsTab', false, tab)

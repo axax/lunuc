@@ -2,7 +2,7 @@ import {sendError, sendFileFromDir} from './file.mjs'
 import {SECRET_KEY} from '../../api/constants/index.mjs'
 import jwt from 'jsonwebtoken'
 import path from 'path'
-import archiver from 'archiver'
+import {ZipArchive} from 'archiver'
 import {ObjectId} from 'mongodb'
 import {dbConnectionCached, MONGO_URL} from '../../api/database.mjs'
 import {getDynamicConfig} from '../../util/config.mjs'
@@ -48,7 +48,9 @@ export const zipAndSendMedias = (res, decoded) => {
             res.setHeader('Content-Type', 'application/zip')
 
             // Create a zip archive and pipe it to the response
-            const archive = archiver('zip', {zlib: {level: 9}})
+            const archive = new ZipArchive({
+                zlib: { level: 9 }, // Sets the compression level.
+            })
             archive.pipe(res)
 
             const medias = await db.collection('Media').find({ _id: { $in: decoded.mediaIds.map(id=>new ObjectId(id)) } }).toArray()

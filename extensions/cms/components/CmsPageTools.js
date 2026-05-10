@@ -51,9 +51,19 @@ export default function CmsPageTools(props){
     const handleMessage = useCallback((event) => {
         if(event.data.key === 'aiassistent') {
 
-            if(event.data.script){
-                props.onScriptChange(event.data.script)
-            }else {
+            if(event.data.style) {
+                props.setCmsPageValue({key:'style'},event.data.script)
+            }
+
+            if(event.data.script) {
+                props.setCmsPageValue({key: 'script'}, event.data.script)
+            }
+
+            if(event.data.serverScript) {
+                props.setCmsPageValue({key: 'serverScript'}, event.data.serverScript)
+            }
+
+            if(event.data.path && event.data.data) {
                 const template = JSON.parse(props.template)
                 let path = event.data.path
                 if (path.startsWith('template.')) {

@@ -43,6 +43,7 @@ const startProxyServer = (db, port = DEFAULT_PORT)=> {
 
 
             if (!await checkAuth(headers)) {
+                console.log('Proxy Server: 401 Access denied')
                 clientToProxySocket.write("HTTP/1.1 401 Access denied\r\n\r\n")
                 clientToProxySocket.end()
             } else {
