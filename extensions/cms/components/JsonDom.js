@@ -57,7 +57,7 @@ const hasNativeLazyLoadSupport = !_app_.ssr && window.HTMLImageElement && 'loadi
 
 const SCRIPT_UTIL_PART = ',Util=this.Util,_e=Util.escapeForJson,_i=Util.tryCatch.bind(this),_t=this._t.bind('
 
-const MAP_TEMPLATE_REPLACEMENTS = {
+const PRE_TEMPLATE_REPLACEMENTS = {
     '\\\\`': '\\`',
     '\\': '\\\\',
     '"###': '',
@@ -65,13 +65,25 @@ const MAP_TEMPLATE_REPLACEMENTS = {
     '#BACKSLASH#': '\\'
 }
 
+const POST_TEMPLATE_REPLACEMENTS = {
+    '\t': '\\t',
+    '$.__ignore__{': '${'
+}
+
 // Build a single combined regex using alternation for all keys
-const TEMPLATE_REPLACE_REGEX = new RegExp(
-    Object.keys(MAP_TEMPLATE_REPLACEMENTS)
+const PRE_TEMPLATE_REPLACE_REGEX = new RegExp(
+    Object.keys(PRE_TEMPLATE_REPLACEMENTS)
         .map(Util.escapeRegex)
         .join('|'),
     'g'
 )
+const POST_TEMPLATE_REPLACE_REGEX = new RegExp(
+    Object.keys(POST_TEMPLATE_REPLACEMENTS)
+        .map(Util.escapeRegex)
+        .join('|'),
+    'g'
+)
+
 
 /*function isString(variable) {
     return typeof variable === 'string'
@@ -1476,7 +1488,7 @@ class JsonDom extends React.Component {
         } else if (str.indexOf('{') == 0 || str.indexOf('[') == 0) {
             //It is json
             // replace control character
-            str = str.replace(TEMPLATE_REPLACE_REGEX, m => MAP_TEMPLATE_REPLACEMENTS[m])
+            str = str.replace(PRE_TEMPLATE_REPLACE_REGEX, m => PRE_TEMPLATE_REPLACEMENTS[m])
         } else {
             //Is other
             str = JSON.stringify({
@@ -1497,7 +1509,7 @@ class JsonDom extends React.Component {
                 addToPostRender: this.addToPostRender,
                 serverMethod: this.serverMethod,
                 props: this.props
-            }).replace(/\t/g, '\\t')
+            }).replace(POST_TEMPLATE_REPLACE_REGEX, m => POST_TEMPLATE_REPLACEMENTS[m])
 
         } catch (e) {
             this.error = {type: 'template render', e, code, offset:3}

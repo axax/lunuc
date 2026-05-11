@@ -1758,6 +1758,10 @@ class JsonDomHelper extends React.Component {
                     let val = fields[key]
                     if(isString(val)){
                         val = val.replace(/(?<![\$\\])\`/g, '\\`')
+
+                        if(currentElement.options[key].escapeTemplateVars){
+                            val = val.replace(/\$\{/g, '$.__ignore__{');
+                        }
                     }
 
                     if (key.startsWith('!')) {

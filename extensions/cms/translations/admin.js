@@ -303,7 +303,7 @@ export const translations = {
         'elements.cssClassImage': 'Image classname',
         'elements.hideElement': 'Hide element',
         'JsonDomHelper.elementSettings': 'Settings',
-        'JsonDomAddElementDialog.editElement': 'Editing %name%',
+        'JsonDomAddElementDialog.editElement': 'Editing Element %name%',
         'JsonDomAddElementDialog.selectElement': 'Select element',
         'JsonDomAddElementDialog.createElementAi': 'Create element using AI',
         'JsonDomAddElementDialog.createElementAiPlaceholder': 'For example, type: Create input element',

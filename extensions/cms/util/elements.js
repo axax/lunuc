@@ -2731,7 +2731,8 @@ const advancedElements = [
                 tab: 'HTML',
                 label: 'Plain HTML',
                 fullWidth:true,
-                uitype:'editor'
+                uitype:'editor',
+                escapeTemplateVars: true
             },
             ...styleIndented(),
             ...marginOptions('p_'),
