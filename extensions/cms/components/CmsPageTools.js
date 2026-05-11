@@ -49,75 +49,77 @@ export default function CmsPageTools(props){
 
 
     const handleMessage = useCallback((event) => {
-        if(event.data.key === 'aiassistent') {
+        if(event.data.lunuc_component && event.data.key) {
 
-            if(event.data.style) {
-                props.setCmsPageValue({key:'style'},event.data.script)
-            }
-
-            if(event.data.script) {
-                props.setCmsPageValue({key: 'script'}, event.data.script)
-            }
-
-            if(event.data.serverScript) {
-                props.setCmsPageValue({key: 'serverScript'}, event.data.serverScript)
-            }
-
-            if(event.data.path && event.data.data) {
-                const template = JSON.parse(props.template)
-                let path = event.data.path
-                if (path.startsWith('template.')) {
-                    path = path.substring(9)
-                }
-                let data = propertyByPath(path, template)
-                let newData = event.data.data
-
-                if (Array.isArray(newData)) {
-                    if (newData.length === 1) {
-                        newData = newData[0]
+            if(event.data.key==='template') {
+                if(event.data.path && event.data.data) {
+                    const template = JSON.parse(props.data.template)
+                    let path = event.data.path
+                    if (path.startsWith('template.')) {
+                        path = path.substring(9)
                     }
-                }
-                let parentPath = path.slice(0, path.lastIndexOf('.'))
-                if (parentPath.endsWith('.c')) {
-                    parentPath = parentPath.substring(0, parentPath.lastIndexOf('.'))
-                }
-                const parentData = propertyByPath(parentPath, template)
-                if (parentData) {
-                    if (event.data.operation === 'remove') {
-                        if (Array.isArray(parentData.c)) {
-                            const index = parentData.c.indexOf(data)
-                            if (index > -1) {
-                                parentData.c.splice(index, 1)
-                            }
-                        } else {
-                            parentData.c = {}
-                        }
-                    } else if (event.data.operation === 'add') {
-                        if (!Array.isArray(parentData.c)) {
-                            parentData.c = [parentData.c]
-                        }
-                        let index = parentData.c.indexOf(data)
-                        if (index < 0) {
-                            index = 0
-                        }
-                        if (event.data.location === 'before') {
-                            parentData.c.splice(index, 0, newData)
-                        } else {
-                            parentData.c.splice(index < parentData.c.length - 1 ? index + 1 : index, 0, newData)
-                        }
-                    } else if (event.data.operation === 'update') {
-                        if (Array.isArray(parentData.c)) {
-                            const index = parentData.c.indexOf(data)
-                            if (index > -1) {
-                                parentData.c[index] = newData
-                            }
-                        } else {
-                            parentData.c = newData
+                    let data = propertyByPath(path, template)
+                    let newData = event.data.data
+
+                    if (Array.isArray(newData)) {
+                        if (newData.length === 1) {
+                            newData = newData[0]
                         }
                     }
+                    let parentPath = path.slice(0, path.lastIndexOf('.'))
+                    if (parentPath.endsWith('.c')) {
+                        parentPath = parentPath.substring(0, parentPath.lastIndexOf('.'))
+                    }
+                    const parentData = propertyByPath(parentPath, template)
+                    if (parentData) {
+                        if (event.data.operation === 'remove') {
+                            if (Array.isArray(parentData.c)) {
+                                const index = parentData.c.indexOf(data)
+                                if (index > -1) {
+                                    parentData.c.splice(index, 1)
+                                }
+                            } else {
+                                parentData.c = {}
+                            }
+                        } else if (event.data.operation === 'add') {
+                            if (!Array.isArray(parentData.c)) {
+                                parentData.c = [parentData.c]
+                            }
+                            let index = parentData.c.indexOf(data)
+                            if (index < 0) {
+                                index = 0
+                            }
+                            if (event.data.location === 'before') {
+                                parentData.c.splice(index, 0, newData)
+                            } else {
+                                parentData.c.splice(index < parentData.c.length - 1 ? index + 1 : index, 0, newData)
+                            }
+                        } else if (event.data.operation === 'update') {
+                            if (Array.isArray(parentData.c)) {
+                                const index = parentData.c.indexOf(data)
+                                if (index > -1) {
+                                    parentData.c[index] = newData
+                                }
+                            } else {
+                                parentData.c = newData
+                            }
+                        }
+                    }
+                    props.onTemplateChange(template, true)
+                }
+            }else{
+
+                let newData
+                if(event.data.old_data){
+                    const currentData = props.data[event.data.key]
+                    if(currentData){
+                        newData = currentData.replace(event.data.old_data, event.data.data)
+                    }
+                }else{
+                    newData = event.data.data
                 }
 
-                props.onTemplateChange(template, true)
+                props.setCmsPageValue({key:event.data.key},newData)
             }
             // Optionally verify event.origin here for security
             console.log("Received data from iframe:", event.data);
@@ -150,7 +152,7 @@ export default function CmsPageTools(props){
             props.onTab(newTab)
         }
     }
-    const aiAssistenUrl = `/system/aiassistent?preview=true&slug=${props.slug || ''}`
+    const aiAssistenUrl = `/system/aiassistent?preview=true&slug=${props.data.slug || ''}`
     return <StyledBox style={props.style}>
         {tab && <ResizableDivider direction="vertical" onResize={(newPosition)=>{
             const newHeight = Math.max(boxHeight - newPosition,50)
