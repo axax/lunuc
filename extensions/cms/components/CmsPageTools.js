@@ -119,7 +119,7 @@ export default function CmsPageTools(props){
                     newData = event.data.data
                 }
 
-                props.setCmsPageValue({key:event.data.key},newData)
+                props.setCmsPageValue({key:event.data.key, forceUpdateEditor:true},newData)
             }
             // Optionally verify event.origin here for security
             console.log("Received data from iframe:", event.data);

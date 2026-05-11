@@ -229,6 +229,8 @@ class CmsViewEditorContainer extends React.Component {
             template,
             templateChangeCount:0,
             styleChangeCount:0,
+            scriptChangeCount:0,
+            serverScriptChangeCount:0,
             dataResolverChangeCount:0,
             resources,
             script,
@@ -407,6 +409,8 @@ class CmsViewEditorContainer extends React.Component {
             state.addNewSite !== this.state.addNewSite ||
             state.serverScript !== this.state.serverScript ||
             state.styleChangeCount !== this.state.styleChangeCount ||
+            state.scriptChangeCount !== this.state.scriptChangeCount ||
+            state.serverScriptChangeCount !== this.state.serverScriptChangeCount ||
             state.manual !== this.state.manual ||
             state.EditorOptions !== this.state.EditorOptions ||
             Util.shallowCompare(state.EditorPageOptions, this.state.EditorPageOptions,
@@ -656,7 +660,7 @@ class CmsViewEditorContainer extends React.Component {
                         expanded={EditorPageOptions.serverScriptExpanded}>
                         <ScriptEditor
                             key={'script' + slug}
-                            identifier={'serverScript' + cmsPage._id}
+                            identifier={`serverScript-${cmsPage._id}-${this.state.serverScriptChangeCount}`}
                             onScroll={this.handleSettingChange.bind(this, 'serverScriptScroll', true)}
                             scrollPosition={EditorPageOptions.serverScriptScroll}
                             onFullSize={this.fullSizeMode.bind(this,'serverScript')}
@@ -691,7 +695,7 @@ class CmsViewEditorContainer extends React.Component {
                                 onChange={this.handleSettingChange.bind(this, 'scriptExpanded', true)}
                                 expanded={EditorPageOptions.scriptExpanded}>
                         <ScriptEditor
-                            identifier={'script' + cmsPage._id}
+                            identifier={`style-${cmsPage._id}-${this.state.scriptChangeCount}`}
                             onScroll={this.handleSettingChange.bind(this, 'scriptScroll', true)}
                             fileIndex={EditorPageOptions.scriptFileIndex}
                             onFileChange={this.handleSettingChange.bind(this, 'scriptFileIndex', true)}
@@ -1252,7 +1256,7 @@ class CmsViewEditorContainer extends React.Component {
     _keyValueMapState = {}
     _setCmsPageStateTimeout = 0
 
-    setCmsPageValue = ({key, timeoutSetState, timeoutUpdate, setStateCallback}, value) => {
+    setCmsPageValue = ({key, timeoutSetState, timeoutUpdate, setStateCallback, forceUpdateEditor}, value) => {
         if (this._saveSettings)
             this._saveSettings()
         this._keyValueMap[key] = value
@@ -1260,14 +1264,19 @@ class CmsViewEditorContainer extends React.Component {
         clearTimeout(this._setCmsPageStateTimeout)
         clearTimeout(this._saveCmsPageTimeout)
 
-        if(timeoutSetState){
-            this._setCmsPageStateTimeout = setTimeout(()=>{
-                this.setState(this._keyValueMapState, setStateCallback)
-                this._keyValueMapState = {}
-            },timeoutSetState)
-        }else{
+        const finalSetState =()=>{
             this.setState(this._keyValueMapState, setStateCallback)
             this._keyValueMapState = {}
+            if(forceUpdateEditor){
+                this.setState({[`${key}ChangeCount`]:this.state[`${key}ChangeCount`]+1})
+            }
+        }
+        if(timeoutSetState){
+            this._setCmsPageStateTimeout = setTimeout(()=>{
+                finalSetState()
+            },timeoutSetState)
+        }else{
+            finalSetState()
         }
 
         this._saveCmsPageTimeout = setTimeout(()=>{
