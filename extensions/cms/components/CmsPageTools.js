@@ -52,58 +52,63 @@ export default function CmsPageTools(props){
         if(event.data.lunuc_component && event.data.key) {
 
             if(event.data.key==='template') {
-                if(event.data.path && event.data.data) {
-                    const template = JSON.parse(props.data.template)
-                    let path = event.data.path
-                    if (path.startsWith('template.')) {
-                        path = path.substring(9)
-                    }
-                    let data = propertyByPath(path, template)
-                    let newData = event.data.data
+                if(event.data.data) {
+                    let template
+                    if(event.data.path) {
+                        template = JSON.parse(props.data.template)
+                        let path = event.data.path
+                        if (path.startsWith('template.')) {
+                            path = path.substring(9)
+                        }
+                        let data = propertyByPath(path, template)
+                        let newData = event.data.data
 
-                    if (Array.isArray(newData)) {
-                        if (newData.length === 1) {
-                            newData = newData[0]
-                        }
-                    }
-                    let parentPath = path.slice(0, path.lastIndexOf('.'))
-                    if (parentPath.endsWith('.c')) {
-                        parentPath = parentPath.substring(0, parentPath.lastIndexOf('.'))
-                    }
-                    const parentData = propertyByPath(parentPath, template)
-                    if (parentData) {
-                        if (event.data.operation === 'remove') {
-                            if (Array.isArray(parentData.c)) {
-                                const index = parentData.c.indexOf(data)
-                                if (index > -1) {
-                                    parentData.c.splice(index, 1)
-                                }
-                            } else {
-                                parentData.c = {}
-                            }
-                        } else if (event.data.operation === 'add') {
-                            if (!Array.isArray(parentData.c)) {
-                                parentData.c = [parentData.c]
-                            }
-                            let index = parentData.c.indexOf(data)
-                            if (index < 0) {
-                                index = 0
-                            }
-                            if (event.data.location === 'before') {
-                                parentData.c.splice(index, 0, newData)
-                            } else {
-                                parentData.c.splice(index < parentData.c.length - 1 ? index + 1 : index, 0, newData)
-                            }
-                        } else if (event.data.operation === 'update') {
-                            if (Array.isArray(parentData.c)) {
-                                const index = parentData.c.indexOf(data)
-                                if (index > -1) {
-                                    parentData.c[index] = newData
-                                }
-                            } else {
-                                parentData.c = newData
+                        if (Array.isArray(newData)) {
+                            if (newData.length === 1) {
+                                newData = newData[0]
                             }
                         }
+                        let parentPath = path.slice(0, path.lastIndexOf('.'))
+                        if (parentPath.endsWith('.c')) {
+                            parentPath = parentPath.substring(0, parentPath.lastIndexOf('.'))
+                        }
+                        const parentData = propertyByPath(parentPath, template)
+                        if (parentData) {
+                            if (event.data.operation === 'remove') {
+                                if (Array.isArray(parentData.c)) {
+                                    const index = parentData.c.indexOf(data)
+                                    if (index > -1) {
+                                        parentData.c.splice(index, 1)
+                                    }
+                                } else {
+                                    parentData.c = {}
+                                }
+                            } else if (event.data.operation === 'add') {
+                                if (!Array.isArray(parentData.c)) {
+                                    parentData.c = [parentData.c]
+                                }
+                                let index = parentData.c.indexOf(data)
+                                if (index < 0) {
+                                    index = 0
+                                }
+                                if (event.data.location === 'before') {
+                                    parentData.c.splice(index, 0, newData)
+                                } else {
+                                    parentData.c.splice(index < parentData.c.length - 1 ? index + 1 : index, 0, newData)
+                                }
+                            } else if (event.data.operation === 'update') {
+                                if (Array.isArray(parentData.c)) {
+                                    const index = parentData.c.indexOf(data)
+                                    if (index > -1) {
+                                        parentData.c[index] = newData
+                                    }
+                                } else {
+                                    parentData.c = newData
+                                }
+                            }
+                        }
+                    }else{
+                        template = event.data.data
                     }
                     props.onTemplateChange(template, true)
                 }
