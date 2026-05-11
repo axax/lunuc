@@ -84,7 +84,7 @@
     "@mui/material": "^9.0.1",
     "@mui/x-tree-view": "^9.1.0",
     "ajv": "^8.20.0",
-    "archiver": "^7.0.1",
+    "archiver": "^8.0.0",
     "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.2",
     "cheerio": "^1.2.0",

@@ -187,6 +187,7 @@ export default function SimpleAutosuggest(props) {
                 );
             }}
             renderInput={(params) => {
+
                 return <TextField
                     onClick={props.onClick}
                     placeholder={props.placeholder}
@@ -195,16 +196,18 @@ export default function SimpleAutosuggest(props) {
                     {...params}
                     sx={{margin:0}}
                     slotProps={{
+                        htmlInput: params.slotProps?.htmlInput,
                         inputLabel:{
+                            ...params.slotProps?.inputLabel,
                             shrink: props.labelShrink
                         },
                         input:{
+                            ...params.slotProps?.input,
                             name:props.name,
-                            ...params.slotProps.input,
                             endAdornment: (
                                 <React.Fragment>
                                     {loading ? <CircularProgress color="inherit" size={20}/> : null}
-                                    {params.slotProps.input.endAdornment}
+                                    {params.slotProps?.input?.endAdornment}
                                 </React.Fragment>
                             ),
                         }

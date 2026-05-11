@@ -2729,7 +2729,7 @@ const advancedElements = [
             },
             $c: {
                 tab: 'HTML',
-                label: 'Plain HTML',
+                label: 'Plain HTML (script tag is not allowed)',
                 fullWidth:true,
                 uitype:'editor',
                 escapeTemplateVars: true
