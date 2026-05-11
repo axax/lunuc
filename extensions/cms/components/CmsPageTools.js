@@ -84,17 +84,22 @@ export default function CmsPageTools(props){
                                     parentData.c = {}
                                 }
                             } else if (event.data.operation === 'add') {
-                                if (!Array.isArray(parentData.c)) {
+                                let arr
+                                if (Array.isArray(parentData)) {
+                                    arr = parentData
+                                }else if (!Array.isArray(parentData.c)) {
                                     parentData.c = [parentData.c]
+                                    arr = parentData.c
                                 }
-                                let index = parentData.c.indexOf(data)
+
+                                let index = arr.indexOf(data)
                                 if (index < 0) {
                                     index = 0
                                 }
                                 if (event.data.location === 'before') {
-                                    parentData.c.splice(index, 0, newData)
+                                    arr.splice(index, 0, newData)
                                 } else {
-                                    parentData.c.splice(index < parentData.c.length - 1 ? index + 1 : index, 0, newData)
+                                    arr.splice(index < arr.length - 1 ? index + 1 : index, 0, newData)
                                 }
                             } else if (event.data.operation === 'update') {
                                 if (Array.isArray(parentData.c)) {
