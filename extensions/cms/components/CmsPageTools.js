@@ -90,6 +90,8 @@ export default function CmsPageTools(props){
                                 }else if (!Array.isArray(parentData.c)) {
                                     parentData.c = [parentData.c]
                                     arr = parentData.c
+                                }else{
+                                    arr = parentData.c
                                 }
 
                                 let index = arr.indexOf(data)
