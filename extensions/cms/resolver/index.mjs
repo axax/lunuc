@@ -260,7 +260,6 @@ export default db => ({
                     await setPageOptionsAsMeta(db, context, result)
                 }
             }
-            console.debug(`CMS: resolver for ${slug} got data in ${(new Date()).getTime() - startTime}ms`)
 
             if(meta === 'fetchMore' || meta.isFetchMore /* || meta.isRefetch*/){
                 delete result.dataResolver
@@ -271,8 +270,11 @@ export default db => ({
                 delete result.style
                 delete result.name
             }
-            console.debug(`get cms ${slug} in ${(new Date()).getTime() - startTime}ms`)
+            const elapsedTime = (new Date()).getTime() - startTime
 
+            if(elapsedTime>20) {
+                console.debug(`CMS: resolver for ${slug} got data in ${elapsedTime}ms`)
+            }
             return result
         },
         cmsPageStatus: async ({slug}, req) => {

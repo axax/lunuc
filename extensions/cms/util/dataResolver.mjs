@@ -286,7 +286,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         addDataResolverSubscription = true
                     }
                 } else {
-                    console.debug('call cmsCustomResolver', segment)
+                    //console.debug('call cmsCustomResolver', segment)
 
                     if (Hook.hooks['cmsCustomResolver'] && Hook.hooks['cmsCustomResolver'].length) {
                         let c = Hook.hooks['cmsCustomResolver'].length
@@ -324,7 +324,10 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
         }
 
     }
-    console.debug(`CMS: dataResolver for ${scope.page.slug} in ${new Date().getTime() - startTime}ms`)
+    const elapsedTime = new Date().getTime() - startTime
+    if(elapsedTime>20) {
+        console.debug(`CMS: dataResolver for ${scope.page.slug} in ${elapsedTime}ms`)
+    }
     return {resolvedData, subscriptions: subscriptions.length > 0 ? JSON.stringify(subscriptions) : ''}
 }
 

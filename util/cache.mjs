@@ -9,7 +9,7 @@ const Cache = {
         Cache.aliases[aliasKey] = key
     },
     set: function (key, data, expiresIn) {
-        console.debug(`Cache: add to cache ${key}`)
+        //console.debug(`Cache: add to cache ${key}`)
         Cache.cache[key] = {data, validUntil: (expiresIn ? (new Date()).getTime() + expiresIn : 0)}
     },
     get: function (key) {

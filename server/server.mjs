@@ -226,7 +226,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
                 res.end()
             }
             if(!cookies.auth) {
-                console.log(`update cache for ${cacheFileName}`)
+                //console.log(`update cache for ${cacheFileName}`)
                 fs.writeFile(cacheFileName, pageData.html, (err) => {
                     if (err) {
                         console.error("Error writing to file " + cacheFileName, err)
@@ -250,7 +250,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
 
 
 const sendFileFromTemplateDir = (req, res, urlPathname, headers, parsedUrl, host) => {
-    console.log(`load ${urlPathname} from template dir`)
+    //console.log(`load ${urlPathname} from template dir`)
 
     // fetch file details
     fs.stat(STATIC_TEMPLATE_DIR + urlPathname, (err, stats) => {
@@ -380,7 +380,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
         req.isHttps = req.socket.encrypted
 
-        if (!req.headers[TRACK_IP_HEADER]) {
+        if (!req.headers[TRACK_IP_HEADER] && parsedUrl.href!=='/graphql') {
             console.log(`${req.method} ${remoteAddress}: ${req.isHttps ? 'https' : 'http'}://${host}${parsedUrl.href} - ${req.headers['user-agent']}`)
         }
         // check with and without www
