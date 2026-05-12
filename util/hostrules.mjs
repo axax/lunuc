@@ -3,6 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import tls from 'tls'
 import config from '../gensrc/config.mjs'
+import {getRegexCached} from '../server/util/regexCache.mjs'
 
 const {HOSTRULES_ABSPATH} = config
 
@@ -76,11 +77,11 @@ function replaceToRegExp(hostrule) {
         return
     }
     if (hostrule.botRegex) {
-        hostrule.botRegex = new RegExp(hostrule.botRegex, 'i')
+        hostrule.botRegex = getRegexCached(hostrule.botRegex)
     }
 
     if (hostrule.noJsRenderingBotRegex) {
-        hostrule.noJsRenderingBotRegex = new RegExp(hostrule.noJsRenderingBotRegex, 'i')
+        hostrule.noJsRenderingBotRegex = getRegexCached(hostrule.noJsRenderingBotRegex)
     }
 }
 
