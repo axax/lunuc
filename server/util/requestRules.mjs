@@ -28,14 +28,14 @@ function compileRules(rules) {
     return compiled;
 }
 
-function getFieldValue(field, req, parsedUrl) {
+function getFieldValue(field, req, parsedUrl, remoteAddress) {
     switch (field) {
         case 'userAgent': return req.headers['user-agent'] ?? '';
         case 'pathname':      return parsedUrl.pathname ?? '';
         case 'search':     return parsedUrl.search ?? '';   // z.B. "?foo=bar"
         case 'method':    return req.method ?? '';
         case 'host':      return req.headers['host'] ?? '';
-        case 'ip':        return req.socket?.remoteAddress ?? '';
+        case 'ip':        return remoteAddress ?? '';
         default:          return req.headers[field.toLowerCase()] ?? '';
     }
 }
@@ -64,7 +64,7 @@ function executeAction(action, res) {
 }
 
 
-export function applyRequestRules(req, res, parsedUrl, rules) {
+export function applyRequestRules(req, res, parsedUrl,remoteAddress, rules) {
     if(!rules?.length) return false;
 
     const compiledRules = compileRules(rules);
@@ -87,7 +87,7 @@ export function applyRequestRules(req, res, parsedUrl, rules) {
             }
 
             const pattern = match[field];
-            const value   = getFieldValue(field, req, parsedUrl);
+            const value   = getFieldValue(field, req, parsedUrl, remoteAddress);
             const hit = pattern instanceof RegExp
                 ? pattern.test(value)
                 : pattern === value;

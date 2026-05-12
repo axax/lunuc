@@ -404,7 +404,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             return
         }
 
-        if( applyRequestRules(req,res,parsedUrl,hostrule.requestRules)){
+        if( applyRequestRules(req,res,parsedUrl,remoteAddress,hostrule.requestRules)){
             return
         }
 
