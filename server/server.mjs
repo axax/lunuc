@@ -37,6 +37,7 @@ import {doTrackingEvent} from './util/tracking.mjs'
 import {getGatewayIp} from '../util/gatewayIp.mjs'
 import {isRateLimited} from './util/rateLimiter.mjs'
 import {applyRequestRules} from './util/requestRules.mjs'
+import {getRegexCached} from "./util/regexCache.mjs";
 
 const config = getDynamicConfig()
 
@@ -427,7 +428,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
 
         if (hostrule.blockUrlPathRegex) {
-            const patternFromString = new RegExp(hostrule.blockUrlPathRegex)
+            const patternFromString = getRegexCached(hostrule.blockUrlPathRegex)
 
             if (patternFromString.test(parsedUrl.pathname) && (!hostrule.redirects || !hostrule.redirects[parsedUrl.pathname])) {
                 console.log(`url path ${parsedUrl.pathname} blocked by hostrule regex for ${host}`)

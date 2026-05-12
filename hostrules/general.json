@@ -46,5 +46,15 @@
       "type": "block",
       "statusCode": 403
     }
+  },{
+    "match": {
+      "userAgent": "/Baiduspider/i",
+      "pathname": "/^\/proflight\/produkt\/detail\\//",
+      "allowedQueryParams": ["p", "open"]
+    },
+    "action": {
+      "type": "block",
+      "statusCode": 403
+    }
   }]
 }
