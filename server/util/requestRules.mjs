@@ -9,6 +9,12 @@ function compileRules(rules) {
         const compiledMatch = {};
 
         for (const [field, value] of Object.entries(rule.match)) {
+
+            if (field === 'allowedQueryParams') {
+                compiledMatch[field] = new Set(value); // O(1) Lookup
+                continue;
+            }
+
             const regexMatch = typeof value === 'string' && value.match(/^\/(.+)\/([gimsuy]*)$/);
             compiledMatch[field] = regexMatch
                 ? new RegExp(regexMatch[1], regexMatch[2])
@@ -70,6 +76,16 @@ export function applyRequestRules(req, res, parsedUrl, rules) {
         let matched = true;
 
         for (const field in match) {
+            if (field === 'allowedQueryParams') {
+                const allowedParams = match[field]; // Set
+                const hit = Object.keys(parsedUrl.query).some(param => !allowedParams.has(param));
+                if (!hit) {
+                    matched = false;
+                    break;
+                }
+                continue;
+            }
+
             const pattern = match[field];
             const value   = getFieldValue(field, req, parsedUrl);
             const hit = pattern instanceof RegExp
@@ -83,7 +99,7 @@ export function applyRequestRules(req, res, parsedUrl, rules) {
         }
 
         if (matched) {
-            console.log(`Request Rule action match "${action.reason}" --> ${req.url}`);
+            console.log(`Request Rule action match "${action.type}" --> ${req.url}`);
 
             if(executeAction(action, res)) {
                 return true;
