@@ -36,6 +36,7 @@ import Util from '../client/util/index.mjs'
 import {doTrackingEvent} from './util/tracking.mjs'
 import {getGatewayIp} from '../util/gatewayIp.mjs'
 import {isRateLimited} from './util/rateLimiter.mjs'
+import {applyRequestRules} from './util/requestRules.mjs'
 
 const config = getDynamicConfig()
 
@@ -369,7 +370,8 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             return
         }
 
-        const host = getHostFromHeaders(req.headers), parsedUrl = url.parse(req.url, true)
+        const host = getHostFromHeaders(req.headers),
+            parsedUrl = url.parse(req.url, true)
 
         if (!host) {
             console.log(`no host found in request: ${req.method} ${remoteAddress}`, req.url, req.headers)
@@ -398,6 +400,10 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
         if (isRateLimited(req, hostrule)) {
             console.log(`rate limited for ${remoteAddress} ${req.headers['user-agent']}`)
             sendError(res, 429)
+            return
+        }
+
+        if( applyRequestRules(req,res,parsedUrl,hostrule.requestRules)){
             return
         }
 
@@ -637,7 +643,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
                     const gatewayIp = await getGatewayIp()
 
-                    if(gatewayIp !== remoteAddress && remoteAddress !== '127.0.0.1') {
+                    if(gatewayIp !== remoteAddress && remoteAddress !== '127.0.0.1' && remoteAddress !== '::1') {
                         // second more restrictiv check
                         if (isTemporarilyBlocked({
                                 req,

@@ -35,5 +35,16 @@
     "userAgent": "meta-externalagent/1.1 (+https://developers.facebook.com/docs/sharing/webmasters/crawler)",
     "time": 60000,
     "maxRequestsPerTime": 5
+  }],
+  "00requestRules": [{
+    "match": {
+      "userAgent": "/Baiduspider/i",
+      "pathname": "/^\/proflight\/produkte\//",
+      "search": "/^\\?.+/"
+    },
+    "action": {
+      "type": "block",
+      "statusCode": 403
+    }
   }]
 }
