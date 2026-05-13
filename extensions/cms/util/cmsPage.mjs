@@ -12,15 +12,6 @@ export const getCmsPageCacheKey = ({_version, slug, host, inEditor})=>{
     return 'cmsPage-' + (_version ? _version + '-' : 'default-') + slug + (host ? '-' + host : '') + (inEditor ? '-inEditor': '')
 }
 
-const paths = [
-    "generated/component/*",
-    "core/qrcode",
-    "system/responsive-viewer",
-    "system/hostrules",
-    "system/console",
-    "system/aiassistent"
-];
-
 function pathMatches(path, pathPatterns) {
     return pathPatterns.some(pattern => {
         if (pattern.endsWith('*')) {

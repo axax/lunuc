@@ -6,8 +6,12 @@ const DEFAULT_REQUEST_TIME_IN_MS = 10000, /* 10s */
 const ipMap = {}, blockedIps = {}
 let reqCounter = 0
 
+
+export const resetCounterForKey = (key) => {
+    delete ipMap[key]
+}
+
 export const isTemporarilyBlocked = ({
-                                         req,
                                          key,
                                          requestPerTime = DEFAULT_REQUEST_MAX_PER_TIME,
                                          requestTimeInMs = DEFAULT_REQUEST_TIME_IN_MS,
@@ -20,7 +24,6 @@ export const isTemporarilyBlocked = ({
             delete blockedIps[key]
         } else {
             console.log(`${key} is temporarily blocked due to too many requests in a short time`)
-            req?.connection?.destroy()
             return true
         }
     }
@@ -33,7 +36,6 @@ export const isTemporarilyBlocked = ({
     if (ipMap[key].count > requestPerTime) {
         blockedIps[key] = { start: now }
         delete ipMap[key]
-        req?.connection?.destroy()
         return true
     }
 

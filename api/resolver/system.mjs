@@ -28,6 +28,7 @@ import jwt from 'jsonwebtoken'
 import {SECRET_KEY} from '../constants/index.mjs'
 import {MONGO_URL} from '../database.mjs'
 import {isTemporarilyBlocked} from '../../server/util/requestBlocker.mjs'
+import {clientAddress} from "../../util/host.mjs";
 
 const {UPLOAD_DIR} = config
 
@@ -194,10 +195,11 @@ export const systemResolver = (db) => ({
 
             return {response, id: currentId}
         },
-        sendMail: async (data, {context}) => {
+        sendMail: async (data, req) => {
             //Util.checkIfUserIsLoggedIn(context)
-
-            if(isTemporarilyBlocked({requestTimeInMs: 2000, requestPerTime: 2,requestBlockForInMs:6000, key:'graphqlSendMail'})){
+            const {context} = req
+            const remoteAddress = clientAddress(req)
+            if(isTemporarilyBlocked({requestTimeInMs: 2000, requestPerTime: 2,requestBlockForInMs:6000, key:'graphqlSendMail-'+remoteAddress})){
                 return {response: JSON.stringify({error: 'Too many requests. Please try again later.'})}
             }
 

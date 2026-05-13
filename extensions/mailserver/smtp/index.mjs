@@ -6,7 +6,7 @@ import config from '../../../gensrc/config.mjs'
 import {getFolderForMailAccount, getMailAccountByEmail, getMailAccountsFromMailData} from '../util/dbhelper.mjs'
 import nodemailerDirectTransport from 'nodemailer-direct-transport'
 import nodemailer from 'nodemailer'
-import {isTemporarilyBlocked} from '../../../server/util/requestBlocker.mjs'
+import {isTemporarilyBlocked, resetCounterForKey} from '../../../server/util/requestBlocker.mjs'
 import Util from '../../../api/util/index.mjs'
 import {detectSpam} from './spam.mjs'
 import {dynamicSettings} from '../../../api/util/settings.mjs'
@@ -64,7 +64,9 @@ const startListening = async (db, context) => {
             },
             onAuth: async (auth, session, callback) => {
 
-                console.debug('SMTP onAuth', {...auth,password:'*****'}, session)
+                if(settings.debug) {
+                    console.debug('SMTP onAuth', {...auth, password: '*****'}, session)
+                }
                 const mailAccount = await getMailAccountByEmail(db, auth.username)
                 const generalInvalidLoginMessage = 'Invalid username or password'
 
@@ -77,6 +79,11 @@ const startListening = async (db, context) => {
                             scope: "my_smtp_access_scope_name",
                         },
                     })*/
+                }
+
+
+                if(isTemporarilyBlocked({requestTimeInMs: 60000, requestPerTime: 10,requestBlockForInMs:60000, key:'smtpAuth-'+session.remoteAddress})){
+                    return callback(new Error("Too many failed login attempts"))
                 }
 
 
@@ -93,6 +100,7 @@ const startListening = async (db, context) => {
                     return callback(new Error(`Authentication needed or auth method ${auth.method} - ${auth.accessToken} invalid`))
                 }
 
+                resetCounterForKey('smtpAuth-'+session.remoteAddress)
 
                 /*   if (auth.method !== "XOAUTH2") {
                        // should never occur in this case as only XOAUTH2 is allowed
@@ -111,10 +119,12 @@ const startListening = async (db, context) => {
                 callback(null, {user: auth.username}); // where 123 is the user id or similar property
             },
             onConnect(session, callback) {
-                console.debug('SMTP onConnect', session)
 
+                if(settings.debug) {
+                    console.debug('SMTP onConnect', session)
+                }
 
-                if(isTemporarilyBlocked({requestTimeInMs: 3000, requestPerTime: 50,requestBlockForInMs:60000, key:'smtpConnection'})){
+                if(isTemporarilyBlocked({requestTimeInMs: 3000, requestPerTime: 8,requestBlockForInMs:60000, key:'smtpConnection-'+session.remoteAddress})){
                     return callback(new Error("No connections allowed"))
                 }
 
@@ -124,7 +134,9 @@ const startListening = async (db, context) => {
                 return callback() // Accept the connection
             },
             onSecure(socket, session, callback) {
-                console.debug('SMTP onSecure', session)
+                if(settings.debug) {
+                    console.debug('SMTP onSecure', session)
+                }
 
                 const mailserverList = Object.keys(getHostRules(false)).map(h=>`mail.${h}`)
 
@@ -140,8 +152,10 @@ const startListening = async (db, context) => {
                 return callback(); // Accept the connection
             },
             onMailFrom: async (address, session, callback) => {
-                console.debug('SMTP onMailFrom', address, session)
 
+                if(settings.debug) {
+                    console.debug('SMTP onMailFrom', address, session)
+                }
                 /* const mailAccount = await getMailAccountByEmail(db, session.user)
 
                  if (!mailAccount) {
@@ -176,8 +190,10 @@ const startListening = async (db, context) => {
                 return callback(); // Accept the address
             },
             onRcptTo: async (address, session, callback) => {
-                console.debug('SMTP onRcptTo', address, session)
 
+                if(settings.debug) {
+                    console.debug('SMTP onRcptTo', address, session)
+                }
                 let mailAccount
                 if (session.user) {
                     mailAccount = await getMailAccountByEmail(db, session.user)
@@ -200,9 +216,9 @@ const startListening = async (db, context) => {
             },
             onData: (stream, session, callback) => {
                 const fromMail = session?.envelope?.mailFrom?.address
-
-                console.debug('SMTP onData', fromMail, session)
-
+                if(settings.debug) {
+                    console.debug('SMTP onData', fromMail, session)
+                }
                 const endWithError = (error)=>{
                     let err
                     if(error.errors){
