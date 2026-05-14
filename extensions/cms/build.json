@@ -35,6 +35,7 @@
           "index": 1,
           "bulkEditable": true,
           "fullWidth": true,
+          "vagueSearchable": false,
           "Tab": "elements.generalTab"
         },
         {
@@ -78,6 +79,7 @@
           "hideColumnInTypesByDefault": true,
           "index": 1,
           "defaultValue": true,
+          "vagueSearchable": false,
           "compoundIndex": [
             {
               "unique": false,
@@ -93,6 +95,7 @@
           "label": "Refresh behavior",
           "defaultValue": "default",
           "hideColumnInTypes": true,
+          "vagueSearchable": false,
           "enum": [
             "default",
             "full",
@@ -111,6 +114,7 @@
           "label": "Fetch Policy",
           "defaultValue": "cache-first",
           "hideColumnInTypes": true,
+          "vagueSearchable": false,
           "enum": [
             "cache-first",
             "cache-and-network",
@@ -152,27 +156,32 @@
         {
           "name": "template",
           "hideColumnInTypes": true,
-          "searchable": true
+          "searchable": true,
+          "vagueSearchable": false
         },
         {
           "name": "script",
           "hideColumnInTypes": true,
-          "searchable": true
+          "searchable": true,
+          "vagueSearchable": false
         },
         {
           "name": "serverScript",
           "hidden": true,
-          "searchable": true
+          "searchable": true,
+          "vagueSearchable": false
         },
         {
           "name": "dataResolver",
           "hidden": true,
-          "searchable": true
+          "searchable": true,
+          "vagueSearchable": false
         },
         {
           "name": "manual",
           "hidden": true,
-          "searchable": true
+          "searchable": true,
+          "vagueSearchable": false
         },
         {
           "name": "resolvedData",
@@ -186,6 +195,7 @@
           "name": "resources",
           "hideColumnInTypes": true,
           "searchable": true,
+          "vagueSearchable": false,
           "access": {
             "ui": {
               "role": "manage_cms_template"
@@ -196,7 +206,7 @@
           "name": "style",
           "hideColumnInTypes": true,
           "searchable": true,
-          "vagueSearchable": true
+          "vagueSearchable": false
         },
         {
           "name": "uniqueStyle",
@@ -284,6 +294,7 @@
           "label": "Template",
           "type": "Boolean",
           "hideColumnInTypes": true,
+          "vagueSearchable": false,
           "index": 1,
           "clone": false
         },
@@ -292,6 +303,7 @@
           "label": "Disable rendering",
           "type": "Boolean",
           "hideColumnInTypes": true,
+          "vagueSearchable": false,
           "access": {
             "ui": {
               "role": "manage_cms_template"

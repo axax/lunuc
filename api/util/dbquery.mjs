@@ -470,6 +470,7 @@ export const addFilterToMatchV2 = async ({
 const OPERATOR_MAP    = { '||': '$or', '&&': '$and' }
 const COMPARATOR_MAP  = { '>': '$gt', '>=': '$gte', '<': '$lt', '<=': '$lte', '=': '$regex', '!=': '$regex', '==': '$eq', '!==': '$ne' }
 
+//TODO: Deprecated --> remove
 export const addSearchStringToMatch = (inputString, query) => {
     let subQuery         = query
     let inQuote          = false
@@ -559,6 +560,11 @@ export const addSearchStringToMatch = (inputString, query) => {
 
     return query
 }
+
+/*const match = {}
+addSearchStringToMatch('name=="hallo" && (slug=test || slug=bla)', match)
+console.log(JSON.stringify(match, null, 2))*/
+
 
 // ─── extendWithOwnerGroupMatch ────────────────────────────────────────────────
 

@@ -348,7 +348,7 @@ const GenericResolver = {
                     queryResponse.total = estimateCount ? await collection.estimatedDocumentCount() : 0
 
                     if (queryResponse.results.length > queryResponse.total && countQuery) {
-                        console.log('estimatedDocumentCount is not accurate', queryResponse.total, queryResponse.results.length)
+                        //console.log('estimatedDocumentCount is not accurate', queryResponse.total, queryResponse.results.length)
                         const countResults = await collection.aggregate(countQuery, {allowDiskUse: true}).toArray()
                         if (countResults.length > 0) queryResponse.total = countResults[0].count
                     }

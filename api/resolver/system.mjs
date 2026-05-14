@@ -448,20 +448,33 @@ export const systemResolver = (db) => ({
             const token = jwt.sign(payload, SECRET_KEY, {expiresIn: '5h'})
             return {token}
         },
-        getAllCollectionIndexes: async ({},{context}) =>{
-            await Util.checkIfUserHasCapability(db, context, CAPABILITY_ADMIN_OPTIONS)
+        getAllCollectionIndexes: async ({}, { context }) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_ADMIN_OPTIONS);
 
-            const collections = await db.listCollections().toArray()
-            const results = []
+            const collections = await db.listCollections().toArray();
+            const results = [];
 
             for (const collection of collections) {
-                console.log(await db.collection(collection.name).indexes())
+                // Wir holen die Statistiken der Collection
+                // 'indexSizes' ist ein Objekt: { "indexName": sizeInBytes }
+                const stats = await db.command({ collStats: collection.name });
+                const indexSizes = stats.indexSizes;
+
+                // Wir holen die Index-Definitionen
+                const indexes = await db.collection(collection.name).indexes();
+
                 results.push({
                     name: collection.name,
-                    indexes: (await db.collection(collection.name).indexes()).map(index => JSON.stringify(index))
-                })
+                    totalIndexSize: stats.totalIndexSize, // Gesamtgröße aller Indizes
+                    indexes: indexes.map(index => JSON.stringify({
+                        ...index,
+                        // Wir mappen die Größe aus den Stats zum jeweiligen Index
+                        sizeOnDisk: indexSizes[index.name] || 0
+                    }))
+                });
             }
-            return {results}
+
+            return { results };
         },
         systemInfo: async () =>{
 

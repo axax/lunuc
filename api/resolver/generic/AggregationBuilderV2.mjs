@@ -433,10 +433,10 @@ export default class AggregationBuilderV2 {
         let projectResultData = {}
 
         // Apply full-text search string to the root match
-        if (this.options.search) {
+        /*if (this.options.search) {
             makeAllMatchAnAndMatch(match)
             addSearchStringToMatch(this.options.search, match)
-        }
+        }*/
         makeAllMatchAnAndMatch(match)
 
         // Run pre-query hooks (e.g. injecting tenant filters)
@@ -457,14 +457,8 @@ export default class AggregationBuilderV2 {
             )
 
            if (matches.match.length > 0) {
-              //  console.log('xxxxxx', JSON.stringify(matches.match, null, 2))
+                //console.log('xxxxxx', JSON.stringify(matches.match, null, 2))
                 match.$and.push(...matches.match)
-
-               // TODO remove after V2 is default
-               if(match.$and.length===2 && match.$and[match.$and.length-1].$or) {
-                    match.$or = match.$and[match.$and.length-1].$or
-                    match.$and.pop()
-               }
             }
             if (matches.resultMatch.length > 0) {
                 resultMatch.$and.push(...matches.resultMatch)

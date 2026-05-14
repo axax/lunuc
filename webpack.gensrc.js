@@ -132,7 +132,7 @@ GenSourceCode.prototype.apply = function (compiler) {
                                 delete buildOptions.config
                             }
 
-                            // remove hidden fields as we don't want theme to be exposed to the frontend
+                            // remove hidden fields as we don't want them to be exposed to the frontend
                             if (buildOptions.types) {
                                 buildOptions.types.forEach(type => {
                                     type.fields = type.fields.filter(field => (!field.hidden || field.searchable === true || field.includeInQuery === true))

@@ -92,6 +92,7 @@ export const systemSchemaRaw = `
     
     type CollectionIndexes{
         name: String
+        totalIndexSize: Float
         indexes: [String]
     }
     
