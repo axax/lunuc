@@ -63,6 +63,7 @@ class SimpleSelect extends React.Component {
         } else if (multi) {
             value = []
         }
+        console.log('value', value, items)
         return <FormControl className={className}
                             sx={sx}
                             disabled={disabled}
@@ -78,7 +79,7 @@ class SimpleSelect extends React.Component {
                 readOnly={readOnly}
                 onChange={onChange}
                 slotProps={{
-                    htmlInput: {
+                    input: {
                         name,
                         id: name
                     }
