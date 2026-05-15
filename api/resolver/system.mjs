@@ -486,6 +486,16 @@ export const systemResolver = (db) => ({
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
             return await createAllIndexes(db)
         },
+        dropDbIndexes: async ({name,indexes}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
+
+            indexes.forEach(indexName => {
+                db.collection(name).dropIndex(indexName)
+            })
+
+
+            return {status:'Indexes dropped'}
+        },
         createBackup: async ({type, options}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_BACKUPS)
 

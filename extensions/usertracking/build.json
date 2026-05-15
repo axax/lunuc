@@ -171,7 +171,6 @@
         {
           "name": "geodata",
           "type": "Object",
-          "index": 1,
           "vagueSearchable": false,
           "tab": "Data",
           "hideColumnInTypes": true

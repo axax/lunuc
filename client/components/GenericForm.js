@@ -1288,6 +1288,7 @@ class GenericForm extends React.Component {
                 queryFields={field.queryFields || field.fields}
                 pickerSort={field.pickerSort}
                 type={field.type}
+                limit={field.limit}
                 placeholder={field.placeholder}/>)
         } else if (uitype === 'select') {
 

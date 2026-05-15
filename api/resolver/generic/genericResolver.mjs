@@ -831,15 +831,18 @@ const GenericResolver = {
             createdBy: createdBy,
             status: 'updated'
         }
+        const cacheKeysToClear = ['$'+collectionName]
         if(context.id) {
-            Cache.clearStartWith(collectionName+context.id)
+            cacheKeysToClear.push(collectionName+context.id)
         }
         if (_meta) {
             const meta = _meta.constructor===Object?_meta:JSON.parse(_meta)
             if (meta.clearCachePrefix) {
-                Cache.clearStartWith(meta.clearCachePrefix)
+                cacheKeysToClear.push(meta.clearCachePrefix)
             }
         }
+
+        Cache.clearStartWith(cacheKeysToClear)
 
         if (!options.ignoreHooks) {
             Hook.call('typeUpdated', {type: typeName, data, db, context, payload})

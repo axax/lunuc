@@ -31,16 +31,19 @@ const Cache = {
         delete Cache.cache[key]
     },
     clearStartWith: (startkey) => {
-        console.debug(`Cache: clear cache start with ${startkey}`)
+        const allStartKeys = [].concat(startkey)  // handles both string and array
+
+        const matches = key => allStartKeys.some(f => key.startsWith(f))
+
         Object.keys(Cache.cache).forEach(key => {
-            if (key.indexOf(startkey) === 0) {
+            if (matches(key)) {
                 console.debug('Cache: clear cache by key ' + key)
                 delete Cache.cache[key]
             }
         })
 
         Object.keys(Cache.aliases).forEach(key => {
-            if (key.indexOf(startkey) === 0) {
+            if (matches(key)) {
                 console.debug('Cache: clear cache by alias key ' + key)
                 delete Cache.cache[Cache.aliases[key]]
                 delete Cache.aliases[key]

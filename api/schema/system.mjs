@@ -128,7 +128,8 @@ export const systemSchemaRaw = `
     
       
     type Mutation {   	
-    	createDbIndexes: GenericResult    	
+    	createDbIndexes: GenericResult    
+    	dropDbIndexes(name: String!, indexes: [String]!): GenericResult   	
     	createBackup(type: String!, options: String): Backup    	
     	removeBackup(type: String!, name: String!): RemoveBackupResult   
     	cloneCollection(type: String!, name: String, empty: Boolean): CloneCollectionResult

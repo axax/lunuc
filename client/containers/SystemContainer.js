@@ -4,6 +4,7 @@ import {Typography, ExpansionPanel, Button, SimpleSwitch, ContentBlock,
     SimpleTab,
     SimpleTabPanel,
     SimpleDialog,
+    DeleteIconButton,
     SimpleTabs} from 'ui/admin'
 import Hook from 'util/hook.cjs'
 import {client, Query} from '../middleware/graphql'
@@ -32,7 +33,7 @@ class SystemContainer extends React.Component {
         Object.keys(extensions).map(k => {
             extensionStates[k] = fromStorage[k] || {enabled: true}
         })
-        this.state = {extensionStates, tabValue:0, message:''}
+        this.state = {extensionStates, tabValue:0, message:'', confirmDeletionDialog:false}
     }
 
     setExtensionState(k, e) {
@@ -53,7 +54,7 @@ class SystemContainer extends React.Component {
     }
 
     render() {
-        const {extensionStates, tabValue, message} = this.state
+        const {extensionStates, tabValue, message, confirmDeletionDialog} = this.state
 
         return <>
             <Typography variant="h3" component="h1" gutterBottom>System</Typography>
@@ -149,7 +150,8 @@ class SystemContainer extends React.Component {
                         if (error) return `Error! ${error.message}`
                         if (!data.getAllCollectionIndexes.results) return 'No data'
                         return <ul>{data.getAllCollectionIndexes.results.map(collection=><li>{collection.name}<ul>{
-                            collection.indexes.map(index=><li>{index}</li>)
+                            collection.indexes.map(index=><li>{index}
+                                <DeleteIconButton onClick={()=>this.setState({confirmDeletionDialog:{name:collection.name,index,open:true}})} /></li>)
                         }</ul></li>)}</ul>
                     }}
                 </Query>
@@ -166,7 +168,34 @@ class SystemContainer extends React.Component {
             }} actions={[{autoFocus: true, key: 'ok', label: 'Ok', type: 'primary'}]} title="Response">
                 {message}
             </SimpleDialog>}
+
+            {confirmDeletionDialog &&
+                <SimpleDialog open={confirmDeletionDialog.open} onClose={(e)=>{
+                    if(e.key==='yes') {
+                        this.deleteIndex(confirmDeletionDialog.name, confirmDeletionDialog.index)
+                    }
+                    this.setState({confirmDeletionDialog: {open:false}})
+                }}
+                              actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
+                              title="Confirm deletion">
+                    Are you sure you want to delete the index &ldquo;{confirmDeletionDialog.name + ' - ' + confirmDeletionDialog.index}&rdquo;?
+                </SimpleDialog>
+            }
         </>
+    }
+
+    deleteIndex(name, index){
+        const indexJson = JSON.parse(index)
+
+        client.mutate({
+                mutation: `mutation dropDbIndexes($name:String!,$indexes:[String]!){dropDbIndexes(name:$name,indexes:$indexes){status}}`,
+                variables: {name, indexes:[indexJson.name]},
+                update: (store, {data: {dropDbIndexes}}) => {
+                    this.forceUpdate()
+                }
+            }
+        )
+
     }
 }
 

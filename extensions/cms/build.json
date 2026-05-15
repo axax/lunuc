@@ -82,10 +82,18 @@
           "vagueSearchable": false,
           "compoundIndex": [
             {
-              "unique": false,
+              "unique": true,
               "fields": {
                 "public": 1,
                 "slug": 1
+              }
+            },
+            {
+              "unique": true,
+              "fields": {
+                "public": 1,
+                "slug": 1,
+                "_id": -1
               }
             }
           ]

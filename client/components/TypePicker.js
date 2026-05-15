@@ -299,7 +299,7 @@ class TypePicker extends React.Component {
                                   }
 
                               },
-                              limit:999})
+                              limit:this.props.limit || 999})
                           }catch (e){
                               console.log(e)
                           }
@@ -591,7 +591,7 @@ class TypePicker extends React.Component {
                     filter = `(${filter})`
                 }
                 this.pickTimeout = 0
-                this.getData(filter + (this.props.filter ? ' && ' + this.props.filter : ''), {})
+                this.getData(filter + (this.props.filter ? ' && ' + this.props.filter : ''), {limit:this.props.limit})
             }, 250)
         }
     }
@@ -657,7 +657,7 @@ class TypePicker extends React.Component {
             } else {
                 queryString = queryStatemantForType({type})
             }
-            const variables = {filter, limit: limit || 20},
+            const variables = {filter, limit: limit || 10},
                 gqlQuery = `query ${nameStartLower}($sort: String,$limit: Int,$page: Int,$filter: String){${nameStartLower}(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results${queryString}}}`
 
             if(pickerSort){
