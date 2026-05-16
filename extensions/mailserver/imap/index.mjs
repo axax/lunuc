@@ -596,7 +596,18 @@ const startListening = async (db, context) => {
 
 
         for (const sourceMessage of sourceMessages) {
+
+
             const destinationMessage = JSON.parse(JSON.stringify(sourceMessage))
+
+            if(destinationMessage?.data?.attachments?.length) {
+
+                for(const attachment of destinationMessage.data.attachments) {
+                    attachment.content = getAttachmentContentFromFile(attachment, {db, message: destinationMessage})
+                }
+            }
+
+
             destinationMessage.mailAccountFolder = destinationFolder._id
             delete destinationMessage.uid
             delete destinationMessage.modseq
