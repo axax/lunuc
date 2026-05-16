@@ -102,7 +102,7 @@ export default async function (response, {typeName, db, graphqlInfo}){
                                 }
                             }
                         }else if(field.type==='Float'){
-                            if (isNaN(item[field.name])) {
+                            if (item[field.name] === null || isNaN(item[field.name])) {
                                 item[field.name] = 0
                             }
                         }else if (field.type === 'Object') {

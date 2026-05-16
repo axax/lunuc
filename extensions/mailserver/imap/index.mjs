@@ -232,66 +232,116 @@ const startListening = async (db, context) => {
     server.onCreate = async function (mailbox, session, callback) {
         logger.debug('[%s] CREATE "%s"', session.id, mailbox)
 
-        const existingFolder = await getFolderForMailAccount(db,session.user.id,mailbox)
+        const existingFolder = await getFolderForMailAccount(db, session.user.id, mailbox)
 
         if (existingFolder) {
             return callback(null, 'ALREADYEXISTS')
         }
 
-       //const insertResult = await MailserverResolver(db).Mutation.createMailAccountFolder(destinationMessage, {context}, {skipCheck:true})
+        try {
+            await MailserverResolver(db).Mutation.createMailAccountFolder({
+                mailAccount: session.user.id,
+                path: mailbox,
+                symbol: mailbox.split('/').pop(), // letztes Segment als Name
+            }, { context }, { skipCheck: true })
 
-
-        /*folders.set(mailbox, {
-            path: mailbox,
-            uidValidity: Date.now(),
-            uidNext: 1,
-            modifyIndex: 0,
-            messages: [],
-            journal: []
-        });
-
-        subscriptions.add(folders.get(mailbox));*/
-        callback(null, true)
+            callback(null, true)
+        } catch (err) {
+            logger.error('CREATE folder failed: %s', err.message)
+            callback(new Error('CREATE failed'))
+        }
     }
 
     // RENAME "path/to/mailbox" "new/path"
     // NB! RENAME affects child and hierarchy mailboxes as well, this example does not do this
-    server.onRename = function (mailbox, newname, session, callback) {
-        logger.debug('[%s] RENAME "%s" to "%s"', session.id, mailbox, newname);
+    server.onRename = async function (mailbox, newname, session, callback) {
+        logger.debug('[%s] RENAME "%s" to "%s"', session.id, mailbox, newname)
 
-        /*if (!folders.has(mailbox)) {
-            return callback(null, 'NONEXISTENT');
+        const folder = await getFolderForMailAccount(db, session.user.id, mailbox)
+
+        if (!folder) {
+            return callback(null, 'NONEXISTENT')
         }
 
-        if (folders.has(newname)) {
-            return callback(null, 'ALREADYEXISTS');
+        const existingFolder = await getFolderForMailAccount(db, session.user.id, newname)
+        if (existingFolder) {
+            return callback(null, 'ALREADYEXISTS')
         }
 
-        let oldMailbox = folders.get(mailbox);
-        folders.delete(mailbox);
+        try {
+            // Unterordner ebenfalls umbenennen (z.B. "Archiv/2023" → "Old/2023")
+            const allFolders = await getFoldersForMailAccount(db, session.user.id)
 
-        oldMailbox.path = newname;
-        folders.set(newname, oldMailbox);*/
+            const childFolders = allFolders.values().filter(f =>
+                f.path !== mailbox && f.path.startsWith(mailbox + '/')
+            )
 
-        callback(null, true);
-    };
+            for (const child of childFolders) {
+                const newChildPath = newname + child.path.slice(mailbox.length)
+                await MailserverResolver(db).Mutation.updateMailAccountFolder(
+                    {
+                        _id: child._id,
+                        path: newChildPath,
+                        name: newChildPath.split('/').pop()
+                    },
+                    { context },
+                    { skipCheck: true }
+                )
+            }
+
+            // Ordner selbst umbenennen
+            await MailserverResolver(db).Mutation.updateMailAccountFolder(
+                {
+                    _id: folder._id,
+                    path: newname,
+                    name: newname.split('/').pop()
+                },
+                { context },
+                { skipCheck: true }
+            )
+
+            callback(null, true)
+        } catch (err) {
+            logger.error('RENAME folder failed: %s', err.message)
+            callback(new Error('RENAME failed'))
+        }
+    }
 
     // DELETE "path/to/mailbox"
-    server.onDelete = function (mailbox, session, callback) {
-        logger.debug('[%s] DELETE "%s"', session.id, mailbox);
+    server.onDelete = async function (mailbox, session, callback) {
+        logger.debug('[%s] DELETE "%s"', session.id, mailbox)
 
-        /*if (!folders.has(mailbox)) {
-            return callback(null, 'NONEXISTENT');
+        const folder = await getFolderForMailAccount(db, session.user.id, mailbox)
+
+        if (!folder) {
+            return callback(null, 'NONEXISTENT')
         }
 
-        // keep SPECIAL-USE folders
-        if (folders.get(mailbox).specialUse) {
-            return callback(null, 'CANNOT');
+        // Optional: SPECIAL-USE Ordner schützen (Inbox, Sent, etc.)
+        if (folder.specialUse || folder.path==='INBOX') {
+            return callback(null, 'CANNOT')
         }
 
-        folders.delete(mailbox);*/
-        callback(null, true);
-    };
+        try {
+            // 1. Alle Nachrichten im Ordner löschen
+            await deleteMessagesForFolderByUids(
+                db,
+                folder
+            )
+
+            // 2. Den Ordner selbst löschen
+            await MailserverResolver(db).Mutation.deleteMailAccountFolder(
+                { _id: folder._id },
+                { context },
+                { skipCheck: true }
+            )
+
+            callback(null, true)
+        } catch (err) {
+            logger.error('DELETE folder failed: %s', err.message)
+            callback(new Error('DELETE failed'))
+        }
+    }
 
     // SELECT/EXAMINE
     server.onOpen = async function (mailbox, session, callback) {
@@ -595,8 +645,6 @@ const startListening = async (db, context) => {
         const {match, project} = mongoDbMatchProjectFromIMapData(options)
         const messages = await getMessagesForFolder(db,folder._id,match, project)
 
-        console.log(`imap ${messages.length} found`, match)
-
         let messageData
         const logError = (message) => {
             GenericResolver.createEntity(db, {context: context}, 'Log', {
@@ -717,7 +765,6 @@ const startListening = async (db, context) => {
                                 queryRequest.mimeTree = parseMimeTree(mailMessage)
 
                                 Hook.call('imapOnFetchMailComposed', {queryRequest, messageData, folderId, options, session})
-
 
                                 let stream = imapHandler.compileStream(
                                     session.formatResponse('FETCH', message.uid, {

@@ -339,7 +339,6 @@ const GenericResolver = {
             } else {
                 queryResponse = await postQueryConvert(queryResults[0], {typeName, db, context, graphqlInfo})
             }
-
             // ── resolve total count ────────────────────────────────────────────────
             if (queryResponse.total === undefined) {
                 if (queryResponse.count?.length > 0) {
@@ -541,9 +540,13 @@ const GenericResolver = {
             return resultData
         }
     },
-    deleteEnity: async (db, context, typeName, {_version, ...data}) => {
+    deleteEnity: async (db, context, typeName, {_version, ...data}, options) => {
 
-        Util.checkIfUserIsLoggedIn(context)
+        const skipCheck = options && options.skipCheck
+
+        if(!skipCheck) {
+            Util.checkIfUserIsLoggedIn(context)
+        }
 
         if (!data._id) {
             throw new Error('Id is missing')
@@ -564,7 +567,7 @@ const GenericResolver = {
         const collectionName = await buildCollectionName(db, context, typeName, _version)
 
         let match = {}
-        if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
+        if (!skipCheck && !await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
             match = await createMatchForCurrentUser({typeName, db, context, operation:'delete'})
         }
 
@@ -667,7 +670,7 @@ const GenericResolver = {
     updateEnity: async (db, context, typeName, {_version, _meta, ...data}, options) => {
 
         if (!options) {
-            options = {forceAdminContext:false, ignoreHooks:false}
+            options = {forceAdminContext:false, skipCheck:false, ignoreHooks:false}
         }
 
 
@@ -676,11 +679,13 @@ const GenericResolver = {
             context = Object.assign({},context,{id:admin._id,username:admin.username})
         }
 
-        Util.checkIfUserIsLoggedIn(context)
+        if(!options.skipCheck) {
+            Util.checkIfUserIsLoggedIn(context)
 
 
-        if(!await Util.userHasAccessRights(db,context,{typeName, access:'update'})){
-            throw new Error('Benutzer hat keine Berechtigung zum Bearbeiten')
+            if (!await Util.userHasAccessRights(db, context, {typeName, access: 'update'})) {
+                throw new Error('Benutzer hat keine Berechtigung zum Bearbeiten')
+            }
         }
 
 
@@ -709,7 +714,7 @@ const GenericResolver = {
 
 
 
-        if (!await Util.userHasCapability(db, context, options.capability ? options.capability : CAPABILITY_MANAGE_OTHER_USERS)) {
+        if (!options.skipCheck && !await Util.userHasCapability(db, context, options.capability ? options.capability : CAPABILITY_MANAGE_OTHER_USERS)) {
 
             if (data.createdBy && data.createdBy.toString() !== context.id) {
 

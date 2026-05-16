@@ -71,6 +71,26 @@ Hook.on(['typeBeforeUpdate'], async ({db, type,data}) => {
 Hook.on(['typeBeforeCreate'], async ({db, type, data}) => {
     if(type==='MailAccountFolder'){
 
+        const mailAccount = await db.collection('MailAccount').findOne({_id: data.mailAccount})
+
+        if(mailAccount){
+            data.subscribed = true
+            data.mailAccount = mailAccount._id
+
+            let uidValidity = 1
+            const highestUidValidity = await db.collection('MailAccountFolder')
+                .find({ mailAccount: mailAccount._id }) // or { mailAccount: ObjectId(mailAccountId) }
+                .sort({ uidValidity: -1 })           // -1 = descending
+                .limit(1)
+                .toArray();
+            if(highestUidValidity.length>0){
+                uidValidity = highestUidValidity[0].uidValidity+1
+            }
+            data.uidValidity = uidValidity
+            data.uidNext = 1
+            data.modifyIndex = 1
+        }
+
     }else if(type==='MailAccountMessage'){
         let mailAccount
         if(data.mailAccount){

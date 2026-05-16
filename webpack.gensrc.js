@@ -596,8 +596,8 @@ function gensrcExtension(name, options) {
             }
             return result
         },
-        delete${type.name}: async ({_id}, {context}) => {
-            const deletedEntry = await GenericResolver.deleteEnity(db, context, '${type.name}', {_id})
+        delete${type.name}: async ({_id}, {context}, options) => {
+            const deletedEntry = await GenericResolver.deleteEnity(db, context, '${type.name}', {_id}, options)
             if(deletedEntry){
                 ${type.subscription === false ? '//' : ''}pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', removedIds: [_id]}}, db, context)
             }
