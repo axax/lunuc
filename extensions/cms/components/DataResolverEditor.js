@@ -275,7 +275,44 @@ class DataResolverEditor extends React.Component {
                                     fullWidth: true
                                 }
                             ]
-                        }
+                        },
+                        type:{
+                            uistate: {
+                                visible: 'resolverType==type'
+                            },
+                            uitype:'wrapper',
+                            label:'Add type',
+                            name:'genericType',
+                            multi:false,
+                            titleTemplate: 'Generic Type ${this.context ? this.context.type || "": ""}',
+                            subFields:[
+                                {
+                                    name: 'name',
+                                    label: 'Name',
+                                    enum: '$TYPES',
+                                    fullWidth: true
+                                },
+                                {
+                                    name: 'filter',
+                                    label: 'Filter',
+                                    fullWidth: true
+                                },
+                                {
+                                    name: 'limit',
+                                    label: 'Limit',
+                                    type: 'Float',
+                                    defaultValue:10,
+                                    uitype:'number',
+                                    fullWidth: true
+                                },
+                                {
+                                    name: 'subscribe',
+                                    label: 'Subscribe',
+                                    type: 'Boolean',
+                                    fullWidth: true
+                                }
+                            ]
+                        },
                     }
                 } onClick={()=>{}}/>
             </SimpleDialog>

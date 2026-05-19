@@ -105,6 +105,19 @@
         },
         {
           "tab": "elements.generalTab",
+          "name": "userContext",
+          "type": "User",
+          "schemaType": "UserPublic",
+          "fields": [
+            "username"
+          ],
+          "queryFields": [
+            "username"
+          ],
+          "index": 1
+        },
+        {
+          "tab": "elements.generalTab",
           "name": "scopes",
           "type": "Object",
           "uitype": "json",

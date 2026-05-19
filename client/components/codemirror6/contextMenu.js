@@ -191,7 +191,7 @@ export function generateContextMenu({type,clickEvent, editorView, propertyTempla
            icon: <AutoAwesomeIcon/>,
            name: _t('CodeEditor.aiAssistent') + ' (Alt-Cmd-A)',
            onClick: () => {
-               winAndReplace(`/system/aiassistent?preview=true&input=${encodeURIComponent(selectedContent || '')}true&type=${type}`)
+               winAndReplace(`/system/aiassistent?preview=true&input=${encodeURIComponent(selectedContent || '')}&type=${type}`)
            }
        })
 

@@ -204,12 +204,20 @@ Hook.on('appready', ({app, db}) => {
                         const result = await db.collection('ApiToken').findOne({ _id:{$in:api.apiToken}, token: token, $or: [
                                 { expires: { $exists: false } },
                                 { expires: null },
+                                { expires: 0 },
                                 { expires: { $gt: Date.now()} }
                             ]})
 
                         if (!result) {
                             return res.status(401).json({ error: 'API Bearer Token is invalid or expired' });
+                        }else if(result.userContext !== null){
+                            const user = await Util.userById(db, result.userContext)
+                            if(user) {
+                                req.context = {...req.context, usernamen: user.username, userId: user._id.toString()}
+                            }
                         }
+
+
                     }
 
                     const result = await runApiScript({api, db, req, res, startTime})

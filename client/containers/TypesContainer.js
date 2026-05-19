@@ -318,6 +318,9 @@ class TypesContainer extends React.Component {
                                             if (field.fields) {
                                                 let str = ''
                                                 field.fields.forEach(f => {
+                                                    if(!fieldValue[f]){
+                                                        return
+                                                    }
                                                     if (str) str += ', '
                                                     if (fieldValue[f].constructor === Object) {
                                                         str += fieldValue[f][_app_.lang]
