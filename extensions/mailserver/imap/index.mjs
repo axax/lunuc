@@ -835,7 +835,6 @@ const startListening = async (db, context) => {
                         setImmediate(processMessage)
                     }
                 }else{
-                    console.log(`imap fetch without data ${message.uid}`)
                     const stream = imapHandler.compileStream(
                         session.formatResponse('FETCH', message.uid, {
                             query: options.query,

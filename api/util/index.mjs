@@ -643,8 +643,30 @@ const Util = {
                 }
 
                 if (c === 41) { i++; continue }
-                if (c === 124 && str.charCodeAt(i+1) === 124) { tokens.push('||'); i += 2; continue }
-                if (c === 38  && str.charCodeAt(i+1) === 38)  { tokens.push('&&'); i += 2; continue }
+
+                if (c === 124 && str.charCodeAt(i+1) === 124) {
+                    tokens.push('||'); i += 2
+                    while (i < len) {
+                        const cc = str.charCodeAt(i)
+                        if (cc === 32 || cc === 9 || cc === 10 || cc === 13) { i++; continue }
+                        if (cc === 124 && str.charCodeAt(i+1) === 124) { i += 2; continue }
+                        if (cc === 38  && str.charCodeAt(i+1) === 38)  { i += 2; continue }
+                        break
+                    }
+                    continue
+                }
+
+                if (c === 38 && str.charCodeAt(i+1) === 38) {
+                    tokens.push('&&'); i += 2
+                    while (i < len) {
+                        const cc = str.charCodeAt(i)
+                        if (cc === 32 || cc === 9 || cc === 10 || cc === 13) { i++; continue }
+                        if (cc === 38  && str.charCodeAt(i+1) === 38)  { i += 2; continue }
+                        if (cc === 124 && str.charCodeAt(i+1) === 124) { i += 2; continue }
+                        break
+                    }
+                    continue
+                }
 
                 const start = i
                 let inQuote = false
