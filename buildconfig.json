@@ -97,9 +97,12 @@
       "active": true
     },
     "mailserver": {
-      "active": true
+      "active": false
     },
     "webauthn": {
+      "active": true
+    },
+    "oauth": {
       "active": true
     }
   },

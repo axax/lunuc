@@ -286,6 +286,10 @@ if (DEV_MODE) {
         host: '0.0.0.0',
         proxy: [
             {
+                context: ['/oauth/'],
+                target: `http://0.0.0.0:${API_PORT}`
+            },
+            {
                 context: ['/graphql'],
                 target: `http://0.0.0.0:${API_PORT}`
             },

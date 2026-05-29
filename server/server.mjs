@@ -453,7 +453,8 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 sendError(res, 403)
             }
 
-        } else if (urlPathname.startsWith('/graphql') || API_PREFIXES.some(prefix => urlPathname.startsWith('/' + prefix + '/'))) {
+        } else if (urlPathname.startsWith('/graphql') || urlPathname.startsWith('/oauth/') ||
+            API_PREFIXES.some(prefix => urlPathname.startsWith('/' + prefix + '/'))) {
             // there is also /graphql/upload
            await proxyToApiServer(req, res, {host, path: parsedUrl.path})
         } else {

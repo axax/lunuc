@@ -97,6 +97,9 @@ export const start = (done) => {
             // fix graphql limit of 100kb body size
             app.use(bodyParser.json({limit: '10000mb'}))
 
+            app.use(express.urlencoded({
+                extended: true
+            }))
             // delay response
             /*  app.use(function (req, res, next) {
                setTimeout(next, 1000)
@@ -163,9 +166,6 @@ export const start = (done) => {
 
 
             /* fallback login for no js browsers */
-            app.use(express.urlencoded({
-                extended: true
-            }))
             app.use('/graphql/login', async (req, res) => {
                 if(req.body) {
 

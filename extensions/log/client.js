@@ -25,6 +25,8 @@ const sendError = ({location, message, meta}) =>{
 export default () => {
     // other js error
     window.addEventListener('error', (e) => {
+        // Script error ohne Details = cross-origin oder Extension → ignorieren
+        if (e.message === 'Script error.' && !e.filename && e.lineno === 0) return
         sendError({
             location:'window',
             message: [

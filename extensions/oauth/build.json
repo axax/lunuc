@@ -1,0 +1,80 @@
+{
+  "types": [
+    {
+      "name": "OAuthClient",
+      "fields": [
+        {
+          "name": "name",
+          "type": "String",
+          "required": true
+        },
+        {
+          "name": "clientId",
+          "type": "String",
+          "required": true,
+          "index": 1
+        },
+        {
+          "name": "clientSecretHash",
+          "type": "String",
+          "uitype": "password",
+          "hash": true,
+          "required": true
+        },
+        {
+          "name": "allowedRedirectUris",
+          "type": "String",
+          "uitype": "textarea"
+        },
+        {
+          "name": "allowedScopes",
+          "type": "String",
+          "uitype": "textarea"
+        },
+        {
+          "name": "isActive",
+          "type": "Boolean",
+          "default": true
+        }
+      ]
+    },
+    {
+      "name": "OAuthCode",
+      "fields": [
+        {
+          "type": "String",
+          "name": "code",
+          "index": 1,
+          "required": true
+        },
+        {
+          "type": "OAuthClient",
+          "name": "client",
+          "index": 1
+        },
+        {
+          "type": "String",
+          "name": "redirectUri",
+          "index": 1,
+          "required": true
+        },
+        {
+          "type": "String",
+          "name": "scope",
+          "index": 1
+        },
+        {
+          "type": "Float",
+          "name": "expiresAt",
+          "uitype": "datetime",
+          "index": 1
+        },
+        {
+          "name": "used",
+          "type": "Boolean",
+          "index": 1
+        }
+      ]
+    }
+  ]
+}
