@@ -13,6 +13,7 @@ import {_t} from '../../util/i18n.mjs'
 const StyledRoot = styled('div')(({ error, inWindow}) => ({
     display: 'flex',
     flexDirection: 'column',
+    position: 'relative',
     ...(error && {
         border: 'dashed 1px red',
         position:'relative',
@@ -49,14 +50,48 @@ const StyledEditorResizer = styled('div')({
     }
 })
 
+const StyledCopyButtonWrapper = styled('div')({
+    position: 'sticky',
+    top: '8px',
+    height: 0,
+    overflow: 'visible',
+    zIndex: 999,
+    pointerEvents: 'none',
+    order: -1,
+})
+
+const StyledCopyButton = styled('button')(({ copied, theme }) => ({
+    position: 'absolute',
+    top: 0,
+    right: '8px',
+    pointerEvents: 'all',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '4px 4px',
+    fontSize: '12px',
+    fontFamily: 'inherit',
+    border: '1px solid ' + (theme.palette ? theme.palette.divider : '#e5e7eb'),
+    borderRadius: '6px',
+    cursor: 'pointer',
+    background: theme.palette ? theme.palette.background.paper : '#ffffff',
+    color: copied ? (theme.palette ? theme.palette.success.main : '#16a34a') : (theme.palette ? theme.palette.text.secondary : '#6b7280'),
+    transition: 'color 0.15s, border-color 0.15s, background 0.15s',
+    '&:hover': {
+        background: '#f3f4f6',
+        borderColor: theme.palette ? theme.palette.divider : '#d1d5db',
+        color: copied ? (theme.palette ? theme.palette.success.main : '#16a34a') : (theme.palette ? theme.palette.text.primary : '#374151'),
+    }
+}))
 
 function CodeEditor(props,ref){
-    const {controlled, hasContextMenu, mergeView, mergeValue, children, onScroll, onFullSize, onFileChange, showFab, fabButtonStyle, actions, onChange, onError, onBlur, lineNumbers, type, style, className, error, templates, propertyTemplates, fileSplit, identifier, readOnly} = props
+    const {controlled, hasContextMenu, mergeView, mergeValue, children, onScroll, onFullSize, onFileChange, showFab, fabButtonStyle, actions, onChange, onError, onBlur, lineNumbers, type, style, className, error, templates, propertyTemplates, fileSplit, identifier, readOnly, showCopyButton} = props
 
     if(!identifier){
         console.warn('CodeEditor identifier is missing')
     }
 
+    const [copied, setCopied] = useState(false)
     const [renderInWindow, setRenderInWindow] = useState(false)
     const [contextMenu, setContextMenu] = useState(false)
     const [stateError, setStateError] = useState(false)
@@ -101,6 +136,14 @@ function CodeEditor(props,ref){
             delete editorViewRef.resizerState
             setHeight(editorViewRef.current.dom.getBoundingClientRect().height+'px')
         }
+    }
+
+    const handleCopy = () => {
+        const content = editorViewRef.current?.state.doc.toString() ?? ''
+        navigator.clipboard.writeText(content).then(() => {
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2000)
+        })
     }
 
     useEffect(() => {
@@ -266,6 +309,27 @@ function CodeEditor(props,ref){
             style={{height:renderInWindow ? '100%': (height ? height : '30rem')}}
             firstVisibleLine={scrollPositions[finalFileIndex] ? scrollPositions[finalFileIndex].firstVisibleLine : 0}
             value={finalValue}/>
+
+        {showCopyButton && (
+            <StyledCopyButtonWrapper>
+                <StyledCopyButton copied={copied} onClick={handleCopy} title="Copy to clipboard">
+                    {copied ? (
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"
+                             xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <path d="M15.188 5.11a.5.5 0 0 1 .752.626l-.056.084-7.5 9a.5.5 0 0 1-.738.033l-3.5-3.5-.064-.078a.501.501 0 0 1 .693-.693l.078.064 3.113 3.113 7.15-8.58z"/>
+                        </svg>
+                    ) : (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                             aria-hidden="true">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                    )}
+                </StyledCopyButton>
+            </StyledCopyButtonWrapper>
+        )}
+
         {showFab && <SimpleMenu key="menu" mini fab color="secondary" style={{
             zIndex: 999,
             position: 'absolute',
