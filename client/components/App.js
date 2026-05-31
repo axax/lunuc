@@ -78,8 +78,8 @@ export default function App(props) {
             dispatch({type: 'LOGIN', payload: user})
         },
         addError:(add) =>{
-            dispatch({type:'MESSAGE',payload:{add}})
             Hook.call('dispatcherAddError',add)
+            dispatch({type:'MESSAGE',payload:{add}})
         },
         addNotification:(payload) =>{
             dispatch({type:'NOTIFICATION',payload})

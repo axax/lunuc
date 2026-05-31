@@ -389,7 +389,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
             _app_.dispatcher.addError({
                 key: 'api_error',
                 msg,
-                meta: {query, variables, name: error.name}
+                meta: {query, variables, name: error.name, stack: error.stack}
             })
         })
     })
