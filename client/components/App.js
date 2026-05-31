@@ -9,6 +9,7 @@ import UserDataContainer from 'client/containers/UserDataContainer'
  * it explicitly to all the components.
  */
 import {AppContext} from './AppContext'
+import Hook from '../../util/hook'
 
 /*setTimeout(()=>{
     _app_.dispatcher.dispatch({type:'MESSAGE',payload:{add:{key:'sss',msg:'xxxx'}}})
@@ -78,6 +79,7 @@ export default function App(props) {
         },
         addError:(add) =>{
             dispatch({type:'MESSAGE',payload:{add}})
+            Hook.call('dispatcherAddError',add)
         },
         addNotification:(payload) =>{
             dispatch({type:'NOTIFICATION',payload})

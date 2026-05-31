@@ -148,9 +148,9 @@ export const start = (done) => {
                     customFormatErrorFn: formatError,
                     extensions({document, variables, operationName, result}) {
 
-                        if (result.errors && result.errors.length > 0) {
+                        /*if (result.errors && result.errors.length > 0) {
                             Hook.call('graphqlError', {db, req, type:'format', errors: result.errors})
-                        }
+                        }*/
 
                         // return auth state
                         result.isAuth = !!(req.context && req.context.id)

@@ -349,7 +349,9 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  qu
                 })
             } else {
                 reject({error: {message: r.statusText}, loading: false, networkStatus: NetworkStatus.error})
-                _app_.dispatcher.addError({key: 'api_error', msg: r.status + ' - ' + r.statusText})
+                _app_.dispatcher.addError({key: 'api_error',
+                    msg: r.status + ' - ' + r.statusText,
+                    meta: {query, variables}})
             }
 
         }).catch(error => {
@@ -358,7 +360,8 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  qu
             reject({error, loading: false, networkStatus: NetworkStatus.error})
             _app_.dispatcher.addError({
                 key: 'api_error',
-                msg: controller._timeout ? 'Request timeout reached' : error.message
+                msg: controller._timeout ? 'Request timeout reached' : error.message,
+                meta: {query, variables}
             })
 
         })

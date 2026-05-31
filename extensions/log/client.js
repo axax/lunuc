@@ -87,4 +87,18 @@ export default () => {
             message: error.message + '\n\n' + error.stack
         })
     })
+
+    // add routes for this extension
+    Hook.on('dispatcherAddError', (payload) => {
+        if(payload.meta && payload.meta.query && payload.meta.variables) {
+            if(payload.meta.query.startsWith('mutation createLog')) return
+
+            sendError({
+                location: 'dispatcherAddError',
+                message: payload.msg,
+                meta: payload.meta,
+                type: payload.key
+            })
+        }
+    })
 }
