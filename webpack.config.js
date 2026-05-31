@@ -47,7 +47,6 @@ const APP_VALUES = {
     APP_NAME: PACKAGE_JSON.name,
     APP_VERSION: PACKAGE_JSON.version,
     APP_DESCRIPTION: PACKAGE_JSON.description,
-    APP_DESCRIPTION: PACKAGE_JSON.description,
     APP_COLOR: '#2196f3',
     HTML_HEAD: '',
     BASE_POLYFILL: '!window.Promise || !Promise.prototype.finally || !window.URL || !Object.values || !Object.assign || !window.Map || !window.Symbol',
@@ -146,8 +145,11 @@ const config = {
     target: ['web', 'es5'],
     output: {
         path: path.resolve(__dirname, 'build'),
-        filename: '[name].bundle.js?v=' + BUILD_NUMBER,
-        chunkFilename: '[name].bundle.js?v=' + BUILD_NUMBER,
+        // FIX: Query-String aus Dateinamen entfernt – verhindert dass die
+        // .map-Datei einen ungültigen Namen bekommt. Version wird stattdessen
+        // als globale Konstante per DefinePlugin injiziert.
+        filename: '[name].bundle.js',
+        chunkFilename: '[name].bundle.js',
         publicPath: '/'
     },
     externals: {
@@ -195,7 +197,12 @@ const config = {
         new GenSourceCode(APP_VALUES), /* Generate some source code based on the buildconfig.json file */
         new MiniCssExtractPlugin({
             filename: 'style.css'
-        }) /* Extract css from bundle */
+        }), /* Extract css from bundle */
+        // FIX: BUILD_NUMBER als globale Konstante verfügbar machen, da er
+        // nicht mehr im Dateinamen steht.
+        new webpack.DefinePlugin({
+            '__BUILD_NUMBER__': JSON.stringify(BUILD_NUMBER)
+        })
     ],
     optimization: {
         usedExports: true,
@@ -242,7 +249,7 @@ if (DEV_MODE) {
     const PORT = (process.env.PORT || 8080)
     const API_PORT = (process.env.API_PORT || 3000)
 
-   // config.plugins.push(new webpack.HotModuleReplacementPlugin())
+    // config.plugins.push(new webpack.HotModuleReplacementPlugin())
 
     config.devServer = {
         /*contentBase: [path.join(__dirname, ''), path.join(__dirname, 'static'), path.join(__dirname, APP_VALUES.UPLOAD_DIR)],*/
@@ -280,7 +287,6 @@ if (DEV_MODE) {
                 }
             ]
         },
-        /*inline: true,*/
         hot: false,
         port: PORT,
         host: '0.0.0.0',
@@ -299,8 +305,8 @@ if (DEV_MODE) {
                 ws: true
             },
             ...((Array.isArray(APP_VALUES.API_PREFIX)?APP_VALUES.API_PREFIX:[APP_VALUES.API_PREFIX]).map(prefix=>({
-                    context: ['/' + prefix + '/'],
-                    target: `http://0.0.0.0:${API_PORT}`
+                context: ['/' + prefix + '/'],
+                target: `http://0.0.0.0:${API_PORT}`
             })))
         ],
         client: {
@@ -325,7 +331,10 @@ if (DEV_MODE) {
 } else {
     console.log('Build for production')
     config.mode = 'production'
-    config.devtool= 'source-map'
+    // FIX: 'source-map' erzeugt eine separate .map Datei die im Browser
+    // DevTools geladen werden kann ohne sie öffentlich zugänglich zu machen
+    // (siehe auch: nosources-source-map wenn Quellcode versteckt bleiben soll)
+    config.devtool = 'source-map'
     config.resolve = {
         extensions: ['.js', '.json', '.wasm', '.cjs', '.mjs'],
         alias: {
@@ -344,10 +353,14 @@ if (DEV_MODE) {
                             stage: webpack.Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE,
                         },
                         () => {
-                            // get the file main.js
-                            const key = 'main.bundle.js?v=' + BUILD_NUMBER
+                            // FIX: Dateiname ohne Query-String
+                            const key = 'main.bundle.js'
 
                             const file = compilation.getAsset(key)
+                            if (!file) {
+                                console.warn('[Replace Plugin] Asset not found:', key)
+                                return
+                            }
 
                             let content = file.source.source()
 
@@ -357,10 +370,15 @@ if (DEV_MODE) {
                             content = content.replace(/new ReferenceError\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'new ReferenceError()')
                             content = content.replace(/throw E\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'throw E()')
                             content = content.replace(/throw Error\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'throw Error()')
-                            // update main.js with new content
+
+                            // FIX: SourceMapSource statt RawSource verwenden damit
+                            // die Source Map Verknüpfung erhalten bleibt.
+                            const existingMap = file.source.map()
                             compilation.updateAsset(
                                 key,
-                                new webpack.sources.RawSource(content)
+                                existingMap
+                                    ? new webpack.sources.SourceMapSource(content, key, existingMap)
+                                    : new webpack.sources.RawSource(content)
                             )
                         }
                     )
@@ -396,6 +414,8 @@ if (DEV_MODE) {
             parse: {},
             module: true,
             mangle: {},
+            // FIX: Source Maps durch Terser hindurch erhalten
+            sourceMap: true,
             compress: {
                 booleans_as_integers: false,
                 drop_console: true,
@@ -430,4 +450,3 @@ module.exports = config
 
 
 /* --port 8080 --hot --host 0.0.0.0 --content-base . */
-
