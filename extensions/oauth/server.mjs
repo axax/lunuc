@@ -25,5 +25,4 @@ Hook.on('appready', ({app, db}) => {
     app.post('/oauth/token', async (req,res)=>{
         await oauthToken(db,req, res)
     })
-
 })

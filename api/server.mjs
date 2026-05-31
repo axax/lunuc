@@ -147,7 +147,10 @@ export const start = (done) => {
                     graphiql: process.env.NODE_ENV !== 'production',
                     customFormatErrorFn: formatError,
                     extensions({document, variables, operationName, result}) {
-                        //UserStats.addData(req, {operationName})
+
+                        if (result.errors && result.errors.length > 0) {
+                            Hook.call('graphqlError', {db, req, type:'format', errors: result.errors})
+                        }
 
                         // return auth state
                         result.isAuth = !!(req.context && req.context.id)
@@ -157,10 +160,13 @@ export const start = (done) => {
                     if (req.context) {
 
                     }
-                }).catch((e) => {
-                    res.writeHead(500, {'content-type': 'application/json'})
-                    res.end(`{"errors":[{"message":"Error in graphql. Probably there is something wrong with the schema or the resolver: ${e.message}"}]}`)
+                }).catch((error) => {
 
+                    res.writeHead(500, {'content-type': 'application/json'})
+                    res.end(`{"errors":[{"message":"Error in graphql. Probably there is something wrong with the schema or the resolver: ${error.message}"}]}`)
+
+
+                    Hook.call('graphqlError', {db, req, errors: [error], type:'catch'})
                 })
             })
 

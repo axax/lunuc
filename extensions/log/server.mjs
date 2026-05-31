@@ -184,6 +184,15 @@ Hook.on('invalidLogin', async ({context, db, username, ip, domain}) => {
     })
 })
 
+Hook.on('graphqlError', async ({db, req, type, errors}) => {
+    await GenericResolver.createEntity(db, req, 'Log', {
+        location: 'graphqlError',
+        type: type,
+        message: errors[0].message,
+        meta: {errors}
+    })
+})
+
 /*
 // add routes for this extension
 Hook.on('GlobalError', ({error, db, cronjobId, context}) => {
