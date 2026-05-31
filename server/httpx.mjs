@@ -5,77 +5,97 @@ import http from 'http'
 import http2 from 'http2'
 
 
-const TLS_HANDSHAKE_BYTE = 0x16; // Decimal 22
+const TLS_HANDSHAKE_BYTE = 0x16 // Decimal 22 -> TLS record content type "handshake"
 
 /**
  * Creates a single server instance that routes connections to either
- * a standard HTTP/1.1 server or a secure HTTP/2 server.
+ * a cleartext HTTP/1.1 server or a secure HTTP/2 server, based on whether
+ * the first byte of the connection looks like a TLS handshake.
  *
- * @param {object} tlsOpts - Options for the HTTP/2 server, MUST include key and cert.
- * @param {function} handler - The standard (req, res) request handler function.
+ * @param {import('tls').SecureContextOptions} tlsOpts
+ *   Options for the HTTP/2 secure server. MUST include `key` and `cert`.
+ *   `allowHTTP1` defaults to `true` so that TLS clients which negotiate
+ *   `http/1.1` via ALPN (instead of `h2`) are not rejected. Pass
+ *   `allowHTTP1: false` explicitly to force HTTP/2-only over TLS.
+ * @param {function} handler - The standard (req, res) request handler.
  * @returns {net.Server} The combined network server instance.
  */
 const createServer = (tlsOpts, handler) => {
     // 1. Create the dedicated HTTP/1.1 and HTTP/2 servers
 
-    // HTTP/1.1 Cleartext Server
-    const httpServer = http.createServer(handler);
+    // HTTP/1.1 cleartext server
+    const httpServer = http.createServer(handler)
 
-    // HTTP/2 Secure Server (Handles TLS handshake and ALPN negotiation for 'h2')
-    // This server must be provided with the key and cert.
-    const http2Server = http2.createSecureServer(tlsOpts, handler);
+    // HTTP/2 secure server (handles the TLS handshake and ALPN negotiation).
+    // allowHTTP1: true lets TLS clients that don't speak h2 fall back to
+    // HTTP/1.1 over TLS instead of getting a connection error.
+    const http2Server = http2.createSecureServer(
+        {allowHTTP1: true, ...tlsOpts},
+        handler
+    )
 
-    // Configure server timeouts
-    httpServer.headersTimeout = HEADER_TIMEOUT;
-    http2Server.headersTimeout = HEADER_TIMEOUT;
-    httpServer.requestTimeout = 0;
-    http2Server.requestTimeout = 0;
+    // Timeouts.
+    // headersTimeout / requestTimeout are HTTP/1.1 (http.Server) properties only;
+    // setting them on the HTTP/2 server would be a no-op, so they're applied
+    // to httpServer alone. HTTP/2 has its own timeout model (server.timeout,
+    // session.setTimeout(), maxSessionMemory) if you need it later.
+    httpServer.headersTimeout = HEADER_TIMEOUT
+    httpServer.requestTimeout = 0 // 0 = disabled. Intentional for long-lived/streaming
+                                  // requests; set a finite value if that's not required.
 
     // 2. Create the main NET server for connection routing
     const unifiedServer = net.createServer(socket => {
-        // Only peek at the first byte to check for a TLS handshake marker
+        // Detection-phase handlers. These only guard the brief window before we
+        // hand the socket off; afterwards the chosen server owns the socket.
+        const onError = err => {
+            console.error('Unified Server Socket Error:', err.message)
+            socket.destroy()
+        }
+        const onTimeout = () => {
+            // Client connected but never sent the first byte -> close it so a
+            // stalled connection can't tie up resources (slowloris-style).
+            socket.destroy()
+        }
+
+        socket.on('error', onError)
+        socket.setTimeout(HEADER_TIMEOUT, onTimeout)
+
+        // Peek at the first chunk to decide which protocol this is.
         socket.once('data', buffer => {
-            // Pause the socket immediately after reading the first chunk
+            // Pause and detach the detection-phase guards; the downstream
+            // server sets up its own timeout/error handling from here on.
             socket.pause()
+            socket.setTimeout(0)
+            socket.removeListener('error', onError)
+
+            // Defensive: the 'data' event normally carries >= 1 byte, but guard
+            // against an empty buffer just in case.
+            if (!buffer || buffer.length === 0) {
+                socket.destroy()
+                return
+            }
 
             const isTlsHandshake = buffer[0] === TLS_HANDSHAKE_BYTE
 
-            // Push the initial data buffer back onto the front of the data stream
+            // Put the peeked bytes back at the front of the stream so the
+            // downstream TLS layer / HTTP parser sees the full data.
             socket.unshift(buffer)
 
-            if (isTlsHandshake) {
-                // Connection starts with 0x16 (TLS Handshake) -> Route to HTTP/2 Server
+            // 0x16 -> TLS handshake -> HTTP/2 secure server (wraps the raw
+            //         socket in a TLSSocket and runs ALPN/handshake).
+            // otherwise -> cleartext HTTP/1.1 server.
+            const target = isTlsHandshake ? http2Server : httpServer
+            target.emit('connection', socket)
 
-                // ⚠️ CRITICAL STEP: The socket must be handed directly to the
-                // http2 server's internal listener, which wraps it in a TLSSocket
-                // and handles ALPN/handshake before proceeding with HTTP/2.
-                http2Server.emit('connection', socket)
-
-            } else {
-                // Connection does NOT start with 0x16 -> Route to HTTP/1.1 Server
-
-                // Emit the original socket to the HTTP/1.1 server
-                httpServer.emit('connection', socket)
-            }
-
-            // Resume the original socket in the next I/O cycle.
-            // The receiving server (httpServer or http2Server) is now responsible
-            // for processing the rest of the stream.
-            setImmediate(() => {
-                socket.resume()
-            })
-        })
-
-        // Add essential error handling for the raw connection
-        socket.on('error', (err) => {
-            console.error('Unified Server Socket Error:', err.message)
-            socket.destroy()
+            // Resume on the next tick, once the receiving server has attached
+            // its own readable handlers during the synchronous emit above.
+            process.nextTick(() => socket.resume())
         })
     })
 
     // 3. Attach the dedicated servers for external access
     unifiedServer.http = httpServer
-    unifiedServer.https = http2Server // Note: Renamed to avoid confusion with the module name
+    unifiedServer.https = http2Server
 
     return unifiedServer
 }

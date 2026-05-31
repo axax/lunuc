@@ -5,11 +5,6 @@ import {deepMerge} from "../../util/deepMerge.mjs";
 
 
 const NetworkStatus = {
-    /*loading: 1,
-    setVariables: 2,
-    fetchMore: 3,
-    refetch: 4,
-    poll: 6,*/
     ready: 7,
     error: 8
 }
@@ -26,9 +21,9 @@ export let SSR_FETCH_CHAIN = {}
 
 export const getGraphQlUrl = () => {
     if (!GRAPHQL_URL) {
-        if(_app_.graphqlOptions){
+        if (_app_.graphqlOptions) {
             GRAPHQL_URL = _app_.graphqlOptions.url
-        }else {
+        } else {
             const location = window.location
             GRAPHQL_URL = `${location.protocol}//${location.hostname}:${location.port}/graphql`
         }
@@ -38,9 +33,9 @@ export const getGraphQlUrl = () => {
 
 export const getGraphQlWsUrl = () => {
     if (!GRAPHQL_WS_URL) {
-        if(_app_.graphqlOptions){
+        if (_app_.graphqlOptions) {
             GRAPHQL_WS_URL = _app_.graphqlOptions.wsUrl
-        }else {
+        } else {
             const location = window.location
             GRAPHQL_WS_URL = (location.protocol === 'https:' ? 'wss' : 'ws') + `://${location.hostname}:${location.port}/lunucws`
         }
@@ -48,26 +43,24 @@ export const getGraphQlWsUrl = () => {
     return GRAPHQL_WS_URL
 }
 
-
 export const setGraphQlOptions = ({url}) => {
     GRAPHQL_URL = url
 }
 
-// create a middleware for state handling and to attach the hook
+// Loading counter middleware
 let loadingCounter = 0
 
 function addLoader() {
     loadingCounter++
     if (loadingCounter === 1 && _app_.dispatcher) {
-       _app_.dispatcher.dispatch({type:'NETWORK_STATUS',payload:{loading:true}})
+        _app_.dispatcher.dispatch({type: 'NETWORK_STATUS', payload: {loading: true}})
     }
 }
 
 function removeLoader() {
     loadingCounter--
     if (loadingCounter === 0 && _app_.dispatcher) {
-        // send loading false when all request are done
-        _app_.dispatcher.dispatch({type:'NETWORK_STATUS',payload:{loading:false}})
+        _app_.dispatcher.dispatch({type: 'NETWORK_STATUS', payload: {loading: false}})
     }
 }
 
@@ -75,11 +68,9 @@ function removeLoader() {
 /* Websocket */
 let wsCurrentConnection, subscribeCount = 0, openWsSubscription = [], sharedKeyIdMap = {}
 
-
 const isConnected = ws => ws && ws.readyState === 1
 
 const createWsSubscription = (id, subId, payload, next) => {
-
     const withSameId = openWsSubscription.find(f => f.id === id)
 
     if (withSameId) {
@@ -95,11 +86,9 @@ const createWsSubscription = (id, subId, payload, next) => {
             wsCurrentConnection.send(JSON.stringify({type: 'start', clientId: _app_.clientId, id, payload}))
         }
     }
-
 }
 
 const removeWsSubscription = (id, subId) => {
-
     for (let i = 0; i < openWsSubscription.length; i++) {
         if (openWsSubscription[i].id === id) {
             const data = openWsSubscription[i]
@@ -109,7 +98,6 @@ const removeWsSubscription = (id, subId) => {
             if (Object.keys(data.nexts).length > 0) {
                 return false
             }
-            // remove from array by id
             openWsSubscription.splice(i, 1)
             break
         }
@@ -146,7 +134,7 @@ const setUpWs = () => {
             }
 
             wsCurrentConnection.onclose = () => {
-                console.log(`WebSocket closed.  Try to reconnect in 5 seconds`)
+                console.log(`WebSocket closed. Try to reconnect in 5 seconds`)
                 setUpWsWasCalled = false
                 setTimeout(setUpWs, 5000)
             }
@@ -162,26 +150,23 @@ const setUpWs = () => {
                         subIds.forEach(subId => {
                             sub.nexts[subId](msg.payload)
                         })
-
                     }
                 }
             }, false)
 
-
         } catch (e) {
-            // without ws
             console.warn('WS might not work', e)
         }
-
     }
 }
+
 const setUpWsIfNeeded = (data) => {
     if (data && data.cmsPage && data.cmsPage.subscriptions) {
-        // only setup subscription if needed
         setUpWs()
     }
 }
-const getHeaders = (lang, headersExtra={}) => {
+
+const getHeaders = (lang, headersExtra = {}) => {
     const headers = {
         'Content-Language': lang || _app_.lang,
         'Content-Type': 'application/json',
@@ -204,15 +189,14 @@ const getHeaders = (lang, headersExtra={}) => {
 
 const getCacheKey = ({query, variables = {}, lang = _app_.lang, userId = _app_.user._id}) => {
     const {slug, ...rest} = variables
-    return (slug !== undefined ? slug + '|' : query) + lang + (userId?'-'+userId+'-':'') + Object.keys(rest).filter(key => rest[key] ).sort().map(key=>key + '-' + rest[key]).join('|')
+    return (slug !== undefined ? slug + '|' : query) + lang + (userId ? '-' + userId + '-' : '') + Object.keys(rest).filter(key => rest[key]).sort().map(key => key + '-' + rest[key]).join('|')
 }
-
 
 const getFetchMore = ({prevData, type, query, variables, fetchPolicy}) => {
     return (opt) => {
         finalFetch({type, query, variables: {...variables, ...opt.variables}, fetchPolicy}).then((fetchMoreResult) => {
             opt.updateQuery(prevData, {fetchMoreResult: fetchMoreResult.data})
-        }).catch((e)=>{
+        }).catch((e) => {
             console.log(e)
             opt.updateQuery(e)
         })
@@ -222,44 +206,59 @@ const getFetchMore = ({prevData, type, query, variables, fetchPolicy}) => {
 const FETCH_BY_ID = {}
 
 export const clearFetchById = (id) => {
-    if(FETCH_BY_ID[id]){
+    if (FETCH_BY_ID[id]) {
         console.log(`abort fetch with id ${id}`)
         FETCH_BY_ID[id].abort()
         delete FETCH_BY_ID[id]
     }
 }
-const FETCHING_BY_CACHEKEY = {}
-export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  query, variables, hiddenVariables, fetchPolicy = CACHE_FIRST, lang, headersExtra}) => {
 
-    if(!query){
+const FETCHING_BY_CACHEKEY = {}
+
+export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, query, variables, hiddenVariables, fetchPolicy = CACHE_FIRST, lang, headersExtra}) => {
+
+    if (!query) {
         console.error('query is missing in finalFetch')
         return
     }
+
     if (!cacheKey && type === RequestType.query) {
         cacheKey = getCacheKey({query, variables, lang})
     }
-    if(cacheKey && FETCHING_BY_CACHEKEY[cacheKey]){
-        // exact same query is running
-        // prevent duplicate queries
+
+    // Prevent duplicate in-flight requests for the same cache key
+    if (cacheKey && FETCHING_BY_CACHEKEY[cacheKey]) {
         return FETCHING_BY_CACHEKEY[cacheKey]
     }
+
+    // FIX: Create the controller before anything async happens so it is
+    // always available on promise._controller, even if the caller assigns
+    // it after finalFetch() returns.
     const controller = new AbortController()
 
-    if(id){
+    if (id) {
         clearFetchById(id)
         FETCH_BY_ID[id] = controller
     }
 
-    const timeoutId = timeout === 0 ? 0 :setTimeout(() => {
-        controller._timeout = true
-        controller.abort()
-    }, timeout || 60000)
+    // FIX: treat timeout=0 as "no timeout" (was previously coercing 0 to
+    // timeoutId=0, making clearTimeout(0) a silent no-op and leaving the
+    // caller with a false sense of safety).
+    const timeoutId = timeout > 0
+        ? setTimeout(() => {
+            controller._timeout = true
+            controller.abort()
+        }, timeout)
+        : timeout === undefined
+            ? setTimeout(() => {
+                controller._timeout = true
+                controller.abort()
+            }, 60000)
+            : null   // timeout === 0 -> disabled
 
-    const finalizeRequest = () =>{
-        clearTimeout(timeoutId)
-        if(cacheKey){
-            delete FETCHING_BY_CACHEKEY[cacheKey]
-        }
+    const finalizeRequest = () => {
+        if (timeoutId !== null) clearTimeout(timeoutId)
+        if (cacheKey) delete FETCHING_BY_CACHEKEY[cacheKey]
     }
 
     const promise = new Promise((resolve, reject) => {
@@ -267,13 +266,14 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  qu
         if (type === RequestType.query && fetchPolicy === CACHE_FIRST) {
             const fromCache = client.readQuery({cacheKey})
             if (fromCache) {
+                // Cache hit: finalize immediately so the cacheKey slot is freed
+                finalizeRequest()
                 const resolveData = {
                     data: fromCache,
                     loading: false,
                     networkStatus: NetworkStatus.ready,
                     fetchMore: getFetchMore({prevData: fromCache, fetchPolicy, variables, type, query})
                 }
-
                 resolve(resolveData)
                 setUpWsIfNeeded(resolveData.data)
                 return
@@ -286,7 +286,9 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  qu
         } else {
             body = JSON.stringify({query, variables})
         }
+
         addLoader()
+
         fetch(getGraphQlUrl(), {
             method: 'POST',
             signal: controller.signal,
@@ -294,32 +296,35 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  qu
             headers: getHeaders(lang, headersExtra),
             body
         }).then(r => {
-            finalizeRequest()
             removeLoader()
+
             if (r.ok) {
-                // x-session is only set when USE_COOKIES is false
                 _app_.session = r.headers.get('x-session')
 
                 r.json().then(response => {
+                    // FIX: finalizeRequest() moved into the json callback so that
+                    // FETCHING_BY_CACHEKEY is only cleared once the response is
+                    // fully processed, preventing a second identical request from
+                    // racing through while we are still inside r.json().
+                    finalizeRequest()
+
                     if (!response.isAuth && _app_.user && _app_.user._id) {
-                        // if a user is logged in and for some reason user session is not valid anymore update user in client
                         _app_.dispatcher.setUser(null)
                     }
+
                     if (response.errors) {
                         const rejectData = {...response, loading: false, networkStatus: NetworkStatus.ready}
-                        if (response.errors) {
-                            rejectData.error = response.errors[0]
-                            _app_.dispatcher.addError({
-                                key: 'graphql_error',
-                                msg: rejectData.error.message /* + (rejectData.error.path ? ' (in operation ' + rejectData.error.path.join('/') + ')' : '') */
-                            })
-                        }
+                        rejectData.error = response.errors[0]
+                        _app_.dispatcher.addError({
+                            key: 'graphql_error',
+                            msg: rejectData.error.message
+                        })
                         reject(rejectData)
                     } else {
                         const resolveData = {...response, loading: false, networkStatus: NetworkStatus.ready}
                         setUpWsIfNeeded(response.data)
-                        if (type === RequestType.query) {
 
+                        if (type === RequestType.query) {
                             resolveData.fetchMore = getFetchMore({
                                 prevData: response.data,
                                 fetchPolicy,
@@ -327,7 +332,6 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  qu
                                 type,
                                 query
                             })
-
                             Hook.call('ApiClientQueryResponse', {response})
                             resolve(resolveData)
                             if (fetchPolicy !== 'no-cache') {
@@ -336,40 +340,69 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout,  qu
                         } else {
                             resolve(resolveData)
                         }
-
-
                     }
 
                 }).catch(error => {
+                    // FIX: finalizeRequest() also called on JSON parse failure
+                    finalizeRequest()
                     reject({error, loading: false, networkStatus: NetworkStatus.error})
                     _app_.dispatcher.addError({
                         key: 'graphql_error',
                         msg: error.message + (error.path ? ' (in operation ' + error.path.join('/') + ')' : '')
                     })
                 })
+
             } else {
+                // FIX: finalizeRequest() was missing in the !r.ok branch
+                finalizeRequest()
                 reject({error: {message: r.statusText}, loading: false, networkStatus: NetworkStatus.error})
-                _app_.dispatcher.addError({key: 'api_error',
+                _app_.dispatcher.addError({
+                    key: 'api_error',
                     msg: r.status + ' - ' + r.statusText,
-                    meta: {query, variables}})
+                    meta: {query, variables}
+                })
             }
 
         }).catch(error => {
             finalizeRequest()
             removeLoader()
+
+            // FIX: distinguish between timeout, user-triggered abort, offline,
+            // and genuine network failures so error messages are actionable.
+            const isTimeout = controller._timeout
+            const isAborted = !isTimeout && error.name === 'AbortError'
+            const isOffline = typeof navigator !== 'undefined' && !navigator.onLine
+
+            // Swallow intentional aborts silently (e.g. component unmount in useQuery)
+            if (isAborted) {
+                reject({error, loading: false, networkStatus: NetworkStatus.error})
+                return
+            }
+
+            const msg = isTimeout
+                ? 'Request timeout reached'
+                : isOffline
+                    ? 'No network connection'
+                    : `Network Error: ${error.message}`
+
             reject({error, loading: false, networkStatus: NetworkStatus.error})
             _app_.dispatcher.addError({
                 key: 'api_error',
-                msg: controller._timeout ? 'Request timeout reached' : error.message,
-                meta: {query, variables}
+                msg,
+                meta: {query, variables, name: error.name}
             })
-
         })
     })
+
+    // Expose the controller so callers (e.g. useQuery cleanup) can abort the
+    // request. Because the controller is created synchronously above, this is
+    // always set before any async work begins.
     promise._controller = controller
-    if(cacheKey){
+
+    if (cacheKey) {
         FETCHING_BY_CACHEKEY[cacheKey] = promise
     }
+
     return promise
 }
 
@@ -381,10 +414,10 @@ export const client = {
     query: ({query, variables, fetchPolicy, timeout, id}) => {
         return finalFetch({id, timeout, query, variables, fetchPolicy})
     },
-    clearCacheWith:({start}) =>{
-        const clearedKeys= []
-        Object.keys(CACHE_QUERIES).forEach(key=>{
-            if(key.startsWith(start)){
+    clearCacheWith: ({start}) => {
+        const clearedKeys = []
+        Object.keys(CACHE_QUERIES).forEach(key => {
+            if (key.startsWith(start)) {
                 clearedKeys.push(key)
                 delete CACHE_QUERIES[key]
             }
@@ -397,7 +430,7 @@ export const client = {
             query &&
             variables &&
             data.cmsPage &&
-            ['full',true].indexOf(data.cmsPage.urlSensitiv)<0 &&
+            ['full', true].indexOf(data.cmsPage.urlSensitiv) < 0 &&
             variables.query) {
 
             oldCacheKey = cacheKey || getCacheKey({query, variables})
@@ -417,7 +450,6 @@ export const client = {
 
         if (update) {
             if (data.__optimistic) {
-                // return optimistic response
                 update(data.__optimistic)
             } else {
                 update(data)
@@ -429,12 +461,11 @@ export const client = {
             cacheKey = getCacheKey({query, variables})
         }
         let res = CACHE_QUERIES[cacheKey]
-        if(res && res.__alias){
+        if (res && res.__alias) {
             console.log('read cache from alias')
             res = CACHE_QUERIES[res.__alias]
         }
         if (res && res.__optimistic) {
-            // return optimistic response
             return res.__optimistic
         }
         return res
@@ -480,17 +511,15 @@ export const client = {
                     },
                     writeQuery: ({query, variables, data, cacheKey}) => {
                         const existingData = proxy.readQuery({query, variables, cacheKey})
-                        if(existingData) {
+                        if (existingData) {
                             delete existingData.__optimistic
                         }
-
                         data = {...existingData, __optimistic: data}
                         client.writeQuery({cacheKey, query, variables, data})
                     }
                 }
                 update(proxy, {data: optimisticResponse})
             }
-
 
             res.then((r) => {
                 if (optimisticResponse) {
@@ -549,7 +578,7 @@ export const client = {
 
 export const graphql = (query, operationOptions = {}) => {
 
-    let finalQuery  = query.constructor === String?query.trim():null
+    let finalQuery = query.constructor === String ? query.trim() : null
 
     return (WrappedComponent) => {
 
@@ -558,7 +587,7 @@ export const graphql = (query, operationOptions = {}) => {
             prevRespone = {}
 
             render() {
-                if(query.constructor === Function) {
+                if (query.constructor === Function) {
                     finalQuery = query(this.props, this.state)
                 }
 
@@ -575,10 +604,10 @@ export const graphql = (query, operationOptions = {}) => {
 
                 let finalProps
 
-                const {refetchProps,refetchOptions} = this.state || {}
+                const {refetchProps, refetchOptions} = this.state || {}
 
-                if(refetchProps){
-                    finalProps = Object.assign({isRefetch:true, refetchOptions}, this.props, refetchProps)
+                if (refetchProps) {
+                    finalProps = Object.assign({isRefetch: true, refetchOptions}, this.props, refetchProps)
                 } else {
                     finalProps = this.props
                 }
@@ -596,9 +625,9 @@ export const graphql = (query, operationOptions = {}) => {
                     if (!data && (res.loading || skip)) {
                         data = prevData
                     }
-                    if(refetchOptions && refetchOptions.extendData) {
+                    if (refetchOptions && refetchOptions.extendData) {
                         data = deepMerge({}, prevData, res.data)
-                    }else {
+                    } else {
                         res.lang = _app_.lang
                         this.prevRespone = res
                     }
@@ -608,8 +637,8 @@ export const graphql = (query, operationOptions = {}) => {
                             loading: res.loading,
                             networkStatus: res.networkStatus,
                             fetchMore: res.fetchMore,
-                            refetch: (refetchProps, refetchOptions={})=>{
-                                this.setState({refetchProps,refetchOptions})
+                            refetch: (refetchProps, refetchOptions = {}) => {
+                                this.setState({refetchProps, refetchOptions})
                             }
                         },
                         ownProps: finalProps
@@ -630,11 +659,6 @@ export const Query = props => {
         result = useQuery(query, options)
     return children && result ? children(result) : null
 }
-/*
-export const Subscription = props => {
-    const result = useSubscription(props.subscription, props)
-    return props.children && result ? props.children(result) : null
-}*/
 
 export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = CACHE_FIRST, skip}) => {
     const cacheKey = getCacheKey({query, variables})
@@ -659,7 +683,6 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = CACHE
     }
 
     if (_app_.ssr) {
-
         if (!currentData) {
             SSR_FETCH_CHAIN[cacheKey] = {query, variables}
         }
@@ -668,7 +691,7 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = CACHE
 
     const [response, setResponse] = useState(initialData)
 
-    const cacheDeletedAt = checkCache && response.data && !response.errors && !currentData ? Date.now(): response.cacheDeletedAt
+    const cacheDeletedAt = checkCache && response.data && !response.errors && !currentData ? Date.now() : response.cacheDeletedAt
 
     useEffect(() => {
 
@@ -695,10 +718,16 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = CACHE
                     fetchPolicy
                 })
 
+                // FIX: guard against finalFetch returning undefined (e.g. missing query)
+                if (!promise) return
+
                 controller = promise._controller
                 promise.then(response => {
                     setResponse({...response, cacheDeletedAt, cacheKey})
                 }).catch(error => {
+                    // FIX: only update state for non-aborted errors; silently
+                    // swallow intentional aborts (component unmount) to avoid
+                    // setting error state on a component that is already gone.
                     if (!controller.signal.aborted || controller._timeout) {
                         setResponse(error)
                     }
@@ -708,11 +737,10 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = CACHE
 
         return () => {
             if (controller) {
-                console.log('Abort request in useQuery',variables)
                 controller.abort()
             }
         }
-    }, [cacheKey,cacheDeletedAt])
+    }, [cacheKey, cacheDeletedAt])
 
     if (!initialLoading) {
         response.data = currentData
@@ -720,7 +748,7 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = CACHE
     }
 
     if (response.cacheKey && initialData.cacheKey !== response.cacheKey) {
-        if(currentData) {
+        if (currentData) {
             response.data = currentData
         }
         response.loading = true
