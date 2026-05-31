@@ -5,7 +5,7 @@ import oAuthResolver from './gensrc/resolver.mjs'
 import {auth} from '../../api/auth.mjs'
 
 export async function oauthAuthorize(db, req, res) {
-    const { client_id, redirect_uri, state, response_type, scope } = req.query
+    const { client_id, redirect_uri, state, response_type, scope, domain } = req.query
 
     // 1. Pflichtfelder prüfen
     if (!client_id || !redirect_uri || !response_type) {
@@ -27,7 +27,7 @@ export async function oauthAuthorize(db, req, res) {
 
     // 5. redirect_uri gegen Whitelist prüfen
     const allowedUris = clientData.allowedRedirectUris
-        ? clientData.allowedRedirectUris.split(',').map(u => u.trim())
+        ? clientData.allowedRedirectUris.split(/[,\n]+/).map(u => u.trim())
         : []
 
     if (allowedUris.length>0 && !allowedUris.includes(redirect_uri)) {
@@ -36,7 +36,7 @@ export async function oauthAuthorize(db, req, res) {
 
     // 6. Scopes prüfen (falls vorhanden)
     if (scope && clientData.allowedScopes) {
-        const allowed = clientData.allowedScopes.split(',').map(s => s.trim())
+        const allowed = clientData.allowedScopes.split(/[\s,]+/).map(s => s.trim())
         const requested = scope.split(' ')
         const invalid = requested.filter(s => !allowed.includes(s))
         if (invalid.length > 0) {
@@ -51,7 +51,7 @@ export async function oauthAuthorize(db, req, res) {
 
     // 8. Sonst: zum Login weiterleiten
     const forward = encodeURIComponent(req.originalUrl)
-    res.redirect(`/admin/login?forward=${forward}`)
+    res.redirect(`/admin/login?forward=${forward}&domain=${domain||''}`)
 }
 
 export async function issueCode(db, req, res, {clientData, scope, state, redirect_uri }) {
@@ -139,7 +139,10 @@ export async function oauthToken(db, req, res) {
     )
 
     // 11. Access Token generieren
-    const {token} = await auth.signPayload(db, clientData.createdBy)
+    const {token} = await auth.signPayload(db, clientData.createdBy, {
+        oauth:{client: clientData._id},
+        accessScope:clientData.allowedScopes ? clientData.allowedScopes.split(/[\s,]+/) : []
+    })
 
 
     // 12. Antwort

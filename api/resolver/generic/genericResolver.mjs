@@ -485,6 +485,22 @@ const GenericResolver = {
             if(field.localized && !dataSet[fieldName]){
                 dataSet[fieldName] = {}
             }
+
+            if(field.reference && dataSet[fieldName]){
+                if(field.multi){
+                    if(!Array.isArray(dataSet[fieldName])){
+                        dataSet[fieldName] = [dataSet[fieldName]]
+                    }
+                    for(let i=0;i<dataSet[fieldName].length;i++){
+                        const ref = dataSet[fieldName][i]
+                        if(ref.constructor === String){
+                            dataSet[fieldName][i] = new ObjectId(ref)
+                        }
+                    }
+                }else if(dataSet[fieldName].constructor === String){
+                    dataSet[fieldName] = new ObjectId(dataSet[fieldName])
+                }
+            }
         }
 
 

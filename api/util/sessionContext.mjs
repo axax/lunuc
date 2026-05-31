@@ -84,7 +84,10 @@ export const contextByRequest = (req, res) => {
 
             if (exp - new Date() - AUTH_EXPIRES_IN_COOKIE / 2 < 0) {
                 // renew token & cookie
-                const payload = {username: context.username, id: context.id, role: context.role, group: context.group}
+                const payload = {...context}
+                delete payload.exp
+                delete payload.iat
+                delete payload.auth
                 const token = jwt.sign(payload, SECRET_KEY, {expiresIn: AUTH_EXPIRES_IN})
 
                 console.log('renew token')

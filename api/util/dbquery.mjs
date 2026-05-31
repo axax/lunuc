@@ -613,6 +613,19 @@ export const createMatchForCurrentUser = async ({ typeName, db, context, operati
         }
 
     } else {
+
+
+        if(context.accessScope && context.accessScope.length > 0){
+            // oauth access scope
+            if(context.accessScope.includes('user:read')){
+                match = { createdBy: { $in: await Util.userAndJuniorIds(db, context.id) } }
+                return match
+            }
+        }
+
+
+
+
         const typeDefinition = getType(typeName)
         let userFilter = true
 
