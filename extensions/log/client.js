@@ -90,8 +90,9 @@ export default () => {
 
     // add routes for this extension
     Hook.on('dispatcherAddError', (payload) => {
-        if(payload.meta && payload.meta.query && payload.meta.variables) {
-            if(payload.meta.query.startsWith('mutation createLog')) return
+        if(payload && payload.msg && payload.meta && payload.meta.query && payload.meta.variables) {
+            if(payload.meta.query.startsWith('mutation createLog') ||
+                payload.msg.startsWith('503 - Service Unavailable')) return
 
             sendError({
                 location: 'dispatcherAddError',
