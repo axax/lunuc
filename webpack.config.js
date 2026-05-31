@@ -325,7 +325,7 @@ if (DEV_MODE) {
 } else {
     console.log('Build for production')
     config.mode = 'production'
-
+    config.devtool= 'source-map'
     config.resolve = {
         extensions: ['.js', '.json', '.wasm', '.cjs', '.mjs'],
         alias: {
