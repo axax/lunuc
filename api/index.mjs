@@ -6,7 +6,8 @@ const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch
 
 
 globalThis.fetch = fetch
-globalThis.window = {location:{href:'',origin: ''}}
+globalThis.window = {location:{href:'',origin: ''}, chrome:{}}
+globalThis.navigator = {userAgent:'lunuc api',languages:[],plugins:[]}
 
 // define some global vars for server side rendering
 global.document = {documentElement: {}, referrer:''}

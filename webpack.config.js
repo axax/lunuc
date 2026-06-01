@@ -1,6 +1,5 @@
 const path = require('path')
 const fs = require('fs')
-const glob = require('glob')
 const webpack = require('webpack')
 const zlib = require('zlib')
 

@@ -226,7 +226,6 @@ const getBodyBuffer = (req, timeoutMs = 30000) => {
     return new Promise((resolve, reject) => {
         const chunks = []
 
-        // FIX: Timeout damit langsame/abgebrochene Clients nicht ewig hängen
         const timer = setTimeout(() => {
             req.destroy()
             reject(new Error(`getBodyBuffer timeout after ${timeoutMs}ms`))
@@ -243,10 +242,15 @@ const getBodyBuffer = (req, timeoutMs = 30000) => {
             cleanup()
             reject(err)
         })
-        req.on('close', () => {
-            // Client hat Verbindung geschlossen bevor Body komplett war
+        // FIX: Client hat abgebrochen
+        req.on('aborted', () => {
             cleanup()
-            reject(new Error('Client closed connection before body was complete'))
+            console.log('getBodyBuffer: client aborted', req.url)
+            reject(new Error('client aborted'))
+        })
+        req.on('close', () => {
+            cleanup()
+            reject(new Error('client closed connection'))
         })
     })
 }

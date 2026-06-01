@@ -3,6 +3,45 @@ import Hook from 'util/hook.cjs'
 import {getTypeQueries} from 'util/types.mjs'
 import {client} from 'client/middleware/graphql'
 
+
+const isHeadlessBrowser = () => {
+    try {
+        // 1. Der offizielle Standard-Check (Sicher gegen fehlendes navigator-Objekt)
+        if (window?.navigator?.webdriver) {
+            return true;
+        }
+
+        // 2. Der Chrome-Spezifische Check mit Optional Chaining
+        // Prüft sicher, ob window.chrome existiert, ohne einen TypeError zu werfen
+        const hasChromeObject = !!window?.chrome;
+        const hasPlugins = !!window?.navigator?.plugins?.length;
+
+        if (hasChromeObject && !hasPlugins) {
+            return true; // Echte Chrome-Browser haben praktisch immer Plugins gelistet
+        }
+
+        // 3. Spracheinstellungen prüfen (Null-Pointer-safe)
+        const languages = window?.navigator?.languages;
+        if (!languages || languages.length === 0) {
+            return true; // Headless-Browser vergessen oft, Sprachen zu setzen
+        }
+
+        // 4. User-Agent-Check mit indexOf (Alternative zu .includes)
+        const ua = window?.navigator?.userAgent?.toLowerCase();
+        if (ua) {
+            if (ua.indexOf("headless") !== -1 ||
+                ua.indexOf("phantomjs") !== -1 ||
+                ua.indexOf("selenium") !== -1) {
+                return true;
+            }
+        }
+
+        return false;
+    } catch (e) {
+        return false;
+    }
+}
+
 const sendError = ({location, message, meta}) =>{
 
     const queries = getTypeQueries('Log')
@@ -16,6 +55,7 @@ const sendError = ({location, message, meta}) =>{
                 agent: navigator.userAgent,
                 href: window.location.href,
                 parser: window._lunucWebParser,
+                headless: isHeadlessBrowser(),
                 ...meta
             })
         }
