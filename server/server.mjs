@@ -133,6 +133,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
         ...hostrule.headers[urlPathname]
     }
 
+
     const statusCode = (hostrule.statusCode && hostrule.statusCode[urlPathname] ? hostrule.statusCode[urlPathname] : 200)
 
     let {isBot, noJsRendering} = parseUserAgent(agent, {botRegex: hostrule.botRegex, noJsRenderingBotRegex: hostrule.noJsRenderingBotRegex})
@@ -685,30 +686,38 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 // WebSocket requests as well.
 //
 if (USE_HTTPX) {
+    const trackRequest = (req) => {
+        req.socket._lastUrl = req.url
+        req.socket._lastIp = req.socket?.remoteAddress
+        req.socket._lastUserAgent = req.headers?.['user-agent']
+    }
+
+    const onClientError = (protocol) => (err, socket) => {
+        console.log(`${protocol} clientError`, {
+            code: err.code,
+            message: err.message,
+            remoteIp: socket?.remoteAddress || socket?._lastIp,
+            requestUrl: socket?._lastUrl || '(unknown)',
+            userAgent: socket?._lastUserAgent || '(unknown)'
+        })
+
+        if (err.code === 'ECONNRESET' || !socket.writable) {
+            return
+        }
+        socket.end('HTTP/1.1 400 Bad Request\r\n\r\n')
+    }
+
     app.http.on('upgrade', proxyWsToApiServer)
     app.https.on('upgrade', proxyWsToApiServer)
-    app.http.on('error', (e) => {
-        console.log('http error', e)
-    })
-    app.https.on('error', (e) => {
-        console.log('https error', e)
-    })
-    app.http.on('clientError', (err, socket) => {
-        console.log('http clientError', err)
 
-        if (err.code === 'ECONNRESET' || !socket.writable) {
-            return
-        }
-        socket.end('HTTP/1.1 400 Bad Request\r\n\r\n')
-    })
-    app.https.on('clientError', (err, socket) => {
-        console.log('https clientError', err, socket && socket.remoteAddress)
+    app.http.on('error', (e) => console.log('http error', e))
+    app.https.on('error', (e) => console.log('https error', e))
 
-        if (err.code === 'ECONNRESET' || !socket.writable) {
-            return
-        }
-        socket.end('HTTP/1.1 400 Bad Request\r\n\r\n')
-    })
+    app.http.on('request', trackRequest)
+    app.https.on('request', trackRequest)
+
+    app.http.on('clientError', onClientError('http'))
+    app.https.on('clientError', onClientError('https'))
 } else {
     app.on('upgrade', proxyWsToApiServer)
 }
