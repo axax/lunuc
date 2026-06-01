@@ -290,7 +290,8 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
         addLoader()
 
         const headers = getHeaders(lang, headersExtra)
-        fetch(getGraphQlUrl(), {
+        const graphQlUrl = getGraphQlUrl()
+        fetch(graphQlUrl, {
             method: 'POST',
             signal: controller.signal,
             credentials: 'include',
@@ -390,7 +391,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
             _app_.dispatcher.addError({
                 key: 'api_error',
                 msg,
-                meta: {query, variables, hiddenVariables, headers, name: error.name, stack: error.stack}
+                meta: {query, variables, hiddenVariables, headers, name: error.name, stack: error.stack, graphQlUrl, cacheKey}
             })
         })
     })
