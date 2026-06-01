@@ -10,7 +10,8 @@ import {
     TRACK_REFERER_HEADER,
     TRACK_USER_AGENT_HEADER
 } from '../../api/constants/index.mjs'
-import Util from "../../api/util/index.mjs";
+import Util from '../../api/util/index.mjs'
+import {parseOrElse} from '../../client/util/json.mjs'
 
 let mydb
 Hook.on('dbready', ({db}) => {
@@ -103,11 +104,17 @@ Hook.on('typeLoaded', async ({type,cacheKey,db, req, context, result, dataQuery,
   }
 })
 
-Hook.on('typeBeforeCreate', ({type, data}) => {
+Hook.on('typeBeforeCreate', ({type, data, req}) => {
     if (type === 'Log') {
         if (!data.server) {
             data.server = Util.systemProperties().hostname
         }
+        const meta = parseOrElse(data.meta,{})
+
+        if(!meta.ip){
+            meta.ip = clientAddress(req)
+        }
+        data.meta = meta
     }
 })
 
