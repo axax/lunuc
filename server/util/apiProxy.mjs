@@ -22,6 +22,15 @@ export const proxyToApiServer = async (req, res, options) => {
         try {
             bufferedBody = await getBodyBuffer(req)
         } catch (err) {
+            // FIX: unterscheiden ob Timeout oder Client-Abbruch
+            if (err.message.includes('timeout')) {
+                console.warn('Body buffer timeout – slow client:', clientAddress(req))
+                return sendError(res, 408, 'Request Timeout: body upload too slow.')
+            }
+            if (err.message.includes('closed connection')) {
+                console.warn('Client disconnected during body upload:', clientAddress(req))
+                return // Keine Response nötig, Client ist weg
+            }
             console.error('Error buffering client request:', err)
             return sendError(res, 400, 'Error reading request body.')
         }
@@ -102,7 +111,7 @@ const executeProxyRequest = (originalReq, originalRes, options, bufferedBody) =>
         method: originalReq.method,
         headers: newHeaders,
         rejectUnauthorized: false,
-        requestTimeout:2000,
+        requestTimeout:5000,
         timeout: 7200000, /* 2h */
     }, (proxyRes) => {
         // ... (Response handling is the same)
@@ -190,6 +199,16 @@ const executeProxyRequest = (originalReq, originalRes, options, bufferedBody) =>
         }
     })
 
+    proxyReq.on('requestTimeout', () => {
+        console.error(`Proxy requestTimeout – API server too slow`)
+        proxyReq.destroy()
+        if (!originalRes.headersSent) {
+            sendError(originalRes, 504, 'Gateway Timeout: API server did not respond in time.')
+        } else {
+            originalRes.destroy()
+        }
+    })
+
     // e) Handle client request closure/error **before** piping is complete (client disconnects early)
     originalReq.on('aborted', () => {
         console.warn('Client aborted request.')
@@ -203,15 +222,31 @@ const executeProxyRequest = (originalReq, originalRes, options, bufferedBody) =>
 }
 
 // Helper function to read the entire request body into a buffer
-const getBodyBuffer = (req) => {
+const getBodyBuffer = (req, timeoutMs = 30000) => {
     return new Promise((resolve, reject) => {
         const chunks = []
-        req.on('data', (chunk) => {
-            chunks.push(chunk)
-        })
+
+        // FIX: Timeout damit langsame/abgebrochene Clients nicht ewig hängen
+        const timer = setTimeout(() => {
+            req.destroy()
+            reject(new Error(`getBodyBuffer timeout after ${timeoutMs}ms`))
+        }, timeoutMs)
+
+        const cleanup = () => clearTimeout(timer)
+
+        req.on('data', (chunk) => chunks.push(chunk))
         req.on('end', () => {
+            cleanup()
             resolve(Buffer.concat(chunks))
         })
-        req.on('error', reject)
+        req.on('error', (err) => {
+            cleanup()
+            reject(err)
+        })
+        req.on('close', () => {
+            // Client hat Verbindung geschlossen bevor Body komplett war
+            cleanup()
+            reject(new Error('Client closed connection before body was complete'))
+        })
     })
 }
