@@ -112,7 +112,10 @@ Hook.on('typeBeforeCreate', ({type, data, req}) => {
         const meta = parseOrElse(data.meta,{})
 
         if(!meta.ip){
-            meta.ip = clientAddress(req)
+            const ip = clientAddress(req)
+            if(ip){
+                meta.ip = ip
+            }
         }
         data.meta = meta
     }
