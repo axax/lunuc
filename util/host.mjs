@@ -40,7 +40,7 @@ export const clientAddress = (req) => {
             ip = req.headers[FORWARDED_FOF_HEADER].split(',')[0]
         }
     }
-    if(!ip) {
+    if(!ip && req.connection) {
         ip = req.connection.remoteAddress
     }
 

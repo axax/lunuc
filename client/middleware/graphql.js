@@ -150,10 +150,12 @@ const setUpWs = () => {
 
                     for (let i = 0; i < openWsSubscription.length; i++) {
                         const sub = openWsSubscription[i]
-                        const subIds = Object.keys(sub.nexts)
-                        subIds.forEach(subId => {
-                            sub.nexts[subId](msg.payload)
-                        })
+                        if (msg.id === sub.id) {
+                            const subIds = Object.keys(sub.nexts)
+                            subIds.forEach(subId => {
+                                sub.nexts[subId](msg.payload)
+                            })
+                        }
                     }
                 }
             }, false)
@@ -191,7 +193,7 @@ const getHeaders = (lang, headersExtra = {}) => {
     return headers
 }
 
-const getCacheKey = ({query, variables = {}, lang = _app_.lang, userId = _app_.user._id}) => {
+const getCacheKey = ({query, variables = {}, lang = _app_.lang, userId = _app_.user?._id}) => {
     const {slug, ...rest} = variables
     return (slug !== undefined ? slug + '|' : query) + lang + (userId ? '-' + userId + '-' : '') + Object.keys(rest).filter(key => rest[key]).sort().map(key => key + '-' + rest[key]).join('|')
 }
@@ -412,7 +414,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
     return promise
 }
 
-let CACHE_QUERIES = {}, CACHE_ITEMS = {}, QUERY_WATCHER = {}
+let CACHE_QUERIES = {},  QUERY_WATCHER = {}
 
 _app_.CACHE_QUERIES = CACHE_QUERIES
 
@@ -492,9 +494,11 @@ export const client = {
     addQueryWatcher: ({cacheKey, update}) => {
         QUERY_WATCHER[cacheKey] = update
     },
+    removeQueryWatcher: (cacheKey) => {
+        delete QUERY_WATCHER[cacheKey]
+    },
     resetStore: () => {
         CACHE_QUERIES = {}
-        CACHE_ITEMS = {}
     },
     mutate: ({mutation, variables, update, optimisticResponse}, _ref) => {
         const res = finalFetch({type: RequestType.mutate, query: mutation, variables})
@@ -584,7 +588,6 @@ export const client = {
 
 export const graphql = (query, operationOptions = {}) => {
 
-    let finalQuery = query.constructor === String ? query.trim() : null
 
     return (WrappedComponent) => {
 
@@ -593,9 +596,10 @@ export const graphql = (query, operationOptions = {}) => {
             prevRespone = {}
 
             render() {
-                if (query.constructor === Function) {
-                    finalQuery = query(this.props, this.state)
-                }
+                const finalQuery = query.constructor === Function
+                    ? query(this.props, this.state)
+                    : (query.constructor === String ? query.trim() : null)
+
 
                 if (finalQuery.startsWith('mutation')) {
                     const props = operationOptions.props({
@@ -697,25 +701,34 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = CACHE
 
     const [response, setResponse] = useState(initialData)
 
+    // FIX 4 & 5: Offizielles React-Pattern für State-Updates direkt im Render-Durchlauf.
+    // Falls sich der Cache-Key ändert (z.B. neue Variablen), triggern wir sofort
+    // ein State-Reset auf die neuen `initialData` und brechen den veralteten Render-Zweig ab.
+    // Das spart den unschönen DOM-Paint und eliminiert jegliche State-Mutationen.
+    if (response.cacheKey !== cacheKey) {
+        setResponse(initialData)
+        return initialData
+    }
+
     const cacheDeletedAt = checkCache && response.data && !response.errors && !currentData ? Date.now() : response.cacheDeletedAt
 
     useEffect(() => {
-
         let controller
 
-        const newResponse = {cacheDeletedAt, cacheKey, fetchMore: initialData.fetchMore}
-        newResponse.loading = response.networkStatus !== NetworkStatus.error
-
+        // FIX: Funktionales Update verhindert das Einfrieren von veralteten State-Closures (Stale Closures) im Watcher
         client.addQueryWatcher({
             cacheKey, update: data => {
-                if (data !== newResponse.data) {
-                    setResponse({...newResponse, loading: false, data})
-                }
+                setResponse(prev => {
+                    if (data !== prev.data) {
+                        return {...prev, loading: false, data}
+                    }
+                    return prev
+                })
             }
         })
 
         if (initialLoading) {
-            if (newResponse.loading) {
+            if (response.networkStatus !== NetworkStatus.error) {
                 const promise = finalFetch({
                     cacheKey,
                     query,
@@ -724,16 +737,12 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = CACHE
                     fetchPolicy
                 })
 
-                // FIX: guard against finalFetch returning undefined (e.g. missing query)
                 if (!promise) return
 
                 controller = promise._controller
-                promise.then(response => {
-                    setResponse({...response, cacheDeletedAt, cacheKey})
+                promise.then(res => {
+                    setResponse({...res, cacheDeletedAt, cacheKey})
                 }).catch(error => {
-                    // FIX: only update state for non-aborted errors; silently
-                    // swallow intentional aborts (component unmount) to avoid
-                    // setting error state on a component that is already gone.
                     if (!controller.signal.aborted || controller._timeout) {
                         setResponse(error)
                     }
@@ -745,20 +754,9 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = CACHE
             if (controller) {
                 controller.abort()
             }
+            client.removeQueryWatcher(cacheKey)
         }
     }, [cacheKey, cacheDeletedAt])
-
-    if (!initialLoading) {
-        response.data = currentData
-        return initialData
-    }
-
-    if (response.cacheKey && initialData.cacheKey !== response.cacheKey) {
-        if (currentData) {
-            response.data = currentData
-        }
-        response.loading = true
-    }
 
     return response
 }
