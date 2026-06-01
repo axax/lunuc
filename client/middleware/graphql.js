@@ -337,7 +337,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
                             Hook.call('ApiClientQueryResponse', {response})
                             resolve(resolveData)
                             if (fetchPolicy !== 'no-cache') {
-                                client.writeQuery({cacheKey, query, variables, data: response.data})
+                                client.writeQuery({cacheKey, query, variables, data: response.data, buildVersion: _app_.config.BUILD_NUMBER})
                             }
                         } else {
                             resolve(resolveData)
@@ -391,7 +391,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
             _app_.dispatcher.addError({
                 key: 'api_error',
                 msg,
-                meta: {query, variables, hiddenVariables, headers, name: error.name, stack: error.stack, graphQlUrl, cacheKey}
+                meta: {query, variables, hiddenVariables, headers, name: error.name, stack: error.stack, graphQlUrl, cacheKey, buildVersion: _app_.config.BUILD_NUMBER}
             })
         })
     })

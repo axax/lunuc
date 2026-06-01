@@ -143,13 +143,11 @@ if (fs.existsSync(APP_VALUES.HOSTRULES_ABSPATH)) {
 const config = {
     entry: ['./client/index.js'],
     target: ['web', 'es5'],
+    /*target: ['web', 'es2017'],*/
     output: {
         path: path.resolve(__dirname, 'build'),
-        // FIX: Query-String aus Dateinamen entfernt – verhindert dass die
-        // .map-Datei einen ungültigen Namen bekommt. Version wird stattdessen
-        // als globale Konstante per DefinePlugin injiziert.
-        filename: '[name].bundle.js',
-        chunkFilename: '[name].bundle.js',
+        filename: '[name].bundle.js' + (DEV_MODE ? '?v=' + BUILD_NUMBER:''),
+        chunkFilename: '[name].bundle.js' + (DEV_MODE ? '?v=' + BUILD_NUMBER:''),
         publicPath: '/'
     },
     externals: {
