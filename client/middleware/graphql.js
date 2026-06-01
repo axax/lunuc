@@ -25,7 +25,9 @@ export const getGraphQlUrl = () => {
             GRAPHQL_URL = _app_.graphqlOptions.url
         } else {
             const location = window.location
-            GRAPHQL_URL = `${location.protocol}//${location.hostname}:${location.port}/graphql`
+            // FIX: port weglassen wenn leer (Standard-Ports 80/443)
+            const port = location.port ? `:${location.port}` : ''
+            GRAPHQL_URL = `${location.protocol}//${location.hostname}${port}/graphql`
         }
     }
     return GRAPHQL_URL
@@ -37,7 +39,9 @@ export const getGraphQlWsUrl = () => {
             GRAPHQL_WS_URL = _app_.graphqlOptions.wsUrl
         } else {
             const location = window.location
-            GRAPHQL_WS_URL = (location.protocol === 'https:' ? 'wss' : 'ws') + `://${location.hostname}:${location.port}/lunucws`
+            // FIX: port weglassen wenn leer (Standard-Ports 80/443)
+            const port = location.port ? `:${location.port}` : ''
+            GRAPHQL_WS_URL = (location.protocol === 'https:' ? 'wss' : 'ws') + `://${location.hostname}${port}/lunucws`
         }
     }
     return GRAPHQL_WS_URL
@@ -337,7 +341,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
                             Hook.call('ApiClientQueryResponse', {response})
                             resolve(resolveData)
                             if (fetchPolicy !== 'no-cache') {
-                                client.writeQuery({cacheKey, query, variables, data: response.data, buildVersion: _app_.config.BUILD_NUMBER})
+                                client.writeQuery({cacheKey, query, variables, data: response.data})
                             }
                         } else {
                             resolve(resolveData)
@@ -391,7 +395,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
             _app_.dispatcher.addError({
                 key: 'api_error',
                 msg,
-                meta: {query, variables, hiddenVariables, headers, name: error.name, stack: error.stack, graphQlUrl, cacheKey, buildVersion: _app_.config.BUILD_NUMBER}
+                meta: {query, variables, hiddenVariables, headers, name: error.name, stack: error.stack, graphQlUrl, cacheKey}
             })
         })
     })
