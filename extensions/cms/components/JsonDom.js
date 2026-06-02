@@ -1507,7 +1507,7 @@ class JsonDom extends React.Component {
                 _t,
                 // expose some attributes
                 addToPostRender: this.addToPostRender,
-                serverMethod: this.serverMethod,
+                serverMethod: this.serverMethodTemplate,
                 props: this.props
             }).replace(POST_TEMPLATE_REPLACE_REGEX, m => POST_TEMPLATE_REPLACEMENTS[m])
 
@@ -1647,25 +1647,30 @@ class JsonDom extends React.Component {
     }
 
     serverMethod = (name, args, cb) => {
-        if (!cb && this.props) {
-            JsonDom.instanceCounter++
-            const key = 'serverMethod' + JsonDom.instanceCounter
-            this.props.serverMethod(name, args)
-                .then((response) => {
-                    Util.$('#' + key).innerHTML = response.data.cmsServerMethod.result
-                }).catch((error) => {
-                    Util.$('#' + key).innerHTML = JSON.stringify(error)
-                })
-
-            return '<div id=\'' + key + '\'>...</div>'
-        }
-
         const promise = this.props.serverMethod(name, args)
         if (cb) {
             promise.then(cb).catch(cb)
             return
         }
         return promise
+    }
+
+    serverMethodTemplate = (name, args) => {
+        const key = 'serverMethod' + JsonDom.instanceCounter
+        let msg
+        if (this.props) {
+            JsonDom.instanceCounter++
+            this.props.serverMethod(name, args)
+                .then((response) => {
+                    Util.$('#' + key).innerHTML = response.data.cmsServerMethod.result
+                }).catch((error) => {
+                    Util.$('#' + key).innerHTML = JSON.stringify(error)
+                })
+            msg = '...'
+        }else{
+            msg = 'not mounted'
+        }
+        return `<div id="${key}">${msg}</div>`
     }
 
 
