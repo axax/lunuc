@@ -447,9 +447,9 @@ class CmsViewContainer extends React.Component {
     }
 
 
-    serverMethod(methodName, args, cb) {
+    serverMethod(methodName, args) {
         const {slug, _version} = getSlugVersion(this.props.slug)
-        client.query({
+        return client.query({
             fetchPolicy: 'network-only',
             query: 'query cmsServerMethod($slug:String!,$methodName:String!,$args:String,$_version:String,$dynamic:Boolean){cmsServerMethod(slug:$slug,methodName:$methodName,args:$args,_version:$_version,dynamic:$dynamic){result}}',
             variables: {
@@ -459,7 +459,7 @@ class CmsViewContainer extends React.Component {
                 dynamic: this.props.dynamic,
                 args: args && (args.constructor === Object || args.constructor === Array) ? JSON.stringify(args) : args
             }
-        }).then(cb).catch(cb)
+        })
     }
 
 }

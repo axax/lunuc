@@ -1647,16 +1647,25 @@ class JsonDom extends React.Component {
     }
 
     serverMethod = (name, args, cb) => {
-        if (!cb) {
-
+        if (!cb && this.props) {
             JsonDom.instanceCounter++
             const key = 'serverMethod' + JsonDom.instanceCounter
-            this.props.serverMethod(name, args, (response) => {
-                Util.$('#' + key).innerHTML = response.data.cmsServerMethod.result
-            })
+            this.props.serverMethod(name, args)
+                .then((response) => {
+                    Util.$('#' + key).innerHTML = response.data.cmsServerMethod.result
+                }).catch((error) => {
+                    Util.$('#' + key).innerHTML = JSON.stringify(error)
+                })
+
             return '<div id=\'' + key + '\'>...</div>'
         }
-        this.props.serverMethod(name, args, cb)
+
+        const promise = this.props.serverMethod(name, args)
+        if (cb) {
+            promise.then(cb).catch(cb)
+            return
+        }
+        return promise
     }
 
 
