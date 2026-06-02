@@ -1670,7 +1670,7 @@ class JsonDom extends React.Component {
         }else{
             msg = 'not mounted'
         }
-        return `<div id="${key}">${msg}</div>`
+        return `<div id='${key}'>${msg}</div>`
     }
 
 
