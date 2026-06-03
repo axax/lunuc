@@ -2,32 +2,25 @@ export function propertyByPath(path, obj, separator = '.', assign = false) {
     if (!path) {
         return assign ? assignIfObjectOrArray(obj) : obj
     }
-    let escapedPath
-    return path.split(separator).reduce((res, prop) => {
-        if (res) {
-            if (prop.lastIndexOf('\\') === prop.length - 1) {
-                if (!escapedPath) {
-                    escapedPath = ''
-                }
-                escapedPath += prop.substring(0, prop.length - 1) + separator
-                return res
-            }
-            let finalPath
-            if (escapedPath) {
-                finalPath = escapedPath + prop
-                escapedPath = ''
-            } else {
-                finalPath = prop
-            }
-
-            if (assign) {
-                res[finalPath] = assignIfObjectOrArray(res[finalPath])
-            }
-            return res[finalPath]
+    const parts = path.split(separator)
+    let res = obj
+    let escapedPath = ''
+    const len = parts.length
+    for (let i = 0; i < len; i++) {
+        if (!res) return null
+        const prop = parts[i]
+        if (prop.lastIndexOf('\\') === prop.length - 1) {
+            escapedPath += prop.substring(0, prop.length - 1) + separator
+            continue
         }
-        return null
-
-    }, obj)
+        const finalPath = escapedPath ? escapedPath + prop : prop
+        escapedPath = ''
+        if (assign) {
+            res[finalPath] = assignIfObjectOrArray(res[finalPath])
+        }
+        res = res[finalPath]
+    }
+    return res
 }
 
 export function assignIfObjectOrArray(obj) {
@@ -49,14 +42,14 @@ export const isString = (variable) => typeof variable === 'string'
 /*
 return true if expression is not valid
  */
-const EXPR_REGEX = /([\w|$|\.]*)(==|\!=|>=|<=|>|<| in | nin )(.*)/;
+const EXPR_REGEX = /([\w$.|]*)(==|!=|>=|<=|>|<| in | nin )(.*)/;
 
 export function matchExpr(expr, scope) {
     if (isFalse(expr)) {
         return true
     }
 
-    if(isString(expr) && expr!=='true') {
+    if (typeof expr === 'string' && expr !== 'true') {
         const match = expr.match(EXPR_REGEX)
 
         if (match && match.length === 4) {
@@ -64,53 +57,40 @@ export function matchExpr(expr, scope) {
             try {
                 prop = propertyByPath(match[1], scope)
             } catch (e) {
+                // ignore
             }
-            const m2 = match[2], m3 = match[3]
-            if (m2 === '==') {
-                if (m3 !== String(prop)) {
-                    return true
-                }
-            } else if (m2 === '!=') {
-                if (m3 === String(prop)) {
-                    return true
-                }
-            } else if (m2 === '>') {
-                const v = Array.isArray(m3)?m3[m3.length-1]:m3
-                if (!(prop > parseFloat(v))) {
-                    return true
-                }
-            } else if (m2 === '>=') {
-                const v = Array.isArray(m3)?m3[m3.length-1]:m3
-                if (!(prop >= parseFloat(v))) {
-                    return true
-                }
-            } else if (m2 === '<') {
-                const v = Array.isArray(m3)?m3[0]:m3
-                if (!(prop < parseFloat(v))) {
-                    return true
-                }
-            } else if (m2 === '<=') {
-                const v = Array.isArray(m3)?m3[0]:m3
-                if (!(prop <= parseFloat(v))) {
-                    return true
-                }
-            } else if (m2 === ' in ' || m2 === ' nin ') {
-                if (Array.isArray(prop)) {
-                    let exists = false
-                    for (let i = 0; i < prop.length; i++) {
-                        if (m3.indexOf('"' + prop[i] + '"') >= 0 || m3 === prop[i]) {
-                            exists = true
-                            break
+
+            const m2 = match[2]
+            const m3 = match[3]
+
+            switch (m2) {
+                case '==':
+                    return m3 !== String(prop)
+                case '!=':
+                    return m3 === String(prop)
+                case '>':
+                    return !(prop > parseFloat(m3))
+                case '>=':
+                    return !(prop >= parseFloat(m3))
+                case '<':
+                    return !(prop < parseFloat(m3))
+                case '<=':
+                    return !(prop <= parseFloat(m3))
+                case ' in ':
+                case ' nin ': {
+                    const isNin = m2 === ' nin '
+                    if (Array.isArray(prop)) {
+                        const len = prop.length
+                        for (let i = 0; i < len; i++) {
+                            const p = prop[i]
+                            if (m3 === p || m3.indexOf('"' + p + '"') !== -1) {
+                                return isNin
+                            }
                         }
-                    }
-                    let res = exists ? false : true
-                    return m2 === ' nin ' ? !res : res
-                } else {
-                    const idx = m3.indexOf('"' + prop + '"')
-                    if (m2 === ' nin ') {
-                        return idx >= 0
+                        return !isNin
                     } else {
-                        return idx === -1
+                        const idx = m3.indexOf('"' + prop + '"')
+                        return isNin ? idx !== -1 : idx === -1
                     }
                 }
             }
