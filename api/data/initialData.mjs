@@ -45,9 +45,15 @@ export const createAllInitialData = async (db) => {
 
         const dbFile = path.join(path.resolve(), './api/data/initialDb.gz')
 
-
-        const response = execSync(`mongorestore --nsInclude=lunuc.* --noIndexRestore --uri="${MONGO_URL}" --drop --gzip --archive="${dbFile}"`)
-        console.log('restoreDbDump', response)
+        try {
+            execSync(
+                `mongorestore --nsInclude=lunuc_backup.* --nsFrom="lunuc_backup.*" --nsTo="lunuc.*" --noIndexRestore --uri="${MONGO_URL}" --drop --gzip --archive="${dbFile}"`,
+                { stdio: 'inherit' } // pipes stdout+stderr directly to the parent process
+            );
+            console.log('Restore completed successfully');
+        } catch (err) {
+            console.error('Restore failed:', err.message);
+        }
 
         await createAllIndexes(db)
     }

@@ -12,6 +12,7 @@ const RequestType = {
     query: 1,
     mutate: 2
 }
+const RETRYABLE_STATUS = [502, 503, 504]
 
 const CACHE_FIRST = 'cache-first'
 
@@ -221,7 +222,7 @@ export const clearFetchById = (id) => {
 
 const FETCHING_BY_CACHEKEY = {}
 
-export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, query, variables, hiddenVariables, fetchPolicy = CACHE_FIRST, lang, headersExtra}) => {
+export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, query, variables, hiddenVariables, fetchPolicy = CACHE_FIRST, lang, headersExtra, retries = 1}) => {
 
     if (!query) {
         console.error('query is missing in finalFetch')
@@ -237,9 +238,6 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
         return FETCHING_BY_CACHEKEY[cacheKey]
     }
 
-    // FIX: Create the controller before anything async happens so it is
-    // always available on promise._controller, even if the caller assigns
-    // it after finalFetch() returns.
     const controller = new AbortController()
 
     if (id) {
@@ -247,9 +245,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
         FETCH_BY_ID[id] = controller
     }
 
-    // FIX: treat timeout=0 as "no timeout" (was previously coercing 0 to
-    // timeoutId=0, making clearTimeout(0) a silent no-op and leaving the
-    // caller with a false sense of safety).
+    // timeout=0 -> disabled, undefined -> default 60s. Gilt über alle Versuche hinweg.
     const timeoutId = timeout > 0
         ? setTimeout(() => {
             controller._timeout = true
@@ -260,19 +256,22 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
                 controller._timeout = true
                 controller.abort()
             }, 60000)
-            : null   // timeout === 0 -> disabled
+            : null
 
     const finalizeRequest = () => {
         if (timeoutId !== null) clearTimeout(timeoutId)
         if (cacheKey) delete FETCHING_BY_CACHEKEY[cacheKey]
     }
 
+    // RETRY: kurzer Backoff (mit etwas Jitter, damit nicht alle Clients gleichzeitig retrien)
+    const RETRY_BACKOFF = 400 + Math.floor(Math.random() * 200)
+
     const promise = new Promise((resolve, reject) => {
 
+        // Cache-Check läuft nur einmal, nicht pro Versuch.
         if (type === RequestType.query && fetchPolicy === CACHE_FIRST) {
             const fromCache = client.readQuery({cacheKey})
             if (fromCache) {
-                // Cache hit: finalize immediately so the cacheKey slot is freed
                 finalizeRequest()
                 const resolveData = {
                     data: fromCache,
@@ -293,118 +292,132 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
             body = JSON.stringify({query, variables})
         }
 
-        addLoader()
-
-        const headers = getHeaders(lang, headersExtra)
         const graphQlUrl = getGraphQlUrl()
-        fetch(graphQlUrl, {
-            method: 'POST',
-            signal: controller.signal,
-            credentials: 'include',
-            headers,
-            body
-        }).then(r => {
-            removeLoader()
 
-            if (r.ok) {
-                _app_.session = r.headers.get('x-session')
+        // RETRY: ein einzelner Netzwerk-Versuch. `attemptsLeft` = verbleibende
+        // Wiederholungen NACH diesem Versuch. Nur Queries bekommen attemptsLeft > 0.
+        const attempt = (attemptsLeft) => {
 
-                r.json().then(response => {
-                    // FIX: finalizeRequest() moved into the json callback so that
-                    // FETCHING_BY_CACHEKEY is only cleared once the response is
-                    // fully processed, preventing a second identical request from
-                    // racing through while we are still inside r.json().
-                    finalizeRequest()
+            addLoader()
 
-                    if (!response.isAuth && _app_.user && _app_.user._id) {
-                        _app_.dispatcher.setUser(null)
-                    }
+            const headers = getHeaders(lang, headersExtra)
 
-                    if (response.errors) {
-                        const rejectData = {...response, loading: false, networkStatus: NetworkStatus.ready}
-                        rejectData.error = response.errors[0]
+            fetch(graphQlUrl, {
+                method: 'POST',
+                signal: controller.signal,
+                credentials: 'include',
+                headers,
+                body
+            }).then(r => {
+                removeLoader()
+
+                if (r.ok) {
+                    _app_.session = r.headers.get('x-session')
+
+                    r.json().then(response => {
+                        finalizeRequest()
+
+                        if (!response.isAuth && _app_.user && _app_.user._id) {
+                            _app_.dispatcher.setUser(null)
+                        }
+
+                        if (response.errors) {
+                            const rejectData = {...response, loading: false, networkStatus: NetworkStatus.ready}
+                            rejectData.error = response.errors[0]
+                            _app_.dispatcher.addError({
+                                key: 'graphql_error',
+                                msg: rejectData.error.message
+                            })
+                            reject(rejectData)
+                        } else {
+                            const resolveData = {...response, loading: false, networkStatus: NetworkStatus.ready}
+                            setUpWsIfNeeded(response.data)
+
+                            if (type === RequestType.query) {
+                                resolveData.fetchMore = getFetchMore({prevData: response.data, fetchPolicy, variables, type, query})
+                                Hook.call('ApiClientQueryResponse', {response})
+                                resolve(resolveData)
+                                if (fetchPolicy !== 'no-cache') {
+                                    client.writeQuery({cacheKey, query, variables, data: response.data})
+                                }
+                            } else {
+                                resolve(resolveData)
+                            }
+                        }
+
+                    }).catch(error => {
+                        // JSON-Parse-Fehler: keine sinnvolle Retry-Situation -> terminal
+                        finalizeRequest()
+                        reject({error, loading: false, networkStatus: NetworkStatus.error})
                         _app_.dispatcher.addError({
                             key: 'graphql_error',
-                            msg: rejectData.error.message
+                            msg: error.message + (error.path ? ' (in operation ' + error.path.join('/') + ')' : '')
                         })
-                        reject(rejectData)
-                    } else {
-                        const resolveData = {...response, loading: false, networkStatus: NetworkStatus.ready}
-                        setUpWsIfNeeded(response.data)
+                    })
 
-                        if (type === RequestType.query) {
-                            resolveData.fetchMore = getFetchMore({
-                                prevData: response.data,
-                                fetchPolicy,
-                                variables,
-                                type,
-                                query
-                            })
-                            Hook.call('ApiClientQueryResponse', {response})
-                            resolve(resolveData)
-                            if (fetchPolicy !== 'no-cache') {
-                                client.writeQuery({cacheKey, query, variables, data: response.data})
-                            }
-                        } else {
-                            resolve(resolveData)
-                        }
+                } else {
+                    // RETRY: transiente Gateway-Fehler (502/503/504) -> ein Query-Retry.
+                    // Diese kommen typischerweise vom Proxy, wenn der Upstream einen
+                    // Keep-Alive-Socket abgerissen hat.
+                    if (attemptsLeft > 0 && RETRYABLE_STATUS.indexOf(r.status) > -1) {
+                        console.log(`finalFetch: transient ${r.status}, retry in ${RETRY_BACKOFF}ms (${cacheKey})`)
+                        setTimeout(() => attempt(attemptsLeft - 1), RETRY_BACKOFF)
+                        return
                     }
 
-                }).catch(error => {
-                    // FIX: finalizeRequest() also called on JSON parse failure
+                    finalizeRequest()
+                    reject({error: {message: r.statusText}, loading: false, networkStatus: NetworkStatus.error})
+                    _app_.dispatcher.addError({
+                        key: 'api_error',
+                        msg: r.status + ' - ' + r.statusText,
+                        meta: {query, variables}
+                    })
+                }
+
+            }).catch(error => {
+                removeLoader()
+
+                const isTimeout = controller._timeout
+                const isAborted = !isTimeout && error.name === 'AbortError'
+                const isOffline = typeof navigator !== 'undefined' && !navigator.onLine
+
+                // Bewusste Aborts (z.B. Unmount): nie retrien, still scheitern.
+                if (isAborted) {
                     finalizeRequest()
                     reject({error, loading: false, networkStatus: NetworkStatus.error})
-                    _app_.dispatcher.addError({
-                        key: 'graphql_error',
-                        msg: error.message + (error.path ? ' (in operation ' + error.path.join('/') + ')' : '')
-                    })
-                })
+                    return
+                }
 
-            } else {
-                // FIX: finalizeRequest() was missing in the !r.ok branch
+                // RETRY: transienter Netzwerkfehler ("Failed to fetch", Reset) -> ein Query-Retry.
+                // NICHT bei Timeout (Backend ist eh zu langsam) und NICHT offline (zwecklos).
+                if (attemptsLeft > 0 && !isTimeout && !isOffline) {
+                    console.log(`finalFetch: transient network error, retry in ${RETRY_BACKOFF}ms (${cacheKey})`)
+                    setTimeout(() => attempt(attemptsLeft - 1), RETRY_BACKOFF)
+                    return
+                }
+
                 finalizeRequest()
-                reject({error: {message: r.statusText}, loading: false, networkStatus: NetworkStatus.error})
+
+                const msg = isTimeout
+                    ? 'Request timeout reached'
+                    : isOffline
+                        ? 'No network connection'
+                        : `Network Error: ${error.message}`
+
+                reject({error, loading: false, networkStatus: NetworkStatus.error})
                 _app_.dispatcher.addError({
                     key: 'api_error',
-                    msg: r.status + ' - ' + r.statusText,
-                    meta: {query, variables}
+                    msg,
+                    meta: {query, variables, hiddenVariables, headers, name: error.name, stack: error.stack, graphQlUrl, cacheKey}
                 })
-            }
-
-        }).catch(error => {
-            finalizeRequest()
-            removeLoader()
-
-            // FIX: distinguish between timeout, user-triggered abort, offline,
-            // and genuine network failures so error messages are actionable.
-            const isTimeout = controller._timeout
-            const isAborted = !isTimeout && error.name === 'AbortError'
-            const isOffline = typeof navigator !== 'undefined' && !navigator.onLine
-
-            // Swallow intentional aborts silently (e.g. component unmount in useQuery)
-            if (isAborted) {
-                reject({error, loading: false, networkStatus: NetworkStatus.error})
-                return
-            }
-
-            const msg = isTimeout
-                ? 'Request timeout reached'
-                : isOffline
-                    ? 'No network connection'
-                    : `Network Error: ${error.message}`
-
-            reject({error, loading: false, networkStatus: NetworkStatus.error})
-            _app_.dispatcher.addError({
-                key: 'api_error',
-                msg,
-                meta: {query, variables, hiddenVariables, headers, name: error.name, stack: error.stack, graphQlUrl, cacheKey}
             })
-        })
+        }
+
+        // RETRY: Mutations sind nicht idempotent -> niemals wiederholen (Doppelausführung!).
+        const allowedRetries = type === RequestType.query ? retries : 0
+        attempt(allowedRetries)
     })
 
-    // Expose the controller so callers (e.g. useQuery cleanup) can abort the
-    // request. Because the controller is created synchronously above, this is
-    // always set before any async work begins.
     promise._controller = controller
 
     if (cacheKey) {

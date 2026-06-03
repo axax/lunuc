@@ -200,8 +200,8 @@ export const start = (done) => {
             })
 
 
-            //server.keepAliveTimeout = 11 * 60*1000;
-            server.headersTimeout = HEADER_TIMEOUT
+            server.keepAliveTimeout = 11 * 60 * 1000
+            server.headersTimeout   = server.keepAliveTimeout + 5000  // MUSS größer sein
 
             // attach index reference to server
             server._db = db
