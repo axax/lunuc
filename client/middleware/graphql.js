@@ -12,7 +12,7 @@ const RequestType = {
     query: 1,
     mutate: 2
 }
-const RETRYABLE_STATUS = [502, 503, 504]
+const RETRYABLE_STATUS = [502, 503, 504, 512]
 
 const CACHE_FIRST = 'cache-first'
 
@@ -356,7 +356,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
                     })
 
                 } else {
-                    // RETRY: transiente Gateway-Fehler (502/503/504) -> ein Query-Retry.
+                    // RETRY: transiente Gateway-Fehler (502/503/504/512) -> ein Query-Retry.
                     // Diese kommen typischerweise vom Proxy, wenn der Upstream einen
                     // Keep-Alive-Socket abgerissen hat.
                     if (attemptsLeft > 0 && RETRYABLE_STATUS.indexOf(r.status) > -1) {

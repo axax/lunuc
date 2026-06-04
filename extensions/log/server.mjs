@@ -194,12 +194,12 @@ Hook.on('invalidLogin', async ({context, db, username, ip, domain}) => {
     })
 })
 
-Hook.on('graphqlError', async ({db, req, type, errors}) => {
+Hook.on('graphqlError', async ({db, req, type, errorContext}) => {
     await GenericResolver.createEntity(db, req, 'Log', {
         location: 'graphqlError',
         type: type,
-        message: errors[0].message,
-        meta: {errors}
+        message: errorContext.message,
+        meta: errorContext
     })
 })
 

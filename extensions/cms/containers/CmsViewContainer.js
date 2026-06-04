@@ -189,6 +189,9 @@ class CmsViewContainer extends React.Component {
                             resource = resource.substring(resource.indexOf(']') + 1)
                             fileType = params
                         }
+                        if(!resource){
+                            return
+                        }
                         if (!fileType) {
                             const temp = resource.split('?')[0]
                             fileType = temp.substring(temp.lastIndexOf('.') + 1)

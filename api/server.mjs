@@ -165,8 +165,25 @@ export const start = (done) => {
                     res.writeHead(500, {'content-type': 'application/json'})
                     res.end(`{"errors":[{"message":"Error in graphql. Probably there is something wrong with the schema or the resolver: ${error.message}"}]}`)
 
+                    const errorContext = {
+                        message: error.message,
+                        name: error.name,
+                        stack: error.stack,
+                        body: req.body,                       // enthält query + variables
+                        query: req.body && req.body.query,
+                        variables: req.body && req.body.variables,
+                        operationName: req.body && req.body.operationName,
+                        url: req.originalUrl,
+                        method: req.method,
+                        headers: {
+                            'content-type': req.headers['content-type'],
+                            'user-agent': req.headers['user-agent'],
+                            'x-forwarded-for': req.headers['x-forwarded-for']
+                        },
+                        userId: req.context && req.context.id
+                    }
 
-                    Hook.call('graphqlError', {db, req, errors: [error], type:'catch'})
+                    Hook.call('graphqlError', {db, req, errorContext, type:'catch'})
                 })
             })
 
