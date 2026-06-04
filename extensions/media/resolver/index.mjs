@@ -52,7 +52,7 @@ async function removeMediaVariants(db, {ids,saveMode}) {
 
 
 const REF_MAP_CACHE_KEY = 'allCollectionRefMap'
-const REF_MAP_TTL = 1000 * 60 * 60 * 6 // 1 Tag
+const REF_MAP_TTL = 1000 * 60 * 60 * 24 // 1 Tag
 
 const buildRefMap = async (db, collectionsToSearchIn) => {
     console.log('Building ref map cache...')
@@ -106,10 +106,10 @@ export default db => ({
         findReferencesForMedia: async ({limit, ids, match={}}, {context}) => {
 
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
-            const startTime = new Date().getTime()
+            const startTime = Date.now()
 
             const allCollections = await db.listCollections().toArray()
-            const ignoreCollections = ['OAuthCode','OAuthClient','NewsletterMailing', 'MediaConversion', 'UserTracking',
+            const ignoreCollections = ['system.profile','OAuthCode','OAuthClient','NewsletterMailing', 'MediaConversion', 'UserTracking',
                 'TelegramCommand', 'GenericDataDefinition', 'History', 'Comment', 'Bot',
                 'BotConversation', 'Media', 'UserRole', 'NewsletterSubscriber', 'CrmAddress',
                 'Log', 'Word', 'Post', 'MailClient', 'MailTracking', 'NewsletterList',
