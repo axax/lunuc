@@ -29,6 +29,27 @@ console.debug = (...args) => {
         originalDebug(...args);
     }
 }
+function removeNullsMutating(obj) {
+    if (Array.isArray(obj)) {
+        // Rückwärts iterieren, damit sich die Indizes beim Löschen nicht verschieben
+        for (let i = obj.length - 1; i >= 0; i--) {
+            if (obj[i] === null || obj[i] === undefined) {
+                obj.splice(i, 1);
+            } else {
+                removeNullsMutating(obj[i]);
+            }
+        }
+    } else if (obj !== null && typeof obj === 'object') {
+        for (const key in obj) {
+            if (obj[key] === null || obj[key] === undefined) {
+                delete obj[key];
+            } else {
+                removeNullsMutating(obj[key]);
+            }
+        }
+    }
+    return obj;
+}
 
 const PORT = (process.env.PORT || process.env.API_PORT || 3000)
 
@@ -141,21 +162,28 @@ export const start = (done) => {
             // only allow post methode
             app.post('/graphql', (req, res, next) => {
 
+                const originalJson = res.json.bind(res)
+
+                res.json = (body) => {
+
+                    if (body?.data?.cmsPage) {
+                        body.data = removeNullsMutating(body.data)
+                    }
+                    body.isAuth = !!(req.context && req.context.id)
+                    return originalJson(body)
+                }
+
+
                 graphqlHTTP({
                     schema,
                     rootValue,
                     graphiql: process.env.NODE_ENV !== 'production',
                     customFormatErrorFn: formatError,
-                    extensions({document, variables, operationName, result}) {
+                    /*extensions({document, variables, operationName, result}) {
 
-                        /*if (result.errors && result.errors.length > 0) {
-                            Hook.call('graphqlError', {db, req, type:'format', errors: result.errors})
-                        }*/
-
-                        // return auth state
                         result.isAuth = !!(req.context && req.context.id)
 
-                    }
+                    }*/
                 })(req, res, next).then(() => {
                     if (req.context) {
 

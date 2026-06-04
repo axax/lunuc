@@ -97,7 +97,7 @@ export default db => ({
             return data
         },
         cmsPage: async ({slug, query, props, nosession, editmode, dynamic, inEditor, meta, _version}, req) => {
-            const startTime = (new Date()).getTime()
+            const startTime = Date.now()
             const {context, headers} = req
             meta = parseOrElse(meta,{})
 
@@ -270,7 +270,7 @@ export default db => ({
                 delete result.style
                 delete result.name
             }
-            const elapsedTime = (new Date()).getTime() - startTime
+            const elapsedTime = Date.now() - startTime
 
             if(elapsedTime>20) {
                 console.debug(`CMS: resolver for ${slug} got data in ${elapsedTime}ms`)

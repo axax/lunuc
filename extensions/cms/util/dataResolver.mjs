@@ -37,7 +37,7 @@ function addDebugInfos(resolvedData, segment, startTime, startTimeSegment, debug
 }
 
 export const resolveData = async ({db, context, dataResolver, scope, nosession, req, editmode, dynamic}) => {
-    const startTime = new Date().getTime()
+    const startTime = Date.now()
 
     const resolvedData = {_meta: {}}, subscriptions = []
 
@@ -67,7 +67,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
             for (let i = 0; i < segments.length; i++) {
 
                 const debugLog = []
-                const startTimeSegment = new Date().getTime()
+                const startTimeSegment = Date.now()
 
                 let tempBrowser
                 if (segments[i].website) {
@@ -75,27 +75,42 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     tempBrowser = segments[i].website.pipeline
                     segments[i].website.pipeline = null
                 }
-                const tpl = new Function(`const {${Object.keys(scope).join(',')}} = this.scope
-                                              const {data} = this
-                                              const Util = this.ClientUtil
-                                              const _e = Util.escapeForJson
-                                              const ApiUtil = this.ApiUtil
-                                              const ObjectId = this.ObjectId
-                                              return \`${JSON.stringify(segments[i])}\``)
 
-                const replacedSegmentStr = tpl.call({
-                    scope,
-                    data: resolvedData,
-                    context,
-                    editmode,
-                    dynamic,
-                    ClientUtil,
-                    ApiUtil,
-                    config,
-                    ObjectId
-                }).replace(/"###/g, '').replace(/###"/g, '')
+                const segmentStr = JSON.stringify(segments[i])
 
-                const segment = JSON.parse(replacedSegmentStr)
+                // tpl nur ausführen wenn Template-Expressions vorhanden
+                const needsTemplate = segmentStr.includes('${')
+
+                let segment
+                if (needsTemplate) {
+                    const tpl = new Function(`
+                        const {${Object.keys(scope).join(',')}} = this.scope
+                        const {data} = this
+                        const Util = this.ClientUtil
+                        const _e = Util.escapeForJson
+                        const ApiUtil = this.ApiUtil
+                        const ObjectId = this.ObjectId
+                        return \`${segmentStr}\`
+                    `)
+
+                    const replacedSegmentStr = tpl.call({
+                        scope,
+                        data: resolvedData,
+                        context,
+                        editmode,
+                        dynamic,
+                        ClientUtil,
+                        ApiUtil,
+                        config,
+                        ObjectId
+                    }).replace(/"###/g, '').replace(/###"/g, '')
+
+                    segment = JSON.parse(replacedSegmentStr)
+                } else {
+                    segment = segments[i]  // direkt verwenden, kein Parsing nötig
+                }
+
+
                 if (tempBrowser) {
                     segment.website.pipeline = tempBrowser
                 }
@@ -324,7 +339,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
         }
 
     }
-    const elapsedTime = new Date().getTime() - startTime
+    const elapsedTime = Date.now() - startTime
     if(elapsedTime>20) {
         console.debug(`CMS: dataResolver for ${scope.page.slug} in ${elapsedTime}ms`)
     }

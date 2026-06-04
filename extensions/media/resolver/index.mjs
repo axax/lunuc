@@ -5,7 +5,7 @@ import path from 'path'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
 import {ObjectId} from 'mongodb'
-import {getType} from '../../../util/types.mjs'
+import Cache from '../../../util/cache.mjs'
 import {sendMail} from '../../../api/util/mail.mjs'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -50,6 +50,50 @@ async function removeMediaVariants(db, {ids,saveMode}) {
     return idsRemoved
 }
 
+
+const REF_MAP_CACHE_KEY = 'allCollectionRefMap'
+const REF_MAP_TTL = 1000 * 60 * 60 * 6 // 1 Tag
+
+const buildRefMap = async (db, collectionsToSearchIn) => {
+    console.log('Building ref map cache...')
+    const startTime = new Date().getTime()
+    const idPattern = /^[a-f0-9]{24}$/i
+    const map = {}
+
+    function extractIds(obj, results = new Set()) {
+        if (!obj || typeof obj !== 'object') return results
+        for (const val of Object.values(obj)) {
+            if (!val) continue
+            if (typeof val === 'string' && idPattern.test(val)) results.add(val)
+            if (val._bsontype === 'ObjectId') results.add(val.toString())
+            if (typeof val === 'object') extractIds(val, results)
+        }
+        return results
+    }
+
+    for (const name of collectionsToSearchIn) {
+        console.log(`Scanning ${name}...`)
+        const fullCursor = db.collection(name).find({})
+        for await (const doc of fullCursor) {
+            const docId = doc._id.toString()
+            const foundIds = extractIds(doc)
+            foundIds.delete(docId)
+
+            for (const refId of foundIds) {
+                if (!map[refId]) map[refId] = []
+                // Neu: docId mitspeichern
+                if (!map[refId].find(e => e.location === name && e._id === docId)) {
+                    map[refId].push({ location: name, _id: docId })
+                }
+            }
+        }
+    }
+
+    Cache.set(REF_MAP_CACHE_KEY, map, REF_MAP_TTL)
+    console.log(`Ref map built in ${new Date().getTime() - startTime}ms, ${Object.keys(map).length} unique IDs indexed`)
+    return map
+}
+
 export default db => ({
     Query: {
         cleanUpMedia: async ({ids}, {context}) => {
@@ -62,130 +106,47 @@ export default db => ({
         findReferencesForMedia: async ({limit, ids, match={}}, {context}) => {
 
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
-
             const startTime = new Date().getTime()
-  /*          const allGenericData = []
-            const res = (await db.collection('GenericData').find({}).toArray())
-
-            res.forEach(item => {
-                allGenericData.push({data: JSON.stringify(item.data), _id: item._id})
-            })
-            console.log(`findReferencesForMedia time to load data ${new Date().getTime()-startTime}ms`)*/
-
-
-
 
             const allCollections = await db.listCollections().toArray()
-
-            const ignoreCollections = ['NewsletterMailing',
-                'MediaConversion',
-                'UserTracking',
-                'TelegramCommand',
-                'GenericDataDefinition',
-                'History',
-                'Comment',
-                'Bot',
-                'BotConversation',
-                'Media',
-                'UserRole',
-                'NewsletterSubscriber',
-                'CrmAddress',
-                'Log',
-                'Word',
-                'Post',
-                'MailClient',
-                'MailTracking',
-                'NewsletterList',
-                'PreProcessor',
-                'MediaGroup',
-                'NewsletterSent',
-                'Rating',
-                'StaticFile',
-                'Chat',
-                'MailClientArchive',
-                'WordCategory',
-                'DnsHost',
-                'NewsletterTracking',
-                'TelegramBot',
-                'Product',
-                'CronJobExecution',
-                'ProductCategory',
-                'KeyValueGlobal',
-                'FtpUser',
-                'UserGroup',
-                'UserRestriction',
-                'UserSetting',
-                'SmsLog',
-                'MailAccountMessage',
-                'MailAccount',
-                'MailAccounts', /* collection can be deleted */
-                'MailAccountFolder',
-                'DnsHostGroup',
-                'ProxyUser',
-                'WebAuthnCredential',
-                'ChatMessage'
+            const ignoreCollections = ['OAuthCode','OAuthClient','NewsletterMailing', 'MediaConversion', 'UserTracking',
+                'TelegramCommand', 'GenericDataDefinition', 'History', 'Comment', 'Bot',
+                'BotConversation', 'Media', 'UserRole', 'NewsletterSubscriber', 'CrmAddress',
+                'Log', 'Word', 'Post', 'MailClient', 'MailTracking', 'NewsletterList',
+                'PreProcessor', 'MediaGroup', 'NewsletterSent', 'Rating', 'StaticFile', 'Chat',
+                'MailClientArchive', 'WordCategory', 'DnsHost', 'NewsletterTracking', 'TelegramBot',
+                'Product', 'CronJobExecution', 'ProductCategory', 'KeyValueGlobal', 'FtpUser',
+                'UserGroup', 'UserRestriction', 'UserSetting', 'SmsLog', 'MailAccountMessage',
+                'MailAccount', 'MailAccounts', 'MailAccountFolder', 'DnsHostGroup', 'ProxyUser',
+                'WebAuthnCredential', 'ChatMessage'
             ]
 
-            const collectionsToSearchIn = []
-            for (const {name} of allCollections) {
-                if(name.indexOf('-')<0 && name.indexOf('_')<0 && ignoreCollections.indexOf(name)<0){
-                    collectionsToSearchIn.push(name)
-                }
+            const collectionsToSearchIn = allCollections
+                .map(c => c.name)
+                .filter(name => name.indexOf('-') < 0 && name.indexOf('_') < 0 && !ignoreCollections.includes(name))
+
+            // Cache laden oder neu aufbauen
+            let refMap = Cache.get(REF_MAP_CACHE_KEY)
+            if (!refMap) {
+                refMap = await buildRefMap(db, collectionsToSearchIn)
             }
-            if(!ids){
-                const mediaIds = await db.collection('Media').find(
-                    match,
-                    {'_id':1})
-                    .sort({'references.lastChecked':1}).limit(limit || 10).toArray()
-                ids = mediaIds.map(f=>f._id.toString())
+            if (!ids) {
+                const mediaIds = await db.collection('Media').find(match, {'_id': 1})
+                    .sort({'references.lastChecked': 1}).limit(limit || 10).toArray()
+                ids = mediaIds.map(f => f._id.toString())
             }
 
-            let checkedItems = {}
-            for (let i = 0; i < ids.length; i++) {
-                const _id = ids[i]
-                let count = 0
-                const locations = []
-                const $where = `function() { 
-                    return JSON.stringify(this).indexOf('${_id}')>=0
-                }`
+            const checkedItems = {}
 
-                for( const name of collectionsToSearchIn){
+            for (const _id of ids) {
+                const collectionsWithRef = refMap[_id] || []
 
-                    console.log(`search ${_id} in ${name}`)
-                    let searchQuery
-                    if(name==='User') {
-                        searchQuery = {
-                            $or: [
-                                { picture: new ObjectId(_id) },
-                                { 'meta.cv._id': _id },
-                                { 'meta.docs._id': _id }
-                            ]
-                        }
-                    }else{
-                        const typeDefinition = getType(name)
-                        if (typeDefinition && typeDefinition.wildcardTextIndex) {
-                            searchQuery = {$text: {$search: _id}}
-                        } else {
-                            searchQuery = {$where}
-                            console.warn(`type ${name} does not support wildcard search`)
-                        }
-                    }
-                    const item = await db.collection(name).findOne(searchQuery,  { projection: { _id: 1 } } )
-
-
-                    if( item ){
-                        count++
-                        locations.push({location: name, ...item})
-                        break
-                    }
-                }
-
-                const $set = {references: {count, locations, lastChecked: new Date().getTime()}}
+                const $set = {references: {count: collectionsWithRef.length, locations: collectionsWithRef, lastChecked: new Date().getTime()}}
                 checkedItems[_id] = $set
                 db.collection('Media').updateOne({_id: new ObjectId(_id)}, {$set})
-
             }
-            console.log(`findReferencesForMedia ended after ${new Date().getTime()-startTime}ms`)
+
+            console.log(`findReferencesForMedia ended after ${new Date().getTime() - startTime}ms`)
             return {status: `{"items":${JSON.stringify(checkedItems)}}`}
         },
         deleteOnlyMediaFiles: async ({_id}, {context}) => {
