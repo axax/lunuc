@@ -51,7 +51,7 @@ function ErrorHandler({snackbar}) {
                 horizontal: 'right',
             }}
             autoHideDuration={messages[key].duration!==undefined?messages[key].duration:6000}
-            message={msg + ' ('+key+')'}
+            message={msg && msg.constructor===String?msg + ' ('+key+')':msg}
         />
     }
 
