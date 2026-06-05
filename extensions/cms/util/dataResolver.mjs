@@ -36,6 +36,9 @@ function addDebugInfos(resolvedData, segment, startTime, startTimeSegment, debug
     }
 }
 
+const UNESCAPE_RE = /\\([nrtbf\\'"`])/g;
+const UNESCAPE_MAP = { n:'\n', r:'\r', t:'\t', b:'\b', f:'\f' };
+
 export const resolveData = async ({db, context, dataResolver, scope, nosession, req, editmode, dynamic}) => {
     const startTime = Date.now()
 
@@ -76,7 +79,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     segments[i].website.pipeline = null
                 }
 
-                const segmentStr = JSON.stringify(segments[i])
+                let segmentStr = JSON.stringify(segments[i])
 
                 // tpl nur ausführen wenn Template-Expressions vorhanden
                 const needsTemplate = segmentStr.includes('${')
@@ -107,7 +110,17 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
 
                     segment = JSON.parse(replacedSegmentStr)
                 } else {
-                    segment = segments[i]  // direkt verwenden, kein Parsing nötig
+                    const needsUnescape = segmentStr.includes('\\')
+                    if(needsUnescape || segmentStr.includes('###')){
+                        segmentStr = segmentStr.replace(/"###/g, '').replace(/###"/g, '')
+                        if(needsUnescape) {
+                            segment = JSON.parse(segmentStr.replace(UNESCAPE_RE, (_, c) => UNESCAPE_MAP[c] ?? c))
+                        }else{
+                            segment = JSON.parse(segmentStr)
+                        }
+                    }else{
+                        segment = segments[i]
+                    }
                 }
 
 
