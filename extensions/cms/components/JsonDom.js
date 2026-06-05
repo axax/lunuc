@@ -1024,8 +1024,12 @@ class JsonDom extends React.Component {
                                         if (this.serverMethodMap[cacheKey]) {
                                             return this.serverMethodMap[cacheKey]
                                         }
-                                        this.props.serverMethod(name, args, (response) => {
+                                        this.props.serverMethod(name, args).then((response) => {
                                             this.serverMethodMap[cacheKey] = JSON.parse(response.data.cmsServerMethod.result)
+                                            this.serverMethodMap[d] = this.serverMethodMap[cacheKey]
+                                            this.forceUpdate()
+                                        }).catch((e) => {
+                                            this.serverMethodMap[cacheKey] = e.message
                                             this.serverMethodMap[d] = this.serverMethodMap[cacheKey]
                                             this.forceUpdate()
                                         })
