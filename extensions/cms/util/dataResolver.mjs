@@ -400,7 +400,11 @@ const resolveSystemData = async ({segment, req, resolvedData, context, db}) => {
     if (segment.system.cache) {
         data.cache = {}
         if (segment.system.cache.data) {
-            data.cache.data = Cache.cache
+            if(segment.system.cache.data.keysOnly){
+                data.cache.data = Object.keys(Cache.cache)
+            }else {
+                data.cache.data = Cache.cache
+            }
         }
         if (segment.system.cache.count) {
             data.cache.count = Object.keys(Cache.cache).length
