@@ -5,7 +5,6 @@ import config from '../../../gensrc/config.mjs'
 import Hook from '../../../util/hook.cjs'
 import {
     addFilterToMatchV2,
-    addSearchStringToMatch,
     makeAllMatchAnAndMatch
 } from '../../util/dbquery.mjs'
 

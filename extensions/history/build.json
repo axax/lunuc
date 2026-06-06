@@ -17,6 +17,7 @@
         {
           "hideColumnInTypes": true,
           "alwaysLoad": false,
+          "vagueSearchable": false,
           "tab": "Data",
           "name": "data",
           "type": "Object",

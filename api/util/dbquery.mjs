@@ -381,6 +381,16 @@ export const addFilterToMatchV2 = async ({
         } else if (filterValue?.constructor === ObjectId) {
             matchExpression = { [comparator]: filterValue }
 
+        } else if (ObjectId.isValid(filterValue)) {
+
+            match.push({
+                $or: [
+                    { [filterKey]: { [comparator]: new ObjectId(filterValue) } },
+                    { [filterKey]: { [comparator]: filterValue.toString() } }
+                ]
+            })
+            return true
+
         } else {
             if (filterOptions.inDoubleQuotes) {
                 matchExpression = { [comparator]: filterValue }
