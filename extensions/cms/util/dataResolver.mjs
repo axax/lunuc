@@ -401,7 +401,7 @@ const resolveSystemData = async ({segment, req, resolvedData, context, db}) => {
         data.cache = {}
         if (segment.system.cache.data) {
             if(segment.system.cache.data.keysOnly){
-                data.cache.data = Object.keys(Cache.cache)
+                data.cache.data = Object.keys(Cache.cache).map(key=>({key}))
             }else {
                 data.cache.data = Cache.cache
             }
