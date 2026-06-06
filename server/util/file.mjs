@@ -73,6 +73,7 @@ export const getFileFromOtherServer = async (urlPath, filename, baseResponse, re
     }
 
     // backup server
+    console.log('load from backup server - ' + 'http://100.97.178.113/lunucserver/vmi2319914.contaboserver.net/webroot/uploads/'+filename)
     const response = await downloadUrl('http://100.97.178.113/lunucserver/vmi2319914.contaboserver.net/webroot/uploads/'+filename)
     if(!response.error && response.statusCode == 200) {
         const passStream = new PassThrough()
