@@ -342,12 +342,14 @@ export const addFilterToMatchV2 = async ({
     } else if (type === 'Float') {
         filterValue = parseFloat(filterValue)
 
-    } else if (type === 'Object' && filterValue && db && db._versionInt >= 5) {
-        // Use a server-side JS function to search inside Object fields (MongoDB 5+)
+    } else if (type === 'Object' && filterValue && db && db._versionInt >= 5 && comparator === '$regex') {
+        const negate = rawComparator && rawComparator.startsWith('!')
+        const regexBody = `/${filterValue}/i.test(data[key] && (data[key].constructor===Object || data[key].constructor===Array)?JSON.stringify(data[key]):data[key])`
+        const someExpr = `Object.keys(data).some(key => ${regexBody})`
+        const matchExpr = negate ? `!${someExpr}` : someExpr
+
         filterValue = {
-            body: `function(data) {return data && Object.keys(data).some(
-                key => /${filterValue}/i.test( data[key] && (data[key].constructor===Object || data[key].constructor===Array)?JSON.stringify(data[key]):data[key])
-                )}`,
+            body: `function(data) {return data && ${matchExpr}}`,
             args: ['$' + filterKey],
             lang: 'js'
         }

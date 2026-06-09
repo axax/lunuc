@@ -643,6 +643,7 @@ class JsonDom extends React.Component {
                             'const {serverMethod,on,setLocal,getLocal,refresh,getComponent,addMetaTag,setStyle,fetchMore}=__this;' +
                             'const {history,clientQuery,setKeyValue,getKeyValue,updateResolvedData}=__this.props;' +
                             'const {scope,parent,root,Util,DomUtil}=this;' +
+                            'this.serverMethod = serverMethod;' +
                             'const _t=this._t.bind(scope.data),forceUpdate=refresh;' + script)
 
                         try {

@@ -454,6 +454,7 @@ class CmsViewContainer extends React.Component {
         const {slug, _version} = getSlugVersion(this.props.slug)
         return client.query({
             fetchPolicy: 'network-only',
+            timeout: 1800000,
             query: 'query cmsServerMethod($slug:String!,$methodName:String!,$args:String,$_version:String,$dynamic:Boolean){cmsServerMethod(slug:$slug,methodName:$methodName,args:$args,_version:$_version,dynamic:$dynamic){result}}',
             variables: {
                 _version,

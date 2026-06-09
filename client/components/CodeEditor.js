@@ -41,7 +41,7 @@ const StyledEditorResizer = styled('div')({
     background: 'black',
     right: 0,
     left:0,
-    bottom: 0,
+    bottom: '-5px',
     cursor: 'ns-resize',
     zIndex: 999,
     opacity: 0,
