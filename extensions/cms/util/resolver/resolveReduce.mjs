@@ -1,6 +1,11 @@
 import {assignIfObjectOrArray, matchExpr, propertyByPath, setPropertyByPath} from '../../../../client/util/json.mjs'
 import Cache from '../../../../util/cache.mjs'
 
+// Single shared collator instance. Intl.Collator.prototype.compare is significantly
+// faster than calling String.prototype.localeCompare for every single comparison
+// during a sort, while producing the same ordering for the default locale.
+const localeCollator = new Intl.Collator()
+
 function createFacetSliderMinMax(value, facetData) {
     if (!isNaN(value)) {
         if (facetData.min === undefined || facetData.min > value) {
@@ -96,14 +101,36 @@ function doSorting(re, currentData) {
     if (!value || !Array.isArray(value)) return
 
     const sort = re.sort[0]
-    if (sort.desc) {
-        if (sort.localCompare) {
-            if (sort.path) {
-                value.sort((a, b) => (propertyByPath(sort.path, b) || '').localeCompare(propertyByPath(sort.path, a)))
+    if (sort.localCompare) {
+        if (sort.path) {
+            // Decorate-sort-undecorate: resolve the (potentially deep) path exactly once
+            // per item instead of twice per comparison. This turns O(n log n) path
+            // resolutions into O(n). Array#sort is stable, so the relative order of
+            // equal keys is preserved exactly as before.
+            const len = value.length
+            const decorated = new Array(len)
+            for (let i = 0; i < len; i++) {
+                decorated[i] = [propertyByPath(sort.path, value[i]), value[i]]
+            }
+            if (sort.desc) {
+                decorated.sort((a, b) => localeCollator.compare(b[0] || '', a[0]))
             } else {
-                value.sort((a, b) => (b[sort.key] || '').localeCompare(a[sort.key]))
+                decorated.sort((a, b) => localeCollator.compare(a[0] || '', b[0]))
+            }
+            for (let i = 0; i < len; i++) {
+                value[i] = decorated[i][1]
             }
         } else {
+            // Same operand handling as the original localeCompare version
+            // (undefined on the right side is coerced to string, just like before)
+            if (sort.desc) {
+                value.sort((a, b) => localeCollator.compare(b[sort.key] || '', a[sort.key]))
+            } else {
+                value.sort((a, b) => localeCollator.compare(a[sort.key] || '', b[sort.key]))
+            }
+        }
+    } else {
+        if (sort.desc) {
             value.sort((a, b) => {
                 const sa = a[sort.key]
                 const sb = b[sort.key]
@@ -111,14 +138,6 @@ function doSorting(re, currentData) {
                 if (sa < sb) return 1
                 return 0
             })
-        }
-    } else {
-        if (sort.localCompare) {
-            if (sort.path) {
-                value.sort((a, b) => (propertyByPath(sort.path, a) || '').localeCompare(propertyByPath(sort.path, b)))
-            } else {
-                value.sort((a, b) => (a[sort.key] || '').localeCompare(b[sort.key]))
-            }
         } else {
             value.sort((a, b) => {
                 const sa = a[sort.key]
@@ -161,6 +180,27 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
         loopFacet = getFacetAsArray(re.loop.facets.path, rootData)
     }
 
+    // Hoist frequently accessed config into locals. Avoids repeated nested property
+    // lookups (re.loop.xyz) inside the per-item hot loop.
+    const reAssign = re.assign
+    const loopReduce = re.loop.reduce
+    const loopAssign = re.loop.assign
+    const loopToArray = re.loop.toArray
+    const hasActiveFilters = !!(activeFilters && activeFilters.length > 0)
+
+    // Deferred removal for arrays: value.splice(i, 1) inside the loop is O(n) per
+    // removal and degrades to O(n²) overall when many items are filtered out.
+    // Instead, removed indices are flagged and the array is compacted in a single
+    // in-place pass after the loop. The relative order of the remaining items is
+    // identical to the splice-based version, and the array reference is preserved.
+    let removedFlags = null
+    let hasRemovals = false
+
+    // Lazy per-call cache for or-filter facet subsets, so loopFacet.filter()
+    // does not run again for every single filtered item with the same facetKey.
+    // Safe because the loopFacet array itself is not modified during the loop.
+    let orFacetCache = null
+
     let total = 0
     const inLoop = (key, isObject) => {
         if (loopFacet) {
@@ -169,31 +209,42 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
         const filter = checkFilter(activeFilters, value, key)
         if (filter) {
             if (filter.or && loopFacet) {
-                const filteredFacets = filter.facetKey ? loopFacet.filter(facet => facet.key === filter.facetKey) : loopFacet
+                let filteredFacets
+                if (filter.facetKey) {
+                    if (!orFacetCache) {
+                        orFacetCache = {}
+                    }
+                    filteredFacets = orFacetCache[filter.facetKey] ||
+                        (orFacetCache[filter.facetKey] = loopFacet.filter(facet => facet.key === filter.facetKey))
+                } else {
+                    filteredFacets = loopFacet
+                }
                 createFacets(filteredFacets, value[key], false)
             }
 
-            if (re.assign) {
+            if (reAssign) {
                 if (isObject) {
                     delete value[key]
                 } else {
-                    value.splice(key, 1)
+                    // mark instead of splice - compacted once after the loop
+                    removedFlags[key] = 1
+                    hasRemovals = true
                 }
             }
         } else {
             total++
-            if (re.loop.reduce) {
-                value[key] = re.loop.assign ? assignIfObjectOrArray(value[key]) : value[key]
-                resolveReduce(re.loop.reduce, rootData, value[key], { debugLog, depth: depth + 1 })
+            if (loopReduce) {
+                value[key] = loopAssign ? assignIfObjectOrArray(value[key]) : value[key]
+                resolveReduce(loopReduce, rootData, value[key], { debugLog, depth: depth + 1 })
             }
 
             if (loopFacet) {
                 createFacets(loopFacet, value[key])
             }
 
-            if (re.loop.toArray) {
-                const v = re.loop.toArray.key ? value[key][re.loop.toArray.key] : value[key]
-                if (re.loop.toArray.duplicates) {
+            if (loopToArray) {
+                const v = loopToArray.key ? value[key][loopToArray.key] : value[key]
+                if (loopToArray.duplicates) {
                     newArray.push(v)
                 } else {
                     newSet.add(v)
@@ -205,7 +256,7 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
     if (!value) {
         debugInfo.messages.push(`no value for ${JSON.stringify(re)}`)
     } else {
-        // Strikter constructor Check wie im Original wiederhergestellt
+        // Strict constructor check kept on purpose (must match original behavior exactly)
         if (value.constructor === Object) {
             const keys = Object.keys(value)
             debugInfo.messages.push(`loop through object data ${keys.length}`)
@@ -215,8 +266,28 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
             }
         } else if (Array.isArray(value)) {
             debugInfo.messages.push(`loop through array data ${value.length} with filter ${JSON.stringify(activeFilters)}`)
+            if (reAssign && hasActiveFilters) {
+                // Uint8Array is cheap to allocate and zero-initialized
+                removedFlags = new Uint8Array(value.length)
+            }
+            // Reverse iteration kept so that toArray push order stays identical
             for (let i = value.length - 1; i >= 0; i--) {
                 inLoop(i, false)
+            }
+            if (hasRemovals) {
+                // Single in-place compaction pass (O(n)) - keeps the order of the
+                // remaining items and the original array reference intact
+                let writeIndex = 0
+                const len = value.length
+                for (let i = 0; i < len; i++) {
+                    if (!removedFlags[i]) {
+                        if (writeIndex !== i) {
+                            value[writeIndex] = value[i]
+                        }
+                        writeIndex++
+                    }
+                }
+                value.length = writeIndex
             }
         }
     }
@@ -232,12 +303,12 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
         cacheData[re.loop.total.path] = total
     }
 
-    if (re.loop.toArray) {
+    if (loopToArray) {
         if (newSet.size > 0) {
             newArray = [...newSet]
         }
-        setPropertyByPath(newArray, re.loop.toArray.pathTo, rootData)
-        cacheData[re.loop.toArray.pathTo] = newArray
+        setPropertyByPath(newArray, loopToArray.pathTo, rootData)
+        cacheData[loopToArray.pathTo] = newArray
     }
 
     if (cacheKey) {
@@ -260,10 +331,13 @@ export const resolveReduce = (reducePipe, rootData, currentData, { debugLog, dep
                 let lookedupData, groups
 
                 if (value !== undefined && value !== null) {
-                    // Strikter Check wiederhergestellt, um Wrapper-Objekte exakt gleich zu behandeln
+                    // Strict check kept on purpose to treat wrapper objects exactly the same
                     if (value.constructor === Number || value.constructor === String) {
                         lookedupData = lookupData[value]
-                        if (lookupData === undefined) {
+                        // NOTE: original code checked `lookupData === undefined` here, which
+                        // could never be true at this point (lookupData[value] above would
+                        // have thrown already). Checking the looked-up entry instead.
+                        if (lookedupData === undefined) {
                             console.warn(`${value} not found in`, lookupData)
                         }
                     } else if (Array.isArray(value)) {
@@ -279,50 +353,63 @@ export const resolveReduce = (reducePipe, rootData, currentData, { debugLog, dep
                         const activeFilters = re.lookup.filter && re.lookup.filter.filter(f => isNotFalse(f.is))
                         const activeFiltersBefore = re.lookup.filterBefore && re.lookup.filterBefore.filter(f => isNotFalse(f.is))
 
+                        // Hoist constant config out of the per-item loop
+                        const lookupGroup = re.lookup.group
+                        const groupKey = lookupGroup && lookupGroup.key
+                        const keepOnlyOne = lookupGroup && lookupGroup.keepOnlyOne
+                        const lookupLimit = re.lookup.limit
+                        // The group lookup target is constant for the whole loop -
+                        // resolving the path once instead of per matched item
+                        const groupLookupData = lookupGroup && lookupGroup.lookup
+                            ? propertyByPath(lookupGroup.lookup, rootData)
+                            : null
+
                         const valLen = value.length
                         for (let k = 0; k < valLen; k++) {
                             const key = value[k]
+                            let entry = lookupData[key]
 
                             if (loopFacet) {
-                                createFacets(loopFacet, lookupData[key], true)
+                                createFacets(loopFacet, entry, true)
                             }
 
                             const filter = checkFilter(activeFiltersBefore, lookupData, key)
                             if (filter) {
                                 if (loopFacet && filter.or) {
-                                    createFacets(loopFacet, lookupData[key], false)
+                                    createFacets(loopFacet, entry, false)
                                 }
                                 continue
                             }
 
                             if (loopFacet) {
-                                createFacets(loopFacet, lookupData[key], false)
+                                createFacets(loopFacet, entry, false)
                             }
 
-                            if (re.lookup.group && re.lookup.group.keepOnlyOne) {
-                                if (groups[lookupData[key][re.lookup.group.key]]) {
+                            if (keepOnlyOne) {
+                                if (groups[entry[groupKey]]) {
                                     continue
                                 }
                             }
 
-                            if (re.lookup.limit && re.lookup.limit <= count) {
+                            if (lookupLimit && lookupLimit <= count) {
                                 continue
                             }
                             if (checkFilter(activeFilters, lookupData, key)) {
                                 continue
                             }
                             count++
-                            if (re.lookup.group) {
-                                groups[lookupData[key][re.lookup.group.key]] = lookupData[key]
-                                if (re.lookup.group.lookup) {
-                                    const data = propertyByPath(re.lookup.group.lookup, rootData)
-                                    lookupData[key] = {
-                                        ...lookupData[key],
-                                        [re.lookup.group.key]: data[lookupData[key][re.lookup.group.key]]
+                            if (lookupGroup) {
+                                groups[entry[groupKey]] = entry
+                                if (lookupGroup.lookup) {
+                                    // RHS is evaluated with the old entry before reassignment,
+                                    // exactly like the original spread version
+                                    entry = lookupData[key] = {
+                                        ...entry,
+                                        [groupKey]: groupLookupData[entry[groupKey]]
                                     }
                                 }
                             }
-                            lookedupData.push(lookupData[key])
+                            lookedupData.push(entry)
                         }
 
                         if (loopFacet) {
@@ -341,7 +428,7 @@ export const resolveReduce = (reducePipe, rootData, currentData, { debugLog, dep
                 }
 
                 if (re.extend || re.override) {
-                    // Zurück auf constructor === Object
+                    // Strict constructor === Object check kept on purpose
                     if (lookedupData && lookedupData.constructor === Object) {
                         const fieldOptions = (re.extend && re.extend.fieldOptions) || {}
                         const keys = Object.keys(lookedupData)
@@ -388,13 +475,13 @@ export const resolveReduce = (reducePipe, rootData, currentData, { debugLog, dep
             } else if (re.key) {
                 const value = propertyByPath(re.path, currentData, '.', re.assign)
 
-                // Zurück auf constructor === Object
+                // Strict constructor === Object check kept on purpose
                 if (re.assign && value && value.constructor === Object) {
                     const keys = Object.keys(value)
                     const keysLen = keys.length
                     for (let i = 0; i < keysLen; i++) {
                         const key = keys[i]
-                        // Zurück auf constructor === Object
+                        // Strict constructor === Object check kept on purpose
                         if (value[key] && value[key].constructor === Object) {
                             value[key] = Object.assign({}, value[key])
                         }
@@ -498,27 +585,44 @@ const checkFilter = (filters, value, key) => {
             const filter = filters[i]
 
             if (filter.search) {
-                // Unsichtbares Caching per defineProperty, um JSON-Serialisierung nicht zu stören
+                // Invisible caching via defineProperty so JSON serialization stays untouched
                 if (!filter.search._cachedRegExp) {
                     Object.defineProperty(filter.search, '_cachedRegExp', {
                         value: new RegExp(filter.search.expr, 'i'),
-                        enumerable: false, // Versteckt die Property vor Object.keys() und JSON.stringify()
+                        enumerable: false, // hidden from Object.keys() and JSON.stringify()
+                        writable: true,
+                        configurable: true
+                    })
+                }
+                if (!filter.search._cachedFields) {
+                    // Precompute the field keys and whether they are deep paths.
+                    // Avoids Object.keys() + indexOf('.') for every single checked item.
+                    const fieldKeys = Object.keys(filter.search.fields)
+                    const fieldKeysLen = fieldKeys.length
+                    const cachedFields = new Array(fieldKeysLen)
+                    for (let y = 0; y < fieldKeysLen; y++) {
+                        cachedFields[y] = { fieldKey: fieldKeys[y], isPath: fieldKeys[y].indexOf('.') >= 0 }
+                    }
+                    Object.defineProperty(filter.search, '_cachedFields', {
+                        value: cachedFields,
+                        enumerable: false,
                         writable: true,
                         configurable: true
                     })
                 }
                 const re = filter.search._cachedRegExp
-                const keys = Object.keys(filter.search.fields)
-                const keysLen = keys.length
+                const fields = filter.search._cachedFields
+                const fieldsLen = fields.length
+                const item = value[key]
 
                 let hasMatch = false
-                for (let y = 0; y < keysLen; y++) {
-                    const fieldKey = keys[y]
+                for (let y = 0; y < fieldsLen; y++) {
+                    const field = fields[y]
                     let valueToCheck
-                    if (fieldKey.indexOf('.') >= 0) {
-                        valueToCheck = propertyByPath(fieldKey, value[key])
+                    if (field.isPath) {
+                        valueToCheck = propertyByPath(field.fieldKey, item)
                     } else {
-                        valueToCheck = value[key][fieldKey]
+                        valueToCheck = item[field.fieldKey]
                     }
                     if (valueToCheck && re.test(valueToCheck)) {
                         hasMatch = true

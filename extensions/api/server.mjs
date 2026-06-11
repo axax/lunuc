@@ -213,7 +213,8 @@ Hook.on('appready', ({app, db}) => {
                         }else if(result.userContext !== null){
                             const user = await Util.userById(db, result.userContext)
                             if(user) {
-                                req.context = {...req.context, username: user.username, id: user._id.toString()}
+                                req.context = {...req.context, junior: user.junior, domain:user.domain, group: user.group,
+                                    role: user.role, username: user.username, id: user._id.toString()}
                             }
                         }
 

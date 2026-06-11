@@ -3,28 +3,36 @@
  */
 
 const Cache = {
-    cache: {},
-    aliases: {},
+    cache: Object.create(null),
+    aliases: Object.create(null),
     setAlias: (aliasKey, key) => {
         Cache.aliases[aliasKey] = key
     },
     set: function (key, data, expiresIn) {
-        //console.debug(`Cache: add to cache ${key}`)
-        Cache.cache[key] = {data, validUntil: (expiresIn ? (new Date()).getTime() + expiresIn : 0)}
+        console.debug(`Cache: add to cache ${key}`)
+        Cache.cache[key] = {data, validUntil: (expiresIn ? Date.now() + expiresIn : 0)}
     },
     get: function (key) {
-        const o = Cache.cache[key] || Cache.cache[Cache.aliases[key]]
-        if (o) {
-            if (Cache.isValid(o)) {
-                return o.data
-            } else {
-                delete Cache.cache[key]
+        let realKey = key
+        let o = Cache.cache[realKey]
+        if (o === undefined) {
+            realKey = Cache.aliases[key]
+            if (realKey === undefined) {
+                return
+            }
+            o = Cache.cache[realKey]
+            if (o === undefined) {
+                return
             }
         }
+        if (o.validUntil === 0 || Date.now() < o.validUntil) {
+            return o.data
+        }
+        delete Cache.cache[realKey]
         return
     },
     isValid: function (o) {
-        return o.validUntil === 0 || (new Date()).getTime() < o.validUntil
+        return o.validUntil === 0 || Date.now() < o.validUntil
     },
     remove: function (key) {
         console.debug(`Cache: remove key from cache ${key}`)
