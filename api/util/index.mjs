@@ -190,10 +190,28 @@ const Util = {
                 return map
             }
         }
-        const keyvalues = (await db.collection('KeyValue').find({
+
+        const match = {
             createdBy: new ObjectId(finalContext.id),
             key: {$in: keys}
-        }).project(allOptions.projection).toArray())
+        }
+
+        let keyvalues
+        if(allOptions.projection){
+            keyvalues = await db.collection('KeyValue').aggregate([
+                {
+                    $match: {
+                        createdBy: new ObjectId(finalContext.id),
+                        key: { $in: keys }
+                    }
+                },
+                {
+                    $project: allOptions.projection
+                }
+            ]).toArray();
+        }else{
+            keyvalues = (await db.collection('KeyValue').find(match).toArray())
+        }
 
         return keyvalues.reduce((map, obj) => {
             map[obj.key] = obj.value
