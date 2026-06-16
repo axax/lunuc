@@ -363,9 +363,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
     try {
         const remoteAddress=clientAddress(req)
-        if(isTemporarilyBlocked({
-            checkKeys:['index-'+remoteAddress],
-            key:remoteAddress})) {
+        if(isTemporarilyBlocked({key:remoteAddress})) {
 
             sendError(res, 429)
 
@@ -655,7 +653,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                             }) ||
                             isTemporarilyBlocked({
                                 key: 'index-' + remoteAddress,
-                                requestPerTime: 50,
+                                requestPerTime: 100,
                                 requestTimeInMs: 10000
                             })) {
                             sendError(res, 429)
