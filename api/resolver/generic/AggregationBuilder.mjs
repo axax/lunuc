@@ -886,7 +886,7 @@ export default class AggregationBuilder {
                     (f.constructor === String && f.split('$')[0] === parts[0]) ||
                     (f.constructor === Object && Object.keys(f)[0] === parts[0])
                 ))) {
-                    console.log(`add filter for ${key}`, fields)
+                    //console.log(`add filter for ${key}`, fields)
                     // Temp log
                     /*GenericResolver.createEntity(this.db, {context:{lang:'en'}}, 'Log', {
                         location: 'dbquery',

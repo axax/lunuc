@@ -132,106 +132,90 @@ function addGenericTypeLookupForType(field, otherOptions, projection) {
         otherOptions.lookups = []
     }
 
-    const id = getConditionalIdResolver(field.name)
-    otherOptions.lookups.push({$addFields: {[`${field.name}ObjectId`]: id}})
+    // normalize any expression to an array: [] for null/missing, wrap a scalar in a single-element array
+    const ensureArray = (expr) => ({
+        $cond: [
+            {$isArray: expr}, expr,
+            {$cond: [{$in: [{$type: expr}, ['missing', 'null']]}, [], [expr]]}
+        ]
+    })
+
+    otherOptions.lookups.push({$addFields: {[`${field.name}ObjectId`]: getConditionalIdResolver(field.name)}})
 
     if (field.metaFields) {
         otherOptions.lookups.push({$addFields: {[`data.${field.name}_Original`]: `$data.${field.name}`}})
     }
 
-    let $project
+    const pipeline = []
     if (field.projection) {
-        $project = {}
-        field.projection.forEach(key => {
-            $project[key] = 1
-        })
+        const $project = {}
+        field.projection.forEach(key => $project[key] = 1)
+        pipeline.push({$project})
     }
 
-    if (field.keepOrder /* field.multi  might be better */) {
-        // keep order in array
-        otherOptions.lookups.push(createLookupKeepSorting({name: field.name, type: field.type, $project}))
-    } else {
-        const pipeline = []
-        if ($project) {
-            pipeline.push({$project})
+    // single $lookup for all cases — order & duplicates are restored afterwards, so no keepOrder sorting needed
+    otherOptions.lookups.push({
+        $lookup: {
+            from: field.type,
+            localField: `${field.name}ObjectId`,
+            foreignField: '_id',
+            as: `data.${field.name}`,
+            pipeline,
         }
-        otherOptions.lookups.push({
-            $lookup: {
-                from: field.type,
-                localField: `${field.name}ObjectId`,
-                foreignField: '_id',
-                as: `data.${field.name}`,
-                pipeline,
-            }
-        })
+    })
+
+    // A $lookup join is deduplicated by _id and has no guaranteed order. Rebuild the array
+    // positionally from the (order- and duplicate-preserving) id list and join each position
+    // back against the lookup result. Unresolved references are dropped (null filtered out).
+    const oidArray = ensureArray(`$${field.name}ObjectId`)
+
+    const resolve = {
+        $arrayElemAt: [
+            {$filter: {input: `$data.${field.name}`, cond: {$eq: ['$$this._id', {$arrayElemAt: [oidArray, '$$i']}]}}},
+            0
+        ]
     }
 
-    if (field.metaFields) {
-        otherOptions.lookups.push({
-            $addFields: {
-                [`data.${field.name}`]: {
-                    $map: {
-                        input: `$data.${field.name}`,
-                        as: 'rel',
-                        in: {
-                            $let: {
-                                vars: {
-                                    indexInArray: {
-                                        $indexOfArray: [
-                                            `$${field.name}ObjectId`,
-                                            '$$rel._id'
-                                        ]
-                                    }
-                                },
-                                in: {
-                                    $mergeObjects: [
-                                        '$$rel',
-                                        {
-                                            $cond: {
-                                                if: {
-                                                    $and: [
-                                                        {
-                                                            $gt: [
-                                                                '$$indexInArray',
-                                                                -1
-                                                            ]
-                                                        },
-                                                        {
-                                                            $eq: [
-                                                                {
-                                                                    $type: {
-                                                                        $arrayElemAt: [
-                                                                            `$data.${field.name}_Original`,
-                                                                            '$$indexInArray'
-                                                                        ]
-                                                                    }
-                                                                },
-                                                                'object'
-                                                            ]
-                                                        }
+    otherOptions.lookups.push({
+        $addFields: {
+            [`data.${field.name}`]: {
+                $filter: {
+                    input: {
+                        $map: {
+                            input: {$range: [0, {$size: oidArray}]},
+                            as: 'i',
+                            in: field.metaFields
+                                ? {
+                                    $let: {
+                                        vars: {
+                                            rel: resolve,
+                                            orig: {$arrayElemAt: [ensureArray(`$data.${field.name}_Original`), '$$i']}
+                                        },
+                                        in: {
+                                            $cond: [
+                                                {$eq: ['$$rel', null]},
+                                                null,
+                                                {
+                                                    $mergeObjects: [
+                                                        '$$rel',
+                                                        {$cond: [{$eq: [{$type: '$$orig'}, 'object']}, '$$orig', {}]}
                                                     ]
-                                                },
-                                                then: {
-                                                    $arrayElemAt: [
-                                                        `$data.${field.name}_Original`,
-                                                        '$$indexInArray'
-                                                    ]
-                                                },
-                                                else: { /* empty data */}
-                                            }
+                                                }
+                                            ]
                                         }
-                                    ]
+                                    }
                                 }
-                            }
+                                : resolve
                         }
-                    }
+                    },
+                    cond: {$ne: ['$$this', null]}
                 }
             }
-        })
+        }
+    })
 
-        otherOptions.lookups.push({
-            $unset: `data.${field.name}_Original`
-        })
+    if (field.metaFields) {
+        otherOptions.lookups.push({$unset: `data.${field.name}_Original`})
     }
 }
 

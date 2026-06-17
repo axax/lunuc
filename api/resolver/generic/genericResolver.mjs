@@ -293,6 +293,7 @@ const GenericResolver = {
 
         const { dataQuery, countQuery, debugInfo } = await aggregationBuilder.query()
 
+        //console.log(JSON.stringify(dataQuery,null,4))
         // ── optional version-diff logging ──────────────────────────────────────
         if (finalAggregationBuilderOptions.logVersionDif && !otherOptions.skipFacetQuery) {
             const altBuilder = isV2

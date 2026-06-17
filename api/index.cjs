@@ -1,5 +1,17 @@
 'use strict'
 
+process.on('uncaughtException', (error) => {
+    console.log(error)
+    console.error(error.stack)
+    console.log("Node NOT Exiting...")
+})
+
+process.on('unhandledRejection', (reason, p) => {
+    console.log("Unhandled Rejection at: Promise ", p, " reason: ", reason)
+    // application specific logging, throwing an error, or other logic here
+})
+
+
 // Use ES6 module syntax with node.js
 require('@babel/register')({
     presets: ['@babel/preset-env'],
