@@ -57,13 +57,11 @@ self.addEventListener('fetch', event => {
         return
     }
 
-    // FIX: req.url is always absolute, so compare against the pathname instead.
     const { pathname } = new URL(req.url)
     if (pathname === '/graphql' || pathname.startsWith('/uploads/') || pathname.startsWith('/lunucapi/')) {
         return
     }
 
-    // Only handle same-origin or explicitly allowed cross-origin GET requests.
     if (req.method !== 'GET') {
         return
     }
@@ -81,7 +79,11 @@ self.addEventListener('fetch', event => {
                     caches.open(RUNTIME).then((cache) => cache.put(req, responseClone))
                 }
                 return response
-            }).catch(() => caches.match(req))
+            }).catch(async () => {
+                // Always resolve to a Response, never undefined.
+                const cached = await caches.match(req)
+                return cached || Response.error()
+            })
         )
         return
     }
@@ -90,7 +92,10 @@ self.addEventListener('fetch', event => {
     // since those URLs are immutable.
     event.respondWith(
         caches.match(req).then((resp) => {
-            return resp && !resp.redirected ? resp : fetch(req).then((response) => {
+            if (resp && !resp.redirected) {
+                return resp
+            }
+            return fetch(req).then((response) => {
                 const responseClone = response.clone()
                 if (responseClone && responseClone.status === 200 &&
                     !response.headers.has('x-no-serviceworker-cache')) {
@@ -99,8 +104,11 @@ self.addEventListener('fetch', event => {
                     })
                 }
                 return response
-            }).catch(error => {
+            }).catch((error) => {
+                // FIX: must return a Response, otherwise respondWith throws
+                // "Failed to convert value to 'Response'".
                 console.log(error)
+                return Response.error()
             })
         })
     )
