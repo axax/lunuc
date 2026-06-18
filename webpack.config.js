@@ -145,8 +145,11 @@ const config = {
     /*target: ['web', 'es2017'],*/
     output: {
         path: path.resolve(__dirname, 'build'),
-        filename: '[name].bundle.js' + (DEV_MODE ? '?v=' + BUILD_NUMBER:''),
-        chunkFilename: '[name].bundle.js' + (DEV_MODE ? '?v=' + BUILD_NUMBER:''),
+        filename: '[name].bundle.js',
+        chunkFilename: DEV_MODE
+            ? '[name].bundle.js?v=' + BUILD_NUMBER
+            : '[name].[contenthash:8].bundle.js',
+
         publicPath: '/'
     },
     externals: {
@@ -199,8 +202,10 @@ const config = {
     plugins: [
         new GenSourceCode(APP_VALUES), /* Generate some source code based on the buildconfig.json file */
         new MiniCssExtractPlugin({
-            filename: 'style.css'
-        }), /* Extract css from bundle */
+            filename: 'style.css',
+            chunkFilename: DEV_MODE ? '[name].css' : '[name].[contenthash:8].css'
+        }),
+        /* Extract css from bundle */
         // FIX: BUILD_NUMBER als globale Konstante verfügbar machen, da er
         // nicht mehr im Dateinamen steht.
         new webpack.DefinePlugin({

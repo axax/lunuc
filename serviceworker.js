@@ -25,7 +25,7 @@ self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(PRECACHE)
             .then(cache => cache.addAll(PRECACHE_URLS))
-            .then(self.skipWaiting())
+            .then(() => self.skipWaiting())
     )
 })
 
@@ -38,9 +38,12 @@ self.addEventListener('activate', (event) => {
         await Promise.all(cacheNames.map(async (cacheName) => {
             if (!expectedCaches.includes(cacheName)) {
                 await caches.delete(cacheName)
-                console.log('cache key '+cacheName+' deleted')
+                console.log('cache key ' + cacheName + ' deleted')
             }
         }))
+
+        // Take control of already open clients without requiring a reload.
+        await self.clients.claim()
     })())
 })
 
@@ -49,36 +52,56 @@ self.addEventListener('activate', (event) => {
 // from the network before returning it to the page.
 self.addEventListener('fetch', event => {
     const req = event.request
+
     if (req.cache === 'only-if-cached' && req.mode !== 'same-origin') {
         return
     }
 
-    if (req.url==='/graphql' || req.url.indexOf('/uploads/') >= 0 || req.url.indexOf('/lunucapi/') >= 0) {
+    // FIX: req.url is always absolute, so compare against the pathname instead.
+    const { pathname } = new URL(req.url)
+    if (pathname === '/graphql' || pathname.startsWith('/uploads/') || pathname.startsWith('/lunucapi/')) {
         return
     }
 
-    // Skip cross-origin requests, like those for Google Analytics.
-    if (req.method == 'GET' && (req.url.startsWith(self.location.origin) ||
-            HOSTS.some((host) => req.url.startsWith(host))
-        )) {
-
-
-        event.respondWith(
-            caches.match(req).then((resp) => {
-
-                return resp && !resp.redirected ? resp : fetch(req).then((response) => {
-                    let responseClone = response.clone()
-                    caches.open(RUNTIME).then((cache) => {
-                        if(responseClone && responseClone.status===200 &&
-                            !response.headers.has('x-no-serviceworker-cache')) {
-                            cache.put(req, responseClone)
-                        }
-                    })
-                    return response
-                }).catch(error=>{
-                    console.log(error)
-                })
-            })
-        )
+    // Only handle same-origin or explicitly allowed cross-origin GET requests.
+    if (req.method !== 'GET') {
+        return
     }
+    if (!(req.url.startsWith(self.location.origin) || HOSTS.some((host) => req.url.startsWith(host)))) {
+        return
+    }
+
+    // Navigation / HTML documents: network-first so new deploys are picked up
+    // immediately. Fall back to the cache only when offline.
+    if (req.mode === 'navigate') {
+        event.respondWith(
+            fetch(req).then((response) => {
+                const responseClone = response.clone()
+                if (response.status === 200 && !response.headers.has('x-no-serviceworker-cache')) {
+                    caches.open(RUNTIME).then((cache) => cache.put(req, responseClone))
+                }
+                return response
+            }).catch(() => caches.match(req))
+        )
+        return
+    }
+
+    // Everything else (content-hashed chunks, fonts, ...): cache-first,
+    // since those URLs are immutable.
+    event.respondWith(
+        caches.match(req).then((resp) => {
+            return resp && !resp.redirected ? resp : fetch(req).then((response) => {
+                const responseClone = response.clone()
+                if (responseClone && responseClone.status === 200 &&
+                    !response.headers.has('x-no-serviceworker-cache')) {
+                    caches.open(RUNTIME).then((cache) => {
+                        cache.put(req, responseClone)
+                    })
+                }
+                return response
+            }).catch(error => {
+                console.log(error)
+            })
+        })
+    )
 })
