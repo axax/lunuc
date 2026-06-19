@@ -10,6 +10,7 @@ import Util from '../../api/util/index.mjs'
 import {Worker} from 'node:worker_threads'
 import {isTemporarilyBlocked} from '../../server/util/requestBlocker.mjs'
 import {isString} from '../../client/util/json.mjs'
+import {decodeToken} from '../../api/util/jwt.mjs'
 
 const CACHE_PREFIX = 'ExtensionsApi-'
 
@@ -211,11 +212,20 @@ Hook.on('appready', ({app, db}) => {
                         if (!result) {
 
                             // check oauth token
-                            if(!api.apiTokenFallback || !Util.isUserLoggedIn(req.context) ) {
+                            if(api.apiTokenFallback) {
 
+                                const context = decodeToken('JWT' + token)
 
+                                if(context.auth){
+                                    req.context = context
+                                }else{
+                                    return res.status(401).json({error: 'API Bearer Token (fallback) is invalid or expired'});
+                                }
+                            }else{
                                 return res.status(401).json({error: 'API Bearer Token is invalid or expired'});
                             }
+
+
                         }else if(result.userContext !== null){
                             const user = await Util.userById(db, result.userContext)
                             if(user) {
