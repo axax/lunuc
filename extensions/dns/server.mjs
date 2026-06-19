@@ -64,6 +64,9 @@ Hook.on('appready', async ({db, context}) => {
 
             })
 
+            // periodically flush the access-count buffer (in case traffic is too low
+            // to ever hit the size threshold in the request handler)
+            insertBuffer()
 
         }, 1000 * 60)
 
@@ -167,8 +170,10 @@ Hook.on('appready', async ({db, context}) => {
                         }
                     }
 
+                    // Fire-and-forget: never block the request handler on a DB round-trip.
+                    // insertBuffer() guards against overlapping writes internally.
                     if (Object.keys(dnsServerContext.dbBuffer).length > 20) {
-                        await insertBuffer()
+                        insertBuffer()
                     }
                 } else {
                     send(response)
@@ -260,14 +265,38 @@ const debugMessage = (msg, details) => {
 }
 
 let dnsResolvers = {}
-const dnsCachedAnswers = []
+// O(1) cache keyed by cacheKey. Map preserves insertion order, so the oldest
+// entry is always the first key -> cheap FIFO eviction.
+const dnsCachedAnswers = new Map()
+// In-flight resolves, keyed by cacheKey, to coalesce concurrent identical
+// queries and prevent a cache stampede against the upstream resolver.
+const pendingResolves = new Map()
+
 const resolveDnsQuestion = async (question) => {
     const cacheKey = `${question.name}${question.type}${question.class}`
-    const cachedAnswer = dnsCachedAnswers.find(entry => entry.cacheKey === cacheKey)
+
+    const cachedAnswer = dnsCachedAnswers.get(cacheKey)
     if (cachedAnswer) {
-        return cachedAnswer.answer
+        return cachedAnswer
     }
 
+    // If an identical query is already being resolved, await the same promise
+    // instead of firing another upstream lookup.
+    const inFlight = pendingResolves.get(cacheKey)
+    if (inFlight) {
+        return inFlight
+    }
+
+    const resolvePromise = doResolveUpstream(question, cacheKey)
+    pendingResolves.set(cacheKey, resolvePromise)
+    try {
+        return await resolvePromise
+    } finally {
+        pendingResolves.delete(cacheKey)
+    }
+}
+
+const doResolveUpstream = async (question, cacheKey) => {
     const dnsServer = dnsServerContext.settings.dns || '8.8.8.8'
     if (!dnsResolvers[dnsServer]) {
         dnsResolvers[dnsServer] = new dns2({
@@ -276,7 +305,7 @@ const resolveDnsQuestion = async (question) => {
         })
     }
     const typeName = dnsServerContext.typeMap[question.type]
-    debugMessage(`DNS: resolve ${dnsServer} dns type ${typeName} for question (cache size ${dnsCachedAnswers.length})`, question)
+    debugMessage(`DNS: resolve ${dnsServer} dns type ${typeName} for question (cache size ${dnsCachedAnswers.size})`, question)
 
     // Race the dns2 resolve against an own timeout. The dns2-internal timeout (10s)
     // surfaces as an *unhandled* promise rejection, so we add a catchable timeout here.
@@ -302,15 +331,17 @@ const resolveDnsQuestion = async (question) => {
             console.warn(`DNS: error resolving ${question.name}:`, err.message)
         }
         // Fail-safe: return an empty response so the server can still reply to the client.
-        // Only the fields below are read by the request handler.
+        // Not cached, so the next request for this name retries.
         return {header: {}, authorities: [], additionals: [], answers: []}
     }
 
-    dnsCachedAnswers.push({cacheKey, answer})
+    dnsCachedAnswers.set(cacheKey, answer)
 
     const maxNumbersOfCachedAnswers = dnsServerContext.settings.cacheSize || 1000
-    if (dnsCachedAnswers.length > maxNumbersOfCachedAnswers) {
-        dnsCachedAnswers.shift()
+    if (dnsCachedAnswers.size > maxNumbersOfCachedAnswers) {
+        // evict oldest entry (first key in insertion order)
+        const oldestKey = dnsCachedAnswers.keys().next().value
+        dnsCachedAnswers.delete(oldestKey)
     }
 
     return answer
@@ -381,12 +412,26 @@ const isHostBlocked = (hostname) => {
     return block
 }
 
+// Guard against overlapping writes: under high load many request handlers would
+// otherwise fire bulkWrite at the same time and exhaust the Mongo connection pool.
+let insertingBuffer = false
 const insertBuffer = async () => {
-    if (dnsServerContext.database) {
-        const values = Object.values(dnsServerContext.dbBuffer)
-        if(values.length>0) {
-            await dnsServerContext.database.collection('DnsHost').bulkWrite(values, {ordered: false})
-            dnsServerContext.dbBuffer = {}
-        }
+    if (!dnsServerContext.database || insertingBuffer) {
+        return
+    }
+    const values = Object.values(dnsServerContext.dbBuffer)
+    if (values.length === 0) {
+        return
+    }
+    // Snapshot & clear before the async write so concurrent requests accumulate
+    // into a fresh buffer instead of being lost or written twice.
+    dnsServerContext.dbBuffer = {}
+    insertingBuffer = true
+    try {
+        await dnsServerContext.database.collection('DnsHost').bulkWrite(values, {ordered: false})
+    } catch (e) {
+        console.warn('DNS: insertBuffer failed', e.message)
+    } finally {
+        insertingBuffer = false
     }
 }
