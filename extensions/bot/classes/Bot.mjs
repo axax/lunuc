@@ -1,5 +1,5 @@
 import LogisticRegressionClassifier from 'natural/lib/natural/classifiers/logistic_regression_classifier.js'
-import { JaroWinklerDistance } from 'natural/lib/natural/distance/jaro-winkler_distance.js'
+import JaroWinklerDistance from 'natural/lib/natural/distance/jaro-winkler_distance.js'
 import {Telegraf} from 'telegraf'
 import Stemmer from './Stemmer.mjs'
 import stopwords_en from 'natural/lib/natural/util/stopwords.js'
