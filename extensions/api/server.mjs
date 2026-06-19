@@ -209,7 +209,13 @@ Hook.on('appready', ({app, db}) => {
                             ]})
 
                         if (!result) {
-                            return res.status(401).json({ error: 'API Bearer Token is invalid or expired' });
+
+                            // check oauth token
+                            if(!api.apiTokenFallback || !Util.isUserLoggedIn(req.context) ) {
+
+
+                                return res.status(401).json({error: 'API Bearer Token is invalid or expired'});
+                            }
                         }else if(result.userContext !== null){
                             const user = await Util.userById(db, result.userContext)
                             if(user) {
