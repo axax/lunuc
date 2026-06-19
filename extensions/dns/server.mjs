@@ -272,6 +272,51 @@ const dnsCachedAnswers = new Map()
 // queries and prevent a cache stampede against the upstream resolver.
 const pendingResolves = new Map()
 
+const ERROR_ANSWER = () => ({header: {}, authorities: [], additionals: [], answers: [], isError: true})
+
+// --- Upstream concurrency limiter -------------------------------------------
+// Caps how many upstream lookups run at the same time. A burst of many *distinct*
+// names/types defeats both cache and coalescing (each has a unique cacheKey), so
+// without this every query opens its own dns2 lookup -> unbounded UDP sockets /
+// file descriptors -> EMFILE -> the whole process (incl. the API) stalls.
+// Excess lookups wait in a bounded queue; if that is full, we shed load and reply
+// with an (uncached) error answer so the client can retry.
+let activeUpstream = 0
+const upstreamQueue = []
+const maxConcurrentUpstream = () => dnsServerContext.settings.maxConcurrentResolves || 50
+const maxUpstreamQueue = () => dnsServerContext.settings.maxResolveQueue || 1000
+
+const pumpUpstreamQueue = () => {
+    while (activeUpstream < maxConcurrentUpstream() && upstreamQueue.length > 0) {
+        const job = upstreamQueue.shift()
+        job()
+    }
+}
+
+const scheduleUpstream = (question, cacheKey) => {
+    return new Promise((resolve) => {
+        const job = () => {
+            activeUpstream++
+            doResolveUpstream(question, cacheKey)
+                .then(resolve, () => resolve(ERROR_ANSWER()))
+                .finally(() => {
+                    activeUpstream--
+                    pumpUpstreamQueue()
+                })
+        }
+
+        if (activeUpstream < maxConcurrentUpstream()) {
+            job()
+        } else if (upstreamQueue.length < maxUpstreamQueue()) {
+            upstreamQueue.push(job)
+        } else {
+            console.warn(`DNS: resolve queue full (${upstreamQueue.length}), shedding ${question.name}`)
+            resolve(ERROR_ANSWER())
+        }
+    })
+}
+// ----------------------------------------------------------------------------
+
 const resolveDnsQuestion = async (question) => {
     const cacheKey = `${question.name}${question.type}${question.class}`
 
@@ -287,7 +332,7 @@ const resolveDnsQuestion = async (question) => {
         return inFlight
     }
 
-    const resolvePromise = doResolveUpstream(question, cacheKey)
+    const resolvePromise = scheduleUpstream(question, cacheKey)
     pendingResolves.set(cacheKey, resolvePromise)
     try {
         return await resolvePromise
@@ -331,7 +376,7 @@ const doResolveUpstream = async (question, cacheKey) => {
         }
 
         // Erzeuge eine temporäre Dummy-Antwort für Fehler
-        answer = { header: {}, authorities: [], additionals: [], answers: [], isError: true };
+        answer = ERROR_ANSWER();
     }
 
     // Speichere das Ergebnis im Cache (auch Fehler-Antworten!)
