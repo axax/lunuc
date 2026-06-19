@@ -214,7 +214,7 @@ Hook.on('appready', ({app, db}) => {
                             // check oauth token
                             if(api.apiTokenFallback) {
 
-                                const context = decodeToken('JWT' + token)
+                                const context = decodeToken((token.indexOf('JWT')<0?'JWT ':'') + token)
 
                                 if(context.auth){
                                     req.context = context
