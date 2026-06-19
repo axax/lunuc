@@ -139,7 +139,7 @@ export async function oauthToken(db, req, res) {
     )
 
     // 11. Access Token generieren
-    const {token} = await auth.signPayload(db, clientData.createdBy, {
+    const {token} = await auth.signPayload(db, codeData.createdBy, {
         oauth:{client: clientData._id},
         accessScope:clientData.allowedScopes ? clientData.allowedScopes.split(/[\s,]+/) : []
     })
