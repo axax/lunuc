@@ -16,7 +16,7 @@ import {render} from 'react-dom'
 import {removePrettyUrlPart} from './util/cmsView.mjs'
 
 const TypesContainer = (props) => <Async {...props}
-                                         load={import(/* webpackChunkName: "admin" */ '../../client/containers/TypesContainer')}/>
+                                         load={() =>import(/* webpackChunkName: "admin" */ '../../client/containers/TypesContainer')}/>
 
 
 // Extend Util to use in template

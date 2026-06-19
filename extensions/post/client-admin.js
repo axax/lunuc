@@ -11,8 +11,8 @@ import {registerTrs} from '../../util/i18n.mjs'
 import {translations} from './translations/admin'
 registerTrs(translations, 'Post')
 
-const PostRenderer = (props) => <Async readOnly={true} {...props} load={import(/* webpackChunkName: "post" */ './components/PostEditor')}/>
-const EditIcon = (props) => <Async {...props} expose="EditIcon" load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+const PostRenderer = (props) => <Async readOnly={true} {...props} load={() =>import(/* webpackChunkName: "post" */ './components/PostEditor')}/>
+const EditIcon = (props) => <Async {...props} expose="EditIcon" load={() =>import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 
 export default () => {
 

@@ -14,7 +14,7 @@ import {referencesToIds} from '../../util/typesAdmin.mjs'
 registerTrs(translations, 'Newsletter')
 
 const SimpleDialog = (props) => <Async {...props} expose="SimpleDialog"
-                                       load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+                                       load={() =>import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 
 export default () => {
 

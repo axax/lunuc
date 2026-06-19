@@ -4,7 +4,7 @@ import Async from 'client/components/Async'
 import {CHAT_BASE_URL}  from './constants'
 import {_t, registerTrs} from '../../util/i18n.mjs'
 
-const ChatIcon = (props) => <Async {...props} expose="ChatIcon" load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')} />
+const ChatIcon = (props) => <Async {...props} expose="ChatIcon" load={() =>import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')} />
 
 
 registerTrs({

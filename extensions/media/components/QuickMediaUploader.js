@@ -6,8 +6,8 @@ import {
 } from 'ui/admin'
 import Async from '../../../client/components/Async'
 
-const FileDrop = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../../client/components/FileDrop')}/>
-const TypePicker = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../../client/components/TypePicker')}/>
+const FileDrop = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "admin" */ '../../../client/components/FileDrop')}/>
+const TypePicker = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "admin" */ '../../../client/components/TypePicker')}/>
 
 export const QuickMediaUploader = (props) => {
 

@@ -20,7 +20,7 @@ import {getIconByKey} from '../../client/components/ui/impl/material/icon'
 import MediaFileExplorer from './components/MediaFileExplorer'
 import {QuickMediaUploader} from "./components/QuickMediaUploader";
 
-const ImageIcon = (props) => <Async {...props} expose="ImageIcon" load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+const ImageIcon = (props) => <Async {...props} expose="ImageIcon" load={() =>import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 
 registerTrs(translations, 'MediaTranslations')
 

@@ -7,7 +7,7 @@ import {jsonPropertyTemplates, jsonTemplates} from './templates/template'
 import Async from '../../../client/components/Async'
 import styled from '@emotion/styled'
 
-const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
+const CodeEditor = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
 
 
 

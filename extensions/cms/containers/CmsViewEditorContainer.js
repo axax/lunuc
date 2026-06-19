@@ -86,7 +86,7 @@ const StyledBox = styled(Box)(({theme})=>({
 }))
 
 const CodeEditor = (props) => <Async {...props}
-                                     load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
+                                     load={() =>import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
 
 const DEFAULT_EDITOR_SETTINGS = {inlineEditor: true, fixedLayout: true, drawerOpen: false, drawerWidth: 500}
 

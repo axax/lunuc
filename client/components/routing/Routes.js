@@ -14,36 +14,36 @@ import Util from '../../util/index.mjs'
 
 const BaseLayout = (props) => <Async {...props}
                                      asyncKey="BaseLayout"
-                                     load={import(/* webpackChunkName: "admin" */ '../../components/layout/BaseLayout')}/>
+                                     load={() =>import(/* webpackChunkName: "admin" */ '../../components/layout/BaseLayout')}/>
 
 const BlankLayout = (props) => <Async {...props}
                                      asyncKey="BlankLayout"
-                                     load={import(/* webpackChunkName: "admin" */ '../../components/layout/BlankLayout')}/>
+                                     load={() =>import(/* webpackChunkName: "admin" */ '../../components/layout/BlankLayout')}/>
 
 const LoginContainer = (props) => <Async {...props}
-                                         load={import(/* webpackChunkName: "adminLogin" */ '../../containers/LoginContainer')}/>
+                                         load={() =>import(/* webpackChunkName: "adminLogin" */ '../../containers/LoginContainer')}/>
 const SignUpContainer = (props) => <Async {...props}
-                                          load={import(/* webpackChunkName: "admin" */ '../../containers/SignUpContainer')}/>
+                                          load={() =>import(/* webpackChunkName: "admin" */ '../../containers/SignUpContainer')}/>
 const UserProfileContainer = (props) => <Async {...props}
                                                asyncKey="UserProfileContainer"
-                                               load={import(/* webpackChunkName: "admin" */ '../../containers/UserProfileContainer')}/>
+                                               load={() =>import(/* webpackChunkName: "admin" */ '../../containers/UserProfileContainer')}/>
 const SystemContainer = (props) => <Async {...props}
                                           asyncKey="SystemContainer"
-                                          load={import(/* webpackChunkName: "admin" */ '../../containers/SystemContainer')}/>
+                                          load={() =>import(/* webpackChunkName: "admin" */ '../../containers/SystemContainer')}/>
 const BackupContainer = (props) => <Async {...props}
                                           asyncKey="BackupContainer"
-                                          load={import(/* webpackChunkName: "admin" */ '../../containers/BackupContainer')}/>
+                                          load={() =>import(/* webpackChunkName: "admin" */ '../../containers/BackupContainer')}/>
 const FilesContainer = (props) => <Async {...props}
                                          asyncKey="FilesContainer"
-                                         load={import(/* webpackChunkName: "admin" */ '../../containers/FilesContainer')}/>
+                                         load={() =>import(/* webpackChunkName: "admin" */ '../../containers/FilesContainer')}/>
 const TypesContainer = (props) => <Async {...props}
                                          asyncKey="TypesContainer"
-                                         load={import(/* webpackChunkName: "admin" */ '../../containers/TypesContainer')}/>
+                                         load={() =>import(/* webpackChunkName: "admin" */ '../../containers/TypesContainer')}/>
 const HomeContainer = (props) => <Async {...props}
                                         asyncKey="HomeContainer"
-                                        load={import(/* webpackChunkName: "admin" */ '../../containers/HomeContainer')}/>
+                                        load={() =>import(/* webpackChunkName: "admin" */ '../../containers/HomeContainer')}/>
 const ErrorPage = (props) => <Async {...props}
-                                    load={import(/* webpackChunkName: "errorPage" */ '../../components/layout/ErrorPage')}/>
+                                    load={() =>import(/* webpackChunkName: "errorPage" */ '../../components/layout/ErrorPage')}/>
 
 const UnauthorizedPage = () => (
     <ErrorPage code="401" title="Unauthorized" background="#f4a742"/>

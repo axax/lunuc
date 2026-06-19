@@ -6,7 +6,7 @@ import {_t} from '../../../util/i18n.mjs'
 import GenericForm from '../../../client/components/GenericForm'
 import {getType} from '../../../util/types.mjs'
 
-const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
+const CodeEditor = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
 
 class DataResolverEditor extends React.Component {
 

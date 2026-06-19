@@ -46,7 +46,7 @@ import {QUERY_KEY_VALUES_GLOBAL} from '../util/keyvalue'
 import {replacePlaceholders} from '../../util/placeholders.mjs'
 import {SimpleAutosuggest} from './ui/impl/material'
 
-const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ './CodeEditor')}/>
+const CodeEditor = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "codeeditor" */ './CodeEditor')}/>
 
 
 const StyledTabContainer = styled('div')(({ theme }) => ({

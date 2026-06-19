@@ -12,9 +12,9 @@ import {
 import Async from '../../../client/components/Async.js'
 import UploadUtil from "../../../client/util/upload";
 
-const SimpleSwitch = (props) => <Async {...props} expose="SimpleSwitch" load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
-const TypePicker = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../../client/components/TypePicker')}/>
-const FileDrop = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../../client/components/FileDrop')}/>
+const SimpleSwitch = (props) => <Async {...props} expose="SimpleSwitch" load={() =>import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
+const TypePicker = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "admin" */ '../../../client/components/TypePicker')}/>
+const FileDrop = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "admin" */ '../../../client/components/FileDrop')}/>
 
 export const MediaEditorWrapper = ({children, dataToEdit, meta}) => {
     const mediaSetting = meta.TypeContainer ? meta.TypeContainer.settings.Media : {}

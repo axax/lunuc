@@ -10,7 +10,7 @@ import {client} from "../../client/middleware/graphql";
 registerTrs(translations, 'StaticFile')
 
 const FileDrop = (props) => <Async {...props}
-                                   load={import(/* webpackChunkName: "admin" */ '../../client/components/FileDrop')}/>
+                                   load={() =>import(/* webpackChunkName: "admin" */ '../../client/components/FileDrop')}/>
 
 export default () => {
     // add some extra data to the table

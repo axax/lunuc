@@ -5,8 +5,8 @@ const {ADMIN_BASE_URL} = config
 import Async from 'client/components/Async'
 
 const LiveSpeechTranslaterContainer = (props) => <Async {...props}
-                                                   load={import(/* webpackChunkName: "livetranslator" */ './containers/LiveSpeechTranslaterContainer')}/>
-const TranslateIcon = (props) => <Async {...props} expose="TranslateIcon" load={import(/* webpackChunkName: "livetranslator" */ '../../gensrc/ui/admin')} />
+                                                   load={() =>import(/* webpackChunkName: "livetranslator" */ './containers/LiveSpeechTranslaterContainer')}/>
+const TranslateIcon = (props) => <Async {...props} expose="TranslateIcon" load={() =>import(/* webpackChunkName: "livetranslator" */ '../../gensrc/ui/admin')} />
 
 export default () => {
 

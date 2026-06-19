@@ -26,10 +26,10 @@ import {translateText} from "../../client/util/translate.mjs";
 registerTrs(translations, 'GenericData')
 
 const GenericForm = (props) => <Async {...props}
-                                      load={import(/* webpackChunkName: "admin" */ '../../client/components/GenericForm')}/>
+                                      load={() =>import(/* webpackChunkName: "admin" */ '../../client/components/GenericForm')}/>
 
 const Typography = (props) => <Async {...props} expose="Typography"
-                                     load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+                                     load={() =>import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 
 
 const findField = (definition, key) => {

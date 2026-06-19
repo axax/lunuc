@@ -13,7 +13,7 @@ import {_t} from 'util/i18n.mjs'
 
 const DEFAULT_RESULT_LIMIT = 10
 
-const PostEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "post" */ '../components/PostEditor')}/>
+const PostEditor = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "post" */ '../components/PostEditor')}/>
 
 
 class PostContainer extends React.Component {

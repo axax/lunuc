@@ -46,7 +46,7 @@ import GenericSettings from '../GenericSettings'
 import Drawer from '@mui/material/Drawer'
 import {replacePlaceholders} from '../../../util/placeholders.mjs'
 
-const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../CodeEditor')}/>
+const CodeEditor = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "codeeditor" */ '../CodeEditor')}/>
 
 
 registerTrs(translations, 'AdminTranslations')

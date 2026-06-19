@@ -18,7 +18,7 @@ import Async from '../../../client/components/Async'
 import {_t} from '../../../util/i18n.mjs'
 import JsonDomIFrame from './JsonDomIFrame'
 
-const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
+const CodeEditor = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
 
 function CmsRevisionDialog(props){
     const {onClose, onChange, cmsPage, historyType, revision, canMangeCmsTemplate, ...rest} = props

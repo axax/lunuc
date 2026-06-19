@@ -5,8 +5,8 @@ const {ADMIN_BASE_URL} = config
 import Async from 'client/components/Async'
 
 const SearchWhileSpeechContainer = (props) => <Async {...props}
-                                                   load={import(/* webpackChunkName: "speechsearch" */ './containers/SearchWhileSpeechContainer')}/>
-const SearchIcon = (props) => <Async {...props} expose="SearchIcon" load={import(/* webpackChunkName: "chat" */ '../../gensrc/ui/admin')} />
+                                                   load={() =>import(/* webpackChunkName: "speechsearch" */ './containers/SearchWhileSpeechContainer')}/>
+const SearchIcon = (props) => <Async {...props} expose="SearchIcon" load={() =>import(/* webpackChunkName: "chat" */ '../../gensrc/ui/admin')} />
 
 
 export default () => {

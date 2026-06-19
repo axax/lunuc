@@ -23,9 +23,12 @@ const HOSTS = [
 // The install handler takes care of precaching the resources we always need.
 self.addEventListener('install', event => {
     event.waitUntil(
-        caches.open(PRECACHE)
-            .then(cache => cache.addAll(PRECACHE_URLS))
-            .then(() => self.skipWaiting())
+        caches.open(PRECACHE).then(async (cache) => {
+            // allSettled instead of addAll: a single failing URL (e.g. a new
+            // bundle not yet uploaded during the deploy window) must not abort
+            // the whole installation.
+            await Promise.allSettled(PRECACHE_URLS.map(url => cache.add(url)))
+        }).then(() => self.skipWaiting())
     )
 })
 
@@ -42,8 +45,8 @@ self.addEventListener('activate', (event) => {
             }
         }))
 
-        // Take control of already open clients without requiring a reload.
-        await self.clients.claim()
+        // No clients.claim(): a running page keeps its original controller,
+        // so the new worker never takes over mid-load.
     })())
 })
 
@@ -57,11 +60,13 @@ self.addEventListener('fetch', event => {
         return
     }
 
+    // req.url is always absolute, so compare against the pathname.
     const { pathname } = new URL(req.url)
     if (pathname === '/graphql' || pathname.startsWith('/uploads/') || pathname.startsWith('/lunucapi/')) {
         return
     }
 
+    // Only handle same-origin or explicitly allowed cross-origin GET requests.
     if (req.method !== 'GET') {
         return
     }
@@ -105,7 +110,7 @@ self.addEventListener('fetch', event => {
                 }
                 return response
             }).catch((error) => {
-                // FIX: must return a Response, otherwise respondWith throws
+                // Must return a Response, otherwise respondWith throws
                 // "Failed to convert value to 'Response'".
                 console.log(error)
                 return Response.error()

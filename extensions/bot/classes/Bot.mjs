@@ -1,4 +1,5 @@
-import natural from 'natural'
+import LogisticRegressionClassifier from 'natural/lib/natural/classifiers/logistic_regression_classifier.js'
+import { JaroWinklerDistance } from 'natural/lib/natural/distance/jaro-winkler_distance.js'
 import {Telegraf} from 'telegraf'
 import Stemmer from './Stemmer.mjs'
 import stopwords_en from 'natural/lib/natural/util/stopwords.js'
@@ -75,7 +76,7 @@ class Bot {
         for (let i = 0; i < this.languages.length; i++) {
             const lang = this.languages[i]
             this.stemmer[lang] = new Stemmer(this.stopwords[lang], this.charsToKeep[lang], this.synonym[lang])
-            this.classifier[lang] = new natural.LogisticRegressionClassifier(this.stemmer[lang])
+            this.classifier[lang] = new LogisticRegressionClassifier(this.stemmer[lang])
             this.answers[lang] = {}
             this.expressions[lang] = []
         }
@@ -313,7 +314,7 @@ class Bot {
                     }
                     pushit = true
                 } else {
-                    const accuracy = natural.JaroWinklerDistance(textTokens.stemmed[i], exprTokens.stemmed[exprIdx],{ignoreCase:true})
+                    const accuracy = JaroWinklerDistance(textTokens.stemmed[i], exprTokens.stemmed[exprIdx],{ignoreCase:true})
 
                     if (accuracy < 0.65 && currentKey) {
                         // it is probably a part of the context

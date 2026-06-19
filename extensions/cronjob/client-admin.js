@@ -9,8 +9,8 @@ import {translations} from './translations/admin'
 registerTrs(translations, 'CronJobExtension')
 
 const SimpleDialog = (props) => <Async {...props} expose="SimpleDialog"
-                                       load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
-const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../../client/components/CodeEditor')}/>
+                                       load={() =>import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+const CodeEditor = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "codeeditor" */ '../../client/components/CodeEditor')}/>
 
 export default () => {
 

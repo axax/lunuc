@@ -33,7 +33,7 @@ const StyledTextField = styled(TextField)(() => ({
 
 const EXTENSIONS_TO_EDIT = ['','html','js','md','cjs','mjs','text','txt','yml','json','xml','csv','template']
 
-const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
+const CodeEditor = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
 
 class FilesContainer extends React.Component {
 

@@ -3,8 +3,8 @@ import {_t} from '../../../util/i18n.mjs'
 import Async from 'client/components/Async'
 
 
-const TypePicker = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../../client/components/TypePicker')}/>
-const FileDrop = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../../client/components/FileDrop')}/>
+const TypePicker = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "admin" */ '../../../client/components/TypePicker')}/>
+const FileDrop = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "admin" */ '../../../client/components/FileDrop')}/>
 
 export const MediaUploader = ({TypeContainer, type, dataToEdit, callback}) => {
 

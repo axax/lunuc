@@ -14,7 +14,7 @@ import {_t} from '../../../../util/i18n.mjs'
 import Async from '../../../../client/components/Async'
 import {openWindow} from "../../../../client/util/window";
 
-const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../../../../client/components/CodeEditor')}/>
+const CodeEditor = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "codeeditor" */ '../../../../client/components/CodeEditor')}/>
 
 
 export default function JsonDomAddElementDialog(props){

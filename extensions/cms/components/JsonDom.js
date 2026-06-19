@@ -23,34 +23,34 @@ import {createManifest} from '../util/manifest.mjs'
 import {AppContext} from '../../../client/components/AppContext'
 
 const JsonDomHelper = (props) => <Async {...props}
-                                        load={import(/* webpackChunkName: "jsondom" */ './JsonDomHelper')}/>
+                                        load={() =>import(/* webpackChunkName: "jsondom" */ './JsonDomHelper')}/>
 
 const PrettyErrorMessage = (props) => <Async {...props}
-                                             load={import(/* webpackChunkName: "admin" */ './PrettyErrorMessage')}/>
+                                             load={() =>import(/* webpackChunkName: "admin" */ './PrettyErrorMessage')}/>
 
 const ContentEditable = (props) => <Async {...props}
-                                          load={import(/* webpackChunkName: "admin" */ '../../../client/components/ContentEditable')}/>
+                                          load={() =>import(/* webpackChunkName: "admin" */ '../../../client/components/ContentEditable')}/>
 
 const FileDrop = (props) => <Async {...props}
-                                   load={import(/* webpackChunkName: "admin" */ '../../../client/components/FileDrop')}/>
+                                   load={() =>import(/* webpackChunkName: "admin" */ '../../../client/components/FileDrop')}/>
 
 const Print = (props) => <Async {...props}
-                                load={import(/* webpackChunkName: "admin" */ '../../../client/components/Print')}/>
+                                load={() =>import(/* webpackChunkName: "admin" */ '../../../client/components/Print')}/>
 
 const QuillEditor = (props) => <Async {...props}
-                                      load={import(/* webpackChunkName: "admin" */ '../../../client/components/QuillEditor')}/>
+                                      load={() =>import(/* webpackChunkName: "admin" */ '../../../client/components/QuillEditor')}/>
 
 const CodeEditor = (props) => <Async {...props}
-                                     load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
+                                     load={() =>import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
 
 const MarkDown = (props) => <Async {...props}
-                                   load={import(/* webpackChunkName: "markdown" */ '../../../client/components/MarkDown')}/>
+                                   load={() =>import(/* webpackChunkName: "markdown" */ '../../../client/components/MarkDown')}/>
 
 const ShadowRoot = (props) => <Async {...props}
-                                   load={import(/* webpackChunkName: "shadowroot" */ '../../../client/components/ShadowRoot')}/>
+                                   load={() =>import(/* webpackChunkName: "shadowroot" */ '../../../client/components/ShadowRoot')}/>
 
 const AddToBody = (props) => <Async {...props}
-                                   load={import(/* webpackChunkName: "addtobody" */ './AddToBody')}/>
+                                   load={() =>import(/* webpackChunkName: "addtobody" */ './AddToBody')}/>
 
 
 const hasNativeLazyLoadSupport = !_app_.ssr && window.HTMLImageElement && 'loading' in HTMLImageElement.prototype

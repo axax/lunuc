@@ -20,11 +20,11 @@ import {_t, registerTrs} from '../../../util/i18n.mjs'
 
 // admin pack
 const ErrorPage = (props) => <Async {...props}
-                                    load={import(/* webpackChunkName: "errorPage" */ '../../../client/components/layout/ErrorPage')}/>
+                                    load={() =>import(/* webpackChunkName: "errorPage" */ '../../../client/components/layout/ErrorPage')}/>
 
 
 const CmsViewEditorContainer = (props) => <Async {...props}
-                                                 load={import(/* webpackChunkName: "admin" */ './CmsViewEditorContainer')}/>
+                                                 load={() =>import(/* webpackChunkName: "admin" */ './CmsViewEditorContainer')}/>
 
 // enhance cmsview with editor functionalities if in edit mode
 export default function (WrappedComponent) {

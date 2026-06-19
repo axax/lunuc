@@ -1,7 +1,7 @@
 import React from 'react'
 import Async from '../../../client/components/Async'
 
-const CodeEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
+const CodeEditor = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
 
 class ScriptEditor extends React.Component {
     render(){

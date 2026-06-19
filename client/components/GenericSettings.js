@@ -12,7 +12,7 @@ import Async from './Async'
 import { useKeyValuesGlobal, setKeyValue} from '../util/keyvalue'
 
 const CodeEditor = (props) => <Async {...props}
-                                     load={import(/* webpackChunkName: "codeeditor" */ './CodeEditor')}/>
+                                     load={() =>import(/* webpackChunkName: "codeeditor" */ './CodeEditor')}/>
 
 
 function GenericSettings({keyValues, keyDefinition, onSaveValues}) {

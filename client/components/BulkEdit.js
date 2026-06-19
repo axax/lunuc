@@ -24,7 +24,7 @@ import {parseOrElse} from '../util/json.mjs'
 import CircularProgress from '@mui/material/CircularProgress'
 
 const CodeEditor = (props) => <Async {...props}
-                                     load={import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
+                                     load={() =>import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
 
 function CustomLabel({ editing, editable, children, toggleItemEditing, ...other }) {
     return (

@@ -5,9 +5,9 @@ const {ADMIN_BASE_URL} = config
 import Async from 'client/components/Async'
 
 const WordContainer = (props) => <Async {...props}
-                                        load={import(/* webpackChunkName: "word" */ './containers/WordContainer')}/>
+                                        load={() =>import(/* webpackChunkName: "word" */ './containers/WordContainer')}/>
 const SubjectIcon = (props) => <Async {...props} expose="SubjectIcon"
-                                      load={import(/* webpackChunkName: "word" */ '../../gensrc/ui/admin')}/>
+                                      load={() =>import(/* webpackChunkName: "word" */ '../../gensrc/ui/admin')}/>
 
 
 export default () => {

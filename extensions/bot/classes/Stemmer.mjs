@@ -1,5 +1,7 @@
-import natural from 'natural'
-
+// RegexpTokenizer ist ein NAMED export
+import { RegexpTokenizer } from 'natural/lib/natural/tokenizers/regexp_tokenizer.js'
+// LancasterStemmer ist (in den meisten Versionen) eine fertige Instanz als default export
+import LancasterStemmer from 'natural/lib/natural/stemmers/lancaster_stemmer.js'
 
 class Stemmer {
 
@@ -46,7 +48,7 @@ class Stemmer {
             finalTokens.hasContext = true
             text = text.replace(/\${/g, Stemmer.CONTEXTSTART).replace(/}/g, Stemmer.CONTEXTEND)
         }
-        let tokenizer = new natural.RegexpTokenizer({pattern: new RegExp('[^A-Za-z0-9_\-' + Object.keys(this.charsToKeep).join('') + ']+')});
+        let tokenizer = new RegexpTokenizer({pattern: new RegExp('[^A-Za-z0-9_\-' + Object.keys(this.charsToKeep).join('') + ']+')});
         let tokens = tokenizer.tokenize(text)
 
 
@@ -61,7 +63,7 @@ class Stemmer {
                 finalTokens.stemmed.push(tokenLowerCase)
                 finalTokens.original.push(token)
             } else {
-                const stemmed = natural.LancasterStemmer.stem(tokenLowerCase)
+                const stemmed = LancasterStemmer.stem(tokenLowerCase)
                 finalTokens.stemmed.push(stemmed)
                 finalTokens.original.push(token)
 
