@@ -263,27 +263,53 @@ let dnsResolvers = {}
 const dnsCachedAnswers = []
 const resolveDnsQuestion = async (question) => {
     const cacheKey = `${question.name}${question.type}${question.class}`
-    const cachedAnswer = dnsCachedAnswers.find(entry=>entry.cacheKey===cacheKey)
-    if(cachedAnswer){
+    const cachedAnswer = dnsCachedAnswers.find(entry => entry.cacheKey === cacheKey)
+    if (cachedAnswer) {
         return cachedAnswer.answer
     }
 
     const dnsServer = dnsServerContext.settings.dns || '8.8.8.8'
-    if(!dnsResolvers[dnsServer]) {
+    if (!dnsResolvers[dnsServer]) {
         dnsResolvers[dnsServer] = new dns2({
             dns: dnsServer,
-            recursive:false
+            recursive: false
         })
     }
     const typeName = dnsServerContext.typeMap[question.type]
     debugMessage(`DNS: resolve ${dnsServer} dns type ${typeName} for question (cache size ${dnsCachedAnswers.length})`, question)
 
-    const answer = await dnsResolvers[dnsServer].resolve(question.name, typeName, question.class)
+    // Race the dns2 resolve against an own timeout. The dns2-internal timeout (10s)
+    // surfaces as an *unhandled* promise rejection, so we add a catchable timeout here.
+    const timeoutMs = dnsServerContext.settings.resolveTimeout || 5000
+    let answer
+    try {
+        answer = await Promise.race([
+            dnsResolvers[dnsServer].resolve(question.name, typeName, question.class),
+            new Promise((_, reject) =>
+                setTimeout(
+                    () => reject(Object.assign(
+                        new Error(`DNS timeout after ${timeoutMs}ms for ${question.name}`),
+                        {code: 'ETIMEDOUT'}
+                    )),
+                    timeoutMs
+                )
+            )
+        ])
+    } catch (err) {
+        if (err.code === 'ETIMEDOUT') {
+            console.warn(`DNS: timeout resolving ${question.name} via ${dnsServer}`)
+        } else {
+            console.warn(`DNS: error resolving ${question.name}:`, err.message)
+        }
+        // Fail-safe: return an empty response so the server can still reply to the client.
+        // Only the fields below are read by the request handler.
+        return {header: {}, authorities: [], additionals: [], answers: []}
+    }
 
-    dnsCachedAnswers.push({cacheKey,answer})
+    dnsCachedAnswers.push({cacheKey, answer})
 
     const maxNumbersOfCachedAnswers = dnsServerContext.settings.cacheSize || 1000
-    if(dnsCachedAnswers.length>maxNumbersOfCachedAnswers){
+    if (dnsCachedAnswers.length > maxNumbersOfCachedAnswers) {
         dnsCachedAnswers.shift()
     }
 
@@ -364,4 +390,3 @@ const insertBuffer = async () => {
         }
     }
 }
-
