@@ -217,7 +217,7 @@ Hook.on('appready', ({app, db}) => {
                                 const context = decodeToken((token.indexOf('JWT')<0?'JWT ':'') + token)
 
                                 if(context.auth){
-                                    req.context = {lang: req.context.lang,...context}
+                                    req.context = {...req.context,...context}
                                 }else{
                                     return res.status(401).json({error: 'API Bearer Token (fallback) is invalid or expired'});
                                 }
