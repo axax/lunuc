@@ -7,7 +7,6 @@ import {deepMergeToFirst} from 'util/deepMerge.mjs'
 import Util from '../../api/util/index.mjs'
 import {parseOrElse} from '../../client/util/json.mjs'
 import {getGatewayIp} from '../../util/gatewayIp.mjs'
-import {settings} from "../../.eslintrc.js";
 
 dns2.Packet.TYPE['HTTPS'] = 65
 const dnsServerContext = {
@@ -152,7 +151,8 @@ Hook.on('appready', async ({db, context}) => {
                         } catch (e) {
                             console.log(e, response)
                         }
-                        debugMessage(`DNS: resolved ${name} after ${new Date().getTime() - startTime}ms`)
+                        const typeName = dnsServerContext.typeMap[question.type] || question.type;
+                        debugMessage(`DNS: resolved ${name} (Type: ${typeName}) after ${new Date().getTime() - startTime}ms`)
                     }
 
                     dnsServerContext.dbBuffer[name] = {
@@ -305,12 +305,11 @@ const doResolveUpstream = async (question, cacheKey) => {
         })
     }
     const typeName = dnsServerContext.typeMap[question.type]
-    debugMessage(`DNS: resolve ${dnsServer} dns type ${typeName} for question (cache size ${dnsCachedAnswers.size})`, question)
 
-    // Race the dns2 resolve against an own timeout. The dns2-internal timeout (10s)
-    // surfaces as an *unhandled* promise rejection, so we add a catchable timeout here.
+    // Ablaufzeit für Einträge (z.B. 30 Sekunden für gültige, 5 Sekunden für Fehler)
+    let answer;
     const timeoutMs = dnsServerContext.settings.resolveTimeout || 5000
-    let answer
+
     try {
         answer = await Promise.race([
             dnsResolvers[dnsServer].resolve(question.name, typeName, question.class),
@@ -330,21 +329,27 @@ const doResolveUpstream = async (question, cacheKey) => {
         } else {
             console.warn(`DNS: error resolving ${question.name}:`, err.message)
         }
-        // Fail-safe: return an empty response so the server can still reply to the client.
-        // Not cached, so the next request for this name retries.
-        return {header: {}, authorities: [], additionals: [], answers: []}
+
+        // Erzeuge eine temporäre Dummy-Antwort für Fehler
+        answer = { header: {}, authorities: [], additionals: [], answers: [], isError: true };
     }
 
-    dnsCachedAnswers.set(cacheKey, answer)
+    // Speichere das Ergebnis im Cache (auch Fehler-Antworten!)
+    dnsCachedAnswers.set(cacheKey, answer);
+
+    // Automatisches Löschen aus dem Cache nach Ablauf der Zeit (TTL-Simulation)
+    const cacheDuration = answer.isError ? 5000 : 30000; // 5 Sek für Fehler, 30 Sek für Treffer
+    setTimeout(() => {
+        dnsCachedAnswers.delete(cacheKey);
+    }, cacheDuration);
 
     const maxNumbersOfCachedAnswers = dnsServerContext.settings.cacheSize || 1000
     if (dnsCachedAnswers.size > maxNumbersOfCachedAnswers) {
-        // evict oldest entry (first key in insertion order)
         const oldestKey = dnsCachedAnswers.keys().next().value
         dnsCachedAnswers.delete(oldestKey)
     }
 
-    return answer
+    return answer;
 }
 
 const readHosts = async (db) => {
