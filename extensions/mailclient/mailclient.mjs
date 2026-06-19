@@ -51,7 +51,17 @@ const startListeningSingle = (data, db, context, admin) => {
     // process new messages: search, fetch and parse
     const processMail = () => {
         // search filter applied after an IDLE notification
-        imap.search(['UNSEEN', 'FLAGGED'], (err, results) => {
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+        const dateStr = oneYearAgo.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        });
+
+        imap.search([ 'UNSEEN', ['SINCE', dateStr] ], (err, results) => {
+            console.log(results)
             if (err) {
                 console.error(err)
                 Hook.call('OnMailError', {db, context, error: err})
@@ -99,8 +109,7 @@ const startListeningSingle = (data, db, context, admin) => {
             imap.on('mail', () => {
                 processMail()
             })
-
-            // optionally process unread mail on start
+            // optionally process unread mail on start --> not jet implemented
             if (data.fetchUnreadOnStart) {
                 processMail()
             }
