@@ -401,7 +401,6 @@ Hook.on('Types', ({types}) => {
 
     types.UserGroup = {
         name: 'UserGroup',
-        noUserRelation: true,
         usedBy: ['core'],
         fields: [
             {

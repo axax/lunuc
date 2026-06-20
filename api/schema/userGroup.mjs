@@ -6,6 +6,7 @@ export const userGroupSchemaRaw = `
 		status: String
         modifiedAt: Float
         name: String!
+        createdBy: UserPublic
     }
     
     type UserGroupResult {
@@ -25,11 +26,13 @@ export const userGroupSchemaRaw = `
 			
 		createUserGroup (
 			name: String!
+			createdBy: ID
 		): UserGroup
 		
 		updateUserGroup (
 		    _id: ID!
 			name: String
+			createdBy: ID
 		): UserGroup
 				
     	deleteUserGroup(_id: ID!): UserGroup

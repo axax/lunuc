@@ -1,46 +1,80 @@
 import React, {useCallback, useEffect} from 'react'
 import {_t} from '../../../util/i18n.mjs'
 import styled from '@emotion/styled'
+import {alpha} from '@mui/material/styles'
 import ConsoleCapture from './ConsoleCapture'
 import ResizableDivider from '../../../client/components/ResizableDivider'
 import {propertyByPath} from '../../../client/util/json.mjs'
-import JsonViewer from "./JsonViewer";
+import JsonViewer from './JsonViewer'
 
 
-const StyledBox = styled('div')(({ theme }) => ({
+const StyledBox = styled('div')(({theme}) => ({
     position: 'fixed',
-    background: theme.palette.grey[800],
-    height:'auto',
-    zIndex:1100,
-    right:0,
+    right: 0,
+    bottom: 0,
     top: 'auto',
-    bottom: 0
+    height: 'auto',
+    zIndex: 1100,
+    background: theme.palette.background.paper,
+    borderTop: `1px solid ${theme.palette.divider}`,
+    borderLeft: `1px solid ${theme.palette.divider}`,
+    boxShadow: theme.shadows[6],
+    overflow: 'hidden'
 }))
 
-const StyledButtonGroup = styled.div`
-    border-bottom:'solid 1px #ffffff';
-`
-const StyledInfoBox = styled.div`
-    width: 100%;
-    height: ${({height})=> height}px;
-    max-height: 80vh;
-    border: 1px solid #333;
-    padding: 0;
-    font-family: monospace;
-    white-space: pre-wrap;
-    overflow-y: auto;
-    background: #f4f4f4;`
+const StyledButtonGroup = styled('div')(({theme}) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(0.5),
+    padding: theme.spacing(0.75, 1),
+    background: theme.palette.background.default,
+    borderBottom: `1px solid ${theme.palette.divider}`
+}))
 
-const StyledButton = styled.button`
-    color:${({ selected }) => selected ? 'black' : 'white'};
-    background: ${({ selected }) => selected ? 'rgb(255,255,255)' : 'none'};
-    border:none;
-    border-radius: 0;
-    padding: 2px 10px;
-    margin-left: 1px;
-    &:hover{
-        background-color: ${({ selected }) => selected ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.1)'};
-    }`
+const StyledInfoBox = styled('div')(({theme, height}) => ({
+    width: '100%',
+    height: `${height}px`,
+    maxHeight: '80vh',
+    padding: 0,
+    fontFamily: '"SFMono-Regular", "Menlo", "Consolas", monospace',
+    fontSize: '0.8125rem',
+    lineHeight: 1.6,
+    whiteSpace: 'pre-wrap',
+    overflowY: 'auto',
+    background: theme.palette.background.paper,
+    color: theme.palette.text.primary,
+    // theme-consistent scrollbar
+    '&::-webkit-scrollbar': {width: 6, height: 6},
+    '&::-webkit-scrollbar-track': {background: 'transparent'},
+    '&::-webkit-scrollbar-thumb': {
+        background: theme.palette.grey[300],
+        borderRadius: 99,
+        '&:hover': {background: theme.palette.grey[400]}
+    }
+}))
+
+const StyledButton = styled('button')(({theme, selected}) => ({
+    fontFamily: theme.typography.fontFamily,
+    fontSize: '0.8125rem',
+    fontWeight: 600,
+    letterSpacing: '0.01em',
+    cursor: 'pointer',
+    border: 'none',
+    borderRadius: theme.shape.borderRadius - 4,
+    padding: theme.spacing(0.6, 1.75),
+    transition: 'all 0.15s ease',
+    color: selected ? theme.palette.primary.contrastText : theme.palette.text.secondary,
+    background: selected
+        ? `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`
+        : 'transparent',
+    boxShadow: selected ? theme.shadows[2] : 'none',
+    '&:hover': {
+        color: selected ? theme.palette.primary.contrastText : theme.palette.primary.main,
+        background: selected
+            ? `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`
+            : alpha(theme.palette.primary.main, 0.08)
+    }
+}))
 
 export default function CmsPageTools(props){
 

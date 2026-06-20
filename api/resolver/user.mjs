@@ -716,17 +716,36 @@ export const userResolver = (db) => ({
                 }
             }
 
-            if (group !== undefined) {
-                await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_GROUP)
-                user.group = []
-                if (group) {
-                    group.forEach(sup => {
-                        user.group.push(new ObjectId(sup))
-                    })
-                }
-            }
 
             const userCanManageOthers = await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
+
+
+            if (group !== undefined) {
+                await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_GROUP)
+
+                const newGroupIdsAsString = []
+                if(!userCanManageOthers){
+                    // make sure edit user has at lease on common group
+                    console.log('userCanManageOthers',context)
+                    if(context.group.length>0){
+                        newGroupIdsAsString.push(context.group[0])
+                    }else{
+                        throw new ApiError('User can not change other users group')
+                    }
+                }
+
+
+                if (group) {
+                    group.forEach(sup => {
+                        if(!newGroupIdsAsString.includes(sup)) {
+                            newGroupIdsAsString.push(sup)
+                        }
+                    })
+                }
+
+                user.group = newGroupIdsAsString.map(f => new ObjectId(f))
+            }
+
 
 
             if( userCanManageOthers ) {
