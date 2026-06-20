@@ -726,7 +726,6 @@ export const userResolver = (db) => ({
                 const newGroupIdsAsString = []
                 if(!userCanManageOthers){
                     // make sure edit user has at lease on common group
-                    console.log('userCanManageOthers',context)
                     if(context.group.length>0){
                         newGroupIdsAsString.push(context.group[0])
                     }else{

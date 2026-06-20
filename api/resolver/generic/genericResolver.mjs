@@ -3,8 +3,8 @@ import {ObjectId} from 'mongodb'
 import {getType} from '../../../util/types.mjs'
 import {getFormFieldsByType} from '../../../util/typesAdmin.mjs'
 import {
-    CAPABILITY_MANAGE_TYPES, CAPABILITY_MANAGE_SAME_GROUP,
-    CAPABILITY_MANAGE_OTHER_USERS
+    CAPABILITY_MANAGE_TYPES,
+    CAPABILITY_MANAGE_OTHER_USERS, CAPABILITY_MANAGE_USER_GROUP
 } from '../../../util/capabilities.mjs'
 import Hook from '../../../util/hook.cjs'
 import HookAsync from '../../../util/hookAsync.mjs'
@@ -781,8 +781,17 @@ const GenericResolver = {
                     params[k] = updateMatch[k]
                 })
 
-                // use
-                delete data.ownerGroup
+                if(data.ownerGroup) {
+                    await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_GROUP)
+                    if (context.group.length > 0) {
+                        const firstGroup = new ObjectId(context.group[0])
+                        if(!data.ownerGroup.includes(firstGroup)){
+                            data.ownerGroup.push(firstGroup)
+                        }
+                    } else {
+                        throw new ApiError('User can not change user groups')
+                    }
+                }
             }
         }
 
