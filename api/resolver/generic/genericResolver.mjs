@@ -14,6 +14,7 @@ import Cache from '../../../util/cache.mjs'
 import {_t} from '../../../util/i18nServer.mjs'
 import {createMatchForCurrentUser} from '../../util/dbquery.mjs'
 import postQueryConvert from './postQueryConverter.mjs'
+import {ApiError} from "../../error.mjs";
 
 // ─── helpers (module-level, not inside the method) ──────────────────────────
 
@@ -781,15 +782,13 @@ const GenericResolver = {
                     params[k] = updateMatch[k]
                 })
 
-                if(data.ownerGroup) {
+                if(data.ownerGroup!==undefined) {
                     await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_GROUP)
-                    if (context.group.length > 0) {
-                        const firstGroup = new ObjectId(context.group[0])
-                        if(!data.ownerGroup.includes(firstGroup)){
-                            data.ownerGroup.push(firstGroup)
-                        }
-                    } else {
-                        throw new ApiError('User can not change user groups')
+
+                    const groupsAsString = Array.isArray(data.ownerGroup) ? data.ownerGroup.map(g => g.toString()) : []
+
+                    if(!context.group.some(id => groupsAsString.includes(id))){
+                        throw new ApiError('User must be in the same group to change owner group.')
                     }
                 }
             }
