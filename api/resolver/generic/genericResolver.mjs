@@ -785,9 +785,11 @@ const GenericResolver = {
                 if(data.ownerGroup!==undefined) {
                     await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_GROUP)
 
-                    const groupsAsString = Array.isArray(data.ownerGroup) ? data.ownerGroup.map(g => g.toString()) : []
 
-                    if(!context.group.some(id => groupsAsString.includes(id))){
+                    const groupsAsString = Array.isArray(data.ownerGroup) ? data.ownerGroup.map(g => g.toString()) : []
+                    const refreshedUser = await Util.userById(db,context.id)
+                    // make sure edit user has at lease on common group
+                    if(!refreshedUser || !refreshedUser.group || !refreshedUser.group.some(id => groupsAsString.includes(id.toString()))){
                         throw new ApiError('User must be in the same group to change owner group.')
                     }
                 }

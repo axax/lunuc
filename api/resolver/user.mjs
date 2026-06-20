@@ -734,8 +734,10 @@ export const userResolver = (db) => ({
                 }
 
                 if(!userCanManageOthers){
+
+                    const refreshedUser = await Util.userById(db,context.id)
                     // make sure edit user has at lease on common group
-                    if(!context.group.some(id => newGroupIdsAsString.includes(id))){
+                    if(!refreshedUser || !refreshedUser.group || !refreshedUser.group.some(id => newGroupIdsAsString.includes(id.toString()))){
                         throw new ApiError('User must be in the same group to change other users group.')
                     }
                 }
