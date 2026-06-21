@@ -90,6 +90,9 @@ export default function CmsPageTools(props){
                     let template
                     if(event.data.path) {
                         template = JSON.parse(props.data.template)
+                        if(!Array.isArray(template)){
+                            template = [template]
+                        }
                         let path = event.data.path
                         if (path.startsWith('template.')) {
                             path = path.substring(9)
