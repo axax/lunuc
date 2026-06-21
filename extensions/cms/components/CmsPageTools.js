@@ -86,7 +86,7 @@ export default function CmsPageTools(props){
         if(event.data.lunuc_component && event.data.key) {
 
             if(event.data.key==='template') {
-                if(event.data.data) {
+                if(event.data.data || event.data.operation === 'remove') {
                     let template
                     if(event.data.path) {
                         template = JSON.parse(props.data.template)
