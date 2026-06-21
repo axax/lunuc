@@ -326,7 +326,8 @@ Hook.on('Types', ({types}) => {
             {
                 type:'String',
                 name: 'value',
-                uitype: 'editor'
+                uitype: 'editor',
+                alwaysLoad: false
             }
         ],
         selectParams: [{
