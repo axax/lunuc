@@ -499,6 +499,11 @@ const Util = {
         return {}
     },
     getUserRoles: async (db, id) => {
+        
+        if(id instanceof ObjectId){
+            id = id.toString()
+        }
+
         const cacheKeyUserRole = 'UserRole' + id
         let userRole = Cache.get(cacheKeyUserRole)
 
