@@ -127,8 +127,6 @@ async function resolveReferences(typeName, result, db, context) {
 
                             if (subEntries.results.length>0) {
                                 newResultList.push(subEntries.results[0])
-                            } else {
-                                newResultList.push({_id: f})
                             }
                         }
                         result[field] = newResultList
