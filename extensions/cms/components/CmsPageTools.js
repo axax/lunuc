@@ -79,8 +79,8 @@ const StyledButton = styled('button')(({theme, selected}) => ({
 export default function CmsPageTools(props){
 
     const [tab, setTab] = React.useState(props.tab)
+    const [data, setData] = React.useState(props.data)
     const [boxHeight, setBoxHeight] = React.useState(props.boxHeight || 200)
-
 
     const handleMessage = useCallback((event) => {
         if(event.data.lunuc_component && event.data.key) {
@@ -89,7 +89,7 @@ export default function CmsPageTools(props){
                 if(event.data.data || event.data.operation === 'remove') {
                     let template
                     if(event.data.path) {
-                        template = JSON.parse(props.data.template)
+                        template = JSON.parse(data.template)
                         if(!Array.isArray(template)){
                             template = [template]
                         }
@@ -161,12 +161,13 @@ export default function CmsPageTools(props){
                         template = event.data.data
                     }
                     props.onTemplateChange(template, true)
+                    setData({...data,template:JSON.stringify(template)})
                 }
             }else{
 
                 let newData
                 if(event.data.old_data){
-                    const currentData = props.data[event.data.key]
+                    const currentData = data[event.data.key]
                     if(currentData){
                         newData = currentData.replace(event.data.old_data, event.data.data)
                     }
@@ -207,7 +208,7 @@ export default function CmsPageTools(props){
             props.onTab(newTab)
         }
     }
-    const aiAssistenUrl = `/system/aiassistent?preview=true&slug=${props.data.slug || ''}`
+    const aiAssistenUrl = `/system/aiassistent?preview=true&slug=${data.slug || ''}`
     return <StyledBox style={props.style}>
         {tab && <ResizableDivider direction="vertical" onResize={(newPosition) => {
             const maxHeight = window.innerHeight * 0.8 // matches CSS maxHeight: 80vh

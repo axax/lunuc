@@ -434,6 +434,7 @@ const Util = {
 
             const user = await Util.userById(db, context.id)
             if (user && user.role) {
+                console.log('userHasCapability', context,  user.role, capability, user)
                 const userRole = await Util.getUserRoles(db, user.role)
                 return userRole.capabilities.includes(capability)
             }
@@ -499,7 +500,7 @@ const Util = {
         return {}
     },
     getUserRoles: async (db, id) => {
-        
+
         if(id instanceof ObjectId){
             id = id.toString()
         }
