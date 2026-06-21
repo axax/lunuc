@@ -153,6 +153,10 @@ export const start = (done) => {
                 const originalJson = res.json.bind(res)
 
                 res.json = (body) => {
+                    if (res.headersSent) {
+                        console.warn('[res.json wrapper] Headers already sent, skipping')
+                        return res
+                    }
 
                     if (body?.data?.cmsPage) {
                         body.data = removeNullsMutating(body.data)
@@ -160,7 +164,6 @@ export const start = (done) => {
                     body.isAuth = !!(req.context && req.context.id)
                     return originalJson(body)
                 }
-
 
                 graphqlHTTP({
                     schema,
@@ -178,7 +181,7 @@ export const start = (done) => {
                 })(req, res, next).then(() => {
 
                 }).catch((error) => {
-
+                    console.warn('graphql error', error)
                     res.writeHead(500, {'content-type': 'application/json'})
                     res.end(`{"errors":[{"message":"Error in graphql. Probably there is something wrong with the schema or the resolver: ${error.message}"}]}`)
 

@@ -26,6 +26,7 @@ import {
     hasTooManyInvalidLoginAttempts
 } from '../util/loginBlocker.mjs'
 import HookAsync from '../../util/hookAsync.mjs'
+import {parseOrElse} from '../../client/util/json.mjs'
 
 
 export const createUser = async ({username, role, junior, group, setting, password, language, email, emailConfirmed, blocked, requestNewPassword, meta, domain, hostrule, picture, db, context}, opts) => {
@@ -325,7 +326,7 @@ export const userResolver = (db) => ({
 
             return users
         },
-        login: async ({username, password, domain}, req) => {
+        login: async ({username, password, domain, meta}, req) => {
             const {context} = req
             const ip = clientAddress(req)
 
@@ -340,6 +341,8 @@ export const userResolver = (db) => ({
                 result = await auth.createToken({username, password, db, context})
             }*/
 
+            const metaObj = parseOrElse(meta, {})
+
             if (!result.token) {
 
                 addInvalidLoginAttempt(ip)
@@ -351,7 +354,7 @@ export const userResolver = (db) => ({
             } else {
                 clearInvalidLoginAttempt(ip)
 
-                if (USE_COOKIES) {
+                if (USE_COOKIES && !metaObj.oauth) {
                     setAuthCookies(result, req, req.res)
 
                     // delete token because it is handled by cookies
@@ -370,7 +373,7 @@ export const userResolver = (db) => ({
                     result.resetToken = resetToken
                 }
 
-                Hook.call('login', {context, db, user: result.user})
+                await HookAsync.call('login', {req, result, context, db, user: result.user, metaObj})
             }
             return result
         },

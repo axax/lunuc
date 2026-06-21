@@ -5,7 +5,7 @@ import oAuthResolver from './gensrc/resolver.mjs'
 import {auth} from '../../api/auth.mjs'
 
 export async function oauthAuthorize(db, req, res) {
-    const { client_id, redirect_uri, state, response_type, scope, domain } = req.query
+    const { client_id, redirect_uri,  response_type, scope, domain } = req.query
 
     // 1. Pflichtfelder prüfen
     if (!client_id || !redirect_uri || !response_type) {
@@ -46,15 +46,18 @@ export async function oauthAuthorize(db, req, res) {
 
     // 7. Benutzer bereits eingeloggt?
     if (Util.isUserLoggedIn(req.context)) {
-        return issueCode(db, req, res, {clientData, scope, state, redirect_uri })
+    /*    const redirectUrl = await issueCode(db, req, {clientData, scope, state, redirect_uri })
+
+        res.redirect(redirectUrl)
+        return*/
     }
 
     // 8. Sonst: zum Login weiterleiten
     const forward = encodeURIComponent(req.originalUrl)
-    res.redirect(`/admin/login?forward=${forward}&domain=${domain||''}`)
+    res.redirect(`/admin/login?forward=${forward}&domain=${domain||''}&oauth=true`)
 }
 
-export async function issueCode(db, req, res, {clientData, scope, state, redirect_uri }) {
+export async function issueCode(db, req, {clientData, scope, state, redirect_uri }) {
 
     // 1. Zufälligen Code generieren
     const code = crypto.randomBytes(32).toString('hex')
@@ -67,7 +70,7 @@ export async function issueCode(db, req, res, {clientData, scope, state, redirec
         redirectUri: redirect_uri || '',
         expiresAt:   new Date(Date.now() + 60 * 1000), // 60 Sekunden
         used:        false
-    }, req, false)
+    }, req, {skipCheck:true})
 
 
     // 3. Redirect zum Client mit Code und State
@@ -75,7 +78,7 @@ export async function issueCode(db, req, res, {clientData, scope, state, redirec
     redirect.searchParams.set('code', code)
     if (state) redirect.searchParams.set('state', state)
 
-    res.redirect(redirect.toString())
+    return redirect.toString()
 }
 
 

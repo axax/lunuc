@@ -16,7 +16,7 @@ class LoginContainer extends React.Component {
         super(props)
         DomUtil.noIndexNoFollow()
 
-        const {domain, username, token, resetToken} = Util.extractQueryParams(window.location.search.substring(1))
+        const {domain, username, token, resetToken, oauth} = Util.extractQueryParams(window.location.search.substring(1))
 
         this.state = {
             redirectToReferrer: false,
@@ -29,7 +29,8 @@ class LoginContainer extends React.Component {
             forgotPassword: false,
             forgotPasswordSent: false,
             passwordVisible:false,
-            domain: domain ? domain : _app_.login ? _app_.login.defaultDomain : ''
+            domain: domain ? domain : _app_.login ? _app_.login.defaultDomain : '',
+            oauth: oauth==='true'
         }
     }
 
@@ -116,18 +117,29 @@ class LoginContainer extends React.Component {
 
         this.setState({loading: true, error: null})
 
+        const params = Util.extractQueryParams()
+
         client.query({
             fetchPolicy: 'no-cache',
-            query: 'query login($username:String!,$password:String!,$domain:String){login(username:$username,password:$password,domain:$domain){token resetToken error user{username requestNewPassword email _id role{_id capabilities}}}}',
+            query: 'query login($username:String!,$password:String!,$domain:String,$meta:String){login(username:$username,password:$password,domain:$domain,meta:$meta){token redirectUrl resetToken error user{username requestNewPassword email _id role{_id capabilities}}}}',
             variables: {
                 username: this.state.username,
                 password: this.state.password,
-                domain: this.state.domain
+                domain: this.state.domain,
+                meta: JSON.stringify({
+                    forward: params.forward,
+                    oauth: this.state.oauth
+                })
             }
         }).then(response => {
             this.setState({loading: false})
             if (response.data && response.data.login) {
-                this.loginWithResponse(response.data.login)
+
+                if(response.data.login.redirectUrl){
+                    window.location = response.data.login.redirectUrl
+                }else {
+                    this.loginWithResponse(response.data.login)
+                }
             }
         }).catch((response) => {
             this.setState({loading: false, error: response.error.message})

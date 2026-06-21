@@ -2,7 +2,7 @@ import Hook from '../../util/hook.cjs'
 import schemaGen from './gensrc/schema.mjs'
 import resolverGen from './gensrc/resolver.mjs'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
-import {oauthAuthorize, oauthToken} from './oauth.mjs'
+import {issueCode, oauthAuthorize, oauthToken} from './oauth.mjs'
 
 Hook.on('resolver', ({db, resolvers}) => {
     deepMergeToFirst(resolvers, resolverGen(db))
@@ -12,6 +12,25 @@ Hook.on('resolver', ({db, resolvers}) => {
 Hook.on('schema', ({schemas}) => {
     schemas.push(schemaGen)
 })
+
+Hook.on('login', async ({req, db, metaObj, result}) => {
+
+    if(metaObj.oauth && metaObj.forward){
+        const query = metaObj.forward.split('?')[1];
+        const params = new URLSearchParams(query)
+
+        const clientData = await db.collection('OAuthClient').findOne({ clientId: params.get('client_id') })
+
+        if(clientData){
+            result.redirectUrl = await issueCode(db, req, {clientData,
+                scope: params.get('scope'),
+                state: params.get('state'),
+                redirect_uri: params.get('redirect_uri') })
+        }
+    }
+})
+
+
 
 
 // Hook when db is ready
