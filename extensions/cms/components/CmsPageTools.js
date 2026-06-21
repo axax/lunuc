@@ -138,7 +138,7 @@ export default function CmsPageTools(props){
                                 if (event.data.location === 'before') {
                                     arr.splice(index, 0, newData)
                                 } else {
-                                    arr.splice(index < arr.length - 1 ? index + 1 : index, 0, newData)
+                                    arr.splice(index + 1, 0, newData)
                                 }
                             } else if (event.data.operation === 'update') {
                                 if(Array.isArray(parentData)){
