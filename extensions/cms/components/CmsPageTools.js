@@ -207,7 +207,11 @@ export default function CmsPageTools(props){
             const newHeight = Math.max(boxHeight - newPosition,50)
             setBoxHeight(newHeight)
             if(props.onBoxHeightChange){
-                props.onBoxHeightChange(newHeight)
+                clearTimeout(this.timeout)
+                this.timeout = setTimeout(()=>{
+                    props.onBoxHeightChange(newHeight)
+                },50)
+
             }
         }}/>}
         <StyledButtonGroup>
