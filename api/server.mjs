@@ -8,12 +8,11 @@ import {schemaString} from './schema/index.mjs'
 import {resolver} from './resolver/index.mjs'
 import {dbConnection, dbPreparation, MONGO_URL, BACKUP_MONGO_URL} from './database.mjs'
 import {auth} from './auth.mjs'
-import {formatError} from './error.mjs'
+import {formatAndLogError} from './error.mjs'
 import {handleUpload, handleMediaDumpUpload, handleDbDumpUpload, handleHostruleDumpUpload} from './upload.mjs'
 import Hook from '../util/hook.cjs'
 import compression from 'compression'
 import {createSubscriptionServer} from './subscription.mjs'
-import {HEADER_TIMEOUT} from './constants/index.mjs'
 import {createUsers} from './data/initialData.mjs'
 
 import {getDynamicConfig} from '../util/config.mjs'
@@ -167,16 +166,17 @@ export const start = (done) => {
                     schema,
                     rootValue,
                     graphiql: process.env.NODE_ENV !== 'production',
-                    customFormatErrorFn: formatError,
+                    customFormatErrorFn: (error)=>{
+
+                        return formatAndLogError(db,req,error)
+                    },
                     /*extensions({document, variables, operationName, result}) {
 
                         result.isAuth = !!(req.context && req.context.id)
 
                     }*/
                 })(req, res, next).then(() => {
-                    if (req.context) {
 
-                    }
                 }).catch((error) => {
 
                     res.writeHead(500, {'content-type': 'application/json'})

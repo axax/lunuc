@@ -1,4 +1,5 @@
 import { GraphQLError } from 'graphql'
+import Hook from '../util/hook.cjs'
 
 
 export class ApiError extends Error {
@@ -31,12 +32,13 @@ export class ValidationError extends GraphQLError {
  * Given a GraphQLError, format it according to the rules described by the
  * Response Format, Errors section of the GraphQL Specification.
  */
-export function formatError(error) {
+export function formatAndLogError(db,req,error) {
 
 	let o = {
 		locations: error.locations,
 		path: error.path,
-		message: error.message
+		message: error.message,
+		stack: error.stack
 	}
 	if( error.originalError.key ){
 		o.key = error.originalError.key
@@ -47,5 +49,8 @@ export function formatError(error) {
 	if( error.originalError.state ){
 		o.state = error.originalError.state
 	}
+
+	Hook.call('graphqlError', {db, req, errorContext:o, type:'generalError'})
+
 	return o
 }
