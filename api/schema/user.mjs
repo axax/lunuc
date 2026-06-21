@@ -83,6 +83,7 @@ export const userSchemaRaw = `
 	type Token {
 		token: String
 		resetToken: String
+		redirectUrl: String
 		error: String
 		user: User
 	}
@@ -110,7 +111,7 @@ export const userSchemaRaw = `
         userSettings(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String): UserSettingResult      
         publicUsers(limit: Int=10, offset: Int=0): [UserPublic]
         me: User
-        login(username: String!, password: String!, domain: String): Token
+        login(username: String!, password: String!, domain: String, meta:String): Token
         logout: LogoutResult
         forgotPassword(username: String!,domain: String, url: String, subject: String, fromEmail: String, fromName: String, template: String): ForgotPasswordResult
         newPassword(token:String!, password:String!, passwordConfirm:String): NewPasswordResult
