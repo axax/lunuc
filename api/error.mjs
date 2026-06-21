@@ -37,8 +37,7 @@ export function formatAndLogError(db,req,error) {
 	let o = {
 		locations: error.locations,
 		path: error.path,
-		message: error.message,
-		stack: error.stack
+		message: error.message
 	}
 	if( error.originalError.key ){
 		o.key = error.originalError.key
@@ -51,7 +50,7 @@ export function formatAndLogError(db,req,error) {
 	}
 
 	if(error.message!=="Cms page doesn't exist") {
-		Hook.call('graphqlError', {db, req, errorContext: o, type: 'generalError'})
+		Hook.call('graphqlError', {db, req, errorContext: {...o,stack:error.stack}, type: 'generalError'})
 	}
 
 	return o

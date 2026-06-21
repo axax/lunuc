@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect} from 'react'
+import React, {useCallback, useEffect, useRef} from 'react'
 import {_t} from '../../../util/i18n.mjs'
 import styled from '@emotion/styled'
 import {alpha} from '@mui/material/styles'
@@ -76,111 +76,135 @@ const StyledButton = styled('button')(({theme, selected}) => ({
     }
 }))
 
-export default function CmsPageTools(props){
+export default function CmsPageTools(props) {
 
     const [tab, setTab] = React.useState(props.tab)
-    const [data, setData] = React.useState(props.data)
     const [boxHeight, setBoxHeight] = React.useState(props.boxHeight || 200)
 
+    // Working copy of the page data. Acts as an accumulator for the template
+    // across message events; it does NOT need to trigger re-renders because
+    // nothing in the JSX depends on the template itself.
+    const dataRef = useRef(props.data)
+    const propsRef = useRef(props)
+
+    // Keep refs in sync with incoming props, but preserve the locally edited
+    // template so an unrelated parent re-render cannot discard in-flight edits.
+    useEffect(() => {
+        propsRef.current = props
+        dataRef.current = {...props.data, template: dataRef.current.template}
+    }, [props])
+
     const handleMessage = useCallback((event) => {
-        if(event.data.lunuc_component && event.data.key) {
-
-            if(event.data.key==='template') {
-                if(event.data.data || event.data.operation === 'remove') {
-                    let template
-                    if(event.data.path) {
-                        template = JSON.parse(data.template)
-                        if(!Array.isArray(template)){
-                            template = [template]
-                        }
-                        let path = event.data.path
-                        if (path.startsWith('template.')) {
-                            path = path.substring(9)
-                        }
-                        let data = propertyByPath(path, template)
-                        let newData = event.data.data
-
-                        if (Array.isArray(newData)) {
-                            if (newData.length === 1) {
-                                newData = newData[0]
-                            }
-                        }
-                        let parentPath = path.slice(0, path.lastIndexOf('.'))
-                        if (parentPath.endsWith('.c')) {
-                            parentPath = parentPath.substring(0, parentPath.lastIndexOf('.'))
-                        }
-                        const parentData = propertyByPath(parentPath, template)
-                        if (parentData) {
-                            if (event.data.operation === 'remove') {
-                                if (Array.isArray(parentData.c)) {
-                                    const index = parentData.c.indexOf(data)
-                                    if (index > -1) {
-                                        parentData.c.splice(index, 1)
-                                    }
-                                } else {
-                                    parentData.c = {}
-                                }
-                            } else if (event.data.operation === 'add') {
-                                let arr
-                                if (Array.isArray(parentData)) {
-                                    arr = parentData
-                                }else if (!Array.isArray(parentData.c)) {
-                                    parentData.c = [parentData.c]
-                                    arr = parentData.c
-                                }else{
-                                    arr = parentData.c
-                                }
-
-                                let index = arr.indexOf(data)
-                                if (index < 0) {
-                                    index = 0
-                                }
-                                if (event.data.location === 'before') {
-                                    arr.splice(index, 0, newData)
-                                } else {
-                                    arr.splice(index + 1, 0, newData)
-                                }
-                            } else if (event.data.operation === 'update') {
-                                if(Array.isArray(parentData)){
-                                    const index = parentData.indexOf(data)
-                                    if (index > -1) {
-                                        parentData[index] = newData
-                                    }
-
-                                }else if (Array.isArray(parentData.c)) {
-                                    const index = parentData.c.indexOf(data)
-                                    if (index > -1) {
-                                        parentData.c[index] = newData
-                                    }
-                                } else {
-                                    parentData.c = newData
-                                }
-                            }
-                        }
-                    }else{
-                        template = event.data.data
-                    }
-                    props.onTemplateChange(template, true)
-                    setData({...data,template:JSON.stringify(template)})
-                }
-            }else{
-
-                let newData
-                if(event.data.old_data){
-                    const currentData = data[event.data.key]
-                    if(currentData){
-                        newData = currentData.replace(event.data.old_data, event.data.data)
-                    }
-                }else{
-                    newData = event.data.data
-                }
-
-                props.setCmsPageValue({key:event.data.key, forceUpdateEditor:true},newData)
-            }
-            // Optionally verify event.origin here for security
-            console.log("Received data from iframe:", event.data);
+        if (!event.data.lunuc_component || !event.data.key) {
+            return
         }
-    }, []);
+
+        // Always read the current data / props via refs to avoid stale closures.
+        const currentData = dataRef.current
+        const currentProps = propsRef.current
+
+        if (event.data.key === 'template') {
+            if (!event.data.data && event.data.operation !== 'remove') {
+                return
+            }
+
+            let template
+            if (event.data.path) {
+                template = JSON.parse(currentData.template)
+                if (!Array.isArray(template)) {
+                    template = [template]
+                }
+
+                let path = event.data.path
+                if (path.startsWith('template.')) {
+                    path = path.substring(9)
+                }
+
+                // The node that the incoming path points to (renamed from the
+                // former "data" to avoid shadowing the component data).
+                const targetNode = propertyByPath(path, template)
+                let newData = event.data.data
+
+                if (Array.isArray(newData) && newData.length === 1) {
+                    newData = newData[0]
+                }
+
+                let parentPath = path.slice(0, path.lastIndexOf('.'))
+                if (parentPath.endsWith('.c')) {
+                    parentPath = parentPath.substring(0, parentPath.lastIndexOf('.'))
+                }
+
+                const parentData = propertyByPath(parentPath, template)
+                if (parentData) {
+                    if (event.data.operation === 'remove') {
+                        if (Array.isArray(parentData.c)) {
+                            const index = parentData.c.indexOf(targetNode)
+                            if (index > -1) {
+                                parentData.c.splice(index, 1)
+                            }
+                        } else {
+                            parentData.c = {}
+                        }
+                    } else if (event.data.operation === 'add') {
+                        let arr
+                        if (Array.isArray(parentData)) {
+                            arr = parentData
+                        } else if (!Array.isArray(parentData.c)) {
+                            parentData.c = [parentData.c]
+                            arr = parentData.c
+                        } else {
+                            arr = parentData.c
+                        }
+
+                        let index = arr.indexOf(targetNode)
+                        if (index < 0) {
+                            index = 0
+                        }
+                        if (event.data.location === 'before') {
+                            arr.splice(index, 0, newData)
+                        } else {
+                            arr.splice(index + 1, 0, newData)
+                        }
+                    } else if (event.data.operation === 'update') {
+                        if (Array.isArray(parentData)) {
+                            const index = parentData.indexOf(targetNode)
+                            if (index > -1) {
+                                parentData[index] = newData
+                            }
+                        } else if (Array.isArray(parentData.c)) {
+                            const index = parentData.c.indexOf(targetNode)
+                            if (index > -1) {
+                                parentData.c[index] = newData
+                            }
+                        } else {
+                            parentData.c = newData
+                        }
+                    }
+                }
+            } else {
+                template = event.data.data
+            }
+
+            // Update local working copy so the next event starts from here.
+            dataRef.current = {...currentData, template: JSON.stringify(template)}
+            currentProps.onTemplateChange(template, true)
+        } else {
+            let newData
+            if (event.data.old_data) {
+                const keyData = currentData[event.data.key]
+                if (keyData) {
+                    newData = keyData.replace(event.data.old_data, event.data.data)
+                }
+            } else {
+                newData = event.data.data
+            }
+
+            currentProps.setCmsPageValue({key: event.data.key, forceUpdateEditor: true}, newData)
+        }
+
+        // Optionally verify event.origin here for security
+        console.log('Received data from iframe:', event.data)
+    }, [])
 
     useEffect(() => {
         window.addEventListener('message', handleMessage)
@@ -190,31 +214,26 @@ export default function CmsPageTools(props){
         }
     }, [handleMessage])
 
-
-    /* const hiddeAll = ()=>{
-         setShowConsole(false)
-         setShowScope(false)
-         setShowServerConsole(false)
-         setShowAiAssistent(false)
-     }*/
-    const toggleTab = (name)=>{
+    const toggleTab = (name) => {
         let newTab = name
-        if(tab===newTab){
+        if (tab === newTab) {
             newTab = false
         }
         setTab(newTab)
 
-        if(props.onTab){
+        if (props.onTab) {
             props.onTab(newTab)
         }
     }
-    const aiAssistenUrl = `/system/aiassistent?preview=true&slug=${data.slug || ''}`
+
+    const aiAssistenUrl = `/system/aiassistent?preview=true&slug=${props.data.slug || ''}`
+
     return <StyledBox style={props.style}>
         {tab && <ResizableDivider direction="vertical" onResize={(newPosition) => {
             const maxHeight = window.innerHeight * 0.8 // matches CSS maxHeight: 80vh
             const newHeight = Math.min(Math.max(boxHeight - newPosition, 50), maxHeight)
             setBoxHeight(newHeight)
-            if(props.onBoxHeightChange){
+            if (props.onBoxHeightChange) {
                 props.onBoxHeightChange(newHeight)
             }
         }}/>}
@@ -232,11 +251,19 @@ export default function CmsPageTools(props){
                 {_t('CodeEditor.aiAssistent')}
             </StyledButton>
         </StyledButtonGroup>
-        {tab==='console' && <StyledInfoBox height={boxHeight}><ConsoleCapture /></StyledInfoBox>}
-        {tab==='scope' && <StyledInfoBox height={boxHeight}><JsonViewer json={_app_.JsonDom.scope} />
-        </StyledInfoBox>}
-        {tab==='serverConsole' && <StyledInfoBox  height={boxHeight} style={{overflow:'hidden'}}><iframe src="/system/console?preview=true&embedded=true&cmd=luapi" style={{width:'100%', height:'100%', border:'none'}}/></StyledInfoBox>}
-        {tab==='aiAssistent' && <StyledInfoBox  height={boxHeight} style={{overflow:'hidden'}}><iframe src={aiAssistenUrl} style={{width:'100%', height:'100%', border:'none'}}/></StyledInfoBox>}
+        {tab === 'console' &&
+            <StyledInfoBox height={boxHeight}><ConsoleCapture /></StyledInfoBox>}
+        {tab === 'scope' &&
+            <StyledInfoBox height={boxHeight}><JsonViewer json={_app_.JsonDom.scope} /></StyledInfoBox>}
+        {tab === 'serverConsole' &&
+            <StyledInfoBox height={boxHeight} style={{overflow: 'hidden'}}>
+                <iframe src="/system/console?preview=true&embedded=true&cmd=luapi"
+                        style={{width: '100%', height: '100%', border: 'none'}}/>
+            </StyledInfoBox>}
+        {tab === 'aiAssistent' &&
+            <StyledInfoBox height={boxHeight} style={{overflow: 'hidden'}}>
+                <iframe src={aiAssistenUrl}
+                        style={{width: '100%', height: '100%', border: 'none'}}/>
+            </StyledInfoBox>}
     </StyledBox>
-
 }
