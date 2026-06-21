@@ -141,7 +141,13 @@ export default function CmsPageTools(props){
                                     arr.splice(index < arr.length - 1 ? index + 1 : index, 0, newData)
                                 }
                             } else if (event.data.operation === 'update') {
-                                if (Array.isArray(parentData.c)) {
+                                if(Array.isArray(parentData)){
+                                    const index = parentData.indexOf(data)
+                                    if (index > -1) {
+                                        parentData[index] = newData
+                                    }
+
+                                }else if (Array.isArray(parentData.c)) {
                                     const index = parentData.c.indexOf(data)
                                     if (index > -1) {
                                         parentData.c[index] = newData
