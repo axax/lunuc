@@ -1,10 +1,7 @@
 import GenericResolver from './generic/genericResolver.mjs'
 import Util from '../util/index.mjs'
 import {ObjectId} from 'mongodb'
-import {
-    CAPABILITY_MANAGE_TYPES,
-    CAPABILITY_MANAGE_KEYVALUES
-} from '../../util/capabilities.mjs'
+import {CAPABILITY_MANAGE_KEYVALUES, CAPABILITY_MANAGE_TYPES} from '../../util/capabilities.mjs'
 import Cache from '../../util/cache.mjs'
 import {withFilter} from "graphql-subscriptions";
 import {pubsub, pubsubHooked} from "../subscription.mjs";
@@ -60,6 +57,25 @@ const updateKeyValueGlobal = async ({_id, key, value, ispublic, createdBy, owner
 }
 
 
+function extractQuerySelection(operation) {
+    const selection = operation.selectionSet.selections[0].selectionSet.selections
+
+    return selection[selection.length - 1].selectionSet.selections;
+}
+
+
+function extractFields(operation) {
+    const querySelection = extractQuerySelection(operation)
+    const fields = []
+    querySelection.forEach(se => {
+        const val = se.name.value
+        if (val !== 'status' && val !== '_id' && val !== 'createdBy') {
+            fields.push(val)
+        }
+    })
+    return fields;
+}
+
 export const keyvalueResolver = (db) => ({
     Query: {
         keyValues: async ({keys, limit, sort, offset, page, filter, all, global}, {context}, {operation}) => {
@@ -71,7 +87,14 @@ export const keyvalueResolver = (db) => ({
             if (keys && keys.length > 0) {
                 match.key = {$in: keys}
             }
-            const result =  await GenericResolver.entities(db, context, 'KeyValue', ['key', 'value'], {
+
+            const fields = extractFields(operation)
+            if (fields.length === 0) {
+                fields.push('key', 'value')
+            }
+
+
+            const result =  await GenericResolver.entities(db, context, 'KeyValue', fields, {
                 limit,
                 offset,
                 page,
@@ -92,18 +115,8 @@ export const keyvalueResolver = (db) => ({
             return result
         },
         keyValueGlobals: async ({keys, limit, sort, offset, page, filter}, {context}, {operation}) => {
-            const selection = operation.selectionSet.selections[0].selectionSet.selections
 
-            const querySelection = selection[selection.length - 1].selectionSet.selections
-
-            const fields = []
-            querySelection.forEach(se => {
-                const val = se.name.value
-                if(val!=='status' && val!=='_id' && val!=='createdBy')
-                {
-                    fields.push(val)
-                }
-            })
+            const fields = extractFields(operation)
 
             if (fields.length === 0) {
                 fields.push('key', 'value', 'ispublic')
