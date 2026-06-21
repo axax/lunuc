@@ -45,12 +45,12 @@ export async function oauthAuthorize(db, req, res) {
     }
 
     // 7. Benutzer bereits eingeloggt?
-    if (Util.isUserLoggedIn(req.context)) {
+    //if (Util.isUserLoggedIn(req.context)) {
     /*    const redirectUrl = await issueCode(db, req, {clientData, scope, state, redirect_uri })
 
         res.redirect(redirectUrl)
         return*/
-    }
+   // }
 
     // 8. Sonst: zum Login weiterleiten
     const forward = encodeURIComponent(req.originalUrl)

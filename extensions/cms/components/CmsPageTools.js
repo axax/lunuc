@@ -203,15 +203,12 @@ export default function CmsPageTools(props){
     }
     const aiAssistenUrl = `/system/aiassistent?preview=true&slug=${props.data.slug || ''}`
     return <StyledBox style={props.style}>
-        {tab && <ResizableDivider direction="vertical" onResize={(newPosition)=>{
-            const newHeight = Math.max(boxHeight - newPosition,50)
+        {tab && <ResizableDivider direction="vertical" onResize={(newPosition) => {
+            const maxHeight = window.innerHeight * 0.8 // matches CSS maxHeight: 80vh
+            const newHeight = Math.min(Math.max(boxHeight - newPosition, 50), maxHeight)
             setBoxHeight(newHeight)
             if(props.onBoxHeightChange){
-                clearTimeout(this.timeout)
-                this.timeout = setTimeout(()=>{
-                    props.onBoxHeightChange(newHeight)
-                },50)
-
+                props.onBoxHeightChange(newHeight)
             }
         }}/>}
         <StyledButtonGroup>
