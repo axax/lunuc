@@ -50,7 +50,9 @@ export function formatAndLogError(db,req,error) {
 		o.state = error.originalError.state
 	}
 
-	Hook.call('graphqlError', {db, req, errorContext:o, type:'generalError'})
+	if(error.message!=="Cms page doesn't exist") {
+		Hook.call('graphqlError', {db, req, errorContext: o, type: 'generalError'})
+	}
 
 	return o
 }

@@ -1281,6 +1281,7 @@ class GenericForm extends React.Component {
                 filter={field.filter?Util.replacePlaceholders(field.filter, this.state):''}
                 linkTemplate={field.linkTemplate}
                 multi={field.multi}
+                fieldTemplate={field.fieldTemplate}
                 pickerField={field.pickerField} /* fields that are searched */
                 searchFields={field.searchFields} /* fields that are shown in the picker */
                 projection={field.projection} /* fields that are projected and returned */

@@ -161,7 +161,7 @@ class TypePicker extends React.Component {
     }
 
     render() {
-        const {slotProps = {}, placeholder, multi, showAlwaysAsImage, fileImport, error, helperText, className, sx, fullWidth, linkTemplate, pickerField, metaFields, type, filter, label, genericType, readOnly} = this.props
+        const {slotProps = {}, placeholder, multi, showAlwaysAsImage, fileImport, error, helperText, className, sx, fullWidth, linkTemplate, pickerField, fieldTemplate, metaFields, type, filter, label, genericType, readOnly} = this.props
         const {data, hasFocus, selIdx, value, textValue, showContextMenu} = this.state
         console.log(`render TypePicker | hasFocus=${hasFocus} | pickerField=${pickerField}`, data)
 
@@ -354,7 +354,7 @@ class TypePicker extends React.Component {
                                                           e.dataTransfer.setData('text', e.target.getAttribute('data-index'));
                                                       }}>
                                     <CardContent>
-                                        {typeDataToLabel(singleValue, pickerField)}
+                                        {fieldTemplate ? Util.replacePlaceholders(fieldTemplate, singleValue) : typeDataToLabel(singleValue, pickerField)}
                                         <GenericForm autoFocus
                                                      onBlur={event => {
                                                      }}
