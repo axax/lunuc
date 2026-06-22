@@ -2,7 +2,6 @@ import http from 'http'
 import https from 'https'
 import {sendError} from './file.mjs'
 import {Socket} from 'net'
-import {Readable} from 'stream'
 import {clientAddress} from '../../util/host.mjs'
 import {getGatewayIp} from '../../util/gatewayIp.mjs'
 import {FORWARDED_FOF_HEADER, HOSTRULE_HEADER} from '../../api/constants/index.mjs'
@@ -13,33 +12,35 @@ const LUNUC_SERVER_NODES = process.env.LUNUC_SERVER_NODES || ''
 
 /**
  * Main entry point function for the proxy.
+ *
+ * The request body is streamed straight through to the API server (no
+ * buffering) so that arbitrarily large uploads work without exhausting memory.
+ * Client-side abort/error listeners are attached once here and always target
+ * the currently active proxy request via the shared `state` holder, so retries
+ * do not stack listeners on the original request.
  */
-export const proxyToApiServer = async (req, res, options) => {
-    let bufferedBody = Buffer.alloc(0)
+export const proxyToApiServer = (req, res, options) => {
 
-    // Only buffer if a body is expected
-    if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
-        try {
-            bufferedBody = await getBodyBuffer(req)
-        } catch (err) {
-            // FIX: unterscheiden ob Timeout oder Client-Abbruch
-            if (err.message.includes('timeout')) {
-                console.warn('Body buffer timeout – slow client:', clientAddress(req))
-                return sendError(res, 408, 'Request Timeout: body upload too slow.')
-            }
-            if (err.message.includes('closed connection')) {
-                console.warn('Client disconnected during body upload:', clientAddress(req))
-                return // Keine Response nötig, Client ist weg
-            }
-            console.error('Error buffering client request:', err)
-            return sendError(res, 400, 'Error reading request body.')
+    const state = {proxyReq: null}
+
+    req.on('aborted', () => {
+        console.warn('Client aborted request.')
+        if (state.proxyReq) {
+            state.proxyReq.destroy()
         }
-    }
+    })
 
-    // Now call the function that handles the proxy attempt and retries
+    req.on('error', (err) => {
+        console.error('Client request error:', err.message)
+        if (state.proxyReq) {
+            state.proxyReq.destroy()
+        }
+    })
+
     // Initial call starts with tries=0
-    executeProxyRequest(req, res, { ...options, tries: 0 }, bufferedBody)
-};
+    executeProxyRequest(req, res, {...options, tries: 0}, state)
+}
+
 
 export const proxyWsToApiServer = (req, socket, head) => {
 
@@ -47,6 +48,35 @@ export const proxyWsToApiServer = (req, socket, head) => {
 
     // Create connection to target server
     const targetSocket = new Socket()
+
+    // Tear down both sockets exactly once. On a clean close we end() so any
+    // pending bytes are flushed before sending FIN; on an error we destroy()
+    // immediately to release the connection.
+    let cleanedUp = false
+    const cleanup = (err) => {
+        if (cleanedUp) {
+            return
+        }
+        cleanedUp = true
+        if (err) {
+            console.error('Proxy socket error:', err)
+            socket.destroy()
+            targetSocket.destroy()
+        } else {
+            // graceful: flush pending bytes, then FIN
+            socket.end()
+            targetSocket.end()
+        }
+    }
+
+    // Register listeners before connect() so an early failure can't slip
+    // through. 'close' passes a hadError boolean - forward it so a reset that
+    // arrives without a preceding 'error' is still treated as a hard failure.
+    socket.on('error', cleanup)
+    targetSocket.on('error', cleanup)
+    socket.on('close', (hadError) => cleanup(hadError ? new Error('client socket closed with error') : undefined))
+    targetSocket.on('close', (hadError) => cleanup(hadError ? new Error('target socket closed with error') : undefined))
+
     targetSocket.connect(API_PORT, API_HOST, () => {
         // Write the HTTP upgrade request to the target server
         targetSocket.write([
@@ -55,40 +85,29 @@ export const proxyWsToApiServer = (req, socket, head) => {
             '', // Empty line to separate headers from body
             ''
         ].join('\r\n'))
+
         // Forward the upgrade head if present
         if (head && head.length) {
             targetSocket.write(head)
         }
-        // Pipe the sockets together
+
+        // Pipe both directions; errors are handled by the listeners above
         socket.pipe(targetSocket)
         targetSocket.pipe(socket)
     })
-    // Handle errors on both sockets
-    socket.on('error', (err) => {
-        console.error('Client socket error:', err)
-        targetSocket.end()
-    })
-    targetSocket.on('error', (err) => {
-        console.error('Target socket error:', err)
-        socket.end()
-    })
-    // Clean up when either socket closes
-    socket.on('close', () => {
-        targetSocket.end()
-    })
-    targetSocket.on('close', () => {
-        socket.end()
-    })
 }
 
-
 /**
- * Executes the proxy request using the provided buffer for the body.
- * NOTE: The original req and res are passed for metadata/response, but the body
- * is sourced from the bufferedBody.
+ * Executes a single proxy attempt. The body of `originalReq` is only piped once
+ * the outgoing socket has actually connected. This is what makes the
+ * ECONNREFUSED failover safe: if the connection is refused, no bytes have been
+ * read from `originalReq` yet, so the next attempt can pipe the untouched body
+ * to a different node. A connection that fails *after* data started flowing
+ * cannot be retried (the body stream is already partially consumed) and results
+ * in a 502/destroy instead.
  */
-const executeProxyRequest = (originalReq, originalRes, options, bufferedBody) => {
-    const { host, path, server, port, secure, tries } = options
+const executeProxyRequest = (originalReq, originalRes, options, state) => {
+    const {host, path, server, port, secure, tries} = options
 
     const newHeaders = Object.fromEntries(
         Object.entries(originalReq.headers).filter(([key]) => !/^:/.test(key))
@@ -97,13 +116,12 @@ const executeProxyRequest = (originalReq, originalRes, options, bufferedBody) =>
     newHeaders[FORWARDED_FOF_HEADER] = clientAddress(originalReq)
     newHeaders['x-forwarded-proto'] = originalReq.isHttps ? 'https' : 'http'
     newHeaders['x-forwarded-host'] = host
-    if(tries>0){
+    if (tries > 0) {
         newHeaders[HOSTRULE_HEADER] = host
         newHeaders['x-forwarded-server'] = server
     }
 
-
-    // Create the Outgoing Request Stream
+    // Create the outgoing request stream
     const proxyReq = (secure ? https : http).request({
         hostname: server || API_HOST,
         port: port || API_PORT,
@@ -111,54 +129,68 @@ const executeProxyRequest = (originalReq, originalRes, options, bufferedBody) =>
         method: originalReq.method,
         headers: newHeaders,
         rejectUnauthorized: false,
-        requestTimeout:5000,
-        timeout: 7200000, /* 2h */
+        timeout: 7200000 /* 2h socket inactivity timeout */
     }, (proxyRes) => {
-        // ... (Response handling is the same)
         delete proxyRes.headers['keep-alive']
         delete proxyRes.headers['transfer-encoding']
 
-        proxyRes.on('end', () => {
-            if (!originalRes.finished) {
-                originalRes.end()
-            }
-        })
+        originalRes.writeHead(proxyRes.statusCode, proxyRes.headers)
+        proxyRes.pipe(originalRes)
 
         proxyRes.on('aborted', () => {
             console.warn('Proxy response aborted')
-            originalRes.end()
             originalRes.destroy()
         })
+    })
 
-        originalRes.writeHead(proxyRes.statusCode, proxyRes.headers)
-        proxyRes.pipe(originalRes)
-    });
+    // remember the active proxy request so the client-side abort/error
+    // listeners (attached once in proxyToApiServer) can destroy it
+    state.proxyReq = proxyReq
 
-    // 3. Pipe the Buffered Body to the Outgoing Request
-    // Create a NEW Readable stream from the buffer for this attempt
-    Readable.from(bufferedBody).pipe(proxyReq)
+    // Only start streaming the body after the connection is established.
+    // Guard so it runs exactly once (covers both fresh and reused sockets).
+    let piping = false
+    const startPiping = () => {
+        if (piping) {
+            return
+        }
+        piping = true
+        originalReq.pipe(proxyReq)
+    }
 
-    // 4. Set up Retry Logic on Failure
+    proxyReq.on('socket', (socket) => {
+        if (socket.connecting) {
+            socket.once('connect', startPiping)
+        } else {
+            // socket was reused from the agent pool and is already connected
+            startPiping()
+        }
+    })
+
+    // Retry logic on connection failure
     proxyReq.on('error', async (err) => {
+        // ECONNREFUSED fires during connect, i.e. before startPiping ran, so the
+        // body of originalReq is still intact and can be replayed to another node
         if (err.code === 'ECONNREFUSED' && LUNUC_SERVER_NODES) {
 
-            // --- YOUR SERVER SELECTION LOGIC ---
-            console.log('Proxy ECONNREFUSED -> attempting retry with alternative server.');
+            console.log('Proxy ECONNREFUSED -> attempting retry with alternative server.')
 
-            const remoteAdr = clientAddress(originalReq);
-            const gatewayIp = await getGatewayIp();
-            const servers = LUNUC_SERVER_NODES.split(',');
+            const remoteAdr = clientAddress(originalReq)
+            const gatewayIp = await getGatewayIp()
+            const servers = LUNUC_SERVER_NODES.split(',')
 
-            let count = 0
+            // Walk the eligible servers and pick the (tries)-th one, so each
+            // successive retry targets the next untried node.
+            let eligibleIndex = 0
             for (const s of servers) {
-                // Check if the server does not match the client address or gateway IP
-                // and if it's NOT the server we just tried (not explicitly checked here,
-                // but implied by the logic below if 'server' is used as a filter).
+                // skip servers that point back at the client or the gateway
                 if (s.indexOf(remoteAdr) < 0 && s.indexOf(gatewayIp) < 0) {
 
-                    if ( count < tries){
+                    if (eligibleIndex < tries) {
+                        eligibleIndex++
                         continue
                     }
+
                     const urlObj = new URL(s)
                     console.log(`Retrying on server: ${urlObj.hostname} (attempt=${tries} server=${urlObj.hostname} port=${urlObj.port} protocol=${urlObj.protocol} path=${path})`)
 
@@ -166,18 +198,17 @@ const executeProxyRequest = (originalReq, originalRes, options, bufferedBody) =>
                     executeProxyRequest(originalReq, originalRes, {
                         host,
                         path,
-                        server: urlObj.hostname, // Use the new hostname
-                        port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80), // Use port from URL or default
+                        server: urlObj.hostname,
+                        port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
                         secure: urlObj.protocol === 'https:',
-                        tries: tries + 1 // Pass the incremented count
-                    }, bufferedBody)
+                        tries: tries + 1
+                    }, state)
                     return
-
                 }
             }
         }
 
-        // Final error handling if no more retries or different error
+        // Final error handling if no more retries or a different error
         console.error(`Proxy error connecting to API (Attempt ${tries}):`, err.message)
         if (!originalRes.headersSent) {
             sendError(originalRes, 502, `Bad Gateway: Could not connect to API server. ${err.message}`)
@@ -187,70 +218,14 @@ const executeProxyRequest = (originalReq, originalRes, options, bufferedBody) =>
         proxyReq.destroy()
     })
 
-    // ... (rest of the error/timeout/cleanup handlers)
-    // d) Handle timeouts from the **API Server** connection
+    // Handle socket inactivity timeout from the API server connection
     proxyReq.on('timeout', () => {
-        console.error(`Proxy request timeout (Attempt ${currentAttempt})`)
+        console.error(`Proxy request timeout (Attempt ${tries})`)
         proxyReq.destroy()
         if (!originalRes.headersSent) {
             sendError(originalRes, 504, 'Gateway Timeout: API server did not respond in time.')
         } else {
             originalRes.destroy()
         }
-    })
-
-    proxyReq.on('requestTimeout', () => {
-        console.error(`Proxy requestTimeout – API server too slow`)
-        proxyReq.destroy()
-        if (!originalRes.headersSent) {
-            sendError(originalRes, 504, 'Gateway Timeout: API server did not respond in time.')
-        } else {
-            originalRes.destroy()
-        }
-    })
-
-    // e) Handle client request closure/error **before** piping is complete (client disconnects early)
-    originalReq.on('aborted', () => {
-        console.warn('Client aborted request.')
-        proxyReq.destroy()
-    })
-
-    originalReq.on('error', (err) => {
-        console.error('Client request error:', err.message)
-        proxyReq.destroy()
-    })
-}
-
-// Helper function to read the entire request body into a buffer
-const getBodyBuffer = (req, timeoutMs = 30000) => {
-    return new Promise((resolve, reject) => {
-        const chunks = []
-
-        const timer = setTimeout(() => {
-            req.destroy()
-            reject(new Error(`getBodyBuffer timeout after ${timeoutMs}ms`))
-        }, timeoutMs)
-
-        const cleanup = () => clearTimeout(timer)
-
-        req.on('data', (chunk) => chunks.push(chunk))
-        req.on('end', () => {
-            cleanup()
-            resolve(Buffer.concat(chunks))
-        })
-        req.on('error', (err) => {
-            cleanup()
-            reject(err)
-        })
-        // FIX: Client hat abgebrochen
-        req.on('aborted', () => {
-            cleanup()
-            console.log('getBodyBuffer: client aborted', req.url)
-            reject(new Error('client aborted'))
-        })
-        req.on('close', () => {
-            cleanup()
-            reject(new Error('client closed connection'))
-        })
     })
 }
