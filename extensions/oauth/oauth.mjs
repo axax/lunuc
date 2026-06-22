@@ -3,6 +3,7 @@ import crypto from 'crypto'
 import Util from 'api/util/index.mjs'
 import oAuthResolver from './gensrc/resolver.mjs'
 import {auth} from '../../api/auth.mjs'
+import {ObjectId} from "mongodb";
 
 export async function oauthAuthorize(db, req, res) {
     const { client_id, redirect_uri,  response_type, scope, domain } = req.query
@@ -143,13 +144,17 @@ export async function oauthToken(db, req, res) {
     )
 
 
-    // add
-    const groupName = codeData.createdBy.group ? codeData.createdBy.group.map(g=>{
-        const group = Util.getUserGroup(g)
-        if(!group) return null
-        return group.name
-    }) : []
+    // add user group name
+    let groupName = []
+    if(codeData.createdBy && ObjectId.isValid(codeData.createdBy)) {
+        const user = await Util.userById(db, codeData.createdBy)
 
+        groupName = user.group ? user.group.map(g => {
+            const group = Util.getUserGroup(g)
+            if (!group) return null
+            return group.name
+        }) : []
+    }
 
 
     // 11. Access Token generieren
