@@ -132,7 +132,8 @@ export default () => {
     Hook.on('dispatcherAddError', (payload) => {
         if(payload && payload.msg && payload.meta && payload.meta.query && payload.meta.variables) {
             if(payload.meta.query.startsWith('mutation createLog') ||
-                payload.msg.startsWith('503 - Service Unavailable')) return
+                payload.msg.startsWith('503 - Service Unavailable')||
+                payload.msg.startsWith('404 - Not Found')) return
 
             sendError({
                 location: 'dispatcherAddError',

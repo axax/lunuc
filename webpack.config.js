@@ -209,7 +209,8 @@ const config = {
         // FIX: BUILD_NUMBER als globale Konstante verfügbar machen, da er
         // nicht mehr im Dateinamen steht.
         new webpack.DefinePlugin({
-            '__BUILD_NUMBER__': JSON.stringify(BUILD_NUMBER)
+            '__BUILD_NUMBER__': JSON.stringify(BUILD_NUMBER),
+            'process.env.DRAGGABLE_DEBUG': JSON.stringify(false)
         })
     ],
     optimization: {

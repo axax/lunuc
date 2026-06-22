@@ -56,23 +56,29 @@ const updateKeyValueGlobal = async ({_id, key, value, ispublic, createdBy, owner
     return res
 }
 
-
 function extractQuerySelection(operation) {
-    const selection = operation.selectionSet.selections[0].selectionSet.selections
+    const firstSelection = operation?.selectionSet?.selections?.[0];
+    const selection = firstSelection?.selectionSet?.selections;
 
-    return selection[selection.length - 1].selectionSet.selections;
+    if (!selection?.length) return null;
+
+    return selection[selection.length - 1]?.selectionSet?.selections ?? null;
 }
 
-
 function extractFields(operation) {
-    const querySelection = extractQuerySelection(operation)
-    const fields = []
-    querySelection.forEach(se => {
-        const val = se.name.value
-        if (val !== 'status' && val !== '_id' && val !== 'createdBy') {
-            fields.push(val)
+    const querySelection = extractQuerySelection(operation);
+    if (!querySelection?.length) return [];
+
+    const excluded = new Set(['status', '_id', 'createdBy']);
+    const fields = [];
+
+    for (const se of querySelection) {
+        const val = se?.name?.value;
+        if (val && !excluded.has(val)) {
+            fields.push(val);
         }
-    })
+    }
+
     return fields;
 }
 
@@ -89,7 +95,7 @@ export const keyvalueResolver = (db) => ({
             }
 
             const fields = extractFields(operation)
-            if (fields.length === 0) {
+            if (!fields?.length) {
                 fields.push('key', 'value')
             }
 
@@ -118,7 +124,7 @@ export const keyvalueResolver = (db) => ({
 
             const fields = extractFields(operation)
 
-            if (fields.length === 0) {
+            if (!fields?.length) {
                 fields.push('key', 'value', 'ispublic')
             }
 

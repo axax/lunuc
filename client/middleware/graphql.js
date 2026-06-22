@@ -757,7 +757,7 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = CACHE
                     setResponse({...res, cacheDeletedAt, cacheKey})
                 }).catch(error => {
                     if (!controller.signal.aborted || controller._timeout) {
-                        setResponse(error)
+                        setResponse({...error, cacheKey})
                     }
                 })
             }
