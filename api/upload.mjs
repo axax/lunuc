@@ -62,7 +62,7 @@ export const handleUpload = db => async (req, res) => {
         let context = contextByRequest(req)
 
         if (!context.id) {
-            // use anonymouse user
+            // use anonymous user
             const anonymousUser = await Util.userByName(db, 'anonymous')
             context = {username: anonymousUser.username, id: anonymousUser._id.toString()}
         }
@@ -75,11 +75,7 @@ export const handleUpload = db => async (req, res) => {
             }
 
             /* Process the uploads */
-            const form =  formidable({maxFileSize:10 * 1024 * 1024 * 1024})  // 10GB
-
-
-            // specify that we want to allow the user to upload multiple files in a single request
-            //form.multiples = true
+            const form = formidable({maxFileSize: 10 * 1024 * 1024 * 1024})  // 10GB
 
             // send header
             res.writeHead(200, {'content-type': 'application/json'})
@@ -95,15 +91,28 @@ export const handleUpload = db => async (req, res) => {
                 }
             })
 
+            // 'endReached' is set once the form fully parsed all parts,
+            // 'count' tracks the number of file hooks currently in flight,
+            // 'finished' guards that the response is sent exactly once.
             let endReached = false
+            let count = 0
+            let finished = false
+            const response = {status: 'success'}
 
-            let response = {status: 'success'}, count = 0
+            // Send the final response once the form has ended AND no file hook
+            // is still running. Safe to call multiple times and from multiple
+            // event handlers - only the first matching call sends the response.
+            const tryFinish = () => {
+                if (!finished && endReached && count === 0) {
+                    finished = true
+                    res.end(JSON.stringify(response))
+                }
+            }
 
             // every time a file has been uploaded successfully,
-            // rename it to it's orignal name
-            let hasError
+            // run the registered FileUpload hooks
             form.on('file', async (field, file) => {
-                if( hasError ){
+                if (finished) {
                     return
                 }
                 count++
@@ -113,36 +122,40 @@ export const handleUpload = db => async (req, res) => {
                             await Hook.hooks['FileUpload'][i].callback({db, context, file, response, data})
                         }
                     }
-                }catch (e) {
-                    hasError = true
-                    res.end(JSON.stringify({status: 'aborted', message: e.message}))
+                } catch (e) {
+                    if (!finished) {
+                        finished = true
+                        res.end(JSON.stringify({status: 'aborted', message: e.message}))
+                    }
                     return
                 }
                 count--
-                if (endReached && count === 0) {
-                    res.end(JSON.stringify(response))
-                }
+                tryFinish()
             })
 
             // log any errors that occur
             form.on('error', function (err) {
-                console.log(err)
-                res.end('{"status":"error","message":"' + err.message + '"}')
+                console.log('upload error',err)
+                if (!finished) {
+                    finished = true
+                    res.end('{"status":"error","message":"' + err.message + '"}')
+                }
             })
             form.on('aborted', function (err) {
-                console.log(err)
-                res.end('{"status":"aborted","message":"Upload was aborted"}')
+                console.log('upload aborted', err)
+                if (!finished) {
+                    finished = true
+                    res.end('{"status":"aborted","message":"Upload was aborted"}')
+                }
             })
 
-            /*form.on('progress', function (bytesReceived, bytesExpected) {
-                const percent = (bytesReceived / bytesExpected * 100) | 0
-                console.log('Uploading: ' + percent + '%')
-            })*/
-
-
-            // once all the files have been uploaded, send a response to the client
+            // once all the parts have been received, mark the form as ended and
+            // try to send the response. This also covers the case where no file
+            // was uploaded (only fields) as well as the race where every file
+            // hook already finished before the 'end' event fired.
             form.on('end', () => {
                 endReached = true
+                tryFinish()
             })
 
             // parse the incoming request containing the form data

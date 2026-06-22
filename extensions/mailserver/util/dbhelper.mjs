@@ -191,7 +191,7 @@ export  const replaceAttachmentInMailData = (attachment, mailAccount, {db}) => {
         Util.ensureDirectoryExistence(ATTACHMENT_DIR_ABS)) {
         console.warn(`attachment ${attachment.filename} is too big (${attachment.size} bytes) for db`)
 
-        const fileName = `${mailAccount._id}_${attachment.checksum}_${attachment.size}_${attachment.filename.replace(/\//g, '\\u2215')}.txt`
+        const fileName = `${mailAccount._id}_${attachment.checksum}_${attachment.size}_${attachment.filename?attachment.filename.replace(/\//g, '\\u2215'):''}.txt`
         const fileAbs = path.join(ATTACHMENT_DIR_ABS, fileName)
         try {
             if (!fs.existsSync(fileAbs)) {

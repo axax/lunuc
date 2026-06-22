@@ -873,11 +873,16 @@ const startListening = async (db, context) => {
             return callback(null, 'NONEXISTENT');
         }
 
-        console.log('imap search', options)
+        //console.log('imap search', options)
         const {match} = mongoDbMatchProjectFromIMapData(options)
 
+        const hasBodySearch = options.terms?.includes('body')
 
-        const messages = await getMessagesForFolder(db,folder._id,match, {data:0})
+        const project = hasBodySearch
+            ? {'data.text': 1, 'data.html': 1, uid: 1, flags: 1, modseq: 1}
+            : {data: 0}
+
+        const messages = await getMessagesForFolder(db,folder._id,match, project)
 
 
         logger.debug('[%s] folder %s number of messages found %s', session.id, folder.path, messages.length)

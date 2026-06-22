@@ -236,9 +236,11 @@ export const start = (done) => {
                 }
             })
 
-
             server.keepAliveTimeout = 11 * 60 * 1000
-            server.headersTimeout   = server.keepAliveTimeout + 5000  // MUSS größer sein
+            server.headersTimeout   = server.keepAliveTimeout + 5000
+            // request body may take longer than the 5 min Node default for large uploads
+            server.requestTimeout   = 12 * 60 * 1000                   // 0 disables it entirely
+
 
             // attach index reference to server
             server._db = db

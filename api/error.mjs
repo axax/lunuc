@@ -39,14 +39,16 @@ export function formatAndLogError(db,req,error) {
 		path: error.path,
 		message: error.message
 	}
-	if( error.originalError.key ){
-		o.key = error.originalError.key
-	}
-	if( error.originalError.data ){
-		o.data = error.originalError.data
-	}
-	if( error.originalError.state ){
-		o.state = error.originalError.state
+	if(error.originalError) {
+		if (error.originalError.key) {
+			o.key = error.originalError.key
+		}
+		if (error.originalError.data) {
+			o.data = error.originalError.data
+		}
+		if (error.originalError.state) {
+			o.state = error.originalError.state
+		}
 	}
 
 	if(error.message!=="Cms page doesn't exist") {
