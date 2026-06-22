@@ -146,14 +146,17 @@ export async function oauthToken(db, req, res) {
 
     // add user group name
     let groupName = []
-    if(codeData.createdBy && ObjectId.isValid(codeData.createdBy)) {
+    if (codeData.createdBy && ObjectId.isValid(codeData.createdBy)) {
         const user = await Util.userById(db, codeData.createdBy)
 
-        groupName = user.group ? user.group.map(g => {
-            const group = Util.getUserGroup(db,g)
-            if (!group) return null
-            return group.name
-        }) : []
+        groupName = user.group
+            ? (await Promise.all(
+                user.group.map(async g => {
+                    const group = await Util.getUserGroup(db, g)
+                    return group ? group.name : null
+                })
+            ))
+            : []
     }
 
 
