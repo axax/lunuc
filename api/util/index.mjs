@@ -15,7 +15,7 @@ import path from 'path'
 import fs from "fs";
 import {pubsubHooked} from '../subscription.mjs'
 import crypto from 'crypto'
-import {SECRET_KEY} from '../constants/index.mjs'
+import {ONE_DAY_IN_MS, SECRET_KEY} from '../constants/index.mjs'
 const PASSWORD_MIN_LENGTH = 8
 
 const ROOT_DIR = path.resolve()
@@ -371,7 +371,7 @@ const Util = {
         let user = Cache.get(cacheKeyUser)
         if (!user) {
             user = (await db.collection('User').findOne({_id: new ObjectId(id)}))
-            Cache.set(cacheKeyUser, user, 86400000) // cache expires in 1 day
+            Cache.set(cacheKeyUser, user, ONE_DAY_IN_MS) // cache expires in 1 day
         }
         return user
     },
@@ -403,7 +403,7 @@ const Util = {
 
         if (!user) {
             user = (await db.collection('User').findOne({username: name}))
-            Cache.set(cacheKeyUser, user, 86400000) // cache expires in 1 day
+            Cache.set(cacheKeyUser, user, ONE_DAY_IN_MS) // cache expires in 1 day
         }
 
         return user
@@ -525,9 +525,30 @@ const Util = {
                 userRole.setting = userRole.setting.map(_id=>({_id}))
             }
 
-            Cache.set(cacheKeyUserRole, userRole, 6000000) // cache expires in 100 min
+            Cache.set(cacheKeyUserRole, userRole, ONE_DAY_IN_MS) // cache expires in 100 min
         }
         return userRole
+    },
+    getUserGroup: async (db, id) => {
+
+        if(id) {
+            if(id._id instanceof ObjectId){
+                id = id._id.toString()
+            }else if (id instanceof ObjectId) {
+                id = id.toString()
+            }
+        }else{
+            return null
+        }
+
+        const cacheKeyUserGroup = 'UserGroup' + id
+        let userGroup = Cache.get(cacheKeyUserGroup)
+
+        if (!userGroup) {
+            userGroup = (await db.collection('UserGroup').findOne({_id: new ObjectId(id)}))
+            Cache.set(cacheKeyUserGroup, userGroup, ONE_DAY_IN_MS) // cache expires in 100 min
+        }
+        return userGroup
     },
     draftjsRawToFields: (body) => {
         if (!body || body === '')

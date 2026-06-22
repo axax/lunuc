@@ -141,9 +141,20 @@ export async function oauthToken(db, req, res) {
         { $set: { used: true } }
     )
 
+
+    // add
+    const groupName = codeData.createdBy.group ? codeData.createdBy.group.map(g=>{
+        const group = Util.getUserGroup(g)
+        if(!group) return null
+        return group.name
+    }) : []
+
+
+
     // 11. Access Token generieren
     const {token} = await auth.signPayload(db, codeData.createdBy, {
         oauth:{client: clientData._id},
+        groupName,
         accessScope:clientData.allowedScopes ? clientData.allowedScopes.split(/[\s,]+/) : []
     })
 

@@ -19,3 +19,5 @@ export const AUTH_EXPIRES_IN = process.env.LUNUC_AUTH_EXPIRES_IN || '240d'
 export const AUTH_EXPIRES_IN_COOKIE = process.env.LUNUC_AUTH_EXPIRES_IN_COOKIE || (1000 * 60 * 60 * 24 * 240)
 
 export const HEADER_TIMEOUT = 60 * 1000 * 60 // 60min --> is important for file upload that might take longer
+
+export const ONE_DAY_IN_MS = 86400000
