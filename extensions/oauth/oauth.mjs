@@ -57,13 +57,14 @@ export async function oauthAuthorize(db, req, res) {
     res.redirect(`/admin/login?forward=${forward}&domain=${domain||''}&oauth=true`)
 }
 
-export async function issueCode(db, req, {clientData, scope, state, redirect_uri }) {
+export async function issueCode(db, req, {clientData, scope, state, redirect_uri, user }) {
 
     // 1. Zufälligen Code generieren
     const code = crypto.randomBytes(32).toString('hex')
 
     // 2. Code in DB speichern
     await oAuthResolver(db).Mutation.createOAuthCode({
+        createdBy: user._id,
         code,
         client: clientData._id,
         scope:       scope || '',

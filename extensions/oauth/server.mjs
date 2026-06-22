@@ -3,6 +3,7 @@ import schemaGen from './gensrc/schema.mjs'
 import resolverGen from './gensrc/resolver.mjs'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import {issueCode, oauthAuthorize, oauthToken} from './oauth.mjs'
+import {ObjectId} from "mongodb";
 
 Hook.on('resolver', ({db, resolvers}) => {
     deepMergeToFirst(resolvers, resolverGen(db))
@@ -23,6 +24,7 @@ Hook.on('login', async ({req, db, metaObj, result}) => {
 
         if(clientData){
             result.redirectUrl = await issueCode(db, req, {clientData,
+                user: result.user,
                 scope: params.get('scope'),
                 state: params.get('state'),
                 redirect_uri: params.get('redirect_uri') })
