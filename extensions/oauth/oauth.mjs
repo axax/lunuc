@@ -150,7 +150,7 @@ export async function oauthToken(db, req, res) {
         const user = await Util.userById(db, codeData.createdBy)
 
         groupName = user.group ? user.group.map(g => {
-            const group = Util.getUserGroup(g)
+            const group = Util.getUserGroup(db,g)
             if (!group) return null
             return group.name
         }) : []
