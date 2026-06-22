@@ -58,6 +58,9 @@ const StyledCopyButtonWrapper = styled('div')({
     zIndex: 999,
     pointerEvents: 'none',
     order: -1,
+    '@media print': {
+        display: 'none'
+    }
 })
 
 const StyledCopyButton = styled('button')(({ copied, theme }) => ({

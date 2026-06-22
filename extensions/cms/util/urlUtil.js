@@ -10,65 +10,67 @@ const manualScrollEvent = ()=>{
 const addScrollEvent = ()=>{
     if(manualScroll===undefined) {
         const ael = window.addEventListener
-        ael('wheel', manualScrollEvent)
-        ael('DOMMouseScroll', manualScrollEvent)
-        ael('touchmove', manualScrollEvent)
+        ael('wheel', manualScrollEvent, {passive: true})
+        ael('DOMMouseScroll', manualScrollEvent, {passive: true})
+        ael('touchmove', manualScrollEvent, {passive: true})
     }
     manualScroll = false
 }
+
 const scrollToElement = (el, options, tries = 0, winHash) => {
-    // only check if element exist and user has not scrolled manually
-    if (el && !manualScroll && (!winHash || winHash === window.location.hash)) {
-        const win = window,
-            docEl = win.document.documentElement
-
-        let {scrollStep, scrollOffset, scrollTimeout} = options
-        let mt = parseInt(win.getComputedStyle(el).marginTop),
-            scrollY = win.scrollY
-
-        if(el.dataset.scrollOffset){
-            scrollOffset = parseInt(el.dataset.scrollOffset)
-        }
-
-        if (isNaN(mt)) {
-            mt = 0
-        }
-        let y = Math.floor(el.getBoundingClientRect().top + win.pageYOffset + (scrollOffset || -mt)),
-            z = docEl.scrollHeight - win.innerHeight
-
-        if (y > z) {
-            y = z
-        }
-
-        let step = Math.abs(y - scrollY)
-        if (!scrollStep) {
-            scrollStep = Math.ceil(step / 20)
-        }
-        if (step > scrollStep) {
-            step = scrollStep
-        }
-        let newY = scrollY
-        if (y > scrollY) {
-            newY += step
-        } else {
-            newY -= step
-        }
-        win.scrollTo(0, newY)
-
-        let tout
-        if (scrollY !== win.scrollY) {
-            tout = scrollTimeout || 10
-        } else if (tries < 20) {
-            // try to scroll a few times more in case elements are lazy loaded
-            tries++
-            tout = 50
-        }
-        if(tout) {
-            setTimeout(() => {
-                scrollToElement(el, options, tries, winHash)
-            }, tout)
-        }
+    if (!el || manualScroll || (winHash && winHash !== window.location.hash)) {
+        return
     }
+
+    const win = window
+    const docEl = win.document.documentElement
+
+    let {scrollOffset, scrollEase} = options
+    if (el.dataset.scrollOffset) {
+        scrollOffset = parseInt(el.dataset.scrollOffset)
+    }
+    // fraction of the remaining distance moved per frame (ease-out feel)
+    if (!scrollEase) {
+        scrollEase = 0.2
+    }
+
+    let mt = parseInt(win.getComputedStyle(el).marginTop)
+    if (isNaN(mt)) {
+        mt = 0
+    }
+
+    const scrollY = win.scrollY
+    const maxY = docEl.scrollHeight - win.innerHeight
+
+    // round the target to a full pixel ONCE to avoid sub-pixel chasing
+    let y = Math.round(el.getBoundingClientRect().top + scrollY + (scrollOffset || -mt))
+    if (y > maxY) y = maxY
+    if (y < 0) y = 0
+
+    const diff = y - scrollY
+
+    // dead-zone: stop when close enough. this kills the 1px back-and-forth
+    // that shows up as jitter on iOS / retina displays
+    if (Math.abs(diff) <= 1) {
+        if (tries < 20) {
+            // element might still move due to lazy loaded content above it,
+            // so keep watching a few frames without actually scrolling
+            tries++
+            requestAnimationFrame(() => scrollToElement(el, options, tries, winHash))
+        }
+        return
+    }
+
+    let step = diff * scrollEase
+    // always move at least 1px towards the target so we don't stall
+    if (Math.abs(step) < 1) {
+        step = diff > 0 ? 1 : -1
+    }
+
+    win.scrollTo(0, scrollY + step)
+
+    // still moving -> reset the lazy-load try budget
+    requestAnimationFrame(() => scrollToElement(el, options, 0, winHash))
 }
 
 // expose to global Util
