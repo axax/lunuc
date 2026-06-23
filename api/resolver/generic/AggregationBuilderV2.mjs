@@ -16,6 +16,19 @@ export default class AggregationBuilderV2 {
         this.fields = fields
         this.db = db
         this.options = options
+        // Per-instance cache for getFormFieldsByType results. Schema definitions are
+        // stable for the lifetime of a single query, so caching avoids recomputing
+        // them once per field (and per sub-field on references).
+        this._typeFieldsCache = {}
+    }
+
+    /** Cached wrapper around getFormFieldsByType (keyed by type + flag). */
+    _getFormFieldsByType(type, flag) {
+        const key = flag ? `${type}::1` : type
+        if (!(key in this._typeFieldsCache)) {
+            this._typeFieldsCache[key] = getFormFieldsByType(type, flag)
+        }
+        return this._typeFieldsCache[key]
     }
 
     // ─── Pagination helpers ───────────────────────────────────────────────────
@@ -27,7 +40,7 @@ export default class AggregationBuilderV2 {
 
     getOffset() {
         const { offset, page } = this.options
-        if (offset) return offset
+        if (offset) return parseInt(offset)
         if (page && page > 0) return (page - 1) * this.getLimit()
         return 0
     }
@@ -42,7 +55,7 @@ export default class AggregationBuilderV2 {
         if (!sort) return { _id: -1 };
         if (typeof sort !== 'string') return sort;
 
-        const typeFields = getFormFieldsByType(this.type);
+        const typeFields = this._getFormFieldsByType(this.type);
         const sortObj = {};
 
         sort.split(',').forEach(val => {
@@ -261,11 +274,13 @@ export default class AggregationBuilderV2 {
             !reference &&
             vagueSearchable !== false &&
             type !== 'Boolean' &&
+            type !== 'ID' &&
             (type !== 'Object' || vagueSearchable === true)
 
         if (isVagueEligible) {
-            let count = 0
-            for (const restFilter of filters.rest) {
+            console.log('sxxxx',filterKey, type, JSON.stringify(filters.parts, null, 2))
+            for (let i = 0; i < filters.rest.length; i++) {
+                const restFilter = filters.rest[i]
                 const restMatch = []
                 await addFilterToMatchV2({
                     filterKey,
@@ -282,11 +297,16 @@ export default class AggregationBuilderV2 {
                 if(restMatch.length === 0) continue
 
                 if (!match.$$restQuery) match.$$restQuery = []
-                if (!match.$$restQuery[count]) {
-                    match.$$restQuery.push({ $: [], operator: filters.operator })
+                // Bind the slot to the search-term index (i), NOT to a per-field
+                // counter. $$restQuery is shared across all fields, so a per-field
+                // counter drifts out of sync as soon as one field skips a term
+                // (restMatch empty -> continue), which mixes terms into the wrong
+                // slot. Indexing by i keeps each term in its own slot; the resulting
+                // array may be sparse, which _buildRestQuery handles defensively.
+                if (!match.$$restQuery[i]) {
+                    match.$$restQuery[i] = { $: [], operator: filters.operator }
                 }
-                match.$$restQuery[count].$.push(...restMatch)
-                count++
+                match.$$restQuery[i].$.push(...restMatch)
             }
         }
     }
@@ -304,7 +324,7 @@ export default class AggregationBuilderV2 {
      *   - Object with options:     { title: { localized: true } }
      */
     createFieldDefinition(fieldData, type) {
-        const typeFields = getFormFieldsByType(type)
+        const typeFields = this._getFormFieldsByType(type)
         let fieldDefinition = {}
 
         if (fieldData.constructor === Object) {
@@ -419,7 +439,7 @@ export default class AggregationBuilderV2 {
         const sort       = this.getSort()
         // Ensure the facet sort always has a stable tiebreaker on _id
         const facetSort  = sort._id ? sort : { ...sort, _id: -1 }
-        const typeFields = getFormFieldsByType(this.type, true)
+        const typeFields = this._getFormFieldsByType(this.type, true)
         const filters        = this.getParsedFilter(this.options.filter)
         const resultFilters  = this.getParsedFilter(this.options.resultFilter)
         const lookupFilters  = this.getParsedFilter(this.options.lookupFilter)
@@ -455,7 +475,7 @@ export default class AggregationBuilderV2 {
                 typeFields, filters, resultFilters, lookupFilters
             )
 
-           if (matches.match.length > 0) {
+            if (matches.match.length > 0) {
                 //console.log('xxxxxx', JSON.stringify(matches.match, null, 2))
                 match.$and.push(...matches.match)
             }
@@ -555,14 +575,53 @@ export default class AggregationBuilderV2 {
             dataFacetQuery.push(this.options.beforeGroup)
         }
 
-        // Re-group documents by _id after lookups have been applied
-        dataFacetQuery.push({
-            $group: {
-                _id: '$_id',
-                ...groups,
-                ...this.options.group
+        // Re-group documents by _id after lookups have been applied.
+        //
+        // The $group stage is only strictly required when something in the
+        // pipeline can change the document shape or multiply the document count
+        // for a given _id, i.e.:
+        //   - $lookup stages were added (single-value refs need $arrayElemAt /
+        //     localized refs need per-language sub-doc assembly)
+        //   - the caller provided its own group accumulators (this.options.group)
+        //   - the caller injected beforeGroup / before stages (potentially $unwind)
+        //
+        // Without any of those, each _id maps to exactly one input document, so
+        // $group degrades to a pure no-op. In that case an equivalent $project is
+        // used instead, which is significantly cheaper (no accumulator buffering)
+        // while producing the exact same documents, fields and ordering.
+        const hasLookups = lookups.length > 0
+        const groupEntries = Object.entries(groups)
+        // In the no-lookup case every group entry is of the form { $first: '$path' }.
+        // Guard against anything unexpected so we always fall back to $group then.
+        const allSimpleFirst = groupEntries.every(
+            ([, value]) => value && typeof value.$first === 'string'
+        )
+
+        const needsGroupStage =
+            hasLookups ||
+            this.options.group ||
+            this.options.beforeGroup ||
+            this.options.before ||
+            !allSimpleFirst
+
+        if (needsGroupStage) {
+            dataFacetQuery.push({
+                $group: {
+                    _id: '$_id',
+                    ...groups,
+                    ...this.options.group
+                }
+            })
+        } else {
+            // Equivalent projection for the single-document-per-_id case.
+            // { $first: '$slug' } with key 'slug' → { slug: 1 }; differing paths
+            // keep their field-path expression.
+            const projectGroup = { _id: 1 }
+            for (const [key, value] of groupEntries) {
+                projectGroup[key] = value.$first === `$${key}` ? 1 : value.$first
             }
-        })
+            dataFacetQuery.push({ $project: projectGroup })
+        }
 
         const countQuery = [...dataQuery, { $count: 'count' }]
 
@@ -634,7 +693,9 @@ export default class AggregationBuilderV2 {
         }
         dataQuery.push(addFields)
 
-        console.log(`AggregationBuilderV2: Aggregation time for ${this.type} query ${Date.now()-this.startTimeAggregate}ms`)
+        if (this.options.debug) {
+            console.log(`AggregationBuilderV2: Aggregation time for ${this.type} query ${Date.now()-this.startTimeAggregate}ms`)
+        }
 
         return { dataQuery, countQuery, debugInfo: this.debugInfo }
     }
@@ -657,7 +718,6 @@ export default class AggregationBuilderV2 {
 
         // 1. Initial setup for missing fields
         await this.addMissingFieldsFromFilters(filters, fields, match);
-
         // 2. Main field processing loop
         for (const field of fields) {
             const fieldDef = this.createFieldDefinition(field, this.type);
@@ -790,7 +850,7 @@ export default class AggregationBuilderV2 {
         // If no explicit sub-fields are given, derive them from the referenced type's schema
         if (!refFields) {
             projectResultData[fieldName] = 1
-            const refFieldDefinitions = getFormFieldsByType(fieldDefinition.type)
+            const refFieldDefinitions = this._getFormFieldsByType(fieldDefinition.type)
             if (refFieldDefinitions) {
                 refFields = Object.keys(refFieldDefinitions)
             }
@@ -868,6 +928,9 @@ export default class AggregationBuilderV2 {
     _buildRestQuery(restQueries) {
         const result = { $or: [], $and: [] };
         for (const q of restQueries) {
+            // Slots are indexed by term, so the array may be sparse (holes for
+            // terms that no field could match). Skip empty/undefined slots.
+            if (!q || !q.$?.length) continue;
             if (q.operator === 'or') {
                 result.$or.push(...q.$);
             } else {
@@ -934,7 +997,6 @@ export default class AggregationBuilderV2 {
                     }
                 }else if (fieldDefinition.existsInDefinition) {
 
-                    console.log(`AggregationBuilderV2:`, key, filters, fields)
                     // TODO fileds.push might be better?
                     await this.createFilterForField(fieldDefinition, match, { filters })
                 }else{
@@ -944,8 +1006,40 @@ export default class AggregationBuilderV2 {
         }
     }
 
+    /**
+     * Collapses nesting of the SAME logical operator one or more levels deep,
+     * e.g. { $and: [ { $and: [A, B] }, C ] } -> { $and: [A, B, C] }.
+     *
+     * Only a nested clause that consists solely of the same operator is merged.
+     * A different operator ($or inside $and or vice versa) is left untouched,
+     * since flattening it would change the query semantics.
+     */
+    flattenSameOperator(match, op) {
+        if (!Array.isArray(match[op])) return
+        let changed = true
+        while (changed) {
+            changed = false
+            const flat = []
+            for (const el of match[op]) {
+                if (el && typeof el === 'object' && Array.isArray(el[op]) && Object.keys(el).length === 1) {
+                    flat.push(...el[op])
+                    changed = true
+                } else {
+                    flat.push(el)
+                }
+            }
+            match[op] = flat
+        }
+    }
+
     /** Removes empty or redundant $and/$or clauses from a match object. */
     cleanupMatch(match) {
+        // Collapse same-operator nesting first ($and-in-$and, $or-in-$or). This
+        // removes redundant wrappers produced during match assembly before the
+        // unwrap/empty-removal steps below operate on the result.
+        this.flattenSameOperator(match, '$and')
+        this.flattenSameOperator(match, '$or')
+
         // Unwrap single-element $or into $and
         if (match.$or?.length === 1) {
             match.$and = [...(match.$and ?? []), match.$or[0]];
@@ -955,10 +1049,16 @@ export default class AggregationBuilderV2 {
         // Remove empty or missing $or
         if (!match.$or?.length) delete match.$or;
 
-        // Unwrap single-element $and when it's the only key
-        if (match.$and?.length === 1 && Object.keys(match).length === 1) {
-            Object.assign(match, match.$and[0]);
+        // Unwrap a single-element $and when it's the only key.
+        // The inner object must be pulled out BEFORE deleting $and: if $and[0]
+        // itself carries an $and key (e.g. { $and: [ { $and: [A, B] } ] }), an
+        // Object.assign-then-delete would re-insert that inner $and and then
+        // immediately delete it, leaving an empty match. Looping also collapses
+        // deeper nestings ({ $and: [ { $and: [ { $and: [...] } ] } ] }).
+        while (match.$and?.length === 1 && Object.keys(match).length === 1) {
+            const inner = match.$and[0];
             delete match.$and;
+            Object.assign(match, inner);
         }
 
         // Remove empty $and
