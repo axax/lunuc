@@ -41,7 +41,7 @@
     "start:dev": "echo \"Start api and client in dev mode concurrently\" && npm run api:dev & npm run client:dev",
     "heroku-prebuild": "npm install && node ./clean-node-modules.js",
     "heroku-postbuild": "npm run build",
-    "postinstall": "npm rebuild sharp --platform=linux --arch=x64"
+    "#postinstall": "npm rebuild sharp --platform=linux --arch=x64"
   },
   "keywords": [
     "React for UI",
