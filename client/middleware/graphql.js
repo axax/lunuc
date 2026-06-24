@@ -245,18 +245,23 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
         FETCH_BY_ID[id] = controller
     }
 
-    // timeout=0 -> disabled, undefined -> default 60s. Gilt über alle Versuche hinweg.
-    const timeoutId = timeout > 0
+    // Default-Timeout je nach Request-Typ ableiten:
+    // - explizit gesetzter timeout (auch 0 = disabled) hat immer Vorrang
+    // - Queries ohne expliziten timeout -> 60s (idempotent, werden notfalls retried)
+    // - Mutations ohne expliziten timeout -> disabled. Mutations sind nicht
+    //   idempotent und werden NIE retried; ein harter 60s-Abbruch riskiert hier
+    //   nur Datenverlust (z.B. grosse CMS-Templates, die >60s zum Upload brauchen).
+    const effectiveTimeout = timeout !== undefined
+        ? timeout
+        : (type === RequestType.mutate ? 0 : 60000)
+
+    // timeout=0 -> disabled. Gilt über alle Versuche hinweg.
+    const timeoutId = effectiveTimeout > 0
         ? setTimeout(() => {
             controller._timeout = true
             controller.abort()
-        }, timeout)
-        : timeout === undefined
-            ? setTimeout(() => {
-                controller._timeout = true
-                controller.abort()
-            }, 60000)
-            : null
+        }, effectiveTimeout)
+        : null
 
     const finalizeRequest = () => {
         if (timeoutId !== null) clearTimeout(timeoutId)
@@ -300,6 +305,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
 
             addLoader()
 
+            const startTime = performance.now()   // NEU
             const headers = getHeaders(lang, headersExtra)
 
             fetch(graphQlUrl, {
@@ -408,7 +414,32 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
                 _app_.dispatcher.addError({
                     key: 'api_error',
                     msg,
-                    meta: {query, variables, hiddenVariables, headers, name: error.name, stack: error.stack, graphQlUrl, cacheKey}
+                    meta: {
+                        query,
+                        variables,
+                        hiddenVariables,
+                        headers,
+                        name: error.name,
+                        stack: error.stack,
+                        graphQlUrl,
+                        cacheKey,
+                        // --- Zusatz-Diagnose ---
+                        isTimeout,
+                        isOffline,
+                        requestType: type === RequestType.mutate ? 'mutation' : 'query',
+                        effectiveTimeout,                              // welcher Timeout galt (0 = disabled)
+                        durationMs: Math.round(performance.now() - startTime),
+                        bodySize: body ? body.length : 0,             // Payload-Grösse in Bytes
+                        attemptsLeft,                                  // verbleibende Retries zum Fehlerzeitpunkt
+                        online: typeof navigator !== 'undefined' ? navigator.onLine : null,
+                        connection: typeof navigator !== 'undefined' && navigator.connection
+                            ? {
+                                effectiveType: navigator.connection.effectiveType,   // '4g', '3g', ...
+                                downlink: navigator.connection.downlink,             // Mbit/s
+                                rtt: navigator.connection.rtt                        // ms
+                            }
+                            : null
+                    }
                 })
             })
         }

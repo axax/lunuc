@@ -41,7 +41,8 @@ const createServer = (tlsOpts, handler) => {
     // session.setTimeout(), maxSessionMemory) if you need it later.
     httpServer.headersTimeout = HEADER_TIMEOUT
     httpServer.requestTimeout = 0 // 0 = disabled. Intentional for long-lived/streaming
-                                  // requests; set a finite value if that's not required.
+
+    http2Server.timeout = 2 * 60 * 1000 * 60 // 2h
 
     // 2. Create the main NET server for connection routing
     const unifiedServer = net.createServer(socket => {

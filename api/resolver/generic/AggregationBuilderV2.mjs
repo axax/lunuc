@@ -278,7 +278,6 @@ export default class AggregationBuilderV2 {
             (type !== 'Object' || vagueSearchable === true)
 
         if (isVagueEligible) {
-            console.log('sxxxx',filterKey, type, JSON.stringify(filters.parts, null, 2))
             for (let i = 0; i < filters.rest.length; i++) {
                 const restFilter = filters.rest[i]
                 const restMatch = []
