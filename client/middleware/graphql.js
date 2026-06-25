@@ -301,19 +301,34 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
 
         // RETRY: ein einzelner Netzwerk-Versuch. `attemptsLeft` = verbleibende
         // Wiederholungen NACH diesem Versuch. Nur Queries bekommen attemptsLeft > 0.
-        const attempt = (attemptsLeft) => {
+        const attempt = async (attemptsLeft) => {
 
             addLoader()
 
             const startTime = performance.now()   // NEU
             const headers = getHeaders(lang, headersExtra)
 
+
+            let sendBody = body
+            if (typeof CompressionStream !== 'undefined' && body.length > 10000) {
+                console.log('gzip compression enabled')
+                try {
+                    const stream = new Blob([body]).stream()
+                        .pipeThrough(new CompressionStream('gzip'))
+                    sendBody = await new Response(stream).arrayBuffer()
+                    headers['Content-Encoding'] = 'gzip'
+                } catch (e) {
+                    // Fallback: unkomprimiert (sendBody bleibt der String)
+                    console.warn('gzip compression failed, sending uncompressed', e)
+                }
+            }
+
             fetch(graphQlUrl, {
                 method: 'POST',
                 signal: controller.signal,
                 credentials: 'include',
                 headers,
-                body
+                body: sendBody
             }).then(r => {
                 removeLoader()
 
