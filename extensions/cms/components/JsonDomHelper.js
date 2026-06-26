@@ -1560,6 +1560,23 @@ class JsonDomHelper extends React.Component {
                 }
             })
             items.push({
+                name: _t('elements.key.p'),
+                icon: 'subject',
+                onClick: () => {
+                    changeToType('p')
+                }
+            })
+            if(subJson.t==='img' && subJson.t==='SmartImage'){
+
+                items.push({
+                    name: _t('elements.key.image'),
+                    icon: 'image',
+                    onClick: () => {
+                        changeToType('image')
+                    }
+                })
+            }
+            items.push({
                 name: _t('elements.key.formElement'),
                 onClick: () => {
                     changeToType('formElement')

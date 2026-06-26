@@ -698,7 +698,13 @@ export const graphql = (query, operationOptions = {}) => {
                         data = deepMerge({}, prevData, res.data)
                     } else {
                         res.lang = _app_.lang
-                        this.prevRespone = res
+                        // Keep last good data as fallback ONLY during a refetch (overlapping refetches),
+                        // otherwise a second rapid refetch loses cmsPage and the JsonDom remounts.
+                        // For organic slug changes we must NOT retain stale data, so the
+                        // "page no longer exists" case can still resolve to the ErrorPage.
+                        this.prevRespone = (refetchProps && !res.data && res.loading && prevData)
+                            ? {...res, data: prevData}
+                            : res
                     }
                     const props = operationOptions.props({
                         data: {
