@@ -1500,7 +1500,7 @@ class GenericForm extends React.Component {
                                               onPaste={(e)=>{
                                                 if(field.type==='Float') {
                                                     // remove thousand separators
-                                                    const value = e.clipboardData.getData('text/plain').replace(/’/g, '')
+                                                    const value = e.clipboardData.getData('text/plain').replace(/[^0-9.-]/g, '')
                                                     this.handleInputChange({target:{value, name: fieldKey}})
                                                     e.preventDefault()
                                                 }

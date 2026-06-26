@@ -1566,7 +1566,7 @@ class JsonDomHelper extends React.Component {
                     changeToType('p')
                 }
             })
-            if(subJson.t==='img' && subJson.t==='SmartImage'){
+            if((subJson.t==='img' || subJson.t==='SmartImage') && _options.elementKey !== 'image'){
 
                 items.push({
                     name: _t('elements.key.image'),

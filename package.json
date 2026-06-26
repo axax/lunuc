@@ -62,7 +62,6 @@
     "url": "https://github.com/axax/issues"
   },
   "dependencies": {
-    "puppeteer": "^25.2.0",
     "@codemirror/autocomplete": "^6.20.3",
     "@codemirror/commands": "^6.10.3",
     "@codemirror/highlight": "^0.19.8",
@@ -108,6 +107,7 @@
     "nodemailer": "^9.0.1",
     "nodemailer-direct-transport": "^3.3.2",
     "preact": "^10.29.2",
+    "puppeteer": "^25.2.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-draggable": "^4.7.0",
@@ -145,7 +145,7 @@
     "unpdf": "^1.6.2",
     "xlsx": "^0.18.5",
     "xml2js": "^0.6.2",
-    "youtubei.js": "^17.1.0"
+    "youtubei.js": "^17.2.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.28.6",

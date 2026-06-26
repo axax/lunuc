@@ -20,6 +20,8 @@ export default class AggregationBuilderV2 {
         // stable for the lifetime of a single query, so caching avoids recomputing
         // them once per field (and per sub-field on references).
         this._typeFieldsCache = {}
+        // Per-instance cache for createFieldDefinition results (string specs only).
+        this._fieldDefCache = {}
     }
 
     /** Cached wrapper around getFormFieldsByType (keyed by type + flag). */
@@ -323,6 +325,18 @@ export default class AggregationBuilderV2 {
      *   - Object with options:     { title: { localized: true } }
      */
     createFieldDefinition(fieldData, type) {
+        // String field specs are deterministic for a given (type, fieldData) and
+        // are resolved many times (main loop, reference sub-fields, missing-field
+        // discovery, nested filter groups). Cache them. Object specs are NOT cached
+        // because building a stable cache key from them is unsafe. The returned
+        // object is only ever read by callers (never mutated), so sharing it is safe.
+        let cacheKey
+        if (typeof fieldData === 'string') {
+            cacheKey = `${type}::${fieldData}`
+            const cached = this._fieldDefCache[cacheKey]
+            if (cached) return cached
+        }
+
         const typeFields = this._getFormFieldsByType(type)
         let fieldDefinition = {}
 
@@ -391,6 +405,10 @@ export default class AggregationBuilderV2 {
             fieldDefinition.type = 'ID'
             fieldDefinition.existsInDefinition = true
         }
+
+        if (cacheKey) {
+            this._fieldDefCache[cacheKey] = fieldDefinition
+        }
         return fieldDefinition
     }
 
@@ -427,6 +445,9 @@ export default class AggregationBuilderV2 {
     async query() {
         this.startTimeAggregate = Date.now()
         this.debugInfo = []
+        // Fields that were added solely because a filter references them. They must
+        // contribute a match condition but must NOT be projected, grouped or joined.
+        this.filterOnlyFields = new Set()
 
         const typeDefinition = getType(this.type) || {}
 
@@ -715,8 +736,16 @@ export default class AggregationBuilderV2 {
         const createdFieldMatches = new Set();
         let match = [], lookupMatch = [], resultMatch = [];
 
+        // Recursive calls (nested filter groups) only need the match conditions
+        // for their group filter. Projection / group / lookups depend solely on
+        // `fields` and are already fully built by the level-1 call, so rebuilding
+        // them here would be pure (deduplicated) waste — including the O(n²)
+        // lookup dedup scan and repeated createFieldDefinition / projection work.
+        const matchOnly = level > 1;
+
         // 1. Initial setup for missing fields
         await this.addMissingFieldsFromFilters(filters, fields, match);
+
         // 2. Main field processing loop
         for (const field of fields) {
             const fieldDef = this.createFieldDefinition(field, this.type);
@@ -725,20 +754,29 @@ export default class AggregationBuilderV2 {
             if (!fieldName || processedFields.has(field)) continue;
             processedFields.add(field);
 
+            // Filter-only fields (added via addMissingFieldsFromFilters) and every
+            // field on a recursive level contribute match conditions only — no
+            // projection, group or lookup.
+            const filterOnly = matchOnly || this.filterOnlyFields.has(field);
+
             if (fieldDef.reference) {
                 await this._processReferenceField(
                     fieldDef, fieldName,
-                    projectResultData, match, filters, groups, lookups
+                    projectResultData, match, filters, groups, lookups,
+                    filterOnly
                 );
             } else {
                 await this._processRegularField(
                     fieldDef, fieldName, createdFieldMatches,
                     groups, match, resultMatch, lookupMatch,
-                    filters, resultFilters, lookupFilters, typeFields
+                    filters, resultFilters, lookupFilters, typeFields,
+                    filterOnly
                 );
 
                 // Handle field projections
-                this._applyProjection(fieldName, fieldDef, projectResultData);
+                if (!filterOnly) {
+                    this._applyProjection(fieldName, fieldDef, projectResultData);
+                }
             }
         }
 
@@ -814,18 +852,20 @@ export default class AggregationBuilderV2 {
     }
 
     /**
-     * Helper: Processes regular (non-reference) fields
+     * Helper: Processes regular (non-reference) fields.
+     * When filterOnly is true, only match conditions are produced — the field is
+     * neither grouped nor projected (handled by the caller).
      */
-    async _processRegularField(fieldDef, fieldName, createdSet, groups, match, resM, lookM, f, resF, lookF, typeFields) {
+    async _processRegularField(fieldDef, fieldName, createdSet, groups, match, resM, lookM, f, resF, lookF, typeFields, filterOnly = false) {
         if (createdSet.has(fieldName)) return;
         createdSet.add(fieldName);
 
         if (fieldDef.dynamic?.action === 'alias' && fieldDef.dynamic.path) {
             const aliasRoot = fieldDef.dynamic.path.split('.')[0];
-            groups[aliasRoot] = { $first: `$${aliasRoot}` };
+            if (!filterOnly) groups[aliasRoot] = { $first: `$${aliasRoot}` };
             await this.createFilterForField({ ...fieldDef, name: fieldDef.dynamic.path }, match, { filters: f });
         } else {
-            if (fieldName !== '_id') groups[fieldName] = { $first: `$${fieldName}` };
+            if (!filterOnly && fieldName !== '_id') groups[fieldName] = { $first: `$${fieldName}` };
 
             if (typeFields?.[fieldName] || fieldName === '_id') {
                 await this.createFilterForField(fieldDef, match, { filters: f });
@@ -837,10 +877,16 @@ export default class AggregationBuilderV2 {
     /**
      * Handles the full lookup/group/filter setup for a reference field.
      * Extracted from createQueriesForFieldsRecursive to keep that method readable.
+     *
+     * When filterOnly is true, no projection / group / lookup is produced — the
+     * field only contributes match conditions (root $match runs before lookups,
+     * so sub-field filters are resolved against the foreign collection inside
+     * addFilterToMatchV2 and need no join here).
      */
     async _processReferenceField(
         fieldDefinition, fieldName,
-        projectResultData, match, filters, groups, lookups
+        projectResultData, match, filters, groups, lookups,
+        filterOnly = false
     ) {
         let refFields      = fieldDefinition.fields
         let projectPipeline = {}
@@ -848,7 +894,7 @@ export default class AggregationBuilderV2 {
 
         // If no explicit sub-fields are given, derive them from the referenced type's schema
         if (!refFields) {
-            projectResultData[fieldName] = 1
+            if (!filterOnly) projectResultData[fieldName] = 1
             const refFieldDefinitions = this._getFormFieldsByType(fieldDefinition.type)
             if (refFieldDefinitions) {
                 refFields = Object.keys(refFieldDefinitions)
@@ -861,25 +907,36 @@ export default class AggregationBuilderV2 {
 
                 if (!refFieldName) continue
 
-                if (fieldDefinition.fields) {
+                if (!filterOnly && fieldDefinition.fields) {
                     projectResultData[`${fieldName}.${refFieldName}`] = 1
                 }
 
                 if (refFieldDefinition) {
                     let localProjected = false
 
+                    // The branch (usePipeline / localProjected) is computed
+                    // UNCONDITIONALLY: localProjected feeds the `localized` flag of
+                    // the sub-field filter below and must not depend on filterOnly,
+                    // otherwise a group-filter on a localized+projectLocal sub-field
+                    // would silently switch from single-language to all-language
+                    // matching. Only the projection writes themselves are skipped
+                    // for filter-only fields.
                     if (refFieldDefinition.fields && !refFieldDefinition.reference) {
                         // Nested sub-fields need a pipeline lookup
                         usePipeline = true
-                        for (const subRefField of refFieldDefinition.fields) {
-                            projectPipeline[`${refFieldName}.${subRefField}`] = 1
+                        if (!filterOnly) {
+                            for (const subRefField of refFieldDefinition.fields) {
+                                projectPipeline[`${refFieldName}.${subRefField}`] = 1
+                            }
                         }
                     } else if (refFieldDefinition.localized && refFieldDefinition.projectLocal) {
                         // Project the localized field in the current language only
                         usePipeline    = true
                         localProjected = true
-                        projectPipeline[refFieldName] = `$${refFieldName}.${this.options.lang}`
-                    } else {
+                        if (!filterOnly) {
+                            projectPipeline[refFieldName] = `$${refFieldName}.${this.options.lang}`
+                        }
+                    } else if (!filterOnly) {
                         projectPipeline[refFieldName] = 1
                     }
 
@@ -901,22 +958,26 @@ export default class AggregationBuilderV2 {
             }
         }
 
-        // Decide whether a lookup is needed or just a direct projection
-        const onlyIdRequested =
-            refFields?.length === 1 && refFields[0] === '_id'
-        const lookupSuppressed =
-            this.options.noLookupFields?.indexOf(fieldName) >= 0
+        // Decide whether a lookup is needed or just a direct projection.
+        // Skipped entirely for filter-only fields.
+        if (!filterOnly) {
+            const onlyIdRequested =
+                refFields?.length === 1 && refFields[0] === '_id'
+            const lookupSuppressed =
+                this.options.noLookupFields?.indexOf(fieldName) >= 0
 
-        if (onlyIdRequested || lookupSuppressed) {
-            projectResultData[`${fieldName}._id`] = `$${fieldName}`
-            groups[fieldName] = { $first: `$${fieldName}` }
-        } else {
-            const lookup = this.createAndAddLookup(fieldDefinition, lookups, { usePipeline })
-            if (lookup?.$lookup?.pipeline) {
-                lookup.$lookup.pipeline.push({ $project: projectPipeline })
+            if (onlyIdRequested || lookupSuppressed) {
+                projectResultData[`${fieldName}._id`] = `$${fieldName}`
+                groups[fieldName] = { $first: `$${fieldName}` }
+            } else {
+                const lookup = this.createAndAddLookup(fieldDefinition, lookups, { usePipeline })
+                if (lookup?.$lookup?.pipeline) {
+                    lookup.$lookup.pipeline.push({ $project: projectPipeline })
+                }
+                groups[fieldName] = this.createGroup(fieldDefinition)
             }
-            groups[fieldName] = this.createGroup(fieldDefinition)
         }
+
         await this.createFilterForField(fieldDefinition, match, { filters })
 
     }
@@ -970,34 +1031,45 @@ export default class AggregationBuilderV2 {
     /**
      * Finds filter keys that reference fields not present in the current field list
      * and adds the corresponding match conditions so they are not silently ignored.
+     *
+     * Fields added here are flagged in this.filterOnlyFields so they are excluded
+     * from projection / grouping / lookups downstream.
      */
     async addMissingFieldsFromFilters(filters, fields, match) {
         if (!filters?.parts) return
 
+        // Pre-compute the set of field keys already present so the membership
+        // check is O(1) instead of scanning `fields` for every filter part
+        // (was O(parts * fields)).
+        const includedKeys = new Set()
+        for (const field of fields) {
+            if (!field) continue
+            const fieldKey = typeof field === 'string'
+                ? field.split('$')[0]
+                : typeof field === 'object' && !Array.isArray(field)
+                    ? Object.keys(field)[0]
+                    : null
+            if (fieldKey) includedKeys.add(fieldKey)
+        }
+
         for (const key of Object.keys(filters.parts)) {
             const [topLevelField] = key.split('.')
 
-            const alreadyIncluded = fields.some(field => {
-                if (!field) return false
-                const fieldKey = typeof field === 'string'
-                    ? field.split('$')[0]
-                    : typeof field === 'object' && !Array.isArray(field)
-                        ? Object.keys(field)[0]
-                        : null
-                return fieldKey === key || fieldKey === topLevelField
-            })
+            const alreadyIncluded = includedKeys.has(key) || includedKeys.has(topLevelField)
 
             if (!alreadyIncluded) {
+
                 const fieldDefinition = this.createFieldDefinition(topLevelField, this.type)
-                //console.log(`add filter for ${key}`, fieldDefinition)
                 if(topLevelField==='createdBy'){
                     if(this.options.includeUserFilter) {
                         fields.push(topLevelField)
+                        includedKeys.add(topLevelField)
+                        this.filterOnlyFields.add(topLevelField)
                     }
                 }else if (fieldDefinition.existsInDefinition) {
-
-                    // TODO fileds.push might be better?
-                    await this.createFilterForField(fieldDefinition, match, { filters })
+                    fields.push(topLevelField)
+                    includedKeys.add(topLevelField)
+                    this.filterOnlyFields.add(topLevelField)
                 }else{
                     this.debugInfo.push({ message: `Field ${topLevelField} doesn't exist`, level: 'warn' })
                 }
