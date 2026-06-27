@@ -1,9 +1,9 @@
 const parser = md => {
     // URLs vor Regex-Kollisionen schützen (Underscore-in-URL, ?query etc.)
     const urlPlaceholders = [];
-    const protectedMd = md.replace(/https?:\/\/[^\s\)\"\']+/g, (url) => {
+    const protectedMd = md.replace(/\]\(([^)\s]+)\)/g, (m, url) => {
         urlPlaceholders.push(url);
-        return `%%URL${urlPlaceholders.length - 1}%%`;
+        return `](%%URL${urlPlaceholders.length - 1}%%)`;
     });
 
     const mdRules = [
