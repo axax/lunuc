@@ -27,19 +27,19 @@ export class ValidationError extends GraphQLError {
 }
 
 
-
 /**
  * Given a GraphQLError, format it according to the rules described by the
  * Response Format, Errors section of the GraphQL Specification.
  */
-export function formatAndLogError(db,req,error) {
+export function formatAndLogError(db, req, error) {
 
 	let o = {
 		locations: error.locations,
 		path: error.path,
 		message: error.message
 	}
-	if(error.originalError) {
+
+	if (error.originalError) {
 		if (error.originalError.key) {
 			o.key = error.originalError.key
 		}
@@ -51,8 +51,24 @@ export function formatAndLogError(db,req,error) {
 		}
 	}
 
-	if(error.message!=="Cms page doesn't exist") {
-		Hook.call('graphqlError', {db, req, errorContext: {...o,stack:error.stack}, type: 'generalError'})
+	if (error.message !== "Cms page doesn't exist") {
+		// Erweitere den errorContext um Request-Informationen
+		Hook.call('graphqlError', {
+			db,
+			req,
+			errorContext: {
+				...o,
+				stack: error.stack,
+				request: {
+					body: req.body,           // Der gesamte Request-Body
+					query: req.query,         // URL-Parameter
+					url: req.url,             // Aufgerufener Pfad
+					method: req.method,       // GET, POST, etc.
+					ip: req.ip               // IP-Adresse des Absenders
+				}
+			},
+			type: 'generalError'
+		})
 	}
 
 	return o

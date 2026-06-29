@@ -27,9 +27,19 @@ import {userHasAccessToObject} from '../../../api/util/access.mjs'
 
 
 const createScopeForDataResolver = (query, _props) => {
-    const queryParams = query ? ClientUtil.extractQueryParams(query) : {}
+    let queryParams = {}
+
+    if (query) {
+        try {
+            queryParams = ClientUtil.extractQueryParams(query)
+        } catch (e) {
+            // Wir werfen einen neuen Fehler, der den Query-String zur Message hinzufügt
+            throw new Error(`URI malformed while parsing query: "${query}". Original error: ${e.message}`)
+        }
+    }
+
     const props = (_props ? JSON.parse(_props) : {})
-    const scope = {params: queryParams, props}
+    const scope = { params: queryParams, props }
     return scope
 }
 
