@@ -53,10 +53,16 @@ Hook.on('appready', async ({db, context}) => {
                 const hostGroup = dnsServerContext.hostsGroup[key]
 
                 if (!hostGroup.block && hostGroup.blockRule) {
-
-                    const tpl = new Function(hostGroup.blockRule)
-                    hostGroup._block = tpl.call({})
-
+                    try {
+                        const tpl = new Function(hostGroup.blockRule)
+                        hostGroup._block = tpl.call({})
+                    } catch (e) {
+                        // A broken rule must not kill the refresh interval. NOTE: an
+                        // infinite loop in a rule still blocks the event loop — use
+                        // vm.runInNewContext(code, {}, {timeout}) for real isolation.
+                        console.warn(`DNS: blockRule failed for group ${key}: ${e.message}`)
+                        hostGroup._block = false
+                    }
                 } else {
                     hostGroup._block = false
                 }
@@ -92,12 +98,45 @@ Hook.on('appready', async ({db, context}) => {
                 const response = dns2.Packet.createResponseFromRequest(request)
                 const [question] = request.questions
 
+                if (!isTrustedSource(rinfo.address)) {
+                    // Per-source flood protection. Silent drop => no reply at all,
+                    // so we don't reflect anything toward a possibly-spoofed victim.
+                    if (isRateLimited(rinfo.address)) {
+                        return
+                    }
+                    if (question && question.name) {
+                        // High-amplification query types (TXT/ANY): drop silently.
+                        // This is the actual attack signature in the logs
+                        // (cisco.com TXT x1000) — killing it removes both the
+                        // amplification and the reflection.
+                        const refuseTypes = dnsServerContext.settings.refuseTypesForUntrusted ||
+                            [dns2.Packet.TYPE.ANY, dns2.Packet.TYPE.TXT]
+                        if (refuseTypes.includes(question.type)) {
+                            return
+                        }
+                        // We are not an open recursive resolver. For everything else
+                        // from an untrusted source, answer REFUSED (rcode 5): a tiny
+                        // reply with no answer section, i.e. no amplification incentive.
+                        // Set refuseRecursionForUntrusted=false to keep serving them.
+                        if (dnsServerContext.settings.refuseRecursionForUntrusted !== false) {
+                            response.header.rcode = 5 // REFUSED
+                            try {
+                                send(response)
+                            } catch (e) {
+                                // ignore send errors toward abusive/spoofed sources
+                            }
+                            return
+                        }
+                    }
+                }
+
                 if (question && question.name) {
                     const {name} = question
                     const startTime = new Date().getTime()
 
                     if (dnsServerContext.hosts[name] === undefined) {
-                        dnsServerContext.hosts[name] = {block: false, subdomains: false}
+                        dnsServerContext.hosts[name] = {block: false, subdomains: false, _ephemeral: true}
+                        trackEphemeralHost(name)
                     }
 
                     if (!dnsServerContext.hosts[name].count) {
@@ -239,6 +278,11 @@ Hook.on('typeUpdated_DnsHost', ({result}) => {
         if (result.subdomains !== undefined) {
             dnsServerContext.hosts[result.name].subdomains = result.subdomains
         }
+        // Promote out of the ephemeral pool now that it carries real config.
+        if (dnsServerContext.hosts[result.name]._ephemeral) {
+            delete dnsServerContext.hosts[result.name]._ephemeral
+            ephemeralHosts.delete(result.name)
+        }
     }
 })
 Hook.on(['typeUpdated_DnsHostGroup', 'typeCreated_DnsHostGroup'], ({result}) => {
@@ -264,6 +308,27 @@ const debugMessage = (msg, details) => {
     }
 }
 
+// Throttle noisy warnings to at most one per key per second. An upstream outage
+// would otherwise trigger one synchronous console.warn per query -> a log-storm
+// that blocks the event loop exactly when the system is already under pressure.
+// Keyed by a fixed category (not hostname) so the map stays bounded.
+const warnThrottle = {}
+const throttledWarn = (key, msg) => {
+    const now = Date.now()
+    const entry = warnThrottle[key] || (warnThrottle[key] = {last: 0, suppressed: 0})
+    if (now - entry.last >= 1000) {
+        if (entry.suppressed > 0) {
+            console.warn(`${msg} (+${entry.suppressed} suppressed)`)
+        } else {
+            console.warn(msg)
+        }
+        entry.last = now
+        entry.suppressed = 0
+    } else {
+        entry.suppressed++
+    }
+}
+
 let dnsResolvers = {}
 // O(1) cache keyed by cacheKey. Map preserves insertion order, so the oldest
 // entry is always the first key -> cheap FIFO eviction.
@@ -272,7 +337,66 @@ const dnsCachedAnswers = new Map()
 // queries and prevent a cache stampede against the upstream resolver.
 const pendingResolves = new Map()
 
+// Auto-created (ephemeral) host entries grow without bound under random-subdomain
+// floods. Track them in insertion order and evict the oldest beyond a cap, so
+// untrusted queries can't push the process into a GC death-spiral / OOM.
+const ephemeralHosts = new Set()
+const trackEphemeralHost = (name) => {
+    ephemeralHosts.add(name)
+    const maxEphemeral = dnsServerContext.settings.maxEphemeralHosts || 50000
+    while (ephemeralHosts.size > maxEphemeral) {
+        const oldest = ephemeralHosts.values().next().value
+        ephemeralHosts.delete(oldest)
+        // Only drop if still ephemeral (may have been configured meanwhile).
+        if (dnsServerContext.hosts[oldest] && dnsServerContext.hosts[oldest]._ephemeral) {
+            delete dnsServerContext.hosts[oldest]
+            delete dnsServerContext.dbBuffer[oldest]
+        }
+    }
+}
+
 const ERROR_ANSWER = () => ({header: {}, authorities: [], additionals: [], answers: [], isError: true})
+
+// --- Source-based access control & rate limiting ----------------------------
+// NOTE: these run *inside* the handler, i.e. after the packet was already parsed
+// on the event loop. They remove amplification/reflection (no upstream work, no
+// large reply to a spoofed victim) but do NOT stop a raw packet flood from
+// reaching the process. A firewall on :53 is still the real protection.
+
+// A source is "trusted" (may use us recursively) if its IP matches an allowlist
+// prefix. Empty/absent allowlist => everyone trusted, so this is OPT-IN and does
+// not change behaviour until settings.allowedIps is configured.
+const isTrustedSource = (address) => {
+    const allow = dnsServerContext.settings.allowedIps
+    if (!allow || allow.length === 0) {
+        return true
+    }
+    for (const prefix of allow) {
+        if (address.startsWith(prefix)) {
+            return true
+        }
+    }
+    return false
+}
+
+// Fixed-window per-source rate limiter. O(1), bounded (map reset each window).
+// Spoofed source IPs defeat per-source limits, but real scanners get throttled.
+let rateWindowStart = Date.now()
+let rateCounts = new Map()
+const isRateLimited = (address) => {
+    const limit = dnsServerContext.settings.perSourceQps || 0
+    if (limit <= 0) {
+        return false
+    }
+    const now = Date.now()
+    if (now - rateWindowStart >= 1000) {
+        rateWindowStart = now
+        rateCounts = new Map()
+    }
+    const c = (rateCounts.get(address) || 0) + 1
+    rateCounts.set(address, c)
+    return c > limit
+}
 
 // --- Upstream concurrency limiter -------------------------------------------
 // Caps how many upstream lookups run at the same time. A burst of many *distinct*
@@ -320,9 +444,12 @@ const scheduleUpstream = (question, cacheKey) => {
 const resolveDnsQuestion = async (question) => {
     const cacheKey = `${question.name}${question.type}${question.class}`
 
-    const cachedAnswer = dnsCachedAnswers.get(cacheKey)
-    if (cachedAnswer) {
-        return cachedAnswer
+    const cached = dnsCachedAnswers.get(cacheKey)
+    if (cached) {
+        if (cached.expiresAt > Date.now()) {
+            return cached.answer
+        }
+        dnsCachedAnswers.delete(cacheKey)
     }
 
     // If an identical query is already being resolved, await the same promise
@@ -351,42 +478,43 @@ const doResolveUpstream = async (question, cacheKey) => {
     }
     const typeName = dnsServerContext.typeMap[question.type]
 
-    // Ablaufzeit für Einträge (z.B. 30 Sekunden für gültige, 5 Sekunden für Fehler)
     let answer;
+    let timeoutHandle
     const timeoutMs = dnsServerContext.settings.resolveTimeout || 5000
 
     try {
         answer = await Promise.race([
             dnsResolvers[dnsServer].resolve(question.name, typeName, question.class),
-            new Promise((_, reject) =>
-                setTimeout(
+            new Promise((_, reject) => {
+                timeoutHandle = setTimeout(
                     () => reject(Object.assign(
                         new Error(`DNS timeout after ${timeoutMs}ms for ${question.name}`),
                         {code: 'ETIMEDOUT'}
                     )),
                     timeoutMs
                 )
-            )
+            })
         ])
     } catch (err) {
         if (err.code === 'ETIMEDOUT') {
-            console.warn(`DNS: timeout resolving ${question.name} via ${dnsServer}`)
+            throttledWarn('upstream-timeout', `DNS: timeout resolving via ${dnsServer}`)
         } else {
-            console.warn(`DNS: error resolving ${question.name}:`, err.message)
+            throttledWarn('upstream-error', `DNS: error resolving via ${dnsServer}: ${err.message}`)
         }
-
-        // Erzeuge eine temporäre Dummy-Antwort für Fehler
         answer = ERROR_ANSWER();
+    } finally {
+        // Always clear the race timer on success, otherwise tens of thousands of
+        // pending timers pile up under load.
+        if (timeoutHandle) {
+            clearTimeout(timeoutHandle)
+        }
     }
 
-    // Speichere das Ergebnis im Cache (auch Fehler-Antworten!)
-    dnsCachedAnswers.set(cacheKey, answer);
-
-    // Automatisches Löschen aus dem Cache nach Ablauf der Zeit (TTL-Simulation)
-    const cacheDuration = answer.isError ? 5000 : 30000; // 5 Sek für Fehler, 30 Sek für Treffer
-    setTimeout(() => {
-        dnsCachedAnswers.delete(cacheKey);
-    }, cacheDuration);
+    // Lazy TTL: store an expiry timestamp instead of one setTimeout per entry.
+    // Removes timer accumulation and the bug where a stale TTL timer deletes a
+    // newer entry that reused the same key after FIFO eviction.
+    const cacheDuration = answer.isError ? 5000 : 30000 // 5s errors, 30s hits
+    dnsCachedAnswers.set(cacheKey, {answer, expiresAt: Date.now() + cacheDuration})
 
     const maxNumbersOfCachedAnswers = dnsServerContext.settings.cacheSize || 1000
     if (dnsCachedAnswers.size > maxNumbersOfCachedAnswers) {
@@ -399,12 +527,23 @@ const doResolveUpstream = async (question, cacheKey) => {
 
 const readHosts = async (db) => {
     await db.collection('DnsHost').find().forEach(o => {
-        dnsServerContext.hosts[o.name] = {
+        const entry = {
             block: o.block,
             subdomains: o.subdomains,
             count: o.count,
             response: o.response,
             group: o.group
+        }
+        // Hosts stored purely for usage stats (no block/subdomain/group/response)
+        // are ephemeral and subject to the in-memory cap.
+        const isConfigured = o.block === true || o.subdomains === true ||
+            (o.group && o.group.length > 0) || !!o.response
+        if (!isConfigured) {
+            entry._ephemeral = true
+        }
+        dnsServerContext.hosts[o.name] = entry
+        if (!isConfigured) {
+            trackEphemeralHost(o.name)
         }
     })
 
