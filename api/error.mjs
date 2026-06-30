@@ -60,11 +60,11 @@ export function formatAndLogError(db, req, error) {
 				...o,
 				stack: error.stack,
 				request: {
+					headers: req.headers,
 					body: req.body,           // Der gesamte Request-Body
 					query: req.query,         // URL-Parameter
 					url: req.url,             // Aufgerufener Pfad
 					method: req.method,       // GET, POST, etc.
-					ip: req.ip               // IP-Adresse des Absenders
 				}
 			},
 			type: 'generalError'
