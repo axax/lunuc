@@ -215,7 +215,7 @@ const FETCH_BY_ID = {}
 export const clearFetchById = (id) => {
     if (FETCH_BY_ID[id]) {
         console.log(`abort fetch with id ${id}`)
-        FETCH_BY_ID[id].abort()
+        FETCH_BY_ID[id].abort("clearFetchById")
         delete FETCH_BY_ID[id]
     }
 }
@@ -259,7 +259,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
     const timeoutId = effectiveTimeout > 0
         ? setTimeout(() => {
             controller._timeout = true
-            controller.abort()
+            controller.abort('timeout')
         }, effectiveTimeout)
         : null
 
@@ -817,7 +817,7 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = CACHE
 
         return () => {
             if (controller) {
-                controller.abort()
+                controller.abort('useQuery')
             }
             client.removeQueryWatcher(cacheKey)
         }
