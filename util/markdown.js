@@ -1,8 +1,8 @@
 const parser = md => {
     // URLs vor Regex-Kollisionen schützen (Underscore-in-URL, ?query etc.)
     const urlPlaceholders = [];
-    const protectedMd = md.replace(/\]\(([^)\s]+)\)/g, (m, url) => {
-        urlPlaceholders.push(url);
+    const protectedMd = md.replace(/\]\(([^)]+)\)/g, (m, url) => {
+        urlPlaceholders.push(url.trim());
         return `](%%URL${urlPlaceholders.length - 1}%%)`;
     });
 
