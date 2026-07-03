@@ -407,6 +407,7 @@ Hook.on('Types', ({types}) => {
         fields: [
             {
                 name: 'name',
+                tab: 'elements.generalTab',
                 required: true
             },
             {

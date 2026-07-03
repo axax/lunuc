@@ -18,7 +18,7 @@ export async function addGenericTypeLookup(field, otherOptions, projection, db, 
 }
 
 
-function checkIfLookupIsNeededOrMapId(field,projection) {
+function checkIfLookupIsNeededOrMapId(field, projection) {
     const dataProjection = findProjection('data', projection)
     let fieldProjection, lookupIsNeeded = true
     if (Array.isArray(dataProjection.data)) {
@@ -29,8 +29,8 @@ function checkIfLookupIsNeededOrMapId(field,projection) {
             if (fieldNames.length === 0) {
                 // lookup is not needed because there are no fields
                 lookupIsNeeded = false
-            }else if(fieldNames.length === 1 && fieldNames[0] === '_id'){
-                if(!field.metaFields){
+            } else if (fieldNames.length === 1 && fieldNames[0] === '_id') {
+                if (!field.metaFields) {
                     // lookup is not needed because there is only _id to project
                     // $map to property _id instead of lookup
                     dataProjection.data[projectionResult.index][field.name] = {
@@ -120,14 +120,11 @@ function addGenericTypeLookupForWrapperFields(field, otherOptions, projection) {
 function addGenericTypeLookupForType(field, otherOptions, projection) {
 
     //check if lookup is needed at all
-    let {lookupIsNeeded} = checkIfLookupIsNeededOrMapId(field, projection)
+    let {lookupIsNeeded, fieldProjection} = checkIfLookupIsNeededOrMapId(field, projection)
     if (!lookupIsNeeded) {
         return
     }
 
-    const typeDef = getType(field.type)
-    if (typeDef) {
-    }
     if (!otherOptions.lookups) {
         otherOptions.lookups = []
     }
@@ -147,11 +144,19 @@ function addGenericTypeLookupForType(field, otherOptions, projection) {
     }
 
     const pipeline = []
+    const $projectParent = {}
     if (field.projection) {
-        const $project = {}
-        field.projection.forEach(key => $project[key] = 1)
-        pipeline.push({$project})
+        field.projection.forEach(key => $projectParent[key] = 1)
     }
+
+    // resolve nested references (e.g. User.group -> UserGroup) driven by the requested projection.
+    // may add reference fields to $projectParent so the raw ids survive the parent $project.
+    const nestedStages = buildNestedLookupStages(field.type, fieldProjection && fieldProjection.data, $projectParent)
+
+    if (field.projection) {
+        pipeline.push({$project: $projectParent})
+    }
+    pipeline.push(...nestedStages)
 
     // single $lookup for all cases — order & duplicates are restored afterwards, so no keepOrder sorting needed
     otherOptions.lookups.push({
@@ -355,16 +360,151 @@ async function addGenericTypeLookupForGenericType(field, otherOptions, projectio
 }
 
 
+// -----------------------------------------------------------------------------
+// Nested reference resolution
+// -----------------------------------------------------------------------------
+
+/**
+ * Builds nested $lookup stages for reference sub-fields of `parentType`, driven by the
+ * requested projection. The stages are meant to run INSIDE the parent lookup pipeline,
+ * where the current document is the parent entity itself — therefore paths have no
+ * `data.` prefix. Recurses for deeper references (e.g. User.junior -> User.group).
+ *
+ * `parentProject` (the parent $project object) is mutated so the raw reference ids
+ * survive a restrictive parent projection.
+ *
+ * @param parentType     type name whose reference sub-fields should be resolved (e.g. 'User')
+ * @param projectionData requested projection array for the parent (e.g. ['name', {group:[...]}])
+ * @param parentProject  parent $project object (mutated to keep reference ids)
+ * @param depth          recursion guard
+ */
+function buildNestedLookupStages(parentType, projectionData, parentProject, depth = 0) {
+    const stages = []
+    if (!Array.isArray(projectionData) || !parentType || depth > 4) {
+        return stages
+    }
+    const typeDef = getType(parentType)
+    if (!typeDef) {
+        return stages
+    }
+
+    const ensureArray = (expr) => ({
+        $cond: [
+            {$isArray: expr}, expr,
+            {$cond: [{$in: [{$type: expr}, ['missing', 'null']]}, [], [expr]]}
+        ]
+    })
+
+    for (const entry of projectionData) {
+        if (!entry || entry.constructor !== Object) continue
+        const nestedName = Object.keys(entry)[0]
+        const nestedProjection = entry[nestedName]
+        const subDef = getFieldDefFromType(typeDef, nestedName)
+
+        // only resolve fields that are references to another type
+        if (!subDef || !subDef.type || !subDef.reference) continue
+
+        // make sure the raw reference survives a restrictive parent $project
+        if (parentProject && Object.keys(parentProject).length > 0) {
+            parentProject[nestedName] = 1
+        }
+
+        const oidField = `${nestedName}ObjectId`
+        stages.push({$addFields: {[oidField]: getConditionalIdResolverPath(nestedName)}})
+
+        const $project = buildProjectionFromArray(nestedProjection, subDef.type)
+        $project._id = 1
+        const nestedPipeline = [{$project}]
+
+        // recurse for references inside the nested type
+        nestedPipeline.push(...buildNestedLookupStages(subDef.type, nestedProjection, $project, depth + 1))
+
+        stages.push({
+            $lookup: {
+                from: subDef.type,
+                localField: oidField,
+                foreignField: '_id',
+                as: nestedName,
+                pipeline: nestedPipeline
+            }
+        })
+
+        // restore order + duplicates, drop unresolved refs
+        const oidArray = ensureArray(`$${oidField}`)
+        const rebuilt = {
+            $filter: {
+                input: {
+                    $map: {
+                        input: {$range: [0, {$size: oidArray}]},
+                        as: 'i',
+                        in: {
+                            $arrayElemAt: [
+                                {$filter: {input: `$${nestedName}`, cond: {$eq: ['$$this._id', {$arrayElemAt: [oidArray, '$$i']}]}}},
+                                0
+                            ]
+                        }
+                    }
+                },
+                cond: {$ne: ['$$this', null]}
+            }
+        }
+
+        stages.push({
+            $addFields: {
+                // multi -> keep array; scalar reference -> unwrap to a single object (or null)
+                [nestedName]: subDef.multi
+                    ? rebuilt
+                    : {$arrayElemAt: [rebuilt, 0]}
+            }
+        })
+        stages.push({$unset: oidField})
+    }
+    return stages
+}
+
+/**
+ * Converts a projection array (["name", {meta:["mobile","street"]}]) into a $project object
+ * ({name:1, "meta.mobile":1, ...}). Reference sub-fields are kept whole (raw ids) so a nested
+ * lookup can resolve them; plain embedded objects are flattened into dotted paths.
+ */
+function buildProjectionFromArray(projArr, typeName, prefix = '') {
+    const $project = {}
+    if (!Array.isArray(projArr)) return $project
+    const typeDef = typeName ? getType(typeName) : null
+    for (const p of projArr) {
+        if (typeof p === 'string') {
+            $project[prefix + p] = 1
+        } else if (p && p.constructor === Object) {
+            const k = Object.keys(p)[0]
+            const def = typeDef ? getFieldDefFromType(typeDef, k) : null
+            if (def && def.type && def.reference) {
+                // reference field: keep raw ids for a nested lookup
+                $project[prefix + k] = 1
+            } else {
+                // plain embedded object (e.g. type:'Object' json field): flatten into dotted paths
+                Object.assign($project, buildProjectionFromArray(p[k], null, prefix + k + '.'))
+            }
+        }
+    }
+    return $project
+}
+
+function getFieldDefFromType(typeDef, name) {
+    const fields = typeDef && typeDef.fields
+    if (Array.isArray(fields)) return fields.find(f => f && f.name === name)
+    if (fields && fields.constructor === Object) return fields[name]
+    return null
+}
 
 
-function getConditionalIdResolver(key) {
-    const id = {
+function getConditionalIdResolverPath(path) {
+    return {
         $cond:
             {
-                if: {$isArray: `$data.${key}`},
+                if: {$isArray: `$${path}`},
                 then: {
                     $map: {
-                        input: `$data.${key}`, in: {
+                        input: `$${path}`, in: {
                             $convert: {
                                 input: '$$this', to: 'objectId', onError: {
                                     $convert: {input: '$$this._id', to: 'objectId'}
@@ -375,14 +515,17 @@ function getConditionalIdResolver(key) {
                 },
                 else: {
                     $convert: {
-                        input: `$data.${key}`, to: 'objectId', onError: {
-                            $convert: {input: `$data.${key}._id`, to: 'objectId'}
+                        input: `$${path}`, to: 'objectId', onError: {
+                            $convert: {input: `$${path}._id`, to: 'objectId'}
                         }
                     }
                 }
             }
     }
-    return id;
+}
+
+function getConditionalIdResolver(key) {
+    return getConditionalIdResolverPath(`data.${key}`)
 }
 
 function createLookupKeepSorting({name, as, type, $project}) {
