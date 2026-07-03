@@ -37,14 +37,14 @@ import {doTrackingEvent} from './util/tracking.mjs'
 import {getGatewayIp} from '../util/gatewayIp.mjs'
 import {isRateLimited} from './util/rateLimiter.mjs'
 import {applyRequestRules} from './util/requestRules.mjs'
-import {getRegexCached} from "./util/regexCache.mjs";
+import {getRegexCached} from './util/regexCache.mjs'
 
 const config = getDynamicConfig()
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
 const ROOT_DIR = path.resolve(), SERVER_DIR = path.join(ROOT_DIR, './server')
 const ABS_UPLOAD_DIR = path.join(ROOT_DIR, UPLOAD_DIR)
-const API_PREFIXES = API_PREFIX?(Array.isArray(API_PREFIX)? API_PREFIX : [API_PREFIX]):[]
+const API_PREFIXES = API_PREFIX ? (Array.isArray(API_PREFIX) ? API_PREFIX : [API_PREFIX]) : []
 
 
 // Use Httpx
@@ -62,16 +62,25 @@ const DEFAULT_CERT_DIR = process.env.LUNUC_CERT_DIR || SERVER_DIR
 
 const CACHED_FILES_VALIDATION_TIME = 86400000 * 5 // a day in miliseconds = 86400000
 
+// Request timeout. Was 0 (disabled) which allows slowloris-style clients to
+// hold connections open forever after the first byte. Streaming/uploads that
+// legitimately take longer go through the API proxy / dedicated paths.
+const REQUEST_TIMEOUT_MS = 5 * 60 * 1000 // 5 min
+
+// Base url of this server instance (used for SSR fetches and host replacement)
+const BASE_URL = `http://localhost:${PORT}`
+const BASE_URL_REGEX = new RegExp(BASE_URL, 'g')
+
 const options = {
     allowHTTP1: true,
     SNICallback: (domain, cb) => {
 
         const {hostrule} = getBestMatchingHostRule(domain)
 
-        if(hostrule && hostrule.certContext){
+        if (hostrule && hostrule.certContext) {
             cb(null, hostrule.certContext)
-        }else{
-            cb(null,getRootCertContext())
+        } else {
+            cb(null, getRootCertContext())
         }
     }
 }
@@ -80,7 +89,7 @@ if (fs.existsSync(path.join(DEFAULT_CERT_DIR, './chain.pem'))) {
     // Certificate authority
     options.ca = fs.readFileSync(path.join(DEFAULT_CERT_DIR, './chain.pem'))
     const hostrules = getHostRules(true)
-    if(hostrules.general && !hostrules.general.certDir){
+    if (hostrules.general && !hostrules.general.certDir) {
         hostrules.general.certDir = path.join(DEFAULT_CERT_DIR, './chain.pem')
     }
 }
@@ -92,6 +101,110 @@ process.on('uncaughtException', (error) => {
 })
 
 
+/* ------------------------------------------------------------------ */
+/* Security: path traversal protection                                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Resolves urlParts inside baseDir and returns the absolute path,
+ * or null if the resolved path escapes baseDir (path traversal).
+ * urlPathname is URI-decoded upstream, so sequences like %2e%2e%2f
+ * arrive here as "../" and MUST NOT be allowed to leave baseDir.
+ */
+const safeJoin = (baseDir, ...urlParts) => {
+    const resolved = path.resolve(baseDir, '.' + path.sep + path.join(...urlParts))
+    if (resolved === baseDir || resolved.startsWith(baseDir + path.sep)) {
+        return resolved
+    }
+    return null
+}
+
+/**
+ * Rough check for private / internal network targets.
+ * Not bulletproof (DNS rebinding can bypass hostname checks) but combined
+ * with the auth requirement it removes the trivial SSRF vectors.
+ */
+const isPrivateNetworkTarget = (hostname) => {
+    if (['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(hostname)) {
+        return true
+    }
+    return hostname.startsWith('10.') ||
+        hostname.startsWith('192.168.') ||
+        hostname.startsWith('169.254.') ||
+        hostname.startsWith('100.') || // CGNAT / tailscale range
+        /^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Performance: template dir file index (avoids existsSync per request) */
+/* ------------------------------------------------------------------ */
+
+// Set of url pathnames ('/robots.txt', '/sub/file.xml', ...) that exist in
+// the template dir. Refreshed via fs.watch, so the hot path is a pure
+// in-memory lookup instead of a blocking syscall on every request.
+let templateFiles = new Set()
+
+const scanTemplateDir = () => {
+    const files = new Set()
+    try {
+        const entries = fs.readdirSync(STATIC_TEMPLATE_DIR, {recursive: true, withFileTypes: true})
+        for (const entry of entries) {
+            if (entry.isFile()) {
+                // parentPath is the modern name, path the older one (Node < 20.12)
+                const parent = entry.parentPath || entry.path || STATIC_TEMPLATE_DIR
+                const abs = path.join(parent, entry.name)
+                const rel = '/' + path.relative(STATIC_TEMPLATE_DIR, abs).split(path.sep).join('/')
+                files.add(rel)
+            }
+        }
+    } catch (e) {
+        // dir may not exist - that's fine, set stays empty
+    }
+    templateFiles = files
+}
+
+scanTemplateDir()
+try {
+    fs.watch(STATIC_TEMPLATE_DIR, {recursive: true}, () => {
+        // debounce bursts of change events
+        clearTimeout(scanTemplateDir._t)
+        scanTemplateDir._t = setTimeout(scanTemplateDir, 200)
+    })
+} catch (e) {
+    console.warn('index: cannot watch template dir', e.message)
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Performance: static path resolution cache                            */
+/* ------------------------------------------------------------------ */
+
+// Caches which directory a static url resolves to, so subsequent requests
+// skip the sequential stat attempts across hostrule.paths / STATIC_DIR /
+// WEBROOT / BUILD_DIR. Value: resolved absolute path, or false = known miss.
+const PATH_CACHE_TTL_MS = 60000
+const PATH_CACHE_MAX_ENTRIES = 5000
+const pathResolveCache = new Map()
+
+const pathCacheGet = (key) => {
+    const entry = pathResolveCache.get(key)
+    if (entry && entry.expires > Date.now()) {
+        return entry.value
+    }
+    pathResolveCache.delete(key)
+    return undefined
+}
+
+const pathCacheSet = (key, value) => {
+    // primitive size cap - drop oldest entry when full
+    if (pathResolveCache.size >= PATH_CACHE_MAX_ENTRIES) {
+        pathResolveCache.delete(pathResolveCache.keys().next().value)
+    }
+    pathResolveCache.set(key, {value, expires: Date.now() + PATH_CACHE_TTL_MS})
+}
+
+
 const createSortedQueryString = (query) => {
 
     // Convert to sorted array and build string
@@ -100,9 +213,9 @@ const createSortedQueryString = (query) => {
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
 
-    if(sortedParams.length===0) return ''
+    if (sortedParams.length === 0) return ''
 
-    return '?'+sortedParams.join('&')
+    return '?' + sortedParams.join('&')
 }
 
 
@@ -111,8 +224,8 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
 
     const agent = req.headers['user-agent']
 
-    if(!agent){
-        console.warn('Server: User-Agent missing for '+urlPathname)
+    if (!agent) {
+        console.warn('Server: User-Agent missing for ' + urlPathname)
         res.writeHead(404)
         res.end()
         return
@@ -120,7 +233,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
 
     const headers = {
         'Cache-Control': 'public, max-age=60',
-        'Content-Type': MimeType.detectByExtension('html')+'; charset=utf-8',
+        'Content-Type': MimeType.detectByExtension('html') + '; charset=utf-8',
         'X-Frame-Options': 'SAMEORIGIN',
         'X-Content-Type-Options': 'nosniff',
         'Strict-Transport-Security': 'max-age=31536000',
@@ -138,32 +251,31 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
 
     let {isBot, noJsRendering} = parseUserAgent(agent, {botRegex: hostrule.botRegex, noJsRenderingBotRegex: hostrule.noJsRenderingBotRegex})
 
-    if (noJsRendering || parsedUrl.query.__ssr==='1') {
+    if (noJsRendering || parsedUrl.query.__ssr === '1') {
 
-        if ( req.headers.accept && req.headers.accept.indexOf('text/html') < 0 && req.headers.accept.indexOf('*/*') < 0) {
+        if (req.headers.accept && req.headers.accept.indexOf('text/html') < 0 && req.headers.accept.indexOf('*/*') < 0) {
             console.log('headers not valid', req.headers.accept)
             res.writeHead(404)
             res.end()
             return
         }
 
-        const baseUrl = `http://localhost:${PORT}`
         const queryString = createSortedQueryString(parsedUrl.query)
 
-        const urlToFetch = baseUrl + urlPathname + queryString
+        const urlToFetch = BASE_URL + urlPathname + queryString
         const cacheFileDir = path.join(SERVER_DIR, 'cache', host.replace(/\W/g, ''))
 
         const rawUrlPath = Util.removeTrailingSlash(urlPathname).substring(1) || 'index'
 
-        const cacheFileName = `${cacheFileDir}/${rawUrlPath.replace(/\//g, '-').replace(/[^\w-]/g, '')}${queryString?'@'+queryString.replace(/\W/g, ''):''}.html`
+        const cacheFileName = `${cacheFileDir}/${rawUrlPath.replace(/\//g, '-').replace(/[^\w-]/g, '')}${queryString ? '@' + queryString.replace(/\W/g, '') : ''}.html`
 
-        const errorFile = Cache.get('ErrorFile'+cacheFileName)
-        if(errorFile){
+        const errorFile = Cache.get('ErrorFile' + cacheFileName)
+        if (errorFile) {
             console.log(`send from error file cache ${cacheFileName}`)
             res.writeHead(errorFile.statusCode, headers)
-            res.write('Error '+errorFile.statusCode)
+            res.write('Error ' + errorFile.statusCode)
             res.end()
-            await doTrackingEvent(req, {event:'404', host})
+            await doTrackingEvent(req, {event: '404', host})
             return
         }
 
@@ -189,7 +301,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
                     modeTime = new Date(statsFile.mtime).getTime() + CACHED_FILES_VALIDATION_TIME
 
                 if (modeTime > now) {
-                    await doTrackingEvent(req, {event:'visit',host})
+                    await doTrackingEvent(req, {event: 'visit', host})
                     console.log(`cache is not updated for ${cacheFileName}`)
                     return
                 }
@@ -202,15 +314,14 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
         // remove script tags
         pageData.html = pageData.html.replace(/<(script|noscript)(?![^>]*type=["']application\/ld\+json["'])[\s\S]*?<\/\1>/gi, '')
 
-        // replace host
-        const re = new RegExp(baseUrl, 'g')
-        pageData.html = pageData.html.replace(re, `https://${host}`)
+        // replace host (BASE_URL_REGEX is precompiled at module level)
+        pageData.html = pageData.html.replace(BASE_URL_REGEX, `https://${host}`)
 
 
         if (pageData.statusCode >= 500 || pageData.statusCode === 404) {
 
             if (!sentFromCache) {
-                Cache.set('ErrorFile'+cacheFileName, {statusCode: pageData.statusCode}, 360000) // 5 min
+                Cache.set('ErrorFile' + cacheFileName, {statusCode: pageData.statusCode}, 360000) // 5 min
 
                 res.writeHead(pageData.statusCode, headers)
                 if (pageData.statusCode < 500) {
@@ -228,7 +339,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
                 }
                 res.end()
             }
-            if(!cookies.auth) {
+            if (!cookies.auth) {
                 //console.log(`update cache for ${cacheFileName}`)
                 fs.writeFile(cacheFileName, pageData.html, (err) => {
                     if (err) {
@@ -247,7 +358,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
             // default index
             indexfile = path.join(BUILD_DIR, '/index.min.html')
         }
-        parseAndSendFile(req, res, {filename:indexfile, headers, statusCode, parsedUrl, host, remoteAddress, hostrule})
+        parseAndSendFile(req, res, {filename: indexfile, headers, statusCode, parsedUrl, host, remoteAddress, hostrule})
     }
 }
 
@@ -255,13 +366,27 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
 const sendFileFromTemplateDir = (req, res, urlPathname, headers, parsedUrl, host) => {
     //console.log(`load ${urlPathname} from template dir`)
 
+    const templateFile = safeJoin(STATIC_TEMPLATE_DIR, urlPathname)
+    if (!templateFile) {
+        sendError(res, 404)
+        return
+    }
+
     // fetch file details
-    fs.stat(STATIC_TEMPLATE_DIR + urlPathname, (err, stats) => {
+    fs.stat(templateFile, (err, stats) => {
         if (err) {
-            throw err
+            // never throw inside an async fs callback - it bypasses the
+            // request try/catch and leaves the response hanging forever
+            sendError(res, 404)
+            return
         }
 
-        fs.readFile(STATIC_TEMPLATE_DIR + urlPathname, 'utf8', function (err, data) {
+        fs.readFile(templateFile, 'utf8', (err, data) => {
+            if (err) {
+                sendError(res, 404)
+                return
+            }
+
             const ext = path.extname(urlPathname).split('.')[1]
             const mimeType = MimeType.detectByExtension(ext)
 
@@ -274,7 +399,9 @@ const sendFileFromTemplateDir = (req, res, urlPathname, headers, parsedUrl, host
             })
             const etag = createSimpleEtag({content})
             if (req.headers['if-none-match'] === etag) {
-                res.status(304).end()
+                // native http.ServerResponse - res.status() is Express-only
+                res.writeHead(304)
+                res.end()
                 return
             }
 
@@ -299,18 +426,18 @@ const hasHttpsWwwRedirect = ({parsedUrl, hostrule, host, req, res, remoteAddress
         // force www
         let newhost = host
         if (!newhost.startsWith('www.')
-            && (newhost.indexOf('.')===newhost.lastIndexOf('.')) // not for subdomains
+            && (newhost.indexOf('.') === newhost.lastIndexOf('.')) // not for subdomains
             && hostrule.forceWWW) {
             newhost = 'www.' + newhost
         }
 
-        if (!config.DEV_MODE && !req.isHttps  && !req.headers['x-forwarded-server'] &&
+        if (!config.DEV_MODE && !req.isHttps && !req.headers['x-forwarded-server'] &&
             process.env.LUNUC_FORCE_HTTPS === 'true' && !req.headers[TRACK_IP_HEADER]) {
 
             const agent = req.headers['user-agent']
 
             // don't force redirect for letsencrypt
-            if( agent && !isLetsEncryptAgent(agent) ) {
+            if (agent && !isLetsEncryptAgent(agent)) {
 
                 const {browser, version} = parseUserAgent(agent)
 
@@ -336,7 +463,7 @@ const hasHttpsWwwRedirect = ({parsedUrl, hostrule, host, req, res, remoteAddress
         if (newhost != host) {
             const agent = req.headers['user-agent']
 
-            if( !agent || !isLetsEncryptAgent(agent) ) {
+            if (!agent || !isLetsEncryptAgent(agent)) {
                 console.log(`${remoteAddress}: Redirect to ${newhost} / request url=${req.url}`)
                 res.writeHead(301, {'Location': (req.isHttps ? 'https' : 'http') + '://' + newhost + req.url})
                 res.end()
@@ -352,8 +479,11 @@ const hasHttpsWwwRedirect = ({parsedUrl, hostrule, host, req, res, remoteAddress
 // Initialize http api
 const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req, res) {
 
-    req.setTimeout(0)
-    req.socket.setTimeout(0)
+    // Generous timeout instead of 0 (disabled): protects against clients
+    // that start a request and never finish sending it. Long-running
+    // streaming responses reset the timer with every write.
+    req.setTimeout(REQUEST_TIMEOUT_MS)
+    req.socket.setTimeout(REQUEST_TIMEOUT_MS)
     req.on('aborted', () => {
         console.log('in createServer request aborted', req.url)
     })
@@ -362,8 +492,8 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
     })
 
     try {
-        const remoteAddress=clientAddress(req)
-        if(isTemporarilyBlocked({key:remoteAddress})) {
+        const remoteAddress = clientAddress(req)
+        if (isTemporarilyBlocked({key: remoteAddress})) {
 
             sendError(res, 429)
 
@@ -382,7 +512,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
         req.isHttps = req.socket.encrypted
 
-        if (!req.headers[TRACK_IP_HEADER] && parsedUrl.href!=='/graphql') {
+        if (!req.headers[TRACK_IP_HEADER] && parsedUrl.href !== '/graphql') {
             console.log(`${req.method} ${remoteAddress}: ${req.isHttps ? 'https' : 'http'}://${host}${parsedUrl.href} - ${req.headers['user-agent']}`)
         }
         // check with and without www
@@ -397,13 +527,22 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
         const allHostrules = getHostRules(true),
             hostrule = {...allHostrules.general, ...bestHostruleData.hostrule}
 
+        // Merge general headers into hostrule headers ONCE and EARLY, so both
+        // sendIndexFile and the static file paths below see the same merged
+        // headers. Previously this merge happened only in the static branch,
+        // which meant index requests missed the general headers.
+        hostrule.headers = {...allHostrules.general.headers, ...hostrule.headers}
+        if (!hostrule.headers.common) {
+            hostrule.headers.common = {}
+        }
+
         if (isRateLimited(req, hostrule)) {
             console.log(`rate limited for ${remoteAddress} ${req.headers['user-agent']}`)
             sendError(res, 429)
             return
         }
 
-        if( applyRequestRules(req,res,parsedUrl,remoteAddress,hostrule.requestRules)){
+        if (applyRequestRules(req, res, parsedUrl, remoteAddress, hostrule.requestRules)) {
             return
         }
 
@@ -455,23 +594,24 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
         } else if (urlPathname.startsWith('/graphql') || urlPathname.startsWith('/oauth/') ||
             API_PREFIXES.some(prefix => urlPathname.startsWith('/' + prefix + '/'))) {
             // there is also /graphql/upload
-           await proxyToApiServer(req, res, {host, path: parsedUrl.path})
+            await proxyToApiServer(req, res, {host, path: parsedUrl.path})
         } else {
 
             if (urlPathname.startsWith('/tokenlink/')) {
 
                 let token = urlPathname.substring(11)
                 token = token.substring(0, token.indexOf('/'))
-                verifyTokenAndResponse(req,res,token,parsedUrl)
+                verifyTokenAndResponse(req, res, token, parsedUrl)
 
             } else if (urlPathname.startsWith(BACKUP_URL + '/')) {
                 const context = contextByRequest(req)
                 if (context.id && context.role === 'administrator') {
                     // only allow download if valid jwt token is set
                     const backup_dir = path.join(ROOT_DIR, BACKUP_DIR)
-                    const filename = path.join(backup_dir, urlPathname.substring(BACKUP_URL.length))
+                    // traversal-safe: must stay inside the backup dir
+                    const filename = safeJoin(backup_dir, urlPathname.substring(BACKUP_URL.length))
 
-                    if (!await sendFileFromDir(req, res, {
+                    if (!filename || !await sendFileFromDir(req, res, {
                         filename: filename,
                         neverCompress: true, headers: {}, parsedUrl
                     })) {
@@ -497,7 +637,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                         res.write(`<a download href='${BACKUP_URL}/heapdump/${filename}'>${filename}</a>`)
                         res.end()
                     } else {
-                        sendError('cannot create dir', 500)
+                        sendError(res, 500, 'cannot create dir')
                     }
 
                 } else {
@@ -550,8 +690,6 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     }
                 }
 
-                // extend hostrule header with general headers
-                hostrule.headers = {...allHostrules.general.headers, ...hostrule.headers}
                 const headers = {...hostrule.headers.common, ...hostrule.headers[urlPathname]}
 
                 if (hostrule.fileMapping && hostrule.fileMapping[urlPathname]) {
@@ -560,7 +698,8 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     if (await sendFileFromDir(req, res, {filename: mappedFile, headers, parsedUrl})) {
                         return
                     }
-                } else if (urlPathname.length > 1 && fs.existsSync(STATIC_TEMPLATE_DIR + urlPathname)) {
+                } else if (urlPathname.length > 1 && templateFiles.has(urlPathname)) {
+                    // in-memory lookup instead of fs.existsSync on every request
                     sendFileFromTemplateDir(req, res, urlPathname, headers, parsedUrl, host)
                     return
                 }
@@ -568,8 +707,11 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 if (hostrule.webRoot) {
                     // if a webRoot is defined, only this path is checked for matching files
                     const indexFile = hostrule.indexFile || 'index.html'
-                    if (await sendFileFromDir(req, res, {
-                        filename: path.join(WEBROOT_ABSPATH, hostrule.webRoot, urlPathname !== '/' ? urlPathname : indexFile),
+                    const webRootBase = path.join(WEBROOT_ABSPATH, hostrule.webRoot)
+                    const webRootFile = safeJoin(webRootBase, urlPathname !== '/' ? urlPathname : indexFile)
+
+                    if (webRootFile && await sendFileFromDir(req, res, {
+                        filename: webRootFile,
                         headers
                     })) {
                         return
@@ -577,16 +719,48 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     sendError(res, 404)
                     return
                 } else if (urlPathname !== '/') {
-                    const pathsToCheck = [...hostrule.paths, STATIC_DIR, WEBROOT_ABSPATH, BUILD_DIR]
 
-                    for (const curPath of pathsToCheck) {
-                        if (await sendFileFromDir(req, res, {
-                            filename: path.join(curPath, urlPathname),
-                            headers,
-                            parsedUrl
-                        })) {
+                    // Path resolution cache: skip the sequential stat attempts
+                    // across all candidate dirs once we know where (or that
+                    // nowhere) a given url resolves. Keyed per host because
+                    // hostrule.paths differ between hosts.
+                    const cacheKey = host + ':' + urlPathname
+                    const cachedPath = pathCacheGet(cacheKey)
+
+                    if (cachedPath) {
+                        if (await sendFileFromDir(req, res, {filename: cachedPath, headers, parsedUrl})) {
                             return
                         }
+                        // file disappeared since caching - invalidate and fall
+                        // through to a fresh scan
+                        pathResolveCache.delete(cacheKey)
+                    }
+
+                    if (cachedPath !== false) {
+                        const pathsToCheck = [...hostrule.paths, STATIC_DIR, WEBROOT_ABSPATH, BUILD_DIR]
+
+                        let found = false
+                        for (const curPath of pathsToCheck) {
+                            // traversal-safe: candidate must stay inside curPath
+                            const candidate = safeJoin(curPath, urlPathname)
+                            if (!candidate) {
+                                continue
+                            }
+                            if (await sendFileFromDir(req, res, {
+                                filename: candidate,
+                                headers,
+                                parsedUrl
+                            })) {
+                                pathCacheSet(cacheKey, candidate)
+                                found = true
+                                break
+                            }
+                        }
+                        if (found) {
+                            return
+                        }
+                        // remember the miss so repeated 404s don't rescan all dirs
+                        pathCacheSet(cacheKey, false)
                     }
                 }
 
@@ -600,7 +774,14 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
                         if (data.screenshot && ensureDirectoryExistence(screenShotDir)) {
                             //{"screenshot":{"url":"https:/stackoverflow.com/questions/4374822/remove-all-special-characters-with-regexp","options":{"height":300}}}
-                            //console.log(decodeURI(urlPathname.substring(pos+5)))
+
+                            // Screenshots on demand spawn a headless browser and can
+                            // fetch arbitrary urls (SSRF) - require authentication.
+                            const context = contextByRequest(req)
+                            if (!context.id) {
+                                sendError(res, 403)
+                                return
+                            }
 
                             const filename = decodedStr.replace(/[^\w]/gi, '') + '.png'
 
@@ -608,9 +789,27 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
                             if (!fs.existsSync(absFilename)) {
                                 let url = data.screenshot.url
+
                                 if (url.indexOf('/') === 0) {
-                                    url = /*(req.isHttps ? 'https://' : 'http://') + hostRuleHost*/ 'http://127.0.0.1:' + PORT + url
+                                    // own relative path - resolve against this server
+                                    url = 'http://127.0.0.1:' + PORT + url
+                                } else {
+                                    // external url - block internal network targets (SSRF)
+                                    let parsedTarget
+                                    try {
+                                        parsedTarget = new URL(url)
+                                    } catch (e) {
+                                        sendError(res, 400)
+                                        return
+                                    }
+                                    if (!['http:', 'https:'].includes(parsedTarget.protocol) ||
+                                        isPrivateNetworkTarget(parsedTarget.hostname)) {
+                                        console.log(`screenshot target blocked: ${url} by ${remoteAddress}`)
+                                        sendError(res, 403)
+                                        return
+                                    }
                                 }
+
                                 const result = await doScreenCapture(url, absFilename, data.screenshot.options)
                                 if (result.statusCode !== 200) {
                                     if (result.statusCode === 302) {
@@ -624,7 +823,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
                             }
 
-                            await resolveUploadedFile(req, res,`${UPLOAD_URL}/screenshots/${filename}`, parsedUrl)
+                            await resolveUploadedFile(req, res, `${UPLOAD_URL}/screenshots/${filename}`, parsedUrl)
 
 
                         } else {
@@ -644,7 +843,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
                     const gatewayIp = await getGatewayIp()
 
-                    if(gatewayIp !== remoteAddress && remoteAddress !== '127.0.0.1' && remoteAddress !== '::1') {
+                    if (gatewayIp !== remoteAddress && remoteAddress !== '127.0.0.1' && remoteAddress !== '::1') {
                         // second more restrictiv check
                         if (isTemporarilyBlocked({
                                 key: 'index-' + remoteAddress,

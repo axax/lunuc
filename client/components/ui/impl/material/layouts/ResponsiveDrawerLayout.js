@@ -171,12 +171,12 @@ const ResponsiveDrawer = React.memo((props) => {
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen)
     }
-    const {onMenuChange, menuItems, children, headerLeft, headerRight, title, logo, toolbarStyle, headerStyle, extra} = props
+    const {onMenuChange, menuItems, children, headerLeft, headerRight, title, loading, logo, toolbarStyle, headerStyle, extra} = props
 
     const drawer = (
         <div key="drawer">
             <Toolbar sx={{ padding: '0.5rem !important'}}>
-                <img style={{maxHeight:'2.1rem', maxWidth:'calc(100% - 2rem)', height:'auto'}} src={logo || 'https://www.lunuc.com/lunuc-logo.svg'}/>
+                {!loading && <img style={{maxHeight:'2.1rem', maxWidth:'calc(100% - 2rem)', height:'auto'}} src={logo || 'https://www.lunuc.com/lunuc-logo.svg'}/>}
                 <div style={{marginLeft:'auto'}}>{headerLeft}</div>
             </Toolbar>
             <Divider/>

@@ -7,6 +7,15 @@ import http2 from 'http2'
 
 const TLS_HANDSHAKE_BYTE = 0x16 // Decimal 22 -> TLS record content type "handshake"
 
+// HTTP/2 flow control tuning.
+// Node's default initialWindowSize is 64KB which caps per-stream throughput
+// at roughly windowSize / RTT (e.g. ~1MB/s at 66ms RTT). Larger windows let
+// big static assets (JS bundles, images) stream without waiting for
+// WINDOW_UPDATE frames on every 64KB.
+const H2_STREAM_WINDOW_SIZE = 1024 * 1024 // 1MB per stream
+const H2_SESSION_WINDOW_SIZE = 2 * 1024 * 1024 // 2MB per connection
+const H2_MAX_SESSION_MEMORY = 32 // MB, default is 10 - give headroom for larger windows
+
 /**
  * Creates a single server instance that routes connections to either
  * a cleartext HTTP/1.1 server or a secure HTTP/2 server, based on whether
@@ -30,9 +39,35 @@ const createServer = (tlsOpts, handler) => {
     // allowHTTP1: true lets TLS clients that don't speak h2 fall back to
     // HTTP/1.1 over TLS instead of getting a connection error.
     const http2Server = http2.createSecureServer(
-        {allowHTTP1: true, ...tlsOpts},
+        {
+            allowHTTP1: true,
+            maxSessionMemory: H2_MAX_SESSION_MEMORY,
+            settings: {
+                initialWindowSize: H2_STREAM_WINDOW_SIZE
+            },
+            ...tlsOpts
+        },
         handler
     )
+
+    // Raise the connection-level flow control window as well
+    // (separate from the per-stream window configured above).
+    http2Server.on('session', session => {
+        try {
+            session.setLocalWindowSize(H2_SESSION_WINDOW_SIZE)
+        } catch (e) {
+            // session may already be closed/destroyed - safe to ignore
+        }
+    })
+
+    // TLS handshake failures (port scans, ancient clients, aborted handshakes)
+    // are normal noise on a public server. Destroy quietly instead of
+    // logging full stacks or letting them bubble up.
+    http2Server.on('tlsClientError', (err, tlsSocket) => {
+        if (tlsSocket && !tlsSocket.destroyed) {
+            tlsSocket.destroy()
+        }
+    })
 
     // Timeouts.
     // headersTimeout / requestTimeout are HTTP/1.1 (http.Server) properties only;
@@ -46,10 +81,18 @@ const createServer = (tlsOpts, handler) => {
 
     // 2. Create the main NET server for connection routing
     const unifiedServer = net.createServer(socket => {
+
+        // Disable Nagle's algorithm so small packets (TLS handshake records,
+        // HTTP/2 frames) are sent immediately instead of being buffered.
+        socket.setNoDelay(true)
+
         // Detection-phase handlers. These only guard the brief window before we
         // hand the socket off; afterwards the chosen server owns the socket.
         const onError = err => {
-            console.error('Unified Server Socket Error:', err.message)
+            // ECONNRESET from scans/dropped clients is expected noise
+            if (err.code !== 'ECONNRESET') {
+                console.error('Unified Server Socket Error:', err.message)
+            }
             socket.destroy()
         }
         const onTimeout = () => {
@@ -68,6 +111,7 @@ const createServer = (tlsOpts, handler) => {
             socket.pause()
             socket.setTimeout(0)
             socket.removeListener('error', onError)
+            socket.removeListener('timeout', onTimeout)
 
             // Defensive: the 'data' event normally carries >= 1 byte, but guard
             // against an empty buffer just in case.

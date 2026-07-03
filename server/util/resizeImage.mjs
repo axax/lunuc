@@ -7,13 +7,17 @@ import {parseOrElse} from "../../client/util/json.mjs";
 
 const DEFAULT_FORMAT = 'jpeg'
 
+// Deduplicates concurrent generation of the same variant:
+// two parallel requests for the same modfilename share one sharp run.
+const inFlightResizes = new Map()
 
 export const resizeImage = async (parsedUrl, req, filename) => {
     let mimeType, exists = false
+
     // resize image file
     if (parsedUrl &&
         (parsedUrl.query.width || parsedUrl.query.height || parsedUrl.query.format || parsedUrl.query.flip || parsedUrl.query.flop ||
-        parsedUrl.query.removebg)) {
+            parsedUrl.query.removebg)) {
 
         const width = parseInt(parsedUrl.query.width),
             height = parseInt(parsedUrl.query.height),
@@ -59,25 +63,48 @@ export const resizeImage = async (parsedUrl, req, filename) => {
                 if (ext === '.svg') {
                     // convert svg to png by default
                     format = 'png'
-                }else if(ext){
+                } else if (ext) {
                     format = ext.substring(1)
-                }else{
+                } else {
                     format = DEFAULT_FORMAT
                 }
             }
 
-            let modfilename = `${filename}@${width}x${height}-${quality}${fit ? '-' + fit : ''}${position ? '-' + position : ''}${format ? '-' + format : ''}${flip ? '-flip' : ''}${flop ? '-flop' : ''}${withoutEnlargement ? '-noenlarge' : ''}${bg ? '-' + bg : ''}${density?'-'+density:''}${removeBg?'-'+removeBg:''}`
+            const modfilename = `${filename}@${width}x${height}-${quality}${fit ? '-' + fit : ''}${position ? '-' + position : ''}${format ? '-' + format : ''}${flip ? '-flip' : ''}${flop ? '-flop' : ''}${withoutEnlargement ? '-noenlarge' : ''}${bg ? '-' + bg : ''}${density ? '-' + density : ''}${removeBg ? '-' + removeBg : ''}`
 
             mimeType = MimeType.detectByExtension(format)
             exists = true
 
-            if (!fs.existsSync(modfilename) || parsedUrl.query.force === 'true') {
-                console.log(`modify file ${filename} to ${modfilename}`)
-                try {
+            let modExists = false
+            try {
+                modExists = (await fs.promises.stat(modfilename)).isFile()
+            } catch (e) {
+                // does not exist yet
+            }
 
-                    if(ext==='.heic'){
+            if (!modExists || parsedUrl.query.force === 'true') {
+
+                // if another request is already generating this variant, wait for it
+                if (inFlightResizes.has(modfilename)) {
+                    const result = await inFlightResizes.get(modfilename)
+                    return result.success
+                        ? {filename: modfilename, exists, mimeType}
+                        : {filename, exists: false, mimeType: undefined}
+                }
+
+                const generatePromise = (async () => {
+                    console.log(`modify file ${filename} to ${modfilename}`)
+
+                    let sourceFile = filename
+
+                    if (ext === '.heic') {
                         const heicTarget = `${filename}@${quality}.jpg`
-                        if (!fs.existsSync(heicTarget)) {
+                        let heicExists = false
+                        try {
+                            heicExists = (await fs.promises.stat(heicTarget)).isFile()
+                        } catch (e) {}
+
+                        if (!heicExists) {
                             const response = await heicConvert({
                                 source: filename,
                                 target: heicTarget,
@@ -85,65 +112,90 @@ export const resizeImage = async (parsedUrl, req, filename) => {
                             })
                             if (response.error) {
                                 console.warn(response)
-                                return {filename, exists, mimeType}
+                                return {success: false}
                             }
                         }
-                        filename = heicTarget
+                        sourceFile = heicTarget
                     }
+
                     const sharpOptions = {}
                     if (ext === '.gif') {
                         // might be animated
                         sharpOptions.animated = true
                     }
-                    if(!isNaN(density)){
+                    if (!isNaN(density)) {
                         sharpOptions.density = parseInt(density)
                     }
 
-                    let pipeline = await sharp(filename, sharpOptions)
-                    pipeline = await removeBackgroundIfNeeded(removeBg, pipeline)
+                    // write to temp file first, then rename atomically so a
+                    // concurrent reader never sees a partially written file
+                    const tmpFilename = `${modfilename}.tmp${process.pid}`
 
+                    try {
+                        let pipeline = sharp(sourceFile, sharpOptions)
+                        pipeline = await removeBackgroundIfNeeded(removeBg, pipeline)
 
-                    let resizedFile = pipeline.resize(resizeOptions)/*.withMetadata()*/
+                        let resizedFile = pipeline.resize(resizeOptions)/*.withMetadata()*/
 
-                    if (flip) {
-                        resizedFile = await resizedFile.flip()
+                        if (flip) {
+                            resizedFile = resizedFile.flip()
+                        }
+                        if (flop) {
+                            resizedFile = resizedFile.flop()
+                        }
+
+                        if (format === 'webp') {
+                            await resizedFile.webp({
+                                quality,
+                                alphaQuality: quality,
+                                lossless: false,
+                                force: true
+                            }).toFile(tmpFilename)
+                        } else if (format === 'png') {
+                            await resizedFile.png({
+                                quality,
+                                force: true
+                            }).toFile(tmpFilename)
+                        } else if (format === 'jpg' || format === 'jpeg') {
+                            await resizedFile.jpeg({
+                                quality,
+                                force: true
+                            }).toFile(tmpFilename)
+                        } else {
+                            await resizedFile.jpeg({
+                                quality,
+                                chromaSubsampling: '4:2:0',
+                                force: false
+                            }).toFile(tmpFilename)
+                        }
+
+                        await fs.promises.rename(tmpFilename, modfilename)
+                        return {success: true}
+                    } catch (e) {
+                        console.error(e)
+                        // clean up temp file, never touch modfilename
+                        try {
+                            await fs.promises.unlink(tmpFilename)
+                        } catch (unlinkErr) {}
+                        return {success: false}
                     }
-                    if (flop) {
-                        resizedFile = await resizedFile.flop()
-                    }
+                })()
 
+                inFlightResizes.set(modfilename, generatePromise)
 
-                    if (format === 'webp') {
-                        await resizedFile.webp({
-                            quality,
-                            alphaQuality: quality,
-                            lossless: false,
-                            force: true
-                        }).toFile(modfilename)
-                    } else if (format === 'png') {
-                        await resizedFile.png({
-                            quality,
-                            force: true
-                        }).toFile(modfilename)
-                    } else if (format === 'jpg' || format === 'jpeg') {
-                        await resizedFile.jpeg({
-                            quality,
-                            force: true
-                        }).toFile(modfilename)
+                try {
+                    const result = await generatePromise
+                    if (result.success) {
+                        filename = modfilename
                     } else {
-                        await resizedFile.jpeg({
-                            quality,
-                            chromaSubsampling: '4:2:0',
-                            force: false
-                        }).toFile(modfilename)
+                        // fall back to original file with correct metadata
+                        exists = false
+                        mimeType = undefined
                     }
-                    filename = modfilename
-                } catch (e) {
-                    console.error(e)
-                    if(fs.existsSync(modfilename)) {
-                        fs.unlinkSync(modfilename)
-                    }
+                } finally {
+                    inFlightResizes.delete(modfilename)
                 }
+
             } else {
                 filename = modfilename
             }
@@ -151,7 +203,6 @@ export const resizeImage = async (parsedUrl, req, filename) => {
     }
     return {filename, exists, mimeType}
 }
-
 
 
 async function removeBackgroundIfNeeded(removeBg, pipeline) {
