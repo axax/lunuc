@@ -61,7 +61,8 @@ import styled from '@emotion/styled'
 import {
     CAPABILITY_BULK_EDIT,
     CAPABILITY_BULK_EDIT_SCRIPT,
-    CAPABILITY_MANAGE_COLLECTION
+    CAPABILITY_MANAGE_COLLECTION,
+    CAPABILITY_ADMIN_OPTIONS
 } from '../../util/capabilities.mjs'
 import SelectCollection from '../components/types/SelectCollection'
 import {parseOrElse} from '../util/json.mjs'
@@ -956,6 +957,7 @@ class TypesContainer extends React.Component {
                         justifyContent: "space-between",
                         alignItems: "flex-start",
                         mb:1,
+                        mt:1
                     }}
                 >
 
@@ -1044,10 +1046,12 @@ class TypesContainer extends React.Component {
     }
 
     searchHint() {
-        const {data} = this.state
-        if (data && data.meta) {
-            const meta = JSON.parse(data.meta)
-            return _t('TypesContainer.queryTime', meta) + (meta.debugInfo && meta.debugInfo.length > 0 ? ' - ' + meta.debugInfo.map(f=>f.message).join(' | '):'')
+        if(Util.hasCapability({userData: _app_.user}, CAPABILITY_ADMIN_OPTIONS)) {
+            const {data} = this.state
+            if (data && data.meta) {
+                const meta = JSON.parse(data.meta)
+                return _t('TypesContainer.queryTime', meta) + (meta.debugInfo && meta.debugInfo.length > 0 ? ' - ' + meta.debugInfo.map(f => f.message).join(' | ') : '')
+            }
         }
         return ' '
     }

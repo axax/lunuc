@@ -11,7 +11,7 @@ export const userGroupResolver = (db) => ({
     Query: {
         userGroups: async ({limit, page, offset, filter, sort}, req) => {
             Util.checkIfUserIsLoggedIn(req.context)
-            return await GenericResolver.entities(db, req, 'UserGroup', ['name'], {
+            return await GenericResolver.entities(db, req, 'UserGroup', ['name', 'meta'], {
                 limit,
                 page,
                 offset,
@@ -21,11 +21,11 @@ export const userGroupResolver = (db) => ({
         }
     },
     Mutation: {
-        createUserGroup: async ({name, createdBy}, req) => {
+        createUserGroup: async ({name, meta, createdBy}, req) => {
             await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_MANAGE_USER_GROUP)
-            return await GenericResolver.createEntity(db, req, 'UserGroup', {name, createdBy})
+            return await GenericResolver.createEntity(db, req, 'UserGroup', {name, meta, createdBy})
         },
-        updateUserGroup: async ({_id, name, createdBy}, {context}) => {
+        updateUserGroup: async ({_id, name, meta, createdBy}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_GROUP)
 
             if(createdBy){
@@ -36,11 +36,12 @@ export const userGroupResolver = (db) => ({
             return await GenericResolver.updateEnity(db, context, 'UserGroup', {
                 _id,
                 name,
+                meta,
                 createdBy: (createdBy ? new ObjectId(createdBy) : createdBy)
             })
 
 
-            return {_id, name}
+            return {_id, name, meta}
 
         },
         deleteUserGroup: async ({_id}, {context}) => {

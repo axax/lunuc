@@ -45,6 +45,7 @@ import {translateText} from '../util/translate.mjs'
 import {QUERY_KEY_VALUES_GLOBAL} from '../util/keyvalue'
 import {replacePlaceholders} from '../../util/placeholders.mjs'
 import {SimpleAutosuggest} from './ui/impl/material'
+import { CAPABILITY_MANAGE_TYPES} from '../../util/capabilities.mjs'
 
 const CodeEditor = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "codeeditor" */ './CodeEditor')}/>
 
@@ -652,9 +653,14 @@ class GenericForm extends React.Component {
             if (field.newLine) {
                 currentFormFields.push(<br key={'br' + fieldKey}/>)
             }
-            const uitype = field.uitype || (field.enum ? 'select' : 'text')
+            let uitype = field.uitype || (field.enum ? 'select' : 'text')
 
             if(field.dynamicSubFields){
+                // set uitype to wrapper to hide original field
+                if(!Util.hasCapability(_app_.user, CAPABILITY_MANAGE_TYPES)) {
+                    uitype = 'wrapper'
+                }
+
                 const keys = JSON.parse(replacePlaceholders(field.dynamicSubFields,{user:_app_.user}))
                 if(keys?.length>0) {
                     currentFormFields.push(<Query key="query" query={QUERY_KEY_VALUES_GLOBAL}

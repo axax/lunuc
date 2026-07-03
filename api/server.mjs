@@ -75,6 +75,8 @@ process.on('SIGINT', () => {
     console.log('Goodbye')
 })*/
 
+const TWO_HOURS_AND_FIVE_MINS = (2 * 60 + 5) * 60 * 1000; // 7.500.000 ms
+
 // holds the reference to the server
 export let server
 
@@ -274,11 +276,10 @@ export const start = (done) => {
                 }
             })
 
-            server.keepAliveTimeout = 11 * 60 * 1000
-            server.headersTimeout   = server.keepAliveTimeout + 5000
-            // request body may take longer than the 5 min Node default for large uploads
-            server.requestTimeout   = 12 * 60 * 1000                   // 0 disables it entirely
-
+            server.keepAliveTimeout = TWO_HOURS_AND_FIVE_MINS;
+            server.headersTimeout   = server.keepAliveTimeout + 5000;
+            server.requestTimeout   = TWO_HOURS_AND_FIVE_MINS;
+            server.timeout          = TWO_HOURS_AND_FIVE_MINS;
 
             // attach index reference to server
             server._db = db

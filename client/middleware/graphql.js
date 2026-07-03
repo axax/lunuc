@@ -399,7 +399,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
                 removeLoader()
 
                 const isTimeout = controller._timeout
-                const isAborted = !isTimeout && error.name === 'AbortError'
+                const isAborted = !isTimeout && (error.name === 'AbortError' || controller.signal.aborted)
                 const isOffline = typeof navigator !== 'undefined' && !navigator.onLine
 
                 // Bewusste Aborts (z.B. Unmount): nie retrien, still scheitern.

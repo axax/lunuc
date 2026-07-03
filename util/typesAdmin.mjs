@@ -1,6 +1,7 @@
 import React from 'react'
 import Hook from './hook.cjs'
 import {
+    CAPABILITY_ADMIN_OPTIONS,
     CAPABILITY_MANAGE_OTHER_USERS,
     CAPABILITY_MANAGE_SAME_GROUP,
     CAPABILITY_MANAGE_USER_GROUP,
@@ -407,6 +408,16 @@ Hook.on('Types', ({types}) => {
             {
                 name: 'name',
                 required: true
+            },
+            {
+                name: 'meta',
+                type: 'Object',
+                uitype: 'json',
+                tab: 'Meta',
+                alwaysLoad: false,
+                vagueSearchable: true,
+                hideColumnInTypes: true,
+                dynamicSubFields:'${user.setting?JSON.stringify(user.setting.map(s=>"DynamicUserGroupFields-"+s._id)):"[]"}'
             }
         ]
     }
@@ -432,19 +443,19 @@ Hook.on('Types', ({types}) => {
                 name: 'username',
                 fullWidth: true,
                 required: true,
-                tab: 'Allgemein'
+                tab: 'elements.generalTab'
             },
             {
                 name: 'email',
                 fullWidth: true,
                 required: true,
-                tab: 'Allgemein'
+                tab: 'elements.generalTab'
             },
             {
                 name: 'password',
                 fullWidth: false,
                 uitype: 'password',
-                tab: 'Allgemein',
+                tab: 'elements.generalTab',
                 hideColumnInTypes: true,
                 alwaysLoad:false,
                 vagueSearchable:false,
@@ -454,7 +465,7 @@ Hook.on('Types', ({types}) => {
                 name: 'requestNewPassword',
                 fullWidth: false,
                 type: 'Boolean',
-                tab: 'Allgemein',
+                tab: 'elements.generalTab',
                 hideColumnInTypesByDefault: true,
                 vagueSearchable:false
             },
