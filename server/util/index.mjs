@@ -19,12 +19,24 @@ export const doScreenCapture = async (url, filename, options, cookies) => {
     const page = await browser.newPage()
 
 
-    if( cookies && Object.keys(cookies).length>0) {
+    if (cookies && Object.keys(cookies).length > 0) {
         console.log(`doScreenCapture: Taking over the session can be dangerous. ${filename}`, Object.keys(cookies))
-        const cookiesToSet = Object.keys(cookies).map(k => ({domain: 'localhost', name: k, value: cookies[k]}))
+
+        const parsedUrl = new URL(url)
+        const domain = parsedUrl.hostname  // z.B. 'example.com' oder 'localhost'
+
+        const cookiesToSet = Object.keys(cookies).map(k => ({
+            domain,
+            name: k,
+            value: cookies[k],
+            path: '/',
+            // Optional aber empfohlen:
+            httpOnly: false,
+            secure: parsedUrl.protocol === 'https:',
+        }))
+
         await page.setCookie(...cookiesToSet)
     }
-
 
     try {
         await page.goto(url, {waitUntil: 'domcontentloaded'})
