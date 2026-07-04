@@ -3,7 +3,7 @@ import ApiUtil from '../../api/util/index.mjs'
 import {isTemporarilyBlocked} from './requestBlocker.mjs'
 
 
-export const doScreenCapture = async (url, filename, options) => {
+export const doScreenCapture = async (url, filename, options, cookies) => {
 
     if(isTemporarilyBlocked({requestTimeInMs: 2000, requestPerTime: 4,requestBlockForInMs:6000, key:'doScreenCapture'})){
         return {location: `/lunucapi/system/genimage?width=${options.width || 600}&height=${options.height || 600}&text=Server%20busy.%20Please%20try%20again%20later`, statusCode: 302}
@@ -17,6 +17,14 @@ export const doScreenCapture = async (url, filename, options) => {
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--no-zygote']
     })
     const page = await browser.newPage()
+
+
+    if( cookies && Object.keys(cookies).length>0) {
+        console.log(`doScreenCapture: Taking over the session can be dangerous. ${filename}`, Object.keys(cookies))
+        const cookiesToSet = Object.keys(cookies).map(k => ({domain: 'localhost', name: k, value: cookies[k]}))
+        await page.browser().setCookie(...cookiesToSet)
+    }
+
 
     try {
         await page.goto(url, {waitUntil: 'domcontentloaded'})

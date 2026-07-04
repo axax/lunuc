@@ -21,7 +21,7 @@ import {verifyTokenAndResponse} from './util/tokenLink.mjs'
 //import heapdump from 'heapdump'
 import {clientAddress} from '../util/host.mjs'
 import Cache from '../util/cache.mjs'
-import {decodeURIComponentSafe, doScreenCapture, regexRedirectUrl} from './util/index.mjs'
+import doScreenCapture, {decodeURIComponentSafe, regexRedirectUrl} from './util/index.mjs'
 import {createSimpleEtag} from './util/etag.mjs'
 import {getDynamicConfig} from '../util/config.mjs'
 import {
@@ -810,7 +810,8 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                                     }
                                 }
 
-                                const result = await doScreenCapture(url, absFilename, data.screenshot.options)
+                                const cookies = parseCookies(req)
+                                const result = await doScreenCapture(url, absFilename, data.screenshot.options, cookies)
                                 if (result.statusCode !== 200) {
                                     if (result.statusCode === 302) {
                                         res.writeHead(result.statusCode, {'Location': result.location})
