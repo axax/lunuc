@@ -44,16 +44,6 @@ const API_PORT = (process.env.API_PORT || process.env.LUNUC_API_PORT || 3000)
 // Without it a dead node would stall the client for the full TCP timeout (60s+).
 const REMOTE_FILE_TIMEOUT_MS = 5000
 
-// On-the-fly brotli: quality 5 is the sweet spot (default 11 can take
-// hundreds of ms of CPU for large bundles and delays TTFB on cold hits).
-// Pre-compress with quality 11 at build time if you want maximum ratio.
-const BROTLI_ONTHEFLY_QUALITY = 5
-
-// Only these extensions can possibly be handled by resizeImage / transcodeVideo.
-// Early-out for everything else (js, css, fonts, ...) saves work in the hot path.
-const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.heic', '.avif', '.tiff', '.bmp'])
-const VIDEO_EXTENSIONS = new Set(['.mp4', '.webm', '.mov', '.avi', '.mkv', '.m4v', '.mpeg', '.mpg', '.ogv'])
-
 const downloadUrl = (url, timeoutMs = REMOTE_FILE_TIMEOUT_MS) => {
     return new Promise((resolve) => {
         const request = http.get(url, {timeout: timeoutMs})
@@ -152,21 +142,18 @@ export const sendFileFromDir = async (req, res, {send404 = false, filename, head
 
         // Check if there is a modified image (only for image extensions)
         let modImage = {exists: false}
-        if (IMAGE_EXTENSIONS.has(ext)) {
-            modImage = await resizeImage(parsedUrl, req, filename)
-            if (modImage.exists) {
-                filename = modImage.filename
-            }
+        modImage = await resizeImage(parsedUrl, req, filename)
+        if (modImage.exists) {
+            filename = modImage.filename
         }
+
 
         // Check if there is a modified video (only for video extensions)
         let transcodeOptions = null
-        if (VIDEO_EXTENSIONS.has(ext)) {
-            transcodeOptions = transcodeVideoOptions(parsedUrl, filename)
-            if (transcodeOptions && transcodeOptions.exists) {
-                console.log(`stream from modified file ${transcodeOptions.filename}`)
-                filename = transcodeOptions.filename
-            }
+        transcodeOptions = transcodeVideoOptions(parsedUrl, filename)
+        if (transcodeOptions && transcodeOptions.exists) {
+            console.log(`stream from modified file ${transcodeOptions.filename}`)
+            filename = transcodeOptions.filename
         }
 
         // Reuse the initial stat unless filename was swapped to a variant
