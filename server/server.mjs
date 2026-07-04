@@ -21,7 +21,7 @@ import {verifyTokenAndResponse} from './util/tokenLink.mjs'
 //import heapdump from 'heapdump'
 import {clientAddress} from '../util/host.mjs'
 import Cache from '../util/cache.mjs'
-import doScreenCapture, {decodeURIComponentSafe, regexRedirectUrl} from './util/index.mjs'
+import {decodeURIComponentSafe, regexRedirectUrl, doScreenCapture} from './util/index.mjs'
 import {createSimpleEtag} from './util/etag.mjs'
 import {getDynamicConfig} from '../util/config.mjs'
 import {
