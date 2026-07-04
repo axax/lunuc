@@ -99,12 +99,12 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
 
 
         // always clear auth cookie
-        await page.browser().deleteCookie({name: 'auth', domain: 'localhost'})
+        await page.setCookie({domain:'localhost',name:'auth', value:''})
 
         if( cookies && Object.keys(cookies).length>0 && !isBot/*&& cookies.session && cookies.auth*/) {
             console.log(`Taking over the session can be dangerous. ${urlToFetch}`, Object.keys(cookies))
             const cookiesToSet = Object.keys(cookies).map(k=>({domain:'localhost',name:k, value:cookies[k]}))
-            await page.browser().setCookie(...cookiesToSet)
+            await page.setCookie(...cookiesToSet)
         }
 
         await page.setExtraHTTPHeaders({[HOSTRULE_HEADER]: host,[WEB_PARSER_HEADER]: 'true' })
