@@ -5,8 +5,8 @@ import {isTemporarilyBlocked} from './requestBlocker.mjs'
 
 export const doScreenCapture = async (url, filename, options, cookies) => {
 
-    if(isTemporarilyBlocked({requestTimeInMs: 2000, requestPerTime: 4,requestBlockForInMs:6000, key:'doScreenCapture'})){
-        return {location: `/lunucapi/system/genimage?width=${options.width || 600}&height=${options.height || 600}&text=Server%20busy.%20Please%20try%20again%20later`, statusCode: 302}
+    if(isTemporarilyBlocked({requestTimeInMs: 2000, requestPerTime: 6,requestBlockForInMs:30000, key:'doScreenCapture'})){
+        return {location: `/lunucapi/system/genimage?width=${options.width || 600}&height=${options.height || 600}&text=Server%20busy.%20Please%20try%20again%20later&statusCode=503`, statusCode: 302}
     }
 
     console.log(`take screenshot ${url}`)

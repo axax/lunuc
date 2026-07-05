@@ -52,20 +52,40 @@ function removeNullsMutating(obj) {
 
 const PORT = (process.env.PORT || process.env.API_PORT || 3000)
 
+// Max time to wait for appexit hooks on SIGINT before force-exiting.
+// Prevents a hanging or rejected hook from keeping the process alive forever.
+const SHUTDOWN_TIMEOUT_MS = 10000
+
+// zlib compression level for API responses. Level 4 is roughly twice as fast
+// as the default (6) at only ~2-5% larger output - a good trade-off for
+// per-request JSON compression in the hot path.
+const COMPRESSION_LEVEL = 4
+
 process.on('SIGINT', () => {
     console.log('Caught interrupt signal. Exit process')
 
-    if ('undefined' != typeof (Hook.hooks['appexit']) && Hook.hooks['appexit'].length) {
-        let c = Hook.hooks['appexit'].length
-        for (let i = 0; i < Hook.hooks['appexit'].length; ++i) {
-            const promise = Hook.hooks['appexit'][i].callback()
-            promise.then(() => {
-                c--
-                if (c === 0) {
-                    process.exit()
-                }
-            })
-        }
+    const hooks = Hook.hooks['appexit']
+    if (hooks && hooks.length) {
+
+        // Wrap every hook so a synchronous throw is converted into a settled
+        // promise, and use allSettled so a single rejected hook can't prevent
+        // the others from completing (the old counter approach hung forever
+        // if any hook rejected or never resolved).
+        const allHooks = Promise.allSettled(hooks.map(h => {
+            try {
+                return Promise.resolve(h.callback())
+            } catch (e) {
+                console.error('appexit hook threw synchronously', e)
+                return Promise.resolve()
+            }
+        }))
+
+        const timeout = new Promise(resolve => setTimeout(() => {
+            console.warn(`appexit hooks did not finish within ${SHUTDOWN_TIMEOUT_MS}ms - forcing exit`)
+            resolve()
+        }, SHUTDOWN_TIMEOUT_MS))
+
+        Promise.race([allHooks, timeout]).then(() => process.exit())
     } else {
         process.exit()
     }
@@ -93,6 +113,8 @@ export const start = (done) => {
             const app = express()
 
             app.use(compression({
+                level: COMPRESSION_LEVEL,
+                threshold: 1024, // don't bother compressing tiny responses
                 filter: (req, res) => {
                     if (res.noCompression) {
                         // don't compress responses with this request header
@@ -223,7 +245,13 @@ export const start = (done) => {
                 }).catch((error) => {
                     console.warn('graphql error', error)
                     res.writeHead(500, {'content-type': 'application/json'})
-                    res.end(`{"errors":[{"message":"Error in graphql. Probably there is something wrong with the schema or the resolver: ${error.message}"}]}`)
+                    // JSON.stringify instead of string interpolation - an error
+                    // message containing quotes would otherwise produce broken JSON
+                    res.end(JSON.stringify({
+                        errors: [{
+                            message: `Error in graphql. Probably there is something wrong with the schema or the resolver: ${error.message}`
+                        }]
+                    }))
 
                     const errorContext = {
                         message: error.message,
@@ -250,16 +278,35 @@ export const start = (done) => {
 
             /* fallback login for no js browsers */
             app.use('/graphql/login', async (req, res) => {
-                if(req.body) {
+                // Express 4 does not catch errors in async handlers - without
+                // the try/catch a throwing login resolver would surface as an
+                // unhandled rejection and the client would hang until timeout.
+                try {
+                    if (req.body && req.body.username) {
 
-                    const result = await resolvers.Query.login(req.body, req)
-                    if(!result.user){
-                        res.send(`invalid login`)
-                    }else {
-                        res.redirect(req.body.forward || '/')
+                        const result = await resolvers.Query.login(req.body, req)
+                        if (!result.user) {
+                            res.send(`invalid login`)
+                        } else {
+                            // Only allow relative same-origin redirects. An absolute
+                            // url in `forward` (https://evil.com) would be an open
+                            // redirect - a classic phishing building block. Also
+                            // reject protocol-relative urls (//evil.com).
+                            let forward = req.body.forward || '/'
+                            if (typeof forward !== 'string' || !forward.startsWith('/') ||
+                                forward.startsWith('//') || forward.startsWith('/\\')) {
+                                forward = '/'
+                            }
+                            res.redirect(forward)
+                        }
+                    } else {
+                        res.send(`Username and Password is missing`)
                     }
-                }else{
-                    res.send(`Username and Password is missing`)
+                } catch (e) {
+                    console.error('login fallback error', e)
+                    if (!res.headersSent) {
+                        res.status(500).send('login error')
+                    }
                 }
             })
 
