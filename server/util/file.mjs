@@ -1,8 +1,8 @@
+// server/util/file.mjs
 import fs from 'fs'
 import {resizeImage} from './resizeImage.mjs'
 import MimeType from '../../util/mime.mjs'
 import {createSimpleEtag} from './etag.mjs'
-import {isFileNotNewer} from '../../util/fileUtil.mjs'
 import zlib from 'zlib'
 import {extendHeaderWithRange, isMimeTypeStreamable} from './index.mjs'
 import {clientAddress} from '../../util/host.mjs'
@@ -43,6 +43,20 @@ const API_PORT = (process.env.API_PORT || process.env.LUNUC_API_PORT || 3000)
 // Timeout for fetching files from other server nodes.
 // Without it a dead node would stall the client for the full TCP timeout (60s+).
 const REMOTE_FILE_TIMEOUT_MS = 5000
+
+/**
+ * Non-blocking replacement for fs.statSync in try/catch: resolves with the
+ * stats or null if the file doesn't exist / isn't accessible. Runs on the
+ * libuv threadpool so the event loop keeps serving other requests while
+ * the disk is busy (relevant on cold cache / slow storage / high load).
+ */
+export const statSafe = async (file) => {
+    try {
+        return await fs.promises.stat(file)
+    } catch (e) {
+        return null
+    }
+}
 
 const downloadUrl = (url, timeoutMs = REMOTE_FILE_TIMEOUT_MS) => {
     return new Promise((resolve) => {
@@ -115,7 +129,7 @@ export const getFileFromOtherServer = async (urlPath, filename, baseResponse, re
     }
 
     // backup server
-    if(LUNUC_BACKUP_SERVER_URL) {
+    if (LUNUC_BACKUP_SERVER_URL) {
         const backupUrl = LUNUC_BACKUP_SERVER_URL + filename.substring(13)
         console.log('load from backup server - ' + backupUrl)
         const response = await downloadUrl(backupUrl)
@@ -131,26 +145,18 @@ export const getFileFromOtherServer = async (urlPath, filename, baseResponse, re
 
 export const sendFileFromDir = async (req, res, {send404 = false, filename, headers = {}, parsedUrl, neverCompress = false}) => {
 
-    let statMain
-    try {
-        statMain = fs.statSync(filename)
-    } catch (e) {}
+    const statMain = await statSafe(filename)
 
     if (statMain && statMain.isFile()) {
 
-        const ext = path.extname(filename).toLowerCase()
-
-        // Check if there is a modified image (only for image extensions)
-        let modImage = {exists: false}
-        modImage = await resizeImage(parsedUrl, req, filename)
+        // Check if there is a modified image
+        let modImage = await resizeImage(parsedUrl, req, filename)
         if (modImage.exists) {
             filename = modImage.filename
         }
 
-
-        // Check if there is a modified video (only for video extensions)
-        let transcodeOptions = null
-        transcodeOptions = transcodeVideoOptions(parsedUrl, filename)
+        // Check if there is a modified video
+        let transcodeOptions = transcodeVideoOptions(parsedUrl, filename)
         if (transcodeOptions && transcodeOptions.exists) {
             console.log(`stream from modified file ${transcodeOptions.filename}`)
             filename = transcodeOptions.filename
@@ -159,9 +165,8 @@ export const sendFileFromDir = async (req, res, {send404 = false, filename, head
         // Reuse the initial stat unless filename was swapped to a variant
         let stat
         if (modImage.exists || (transcodeOptions && transcodeOptions.exists)) {
-            try {
-                stat = fs.statSync(filename)
-            } catch (e) {
+            stat = await statSafe(filename)
+            if (!stat) {
                 sendError(res, 404)
                 return true
             }
@@ -195,7 +200,7 @@ export const sendFileFromDir = async (req, res, {send404 = false, filename, head
         if (transcodeOptions && !transcodeOptions.exists) {
             await transcodeAndStreamVideo({options: transcodeOptions, headers: headersExtended, req, res, filename})
         } else {
-            sendFile(req, res, {headers: headersExtended, filename, fileStat: stat, neverCompress, statusCode: 200})
+            await sendFile(req, res, {headers: headersExtended, filename, fileStat: stat, neverCompress, statusCode: 200})
         }
         return true
     } else if (send404) {
@@ -223,19 +228,36 @@ const brotliOptions = (quality, size) => {
     return {params}
 }
 
-export const sendFile = (req, res, {headers, filename, fileStat, neverCompress = false, statusCode = 200}) => {
+export const sendFile = async (req, res, {headers, filename, fileStat, neverCompress = false, statusCode = 200}) => {
     let acceptEncoding = req.headers['accept-encoding'] || ''
 
     if (!neverCompress && !MimeType.inCompressible(headers['Content-Type'])) {
         // TODO make it configurable
         neverCompress = true
     }
-    let statsMainFile
     try {
-        statsMainFile = fileStat || fs.statSync(filename)
+        const statsMainFile = fileStat || await statSafe(filename)
+        if (!statsMainFile) {
+            console.error('sendFile: file not found ' + filename)
+            sendError(res, 404)
+            return
+        }
 
         if (!headers['Last-Modified']) {
             headers['Last-Modified'] = statsMainFile.mtime.toUTCString()
+        }
+
+        /**
+         * returns the stats of the compressed sibling if it exists and is at
+         * least as new as the main file (i.e. the cache is still valid),
+         * otherwise null. One stat call instead of two, non-blocking.
+         */
+        const statCompressedIfValid = async (compressedFile) => {
+            const s = await statSafe(compressedFile)
+            if (s && s.mtime >= statsMainFile.mtime) {
+                return s
+            }
+            return null
         }
 
         /**
@@ -297,11 +319,10 @@ export const sendFile = (req, res, {headers, filename, fileStat, neverCompress =
 
         if (!neverCompress && acceptEncoding.match(/\bbr\b/)) {
 
-            if (isFileNotNewer(filename + '.br', statsMainFile)) {
+            const brStats = await statCompressedIfValid(filename + '.br')
+            if (brStats) {
                 // pre-compressed br version is available - serve it directly
-                const statsFile = fs.statSync(filename + '.br')
-
-                res.writeHead(statusCode, {...headers, 'Content-Length': statsFile.size, 'Content-Encoding': 'br'})
+                res.writeHead(statusCode, {...headers, 'Content-Length': brStats.size, 'Content-Encoding': 'br'})
                 const fileStream = fs.createReadStream(filename + '.br')
                 fileStream.on('error', (err) => console.error('sendFile: Stream error:', err))
                 fileStream.pipe(res)
@@ -311,10 +332,10 @@ export const sendFile = (req, res, {headers, filename, fileStat, neverCompress =
 
         } else if (!neverCompress && acceptEncoding.match(/\bgzip\b/)) {
 
-            if (isFileNotNewer(filename + '.gz', statsMainFile)) {
+            const gzStats = await statCompressedIfValid(filename + '.gz')
+            if (gzStats) {
                 // pre-compressed gz version is available - serve it directly
-                const statsFile = fs.statSync(filename + '.gz')
-                res.writeHead(statusCode, {...headers, 'Content-Length': statsFile.size, 'Content-Encoding': 'gzip'})
+                res.writeHead(statusCode, {...headers, 'Content-Length': gzStats.size, 'Content-Encoding': 'gzip'})
                 const fileStream = fs.createReadStream(filename + '.gz')
                 fileStream.on('error', (err) => console.error('sendFile: Stream error:', err))
                 fileStream.pipe(res)
@@ -380,14 +401,25 @@ const PRELOAD_DATA_PLACEHOLDER = '<%=preloadData%>'
 const APP_DATA_PLACEHOLDER = '<%=appData%>'
 const HEAD_DATA_PLACEHOLDER = '<%=appHead%>'
 const PAGE_TITLE_PLACEHOLDER = '<%=pageTitle%>'
-export const parseAndSendFile = (req, res, {filename, headers, statusCode, parsedUrl, remoteAddress, host, hostrule}) => {
+export const parseAndSendFile = async (req, res, {filename, headers, statusCode, parsedUrl, remoteAddress, host, hostrule}) => {
 
 
     let data = Cache.get('IndexFile' + filename)
-    if (!data || isFileNotNewer(filename, data)) {
+
+    // reload the template when there is no cache entry yet or the file on
+    // disk has been modified after the cache entry was created
+    let needsReload = !data
+    if (data) {
+        const currentStat = await statSafe(filename)
+        if (currentStat && currentStat.mtime.getTime() > data.mtime.getTime()) {
+            needsReload = true
+        }
+    }
+
+    if (needsReload) {
         data = {mtime: new Date()}
         try {
-            data.content = fs.readFileSync(filename, 'utf8')
+            data.content = await fs.promises.readFile(filename, 'utf8')
         } catch (err) {
             console.error(`parseAndSendFile: ${filename} does not exist`, err)
             sendError(res, 404)
@@ -563,7 +595,7 @@ export const resolveUploadedFile = async (req, res, uri, parsedUrl) => {
 
     let filename = baseFilename
 
-    if (!fs.existsSync(filename)) {
+    if (!(await statSafe(filename))) {
         // check for private upload
         let context
         if (USE_COOKIES) {
@@ -589,7 +621,7 @@ export const resolveUploadedFile = async (req, res, uri, parsedUrl) => {
     }
 
 
-    if (!fs.existsSync(filename) && (!parsedUrl || parsedUrl.query.remoteserver !== 'false')) {
+    if (!(await statSafe(filename)) && (!parsedUrl || parsedUrl.query.remoteserver !== 'false')) {
         if (await getFileFromOtherServer(modUri, baseFilename, res, req)) {
             return
         }

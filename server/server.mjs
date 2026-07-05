@@ -1,3 +1,4 @@
+// server/index.mjs
 import httpx from './httpx.mjs'
 import http from 'http'
 import url from 'url'
@@ -29,7 +30,7 @@ import {
     parseAndSendFile,
     sendError,
     sendFile,
-    sendFileFromDir
+    sendFileFromDir, statSafe
 } from './util/file.mjs'
 import {actAsReverseProxy, isUrlValidForPorxing} from './util/reverseProxy.mjs'
 import Util from '../client/util/index.mjs'
@@ -85,6 +86,9 @@ const options = {
     }
 }
 
+// Startup code: sync fs calls are intentional here - the config must be
+// fully loaded before the server starts listening, and nothing else is
+// running yet that could be blocked.
 if (fs.existsSync(path.join(DEFAULT_CERT_DIR, './chain.pem'))) {
     // Certificate authority
     options.ca = fs.readFileSync(path.join(DEFAULT_CERT_DIR, './chain.pem'))
@@ -145,10 +149,10 @@ const isPrivateNetworkTarget = (hostname) => {
 // in-memory lookup instead of a blocking syscall on every request.
 let templateFiles = new Set()
 
-const scanTemplateDir = () => {
+const scanTemplateDir = async () => {
     const files = new Set()
     try {
-        const entries = fs.readdirSync(STATIC_TEMPLATE_DIR, {recursive: true, withFileTypes: true})
+        const entries = await fs.promises.readdir(STATIC_TEMPLATE_DIR, {recursive: true, withFileTypes: true})
         for (const entry of entries) {
             if (entry.isFile()) {
                 // parentPath is the modern name, path the older one (Node < 20.12)
@@ -164,7 +168,8 @@ const scanTemplateDir = () => {
     templateFiles = files
 }
 
-scanTemplateDir()
+// top-level await is fine in ESM - the index must be complete before serving
+await scanTemplateDir()
 try {
     fs.watch(STATIC_TEMPLATE_DIR, {recursive: true}, () => {
         // debounce bursts of change events
@@ -284,21 +289,21 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
         let sentFromCache = false
         if (!cookies.auth && ensureDirectoryExistence(cacheFileDir)) {
 
+            // one async stat replaces the previous existsSync + statSync pair -
+            // non-blocking and no TOCTOU gap between the two calls
+            const cacheStats = await statSafe(cacheFileName)
 
-            let isFile = fs.existsSync(cacheFileName)
-
-            if (isFile) {
+            if (cacheStats && cacheStats.isFile()) {
 
                 //from cache
                 console.log(`send from cache ${cacheFileName}`)
 
-                sendFile(req, res, {headers, filename: cacheFileName, statusCode: 200})
+                await sendFile(req, res, {headers, filename: cacheFileName, fileStat: cacheStats, statusCode: 200})
                 sentFromCache = true
 
                 // only update cache if file is old enough
-                const statsFile = fs.statSync(cacheFileName)
-                const now = new Date().getTime(),
-                    modeTime = new Date(statsFile.mtime).getTime() + CACHED_FILES_VALIDATION_TIME
+                const now = Date.now(),
+                    modeTime = cacheStats.mtime.getTime() + CACHED_FILES_VALIDATION_TIME
 
                 if (modeTime > now) {
                     await doTrackingEvent(req, {event: 'visit', host})
@@ -306,7 +311,6 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
                     return
                 }
             }
-            // return isFile
         }
 
         const pageData = await parseWebsite(urlToFetch, {host, agent, referer: req.headers.referer, isBot, remoteAddress, cookies})
@@ -358,7 +362,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
             // default index
             indexfile = path.join(BUILD_DIR, '/index.min.html')
         }
-        parseAndSendFile(req, res, {filename: indexfile, headers, statusCode, parsedUrl, host, remoteAddress, hostrule})
+        await parseAndSendFile(req, res, {filename: indexfile, headers, statusCode, parsedUrl, host, remoteAddress, hostrule})
     }
 }
 
@@ -372,7 +376,8 @@ const sendFileFromTemplateDir = (req, res, urlPathname, headers, parsedUrl, host
         return
     }
 
-    // fetch file details
+    // callback-based fs is already non-blocking - equivalent to fs.promises,
+    // just a different notation
     fs.stat(templateFile, (err, stats) => {
         if (err) {
             // never throw inside an async fs callback - it bypasses the
@@ -787,7 +792,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
                             const absFilename = path.join(screenShotDir, filename)
 
-                            if (!fs.existsSync(absFilename)) {
+                            if (!(await statSafe(absFilename))) {
                                 let url = data.screenshot.url
 
                                 if (url.indexOf('/') === 0) {
