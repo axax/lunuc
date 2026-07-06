@@ -9,6 +9,18 @@
       },
       "name": "UserTracking",
       "searchOnKeyDown": false,
+      "indexes": [
+        {
+          "fields": {
+            "geodata": 1
+          },
+          "options": {
+            "partialFilterExpression": {
+              "geodata": null
+            }
+          }
+        }
+      ],
       "fields": [
         {
           "name": "ip",
