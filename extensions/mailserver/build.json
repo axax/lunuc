@@ -220,6 +220,14 @@
                 "mailAccountFolder": 1,
                 "uid": 1
               }
+            },
+            {
+              "unique": false,
+              "fields": {
+                "mailAccountFolder": 1,
+                "uid": 1,
+                "modseq": 1
+              }
             }
           ]
         },
