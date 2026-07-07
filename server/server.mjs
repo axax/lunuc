@@ -780,14 +780,6 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                         if (data.screenshot && ensureDirectoryExistence(screenShotDir)) {
                             //{"screenshot":{"url":"https:/stackoverflow.com/questions/4374822/remove-all-special-characters-with-regexp","options":{"height":300}}}
 
-                            // Screenshots on demand spawn a headless browser and can
-                            // fetch arbitrary urls (SSRF) - require authentication.
-                            const context = contextByRequest(req)
-                            if (!context.id) {
-                                sendError(res, 403)
-                                return
-                            }
-
                             const filename = decodedStr.replace(/[^\w]/gi, '') + '.png'
 
                             const absFilename = path.join(screenShotDir, filename)
