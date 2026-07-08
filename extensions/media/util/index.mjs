@@ -164,3 +164,45 @@ export const downloadFile = async (url, fileName)=>{
         }
     })
 }
+
+export async function removeMediaVariants(db, {ids,saveMode}) {
+    const idsAll = await db.collection('Media').distinct("_id", {})
+
+    const idMap = idsAll.reduce((map, obj) => {
+        map[obj.toString()] = true
+        return map
+    }, {})
+
+    const {UPLOAD_DIR} = config
+    const ABS_UPLOAD_DIR = path.join(path.resolve(), UPLOAD_DIR)
+    const uploadPath = path.join(ABS_UPLOAD_DIR, UPLOAD_DIR)
+
+    const idsRemoved = []
+    if (fs.existsSync(uploadPath)) {
+        fs.readdirSync(uploadPath).forEach(function (file, index) {
+            const filePath = uploadPath + "/" + file
+            const stat = fs.lstatSync(filePath)
+            if (!stat.isDirectory() && (!saveMode || file.indexOf('@')>0)) {
+
+                if (ids) {
+                    if (!ids.find(id => file.indexOf(id) >= 0)) {
+                        return
+                    }
+                }
+
+                let id
+                if (file.indexOf('private') === 0) {
+                    id = file.substring(7)
+                } else {
+                    id = file
+                }
+                if (!idMap[id]) {
+                    console.log('delete file ' + filePath)
+                    fs.unlinkSync(filePath)
+                    idsRemoved.push(id)
+                }
+            }
+        })
+    }
+    return idsRemoved
+}

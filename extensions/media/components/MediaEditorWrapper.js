@@ -189,12 +189,15 @@ export const MediaEditorWrapper = ({children, dataToEdit, meta}) => {
                                        onSuccess={r => {
                                            if (meta.TypeContainer) {
                                                setTimeout(() => {
-                                                   meta.TypeContainer.setState({
+                                                   /*meta.TypeContainer.setState({
                                                        createEditDialog: false,
                                                        createEditDialogOption: null
                                                    })
 
-                                                   meta.TypeContainer.getData(meta, false)
+                                                   meta.TypeContainer.getData(meta, false)*/
+
+                                                   location.reload()
+
                                                }, 0)
 
                                            }

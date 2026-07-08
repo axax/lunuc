@@ -119,7 +119,7 @@ export const handleUpload = db => async (req, res) => {
                 try {
                     if (Hook.hooks['FileUpload'] && Hook.hooks['FileUpload'].length) {
                         for (let i = 0; i < Hook.hooks['FileUpload'].length; ++i) {
-                            await Hook.hooks['FileUpload'][i].callback({db, context, file, response, data})
+                            await Hook.hooks['FileUpload'][i].callback({db, req, context, file, response, data})
                         }
                     }
                 } catch (e) {

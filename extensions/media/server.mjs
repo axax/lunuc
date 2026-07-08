@@ -10,9 +10,9 @@ import config from '../../gensrc/config.mjs'
 import React from 'react'
 import {ObjectId} from 'mongodb'
 import Util from '../../api/util/index.mjs'
-import {CAPABILITY_RUN_COMMAND} from '../../util/capabilities.mjs'
+import { CAPABILITY_RUN_COMMAND} from '../../util/capabilities.mjs'
 import {uploadImageToStorage}  from './googleupload.mjs'
-import {createMediaEntry} from './util/index.mjs'
+import {createMediaEntry, removeMediaVariants} from './util/index.mjs'
 import { fileURLToPath } from 'url'
 import {_t, registerTrs} from '../../util/i18nServer.mjs'
 
@@ -22,6 +22,7 @@ registerTrs(translations, 'MediaTranslations')
 import {
     CAPABILITY_MEDIA_REFERENCES
 } from './constants/index.mjs'
+import GenericResolver from "../../api/resolver/generic/genericResolver.mjs";
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const {UPLOAD_DIR, UPLOAD_URL} = config
@@ -40,7 +41,7 @@ Hook.on('schema', ({schemas}) => {
 // Hook to add or modify user roles
 Hook.on('createUserRoles', ({userRoles}) => {
     userRoles.forEach(userRole => {
-        if (['administrator', 'editor'].indexOf(userRole.name) >= 0) {
+        if (['administrator', 'editor', 'author'].indexOf(userRole.name) >= 0) {
             console.log(`Add capabilities "${CAPABILITY_MEDIA_REFERENCES}" for user role "${userRole.name}"`)
             userRole.capabilities.push(CAPABILITY_MEDIA_REFERENCES)
         }
@@ -112,7 +113,21 @@ const addFilePrefix = (result) => {
 })*/
 
 // Hook when db is ready
-Hook.on('FileUpload', async ({db, context, file, data, response}) => {
+Hook.on('FileUpload', async ({db, req, context, file, data, response}) => {
+    let replaceMode = false
+
+    if(data._id){
+        if( !ObjectId.isValid(data._id)) {
+            throw new Error('Invalid _id')
+        }
+        const medias = await GenericResolver.entities(db, req, 'Media', ['_id'], {limit:1, filter:`_id=${data._id}`})
+        if(medias.results.length===0){
+            throw new Error('Media not found')
+        }else{
+            replaceMode = true
+        }
+    }
+
 
     const _id = data._id ? new ObjectId(data._id): new ObjectId()
 
@@ -166,7 +181,10 @@ Hook.on('FileUpload', async ({db, context, file, data, response}) => {
         fs.copyFile(file.filepath, path.join(upload_dir, finalName), async (err) => {
             if (err) throw err
             if( data.createMediaEntry !== false) {
-                createMediaEntry({db, _id, file, data, context})
+                await createMediaEntry({db, _id, file, data, context})
+            }
+            if(replaceMode) {
+                await removeMediaVariants(db, {ids:[data.id],saveMode:true})
             }
         })
     }else{

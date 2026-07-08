@@ -7,48 +7,11 @@ import { fileURLToPath } from 'url'
 import {ObjectId} from 'mongodb'
 import Cache from '../../../util/cache.mjs'
 import {sendMail} from '../../../api/util/mail.mjs'
+import {removeMediaVariants} from '../util/index.mjs'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const {UPLOAD_DIR} = config
 
-
-async function removeMediaVariants(db, {ids,saveMode}) {
-    const idsAll = await db.collection('Media').distinct("_id", {})
-
-    const idMap = idsAll.reduce((map, obj) => {
-        map[obj.toString()] = true
-        return map
-    }, {})
-    const uploadPath = path.join(__dirname, '../../../' + UPLOAD_DIR)
-    const idsRemoved = []
-    if (fs.existsSync(uploadPath)) {
-        fs.readdirSync(uploadPath).forEach(function (file, index) {
-            const filePath = uploadPath + "/" + file
-            const stat = fs.lstatSync(filePath)
-            if (!stat.isDirectory() && (!saveMode || file.indexOf('@')>0)) {
-
-                if (ids) {
-                    if (!ids.find(id => file.indexOf(id) >= 0)) {
-                        return
-                    }
-                }
-
-                let id
-                if (file.indexOf('private') === 0) {
-                    id = file.substring(7)
-                } else {
-                    id = file
-                }
-                if (!idMap[id]) {
-                    console.log('delete file ' + filePath)
-                    fs.unlinkSync(filePath)
-                    idsRemoved.push(id)
-                }
-            }
-        })
-    }
-    return idsRemoved
-}
 
 
 const REF_MAP_CACHE_KEY = 'allCollectionRefMap'
