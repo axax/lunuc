@@ -184,7 +184,7 @@ export const sendFileFromDir = async (req, res, {
         // Quote the etag once and reuse it everywhere. The browser echoes the
         // etag back exactly as sent (including quotes) in the If-None-Match header,
         // so the comparison must be done against the quoted value.
-        const etag = `"${createSimpleEtag({content: filename, stat})}"`
+        const etag = `"${createSimpleEtag({content: filename, stats: stat})}"`
 
         if (req.headers['if-none-match'] === etag) {
             // native http.ServerResponse - res.status() is Express-only.
