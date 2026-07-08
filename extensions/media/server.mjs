@@ -184,7 +184,7 @@ Hook.on('FileUpload', async ({db, req, context, file, data, response}) => {
                 await createMediaEntry({db, _id, file, data, context})
             }
             if(replaceMode) {
-                await removeMediaVariants(db, {ids:[data.id],saveMode:true})
+                await removeMediaVariants(db, {ids:[data._id],saveMode:true})
             }
         })
     }else{
