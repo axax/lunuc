@@ -143,7 +143,14 @@ export const getFileFromOtherServer = async (urlPath, filename, baseResponse, re
 }
 
 
-export const sendFileFromDir = async (req, res, {send404 = false, filename, headers = {}, parsedUrl, neverCompress = false}) => {
+export const sendFileFromDir = async (req, res, {
+    send404 = false,
+    filename,
+    headers = {},
+    parsedUrl,
+    neverCompress = false,
+    cacheControl = 'public, max-age=31536000' /* default: long cache for immutable assets */
+}) => {
 
     const statMain = await statSafe(filename)
 
@@ -174,10 +181,19 @@ export const sendFileFromDir = async (req, res, {send404 = false, filename, head
             stat = statMain
         }
 
-        const etag = createSimpleEtag({content: filename, stat})
+        // Quote the etag once and reuse it everywhere. The browser echoes the
+        // etag back exactly as sent (including quotes) in the If-None-Match header,
+        // so the comparison must be done against the quoted value.
+        const etag = `"${createSimpleEtag({content: filename, stat})}"`
+
         if (req.headers['if-none-match'] === etag) {
-            // native http.ServerResponse - res.status() is Express-only
-            res.writeHead(304)
+            // native http.ServerResponse - res.status() is Express-only.
+            // Re-send validators so the cached entry stays fresh.
+            res.writeHead(304, {
+                'ETag': etag,
+                'Cache-Control': cacheControl,
+                'Last-Modified': stat.mtime.toUTCString()
+            })
             res.end()
             return true
         }
@@ -185,10 +201,10 @@ export const sendFileFromDir = async (req, res, {send404 = false, filename, head
         const headersExtended = {
             'Vary': 'Accept-Encoding',
             'Last-Modified': stat.mtime.toUTCString(),
-            'Cache-Control': 'public, max-age=31536000', /* 604800 (a week) */
+            'Cache-Control': cacheControl,
             'Content-Length': stat.size,
             'Content-Type': parsedUrl ? MimeType.takeOrDetect(modImage.mimeType, parsedUrl) : MimeType.detectByFileName(filename),
-            'ETag': `"${etag}"`,
+            'ETag': etag,
             ...headers
         }
 
@@ -627,7 +643,7 @@ export const resolveUploadedFile = async (req, res, uri, parsedUrl) => {
         }
     }
 
-    if (await sendFileFromDir(req, res, {filename, parsedUrl})) {
+    if (await sendFileFromDir(req, res, {filename, parsedUrl, cacheControl: 'public, max-age=60, must-revalidate'})) {
         // track file access
         Hook.call('UploadedFileAccess', {name: urlWithoutUploadDir, filename})
     } else {
