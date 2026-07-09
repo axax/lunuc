@@ -89,13 +89,6 @@
                 "definition": 1,
                 "_id": 1
               }
-            },
-            {
-              "unique": true,
-              "fields": {
-                "definition": 1,
-                "_id": -1
-              }
             }
           ]
         },

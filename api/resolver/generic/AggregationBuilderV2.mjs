@@ -562,7 +562,8 @@ export default class AggregationBuilderV2 {
                 // Pre-limit the dataset before the facet split
                 dataQuery.push({ $sort: sort }, { $skip: offset }, { $limit: this.options.limitCount })
                 if (!lookupFilters) {
-                    dataFacetQuery.push({ $skip: 0 }, { $limit: limit })
+                    // $skip: 0 was a no-op here, only $limit is needed
+                    dataFacetQuery.push({ $limit: limit })
                 }
             } else {
                 dataFacetQuery.push({ $sort: facetSort })
@@ -643,7 +644,11 @@ export default class AggregationBuilderV2 {
             dataFacetQuery.push({ $project: projectGroup })
         }
 
-        const countQuery = [...dataQuery, { $count: 'count' }]
+        // $sort never affects the count result, even with $skip/$limit present
+        // (the number of documents passing skip/limit is order-independent).
+        // Stripping it avoids an expensive blocking sort in the count pipeline.
+        const countQuery = dataQuery.filter(stage => !stage.$sort)
+        countQuery.push({ $count: 'count' })
 
         // Inject optional stages before $project
         if (this.options.beforeProject) {
@@ -654,8 +659,16 @@ export default class AggregationBuilderV2 {
             }
         }
 
-        // Final sort within the facet result
-        dataFacetQuery.push({ $sort: facetSort })
+        // Final sort within the facet result.
+        // Only required when a preceding stage may have changed the document order:
+        // $group does NOT preserve input order, while $match/$project/$skip/$limit/
+        // $lookup do. Injected beforeProject stages are treated as potentially
+        // order-changing to stay safe. Without a $group the order established by the
+        // earlier $sort (in dataQuery or dataFacetQuery) is still intact, so a
+        // re-sort here would be a pure no-op with cost.
+        if (needsGroupStage || this.options.beforeProject) {
+            dataFacetQuery.push({ $sort: facetSort })
+        }
 
         // Apply projection if requested or if document size measurement is needed
         if (projectResult || returnDocumentSize) {

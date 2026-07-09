@@ -5,6 +5,7 @@ import url from 'url'
 import path from 'path'
 import net from 'net'
 import fs from 'fs'
+import crypto from 'crypto'
 import '../gensrc/extensions-root-server.mjs'
 import MimeType from '../util/mime.mjs'
 import {getHostFromHeaders} from '../util/host.mjs'
@@ -210,6 +211,46 @@ const pathCacheSet = (key, value) => {
 }
 
 
+/* ------------------------------------------------------------------ */
+/* SSR cache: render deduplication + atomic writes                      */
+/* ------------------------------------------------------------------ */
+
+// In-flight render deduplication: prevents a cache stampede when multiple
+// requests hit the same expired/missing cache entry simultaneously. All
+// concurrent requests for the same url share a single parseWebsite call.
+const pendingRenders = new Map()
+
+const renderOnce = (cacheKey, renderFn) => {
+    if (pendingRenders.has(cacheKey)) {
+        // same url is already being rendered -> reuse that promise
+        return pendingRenders.get(cacheKey)
+    }
+    const promise = renderFn().finally(() => pendingRenders.delete(cacheKey))
+    pendingRenders.set(cacheKey, promise)
+    return promise
+}
+
+// Atomic cache write: write to a tmp file first, then rename. rename is
+// atomic on the same filesystem, so a concurrent request can never read
+// a half-written html file.
+const writeCacheFileAtomic = (cacheFileName, html) => {
+    const tmpFile = `${cacheFileName}.tmp-${process.pid}-${Date.now()}`
+    fs.writeFile(tmpFile, html, (err) => {
+        if (err) {
+            console.error('Error writing cache tmp file ' + tmpFile, err)
+            return
+        }
+        fs.rename(tmpFile, cacheFileName, (renameErr) => {
+            if (renameErr) {
+                console.error('Error renaming cache file ' + cacheFileName, renameErr)
+                // cleanup orphaned tmp file
+                fs.unlink(tmpFile, () => {})
+            }
+        })
+    })
+}
+
+
 const createSortedQueryString = (query) => {
 
     // Convert to sorted array and build string
@@ -272,7 +313,12 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
 
         const rawUrlPath = Util.removeTrailingSlash(urlPathname).substring(1) || 'index'
 
-        const cacheFileName = `${cacheFileDir}/${rawUrlPath.replace(/\//g, '-').replace(/[^\w-]/g, '')}${queryString ? '@' + queryString.replace(/\W/g, '') : ''}.html`
+        // short hash guarantees uniqueness: the sanitizing replaces below can
+        // collide (e.g. /a-b and /a/b both become "a-b"), the readable part
+        // is kept for debugging
+        const urlHash = crypto.createHash('md5').update(urlPathname + queryString).digest('hex').substring(0, 8)
+
+        const cacheFileName = `${cacheFileDir}/${rawUrlPath.replace(/\//g, '-').replace(/[^\w-]/g, '')}${queryString ? '@' + queryString.replace(/\W/g, '') : ''}-${urlHash}.html`
 
         const errorFile = Cache.get('ErrorFile' + cacheFileName)
         if (errorFile) {
@@ -310,10 +356,21 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
                     console.log(`cache is not updated for ${cacheFileName}`)
                     return
                 }
+
+                // stale content was already sent - if a background render for
+                // this url is already in flight, don't trigger another one,
+                // the running render will refresh the cache
+                if (pendingRenders.has(cacheFileName)) {
+                    await doTrackingEvent(req, {event: 'visit', host})
+                    console.log(`render already in flight for ${cacheFileName}`)
+                    return
+                }
             }
         }
 
-        const pageData = await parseWebsite(urlToFetch, {host, agent, referer: req.headers.referer, isBot, remoteAddress, cookies})
+        // deduplicated render: concurrent requests for the same url share one render
+        const pageData = await renderOnce(cacheFileName, () =>
+            parseWebsite(urlToFetch, {host, agent, referer: req.headers.referer, isBot, remoteAddress, cookies}))
 
         // remove script tags
         pageData.html = pageData.html.replace(/<(script|noscript)(?![^>]*type=["']application\/ld\+json["'])[\s\S]*?<\/\1>/gi, '')
@@ -324,8 +381,20 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
 
         if (pageData.statusCode >= 500 || pageData.statusCode === 404) {
 
-            if (!sentFromCache) {
-                Cache.set('ErrorFile' + cacheFileName, {statusCode: pageData.statusCode}, 360000) // 5 min
+            if (sentFromCache) {
+                // stale content was already sent and the background re-render
+                // failed: touch the stale file so CACHED_FILES_VALIDATION_TIME
+                // acts as a backoff instead of retrying the (failing) render
+                // on every single request
+                const now = new Date()
+                fs.utimes(cacheFileName, now, now, (err) => {
+                    if (err) {
+                        console.warn('could not touch stale cache file ' + cacheFileName, err)
+                    }
+                })
+                console.warn(`background re-render failed (${pageData.statusCode}) for ${cacheFileName} -> keeping stale cache with backoff`)
+            } else {
+                Cache.set('ErrorFile' + cacheFileName, {statusCode: pageData.statusCode}, 360000) // 6 min
 
                 res.writeHead(pageData.statusCode, headers)
                 if (pageData.statusCode < 500) {
@@ -337,19 +406,13 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
         } else {
 
             if (!sentFromCache) {
-                res.writeHead(statusCode, headers)
-                if (statusCode !== 500) {
-                    res.write(pageData.html)
-                }
+                res.writeHead(pageData.statusCode, headers)
+                res.write(pageData.html)
                 res.end()
             }
             if (!cookies.auth) {
                 //console.log(`update cache for ${cacheFileName}`)
-                fs.writeFile(cacheFileName, pageData.html, (err) => {
-                    if (err) {
-                        console.error("Error writing to file " + cacheFileName, err)
-                    }
-                })
+                writeCacheFileAtomic(cacheFileName, pageData.html)
             }
         }
 

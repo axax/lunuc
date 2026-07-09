@@ -43,7 +43,6 @@
           "label": "Keywords",
           "localized": true,
           "uitype": "textarea",
-          "index": 1,
           "fullWidth": true,
           "hideColumnInTypesByDefault": true,
           "Tab": "elements.generalTab"
@@ -53,7 +52,6 @@
           "label": "Beschreibung (SEO)",
           "localized": true,
           "uitype": "textarea",
-          "index": 1,
           "fullWidth": true,
           "hideColumnInTypesByDefault": true,
           "Tab": "elements.generalTab"
@@ -81,13 +79,6 @@
           "defaultValue": true,
           "vagueSearchable": false,
           "compoundIndex": [
-            {
-              "unique": true,
-              "fields": {
-                "public": 1,
-                "slug": 1
-              }
-            },
             {
               "unique": true,
               "fields": {

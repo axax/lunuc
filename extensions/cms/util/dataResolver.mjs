@@ -347,7 +347,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                 })
             }
         } catch (e) {
-            console.log(e)
+            console.log(`Error in resolveData`,e, scope)
             resolvedData.error = e.message + ' -> scope=' + JSON.stringify(scope)
         }
 
