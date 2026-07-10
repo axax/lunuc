@@ -18,7 +18,7 @@ import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import {getIconByKey} from '../../client/components/ui/impl/material/icon'
 import MediaFileExplorer from './components/MediaFileExplorer'
-import {QuickMediaUploader} from "./components/QuickMediaUploader";
+import {QuickMediaUploader} from './components/QuickMediaUploader'
 
 const ImageIcon = (props) => <Async {...props} expose="ImageIcon" load={() =>import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 
@@ -359,16 +359,37 @@ export default () => {
                         this.handleInputChange({target: {name: field.name, value: JSON.stringify(json.items[this.state.valuesOri._id].references)}})
                     }
                 })
-            }} variant="contained">Verwendung prüfen</Button>
+            }} variant="contained">Verwendung nochmals prüfen</Button>
             if(value) {
                 const json = JSON.parse(value)
+
+                const groupedLocations = (json.locations || []).reduce((acc, item) => {
+                    if (!acc[item.location]) acc[item.location] = []
+                    acc[item.location].push(item)
+                    return acc
+                }, {})
+
                 result.component = <div>
                     <p><span>Letzte Überprüfung:</span> <strong>{Util.formatDate(json.lastChecked)}</strong></p>
                     {
-                        json.locations.length===0?<p>Media wird nicht verwendet</p>:
-                        json.locations.map(item => <p><span>Media ist in Verwendung:</span> <a target="_blank"
-                                                                                               href={`/admin/types/${item.location}?open=${item._id}`}>{item.location}/{item._id}</a>
-                        </p>)
+                        json.locations.length === 0 ? <p>Media wird nicht verwendet</p> :
+                            Object.keys(groupedLocations).map(location => {
+                               // const type = getType(location)
+                                const typeName = _t(location) //(type && (type.label || type.name)) || location
+                                return <div key={location}>
+                                    <p><strong>{typeName}</strong> ({groupedLocations[location].length})</p>
+                                    <ul>
+                                        {
+                                            groupedLocations[location].map(item =>
+                                                <li key={item._id}>
+                                                    <a target="_blank"
+                                                       href={`/admin/types/${item.location}?open=${item._id}`}>{item.name || item._id}</a>
+                                                </li>
+                                            )
+                                        }
+                                    </ul>
+                                </div>
+                            })
                     }
                     {btn}
                 </div>

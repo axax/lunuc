@@ -171,7 +171,8 @@ export const translations = {
         'CmsPage.blankPage': 'Leere Seite',
         'CmsPage.defaultLayout': 'Standard Layout Seite',
         'CmsDataEditDialog.notEditable':'Daten nicht bearbeitbar',
-        'CmsDataEditDialog.noAccess':'Sie haben vermutlich keine Berechtigung diese Daten zu bearbeiten'
+        'CmsDataEditDialog.noAccess':'Sie haben vermutlich keine Berechtigung diese Daten zu bearbeiten',
+        'CmsPage': 'CMS Seite'
     },
     en: {
         'CmsViewEditorContainer.save': 'Save',
@@ -342,6 +343,7 @@ export const translations = {
         'CmsPage.blankPage': 'Blank site',
         'CmsPage.defaultLayout': 'Default layout page',
         'CmsDataEditDialog.notEditable':'Data not editable',
-        'CmsDataEditDialog.noAccess':'You probably do not have permission to edit this data.'
+        'CmsDataEditDialog.noAccess':'You probably do not have permission to edit this data.',
+        'CmsPage': 'CMS Page'
     }
 }

@@ -1,61 +1,21 @@
 import Util from '../../../api/util/index.mjs'
-import {CAPABILITY_ADMIN_OPTIONS, CAPABILITY_MANAGE_TYPES} from '../../../util/capabilities.mjs'
+import {
+    CAPABILITY_ACCESS_ADMIN_PAGE,
+    CAPABILITY_ADMIN_OPTIONS,
+    CAPABILITY_MANAGE_TYPES
+} from '../../../util/capabilities.mjs'
 import config from '../../../gensrc/config.mjs'
 import path from 'path'
 import fs from 'fs'
-import { fileURLToPath } from 'url'
+import {fileURLToPath} from 'url'
 import {ObjectId} from 'mongodb'
-import Cache from '../../../util/cache.mjs'
 import {sendMail} from '../../../api/util/mail.mjs'
 import {removeMediaVariants} from '../util/index.mjs'
+import {checkRefForMedias, getRefMap} from './mediaRefMap.mjs'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const {UPLOAD_DIR} = config
-
-
-
-const REF_MAP_CACHE_KEY = 'allCollectionRefMap'
-const REF_MAP_TTL = 1000 * 60 * 60 * 24 // 1 Tag
-
-const buildRefMap = async (db, collectionsToSearchIn) => {
-    console.log('Building ref map cache...')
-    const startTime = new Date().getTime()
-    const idPattern = /^[a-f0-9]{24}$/i
-    const map = {}
-
-    function extractIds(obj, results = new Set()) {
-        if (!obj || typeof obj !== 'object') return results
-        for (const val of Object.values(obj)) {
-            if (!val) continue
-            if (typeof val === 'string' && idPattern.test(val)) results.add(val)
-            if (val._bsontype === 'ObjectId') results.add(val.toString())
-            if (typeof val === 'object') extractIds(val, results)
-        }
-        return results
-    }
-
-    for (const name of collectionsToSearchIn) {
-        console.log(`Scanning ${name}...`)
-        const fullCursor = db.collection(name).find({})
-        for await (const doc of fullCursor) {
-            const docId = doc._id.toString()
-            const foundIds = extractIds(doc)
-            foundIds.delete(docId)
-
-            for (const refId of foundIds) {
-                if (!map[refId]) map[refId] = []
-                // Neu: docId mitspeichern
-                if (!map[refId].find(e => e.location === name && e._id === docId)) {
-                    map[refId].push({ location: name, _id: docId })
-                }
-            }
-        }
-    }
-
-    Cache.set(REF_MAP_CACHE_KEY, map, REF_MAP_TTL)
-    console.log(`Ref map built in ${new Date().getTime() - startTime}ms, ${Object.keys(map).length} unique IDs indexed`)
-    return map
-}
 
 export default db => ({
     Query: {
@@ -68,7 +28,7 @@ export default db => ({
         },
         findReferencesForMedia: async ({limit, ids, match={}}, {context}) => {
 
-            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_ACCESS_ADMIN_PAGE)
             const startTime = Date.now()
 
             const allCollections = await db.listCollections().toArray()
@@ -89,25 +49,14 @@ export default db => ({
                 .filter(name => name.indexOf('-') < 0 && name.indexOf('_') < 0 && !ignoreCollections.includes(name))
 
             // Cache laden oder neu aufbauen
-            let refMap = Cache.get(REF_MAP_CACHE_KEY)
-            if (!refMap) {
-                refMap = await buildRefMap(db, collectionsToSearchIn)
-            }
+            let refMap = await getRefMap(db, collectionsToSearchIn)
+
             if (!ids) {
                 const mediaIds = await db.collection('Media').find(match, {'_id': 1})
                     .sort({'references.lastChecked': 1}).limit(limit || 10).toArray()
                 ids = mediaIds.map(f => f._id.toString())
             }
-
-            const checkedItems = {}
-
-            for (const _id of ids) {
-                const collectionsWithRef = refMap[_id] || []
-
-                const $set = {references: {count: collectionsWithRef.length, locations: collectionsWithRef, lastChecked: new Date().getTime()}}
-                checkedItems[_id] = $set
-                db.collection('Media').updateOne({_id: new ObjectId(_id)}, {$set})
-            }
+            const checkedItems = checkRefForMedias(ids, refMap, db)
 
             console.log(`findReferencesForMedia ended after ${new Date().getTime() - startTime}ms`)
             return {status: `{"items":${JSON.stringify(checkedItems)}}`}

@@ -61,9 +61,9 @@ const Hook = {
         if ('undefined' != typeof (Hook.hooks[name])) {
             for (let i = 0; i < Hook.hooks[name].length; ++i) {
                 if (thisRef) {
-                    Hook.hooks[name][i].callback.bind(thisRef)(args)
+                    Hook.hooks[name][i].callback.bind(thisRef)(args, name)
                 } else {
-                    Hook.hooks[name][i].callback(args)
+                    Hook.hooks[name][i].callback(args, name)
                 }
             }
         }
