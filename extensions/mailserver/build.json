@@ -166,7 +166,17 @@
           "type": "MailAccountFolder",
           "pickerField": ["path"],
           "multi": false,
-          "index": 1
+          "index": 1,
+
+          "compoundIndex": [
+            {
+              "unique": false,
+              "fields": {
+                "mailAccountFolder": 1,
+                "flags": 1
+              }
+            }
+          ]
         },
         {
           "name": "flags",

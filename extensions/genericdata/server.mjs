@@ -274,7 +274,21 @@ Hook.on('typeBeforeUpdate', async ({type, data, params, _meta, db, context}) => 
 Hook.on('typeBeforeCreate', async ({db, type, data}) => {
     if (type === 'GenericData' && data.definition) {
 
-        const def = await getGenericTypeDefinitionWithStructure(db, {id: data.definition})
+        const defQuery = {}
+        if(data.definition) {
+
+            if(data.definition.constructor === Object) {
+                if(data.definition._id){
+                    defQuery._id = data.definition._id
+                }else if(data.definition.name){
+                    defQuery.name = data.definition.name
+                }
+            }else if (ObjectId.isValid(data.definition)) {
+                defQuery.id = data.definition
+            }
+        }
+
+        const def = await getGenericTypeDefinitionWithStructure(db, defQuery)
 
         if (def && def.structure) {
             const struct = def.structure
@@ -283,7 +297,7 @@ Hook.on('typeBeforeCreate', async ({db, type, data}) => {
                     const field = struct.fields[i]
                     if (field.autoinc) {
 
-                        const last = await db.collection('GenericData').find({definition: new ObjectId(data.definition)}).sort({_id: -1}).limit(1).toArray()
+                        const last = await db.collection('GenericData').find({definition: def._id}).sort({_id: -1}).limit(1).toArray()
                         if (last && last.length) {
                             try {
                                 const nr = parseFloat(last[0].data[field.name])

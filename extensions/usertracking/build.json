@@ -36,7 +36,6 @@
         },
         {
           "name": "host",
-          "index": 1,
           "compoundIndex": [
             {
               "unique": true,
@@ -56,7 +55,6 @@
         },
         {
           "name": "path",
-          "index": 1,
           "compoundIndex": [
             {
               "unique": true,
@@ -84,16 +82,8 @@
         {
           "name": "year",
           "type": "Int",
-          "index": 1,
           "tab": "Allgemein",
           "compoundIndex": [
-            {
-              "unique": false,
-              "fields": {
-                "year": 1,
-                "month": 1
-              }
-            },
             {
               "unique": false,
               "fields": {
@@ -106,15 +96,7 @@
         },
         {
           "name": "event",
-          "index": 1,
           "compoundIndex": [
-            {
-              "unique": false,
-              "fields": {
-                "event": 1,
-                "host": 1
-              }
-            },
             {
               "unique": true,
               "fields": {

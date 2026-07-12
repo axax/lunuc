@@ -1,11 +1,11 @@
 import ApiUtil from '../../../api/util/index.mjs'
 import config from '../../../gensrc/config.mjs'
 
+import {ObjectId} from 'mongodb'
 import path from 'path'
 import fs from 'fs'
 import Util from '../../../api/util/index.mjs'
 import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
-import os from "os";
 
 const ROOT_DIR = path.resolve()
 const BACKUP_DIR_ABS = path.join(ROOT_DIR, config.BACKUP_DIR)
@@ -110,7 +110,11 @@ export const getMessagesForFolder = async (db, mailAccountFolderId, match = {}, 
     const aggr = [
         {
             $match: {
-                mailAccountFolder: mailAccountFolderId,
+                // Make sure we always match with an ObjectId. If a string is passed the match
+                // silently returns no results (documents store mailAccountFolder as ObjectId).
+                mailAccountFolder: mailAccountFolderId.constructor === String
+                    ? new ObjectId(mailAccountFolderId)
+                    : mailAccountFolderId,
                 ...match
             }
         }
@@ -118,8 +122,15 @@ export const getMessagesForFolder = async (db, mailAccountFolderId, match = {}, 
     if(project){
         aggr.push({ $project: project})
     }
-    return await db.collection('MailAccountMessage').aggregate( aggr ).toArray()
+    return await db.collection('MailAccountMessage').aggregate(aggr, {
+        // Force the compound index. Without the hint the planner may cache a plan
+        // based on the standalone modseq_1 index, which degenerates into a near
+        // collection scan for low CONDSTORE changedSince values (3.8s / 1.1GB read
+        // observed in the profiler instead of a few ms).
+        hint: 'mailAccountFolder_1_uid_1_modseq_1'
+    }).toArray()
 }
+
 
 export const deleteMessagesForFolderByUids = async (db, folder, uids) => {
     if(folder.uidList) {
