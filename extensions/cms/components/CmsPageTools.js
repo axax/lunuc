@@ -103,47 +103,78 @@ export default function CmsPageTools(props) {
         const currentData = dataRef.current
         const currentProps = propsRef.current
 
-        if (event.data.key === 'template') {
-            if (!event.data.data && event.data.operation !== 'remove') {
-                return
+        // Sends the result of an applied change back to the source iframe (ai assistant)
+        // so it can show success / error feedback to the user.
+        const respond = (success, error) => {
+            if (event.source && event.source.postMessage) {
+                event.source.postMessage({
+                    lunuc_component_result: true,
+                    key: event.data.key,
+                    operation: event.data.operation,
+                    path: event.data.path,
+                    success,
+                    error: error || null
+                }, '*')
             }
+        }
 
-            let template
-            if (event.data.path) {
-                template = JSON.parse(currentData.template)
-                if (!Array.isArray(template)) {
-                    template = [template]
+        try {
+            if (event.data.key === 'template') {
+                if (!event.data.data && event.data.operation !== 'remove') {
+                    respond(false, 'Missing data for template change')
+                    return
                 }
 
-                let path = event.data.path
-                if (path.startsWith('template.')) {
-                    path = path.substring(9)
-                }
+                let template
+                if (event.data.path) {
+                    try {
+                        template = JSON.parse(currentData.template)
+                    } catch (e) {
+                        respond(false, 'Current template is not valid JSON: ' + e.message)
+                        return
+                    }
+                    if (!Array.isArray(template)) {
+                        template = [template]
+                    }
 
-                // The node that the incoming path points to (renamed from the
-                // former "data" to avoid shadowing the component data).
-                const targetNode = propertyByPath(path, template)
-                let newData = event.data.data
+                    let path = event.data.path
+                    if (path.startsWith('template.')) {
+                        path = path.substring(9)
+                    }
 
-                if (Array.isArray(newData) && newData.length === 1) {
-                    newData = newData[0]
-                }
+                    const targetNode = propertyByPath(path, template)
+                    if (targetNode === undefined && event.data.operation !== 'add') {
+                        respond(false, `Path "${event.data.path}" not found in template`)
+                        return
+                    }
 
-                let parentPath = path.slice(0, path.lastIndexOf('.'))
-                if (parentPath.endsWith('.c')) {
-                    parentPath = parentPath.substring(0, parentPath.lastIndexOf('.'))
-                }
+                    let newData = event.data.data
+                    if (Array.isArray(newData) && newData.length === 1) {
+                        newData = newData[0]
+                    }
 
-                const parentData = propertyByPath(parentPath, template)
-                if (parentData) {
+                    let parentPath = path.slice(0, path.lastIndexOf('.'))
+                    if (parentPath.endsWith('.c')) {
+                        parentPath = parentPath.substring(0, parentPath.lastIndexOf('.'))
+                    }
+
+                    const parentData = propertyByPath(parentPath, template)
+                    if (!parentData) {
+                        respond(false, `Parent path "${parentPath}" not found in template`)
+                        return
+                    }
+
+                    let applied = false
                     if (event.data.operation === 'remove') {
                         if (Array.isArray(parentData.c)) {
                             const index = parentData.c.indexOf(targetNode)
                             if (index > -1) {
                                 parentData.c.splice(index, 1)
+                                applied = true
                             }
                         } else {
                             parentData.c = {}
+                            applied = true
                         }
                     } else if (event.data.operation === 'add') {
                         let arr
@@ -165,45 +196,65 @@ export default function CmsPageTools(props) {
                         } else {
                             arr.splice(index + 1, 0, newData)
                         }
+                        applied = true
                     } else if (event.data.operation === 'update') {
                         if (Array.isArray(parentData)) {
                             const index = parentData.indexOf(targetNode)
                             if (index > -1) {
                                 parentData[index] = newData
+                                applied = true
                             }
                         } else if (Array.isArray(parentData.c)) {
                             const index = parentData.c.indexOf(targetNode)
                             if (index > -1) {
                                 parentData.c[index] = newData
+                                applied = true
                             }
                         } else {
                             parentData.c = newData
+                            applied = true
                         }
+                    } else {
+                        respond(false, `Unknown operation "${event.data.operation}"`)
+                        return
                     }
-                }
-            } else {
-                template = event.data.data
-            }
 
-            // Update local working copy so the next event starts from here.
-            dataRef.current = {...currentData, template: JSON.stringify(template)}
-            currentProps.onTemplateChange(template, true)
-        } else {
-            let newData
-            if (event.data.old_data) {
-                const keyData = currentData[event.data.key]
-                if (keyData) {
+                    if (!applied) {
+                        respond(false, `Could not apply "${event.data.operation}" at "${event.data.path}" (target node not found in parent)`)
+                        return
+                    }
+                } else {
+                    template = event.data.data
+                }
+
+                // Update local working copy so the next event starts from here.
+                dataRef.current = {...currentData, template: JSON.stringify(template)}
+                currentProps.onTemplateChange(template, true)
+                respond(true)
+            } else {
+                let newData
+                if (event.data.old_data) {
+                    const keyData = currentData[event.data.key]
+                    if (!keyData) {
+                        respond(false, `No existing content for key "${event.data.key}"`)
+                        return
+                    }
+                    if (keyData.indexOf(event.data.old_data) < 0) {
+                        respond(false, `old_data not found in current "${event.data.key}" content — the change might be based on an outdated version`)
+                        return
+                    }
                     newData = keyData.replace(event.data.old_data, event.data.data)
+                } else {
+                    newData = event.data.data
                 }
-            } else {
-                newData = event.data.data
+
+                currentProps.setCmsPageValue({key: event.data.key, forceUpdateEditor: true}, newData)
+                respond(true)
             }
-
-            currentProps.setCmsPageValue({key: event.data.key, forceUpdateEditor: true}, newData)
+        } catch (e) {
+            console.error('Error applying component change:', e)
+            respond(false, e.message)
         }
-
-        // Optionally verify event.origin here for security
-        console.log('Received data from iframe:', event.data)
     }, [])
 
     useEffect(() => {
