@@ -165,6 +165,11 @@ export default function CmsPageTools(props) {
                     }
 
                     let applied = false
+
+                    if(!event.data.operation && event.data.op) {
+                        event.data.operation = event.data.op
+                    }
+
                     if (event.data.operation === 'remove') {
                         if (Array.isArray(parentData.c)) {
                             const index = parentData.c.indexOf(targetNode)
