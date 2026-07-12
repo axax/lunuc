@@ -275,22 +275,22 @@ Hook.on('typeBeforeCreate', async ({db, type, data}) => {
     if (type === 'GenericData' && data.definition) {
 
         const defQuery = {}
-        if(data.definition) {
 
-            if(data.definition.constructor === Object) {
-                if(data.definition._id){
-                    defQuery._id = data.definition._id
-                }else if(data.definition.name){
-                    defQuery.name = data.definition.name
-                }
-            }else if (ObjectId.isValid(data.definition)) {
-                defQuery.id = data.definition
+        if(data.definition.constructor === Object) {
+            if(data.definition._id){
+                defQuery._id = data.definition._id
+            }else if(data.definition.name){
+                defQuery.name = data.definition.name
             }
+        }else if (ObjectId.isValid(data.definition)) {
+            defQuery.id = data.definition
         }
 
         const def = await getGenericTypeDefinitionWithStructure(db, defQuery)
 
         if (def && def.structure) {
+            data.definition = def._id
+
             const struct = def.structure
             if (struct.fields) {
                 for (let i = 0; i < struct.fields.length; i++) {
