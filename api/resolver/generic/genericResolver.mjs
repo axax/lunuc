@@ -556,7 +556,8 @@ const GenericResolver = {
             return resultData
         }
     },
-    deleteEnity: async (db, context, typeName, {_version, ...data}, options) => {
+    deleteEnity: async (db, reqOrContext, typeName, {_version, ...data}, options) => {
+        const { context } = resolveRequestContext(reqOrContext)
 
         const skipCheck = options && options.skipCheck
 
