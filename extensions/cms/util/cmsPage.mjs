@@ -150,16 +150,22 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
                     result.style = preprocessCss(result.style)
                 }
                 if (result.compress) {
-                    result.script = result.script.replace(/\t/g, ' ').replace(/ +(?= )/g, '').replace(/(^[ \t]*\n)/gm, "")
 
-                    if (!result.ssrStyle) {
-                        result.style = result.style
+                    if (result.script) {
+                        result.script = result.script
                             .replace(/\t/g, ' ') // remove tabs
-                            .replace(/ +(?= )/g, '') // remove double whitespace
-                            .replace(/(^[ \t]*\n)/gm, "") // remove empty lines
-                            .replace(/^\s+|\s+$/gm, '') // remove whitespace at beginning of line
+                            .replace(/ {2,}/g, ' ') // collapse multiple spaces (faster than lookahead)
+                            .replace(/(^[ \t]*\n)/gm, '') // remove empty lines
+                    }
+
+                    if (result.style && !result.ssrStyle) {
+                        result.style = result.style
+                            .replace(/\/\*[\s\S]*?\*\//gm, '') // remove block comments first, so the following steps don't minify text that gets removed anyway
+                            .replace(/\t/g, ' ') // remove tabs
+                            .replace(/ {2,}/g, ' ') // collapse multiple spaces (faster than lookahead)
+                            .replace(/(^[ \t]*\n)/gm, '') // remove empty lines
+                            .replace(/^\s+|\s+$/gm, '') // remove whitespace at beginning/end of line
                             .replace(/,$\n/gm, ',') // remove line break after ,
-                            .replace(/\/\*[\s\S]*?\*\//gm, '') // remove block comments /**/
 
                         if (!inEditor) {
                             result.style = result.style.replace(/\/\/<\!\!#REMOVE([\s\S]*?)\/\/\!\!#REMOVE>/gm, '') // remove any character between marker
@@ -182,7 +188,7 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
                             })
                         }
 
-                        result.template = JSON.stringify(template, null, 0)
+                        result.template = JSON.stringify(template)
                     } catch (e) {
                         console.warn(`${result.slug} is not a valid json template`)
                     }
@@ -193,7 +199,7 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
             //only cache if public
             if (!editmode && cmsPages.results[0].public) {
                 if (slug !== cmsPages.results[0].slug) {
-                    const cacheKeyAlias = getCmsPageCacheKey({_version, slug: cmsPages.results[0].slug, host, checkHostrules})
+                    const cacheKeyAlias = getCmsPageCacheKey({_version, slug: cmsPages.results[0].slug, host, hostrule})
                     Cache.setAlias(cacheKeyAlias, cacheKey)
                 }
                 Cache.set(cacheKey, cmsPages, 6000000) // cache expires in 1h40min
