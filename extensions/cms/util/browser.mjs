@@ -236,7 +236,7 @@ const openInBrowser = async (options, scope, resolvedData) => {
 
                     const upload_dir = path.join(path.resolve(), UPLOAD_DIR) + '/screenshots/'
 
-                    if (Util.ensureDirectoryExistence(upload_dir)) {
+                    if (Util.ensureDirectoryExistence(upload_dir, true)) {
 
 
                         const name = pipe.screenshot.name || (new Date()).getTime() + '.png'

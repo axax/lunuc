@@ -14,7 +14,7 @@ import {contextByRequest} from '../api/util/sessionContext.mjs'
 const {UPLOAD_DIR, DEFAULT_LANGUAGE, HOSTRULES_ABSPATH} = config
 
 const beforeUpload = (res, req, upload_dir) => {
-    if (!Util.ensureDirectoryExistence(upload_dir)) {
+    if (!Util.ensureDirectoryExistence(upload_dir, true)) {
         // no upload folder
         res.writeHead(500, {'content-type': 'application/json'});
         res.end(`{"status":"error","message":"Upload folder coud not be created -> ${upload_dir}"}`)

@@ -1,24 +1,104 @@
+// util/userAgent.mjs
+//
+// User agent parsing with result caching.
+//
+// UA strings are massively repetitive (a handful of browser/bot strings
+// cover almost all traffic), yet parsing ran fully on every request -
+// and multiple times per request (https redirect check + index handling).
+// Results are now cached per (botRegex, noJsRenderingBotRegex, agent):
+// a cache hit is a Map lookup + shallow copy, the expensive tokenizer
+// only runs for genuinely new agent strings.
+//
+// Also fixed: the tokenizer regex was module-level with the /g flag -
+// exec() keeps lastIndex state on the regex object, so an exception
+// mid-loop would make the NEXT call start parsing mid-string. The regex
+// is now instantiated per call (cold path only, cost is negligible).
+
 // /WhatsApp|TelegramBot|AhrefsBot|Applebot|x28-job-bot|bingbot|msnbot|YandexBot|PetalBot|Googlebot|facebookexternalhit|LinkedInBot|Twitterbot|Xing|AdsBot/
 
 // exception if it starts with spiderweb/ because that is a browser
+// NOTE: the lookahead only protects agents STARTING with spiderweb/ -
+// "Mozilla/5.0 spiderweb/2.0" would still match via "spider"
 export const DEFAULT_BOT_REGEX = /(?!(^spiderweb\/))(leakix.net|bot|ChatGPT|GoogleOther|Google-Apps-Script|crawl|slurp|spider|mediapartners|facebookexternalhit|Xing|WhatsApp|Optimizer|NetcraftSurveyAgent|\(compatible; ITools;)/i
-export const DEFAULT_BOT_WITH_NO_JS_SUPPORT_REGEX = /YandexBot|SEBot-WA|Bytespider|OAI-SearchBot|GPTBot|ClaudeBot|PerplexityBot|Meta-ExternalAgent|meta-webindexer|Frog SEO Spider|Iframely|AhrefsSiteAudit|SeekportBot|SeobilityBot|DuckDuckBot|localsearch|facebookexternalhit|LinkedInBot|Xing|WhatsApp|TelegramBot|\(compatible; ITools;/i
-export const parseUserAgent = (agent, setting = {}) => {
 
+// POLICY REMINDER: every entry here triggers the expensive Puppeteer ssr
+// path. Bytespider / GPTBot / ClaudeBot / PerplexityBot / Meta-ExternalAgent
+// are ai training/bulk crawlers - decide consciously whether they deserve
+// a render (see hostrule.noJsRenderingBotRegex to override per host).
+export const DEFAULT_BOT_WITH_NO_JS_SUPPORT_REGEX = /YandexBot|SEBot-WA|Bytespider|OAI-SearchBot|GPTBot|ClaudeBot|PerplexityBot|Meta-ExternalAgent|meta-webindexer|Frog SEO Spider|Iframely|AhrefsSiteAudit|SeekportBot|SeobilityBot|DuckDuckBot|localsearch|facebookexternalhit|LinkedInBot|Xing|WhatsApp|TelegramBot|\(compatible; ITools;/i
+
+
+/* ------------------------------------------------------------------ */
+/* Result cache                                                         */
+/* ------------------------------------------------------------------ */
+
+// Two-level WeakMap keyed by the actual regex objects, so custom hostrule
+// regexes get their own cache and never mix with the defaults. The regex
+// objects are stable (module constants / getRegexCached), so WeakMap keys
+// work and vanished hostrule regexes get garbage collected automatically.
+const CACHE_MAX_ENTRIES = 5000
+const cacheByBotRegex = new WeakMap()
+
+const getCacheFor = (botRegex, noJsRegex) => {
+    let byNoJs = cacheByBotRegex.get(botRegex)
+    if (!byNoJs) {
+        byNoJs = new WeakMap()
+        cacheByBotRegex.set(botRegex, byNoJs)
+    }
+    let cache = byNoJs.get(noJsRegex)
+    if (!cache) {
+        cache = new Map()
+        byNoJs.set(noJsRegex, cache)
+    }
+    return cache
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Parsing                                                              */
+/* ------------------------------------------------------------------ */
+
+export const parseUserAgent = (agent, setting = {}) => {
 
     let {botRegex, noJsRenderingBotRegex, via} = setting
 
-    if(!botRegex || !botRegex.test){
+    if (!botRegex || !botRegex.test) {
         botRegex = DEFAULT_BOT_REGEX
     }
-    if(!noJsRenderingBotRegex || !noJsRenderingBotRegex.test){
+    if (!noJsRenderingBotRegex || !noJsRenderingBotRegex.test) {
         noJsRenderingBotRegex = DEFAULT_BOT_WITH_NO_JS_SUPPORT_REGEX
     }
 
-    if(via && via.indexOf('archive.org_bot') >= 0){
+    // via header check stays outside the cache (rare, and independent of agent)
+    if (via && via.indexOf('archive.org_bot') >= 0) {
         // https://web.archive.org/
         return {isBot: true, noJsRendering: true}
     }
+
+    const cache = getCacheFor(botRegex, noJsRenderingBotRegex)
+    const cacheKey = agent || ''
+
+    const cached = cache.get(cacheKey)
+    if (cached) {
+        // shallow copy so callers can safely mutate their result
+        // (e.g. overriding noJsRendering) without poisoning the cache
+        return {...cached}
+    }
+
+    const result = computeUserAgentResult(agent, botRegex, noJsRenderingBotRegex)
+
+    if (cache.size >= CACHE_MAX_ENTRIES) {
+        // primitive eviction - drop the oldest entry (same pattern as the
+        // path cache in server/index.mjs). A ua flood cannot grow memory
+        // beyond the cap, it only degrades the hit rate.
+        cache.delete(cache.keys().next().value)
+    }
+    cache.set(cacheKey, result)
+
+    return {...result}
+}
+
+const computeUserAgentResult = (agent, botRegex, noJsRenderingBotRegex) => {
 
     let result = {}
     if (agent) {
@@ -27,11 +107,9 @@ export const parseUserAgent = (agent, setting = {}) => {
 
         if (result.isBot) {
             result.noJsRendering = noJsRenderingBotRegex.test(agentLower)
-        }else{
-
+        } else {
 
             const raw = parseUserAgentRaw(agentLower)
-
 
             if (raw.mobile) {
                 result.mobile = true
@@ -45,7 +123,6 @@ export const parseUserAgent = (agent, setting = {}) => {
             } else if (raw.opera) {
 
                 result.browser = 'opera'
-
 
                 if (raw.version) {
                     result.version = parseFloat(raw.version.version)
@@ -81,6 +158,7 @@ export const parseUserAgent = (agent, setting = {}) => {
 
                 result.browser = 'chrome'
                 result.version = parseFloat(raw.headlesschrome.version)
+                result.headless = true
 
             } else if (raw.crios) {
 
@@ -159,13 +237,17 @@ export const parseUserAgent = (agent, setting = {}) => {
     }
 
     return result
-
 }
 
 
-export const parseUserAgentRaw = (() => {
+export const parseUserAgentRaw = (input) => {
 
-    //useragent strings are just a set of phrases each optionally followed by a set of properties encapsulated in paretheses
+    //useragent strings are just a set of phrases each optionally followed by a set of properties encapsulated in parentheses
+    //
+    //IMPORTANT: instantiated per call. A module-level regex with /g keeps
+    //lastIndex state between calls - an exception mid-loop would corrupt
+    //every subsequent parse. Per-call instantiation is safe and cheap
+    //(V8 caches the compiled pattern; only runs on cache misses anyway).
     const part = /\s*([^\s/]+)(\/(\S+)|)(\s+\(([^)]+)\)|)/g
     //these properties are delimited by semicolons
     const delim = /;\s*/
@@ -181,7 +263,7 @@ export const parseUserAgentRaw = (() => {
         /^([^/]+)\/([^/]+)$/,
         //or is a special string
         /^(.NET CLR|Windows)\s+(.+)$/
-    ];
+    ]
     //otherwise it is unparsable because everyone does it differently, looking at you iPhone
     const many = / +/
     //oh yeah, bots like to use links
@@ -204,17 +286,15 @@ export const parseUserAgentRaw = (() => {
         return properties
     }
 
-    return (input) => {
-        const output = {};
-        for (let match; match = part.exec(input); '') {
-            output[match[1]] = {
-                ...(match[5] && match[5].split(delim).reduce(inner, {})),
-                ...(match[3] && {version: match[3]})
-            }
+    const output = {}
+    for (let match; match = part.exec(input); '') {
+        output[match[1]] = {
+            ...(match[5] && match[5].split(delim).reduce(inner, {})),
+            ...(match[3] && {version: match[3]})
         }
-        return output
     }
-})()
+    return output
+}
 
 export const isLetsEncryptAgent = (agent) => {
     return agent && agent.indexOf('www.letsencrypt.org') >= 0

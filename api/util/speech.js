@@ -10,7 +10,7 @@ import Util from "./index";
 
 export const text2speech = (text, lang='en', filename = Date.now()+'.wav' ) => {
     const filepath = path.join(__dirname, '../../' + UPLOAD_DIR+'/speech/')
-    if (Util.ensureDirectoryExistence(filepath)) {
+    if (Util.ensureDirectoryExistence(filepath, true)) {
 
         //brew install espeak
         execSync(`espeak "${text.replace(/"/g, '')}" -v${lang}+m1 -g5 -s150 -p50 -a100 -m --stdout > ${filepath}${filename}`, {encoding: 'utf8'})

@@ -111,7 +111,7 @@ const Util = {
         }
 
         if ((newOption.skipCheck) || await Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)) {
-            if(newOption.asFile && Util.ensureDirectoryExistence(KEYVALUE_DIR_ABS)){
+            if(newOption.asFile && Util.ensureDirectoryExistence(KEYVALUE_DIR_ABS, true)){
                 const fileName = `KeyValueGlobal_${key}.txt`
                 const fileAbs = path.join(KEYVALUE_DIR_ABS, fileName)
                 fs.writeFile(fileAbs, value.constructor!==String?JSON.stringify(value):value,  (err) => {
@@ -177,7 +177,7 @@ const Util = {
         if (allOptions.cache && !allOptions.projection) {
             let map = {}
             for (const k of keys) {
-                const fromCache = Cache.get(cacheKeyPrefix + k + allOptions.parse + allOptions)
+                const fromCache = Cache.get(cacheKeyPrefix + k + allOptions.parse)
                 if (fromCache) {
                     map[k] = fromCache
                 } else {

@@ -1,3 +1,25 @@
+// server/util/web2html.mjs
+//
+// Server-side rendering via a persistent Puppeteer browser.
+//
+// Design: one long-lived browser instance, one page per render. Resource
+// loading (images, styles, fonts, media) is blocked, navigation waits for
+// domcontentloaded + an explicit app readiness signal instead of
+// networkidle2. Hung CDP connections are detected via timeouts on every
+// browser call; repeated failures trigger a full browser restart
+// (SIGKILL as last resort).
+//
+// Concurrency: the render semaphore in server/index.mjs (renderOnce +
+// acquireRenderSlot, LUNUC_SSR_CONCURRENCY) is the actual concurrency
+// control in front of this module. The isTemporarilyBlocked call below is
+// only an emergency brake and should never fire in normal operation.
+//
+// Page leak handling (escalation ladder, in order):
+//   1. browser unhealthy (CDP unresponsive) -> kill browser
+//   2. browser healthy but too many pages   -> close leaked (oldest) pages
+//      individually, sparing the in-flight renders
+//   3. pages refuse to close despite health -> kill browser after all
+
 import puppeteer from 'puppeteer'
 import {isTemporarilyBlocked} from './requestBlocker.mjs'
 import {
@@ -8,7 +30,17 @@ import {
     TRACK_USER_AGENT_HEADER, WEB_PARSER_HEADER
 } from '../../api/constants/index.mjs'
 
-const MAX_PAGES_IN_PUPPETEER = 10
+// keep in sync with the render semaphore in server.mjs
+const RENDER_MAX_CONCURRENT = parseInt(process.env.LUNUC_SSR_CONCURRENCY) || 5
+
+// Threshold for the leak cleanup, NOT a hard capacity limit: above this
+// page count the excess (oldest) pages are closed individually while the
+// newest RENDER_MAX_CONCURRENT are left alone. Sized as 2x concurrency
+// (active renders + closing stragglers) + blank tab + slack. Hard ceiling
+// is RAM: every open page holds a ~50-150MB renderer process, so on the
+// vps this should stay well below ~15.
+const MAX_PAGES_IN_PUPPETEER = RENDER_MAX_CONCURRENT * 2 + 4
+
 const PAGE_STUCK_TIMEOUT_MS = 20000
 const CDP_HEALTH_TIMEOUT_MS = 5000
 const MAX_CONSECUTIVE_FAILURES = 3
@@ -28,8 +60,26 @@ const withTimeout = (promise, ms, label) => {
     ]).finally(() => clearTimeout(timer))
 }
 
+/* connected state across puppeteer versions: newer expose the .connected
+ * property, older only the isConnected() method */
+const isBrowserConnected = (browser) => {
+    if (typeof browser.connected === 'boolean') {
+        return browser.connected
+    }
+    if (typeof browser.isConnected === 'function') {
+        return browser.isConnected()
+    }
+    return true // unknown api - assume connected, downstream timeouts catch it
+}
+
 const wasBrowserKilled = async (browser) => {
     if (!browser) {
+        return true
+    }
+    // a browser can lose its CDP connection while the process is still
+    // alive - without this check getBrowser would happily return it and
+    // the next pages() call would run into its timeout the hard way
+    if (!isBrowserConnected(browser)) {
         return true
     }
     if (!browser.process) {
@@ -70,7 +120,7 @@ const killBrowser = async () => {
 
 /* health check: is the CDP connection still responsive? */
 const isBrowserHealthy = async () => {
-    if (!parseWebsiteBrowser || !parseWebsiteBrowser.connected) {
+    if (!parseWebsiteBrowser || !isBrowserConnected(parseWebsiteBrowser)) {
         return false
     }
     try {
@@ -142,12 +192,21 @@ const getBrowser = async () => {
 
 export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, remoteAddress, cookies}) => {
 
-    if (isTemporarilyBlocked({requestTimeInMs: 3000, requestPerTime: 15, requestBlockForInMs: 30000, key: 'parseWebsite'})) {
+    // emergency brake ONLY: the render semaphore in index.mjs is the actual
+    // concurrency control. These thresholds are deliberately high - if this
+    // ever fires, the semaphore has a logic problem and the brake keeps the
+    // browser from being buried
+    if (isTemporarilyBlocked({requestTimeInMs: 10000, requestPerTime: 100, requestBlockForInMs: 30000, key: 'parseWebsite'})) {
         return {html: '503 Service Unavailable', statusCode: 503}
     }
 
     let page
     let stuckTimer
+    // set by the stuck timer when it abandons and closes the page: the main
+    // path must then exit controlled (503) instead of stumbling into
+    // "Target closed" errors that would count as browser failures
+    let pageAbandonedReason = null
+
     try {
         const startTime = new Date().getTime()
 
@@ -166,14 +225,41 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
         }
 
         if (pages.length > MAX_PAGES_IN_PUPPETEER) {
-            // too many open pages can itself be a symptom of a stuck browser:
-            // pages that never finish accumulate until the limit is hit
+            // Too many open pages = leak symptom. Diagnose before acting:
+            // an UNHEALTHY browser (hung CDP) is the cause, not the victim -
+            // individual page.close() calls would each just run into their
+            // timeouts, so kill directly. Only a HEALTHY browser gets the
+            // targeted cleanup that spares the in-flight renders.
             if (!(await isBrowserHealthy())) {
+                console.warn(`${pages.length} open pages and browser unhealthy -> killing browser`)
                 await killBrowser()
                 return {html: 'browser restarting', statusCode: 503}
             }
-            console.warn('browser too busy to process more requests -> ignore')
-            return {html: 'too busy to process request', statusCode: 503}
+
+            console.warn(`${pages.length} open pages despite semaphore (limit ${MAX_PAGES_IN_PUPPETEER}) -> closing leaked pages`)
+
+            // oldest first (pages() returns creation order; index 0 is the
+            // about:blank default tab - skip it). The newest
+            // RENDER_MAX_CONCURRENT pages are potentially live renders and
+            // are left alone.
+            const closeCandidates = pages.slice(1, pages.length - RENDER_MAX_CONCURRENT)
+            let closedAny = false
+            for (const p of closeCandidates) {
+                try {
+                    await withTimeout(p.close(), 2000, 'leaked page.close')
+                    closedAny = true
+                } catch (e) {
+                    // ignore - escalation below decides
+                }
+            }
+
+            if (!closedAny && closeCandidates.length > 0) {
+                // healthy per version(), but pages will not close - the
+                // health probe was too optimistic, escalate after all
+                console.warn('leaked pages could not be closed -> killing browser')
+                await killBrowser()
+            }
+            return {html: 'browser busy, cleaning up', statusCode: 503}
         }
 
         // newPage() can also hang on a stuck browser
@@ -185,11 +271,13 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
             return {html: 'browser restarting', statusCode: 503}
         }
 
-        // safety net: close only the stuck page, not the whole browser
+        // safety net: abandon + close only the stuck page, not the browser.
+        // Sets the flag first so the main path exits controlled.
         stuckTimer = setTimeout(async () => {
+            pageAbandonedReason = `page still open after ${PAGE_STUCK_TIMEOUT_MS}ms`
             try {
                 if (page && !page.isClosed()) {
-                    console.warn(`page still open after ${PAGE_STUCK_TIMEOUT_MS}ms -> force close ${urlToFetch}`)
+                    console.warn(`${pageAbandonedReason} -> force close ${urlToFetch}`)
                     await withTimeout(page.close(), 3000, 'stuck page.close').catch(() => {})
                 }
             } catch (e) {
@@ -201,7 +289,7 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
         page.setDefaultNavigationTimeout(10000)
         await page.setRequestInterception(true)
 
-        // always clear auth cookie
+        // always clear auth cookie.
         await page.setCookie({domain: 'localhost', name: 'auth', value: ''})
 
         if (cookies && Object.keys(cookies).length > 0 && !isBot) {
@@ -213,8 +301,12 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
         await page.setExtraHTTPHeaders({[HOSTRULE_HEADER]: host, [WEB_PARSER_HEADER]: 'true'})
 
         page.on('request', (request) => {
+            // request.frame() can be null (service workers, detached
+            // contexts) - a null frame is not an iframe, so let it continue
+            // instead of throwing inside the event handler
+            const frame = request.frame()
             if (['image', 'stylesheet', 'font', 'manifest', 'media', 'other'].indexOf(request.resourceType()) !== -1 ||
-                request.frame().url() !== page.mainFrame().url() /* in iframe */) {
+                (frame && frame.url() !== page.mainFrame().url()) /* in iframe */) {
                 request.abort('blockedbyclient')
             } else {
                 const headers = request.headers()
@@ -273,6 +365,15 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
             console.warn('parseWebsite:', e)
         }
 
+        if (pageAbandonedReason) {
+            // the stuck timer already closed this page - controlled exit.
+            // This is a slow page, not a browser failure: it must NOT count
+            // towards consecutiveFailures / trigger a browser restart
+            console.warn(`render abandoned (${pageAbandonedReason}) ${urlToFetch}`)
+            clearTimeout(stuckTimer)
+            return {html: 'render timeout', statusCode: 503}
+        }
+
         let html = await page.content()
         html = html.replace('</head>', '<script>window.LUNUC_PREPARSED=true</script></head>')
 
@@ -285,8 +386,17 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
 
         return {html, statusCode}
     } catch (e) {
-        console.warn('parseWebsite error ' + urlToFetch, e)
         clearTimeout(stuckTimer)
+
+        if (pageAbandonedReason) {
+            // late race: the stuck timer closed the page while the main path
+            // was inside a page call ("Target closed" etc.) - same controlled
+            // exit as above, not a browser failure
+            console.warn(`render abandoned (${pageAbandonedReason}) ${urlToFetch}`)
+            return {html: 'render timeout', statusCode: 503}
+        }
+
+        console.warn('parseWebsite error ' + urlToFetch, e)
 
         consecutiveFailures++
         if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {

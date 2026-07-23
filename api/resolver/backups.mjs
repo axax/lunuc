@@ -21,7 +21,7 @@ export const listBackups = type =>{
 
     // make sure upload dir exists
     const backup_dir = getBackupDir(type)
-    if (!Util.ensureDirectoryExistence(backup_dir)) {
+    if (!Util.ensureDirectoryExistence(backup_dir, true)) {
         throw new Error(`Backup folder could not be created -> ${backup_dir}`)
     }
 
@@ -71,7 +71,7 @@ export const removeBackup = (type, name) => {
 export const createDbBackup = (options={})=>{
     // make sure upload dir exists
     const backup_dir = getBackupDir('db')
-    if (!Util.ensureDirectoryExistence(backup_dir)) {
+    if (!Util.ensureDirectoryExistence(backup_dir, true)) {
         throw new Error(`Backup folder coud not be created -> ${backup_dir}`)
     }
 
@@ -103,7 +103,7 @@ export const mongoExport = ({type, query}) => {
 export const createMediaBackup = (filesToBackup)=>{
     // make sure upload dir exists
     const backup_dir = getBackupDir('media')
-    if (!Util.ensureDirectoryExistence(backup_dir)) {
+    if (!Util.ensureDirectoryExistence(backup_dir, true)) {
         throw new Error(`Backup folder coud not be created -> ${backup_dir}`)
     }
 
@@ -157,7 +157,7 @@ export const createMediaBackup = (filesToBackup)=>{
 export const createHostruleBackup = ()=>{
     // make sure upload dir exists
     const backup_dir = getBackupDir('hostrule')
-    if (!Util.ensureDirectoryExistence(backup_dir)) {
+    if (!Util.ensureDirectoryExistence(backup_dir, true)) {
         throw new Error(`Backup folder coud not be created -> ${backup_dir}`)
     }
 

@@ -90,7 +90,7 @@ const startFtpServer = async (db)=> {
                     absdir = path.join(path.join(ROOT_DIR, config.BACKUP_DIR), ftpUser.root.substring(7))
                 }
 
-                if(ensureDirectoryExistence(absdir)) {
+                if(ensureDirectoryExistence(absdir, true)) {
                     console.log(absdir)
                     return resolve({root: absdir})
                 }else{

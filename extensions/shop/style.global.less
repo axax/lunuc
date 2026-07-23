@@ -340,11 +340,11 @@
       padding-top: 0;
     }
 
-    @media @tablet, @desktop {
+    @media @{tablet}, @{desktop} {
       padding-top: @content-padding;
     }
 
-    @media @mobile {
+    @media @{mobile} {
       box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
       .menu-container {
         position: absolute;
@@ -382,7 +382,7 @@
         font-weight: bold;
       }
 
-      @media @mobile {
+      @media @{mobile} {
         margin-left: 3rem;
         text-align: center;
       }
@@ -393,7 +393,7 @@
       display: flex;
       align-items: center;
 
-      @media @mobile {
+      @media @{mobile} {
         width: 0;
         overflow-x: hidden;
         position: absolute;
@@ -494,7 +494,7 @@
         left: -0.4rem;
       }
 
-      @media @mobile, @tablet {
+      @media @{mobile}, @{tablet} {
         margin-left: 0;
         .link-text {
           display: none;
@@ -523,14 +523,14 @@
     }
 
     .copyright {
-      @media @mobile {
+      @media @{mobile} {
         text-align: center;
       }
     }
 
     .social {
       text-align: right;
-      @media @mobile {
+      @media @{mobile} {
         text-align: center;
       }
 
@@ -563,7 +563,7 @@
         font: 400 0.8rem 'Source Sans Pro';
 
         padding: 1rem 2rem;
-        @media @mobile {
+        @media @{mobile} {
           padding: 1rem 0.5rem;
           font-size: 0.6rem;
         }
@@ -731,12 +731,12 @@
     width: 20rem;
 
 
-    @media @desktop {
+    @media @{desktop} {
       &:after {
         right: 8.7rem;
       }
     }
-    @media @mobile, @tablet {
+    @media @{mobile}, @{tablet} {
       &:after {
         right: 3.7rem;
       }
@@ -813,7 +813,7 @@
     padding: @content-padding*2 @content-padding 0 @content-padding;
     display: flex;
 
-    @media @mobile {
+    @media @{mobile} {
       display: none;
     }
 
@@ -895,7 +895,7 @@
 
   .main-title {
     margin: 0;
-    @media @mobile {
+    @media @{mobile} {
       font-size: 6vw;
     }
   }
@@ -956,7 +956,7 @@
     .productlist-header {
       margin-bottom: 2.5rem;
       display: flex;
-      @media @mobile {
+      @media @{mobile} {
         flex-direction: column;
       }
     }
@@ -995,7 +995,7 @@
     }
 
     .order {
-      @media @mobile {
+      @media @{mobile} {
         margin-top: 1rem;
         width: 100%;
       }
@@ -1063,10 +1063,10 @@
   }
 
   #app:empty,
-  /*&.Cms-shop-myaccount.Cms--loading,
-  &.Cms-shop-component-productlist.Cms--loading,
-  &.Cms-shop-component-product.Cms--loading,
-  &.Cms-shop-detail.Cms--loading,*/
+    /*&.Cms-shop-myaccount.Cms--loading,
+    &.Cms-shop-component-productlist.Cms--loading,
+    &.Cms-shop-component-product.Cms--loading,
+    &.Cms-shop-detail.Cms--loading,*/
   .signup-form-loading,
   .new-password-form-loading,
   .fogot-password-form-loading,

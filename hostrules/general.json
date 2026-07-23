@@ -31,30 +31,43 @@
     "/de/\\\\?product=(.*)": "/produkte"
   },
   "blockUrlPathRegex": "(\\/.DS_Store|php:\\/\\/|\\/.env|\\/.git|\\/.aws|\\/.svn|\\/index.php\\/|\\/wp-json|\\/wp-admin\\/|\\/wp-includes\\/|\\/\\.\\.\\/|%2F\\.\\.%2F|\\/wp-content\\/|\\/cgi-bin\\/|\\.php$|\\.cgi$|\\.aspx$)",
-  "rateLimit": [{
-    "userAgent": "meta-externalagent/1.1 (+https://developers.facebook.com/docs/sharing/webmasters/crawler)",
-    "time": 60000,
-    "maxRequestsPerTime": 5
-  }],
-  "00requestRules": [{
-    "match": {
-      "userAgent": "/Baiduspider/i",
-      "pathname": "/^\/proflight\/produkte\//",
-      "search": "/^\\?.+/"
-    },
-    "action": {
-      "type": "block",
-      "statusCode": 403
+  "rateLimit": [
+    {
+      "userAgent": "meta-externalagent/1.1 (+https://developers.facebook.com/docs/sharing/webmasters/crawler)",
+      "time": 60000,
+      "maxRequestsPerTime": 5
     }
-  },{
-    "match": {
-      "userAgent": "/Baiduspider/i",
-      "pathname": "/^\/proflight\/produkt\/detail\\//",
-      "allowedQueryParams": ["p", "open"]
+  ],
+  "00requestRules": [
+    {
+      "match": {
+        "userAgent": "/Baiduspider/i",
+        "pathname": "/^\/proflight\/produkte\//",
+        "search": "/^\\?.+/"
+      },
+      "action": {
+        "type": "block",
+        "statusCode": 403
+      }
     },
-    "action": {
-      "type": "block",
-      "statusCode": 403
+    {
+      "match": {
+        "userAgent": "/Baiduspider/i",
+        "pathname": "/^\/proflight\/produkt\/detail\\//",
+        "allowedQueryParams": [
+          "p",
+          "open"
+        ]
+      },
+      "action": {
+        "type": "block",
+        "statusCode": 403
+      }
     }
-  }]
+  ],
+  "asnPolicy": {
+    "mode": "log",
+    "blockAsns": [],
+    "useNotoriousList": false
+  }
 }

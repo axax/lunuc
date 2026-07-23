@@ -23,7 +23,7 @@ import {verifyTokenAndResponse} from './util/tokenLink.mjs'
 //import heapdump from 'heapdump'
 import {clientAddress} from '../util/host.mjs'
 import Cache from '../util/cache.mjs'
-import {decodeURIComponentSafe, regexRedirectUrl, doScreenCapture} from './util/index.mjs'
+import {decodeURIComponentSafe, regexRedirectUrl, doScreenCapture, createCanonicalSsrQuery} from './util/index.mjs'
 import {createSimpleEtag} from './util/etag.mjs'
 import {getDynamicConfig} from '../util/config.mjs'
 import {
@@ -34,12 +34,12 @@ import {
     sendFileFromDir, statSafe
 } from './util/file.mjs'
 import {actAsReverseProxy, isUrlValidForPorxing} from './util/reverseProxy.mjs'
-import Util from '../client/util/index.mjs'
 import {doTrackingEvent} from './util/tracking.mjs'
 import {getGatewayIp} from '../util/gatewayIp.mjs'
 import {isRateLimited} from './util/rateLimiter.mjs'
 import {applyRequestRules} from './util/requestRules.mjs'
 import {getRegexCached} from './util/regexCache.mjs'
+import {initAsnBlocker, checkAsnPolicy, getAsnStats, resetAsnStats} from './util/asnBlocker.mjs'
 
 const config = getDynamicConfig()
 
@@ -181,6 +181,8 @@ try {
     console.warn('index: cannot watch template dir', e.message)
 }
 
+await initAsnBlocker()
+
 
 /* ------------------------------------------------------------------ */
 /* Performance: static path resolution cache                            */
@@ -212,7 +214,7 @@ const pathCacheSet = (key, value) => {
 
 
 /* ------------------------------------------------------------------ */
-/* SSR cache: render deduplication + atomic writes                      */
+/* SSR: render concurrency limit, deduplication + atomic writes         */
 /* ------------------------------------------------------------------ */
 
 // In-flight render deduplication: prevents a cache stampede when multiple
@@ -220,12 +222,56 @@ const pathCacheSet = (key, value) => {
 // concurrent requests for the same url share a single parseWebsite call.
 const pendingRenders = new Map()
 
+// Global Puppeteer concurrency limit. renderOnce deduplicates IDENTICAL
+// urls, this semaphore caps how many DIFFERENT urls render at the same
+// time. Everything above RENDER_MAX_CONCURRENT waits in a bounded queue,
+// everything above the queue limit is rejected immediately with an
+// overloaded result - the server stays responsive no matter how many
+// distinct urls come in.
+// LUNUC_SSR_CONCURRENCY is also read by web2html.mjs (its page-leak
+// threshold is derived from it) - one env var, two consumers, same default.
+const RENDER_MAX_CONCURRENT = parseInt(process.env.LUNUC_SSR_CONCURRENCY) || 5
+const RENDER_MAX_QUEUE = parseInt(process.env.LUNUC_SSR_QUEUE) || 20
+
+let activeRenders = 0
+const renderQueue = []
+
+const acquireRenderSlot = () => {
+    if (activeRenders < RENDER_MAX_CONCURRENT) {
+        activeRenders++
+        return Promise.resolve(true)
+    }
+    if (renderQueue.length >= RENDER_MAX_QUEUE) {
+        return Promise.resolve(false) // overloaded - caller sends 503
+    }
+    return new Promise(resolve => renderQueue.push(resolve))
+}
+
+const releaseRenderSlot = () => {
+    const next = renderQueue.shift()
+    if (next) {
+        next(true) // hand the slot over, activeRenders stays constant
+    } else {
+        activeRenders--
+    }
+}
+
 const renderOnce = (cacheKey, renderFn) => {
     if (pendingRenders.has(cacheKey)) {
         // same url is already being rendered -> reuse that promise
         return pendingRenders.get(cacheKey)
     }
-    const promise = renderFn().finally(() => pendingRenders.delete(cacheKey))
+    const promise = (async () => {
+        const gotSlot = await acquireRenderSlot()
+        if (!gotSlot) {
+            return {statusCode: 503, html: '', overloaded: true}
+        }
+        try {
+            return await renderFn()
+        } finally {
+            releaseRenderSlot()
+        }
+    })().finally(() => pendingRenders.delete(cacheKey))
     pendingRenders.set(cacheKey, promise)
     return promise
 }
@@ -249,22 +295,6 @@ const writeCacheFileAtomic = (cacheFileName, html) => {
         })
     })
 }
-
-
-const createSortedQueryString = (query) => {
-
-    // Convert to sorted array and build string
-    const sortedParams = Object.entries(query)
-        .filter(([key, value]) => key !== '__ssr')
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-
-    if (sortedParams.length === 0) return ''
-
-    return '?' + sortedParams.join('&')
-}
-
-
 
 const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, host, parsedUrl}) => {
 
@@ -306,19 +336,33 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
             return
         }
 
-        const queryString = createSortedQueryString(parsedUrl.query)
+        const queryString = createCanonicalSsrQuery(parsedUrl.query, hostrule)
+
+        if (queryString === null) {
+            // query too large for ssr - serve the js shell instead of
+            // rendering. Real browsers handle it, scrapers get nothing costly.
+            console.log(`ssr skipped (query limits) ${urlPathname} ${remoteAddress}`)
+            let indexfile
+            if (hostrule.fileMapping && hostrule.fileMapping['/index.html']) {
+                indexfile = path.join(hostrule._basedir, hostrule.fileMapping['/index.html'])
+            } else {
+                indexfile = path.join(BUILD_DIR, '/index.min.html')
+            }
+            await parseAndSendFile(req, res, {filename: indexfile, headers, statusCode, parsedUrl, host, remoteAddress, hostrule})
+            return
+        }
 
         const urlToFetch = BASE_URL + urlPathname + queryString
         const cacheFileDir = path.join(SERVER_DIR, 'cache', host.replace(/\W/g, ''))
 
-        const rawUrlPath = Util.removeTrailingSlash(urlPathname).substring(1) || 'index'
+        // filename is the hash alone: uniqueness and filesystem length
+        // limits solved in one. 16 hex chars = 64 bits - collision-safe at
+        // any realistic cache size (8 chars/32 bits would reach birthday-
+        // collision territory at ~65k urls). To map a hash back to its url,
+        // grep the hash in the logs (every cache log line contains it).
+        const urlHash = crypto.createHash('md5').update(urlPathname + queryString).digest('hex').substring(0, 16)
 
-        // short hash guarantees uniqueness: the sanitizing replaces below can
-        // collide (e.g. /a-b and /a/b both become "a-b"), the readable part
-        // is kept for debugging
-        const urlHash = crypto.createHash('md5').update(urlPathname + queryString).digest('hex').substring(0, 8)
-
-        const cacheFileName = `${cacheFileDir}/${rawUrlPath.replace(/\//g, '-').replace(/[^\w-]/g, '')}${queryString ? '@' + queryString.replace(/\W/g, '') : ''}-${urlHash}.html`
+        const cacheFileName = `${cacheFileDir}/${urlHash}.html`
 
         const errorFile = Cache.get('ErrorFile' + cacheFileName)
         if (errorFile) {
@@ -333,7 +377,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
         const cookies = parseCookies(req)
 
         let sentFromCache = false
-        if (!cookies.auth && ensureDirectoryExistence(cacheFileDir)) {
+        if (!cookies.auth && ensureDirectoryExistence(cacheFileDir, true)) {
 
             // one async stat replaces the previous existsSync + statSync pair -
             // non-blocking and no TOCTOU gap between the two calls
@@ -368,9 +412,24 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
             }
         }
 
-        // deduplicated render: concurrent requests for the same url share one render
+        // deduplicated render: concurrent requests for the same url share one
+        // render; the semaphore caps total concurrency across different urls
         const pageData = await renderOnce(cacheFileName, () =>
             parseWebsite(urlToFetch, {host, agent, referer: req.headers.referer, isBot, remoteAddress, cookies}))
+
+        if (pageData.overloaded) {
+            // render capacity exhausted. If stale content was already sent,
+            // the client is fine - just don't touch the error cache. Fresh
+            // requests get 503 + Retry-After (Googlebot treats that as
+            // temporary and retries instead of derating the page). Must run
+            // BEFORE the error-cache logic below, otherwise a full queue
+            // would cache the url as an error for 6 minutes.
+            if (!sentFromCache) {
+                res.writeHead(503, {...headers, 'Retry-After': '30'})
+                res.end()
+            }
+            return
+        }
 
         // remove script tags
         pageData.html = pageData.html.replace(/<(script|noscript)(?![^>]*type=["']application\/ld\+json["'])[\s\S]*?<\/\1>/gi, '')
@@ -604,13 +663,25 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             hostrule.headers.common = {}
         }
 
-        if (isRateLimited(req, hostrule)) {
+        const asnResult = await checkAsnPolicy({
+            ip: remoteAddress,
+            urlPathname: parsedUrl.pathname,
+            userAgent: req.headers['user-agent'],
+            hostrule
+        })
+        if (asnResult.action !== 'allow') {
+            console.log(`asn ${asnResult.action} for ${remoteAddress} AS${asnResult.asn} (${asnResult.org}) ${parsedUrl.pathname}`)
+            sendError(res, asnResult.action === 'block' ? 403 : 429)
+            return
+        }
+
+        if (isRateLimited(req, hostrule, host)) {
             console.log(`rate limited for ${remoteAddress} ${req.headers['user-agent']}`)
             sendError(res, 429)
             return
         }
 
-        if (applyRequestRules(req, res, parsedUrl, remoteAddress, hostrule.requestRules)) {
+        if (applyRequestRules(req, res, parsedUrl, remoteAddress, hostrule.requestRules, host)) {
             return
         }
 
@@ -636,8 +707,11 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
         if (hostrule.blockUrlPathRegex) {
             const patternFromString = getRegexCached(hostrule.blockUrlPathRegex)
 
-            if (patternFromString.test(parsedUrl.pathname) && (!hostrule.redirects || !hostrule.redirects[parsedUrl.pathname])) {
-                console.log(`url path ${parsedUrl.pathname} blocked by hostrule regex for ${host}`)
+            // test the DECODED pathname: testing the raw one allowed trivial
+            // bypasses via percent-encoding (/%61dmin vs ^/admin), because
+            // all routing below operates on the decoded urlPathname
+            if (patternFromString.test(urlPathname) && (!hostrule.redirects || !hostrule.redirects[urlPathname])) {
+                console.log(`url path ${urlPathname} blocked by hostrule regex for ${host}`)
                 sendError(res, 403)
                 return
             }
@@ -654,6 +728,13 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 if (command === 'refreshhostrules') {
                     resetHostRules()
                     sendError(res, 200)
+                } else if (command === 'asnstats') {
+                    res.writeHead(200, {'Content-Type': 'application/json'})
+                    res.write(JSON.stringify(getAsnStats({limit: 50}), null, 2))
+                    res.end()
+                } else if (command === 'asnstatsreset') {
+                    resetAsnStats()
+                    sendError(res, 200)
                 }
             } else {
                 sendError(res, 403)
@@ -662,7 +743,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
         } else if (urlPathname.startsWith('/graphql') || urlPathname.startsWith('/oauth/') ||
             API_PREFIXES.some(prefix => urlPathname.startsWith('/' + prefix + '/'))) {
             // there is also /graphql/upload
-            await proxyToApiServer(req, res, {host, path: parsedUrl.path})
+            proxyToApiServer(req, res, {host, path: parsedUrl.path})
         } else {
 
             if (urlPathname.startsWith('/tokenlink/')) {
@@ -694,7 +775,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
                     const backup_dir = path.join(ROOT_DIR, BACKUP_DIR + '/heapdump/')
 
-                    if (ensureDirectoryExistence(backup_dir)) {
+                    if (ensureDirectoryExistence(backup_dir, true)) {
                         const filename = Date.now() + '.heapsnapshot'
                         const filepath = path.join(backup_dir, filename)
 
@@ -754,7 +835,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     if (!agent || !isLetsEncryptAgent(agent)) {
                         res.writeHead(redirectStatusCode, {'Location': redirect})
                         res.end()
-                        return true
+                        return
                     }
                 }
 
@@ -840,7 +921,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                         const data = JSON.parse(decodedStr)
                         const screenShotDir = path.join(ABS_UPLOAD_DIR, 'screenshots')
 
-                        if (data.screenshot && ensureDirectoryExistence(screenShotDir)) {
+                        if (data.screenshot && ensureDirectoryExistence(screenShotDir, true)) {
                             //{"screenshot":{"url":"https:/stackoverflow.com/questions/4374822/remove-all-special-characters-with-regexp","options":{"height":300}}}
 
                             const filename = decodedStr.replace(/[^\w]/gi, '') + '.png'
@@ -905,14 +986,16 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     const gatewayIp = await getGatewayIp()
 
                     if (gatewayIp !== remoteAddress && remoteAddress !== '127.0.0.1' && remoteAddress !== '::1') {
-                        // second more restrictiv check
+                        // second more restrictive check - NOTE: distinct keys
+                        // per window, otherwise both configs share one bucket
+                        // and double-count each other's requests
                         if (isTemporarilyBlocked({
-                                key: 'index-' + remoteAddress,
+                                key: 'index1s-' + remoteAddress,
                                 requestPerTime: 10,
                                 requestTimeInMs: 1000
                             }) ||
                             isTemporarilyBlocked({
-                                key: 'index-' + remoteAddress,
+                                key: 'index10s-' + remoteAddress,
                                 requestPerTime: 100,
                                 requestTimeInMs: 10000
                             })) {

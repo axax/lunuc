@@ -141,3 +141,55 @@ export const regexRedirectUrl = (url, redirectMap) => {
     }
     return {} // No match found
 }
+
+
+// Parameters that never influence page content - always stripped from
+// both the ssr cache key and the url that gets rendered. Without this,
+// every utm/gclid variant was a cache miss and its own Puppeteer render.
+const TRACKING_PARAMS = new Set([
+    '__ssr', '__ssrt', // legacy noscript params - stripped until old links/caches rotate out
+    'gclid', 'gclsrc', 'gbraid', 'wbraid', 'fbclid', 'msclkid', 'ttclid',
+    'dclid', 'twclid', 'igshid', 'mc_cid', 'mc_eid', '_ga', '_gl',
+    'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+    'utm_id', 'pk_campaign', 'pk_kwd', 'piwik_campaign', 'ref', 'referrer'
+])
+
+/**
+ * Canonical query for SSR: strips tracking params, applies the optional
+ * hostrule whitelist (ssrQueryWhitelist: ['q','page','sort',...]), sorts
+ * the rest. Handles repeated params (arrays from url.parse) and valueless
+ * params (?flag -> flag=). Returns null when the query exceeds sane
+ * limits - the caller treats that as "not renderable" and serves the
+ * js shell instead (protects against combinatorial cache/render abuse).
+ */
+export const createCanonicalSsrQuery = (query, hostrule) => {
+    const whitelist = hostrule.ssrQueryWhitelist
+    const params = []
+
+    for (const [key, value] of Object.entries(query)) {
+        if (TRACKING_PARAMS.has(key.toLowerCase())) {
+            continue
+        }
+        if (whitelist && !whitelist.includes(key)) {
+            continue
+        }
+        // repeated params arrive as arrays from url.parse
+        const values = Array.isArray(value) ? value : [value]
+        for (const v of values) {
+            params.push([key, v === undefined || v === null ? '' : String(v)])
+        }
+    }
+
+    // hard limits against combinatorial abuse
+    if (params.length > 20) {
+        return null
+    }
+
+    params.sort((a, b) => a[0].localeCompare(b[0]) || a[1].localeCompare(b[1]))
+    const qs = params.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&')
+
+    if (qs.length > 512) {
+        return null
+    }
+    return qs ? '?' + qs : ''
+}

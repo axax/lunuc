@@ -67,7 +67,7 @@ export const createAllInitialData = async (db) => {
 
 export const createUploads = () => {
     const upload_dir = path.join(path.resolve(), UPLOAD_DIR)
-    if (Util.ensureDirectoryExistence(upload_dir)) {
+    if (Util.ensureDirectoryExistence(upload_dir, true)) {
         fs.readdir(upload_dir, (err, files) => {
             if (!err && files) {
                 const filterdFiles = files.filter(e => e !== '.DS_Store')

@@ -20,7 +20,7 @@ export const createOrDeleteStaticFile = async (staticFile, {db, force}) => {
         currentDir += '/'
     }
 
-    if (Util.ensureDirectoryExistence(currentDir + pathParts.join('/'))) {
+    if (Util.ensureDirectoryExistence(currentDir + pathParts.join('/'), true)) {
 
         const filePath = currentDir + staticFile.name
 
@@ -87,9 +87,9 @@ export const createOrDeleteStaticFile = async (staticFile, {db, force}) => {
 
 export const createStaticFiles = async (db) => {
 
-    if (Util.ensureDirectoryExistence(staticDir) &&
-        Util.ensureDirectoryExistence(staticPrivateDir) &&
-        Util.ensureDirectoryExistence(staticTemplateDir)) {
+    if (Util.ensureDirectoryExistence(staticDir, true) &&
+        Util.ensureDirectoryExistence(staticPrivateDir, true) &&
+        Util.ensureDirectoryExistence(staticTemplateDir, true)) {
 
 
         const staticFiles = (await db.collection('StaticFile').find().toArray())
