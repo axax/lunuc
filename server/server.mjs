@@ -39,7 +39,7 @@ import {getGatewayIp} from '../util/gatewayIp.mjs'
 import {isRateLimited} from './util/rateLimiter.mjs'
 import {applyRequestRules} from './util/requestRules.mjs'
 import {getRegexCached} from './util/regexCache.mjs'
-import {initAsnBlocker, checkAsnPolicy, getAsnStats, resetAsnStats} from './util/asnBlocker.mjs'
+import {initAsnBlocker, checkGeoPolicy, getAsnStats, resetAsnStats, getCountryStats, resetCountryStats} from './util/asnBlocker.mjs'
 
 const config = getDynamicConfig()
 
@@ -663,15 +663,18 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             hostrule.headers.common = {}
         }
 
-        const asnResult = await checkAsnPolicy({
+        const geoResult = await checkGeoPolicy({
             ip: remoteAddress,
             urlPathname: parsedUrl.pathname,
             userAgent: req.headers['user-agent'],
             hostrule
         })
-        if (asnResult.action !== 'allow') {
-            console.log(`asn ${asnResult.action} for ${remoteAddress} AS${asnResult.asn} (${asnResult.org}) ${parsedUrl.pathname}`)
-            sendError(res, asnResult.action === 'block' ? 403 : 429)
+        if (geoResult.action !== 'allow') {
+            const detail = geoResult.type === 'country'
+                ? `${geoResult.country} (${geoResult.countryName})`
+                : `AS${geoResult.asn} (${geoResult.org})`
+            console.log(`${geoResult.type} ${geoResult.action} for ${remoteAddress} ${detail} ${parsedUrl.pathname}`)
+            sendError(res, geoResult.action === 'block' ? 403 : 429)
             return
         }
 
@@ -734,6 +737,13 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     res.end()
                 } else if (command === 'asnstatsreset') {
                     resetAsnStats()
+                    sendError(res, 200)
+                } else if (command === 'countrystats') {
+                    res.writeHead(200, {'Content-Type': 'application/json'})
+                    res.write(JSON.stringify(getCountryStats({limit: 50}), null, 2))
+                    res.end()
+                } else if (command === 'countrystatsreset') {
+                    resetCountryStats()
                     sendError(res, 200)
                 }
             } else {
