@@ -352,7 +352,7 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
 
         try {
             // domcontentloaded instead of networkidle2 -> we wait for the app signal instead
-            await page.goto(urlToFetch, {waitUntil: 'domcontentloaded'})
+            await page.goto(urlToFetch, {waitUntil: 'networkidle2'})
 
             // wait until the app signals readiness; fall back to current DOM on timeout
             await page.waitForFunction('window.__LUNUC_APP_READY__ === true', {timeout: 8000})

@@ -317,8 +317,6 @@ export const getAsn = (ip) => {
     return null
 }
 
-export const isNotoriousAsn = (asn) => NOTORIOUS_ASNS.has(asn)
-
 /**
  * Reverse DNS + forward confirmation. Both outcomes are cached, so the
  * DNS cost is paid once per ip per 6h, not per request.
