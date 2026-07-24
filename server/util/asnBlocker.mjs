@@ -41,19 +41,23 @@
 // shop with a known, narrow customer base); blockCountries is denylist-mode
 // (symmetric to blockAsns); exceptCountries always wins over both.
 //
-//   "countryPolicy": {
-//     "mode": "throttle",
-//     "allowedCountries": ["CH", "DE", "AT", "FR", "IT", "LI"],
-//     "requestPerTime": 15,
-//     "requestTimeInMs": 60000
-//   }
+// countryPolicy modes: "log" | "throttle" | "block" | "challenge".
+// "challenge" shows a low-friction "confirm you are not a bot" interstitial
+// (server/util/botChallenge.mjs) instead of throttling/blocking outright -
+// a gentler gate for regions with negligible expected legitimate traffic
+// but where an outright block feels too harsh.
 //
-// IMPORTANT before enabling block/throttle broadly by country: scope via
-// pathRegex to the pages actually being scraped (product finder, graphql),
-// and make sure payment provider callbacks/webhooks are NOT on the same
-// path/host, or are covered by exceptCountries / allowAsns for the
-// provider's known ranges. A shop with international payment processors
-// can otherwise break its own checkout.
+//   "countryPolicy": [
+//     {"mode": "throttle", "blockCountries": ["JM", "BR", ...], "requestPerTime": 5, "requestTimeInMs": 60000},
+//     {"mode": "challenge", "allowedCountries": ["CH", "DE", "AT", "FR", "IT", "LI", ...]}
+//   ]
+//
+// IMPORTANT before enabling block/throttle/challenge broadly by country:
+// scope via pathRegex to the pages actually being scraped (product finder,
+// graphql), and make sure payment provider callbacks/webhooks are NOT on
+// the same path/host, or are covered by exceptCountries / allowAsns for
+// the provider's known ranges. A shop with international payment
+// processors can otherwise break its own checkout.
 
 import path from 'path'
 import fs from 'fs'
@@ -63,6 +67,7 @@ import maxmind from 'maxmind'
 import Cache from '../../util/cache.mjs'
 import {ensureDirectoryExistence} from '../../util/fileUtil.mjs'
 import {isTemporarilyBlocked} from './requestBlocker.mjs'
+import {isChallengePassed} from './botChallenge.mjs'
 
 const DOWNLOAD_TIMEOUT_MS = 60000
 const GEO_MIRROR_BASE = 'https://github.com/P3TERX/GeoLite.mmdb/releases/latest/download'
@@ -383,12 +388,14 @@ const createStatsTracker = ({maxKeys = 2000} = {}) => {
         }
         entry.requests++
         if (action !== 'allow') {
+            // covers block / throttle-block / challenge - anything that
+            // is not a plain pass-through counts here
             entry.blocked++
         }
         if (isListed) {
             // counts hits regardless of mode: in log mode this is the dry
-            // run ("how many requests WOULD the list catch"), in throttle
-            // mode it additionally shows the allowed-through share
+            // run ("how many requests WOULD the list catch"), in throttle/
+            // challenge mode it additionally shows the allowed-through share
             entry.listedHits++
         }
         if (entry.ips.size < 200) {
@@ -562,9 +569,13 @@ const isCountryListed = (policy, code) => {
  * ASN. hostrule.countryPolicy may be a single object or an array; first
  * matching policy (by pathRegex scope + isCountryListed) wins.
  *
- * @returns {Promise<{action:'allow'|'block'|'throttle-block', country?:string, countryName?:string}>}
+ * Modes: "log" | "throttle" | "block" | "challenge". "challenge" requires
+ * cookieHeader (req.headers.cookie) to check for an existing confirmation
+ * cookie - see server/util/botChallenge.mjs.
+ *
+ * @returns {Promise<{action:'allow'|'block'|'throttle-block'|'challenge', country?:string, countryName?:string}>}
  */
-export const checkCountryPolicy = async ({ip, urlPathname, userAgent, hostrule}) => {
+export const checkCountryPolicy = async ({ip, urlPathname, userAgent, hostrule, cookieHeader}) => {
     const policies = normalizePolicies(hostrule.countryPolicy)
     if (!mmdbLookups.country || !policies.length || !ip) {
         return {action: 'allow'}
@@ -605,6 +616,8 @@ export const checkCountryPolicy = async ({ip, urlPathname, userAgent, hostrule})
                 })) {
                     action = 'throttle-block'
                 }
+            } else if (matchedPolicy.mode === 'challenge') {
+                action = isChallengePassed(cookieHeader) ? 'allow' : 'challenge'
             }
         }
     }
@@ -614,14 +627,20 @@ export const checkCountryPolicy = async ({ip, urlPathname, userAgent, hostrule})
     return {action, country: code, countryName: name}
 }
 
+
+/* ------------------------------------------------------------------ */
+/* Convenience wrapper                                                   */
+/* ------------------------------------------------------------------ */
+
 /**
- * Convenience wrapper for the common case: run the ASN check first (no
- * extra cost if asnPolicy isn't configured on the host), then the country
- * check, and return the first non-'allow' result. Kept separate from
- * checkAsnPolicy/checkCountryPolicy on purpose - they stay independent,
- * single-purpose functions with their own config surface (blockAsns vs.
- * allowedCountries) and their own stats tracker. This just gives the
- * request pipeline one call site instead of two.
+ * Runs the ASN check first (near-zero cost if asnPolicy isn't configured
+ * on the host), then the country check, and returns the first non-'allow'
+ * result. Kept separate from checkAsnPolicy/checkCountryPolicy on purpose -
+ * they stay independent, single-purpose functions with their own config
+ * surface and their own stats tracker. This just gives the request
+ * pipeline one call site instead of two.
+ *
+ * @returns {Promise<{action, type?: 'asn'|'country', ...}>}
  */
 export const checkGeoPolicy = async (params) => {
     const asnResult = await checkAsnPolicy(params)

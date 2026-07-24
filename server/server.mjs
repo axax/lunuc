@@ -39,7 +39,15 @@ import {getGatewayIp} from '../util/gatewayIp.mjs'
 import {isRateLimited} from './util/rateLimiter.mjs'
 import {applyRequestRules} from './util/requestRules.mjs'
 import {getRegexCached} from './util/regexCache.mjs'
-import {initAsnBlocker, checkGeoPolicy, getAsnStats, resetAsnStats, getCountryStats, resetCountryStats} from './util/asnBlocker.mjs'
+import {
+    initAsnBlocker,
+    checkGeoPolicy,
+    getAsnStats,
+    resetAsnStats,
+    getCountryStats,
+    resetCountryStats
+} from './util/asnBlocker.mjs'
+import {handleChallengeConfirm, renderChallengePage} from './util/botChallenge.mjs'
 
 const config = getDynamicConfig()
 
@@ -639,6 +647,14 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
         req.isHttps = req.socket.encrypted
 
+        // Bot-check confirm route: must be handled BEFORE any geo/asn gate
+        // below, otherwise the confirm request itself could get caught by
+        // the very check it is meant to satisfy.
+        if (parsedUrl.pathname === '/__botcheck/confirm') {
+            handleChallengeConfirm(req, res, parsedUrl)
+            return
+        }
+
         if (!req.headers[TRACK_IP_HEADER] && parsedUrl.href !== '/graphql') {
             console.log(`${req.method} ${remoteAddress}: ${req.isHttps ? 'https' : 'http'}://${host}${parsedUrl.href} - ${req.headers['user-agent']}`)
         }
@@ -667,8 +683,17 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             ip: remoteAddress,
             urlPathname: parsedUrl.pathname,
             userAgent: req.headers['user-agent'],
+            cookieHeader: req.headers.cookie,
             hostrule
         })
+
+        if (geoResult.action === 'challenge') {
+            res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store'})
+            res.write(renderChallengePage(req.url))
+            res.end()
+            return
+        }
+
         if (geoResult.action !== 'allow') {
             const detail = geoResult.type === 'country'
                 ? `${geoResult.country} (${geoResult.countryName})`
