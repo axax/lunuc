@@ -651,7 +651,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
         // below, otherwise the confirm request itself could get caught by
         // the very check it is meant to satisfy.
         if (parsedUrl.pathname === '/__botcheck/confirm') {
-            handleChallengeConfirm(req, res, parsedUrl)
+            handleChallengeConfirm(req, res, parsedUrl, remoteAddress)
             return
         }
 
@@ -688,6 +688,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
         })
 
         if (geoResult.action === 'challenge') {
+            console.log(`country challenge shown to ${remoteAddress} ${geoResult.country} (${geoResult.countryName}) ${req.headers['user-agent']} ${parsedUrl.pathname}`)
             res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store'})
             res.write(renderChallengePage(req.url))
             res.end()
@@ -698,7 +699,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             const detail = geoResult.type === 'country'
                 ? `${geoResult.country} (${geoResult.countryName})`
                 : `AS${geoResult.asn} (${geoResult.org})`
-            console.log(`${geoResult.type} ${geoResult.action} for ${remoteAddress} ${detail} ${parsedUrl.pathname}`)
+            console.log(`${geoResult.type} ${geoResult.action} for ${remoteAddress} ${detail} ${req.headers['user-agent']} ${parsedUrl.pathname}`)
             sendError(res, geoResult.action === 'block' ? 403 : 429)
             return
         }

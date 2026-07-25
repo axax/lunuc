@@ -125,9 +125,11 @@ export const renderChallengePage = (targetUrl) => {
  * routed BEFORE the geo/asn checks run, so the confirm request itself is
  * never caught by the gate it is meant to satisfy.
  */
-export const handleChallengeConfirm = (req, res, parsedUrl) => {
+export const handleChallengeConfirm = (req, res, parsedUrl, remoteAddress) => {
     const target = sanitizeRedirectTarget(parsedUrl.query.redirect)
     const token = createToken()
+
+    console.log(`bot challenge confirmed by ${remoteAddress} -> redirecting to ${target}`)
 
     const cookieParts = [
         `${COOKIE_NAME}=${token}`,

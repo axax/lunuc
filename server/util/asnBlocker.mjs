@@ -52,12 +52,27 @@
 //     {"mode": "challenge", "allowedCountries": ["CH", "DE", "AT", "FR", "IT", "LI", ...]}
 //   ]
 //
+// hostrule.geoExceptIps: [ip, ip, ...] - a flat, hostrule-level exception
+// list (mirrors the existing hostrule.blockedIps mechanism, just for the
+// opposite direction). Any ip in this list is NEVER listed by asnPolicy or
+// countryPolicy (throttle/block/challenge), regardless of its ASN or
+// country - use this for specific, individually verified third-party
+// services (site audit tools, uptime monitors, ...) whose traffic you
+// confirmed via asnstats/countrystats but that run on generic cloud/hosting
+// infrastructure with no other trustworthy signal (no stable ASN scoping
+// possible without also exempting unrelated tenants on the same host, no
+// verifiable dns). The exception still shows up in stats as normal 'allow'
+// traffic - only the listed/blocked/challenged classification is suppressed.
+// Look up the exact ip via the "ips" field in asnstats/countrystats (log
+// mode + a single test request from the service is usually enough to
+// isolate it, especially when distinctIps is 1).
+//
 // IMPORTANT before enabling block/throttle/challenge broadly by country:
 // scope via pathRegex to the pages actually being scraped (product finder,
 // graphql), and make sure payment provider callbacks/webhooks are NOT on
-// the same path/host, or are covered by exceptCountries / allowAsns for
-// the provider's known ranges. A shop with international payment
-// processors can otherwise break its own checkout.
+// the same path/host, or are covered by exceptCountries / allowAsns /
+// geoExceptIps for the provider's known ranges. A shop with international
+// payment processors can otherwise break its own checkout.
 
 import path from 'path'
 import fs from 'fs'
@@ -419,6 +434,11 @@ const createStatsTracker = ({maxKeys = 2000} = {}) => {
             blocked: e.blocked,
             listedHits: e.listedHits,
             distinctIps: e.ips.size,
+            // exposes the actual ips (bounded to 200 already, see the cap
+            // above) so a specific offender/exception (e.g. a third-party
+            // service to add to hostrule.geoExceptIps) can be identified
+            // directly from the stats endpoint without grepping logs
+            ips: [...e.ips],
             requestsPerIp: Math.round(e.requests / Math.max(1, e.ips.size)),
             topPaths: topN(e.paths, 5),
             topAgents: topN(e.agents, 3)
@@ -479,6 +499,10 @@ const normalizePolicies = (policy) => {
     return Array.isArray(policy) ? policy : [policy]
 }
 
+// hostrule-level ip exception, shared by both asn and country checks (see
+// module header for the full rationale). Mirrors hostrule.blockedIps.
+const isExceptedIp = (hostrule, ip) => !!(hostrule.geoExceptIps && hostrule.geoExceptIps.includes(ip))
+
 
 /* ------------------------------------------------------------------ */
 /* ASN policy                                                           */
@@ -494,6 +518,10 @@ const normalizePolicies = (policy) => {
  * differently (e.g. a curated confirmed-offender list -> block, a
  * broader/uncertain list -> throttle only).
  *
+ * hostrule.geoExceptIps always overrides the listing decision (see module
+ * header) - the request still flows through stats recording as a normal
+ * 'allow'.
+ *
  * @returns {Promise<{action:'allow'|'block'|'throttle-block', asn?:number, org?:string}>}
  */
 export const checkAsnPolicy = async ({ip, urlPathname, userAgent, hostrule}) => {
@@ -508,20 +536,24 @@ export const checkAsnPolicy = async ({ip, urlPathname, userAgent, hostrule}) => 
     }
     const {asn, org} = asnInfo
 
+    const excepted = isExceptedIp(hostrule, ip)
+
     let matchedPolicy = null
-    for (const policy of policies) {
-        if (policy.pathRegex) {
-            const re = getPathRegex(policy.pathRegex)
-            if (re && !re.test(urlPathname)) {
-                continue // out of scope for this policy - try the next one
+    if (!excepted) {
+        for (const policy of policies) {
+            if (policy.pathRegex) {
+                const re = getPathRegex(policy.pathRegex)
+                if (re && !re.test(urlPathname)) {
+                    continue // out of scope for this policy - try the next one
+                }
             }
-        }
-        const isListed = ((policy.blockAsns && policy.blockAsns.includes(asn)) ||
-                (policy.useNotoriousList && NOTORIOUS_ASNS.has(asn))) &&
-            !(policy.allowAsns && policy.allowAsns.includes(asn))
-        if (isListed) {
-            matchedPolicy = policy
-            break // first match wins
+            const isListed = ((policy.blockAsns && policy.blockAsns.includes(asn)) ||
+                    (policy.useNotoriousList && NOTORIOUS_ASNS.has(asn))) &&
+                !(policy.allowAsns && policy.allowAsns.includes(asn))
+            if (isListed) {
+                matchedPolicy = policy
+                break // first match wins
+            }
         }
     }
 
@@ -573,6 +605,10 @@ const isCountryListed = (policy, code) => {
  * cookieHeader (req.headers.cookie) to check for an existing confirmation
  * cookie - see server/util/botChallenge.mjs.
  *
+ * hostrule.geoExceptIps always overrides the listing decision (see module
+ * header) - the request still flows through stats recording as a normal
+ * 'allow'.
+ *
  * @returns {Promise<{action:'allow'|'block'|'throttle-block'|'challenge', country?:string, countryName?:string}>}
  */
 export const checkCountryPolicy = async ({ip, urlPathname, userAgent, hostrule, cookieHeader}) => {
@@ -587,17 +623,21 @@ export const checkCountryPolicy = async ({ip, urlPathname, userAgent, hostrule, 
     }
     const {code, name} = countryInfo
 
+    const excepted = isExceptedIp(hostrule, ip)
+
     let matchedPolicy = null
-    for (const policy of policies) {
-        if (policy.pathRegex) {
-            const re = getPathRegex(policy.pathRegex)
-            if (re && !re.test(urlPathname)) {
-                continue
+    if (!excepted) {
+        for (const policy of policies) {
+            if (policy.pathRegex) {
+                const re = getPathRegex(policy.pathRegex)
+                if (re && !re.test(urlPathname)) {
+                    continue
+                }
             }
-        }
-        if (isCountryListed(policy, code)) {
-            matchedPolicy = policy
-            break
+            if (isCountryListed(policy, code)) {
+                matchedPolicy = policy
+                break
+            }
         }
     }
 
