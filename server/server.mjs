@@ -304,7 +304,7 @@ const writeCacheFileAtomic = (cacheFileName, html) => {
     })
 }
 
-const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, host, parsedUrl}) => {
+const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, host, parsedUrl, geoResult}) => {
 
     const agent = req.headers['user-agent']
 
@@ -334,6 +334,10 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
     const statusCode = (hostrule.statusCode && hostrule.statusCode[urlPathname] ? hostrule.statusCode[urlPathname] : 200)
 
     let {isBot, noJsRendering} = parseUserAgent(agent, {botRegex: hostrule.botRegex, noJsRenderingBotRegex: hostrule.noJsRenderingBotRegex})
+
+    if(geoResult.isCrawler && !isBot){
+        isBot = true
+    }
 
     if (noJsRendering || parsedUrl.query.__ssr === '1') {
 
@@ -688,7 +692,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
         })
 
         if (geoResult.action === 'challenge') {
-            console.log(`country challenge shown to ${remoteAddress} ${geoResult.country} (${geoResult.countryName}) ${req.headers['user-agent']} ${parsedUrl.pathname}`)
+            console.log(`country challenge shown to ${remoteAddress} ${geoResult.country} (${geoResult.countryName}) ${req.headers['user-agent']} ${parsedUrl.pathname} isCrawler=${!!geoResult.isCrawler}`)
             res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store'})
             res.write(renderChallengePage(req.url))
             res.end()
@@ -1043,7 +1047,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     const ext = path.extname(urlPathname)
                     if (!ext || urlPathname.indexOf('/' + config.PRETTYURL_SEPERATOR + '/') >= 0) {
                         // file extension is not allowed here
-                        await sendIndexFile({req, res, remoteAddress, urlPathname, hostrule, host, parsedUrl})
+                        await sendIndexFile({req, res, remoteAddress, urlPathname, hostrule, host, parsedUrl, geoResult})
                     } else {
                         sendError(res, 404)
                     }

@@ -57,15 +57,15 @@
 // opposite direction). Any ip in this list is NEVER listed by asnPolicy or
 // countryPolicy (throttle/block/challenge), regardless of its ASN or
 // country - use this for specific, individually verified third-party
-// services (site audit tools, uptime monitors, ...) whose traffic you
-// confirmed via asnstats/countrystats but that run on generic cloud/hosting
-// infrastructure with no other trustworthy signal (no stable ASN scoping
-// possible without also exempting unrelated tenants on the same host, no
-// verifiable dns). The exception still shows up in stats as normal 'allow'
-// traffic - only the listed/blocked/challenged classification is suppressed.
-// Look up the exact ip via the "ips" field in asnstats/countrystats (log
-// mode + a single test request from the service is usually enough to
-// isolate it, especially when distinctIps is 1).
+// services (site audit tools, uptime monitors, a specific crawler with no
+// reliable dns/ip-range verification method - e.g. Bytespider, Cohere-ai,
+// Diffbot, search.ch...) whose traffic you confirmed via asnstats/
+// countrystats but that cannot be verified generically. The exception
+// still shows up in stats as normal 'allow' traffic - only the listed/
+// blocked/challenged classification is suppressed. Look up the exact ip
+// via the "ips" field in asnstats/countrystats (log mode + a single test
+// request from the service is usually enough to isolate it, especially
+// when distinctIps is 1).
 //
 // IMPORTANT before enabling block/throttle/challenge broadly by country:
 // scope via pathRegex to the pages actually being scraped (product finder,
@@ -73,9 +73,53 @@
 // the same path/host, or are covered by exceptCountries / allowAsns /
 // geoExceptIps for the provider's known ranges. A shop with international
 // payment processors can otherwise break its own checkout.
+//
+// CRAWLER VERIFICATION IS INFRASTRUCTURE-BASED, NOT UA-BASED - a request
+// only ever fails/passes based on WHICH NETWORK it comes from (dns PTR or
+// published ip range), never based on the user-agent string it claims.
+// This matters especially with a narrow allowedCountries (e.g. CH/DE/AT):
+// nearly every major search/AI crawler (Google, Bing/Copilot, OpenAI,
+// Anthropic, Meta, Amazon, Yandex...) runs from US/foreign datacenters and
+// would otherwise be flagged by countryPolicy like any other foreign
+// visitor - isVerifiedCrawler is what lets them through regardless. Two
+// methods:
+//   1. DNS_VERIFIED_CRAWLER_DOMAINS (reverse+forward dns) - since this
+//      checks the IP's OWN infrastructure, it transparently covers ANY
+//      product/crawler operated from that infrastructure, even ones not
+//      explicitly named here.
+//   2. IP_RANGE_CRAWLER_SOURCES (published CIDR lists) - for OpenAI and
+//      Perplexity, who run on rented cloud infra with no stable PTR
+//      convention, but who publish their crawler IP ranges directly.
+//
+// PERFORMANCE: isVerifiedCrawler is intentionally NOT run on every request.
+// It only runs when a policy has already flagged the ip as listed - the
+// rare path, not the hot path. A DNS reverse lookup can take up to ~2s on
+// first sight of an unfamiliar ip (see DNS_VERIFY_TTL below), so running it
+// unconditionally would add that latency risk to ordinary customer
+// traffic. checkAsnPolicy/checkCountryPolicy expose the outcome as
+// `isCrawler` in their return value, but it stays `null` ("not evaluated")
+// whenever no policy matched - never forced just to populate the field.
+//
+// SCOPE IS DELIBERATELY LIMITED TO CRAWLERS THAT PROVIDE VISIBILITY VALUE
+// (search engines, AI assistants that can cite/link back). Pure training-
+// only scrapers with no visibility benefit (Bytespider/ByteDance, Common
+// Crawl/CCBot, Cohere-ai, Diffbot, ...) are intentionally left unverified -
+// they run on infrastructure that either has no documented verification
+// method, or (Common Crawl) is verifiable but was excluded on purpose:
+// it feeds training datasets, not direct citations, so it brings no
+// traffic/visibility benefit here. Such traffic stays subject to whatever
+// asnPolicy/countryPolicy already applies. If one is specifically wanted
+// despite that, verify its actual source ip via asnstats/countrystats and
+// allow it individually via geoExceptIps - exactly like the geochecker.net
+// case. The same manual path applies to smaller/regional search engines
+// with no documented verification method (e.g. search.ch) - check first
+// whether they even get flagged at all (a swiss-hosted crawler likely
+// already passes a CH-inclusive allowedCountries without needing any
+// verification).
 
 import path from 'path'
 import fs from 'fs'
+import net from 'net'
 import dns from 'dns'
 import {pipeline} from 'stream/promises'
 import maxmind from 'maxmind'
@@ -133,34 +177,44 @@ const NOTORIOUS_ASNS = new Set([
 
 
 /* ------------------------------------------------------------------ */
-/* Crawler verification: reverse+forward DNS (FCrDNS)                   */
+/* Crawler verification, method 1: reverse+forward DNS (FCrDNS)         */
 /*                                                                       */
 /* Works reliably for vendors that own stable, long-documented crawling  */
-/* infrastructure (search engines). OpenAI and Anthropic are included as */
-/* best-effort - they run mostly on rented cloud infra (AWS/Azure/GCP),  */
-/* so their PTR records are NOT guaranteed to follow a fixed convention; */
-/* treat those two as a weaker signal than the rest of the list.         */
-/* Perplexity is deliberately NOT included - no stable PTR convention is */
-/* documented for it, and Cloudflare has documented undeclared/rotating  */
-/* Perplexity crawlers besides, so a fabricated entry here would be      */
-/* worse than no entry (false confidence). Unverified AI-bot traffic     */
-/* from a listed ASN/country is simply treated like any other bot.       */
+/* infrastructure - the check is IP/PTR based, so it automatically       */
+/* covers every product/crawler that vendor runs from that network,      */
+/* not just the specific bot names listed in the comments below.         */
 /* ------------------------------------------------------------------ */
 
 const DNS_VERIFIED_CRAWLER_DOMAINS = [
-    // --- established, high confidence: vendor owns dedicated crawl infra ---
-    '.googlebot.com', '.google.com',          // Googlebot (incl. Google-Extended/AI Overviews - same crawler)
-    '.search.msn.com',                        // Bingbot
+    // --- established, high confidence: vendor owns dedicated crawl infra,
+    // pattern is officially documented by the vendor itself ---
+    '.googlebot.com', '.google.com',          // Googlebot, Google-Extended, and any
+    // Gemini/AI Overviews fetcher sharing this infra
+    '.search.msn.com',                        // Bingbot; Microsoft Copilot's web grounding is
+    // widely believed to share Bing's crawl infra, but
+    // this is not separately documented by Microsoft -
+    // treat the Copilot coverage as reasonably likely,
+    // not guaranteed
     '.crawl.yahoo.net',                       // Yahoo Slurp
     '.applebot.apple.com',                    // Applebot (incl. Applebot-Extended - same crawler)
     '.duckduckgo.com',                        // DuckDuckBot / DuckAssistBot
     '.yandex.com', '.yandex.ru', '.yandex.net', // YandexBot
     '.baidu.com', '.baidu.jp',                 // Baiduspider
     '.sogou.com',                              // Sogou Spider
+    '.crawl.amazonbot.amazon',                 // Amazonbot - officially documented at
+    // developer.amazon.com/amazonbot
 
-    // --- best-effort only, see caveat above ---
-    '.openai.com',     // GPTBot / ChatGPT-User / OAI-SearchBot
-    '.anthropic.com'   // ClaudeBot / Claude-User / Claude-SearchBot
+    // --- best-effort only: these vendors run mostly on rented cloud infra
+    // (AWS/Azure/GCP), so PTR records are NOT guaranteed to follow a fixed
+    // convention. Sourced from converging but non-authoritative third-party
+    // observations, not an official vendor document. OpenAI additionally
+    // gets the stronger ip-range check below (method 2). ---
+    '.openai.com',                  // GPTBot / ChatGPT-User / OAI-SearchBot
+    '.anthropic.com',               // ClaudeBot / Claude-User / Claude-SearchBot - Anthropic
+    // does not currently publish stable IP ranges either
+    '.facebook.com', '.fb.com'      // Meta-ExternalAgent / meta-webindexer / Meta-ExternalFetcher
+    // (Meta AI). Meta does not publish IP ranges (per multiple
+    // third-party sources) - dns is the only available signal
 ]
 
 const DNS_VERIFY_TTL = 6 * 3600 * 1000
@@ -191,9 +245,142 @@ const isDnsVerifiedCrawler = async (ip) => {
     return false
 }
 
+
+/* ------------------------------------------------------------------ */
+/* Crawler verification, method 2: official published IP ranges         */
+/*                                                                       */
+/* The vendor-recommended method for OpenAI and Perplexity, who publish  */
+/* their crawler IP ranges as JSON feeds instead of owning stable PTR    */
+/* infrastructure. Uses Node's built-in net.BlockList (no extra          */
+/* dependency) for CIDR containment checks.                             */
+/*                                                                       */
+/* CAVEAT (Perplexity): Cloudflare documented in 2025 that Perplexity    */
+/* also runs undeclared crawlers outside these published ranges to      */
+/* evade blocking. A NON-match here is therefore not proof of spoofing - */
+/* it only means this method could not confirm it - such traffic is     */
+/* simply treated as unverified, same as any other unrecognized bot.    */
+/*                                                                       */
+/* Lists are refreshed periodically but NOT persisted to disk (small,   */
+/* cheap to re-fetch) - a fetch failure just keeps the previous list     */
+/* (or leaves that source disabled until the next refresh if there never */
+/* was one); it never blocks anything else. Vendor domains must be       */
+/* reachable from the vps for this to populate (openai.com,             */
+/* perplexity.com) - add them to any egress firewall allowlist.          */
+/*                                                                       */
+/* PERFORMANCE: both startup and the periodic refresh are fire-and-      */
+/* forget (no await on initIpRangeCrawlerSources / refreshIpRangeSource  */
+/* at startup) - server start and request handling are never blocked on  */
+/* these network calls, even if openai.com/perplexity.com are            */
+/* unreachable. The refresh timer is unref()'d so it cannot keep the     */
+/* process alive either.                                                */
+/* ------------------------------------------------------------------ */
+
+const IP_RANGE_CRAWLER_SOURCES = [
+    {
+        name: 'openai', urls: [
+            'https://openai.com/gptbot.json',
+            'https://openai.com/chatgpt-user.json',
+            'https://openai.com/searchbot.json'
+        ]
+    },
+    {
+        name: 'perplexity', urls: [
+            'https://www.perplexity.com/perplexitybot.json',
+            'https://www.perplexity.com/perplexity-user.json'
+        ]
+    }
+]
+
+const IP_RANGE_REFRESH_MS = 24 * 3600 * 1000
+const IP_RANGE_FETCH_TIMEOUT_MS = 15000
+const ipRangeBlockLists = new Map() // source name -> net.BlockList
+
+// Defensive extraction: matches ip/cidr patterns directly in the raw
+// response text regardless of the surrounding JSON structure, since
+// vendors have been known to change the shape of these feeds without
+// notice ("a moving control, not a permanent identity").
+const IPV4_CIDR_RE = /\b(?:\d{1,3}\.){3}\d{1,3}(?:\/\d{1,2})?\b/g
+const IPV6_CIDR_RE = /\b(?:[0-9a-fA-F]{1,4}:){2,7}[0-9a-fA-F]{0,4}(?:\/\d{1,3})?\b/g
+
+const buildBlockListFromText = (text) => {
+    const blockList = new net.BlockList()
+    let count = 0
+    const matches = [...(text.match(IPV4_CIDR_RE) || []), ...(text.match(IPV6_CIDR_RE) || [])]
+    for (const raw of matches) {
+        const isV6 = raw.includes(':')
+        const [addr, prefix] = raw.split('/')
+        try {
+            blockList.addSubnet(addr, prefix ? parseInt(prefix) : (isV6 ? 128 : 32), isV6 ? 'ipv6' : 'ipv4')
+            count++
+        } catch (e) {
+            // malformed match (e.g. a version number that happened to look
+            // like an ip fragment) - skip it, not worth failing the whole feed
+        }
+    }
+    return {blockList, count}
+}
+
+const refreshIpRangeSource = async (source) => {
+    try {
+        const texts = await Promise.all(source.urls.map(async (url) => {
+            const abort = new AbortController()
+            const timeout = setTimeout(() => abort.abort(), IP_RANGE_FETCH_TIMEOUT_MS)
+            try {
+                const res = await fetch(url, {signal: abort.signal, headers: {'User-Agent': 'lunuc-asn-blocker'}})
+                if (!res.ok) {
+                    throw new Error(`${url} -> HTTP ${res.status}`)
+                }
+                return await res.text()
+            } finally {
+                clearTimeout(timeout)
+            }
+        }))
+        const {blockList, count} = buildBlockListFromText(texts.join('\n'))
+        if (count === 0) {
+            throw new Error('no valid ip/cidr entries parsed from response')
+        }
+        ipRangeBlockLists.set(source.name, blockList)
+        console.log(`asnBlocker: crawler ip ranges updated for ${source.name} (${count} entries)`)
+    } catch (e) {
+        console.warn(`asnBlocker: could not refresh ${source.name} crawler ip ranges - ${e.message}`)
+    }
+}
+
+const initIpRangeCrawlerSources = () => {
+    for (const source of IP_RANGE_CRAWLER_SOURCES) {
+        refreshIpRangeSource(source) // fire and forget at startup, fails soft
+    }
+    const timer = setInterval(() => {
+        for (const source of IP_RANGE_CRAWLER_SOURCES) {
+            refreshIpRangeSource(source)
+        }
+    }, IP_RANGE_REFRESH_MS)
+    timer.unref()
+}
+
+const isIpInCrawlerRanges = (ip) => {
+    const type = ip.includes(':') ? 'ipv6' : 'ipv4'
+    for (const blockList of ipRangeBlockLists.values()) {
+        try {
+            if (blockList.check(ip, type)) {
+                return true
+            }
+        } catch (e) {
+            // malformed ip - ignore, treat as no match
+        }
+    }
+    return false
+}
+
+
 /**
- * Reverse+forward DNS verification. Result is cached, so the DNS cost is
- * paid once per ip per 6h, not per request.
+ * Combined crawler verification: official IP ranges first (cheap, no
+ * network roundtrip), then DNS FCrDNS as fallback. Both outcomes are
+ * cached, so repeat cost is paid once per ip per 6h.
+ *
+ * NOT called unconditionally on every request - see the PERFORMANCE note
+ * in the module header. Only invoked once a policy has already flagged
+ * the ip as listed.
  */
 export const isVerifiedCrawler = async (ip) => {
     const cacheKey = 'asnCrawler-' + ip
@@ -202,7 +389,7 @@ export const isVerifiedCrawler = async (ip) => {
         return cached.verified
     }
 
-    const verified = await isDnsVerifiedCrawler(ip)
+    const verified = isIpInCrawlerRanges(ip) || await isDnsVerifiedCrawler(ip)
     Cache.set(cacheKey, {verified}, DNS_VERIFY_TTL)
     return verified
 }
@@ -305,7 +492,9 @@ const initMmdb = async (dbKey) => {
  * - existing valid dbs -> loaded synchronously (local mmdb parse, ~50ms each)
  * - missing/broken db  -> download runs in the background per db; until it
  *   completes, the corresponding checks fail soft (return 'allow').
- * Also starts the periodic refresh timer for both mmdbs.
+ * Also starts the periodic refresh timer for both mmdbs and the ai
+ * crawler ip range sources - all fire-and-forget, see PERFORMANCE note
+ * in the module header.
  */
 export const initAsnBlocker = async () => {
     await initMmdb('asn')
@@ -319,6 +508,8 @@ export const initAsnBlocker = async () => {
         }
     }, 6 * 3600 * 1000)
     timer.unref()
+
+    initIpRangeCrawlerSources()
 }
 
 
@@ -522,17 +713,19 @@ const isExceptedIp = (hostrule, ip) => !!(hostrule.geoExceptIps && hostrule.geoE
  * header) - the request still flows through stats recording as a normal
  * 'allow'.
  *
- * @returns {Promise<{action:'allow'|'block'|'throttle-block', asn?:number, org?:string}>}
+ * @returns {Promise<{action:'allow'|'block'|'throttle-block', asn?:number, org?:string, isCrawler:boolean|null}>}
+ *   isCrawler is null when no policy matched (verification was never run -
+ *   see the PERFORMANCE note in the module header), otherwise true/false.
  */
 export const checkAsnPolicy = async ({ip, urlPathname, userAgent, hostrule}) => {
     const policies = normalizePolicies(hostrule.asnPolicy)
     if (!mmdbLookups.asn || !policies.length || !ip) {
-        return {action: 'allow'}
+        return {action: 'allow', isCrawler: null}
     }
 
     const asnInfo = getAsn(ip)
     if (!asnInfo) {
-        return {action: 'allow'}
+        return {action: 'allow', isCrawler: null}
     }
     const {asn, org} = asnInfo
 
@@ -558,9 +751,13 @@ export const checkAsnPolicy = async ({ip, urlPathname, userAgent, hostrule}) => 
     }
 
     let action = 'allow'
+    let isCrawler = null // null = not evaluated - see PERFORMANCE note above.
+    // Deliberately not run on every request: a dns
+    // reverse lookup can take up to ~2s on first sight
+    // of an ip, which must not land on ordinary traffic.
     if (matchedPolicy) {
-        // verified search engine / ai crawlers always pass, whatever the list says
-        if (!(await isVerifiedCrawler(ip))) {
+        isCrawler = await isVerifiedCrawler(ip)
+        if (!isCrawler) {
             if (matchedPolicy.mode === 'block') {
                 action = 'block'
             } else if (matchedPolicy.mode === 'throttle') {
@@ -579,7 +776,7 @@ export const checkAsnPolicy = async ({ip, urlPathname, userAgent, hostrule}) => 
 
     asnStatsTracker.record({key: asn, label: org, ip, urlPathname, userAgent, action, isListed: !!matchedPolicy})
 
-    return {action, asn, org}
+    return {action, asn, org, isCrawler}
 }
 
 
@@ -609,17 +806,19 @@ const isCountryListed = (policy, code) => {
  * header) - the request still flows through stats recording as a normal
  * 'allow'.
  *
- * @returns {Promise<{action:'allow'|'block'|'throttle-block'|'challenge', country?:string, countryName?:string}>}
+ * @returns {Promise<{action:'allow'|'block'|'throttle-block'|'challenge', country?:string, countryName?:string, isCrawler:boolean|null}>}
+ *   isCrawler is null when no policy matched (verification was never run -
+ *   see the PERFORMANCE note in the module header), otherwise true/false.
  */
 export const checkCountryPolicy = async ({ip, urlPathname, userAgent, hostrule, cookieHeader}) => {
     const policies = normalizePolicies(hostrule.countryPolicy)
     if (!mmdbLookups.country || !policies.length || !ip) {
-        return {action: 'allow'}
+        return {action: 'allow', isCrawler: null}
     }
 
     const countryInfo = getCountry(ip)
     if (!countryInfo) {
-        return {action: 'allow'}
+        return {action: 'allow', isCrawler: null}
     }
     const {code, name} = countryInfo
 
@@ -642,8 +841,10 @@ export const checkCountryPolicy = async ({ip, urlPathname, userAgent, hostrule, 
     }
 
     let action = 'allow'
+    let isCrawler = null // null = not evaluated - see PERFORMANCE note above
     if (matchedPolicy) {
-        if (!(await isVerifiedCrawler(ip))) {
+        isCrawler = await isVerifiedCrawler(ip)
+        if (!isCrawler) {
             if (matchedPolicy.mode === 'block') {
                 action = 'block'
             } else if (matchedPolicy.mode === 'throttle') {
@@ -664,7 +865,7 @@ export const checkCountryPolicy = async ({ip, urlPathname, userAgent, hostrule, 
 
     countryStatsTracker.record({key: code, label: name, ip, urlPathname, userAgent, action, isListed: !!matchedPolicy})
 
-    return {action, country: code, countryName: name}
+    return {action, country: code, countryName: name, isCrawler}
 }
 
 
@@ -680,7 +881,10 @@ export const checkCountryPolicy = async ({ip, urlPathname, userAgent, hostrule, 
  * surface and their own stats tracker. This just gives the request
  * pipeline one call site instead of two.
  *
- * @returns {Promise<{action, type?: 'asn'|'country', ...}>}
+ * isCrawler: prefers whichever sub-check actually ran the verification
+ * (matched a policy); stays null if neither did.
+ *
+ * @returns {Promise<{action, type?: 'asn'|'country', isCrawler: boolean|null, ...}>}
  */
 export const checkGeoPolicy = async (params) => {
     const asnResult = await checkAsnPolicy(params)
@@ -691,5 +895,5 @@ export const checkGeoPolicy = async (params) => {
     if (countryResult.action !== 'allow') {
         return {...countryResult, type: 'country'}
     }
-    return {action: 'allow'}
+    return {action: 'allow', isCrawler: countryResult.isCrawler ?? asnResult.isCrawler ?? null}
 }
