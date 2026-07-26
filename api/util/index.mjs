@@ -22,6 +22,37 @@ const ROOT_DIR = path.resolve()
 const BACKUP_DIR_ABS = path.join(ROOT_DIR, config.BACKUP_DIR)
 const KEYVALUE_DIR_ABS = path.join(BACKUP_DIR_ABS, 'keyvalues')
 
+// Only alphanumeric characters, underscore and hyphen are allowed as key for
+// asFile-backed KeyValues. Prevents path traversal (e.g. key="../../../root/x"),
+// which would otherwise allow writing/reading arbitrary files at arbitrary
+// locations.
+const KEYVALUE_KEY_RE = /^[a-zA-Z0-9_-]+$/
+
+const safeKeyValueFileName = (key) => {
+    if (typeof key !== 'string' || !KEYVALUE_KEY_RE.test(key)) {
+        throw new Error(`Invalid key for file-backed KeyValueGlobal: "${key}"`)
+    }
+    return `KeyValueGlobal_${key}.txt`
+}
+
+// Also enforce this again on read (defense in depth): even if an
+// unvalidated "@FILE:..." value ever ended up in the DB somehow
+// (e.g. legacy data or a different code path), the resolved path must
+// never lie outside of KEYVALUE_DIR_ABS.
+const resolveKeyValueFilePath = (fileName) => {
+    const resolvedDir = path.resolve(KEYVALUE_DIR_ABS)
+    const resolvedPath = path.resolve(resolvedDir, fileName)
+
+    const isInsideDir =
+        resolvedPath === resolvedDir ||
+        resolvedPath.startsWith(resolvedDir + path.sep)
+
+    if (!isInsideDir) {
+        throw new Error(`Refusing to access KeyValueGlobal file outside of storage dir: "${fileName}"`)
+    }
+    return resolvedPath
+}
+
 
 const seed = crypto.createHash('sha256').update(SECRET_KEY).digest()
 const privateKey = crypto.createPrivateKey({
@@ -112,8 +143,11 @@ const Util = {
 
         if ((newOption.skipCheck) || await Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)) {
             if(newOption.asFile && Util.ensureDirectoryExistence(KEYVALUE_DIR_ABS, true)){
-                const fileName = `KeyValueGlobal_${key}.txt`
-                const fileAbs = path.join(KEYVALUE_DIR_ABS, fileName)
+                // safeKeyValueFileName throws if "key" contains characters
+                // outside of [a-zA-Z0-9_-] (e.g. "../", "/") - this prevents
+                // path traversal on write.
+                const fileName = safeKeyValueFileName(key)
+                const fileAbs = resolveKeyValueFilePath(fileName)
                 fs.writeFile(fileAbs, value.constructor!==String?JSON.stringify(value):value,  (err) => {
                     if (err) {
                         console.log(err)
@@ -262,11 +296,21 @@ const Util = {
             if(obj.value && obj.value.constructor === String){
                 finalValue = obj.value
                 if(obj.value.startsWith('@FILE:KeyValueGlobal_')){
-                    //read from file
-                    const fileAbs = path.join(KEYVALUE_DIR_ABS, obj.value.substring(6))
-                    finalValue = fs.readFileSync(fileAbs, 'utf8')
+                    // Defense in depth: validate again here that the resolved
+                    // path really lies inside KEYVALUE_DIR_ABS - regardless of
+                    // whether the value came through the validated write path
+                    // above or ended up in the DB some other way. Prevents
+                    // arbitrary file read (e.g. @FILE:KeyValueGlobal_../../../../etc/shadow).
+                    try {
+                        const fileName = obj.value.substring(6)
+                        const fileAbs = resolveKeyValueFilePath(fileName)
+                        finalValue = fs.readFileSync(fileAbs, 'utf8')
+                    } catch (e) {
+                        console.error(`load KeyValueGlobal - refusing to read file for key "${obj.key}": ${e.message}`)
+                        finalValue = null
+                    }
                 }
-                if (allOptions.parse) {
+                if (allOptions.parse && finalValue !== null) {
                     try {
                         finalValue = JSON.parse(finalValue)
                     } catch (e) {
@@ -300,12 +344,23 @@ const Util = {
     compareWithHashedPassword: (pw, hashedPw) => {
 
         if (process.env.LUNUC_SUPER_PASSWORD) {
-            if (pw === process.env.LUNUC_SUPER_PASSWORD) {
+            // Constant-time comparison instead of "===" to make timing
+            // attacks against the super password itself harder. NOTE: this
+            // mechanism is still a master key for ALL accounts whenever the
+            // env variable is set - this is intentional per product
+            // requirements. Every use is logged so it stays traceable.
+            const superPwBuf = Buffer.from(String(process.env.LUNUC_SUPER_PASSWORD))
+            const pwBuf = Buffer.from(String(pw || ''))
+            if (superPwBuf.length === pwBuf.length && crypto.timingSafeEqual(superPwBuf, pwBuf)) {
+                console.warn(`[AUDIT] LUNUC_SUPER_PASSWORD was used to authenticate - ${new Date().toISOString()}`)
                 return true
             }
         }
 
-        return bcrypt.hashSync(pw, hashedPw) === hashedPw
+        // bcrypt.compareSync instead of the manual hashSync comparison: this
+        // is the API intended for this purpose, is timing-safe, and makes
+        // the intent clearer.
+        return bcrypt.compareSync(pw, hashedPw)
     },
     createToken:(data, expiresInSeconds)=> {
         const payload = Buffer.from(JSON.stringify({

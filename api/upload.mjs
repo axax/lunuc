@@ -2,9 +2,9 @@ import formidable from 'formidable'
 import path from 'path'
 import Util from './util/index.mjs'
 import config from '../gensrc/config.mjs'
-import zipper from 'zip-local'
 import Hook from '../util/hook.cjs'
-import {execSync} from 'child_process'
+import {execFileSync} from 'child_process'
+import {safeUnzipToDir} from './util/zipSafe.mjs'
 import {
     CAPABILITY_MANAGE_BACKUPS
 } from '../util/capabilities.mjs'
@@ -185,9 +185,14 @@ export const handleMediaDumpUpload = db => async (req, res) => {
             // rename it to it's orignal name
             form.on('file', function (field, file) {
                 try {
-                    zipper.sync.unzip(file.filepath).save(upload_dir);
+                    // safeUnzipToDir validates EVERY zip entry against path
+                    // traversal ("zip slip") before anything is written.
+                    // The old code (zipper.sync.unzip(...).save(...)) did NOT
+                    // do that and allowed writing files outside of upload_dir
+                    // (e.g. via "../../../root/xyz" entry names).
+                    safeUnzipToDir(file.filepath, upload_dir)
                 } catch (e) {
-                    console.log(file.path)
+                    console.log(file.filepath)
                     console.error(e)
                     res.end('{"status":"error","message":"' + e.message + '"}')
 
@@ -238,9 +243,10 @@ export const handleHostruleDumpUpload = db => async (req, res) => {
             // rename it to it's orignal name
             form.on('file', function (field, file) {
                 try {
-                    zipper.sync.unzip(file.filepath).save(HOSTRULES_ABSPATH);
+                    // See comment in handleMediaDumpUpload: zip slip protection.
+                    safeUnzipToDir(file.filepath, HOSTRULES_ABSPATH)
                 } catch (e) {
-                    console.log(file.path)
+                    console.log(file.filepath)
                     console.error(e)
                     res.end('{"status":"error","message":"' + e.message + '"}')
 
@@ -291,9 +297,24 @@ export const handleDbDumpUpload = (db, client) => async (req, res) => {
 
         form.on('file', function (field, file) {
 
-            // --drop --> drops collections before
-            const response = execSync(`mongorestore --nsInclude=lunuc.* --noIndexRestore --uri="${client.s.url}" --drop --gzip --archive="${file.filepath}"`)
-            console.log('restoreDbDump', response)
+            // execFileSync instead of execSync: no shell parsing, arguments are
+            // passed 1:1 to the process. client.s.url and file.filepath don't
+            // come directly from the client body, but execFileSync is still
+            // the safer choice here with no downsides.
+            // --drop deletes ALL existing collections before the restore -
+            // make sure CAPABILITY_MANAGE_BACKUPS is tightly scoped and
+            // restores are logged/audited (see below).
+            console.log(`[AUDIT] DB restore triggered by user=${authContext.username || authContext.id} at ${new Date().toISOString()}`)
+
+            const response = execFileSync('mongorestore', [
+                '--nsInclude=lunuc.*',
+                '--noIndexRestore',
+                `--uri=${client.s.url}`,
+                '--drop',
+                '--gzip',
+                `--archive=${file.filepath}`
+            ])
+            console.log('restoreDbDump', response.toString())
 
         })
 

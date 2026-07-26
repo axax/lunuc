@@ -19,6 +19,18 @@
 //   2. browser healthy but too many pages   -> close leaked (oldest) pages
 //      individually, sparing the in-flight renders
 //   3. pages refuse to close despite health -> kill browser after all
+//
+// Render-completeness handling:
+//   goto/appReady/networkIdle timeouts used to be swallowed and the page
+//   was served anyway with whatever statusCode the response listener
+//   captured (usually 200) - meaning an incomplete or empty DOM could get
+//   indexed as if it were a valid page. Now: if the appReady signal never
+//   fires, the render is considered INCOMPLETE and a 503 is returned
+//   instead, regardless of the underlying HTTP status. This also gives
+//   in-flight client-side fetches (e.g. the GraphQL cmsPage query) a short
+//   extra grace window before the page context is torn down, which
+//   reduces spurious "Failed to fetch" errors caused by page.close()
+//   aborting requests that were seconds away from completing.
 
 import puppeteer from 'puppeteer'
 import {isTemporarilyBlocked} from './requestBlocker.mjs'
@@ -44,6 +56,16 @@ const MAX_PAGES_IN_PUPPETEER = RENDER_MAX_CONCURRENT * 2 + 4
 const PAGE_STUCK_TIMEOUT_MS = 20000
 const CDP_HEALTH_TIMEOUT_MS = 5000
 const MAX_CONSECUTIVE_FAILURES = 3
+
+// NEW: configurable wait budgets for rendering, tunable via ENV without a
+// code change. Defaults match the previous hardcoded values.
+const NAV_TIMEOUT_MS = parseInt(process.env.LUNUC_SSR_NAV_TIMEOUT_MS) || 10000
+const APP_READY_TIMEOUT_MS = parseInt(process.env.LUNUC_SSR_APPREADY_TIMEOUT_MS) || 8000
+const NETWORK_IDLE_TIMEOUT_MS = parseInt(process.env.LUNUC_SSR_NETIDLE_TIMEOUT_MS) || 3000
+// NEW: extra grace period before the page is closed, in case requests are
+// still pending after appReady. Prevents a GraphQL fetch that's about to
+// finish from being hard-aborted by page.close().
+const CLOSE_GRACE_TIMEOUT_MS = parseInt(process.env.LUNUC_SSR_CLOSE_GRACE_MS) || 2000
 
 let parseWebsiteBrowser
 let browserLaunchPromise // prevents parallel launches (race condition)
@@ -206,6 +228,11 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
     // path must then exit controlled (503) instead of stumbling into
     // "Target closed" errors that would count as browser failures
     let pageAbandonedReason = null
+    // NEW: count of currently open (not yet completed) requests in the main
+    // frame. Tracked via the request/response listeners so we can briefly
+    // wait for in-flight fetches (e.g. the initial GraphQL cmsPage query)
+    // before closing the page, instead of hard-aborting them.
+    let pendingRequestCount = 0
 
     try {
         const startTime = new Date().getTime()
@@ -285,8 +312,8 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
             }
         }, PAGE_STUCK_TIMEOUT_MS)
 
-        page.setDefaultTimeout(10000)
-        page.setDefaultNavigationTimeout(10000)
+        page.setDefaultTimeout(NAV_TIMEOUT_MS)
+        page.setDefaultNavigationTimeout(NAV_TIMEOUT_MS)
         await page.setRequestInterception(true)
 
         // always clear auth cookie.
@@ -309,6 +336,7 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
                 (frame && frame.url() !== page.mainFrame().url()) /* in iframe */) {
                 request.abort('blockedbyclient')
             } else {
+                pendingRequestCount++
                 const headers = request.headers()
                 headers[TRACK_REFERER_HEADER] = referer || ''
                 headers[TRACK_IP_HEADER] = remoteAddress
@@ -334,6 +362,10 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
                 statusCode = 404
             }
         })
+        // NEW: count the request counter back down, regardless of whether it
+        // succeeded, failed, or was aborted
+        page.on('requestfinished', () => { pendingRequestCount-- })
+        page.on('requestfailed', () => { pendingRequestCount-- })
 
         await page.evaluateOnNewDocument((data) => {
             window._disableWsConnection = true
@@ -350,17 +382,39 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
             })
         }, {host, agent, isBot, remoteAddress})
 
+        // NEW: appReady status is now tracked explicitly instead of merely
+        // being logged - decides below whether the page counts as complete
+        // or a 503 is returned instead.
+        let appReadyReceived = false
+
         try {
             // domcontentloaded instead of networkidle2 -> we wait for the app signal instead
             await page.goto(urlToFetch, {waitUntil: 'networkidle2'})
 
             // wait until the app signals readiness; fall back to current DOM on timeout
-            await page.waitForFunction('window.__LUNUC_APP_READY__ === true', {timeout: 8000})
+            await page.waitForFunction('window.__LUNUC_APP_READY__ === true', {timeout: APP_READY_TIMEOUT_MS})
+                .then(() => { appReadyReceived = true })
                 .catch(() => console.warn(`appReady signal not received for ${urlToFetch} -> continue with current DOM`))
 
             // small settle window for async data rendering after appReady
-            await page.waitForNetworkIdle({idleTime: 200, timeout: 3000})
+            await page.waitForNetworkIdle({idleTime: 200, timeout: NETWORK_IDLE_TIMEOUT_MS})
                 .catch(() => {})
+
+            // NEW: if appReady fired but requests are still pending (e.g. a
+            // GraphQL query that just barely missed the waitForNetworkIdle
+            // window), give it a short grace period instead of closing
+            // immediately. This prevents part of the "Failed to fetch"
+            // aborts that are caused purely by the context teardown while a
+            // fetch is still in flight.
+            if (appReadyReceived && pendingRequestCount > 0) {
+                const graceStart = Date.now()
+                while (pendingRequestCount > 0 && Date.now() - graceStart < CLOSE_GRACE_TIMEOUT_MS) {
+                    await new Promise(r => setTimeout(r, 100))
+                }
+                if (pendingRequestCount > 0) {
+                    console.warn(`${pendingRequestCount} request(s) still pending after grace window for ${urlToFetch}`)
+                }
+            }
         } catch (e) {
             console.warn('parseWebsite:', e)
         }
@@ -372,6 +426,17 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
             console.warn(`render abandoned (${pageAbandonedReason}) ${urlToFetch}`)
             clearTimeout(stuckTimer)
             return {html: 'render timeout', statusCode: 503}
+        }
+
+        // NEW: never deliver an incomplete render as 200. Without appReady,
+        // the DOM snapshot is very likely a loading state or an empty page -
+        // it must not be indexed. 503 tells crawlers "try again later".
+        if (!appReadyReceived) {
+            console.warn(`render incomplete (no appReady) -> 503 ${urlToFetch}`)
+            clearTimeout(stuckTimer)
+            await withTimeout(page.close(), 3000, 'page.close').catch(() => {})
+            consecutiveFailures = 0
+            return {html: 'render incomplete', statusCode: 503}
         }
 
         let html = await page.content()

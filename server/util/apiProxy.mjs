@@ -14,12 +14,46 @@ const LUNUC_SERVER_NODES = process.env.LUNUC_SERVER_NODES || ''
 // API server (port open but not accepting) would stall the client forever.
 const WS_CONNECT_TIMEOUT_MS = 5000
 
+// Whether to verify TLS certificates when proxying to a secure (https)
+// server node during failover. Defaults to secure (true). Only disable
+// this via env var if you fully understand the risk: without cert
+// validation, anyone able to intercept traffic between this proxy and an
+// alternative node (e.g. on a shared network) can MITM inter-node traffic
+// undetected. Previously this was hardcoded to false for all secure
+// proxy requests.
+const REJECT_UNAUTHORIZED_TLS = process.env.LUNUC_PROXY_ALLOW_INSECURE_TLS !== 'true'
+
 // Hop-by-hop headers must not be forwarded to the next hop (RFC 7230 6.1).
 // A leaked 'connection: close' would also sabotage the keep-alive agent pool.
 const HOP_BY_HOP_HEADERS = new Set([
     'connection', 'keep-alive', 'proxy-connection', 'transfer-encoding',
     'upgrade', 'te', 'trailer', 'proxy-authenticate', 'proxy-authorization'
 ])
+
+// Headers that carry internal trust signals set by THIS proxy (client
+// address, which hostrule/server this request was routed through, etc).
+// Their names are public (this is an open source project), so a client
+// could simply send these header names themselves. They must always be
+// stripped from the incoming request before we (re)assign the trusted
+// values ourselves - otherwise a client-supplied value would pass straight
+// through to the API server on the first attempt (tries === 0), since it
+// was previously only overwritten on retries.
+const INTERNAL_ONLY_HEADERS = [
+    FORWARDED_FOF_HEADER.toLowerCase(),
+    HOSTRULE_HEADER.toLowerCase(),
+    'x-forwarded-server',
+    'x-forwarded-proto',
+    'x-forwarded-host'
+]
+
+const stripInternalHeaders = (headers) => {
+    for (const key of Object.keys(headers)) {
+        if (INTERNAL_ONLY_HEADERS.includes(key.toLowerCase())) {
+            delete headers[key]
+        }
+    }
+    return headers
+}
 
 /**
  * Filters HTTP/2 pseudo headers (:path, :authority, ...) and hop-by-hop
@@ -49,6 +83,16 @@ const filterForwardableHeaders = (headers, {keepUpgrade = false} = {}) => {
 const isResponseUnusable = (res) => {
     return res.headersSent || res.writableEnded || res.destroyed
 }
+
+/**
+ * Rejects any string containing raw CR or LF characters. Used as a
+ * defense-in-depth guard before manually constructing raw HTTP/1.1 request
+ * text for the websocket upgrade path (see proxyWsToApiServer). Node's own
+ * http.request() validates header values against this automatically, but
+ * the websocket path writes raw bytes to a plain socket instead, bypassing
+ * that built-in protection - so we replicate the check here explicitly.
+ */
+const containsCrlf = (value) => /[\r\n]/.test(String(value))
 
 /**
  * Main entry point function for the proxy.
@@ -85,6 +129,16 @@ export const proxyToApiServer = (req, res, options) => {
 
 
 export const proxyWsToApiServer = (req, socket, head) => {
+
+    // Reject CRLF in the request line before doing anything else - this
+    // request line is written to a raw socket further down, bypassing
+    // Node's built-in header/url validation that http.request() would
+    // normally provide.
+    if (containsCrlf(req.url)) {
+        console.warn('proxyWsToApiServer: rejecting request with CRLF in url')
+        socket.destroy()
+        return
+    }
 
     // Create connection to target server
     const targetSocket = new Socket()
@@ -131,8 +185,24 @@ export const proxyWsToApiServer = (req, socket, head) => {
 
         // Forward only clean HTTP/1.1 headers: no :pseudo headers, no
         // hop-by-hop headers except the upgrade/connection pair which the
-        // websocket handshake requires.
-        const forwardHeaders = filterForwardableHeaders(req.headers, {keepUpgrade: true})
+        // websocket handshake requires. Internal-only headers are stripped
+        // so a client can't spoof them (see INTERNAL_ONLY_HEADERS).
+        const forwardHeaders = stripInternalHeaders(
+            filterForwardableHeaders(req.headers, {keepUpgrade: true})
+        )
+        forwardHeaders[FORWARDED_FOF_HEADER] = clientAddress(req)
+
+        // Defense in depth: header values could in principle contain CRLF
+        // depending on the incoming protocol (see containsCrlf comment
+        // above) - reject the whole upgrade rather than write malformed
+        // data to a raw socket.
+        for (const [key, value] of Object.entries(forwardHeaders)) {
+            if (containsCrlf(key) || containsCrlf(value)) {
+                console.warn(`proxyWsToApiServer: rejecting request with CRLF in header "${key}"`)
+                cleanup(new Error('invalid header value'))
+                return
+            }
+        }
 
         // Write the HTTP upgrade request to the target server
         targetSocket.write([
@@ -165,7 +235,13 @@ export const proxyWsToApiServer = (req, socket, head) => {
 const executeProxyRequest = (originalReq, originalRes, options, state) => {
     const {host, path, server, port, secure, tries} = options
 
-    const newHeaders = filterForwardableHeaders(originalReq.headers)
+    // Strip any client-supplied values for internal-trust headers BEFORE we
+    // (re)assign the values this proxy actually trusts. Previously
+    // HOSTRULE_HEADER/x-forwarded-server were only overwritten when
+    // tries > 0, so a client sending these header names themselves (the
+    // names are public - this is an open source project) had their value
+    // forwarded unmodified to the API server on the first attempt.
+    const newHeaders = stripInternalHeaders(filterForwardableHeaders(originalReq.headers))
 
     newHeaders[FORWARDED_FOF_HEADER] = clientAddress(originalReq)
     newHeaders['x-forwarded-proto'] = originalReq.isHttps ? 'https' : 'http'
@@ -182,7 +258,11 @@ const executeProxyRequest = (originalReq, originalRes, options, state) => {
         path: path,
         method: originalReq.method,
         headers: newHeaders,
-        rejectUnauthorized: false,
+        // See REJECT_UNAUTHORIZED_TLS above: only insecure if explicitly
+        // opted into via LUNUC_PROXY_ALLOW_INSECURE_TLS=true. Previously
+        // hardcoded to false (never verify), which allowed undetected MITM
+        // on https connections to alternative server nodes during failover.
+        rejectUnauthorized: REJECT_UNAUTHORIZED_TLS,
         timeout: 7200000 /* 2h socket inactivity timeout */
     }, (proxyRes) => {
         delete proxyRes.headers['keep-alive']

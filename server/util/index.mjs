@@ -2,6 +2,33 @@ import puppeteer from 'puppeteer'
 import ApiUtil from '../../api/util/index.mjs'
 import {isTemporarilyBlocked} from './requestBlocker.mjs'
 
+// Same private-network check as server/index.mjs's isPrivateNetworkTarget.
+// Duplicated intentionally: this module must stay defensive on its own,
+// even if the caller's check is ever skipped, weakened, or bypassed via a
+// redirect after the caller's check already ran.
+const isPrivateNetworkHost = (hostname) => {
+    if (['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(hostname)) {
+        return true
+    }
+    return hostname.startsWith('10.') ||
+        hostname.startsWith('192.168.') ||
+        hostname.startsWith('169.254.') ||
+        hostname.startsWith('100.') || // CGNAT / tailscale range
+        /^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
+}
+
+// Reasonable upper bound for viewport/clip dimensions coming from
+// user-supplied options - without this an attacker could request an
+// enormous viewport and make Puppeteer try to allocate a huge buffer
+// (resource exhaustion / DoS).
+const MAX_DIMENSION = 4000
+const clampDimension = (value, fallback) => {
+    const n = parseInt(value, 10)
+    if (!Number.isFinite(n) || n <= 0) {
+        return fallback
+    }
+    return Math.min(n, MAX_DIMENSION)
+}
 
 export const doScreenCapture = async (url, filename, options, cookies) => {
 
@@ -11,6 +38,21 @@ export const doScreenCapture = async (url, filename, options, cookies) => {
 
     console.log(`take screenshot ${url}`)
 
+    // Determine whether this is our own internal self-render (the caller in
+    // server/index.mjs resolves relative paths to http://127.0.0.1:PORT/...)
+    // or a request against an external, user-supplied url. This distinction
+    // drives two separate protections below: cookies must NEVER be attached
+    // to an external target, and external targets must be defended against
+    // SSRF via redirect even after the caller already validated the initial
+    // url.
+    let initialHostname
+    try {
+        initialHostname = new URL(url).hostname
+    } catch (e) {
+        return {statusCode: 400}
+    }
+    const isSelfRenderCall = isPrivateNetworkHost(initialHostname)
+
     const browser = await puppeteer.launch({
         ignoreHTTPSErrors: true, /* deprecated */
         acceptInsecureCerts:true,
@@ -18,30 +60,65 @@ export const doScreenCapture = async (url, filename, options, cookies) => {
     })
     const page = await browser.newPage()
 
-
-    if (cookies && Object.keys(cookies).length > 0) {
+    // Only forward the requesting user's session cookies for our OWN
+    // internal render calls (e.g. rendering an auth-gated page for SSR).
+    // Never forward them to an external, user-supplied target - doing so
+    // previously allowed an attacker to have a victim's session cookie
+    // sent straight to an attacker-controlled server, by pointing the
+    // screenshot feature at a domain the attacker owns.
+    if (cookies && Object.keys(cookies).length > 0 && isSelfRenderCall) {
         console.log(`doScreenCapture: Taking over the session can be dangerous. ${filename}`, Object.keys(cookies))
 
         const parsedUrl = new URL(url)
-        const domain = parsedUrl.hostname  // z.B. 'example.com' oder 'localhost'
+        const domain = parsedUrl.hostname
 
         const cookiesToSet = Object.keys(cookies).map(k => ({
             domain,
             name: k,
             value: cookies[k],
             path: '/',
-            // Optional aber empfohlen:
             httpOnly: false,
             secure: parsedUrl.protocol === 'https:',
         }))
 
         await page.setCookie(...cookiesToSet)
+    } else if (cookies && Object.keys(cookies).length > 0 && !isSelfRenderCall) {
+        console.warn(`doScreenCapture: refusing to forward session cookies to external target ${url}`)
+    }
+
+    // For external targets, defend against SSRF via redirect: the caller
+    // already validated the INITIAL url, but page.goto() follows redirects
+    // automatically, and a redirect chain could still point at an internal
+    // address. Intercept every request (including redirects and
+    // subresources) and abort anything that resolves to a private network
+    // host. Not needed for our own self-render calls, which are internal
+    // by design.
+    if (!isSelfRenderCall) {
+        await page.setRequestInterception(true)
+        page.on('request', (req) => {
+            let reqHostname
+            try {
+                reqHostname = new URL(req.url()).hostname
+            } catch (e) {
+                req.abort()
+                return
+            }
+            if (isPrivateNetworkHost(reqHostname)) {
+                console.warn(`doScreenCapture: blocking request to internal host during external capture: ${req.url()}`)
+                req.abort()
+                return
+            }
+            req.continue()
+        })
     }
 
     try {
         await page.goto(url, {waitUntil: 'domcontentloaded'})
 
-        await page.setViewport({width: 1280, height: 800, ...options})
+        const viewportWidth = clampDimension(options.width, 1280)
+        const viewportHeight = clampDimension(options.height, 800)
+        await page.setViewport({width: viewportWidth, height: viewportHeight})
+
         if (options.delay) {
             await ApiUtil.sleep(options.delay)
         }
@@ -65,19 +142,29 @@ export const doScreenCapture = async (url, filename, options, cookies) => {
             options.clip = {
                 x: l,
                 y: t,
-                width: options.width - (l + r),
-                height: options.height - (t + b)
+                width: viewportWidth - (l + r),
+                height: viewportHeight - (t + b)
             }
         }
 
+        // Strip "path" (and "type", which also affects how the file is
+        // written) from user-supplied options BEFORE spreading, and set
+        // "path" last so it can never be overridden. Previously
+        // "...options" was spread AFTER "path: filename", meaning an
+        // attacker-supplied options.path completely overrode the intended
+        // output location - an arbitrary file write anywhere Node could
+        // write, with attacker-controlled screenshot bytes as content.
+        const {path: _ignoredPath, ...safeScreenshotOptions} = options || {}
 
         await page.screenshot({
             fullPage: false,
-            path: filename,
-            ...options
+            ...safeScreenshotOptions,
+            path: filename
         })
         await page.close()
-    }catch (e){}
+    }catch (e){
+        console.warn(`doScreenCapture: capture failed for ${url}`, e.message)
+    }
     await browser.close()
     return {statusCode:200}
 }

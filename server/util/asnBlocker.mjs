@@ -774,7 +774,7 @@ export const checkAsnPolicy = async ({ip, urlPathname, userAgent, hostrule}) => 
         }
     }
 
-    asnStatsTracker.record({key: asn, label: org, ip, urlPathname, userAgent, action, isListed: !!matchedPolicy})
+    asnStatsTracker.record({key: asn, label: org, ip, urlPathname: hostrule.host + urlPathname, userAgent, action, isListed: !!matchedPolicy})
 
     return {action, asn, org, isCrawler}
 }

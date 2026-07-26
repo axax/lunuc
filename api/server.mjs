@@ -52,6 +52,17 @@ function removeNullsMutating(obj) {
 
 const PORT = (process.env.PORT || process.env.API_PORT || 3000)
 
+// Which interface this API server binds to. Defaults to loopback-only:
+// this server is the internal backend behind server/index.mjs (port 8080),
+// which is the only thing that should ever talk to it - all rate limiting,
+// ASN/country blocking, and bot challenges live there. Binding to 0.0.0.0
+// (the previous default when no host is passed to listen()) would let
+// anyone reach this API directly from the network, bypassing every one of
+// those protections. Override only if you have a specific topology reason
+// to (e.g. API server on a different host than the reverse proxy) AND a
+// firewall in front of it.
+const API_BIND_HOST = process.env.LUNUC_API_BIND_HOST || '127.0.0.1'
+
 // Max time to wait for appexit hooks on SIGINT before force-exiting.
 // Prevents a hanging or rejected hook from keeping the process alive forever.
 const SHUTDOWN_TIMEOUT_MS = 10000
@@ -230,7 +241,14 @@ export const start = (done) => {
                 graphqlHTTP({
                     schema,
                     rootValue,
-                    graphiql: process.env.NODE_ENV !== 'production',
+                    // Explicit allow-list instead of a deny-list: GraphiQL (full
+                    // schema introspection UI) is only enabled when NODE_ENV is
+                    // EXACTLY "development". The previous check
+                    // (`!== 'production'`) fails open - if NODE_ENV is ever
+                    // unset, misspelled, or something like "staging", GraphiQL
+                    // would be silently exposed to the internet with full
+                    // schema introspection.
+                    graphiql: process.env.NODE_ENV === 'development',
                     customFormatErrorFn: (error)=>{
 
                         return formatAndLogError(db,req,error)
@@ -315,9 +333,14 @@ export const start = (done) => {
             server = createServer(app)
 
 
-            // Bind it to port and start listening
-            server.listen(PORT, () => {
-                console.log(`Server/Websocket is now running on http://localhost:${PORT}`)
+            // Bind it to port and start listening. Explicit host argument
+            // (see API_BIND_HOST above) - without it, Node defaults to
+            // 0.0.0.0 and this internal API becomes directly reachable from
+            // the network, bypassing every protection built into
+            // server/index.mjs (rate limiting, ASN/country blocking, bot
+            // challenges).
+            server.listen(PORT, API_BIND_HOST, () => {
+                console.log(`Server/Websocket is now running on http://${API_BIND_HOST}:${PORT}`)
                 if (typeof done === 'function') {
                     done(server)
                 }
