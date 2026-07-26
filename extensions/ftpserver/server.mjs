@@ -26,6 +26,23 @@ import {isExtensionEnabled} from '../../gensrc/extensions-private.mjs'
 
 const ROOT_DIR = path.resolve()
 
+// Per-username lockout is intentionally more lenient than the per-IP
+// lockout (loginBlocker.mjs uses MAX_LOGIN_ATTEMPTS=10 / 180s). Locking a
+// specific username too aggressively turns into its own vulnerability: an
+// attacker who merely knows a valid username (not the password) could
+// deny that legitimate user access by deliberately failing logins against
+// it. This is a coarser, longer-window safety net mainly meant to slow
+// down credential-guessing attacks that rotate the SOURCE IP but keep
+// trying the same known/guessed username (e.g. guessing LUNUC_SUPER_PASSWORD
+// against a fixed username from many different IPs, which the per-IP
+// lockout alone would not catch).
+const usernameKey = (username) => `ftpuser:${username}`
+// Deliberately more lenient than loginBlocker's per-IP default (10 / 180s):
+// more attempts allowed, and a longer window, so a legitimate user who
+// mistypes their password a few times isn't locked out by this secondary
+// check - the per-IP lockout above still catches fast brute-forcing from a
+// single source.
+const USERNAME_LOCKOUT_OPTIONS = {maxAttempts: 20, delayInSec: 900}
 
 const startFtpServer = async (db)=> {
 
@@ -69,7 +86,15 @@ const startFtpServer = async (db)=> {
 
     ftpServer.on('login', async (data, resolve, reject) => {
         const ip= data.connection.ip
+        const userKey = usernameKey(data.username)
+
         if(hasTooManyInvalidLoginAttempts(ip+':ftp')){
+            console.warn(`[AUDIT] ftp login blocked (too many attempts for ip) - ip=${ip} username=${data.username} - ${new Date().toISOString()}`)
+            return reject(new Error(_t('core.login.blocked.temporarily'), 401))
+        }
+
+        if(hasTooManyInvalidLoginAttempts(userKey, USERNAME_LOCKOUT_OPTIONS)){
+            console.warn(`[AUDIT] ftp login blocked (too many attempts for username) - ip=${ip} username=${data.username} - ${new Date().toISOString()}`)
             return reject(new Error(_t('core.login.blocked.temporarily'), 401))
         }
 
@@ -77,6 +102,8 @@ const startFtpServer = async (db)=> {
         if(ftpUser){
             if (Util.compareWithHashedPassword(data.password, ftpUser.password)) {
                 clearInvalidLoginAttempt(ip+':ftp')
+                clearInvalidLoginAttempt(userKey)
+
                 let absdir = path.join(WEBROOT_ABSPATH, ftpUser.root)
                 if(ftpUser.root && ftpUser.root.startsWith('@approot/')){
                     absdir = path.join(ROOT_DIR, ftpUser.root.substring(8))
@@ -91,19 +118,30 @@ const startFtpServer = async (db)=> {
                 }
 
                 if(ensureDirectoryExistence(absdir, true)) {
-                    console.log(absdir)
+                    // Successful logins were previously not logged at all -
+                    // only failed attempts fed into the rate limiter. Without
+                    // this, a successful (possibly unauthorized) login left
+                    // zero trace to investigate after the fact.
+                    console.log(`[AUDIT] ftp login success - ip=${ip} username=${data.username} root=${absdir} - ${new Date().toISOString()}`)
                     return resolve({root: absdir})
                 }else{
                     return reject(new Error(`Root dir ${ftpUser.root} for username ${data.username} doesn't exist`, 500))
                 }
             }else{
                 addInvalidLoginAttempt(ip+':ftp')
+                addInvalidLoginAttempt(userKey)
             }
         }else{
             addInvalidLoginAttempt(ip+':ftp')
+            // Deliberately NOT calling addInvalidLoginAttempt(userKey) here:
+            // the username doesn't exist, so tracking it would let an
+            // attacker fill the lockout map with usernames that were never
+            // real accounts (see loginBlocker.mjs's own cap/sweep for the
+            // memory-growth angle - this avoids adding to that pressure for
+            // a case that isn't a real account anyway).
         }
 
-
+        console.warn(`[AUDIT] ftp login failed - ip=${ip} username=${data.username} - ${new Date().toISOString()}`)
         return reject(new Error(`Invalid username ${data.username} or password from ${ip}`, 401))
     })
 
