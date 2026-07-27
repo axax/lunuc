@@ -102,9 +102,13 @@ Hook.on(['typeBeforeCreate'], async ({db, type, data}) => {
 
         if(mailAccount) {
             if (data.data && data.data.attachments) {
-                data.data.attachments.forEach(attachment => {
-                    replaceAttachmentInMailData(attachment, mailAccount, {db})
-                })
+                // for...of + await instead of forEach: forEach ignores the
+                // returned promise, so a failed/slow disk write was never
+                // awaited and errors were silently lost. replaceAttachmentInMailData
+                // is now async, so we need to actually wait for each one.
+                for (const attachment of data.data.attachments) {
+                    await replaceAttachmentInMailData(attachment, mailAccount, {db})
+                }
             }
 
             data.mailAccount = mailAccount._id

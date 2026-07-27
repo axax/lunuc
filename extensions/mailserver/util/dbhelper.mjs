@@ -4,6 +4,7 @@ import config from '../../../gensrc/config.mjs'
 import {ObjectId} from 'mongodb'
 import path from 'path'
 import fs from 'fs'
+import fsp from 'fs/promises'
 import Util from '../../../api/util/index.mjs'
 import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
 
@@ -195,27 +196,67 @@ export const getAttachmentContentFromFile = (attachment, {db, message})=>{
     return attachment.content
 }
 
-export  const replaceAttachmentInMailData = (attachment, mailAccount, {db}) => {
+/**
+ * Offloads large attachment content to disk and replaces attachment.content
+ * with a "@FILE:<name>" marker, mirroring the encoding used by
+ * getAttachmentContentFromFile so read/write stay symmetric.
+ *
+ * Safety properties:
+ * - Async / non-blocking (fs.promises instead of sync calls).
+ * - Atomic, race-free write via the 'wx' flag: two concurrent writes of the
+ *   same checksum+size can never both "win" the exists-check and clobber
+ *   each other; the loser simply detects EEXIST and treats the file as
+ *   already present.
+ * - Write failures OTHER than "already exists" are rethrown instead of
+ *   swallowed, so callers don't silently store an oversized attachment in
+ *   MongoDB while believing it was offloaded to disk.
+ */
+export const replaceAttachmentInMailData = async (attachment, mailAccount, {db}) => {
 
-    if (attachment.content &&
-        attachment.size > MAX_ATTACHMENT_SIZE_FOR_DB &&
-        Util.ensureDirectoryExistence(ATTACHMENT_DIR_ABS, true)) {
-        console.warn(`attachment ${attachment.filename} is too big (${attachment.size} bytes) for db`)
+    if (!(attachment.content &&
+        attachment.size > MAX_ATTACHMENT_SIZE_FOR_DB)) {
+        return
+    }
 
-        const fileName = `${mailAccount._id}_${attachment.checksum}_${attachment.size}_${attachment.filename?attachment.filename.replace(/\//g, '\\u2215'):''}.txt`
-        const fileAbs = path.join(ATTACHMENT_DIR_ABS, fileName)
-        try {
-            if (!fs.existsSync(fileAbs)) {
-                fs.writeFileSync(fileAbs, attachment.content)
-            }
-            attachment.content = `@FILE:${fileName}`
-        } catch (error) {
-            console.warn('Error writing attachment to file: ', error)
-            GenericResolver.createEntity(db, {context: {lang: 'en'}}, 'Log', {
+    if (!Util.ensureDirectoryExistence(ATTACHMENT_DIR_ABS, true)) {
+        // Directory couldn't be created/verified - nothing we can safely do,
+        // leave attachment.content as-is (caller/DB will get the full payload).
+        console.warn(`could not ensure attachment directory for ${attachment.filename}, keeping content inline`)
+        return
+    }
+
+    console.warn(`attachment ${attachment.filename} is too big (${attachment.size} bytes) for db`)
+
+    // encoding used for on-disk storage must match what getAttachmentContentFromFile
+    // will use when reading it back
+    const encoding = attachment.encoding || 'base64'
+
+    const fileName = `${mailAccount._id}_${attachment.checksum}_${attachment.size}_${attachment.filename ? attachment.filename.replace(/\//g, '\\u2215') : ''}.txt`
+    const fileAbs = path.join(ATTACHMENT_DIR_ABS, fileName)
+
+    try {
+        // 'wx' = exclusive create, fails with EEXIST if the file is already there.
+        // This makes "does it exist / write it" a single atomic filesystem op
+        // instead of the previous existsSync() + writeFileSync() race.
+        await fsp.writeFile(fileAbs, attachment.content, {encoding, flag: 'wx'})
+    } catch (error) {
+        if (error.code === 'EEXIST') {
+            // Another concurrent write (or a previous message with the same
+            // checksum/size) already stored this content - nothing to do.
+        } else {
+            console.error('Error writing attachment to file: ', error)
+            await GenericResolver.createEntity(db, {context: {lang: 'en'}}, 'Log', {
                 type: 'imap',
-                message: 'Error writing attachment to file: '+ error.message,
-                meta: {message:{attachment},fileAbs}
+                message: 'Error writing attachment to file: ' + error.message,
+                meta: {message: {attachment}, fileAbs}
             })
+            // Rethrow: do NOT fall through and leave attachment.content as the
+            // full inline payload silently - caller must know this failed so
+            // it can decide (retry, reject the message, alert, etc.) rather
+            // than an oversized document quietly landing in MongoDB.
+            throw error
         }
     }
+
+    attachment.content = `@FILE:${fileName}`
 }
