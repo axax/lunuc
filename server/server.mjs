@@ -655,7 +655,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
         // below, otherwise the confirm request itself could get caught by
         // the very check it is meant to satisfy.
         if (parsedUrl.pathname === '/__botcheck/confirm') {
-            handleChallengeConfirm(req, res, parsedUrl, remoteAddress)
+            handleChallengeConfirm(req, res, parsedUrl, remoteAddress, host)
             return
         }
 
