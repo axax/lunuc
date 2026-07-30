@@ -6,6 +6,24 @@ import Cache from '../../../../util/cache.mjs'
 // during a sort, while producing the same ordering for the default locale.
 const localeCollator = new Intl.Collator()
 
+// Reused scope object for matchExpr. matchExpr only reads from it and keeps no
+// reference, and checkFilter always returns before any nested resolveReduce runs,
+// so a single shared instance is safe. Saves one object allocation per item/filter
+// and keeps the shape monomorphic.
+const matchScope = {key: null, value: null}
+
+// Attach a derived value to a config object without making it visible to
+// Object.keys() or JSON.stringify()
+function defineHidden(obj, key, value) {
+    Object.defineProperty(obj, key, {
+        value,
+        enumerable: false,
+        writable: true,
+        configurable: true
+    })
+    return value
+}
+
 function createFacetSliderMinMax(value, facetData) {
     if (!isNaN(value)) {
         if (facetData.min === undefined || facetData.min > value) {
@@ -53,7 +71,9 @@ const createFacets = (facets, data, beforeFilter) => {
                 }
             } else {
                 if (!currentFacet.values) {
-                    currentFacet.values = {}
+                    // null prototype: used as a plain dictionary, so keys like
+                    // '__proto__' or 'constructor' must not resolve to inherited members
+                    currentFacet.values = Object.create(null)
                 }
                 if (Array.isArray(facetValue)) {
                     const len = facetValue.length
@@ -156,14 +176,28 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
         newArray = [],
         newSet = new Set()
 
-    const activeFilters = re.loop.filter && re.loop.filter.filter(f => isNotFalse(f.is)).map(f => {
-        return f.expr ? { ...f, facetKey: f.expr.split(/[ =!<>]/)[0].substring(6) } : f
+    const debugEnabled = debugInfo.enabled
+
+    // facetKey is derived from the (static) filter config, so it is computed once per
+    // config object instead of rebuilding a spread copy of every filter on each call
+    const activeFilters = re.loop.filter && re.loop.filter.filter(f => {
+        if (!isNotFalse(f.is)) {
+            return false
+        }
+        if (f.expr && f.facetKey === undefined) {
+            defineHidden(f, 'facetKey', f.expr.split(/[ =!<>]/)[0].substring(6))
+        }
+        return true
     })
 
     let cacheKey
     if (re.loop.cache && isNotFalse(re.loop.cache.$is) && !re.loop.reduce &&
         (re.loop.cache.includeFilter || !activeFilters || activeFilters.length === 0)) {
-        cacheKey = `resolveReduce${re.loop.cache.keyPrefix || ''}-${re.path}-${JSON.stringify(re.loop)}`
+        // JSON.stringify(re.loop) is stable for a given config -> serialize once
+        const loopJson = re._loopJson !== undefined
+            ? re._loopJson
+            : defineHidden(re, '_loopJson', JSON.stringify(re.loop))
+        cacheKey = `resolveReduce${re.loop.cache.keyPrefix || ''}-${re.path}-${loopJson}`
         const fromCache = Cache.get(cacheKey)
         if (fromCache) {
             const paths = Object.keys(fromCache)
@@ -196,30 +230,28 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
     let removedFlags = null
     let hasRemovals = false
 
-    // Lazy per-call cache for or-filter facet subsets, so loopFacet.filter()
-    // does not run again for every single filtered item with the same facetKey.
-    // Safe because the loopFacet array itself is not modified during the loop.
-    let orFacetCache = null
+    // Per-call cache for or-filter facet subsets, so loopFacet.filter() does not run
+    // again for every single filtered item with the same facetKey. Safe because the
+    // loopFacet array itself is not modified during the loop.
+    const orFacetCache = Object.create(null)
 
     let total = 0
     const inLoop = (key, isObject) => {
+        let item = value[key]
         if (loopFacet) {
-            createFacets(loopFacet, value[key], true)
+            createFacets(loopFacet, item, true)
         }
         const filter = checkFilter(activeFilters, value, key)
         if (filter) {
             if (filter.or && loopFacet) {
                 let filteredFacets
                 if (filter.facetKey) {
-                    if (!orFacetCache) {
-                        orFacetCache = {}
-                    }
                     filteredFacets = orFacetCache[filter.facetKey] ||
                         (orFacetCache[filter.facetKey] = loopFacet.filter(facet => facet.key === filter.facetKey))
                 } else {
                     filteredFacets = loopFacet
                 }
-                createFacets(filteredFacets, value[key], false)
+                createFacets(filteredFacets, item, false)
             }
 
             if (reAssign) {
@@ -234,16 +266,20 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
         } else {
             total++
             if (loopReduce) {
-                value[key] = loopAssign ? assignIfObjectOrArray(value[key]) : value[key]
-                resolveReduce(loopReduce, rootData, value[key], { debugLog, depth: depth + 1 })
+                if (loopAssign) {
+                    item = value[key] = assignIfObjectOrArray(item)
+                }
+                resolveReduce(loopReduce, rootData, item, { debugLog, depth: depth + 1 })
+                // re-read in case the nested pipeline replaced the entry
+                item = value[key]
             }
 
             if (loopFacet) {
-                createFacets(loopFacet, value[key])
+                createFacets(loopFacet, item)
             }
 
             if (loopToArray) {
-                const v = loopToArray.key ? value[key][loopToArray.key] : value[key]
+                const v = loopToArray.key ? item[loopToArray.key] : item
                 if (loopToArray.duplicates) {
                     newArray.push(v)
                 } else {
@@ -254,18 +290,24 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
     }
 
     if (!value) {
-        debugInfo.messages.push(`no value for ${JSON.stringify(re)}`)
+        if (debugEnabled) {
+            debugInfo.messages.push(`no value for ${JSON.stringify(re)}`)
+        }
     } else {
         // Strict constructor check kept on purpose (must match original behavior exactly)
         if (value.constructor === Object) {
             const keys = Object.keys(value)
-            debugInfo.messages.push(`loop through object data ${keys.length}`)
+            if (debugEnabled) {
+                debugInfo.messages.push(`loop through object data ${keys.length}`)
+            }
             const keysLen = keys.length
             for (let i = 0; i < keysLen; i++) {
                 inLoop(keys[i], true)
             }
         } else if (Array.isArray(value)) {
-            debugInfo.messages.push(`loop through array data ${value.length} with filter ${JSON.stringify(activeFilters)}`)
+            if (debugEnabled) {
+                debugInfo.messages.push(`loop through array data ${value.length} with filter ${JSON.stringify(activeFilters)}`)
+            }
             if (reAssign && hasActiveFilters) {
                 // Uint8Array is cheap to allocate and zero-initialized
                 removedFlags = new Uint8Array(value.length)
@@ -318,10 +360,19 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
 
 export const resolveReduce = (reducePipe, rootData, currentData, { debugLog, depth = 0 }) => {
     const pipeLength = reducePipe.length
+    // debug output is only ever collected on the top level, so anything that exists
+    // purely for the log must not be computed in nested calls
+    const debugEnabled = depth < 1
     for (let pipeIndex = 0; pipeIndex < pipeLength; pipeIndex++) {
         const re = reducePipe[pipeIndex]
         if (isNotFalse(re.$is)) {
-            const debugInfo = { index: pipeIndex, step: re, startTime: Date.now(), messages: [] }
+            const debugInfo = {
+                index: pipeIndex,
+                step: re,
+                startTime: debugEnabled ? Date.now() : 0,
+                messages: [],
+                enabled: debugEnabled
+            }
 
             if (re.sort) {
                 doSorting(re, currentData)
@@ -342,7 +393,8 @@ export const resolveReduce = (reducePipe, rootData, currentData, { debugLog, dep
                         }
                     } else if (Array.isArray(value)) {
                         lookedupData = []
-                        groups = {}
+                        // null prototype: used as a plain dictionary keyed by data values
+                        groups = Object.create(null)
                         let count = 0
                         let loopFacet
 
@@ -530,7 +582,7 @@ export const resolveReduce = (reducePipe, rootData, currentData, { debugLog, dep
                     }
                 } else {
                     if (re.toArray) {
-                        const toArrayStart = Date.now()
+                        const toArrayStart = debugEnabled ? Date.now() : 0
                         if (!rootData[re.key]) {
                             rootData[re.key] = []
                         }
@@ -543,7 +595,9 @@ export const resolveReduce = (reducePipe, rootData, currentData, { debugLog, dep
                         } else if (re.duplicates || rootData[re.key].indexOf(value) < 0) {
                             rootData[re.key].push(value)
                         }
-                        debugInfo.toArrayTime = Date.now() - toArrayStart
+                        if (debugEnabled) {
+                            debugInfo.toArrayTime = Date.now() - toArrayStart
+                        }
                     } else {
                         rootData[re.key] = value
                     }
@@ -570,7 +624,7 @@ export const resolveReduce = (reducePipe, rootData, currentData, { debugLog, dep
                 delete ob[re.path.substring(re.path.lastIndexOf('.') + 1)]
             }
 
-            if (depth < 1) {
+            if (debugEnabled) {
                 debugInfo.time = Date.now() - debugInfo.startTime
                 debugLog.push(debugInfo)
             }
@@ -587,12 +641,7 @@ const checkFilter = (filters, value, key) => {
             if (filter.search) {
                 // Invisible caching via defineProperty so JSON serialization stays untouched
                 if (!filter.search._cachedRegExp) {
-                    Object.defineProperty(filter.search, '_cachedRegExp', {
-                        value: new RegExp(filter.search.expr, 'i'),
-                        enumerable: false, // hidden from Object.keys() and JSON.stringify()
-                        writable: true,
-                        configurable: true
-                    })
+                    defineHidden(filter.search, '_cachedRegExp', new RegExp(filter.search.expr, 'i'))
                 }
                 if (!filter.search._cachedFields) {
                     // Precompute the field keys and whether they are deep paths.
@@ -603,12 +652,7 @@ const checkFilter = (filters, value, key) => {
                     for (let y = 0; y < fieldKeysLen; y++) {
                         cachedFields[y] = { fieldKey: fieldKeys[y], isPath: fieldKeys[y].indexOf('.') >= 0 }
                     }
-                    Object.defineProperty(filter.search, '_cachedFields', {
-                        value: cachedFields,
-                        enumerable: false,
-                        writable: true,
-                        configurable: true
-                    })
+                    defineHidden(filter.search, '_cachedFields', cachedFields)
                 }
                 const re = filter.search._cachedRegExp
                 const fields = filter.search._cachedFields
@@ -635,7 +679,9 @@ const checkFilter = (filters, value, key) => {
                 return filter
 
             } else {
-                if (matchExpr(filter.expr, { key, value: value[key] })) {
+                matchScope.key = key
+                matchScope.value = value[key]
+                if (matchExpr(filter.expr, matchScope)) {
                     return filter
                 }
             }

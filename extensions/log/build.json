@@ -38,6 +38,18 @@
           "hideColumnInTypes": true,
           "alwaysLoad": false,
           "tab": "Details"
+        },
+        {
+          "name":"solution",
+          "uitype": "htmlParser",
+          "replacePlaceholders":true,
+          "html":"<iframe src=\"/system/aiassistent?promtTemplate=lunuc_log&input=${ encodeURIComponent(   'message: ' + valuesOri.message + '\\n' +  'type: ' + valuesOri.type + '\\n' +  'location: ' + valuesOri.location + '\\n' + 'details: ' + JSON.stringify(valuesOri.meta))}\" frameborder=\"0\" width=\"100%\" height=\"300px\" />",
+          "tab": "KI assistant",
+          "access": {
+            "ui": {
+              "role": "admin_options"
+            }
+          }
         }
       ]
     }
