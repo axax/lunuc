@@ -210,7 +210,7 @@ export default () => {
                         const slugWithoutSlugContext = Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_OTHER_USERS) ? item.slug :  Util.removeSlugContext('/'+item.slug).substring(1)
 
                         d.preview =  <Link style={{display:'block', lineHeight: '0'}} to={cmsPageEditorUrl(slugWithoutSlugContext, container.pageParams._version)}>
-                            <img style={{borderRadius:'0.5rem'}}
+                            <img style={{borderRadius:'0.5rem',maxWidth:'20vw',height:'auto'}}
                                  width={120} height={80}
                                  id={'img-'+item._id}
                                  key={'key-'+item._id}
