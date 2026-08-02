@@ -5,6 +5,7 @@ import {getComponentByKey} from "./jsonDomUtil";
 import JsonDomHelper from '../components/JsonDomHelper'
 import Util from '../../../client/util/index.mjs'
 import {CAPABILITY_ADMIN_OPTIONS} from '../../../util/capabilities.mjs'
+import {getZIndexBasis} from '../components/jsondomhelper/JsonDomStyledElements'
 
 
 export const ALLOW_DROP = ['Cms', 'Print', 'Col', 'Row','div', 'main', 'footer', 'header', 'nav', 'section', 'aside', 'article', 'td', 'table']
@@ -26,7 +27,7 @@ const CSS_DROPAREA = css`
     transition: visibility .5s ease-out, opacity .5s ease-out;
     visibility: hidden;
     opacity: 0;
-    z-index: 999;
+    z-index: ${getZIndexBasis() +1};
     display: flex;
     justify-content:center;
     align-items:center;
@@ -58,7 +59,7 @@ const CSS_DROPAREA_ACTIVE = css`
     opacity: 0.8;
 `
 const CSS_DROPAREA_OVER = css`
-    z-index: 1000;
+    z-index: ${getZIndexBasis() + 2};
     visibility: visible;
     background: red;
     &:after {
@@ -306,7 +307,6 @@ export const onJsonDomDrag = (e) => {
 
 
                         const dropArea = getOrCreateDropArea(domEl, {create:true, isChild, index})
-
                         // getBoundingClientRect returns the size and position relative to the viewport.
                         const rect = domEl.getBoundingClientRect()
 

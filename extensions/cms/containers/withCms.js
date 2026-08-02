@@ -18,6 +18,19 @@ import {NO_SESSION_KEY_VALUES} from '../../../client/constants/index.mjs'
 import {_t, registerTrs} from '../../../util/i18n.mjs'
 
 
+// register once on module level instead of on every instance
+registerTrs({
+    de: {
+        'ErrorPage.title.504': 'Wartungsarbeiten',
+        'ErrorPage.message.504': 'Bitte haben Sie einen kurzen Moment Geduld. Wir sind gleich zurück.'
+    },
+    en: {
+        'ErrorPage.title.504': 'Maintenance',
+        'ErrorPage.message.504': 'We are sorry. Please try again in a moment'
+    }
+}, 'ErrorPage')
+
+
 // admin pack
 const ErrorPage = (props) => <Async {...props}
                                     load={() =>import(/* webpackChunkName: "errorPage" */ '../../../client/components/layout/ErrorPage')}/>
@@ -33,21 +46,86 @@ export default function (WrappedComponent) {
         constructor(props) {
             super(props)
 
-            registerTrs({
-                de:{
-                    'ErrorPage.title.504':'Wartungsarbeiten',
-                    'ErrorPage.message.504':'Bitte haben Sie einen kurzen Moment Geduld. Wir sind gleich zurück.'
-                },
-                en:{
-                    'ErrorPage.title.504':'Maintenance',
-                    'ErrorPage.message.504':'We are sorry. Please try again in a moment'
-                }
-            }, 'ErrorPage')
+            if (props.cmsData) {
+                this._localCmsPage = normalizeCmsData(props.cmsData)
+            }
+        }
 
+        componentDidUpdate(prevProps) {
+            // take over a new json that was passed in from outside
+            if (this.props.cmsData && this.props.cmsData !== prevProps.cmsData) {
+                this._localCmsPage = normalizeCmsData(this.props.cmsData)
+                this.forceUpdate()
+            }
+        }
+
+        /**
+         * local mode: the cmsPage is passed in as json with the cmsData prop and every change
+         * is returned as json instead of being written through graphql
+         */
+        get isLocal() {
+            return !!this.props.cmsData
+        }
+
+        getCmsPage() {
+            return this.isLocal ? this._localCmsPage : this.props.cmsPage
+        }
+
+        /**
+         * reads the current cmsPage. Used by the components that live outside of this wrapper
+         * @returns {Object|null} the store data containing the cmsPage
+         */
+        readCmsPage = () => {
+            if (this.isLocal) {
+                return {cmsPage: this._localCmsPage}
+            }
+            try {
+                return client.readQuery({
+                    query: getCmsPageQuery(this.props),
+                    variables: this.props.cmsPageVariables
+                })
+            } catch (e) {
+                console.warn('cmsPage not in store', e)
+                return null
+            }
+        }
+
+        /**
+         * writes the cmsPage back. In local mode nothing is persisted, the json is returned instead
+         * @param {Object} storeData the store data containing the cmsPage
+         */
+        writeCmsPage = (storeData) => {
+            if (this.isLocal) {
+                // keep it in a field instead of the state, so two writes in the same tick
+                // do not read a stale value
+                this._localCmsPage = storeData.cmsPage
+                this.forceUpdate()
+                if (this.props.onCmsDataChange) {
+                    this.props.onCmsDataChange(this._localCmsPage)
+                }
+                return
+            }
+            client.writeQuery({
+                query: getCmsPageQuery(this.props),
+                variables: this.props.cmsPageVariables,
+                data: storeData
+            })
         }
 
         render() {
-            const {slug, dynamic, cmsPage, loading} = this.props
+            const {cmsData, onCmsDataChange, ...props} = this.props
+            const {slug, dynamic, loading} = props
+            const cmsPage = this.getCmsPage()
+
+            const cmsProps = {
+                cmsLocal: this.isLocal,
+                readCmsPage: this.readCmsPage,
+                writeCmsPage: this.writeCmsPage,
+                updateResolvedData: this.updateResolvedData.bind(this),
+                setKeyValue: this.setKeyValue.bind(this),
+                getKeyValue: this.getKeyValue.bind(this)
+            }
+
             if (!cmsPage) {
                 if (!loading) {
                     console.warn(`cmsPage ${slug} missing`)
@@ -56,7 +134,7 @@ export default function (WrappedComponent) {
                         // add meta tag here instead of in the ErrorPage. It is faster, because for the ErrorPage we need to load extra bundles
                         DomUtil.noIndexNoFollow()
 
-                        if (this.props.networkStatus === 8) {
+                        if (props.networkStatus === 8) {
                             console.log('Network status = 8')
                             setTimeout(() => {
                                 window.location.href = window.location.href
@@ -66,10 +144,9 @@ export default function (WrappedComponent) {
                                               title={_t('ErrorPage.title.504')} background="#f4a742"/>
                         }
                         if (isEditMode(this.props)) {
-                            return <CmsViewEditorContainer updateResolvedData={this.updateResolvedData.bind(this)}
-                                                           setKeyValue={this.setKeyValue.bind(this)}
-                                                           WrappedComponent={WrappedComponent}
-                                                           {...this.props}
+                            return <CmsViewEditorContainer WrappedComponent={WrappedComponent}
+                                                           {...props}
+                                                           {...cmsProps}
                                                            cmsPage={{name: {}}}/>
                         } else {
 
@@ -86,16 +163,13 @@ export default function (WrappedComponent) {
                 }
             }
             if (isEditMode(this.props) && window.self === window.top) {
-                return <CmsViewEditorContainer updateResolvedData={this.updateResolvedData.bind(this)}
-                                               setKeyValue={this.setKeyValue.bind(this)}
-                                               getKeyValue={this.getKeyValue.bind(this)}
-                                               WrappedComponent={WrappedComponent}
-                                               {...this.props}/>
+                return <CmsViewEditorContainer WrappedComponent={WrappedComponent}
+                                               {...props}
+                                               {...cmsProps}
+                                               cmsPage={cmsPage}/>
             } else {
-                return <WrappedComponent updateResolvedData={this.updateResolvedData.bind(this)}
-                                         setKeyValue={this.setKeyValue.bind(this)}
-                                         getKeyValue={this.getKeyValue.bind(this)}
-                                         {...this.props}
+                return <WrappedComponent {...props}
+                                         {...cmsProps}
                                          cmsPage={cmsPage}/>
             }
         }
@@ -117,7 +191,8 @@ export default function (WrappedComponent) {
                 return
             }
 
-            if(local){
+            // in local mode there is no server roundtrip
+            if(local || this.isLocal){
                 return getKeyValueFromLS(key)
             }
 
@@ -140,7 +215,7 @@ export default function (WrappedComponent) {
          */
         setKeyValue({key, value, server, internal, global, callback}) {
 
-            const {cmsPage} = this.props
+            const cmsPage = this.getCmsPage()
 
             if (!key || value === undefined || !cmsPage) {
                 return
@@ -157,6 +232,17 @@ export default function (WrappedComponent) {
                     }
                     resolvedDataJson[kvk][key] = value
                 }
+            }
+
+            // local mode: nothing is persisted, the value only lives in the returned json
+            if (this.isLocal) {
+                if (resolvedDataJson) {
+                    this.updateResolvedData({json: resolvedDataJson})
+                }
+                if (callback) {
+                    callback({key, value})
+                }
+                return
             }
 
             const variables = {
@@ -203,11 +289,8 @@ export default function (WrappedComponent) {
 
 
         updateResolvedData({json, path, value}) {
-            const {cmsPageVariables, cmsPage} = this.props
-            const storeData = client.readQuery({
-                query: getCmsPageQuery(this.props),
-                variables: cmsPageVariables
-            })
+            const cmsPage = this.getCmsPage()
+            const storeData = this.readCmsPage()
 
             // upadate data in resolvedData string
             if (storeData && storeData.cmsPage && storeData.cmsPage.resolvedData) {
@@ -221,12 +304,7 @@ export default function (WrappedComponent) {
                     newData.resolvedData = JSON.stringify(json)
                 }
 
-                client.writeQuery({
-                    query: getCmsPageQuery(this.props),
-                    variables: cmsPageVariables,
-                    data: {...storeData, cmsPage: newData}
-                })
-
+                this.writeCmsPage({...storeData, cmsPage: newData})
             }
         }
     }
@@ -234,6 +312,10 @@ export default function (WrappedComponent) {
     const withGql = compose(
         graphql(getCmsPageQuery, {
             skip: (props, prevData, prevLang) => {
+                if (props.cmsData) {
+                    // local mode, there is nothing to load
+                    return true
+                }
                 if (prevData &&
                     _app_.lang===prevLang &&
                     prevData.cmsPage &&
@@ -247,7 +329,7 @@ export default function (WrappedComponent) {
             options(ownProps) {
                 let hiddenVariables
                 if (!ownProps.dynamic) {
-                    const urlStack = ownProps.history._urlStack
+                    const urlStack = ownProps.history && ownProps.history._urlStack
                     hiddenVariables = {
                         meta: JSON.stringify({isRefetch: ownProps.isRefetch, referer: urlStack && urlStack.length > 1 ? urlStack[1] : document.referrer})
                     }
@@ -258,7 +340,7 @@ export default function (WrappedComponent) {
                     fetchPolicy: ownProps.fetchPolicy ||
                         (isEditMode(ownProps) ? 'network-only' :
                             (_app_.defaultFetchPolicy && _app_.defaultFetchPolicy[ownProps.slug]?_app_.defaultFetchPolicy[ownProps.slug]:
-                            (['full','client',true,undefined].indexOf(urlSensitivMap[ownProps.slug])>=0?'cache-and-network':'cache-first'))) // cache-first
+                                (['full','client',true,undefined].indexOf(urlSensitivMap[ownProps.slug])>=0?'cache-and-network':'cache-first'))) // cache-first
                 }
             },
             props: ({data: {loading, cmsPage, variables, fetchMore, refetch, networkStatus}, ownProps}) => {
@@ -284,4 +366,16 @@ export default function (WrappedComponent) {
 
     return withGql
 
+}
+
+
+/**
+ * resolvedData is expected to be a json string everywhere downstream
+ * @param {Object} cmsPage
+ */
+function normalizeCmsData(cmsPage) {
+    if (cmsPage && cmsPage.resolvedData && cmsPage.resolvedData.constructor !== String) {
+        return {...cmsPage, resolvedData: JSON.stringify(cmsPage.resolvedData)}
+    }
+    return cmsPage
 }

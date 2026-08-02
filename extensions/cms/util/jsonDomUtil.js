@@ -238,42 +238,65 @@ export const getHighlightPosition = (node)=>  {
 
 
 let aftershockTimeout
+let rafPending = false
+
+/**
+ * Scroll needs a cheap path: rAF throttled and without the aftershock,
+ * otherwise every scroll event schedules 26 additional reflows.
+ * Registered with capture:true so scrolling containers are covered too.
+ */
+export const highlighterScrollHandler = (e) => {
+    if (rafPending) {
+        return
+    }
+    rafPending = true
+    requestAnimationFrame(() => {
+        rafPending = false
+        highlighterHandler(e, null, true)
+    })
+}
+
 export const highlighterHandler = (e, observer, after) => {
     const hightlighters = document.querySelectorAll('[data-highlighter]')
-    if (hightlighters && hightlighters.length > 0) {
-        hightlighters.forEach(hightlighter => {
-            const key = hightlighter.getAttribute('data-highlighter')
-            const node = document.querySelector('[_key="' + key + '"]')
 
-            if (node) {
-                const pos = getHighlightPosition(node)
-                hightlighter.style.top = pos.top + 'px'
-                hightlighter.style.left = pos.left + 'px'
-                hightlighter.style.width = pos.width + 'px'
-                hightlighter.style.height = pos.height + 'px'
-
-                const toolbar = document.querySelector('[data-toolbar="' + key + '"]')
-                if (toolbar) {
-                    toolbar.style.top = pos.top + 'px'
-                    toolbar.style.left = pos.left + 'px'
-                    toolbar.style.height = pos.height + 'px'
-                }
-
-                const toolbarRichtext = document.querySelector('[data-richtext-toolbar="' + key + '"]')
-                if (toolbarRichtext) {
-                    const rect = node.getBoundingClientRect()
-                    let top = rect.top - 130
-                    if(top<0){
-                        toolbarRichtext.style.top = (Math.abs(top)-65) + 'px'
-                    }
-                    /*toolbarRichtext.style.top = pos.top + 'px'
-                    toolbarRichtext.style.left = pos.left + 'px'
-                    toolbarRichtext.style.height = pos.height + 'px'*/
-                }
-
-            }
-        })
+    // nothing to reposition - never schedule the aftershock in that case
+    if (hightlighters.length === 0) {
+        return
     }
+
+    hightlighters.forEach(hightlighter => {
+        const key = hightlighter.getAttribute('data-highlighter')
+        const node = document.querySelector('[_key="' + key + '"]')
+
+        if (node) {
+            const pos = getHighlightPosition(node)
+            hightlighter.style.top = pos.top + 'px'
+            hightlighter.style.left = pos.left + 'px'
+            hightlighter.style.width = pos.width + 'px'
+            hightlighter.style.height = pos.height + 'px'
+
+            const toolbar = document.querySelector('[data-toolbar="' + key + '"]')
+            if (toolbar) {
+                toolbar.style.top = pos.top + 'px'
+                toolbar.style.left = pos.left + 'px'
+                toolbar.style.height = pos.height + 'px'
+            }
+
+            const toolbarRichtext = document.querySelector('[data-richtext-toolbar="' + key + '"]')
+            if (toolbarRichtext) {
+                const rect = node.getBoundingClientRect()
+                let top = rect.top - 130
+                if(top<0){
+                    toolbarRichtext.style.top = (Math.abs(top)-65) + 'px'
+                }
+                /*toolbarRichtext.style.top = pos.top + 'px'
+                toolbarRichtext.style.left = pos.left + 'px'
+                toolbarRichtext.style.height = pos.height + 'px'*/
+            }
+
+        }
+    })
+
     if (!after) {
         clearTimeout(aftershockTimeout)
         aftershockTimeout = setTimeout(() => {

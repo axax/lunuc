@@ -49,10 +49,9 @@ import {
     CAPABILITY_VIEW_CMS_EDITOR
 } from '../constants/index.mjs'
 import {
-    propertyByPath,
     setPropertyByPath,
     findSegmentByKeyOrPath,
-    findObjectsByAttributeValue, isTrue
+    findObjectsByAttributeValue, isTrue, isString
 } from '../../../client/util/json.mjs'
 import {_t} from '../../../util/i18n.mjs'
 import config from 'gen/config-client'
@@ -77,6 +76,9 @@ import GenericSettings from '../../../client/components/GenericSettings'
 import {DEFAULT_STYLE} from '../constants/cmsDefaults.mjs'
 import CmsPageTools from '../components/CmsPageTools'
 import CmsDataEditDialog from '../components/CmsDataEditDialog'
+import {
+    setEditorZIndexActive
+} from '../components/jsondomhelper/JsonDomStyledElements'
 
 const StyledBox = styled(Box)(({theme})=>({
     display: 'flex',
@@ -182,6 +184,13 @@ class CmsViewEditorContainer extends React.Component {
         this.state = CmsViewEditorContainer.propsToState(props, null)
     }
 
+    /**
+     * local mode: the cmsPage is not persisted, every change is returned as json
+     */
+    get isLocal() {
+        return !!this.props.cmsLocal
+    }
+
     static getDerivedStateFromProps(nextProps, prevState) {
         if (nextProps.cmsPage && !nextProps.loading) {
 
@@ -253,7 +262,7 @@ class CmsViewEditorContainer extends React.Component {
         }
 
         if (meta) {
-            const metaJson = JSON.parse(meta)
+            const metaJson = isString(meta) ? JSON.parse(meta) : meta
 
             result.EditorOptions = metaJson.EditorOptions
             result.EditorPageOptions = metaJson.EditorPageOptions
@@ -278,18 +287,19 @@ class CmsViewEditorContainer extends React.Component {
 
         if (state && state.addNewSite && props.cmsPage && props.cmsPage.slug === state.slug) {
             result.addNewSite = state.addNewSite
-        } else if (props.cmsPage && !props.cmsPage._id) {
+        } else if (props.cmsPage && !props.cmsPage._id && !props.cmsLocal) {
             result.addNewSite = {slugNoExist: props.slug, slug: props.slug}
         }
 
         return result
     }
 
-
     componentDidMount() {
         const {history, dynamic} = this.props
 
-        if (!dynamic) {
+        setEditorZIndexActive(!!this.props.cmsLocal)
+
+        if (!dynamic && history) {
             window.addEventListener('beforeunload', ()=>{
                 console.log('beforeunload')
                 this.saveCmsPage()
@@ -309,7 +319,7 @@ class CmsViewEditorContainer extends React.Component {
     watchCmsPageStatus(instant) {
         clearTimeout(this._watchCmsPageStatus)
         this._watchCmsPageStatus = setTimeout(() => {
-            if (!this.state.ignoreStatus && !this.props.dynamic && this.props.cmsPage && this.props.cmsPage.realSlug !== undefined) {
+            if (!this.state.ignoreStatus && !this.isLocal && !this.props.dynamic && this.props.cmsPage && this.props.cmsPage.realSlug !== undefined) {
                 client.query({
                     fetchPolicy: 'no-cache',
                     query: `query cmsPageStatus($slug: String!){cmsPageStatus(slug: $slug){data user{username _id}}}`,
@@ -347,6 +357,8 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     componentWillUnmount() {
+
+        setEditorZIndexActive(false)
         clearTimeout(this._watchCmsPageStatus)
         this.saveCmsPage()
     }
@@ -374,7 +386,7 @@ class CmsViewEditorContainer extends React.Component {
          console.log('cmsStatusData changed', state.cmsStatusData !== this.state.cmsStatusData)
          console.log('EditorOptions changed', state.EditorOptions !== this.state.EditorOptions)
          console.log('EditorPageOptions changed', state.EditorPageOptions !== this.state.EditorPageOptions)*/
-         //console.log('props.cmsPage.urlSensitiv', props.cmsPage.urlSensitiv)
+        //console.log('props.cmsPage.urlSensitiv', props.cmsPage.urlSensitiv)
         // only update if it is needed
         return noCmsPage ||
             props.loading !== this.props.loading ||
@@ -467,35 +479,35 @@ class CmsViewEditorContainer extends React.Component {
 
         const inner = [
             <WrappedComponent key="cmsView"
-                                           cmsEditData={cmsEditData}
-                                           onTemplateChange={this.handleTemplateChange}
-                                           findSegmentInDataResolverByKeyOrPath={this.findSegmentInDataResolverByKeyOrPath.bind(this)}
-                                           inEditor={canViewCmsEditor}
-                                           onError={this.handleCmsError.bind(this)}
-                                           onDataResolverPropertyChange={this.handleDataResolverPropertySave.bind(this)}
-                                           settings={EditorOptions}
-                                           cmsPage={cmsPageWithState}
-                                           cmsEditorActions={{
-                                               editTemplate: this.editTemplate.bind(this),
-                                               editCmsData: this.editCmsData.bind(this)
-                                           }}
-                                           {...props} />,
+                              cmsEditData={cmsEditData}
+                              onTemplateChange={this.handleTemplateChange}
+                              findSegmentInDataResolverByKeyOrPath={this.findSegmentInDataResolverByKeyOrPath.bind(this)}
+                              inEditor={canViewCmsEditor}
+                              onError={this.handleCmsError.bind(this)}
+                              onDataResolverPropertyChange={this.handleDataResolverPropertySave.bind(this)}
+                              settings={EditorOptions}
+                              cmsPage={cmsPageWithState}
+                              cmsEditorActions={{
+                                  editTemplate: this.editTemplate.bind(this),
+                                  editCmsData: this.editCmsData.bind(this)
+                              }}
+                              {...props} />,
             EditorOptions.devTools && <CmsPageTools
-            style={{left:EditorOptions.drawerOpen?EditorOptions.drawerWidth:0}}
-            boxHeight={EditorOptions.devToolsBoxHeight}
-            tab={EditorOptions.devToolsTab}
-            data={{slug:props.slug, template, style, script, serverScript, dataResolver}}
-            setCmsPageValue={this.setCmsPageValue.bind(this)}
-            onTemplateChange={this.handleTemplateChange.bind(this)}
-            onTab={(tab)=>{
-                this.handleSettingChange( 'devToolsTab', false, tab)
-            }}
-            onBoxHeightChange={(height)=>{
-                clearTimeout(this.boxHeightTimeout)
-                this.boxHeightTimeout = setTimeout(()=>{
-                    this.handleSettingChange( 'devToolsBoxHeight', false, height)
-                },1000)
-            }} />,
+                style={{left:EditorOptions.drawerOpen?EditorOptions.drawerWidth:0}}
+                boxHeight={EditorOptions.devToolsBoxHeight}
+                tab={EditorOptions.devToolsTab}
+                data={{slug:props.slug, template, style, script, serverScript, dataResolver}}
+                setCmsPageValue={this.setCmsPageValue.bind(this)}
+                onTemplateChange={this.handleTemplateChange.bind(this)}
+                onTab={(tab)=>{
+                    this.handleSettingChange( 'devToolsTab', false, tab)
+                }}
+                onBoxHeightChange={(height)=>{
+                    clearTimeout(this.boxHeightTimeout)
+                    this.boxHeightTimeout = setTimeout(()=>{
+                        this.handleSettingChange( 'devToolsBoxHeight', false, height)
+                    },1000)
+                }} />,
             !props.dynamic && <ErrorHandler key="errorHandler" snackbar/>,
             !props.dynamic && <NotificationHandler />,
             <NetworkStatusHandler key="networkStatus"/>,
@@ -591,10 +603,10 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>}
 
                     {canMangeCmsContent && <Expandable title={_t('CmsViewEditorContainer.settings')}
-                                disableGutters
-                                icon="displaySetting" className="accordion-flat"
-                                onChange={this.handleSettingChange.bind(this, 'settingsExpanded', true)}
-                                expanded={EditorPageOptions.settingsExpanded}>
+                                                       disableGutters
+                                                       icon="displaySetting" className="accordion-flat"
+                                                       onChange={this.handleSettingChange.bind(this, 'settingsExpanded', true)}
+                                                       expanded={EditorPageOptions.settingsExpanded}>
 
                         <CmsPageOptions cmsPage={cmsPage}
                                         values={this.state}
@@ -604,11 +616,11 @@ class CmsViewEditorContainer extends React.Component {
 
 
 
-                    {canMangeCmsContent && !loadingState && <Expandable title={_t('CmsViewEditorContainer.revisions')}
-                                                  disableGutters
-                                                  icon="history" className="accordion-flat"
-                                                  onChange={this.handleSettingChange.bind(this, 'revisionsExpanded', true)}
-                                                  expanded={EditorPageOptions.revisionsExpanded}>
+                    {canMangeCmsContent && !loadingState && !this.isLocal && <Expandable title={_t('CmsViewEditorContainer.revisions')}
+                                                                                         disableGutters
+                                                                                         icon="history" className="accordion-flat"
+                                                                                         onChange={this.handleSettingChange.bind(this, 'revisionsExpanded', true)}
+                                                                                         expanded={EditorPageOptions.revisionsExpanded}>
 
                         <CmsRevision historyLimit={10}
                                      cmsPage={cmsPage}
@@ -637,14 +649,14 @@ class CmsViewEditorContainer extends React.Component {
                 </StyledBox>}
                 {EditorOptions.bottomNavigation===2 && canMangeCmsTemplate && <StyledBox data-layout-expandable="true">
                     <Expandable title="Data resolver"
-                        icon="storage" className="accordion-flat"
-                        id="dataResolverExpandable"
-                        disableGutters
-                        onChange={this.handleSettingChange.bind(this, 'dataResolverExpanded', true)}
-                        expanded={EditorPageOptions.dataResolverExpanded}>
+                                icon="storage" className="accordion-flat"
+                                id="dataResolverExpandable"
+                                disableGutters
+                                onChange={this.handleSettingChange.bind(this, 'dataResolverExpanded', true)}
+                                expanded={EditorPageOptions.dataResolverExpanded}>
                         <DataResolverEditor onScroll={this.handleSettingChange.bind(this, 'dataResolverScroll', true)}
                                             scrollPosition={EditorPageOptions.dataResolverScroll}
-                                            /*height={EditorPageOptions.dataResolverHeight}*/
+                            /*height={EditorPageOptions.dataResolverHeight}*/
                                             identifier={`dataResolver${cmsPage._id}-${this.state.dataResolverChangeCount}`}
                                             onCleanUpTranslations={this.handleCleanUpTranslations.bind(this)}
                                             onFullSize={this.fullSizeMode.bind(this,'dataResolver')}
@@ -653,11 +665,11 @@ class CmsViewEditorContainer extends React.Component {
                                             }}>{dataResolver}</DataResolverEditor>
                     </Expandable>
                     <Expandable title="Server Script"
-                        icon="code" className="accordion-flat"
-                        disableGutters
-                        id="serverScriptExpandable"
-                        onChange={this.handleSettingChange.bind(this, 'serverScriptExpanded', true)}
-                        expanded={EditorPageOptions.serverScriptExpanded}>
+                                icon="code" className="accordion-flat"
+                                disableGutters
+                                id="serverScriptExpandable"
+                                onChange={this.handleSettingChange.bind(this, 'serverScriptExpanded', true)}
+                                expanded={EditorPageOptions.serverScriptExpanded}>
                         <ScriptEditor
                             key={'script' + slug}
                             identifier={`serverScript-${cmsPage._id}-${this.state.serverScriptChangeCount}`}
@@ -729,7 +741,7 @@ class CmsViewEditorContainer extends React.Component {
                                                     name: 'Layout style',
                                                     onClick: ()=>{
                                                         this.setCmsPageValue({key:'style', timeoutSetState: 0, timeoutUpdate: 0, setStateCallback:()=>{
-                                                            this.setState({styleChangeCount:this.state.styleChangeCount+1})}},DEFAULT_STYLE)
+                                                                this.setState({styleChangeCount:this.state.styleChangeCount+1})}},DEFAULT_STYLE)
                                                     }
                                                 }
                                             ]
@@ -788,7 +800,7 @@ class CmsViewEditorContainer extends React.Component {
             </>
 
             const moreMenu = []
-            if(canMangeCmsContent){
+            if(canMangeCmsContent && !this.isLocal){
                 moreMenu.push({
                         divider: true,
                         icon: 'add',
@@ -829,154 +841,154 @@ class CmsViewEditorContainer extends React.Component {
 
 
                 moreMenu.push({
-                        icon:'language',
-                        name: _t('CmsViewEditorContainer.globalTranslation'),
-                        onClick: () =>{
-                            const key ='GlobalTranslations-'+slug.split('/')[0]
-                            let editedData, editorRef
-                            const GlobalEditor = ()=>{
-                                const keyValues = useKeyValuesGlobal([key], {})
-                                if(!keyValues.loading){
-                                    return <CodeEditor onChange={(e)=>{
-                                        editedData = e
-                                    }} onForwardRef={(e) => {
-                                        editorRef = e
-                                    }} type="json">{keyValues.data[key]}</CodeEditor>
-                                }
-                                return 'loading...'
+                    icon:'language',
+                    name: _t('CmsViewEditorContainer.globalTranslation'),
+                    onClick: () =>{
+                        const key ='GlobalTranslations-'+slug.split('/')[0]
+                        let editedData, editorRef
+                        const GlobalEditor = ()=>{
+                            const keyValues = useKeyValuesGlobal([key], {})
+                            if(!keyValues.loading){
+                                return <CodeEditor onChange={(e)=>{
+                                    editedData = e
+                                }} onForwardRef={(e) => {
+                                    editorRef = e
+                                }} type="json">{keyValues.data[key]}</CodeEditor>
                             }
-                            this.setState({
-                                simpleDialog: {
-                                    title: _t('CmsViewEditorContainer.globalTranslation'),
-                                    text: <><GlobalEditor /><FileDrop maxSize={100000} style={{width: '100%'}} accept="text/csv"
-                                                                      onFileContent={(files,content)=>{
-                                                                          const json = csvToJson(content)
-                                                                          if(json && json.length>0){
-                                                                              const trs = {}
-                                                                              json.forEach(entry=>{
-                                                                                  config.LANGUAGES.forEach(lang => {
-                                                                                      if(entry[lang]) {
-                                                                                          if (!trs[lang]) {
-                                                                                              trs[lang] = {}
-                                                                                          }
-                                                                                          trs[lang][entry.key] = entry[lang]
-                                                                                      }
-                                                                                  })
-                                                                              })
-                                                                              editorRef.setValue(JSON.stringify({tr:trs},null,4))
-                                                                          }
-                                                                      }} label={_t('CmsViewEditorContainer.importCsv')}/></>,
-                                    actions: [
-                                        {
-                                            key: 'cancel',
-                                            label: _t('core.cancel'),
-                                            type: 'secondary'
-                                        },
-                                        {
-                                            key: 'translate',
-                                            label: _t('CmsViewEditorContainer.translate'),
-                                            type: 'primary'
-                                        },
-                                        {
-                                            key: 'export',
-                                            label: _t('CmsViewEditorContainer.exportCsv'),
-                                            type: 'primary'
-                                        },
-                                        {
-                                            key: 'save',
-                                            label: _t('core.save'),
-                                            type: 'primary',
-                                            variant:'contained'
-                                        }
-                                    ],
-                                    onClose: (e) => {
-                                        if (e.key === 'translate') {
-                                            const json = JSON.parse(editorRef.getValue())
-                                            if(json && json.tr){
-                                                translateInDataResolver({source:json.tr[config.DEFAULT_LANGUAGE],
-                                                    base: json.tr,
-                                                    onChange:()=>{
-                                                        editorRef.setValue(JSON.stringify(json,null,4))
-                                                    }})
-                                            }
-                                            return true
-                                        }else if (e.key === 'export') {
-                                            saveTrsAsCsv(editorRef.getValue())
-                                            return
-                                        }else if(e.key==='save' && editedData) {
-                                            setKeyValue({key,value:editedData,clearCache:true, global:true}).then(()=>{
-                                                location.href = location.href
-                                            })
-                                        }
-                                        this.setState({simpleDialog: true})
-                                    }
-                                }
-                            })
+                            return 'loading...'
                         }
-                    })
+                        this.setState({
+                            simpleDialog: {
+                                title: _t('CmsViewEditorContainer.globalTranslation'),
+                                text: <><GlobalEditor /><FileDrop maxSize={100000} style={{width: '100%'}} accept="text/csv"
+                                                                  onFileContent={(files,content)=>{
+                                                                      const json = csvToJson(content)
+                                                                      if(json && json.length>0){
+                                                                          const trs = {}
+                                                                          json.forEach(entry=>{
+                                                                              config.LANGUAGES.forEach(lang => {
+                                                                                  if(entry[lang]) {
+                                                                                      if (!trs[lang]) {
+                                                                                          trs[lang] = {}
+                                                                                      }
+                                                                                      trs[lang][entry.key] = entry[lang]
+                                                                                  }
+                                                                              })
+                                                                          })
+                                                                          editorRef.setValue(JSON.stringify({tr:trs},null,4))
+                                                                      }
+                                                                  }} label={_t('CmsViewEditorContainer.importCsv')}/></>,
+                                actions: [
+                                    {
+                                        key: 'cancel',
+                                        label: _t('core.cancel'),
+                                        type: 'secondary'
+                                    },
+                                    {
+                                        key: 'translate',
+                                        label: _t('CmsViewEditorContainer.translate'),
+                                        type: 'primary'
+                                    },
+                                    {
+                                        key: 'export',
+                                        label: _t('CmsViewEditorContainer.exportCsv'),
+                                        type: 'primary'
+                                    },
+                                    {
+                                        key: 'save',
+                                        label: _t('core.save'),
+                                        type: 'primary',
+                                        variant:'contained'
+                                    }
+                                ],
+                                onClose: (e) => {
+                                    if (e.key === 'translate') {
+                                        const json = JSON.parse(editorRef.getValue())
+                                        if(json && json.tr){
+                                            translateInDataResolver({source:json.tr[config.DEFAULT_LANGUAGE],
+                                                base: json.tr,
+                                                onChange:()=>{
+                                                    editorRef.setValue(JSON.stringify(json,null,4))
+                                                }})
+                                        }
+                                        return true
+                                    }else if (e.key === 'export') {
+                                        saveTrsAsCsv(editorRef.getValue())
+                                        return
+                                    }else if(e.key==='save' && editedData) {
+                                        setKeyValue({key,value:editedData,clearCache:true, global:true}).then(()=>{
+                                            location.href = location.href
+                                        })
+                                    }
+                                    this.setState({simpleDialog: true})
+                                }
+                            }
+                        })
+                    }
+                })
                 if(canMangeCmsContent) {
                     moreMenu.push({
                             divider: true,
                             icon: 'magic',
                             name: _t('CmsViewEditorContainer.autotranslate'), onClick: async () => {
-                            this.setState({
-                                simpleDialog: {
-                                    title: _t('CmsViewEditorContainer.autotranslate'),
-                                    text: <><SimpleSwitch key="translatePageTitleSwitch" color="primary"
-                                                          defaultChecked={this.state.translatePageTitle}
+                                this.setState({
+                                    simpleDialog: {
+                                        title: _t('CmsViewEditorContainer.autotranslate'),
+                                        text: <><SimpleSwitch key="translatePageTitleSwitch" color="primary"
+                                                              defaultChecked={this.state.translatePageTitle}
+                                                              onChange={(e)=>{
+                                                                  this.setState({translatePageTitle:!this.state.translatePageTitle})
+                                                              }}
+                                                              label={_t('CmsViewEditorContainer.translatePageTitle')}/>
+                                            <SimpleSwitch key="overrideTranslationsSwitch" color="primary"
+                                                          defaultChecked={this.state.overrideTranslations}
                                                           onChange={(e)=>{
-                                                              this.setState({translatePageTitle:!this.state.translatePageTitle})
+                                                              this.setState({overrideTranslations:!this.state.overrideTranslations})
                                                           }}
-                                                          label={_t('CmsViewEditorContainer.translatePageTitle')}/>
-                                        <SimpleSwitch key="overrideTranslationsSwitch" color="primary"
-                                                        defaultChecked={this.state.overrideTranslations}
-                                                        onChange={(e)=>{
-                                                            this.setState({overrideTranslations:!this.state.overrideTranslations})
-                                                        }}
-                                                        label={_t('CmsViewEditorContainer.overrideTranslations')}/>
-                                    </>,
-                                    maxWidth:'sm',
-                                    actions: [
-                                        {
-                                            key: 'translate',
-                                            label: _t('CmsViewEditorContainer.translate'),
-                                            type: 'primary'
-                                        }
-                                    ],
-                                    onClose: async (event) => {
-                                        if(event.key==='translate'){
-                                            const {segment, dataResolver} = this.findSegmentInDataResolverByKeyOrPath({path: 'tr'})
-                                            if (segment.tr && segment.tr[config.DEFAULT_LANGUAGE]) {
+                                                          label={_t('CmsViewEditorContainer.overrideTranslations')}/>
+                                        </>,
+                                        maxWidth:'sm',
+                                        actions: [
+                                            {
+                                                key: 'translate',
+                                                label: _t('CmsViewEditorContainer.translate'),
+                                                type: 'primary'
+                                            }
+                                        ],
+                                        onClose: async (event) => {
+                                            if(event.key==='translate'){
+                                                const {segment, dataResolver} = this.findSegmentInDataResolverByKeyOrPath({path: 'tr'})
+                                                if (segment.tr && segment.tr[config.DEFAULT_LANGUAGE]) {
 
-                                                await translateInDataResolver({
+                                                    await translateInDataResolver({
+                                                        overrideTranslations: this.state.overrideTranslations,
+                                                        source:segment.tr[config.DEFAULT_LANGUAGE],
+                                                        base: segment.tr,
+                                                        onChange:()=>{
+                                                            this.handleDataResolverChange(JSON.stringify(dataResolver, null, 2))
+                                                        }})
+                                                }
+
+                                                if(this.state.translatePageTitle){
+                                                    await translatePageTitle({
+                                                        title:cmsPage.name,
+                                                        overrideTranslations: this.state.overrideTranslations,
+                                                        onChange:this.handleFlagChange.bind(this)})
+                                                }
+
+                                                await translateInTemplate({
                                                     overrideTranslations: this.state.overrideTranslations,
-                                                    source:segment.tr[config.DEFAULT_LANGUAGE],
-                                                    base: segment.tr,
-                                                    onChange:()=>{
-                                                        this.handleDataResolverChange(JSON.stringify(dataResolver, null, 2))
+                                                    template:JSON.parse(this.state.template),
+                                                    onChange:(template)=>{
+                                                        this.handleTemplateChange(template,false,true)
                                                     }})
+                                                this.setState({simpleDialog: null})
+                                            }else {
+                                                this.setState({simpleDialog: null})
                                             }
-
-                                            if(this.state.translatePageTitle){
-                                                await translatePageTitle({
-                                                    title:cmsPage.name,
-                                                    overrideTranslations: this.state.overrideTranslations,
-                                                    onChange:this.handleFlagChange.bind(this)})
-                                            }
-
-                                            await translateInTemplate({
-                                                overrideTranslations: this.state.overrideTranslations,
-                                                template:JSON.parse(this.state.template),
-                                                onChange:(template)=>{
-                                                this.handleTemplateChange(template,false,true)
-                                            }})
-                                            this.setState({simpleDialog: null})
-                                        }else {
-                                            this.setState({simpleDialog: null})
                                         }
                                     }
-                                }
-                            })
+                                })
                             }
                         }
                     )
@@ -1431,6 +1443,11 @@ class CmsViewEditorContainer extends React.Component {
 
     saveSettings() {
 
+        if (this.isLocal) {
+            // editor settings are not persisted in local mode, they only live in the component state
+            return
+        }
+
         this._saveSettings = (callback) => {
 
             const {EditorOptions, EditorPageOptions} = this.state
@@ -1512,6 +1529,10 @@ CmsViewEditorContainer.propTypes = {
     dynamic: PropTypes.bool,
     /* if true data gets refetched with query on url change*/
     urlSensitiv: PropTypes.any,
+    /* read and write the cmsPage. Injected by withCms */
+    cmsLocal: PropTypes.bool,
+    readCmsPage: PropTypes.func,
+    writeCmsPage: PropTypes.func,
     /* udate data */
     updateCmsPage: PropTypes.func.isRequired,
     updateResolvedData: PropTypes.func.isRequired
@@ -1522,6 +1543,27 @@ const CmsViewEditorContainerWithGql = compose(
     graphql(`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$realSlug:String,$name:LocalizedStringInput,$author:String,$keyword:LocalizedStringInput,$description:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$manual:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:String,$parseResolvedData:Boolean,$fetchPolicy:String,$alwaysLoadAssets:Boolean,$loadPageOptions:Boolean,$ssrStyle:Boolean,$uniqueStyle:Boolean,$publicEdit:Boolean,$disableRendering:Boolean,$compress:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,realSlug:$realSlug,name:$name,author:$author,keyword:$keyword,description:$description,script:$script,style:$style,serverScript:$serverScript,manual:$manual,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,loadPageOptions:$loadPageOptions,compress:$compress,ssrStyle:$ssrStyle,uniqueStyle:$uniqueStyle,publicEdit:$publicEdit,disableRendering:$disableRendering,parseResolvedData:$parseResolvedData,fetchPolicy:$fetchPolicy,query:$query,props:$props){slug realSlug name{${config.LANGUAGES.join(' ')}} description{${config.LANGUAGES.join(' ')}} keyword{${config.LANGUAGES.join(' ')}} author template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, realSlug, ...rest}, cb) => {
+
+                if (ownProps.cmsLocal) {
+                    // local mode: only the json is updated, no mutation is sent
+                    const data = ownProps.readCmsPage()
+                    if (data && data.cmsPage) {
+                        const newData = {
+                            ...data.cmsPage,
+                            _id,
+                            ...rest,
+                            modifiedAt: new Date().getTime() + ''
+                        }
+                        if (realSlug) {
+                            newData.realSlug = realSlug
+                        }
+                        ownProps.writeCmsPage({...data, cmsPage: newData})
+                    }
+                    if (cb) {
+                        cb()
+                    }
+                    return Promise.resolve()
+                }
 
                 const variables = getGqlVariables(ownProps)
 
@@ -1590,4 +1632,3 @@ const CmsViewEditorContainerWithGql = compose(
 
 
 export default CmsViewEditorContainerWithGql
-

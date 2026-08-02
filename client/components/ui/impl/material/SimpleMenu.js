@@ -43,7 +43,7 @@ class SimpleMenu extends React.Component {
 
     render() {
         const {anchorEl} = this.state
-        const {style, items, label, mini, color, fab, icon, onClick, className, open, onOpen, noButton, ...rest} = this.props
+        const {style, items, label, mini, color, fab, icon, onClick, className, open, onOpen, noButton, zIndex, ...rest} = this.props
         return (
             <div className={className} style={style}>
                 {
@@ -88,8 +88,15 @@ class SimpleMenu extends React.Component {
                     anchorEl={anchorEl}
                     open={open !== undefined ? !!open : Boolean(anchorEl)}
                     onClose={this.handleClose}
-                    style={{zIndex:9999}}
                     {...rest}
+                    slotProps={{
+                        root: {
+                            // z-index must be on the modal root, the paper is inside its stacking context
+                            style: {zIndex: zIndex ? zIndex: 9999},
+                            ...rest.slotProps?.root
+                        },
+                        ...rest.slotProps
+                    }}
                 >
                     {this.renderMenu(items)}
 

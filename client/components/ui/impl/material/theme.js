@@ -35,35 +35,35 @@ export const defaultTheme = createTheme({
         MuiDialog: {
             styleOverrides: {
                 root: {
-                    zIndex: '9999 !important'
+                    zIndex: '9999'
                 }
             }
         },
         MuiSnackbar: {
             styleOverrides: {
                 root: {
-                    zIndex: '10000 !important'
+                    zIndex: '10000'
                 }
             }
         },
         MuiPopover: {
             styleOverrides: {
                 root: {
-                    zIndex: '9999 !important'
+                    zIndex: '9999'
                 }
             }
         },
         MuiTooltip: {
             styleOverrides: {
                 popper: {
-                    zIndex: '99999 !important'
+                    zIndex: '99999'
                 }
             }
         },
         MuiAutocomplete: {
             styleOverrides: {
                 popper: {
-                    zIndex: '99999 !important'
+                    zIndex: '99999'
                 },
                 tag:{
                     margin:'2px',

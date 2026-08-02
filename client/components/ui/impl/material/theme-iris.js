@@ -421,7 +421,7 @@ export const defaultTheme = createTheme({
                         width: '100%',
                     }
                 },
-                popper: { zIndex: '99999 !important' },
+                popper: { zIndex: '99999' },
                 inputRoot: {
                     padding: '4px 9px',
                     '& .MuiAutocomplete-input': {
@@ -629,7 +629,7 @@ export const defaultTheme = createTheme({
         // ── Tooltip ───────────────────────────────────────────────
         MuiTooltip: {
             styleOverrides: {
-                popper: { zIndex: '99999 !important' },
+                popper: { zIndex: '99999' },
                 tooltip: {
                     background: colors.grey900,
                     color: '#f8faff',
@@ -646,7 +646,7 @@ export const defaultTheme = createTheme({
         // ── Dialog ────────────────────────────────────────────────
         MuiDialog: {
             styleOverrides: {
-                root: { zIndex: '9999 !important' },
+                root: { zIndex: '9999' },
                 paper: {
                     borderRadius: 20,
                     boxShadow: '0 24px 64px rgba(99,102,241,0.20), 0 8px 24px rgba(0,0,0,0.08)',
@@ -723,7 +723,7 @@ export const defaultTheme = createTheme({
         // ── Popover ───────────────────────────────────────────────
         MuiPopover: {
             styleOverrides: {
-                root: { zIndex: '9999 !important' },
+                root: { zIndex: '9999' },
                 paper: {
                     borderRadius: 14,
                     border: `1px solid ${colors.grey200}`,

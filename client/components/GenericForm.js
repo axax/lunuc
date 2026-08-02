@@ -46,12 +46,38 @@ import {QUERY_KEY_VALUES_GLOBAL} from '../util/keyvalue'
 import {replacePlaceholders} from '../../util/placeholders.mjs'
 import {SimpleAutosuggest} from './ui/impl/material'
 import { CAPABILITY_MANAGE_TYPES} from '../../util/capabilities.mjs'
+import CmsViewContainer from '../../extensions/cms/containers/CmsViewContainer'
+import {
+    DEFAULT_STYLE_EDITOR, DEFAULT_STYLE_ENVIRONMENT,
+    DEFAULT_TEMPLATE_MINIMAL
+} from '../../extensions/cms/constants/cmsDefaults.mjs'
 
 const CodeEditor = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "codeeditor" */ './CodeEditor')}/>
 
 
 const StyledTabContainer = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.background.paper
+}))
+
+const StyledCmsEditorFrame = styled('div')(({theme}) => ({
+    position: 'relative',
+    padding: '10px',
+    borderRadius: '12px',
+    border: `1px solid ${theme.palette.divider}`,
+    backgroundColor: theme.palette.action.hover,
+    // dotted canvas so the area reads as a surface, not as an input
+    backgroundImage: `radial-gradient(circle, ${theme.palette.divider} 1px, transparent 1px)`,
+    backgroundSize: '14px 14px'
+}))
+
+const StyledCmsEditorCanvas = styled('div')(({theme}) => ({
+    minHeight: '8rem',
+    borderRadius: '8px',
+    backgroundColor: theme.palette.background.paper,
+    boxShadow: theme.shadows[1],
+    // room for the editor chrome: drag bar (-8px), context menu (-2.45rem)
+    // and the action bar above the element
+    padding: '1rem'
 }))
 
 const getSxProps = (field,theme) => ({
@@ -1101,9 +1127,9 @@ class GenericForm extends React.Component {
             }
 
 
-            if(field.highlight){
+            if (field.highlight) {
                 const newHighlight = Util.replacePlaceholders(field.highlight, this.state.fields)
-                if(newHighlight){
+                if (newHighlight) {
                     highlight = newHighlight
                 }
             }
@@ -1111,14 +1137,14 @@ class GenericForm extends React.Component {
             currentFormFields.push(<FormControl key={'control' + fieldKey}
                                                 className={field.className}
                                                 error={!!this.state.fieldErrors[fieldKey]}
-                                                sx={getSxProps({fullWidth:true},theme)}>
+                                                sx={getSxProps({fullWidth: true}, theme)}>
                 <InputLabel key={'label' + fieldKey}
-                            onMouseEnter={(e)=>{
-                                if(field.label && field.name && field.label !== field.name) {
+                            onMouseEnter={(e) => {
+                                if (field.label && field.name && field.label !== field.name) {
                                     showTooltip(field.name, e)
                                 }
                             }}
-                            onMouseLeave={()=>{
+                            onMouseLeave={() => {
                                 hideTooltip()
                             }}
                             shrink>{field.label + (languageCode ? ' [' + languageCode + ']' : '')}</InputLabel>
@@ -1130,10 +1156,11 @@ class GenericForm extends React.Component {
                             name: fieldKey,
                             value: newValue
                         }
-                    })} componentTemplate={field.componentTemplate} propertyTemplate={field.propertyTemplate}>{value}</JsonEditor> :
+                    })} componentTemplate={field.componentTemplate}
+                                                      propertyTemplate={field.propertyTemplate}>{value}</JsonEditor> :
 
                     <CodeEditor
-                        style={{border: '1px solid #eeeeee',margin: '16px 0'}}
+                        style={{border: '1px solid #eeeeee', margin: '16px 0'}}
                         readOnly={field.readOnly || field.uiReadOnly}
                         identifier={(this.props.id || '') + '-' + fieldKey}
                         key={fieldKey}
@@ -1153,6 +1180,47 @@ class GenericForm extends React.Component {
 
                 <FormHelperText error>{this.state.fieldErrors[fieldKey]}</FormHelperText>
             </FormControl>)
+
+        } else if (uitype === 'CmsEditor') {
+           currentFormFields.push(<FormControl key={'control' + fieldKey}
+                                               className={field.className}
+                                               error={!!this.state.fieldErrors[fieldKey]}
+                                               sx={getSxProps({fullWidth: true}, theme)}>
+               <InputLabel key={'label' + fieldKey}
+                           onMouseEnter={(e) => {
+                               if (field.label && field.name && field.label !== field.name) {
+                                   showTooltip(field.name, e)
+                               }
+                           }}
+                           onMouseLeave={() => {
+                               hideTooltip()
+                           }}
+                           shrink>{field.label + (languageCode ? ' [' + languageCode + ']' : '')}</InputLabel>
+               <StyledCmsEditorFrame>
+                   <StyledCmsEditorCanvas>
+               <CmsViewContainer
+                   slug=""
+                   forceEditMode={true}
+                   cmsData={{
+                       slug: '',
+                       template: value ? value : DEFAULT_TEMPLATE_MINIMAL,
+                       style: DEFAULT_STYLE_ENVIRONMENT + '\n\n' + DEFAULT_STYLE_EDITOR
+                   }}
+                   onCmsDataChange={cmsPage => {
+                       // the complete updated json, no graphql write happened
+                       console.log(cmsPage)
+                       this.handleInputChange({
+                           target: {
+                               dataset: {
+                                   language: languageCode
+                               },
+                               name: fieldKey,
+                               value: cmsPage.template
+                           }
+                       })
+                   }}
+               /></StyledCmsEditorCanvas></StyledCmsEditorFrame></FormControl>
+           )
 
         } else if (uitype === 'html') {
             const hasError = !!this.state.fieldErrors[fieldKey]

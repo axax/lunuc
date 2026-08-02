@@ -12,8 +12,8 @@ import {
     FileCopyIcon,
     PlaylistAddIcon,
     FlipToBackIcon,
-    MoveDownIcon,
-    MoveUpIcon,
+    ArrowUpwardIcon,
+    ArrowDownwardIcon,
     LowPriorityIcon,
     TransformIcon,
     LayersIcon
@@ -34,7 +34,8 @@ import {
     removeComponent,
     isTargetAbove,
     copyComponent,
-    recalculatePixelValue, highlighterHandler, getHighlightPosition, checkIfElementOrParentHasDataKey
+    recalculatePixelValue, highlighterHandler, getHighlightPosition, checkIfElementOrParentHasDataKey,
+    highlighterScrollHandler
 } from '../util/jsonDomUtil'
 import {ALLOW_DROP, JsonDomDraggable, onJsonDomDrag, onJsonDomDragEnd} from '../util/jsonDomDragUtil'
 import config from 'gen/config-client'
@@ -53,7 +54,8 @@ import {
     StyledToolbarButton,
     StyledHighlighter,
     StyledPicker,
-    StyledHorizontalDivider, StyledRichTextBar,StyledDragBar
+    StyledActionBar,
+    StyledHorizontalDivider, StyledRichTextBar, StyledDragBar, getZIndexBasis
 } from './jsondomhelper/JsonDomStyledElements'
 import CmsViewContainer from '../containers/CmsViewContainer'
 import {SimpleSwitch} from '../../../client/components/ui/impl/material'
@@ -99,8 +101,7 @@ document.addEventListener('keyup', (e) => {
     }
 })
 
-document.addEventListener('scroll', highlighterHandler)
-
+document.addEventListener('scroll', highlighterScrollHandler, {capture: true, passive: true})
 
 
 class JsonDomHelper extends React.Component {
@@ -147,8 +148,85 @@ class JsonDomHelper extends React.Component {
         }
     }
 
+    componentDidUpdate(prevProps) {
+        // keys are index based - on reorder react reuses the instance and
+        // only swaps the key, so the registry has to follow
+        if (prevProps._key !== this.props._key) {
+            if (JsonDomHelper.instances[prevProps._key] === this) {
+                delete JsonDomHelper.instances[prevProps._key]
+            }
+            JsonDomHelper.instances[this.props._key] = this
+        }
+    }
+
+    /**
+     * Recalculate the highlight after the template changed. The stored rect is
+     * stale once the element was re-rendered somewhere else. Since instances are
+     * registered by key, the highlight can be handed over to whichever instance
+     * now sits at the given position.
+     */
+    refreshHighlightAt(key) {
+        requestAnimationFrame(() => {
+            const target = JsonDomHelper.instances[key] || this
+            const node = ReactDOM.findDOMNode(target)
+            if (!node) {
+                return
+            }
+            if (target !== this) {
+                this.setState({hovered: false, toolbarHovered: false})
+            }
+            target.setState(getHighlightPosition(node), () => {
+                highlighterHandler(node)
+            })
+
+            // The hover was set programmatically. The pointer may never have been
+            // inside this node, in which case no mouseout will ever fire and the
+            // highlight would stay forever - watch for the pointer leaving instead.
+            target.watchPointerLeave()
+        })
+    }
+
+    watchPointerLeave() {
+        this.stopWatchPointerLeave()
+        this._pointerWatch = (e) => {
+            const node = ReactDOM.findDOMNode(this)
+            if (node && node.contains(e.target)) {
+                return
+            }
+            if (checkIfElementOrParentHasDataKey(e.target, ['data-toolbar', 'data-picker'])) {
+                return
+            }
+            this.stopWatchPointerLeave()
+            this.setState({hovered: false, toolbarHovered: false})
+        }
+        document.addEventListener('mousemove', this._pointerWatch, {passive: true})
+    }
+
+    stopWatchPointerLeave() {
+        if (this._pointerWatch) {
+            document.removeEventListener('mousemove', this._pointerWatch)
+            this._pointerWatch = null
+        }
+    }
+
     componentWillUnmount() {
-        delete JsonDomHelper.instances[this.props._key]
+        clearTimeout(this.helperTimeoutIn)
+        clearTimeout(this.helperTimeoutOut)
+        clearTimeout(this.toolbarTimeoutOut)
+        this.stopWatchPointerLeave()
+
+        // an unmounted instance must not stay in the selection, otherwise
+        // deselectSelected() calls forceUpdate() on a dead component
+        const selectedIndex = JsonDomHelper.selected.indexOf(this)
+        if (selectedIndex >= 0) {
+            JsonDomHelper.selected.splice(selectedIndex, 1)
+        }
+
+        // on reorder a new instance with the same key can mount before this
+        // one unmounts - only remove the entry when it still points to us
+        if (JsonDomHelper.instances[this.props._key] === this) {
+            delete JsonDomHelper.instances[this.props._key]
+        }
     }
 
     shouldComponentUpdate(props, state) {
@@ -170,6 +248,7 @@ class JsonDomHelper extends React.Component {
             state.left !== this.state.left ||
             state.height !== this.state.height ||
             state.width !== this.state.width ||
+            state.marginBottom !== this.state.marginBottom ||
             state.marginBottomNew !== this.state.marginBottomNew ||
             state.toolbarHovered !== this.state.toolbarHovered ||
             state.mouseX !== this.state.mouseX ||
@@ -179,10 +258,15 @@ class JsonDomHelper extends React.Component {
 
     helperTimeoutOut = null
     helperTimeoutIn = null
+    toolbarTimeoutOut = null
 
     onHelperMouseOver(e) {
         if (JsonDomHelper.disableEvents || JsonDomHelper.altKeyDown)
             return
+
+        // regular hover handling takes over again
+        this.stopWatchPointerLeave()
+
         e.stopPropagation()
         const {hovered, dragging} = this.state
         // take this node instead of e.target becuase it might be a child of it
@@ -224,7 +308,7 @@ class JsonDomHelper extends React.Component {
                 if(!this.state.dividerHovered) {
                     this.setState({hovered: false})
                 }
-            }, 80)
+            }, 125)
         } else {
             clearTimeout(this.helperTimeoutIn)
         }
@@ -234,6 +318,11 @@ class JsonDomHelper extends React.Component {
     onToolbarMouseOver(e) {
         if (JsonDomHelper.disableEvents)
             return
+
+        // a pending hide from a previous mouseout would fire after this
+        // and switch the toolbar off while the pointer is still on it
+        clearTimeout(this.toolbarTimeoutOut)
+
         e.stopPropagation()
 
         const {toolbarMenuOpen} = this.state
@@ -247,7 +336,8 @@ class JsonDomHelper extends React.Component {
         e.stopPropagation()
         if (!this.state.toolbarMenuOpen) {
             if(!checkIfElementOrParentHasDataKey(e.toElement || e.relatedTarget,['data-toolbar', 'data-picker'])) {
-                setTimeout(() => {
+                clearTimeout(this.toolbarTimeoutOut)
+                this.toolbarTimeoutOut = setTimeout(() => {
                     this.setState({toolbarHovered: false})
                 }, 100)
             }else{
@@ -268,7 +358,7 @@ class JsonDomHelper extends React.Component {
         const viewH = window.innerHeight;
 
         // 1. Calculate Dynamic Scale
-        // We want the ghost to be no larger than 30% of the screen width/height
+        // We want the ghost to be no larger than 80% of the screen width/height
         const maxW = viewW * 0.8;
         const maxH = viewH * 0.8;
 
@@ -581,7 +671,7 @@ class JsonDomHelper extends React.Component {
 
         const {toolbarMenuOpen, addChildDialog, deleteConfirmDialog, copyOptionsDialog, deleteSelectionConfirmDialog, deleteSourceConfirmDialog} = this.state
         if(!rest._key){
-            return
+            return null
         }
 
         const isCms = _tagName === 'Cms',
@@ -692,6 +782,11 @@ class JsonDomHelper extends React.Component {
                     overrideEvents, onChange, _options, _dynamic, rest, _json, isInLoop, isSelected, hasRichTextBar
                 })
 
+                const flatMenuItems = menuItems.reduce((acc, item) => acc.concat(item, item.items || []), [])
+                const quickActions = ['moveUp', 'moveDown', 'edit', 'clone', 'remove']
+                    .map(id => flatMenuItems.find(item => item.id === id))
+                    .filter(Boolean)
+
                 if(toolbarMenuOpen && menuItems.length === 0){
                     //close menu again as there are no menu items
                     this.setState({toolbarMenuOpen: false, toolbarHovered: false})
@@ -704,19 +799,31 @@ class JsonDomHelper extends React.Component {
                     data-toolbar={rest._key}
                     onMouseOver={this.onToolbarMouseOver.bind(this)}
                     onMouseOut={this.onToolbarMouseOut.bind(this)}
-                    style={{top: this.state.top, left: this.state.left, height: this.state.height}}>
+                    style={{top: this.state.top, left: this.state.left, height: this.state.height, width: this.state.width}}>
 
 
                     {isDraggable && <StyledDragBar onContextMenu={this.triggerContextMenu.bind(this)}
-                            data-dragbar={true}
-                            draggable={helperEvents.draggable}
-                            onDragStart={helperEvents.onDragStart}
-                            onDrag={helperEvents.onDrag}
-                            onDragEnd={helperEvents.onDragEnd}/>}
+                                                   data-dragbar={true}
+                                                   draggable={helperEvents.draggable}
+                                                   onDragStart={helperEvents.onDragStart}
+                                                   onDrag={helperEvents.onDrag}
+                                                   onDragEnd={helperEvents.onDragEnd}/>}
 
                     <StyledInfoBox>{(_t(`elements.key.${elementKey}`,null,elementKey)) + (rest.id?` (${rest.id})`:(rest.slug?` (${rest.slug})`:''))}</StyledInfoBox>
-
+                    {quickActions.length > 0 && <StyledActionBar flipped={this.state.top < 40}>
+                        {quickActions.map(action => <button
+                            key={action.id}
+                            type="button"
+                            data-action={action.id}
+                            title={action.name}
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                e.preventDefault()
+                                action.onClick(e)
+                            }}>{action.icon}</button>)}
+                    </StyledActionBar>}
                     {menuItems.length>0 && <StyledToolbarMenu
+                        zIndex={Math.max(getZIndexBasis() + 6, 9999)}
                         anchorReference={this.state.mouseY ? "anchorPosition" : "anchorEl"}
                         anchorPosition={
                             this.state.mouseY && this.state.mouseX
@@ -814,9 +921,9 @@ class JsonDomHelper extends React.Component {
                                                      _onTemplateChange(_json, true)
 
                                                  }
-                                                this.setState({dividerMousePos:false,
-                                                    marginBottom: this.state.marginBottomNew,
-                                                    marginBottomNew:false})
+                                                 this.setState({dividerMousePos:false,
+                                                     marginBottom: this.state.marginBottomNew,
+                                                     marginBottomNew:false})
                                              }}
                                              onMouseMove={(e)=>{
                                                  if(this.state.dividerMousePos) {
@@ -920,7 +1027,7 @@ class JsonDomHelper extends React.Component {
                                       this.setState({copyOptionsDialog: null})
                                   }}
                                   actions={[{key: 'cancel',label: _t('core.cancel'),type: 'secondary'},
-                                            {key: 'yes',label: _t('core.ok'),type: 'primary'}]}
+                                      {key: 'yes',label: _t('core.ok'),type: 'primary'}]}
                                   title={_t('JsonDomHelper.copy.element')}>
 
                         <SimpleSwitch
@@ -928,7 +1035,6 @@ class JsonDomHelper extends React.Component {
                             defaultChecked={true}
                             onChange={(checked)=>{
                                 copyOptionsDialog.keepTrKey = checked
-                                console.log(copyOptionsDialog)
                             }}
                         />
 
@@ -973,20 +1079,20 @@ class JsonDomHelper extends React.Component {
                     </SimpleDialog>
                 )}
                 {(addChildDialog && <JsonDomAddElementDialog {...addChildDialog}
-                    slug={_scope.page.slug}
-                    onSelectParent={({key})=>{
-                        const parentKey = key.substring(0, key.lastIndexOf('.'))
-                        if(parentKey) {
-                            const subJsonParent = getComponentByKey(parentKey, _json)
-                            this.handleEditElement({
-                                jsonElement: subJsonParent?.$inlineEditor?.elementKey && getJsonDomElements(subJsonParent.$inlineEditor.elementKey),
-                                subJson: subJsonParent,
-                                isCms: subJsonParent?.$inlineEditor?.elementKey == 'cms',
-                                json: _json,
-                                key: parentKey
-                            })
-                        }
-                    }} onClose={this.onAddChildDialogClose.bind(this)}/>)}</React.Fragment>
+                                                             slug={_scope.page.slug}
+                                                             onSelectParent={({key})=>{
+                                                                 const parentKey = key.substring(0, key.lastIndexOf('.'))
+                                                                 if(parentKey) {
+                                                                     const subJsonParent = getComponentByKey(parentKey, _json)
+                                                                     this.handleEditElement({
+                                                                         jsonElement: subJsonParent?.$inlineEditor?.elementKey && getJsonDomElements(subJsonParent.$inlineEditor.elementKey),
+                                                                         subJson: subJsonParent,
+                                                                         isCms: subJsonParent?.$inlineEditor?.elementKey == 'cms',
+                                                                         json: _json,
+                                                                         key: parentKey
+                                                                     })
+                                                                 }
+                                                             }} onClose={this.onAddChildDialogClose.bind(this)}/>)}</React.Fragment>
         }
     }
 
@@ -1018,7 +1124,6 @@ class JsonDomHelper extends React.Component {
                     // remove selected items
                     const keys = sortJsonKeysDesc(JsonDomHelper.selected.map(sel=>sel.props._key))
                     keys.forEach(key=>{
-                        console.log(key)
                         this.removeByKey(key)
                     })
                     this.deselectSelected()
@@ -1145,6 +1250,7 @@ class JsonDomHelper extends React.Component {
                             overrideEvents.onDoubleClick = doEditElement
                         }
                         menuItems.push({
+                            id: 'edit',
                             name: _options.menuTitle.edit || _t('JsonDomHelper.elementSettings'),
                             icon: <SettingsInputComponentIcon/>,
                             onClick: doEditElement
@@ -1162,6 +1268,7 @@ class JsonDomHelper extends React.Component {
 
                 if (_options.menu.clone !== false) {
                     menuItems.push({
+                        id: 'clone',
                         name: _t('JsonDomHelper.copy.element'),
                         icon: <FileCopyIcon/>,
                         onClick: this.handleCopyClick.bind(this)
@@ -1253,19 +1360,23 @@ class JsonDomHelper extends React.Component {
                     const currentIndex = parentJson.c.indexOf(subJson)
                     if(currentIndex>0) {
                         subMenuMove.push({
+                            id: 'moveUp',
                             name: _t('JsonDomHelper.move.element.up'),
-                            icon: <MoveUpIcon/>,
+                            icon: <ArrowUpwardIcon/>,
                             onClick: () => {
                                 this.moveElementFromTo(rest._key, parentKey, currentIndex-1, _json, subJson)
+                                this.refreshHighlightAt(parentKey + '.' + (currentIndex-1))
                             }
                         })
                     }
                     if(currentIndex+1<parentJson.c.length) {
                         subMenuMove.push({
+                            id: 'moveDown',
                             name: _t('JsonDomHelper.move.element.down'),
-                            icon: <MoveDownIcon/>,
+                            icon: <ArrowDownwardIcon/>,
                             onClick: () => {
                                 this.moveElementFromTo(rest._key, parentKey, currentIndex+2, _json, subJson)
+                                this.refreshHighlightAt(parentKey + '.' + (currentIndex+1))
                             }
                         })
                     }
@@ -1308,6 +1419,7 @@ class JsonDomHelper extends React.Component {
 
                 if (_options.menu.remove !== false) {
                     menuItems.push({
+                        id: 'remove',
                         name: _t('JsonDomHelper.delete.element'),
                         icon: <DeleteIcon/>,
                         onClick: () => {
@@ -1658,7 +1770,7 @@ class JsonDomHelper extends React.Component {
                 val = propertyByPath(key, subJson, '_')
             }
             if(key==='$inlineEditor_dataResolver'){
-               val = this.props._findSegmentInDataResolverByKeyOrPath({key:val}).segment
+                val = this.props._findSegmentInDataResolverByKeyOrPath({key:val}).segment
             }
 
             if (newJsonElement.options[key].tr && newJsonElement.options[key].trKey) {

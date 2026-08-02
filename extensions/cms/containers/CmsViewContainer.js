@@ -3,7 +3,7 @@ import JsonDom from '../components/JsonDom'
 import Util from 'client/util/index.mjs'
 import DomUtil from 'client/util/dom.mjs'
 import {getSubscribeQuery} from 'util/types.mjs'
-import {isEditMode, getSlugVersion, getCmsPageQuery} from '../util/cmsView.mjs'
+import {isEditMode, getSlugVersion} from '../util/cmsView.mjs'
 import withCms from './withCms'
 import {client} from '../../../client/middleware/graphql'
 import Hook from '../../../util/hook.cjs'
@@ -78,7 +78,7 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {slug, cmsPage, children, dynamic, settings, setKeyValue, getKeyValue, updateResolvedData, _props, loaderClass, ...props} = this.props
+        const {slug, cmsPage, children, dynamic, settings, setKeyValue, getKeyValue, updateResolvedData, cmsLocal, readCmsPage, writeCmsPage, _props, loaderClass, ...props} = this.props
         const editMode = isEditMode(this.props)
         if (!cmsPage) {
             // show a loader here
@@ -333,10 +333,7 @@ class CmsViewContainer extends React.Component {
                             const {action, _meta, filter, data, removedIds} = supscriptionData.data[subscriptionName]
 
                             if ((data || removedIds) && (!filter || !subscription.filter[action] || filter === subscription.filter[action])) {
-                                const storedData = client.readQuery({
-                                    query: getCmsPageQuery(_this.props),
-                                    variables: _this.props.cmsPageVariables
-                                })
+                                const storedData = _this.props.readCmsPage()
 
 
                                 // upadate data in resolvedData string
@@ -424,11 +421,7 @@ class CmsViewContainer extends React.Component {
         newStoreData.cmsPage = Object.assign({}, storedData.cmsPage)
         newStoreData.cmsPage.resolvedData = JSON.stringify(resolvedDataJson)
         // save new data
-        client.writeQuery({
-            query: getCmsPageQuery(this.props),
-            variables: this.props.cmsPageVariables,
-            data: newStoreData
-        })
+        this.props.writeCmsPage(newStoreData)
     }
 
     clientQuery(query, options = {}) {
@@ -492,6 +485,10 @@ CmsViewContainer.propTypes = {
     dynamic: PropTypes.bool,
     /!* if true data gets refetched with query on url change*!/
     urlSensitiv: PropTypes.any,
+    /!* read and write the cmsPage. Injected by withCms *!/
+    cmsLocal: PropTypes.bool,
+    readCmsPage: PropTypes.func,
+    writeCmsPage: PropTypes.func,
     inEditor: PropTypes.bool
 }
 */

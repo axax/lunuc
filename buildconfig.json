@@ -234,7 +234,9 @@
         "ContentCut",
         "Layers",
         "OpenWith",
-        "OpenInNew"
+        "OpenInNew",
+        "ArrowDownward",
+        "ArrowUpward"
       ],
       "theme":{
         "colors":{
