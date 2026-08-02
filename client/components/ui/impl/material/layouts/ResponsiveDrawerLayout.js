@@ -11,7 +11,7 @@ import ListItem from '@mui/material/ListItem'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
 import ListItemIcon from '@mui/material/ListItemIcon'
-import React, {useState} from 'react'
+import React, {useCallback, useState} from 'react'
 import Util from '../../../../../util/index.mjs'
 import ExpandLess from '@mui/icons-material/ExpandLess'
 import ExpandMore from '@mui/icons-material/ExpandMore'
@@ -107,7 +107,7 @@ const findActiveItem = (props) => {
 }
 
 const MenuList = (props) => {
-    const {items, depth, onMenuChange} = props
+    const {items, depth, onMenuChange, onNavigate} = props
     const activeItem = findActiveItem(props)
 
     const [open, setOpen] = React.useState({})
@@ -119,14 +119,15 @@ const MenuList = (props) => {
                     return <Divider key={i}/>
                 }
                 if(item.subheader){
-                    return <Box sx={{ pl: 3, mb: 1.5, mt: 1.5}}>
+                    return <Box key={i} sx={{ pl: 3, mb: 1.5, mt: 1.5}}>
                         <Typography variant="subtitle2" color="textSecondary" align="center">
                             {item.name}
                         </Typography>
                     </Box>
                 }
                 const isOpen = open[i] || (open[i]==undefined && item.open)
-                return <><ListItem key={'item-'+i}>
+                const isGroupToggle = !!item.items && !item.to
+                return <React.Fragment key={i}><ListItem>
                     <ListItemButton selected={activeItem === item } onClick={() => {
                         if(item.onClick) {
                             item.onClick()
@@ -138,7 +139,12 @@ const MenuList = (props) => {
                         if(item.to) {
                             _app_.history.push(item.to)
                         }
-                    }} button key={'itemButton-'+i}>
+                        // close the temporary drawer, but keep it open when the
+                        // click only expands or collapses a submenu
+                        if(onNavigate && !isGroupToggle){
+                            onNavigate(item)
+                        }
+                    }}>
                         {
                             item.icon && <ListItemIcon>
                                 {item.icon.constructor === String ?
@@ -154,9 +160,10 @@ const MenuList = (props) => {
 
                     </ListItemButton></ListItem>
                     {item.items?<Collapse in={isOpen} timeout="auto" unmountOnExit>
-                        <MenuList items={item.items} onMenuChange={onMenuChange} depth={depth + 1}/>
+                        <MenuList items={item.items} onMenuChange={onMenuChange}
+                                  onNavigate={onNavigate} depth={depth + 1}/>
                     </Collapse>:null}
-                </>
+                </React.Fragment>
             }
         })}
     </List>
@@ -171,6 +178,12 @@ const ResponsiveDrawer = React.memo((props) => {
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen)
     }
+
+    // stable reference so MenuList does not re-render unnecessarily
+    const handleNavigate = useCallback(() => {
+        setMobileOpen(false)
+    }, [])
+
     const {onMenuChange, menuItems, children, headerLeft, headerRight, title, loading, logo, toolbarStyle, headerStyle, extra} = props
 
     const drawer = (
@@ -180,7 +193,8 @@ const ResponsiveDrawer = React.memo((props) => {
                 <div style={{marginLeft:'auto'}}>{headerLeft}</div>
             </Toolbar>
             <Divider/>
-            <MenuList key="mainMenu" depth={0} onMenuChange={onMenuChange} items={menuItems} />
+            <MenuList key="mainMenu" depth={0} onMenuChange={onMenuChange}
+                      onNavigate={handleNavigate} items={menuItems} />
             <Divider/>
             {extra}
         </div>
