@@ -18,19 +18,6 @@ import {NO_SESSION_KEY_VALUES} from '../../../client/constants/index.mjs'
 import {_t, registerTrs} from '../../../util/i18n.mjs'
 
 
-// register once on module level instead of on every instance
-registerTrs({
-    de: {
-        'ErrorPage.title.504': 'Wartungsarbeiten',
-        'ErrorPage.message.504': 'Bitte haben Sie einen kurzen Moment Geduld. Wir sind gleich zurück.'
-    },
-    en: {
-        'ErrorPage.title.504': 'Maintenance',
-        'ErrorPage.message.504': 'We are sorry. Please try again in a moment'
-    }
-}, 'ErrorPage')
-
-
 // admin pack
 const ErrorPage = (props) => <Async {...props}
                                     load={() =>import(/* webpackChunkName: "errorPage" */ '../../../client/components/layout/ErrorPage')}/>
@@ -45,6 +32,17 @@ export default function (WrappedComponent) {
     class Wrapper extends React.Component {
         constructor(props) {
             super(props)
+
+            registerTrs({
+                de: {
+                    'ErrorPage.title.504': 'Wartungsarbeiten',
+                    'ErrorPage.message.504': 'Bitte haben Sie einen kurzen Moment Geduld. Wir sind gleich zurück.'
+                },
+                en: {
+                    'ErrorPage.title.504': 'Maintenance',
+                    'ErrorPage.message.504': 'We are sorry. Please try again in a moment'
+                }
+            }, 'ErrorPage')
 
             if (props.cmsData) {
                 this._localCmsPage = normalizeCmsData(props.cmsData)
