@@ -112,11 +112,19 @@ class Print extends React.PureComponent {
 
         registerTrs({
             de: {
+                'Print.prepare': 'Bitte warten... Das PDF wird vorbereitet.',
+                'Print.loadResources': 'Bitte warten... Bilder und Schriften werden geladen.',
+                'Print.calculateBreaks': 'Bitte warten... Die Seitenumbrüche werden berechnet.',
+                'Print.prepareLayout': 'Bitte warten... Kopf- und Fusszeilen werden platziert.',
                 'Print.almostDone': 'Bitte warten... Das PDF ist gleich fertiggestellt!',
                 'Print.createPage': 'Bitte warten... Es kann ein wenig dauern... Seite %page% von %numberOfPages% ist erstellt.',
                 'Print.failed': 'Das PDF konnte nicht erstellt werden.'
             },
             en: {
+                'Print.prepare': 'Please wait... Preparing the pdf.',
+                'Print.loadResources': 'Please wait... Loading images and fonts.',
+                'Print.calculateBreaks': 'Please wait... Calculating the page breaks.',
+                'Print.prepareLayout': 'Please wait... Placing headers and footers.',
                 'Print.almostDone': 'Please be patient... We are almost there... Enjoy!',
                 'Print.createPage': 'Please be patient... It might take some time... Page %page% of %numberOfPages% is being produced',
                 'Print.failed': 'The PDF could not be created.'
@@ -270,7 +278,22 @@ class Print extends React.PureComponent {
             return false
         }
 
+        // A simulation runs on every editor keystroke, so it must never flash the
+        // overlay and must not pay for the frames a status message costs.
+        const status = simulation || !overlay
+            ? async () => {}
+            : async (key, params) => {
+                overlay.innerText = _t(key, params)
+                // The browser paints only when the main thread is idle. Page break
+                // calculation and html2canvas both block it synchronously, so
+                // without yielding here the message would never become visible.
+                await new Promise(resolve =>
+                    requestAnimationFrame(() => requestAnimationFrame(resolve)))
+            }
+
         if (!simulation) {
+            overlay.style.display = 'flex'
+            await status('Print.prepare')
             await this.waitForScripts()
         }
 
@@ -282,17 +305,18 @@ class Print extends React.PureComponent {
         // Reset any leftovers from a previous run before measuring
         this.cleanup(printArea, printAreaInner, printFooters)
 
+        await status('Print.loadResources')
         await this.waitForLayout(printArea)
 
         const metrics = this.measure({printArea, printAreaInner, printHeaders, printFooters})
 
+        await status('Print.calculateBreaks')
         this.calculatePageBreaks({printAreaInner, metrics})
 
         if (simulation) {
             return true
         }
 
-        overlay.style.display = 'flex'
         printArea.classList.add(classes.isPrinting)
         printArea.classList.add('print-area-printing')
 
@@ -304,6 +328,8 @@ class Print extends React.PureComponent {
         try {
             const breaks = Array.from(this.$('.' + classes.pageBreak, printAreaInner))
 
+            await status('Print.prepareLayout')
+
             // All repeated elements are inserted BEFORE rendering and positioned
             // absolutely, so the layout no longer shifts while pages are captured.
             const pageTops = this.insertRepeatedElements({
@@ -313,10 +339,10 @@ class Print extends React.PureComponent {
             await this.waitForLayout(printArea)
 
             const pdfContent = await this.renderPages({
-                printArea, printAreaInner, overlay, metrics, pageTops, watermarkImage
+                printArea, printAreaInner, status, metrics, pageTops, watermarkImage
             })
 
-            overlay.innerText = _t('Print.almostDone')
+            await status('Print.almostDone')
 
             const docDefinition = {
                 version: '1.5',
@@ -453,6 +479,17 @@ class Print extends React.PureComponent {
         return PAGE_HEIGHT - metrics.paddingTop - metrics.paddingBottom
     }
 
+    /**
+     * Distance between the top of the print area and the top of the captured page.
+     * pageTops[0] is 0 because the padding of page one is already part of the
+     * captured area, while every other entry is a real dom position. Positioning
+     * and capturing must use the exact same value, otherwise page one ends up
+     * offset by paddingTop against all other pages.
+     */
+    captureTop(metrics, pageTops, page) {
+        return page === 0 ? 0 : pageTops[page] - metrics.paddingTop
+    }
+
     /* ------------------------------------------------------------------ *
      * page break calculation
      * ------------------------------------------------------------------ */
@@ -552,9 +589,15 @@ class Print extends React.PureComponent {
             }
 
             // The element does not fit. If it starts on this page and has block
-            // children of its own, descend and break inside it.
+            // children of its own, descend and break inside it. A nested manual
+            // marker is reason enough to descend even when the child mix is odd -
+            // otherwise the break lands before the whole item and the overflow stays.
+            const hasNestedMarker = ctx.manualBreakSelector
+                && childNode.querySelector
+                && !!childNode.querySelector(ctx.manualBreakSelector)
+
             const startsOnThisPage = nodeTop < pageBottom
-            if (startsOnThisPage && this.hasOnlyElementChildren(childNode)) {
+            if (startsOnThisPage && (hasNestedMarker || this.hasOnlyElementChildren(childNode))) {
                 this.setBreakRec(childNode, ctx)
                 continue
             }
@@ -603,6 +646,7 @@ class Print extends React.PureComponent {
         }
         return Array.from(element.childNodes).every(n =>
             n.nodeType === Node.ELEMENT_NODE ||
+            n.nodeType === Node.COMMENT_NODE ||
             (n.nodeType === Node.TEXT_NODE && !n.textContent.trim())
         )
     }
@@ -755,21 +799,20 @@ class Print extends React.PureComponent {
 
         for (let page = 0; page < pageTops.length; page++) {
             const pageTopAbs = metrics.contentTop + pageTops[page] + (page === 0 ? metrics.paddingTop : 0)
+            const captureTop = this.captureTop(metrics, pageTops, page)
 
             if (page > 0 && printHeaders.length && metrics.headerHeight) {
                 // the header of the item this page belongs to, not always the first one
                 const source = this.pickRepeated(printHeaders, headerPositions, pageTopAbs, 'before')
-                const clone = this.createRepeatedClone(source)
-                // relative to printAreaInner, which starts one paddingTop lower
-                clone.style.top = `${pageTops[page] - metrics.paddingTop}px`
+                const clone = this.createRepeatedClone(source, page)
+                clone.style.top = `${captureTop}px`
                 printAreaInner.appendChild(clone)
             }
 
             if (printFooters.length && metrics.footerHeight) {
                 const source = this.pickRepeated(printFooters, footerPositions, pageTopAbs, 'after')
-                const clone = this.createRepeatedClone(source)
-                clone.style.top =
-                    `${pageTops[page] + innerPageHeight - metrics.footerHeight - metrics.paddingTop}px`
+                const clone = this.createRepeatedClone(source, page)
+                clone.style.top = `${captureTop + innerPageHeight - metrics.footerHeight}px`
                 printAreaInner.appendChild(clone)
             }
         }
@@ -784,8 +827,10 @@ class Print extends React.PureComponent {
         }
 
         // Make sure the last page is fully covered so absolutely positioned
-        // footers are not clipped by overflow:hidden.
-        const requiredHeight = pageTops[pageTops.length - 1] + innerPageHeight - metrics.paddingTop
+        // footers are not clipped by overflow:hidden. Must match the position the
+        // footer clone actually got, hence captureTop instead of pageTops.
+        const lastPage = pageTops.length - 1
+        const requiredHeight = this.captureTop(metrics, pageTops, lastPage) + innerPageHeight
         const missing = requiredHeight - printAreaInner.offsetHeight
         if (missing > 0) {
             const spacer = document.createElement('div')
@@ -820,9 +865,24 @@ class Print extends React.PureComponent {
         return elements[elements.length - 1]
     }
 
-    createRepeatedClone(source) {
+    /**
+     * A page is almost never as tall in the dom as it is on paper: pageTops grow by
+     * the real distance between two breaks, while the footer is placed a full
+     * innerPageHeight below the page top. The clones of the following pages
+     * therefore reach into the capture area of the current page - which is exactly
+     * how a header of page n+1 ends up sitting on the footer of page n. Only the
+     * clones belonging to the page being captured may be visible.
+     */
+    setRepeatedClonesForPage(printAreaInner, page) {
+        this.$('[data-print-clone-page]', printAreaInner).forEach(clone => {
+            clone.style.display = clone.dataset.printClonePage === String(page) ? '' : 'none'
+        })
+    }
+
+    createRepeatedClone(source, page) {
         const clone = source.cloneNode(true)
         clone.dataset.isPrintClone = 'true'
+        clone.dataset.printClonePage = String(page)
 
         // duplicated ids break every script that looks the element up by id
         clone.removeAttribute('id')
@@ -864,25 +924,56 @@ class Print extends React.PureComponent {
      * rendering
      * ------------------------------------------------------------------ */
 
-    async renderPages({printArea, printAreaInner, overlay, metrics, pageTops, watermarkImage}) {
+    /**
+     * A page is embedded as one raster image. Beyond roughly six megapixel the
+     * macOS pdf viewers drop the decoded bitmap while scrolling and render a blank
+     * page instead, so an over-ambitious scale is capped here. Six megapixel still
+     * means about 250 dpi at 595pt page width, which is more than enough for print.
+     */
+    effectiveScale() {
+        const requested = this.props.scale || 2
+        const budget = this.props.maxPagePixels === undefined ? 6000000 : this.props.maxPagePixels
+        if (!budget) {
+            return requested
+        }
+        const pagePixels = PAGE_WIDTH * PAGE_HEIGHT
+        if (pagePixels * requested * requested <= budget) {
+            return requested
+        }
+        const limited = Math.max(1, Math.floor(Math.sqrt(budget / pagePixels) * 100) / 100)
+        console.warn(
+            `Print: scale ${requested} would produce `
+            + `${Math.round(pagePixels * requested * requested / 1e6)} megapixel per page, `
+            + `reduced to ${limited}. Raise maxPagePixels to opt out.`
+        )
+        return limited
+    }
+
+    async renderPages({printArea, printAreaInner, status, metrics, pageTops, watermarkImage}) {
         const {showDate} = this.props
-        const scale = this.props.scale || 2
+        const scale = this.effectiveScale()
         const pageCount = pageTops.length
         const innerPageHeight = this.innerPageHeight(metrics)
         const pdfContent = []
 
-        const scrollYOffset = this.isInFixedContainer(printArea) ? 0 : window.scrollY
-
         for (let page = 0; page < pageCount; page++) {
-            overlay.innerText = _t('Print.createPage', {page: page + 1, numberOfPages: pageCount})
-
             const isFirstPage = page === 0,
                 isLastPage = page === pageCount - 1
 
+            // Read the scroll position per page: the overlay does not lock scrolling,
+            // so a user scrolling mid-run would otherwise shift every later page.
+            const scrollYOffset = this.isInFixedContainer(printArea) ? 0 : window.scrollY
+
             // The page top must end up at paddingTop within the captured image.
             // On page 0 the padding is already part of the print area.
-            const captureTop = isFirstPage ? 0 : pageTops[page] - metrics.paddingTop
+            const captureTop = this.captureTop(metrics, pageTops, page)
             const scrollY = -captureTop - scrollYOffset
+
+            // hide the header/footer clones of every other page before capturing.
+            // The status update below yields two frames, which also gets the style
+            // change applied before html2canvas reads the dom.
+            this.setRepeatedClonesForPage(printAreaInner, page)
+            await status('Print.createPage', {page: page + 1, numberOfPages: pageCount})
 
             const canvas = await window.html2canvas(printArea, {
                 imageTimeout: 20000,
@@ -944,8 +1035,12 @@ class Print extends React.PureComponent {
             )
 
             // No upscaling here: the old code stretched 1020x1443 to 1530x2165,
-            // which only added blur and file size.
-            const data = out.toDataURL(this.props.imageType || 'image/png', this.props.imageQuality || 0.95)
+            // which only added blur and file size. jpeg is safe because the canvas
+            // was filled with opaque white before drawing.
+            const data = out.toDataURL(
+                this.props.imageType || 'image/png',
+                this.props.imageQuality === undefined ? 0.95 : this.props.imageQuality
+            )
 
             pdfContent.push({
                 image: data,
@@ -953,6 +1048,14 @@ class Print extends React.PureComponent {
                 pageBreak: isLastPage ? '' : 'after'
             })
         }
+
+        const imageType = this.props.imageType || 'image/png'
+        const bytes = pdfContent.reduce((sum, p) => sum + Math.round(p.image.length * 0.75), 0)
+        console.info(
+            `Print: ${pageCount} page(s), ${imageType}, scale ${scale}, `
+            + `~${(bytes / 1048576).toFixed(1)} MB of image data. `
+            + `Use imageType 'image/jpeg' if a viewer struggles with this document.`
+        )
 
         return pdfContent
     }
@@ -1056,6 +1159,7 @@ Print.propTypes = {
     minTableRemainder: PropTypes.number,    // px of a table required on a page (default 60)
     imageType: PropTypes.string,            // 'image/png' (default) or 'image/jpeg'
     imageQuality: PropTypes.number,
+    maxPagePixels: PropTypes.number,        // pixel budget per page, 0 disables the cap
     repeatedElementBackground: PropTypes.string // background of header/footer clones
 }
 
