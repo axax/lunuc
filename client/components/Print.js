@@ -16,9 +16,6 @@ const PAGE_HEIGHT = Math.round(PAGE_WIDTH * A4_RATIO) // 1443
 // most 841.89 / A4_RATIO = 595.13pt wide, so 595 keeps us just below the limit.
 const PDF_IMAGE_WIDTH = 595
 
-// Element tags that may not contain a plain <div> as a child
-const TABLE_SECTION_TAGS = ['TABLE', 'THEAD', 'TBODY', 'TFOOT', 'TR']
-
 // Default elements that must not be the last thing on a page
 const DEFAULT_KEEP_WITH_NEXT = 'h1,h2,h3,h4,h5,h6,.keep-with-next'
 
@@ -277,15 +274,17 @@ class Print extends React.PureComponent {
             await this.waitForScripts()
         }
 
-        const printHeader = headerSelector ? this.$(headerSelector, printArea)[0] : null,
-            printFooter = footerSelector ? this.$(footerSelector, printArea)[0] : null
+        // A template that repeats a product may contain more than one header and
+        // footer. Every single one of them has to be handled, not just the first.
+        const printHeaders = headerSelector ? Array.from(this.$(headerSelector, printArea)) : []
+        const printFooters = footerSelector ? Array.from(this.$(footerSelector, printArea)) : []
 
         // Reset any leftovers from a previous run before measuring
-        this.cleanup(printArea, printAreaInner, printFooter)
+        this.cleanup(printArea, printAreaInner, printFooters)
 
         await this.waitForLayout(printArea)
 
-        const metrics = this.measure({printArea, printAreaInner, printHeader, printFooter})
+        const metrics = this.measure({printArea, printAreaInner, printHeaders, printFooters})
 
         this.calculatePageBreaks({printAreaInner, metrics})
 
@@ -308,7 +307,7 @@ class Print extends React.PureComponent {
             // All repeated elements are inserted BEFORE rendering and positioned
             // absolutely, so the layout no longer shifts while pages are captured.
             const pageTops = this.insertRepeatedElements({
-                printArea, printAreaInner, printHeader, printFooter, breaks, metrics
+                printArea, printAreaInner, printHeaders, printFooters, breaks, metrics
             })
 
             await this.waitForLayout(printArea)
@@ -355,7 +354,7 @@ class Print extends React.PureComponent {
         } finally {
             printArea.classList.remove(classes.isPrinting)
             printArea.classList.remove('print-area-printing')
-            this.cleanup(printArea, printAreaInner, printFooter, !this.props.showPageBreak)
+            this.cleanup(printArea, printAreaInner, printFooters, !this.props.showPageBreak)
         }
     }
 
@@ -368,7 +367,7 @@ class Print extends React.PureComponent {
         })
     }
 
-    cleanup(printArea, printAreaInner, printFooter, removeBreaks) {
+    cleanup(printArea, printAreaInner, printFooters, removeBreaks) {
         this.$('[data-is-print-clone="true"]', printAreaInner).forEach(n => {
             if (n.parentNode) {
                 n.parentNode.removeChild(n)
@@ -377,9 +376,10 @@ class Print extends React.PureComponent {
         this.$('.' + this.props.classes.pageBreak, printAreaInner).forEach(n => {
             n.style.height = ''
         })
-        if (printFooter) {
-            printFooter.style.visibility = ''
-        }
+        // every footer was hidden, so every footer has to be restored
+        ;(printFooters || []).forEach(footer => {
+            footer.style.visibility = ''
+        })
         if (removeBreaks) {
             this.removeExistingPageBreaks(printAreaInner)
         }
@@ -389,7 +389,7 @@ class Print extends React.PureComponent {
      * measuring
      * ------------------------------------------------------------------ */
 
-    measure({printArea, printAreaInner, printHeader, printFooter}) {
+    measure({printArea, printAreaInner, printHeaders, printFooters}) {
         return {
             // everything is measured relative to the top of the print area
             contentTop: this.offsetTop(printArea),
@@ -397,13 +397,46 @@ class Print extends React.PureComponent {
                 + this.getPropertyAsNumber(printAreaInner, 'padding-top'),
             paddingBottom: this.getPropertyAsNumber(printArea, 'padding-bottom')
                 + this.getPropertyAsNumber(printAreaInner, 'padding-bottom'),
-            headerHeight: printHeader
-                ? this.outerHeight(printHeader)
-                : 0,
-            footerHeight: printFooter
-                ? this.outerHeight(printFooter)
-                : 0
+            // the tallest one wins - reserving too little space is what causes
+            // content to run into the footer
+            headerHeight: this.maxRepeatedHeight(printHeaders),
+            footerHeight: this.maxRepeatedHeight(printFooters)
         }
+    }
+
+    maxRepeatedHeight(elements) {
+        if (!elements || elements.length === 0) {
+            return 0
+        }
+        return elements.reduce((max, el) => Math.max(max, this.repeatedElementHeight(el)), 0)
+    }
+
+    // offsetHeight ignores child margins that collapse out of the element. A footer
+    // that only has a border-top therefore measures shorter than the space it
+    // really occupies, and the content above it overlaps the footer in the pdf.
+    repeatedElementHeight(element) {
+        if (!element || element.nodeType !== Node.ELEMENT_NODE) {
+            return 0
+        }
+        const rect = element.getBoundingClientRect()
+        const style = window.getComputedStyle(element)
+        let top = rect.top - (parseInt(style.marginTop) || 0)
+        let bottom = rect.bottom + (parseInt(style.marginBottom) || 0)
+
+        element.querySelectorAll('*').forEach(child => {
+            const childRect = child.getBoundingClientRect()
+            if (!childRect.height && !childRect.width) {
+                return
+            }
+            const childStyle = window.getComputedStyle(child)
+            if (childStyle.position === 'absolute' || childStyle.position === 'fixed') {
+                return
+            }
+            top = Math.min(top, childRect.top - (parseInt(childStyle.marginTop) || 0))
+            bottom = Math.max(bottom, childRect.bottom + (parseInt(childStyle.marginBottom) || 0))
+        })
+
+        return Math.ceil(bottom - top)
     }
 
     // Usable content height of a page. The first page carries no repeated header.
@@ -425,15 +458,19 @@ class Print extends React.PureComponent {
      * ------------------------------------------------------------------ */
 
     calculatePageBreaks({printAreaInner, metrics}) {
-        const {forceManuelBreak, manualBreakSelector} = this.props
+        const {manualBreakSelector} = this.props
 
         this.removeExistingPageBreaks(printAreaInner)
+
+        const hasManualMarkers = manualBreakSelector
+            ? this.$(manualBreakSelector, printAreaInner).length > 0
+            : false
 
         const totalHeight = printAreaInner.clientHeight
             + metrics.headerHeight // reserved on continuation pages
             + metrics.footerHeight
 
-        if (totalHeight < this.availableHeight(metrics, 0) && !(forceManuelBreak && manualBreakSelector)) {
+        if (totalHeight < this.availableHeight(metrics, 0) && !hasManualMarkers) {
             return
         }
 
@@ -448,9 +485,9 @@ class Print extends React.PureComponent {
 
         this.setBreakRec(printAreaInner, ctx)
 
-        if (!(forceManuelBreak && manualBreakSelector)) {
-            this.applyKeepWithNext(printAreaInner, metrics)
-        }
+        // Manual markers used to disable this. Headings still must not dangle at
+        // the bottom of a page, so it now always runs; manual breaks are skipped.
+        this.applyKeepWithNext(printAreaInner, metrics)
     }
 
     removeExistingPageBreaks(printAreaInner) {
@@ -463,8 +500,15 @@ class Print extends React.PureComponent {
         })
     }
 
+    /**
+     * Single pass over the tree. A manual marker always forces a break, and a
+     * segment that does not fit on the current page gets an additional automatic
+     * break. The old implementation returned early for manual markers, so content
+     * between two markers could exceed the page height without anyone noticing -
+     * that overflow is what overlapped the footer.
+     */
     setBreakRec(node, ctx) {
-        const {forceManuelBreak, noBreakClassName, breakTolerance} = this.props
+        const {noBreakClassName, breakTolerance} = this.props
         const {metrics} = ctx
         // Never let content silently overflow. The old default of 20px was cut off
         // by the white rectangle drawn on the canvas.
@@ -472,9 +516,7 @@ class Print extends React.PureComponent {
 
         // Snapshot the node list: inserting breaks mutates a live NodeList and
         // makes forEach visit the same node twice.
-        const nodes = Array.from(ctx.manualBreakSelector
-            ? node.querySelectorAll(ctx.manualBreakSelector)
-            : node.childNodes)
+        const nodes = Array.from(node.childNodes)
 
         for (const childNode of nodes) {
             if (childNode.nodeType !== Node.ELEMENT_NODE) {
@@ -484,8 +526,9 @@ class Print extends React.PureComponent {
                 continue
             }
 
-            if (forceManuelBreak && ctx.manualBreakSelector) {
-                this.insertBreakBefore(childNode, ctx)
+            // an explicit marker in the template always starts a new page
+            if (ctx.manualBreakSelector && this.safeMatches(childNode, ctx.manualBreakSelector)) {
+                this.insertBreakBefore(childNode, ctx, true)
                 continue
             }
 
@@ -495,6 +538,12 @@ class Print extends React.PureComponent {
                 overflow = nodeBottom - pageBottom
 
             if (overflow <= tolerance) {
+                // The element fits, but a marker may sit somewhere inside it.
+                if (ctx.manualBreakSelector
+                    && childNode.querySelector
+                    && childNode.querySelector(ctx.manualBreakSelector)) {
+                    this.setBreakRec(childNode, ctx)
+                }
                 continue
             }
 
@@ -505,7 +554,7 @@ class Print extends React.PureComponent {
             // The element does not fit. If it starts on this page and has block
             // children of its own, descend and break inside it.
             const startsOnThisPage = nodeTop < pageBottom
-            if (startsOnThisPage && !ctx.manualBreakSelector && this.hasOnlyElementChildren(childNode)) {
+            if (startsOnThisPage && this.hasOnlyElementChildren(childNode)) {
                 this.setBreakRec(childNode, ctx)
                 continue
             }
@@ -513,19 +562,37 @@ class Print extends React.PureComponent {
             this.insertBreakBefore(childNode, ctx)
         }
 
-        // a manual selector pass that produced nothing still needs automatic breaks
-        if (ctx.manualBreakSelector && !forceManuelBreak && nodes.length === 0) {
-            this.setBreakRec(node, {...ctx, manualBreakSelector: null})
-        }
-
         return ctx.lastBreakBottom
     }
 
-    isNoBreak(element, noBreakClassName) {
-        if (!noBreakClassName) {
+    // A selector coming from a cms template may be invalid, which must not kill
+    // the whole pdf run.
+    safeMatches(element, selector) {
+        if (!element.matches) {
             return false
         }
-        return noBreakClassName.some(cn => element.classList.contains(cn))
+        try {
+            return element.matches(selector)
+        } catch (e) {
+            return false
+        }
+    }
+
+    // Accepts both 'pageFooter' and '.pageFooter'. classList.contains never
+    // matched a leading dot, so a configured no-break class silently did nothing.
+    isNoBreak(element, noBreakClassName) {
+        if (!noBreakClassName || !noBreakClassName.length) {
+            return false
+        }
+        return noBreakClassName.some(cn => {
+            if (!cn) {
+                return false
+            }
+            if (cn.charAt(0) === '.' || cn.charAt(0) === '#' || cn.indexOf('[') >= 0) {
+                return this.safeMatches(element, cn)
+            }
+            return element.classList.contains(cn)
+        })
     }
 
     // Only descend into elements whose direct children are all elements. Otherwise
@@ -544,11 +611,15 @@ class Print extends React.PureComponent {
      * break insertion
      * ------------------------------------------------------------------ */
 
-    insertBreakBefore(childNode, ctx) {
+    insertBreakBefore(childNode, ctx, isManual) {
         const {metrics} = ctx
         const br = this.createBreakElement(childNode, ctx)
         if (!br) {
             return false
+        }
+
+        if (isManual) {
+            br.dataset.manualBreak = 'true'
         }
 
         // Reserve the space the repeated header will occupy on the new page.
@@ -641,6 +712,9 @@ class Print extends React.PureComponent {
             if (br.tagName === 'TD') {
                 return // headings inside tables are out of scope
             }
+            if (br.dataset.manualBreak === 'true') {
+                return // an explicit break in the template stays where it is
+            }
             const pageTop = index === 0
                 ? metrics.contentTop + metrics.paddingTop
                 : this.offsetTop(breaks[index - 1]) + this.outerHeight(breaks[index - 1])
@@ -648,7 +722,7 @@ class Print extends React.PureComponent {
             let moved = 0
             while (moved < 3) {
                 const prev = br.previousElementSibling
-                if (!prev || prev.classList.contains(classes.pageBreak) || !prev.matches(selector)) {
+                if (!prev || prev.classList.contains(classes.pageBreak) || !this.safeMatches(prev, selector)) {
                     break
                 }
                 // do not move if it would leave the page nearly empty
@@ -665,7 +739,7 @@ class Print extends React.PureComponent {
      * repeated header / footer
      * ------------------------------------------------------------------ */
 
-    insertRepeatedElements({printArea, printAreaInner, printHeader, printFooter, breaks, metrics}) {
+    insertRepeatedElements({printArea, printAreaInner, printHeaders, printFooters, breaks, metrics}) {
         const innerPageHeight = this.innerPageHeight(metrics)
 
         // Top edge of each page's content box, relative to the print area top.
@@ -674,34 +748,39 @@ class Print extends React.PureComponent {
             pageTops.push(this.offsetTop(br) - metrics.contentTop)
         })
 
-        if (printHeader && metrics.headerHeight) {
-            for (let page = 1; page < pageTops.length; page++) {
-                const clone = printHeader.cloneNode(true)
-                clone.dataset.isPrintClone = 'true'
-                clone.style.position = 'absolute'
-                clone.style.left = '0'
-                clone.style.right = '0'
-                clone.style.margin = '0'
+        // Cache positions before any clone is appended so the lookup below stays
+        // stable even if the browser reflows.
+        const headerPositions = printHeaders.map(el => this.offsetTop(el))
+        const footerPositions = printFooters.map(el => this.offsetTop(el))
+
+        for (let page = 0; page < pageTops.length; page++) {
+            const pageTopAbs = metrics.contentTop + pageTops[page] + (page === 0 ? metrics.paddingTop : 0)
+
+            if (page > 0 && printHeaders.length && metrics.headerHeight) {
+                // the header of the item this page belongs to, not always the first one
+                const source = this.pickRepeated(printHeaders, headerPositions, pageTopAbs, 'before')
+                const clone = this.createRepeatedClone(source)
                 // relative to printAreaInner, which starts one paddingTop lower
                 clone.style.top = `${pageTops[page] - metrics.paddingTop}px`
                 printAreaInner.appendChild(clone)
             }
-        }
 
-        if (printFooter && metrics.footerHeight) {
-            for (let page = 0; page < pageTops.length; page++) {
-                const clone = printFooter.cloneNode(true)
-                clone.dataset.isPrintClone = 'true'
-                clone.style.position = 'absolute'
-                clone.style.left = '0'
-                clone.style.right = '0'
-                clone.style.margin = '0'
-                clone.style.visibility = 'visible'
-                clone.style.top = `${pageTops[page] + innerPageHeight - metrics.footerHeight - metrics.paddingTop}px`
+            if (printFooters.length && metrics.footerHeight) {
+                const source = this.pickRepeated(printFooters, footerPositions, pageTopAbs, 'after')
+                const clone = this.createRepeatedClone(source)
+                clone.style.top =
+                    `${pageTops[page] + innerPageHeight - metrics.footerHeight - metrics.paddingTop}px`
                 printAreaInner.appendChild(clone)
             }
-            // keep the original in the flow (it was accounted for) but hide it
-            printFooter.style.visibility = 'hidden'
+        }
+
+        // Keep the originals in the flow (their height was accounted for) but hide
+        // all of them. Previously only the first footer was hidden, so in a
+        // repeated template every other footer stayed visible mid-page.
+        if (metrics.footerHeight) {
+            printFooters.forEach(footer => {
+                footer.style.visibility = 'hidden'
+            })
         }
 
         // Make sure the last page is fully covered so absolutely positioned
@@ -716,6 +795,69 @@ class Print extends React.PureComponent {
         }
 
         return pageTops
+    }
+
+    // 'before' picks the last element that starts at or above the page top
+    // (headers), 'after' the first one at or below it (footers).
+    pickRepeated(elements, positions, pageTopAbs, mode) {
+        if (elements.length === 1) {
+            return elements[0]
+        }
+        if (mode === 'before') {
+            let found = elements[0]
+            for (let i = 0; i < elements.length; i++) {
+                if (positions[i] <= pageTopAbs + 1) {
+                    found = elements[i]
+                }
+            }
+            return found
+        }
+        for (let i = 0; i < elements.length; i++) {
+            if (positions[i] >= pageTopAbs - 1) {
+                return elements[i]
+            }
+        }
+        return elements[elements.length - 1]
+    }
+
+    createRepeatedClone(source) {
+        const clone = source.cloneNode(true)
+        clone.dataset.isPrintClone = 'true'
+
+        // duplicated ids break every script that looks the element up by id
+        clone.removeAttribute('id')
+        clone.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'))
+
+        // cloneNode copies the canvas element but not its bitmap, so a qr code
+        // rendered into a canvas would come out empty
+        const sourceCanvases = source.querySelectorAll('canvas')
+        if (sourceCanvases.length) {
+            const cloneCanvases = clone.querySelectorAll('canvas')
+            sourceCanvases.forEach((sourceCanvas, i) => {
+                const targetCanvas = cloneCanvases[i]
+                if (targetCanvas && sourceCanvas.width && sourceCanvas.height) {
+                    targetCanvas.width = sourceCanvas.width
+                    targetCanvas.height = sourceCanvas.height
+                    try {
+                        targetCanvas.getContext('2d').drawImage(sourceCanvas, 0, 0)
+                    } catch (e) {
+                        // tainted canvas - nothing we can do here
+                    }
+                }
+            })
+        }
+
+        clone.style.position = 'absolute'
+        clone.style.left = '0'
+        clone.style.right = '0'
+        clone.style.margin = '0'
+        clone.style.visibility = 'visible'
+        // opaque and on top, so leftover content can never bleed through
+        clone.style.zIndex = '10'
+        clone.style.backgroundColor = this.props.repeatedElementBackground === undefined
+            ? '#ffffff'
+            : this.props.repeatedElementBackground
+        return clone
     }
 
     /* ------------------------------------------------------------------ *
@@ -772,12 +914,16 @@ class Print extends React.PureComponent {
                 ? metrics.paddingTop + innerPageHeight
                 : PAGE_HEIGHT
 
-            if (!isLastPage) {
-                // content of this page ends where the next page starts
-                const contentBottom = Math.min(
+            // Always clear the gap between the end of this page's content and the
+            // footer - including on the last page, which was skipped before. If a
+            // segment still overflows, it now gets cut instead of overlapping.
+            const contentBottom = isLastPage
+                ? footerTop
+                : Math.min(
                     pageTops[page + 1] - pageTops[page] + (isFirstPage ? 0 : metrics.paddingTop),
                     footerTop
                 )
+            if (contentBottom < footerTop) {
                 ctx.fillRect(0, contentBottom * scale, out.width, (footerTop - contentBottom) * scale)
             }
             if (metrics.footerHeight) {
@@ -897,18 +1043,20 @@ Print.propTypes = {
     headerSelector: PropTypes.string,
     footerSelector: PropTypes.string,
     manualBreakSelector: PropTypes.string,
+    // deprecated: manual markers always force a break, automatic breaks are
+    // always added on top of them. Kept so existing templates do not crash.
     forceManuelBreak: PropTypes.bool,
     noBreakClassName: PropTypes.array,
     watermark: PropTypes.string,
     watermarkOption: PropTypes.object,
     scale: PropTypes.number,
     onCustomEvent: PropTypes.func,
-    // new options
     breakTolerance: PropTypes.number,       // px of overflow accepted before breaking (default 0)
     keepWithNextSelector: PropTypes.string, // elements that must not end a page, '' disables
     minTableRemainder: PropTypes.number,    // px of a table required on a page (default 60)
     imageType: PropTypes.string,            // 'image/png' (default) or 'image/jpeg'
-    imageQuality: PropTypes.number
+    imageQuality: PropTypes.number,
+    repeatedElementBackground: PropTypes.string // background of header/footer clones
 }
 
 export default injectSheet(styles)(Print)
