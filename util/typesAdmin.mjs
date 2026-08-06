@@ -90,9 +90,10 @@ const getCreatedByField = (options= {})=>{
  *
  * @param {String} type
  *
+ * @param includeHidden
  * @returns {Object} an object
  */
-export const getFormFieldsByType = (type, includeHidden) => {
+export const getFormFieldsByType = (type, includeHidden = false) => {
     const key = `${type}${includeHidden?'_hidden':''}`
     if (typeFormFields[key]) return typeFormFields[key]
 

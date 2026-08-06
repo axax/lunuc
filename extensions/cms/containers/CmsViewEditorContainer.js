@@ -79,6 +79,7 @@ import CmsDataEditDialog from '../components/CmsDataEditDialog'
 import {
     setEditorZIndexActive
 } from '../components/jsondomhelper/JsonDomStyledElements'
+import {deepMergeOptional} from '../../../util/deepMerge.mjs'
 
 const StyledBox = styled(Box)(({theme})=>({
     display: 'flex',
@@ -1379,7 +1380,8 @@ class CmsViewEditorContainer extends React.Component {
                 results.unshift({_id: dataToEdit._id})
             }
 
-            results[idx] = Object.assign(results[idx], optimisticData)
+            results[idx] = deepMergeOptional({mergeArray: true, arrayCutToLast: true, arrayIdProperty: '_id'}, results[idx], optimisticData)
+
             const formFields = getFormFieldsByType(type)
             // convert type=Object to Object
             Object.keys(formFields).forEach(key => {

@@ -114,7 +114,11 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     if(needsUnescape || segmentStr.includes('###')){
                         segmentStr = segmentStr.replace(/"###/g, '').replace(/###"/g, '')
                         if(needsUnescape) {
-                            segment = JSON.parse(segmentStr.replace(UNESCAPE_RE, (_, c) => UNESCAPE_MAP[c] ?? c))
+                            try {
+                                segment = JSON.parse(segmentStr.replace(UNESCAPE_RE, (_, c) => UNESCAPE_MAP[c] ?? c))
+                            }catch (e){
+                                segment = JSON.parse(segmentStr)
+                            }
                         }else{
                             segment = JSON.parse(segmentStr)
                         }

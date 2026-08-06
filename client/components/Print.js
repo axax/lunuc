@@ -311,7 +311,11 @@ class Print extends React.PureComponent {
         const metrics = this.measure({printArea, printAreaInner, printHeaders, printFooters})
 
         await status('Print.calculateBreaks')
-        this.calculatePageBreaks({printAreaInner, metrics})
+        this.calculatePageBreaks({
+            printAreaInner,
+            metrics,
+            ignoreRoots: printHeaders.concat(printFooters)
+        })
 
         if (simulation) {
             return true
@@ -494,7 +498,7 @@ class Print extends React.PureComponent {
      * page break calculation
      * ------------------------------------------------------------------ */
 
-    calculatePageBreaks({printAreaInner, metrics}) {
+    calculatePageBreaks({printAreaInner, metrics, ignoreRoots}) {
         const {manualBreakSelector} = this.props
 
         this.removeExistingPageBreaks(printAreaInner)
@@ -525,6 +529,128 @@ class Print extends React.PureComponent {
         // Manual markers used to disable this. Headings still must not dangle at
         // the bottom of a page, so it now always runs; manual breaks are skipped.
         this.applyKeepWithNext(printAreaInner, metrics)
+
+        this.removeEmptyPages({printAreaInner, ignoreRoots})
+    }
+
+    /**
+     * A break can end up in front of a segment that carries no visible content at
+     * all - the classic case is the footer sitting in the flow at the end of the
+     * template: it no longer fits, so a break goes in front of it and the resulting
+     * page shows nothing but the repeated header and footer. Those breaks are
+     * dropped again here.
+     *
+     * ignoreRoots holds the header and footer originals. They are content in the
+     * dom but they are reproduced as clones on every page, so they must not keep a
+     * segment alive.
+     */
+    removeEmptyPages({printAreaInner, ignoreRoots}) {
+        if (this.props.keepEmptyPages) {
+            return
+        }
+        let removedTotal = 0
+
+        // Removing a break shifts everything below it, so measure again per round.
+        // Empty segments are short, which is why this settles almost immediately.
+        for (let round = 0; round < 3; round++) {
+            const breaks = Array.from(this.$('.' + this.props.classes.pageBreak, printAreaInner))
+            if (!breaks.length) {
+                break
+            }
+
+            const ink = this.collectInk(printAreaInner, ignoreRoots)
+            const contentEnd = this.offsetTop(printAreaInner) + printAreaInner.offsetHeight
+            const removable = []
+
+            breaks.forEach((br, i) => {
+                const from = this.offsetTop(br) + this.outerHeight(br)
+                const to = i + 1 < breaks.length ? this.offsetTop(breaks[i + 1]) : contentEnd
+                const filled = ink.some(box => box.bottom > from + 1 && box.top < to - 1)
+                if (!filled) {
+                    removable.push(br)
+                }
+            })
+
+            if (!removable.length) {
+                break
+            }
+
+            removable.forEach(br => {
+                // a break inside a table lives in its own <tr>
+                const node = br.tagName === 'TD' && br.parentNode && br.parentNode.tagName === 'TR'
+                    ? br.parentNode
+                    : br
+                if (node.parentNode) {
+                    node.parentNode.removeChild(node)
+                }
+            })
+            removedTotal += removable.length
+        }
+
+        if (removedTotal) {
+            console.info(`Print: dropped ${removedTotal} empty page(s)`)
+        }
+    }
+
+    // Vertical extent of everything that actually leaves a mark on the paper.
+    collectInk(printAreaInner, ignoreRoots) {
+        const breakClass = this.props.classes.pageBreak
+        const roots = ignoreRoots || []
+        const boxes = []
+
+        printAreaInner.querySelectorAll('*').forEach(element => {
+            if (element.classList.contains(breakClass)) {
+                return
+            }
+            if (element.dataset && element.dataset.isPrintClone === 'true') {
+                return
+            }
+            if (roots.some(root => root === element || root.contains(element))) {
+                return
+            }
+            if (!this.hasInk(element)) {
+                return
+            }
+            const rect = element.getBoundingClientRect()
+            if (!rect.height && !rect.width) {
+                return
+            }
+            const top = rect.top + document.documentElement.scrollTop
+            boxes.push({top, bottom: top + rect.height})
+        })
+
+        return boxes
+    }
+
+    hasInk(element) {
+        // cheap checks first, getComputedStyle is the expensive part here
+        for (const child of element.childNodes) {
+            if (child.nodeType === Node.TEXT_NODE && child.textContent.trim()) {
+                return true
+            }
+        }
+        const tag = (element.tagName || '').toUpperCase()
+        if (tag === 'IMG' || tag === 'SVG' || tag === 'CANVAS' || tag === 'VIDEO' || tag === 'IFRAME') {
+            return true
+        }
+
+        const style = window.getComputedStyle(element)
+        if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) === 0) {
+            return false
+        }
+        if (style.backgroundImage && style.backgroundImage !== 'none') {
+            return true
+        }
+        const background = style.backgroundColor
+        if (background
+            && background !== 'transparent'
+            && !/rgba\([^)]*,\s*0(\.0+)?\s*\)/.test(background)) {
+            return true
+        }
+        return ['Top', 'Right', 'Bottom', 'Left'].some(side =>
+            (parseFloat(style[`border${side}Width`]) || 0) > 0
+            && style[`border${side}Style`] !== 'none'
+        )
     }
 
     removeExistingPageBreaks(printAreaInner) {
@@ -1157,6 +1283,7 @@ Print.propTypes = {
     breakTolerance: PropTypes.number,       // px of overflow accepted before breaking (default 0)
     keepWithNextSelector: PropTypes.string, // elements that must not end a page, '' disables
     minTableRemainder: PropTypes.number,    // px of a table required on a page (default 60)
+    keepEmptyPages: PropTypes.bool,         // true keeps pages without visible content
     imageType: PropTypes.string,            // 'image/png' (default) or 'image/jpeg'
     imageQuality: PropTypes.number,
     maxPagePixels: PropTypes.number,        // pixel budget per page, 0 disables the cap
