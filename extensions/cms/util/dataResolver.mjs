@@ -20,6 +20,7 @@ import {TRACK_USER_AGENT_HEADER} from '../../../api/constants/index.mjs'
 import {getBestMatchingHostRule, getHostRules} from '../../../util/hostrules.mjs'
 import Util from '../../../api/util/index.mjs'
 import {clientAddress} from '../../../util/host.mjs'
+import {fixAndParseJSON} from '../../../client/util/fixJson.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -108,7 +109,11 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         ObjectId
                     }).replace(/"###/g, '').replace(/###"/g, '')
 
-                    segment = JSON.parse(replacedSegmentStr)
+                    const parsedJson = fixAndParseJSON(replacedSegmentStr)
+                    if(!parsedJson.fixed && parsedJson.errors.length > 0) {
+                        throw new Error(parsedJson.errors[0])
+                    }
+                    segment = parsedJson.json
                 } else {
                     const needsUnescape = segmentStr.includes('\\')
                     if(needsUnescape || segmentStr.includes('###')){
