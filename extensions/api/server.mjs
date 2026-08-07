@@ -171,34 +171,39 @@ Hook.on('appready', ({app, db}) => {
             const startTime = new Date().getTime()
             const slug = url.parse(req.url).pathname.substring(1).split(`/${config.PRETTYURL_SEPERATOR}/`)[0]
 
-            console.log(`Api request: ${slug}`)
+            console.log(`[API] START ${slug} | ${req.method} ${req.url} | protocol=${req.protocol} | remote=${req.socket.remoteAddress}`)
+
+            req.on('aborted', () => console.warn(`[API] client aborted: ${slug} nach ${new Date().getTime()-startTime}ms`))
+            res.on('close', () => console.log(`[API] res close: ${slug} nach ${new Date().getTime()-startTime}ms | headersSent=${res.headersSent}`))
 
             try {
                 const api = await getApi({slug, db})
+                console.log(`[API] getApi done: ${slug} -> ${api ? 'found' : 'NOT FOUND'} (${new Date().getTime()-startTime}ms)`)
 
                 if (!api) {
-
                     console.log(`LunuC API ${req.method} ${req.path} --> 404 not found`);
                     res.writeHead(404, {'content-type': 'application/json'})
                     res.end(`{"status":"notfound","message":"Api for '${slug}' not found"}`)
                 } else {
 
                     if(api.workerThread && isTemporarilyBlocked({requestTimeInMs: 5000, requestPerTime: 10,requestBlockForInMs:30000, key:'apiScript'})){
+                        console.warn(`[API] BLOCKED (rate limit): ${slug}`)
                         res.writeHead(503, {'content-type': 'application/json'})
                         res.end(`{"status":"Service Unavailable","message":"Too many requests. Please try again later."}`)
                         return
                     }
 
                     if(api.basicAuth && !checkBasicAuth(req, res, {login:api.baUser, password: api.baPassword})) {
+                        console.log(`[API] basicAuth rejected: ${slug}`)
                         return
                     }
 
                     if(api?.apiToken?.length>0){
-                        // check token
                         const authHeader = req.headers['authorization'];
                         const token = authHeader && authHeader.split(' ')[1];
 
                         if (!token) {
+                            console.log(`[API] token missing: ${slug}`)
                             return res.status(401).json({ error: 'API Bearer Token missing' });
                         }
 
@@ -210,22 +215,18 @@ Hook.on('appready', ({app, db}) => {
                             ]})
 
                         if (!result) {
-
-                            // check oauth token
                             if(api.apiTokenFallback) {
-
                                 const context = decodeToken((token.indexOf('JWT')<0?'JWT ':'') + token)
-
                                 if(context.auth){
                                     req.context = {...req.context,...context}
                                 }else{
+                                    console.log(`[API] token fallback invalid: ${slug}`)
                                     return res.status(401).json({error: 'API Bearer Token (fallback) is invalid or expired'});
                                 }
                             }else{
+                                console.log(`[API] token invalid: ${slug}`)
                                 return res.status(401).json({error: 'API Bearer Token is invalid or expired'});
                             }
-
-
                         }else if(result.userContext !== null){
                             const user = await Util.userById(db, result.userContext)
                             if(user) {
@@ -233,25 +234,35 @@ Hook.on('appready', ({app, db}) => {
                                     role: user.role, username: user.username, id: user._id.toString()}
                             }
                         }
-
-
                     }
 
+                    console.log(`[API] runApiScript start: ${slug} (${new Date().getTime()-startTime}ms)`)
                     const result = await runApiScript({api, db, req, res, startTime})
+                    console.log(`[API] runApiScript done: ${slug} (${new Date().getTime()-startTime}ms) | error=${!!result.error} | ignore=${!!(result.responseStatus?.ignore)}`)
+
                     if (!result.error && result.responseStatus && result.responseStatus.ignore) {
 
                     } else if (result.error) {
+                        console.error(`[API] SCRIPT ERROR: ${slug}`, result.error)
                         Hook.call('ExtensionApiError', {db, req, error: result.error, slug})
 
-                        res.writeHead(500, {'content-type': 'application/json'})
-                        res.end(`{"status":"error","message":"${result.error.message}"}`)
+                        if (!res.headersSent) {
+                            res.writeHead(500, {'content-type': 'application/json'})
+                            res.end(`{"status":"error","message":"${result.error.message}"}`)
+                        } else {
+                            console.error(`[API] cannot send 500, headers already sent: ${slug}`)
+                            if (!res.writableEnded) res.end()
+                        }
                     } else {
                         const data = await result.data
 
                         if (data && data._error) {
+                            console.error(`[API] DATA ERROR: ${slug}`, data._error)
                             Hook.call('ExtensionApiError', {db, req, error: data._error, slug})
-                            res.writeHead(500, {'content-type': 'application/json'})
-                            res.end(`{"status":"error","message":"${data._error.message}"}`)
+                            if (!res.headersSent) {
+                                res.writeHead(500, {'content-type': 'application/json'})
+                                res.end(`{"status":"error","message":"${data._error.message}"}`)
+                            }
                         } else {
                             res.writeHead(res.responseCode || 200, {'content-type': api.mimeType || 'application/json'})
                             res.end(data ? (isString(data) ? data : JSON.stringify(data)) : data)
@@ -259,7 +270,15 @@ Hook.on('appready', ({app, db}) => {
                     }
                 }
             }catch (e){
-                console.log(e)
+                console.error(`[API] CAUGHT EXCEPTION: ${slug} | headersSent=${res.headersSent} | ended=${res.writableEnded}`)
+                console.error(e.stack || e)
+
+                if (!res.headersSent && !res.writableEnded) {
+                    res.writeHead(500, {'content-type': 'application/json'})
+                    res.end(`{"status":"error","message":"${(e.message||'internal error').replace(/"/g,'\\"')}"}`)
+                } else if (!res.writableEnded) {
+                    res.end()
+                }
             }
 
         })

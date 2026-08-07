@@ -211,7 +211,7 @@ export const getAttachmentContentFromFile = (attachment, {db, message})=>{
  *   swallowed, so callers don't silently store an oversized attachment in
  *   MongoDB while believing it was offloaded to disk.
  */
-export const replaceAttachmentInMailData = async (attachment, mailAccount, {db}) => {
+export const replaceAttachmentInMailData = async (attachment, identifier, {db}) => {
 
     if (!(attachment.content &&
         attachment.size > MAX_ATTACHMENT_SIZE_FOR_DB)) {
@@ -231,7 +231,7 @@ export const replaceAttachmentInMailData = async (attachment, mailAccount, {db})
     // will use when reading it back
     const encoding = attachment.encoding || 'base64'
 
-    const fileName = `${mailAccount._id}_${attachment.checksum}_${attachment.size}_${attachment.filename ? attachment.filename.replace(/\//g, '\\u2215') : ''}.txt`
+    const fileName = `${identifier}_${attachment.checksum}_${attachment.size}_${attachment.filename ? attachment.filename.replace(/\//g, '\\u2215') : ''}.txt`
     const fileAbs = path.join(ATTACHMENT_DIR_ABS, fileName)
 
     try {

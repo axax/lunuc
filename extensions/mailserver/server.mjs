@@ -107,7 +107,7 @@ Hook.on(['typeBeforeCreate'], async ({db, type, data}) => {
                 // awaited and errors were silently lost. replaceAttachmentInMailData
                 // is now async, so we need to actually wait for each one.
                 for (const attachment of data.data.attachments) {
-                    await replaceAttachmentInMailData(attachment, mailAccount, {db})
+                    await replaceAttachmentInMailData(attachment, mailAccount._id, {db})
                 }
             }
 
