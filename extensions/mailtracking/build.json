@@ -28,11 +28,13 @@
         },
         {
           "name": "text",
-          "uitype": "editor"
+          "uitype": "editor",
+          "alwaysLoad": false
         },
         {
           "name": "attachments",
           "type": "Object",
+          "alwaysLoad": false,
           "uitype": "json"
         },
         {
@@ -44,6 +46,7 @@
         {
           "name": "response",
           "type": "Object",
+          "alwaysLoad": false,
           "uitype": "json"
         }
       ]
