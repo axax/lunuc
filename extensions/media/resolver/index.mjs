@@ -23,7 +23,7 @@ export default db => ({
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
 
             const variantsRemoved = await removeMediaVariants(db, {ids})
-            const screenshotsRemoved = await removeMediaScreenshots(db, {ids})
+            const screenshotsRemoved = removeMediaScreenshots({ids})
 
             const totalRemoved = variantsRemoved.length + screenshotsRemoved.length
 
@@ -77,6 +77,7 @@ export default db => ({
 
             // delete file variants
             await removeMediaVariants(db, {saveMode:true, ids:_id})
+            await removeMediaScreenshots({ids:_id})
 
             // delete original files
             for(const id of _id) {

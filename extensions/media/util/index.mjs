@@ -165,69 +165,102 @@ export const downloadFile = async (url, fileName)=>{
     })
 }
 
-async function getMediaIdMap(db) {
-    const idsAll = await db.collection('Media').distinct("_id", {})
-    return idsAll.reduce((map, id) => {
-        map[id.toString()] = true
-        return map
-    }, {})
+
+const OBJECT_ID_EXACT = /^[0-9a-f]{24}$/
+
+
+// the media id a file belongs to is the file name without the 'private' prefix
+function mediaKeyFromFile(file) {
+    return file.indexOf('private') === 0 ? file.substring(7) : file
 }
 
-function deleteOrphanedFiles(dir, ids, {filter, exists}) {
-    const filesRemoved = []
+
+// collects all files in dir, optionally restricted by media ids and a custom filter
+function collectFiles(dir, {ids, filter} = {}) {
     if (!fs.existsSync(dir)) {
-        console.log(`[deleteOrphanedFiles] directory does not exist: ${dir}`)
-        return filesRemoved
+        console.log(`[collectFiles] directory does not exist: ${dir}`)
+        return []
     }
 
-    fs.readdirSync(dir).forEach(function (file) {
-        const filePath = dir + "/" + file
-        const stat = fs.lstatSync(filePath)
-        if (stat.isDirectory()) {
-            return
+    return fs.readdirSync(dir).reduce((files, file) => {
+        const filePath = path.join(dir, file)
+
+        if (fs.lstatSync(filePath).isDirectory()) {
+            return files
         }
         if (filter && !filter(file)) {
-            return
+            return files
+        }
+        // if ids are given, only files belonging to one of them are handled
+        if (ids && !ids.some(id => file.indexOf(id) >= 0)) {
+            return files
         }
 
-        if (ids && !ids.find(id => file.indexOf(id) >= 0)) {
-            return
-        }
-
-        if (!exists(file)) {
-            console.log('[deleteOrphanedFiles] delete file ' + filePath)
-            fs.unlinkSync(filePath)
-            filesRemoved.push(file)
-        }
-    })
-
-    return filesRemoved
+        files.push({file, filePath})
+        return files
+    }, [])
 }
 
+
+// deletes the given files and returns the names of the removed ones
+function deleteFiles(files) {
+    return files.reduce((removed, {file, filePath}) => {
+        console.log('[deleteFiles] delete file ' + filePath)
+        fs.unlinkSync(filePath)
+        removed.push(file)
+        return removed
+    }, [])
+}
+
+
+// resolves which media ids still exist, ids = null checks the whole collection
+async function getExistingMediaIds(db, ids = null) {
+    const found = await db.collection('Media').distinct('_id', ids ? {
+        _id: {$in: ids.map(id => new ObjectId(id))}
+    } : {})
+
+    return new Set(found.map(id => id.toString()))
+}
+
+
+// removes generated image variants, originals only if the media does not exist anymore
 export async function removeMediaVariants(db, {ids, saveMode} = {}) {
-    const idMap = await getMediaIdMap(db)
-
     const {UPLOAD_DIR} = config
-    const ABS_UPLOAD_DIR = path.join(path.resolve(), UPLOAD_DIR)
+    const uploadDir = path.join(path.resolve(), UPLOAD_DIR)
 
-    return deleteOrphanedFiles(ABS_UPLOAD_DIR, ids, {
-        filter: saveMode ? (file => file.indexOf('@') > 0) : null,
-        exists: (file) => {
-            const id = file.indexOf('private') === 0 ? file.substring(7) : file
-            return !!idMap[id]
-        }
+    const candidates = collectFiles(uploadDir, {
+        ids,
+        // in save mode only generated variants are touched, originals are kept
+        filter: saveMode ? (file => file.indexOf('@') > 0) : null
     })
+
+    if (!candidates.length) {
+        return []
+    }
+
+    // a file named exactly like a media id is an original, everything else is generated
+    const originalIds = candidates
+        .map(({file}) => mediaKeyFromFile(file))
+        .filter(key => OBJECT_ID_EXACT.test(key))
+
+    // only originals need a db lookup, generated files are always removed
+    const existingIds = originalIds.length
+        ? await getExistingMediaIds(db, ids ? originalIds : null)
+        : new Set()
+
+    return deleteFiles(candidates.filter(({file}) => !existingIds.has(mediaKeyFromFile(file))))
 }
 
-export async function removeMediaScreenshots(db, {ids} = {}) {
-    const idMap = await getMediaIdMap(db)
+
+// screenshots are always generated on demand and can be removed unconditionally,
+// but for now only when explicit media ids are given
+export function removeMediaScreenshots({ids} = {}) {
+    if (!ids || !ids.length) {
+        return []
+    }
 
     const {UPLOAD_DIR} = config
-    const ABS_UPLOAD_DIR = path.join(path.resolve(), UPLOAD_DIR)
-    const screenShotDir = path.join(ABS_UPLOAD_DIR, 'screenshots')
+    const screenShotDir = path.join(path.resolve(), UPLOAD_DIR, 'screenshots')
 
-    return deleteOrphanedFiles(screenShotDir, ids, {
-        filter: null,
-        exists: (file) => Object.keys(idMap).some(id => file.indexOf(id) >= 0)
-    })
+    return deleteFiles(collectFiles(screenShotDir, {ids}))
 }

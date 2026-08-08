@@ -185,7 +185,7 @@ Hook.on('FileUpload', async ({db, req, context, file, data, response}) => {
             }
             if(replaceMode) {
                 await removeMediaVariants(db, {ids:[data._id],saveMode:true})
-                await removeMediaScreenshots(db, {ids:[data._id]})
+                await removeMediaScreenshots({ids:[data._id]})
             }
         })
     }else{
