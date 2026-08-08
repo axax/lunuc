@@ -12,7 +12,7 @@ import {ObjectId} from 'mongodb'
 import Util from '../../api/util/index.mjs'
 import { CAPABILITY_RUN_COMMAND} from '../../util/capabilities.mjs'
 import {uploadImageToStorage}  from './googleupload.mjs'
-import {createMediaEntry, removeMediaVariants} from './util/index.mjs'
+import {createMediaEntry, removeMediaScreenshots, removeMediaVariants} from './util/index.mjs'
 import { fileURLToPath } from 'url'
 import {_t, registerTrs} from '../../util/i18nServer.mjs'
 
@@ -185,6 +185,7 @@ Hook.on('FileUpload', async ({db, req, context, file, data, response}) => {
             }
             if(replaceMode) {
                 await removeMediaVariants(db, {ids:[data._id],saveMode:true})
+                await removeMediaScreenshots(db, {ids:[data._id]})
             }
         })
     }else{

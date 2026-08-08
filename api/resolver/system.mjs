@@ -1,6 +1,5 @@
 import Util from '../util/index.mjs'
 import {execSync, spawn} from 'child_process'
-import path from 'path'
 import config from '../../gensrc/config.mjs'
 import {
     CAPABILITY_MANAGE_BACKUPS,
@@ -29,11 +28,6 @@ import {SECRET_KEY} from '../constants/index.mjs'
 import {MONGO_URL} from '../database.mjs'
 import {isTemporarilyBlocked} from '../../server/util/requestBlocker.mjs'
 import {clientAddress} from "../../util/host.mjs";
-
-const {UPLOAD_DIR} = config
-
-
-const ABS_UPLOAD_DIR = path.join(path.resolve(), UPLOAD_DIR)
 
 const SKIP_CAPABILITY_CHECK = ['ls -l', 'pwd', 'ls', 'ping lunuc.com']
 const ENDOFCOMMAND = '__ENDOFCOMMAND__\n'

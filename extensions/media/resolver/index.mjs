@@ -10,7 +10,7 @@ import fs from 'fs'
 import {fileURLToPath} from 'url'
 import {ObjectId} from 'mongodb'
 import {sendMail} from '../../../api/util/mail.mjs'
-import {removeMediaVariants} from '../util/index.mjs'
+import {removeMediaScreenshots, removeMediaVariants} from '../util/index.mjs'
 import {checkRefForMedias, getRefMap} from './mediaRefMap.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -22,9 +22,18 @@ export default db => ({
         cleanUpMedia: async ({ids}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
 
-            const idsRemoved = await removeMediaVariants(db, {ids})
+            const variantsRemoved = await removeMediaVariants(db, {ids})
+            const screenshotsRemoved = await removeMediaScreenshots(db, {ids})
 
-            return {status: `${idsRemoved.length} ${idsRemoved.length > 1 ? 'files' : 'file'} removed`}
+            const totalRemoved = variantsRemoved.length + screenshotsRemoved.length
+
+            return {
+                status: totalRemoved === 0
+                    ? 'no files removed'
+                    : `${totalRemoved} ${totalRemoved > 1 ? 'files' : 'file'} removed ` +
+                    `(${variantsRemoved.length} variant${variantsRemoved.length !== 1 ? 's' : ''}, ` +
+                    `${screenshotsRemoved.length} screenshot${screenshotsRemoved.length !== 1 ? 's' : ''})`
+            }
         },
         findReferencesForMedia: async ({limit, ids, match={}}, {context}) => {
 
