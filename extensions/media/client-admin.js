@@ -409,7 +409,7 @@ export default () => {
             fileToUpload = false
 
             // access data from TypeContainer
-            const createEditDialogOption = meta.TypeContainer.state.createEditDialogOption
+            const createEditDialogOption = meta?.TypeContainer?.state?.createEditDialogOption
             if (createEditDialogOption?.variant === 'upload') {
 
                 props.actions = [{ key: 'cancel',label: _t('core.ok')}]
