@@ -1272,6 +1272,9 @@ class CmsViewEditorContainer extends React.Component {
     setCmsPageValue = ({key, timeoutSetState, timeoutUpdate, setStateCallback, forceUpdateEditor}, value) => {
         if (this._saveSettings)
             this._saveSettings()
+        if(key==='dataResolver' && value && !isString(value)) {
+            value = JSON.stringify(value)
+        }
         this._keyValueMap[key] = value
         this._keyValueMapState[key] = value
         clearTimeout(this._setCmsPageStateTimeout)
