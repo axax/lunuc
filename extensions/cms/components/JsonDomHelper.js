@@ -113,6 +113,7 @@ class JsonDomHelper extends React.Component {
 
     state = {
         hovered: false,
+        richTextBarFocused: false,
         top: 0,
         left: 0,
         height: 0,
@@ -156,6 +157,15 @@ class JsonDomHelper extends React.Component {
                 delete JsonDomHelper.instances[prevProps._key]
             }
             JsonDomHelper.instances[this.props._key] = this
+        }
+
+        // Once the element goes inactive its contentEditable prop is dropped,
+        // so a blur may never reach react and richTextBarFocused would stay
+        // true forever - clear it here instead of relying on onBlur alone.
+        if (this.state.richTextBarFocused && !this.isElementActive()) {
+            this.stopWatchSelectionChange()
+            this.stopWatchScroll()
+            this.setState({richTextBarFocused: false, richTextBarFloating: false})
         }
     }
 
@@ -209,11 +219,285 @@ class JsonDomHelper extends React.Component {
         }
     }
 
+    /**
+     * Positions the rich text toolbar right above the current caret / selection
+     * instead of pinning it to the top edge of the whole element.
+     *
+     * Both getBoundingClientRect() and this.state.top/left (written by
+     * getHighlightPosition, see jsonDomUtil) are viewport-relative, since the
+     * StyledHighlighter parent uses position: fixed. So no scroll offset must
+     * be added here - richTextBarTop/Left stay in the same coordinate space
+     * and are turned into a relative offset only at render time.
+     */
+    /**
+     * Determines the rect of the current caret line.
+     *
+     * A plain collapsed range is not enough here for two reasons:
+     *
+     * 1. focusNode is not always a text node. After onInput triggers
+     *    _onTemplateChange the subtree is re-rendered and the browser
+     *    normalises the selection onto the contentEditable container itself
+     *    (focusNode = element, focusOffset = 0). Measuring that yields a rect
+     *    at the very TOP of the element instead of at the caret, which is why
+     *    the bar jumped to the top of the viewport and moved erratically on
+     *    scroll (sometimes caret, sometimes element start).
+     * 2. Collapsed ranges frequently report no client rects at all, so the
+     *    range is expanded by a single character to get a reliable line box.
+     */
+    getCaretRect(node, selection) {
+        let target = selection.focusNode
+        let offset = selection.focusOffset
+
+        if (!target) {
+            return null
+        }
+
+        // resolve an element+offset position down to the node it points at
+        if (target.nodeType === Node.ELEMENT_NODE) {
+            const children = target.childNodes
+            const child = children[offset] || children[offset - 1] || children[children.length - 1]
+            if (child) {
+                if (child.nodeType === Node.TEXT_NODE) {
+                    offset = children[offset] ? 0 : child.length
+                    target = child
+                } else if (child.nodeType === Node.ELEMENT_NODE) {
+                    const elRect = child.getBoundingClientRect()
+                    if (elRect && (elRect.width || elRect.height)) {
+                        return elRect
+                    }
+                }
+            }
+        }
+
+        if (target.nodeType === Node.TEXT_NODE) {
+            const len = target.length
+            const pos = Math.min(Math.max(offset, 0), len)
+            try {
+                const range = document.createRange()
+                if (len === 0) {
+                    range.setStart(target, 0)
+                    range.setEnd(target, 0)
+                } else if (pos < len) {
+                    // expand forward one character
+                    range.setStart(target, pos)
+                    range.setEnd(target, pos + 1)
+                } else {
+                    // caret at the very end - expand backwards instead
+                    range.setStart(target, pos - 1)
+                    range.setEnd(target, pos)
+                }
+                const rects = range.getClientRects()
+                if (rects.length > 0) {
+                    return rects[0]
+                }
+                const rangeRect = range.getBoundingClientRect()
+                if (rangeRect && (rangeRect.width || rangeRect.height)) {
+                    return rangeRect
+                }
+            } catch (e) {
+                // fall through to the parent element below
+            }
+
+            const parentEl = target.parentElement
+            if (parentEl && node.contains(parentEl)) {
+                const parentRect = parentEl.getBoundingClientRect()
+                if (parentRect && (parentRect.width || parentRect.height)) {
+                    return parentRect
+                }
+            }
+        }
+
+        return null
+    }
+
+    updateRichTextBarPosition = (allowMarker = true) => {
+        if (this._richTextBarRaf) {
+            return
+        }
+        this._richTextBarRaf = requestAnimationFrame(() => {
+            this._richTextBarRaf = null
+
+            const node = ReactDOM.findDOMNode(this)
+            const selection = window.getSelection()
+            if (!node || !selection || selection.rangeCount === 0 || !selection.focusNode || !node.contains(selection.focusNode)) {
+                return
+            }
+
+            let rect = this.getCaretRect(node, selection)
+
+            // Nothing measurable (truly empty line): insert a zero width
+            // marker to get a real rect, then restore the caret.
+            //
+            // Skipped while scrolling: mutating the DOM and re-applying the
+            // selection can make the browser scroll to it, which fights the
+            // user's own scrolling.
+            if (!rect && allowMarker) {
+                const range = selection.getRangeAt(0).cloneRange()
+                const marker = document.createElement('span')
+                marker.textContent = '\u200b'
+                range.insertNode(marker)
+                rect = marker.getBoundingClientRect()
+                const parent = marker.parentNode
+                if (parent) {
+                    parent.removeChild(marker)
+                    parent.normalize()
+                }
+                selection.removeAllRanges()
+                selection.addRange(range)
+            }
+
+            // Keep the previous position rather than jumping somewhere wrong
+            // when a measurement fails - this is what made the bar hop around
+            // while scrolling.
+            if (!rect) {
+                rect = this._lastCaretRect
+            }
+            if (!rect) {
+                return
+            }
+            this._lastCaretRect = rect
+
+            this.setState(this.clampRichTextBarPosition(rect))
+        })
+    }
+
+    /**
+     * Keeps the bar inside the viewport.
+     *
+     * top refers to the caret line; the bar is drawn above it via
+     * translateY(-100%), so its visible upper edge is top - barHeight.
+     * Clamping in BOTH directions matters: once the caret is scrolled past
+     * the top edge rect.top goes negative, and without a lower bound the bar
+     * simply leaves the screen.
+     *
+     * Deliberately no flipping to the other side of the line - switching
+     * sides makes the bar jump downwards at the threshold while the user is
+     * scrolling upwards, which reads as the bar moving the wrong way.
+     * Sticking to the edge keeps the movement monotonic.
+     */
+    clampRichTextBarPosition(rect) {
+        const bar = this._richTextBarNode
+        const barHeight = (bar && bar.offsetHeight) || 48
+        const barWidth = (bar && bar.offsetWidth) || 320
+        const margin = 8
+
+        const minTop = barHeight + margin
+        const maxTop = window.innerHeight - margin
+
+        let top = rect.top
+        if (top < minTop) {
+            top = minTop
+        }
+        if (top > maxTop) {
+            top = maxTop
+        }
+
+        let left = rect.left
+        if (left + barWidth > window.innerWidth - margin) {
+            left = window.innerWidth - barWidth - margin
+        }
+        if (left < margin) {
+            left = margin
+        }
+
+        return {
+            richTextBarFloating: true,
+            richTextBarTop: top,
+            richTextBarLeft: left
+        }
+    }
+
+    watchSelectionChange() {
+        this.stopWatchSelectionChange()
+        this._selectionChangeHandler = () => this.updateRichTextBarPosition()
+        document.addEventListener('selectionchange', this._selectionChangeHandler)
+    }
+
+    stopWatchSelectionChange() {
+        if (this._selectionChangeHandler) {
+            document.removeEventListener('selectionchange', this._selectionChangeHandler)
+            this._selectionChangeHandler = null
+        }
+    }
+
+    /**
+     * Re-measures the caret while scrolling.
+     *
+     * getBoundingClientRect() always returns current viewport coordinates,
+     * so simply re-reading it is enough to keep the bar glued to the caret -
+     * no scroll offset arithmetic needed.
+     *
+     * Deliberately does NOT touch state.top/left/height/width: those belong
+     * to the highlighter, which is kept in sync by the global
+     * highlighterScrollHandler. Updating them here as well made the bar move
+     * by roughly twice the scroll distance, because the container was
+     * shifted by the scroll AND the offset derived from state.top changed
+     * on top of it.
+     */
+    updateHighlightPosition = () => {
+        if (this.state.richTextBarFocused) {
+            this.updateRichTextBarPosition(false)
+        }
+    }
+
+    /**
+     * Collects the actually scrollable ancestors of the node (plus window).
+     * Listening on those directly instead of a global capturing document
+     * listener keeps this independent of the shared highlighterScrollHandler
+     * and avoids reacting to scrolling that cannot affect this element.
+     */
+    getScrollParents(node) {
+        const parents = []
+        let el = node && node.parentElement
+        while (el && el !== document.body && el !== document.documentElement) {
+            const style = window.getComputedStyle(el)
+            if (/(auto|scroll|overlay)/.test(style.overflow + style.overflowY + style.overflowX)) {
+                parents.push(el)
+            }
+            el = el.parentElement
+        }
+        parents.push(window)
+        return parents
+    }
+
+    watchScroll() {
+        if (this._scrollTargets) {
+            return
+        }
+        const node = ReactDOM.findDOMNode(this)
+        if (!node) {
+            return
+        }
+        this._scrollHandler = () => this.updateHighlightPosition()
+        this._scrollTargets = this.getScrollParents(node)
+        this._scrollTargets.forEach(target => {
+            target.addEventListener('scroll', this._scrollHandler, {passive: true})
+        })
+        window.addEventListener('resize', this._scrollHandler, {passive: true})
+    }
+
+    stopWatchScroll() {
+        if (this._scrollTargets) {
+            this._scrollTargets.forEach(target => {
+                target.removeEventListener('scroll', this._scrollHandler)
+            })
+            window.removeEventListener('resize', this._scrollHandler)
+            this._scrollTargets = null
+            this._scrollHandler = null
+        }
+    }
+
     componentWillUnmount() {
         clearTimeout(this.helperTimeoutIn)
         clearTimeout(this.helperTimeoutOut)
         clearTimeout(this.toolbarTimeoutOut)
         this.stopWatchPointerLeave()
+        this.stopWatchSelectionChange()
+        this.stopWatchScroll()
+        if (this._richTextBarRaf) {
+            cancelAnimationFrame(this._richTextBarRaf)
+            this._richTextBarRaf = null
+        }
 
         // an unmounted instance must not stay in the selection, otherwise
         // deselectSelected() calls forceUpdate() on a dead component
@@ -238,6 +522,10 @@ class JsonDomHelper extends React.Component {
             props.children !== this.props.children ||
             state.hovered !== this.state.hovered ||
             state.richTextBarHover !== this.state.richTextBarHover ||
+            state.richTextBarFocused !== this.state.richTextBarFocused ||
+            state.richTextBarFloating !== this.state.richTextBarFloating ||
+            state.richTextBarTop !== this.state.richTextBarTop ||
+            state.richTextBarLeft !== this.state.richTextBarLeft ||
             state.addChildDialog !== this.state.addChildDialog ||
             state.deleteConfirmDialog !== this.state.deleteConfirmDialog ||
             state.copyOptionsDialog !== this.state.copyOptionsDialog ||
@@ -679,7 +967,7 @@ class JsonDomHelper extends React.Component {
             isElementActive = this.isElementActive(),
             isSelected = JsonDomHelper.selected.indexOf(this)>=0
 
-        let hasJsonToEdit = !!_json, subJson, toolbar, highlighter,
+        let hasJsonToEdit = !!_json, subJson, toolbar, highlighter, richTextBar,
             overrideEvents = {}, parsedSource
 
         const helperEvents = {
@@ -854,13 +1142,34 @@ class JsonDomHelper extends React.Component {
                     helperEvents.contentEditable = true
                     helperEvents.onFocus = (e) => {
                         this.focusTime = Date.now()
+                        if (hasRichTextBar) {
+                            this._lastCaretRect = null
+                            this.setState({richTextBarFocused: true})
+                            this.updateRichTextBarPosition()
+                            this.watchSelectionChange()
+                            this.watchScroll()
+                        }
                     }
                     helperEvents.onBlur = (e) => {
                         delete this.focusTime
+                        if (hasRichTextBar) {
+                            this._lastCaretRect = null
+                            this.stopWatchSelectionChange()
+                            this.stopWatchScroll()
+                            this.setState({richTextBarFocused: false, richTextBarFloating: false})
+                        }
                     }
                     helperEvents.onInput=(e)=>{
                         setPropertyByPath(e.target.innerHTML,'$c',subJson)
                         _onTemplateChange(_json, true)
+                        if (hasRichTextBar) {
+                            this.updateRichTextBarPosition()
+                        }
+                    }
+                    helperEvents.onKeyUp = (e) => {
+                        if (hasRichTextBar) {
+                            this.updateRichTextBarPosition()
+                        }
                     }
                 }
 
@@ -896,20 +1205,6 @@ class JsonDomHelper extends React.Component {
                             }
                         }}>{isCms && subJson && subJson.p ? (subJson.p.id ? subJson.p.id.replace(/\$\.\w+\{[^}]*\}/g, ''): subJson.p.slug) :
                         <ImageIcon/>}</StyledPicker> : ''}
-                    {hasRichTextBar && <StyledRichTextBar
-                        data-richtext-toolbar={rest._key}
-                        onMouseOver={()=>{
-                            this.setState({richTextBarHover:true})
-                        }}
-                        onContextMenu={this.triggerContextMenu.bind(this)}
-                        onMouseLeave={(e)=>{
-                            this.setState({richTextBarHover:false})
-                            const parentTargetEl = checkIfElementOrParentHasDataKey(e.toElement || e.relatedTarget,['data-element-key'],'richText')
-                            const parentSrcEl = checkIfElementOrParentHasDataKey(ReactDOM.findDOMNode(this),['data-element-key'],'richText')
-                            if(parentTargetEl === parentSrcEl) {
-                                this.setState({hovered:true})
-                            }
-                        }}><CmsViewContainer _props={{toolsOnly:true,setBackgroundColor:false}} slug="core/wysiwyg" dynamic={true}/></StyledRichTextBar>}
                     <StyledHorizontalDivider style={{height:this.state.marginBottomNew || this.state.marginBottom}}
                                              onMouseDown={(e)=>{
                                                  this.setState({dividerMousePos:e.pageY})
@@ -956,6 +1251,40 @@ class JsonDomHelper extends React.Component {
                                                  }
                                              }}>{this.state.marginBottom!='0px'?(Math.round(parseFloat(this.state.marginBottomNew || this.state.marginBottom) * 100) / 100 + 'px')+(marginBottomStyle && this.state.marginBottom!=marginBottomStyle?` = ${marginBottomStyle}`:''):''}</StyledHorizontalDivider>
                 </StyledHighlighter>
+
+                if (hasRichTextBar && this.state.richTextBarFocused) {
+                    // Rendered as its own fixed-position element (sibling of
+                    // the highlighter in the AddToBody portal) rather than
+                    // nested inside StyledHighlighter. That highlighter's
+                    // top/left may be clamped/adjusted by getHighlightPosition
+                    // when the element is partially scrolled out of the
+                    // viewport, which broke the relative offset this bar
+                    // used to be positioned with. Anchoring directly to
+                    // viewport coordinates (richTextBarTop/Left, both taken
+                    // straight from getBoundingClientRect) avoids that.
+                    const floating = !!this.state.richTextBarFloating
+                    richTextBar = <StyledRichTextBar
+                        key={rest._key + '.richtextbar'}
+                        ref={(el)=>{this._richTextBarNode = el}}
+                        data-richtext-toolbar={rest._key}
+                        floating={floating}
+                        style={{
+                            top: floating ? this.state.richTextBarTop : this.state.top,
+                            left: floating ? this.state.richTextBarLeft : this.state.left
+                        }}
+                        onMouseOver={()=>{
+                            this.setState({richTextBarHover:true})
+                        }}
+                        onContextMenu={this.triggerContextMenu.bind(this)}
+                        onMouseLeave={(e)=>{
+                            this.setState({richTextBarHover:false})
+                            const parentTargetEl = checkIfElementOrParentHasDataKey(e.toElement || e.relatedTarget,['data-element-key'],'richText')
+                            const parentSrcEl = checkIfElementOrParentHasDataKey(ReactDOM.findDOMNode(this),['data-element-key'],'richText')
+                            if(parentTargetEl === parentSrcEl) {
+                                this.setState({hovered:true})
+                            }
+                        }}><CmsViewContainer _props={{toolsOnly:true,setBackgroundColor:false}} slug="core/wysiwyg" dynamic={true}/></StyledRichTextBar>
+                }
             }
         }
 
@@ -996,7 +1325,7 @@ class JsonDomHelper extends React.Component {
                 children={children}/>
         }
         if (toolbar || isSelected) {
-            return [comp, <AddToBody key="hover">{highlighter}{toolbar}</AddToBody>,(deleteSelectionConfirmDialog &&
+            return [comp, <AddToBody key="hover">{highlighter}{toolbar}{richTextBar}</AddToBody>,(deleteSelectionConfirmDialog &&
                 <SimpleDialog fullWidth={true} maxWidth="sm" key="deleteSelectionConfirm" open={true}
                               onClose={(e) => {
                                   if (e.key === 'delete') {

@@ -270,10 +270,10 @@ export const highlighterHandler = (e, observer, after) => {
 
         if (node) {
             const pos = getHighlightPosition(node)
-            hightlighter.style.top = pos.top + 'px'
-            hightlighter.style.left = pos.left + 'px'
-            hightlighter.style.width = pos.width + 'px'
-            hightlighter.style.height = pos.height + 'px'
+            hightlighter.style.top = pos.top-1 + 'px'
+            hightlighter.style.left = pos.left-1 + 'px'
+            hightlighter.style.width = pos.width+2 + 'px'
+            hightlighter.style.height = pos.height+2 + 'px'
 
             const toolbar = document.querySelector('[data-toolbar="' + key + '"]')
             if (toolbar) {

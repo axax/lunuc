@@ -280,15 +280,34 @@ export const StyledActionBar = styled('div', noForward('flipped'))(({flipped}) =
     }
 }))
 
-export const StyledRichTextBar = styled('div')({
+/**
+ * Rich text toolbar.
+ *
+ * Rendered as its own fixed-position element (a sibling of the highlighter
+ * in the AddToBody portal, not nested inside it). top/left are written
+ * directly in viewport pixel coordinates by JsonDomHelper - either the
+ * caret position (while floating) or the element's own top/left as a
+ * fallback before the very first caret measurement completes. Positioning
+ * independently like this (instead of relative to the highlighter's own
+ * top/left) matters once the target element is partially scrolled out of
+ * the viewport, since the highlighter's coordinates may be adjusted/clamped
+ * for its own display purposes while the caret rect from
+ * getBoundingClientRect() never is - mixing the two produced an offset bar.
+ */
+export const StyledRichTextBar = styled('div', noForward('floating'))(({floating}) => ({
     pointerEvents: 'auto',
     zIndex: z(5),
-    position: 'absolute',
-    top: '-4rem',
+    position: 'fixed',
+    top: 0,
     left: 0,
-    right: 0,
-    height: '4rem',
-    width: '100%',
+    height: '3rem',
+    width: 'auto',
+    // Drawn above the caret line. JsonDomHelper clamps the coordinates so
+    // there is always room for it inside the viewport.
+    transform: 'translateY(-100%)',
+    // No transition on top/left: while scrolling the position is rewritten
+    // every frame, and an eased transition would make the bar visibly lag
+    // behind the caret instead of sticking to it.
     animation: `${fadeIn} 120ms ${T.ease}`,
     '> div': {
         backgroundColor: 'transparent'
@@ -299,7 +318,7 @@ export const StyledRichTextBar = styled('div')({
         backdropFilter: 'blur(10px)',
         boxShadow: '0 12px 28px -10px rgba(15, 23, 42, 0.4), 0 2px 6px -2px rgba(15, 23, 42, 0.18)'
     }
-})
+}))
 
 export const StyledInfoBox = styled('div')({
     position: 'absolute',

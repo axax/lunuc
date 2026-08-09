@@ -1273,7 +1273,7 @@ class CmsViewEditorContainer extends React.Component {
         if (this._saveSettings)
             this._saveSettings()
         if(key==='dataResolver' && value && !isString(value)) {
-            value = JSON.stringify(value)
+            value = JSON.stringify(value,null,4)
         }
         this._keyValueMap[key] = value
         this._keyValueMapState[key] = value

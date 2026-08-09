@@ -90,7 +90,9 @@ const StyledDrawerHeader = styled('div')(({ theme }) => ({
     ...theme.mixins.toolbar
 }))
 
-const StyledDrawerDivider = styled('div')({
+const StyledDrawerDivider = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'active',
+})(({ active }) => ({
     position: 'absolute',
     width: '4px',
     background: 'black',
@@ -102,7 +104,20 @@ const StyledDrawerDivider = styled('div')({
     opacity: 0,
     '&:hover': {
         opacity: 1
-    }
+    },
+    ...(active && {
+        opacity: 1
+    })
+}))
+
+const StyledResizeOverlay = styled('div')({
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1300,
+    cursor: 'ew-resize',
 })
 
 
@@ -146,6 +161,7 @@ class DrawerLayout extends React.Component {
         super(props)
         this.state = {
             dragEntered: false,
+            isResizing: false,
             open: !!this.props.open,
             drawerWidth: this.props.drawerWidth || DRAWER_WIDTH_DEFAULT,
             drawerWidthOriginal: this.props.drawerWidth,
@@ -166,7 +182,11 @@ class DrawerLayout extends React.Component {
     }
 
     shouldComponentUpdate(nextProps, nextState) {
-        return nextProps !== this.props || this.state.open !== nextState.open || this.state.drawerWidth !== nextState.drawerWidth || this.state.dragEntered !== nextState.dragEntered
+        return nextProps !== this.props
+            || this.state.open !== nextState.open
+            || this.state.drawerWidth !== nextState.drawerWidth
+            || this.state.dragEntered !== nextState.dragEntered
+            || this.state.isResizing !== nextState.isResizing
     }
 
     handleDrawerOpen = () => {
@@ -196,6 +216,7 @@ class DrawerLayout extends React.Component {
 
     dividerMouseDown = (e) => {
         this.mouseDividerPos = e.pageX
+        this.setState({isResizing: true})
     }
 
     dividerMouseMove = (e) => {
@@ -212,8 +233,8 @@ class DrawerLayout extends React.Component {
     }
 
     dividerMouseUp = (e) => {
-        if(this.state.dragEntered) {
-            this.setState({dragEntered: false})
+        if(this.state.dragEntered || this.state.isResizing) {
+            this.setState({dragEntered: false, isResizing: false})
         }
         const {onDrawerWidthChange} = this.props
         if (onDrawerWidthChange && this.props.drawerWidth !== this.state.drawerWidth) {
@@ -237,7 +258,7 @@ class DrawerLayout extends React.Component {
 
     render() {
         const {title, sidebar, toolbarLeft, toolbarRight, children, fixedLayout, contentStyle} = this.props
-        const {open, drawerWidth, dragEntered} = this.state
+        const {open, drawerWidth, dragEntered, isResizing} = this.state
         const contentFixed = {...contentStyle}
         if (open) {
             contentFixed.marginLeft = drawerWidth + 'px'
@@ -287,12 +308,18 @@ class DrawerLayout extends React.Component {
                         </StyledDrawerHeader>
                         <Divider/>
                         {open && sidebar}
-                        <StyledDrawerDivider onMouseDown={this.dividerMouseDown}/>
+                        <StyledDrawerDivider onMouseDown={this.dividerMouseDown} active={isResizing}/>
                     </StyledDrawer>
                     <StyledContent data-layout-content="true" style={contentFixed} fixed={fixedLayout} open={open}>
                         {children}
                     </StyledContent>
                 </StyledAppFrame>
+                {isResizing && (
+                    <StyledResizeOverlay
+                        onMouseMove={this.dividerMouseMove}
+                        onMouseUp={this.dividerMouseUp}
+                    />
+                )}
             </StyledDrawerRoot>
         )
     }

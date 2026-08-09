@@ -559,6 +559,9 @@ div[data-isempty=true]{
   background: rgba(255,0,0,0.2);
 }
 [_inlineeditor=true]{
+  &[contenteditable=true]{
+    outline:none;
+  }
   &.row,
   &[data-element-key="container"],
   &[data-element-key="background"],
