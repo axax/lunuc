@@ -25,8 +25,7 @@ export const DEFAULT_BOT_REGEX = /(?!(^spiderweb\/))(leakix.net|bot|ChatGPT|Goog
 // path. Bytespider / GPTBot / ClaudeBot / PerplexityBot / Meta-ExternalAgent
 // are ai training/bulk crawlers - decide consciously whether they deserve
 // a render (see hostrule.noJsRenderingBotRegex to override per host).
-export const DEFAULT_BOT_WITH_NO_JS_SUPPORT_REGEX = /YandexBot|SEBot-WA|Bytespider|OAI-SearchBot|GPTBot|ClaudeBot|PerplexityBot|Meta-ExternalAgent|meta-webindexer|Frog SEO Spider|Iframely|AhrefsSiteAudit|SeekportBot|SeobilityBot|DuckDuckBot|localsearch|facebookexternalhit|LinkedInBot|Xing|WhatsApp|TelegramBot|\(compatible; ITools;/i
-
+export const DEFAULT_BOT_WITH_NO_JS_SUPPORT_REGEX = /Yandex|SonarBot|googlebot|GoogleOther|Google-InspectionTool|Google-Agent|bingbot|BingPreview|Applebot|Baiduspider|Yeti|SeznamBot|PetalBot|SEBot-WA|Bytespider|OAI-SearchBot|GPTBot|ChatGPT-User|ClaudeBot|Claude-User|Claude-SearchBot|PerplexityBot|Perplexity-User|Amazonbot|CCBot|MistralAI-User|Meta-ExternalAgent|meta-webindexer|Screaming Frog SEO Spider|Iframely|AhrefsBot|AhrefsSiteAudit|SemrushBot|MJ12bot|DotBot|SeekportBot|SeobilityBot|DuckDuckBot|localsearch|facebookexternalhit|Twitterbot|LinkedInBot|Xing|WhatsApp|TelegramBot|Slackbot|Discordbot|Pinterestbot|redditbot|SkypeUriPreview|Bluesky|Mastodon|archive\.org_bot|\(compatible; ITools;|YisouSpider|coccocbot|Sogou|360Spider|BLEXBot|serpstatbot/i
 
 /* ------------------------------------------------------------------ */
 /* Result cache                                                         */
