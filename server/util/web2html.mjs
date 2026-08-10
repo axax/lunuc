@@ -214,34 +214,34 @@ const getBrowser = async () => {
 
 export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, remoteAddress, cookies}) => {
 
-    // emergency brake ONLY: the render semaphore in index.mjs is the actual
-    // concurrency control. These thresholds are deliberately high - if this
-    // ever fires, the semaphore has a logic problem and the brake keeps the
-    // browser from being buried
-    if (isTemporarilyBlocked({requestTimeInMs: 10000, requestPerTime: 100, requestBlockForInMs: 30000, key: 'parseWebsite'})) {
+    // -----------------------------------------------------------------
+    // 1️⃣  Emergency brake – prevents the parser from overwhelming the
+    //     browser when the system is under heavy load.
+    // -----------------------------------------------------------------
+    if (isTemporarilyBlocked({
+        requestTimeInMs: 10000,
+        requestPerTime: 100,
+        requestBlockForInMs: 30000,
+        key: 'parseWebsite'
+    })) {
         return {html: '503 Service Unavailable', statusCode: 503}
     }
 
     let page
     let stuckTimer
-    // set by the stuck timer when it abandons and closes the page: the main
-    // path must then exit controlled (503) instead of stumbling into
-    // "Target closed" errors that would count as browser failures
     let pageAbandonedReason = null
-    // NEW: count of currently open (not yet completed) requests in the main
-    // frame. Tracked via the request/response listeners so we can briefly
-    // wait for in-flight fetches (e.g. the initial GraphQL cmsPage query)
-    // before closing the page, instead of hard-aborting them.
-    let pendingRequestCount = 0
+    let pendingRequestCount = 0          // number of in‑flight requests
 
     try {
-        const startTime = new Date().getTime()
-
+        const startTime = Date.now()
         console.log(`parseWebsite fetch ${urlToFetch}`)
 
+        // -------------------------------------------------------------
+        // Browser initialization
+        // -------------------------------------------------------------
         const browser = await getBrowser()
 
-        // pages() can hang on a dead browser -> timeout it
+        // `pages()` may hang on a dead browser – protect with a timeout
         let pages
         try {
             pages = await withTimeout(browser.pages(), CDP_HEALTH_TIMEOUT_MS, 'browser.pages')
@@ -251,12 +251,10 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
             return {html: 'browser restarting', statusCode: 503}
         }
 
+        // -----------------------------------------------------------------
+        // Leak protection: if too many pages are open, clean up or kill
+        // -----------------------------------------------------------------
         if (pages.length > MAX_PAGES_IN_PUPPETEER) {
-            // Too many open pages = leak symptom. Diagnose before acting:
-            // an UNHEALTHY browser (hung CDP) is the cause, not the victim -
-            // individual page.close() calls would each just run into their
-            // timeouts, so kill directly. Only a HEALTHY browser gets the
-            // targeted cleanup that spares the in-flight renders.
             if (!(await isBrowserHealthy())) {
                 console.warn(`${pages.length} open pages and browser unhealthy -> killing browser`)
                 await killBrowser()
@@ -265,31 +263,25 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
 
             console.warn(`${pages.length} open pages despite semaphore (limit ${MAX_PAGES_IN_PUPPETEER}) -> closing leaked pages`)
 
-            // oldest first (pages() returns creation order; index 0 is the
-            // about:blank default tab - skip it). The newest
-            // RENDER_MAX_CONCURRENT pages are potentially live renders and
-            // are left alone.
             const closeCandidates = pages.slice(1, pages.length - RENDER_MAX_CONCURRENT)
             let closedAny = false
             for (const p of closeCandidates) {
                 try {
                     await withTimeout(p.close(), 2000, 'leaked page.close')
                     closedAny = true
-                } catch (e) {
-                    // ignore - escalation below decides
-                }
+                } catch (_) { /* ignore */ }
             }
 
             if (!closedAny && closeCandidates.length > 0) {
-                // healthy per version(), but pages will not close - the
-                // health probe was too optimistic, escalate after all
                 console.warn('leaked pages could not be closed -> killing browser')
                 await killBrowser()
             }
             return {html: 'browser busy, cleaning up', statusCode: 503}
         }
 
-        // newPage() can also hang on a stuck browser
+        // -------------------------------------------------------------
+        // Open a new page (with timeout)
+        // -------------------------------------------------------------
         try {
             page = await withTimeout(browser.newPage(), CDP_HEALTH_TIMEOUT_MS, 'newPage')
         } catch (e) {
@@ -298,8 +290,9 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
             return {html: 'browser restarting', statusCode: 503}
         }
 
-        // safety net: abandon + close only the stuck page, not the browser.
-        // Sets the flag first so the main path exits controlled.
+        // -----------------------------------------------------------------
+        // Stuck‑timer – forces a page close after a maximum allowed time
+        // -----------------------------------------------------------------
         stuckTimer = setTimeout(async () => {
             pageAbandonedReason = `page still open after ${PAGE_STUCK_TIMEOUT_MS}ms`
             try {
@@ -316,121 +309,174 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
         page.setDefaultNavigationTimeout(NAV_TIMEOUT_MS)
         await page.setRequestInterception(true)
 
-        // always clear auth cookie.
+        // -----------------------------------------------------------------
+        // Cookie & header preparation
+        // -----------------------------------------------------------------
         await page.setCookie({domain: 'localhost', name: 'auth', value: ''})
 
         if (cookies && Object.keys(cookies).length > 0 && !isBot) {
             console.log(`Taking over the session can be dangerous. ${urlToFetch}`, Object.keys(cookies))
-            const cookiesToSet = Object.keys(cookies).map(k => ({domain: 'localhost', name: k, value: cookies[k]}))
+            const cookiesToSet = Object.keys(cookies).map(k => ({
+                domain: 'localhost',
+                name: k,
+                value: cookies[k]
+            }))
             await page.setCookie(...cookiesToSet)
         }
 
-        await page.setExtraHTTPHeaders({[HOSTRULE_HEADER]: host, [WEB_PARSER_HEADER]: 'true'})
+        await page.setExtraHTTPHeaders({
+            [HOSTRULE_HEADER]: host,
+            [WEB_PARSER_HEADER]: 'true'
+        })
 
-        page.on('request', (request) => {
-            // request.frame() can be null (service workers, detached
-            // contexts) - a null frame is not an iframe, so let it continue
-            // instead of throwing inside the event handler
+        // -----------------------------------------------------------------
+        // Request interception – block unnecessary resources and add tracking headers
+        // -----------------------------------------------------------------
+        page.on('request', request => {
             const frame = request.frame()
-            if (['image', 'stylesheet', 'font', 'manifest', 'media', 'other'].indexOf(request.resourceType()) !== -1 ||
-                (frame && frame.url() !== page.mainFrame().url()) /* in iframe */) {
+            if (
+                ['image', 'stylesheet', 'font', 'manifest', 'media', 'other'].includes(request.resourceType()) ||
+                (frame && frame.url() !== page.mainFrame().url()) // in iframe
+            ) {
                 request.abort('blockedbyclient')
             } else {
                 pendingRequestCount++
-                const headers = request.headers()
-                headers[TRACK_REFERER_HEADER] = referer || ''
-                headers[TRACK_IP_HEADER] = remoteAddress
-                headers[TRACK_IS_BOT_HEADER] = isBot
-                headers[TRACK_USER_AGENT_HEADER] = agent
-                headers[HOSTRULE_HEADER] = host
-                request.continue({headers})
+                const hdr = request.headers()
+                hdr[TRACK_REFERER_HEADER] = referer || ''
+                hdr[TRACK_IP_HEADER] = remoteAddress
+                hdr[TRACK_IS_BOT_HEADER] = isBot
+                hdr[TRACK_USER_AGENT_HEADER] = agent
+                hdr[HOSTRULE_HEADER] = host
+                request.continue({headers: hdr})
             }
         })
 
-        // capture the real status code of the main document
+        // -----------------------------------------------------------------
+        // 2️⃣  Response monitoring – capture status code and possible redirect target
+        // -----------------------------------------------------------------
         let statusCode = 200
         let mainResponseSeen = false
+        let redirectDetected = false
+        let redirectUrl = null               // target URL from Location header (if any)
+
         page.on('response', response => {
-            if (!mainResponseSeen &&
+            const isMainDoc =
                 response.request().resourceType() === 'document' &&
-                response.request().frame() === page.mainFrame()) {
+                response.request().frame() === page.mainFrame()
+
+            if (!mainResponseSeen && isMainDoc) {
                 mainResponseSeen = true
                 statusCode = response.status()
+
+                // ---------------------------------------------------------
+                // Detect any 3xx redirect (300‑308). Store flag, code and
+                // optional Location header.
+                // ---------------------------------------------------------
+                if (statusCode >= 300 && statusCode < 400) {
+                    redirectDetected = true
+                    const loc = response.headers()['location'] || response.headers()['Location']
+                    if (loc) redirectUrl = loc
+                    console.warn(`Redirect (${statusCode}) detected for ${urlToFetch} – not following`)
+                }
             }
-            // keep soft-404 detection (client side redirect to /404)
-            if (response.status() === 404 && response.request().resourceType() === 'document' && response.url().endsWith('/404')) {
+
+            // Soft‑404 detection (client‑side redirect to /404)
+            if (
+                response.status() === 404 &&
+                response.request().resourceType() === 'document' &&
+                response.url().endsWith('/404')
+            ) {
                 statusCode = 404
             }
         })
-        // NEW: count the request counter back down, regardless of whether it
-        // succeeded, failed, or was aborted
+
+        // -----------------------------------------------------------------
+        // Decrement request counter when a request finishes or fails
+        // -----------------------------------------------------------------
         page.on('requestfinished', () => { pendingRequestCount-- })
         page.on('requestfailed', () => { pendingRequestCount-- })
 
-        await page.evaluateOnNewDocument((data) => {
-            window._disableWsConnection = true
-            window._lunucWebParser = data
-            window.addEventListener('appReady', () => {
-                if (window._app_) {
-                    if (!_app_.JsonDom) {
-                        _app_.JsonDom = {}
+        // -----------------------------------------------------------------
+        // Inject script that sets up the app‑ready signal
+        // -----------------------------------------------------------------
+        await page.evaluateOnNewDocument(
+            data => {
+                window._disableWsConnection = true
+                window._lunucWebParser = data
+                window.addEventListener('appReady', () => {
+                    if (window._app_) {
+                        if (!_app_.JsonDom) _app_.JsonDom = {}
+                        _app_.JsonDom.elementWatchForceVisible = true
                     }
-                    _app_.JsonDom.elementWatchForceVisible = true
-                }
-                // signal for waitForFunction below
-                window.__LUNUC_APP_READY__ = true
-            })
-        }, {host, agent, isBot, remoteAddress})
+                    window.__LUNUC_APP_READY__ = true
+                })
+            },
+            {host, agent, isBot, remoteAddress}
+        )
 
-        // NEW: appReady status is now tracked explicitly instead of merely
-        // being logged - decides below whether the page counts as complete
-        // or a 503 is returned instead.
         let appReadyReceived = false
 
+        // -----------------------------------------------------------------
+        // 3️⃣  Navigation & optional app‑ready waiting (skipped on redirect)
+        // -----------------------------------------------------------------
         try {
-            // domcontentloaded instead of networkidle2 -> we wait for the app signal instead
             await page.goto(urlToFetch, {waitUntil: 'networkidle2'})
 
-            // wait until the app signals readiness; fall back to current DOM on timeout
-            await page.waitForFunction('window.__LUNUC_APP_READY__ === true', {timeout: APP_READY_TIMEOUT_MS})
-                .then(() => { appReadyReceived = true })
-                .catch(() => console.warn(`appReady signal not received for ${urlToFetch} -> continue with current DOM`))
+            if (!redirectDetected) {
+                // Wait for the SPA to signal readiness; fallback on timeout
+                await page
+                    .waitForFunction('window.__LUNUC_APP_READY__ === true', {
+                        timeout: APP_READY_TIMEOUT_MS
+                    })
+                    .then(() => { appReadyReceived = true })
+                    .catch(() =>
+                        console.warn(`appReady signal not received for ${urlToFetch} -> continue with current DOM`)
+                    )
 
-            // small settle window for async data rendering after appReady
-            await page.waitForNetworkIdle({idleTime: 200, timeout: NETWORK_IDLE_TIMEOUT_MS})
-                .catch(() => {})
+                // Small settle window after appReady
+                await page.waitForNetworkIdle({idleTime: 200, timeout: NETWORK_IDLE_TIMEOUT_MS}).catch(() => {})
 
-            // NEW: if appReady fired but requests are still pending (e.g. a
-            // GraphQL query that just barely missed the waitForNetworkIdle
-            // window), give it a short grace period instead of closing
-            // immediately. This prevents part of the "Failed to fetch"
-            // aborts that are caused purely by the context teardown while a
-            // fetch is still in flight.
-            if (appReadyReceived && pendingRequestCount > 0) {
-                const graceStart = Date.now()
-                while (pendingRequestCount > 0 && Date.now() - graceStart < CLOSE_GRACE_TIMEOUT_MS) {
-                    await new Promise(r => setTimeout(r, 100))
-                }
-                if (pendingRequestCount > 0) {
-                    console.warn(`${pendingRequestCount} request(s) still pending after grace window for ${urlToFetch}`)
+                // Grace period for still‑pending requests after appReady
+                if (appReadyReceived && pendingRequestCount > 0) {
+                    const graceStart = Date.now()
+                    while (pendingRequestCount > 0 && Date.now() - graceStart < CLOSE_GRACE_TIMEOUT_MS) {
+                        await new Promise(r => setTimeout(r, 100))
+                    }
+                    if (pendingRequestCount > 0) {
+                        console.warn(`${pendingRequestCount} request(s) still pending after grace window for ${urlToFetch}`)
+                    }
                 }
             }
         } catch (e) {
             console.warn('parseWebsite:', e)
         }
 
+        // -----------------------------------------------------------------
+        // Was the page abandoned by the stuck timer?
+        // -----------------------------------------------------------------
         if (pageAbandonedReason) {
-            // the stuck timer already closed this page - controlled exit.
-            // This is a slow page, not a browser failure: it must NOT count
-            // towards consecutiveFailures / trigger a browser restart
             console.warn(`render abandoned (${pageAbandonedReason}) ${urlToFetch}`)
             clearTimeout(stuckTimer)
             return {html: 'render timeout', statusCode: 503}
         }
 
-        // NEW: never deliver an incomplete render as 200. Without appReady,
-        // the DOM snapshot is very likely a loading state or an empty page -
-        // it must not be indexed. 503 tells crawlers "try again later".
+        // -----------------------------------------------------------------
+        // 4️⃣  Redirect case – return immediately, no further processing
+        // -----------------------------------------------------------------
+        if (redirectDetected) {
+            clearTimeout(stuckTimer)
+            await withTimeout(page.close(), 3000, 'page.close').catch(() => {})
+            consecutiveFailures = 0
+            return {
+                html: `redirect ${statusCode}`,
+                statusCode,
+                redirectUrl            // may be null if no Location header was sent
+            }
+        }
+
+        // -----------------------------------------------------------------
+        // No redirect → verify that the app signaled readiness
+        // -----------------------------------------------------------------
         if (!appReadyReceived) {
             console.warn(`render incomplete (no appReady) -> 503 ${urlToFetch}`)
             clearTimeout(stuckTimer)
@@ -439,24 +485,26 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
             return {html: 'render incomplete', statusCode: 503}
         }
 
+        // -----------------------------------------------------------------
+        // Normal success path – capture HTML content
+        // -----------------------------------------------------------------
         let html = await page.content()
         html = html.replace('</head>', '<script>window.LUNUC_PREPARSED=true</script></head>')
 
-        console.log(`url fetched ${urlToFetch} (statusCode ${statusCode}) in ${new Date().getTime() - startTime}ms`)
+        console.log(`url fetched ${urlToFetch} (statusCode ${statusCode}) in ${Date.now() - startTime}ms`)
 
         clearTimeout(stuckTimer)
         await withTimeout(page.close(), 3000, 'page.close').catch(() => {})
 
         consecutiveFailures = 0
-
         return {html, statusCode}
     } catch (e) {
+        // -----------------------------------------------------------------
+        // General error handling (same as original)
+        // -----------------------------------------------------------------
         clearTimeout(stuckTimer)
 
         if (pageAbandonedReason) {
-            // late race: the stuck timer closed the page while the main path
-            // was inside a page call ("Target closed" etc.) - same controlled
-            // exit as above, not a browser failure
             console.warn(`render abandoned (${pageAbandonedReason}) ${urlToFetch}`)
             return {html: 'render timeout', statusCode: 503}
         }
@@ -465,12 +513,10 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
 
         consecutiveFailures++
         if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-            // multiple failures in a row -> the browser itself is likely the problem
             console.warn(`${consecutiveFailures} consecutive failures -> restarting browser`)
             consecutiveFailures = 0
             await killBrowser()
         } else if (page && !page.isClosed()) {
-            // page.close() on a hung browser can hang too
             await withTimeout(page.close(), 3000, 'page.close').catch(() => {})
         }
         return {html: e.message, statusCode: 500}
