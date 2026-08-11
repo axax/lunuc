@@ -1,10 +1,43 @@
 import React from 'react'
 import Util from 'client/util/index.mjs'
 
+// Shared IntersectionObserver pool.
+// One observer instance per unique option set instead of one observer per watched
+// element. Behaviour is identical, but memory and callback overhead is much lower
+// on pages with many lazy loaded elements.
+const observerPool = new Map()
+
+const getPooledObserver = (rootMargin, threshold) => {
+    const poolKey = rootMargin + '|' + threshold
+    let pooled = observerPool.get(poolKey)
+    if (!pooled) {
+        const callbacks = new WeakMap()
+        pooled = {
+            callbacks,
+            observer: new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const targetCallbacks = callbacks.get(entry.target)
+                    if (targetCallbacks) {
+                        // copy, a callback may unobserve itself while iterating
+                        Array.from(targetCallbacks).forEach(cb => cb(entry))
+                    }
+                })
+            }, {rootMargin, threshold})
+        }
+        observerPool.set(poolKey, pooled)
+    }
+    return pooled
+}
+
 
 class ElementWatch extends React.Component {
     static hasLoaded = {}
     static loadedSvgData = {}
+
+    _isMounted = false
+    _observed = []
+    _timeouts = new Set()
+    _image = null
 
     constructor(props) {
         super(props)
@@ -26,7 +59,7 @@ class ElementWatch extends React.Component {
         let tagSrc, tagImg, isVideo = false
         if (tagName === 'SmartImage') {
             tagImg = Util.getImageObject(eleProps.src, eleProps.options)
-            tagSrc = tagImg.src + (eleProps.inlineSvg?'#inlinesvg':'')
+            tagSrc = tagImg.src + (eleProps.inlineSvg ? '#inlinesvg' : '')
             isVideo = tagImg?.mimeType?.startsWith('video/')
         } else {
             tagSrc = eleProps.id || _key
@@ -35,11 +68,11 @@ class ElementWatch extends React.Component {
         const href = props?.jsonDom?.props?.location?.href
         const hasMadeVisibleClass = $observe.initialClass && $observe.visibleClass && href !== state.href
 
-        if(hasMadeVisibleClass){
+        if (hasMadeVisibleClass) {
             ElementWatch.hasLoaded[tagSrc] = false
         }
 
-        const isAlreadyMadeVisible = state.madeVisible && tagName !== 'SmartImage'? true : ElementWatch.hasLoaded[tagSrc]
+        const isAlreadyMadeVisible = state.madeVisible && tagName !== 'SmartImage' ? true : ElementWatch.hasLoaded[tagSrc]
 
 
         return {
@@ -47,9 +80,9 @@ class ElementWatch extends React.Component {
             oriSrc: eleProps.src,
             tagSrc,
             tagImg,
-            inViewport:false,
-            inFlipMode:false,
-            hasError:false,
+            inViewport: false,
+            inFlipMode: false,
+            hasError: false,
             key: _key,
             madeVisible: (isAlreadyMadeVisible && !hasMadeVisibleClass) || (_app_.JsonDom.elementWatchForceVisible && !eleProps.inlineSvg),
             initialVisible: tagName === 'SmartImage' ? isVideo : !$observe.waitVisible
@@ -66,14 +99,43 @@ class ElementWatch extends React.Component {
     }
 
     componentDidMount() {
+        this._isMounted = true
         this.initObserver()
+    }
+
+    componentWillUnmount() {
+        this._isMounted = false
+        this.unobserveAll()
+        this._timeouts.forEach(id => clearTimeout(id))
+        this._timeouts.clear()
+        if (this._image) {
+            this._image.onload = this._image.onerror = null
+            this._image = null
+        }
+    }
+
+    // prevents setState calls from timers, image events and fetch callbacks
+    // after the component has been unmounted
+    setStateSafe(state) {
+        if (this._isMounted) {
+            this.setState(state)
+        }
+    }
+
+    setTimeoutSafe(fn, delay) {
+        const id = setTimeout(() => {
+            this._timeouts.delete(id)
+            fn()
+        }, delay)
+        this._timeouts.add(id)
+        return id
     }
 
     initObserver() {
         const {tagSrc} = this.state
         if (!tagSrc || !ElementWatch.hasLoaded[tagSrc]) {
             if (!!window.IntersectionObserver) {
-                setTimeout(() => {
+                this.setTimeoutSafe(() => {
                     this.addIntersectionObserver()
                 }, 0)
             } else if (this.props.eleProps && this.props.eleProps.inlineSvg) {
@@ -110,9 +172,9 @@ class ElementWatch extends React.Component {
                 } else if (eleProps.width && eleProps.height) {
                     w = eleProps.width
                     h = eleProps.height
-                }else if(!hasValidLazyImage){
+                } else if (!hasValidLazyImage) {
                     const data = Util.getImageObject(eleProps.src)
-                    if(data.width && data.height){
+                    if (data.width && data.height) {
                         w = data.width
                         h = data.height
                     }
@@ -127,17 +189,17 @@ class ElementWatch extends React.Component {
                         webp: true
                     })
                 } else if (w && h) {
-                    tmpSrc = Util.createDummySvg(w,h,o && o.dummyColor ? o.dummyColor :  _app_.JsonDom.dummyImageColor)
+                    tmpSrc = Util.createDummySvg(w, h, o && o.dummyColor ? o.dummyColor : _app_.JsonDom.dummyImageColor)
                 }
 
                 if (tmpSrc) {
                     return React.createElement(
                         eleType,
                         {
-                            width:w,
-                            height:h,
+                            width: w,
+                            height: h,
                             ...eleProps,
-                            className:allClassNames,
+                            className: allClassNames,
                             options: null,
                             src: tmpSrc,
                             alt: (tagImg.alt || eleProps.alt),
@@ -151,30 +213,34 @@ class ElementWatch extends React.Component {
 
             }
 
-            const propsToPass = {className:allClassNames, key}
-            if($observe.passProps) {
+            const propsToPass = {className: allClassNames, key}
+            if ($observe.passProps) {
                 Object.keys(eleProps).forEach(propKey => {
-                    if (propKey.startsWith('data') || propKey=='style') {
+                    if (propKey.startsWith('data') || propKey == 'style') {
                         propsToPass[propKey] = eleProps[propKey]
                     }
                 })
             }
 
             return <div data-element-watch-key={key} data-wait-visible={jsonDom.instanceId}
-                        style={{minHeight: eleProps.style && eleProps.style.minHeight ? eleProps.style.minHeight:'1rem', minWidth: '1rem'}} {...propsToPass}></div>
+                        style={{
+                            minHeight: eleProps.style && eleProps.style.minHeight ? eleProps.style.minHeight : '1rem',
+                            minWidth: '1rem'
+                        }} {...propsToPass}></div>
         } else {
-            const newEleProps = Object.assign({},eleProps, {
+            const newEleProps = Object.assign({}, eleProps, {
                 key,
                 'data-has-error': hasError,
                 'data-made-visible': madeVisible,
-                'data-element-watch':true})
+                'data-element-watch': true
+            })
 
             if (newEleProps.inlineSvg && ElementWatch.loadedSvgData[tagSrc]) {
                 newEleProps.svgData = ElementWatch.loadedSvgData[tagSrc].data
             }
             if ($observe.initialClass || $observe.visibleClass) {
                 newEleProps['data-element-watch-key'] = key
-                if(!newEleProps.className){
+                if (!newEleProps.className) {
                     newEleProps.className = ''
                 }
                 // we change props here so components get updated
@@ -185,9 +251,9 @@ class ElementWatch extends React.Component {
                     newEleProps.className += ' ' + $observe.initialClass
                 }
             }
-            if(observeBgImage && !madeVisible){
+            if (observeBgImage && !madeVisible) {
                 // set background image when element gets visible
-                newEleProps.style = {backgroundImage:''}
+                newEleProps.style = {backgroundImage: ''}
                 newEleProps['data-element-watch-key'] = key
             }
             return React.createElement(
@@ -206,38 +272,36 @@ class ElementWatch extends React.Component {
             return
         }
         let loadedSvgData = ElementWatch.loadedSvgData[tagSrc]
-        if(!loadedSvgData){
-            loadedSvgData = ElementWatch.loadedSvgData[tagSrc] = {loading: false, data: false, cb:[]}
+        if (!loadedSvgData) {
+            loadedSvgData = ElementWatch.loadedSvgData[tagSrc] = {loading: false, data: false, cb: []}
         }
 
-        if(loadedSvgData.data){
-            this.setState({madeVisible: true})
-        }else if(loadedSvgData.loading){
-            loadedSvgData.cb.push(()=>{
-                this.setState({madeVisible: true})
+        if (loadedSvgData.data) {
+            this.setStateSafe({madeVisible: true})
+        } else if (loadedSvgData.loading) {
+            loadedSvgData.cb.push(() => {
+                this.setStateSafe({madeVisible: true})
             })
-        }else{
+        } else {
 
             loadedSvgData.loading = true
-            fetch(tagSrc).then((response) => response.blob()).then((blob) => {
-                const reader = new FileReader()
+            fetch(tagSrc).then(response => response.text()).then(data => {
+                loadedSvgData.data = data
+                loadedSvgData.loading = false
+                ElementWatch.hasLoaded[tagSrc] = true
+                this.setStateSafe({madeVisible: true})
 
-                reader.addEventListener('load', () => {
-                    loadedSvgData.data = reader.result
-                    ElementWatch.hasLoaded[tagSrc] = true
-                    this.setState({madeVisible: true})
-
-                    while(loadedSvgData.cb.length>0){
-                        let cb = loadedSvgData.cb.shift()
-                        cb()
-                    }
-
-                }, false)
-
-                reader.readAsText(blob)
+                while (loadedSvgData.cb.length > 0) {
+                    const cb = loadedSvgData.cb.shift()
+                    cb()
+                }
+            }).catch(error => {
+                // release the lock, otherwise all other instances of the same svg
+                // would wait forever and a later mount could never retry
+                loadedSvgData.loading = false
+                loadedSvgData.cb.length = 0
+                console.warn('ElementWatch: unable to load inline svg', tagSrc, error)
             })
-
-
         }
     }
 
@@ -246,18 +310,14 @@ class ElementWatch extends React.Component {
         const {tagSrc} = this.state
         const {$observe, eleProps, tagName, jsonDom} = this.props
 
-        const madeVisibleDelay = ()=>{
-            setTimeout(()=>{
-                this.setState({madeVisible: true})
+        const madeVisibleDelay = () => {
+            this.setTimeoutSafe(() => {
+                this.setStateSafe({madeVisible: true})
             }, $observe.delay || 0)
         }
         if (this.state.initialVisible) {
-            if($observe.visibleClass) {
+            if ($observe.visibleClass) {
                 madeVisibleDelay()
-                /*setTimeout(()=>{
-                    this.setState({madeVisible: true})
-                  //  ele.classList.add(...$observe.visibleClass.split(' '))
-                }, $observe.delay || 0)*/
             }
         } else {
             ele.setAttribute('data-loading', true)
@@ -265,16 +325,20 @@ class ElementWatch extends React.Component {
                 if (eleProps.inlineSvg) {
                     this.fetchSvg()
                 } else {
-                    const img = new Image()
+                    const img = this._image = new Image()
 
-                    const timeout = setTimeout(() => {
-                        // gifs can be show even if they are not fully loaded
+                    const timeout = this.setTimeoutSafe(() => {
+                        // gifs can be shown even if they are not fully loaded
                         img.onerror = img.onload = null
-                        this.setState({madeVisible: true})
+                        this._image = null
+                        ele.setAttribute('data-loading', false)
+                        this.setStateSafe({madeVisible: true})
                     }, 20000)
 
                     const onEnd = () => {
                         clearTimeout(timeout)
+                        this._timeouts.delete(timeout)
+                        this._image = null
                         if (!$observe.waitVisible || jsonDom.props.inEditor) { // jsonDom.props.inEditor check prevents flickering in cms editor
                             ElementWatch.hasLoaded[tagSrc] = true
                         }
@@ -282,8 +346,8 @@ class ElementWatch extends React.Component {
                         ele.setAttribute('data-loading', false)
                     }
 
-                    img.onerror = ()=>{
-                        this.setState({hasError: true})
+                    img.onerror = () => {
+                        this.setStateSafe({hasError: true})
                         onEnd()
                     }
                     img.onload = onEnd
@@ -302,30 +366,66 @@ class ElementWatch extends React.Component {
     }
 
     addIntersectionObserver() {
+        if (!this._isMounted) {
+            return
+        }
         const {key, madeVisible} = this.state
         const {$observe} = this.props
+
+        // drop observers of a previous run, otherwise they pile up on src changes
+        this.unobserveAll()
 
         const eles = document.querySelectorAll(`[data-element-watch-key='${key}']`)
         eles.forEach(ele => {
             if (_app_.JsonDom.elementWatchForceVisible) {
                 this.makeVisible(ele)
             } else {
-                let observer = new IntersectionObserver((entries, observer) => {
-                    entries.forEach(entry => {
-                        if($observe.flipMode && madeVisible) {
-                            this.setState({inFlipMode:true, inViewport:entry.isIntersecting})
-                        }else if (entry.isIntersecting) {
-                            observer.unobserve(entry.target)
-                            this.makeVisible(ele)
-                        }
-                    })
-                }, {rootMargin: $observe.rootMargin || '0px 0px 0px 0px', threshold: $observe.threshold || 0})
-                observer.observe(ele)
+                const pooled = getPooledObserver(
+                    $observe.rootMargin || '0px 0px 0px 0px',
+                    $observe.threshold || 0
+                )
+                const item = {pooled, target: ele}
+                item.callback = (entry) => {
+                    if ($observe.flipMode && madeVisible) {
+                        this.setStateSafe({inFlipMode: true, inViewport: entry.isIntersecting})
+                    } else if (entry.isIntersecting) {
+                        this.unobserve(item)
+                        this.makeVisible(ele)
+                    }
+                }
+
+                let targetCallbacks = pooled.callbacks.get(ele)
+                if (!targetCallbacks) {
+                    targetCallbacks = new Set()
+                    pooled.callbacks.set(ele, targetCallbacks)
+                }
+                targetCallbacks.add(item.callback)
+
+                pooled.observer.observe(ele)
+                this._observed.push(item)
             }
         })
+    }
+
+    unobserve(item) {
+        const {pooled, target, callback} = item
+        const targetCallbacks = pooled.callbacks.get(target)
+        if (targetCallbacks) {
+            targetCallbacks.delete(callback)
+            if (targetCallbacks.size === 0) {
+                pooled.callbacks.delete(target)
+                pooled.observer.unobserve(target)
+            }
+        }
+        this._observed = this._observed.filter(o => o !== item)
+    }
+
+    unobserveAll() {
+        // copy, unobserve modifies _observed
+        Array.from(this._observed).forEach(item => this.unobserve(item))
+        this._observed = []
     }
 }
 
 
 export default ElementWatch
-

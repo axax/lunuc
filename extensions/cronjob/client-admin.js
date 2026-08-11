@@ -1,7 +1,9 @@
 import React from 'react'
 import Hook from 'util/hook.cjs'
 import Async from 'client/components/Async'
+import Util from 'client/util/index.mjs'
 import {client} from 'client/middleware/graphql'
+import {CAPABILITY_RUN_SCRIPT} from 'util/capabilities.mjs'
 import {cronToReadableString} from './util/cronexpression.mjs'
 import {registerTrs} from '../../util/i18n.mjs'
 import {translations} from './translations/admin'
@@ -12,19 +14,93 @@ const SimpleDialog = (props) => <Async {...props} expose="SimpleDialog"
                                        load={() =>import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 const CodeEditor = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "codeeditor" */ '../../client/components/CodeEditor')}/>
 
-export default () => {
 
-    /*Hook.on('ApiResponse', ({data}) => {
-        if (data.products) {
-            const results = data.products.results
-            if (results) {
-                results.forEach(e => {
-                    //e.name = 'ssss'
-                    //console.log(e)
-                })
+const formatRuntime = (ms) => {
+    if (!ms && ms !== 0) {
+        return '-'
+    }
+    const seconds = Math.floor(ms / 1000)
+    if (seconds < 60) {
+        return `${seconds}s`
+    }
+    const minutes = Math.floor(seconds / 60)
+    if (minutes < 60) {
+        return `${minutes}m ${seconds % 60}s`
+    }
+    return `${Math.floor(minutes / 60)}h ${minutes % 60}m`
+}
+
+const cellStyle = {padding: '0.4rem 0.8rem', borderBottom: '1px solid rgba(0,0,0,0.12)', textAlign: 'left'}
+
+const renderRunningCronJobs = (jobs, container) => {
+    if (!jobs.length) {
+        return <div>No cronjob is currently running.</div>
+    }
+
+    return <div>
+        <table style={{width: '100%', borderCollapse: 'collapse'}}>
+            <thead>
+            <tr>
+                <th style={cellStyle}>Name</th>
+                <th style={cellStyle}>Id</th>
+                <th style={cellStyle}>Started</th>
+                <th style={cellStyle}>Runtime</th>
+                <th style={cellStyle}></th>
+            </tr>
+            </thead>
+            <tbody>
+            {jobs.map(job => <tr key={job.cronjobId}>
+                <td style={cellStyle}>{job.name || '-'}</td>
+                <td style={cellStyle}><small>{job.cronjobId}</small></td>
+                <td style={cellStyle}>{job.startTime ? new Date(job.startTime).toLocaleString() : '-'}</td>
+                <td style={cellStyle}>{formatRuntime(job.runtime)}</td>
+                <td style={cellStyle}>
+                    <button onClick={() => abortRunningCronJob(job.cronjobId, container)}
+                            title={job.killable ? 'Terminate the job' : 'Only the lock gets released, the script keeps running'}>
+                        {job.killable ? 'Abort' : 'Release lock'}
+                    </button>
+                </td>
+            </tr>)}
+            </tbody>
+        </table>
+        <button style={{marginTop: '1rem'}} onClick={() => loadRunningCronJobs(container)}>Refresh</button>
+    </div>
+}
+
+const loadRunningCronJobs = (container) => {
+    client.query({
+        fetchPolicy: 'network-only',
+        query: '{getRunningCronJobs{cronjobId executionId name startTime runtime killable}}'
+    }).then(response => {
+        const jobs = (response.data && response.data.getRunningCronJobs) || []
+        container.setState({
+            simpleDialog: {
+                title: 'Running CronJobs',
+                fullWidth: true,
+                maxWidth: 'md',
+                children: renderRunningCronJobs(jobs, container)
             }
-        }
-    })*/
+        })
+    }).catch(error => {
+        container.setState({simpleDialog: {title: 'Running CronJobs', children: error.message}})
+    })
+}
+
+const abortRunningCronJob = (cronjobId, container) => {
+    client.query({
+        fetchPolicy: 'network-only',
+        query: 'query abortCronJob($cronjobId:String!){abortCronJob(cronjobId:$cronjobId){success status}}',
+        variables: {cronjobId}
+    }).then(() => {
+        // reload the list so the dialog reflects the new state
+        loadRunningCronJobs(container)
+    }).catch(error => {
+        container.setState({simpleDialog: {title: 'Running CronJobs', children: error.message}})
+    })
+}
+
+
+export default () => {
 
     Hook.on('TypeCreateEditAction', function ({type, action, dataToEdit, createEditForm, meta}) {
         if (type === 'CronJob' && action && action.key && action.key.startsWith('run')) {
@@ -47,6 +123,24 @@ export default () => {
                 }
             }).catch(error => {
                 console.log(error.message)
+            })
+        }
+    })
+
+
+    Hook.on('TypeTableAction', function ({type, actions}) {
+        if (type === 'CronJob') {
+            if (!Util.hasCapability({userData: _app_.user}, CAPABILITY_RUN_SCRIPT)) {
+                return
+            }
+
+            const container = this
+
+            actions.unshift({
+                name: 'Show running CronJobs',
+                onClick: () => {
+                    loadRunningCronJobs(container)
+                }
             })
         }
     })

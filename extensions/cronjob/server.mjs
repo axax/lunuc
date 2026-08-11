@@ -95,6 +95,7 @@ Hook.on('schema', ({schemas}) => {
 
 // Hook when db is ready
 Hook.on('appready', ({db}) => {
+    cronjobUtil.cleanupStaleExecutions(db)
     registerCronJobs(db, true)
 })
 
