@@ -13,11 +13,13 @@ process.on('unhandledRejection', (reason, p) => {
 
 
 // Use ES6 module syntax with node.js
+console.time('api-boot')
 require('@babel/register')({
-    presets: ['@babel/preset-env'],
-
-  ignore: [/node_modules/]
+    envName: 'api',
+    ignore: [/node_modules/]
 })
+console.timeEnd('api-boot')
+
 require('./util/localStorage')
 
 
