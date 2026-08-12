@@ -176,10 +176,14 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
                             }
                         }
                         if (fs.existsSync(EXTENSION_PATH + file + '/server.mjs')) {
+                            serverContent += `console.time('extension-server-load-${file}')\n`
                             serverContent += `import '.${EXTENSION_PATH}${file}/server.mjs'\n`
+                            serverContent += `console.timeEnd('extension-server-load-${file}')\n`
                         }
                         if (fs.existsSync(EXTENSION_PATH + file + '/root-server.mjs')) {
+                            rootServerContent += `console.time('extension-root-server-load-${file}')\n`
                             rootServerContent += `import '.${EXTENSION_PATH}${file}/root-server.mjs'\n`
+                            rootServerContent += `console.timeEnd('extension-root-server-load-${file}')\n`
                         }
                     }
                 }
