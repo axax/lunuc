@@ -5,6 +5,26 @@ import CircularProgress from '@mui/material/CircularProgress'
 import {setKeyValue, useKeyValues} from '../../../../util/keyvalue'
 import HistoryIcon from '@mui/icons-material/History'
 
+const contextAwareSplit = (text, separator) => {
+    const result = []
+    let token = '', depth = 0
+
+    for (const char of text) {
+        if (char === '{') depth++
+        else if (char === '}') depth--
+
+        if (depth === 0 && char === separator) {
+            if (token) result.push(token)
+            token = ''
+        } else {
+            token += char
+        }
+    }
+    if (token) result.push(token)
+
+    return result
+}
+
 export default function SimpleAutosuggest(props) {
 
     const [open, setOpen] = React.useState(false)
@@ -82,7 +102,7 @@ export default function SimpleAutosuggest(props) {
 
 
     }
-    const finalValue = props.multipleSeparator ? text.split(props.multipleSeparator).filter(f=>f) : text
+    const finalValue = props.multipleSeparator ? contextAwareSplit(text, props.multipleSeparator).filter(f=>f) : text
     return (
         <Autocomplete
             multiple={!!props.multipleSeparator}

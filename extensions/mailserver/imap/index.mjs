@@ -26,10 +26,21 @@ import {dynamicSettings} from '../../../api/util/settings.mjs'
 import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
 import Hook from '../../../util/hook.cjs'
 import Util from '../../../client/util/index.mjs'
+import Cache from '../../../util/cache.mjs'
 
 // open port 993 on your server
 // sudo ufw allow 993
 
+
+// prefix for cached mime trees, so they can be cleared selectively via Cache.clearStartWith
+const MIME_TREE_CACHE_PREFIX = 'imapMimeTree_'
+
+// a client fetches structure and body parts of the same message within seconds,
+// so a short ttl is enough to keep the mime boundaries stable across those calls
+const MIME_TREE_CACHE_TTL = 5 * 60 * 1000
+
+// large messages are usually fetched in one go and would bloat the heap
+const MIME_TREE_CACHE_MAX_SIZE = 2 * 1024 * 1024
 
 
 function headerLinesToMimeTreeHeaders(headerLines) {
@@ -105,6 +116,12 @@ const mongoDbMatchProjectFromIMapData = (options) => {
         })
         if(project.bodystructure || project.body || project.content || project['rfc822.size']){
             project.data = 1
+            // uid, flags and modseq are always needed: modseq is part of the mime tree
+            // cache key and must be present in every fetch that composes a message,
+            // otherwise the same message would be rebuilt with different mime boundaries
+            project.uid = 1
+            project.flags = 1
+            project.modseq = 1
         }
     }
     return {match, project}
@@ -208,11 +225,11 @@ const startListening = async (db, context) => {
     // SUBSCRIBE "path/to/mailbox"
     server.onSubscribe = function (mailbox, session, callback) {
         logger.debug('[%s] SUBSCRIBE to "%s"', session.id, mailbox)
-      /*  if (!folders.has(mailbox)) {
-            return callback(null, 'NONEXISTENT');
-        }
+        /*  if (!folders.has(mailbox)) {
+              return callback(null, 'NONEXISTENT');
+          }
 
-        subscriptions.add(folders.get(mailbox));*/
+          subscriptions.add(folders.get(mailbox));*/
         callback(null, true);
     };
 
@@ -669,9 +686,14 @@ const startListening = async (db, context) => {
             })
         }
 
-        session.writeStream.on('error', (err) => {
-            logError(err.message)
-        })
+        // register the error handler only once per session, otherwise every fetch
+        // adds another listener and node starts warning about a memory leak
+        if (!session._writeStreamErrorHandlerAttached) {
+            session._writeStreamErrorHandlerAttached = true
+            session.writeStream.on('error', (err) => {
+                logError(err.message)
+            })
+        }
 
 
         if (options.markAsSeen) {
@@ -679,6 +701,10 @@ const startListening = async (db, context) => {
             messages.forEach(message => {
                 if (options.messages.indexOf(message.uid) < 0) {
                     return
+                }
+
+                if (!message.flags) {
+                    message.flags = []
                 }
 
                 // if BODY[] is touched, then add \Seen flag and notify other clients
@@ -696,11 +722,16 @@ const startListening = async (db, context) => {
 
         this.notifier.addEntries(session,folder, entries,() => {
             let pos = 0;
+
+            const finish = () => {
+                // once messages are processed show relevant updates
+                this.notifier.fire(session.user.id, null)
+                return callback(null, true)
+            }
+
             let processMessage = () => {
                 if (pos >= messages.length) {
-                    // once messages are processed show relevant updates
-                    this.notifier.fire(session.user.id, null)
-                    return callback(null, true)
+                    return finish()
                 }
                 let message = messages[pos++]
                 logger.debug('[%s] imap process message with uid "%s"', session.id, message.uid)
@@ -718,6 +749,61 @@ const startListening = async (db, context) => {
 
                 if(message.data) {
 
+                    // writes the composed message to the client stream.
+                    // shared by the cached and the freshly composed path
+                    const sendMailMessage = (rawMailMessage) => {
+                        const queryRequest = {
+                            ...message,
+                            idate: new Date(message.data.date || Util.dateFromObjectId(message._id.toString(), new Date())),
+                            mimeTree: parseMimeTree(rawMailMessage)
+                        }
+
+                        Hook.call('imapOnFetchMailComposed', {queryRequest, messageData, folderId, options, session})
+
+                        const stream = imapHandler.compileStream(
+                            session.formatResponse('FETCH', message.uid, {
+                                query: options.query,
+                                values: session.getQueryResponse(
+                                    options.query,
+                                    queryRequest
+                                )
+                            })
+                        )
+
+                        if (!stream || !session?.socket?.writable || session?.socket?.destroyed) {
+                            // abort the whole fetch, otherwise the callback would never be called
+                            logger.debug('[%s] socket is not ready anymore, aborting fetch', session.id)
+                            return finish()
+                        }
+
+                        stream.on('error', (err) => {
+                            logError('stream error: ' + err.message)
+                        })
+
+                        session.writeStream.write(stream, () => {
+                            setImmediate(processMessage)
+                        })
+                    }
+
+                    // the mime boundaries generated by MailComposer are random, so composing
+                    // the same message twice yields different boundaries. clients fetch the
+                    // body structure and the single body parts in separate FETCH calls, so the
+                    // composed message has to stay identical across those calls
+                    const cacheKey = `${MIME_TREE_CACHE_PREFIX}${message._id}_${message.modseq}`
+                    const cachedMailMessage = Cache.get(cacheKey)
+
+                    if (cachedMailMessage) {
+                        // cache hit: no need to read attachments from disk or recompose
+                        try {
+                            sendMailMessage(cachedMailMessage)
+                        } catch (error) {
+                            logError(error.message)
+                            console.error('error sending cached email', error)
+                            setImmediate(processMessage)
+                        }
+                        return
+                    }
+
                     // Extract fields from parsed email
                     messageData = {
                         from: message.data.from?.text,            // 'From' header
@@ -733,7 +819,7 @@ const startListening = async (db, context) => {
                         text: message.data.text,
                         html: message.data.html,
                         date: new Date(message.data.date || Util.dateFromObjectId(message._id.toString(), new Date())).toUTCString(), // important for preserving sent date
-                       // alternatives: message.data.alternatives,
+                        // alternatives: message.data.alternatives,
                         attachments: Array.isArray(message.data.attachments) ? message.data.attachments.map(att => ({
                             filename: att.filename,
                             content: getAttachmentContentFromFile(att, {db, message}),
@@ -761,73 +847,36 @@ const startListening = async (db, context) => {
                     }
 
                     try {
-
-
-                        const queryRequest = {
-                            ...message,
-                            idate: new Date(messageData.date)
+                        // shallow clone instead of a JSON roundtrip, so attachment buffers
+                        // are not serialized into {type:'Buffer',data:[...]} objects
+                        const composerInput = {
+                            ...messageData,
+                            attachments: messageData.attachments.map(att => ({...att}))
                         }
 
-                       // if(settings.useMailComposer){
-                            const mailComposer = new MailComposer(JSON.parse(JSON.stringify(messageData)))
+                        const mailComposer = new MailComposer(composerInput)
 
-                            mailComposer.compile().build((err, mailMessage) => {
-
-                                queryRequest.mimeTree = parseMimeTree(mailMessage)
-
-                                Hook.call('imapOnFetchMailComposed', {queryRequest, messageData, folderId, options, session})
-
-                                let stream = imapHandler.compileStream(
-                                    session.formatResponse('FETCH', message.uid, {
-                                        query: options.query,
-                                        values: session.getQueryResponse(
-                                            options.query,
-                                            queryRequest
-                                        )
-                                    })
-                                )
-
-                                if (stream && session?.socket?.writable && !session?.socket?.destroyed) {
-                                    stream.on('error', (err) => {
-                                        logError('stream error', err.message)
-                                    })
-
-                                    session.writeStream.write(stream, () => {
-                                        setImmediate(processMessage)
-                                    })
-                                }else{
-                                    console.log('socket is not ready anymore', session)
-                                }
-                            })
-
-
-
-                      /*  }else{
-                            queryRequest.mimeTree = parseMimeTree(buildRFC822Email(messageData))
-                            Hook.call('imapOnFetchMailComposed', {queryRequest, messageData, folderId, options, session})
-
-
-                            let stream = imapHandler.compileStream(
-                                session.formatResponse('FETCH', message.uid, {
-                                    query: options.query,
-                                    values: session.getQueryResponse(
-                                        options.query,
-                                        queryRequest
-                                    )
-                                })
-                            )
-
-                            if (stream && session?.socket?.writable && !session?.socket?.destroyed) {
-                                stream.on('error', (err) => {
-                                    logError(err.message)
-                                })
-
-                                session.writeStream.write(stream, () => {
-                                    setImmediate(processMessage)
-                                })
+                        mailComposer.compile().build((err, builtMailMessage) => {
+                            if (err) {
+                                logError(err.message)
+                                console.error('error building email', err)
+                                return setImmediate(processMessage)
                             }
 
-                        }*/
+                            if (builtMailMessage.length <= MIME_TREE_CACHE_MAX_SIZE) {
+                                Cache.set(cacheKey, builtMailMessage, MIME_TREE_CACHE_TTL)
+                            } else {
+                                logger.debug('[%s] message with uid "%s" too large to cache (%s bytes)', session.id, message.uid, builtMailMessage.length)
+                            }
+
+                            try {
+                                sendMailMessage(builtMailMessage)
+                            } catch (error) {
+                                logError(error.message)
+                                console.error('error sending email', error)
+                                setImmediate(processMessage)
+                            }
+                        })
 
                     } catch (error) {
                         logError(error.message)
@@ -850,11 +899,14 @@ const startListening = async (db, context) => {
                     if (stream && session?.socket?.writable && !session?.socket?.destroyed) {
 
                         stream.on('error', (err) => {
-                            logError(err.message)
+                            logError('stream error: ' + err.message)
                         })
                         session.writeStream.write(stream, () => {
                             setImmediate(processMessage)
                         })
+                    } else {
+                        logger.debug('[%s] socket is not ready anymore, aborting fetch', session.id)
+                        return finish()
                     }
                 }
             }
@@ -924,7 +976,8 @@ const startListening = async (db, context) => {
 
 
 const stopListening = () => {
-
+    // free composed mime trees, they can take up a lot of memory
+    Cache.clearStartWith(MIME_TREE_CACHE_PREFIX)
 }
 
 export default {startListening, stopListening}

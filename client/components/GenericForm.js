@@ -1161,6 +1161,7 @@ class GenericForm extends React.Component {
 
                     <CodeEditor
                         style={{border: '1px solid #eeeeee', margin: '16px 0'}}
+                        height={field.height}
                         readOnly={field.readOnly || field.uiReadOnly}
                         identifier={(this.props.id || '') + '-' + fieldKey}
                         key={fieldKey}
