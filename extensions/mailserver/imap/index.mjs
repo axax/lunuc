@@ -57,6 +57,37 @@ function headerLinesToMimeTreeHeaders(headerLines) {
     return headers;
 }
 
+/*
+ getAttachmentContentFromFile may return a BSON Binary (mongodb driver), a Buffer,
+ a string or a serialized buffer object. MailComposer only accepts strings, Buffers
+ or streams, everything else fails with "chunk argument must be of type string or
+ an instance of Buffer" as soon as nodemailer writes it to the stream.
+ */
+function normalizeAttachmentContent(content) {
+    if (content === null || content === undefined) {
+        return content
+    }
+    if (typeof content === 'string' || Buffer.isBuffer(content)) {
+        return content
+    }
+    // BSON Binary exposes the raw bytes via value(true)
+    if (typeof content.value === 'function') {
+        return Buffer.from(content.value(true))
+    }
+    // BSON Binary of older drivers and similar wrappers keep the bytes in .buffer
+    if (content.buffer) {
+        return Buffer.from(content.buffer)
+    }
+    // serialized buffer: {type:'Buffer', data:[...]}
+    if (content.type === 'Buffer' && Array.isArray(content.data)) {
+        return Buffer.from(content.data)
+    }
+    if (content instanceof ArrayBuffer || ArrayBuffer.isView(content)) {
+        return Buffer.from(content)
+    }
+    return content
+}
+
 function convertSimpleParserToMimeTree(parsed) {
     const root = {
         headers: headerLinesToMimeTreeHeaders(parsed.headerLines),
@@ -820,14 +851,22 @@ const startListening = async (db, context) => {
                         html: message.data.html,
                         date: new Date(message.data.date || Util.dateFromObjectId(message._id.toString(), new Date())).toUTCString(), // important for preserving sent date
                         // alternatives: message.data.alternatives,
-                        attachments: Array.isArray(message.data.attachments) ? message.data.attachments.map(att => ({
-                            filename: att.filename,
-                            content: getAttachmentContentFromFile(att, {db, message}),
-                            contentType: att.contentType,
-                            cid: att.cid,
-                            encoding: att.encoding!=='quoted-printable' ? att.encoding : undefined,
-                            contentDisposition: att.contentDisposition,
-                        })): [],
+                        attachments: Array.isArray(message.data.attachments) ? message.data.attachments.map(att => {
+                            const attachmentContent = normalizeAttachmentContent(getAttachmentContentFromFile(att, {db, message}))
+
+                            return {
+                                filename: att.filename,
+                                content: attachmentContent,
+                                contentType: att.contentType,
+                                cid: att.cid,
+                                // encoding describes how a given content string is encoded,
+                                // a Buffer already holds the decoded bytes
+                                encoding: Buffer.isBuffer(attachmentContent)
+                                    ? undefined
+                                    : (att.encoding !== 'quoted-printable' ? att.encoding : undefined),
+                                contentDisposition: att.contentDisposition,
+                            }
+                        }): [],
                     }
 
                     if(message.data.headers) {
