@@ -15,7 +15,7 @@ import {
 import { TreeItemIcon } from '@mui/x-tree-view/TreeItemIcon';
 import { TreeItemProvider } from '@mui/x-tree-view/TreeItemProvider';
 import { useTreeItemModel } from '@mui/x-tree-view/hooks';
-import { useEffect, useState } from "react";
+import { useEffect, useState, useImperativeHandle } from "react";
 import { getIconByKey } from "./icon";
 
 // ─── Module-level context ────────────────────────────────────────────────────
@@ -323,8 +323,23 @@ const removeItemById = (nodes, id) => {
     return null;
 };
 
+/**
+ * The synthetic root node (only present when drag and drop is enabled) holds a
+ * self reference: its children array IS the top level array, including the root
+ * node itself at index 0. Any structural change to the top level array must
+ * therefore be mirrored back onto root.children, and inserts must skip index 0.
+ */
+const getRootNode = (nodes) => (nodes?.[0]?.fileType === 'root' ? nodes[0] : null);
+
 // ─── File Explorer ────────────────────────────────────────────────────────────
-export default function FileExplorer({ onFetch, onItemClick, ContextMenu, onItemAction, defaultExpandedItems, enableDragAndDrop = false }) {
+const FileExplorer = React.forwardRef(function FileExplorer({
+                                                                onFetch,
+                                                                onItemClick,
+                                                                ContextMenu,
+                                                                onItemAction,
+                                                                defaultExpandedItems,
+                                                                enableDragAndDrop = false
+                                                            }, ref) {
 
     const [data, setData] = useState(null);
     const [error, setError] = useState(null);
@@ -353,29 +368,32 @@ export default function FileExplorer({ onFetch, onItemClick, ContextMenu, onItem
         enableDragAndDrop,
         onDrop: (sourceId, targetFolderId) => {
             setData(prevData => {
-                const newData = prevData.splice(0);
+                if (!prevData) return prevData;
+
+                const newData = [...prevData];
 
                 // Remove the dragged item from wherever it currently lives
                 const draggedItem = removeItemById(newData, sourceId);
                 if (!draggedItem) return prevData;
 
+                const root = getRootNode(newData);
+
                 // Insert into the target folder
-                if(targetFolderId==='root'){
-                    newData.splice(1, 0, draggedItem)
-                }else {
+                if (!targetFolderId || targetFolderId === 'root') {
+                    newData.splice(root ? 1 : 0, 0, draggedItem);
+                } else {
                     const targetFolder = findById(newData, targetFolderId);
                     if (!targetFolder) return prevData;
-                    if (!targetFolder.children) targetFolder.children = [];
-                    targetFolder.children.push(draggedItem);
+                    targetFolder.children = [...(targetFolder.children || []), draggedItem];
                 }
 
-                // Mark folder as having fetched children so it doesn't re-fetch
-                //targetFolder.childrenFetched = true;
+                if (root) root.children = newData;
+                draggedItem.parent = targetFolderId;
 
                 // Notify parent to persist the move
-                onItemAction?.({source: findById(newData, sourceId), itemId: sourceId, targetFolderId },{key:'move'});
+                onItemAction?.({ source: draggedItem, itemId: sourceId, targetFolderId }, { key: 'move' });
 
-                return [...newData];
+                return newData;
             });
         },
     };
@@ -403,8 +421,12 @@ export default function FileExplorer({ onFetch, onItemClick, ContextMenu, onItem
         });
     };
 
-    useEffect(async () => {
-        if (!data) {
+    useEffect(() => {
+        // An async function passed directly to useEffect returns a promise
+        // instead of a cleanup function, so it is wrapped here.
+        const init = async () => {
+            if (data) return;
+
             const allPaths = [''];
             if (defaultExpandedItems) {
                 allPaths.push(...defaultExpandedItems);
@@ -415,12 +437,91 @@ export default function FileExplorer({ onFetch, onItemClick, ContextMenu, onItem
             for (const id of allPathSorted) {
                 currentData = await fetchData({ id, data: currentData });
             }
-            if(enableDragAndDrop && currentData) {
-                currentData.unshift({label: '.', id: 'root', fileType: 'root', children: currentData, icon: 'source', original:{createdBy:_app_.user}});
+            if (enableDragAndDrop && currentData) {
+                currentData.unshift({
+                    label: '.',
+                    id: 'root',
+                    fileType: 'root',
+                    children: currentData,
+                    icon: 'source',
+                    original: { createdBy: _app_.user }
+                });
             }
             setData(currentData);
-        }
+        };
+        init();
     }, []);
+
+    /**
+     * Imperative API for callers. Item references handed out via callbacks live
+     * inside this component's state, so mutating them from the outside never
+     * triggers a re-render. These methods go through setData with a fresh array
+     * reference instead, which is what makes the tree update without a reload.
+     */
+    useImperativeHandle(ref, () => ({
+        removeItem: (id) => {
+            if (!id || id === 'root') return;
+            setData(prevData => {
+                if (!prevData) return prevData;
+                const newData = [...prevData];
+                if (!removeItemById(newData, id)) return prevData;
+                const root = getRootNode(newData);
+                if (root) root.children = newData;
+                return newData;
+            });
+            // Drop stale references from the controlled tree state
+            setExpandedItems(prev => prev.filter(itemId => itemId !== id));
+            setSelectedItems(prev => prev.filter(itemId => itemId !== id));
+            setLoadingItems(prev => {
+                if (!prev.has(id)) return prev;
+                const next = new Set(prev);
+                next.delete(id);
+                return next;
+            });
+        },
+
+        addItems: (parentId, newItems) => {
+            if (!newItems?.length) return;
+            setData(prevData => {
+                if (!prevData) return prevData;
+
+                const newData = [...prevData];
+                const root = getRootNode(newData);
+                const isRootTarget = !parentId || parentId === 'root';
+                const parent = isRootTarget ? root : findById(newData, parentId);
+
+                if (isRootTarget || (root && parent === root)) {
+                    newData.splice(root ? 1 : 0, 0, ...newItems);
+                    if (root) root.children = newData;
+                    return newData;
+                }
+
+                if (!parent) return prevData;
+                parent.children = [...newItems, ...(parent.children || [])];
+                parent.childrenFetched = true;
+                return newData;
+            });
+        },
+
+        updateItem: (id, changes) => {
+            if (!id || id === 'root' || !changes) return;
+            setData(prevData => {
+                if (!prevData) return prevData;
+                const newData = [...prevData];
+                const item = findById(newData, id);
+                if (!item) return prevData;
+                Object.assign(item, changes);
+                return newData;
+            });
+        },
+
+        // Escape hatch: force a full reload of the tree from the data source
+        reload: () => {
+            setData(null);
+            setExpandedItems([]);
+            setSelectedItems([]);
+        },
+    }), []);
 
     if (error) return error.message;
     if (!data) return null;
@@ -447,6 +548,7 @@ export default function FileExplorer({ onFetch, onItemClick, ContextMenu, onItem
 
                     const wasExpanded = expandedItems.includes(id);
                     const item = findById(data, id);
+                    if (!item) return;
 
                     if (item.fileType === 'folder' && !item.childrenFetched && event.detail !== 2) {
                         setLoadingItems(prev => new Set(prev).add(id));
@@ -483,10 +585,11 @@ export default function FileExplorer({ onFetch, onItemClick, ContextMenu, onItem
                 item={contextMenu?.item}
                 onClose={() => setContextMenu(null)}
                 onAction={(event, item, action) => {
-                    console.log(action, findById(data, item.parent))
                     onItemAction?.(item, action, findById(data, item.parent))
                 }}
             />}
         </TreeContextMenuContext.Provider>
     );
-}
+});
+
+export default FileExplorer;

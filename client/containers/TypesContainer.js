@@ -1589,7 +1589,7 @@ class TypesContainer extends React.Component {
                     _version,
                     _id: ids.length > 1 ? ids : ids[0]
                 },
-                update: (store, {data}) => {
+                update: (store, {data, errors}) => {
                     const variables = {limit, page, sort: this.extendSort(sort), meta, _version, filter: this.extendFilter(filter)}
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
@@ -1632,7 +1632,7 @@ class TypesContainer extends React.Component {
                     }
 
                     if(callback){
-                        callback({ids,data})
+                        callback({ids,data,errors})
                     }
                 },
             })
