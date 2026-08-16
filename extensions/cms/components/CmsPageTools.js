@@ -1,11 +1,34 @@
-import React, {useCallback, useEffect, useRef} from 'react'
+import React, {useCallback, useEffect, useMemo, useRef} from 'react'
 import {_t} from '../../../util/i18n.mjs'
 import styled from '@emotion/styled'
 import {alpha} from '@mui/material/styles'
 import ConsoleCapture from './ConsoleCapture'
 import ResizableDivider from '../../../client/components/ResizableDivider'
-import {propertyByPath} from '../../../client/util/json.mjs'
 import JsonViewer from './JsonViewer'
+import {applyPatch, PatchError, buildPatchFeedback} from '../util/patch-utils.mjs'
+import {
+    applyTemplateOperation,
+    normalizeOperation,
+    parseTemplate,
+    TemplateOpError
+} from '../util/template-ops.mjs'
+
+
+// Keys that may be changed through a lunuc_component message.
+const PATCHABLE_KEYS = ['script', 'serverScript', 'style', 'dataResolver']
+const ALLOWED_KEYS = ['template', ...PATCHABLE_KEYS]
+
+const TABS = [
+    {name: 'console', label: () => 'Console'},
+    {name: 'scope', label: () => 'Scope'},
+    {name: 'serverConsole', label: () => 'Server Console'},
+    {name: 'aiAssistent', label: () => _t('CodeEditor.aiAssistent')}
+]
+
+const MIN_BOX_HEIGHT = 50
+const MAX_BOX_HEIGHT_RATIO = 0.8 // matches CSS maxHeight: 80vh
+
+const IFRAME_STYLE = {width: '100%', height: '100%', border: 'none'}
 
 
 const StyledBox = styled('div')(({theme}) => ({
@@ -31,7 +54,11 @@ const StyledButtonGroup = styled('div')(({theme}) => ({
     borderBottom: `1px solid ${theme.palette.divider}`
 }))
 
-const StyledInfoBox = styled('div')(({theme, height}) => ({
+// shouldForwardProp keeps the custom prop out of the DOM. Without it emotion
+// forwards `height` as an html attribute.
+const StyledInfoBox = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'height'
+})(({theme, height}) => ({
     width: '100%',
     height: `${height}px`,
     maxHeight: '80vh',
@@ -53,7 +80,11 @@ const StyledInfoBox = styled('div')(({theme, height}) => ({
     }
 }))
 
-const StyledButton = styled('button')(({theme, selected}) => ({
+// Same reason: `selected` is a valid attribute on <option>, so emotion would
+// forward it and React warns about a non boolean value.
+const StyledButton = styled('button', {
+    shouldForwardProp: (prop) => prop !== 'selected'
+})(({theme, selected}) => ({
     fontFamily: theme.typography.fontFamily,
     fontSize: '0.8125rem',
     fontWeight: 600,
@@ -76,159 +107,117 @@ const StyledButton = styled('button')(({theme, selected}) => ({
     }
 }))
 
+
 export default function CmsPageTools(props) {
 
     const [tab, setTab] = React.useState(props.tab)
     const [boxHeight, setBoxHeight] = React.useState(props.boxHeight || 200)
 
-    // Working copy of the page data. Acts as an accumulator for the template
-    // across message events; it does NOT need to trigger re-renders because
-    // nothing in the JSX depends on the template itself.
-    const dataRef = useRef(props.data)
+    // Tabs the user has opened at least once. Their iframes stay mounted so
+    // switching tabs does not throw away the assistant conversation.
+    const [mountedTabs, setMountedTabs] = React.useState(
+        () => (props.tab ? {[props.tab]: true} : {})
+    )
+
+    // Forces a re-read of the global scope, which is not reactive on its own.
+    const [scopeVersion, setScopeVersion] = React.useState(0)
+
+    // Working copy of the page data. Acts as an accumulator across message
+    // events; it does NOT need to trigger re-renders because nothing in the
+    // JSX depends on it.
+    const dataRef = useRef(props.data || {})
     const propsRef = useRef(props)
 
-    // Keep refs in sync with incoming props, but preserve the locally edited
-    // template so an unrelated parent re-render cannot discard in-flight edits.
+    // Keys changed locally that are not yet reflected in props.data.
+    const pendingKeysRef = useRef({})
+
+    // Mirrors the last COMMITTED boxHeight so the resize handler can read the
+    // current value without being re-created on every render.
+    const boxHeightRef = useRef(boxHeight)
+
+    // Height at the moment the drag started. ResizableDivider reports the
+    // cumulative distance since mousedown, so every event must be measured
+    // against this frozen value - measuring against the current height would
+    // apply the growing delta again and again, making the box accelerate.
+    const dragStartHeightRef = useRef(null)
+
+    // Keep refs in sync with the committed render, but preserve locally edited
+    // parts so an unrelated parent re-render cannot discard in-flight edits.
     useEffect(() => {
         propsRef.current = props
-        dataRef.current = {...props.data, template: dataRef.current.template}
-    }, [props])
+        boxHeightRef.current = boxHeight
+
+        const incoming = props.data || {}
+        const merged = {...incoming, template: dataRef.current.template ?? incoming.template}
+
+        for (const key of Object.keys(pendingKeysRef.current)) {
+            // Once the parent reports the value we applied, the edit has round
+            // tripped and no longer needs to be held locally.
+            if (incoming[key] === pendingKeysRef.current[key]) {
+                delete pendingKeysRef.current[key]
+            } else {
+                merged[key] = pendingKeysRef.current[key]
+            }
+        }
+        dataRef.current = merged
+    })
 
     const handleMessage = useCallback((event) => {
-        if (!event.data.lunuc_component || !event.data.key) {
+        // Only accept messages from our own origin. The assistant runs in a
+        // same-origin iframe; nothing else may inject script or serverScript.
+        if (event.origin !== window.location.origin) {
             return
         }
+        if (!event.data || !event.data.lunuc_component || !event.data.key) {
+            return
+        }
+
+        const key = event.data.key
+        if (ALLOWED_KEYS.indexOf(key) < 0) {
+            return
+        }
+
+        // Normalize the op / operation aliases up front. Doing this later meant
+        // an `op="remove"` message failed the "missing data" check below.
+        const operation = normalizeOperation(event.data)
 
         // Always read the current data / props via refs to avoid stale closures.
         const currentData = dataRef.current
         const currentProps = propsRef.current
 
-        // Sends the result of an applied change back to the source iframe (ai assistant)
-        // so it can show success / error feedback to the user.
-        const respond = (success, error) => {
+        // Sends the result of an applied change back to the source iframe (ai
+        // assistant) so it can show success / error feedback to the user.
+        const respond = (success, error, extra) => {
             if (event.source && event.source.postMessage) {
                 event.source.postMessage({
                     lunuc_component_result: true,
-                    key: event.data.key,
-                    operation: event.data.operation,
+                    key,
+                    operation,
                     path: event.data.path,
                     success,
-                    error: error || null
-                }, '*')
+                    error: error || null,
+                    ...extra
+                }, event.origin)
             }
         }
 
         try {
-            if (event.data.key === 'template') {
-                if (!event.data.data && event.data.operation !== 'remove') {
-                    respond(false, 'Missing data for template change')
-                    return
-                }
-
+            if (key === 'template') {
                 let template
+
                 if (event.data.path) {
-                    try {
-                        template = JSON.parse(currentData.template)
-                    } catch (e) {
-                        respond(false, 'Current template is not valid JSON: ' + e.message)
-                        return
-                    }
-                    if (!Array.isArray(template)) {
-                        template = [template]
-                    }
-
-                    let path = event.data.path
-                    if (path.startsWith('template.')) {
-                        path = path.substring(9)
-                    }
-
-                    const targetNode = propertyByPath(path, template)
-                    if (targetNode === undefined && event.data.operation !== 'add') {
-                        respond(false, `Path "${event.data.path}" not found in template`)
-                        return
-                    }
-
-                    let newData = event.data.data
-                    if (Array.isArray(newData) && newData.length === 1) {
-                        newData = newData[0]
-                    }
-
-                    let parentPath = path.slice(0, path.lastIndexOf('.'))
-                    if (parentPath.endsWith('.c')) {
-                        parentPath = parentPath.substring(0, parentPath.lastIndexOf('.'))
-                    }
-
-                    const parentData = propertyByPath(parentPath, template)
-                    if (!parentData) {
-                        respond(false, `Parent path "${parentPath}" not found in template`)
-                        return
-                    }
-
-                    let applied = false
-
-                    if(!event.data.operation && event.data.op) {
-                        event.data.operation = event.data.op
-                    }
-
-                    if (event.data.operation === 'remove') {
-                        if (Array.isArray(parentData.c)) {
-                            const index = parentData.c.indexOf(targetNode)
-                            if (index > -1) {
-                                parentData.c.splice(index, 1)
-                                applied = true
-                            }
-                        } else {
-                            parentData.c = {}
-                            applied = true
-                        }
-                    } else if (event.data.operation === 'add') {
-                        let arr
-                        if (Array.isArray(parentData)) {
-                            arr = parentData
-                        } else if (!Array.isArray(parentData.c)) {
-                            parentData.c = [parentData.c]
-                            arr = parentData.c
-                        } else {
-                            arr = parentData.c
-                        }
-
-                        let index = arr.indexOf(targetNode)
-                        if (index < 0) {
-                            index = 0
-                        }
-                        if (event.data.location === 'before') {
-                            arr.splice(index, 0, newData)
-                        } else {
-                            arr.splice(index + 1, 0, newData)
-                        }
-                        applied = true
-                    } else if (event.data.operation === 'update') {
-                        if (Array.isArray(parentData)) {
-                            const index = parentData.indexOf(targetNode)
-                            if (index > -1) {
-                                parentData[index] = newData
-                                applied = true
-                            }
-                        } else if (Array.isArray(parentData.c)) {
-                            const index = parentData.c.indexOf(targetNode)
-                            if (index > -1) {
-                                parentData.c[index] = newData
-                                applied = true
-                            }
-                        } else {
-                            parentData.c = newData
-                            applied = true
-                        }
-                    } else {
-                        respond(false, `Unknown operation "${event.data.operation}"`)
-                        return
-                    }
-
-                    if (!applied) {
-                        respond(false, `Could not apply "${event.data.operation}" at "${event.data.path}" (target node not found in parent)`)
-                        return
-                    }
+                    template = parseTemplate(currentData.template)
+                    applyTemplateOperation(template, {
+                        path: event.data.path,
+                        operation: operation || 'update',
+                        data: event.data.data,
+                        location: event.data.location
+                    })
                 } else {
+                    if (event.data.data === undefined) {
+                        respond(false, 'Missing data for template replacement')
+                        return
+                    }
                     template = event.data.data
                 }
 
@@ -236,27 +225,46 @@ export default function CmsPageTools(props) {
                 dataRef.current = {...currentData, template: JSON.stringify(template)}
                 currentProps.onTemplateChange(template, true)
                 respond(true)
-            } else {
-                let newData
-                if (event.data.old_data) {
-                    const keyData = currentData[event.data.key]
-                    if (!keyData) {
-                        respond(false, `No existing content for key "${event.data.key}"`)
-                        return
-                    }
-                    if (keyData.indexOf(event.data.old_data) < 0) {
-                        respond(false, `old_data not found in current "${event.data.key}" content — the change might be based on an outdated version`)
-                        return
-                    }
-                    newData = keyData.replace(event.data.old_data, event.data.data)
-                } else {
-                    newData = event.data.data
-                }
-
-                currentProps.setCmsPageValue({key: event.data.key, forceUpdateEditor: true}, newData)
-                respond(true)
+                return
             }
+
+            let newValue
+            let matchedVia = null
+            const isPatch = typeof event.data.old_data === 'string' && event.data.old_data.length > 0
+
+            if (isPatch) {
+                const applied = applyPatch(currentData[key], {
+                    oldData: event.data.old_data,
+                    data: event.data.data == null ? '' : event.data.data
+                }, {key})
+
+                newValue = applied.result
+                matchedVia = applied.matchedVia
+
+                if (applied.degraded) {
+                    console.warn(`[lunuc] patch on "${key}" applied via fallback match: ${matchedVia}`)
+                }
+            } else {
+                newValue = event.data.data == null ? '' : event.data.data
+            }
+
+            // Keep the working copy in sync so a follow up patch on the same key
+            // sees the result of this one, even before props.data updates.
+            dataRef.current = {...currentData, [key]: newValue}
+            pendingKeysRef.current[key] = newValue
+
+            currentProps.setCmsPageValue({key, forceUpdateEditor: true}, newValue)
+            respond(true, null, matchedVia ? {matchedVia} : undefined)
+
         } catch (e) {
+            if (e instanceof PatchError) {
+                respond(false, buildPatchFeedback(e, key), {code: e.code})
+                return
+            }
+            if (e instanceof TemplateOpError) {
+                respond(false, e.message)
+                return
+            }
             console.error('Error applying component change:', e)
             respond(false, e.message)
         }
@@ -270,56 +278,109 @@ export default function CmsPageTools(props) {
         }
     }, [handleMessage])
 
-    const toggleTab = (name) => {
-        let newTab = name
-        if (tab === newTab) {
-            newTab = false
+    // ResizableDivider offers no end callback, so the drag baseline is reset on
+    // mouseup. Without this the next drag would jump back to the height the
+    // first drag started from. The divider listens on document, which bubbles
+    // before window, so this always runs after the last mousemove.
+    useEffect(() => {
+        const resetDragBaseline = () => {
+            dragStartHeightRef.current = null
         }
-        setTab(newTab)
+        window.addEventListener('mouseup', resetDragBaseline)
+        return () => {
+            window.removeEventListener('mouseup', resetDragBaseline)
+        }
+    }, [])
 
+    const toggleTab = (name) => {
+        const newTab = tab === name ? false : name
+
+        setTab(newTab)
+        if (newTab) {
+            setMountedTabs((prev) => (prev[newTab] ? prev : {...prev, [newTab]: true}))
+            if (newTab === 'scope') {
+                setScopeVersion((v) => v + 1)
+            }
+        }
         if (props.onTab) {
             props.onTab(newTab)
         }
     }
 
-    const aiAssistenUrl = `/system/aiassistent?preview=true&slug=${props.data.slug || ''}`
+    // Side effects must stay out of the state updater: React invokes updaters
+    // twice in StrictMode, which would fire onBoxHeightChange twice per event.
+    const handleResize = useCallback((newPosition) => {
+        if (dragStartHeightRef.current === null) {
+            dragStartHeightRef.current = boxHeightRef.current
+        }
+
+        const maxHeight = window.innerHeight * MAX_BOX_HEIGHT_RATIO
+        const next = Math.min(
+            Math.max(dragStartHeightRef.current - newPosition, MIN_BOX_HEIGHT),
+            maxHeight
+        )
+
+        if (next === boxHeightRef.current) {
+            return
+        }
+
+        setBoxHeight(next)
+
+        if (propsRef.current.onBoxHeightChange) {
+            propsRef.current.onBoxHeightChange(next)
+        }
+    }, [])
+
+    // Memoized so the iframe src stays referentially stable across re-renders
+    // and the assistant is not reloaded.
+    const aiAssistenUrl = useMemo(
+        () => `/system/aiassistent?preview=true&slug=${encodeURIComponent(props.data?.slug || '')}`,
+        [props.data?.slug]
+    )
+
+    // Iframe tabs own internal state, so once opened they stay mounted and are
+    // only hidden. Unmounting them would discard the assistant conversation.
+    const renderIframeTab = (name, src, title) => {
+        if (!mountedTabs[name]) {
+            return null
+        }
+        return <StyledInfoBox
+            height={boxHeight}
+            style={{overflow: 'hidden', display: tab === name ? 'block' : 'none'}}>
+            <iframe src={src} title={title} style={IFRAME_STYLE}/>
+        </StyledInfoBox>
+    }
 
     return <StyledBox style={props.style}>
-        {tab && <ResizableDivider direction="vertical" onResize={(newPosition) => {
-            const maxHeight = window.innerHeight * 0.8 // matches CSS maxHeight: 80vh
-            const newHeight = Math.min(Math.max(boxHeight - newPosition, 50), maxHeight)
-            setBoxHeight(newHeight)
-            if (props.onBoxHeightChange) {
-                props.onBoxHeightChange(newHeight)
-            }
-        }}/>}
-        <StyledButtonGroup>
-            <StyledButton selected={tab === 'console'} onClick={() => toggleTab('console')}>
-                Console
-            </StyledButton>
-            <StyledButton selected={tab === 'scope'} onClick={() => toggleTab('scope')}>
-                Scope
-            </StyledButton>
-            <StyledButton selected={tab === 'serverConsole'} onClick={() => toggleTab('serverConsole')}>
-                Server Console
-            </StyledButton>
-            <StyledButton selected={tab === 'aiAssistent'} onClick={() => toggleTab('aiAssistent')}>
-                {_t('CodeEditor.aiAssistent')}
-            </StyledButton>
+        {tab && <ResizableDivider direction="vertical" onResize={handleResize}/>}
+
+        <StyledButtonGroup role="tablist">
+            {TABS.map(({name, label}) => (
+                <StyledButton
+                    key={name}
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === name}
+                    selected={tab === name}
+                    onClick={() => toggleTab(name)}>
+                    {label()}
+                </StyledButton>
+            ))}
         </StyledButtonGroup>
+
         {tab === 'console' &&
-            <StyledInfoBox height={boxHeight}><ConsoleCapture /></StyledInfoBox>}
+            <StyledInfoBox height={boxHeight}><ConsoleCapture/></StyledInfoBox>}
+
         {tab === 'scope' &&
-            <StyledInfoBox height={boxHeight}><JsonViewer json={_app_.JsonDom.scope} /></StyledInfoBox>}
-        {tab === 'serverConsole' &&
-            <StyledInfoBox height={boxHeight} style={{overflow: 'hidden'}}>
-                <iframe src="/system/console?preview=true&embedded=true&cmd=luapi"
-                        style={{width: '100%', height: '100%', border: 'none'}}/>
+            <StyledInfoBox height={boxHeight}>
+                <JsonViewer key={scopeVersion} json={_app_.JsonDom.scope}/>
             </StyledInfoBox>}
-        {tab === 'aiAssistent' &&
-            <StyledInfoBox height={boxHeight} style={{overflow: 'hidden'}}>
-                <iframe src={aiAssistenUrl}
-                        style={{width: '100%', height: '100%', border: 'none'}}/>
-            </StyledInfoBox>}
+
+        {renderIframeTab(
+            'serverConsole',
+            '/system/console?preview=true&embedded=true&cmd=luapi',
+            'Server console'
+        )}
+        {renderIframeTab('aiAssistent', aiAssistenUrl, _t('CodeEditor.aiAssistent'))}
     </StyledBox>
 }

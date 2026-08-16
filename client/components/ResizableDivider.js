@@ -1,11 +1,16 @@
-import React, {useRef} from 'react'
+import React, {useRef, useState} from 'react'
 import styled from '@emotion/styled'
 
-const StyledDivider = styled.div`
+// shouldForwardProp keeps the custom props out of the DOM - emotion would
+// otherwise pass `direction`, `position` and `dragging` through as attributes.
+const StyledDivider = styled('div', {
+    shouldForwardProp: (prop) =>
+        prop !== 'direction' && prop !== 'position' && prop !== 'dragging'
+})`
     position: absolute;
     background-color: #222;
     z-index: 10;
-    opacity: 0;
+    opacity: ${(props) => (props.dragging ? 1 : 0)};
     transition: opacity 0.15s ease;
     &:hover {
         opacity: 1;
@@ -33,11 +38,18 @@ const ResizableDivider = ({direction = 'horizontal', onResize}) => {
     // useRef avoids stale closures and unnecessary re-renders during drag
     const dividerPositionRef = useRef(0)
 
+    // Keeps the divider visible for the whole drag. Hover alone is not enough:
+    // the overlay below sits on top of everything, so :hover never matches
+    // while dragging, and the pointer leaves the 3px strip anyway.
+    const [dragging, setDragging] = useState(false)
+
     const handleMouseDown = (e) => {
         e.preventDefault()
 
         const startPos = isHorizontal ? e.pageX : e.pageY
         const startDivider = dividerPositionRef.current
+
+        setDragging(true)
 
         // Transparent overlay that captures all pointer events so iframes
         // underneath cannot swallow mousemove events during the drag.
@@ -49,7 +61,7 @@ const ResizableDivider = ({direction = 'horizontal', onResize}) => {
             cursor: ${isHorizontal ? 'ew-resize' : 'ns-resize'};
         `
         document.body.appendChild(overlay)
-        document.body.style.userSelect = 'none'
+        document.body.style.userSelect = ''
 
         const handleMouseMove = (event) => {
             const delta = (isHorizontal ? event.pageX : event.pageY) - startPos
@@ -66,6 +78,7 @@ const ResizableDivider = ({direction = 'horizontal', onResize}) => {
             document.removeEventListener('mouseup', handleMouseUp)
             overlay.remove()
             document.body.style.userSelect = ''
+            setDragging(false)
         }
 
         document.addEventListener('mousemove', handleMouseMove)
@@ -76,6 +89,7 @@ const ResizableDivider = ({direction = 'horizontal', onResize}) => {
         <StyledDivider
             direction={direction}
             position={onResize ? 0 : dividerPositionRef.current}
+            dragging={dragging}
             onMouseDown={handleMouseDown}
         />
     )
