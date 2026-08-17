@@ -40,6 +40,7 @@ import BottomNavigation from '@mui/material/BottomNavigation'
 import BottomNavigationAction from '@mui/material/BottomNavigationAction'
 import Paper from '@mui/material/Paper'
 import Box from '@mui/material/Box'
+import Tooltip from '@mui/material/Tooltip'
 import NetworkStatusHandler from 'client/components/layout/NetworkStatusHandler'
 import Util from '../../../client/util/index.mjs'
 import {translateText} from '../../../client/util/translate.mjs'
@@ -92,6 +93,48 @@ const CodeEditor = (props) => <Async {...props}
                                      load={() =>import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
 
 const DEFAULT_EDITOR_SETTINGS = {inlineEditor: true, fixedLayout: true, drawerOpen: false, drawerWidth: 500}
+
+/**
+ * keys that are tracked by the undo / redo history.
+ * every key needs a corresponding `${key}ChangeCount` in the state, otherwise the
+ * editor component will not reload the value when it is restored from the history
+ */
+const HISTORY_KEYS = ['template', 'style', 'script', 'serverScript', 'dataResolver']
+const HISTORY_LIMIT = 20
+
+const HISTORY_KEY_LABELS = {
+    template: 'Template',
+    style: 'Style',
+    script: 'Script',
+    serverScript: 'Server Script',
+    dataResolver: 'Data Resolver'
+}
+
+const countLines = (value) => value ? value.split('\n').length : 0
+
+/**
+ * short summary of what changes when the entry gets applied.
+ * intentionally cheap (length based), a real diff is done in the revision view
+ */
+const describeHistoryEntry = (entry, currentValues) => {
+    return Object.keys(entry.values).map(key => {
+        const to = entry.values[key] || '',
+            from = currentValues[key] || ''
+        return {
+            key,
+            label: HISTORY_KEY_LABELS[key] || key,
+            lineDiff: countLines(to) - countLines(from),
+            charDiff: to.length - from.length
+        }
+    })
+}
+
+const formatDiff = (diff, unit) => {
+    if (diff === 0) {
+        return `~ ${unit}`
+    }
+    return `${diff > 0 ? '+' : ''}${diff} ${unit}`
+}
 
 
 function saveTrsAsCsv(data) {
@@ -178,7 +221,17 @@ const translateInTemplate = async ({template, onChange, overrideTranslations})=>
 
 class CmsViewEditorContainer extends React.Component {
 
-    templateChangeHistory = []
+    /* stack of previous values. every entry contains all keys that were changed
+       within one updateCmsPage call, mapped to their value before the change */
+    undoHistory = []
+    redoHistory = []
+    /* mirror of the current values. needed because this.state can lag behind
+       (setCmsPageValue supports a delayed setState via timeoutSetState) */
+    _historyValues = {}
+    /* entry that is currently collecting changes. it is already on the undoHistory stack
+       so the button shows up instantly, and gets closed by saveCmsPage */
+    _openUndoEntry = null
+    _isApplyingHistory = false
 
     constructor(props) {
         super(props)
@@ -242,6 +295,8 @@ class CmsViewEditorContainer extends React.Component {
             scriptChangeCount:0,
             serverScriptChangeCount:0,
             dataResolverChangeCount:0,
+            undoCount:0,
+            redoCount:0,
             resources,
             script,
             style,
@@ -380,7 +435,7 @@ class CmsViewEditorContainer extends React.Component {
         if (slugChanged) {
             JsonDomHelper.disableEvents = false
             this.watchCmsPageStatus(true)
-            this.templateChangeHistory = []
+            this.resetHistory()
         }
 
         if (props.aboutToChange) {
@@ -432,6 +487,8 @@ class CmsViewEditorContainer extends React.Component {
             state.styleChangeCount !== this.state.styleChangeCount ||
             state.scriptChangeCount !== this.state.scriptChangeCount ||
             state.serverScriptChangeCount !== this.state.serverScriptChangeCount ||
+            state.undoCount !== this.state.undoCount ||
+            state.redoCount !== this.state.redoCount ||
             state.manual !== this.state.manual ||
             state.EditorOptions !== this.state.EditorOptions ||
             Util.shallowCompare(state.EditorPageOptions, this.state.EditorPageOptions,
@@ -1005,14 +1062,25 @@ class CmsViewEditorContainer extends React.Component {
             }
 
 
-            if (this.templateChangeHistory.length > 0) {
+            if (this.undoHistory.length > 0) {
                 moreMenu.push(
                     {
                         divider: true,
-                        icon:'replay',
-                        name: _t('CmsViewEditorContainer.undochange') + ' (' + this.templateChangeHistory.length + ')',
+                        icon: 'replay',
+                        name: `${_t('CmsViewEditorContainer.undochange')} (${this.undoHistory.length}) - ${Object.keys(this.undoHistory[0].values).map(k => HISTORY_KEY_LABELS[k] || k).join(', ')}`,
                         onClick: () => {
                             this.undoLastChange()
+                        }
+                    })
+            }
+            if (this.redoHistory.length > 0) {
+                moreMenu.push(
+                    {
+                        divider: this.undoHistory.length === 0,
+                        icon: <ReplayIcon style={{transform: 'scaleX(-1)'}}/>,
+                        name: `${_t('CmsViewEditorContainer.redochange')} (${this.redoHistory.length}) - ${Object.keys(this.redoHistory[0].values).map(k => HISTORY_KEY_LABELS[k] || k).join(', ')}`,
+                        onClick: () => {
+                            this.redoLastChange()
                         }
                     })
             }
@@ -1022,10 +1090,35 @@ class CmsViewEditorContainer extends React.Component {
 
             if(canMangeCmsContent) {
 
-                if (this.templateChangeHistory.length > 0) {
-                    toolbarRight.push(<Button startIcon={<ReplayIcon/>} size="small" color="inherit" onClick={() => {
-                        this.undoLastChange()
-                    }}>{_t('CmsViewEditorContainer.undochange')}</Button>)
+                if (this.undoHistory.length > 0) {
+                    toolbarRight.push(
+                        <Tooltip key="undoButton" arrow placement="bottom"
+                                 title={this.renderHistoryTooltip(this.undoHistory[0], _t('CmsViewEditorContainer.undochange'))}>
+                            {/* the span is needed so the tooltip can attach its ref and mouse handlers */}
+                            <span>
+                                <Button startIcon={<ReplayIcon/>}
+                                        size="small"
+                                        color="inherit"
+                                        onClick={() => {
+                                            this.undoLastChange()
+                                        }}>{_t('CmsViewEditorContainer.undochange')} ({this.undoHistory.length})</Button>
+                            </span>
+                        </Tooltip>)
+                }
+
+                if (this.redoHistory.length > 0) {
+                    toolbarRight.push(
+                        <Tooltip key="redoButton" arrow placement="bottom"
+                                 title={this.renderHistoryTooltip(this.redoHistory[0], _t('CmsViewEditorContainer.redochange'))}>
+                            <span>
+                                <Button startIcon={<ReplayIcon style={{transform: 'scaleX(-1)'}}/>}
+                                        size="small"
+                                        color="inherit"
+                                        onClick={() => {
+                                            this.redoLastChange()
+                                        }}>{_t('CmsViewEditorContainer.redochange')} ({this.redoHistory.length})</Button>
+                            </span>
+                        </Tooltip>)
                 }
 
                 if (isSmallScreen) {
@@ -1183,11 +1276,168 @@ class CmsViewEditorContainer extends React.Component {
     }
 
 
-    undoLastChange() {
-        if (this.templateChangeHistory.length > 0) {
-            this.handleTemplateChange(this.templateChangeHistory[0], true, true)
-            this.templateChangeHistory.splice(0, 1)
+    /**
+     * remembers the value before the change. the entry is pushed to the stack immediately,
+     * so the undo button is visible without waiting for the debounced saveCmsPage.
+     * all changes until the next saveCmsPage are collected in the same entry
+     */
+    trackHistoryValue(key, value) {
+        if (HISTORY_KEYS.indexOf(key) < 0) {
+            return
         }
+        const oldValue = this._historyValues.hasOwnProperty(key) ? this._historyValues[key] : this.state[key]
+        this._historyValues[key] = value
+
+        if (this._isApplyingHistory || oldValue === value) {
+            return
+        }
+
+        if (!this._openUndoEntry) {
+            this._openUndoEntry = {time: Date.now(), values: {}, open: true}
+            this.undoHistory.unshift(this._openUndoEntry)
+            if (this.undoHistory.length > HISTORY_LIMIT) {
+                this.undoHistory.length = HISTORY_LIMIT
+            }
+            // a new change invalidates the redo stack.
+            // set length to 0 instead of a new array to keep references valid
+            this.redoHistory.length = 0
+        }
+        // only keep the very first value of this batch
+        if (!this._openUndoEntry.values.hasOwnProperty(key)) {
+            this._openUndoEntry.values[key] = oldValue
+        }
+        // separate setState on purpose: _keyValueMapState may be flushed with a delay
+        this.syncHistoryState()
+    }
+
+    /**
+     * finalizes the open entry. called right before the mutation is sent,
+     * so one history entry always matches one updateCmsPage call
+     */
+    closeUndoEntry() {
+        const entry = this._openUndoEntry
+        this._openUndoEntry = null
+        if (!entry) {
+            return
+        }
+        entry.open = false
+        // drop keys that ended up with their original value again
+        Object.keys(entry.values).forEach(key => {
+            if (entry.values[key] === this._historyValues[key]) {
+                delete entry.values[key]
+            }
+        })
+        if (Object.keys(entry.values).length === 0) {
+            const idx = this.undoHistory.indexOf(entry)
+            if (idx >= 0) {
+                this.undoHistory.splice(idx, 1)
+            }
+        }
+        this.syncHistoryState()
+    }
+
+    undoLastChange() {
+        this.applyHistory(this.undoHistory, this.redoHistory)
+    }
+
+    redoLastChange() {
+        this.applyHistory(this.redoHistory, this.undoHistory)
+    }
+
+    /**
+     * restores the newest entry of fromStack and pushes the current values to toStack
+     */
+    applyHistory(fromStack, toStack) {
+        // close the open entry first, so it can be undone right away
+        if (this._openUndoEntry) {
+            clearTimeout(this._saveCmsPageTimeout)
+            this.saveCmsPage()
+        }
+        if (fromStack.length === 0) {
+            this.syncHistoryState()
+            return
+        }
+
+        const entry = fromStack.shift()
+        const currentValues = this.getCurrentHistoryValues()
+
+        // the current values become the counterpart entry on the other stack
+        const inverse = {}
+        Object.keys(entry.values).forEach(key => {
+            inverse[key] = currentValues[key]
+        })
+        toStack.unshift({time: Date.now(), values: inverse})
+        if (toStack.length > HISTORY_LIMIT) {
+            toStack.length = HISTORY_LIMIT
+        }
+
+        this._isApplyingHistory = true
+        const keys = Object.keys(entry.values)
+        keys.forEach((key, idx) => {
+            this.setCmsPageValue({
+                key,
+                timeoutSetState: 0,
+                // only the last key triggers the mutation, all values are sent together
+                timeoutUpdate: idx === keys.length - 1 ? 0 : 5000,
+                forceUpdateEditor: true,
+                setStateCallback: () => {
+                    if (key === 'dataResolver') {
+                        this._tmpDataResolver = null
+                    }
+                }
+            }, entry.values[key])
+        })
+        this._isApplyingHistory = false
+        this.syncHistoryState()
+    }
+
+    /**
+     * current value of every tracked key. `this._historyValues` wins over the state,
+     * because setState can be delayed via timeoutSetState
+     */
+    getCurrentHistoryValues() {
+        const values = {}
+        HISTORY_KEYS.forEach(key => {
+            values[key] = this._historyValues.hasOwnProperty(key) ? this._historyValues[key] : this.state[key]
+        })
+        return values
+    }
+
+    /**
+     * preview of the entry that would be applied next, shown on hover
+     */
+    renderHistoryTooltip(entry, title) {
+        const rows = describeHistoryEntry(entry, this.getCurrentHistoryValues())
+        return <Box sx={{minWidth: '14rem'}}>
+            <Box sx={{fontWeight: 'bold', mb: 0.5}}>{title}</Box>
+            {rows.map(row => <Box key={row.key}
+                                  sx={{display: 'flex', justifyContent: 'space-between', gap: 2, lineHeight: 1.6}}>
+                <span>{row.label}</span>
+                <span style={{
+                    color: row.charDiff > 0 ? '#81c784' : (row.charDiff < 0 ? '#e57373' : 'inherit'),
+                    whiteSpace: 'nowrap'
+                }}>
+                    {formatDiff(row.lineDiff, 'Z.')} / {formatDiff(row.charDiff, 'Zeichen')}
+                </span>
+            </Box>)}
+            <Box sx={{mt: 0.5, opacity: 0.7, fontSize: '0.75rem'}}>
+                {new Date(entry.time).toLocaleTimeString()}{entry.open ? ' - ' + _t('CmsViewEditorContainer.notSavedYet') : ''}
+            </Box>
+        </Box>
+    }
+
+    syncHistoryState() {
+        if (this._isUnmounted) {
+            return
+        }
+        this.setState({undoCount: this.undoHistory.length, redoCount: this.redoHistory.length})
+    }
+
+    resetHistory() {
+        this.undoHistory.length = 0
+        this.redoHistory.length = 0
+        this._historyValues = {}
+        this._openUndoEntry = null
     }
 
     handleCleanUpTranslations() {
@@ -1283,6 +1533,7 @@ class CmsViewEditorContainer extends React.Component {
         if(key==='dataResolver' && value && !isString(value)) {
             value = JSON.stringify(value,null,4)
         }
+        this.trackHistoryValue(key, value)
         this._keyValueMap[key] = value
         this._keyValueMapState[key] = value
         clearTimeout(this._setCmsPageStateTimeout)
@@ -1313,6 +1564,7 @@ class CmsViewEditorContainer extends React.Component {
             this._saveSettings()
         const keys = Object.keys(this._keyValueMap)
         if(keys.length>0) {
+            this.closeUndoEntry()
             const {updateCmsPage, cmsPage} = this.props
             console.log('save cms values for', keys)
             updateCmsPage({
@@ -1348,20 +1600,21 @@ class CmsViewEditorContainer extends React.Component {
                 str = JSON.stringify(str, null, 2)
             }
 
-            if (!skipHistory) {
-                this.templateChangeHistory.unshift(this.state.template)
-                if (this.templateChangeHistory.length > 10) {
-                    this.templateChangeHistory.length = 10
-                }
-            }
             if(!skipChangeCount) {
                 this._keyValueMapState.templateChangeCount = this.state.templateChangeCount + 1
+            }
+
+            const wasApplyingHistory = this._isApplyingHistory
+            if (skipHistory) {
+                // the caller does not want an undo entry for this change (e.g. auto translation)
+                this._isApplyingHistory = true
             }
             this.setCmsPageValue({
                 key: 'template',
                 timeoutSetState:instantSave?0:300,
                 timeoutUpdate: instantSave?0:5000
             }, str)
+            this._isApplyingHistory = wasApplyingHistory
         }
     }
 
