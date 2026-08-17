@@ -57,7 +57,7 @@ import {_t} from '../../../util/i18n.mjs'
 import config from 'gen/config-client'
 import {getFormFieldsByType} from '../../../util/typesAdmin.mjs'
 import Hook from '../../../util/hook.cjs'
-import {client, graphql} from '../../../client/middleware/graphql'
+import {CACHE_QUERIES, client, getCacheKey, graphql} from '../../../client/middleware/graphql'
 import Async from '../../../client/components/Async'
 import CmsRevision from '../components/CmsRevision'
 import {CmsAddNewSite} from '../components/CmsAddNewSite'
@@ -297,24 +297,35 @@ class CmsViewEditorContainer extends React.Component {
 
     componentDidMount() {
         const {history, dynamic} = this.props
-
         setEditorZIndexActive(!!this.props.cmsLocal)
 
         if (!dynamic && history) {
-            window.addEventListener('beforeunload', ()=>{
-                console.log('beforeunload')
+            this._handleSaveEvent = () => {
                 this.saveCmsPage()
-            })
-            window.addEventListener('blur', () => {
-                this.saveCmsPage()
-            })
-
-            history.block(() => {
-                console.log('block')
+            }
+            window.addEventListener('beforeunload', this._handleSaveEvent)
+            window.addEventListener('blur', this._handleSaveEvent)
+            this._unblockHistory = history.block(() => {
                 this.saveCmsPage()
                 return true
             })
         }
+    }
+
+    componentWillUnmount() {
+        this._isUnmounted = true
+        if (this._handleSaveEvent) {
+            window.removeEventListener('beforeunload', this._handleSaveEvent)
+            window.removeEventListener('blur', this._handleSaveEvent)
+            this._handleSaveEvent = null
+        }
+        if (this._unblockHistory) {
+            this._unblockHistory()
+            this._unblockHistory = null
+        }
+        setEditorZIndexActive(false)
+        clearTimeout(this._watchCmsPageStatus)
+        this.saveCmsPage()
     }
 
     watchCmsPageStatus(instant) {
@@ -328,6 +339,7 @@ class CmsViewEditorContainer extends React.Component {
                         slug: this.props.cmsPage.realSlug
                     },
                 }).then((res) => {
+                    if (this._isUnmounted) return
                     this.watchCmsPageStatus()
                     if (res.data.cmsPageStatus && res.data.cmsPageStatus.user && this.props.user._id) {
 
@@ -352,18 +364,14 @@ class CmsViewEditorContainer extends React.Component {
                             this.setState({cmsStatusData: JSON.parse(res.data.cmsPageStatus.data)})
                         }
                     }
+                }).catch((e) => {
+                    if (this._isUnmounted) return
+                    console.warn('cmsPageStatus failed', e)
+                    this.watchCmsPageStatus()
                 })
             }
         }, instant ? 0 : 10000)
     }
-
-    componentWillUnmount() {
-
-        setEditorZIndexActive(false)
-        clearTimeout(this._watchCmsPageStatus)
-        this.saveCmsPage()
-    }
-
 
     shouldComponentUpdate(props, state) {
         const noCmsPage = !props.cmsPage || !this.props.cmsPage,
@@ -1617,12 +1625,16 @@ const CmsViewEditorContainerWithGql = compose(
                                 newData.subscriptions = updateCmsPage.subscriptions
                             }
 
-                            if(!ownProps.dynamic || variables.editmode){
-                                // clear caches for dynamic use
-                                client.clearCacheWith({start:ownProps.slug+'|'})
-                            }
-
                             client.writeQuery({query: getCmsPageQuery(ownProps), variables, data: {...data, cmsPage: newData}})
+
+                            if(!ownProps.dynamic || variables.editmode){
+                                const keepKey = getCacheKey({query: getCmsPageQuery(ownProps), variables})
+                                Object.keys(CACHE_QUERIES).forEach(key => {
+                                    if (key.startsWith(ownProps.slug + '|') && key !== keepKey) {
+                                        delete CACHE_QUERIES[key]
+                                    }
+                                })
+                            }
 
                         }
                         if (cb) {

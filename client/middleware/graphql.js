@@ -194,7 +194,7 @@ const getHeaders = (lang, headersExtra = {}) => {
     return headers
 }
 
-const getCacheKey = ({query, variables = {}, lang = _app_.lang, userId = _app_.user?._id}) => {
+export const getCacheKey = ({query, variables = {}, lang = _app_.lang, userId = _app_.user?._id}) => {
     const {slug, ...rest} = variables
     return (slug !== undefined ? slug + '|' : query) + lang + (userId ? '-' + userId + '-' : '') + Object.keys(rest).filter(key => rest[key]).sort().map(key => key + '-' + rest[key]).join('|')
 }
@@ -233,9 +233,13 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
         cacheKey = getCacheKey({query, variables, lang})
     }
 
-    // Prevent duplicate in-flight requests for the same cache key
+    // Prevent duplicate in-flight requests for the same cache key.
+    // The returned promise is SHARED between all callers, so it must not be
+    // aborted by whoever happens to go away first (see _release below).
     if (cacheKey && FETCHING_BY_CACHEKEY[cacheKey]) {
-        return FETCHING_BY_CACHEKEY[cacheKey]
+        const shared = FETCHING_BY_CACHEKEY[cacheKey]
+        shared._refCount++
+        return shared
     }
 
     const controller = new AbortController()
@@ -466,6 +470,21 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
 
     promise._controller = controller
 
+    // Reference counting for shared (deduplicated) requests.
+    // Every caller that returned from FETCHING_BY_CACHEKEY increments the count.
+    // A caller that goes away (e.g. an unmounting component) must call _release()
+    // instead of aborting the controller directly - otherwise it would cancel the
+    // request other consumers are still waiting for, leaving them stuck in loading.
+    // Callers that never release (client.query, fetchMore, ...) simply keep the
+    // count above zero, which makes the abort conservatively not happen.
+    promise._refCount = 1
+    promise._release = (reason) => {
+        promise._refCount--
+        if (promise._refCount <= 0) {
+            controller.abort(reason)
+        }
+    }
+
     if (cacheKey) {
         FETCHING_BY_CACHEKEY[cacheKey] = promise
     }
@@ -473,9 +492,23 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
     return promise
 }
 
-let CACHE_QUERIES = {},  QUERY_WATCHER = {}
+export const CACHE_QUERIES = {}
+// Aliases are routing information, not data: they map a cacheKey that was built
+// while urlSensitiv was still unknown (and therefore still contained the url
+// query params) onto the canonical, query-less cacheKey. They must survive
+// clearCacheWith/clearCacheStartsWith - otherwise a component that mounted
+// before urlSensitiv was known loses its connection to the canonical entry and
+// never receives another update.
+const CACHE_ALIASES = {}
+// One cacheKey can have MULTIPLE watchers (several components rendering the same
+// query/variables). Storing a single function here would silently drop all but
+// the last one, and removing on unmount would kill the others as well.
+const QUERY_WATCHER = {}
 
 _app_.CACHE_QUERIES = CACHE_QUERIES
+_app_.CACHE_ALIASES = CACHE_ALIASES
+
+const resolveAlias = (cacheKey) => CACHE_ALIASES[cacheKey] || cacheKey
 
 export const client = {
     query: ({query, variables, fetchPolicy, timeout, id}) => {
@@ -489,10 +522,10 @@ export const client = {
                 delete CACHE_QUERIES[key]
             }
         })
+        // NOTE: CACHE_ALIASES is intentionally left untouched here.
         return clearedKeys
     },
     writeQuery: ({query, variables, data, cacheKey}) => {
-        let oldCacheKey
         if (data &&
             query &&
             variables &&
@@ -500,38 +533,51 @@ export const client = {
             ['full', true].indexOf(data.cmsPage.urlSensitiv) < 0 &&
             variables.query) {
 
-            oldCacheKey = cacheKey || getCacheKey({query, variables})
+            const aliasKey = cacheKey || getCacheKey({query, variables})
 
             const newVariables = Object.assign({}, variables)
             delete newVariables.query
             cacheKey = getCacheKey({query, variables: newVariables})
-            CACHE_QUERIES[oldCacheKey] = {__alias: cacheKey}
-            console.log('new cacheKey with alias')
+
+            if (CACHE_ALIASES[aliasKey] !== cacheKey) {
+                CACHE_ALIASES[aliasKey] = cacheKey
+                console.log('new cacheKey with alias')
+            }
         }
 
         if (!cacheKey) {
             cacheKey = getCacheKey({query, variables})
         }
-        CACHE_QUERIES[cacheKey] = data
-        const update = QUERY_WATCHER[cacheKey] || QUERY_WATCHER[oldCacheKey]
+        // never store data under an alias key
+        cacheKey = resolveAlias(cacheKey)
 
-        if (update) {
-            if (data.__optimistic) {
-                update(data.__optimistic)
-            } else {
-                update(data)
+        CACHE_QUERIES[cacheKey] = data
+
+        // Notify every watcher on the canonical key AND on every key aliasing to it.
+        const payload = data.__optimistic ? data.__optimistic : data
+        const notified = {}
+        const notify = (key) => {
+            if (!key || notified[key]) return
+            notified[key] = true
+            const watchers = QUERY_WATCHER[key]
+            if (watchers) {
+                // iterate over a copy: a watcher may unsubscribe while being called
+                watchers.slice().forEach(update => update(payload))
             }
         }
+
+        notify(cacheKey)
+        Object.keys(CACHE_ALIASES).forEach(aliasKey => {
+            if (CACHE_ALIASES[aliasKey] === cacheKey) {
+                notify(aliasKey)
+            }
+        })
     },
     readQuery: ({query, variables, cacheKey}) => {
         if (!cacheKey) {
             cacheKey = getCacheKey({query, variables})
         }
-        let res = CACHE_QUERIES[cacheKey]
-        if (res && res.__alias) {
-            console.log('read cache from alias')
-            res = CACHE_QUERIES[res.__alias]
-        }
+        const res = CACHE_QUERIES[resolveAlias(cacheKey)]
         if (res && res.__optimistic) {
             return res.__optimistic
         }
@@ -541,7 +587,7 @@ export const client = {
         if (!cacheKey) {
             cacheKey = getCacheKey({query, variables})
         }
-        delete CACHE_QUERIES[cacheKey]
+        delete CACHE_QUERIES[resolveAlias(cacheKey)]
     },
     clearCacheStartsWith: (key) => {
         Object.keys(CACHE_QUERIES).forEach(k => {
@@ -551,13 +597,45 @@ export const client = {
         })
     },
     addQueryWatcher: ({cacheKey, update}) => {
-        QUERY_WATCHER[cacheKey] = update
+        if (!cacheKey || !update) {
+            return
+        }
+        if (!QUERY_WATCHER[cacheKey]) {
+            QUERY_WATCHER[cacheKey] = []
+        }
+        if (QUERY_WATCHER[cacheKey].indexOf(update) < 0) {
+            QUERY_WATCHER[cacheKey].push(update)
+        }
     },
-    removeQueryWatcher: (cacheKey) => {
-        delete QUERY_WATCHER[cacheKey]
+    /**
+     * removes a watcher.
+     * @param {String} cacheKey
+     * @param {Function} [update] the exact callback that was registered. If omitted
+     *        ALL watchers for this key are removed (legacy behaviour, avoid it).
+     */
+    removeQueryWatcher: (cacheKey, update) => {
+        const watchers = QUERY_WATCHER[cacheKey]
+        if (!watchers) {
+            return
+        }
+        if (update) {
+            const idx = watchers.indexOf(update)
+            if (idx >= 0) {
+                watchers.splice(idx, 1)
+            }
+        }
+        if (!update || watchers.length === 0) {
+            delete QUERY_WATCHER[cacheKey]
+        }
     },
     resetStore: () => {
-        CACHE_QUERIES = {}
+        for (const key in CACHE_QUERIES) {
+            delete CACHE_QUERIES[key]
+        }
+        // a full reset (logout, language switch) also drops the routing info
+        for (const key in CACHE_ALIASES) {
+            delete CACHE_ALIASES[key]
+        }
     },
     mutate: ({mutation, variables, update, optimisticResponse}, _ref) => {
         const res = finalFetch({type: RequestType.mutate, query: mutation, variables})
@@ -778,37 +856,41 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = CACHE
     const cacheDeletedAt = checkCache && response.data && !response.errors && !currentData ? Date.now() : response.cacheDeletedAt
 
     useEffect(() => {
-        let controller
+        // the shared in-flight promise, released (not aborted) on cleanup
+        let pending
 
         // FIX: Funktionales Update verhindert das Einfrieren von veralteten State-Closures (Stale Closures) im Watcher
-        client.addQueryWatcher({
-            cacheKey, update: data => {
-                setResponse(prev => {
-                    if (data !== prev.data) {
-                        return {...prev, loading: false, data}
-                    }
-                    return prev
-                })
-            }
-        })
+        // The callback is kept in a variable so exactly THIS watcher can be removed
+        // on cleanup without touching the watchers of other components on the same key.
+        const watcherUpdate = data => {
+            setResponse(prev => {
+                if (data !== prev.data) {
+                    return {...prev, loading: false, data}
+                }
+                return prev
+            })
+        }
 
-        if (initialLoading) {
-            if (response.networkStatus !== NetworkStatus.error) {
-                const promise = finalFetch({
-                    cacheKey,
-                    query,
-                    variables,
-                    hiddenVariables,
-                    fetchPolicy
-                })
+        client.addQueryWatcher({cacheKey, update: watcherUpdate})
 
-                if (!promise) return
+        if (initialLoading && response.networkStatus !== NetworkStatus.error) {
+            const promise = finalFetch({
+                cacheKey,
+                query,
+                variables,
+                hiddenVariables,
+                fetchPolicy
+            })
 
-                controller = promise._controller
+            // NOTE: no early return here - the cleanup below must always be registered,
+            // otherwise the watcher added above would leak.
+            if (promise) {
+                pending = promise
                 promise.then(res => {
                     setResponse({...res, cacheDeletedAt, cacheKey})
                 }).catch(error => {
-                    if (!controller.signal.aborted || controller._timeout) {
+                    const ctrl = promise._controller
+                    if (!ctrl || !ctrl.signal.aborted || ctrl._timeout) {
                         setResponse({...error, cacheKey})
                     }
                 })
@@ -816,10 +898,15 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = CACHE
         }
 
         return () => {
-            if (controller) {
-                controller.abort('useQuery')
+            if (pending) {
+                // only aborts once the last consumer of a shared request is gone
+                if (pending._release) {
+                    pending._release('useQuery')
+                } else if (pending._controller) {
+                    pending._controller.abort('useQuery')
+                }
             }
-            client.removeQueryWatcher(cacheKey)
+            client.removeQueryWatcher(cacheKey, watcherUpdate)
         }
     }, [cacheKey, cacheDeletedAt])
 
