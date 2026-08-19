@@ -264,8 +264,12 @@ Hook.on('appready', ({app, db}) => {
                                 res.end(`{"status":"error","message":"${data._error.message}"}`)
                             }
                         } else {
-                            res.writeHead(res.responseCode || 200, {'content-type': api.mimeType || 'application/json'})
-                            res.end(data ? (isString(data) ? data : JSON.stringify(data)) : data)
+                            if (!res.headersSent) {
+                                res.writeHead(res.responseCode || 200, {'content-type': api.mimeType || 'application/json'})
+                            }
+                            if(data && !res.writableEnded) {
+                                res.end((isString(data) ? data : JSON.stringify(data)))
+                            }
                         }
                     }
                 }
