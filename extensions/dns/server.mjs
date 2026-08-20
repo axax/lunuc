@@ -146,18 +146,23 @@ Hook.on('appready', async ({db, context}) => {
 
                     const hostBlocked = isHostBlocked(name)
 
+
                     if (hostBlocked && !dnsServerContext.settings.disabled) {
                         debugMessage(`DNS: block ${name}`)
+
+                        // Block-Answer muss zum angefragten Record-Typ passen:
+                        // A  -> 0.0.0.0,  AAAA -> ::
+                        const nullAddress =
+                            question.type === dns2.Packet.TYPE.AAAA ? '::' : '0.0.0.0'
 
                         response.answers.push({
                             name,
                             type: question.type,
                             class: question.class,
                             ttl: 300,
-                            address: '0.0.0.0'
+                            address: nullAddress
                         })
                         send(response)
-
                     } else {
                         const localResponse = dnsServerContext.hosts[name].response
                         if (localResponse?.answers?.length > 0) {

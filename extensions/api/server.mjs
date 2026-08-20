@@ -20,21 +20,57 @@ const getApi = async ({slug, db}) => {
     const cacheKey = `${CACHE_PREFIX}${slug}`
 
     const cachedData = Cache.get(cacheKey)
-    if(cachedData){
+    if (cachedData) {
         return cachedData
     }
 
+    // Build candidate slugs: the exact slug plus all wildcard prefixes,
+    // ordered from most specific to least specific
+    const segments = slug.split('/').filter(Boolean)
+    const candidates = [slug]
+    for (let i = segments.length; i > 0; i--) {
+        const prefix = segments.slice(0, i).join('/')
+        candidates.push(`${prefix}/*`)
+    }
+    const uniqueCandidates = [...new Set(candidates)]
 
-    const apis = (await db.collection('Api').find({slug, active: true}).toArray())
-    if (apis.length > 0) {
-        Cache.set(cacheKey, apis[0])
-        return apis[0]
+    console.log('uniqueCandidates',uniqueCandidates)
+    const apis = await db.collection('Api')
+        .find({slug: {$in: uniqueCandidates}, active: true})
+        .toArray()
+
+    if (apis.length === 0) {
+        return null
     }
 
-    return null
+    // Pick the best match: uniqueCandidates order defines the priority
+    apis.sort((a, b) => uniqueCandidates.indexOf(a.slug) - uniqueCandidates.indexOf(b.slug))
+    const best = apis[0]
+
+    Cache.set(cacheKey, best)
+    return best
 }
 
-const runApiScript = ({api, db, req, res, startTime}) => {
+// Returns the part of requestSlug that matched the "*" in a wildcard api.slug
+// e.g. getWildcardParam('/myslug/test/foo', '/myslug/*') => 'test/foo'
+//      getWildcardParam('/myslug', '/myslug/*')          => ''
+//      getWildcardParam('/myslug/test', '/other/*')      => undefined
+const getWildcardParam = (requestSlug, apiSlug) => {
+    if (!apiSlug || !apiSlug.endsWith('/*')) {
+        return undefined
+    }
+    const base = apiSlug.slice(0, -2) // strip trailing "/*"
+    if (requestSlug === base) {
+        return ''
+    }
+    if (requestSlug.startsWith(`${base}/`)) {
+        return requestSlug.slice(base.length + 1)
+    }
+    return undefined
+}
+
+
+const runApiScript = ({api, slug, db, req, res, startTime}) => {
     return new Promise(resolve => {
         try {
 
@@ -128,7 +164,10 @@ const runApiScript = ({api, db, req, res, startTime}) => {
                     }
                 })()
                 this.resolve({data, responseStatus: this.responseStatus})`)
-                tpl.call({resolve, require: requireContext.require, db, context: req.context, req, res, startTime})
+
+                const wildcardPath = getWildcardParam(slug, api.slug)
+
+                tpl.call({resolve, require: requireContext.require, db, context: req.context, req, res, startTime, wildcardPath})
             }
         } catch (error) {
             resolve({error})
@@ -237,7 +276,7 @@ Hook.on('appready', ({app, db}) => {
                     }
 
                     console.log(`[API] runApiScript start: ${slug} (${new Date().getTime()-startTime}ms)`)
-                    const result = await runApiScript({api, db, req, res, startTime})
+                    const result = await runApiScript({api, slug, db, req, res, startTime})
                     console.log(`[API] runApiScript done: ${slug} (${new Date().getTime()-startTime}ms) | error=${!!result.error} | ignore=${!!(result.responseStatus?.ignore)}`)
 
                     if (!result.error && result.responseStatus && result.responseStatus.ignore) {
