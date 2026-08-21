@@ -12,7 +12,9 @@ import {
     parseTemplate,
     TemplateOpError
 } from '../util/template-ops.mjs'
-
+import Util from "../../../client/util/index.mjs";
+import {CAPABILITY_RUN_COMMAND} from '../../../util/capabilities.mjs'
+import {getIconByKey} from '../../../client/components/ui/impl/material/icon'
 
 // Keys that may be changed through a lunuc_component message.
 const PATCHABLE_KEYS = ['script', 'serverScript', 'style', 'dataResolver']
@@ -21,8 +23,8 @@ const ALLOWED_KEYS = ['template', ...PATCHABLE_KEYS]
 const TABS = [
     {name: 'console', label: () => 'Console'},
     {name: 'scope', label: () => 'Scope'},
-    {name: 'serverConsole', label: () => 'Server Console'},
-    {name: 'aiAssistent', label: () => _t('CodeEditor.aiAssistent')}
+    {name: 'serverConsole', label: () => 'Server Console', 'capa':CAPABILITY_RUN_COMMAND},
+    {name: 'aiAssistent', label: () => _t('CodeEditor.aiAssistent'), icon:'autoAwesome'}
 ]
 
 const MIN_BOX_HEIGHT = 50
@@ -355,17 +357,25 @@ export default function CmsPageTools(props) {
         {tab && <ResizableDivider direction="vertical" onResize={handleResize}/>}
 
         <StyledButtonGroup role="tablist">
-            {TABS.map(({name, label}) => (
-                <StyledButton
+            {TABS.map(({name, label, capa, icon}) => {
+
+                if(capa && !Util.hasCapability(_app_.user, capa)){
+                    return
+                }
+
+                const Icon = icon ? getIconByKey(icon) : null
+
+                return <StyledButton
                     key={name}
                     type="button"
                     role="tab"
                     aria-selected={tab === name}
                     selected={tab === name}
                     onClick={() => toggleTab(name)}>
+                    {Icon && <Icon style={{fontSize: '1rem', marginRight: 4, verticalAlign: 'text-bottom'}}/>}
                     {label()}
                 </StyledButton>
-            ))}
+            })}
         </StyledButtonGroup>
 
         {tab === 'console' &&

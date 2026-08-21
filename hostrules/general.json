@@ -19,7 +19,7 @@
   "statusCode": {
     "/404": 404
   },
-  "0botregex": "AhrefsBot|bingbot|msnbot|YandexBot|PetalBot|Googlebot|facebookexternalhit",
+  "__botregex": "AhrefsBot|bingbot|msnbot|YandexBot|PetalBot|Googlebot|facebookexternalhit",
   "paths": [
     "/Volumes/ELEMENTS/webroot/media"
   ],
@@ -38,7 +38,7 @@
       "maxRequestsPerTime": 5
     }
   ],
-  "00requestRules": [
+  "__requestRules": [
     {
       "match": {
         "userAgent": "/Baiduspider/i",
@@ -69,5 +69,9 @@
     "mode": "log",
     "blockAsns": [],
     "useNotoriousList": false
+  },
+  "__countryPolicy": {
+    "mode": "challenge",
+    "blockCountries": ["CH"]
   }
 }

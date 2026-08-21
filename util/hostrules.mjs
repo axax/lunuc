@@ -85,6 +85,14 @@ function replaceToRegExp(hostrule) {
     }
 }
 
+const DEFAULT_SLUG_FALLBACK_EXCEPTIONS= [
+    "core/qrcode",
+    "system/responsive-viewer",
+    "system/hostrules",
+    "system/console",
+    "system/aiassistent"
+]
+
 const loadSingleHostrule = ({domainname, hostruleFilePath, isDefault, hostrules, withCertContext}) => {
     const stats = fs.statSync(hostruleFilePath)
     // only read file if it has changed
@@ -110,6 +118,12 @@ const loadSingleHostrule = ({domainname, hostruleFilePath, isDefault, hostrules,
             if(hostrule.subDomains){
                 for(const subDomain of Object.values(hostrule.subDomains)){
                     replaceToRegExp(subDomain)
+                }
+            }
+
+            if(hostrule.slugFallback){
+                if(!hostrule.slugFallback.exceptions) {
+                    hostrule.slugFallback.exceptions = [...DEFAULT_SLUG_FALLBACK_EXCEPTIONS]
                 }
             }
         }

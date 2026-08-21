@@ -258,7 +258,6 @@ const BaseLayout = props => {
         headerRight.push(<GlobalSearch/>)
     }
 
-
     if (!settings.headerActions) {
         settings.headerActions = [{
             to: '/',
@@ -266,7 +265,17 @@ const BaseLayout = props => {
         }]
     }
 
-    settings.headerActions.forEach((item, index) => {
+    const headerActions = [...settings.headerActions]
+
+
+    headerActions.push(
+        {
+            icon: 'autoAwesome',
+            name: 'Ask',
+            to: '/[admin]/system/ask?showTools=false&showModels=false&showPromtInstructions=false&showChats=true'
+        })
+
+    headerActions.forEach((item, index) => {
         const Icon = getIconByKey(item.icon, SettingsIcon)
         headerRight.push(
             <IconButton key={'headerAction' + index}

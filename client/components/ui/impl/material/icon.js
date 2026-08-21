@@ -104,7 +104,8 @@ import {
     DownloadIcon,
     ArticleIcon,
     ContentCutIcon,
-    LayersIcon
+    LayersIcon,
+    AutoAwesomeIcon
 } from 'gensrc/ui/admin/icons'
 import SourceIcon from '@mui/icons-material/Source'
 
@@ -214,7 +215,8 @@ const iconComponents = {
     download: DownloadIcon,
     doc: ArticleIcon,
     contentCut: ContentCutIcon,
-    layers: LayersIcon
+    layers: LayersIcon,
+    autoAwesome:AutoAwesomeIcon
 }
 
 export const getIconByKey = (key, defaultIcon) => {
