@@ -90,7 +90,9 @@ const DEFAULT_SLUG_FALLBACK_EXCEPTIONS= [
     "system/responsive-viewer",
     "system/hostrules",
     "system/console",
-    "system/aiassistent"
+    "system/aiassistent",
+    "system/ask",
+    "system/mailclient"
 ]
 
 const loadSingleHostrule = ({domainname, hostruleFilePath, isDefault, hostrules, withCertContext}) => {
@@ -130,6 +132,10 @@ const loadSingleHostrule = ({domainname, hostruleFilePath, isDefault, hostrules,
 
             if(!hostrule.slugFallback.exceptions) {
                 hostrule.slugFallback.exceptions = [...DEFAULT_SLUG_FALLBACK_EXCEPTIONS]
+            }else if(hostrule.slugFallback.extendWithDefaults) {
+                hostrule.slugFallback.exceptions = [
+                    ...new Set([...hostrule.slugFallback.exceptions, ...DEFAULT_SLUG_FALLBACK_EXCEPTIONS])
+                ]
             }
         }
     }
