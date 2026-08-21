@@ -121,10 +121,15 @@ const loadSingleHostrule = ({domainname, hostruleFilePath, isDefault, hostrules,
                 }
             }
 
-            if(hostrule.slugFallback){
-                if(!hostrule.slugFallback.exceptions) {
-               //     hostrule.slugFallback.exceptions = [...DEFAULT_SLUG_FALLBACK_EXCEPTIONS]
-                }
+            // normaliue slugFallback
+            if(hostrule.slugFallback===true) {
+                hostrule.slugFallback = {default: true}
+            }else if(hostrule?.slugFallback?.constructor !== Object) {
+                hostrule.slugFallback = {default: false}
+            }
+
+            if(!hostrule.slugFallback.exceptions) {
+                hostrule.slugFallback.exceptions = [...DEFAULT_SLUG_FALLBACK_EXCEPTIONS]
             }
         }
     }
