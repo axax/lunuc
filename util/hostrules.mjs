@@ -123,7 +123,7 @@ const loadSingleHostrule = ({domainname, hostruleFilePath, isDefault, hostrules,
 
             if(hostrule.slugFallback){
                 if(!hostrule.slugFallback.exceptions) {
-                    hostrule.slugFallback.exceptions = [...DEFAULT_SLUG_FALLBACK_EXCEPTIONS]
+               //     hostrule.slugFallback.exceptions = [...DEFAULT_SLUG_FALLBACK_EXCEPTIONS]
                 }
             }
         }
