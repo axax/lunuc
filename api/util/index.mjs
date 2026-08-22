@@ -452,12 +452,16 @@ const Util = {
         }
         return ids
     },
-    userByName: async (db, name) => {
+    userByName: async (db, name, domain) => {
         const cacheKeyUser = 'User' + name
         let user = Cache.get(cacheKeyUser)
 
         if (!user) {
-            user = (await db.collection('User').findOne({username: name}))
+            if(domain){
+                user = (await db.collection('User').findOne({username: name, domain}))
+            }else{
+                user = (await db.collection('User').findOne({username: name}))
+            }
             Cache.set(cacheKeyUser, user, ONE_DAY_IN_MS) // cache expires in 1 day
         }
 
