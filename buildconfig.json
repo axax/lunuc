@@ -236,7 +236,8 @@
         "OpenWith",
         "OpenInNew",
         "ArrowDownward",
-        "ArrowUpward"
+        "ArrowUpward",
+        "CompareArrows"
       ],
       "theme":{
         "colors":{

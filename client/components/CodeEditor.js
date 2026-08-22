@@ -94,6 +94,7 @@ function CodeEditor(props,ref){
         console.warn('CodeEditor identifier is missing')
     }
 
+    const [compareData, setCompareData] = useState(false)
     const [copied, setCopied] = useState(false)
     const [renderInWindow, setRenderInWindow] = useState(false)
     const [contextMenu, setContextMenu] = useState(false)
@@ -300,6 +301,7 @@ function CodeEditor(props,ref){
                         type,
                         fileSplit,files, finalFileIndex,
                         setShowFileSplit,setStateValue,
+                        setCompareData,
                         clickEvent,
                         editorView,
                         showFileSplit,
@@ -417,6 +419,24 @@ function CodeEditor(props,ref){
             }
 
         }}/>
+        {compareData && <SimpleDialog disablePortal={renderInWindow} fullWidth={true} maxWidth="lg"
+                                      key="compareDialog" open={true}
+                                      title={_t('CodeEditor.compareWithClipboard')}
+                                      actions={[{key: 'close', label: _t('core.cancel'), type: 'primary'}]}
+                                      onClose={() => {setCompareData(false)}}>
+            {compareData.error ?
+                <div style={{color: 'red'}}>{compareData.error}</div>
+                :
+                <CodeMirrorWrapper identifier={`${stateIdentifier}-compare`}
+                                   type={type}
+                                   lineNumbers={lineNumbers}
+                                   readOnly={true}
+                                   mergeView={true}
+                                   mergeValue={compareData.clipboard}
+                                   style={{height: '60vh'}}
+                                   value={compareData.current}/>
+            }
+        </SimpleDialog>}
     </StyledRoot>
 
     if(renderInWindow){

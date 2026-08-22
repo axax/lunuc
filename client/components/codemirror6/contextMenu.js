@@ -4,8 +4,9 @@ import {_t} from '../../../util/i18n.mjs'
 import {formatCode} from './utils'
 import {openWindow} from '../../util/window'
 import {fixAndParseJSON} from '../../util/fixJson.mjs'
-import {BuildIcon} from '../../../gensrc/ui/admin'
+import {BuildIcon, CompareArrowsIcon} from '../../../gensrc/ui/admin'
 import {putFilesTogether} from './fileSeperation'
+
 
 const getTextAtLineNumber = (editorView, number) => {
     try {
@@ -29,7 +30,7 @@ function endsWithAny(str, chars) {
 
 export function generateContextMenu({type,clickEvent, editorView, propertyTemplates, templates, setEditData,
                                         fileSplit, showFileSplit, files, finalFileIndex,
-                                        setShowFileSplit,setStateValue}) {
+                                        setShowFileSplit,setStateValue,setCompareData}) {
     let contextMenuItems = []
 
    if (editorView) {
@@ -165,6 +166,23 @@ export function generateContextMenu({type,clickEvent, editorView, propertyTempla
                formatCode(editorView, type)
            }
         })
+
+       if (setCompareData && navigator.clipboard && navigator.clipboard.readText) {
+           contextMenuItems.push({
+               icon: <CompareArrowsIcon/>,
+               name: _t('CodeEditor.compareWithClipboard'),
+               onClick: async () => {
+                   try {
+                       const clipboardText = await navigator.clipboard.readText()
+                       // always compare the complete content, even if file split is active
+                       const currentText = putFilesTogether(files, finalFileIndex, editorView.state.doc.toString())
+                       setCompareData({current: currentText, clipboard: clipboardText || ''})
+                   } catch (e) {
+                       setCompareData({error: e.message || String(e)})
+                   }
+               }
+           })
+       }
 
        const selectedContent = editorView.state.sliceDoc(editorView.state.selection.main.from, editorView.state.selection.main.to)
 
