@@ -272,7 +272,7 @@ const BaseLayout = props => {
         {
             icon: 'autoAwesome',
             name: 'Ask',
-            to: '/[admin]/system/ask?showTools=false&showModels=false&showPromtInstructions=false&showChats=true'
+            to: '/[admin]/system/ask?tools=assistent&showTools=false&showModels=false&showPromtInstructions=false&showChats=true'
         })
 
     headerActions.forEach((item, index) => {
