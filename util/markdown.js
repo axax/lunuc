@@ -77,20 +77,20 @@ const parser = md => {
     // -----------------------------------------------------------------
     const mdRules = [
         /* ---------- Images inside links ---------- */
-        [/\[!\[([^\]]*)\]\(%%URL(\d+)%%\)\]\(%%URL(\d+)%%\)/gm,
+        [/\[!\[((?:[^\[\]\n]|\[[^\]\n]*\])*)\]\(%%URL(\d+)%%\)\]\(%%URL(\d+)%%\)/gm,
             (m, alt, img, lnk) =>
                 `<a target='_blank' href='${urlPlaceholders[+lnk]}'><img src='${urlPlaceholders[+img]}' alt='${alt}' /></a>`],
 
-        /* ---------- Stand‑alone images ---------- */
-        [/!\[([^\]]*)\]\(%%URL(\d+)%%\)/gm,
+        /* ---------- Stand-alone images ---------- */
+        [/!\[((?:[^\[\]\n]|\[[^\]\n]*\])*)\]\(%%URL(\d+)%%\)/gm,
             (m, alt, i) => `<img src='${urlPlaceholders[+i]}' alt='${alt}' />`],
 
         /* ---------- Links with attributes ---------- */
-        [/\[([^\]]*)\]\(%%URL(\d+)%%\)\{:([^\}]*)\}/gm,
+        [/\[((?:[^\[\]\n]|\[[^\]\n]*\])*)\]\(%%URL(\d+)%%\)\{:([^}]*)\}/gm,
             (m, t, i, a) => `<a href='${urlPlaceholders[+i]}' ${a}>${t}</a>`],
 
         /* ---------- Plain links ---------- */
-        [/\[([^\]]*)\]\(%%URL(\d+)%%\)/gm,
+        [/\[((?:[^\[\]\n]|\[[^\]\n]*\])*)\]\(%%URL(\d+)%%\)/gm,
             (m, t, i) => `<a href='${urlPlaceholders[+i]}'>${t}</a>`],
 
         /* ---------- Code block (fenced) ---------- */
@@ -173,7 +173,7 @@ const parser = md => {
         .replace(/<p><\/p>/g, '')
         .replace(/<br\s*\/?>\s*<\/p>/g, '</p>')
         .replace(/>\s*<br\s*\/>/g, '>')
-        .replace(/\n+/g, '');   // drop any remaining raw newlines
+        .replace(/\n+/g, '').replace(/%%URL(\d+)%%/g, (m, i) => urlPlaceholders[+i]);
 
     // -----------------------------------------------------------------
     // 6️⃣ Wrap the whole thing in a single <p> (mirrors original behaviour)
