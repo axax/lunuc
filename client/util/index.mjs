@@ -10,6 +10,11 @@ import {_t} from '../../util/i18n.mjs'
  */
 const JSON_ESCAPE_MAP = {'\\': '\\\\', '\"': '\\\"','"': '\\\"', '\b': '\\b', '\f': '\\f', '\n': '\\n', '\r': '\\r', '\t': '\\t'}
 const DATE_FORMATS = {}
+const OBJECT_ID = /^[0-9a-f]{24}$/i
+const ABSOLUTE_URL = /^https?:\/\//
+const IMAGE_PARAM_KEYS = ['quality', 'removebg', 'flop', 'flip', 'position', 'noenlarge']
+const RESPONSIVE_BREAKPOINTS = [720, 1024, 1200, 1400]
+const RESPONSIVE_MAX_WIDTH = 1600
 
 const Util = {
     getType: getType,
@@ -329,17 +334,13 @@ const Util = {
         }
         return '/placeholder.svg'
     },*/
-    getImageObject(raw, options) {
-        if(!options){
-            options = {}
-        }
-        let image
-        const data = {}, resize = options.resize
+    getImageObject(raw, options = {}) {
+        const data = {}, resize = options.resize, params = []
 
         if (!raw) {
-            if(options.placeholder){
+            if (options.placeholder) {
                 data.src = options.placeholder
-            }else if (resize && resize.height && resize.width) {
+            } else if (resize && resize.height && resize.width) {
                 data.width = resize.width
                 data.height = resize.height
                 data.src = Util.createDummySvg(resize.width, resize.height)
@@ -348,29 +349,28 @@ const Util = {
             }
             data.alt = 'Placeholder'
             return data
-        } else if (isString(raw)) {
-            image = {
-                src: raw
-            }
-            if (raw.startsWith('[') || raw.startsWith('{')) {
-                try {
-                    image = JSON.parse(raw)
-                    if (!image) {
-                        image = {
-                            src: raw
-                        }
+        }
+
+        let image = raw
+        if (isString(raw)) {
+            if (OBJECT_ID.test(raw)) {
+                image = {_id: raw}
+            } else {
+                image = {src: raw}
+                if (raw.startsWith('[') || raw.startsWith('{')) {
+                    // on parse error image stays {src: raw}
+                    try {
+                        image = JSON.parse(raw) || {src: raw}
+                    } catch (e) {
+                        console.log(e, raw)
                     }
-                } catch (e) {
-                    console.log(e, raw)
                 }
             }
-        } else {
-            image = raw
         }
-        if(image._localized){
+        if (image._localized) {
             image = _t(image)
-            if(isString(image)){
-                image = {src:image}
+            if (isString(image)) {
+                image = {src: image}
             }
         }
         if (Array.isArray(image)) {
@@ -379,28 +379,23 @@ const Util = {
         if (!image) {
             return data
         }
-        if (image.alt) {
-            data.alt = _t(image.alt)
+
+        const alt = (image.alt && _t(image.alt)) || image.name
+        if (alt) {
+            data.alt = alt
         }
 
-        if (!data.alt && image.name) {
-            data.alt = image.name
-        }
-        if (!image.src) {
-            data.src = _app_.config.UPLOAD_URL + '/' + image._id + (image.name ? '/' + config.PRETTYURL_SEPERATOR + '/' + image.name : '')
-        } else {
-            data.src = image.src
-        }
-        if(!data.alt){
+        data.src = image.src || `${_app_.config.UPLOAD_URL}/${image._id}` +
+            (image.name ? `/${config.PRETTYURL_SEPERATOR}/${image.name}` : '')
+
+        if (!data.alt) {
             data.alt = data.src.split('/').pop().split('?')[0]
         }
-
-        if(image.info){
+        if (image.info) {
             data.width = image.info.width
             data.height = image.info.height
         }
-
-        if (_app_.ssr && !/^https?:\/\//.test(data.src)) {
+        if (_app_.ssr && !ABSOLUTE_URL.test(data.src)) {
             try {
                 data.src = new URL(data.src, location.origin).href
             } catch (e) {
@@ -408,26 +403,16 @@ const Util = {
             }
         }
 
-        let h, w, params = '', isVideo = false
+        const isVideo = !!image.mimeType && image.mimeType.startsWith('video/')
         if (image.mimeType) {
             data.mimeType = image.mimeType
-            isVideo = image.mimeType.startsWith('video/')
         }
 
         if (resize) {
+            let w, h
             if (resize === 'auto' || resize.responsive) {
                 const ww = window.innerWidth
-                if (ww <= 720) {
-                    w = 720
-                } else if (ww <= 1024) {
-                    w = 1024
-                } else if (ww <= 1200) {
-                    w = 1200
-                } else if (ww <= 1400) {
-                    w = 1400
-                } else {
-                    w = 1600
-                }
+                w = RESPONSIVE_BREAKPOINTS.find(bp => ww <= bp) || RESPONSIVE_MAX_WIDTH
                 if (resize.width < w) {
                     w = resize.width
                 }
@@ -438,58 +423,55 @@ const Util = {
                     h = Math.ceil((w / resize.width) * resize.height)
                 }
             } else {
-                if (resize.width) {
-                    w = resize.width
-                }
-                if (resize.height) {
-                    h = resize.height
-                }
+                w = resize.width
+                h = resize.height
             }
             if (w) {
-                if (!h && data.height && data.width) {
+                if (!h && data.width && data.height) {
                     data.height = Math.ceil((w / data.width) * data.height)
                 }
                 data.width = w
-                if(!isVideo) {
-                    params += `&width=${w}`
+                if (!isVideo) {
+                    params.push(`width=${w}`)
                 }
             }
             if (h) {
-                if (!w && data.height && data.width) {
+                if (!w && data.width && data.height) {
                     data.width = Math.ceil((h / data.height) * data.width)
                 }
                 data.height = h
-                if(!isVideo) {
-                    params += `&height=${h}`
+                if (!isVideo) {
+                    params.push(`height=${h}`)
                 }
             }
         }
 
-        if(isVideo) {
-            data.posterSrc = `${data.src}?transcode=${encodeURIComponent(JSON.stringify({screenshot:{quality:options.posterQuality || 15,time:options.posterTime || 0,size:data.width+'x?'}}))}&ext=jpg`
-            if(options.videoTranscode){
-                params += `&transcode=${options.videoTranscode}&ext=mp4`
+        if (isVideo) {
+            const screenshot = {
+                quality: options.posterQuality || 15,
+                time: options.posterTime || 0,
+                size: `${data.width}x?`
             }
-        }else{
-
-            if (options.format) {
-                params += '&format=' + options.format
-            } else if (options.webp) {
-                params += '&format=webp'
+            data.posterSrc = `${data.src}?transcode=${encodeURIComponent(JSON.stringify({screenshot}))}&ext=jpg`
+            if (options.videoTranscode) {
+                params.push(`transcode=${options.videoTranscode}`, 'ext=mp4')
             }
-
-            ['quality', 'removebg', 'flop', 'flip', 'position', 'noenlarge'].forEach(key => {
-                if (options[key]) {
-                    if (key === 'removebg' && options[key].tolerance <= 0) {
-                        return
-                    }
-                    params += `&${key}=${options[key].constructor === Object ? JSON.stringify(options[key]) : options[key]}`
+        } else {
+            const format = options.format || (options.webp ? 'webp' : null)
+            if (format) {
+                params.push(`format=${format}`)
+            }
+            for (const key of IMAGE_PARAM_KEYS) {
+                const value = options[key]
+                if (!value || (key === 'removebg' && value.tolerance <= 0)) {
+                    continue
                 }
-            })
+                params.push(`${key}=${value.constructor === Object ? JSON.stringify(value) : value}`)
+            }
         }
 
-        if (params && options.addParams!==false) {
-            data.src += (data.src.indexOf('?')>=0?'&':'?') + params.substring(1)
+        if (params.length && options.addParams !== false) {
+            data.src += (data.src.includes('?') ? '&' : '?') + params.join('&')
         }
 
         return data
