@@ -334,7 +334,10 @@ const Util = {
         }
         return '/placeholder.svg'
     },*/
-    getImageObject(raw, options = {}) {
+    getImageObject(raw, options) {
+        if (!options) {
+            options = {}
+        }
         const data = {}, resize = options.resize, params = []
 
         if (!raw) {
