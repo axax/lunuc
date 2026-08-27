@@ -1240,8 +1240,12 @@ class JsonDom extends React.Component {
                                 eleProps.value = this.bindings[eleProps.name]
                             }
                             eleProps.time = new Date()
+                            if(tagName==='input' || tagName==='textarea'){
+                                eleProps.onInput = this.handleBindingChange.bind(this, eleProps.onInput)
 
-                            eleProps.onChange = this.handleBindingChange.bind(this, eleProps.onChange)
+                            }else {
+                                eleProps.onChange = this.handleBindingChange.bind(this, eleProps.onChange)
+                            }
                         }
 
                         if (eleProps.props && eleProps.props.$data) {
