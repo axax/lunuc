@@ -4,7 +4,7 @@ import {SimpleMenu,SimpleDialog} from 'ui/admin'
 import GenericForm from './GenericForm'
 import RenderInNewWindow from './layout/RenderInNewWindow'
 import {generateContextMenu} from './codemirror6/contextMenu'
-import {replaceLineWithText, formatCode} from './codemirror6/utils'
+import {replaceLineWithText, formatCode, applyUnifiedDiff, scrollToLine} from './codemirror6/utils'
 import {StyledFile, seperateFiles, putFilesTogether, SPLIT_SIGN} from './codemirror6/fileSeperation'
 import styled from '@emotion/styled'
 import Util from '../util/index.mjs'
@@ -359,57 +359,94 @@ function CodeEditor(props,ref){
                                           setFileIndex(0)
                                           triggerOnChange(content)
                                       }
-
                                   }
                                   setEditData(false)
                               }}>
                     {_t('CodeEditor.deleteFileSplitConfirm', editData.file)}
                 </SimpleDialog>
-                :
-                <SimpleDialog disablePortal={renderInWindow} fullWidth={true} maxWidth="md" key="newSiteDialog" open={true}
-                                   onClose={(action) => {
-                                       if (action.key === 'ok') {
+                : editData.applyPatch ?
+                    <SimpleDialog disablePortal={renderInWindow} fullWidth={true} maxWidth="md" key="applyPatchDialog" open={true}
+                                  title={_t('CodeEditor.applyPatch')}
+                                  actions={[{key: 'cancel', label: _t('core.cancel'), type: 'secondary'}, {key: 'ok', label: _t('core.save'), type: 'primary'}]}
+                                  onClose={(action) => {
+                                      if (action.key === 'ok') {
+                                          const formValidation = editDataFormRef.current.validate()
+                                          if (formValidation.isValid) {
+                                              const diffText = editDataFormRef.current.state.fields.diff
+                                              const currentContent = putFilesTogether(files, finalFileIndex, editorViewRef.current.state.doc.toString())
+                                              try {
+                                                  const patchedContent = applyUnifiedDiff(currentContent, diffText)
 
-                                           const formValidation = editDataFormRef.current.validate()
-                                           if (formValidation.isValid) {
-                                               if (editData.fileSplit) {
-                                                   if(editData.file){
-                                                       let content = putFilesTogether(files, finalFileIndex, editorViewRef.current.state.doc.toString())
-                                                       const regex = new RegExp(`^${SPLIT_SIGN}${editData.file.filename}$`, 'gm');
-                                                       content = content.replace(regex, SPLIT_SIGN+Util.escapeForJson(editDataFormRef.current.state.fields.name))
-                                                       triggerOnChange(content)
-
-                                                   }else {
-                                                       editorViewRef.current.dispatch({
-                                                           changes: {
-                                                               from: editData.lineInfo.to,
-                                                               to: editData.lineInfo.to,
-                                                               insert: `${editData.lineInfo.text.length > 0 ? '\n' : ''}${SPLIT_SIGN}${Util.escapeForJson(editDataFormRef.current.state.fields.name)}`
-                                                           }
-                                                       })
-                                                       setStateValue(putFilesTogether(files, finalFileIndex, editorViewRef.current.state.doc.toString()))
-                                                       setFileIndex(files && files.length > 0 ? finalFileIndex + 1 : 1)
-                                                   }
-                                               } else {
-                                                   replaceLineWithText(editorViewRef.current, editData.lineData.number, `"${editData.key}":"${Util.escapeForJson(editDataFormRef.current.state.fields.data).replace(/\\/g, '\\\\\\')}"${editData.lineData.endsWithComma ? ',' : ''}`)
-                                                   formatCode(editorViewRef.current)
-                                               }
-                                           }
-                                       }
-                                       setEditData(false)
-                                   }}
-                                   actions={[{
-                                       key: 'cancel',
-                                       label: _t('core.cancel'),
-                                       type: 'secondary'
-                                   }, {
-                                       key: 'ok',
-                                       label: _t('core.save'),
-                                       type: 'primary'
-                                   }]}
-                                   title={'Edit'}>
-            <GenericForm ref={editDataFormRef} primaryButton={false} values={editData.values || {data: editData.value}} fields={editData.fields || {
-                             data: {fullWidth: true,label: editData.key,uitype: editData.uitype}}}/></SimpleDialog>)}
+                                                  // if file-split view is active, only show the patched
+                                                  // content of the currently selected file in the editor
+                                                  let displayContent = patchedContent
+                                                  if (files && showFileSplit) {
+                                                      const patchedFiles = seperateFiles(patchedContent)
+                                                      if (patchedFiles.length > 0) {
+                                                          const idx = finalFileIndex < patchedFiles.length ? finalFileIndex : 0
+                                                          displayContent = patchedFiles[idx].content
+                                                      }
+                                                  }
+                                                  const fistVisibleLine = editorViewRef.current.state.doc.lineAt(editorViewRef.current.elementAtHeight(editorViewRef.current.dom.getBoundingClientRect().top - editorViewRef.current.documentTop).from).number
+                                                  editorViewRef.current.dispatch({
+                                                      changes: {from: 0, to: editorViewRef.current.state.doc.length, insert: displayContent}
+                                                  })
+                                                  scrollToLine(editorViewRef.current, fistVisibleLine)
+                                                  setStateError(false)
+                                              } catch (patchError) {
+                                                  setStateError(patchError)
+                                              }
+                                          }
+                                      }
+                                      setEditData(false)
+                                  }}>
+                        <GenericForm ref={editDataFormRef} primaryButton={false} values={{}} fields={{
+                            diff: {fullWidth: true, label: _t('CodeEditor.diffInput'), uitype: 'textarea', required: true}
+                        }}/>
+                    </SimpleDialog>
+                    :
+                    <SimpleDialog disablePortal={renderInWindow} fullWidth={true} maxWidth="md" key="newSiteDialog" open={true}
+                                  onClose={(action) => {
+                                      if (action.key === 'ok') {
+                                          const formValidation = editDataFormRef.current.validate()
+                                          if (formValidation.isValid) {
+                                              if (editData.fileSplit) {
+                                                  if(editData.file){
+                                                      let content = putFilesTogether(files, finalFileIndex, editorViewRef.current.state.doc.toString())
+                                                      const regex = new RegExp(`^${SPLIT_SIGN}${editData.file.filename}$`, 'gm');
+                                                      content = content.replace(regex, SPLIT_SIGN+Util.escapeForJson(editDataFormRef.current.state.fields.name))
+                                                      triggerOnChange(content)
+                                                  }else {
+                                                      editorViewRef.current.dispatch({
+                                                          changes: {
+                                                              from: editData.lineInfo.to,
+                                                              to: editData.lineInfo.to,
+                                                              insert: `${editData.lineInfo.text.length > 0 ? '\n' : ''}${SPLIT_SIGN}${Util.escapeForJson(editDataFormRef.current.state.fields.name)}`
+                                                          }
+                                                      })
+                                                      setStateValue(putFilesTogether(files, finalFileIndex, editorViewRef.current.state.doc.toString()))
+                                                      setFileIndex(files && files.length > 0 ? finalFileIndex + 1 : 1)
+                                                  }
+                                              } else {
+                                                  replaceLineWithText(editorViewRef.current, editData.lineData.number, `"${editData.key}":"${Util.escapeForJson(editDataFormRef.current.state.fields.data).replace(/\\/g, '\\\\\\')}"${editData.lineData.endsWithComma ? ',' : ''}`)
+                                                  formatCode(editorViewRef.current)
+                                              }
+                                          }
+                                      }
+                                      setEditData(false)
+                                  }}
+                                  actions={[{
+                                      key: 'cancel',
+                                      label: _t('core.cancel'),
+                                      type: 'secondary'
+                                  }, {
+                                      key: 'ok',
+                                      label: _t('core.save'),
+                                      type: 'primary'
+                                  }]}
+                                  title={'Edit'}>
+                        <GenericForm ref={editDataFormRef} primaryButton={false} values={editData.values || {data: editData.value}} fields={editData.fields || {
+                            data: {fullWidth: true,label: editData.key,uitype: editData.uitype}}}/></SimpleDialog>)}
         <StyledEditorResizer onMouseDown={(e)=>{
             editorViewRef.resizerState = {pageY:e.pageY}
         }} onDblclick={(e)=>{

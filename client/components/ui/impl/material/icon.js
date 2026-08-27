@@ -1,5 +1,6 @@
 import React from 'react'
 import {
+    ApprovalIcon,
     HomeIcon,
     BuildIcon,
     SettingsIcon,
@@ -216,7 +217,8 @@ const iconComponents = {
     doc: ArticleIcon,
     contentCut: ContentCutIcon,
     layers: LayersIcon,
-    autoAwesome:AutoAwesomeIcon
+    autoAwesome:AutoAwesomeIcon,
+    approval: ApprovalIcon
 }
 
 export const getIconByKey = (key, defaultIcon) => {
