@@ -146,13 +146,33 @@ export const getFileFromOtherServer = async (urlPath, filename, baseResponse, re
 export const sendFileFromDir = async (req, res, {
     send404 = false,
     filename,
+    indexFiles, // e.g. ['index.html', 'index.htm']
     headers = {},
     parsedUrl,
     neverCompress = false,
     cacheControl = 'public, max-age=31536000' /* default: long cache for immutable assets */
 }) => {
 
-    const statMain = await statSafe(filename)
+    let statMain = await statSafe(filename)
+
+    // If the path points to a directory, try each indexFiles candidate in order
+    if (statMain && indexFiles && indexFiles.length && statMain.isDirectory()) {
+        let resolved = null
+        for (const candidate of indexFiles) {
+            const indexPath = path.join(filename, candidate)
+            const indexStat = await statSafe(indexPath)
+            if (indexStat && indexStat.isFile()) {
+                resolved = {filename: indexPath, stat: indexStat}
+                break
+            }
+        }
+        if (resolved) {
+            filename = resolved.filename
+            statMain = resolved.stat
+        } else {
+            statMain = null // no matching index file -> fall through to 404 handling
+        }
+    }
 
     if (statMain && statMain.isFile()) {
 

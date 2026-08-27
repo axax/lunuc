@@ -934,6 +934,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                                 continue
                             }
                             if (await sendFileFromDir(req, res, {
+                                indexFiles: hostrule.indexFiles,
                                 filename: candidate,
                                 headers,
                                 parsedUrl
