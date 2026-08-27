@@ -154,6 +154,7 @@ export const sendFileFromDir = async (req, res, {
 }) => {
 
     let statMain = await statSafe(filename)
+    let mimeType
 
     // If the path points to a directory, try each indexFiles candidate in order
     if (statMain && indexFiles && indexFiles.length && statMain.isDirectory()) {
@@ -169,6 +170,7 @@ export const sendFileFromDir = async (req, res, {
         if (resolved) {
             filename = resolved.filename
             statMain = resolved.stat
+            mimeType = 'text/html'
         } else {
             statMain = null // no matching index file -> fall through to 404 handling
         }
@@ -217,13 +219,16 @@ export const sendFileFromDir = async (req, res, {
             res.end()
             return true
         }
+        if(!mimeType){
+            mimeType = parsedUrl ? MimeType.takeOrDetect(modImage.mimeType, parsedUrl) : MimeType.detectByFileName(filename)
+        }
 
         const headersExtended = {
             'Vary': 'Accept-Encoding',
             'Last-Modified': stat.mtime.toUTCString(),
             'Cache-Control': cacheControl,
             'Content-Length': stat.size,
-            'Content-Type': parsedUrl ? MimeType.takeOrDetect(modImage.mimeType, parsedUrl) : MimeType.detectByFileName(filename),
+            'Content-Type': mimeType,
             'ETag': etag,
             ...headers
         }
