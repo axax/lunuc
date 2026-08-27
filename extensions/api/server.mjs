@@ -277,7 +277,7 @@ Hook.on('appready', ({app, db}) => {
 
                     console.log(`[API] runApiScript start: ${slug} (${new Date().getTime()-startTime}ms)`)
                     const result = await runApiScript({api, slug, db, req, res, startTime})
-                    console.log(`[API] runApiScript done: ${slug} (${new Date().getTime()-startTime}ms) | error=${!!result.error} | ignore=${!!(result.responseStatus?.ignore)}`)
+                    console.log(`[API] runApiScript done: ${slug} (${new Date().getTime()-startTime}ms) | error=${!!result.error} | ignore=${!!(result.responseStatus?.ignore)} headersSent=${res.headersSent}`)
 
                     if (!result.error && result.responseStatus && result.responseStatus.ignore) {
 
@@ -306,7 +306,7 @@ Hook.on('appready', ({app, db}) => {
                             if (!res.headersSent) {
                                 res.writeHead(res.responseCode || 200, {'content-type': api.mimeType || 'application/json'})
                             }
-                            if(data && !res.writableEnded) {
+                            if(!res.writableEnded) {
                                 res.end((isString(data) ? data : JSON.stringify(data)))
                             }
                         }
