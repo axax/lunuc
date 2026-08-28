@@ -52,7 +52,9 @@
 //     {"mode": "challenge", "allowedCountries": ["CH", "DE", "AT", "FR", "IT", "LI", ...]}
 //   ]
 //
-// hostrule.geoExceptIps: [ip, ip, ...] - a flat, hostrule-level exception
+// hostrule.geoExceptIps: [ip | cidr, ...] - a flat, hostrule-level exception
+// list (mirrors hostrule.blockedIps, opposite direction). Accepts plain IPs
+// and CIDR ranges ("85.208.96.0/22" for SEMrush's rotating crawler pool).
 // list (mirrors the existing hostrule.blockedIps mechanism, just for the
 // opposite direction). Any ip in this list is NEVER listed by asnPolicy or
 // countryPolicy (throttle/block/challenge), regardless of its ASN or
@@ -589,7 +591,7 @@ const createStatsTracker = ({maxKeys = 2000} = {}) => {
             if (stats.size >= maxKeys) {
                 return // cap reached - keep counting known keys only
             }
-            entry = {label, requests: 0, blocked: 0, listedHits: 0, ips: new Set(), paths: new Map(), agents: new Map()}
+            entry = {label, requests: 0, blocked: 0, challenged: 0, listedHits: 0, ips: new Set(), paths: new Map(), agents: new Map()}
             stats.set(key, entry)
         }
         entry.requests++
@@ -597,6 +599,12 @@ const createStatsTracker = ({maxKeys = 2000} = {}) => {
             // covers block / throttle-block / challenge - anything that
             // is not a plain pass-through counts here
             entry.blocked++
+        }
+        if (action === 'challenge') {
+            // separate from 'blocked' above: challenge is a soft gate (visitor can
+            // still get through by passing it), worth seeing distinctly from a
+            // hard block/throttle
+            entry.challenged++
         }
         if (isListed) {
             // counts hits regardless of mode: in log mode this is the dry
@@ -623,6 +631,7 @@ const createStatsTracker = ({maxKeys = 2000} = {}) => {
             label: e.label,
             requests: e.requests,
             blocked: e.blocked,
+            challenged: e.challenged,
             listedHits: e.listedHits,
             distinctIps: e.ips.size,
             // exposes the actual ips (bounded to 200 already, see the cap
@@ -691,9 +700,51 @@ const normalizePolicies = (policy) => {
 }
 
 // hostrule-level ip exception, shared by both asn and country checks (see
-// module header for the full rationale). Mirrors hostrule.blockedIps.
-const isExceptedIp = (hostrule, ip) => !!(hostrule.geoExceptIps && hostrule.geoExceptIps.includes(ip))
+// module header for the full rationale). Mirrors hostrule.blockedIps, but
+// supports CIDR ranges in addition to plain IPs (e.g. SEMrush's crawler
+// range "85.208.96.0/22" instead of pinning individual, rotating IPs).
+//
+// Cached per geoExceptIps ARRAY REFERENCE, not per hostrule object: hostrule
+// itself is rebuilt on every request (see index.mjs), but as a shallow spread
+// it keeps the same underlying geoExceptIps array from config across
+// requests - so the WeakMap cache survives request-to-request and only
+// rebuilds when the config actually reloads with a new array.
+const geoExceptBlockListCache = new WeakMap() // geoExceptIps array -> net.BlockList
 
+const buildExceptBlockList = (geoExceptIps) => {
+    const blockList = new net.BlockList()
+    for (const entry of geoExceptIps) {
+        if (typeof entry !== 'string') {
+            console.warn(`asnBlocker: invalid geoExceptIps entry (not a string) - skipping`)
+            continue
+        }
+        const isV6 = entry.includes(':')
+        const [addr, prefix] = entry.split('/')
+        try {
+            blockList.addSubnet(addr, prefix ? parseInt(prefix) : (isV6 ? 128 : 32), isV6 ? 'ipv6' : 'ipv4')
+        } catch (e) {
+            console.warn(`asnBlocker: invalid geoExceptIps entry "${entry}" - skipping`)
+        }
+    }
+    return blockList
+}
+
+const isExceptedIp = (hostrule, ip) => {
+    if (!hostrule.geoExceptIps || !hostrule.geoExceptIps.length) {
+        return false
+    }
+    let blockList = geoExceptBlockListCache.get(hostrule.geoExceptIps)
+    if (!blockList) {
+        blockList = buildExceptBlockList(hostrule.geoExceptIps)
+        geoExceptBlockListCache.set(hostrule.geoExceptIps, blockList)
+    }
+    try {
+        return blockList.check(ip, ip.includes(':') ? 'ipv6' : 'ipv4')
+    } catch (e) {
+        // malformed ip - treat as not excepted, fail closed
+        return false
+    }
+}
 
 /* ------------------------------------------------------------------ */
 /* ASN policy                                                           */
