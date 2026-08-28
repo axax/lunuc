@@ -768,7 +768,7 @@ const isExceptedIp = (hostrule, ip) => {
  *   isCrawler is null when no policy matched (verification was never run -
  *   see the PERFORMANCE note in the module header), otherwise true/false.
  */
-export const checkAsnPolicy = async ({ip, urlPathname, userAgent, hostrule}) => {
+export const checkAsnPolicy = async ({ip, urlPathname, userAgent, host, hostrule}) => {
     const policies = normalizePolicies(hostrule.asnPolicy)
     if (!mmdbLookups.asn || !policies.length || !ip) {
         return {action: 'allow', isCrawler: null}
@@ -825,8 +825,11 @@ export const checkAsnPolicy = async ({ip, urlPathname, userAgent, hostrule}) => 
         }
     }
 
-    asnStatsTracker.record({key: asn, label: org, ip, urlPathname: hostrule.host + urlPathname, userAgent, action, isListed: !!matchedPolicy})
-
+    asnStatsTracker.record({
+        key: asn, label: org, ip,
+        urlPathname: (host || '') + urlPathname,
+        userAgent, action, isListed: !!matchedPolicy
+    })
     return {action, asn, org, isCrawler}
 }
 
@@ -861,7 +864,7 @@ const isCountryListed = (policy, code) => {
  *   isCrawler is null when no policy matched (verification was never run -
  *   see the PERFORMANCE note in the module header), otherwise true/false.
  */
-export const checkCountryPolicy = async ({ip, urlPathname, userAgent, hostrule, cookieHeader}) => {
+export const checkCountryPolicy = async ({ip, urlPathname, userAgent, host, hostrule, cookieHeader}) => {
     const policies = normalizePolicies(hostrule.countryPolicy)
     if (!mmdbLookups.country || !policies.length || !ip) {
         return {action: 'allow', isCrawler: null}
@@ -914,8 +917,11 @@ export const checkCountryPolicy = async ({ip, urlPathname, userAgent, hostrule, 
         }
     }
 
-    countryStatsTracker.record({key: code, label: name, ip, urlPathname, userAgent, action, isListed: !!matchedPolicy})
-
+    countryStatsTracker.record({
+        key: code, label: name, ip,
+        urlPathname: (host || '') + urlPathname,
+        userAgent, action, isListed: !!matchedPolicy
+    })
     return {action, country: code, countryName: name, isCrawler}
 }
 

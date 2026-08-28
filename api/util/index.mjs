@@ -195,6 +195,10 @@ const Util = {
         const map = await Util.keyValueGlobalMap(db, context, [key], {parse})
         return map[key]
     },
+    getKeyValue: async (db, context, key, parse) => {
+        const map = await Util.keyvalueMap(db, context, [key], {parse})
+        return map[key]
+    },
     keyvalueMap: async (db, context, keys, options) => {
 
         const allOptions = Object.assign({cache: false, parse: false}, options)

@@ -686,6 +686,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             urlPathname: parsedUrl.pathname,
             userAgent: req.headers['user-agent'],
             cookieHeader: req.headers.cookie,
+            host,
             hostrule
         })
 
