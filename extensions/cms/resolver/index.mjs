@@ -65,7 +65,7 @@ export default db => ({
 
             if (filter) {
 
-                const parsedFilter = Util.parseFilter(filter)
+                const parsedFilter = Util.parseFilterV2(filter)
                 const hasRest = parsedFilter.rest.length>0
                 // search in fields
                 if(hasRest || parsedFilter.parts.dataResolver) {

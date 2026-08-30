@@ -238,7 +238,8 @@
         "ArrowDownward",
         "ArrowUpward",
         "CompareArrows",
-        "Approval"
+        "Approval",
+        "Info"
       ],
       "theme":{
         "colors":{

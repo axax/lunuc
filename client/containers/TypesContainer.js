@@ -30,7 +30,9 @@ import {
     Divider,
     Paper,
     CloudUploadIcon,
-    SyncIcon
+    SyncIcon,
+    Tooltip,
+    InfoIcon
 } from 'ui/admin'
 import Util from 'client/util/index.mjs'
 import TypeEdit from 'client/components/types/TypeEdit'
@@ -908,6 +910,11 @@ class TypesContainer extends React.Component {
                                 sx={{ml: 1, flex: 1}}
                                 placeholder={_t('TypesContainer.filter')}
                             />
+                            <Tooltip arrow title={this.renderFilterHelp()}>
+                                <IconButton sx={{p: '10px'}}>
+                                    <InfoIcon fontSize="small"/>
+                                </IconButton>
+                            </Tooltip>
                             {(this.state.filter || savedQueries.length > 0) &&
                                 <SimpleMenu key="menu" mini icon={<ExpandMoreIcon/>} items={[
                                     (this.state.filter ? {
@@ -1869,6 +1876,44 @@ class TypesContainer extends React.Component {
             }
         })
         return newFilter
+    }
+
+    renderFilterHelp() {
+        const rows = [
+            ['feld=wert', _t('TypesContainer.filterHelp.contains')],
+            ['feld==wert', _t('TypesContainer.filterHelp.equals')],
+            ['feld!=wert', _t('TypesContainer.filterHelp.notContains')],
+            ['feld!==wert', _t('TypesContainer.filterHelp.notEquals')],
+            ['feld>wert', _t('TypesContainer.filterHelp.greater')],
+            ['feld>=wert', _t('TypesContainer.filterHelp.greaterEquals')],
+            ['feld<wert', _t('TypesContainer.filterHelp.less')],
+            ['feld<=wert', _t('TypesContainer.filterHelp.lessEquals')],
+            ['feld~/muster/i', _t('TypesContainer.filterHelp.regex')],
+            ['feld!~wert', _t('TypesContainer.filterHelp.notRegex')],
+            ['feld~~wert', _t('TypesContainer.filterHelp.deepSearch')],
+            ['feld!~~wert', _t('TypesContainer.filterHelp.notDeepSearch')],
+            ['feld==[a,b,c]', _t('TypesContainer.filterHelp.oneOf')],
+            ['feld.unterfeld=wert', _t('TypesContainer.filterHelp.subField')],
+            ['a=1 && b=2', _t('TypesContainer.filterHelp.and')],
+            ['a=1 || b=2', _t('TypesContainer.filterHelp.or')],
+            ['(a=1 || a=2) && b==3', _t('TypesContainer.filterHelp.group')]
+        ]
+
+        return <table style={{borderCollapse: 'collapse', fontSize: '0.75rem', lineHeight: 1.6}}>
+            <tbody>
+            {rows.map(([op, desc]) => (
+                <tr key={op}>
+                    <td style={{
+                        padding: '1px 10px 1px 0',
+                        verticalAlign: 'top',
+                        whiteSpace: 'nowrap',
+                        fontFamily: 'monospace'
+                    }}>{op}</td>
+                    <td style={{padding: '1px 0', verticalAlign: 'top', opacity: 0.85}}>{desc}</td>
+                </tr>
+            ))}
+            </tbody>
+        </table>
     }
 
     runFilter(f) {

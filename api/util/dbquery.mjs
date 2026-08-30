@@ -13,8 +13,11 @@ const SUBQUERY_CACHE_TTL_MS = 10000
 export const comparatorMap = {
     ':':   '$regex',
     '=':   '$regex',
+    '~':  '$regex',
     '=~':  '$regex',
     '!~':  '$regex', /* ~ ---> Alt+N */
+    '~~':  '$deepSearch',  /* searches the whole value, including nested objects */
+    '!~~': '$deepSearch',
     '==':  '$eq',
     '===': '$eq',
     '>':   '$gt',
@@ -28,247 +31,32 @@ export const comparatorMap = {
 // Set gives O(1) lookup instead of O(n) Array.indexOf
 const RANGE_COMPARATORS = new Set(['$gt', '$gte', '$lt', '$lte'])
 
-// ─── addFilterToMatch ─────────────────────────────────────────────────────────
-
-/**
- * Builds a MongoDB match expression for a single filter condition and appends
- * it to the given match object.
- *
- * SubQuery DB lookups are cached via Cache to avoid redundant round-trips.
- *
- * @returns {boolean} true if a condition was added, false if the value was invalid.
- */
-export const addFilterToMatch = async ({db, debugInfo, filterKey, filterValue, type, subQuery, multi, filterOptions, match}) => {
-
-    const rawComperator = filterOptions && filterOptions.comparator
-
-    let comparator = '$regex' // default comparator
-
-    if (rawComperator && comparatorMap[rawComperator]) {
-        comparator = comparatorMap[rawComperator]
-    }
-
-    if (comparator === '$regex' && (type === 'Boolean' || type === 'ID' || type === 'Float')) {
-
-        if (rawComperator === '!=') {
-            comparator = '$ne'
-        } else {
-            comparator = '$eq'
-        }
-    }
-    if (type === 'ID') {
-        if (filterValue) {
-
-            if (filterValue.constructor === ObjectId) {
-                // do nothing
-            } else if (filterValue.startsWith('[') && filterValue.endsWith(']')) {
-                filterValue = filterValue.substring(1, filterValue.length - 1).split(',')
-                const ids = []
-                for (const id of filterValue) {
-                    if (ObjectId.isValid(id)) {
-                        ids.push(new ObjectId(id))
-                    } else {
-                        if(debugInfo) {
-                            debugInfo.push({
-                                code: 'invalidId',
-                                message: 'Search for IDs. But at least one ID is not valid'
-                            })
-                        }
-                        return false
-                    }
-                }
-                filterValue = ids
-                if (comparator === '$ne') {
-                    comparator = '$nin'
-                } else {
-                    comparator = '$in'
-                }
-            } else if (ObjectId.isValid(filterValue)) {
-                // match by id
-                filterValue = new ObjectId(filterValue)
-
-            } else {
-                if(debugInfo) {
-                    debugInfo.push({message: 'Search for ID. But ID is not valid', code: 'invalidId'})
-                }
-                return false
-            }
-        } else {
-
-            if (comparator === '$ne') {
-                if (!match.$and) {
-                    match.$and = []
-                }
-                match.$and.push({
-                    // Check about no Company key
-                    [filterKey]: {
-                        $exists: true,
-                    },
-                })
-                match.$and.push({
-                    // Check about no Company key
-                    [filterKey]: {$ne: null},
-                })
-            } else {
-
-                if (!match.$or) {
-                    match.$or = []
-                }
-                match.$or.push({
-                    // Check about no Company key
-                    [filterKey]: {
-                        $exists: false,
-                    },
-                })
-                match.$or.push({
-                    // Check about no Company key
-                    [filterKey]: null,
-                })
-                match.$or.push({
-                    // Check about no Company key
-                    [filterKey]: {
-                        $size: 0
-                    },
-                })
-            }
-            return true
-        }
-    } else if (type === 'Boolean') {
-        if (filterValue === 'true' || filterValue === 'TRUE') {
-            filterValue = true
-        } else if (filterValue === 'false' || filterValue === 'FALSE') {
-            filterValue = false
-        }
-    } else if (type === 'Float') {
-        filterValue = parseFloat(filterValue)
-    } else if (type === 'Object' && filterValue && db && db._versionInt >= 5) {
-        filterValue = {
-            body: `function(data) {return data && Object.keys(data).some(
-                key => /${filterValue}/i.test( data[key] && (data[key].constructor===Object || data[key].constructor===Array)?JSON.stringify(data[key]):data[key])
-                )}`,
-            args: ['$' + filterKey],
-            lang: 'js'
-        }
-
-        comparator = '$function'
-        filterKey = '$expr'
-    }
-
-    let matchExpression
-    if (['$gt', '$gte', '$lt', '$lte'].indexOf(comparator) >= 0) {
-        matchExpression = {[comparator]: type === 'ID' ? filterValue : parseFloat(filterValue)}
-    } else if (comparator === '$ne' || comparator === '$eq') {
-        if (multi && filterValue && filterValue.constructor !== Array) {
-            matchExpression = {[comparator === '$eq' ? '$in' : '$nin']: [filterValue]}
-        } else if (filterValue === '') {
-            matchExpression = {[comparator === '$eq' ? '$in' : '$nin']: [null, ""]}
-
-            if (comparator !== '$eq') {
-                // array must exist and must not be empty
-                matchExpression.$exists = true
-                matchExpression.$not = {$size: 0}
-            }
-
-        } else if (!filterOptions.inDoubleQuotes && filterValue === 'null') {
-            matchExpression = {[comparator]: null}
-        } else if (filterValue.constructor === ObjectId) {
-            matchExpression = {[comparator]: filterValue}
-        } else {
-            if (filterOptions.inDoubleQuotes) {
-                matchExpression = {[comparator]: filterValue}
-            } else if (filterValue === true || filterValue === false) {
-                matchExpression = {[comparator]: filterValue}
-            } else if (!isNaN(filterValue)) {
-                matchExpression = {[comparator]: parseFloat(filterValue)}
-            } else if (filterValue && filterValue.constructor === String && filterValue.startsWith('[') && filterValue.endsWith(']')) {
-                matchExpression = {
-                    '$in': filterValue.substring(1, filterValue.length - 1).split(',').map(f=>{
-                        if(f.startsWith('"') && f.endsWith('"')){
-                            return f.slice(1, -1)
-                        }
-                        return f
-                    })
-                }
-            } else {
-                matchExpression = {[comparator]: filterValue}
-            }
-        }
-    } else if (comparator === '$regex') {
-        let $options, finalValue
-        if(filterValue===undefined){
-            filterValue = ''
-        }
-
-        if(filterValue.constructor!==String){
-            // value must be a string
-            filterValue = filterValue + ''
-        }
-        if(rawComperator.indexOf('~')>=0){
-            const regParts = filterValue.match(/^\/(.*?)\/([gim]*)$/)
-            if (regParts) {
-                finalValue = new RegExp(regParts[1], regParts[2])
-            } else {
-                finalValue = new RegExp(filterValue)
-            }
-        }else {
-            $options= 'i'
-            finalValue = ClientUtil.escapeRegex(filterValue)
-        }
-
-        if (rawComperator.indexOf('!')>=0) {
-            matchExpression = {$not: {[comparator]: finalValue}}
-            if($options){
-                matchExpression.$not.$options = $options
-            }
-        } else {
-            matchExpression = {[comparator]: finalValue}
-            if($options){
-                matchExpression.$options = $options
-            }
-        }
-    } else {
-        matchExpression = {[comparator]: filterValue}
-    }
-
-    if (subQuery) {
-        // execute sub query
-        const ids = (await db.collection(subQuery.type).find({[subQuery.name]: matchExpression.$not ? matchExpression.$not : matchExpression}).toArray()).map(item => item._id)
-        matchExpression = {[matchExpression.$not ? '$nin': '$in']: ids}
-    }
-
-    if (!filterOptions || filterOptions.operator === 'or') {
-        if (!match.$or) {
-            match.$or = []
-        }
-        match.$or.push({[filterKey]: matchExpression})
-    } else {
-
-        if (!match.$and) {
-            match.$and = []
-        }
-
-        match.$and.push({[filterKey]: matchExpression})
-    }
-    return true
+const makeAccentInsensitive = (str) => {
+    return str
+        .replace(/ss|ß|ẞ/gi, '(?:ss|ß|ẞ)')
+        .replace(/ae|ä/gi, '(?:ae|ä)')
+        .replace(/oe|ö/gi, '(?:oe|ö)')
+        .replace(/ue|ü/gi, '(?:ue|ü)')
+        .replace(/[aáàâåã]/gi, '[aáàâåã]')
+        .replace(/[eéèêë]/gi, '[eéèêë]')
+        .replace(/[iíìîï]/gi, '[iíìîï]')
+        .replace(/[oóòôõ]/gi, '[oóòôõ]')
+        .replace(/[uúùû]/gi, '[uúùû]')
+        .replace(/[cç]/gi, '[cç]')
+        .replace(/[nñ]/gi, '[nñ]')
 }
 
+export const addFilterToMatchV2 = async ({ db, debugInfo, filterKey, filterValue,
+                                             type, subQuery, multi, filterOptions, match }) => {
+    // Normalize once so every branch below can access these unguarded.
+    const options = filterOptions ?? {}
+    const rawComparator = options.comparator ?? ''
 
+    if (rawComparator && !comparatorMap[rawComparator] && debugInfo) {
+        debugInfo.push({ code: 'unknownComparator',
+            message: `Unknown comparator "${rawComparator}", falling back to regex match` })
+    }
 
-
-export const addFilterToMatchV2 = async ({
-                                           db,
-                                           debugInfo,
-                                           filterKey,
-                                           filterValue,
-                                           type,
-                                           subQuery,
-                                           multi,
-                                           filterOptions,
-                                           match
-                                       }) => {
-    const rawComparator = filterOptions?.comparator
-
-    // Resolve comparator, defaulting to $regex
     let comparator = comparatorMap[rawComparator] ?? '$regex'
 
     // $regex is not meaningful for Boolean / ID / Float – fall back to $eq / $ne
@@ -278,13 +66,65 @@ export const addFilterToMatchV2 = async ({
 
     // ── Type-specific value coercion ──────────────────────────────────────────
 
-    if (type === 'ID') {
+    // Deep search is used when explicitly requested via ? / !?, or implicitly when
+    // a regex filter targets an Object field at its root (info=vertrag). A plain
+    // regex can never match an Object value, so the root case would silently
+    // return nothing otherwise. Sub paths (info.foo.name) are NOT included: there
+    // the value is usually a scalar and a plain regex is both correct and
+    // indexable.
+    const isDeepSearch =
+        comparator === '$deepSearch' ||
+        (comparator === '$regex' && type === 'Object' && !filterKey.includes('.'))
+
+    if (isDeepSearch) {
+        if (!db || db._versionInt < 5) {
+            if (debugInfo) {
+                debugInfo.push({
+                    code: 'deepSearchUnsupported',
+                    message: 'Deep search requires MongoDB 5 or newer'
+                })
+            }
+            return false
+        }
+
+        if (subQuery) {
+            // filterKey is rewritten to '$expr' below, which cannot be nested
+            // under a sub-collection field path.
+            if (debugInfo) {
+                debugInfo.push({
+                    code: 'deepSearchNoSubQuery',
+                    message: 'Deep search is not supported on reference sub fields'
+                })
+            }
+            return false
+        }
+
+        const negate = rawComparator.startsWith('!')
+
+        // The pattern is passed in via `args` rather than interpolated into the
+        // function body, and pre-escaped, so it can never break out of the
+        // generated JS source (which MongoDB executes server-side via $function).
+        const escapedPattern = ClientUtil.escapeRegex(String(filterValue))
+
+        filterValue = {
+            body: `function(data, pattern) {
+                if (data === null || data === undefined) return false;
+                var haystack = (typeof data === 'object') ? JSON.stringify(data) : String(data);
+                return ${negate ? '!' : ''}new RegExp(pattern, 'i').test(haystack);
+            }`,
+            args: ['$' + filterKey, {$literal: escapedPattern}],
+            lang: 'js'
+        }
+        comparator = '$function'
+        filterKey  = '$expr'
+
+    } else if (type === 'ID') {
         if (filterValue) {
             if (filterValue.constructor === ObjectId) {
                 // Already an ObjectId – nothing to do
             } else if (filterValue.startsWith('[') && filterValue.endsWith(']')) {
                 // Array of IDs: "[id1,id2,...]"
-                const rawIds = filterValue.slice(1, -1).split(',')
+                const rawIds = filterValue.slice(1, -1).split(',').map(id => id.trim())
                 const ids = []
 
                 for (const id of rawIds) {
@@ -342,19 +182,23 @@ export const addFilterToMatchV2 = async ({
     } else if (type === 'Float') {
         filterValue = parseFloat(filterValue)
 
-    } else if (type === 'Object' && filterValue && db && db._versionInt >= 5 && comparator === '$regex') {
-        const negate = rawComparator && rawComparator.startsWith('!')
-        const regexBody = `/${filterValue}/i.test(data[key] && (data[key].constructor===Object || data[key].constructor===Array)?JSON.stringify(data[key]):data[key])`
-        const someExpr = `Object.keys(data).some(key => ${regexBody})`
-        const matchExpr = negate ? `!${someExpr}` : someExpr
-
-        filterValue = {
-            body: `function(data) {return data && ${matchExpr}}`,
-            args: ['$' + filterKey],
-            lang: 'js'
+        if (isNaN(filterValue)) {
+            if (debugInfo) {
+                debugInfo.push({
+                    code: 'invalidNumber',
+                    message: `Search for a number on field ${filterKey}. But the value is not a valid number`
+                })
+            }
+            return false
         }
-        comparator = '$function'
-        filterKey  = '$expr'
+
+    } else if (type === 'Object' && comparator === '$regex' && debugInfo) {
+        // A plain regex can never match an Object value. Point the user at the
+        // two options instead of silently returning no results.
+        debugInfo.push({
+            code: 'objectFilterNeedsPathOrDeepSearch',
+            message: `Field ${filterKey} is an Object. Use a sub path (${filterKey}.name:value) or deep search (${filterKey}?value)`
+        })
     }
 
     // ── Build the match expression ────────────────────────────────────────────
@@ -377,7 +221,7 @@ export const addFilterToMatchV2 = async ({
                 matchExpression.$not = { $size: 0 }
             }
 
-        } else if (!filterOptions.inDoubleQuotes && filterValue === 'null') {
+        } else if (!options.inDoubleQuotes && filterValue === 'null') {
             matchExpression = { [comparator]: null }
 
         } else if (filterValue?.constructor === ObjectId) {
@@ -394,7 +238,7 @@ export const addFilterToMatchV2 = async ({
             return true
 
         } else {
-            if (filterOptions.inDoubleQuotes) {
+            if (options.inDoubleQuotes) {
                 matchExpression = { [comparator]: filterValue }
             } else if (filterValue === true || filterValue === false) {
                 matchExpression = { [comparator]: filterValue }
@@ -406,9 +250,10 @@ export const addFilterToMatchV2 = async ({
                 filterValue.endsWith(']')
             ) {
                 matchExpression = {
-                    $in: filterValue.slice(1, -1).split(',').map(f =>
-                        f.startsWith('"') && f.endsWith('"') ? f.slice(1, -1) : f
-                    )
+                    $in: filterValue.slice(1, -1).split(',').map(f => {
+                        f = f.trim()
+                        return f.startsWith('"') && f.endsWith('"') ? f.slice(1, -1) : f
+                    })
                 }
             } else {
                 matchExpression = { [comparator]: filterValue }
@@ -418,28 +263,24 @@ export const addFilterToMatchV2 = async ({
 
     } else if (comparator === '$regex') {
         if (filterValue === undefined || filterValue === null) filterValue = ''
-
-        // Ensure string (already coerced above for non-special types, but guard here too)
         if (filterValue.constructor !== String) filterValue = String(filterValue)
 
-        let $options, finalValue
+        let finalValue
 
         if (rawComparator.includes('~')) {
-            // Treat value as a raw regex literal e.g. /pattern/flags
             const regParts = filterValue.match(/^\/(.*?)\/([gim]*)$/)
             finalValue = regParts ? new RegExp(regParts[1], regParts[2]) : new RegExp(filterValue)
         } else {
-            $options   = 'i'
-            finalValue = ClientUtil.escapeRegex(filterValue)
+            const escapedValue = ClientUtil.escapeRegex(filterValue)
+            const patternSource = options.ignoreAccents !== false
+                ? makeAccentInsensitive(escapedValue)
+                : escapedValue
+            finalValue = new RegExp(patternSource, 'i')
         }
 
-        if (rawComparator.includes('!')) {
-            matchExpression = { $not: { [comparator]: finalValue } }
-            if ($options) matchExpression.$not.$options = $options
-        } else {
-            matchExpression = { [comparator]: finalValue }
-            if ($options) matchExpression.$options = $options
-        }
+        matchExpression = rawComparator.includes('!')
+            ? { $not: finalValue }
+            : finalValue
 
     } else {
         matchExpression = { [comparator]: filterValue }
@@ -449,16 +290,18 @@ export const addFilterToMatchV2 = async ({
     // Results are cached via Cache to avoid redundant DB round-trips when the
     // same sub-collection + condition appears more than once within a request.
     if (subQuery) {
-        const subFilter = matchExpression.$not ?? matchExpression
-        const isNegated = Boolean(matchExpression.$not)
+        // $not only means "negate the whole condition" when it is the sole key.
+        // Alongside other operators (e.g. { $nin, $exists, $not }) the expression
+        // must be passed through to the sub-collection unchanged.
+        const keys = matchExpression?.constructor === Object ? Object.keys(matchExpression) : []
+        const isNegated = keys.length === 1 && keys[0] === '$not'
+        const subFilter = isNegated ? matchExpression.$not : matchExpression
 
-        const cacheKey = `subquery:${subQuery.type}:${subQuery.name}:${JSON.stringify(subFilter)}`
+        const cacheKey = `subquery:${subQuery.type}:${subQuery.name}:` +
+            JSON.stringify(subFilter, (k, v) => v instanceof RegExp ? `__re__:${v.source}:${v.flags}` : v)
+
         let ids = Cache.get(cacheKey)
-
         if (!ids) {
-
-            // TODO    const typeDefinition = getType(typeName)
-            //         match = extendWithOwnerGroupMatch(typeDefinition, context, match, true)
             ids = (await db.collection(subQuery.type).find({ [subQuery.name]: subFilter }).toArray())
                 .map(item => item._id)
             Cache.set(cacheKey, ids, SUBQUERY_CACHE_TTL_MS)
@@ -471,112 +314,6 @@ export const addFilterToMatchV2 = async ({
 
     return true
 }
-
-// ─── addSearchStringToMatch ───────────────────────────────────────────────────
-
-/*
- * Parses a search input string and converts it into a MongoDB query.
- * Format: conditions separated by "&&", groups enclosed in parentheses,
- * conditions within a group separated by "||". Each condition: "field=value".
- */
-const OPERATOR_MAP    = { '||': '$or', '&&': '$and' }
-const COMPARATOR_MAP  = { '>': '$gt', '>=': '$gte', '<': '$lt', '<=': '$lte', '=': '$regex', '!=': '$regex', '==': '$eq', '!==': '$ne' }
-
-//TODO: Deprecated --> remove
-export const addSearchStringToMatch = (inputString, query) => {
-    let subQuery         = query
-    let inQuote          = false
-    let currTerm         = ''
-    let comparator       = ''
-    let operator         = ''
-    let currField        = ''
-    let parenthesisLevel = 0
-    const parenthesisParents  = {}
-    const parenthesisOperator = {}
-
-    const addToQuery = (mQuery = {}) => {
-        const mOperator = OPERATOR_MAP[operator] || '$ukn'
-        if (!subQuery[mOperator]) subQuery[mOperator] = []
-
-        // Promote any unresolved ($ukn) entries into the real operator bucket
-        if (mOperator !== '$ukn' && subQuery.$ukn) {
-            subQuery[mOperator].push(...subQuery.$ukn)
-            delete subQuery.$ukn
-        }
-        subQuery[mOperator].push(mQuery)
-        return mQuery
-    }
-
-    const pushCurrTerm = () => {
-        if (!currField || !currTerm || !comparator) return
-
-        const comp = COMPARATOR_MAP[comparator] || '$eq'
-        if (comp.startsWith('$lt') || comp.startsWith('$gt')) {
-            currTerm = parseFloat(currTerm)
-        }
-
-        const mQuery = { [currField]: { [comp]: currTerm } }
-        if (comp === '$regex') {
-            // AND-style regex: each whitespace-separated word must match somewhere
-            mQuery[currField][comp] = `^${mQuery[currField][comp].split(/\s/).map(f => `(?=.*${f}.*)`).join('')}.*$`
-            mQuery[currField].$options = 'i'
-        }
-        addToQuery(mQuery)
-        comparator = currField = currTerm = operator = ''
-    }
-
-    for (let i = 0; i < inputString.length; i++) {
-        const char = inputString[i]
-
-        if (char === '"') {
-            inQuote = !inQuote
-        } else if (!inQuote) {
-            if (char === '(') {
-                parenthesisOperator[parenthesisLevel] = operator
-                parenthesisParents[parenthesisLevel]  = subQuery
-                parenthesisLevel++
-                operator = ''
-                subQuery = addToQuery()
-
-            } else if (char === ')') {
-                pushCurrTerm()
-                parenthesisLevel--
-                operator = parenthesisOperator[parenthesisLevel]
-                subQuery = parenthesisParents[parenthesisLevel]
-                delete parenthesisParents[parenthesisLevel]
-                delete parenthesisOperator[parenthesisLevel]
-
-            } else if (char === '|' || char === '&') {
-                operator += char
-            } else if (char === '=' || char === '<' || char === '>' || char === '!') {
-                comparator += char
-            } else if (char === ' ') {
-                pushCurrTerm()
-            } else {
-                if (comparator) currTerm  += char
-                else            currField += char
-            }
-        } else {
-            currTerm += char
-        }
-    }
-
-    pushCurrTerm()
-
-    // Flush any remaining $ukn conditions into $and
-    if (query.$ukn) {
-        if (!query.$and) query.$and = []
-        query.$and.push(...query.$ukn)
-        delete query.$ukn
-    }
-
-    return query
-}
-
-/*const match = {}
-addSearchStringToMatch('name=="hallo" && (slug=test || slug=bla)', match)
-console.log(JSON.stringify(match, null, 2))*/
-
 
 // ─── extendWithOwnerGroupMatch ────────────────────────────────────────────────
 
@@ -684,6 +421,7 @@ export const makeAllMatchAnAndMatch = (match) => {
     if (!match) return
     for (const k in match) {
         if (k === '$and') continue
+        if (!match.$and) match.$and = []
         match.$and.push({ [k]: match[k] })
         delete match[k]
     }

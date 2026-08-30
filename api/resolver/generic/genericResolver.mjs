@@ -9,7 +9,6 @@ import {
 import Hook from '../../../util/hook.cjs'
 import HookAsync from '../../../util/hookAsync.mjs'
 import AggregationBuilderV2 from './AggregationBuilderV2.mjs'
-import AggregationBuilder from './AggregationBuilder.mjs'
 import Cache from '../../../util/cache.mjs'
 import {_t} from '../../../util/i18nServer.mjs'
 import {createMatchForCurrentUser} from '../../util/dbquery.mjs'
@@ -39,45 +38,6 @@ function parseCacheOptions(cache) {
         cachePolicy: cache.policy || null,
     }
 }
-
-const isDeepEqualUnordered = (a, b) => {
-    // 1. Einfache Typen direkt vergleichen
-    if (a === b) return true;
-
-    // 2. Falls Typen unterschiedlich oder null, direkt false
-    if (typeof a !== 'object' || a === null || typeof b !== 'object' || b === null) {
-        return false;
-    }
-
-    // 3. Arrays verarbeiten
-    if (Array.isArray(a) && Array.isArray(b)) {
-        if (a.length !== b.length) return false;
-
-        // Trick: Jedes Element in 'a' muss ein Gegenstück in 'b' finden
-        // Wir kopieren b, um gefundene Übereinstimmungen zu markieren
-        const bCopy = [...b];
-        return a.every(itemA => {
-            const indexB = bCopy.findIndex(itemB => isDeepEqualUnordered(itemA, itemB));
-            if (indexB !== -1) {
-                bCopy.splice(indexB, 1); // Element "verbrauchen"
-                return true;
-            }
-            return false;
-        });
-    }
-
-    // 4. Normale Objekte verarbeiten
-    const keysA = Object.keys(a);
-    const keysB = Object.keys(b);
-
-    if (keysA.length !== keysB.length) return false;
-
-    return keysA.every(key =>
-        Object.prototype.hasOwnProperty.call(b, key) &&
-        isDeepEqualUnordered(a[key], b[key])
-    );
-};
-
 
 const buildCollectionName = async (db, context, typeName, _version) => {
 
@@ -171,15 +131,15 @@ export const prepareDataForUpdate = (typeName, data) => {
                 })
 
                 o[k] = {$cond: {
-                    if: {
-                        $or:[{$eq: [`$${k}`,null]},{$eq: [`$${k}`,'']}]
-                    },
-                    then: keyNotation,
-                    else: {$mergeObjects: [
-                        `$${k}`,
-                        keyNotation
-                    ]}
-                }}
+                        if: {
+                            $or:[{$eq: [`$${k}`,null]},{$eq: [`$${k}`,'']}]
+                        },
+                        then: keyNotation,
+                        else: {$mergeObjects: [
+                                `$${k}`,
+                                keyNotation
+                            ]}
+                    }}
 
             } else if (data[k] && fields[k] && fields[k].type === 'Object') {
                 // store as object
@@ -212,7 +172,7 @@ const GenericResolver = {
             includeCount,
             postConvert,
             aggregateOptions,
-            aggregationBuilderOptions,
+            aggregationBuilderOptions, // no longer read (only V2 exists), kept out of otherOptions for backward compatibility
             graphqlInfo,
             ...otherOptions
         } = options
@@ -267,15 +227,10 @@ const GenericResolver = {
             otherOptions.sort.startsWith('$')
         ) {
             otherOptions.sort = otherOptions.sort.substring(1)
-            finalAggregateOptions.collation = { locale: context.lang }
+            finalAggregateOptions.collation = { locale: context.lang, strength: 1 }
         }
 
         otherOptions.limitCount = 10000
-
-        const finalAggregationBuilderOptions =
-            aggregationBuilderOptions
-            ?? (await Util.getKeyValueGlobal(db, null, 'AggregationBuilderOptions', true))
-            ?? {}
 
         const builderArgs = [typeName, data, db, {
             match,
@@ -285,37 +240,11 @@ const GenericResolver = {
             ...otherOptions,
         }]
 
-        const isV2 = finalAggregationBuilderOptions.version === 2
-        const aggregationBuilder = isV2
-            ? new AggregationBuilderV2(...builderArgs)
-            : new AggregationBuilder(...builderArgs)
+        const aggregationBuilder = new AggregationBuilderV2(...builderArgs)
 
         const { dataQuery, countQuery, debugInfo } = await aggregationBuilder.query()
 
         //console.log(JSON.stringify(dataQuery,null,4))
-        // ── optional version-diff logging ──────────────────────────────────────
-        if (finalAggregationBuilderOptions.logVersionDif && !otherOptions.skipFacetQuery) {
-            const altBuilder = isV2
-                ? new AggregationBuilder(...builderArgs)
-                : new AggregationBuilderV2(...builderArgs)
-
-            const { dataQuery: altDataQuery } = await altBuilder.query()
-
-            if (!isDeepEqualUnordered(dataQuery, altDataQuery)) {
-                console.log('Query of V2 Version is different')
-                await GenericResolver.createEntity(db, { context }, 'Log', {
-                    location: 'aggregationBuilder',
-                    type:     'v2different',
-                    message:  'Query of V2 Version is different',
-                    meta: {
-                        version:    finalAggregationBuilderOptions.version,
-                        dataQuery,
-                        dataQuery2: altDataQuery,
-                        otherOptions,
-                    },
-                })
-            }
-        }
 
         // ── run aggregate ──────────────────────────────────────────────────────
         const collection = db.collection(collectionName)
@@ -684,7 +613,10 @@ const GenericResolver = {
             throw new Error('Error deleting entries. You might not have premissions to manage other users')
         }
     },
-    updateEnity: async (db, context, typeName, {_version, _meta, ...data}, options) => {
+    updateEnity: async (db, context, typeName, data, options) => {
+        return GenericResolver.updateEntity(db, context, typeName, data, options)
+    },
+    updateEntity: async (db, context, typeName, {_version, _meta, ...data}, options) => {
 
         if (!options) {
             options = {forceAdminContext:false, skipCheck:false, ignoreHooks:false}
@@ -815,16 +747,16 @@ const GenericResolver = {
             updateOptions.returnDocument = options.returnDocument
 
             const result = (await collection.findOneAndUpdate(params, [{
-                    $set: dataSet
-                }], updateOptions))
+                $set: dataSet
+            }], updateOptions))
             if(!result){
                 throw new Error(_t('core.update.permission.error', context.lang, {name: collectionName}))
             }
             newData = result
         }else{
             const result = (await collection.updateOne(params, [{
-                    $set: dataSet
-                }], updateOptions))
+                $set: dataSet
+            }], updateOptions))
 
             if (result.modifiedCount !== 1 && result.upsertedCount !== 1) {
                 throw new Error(_t('core.update.permission.error', context.lang, {name: collectionName}))
