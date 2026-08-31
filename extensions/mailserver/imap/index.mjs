@@ -35,27 +35,13 @@ import Cache from '../../../util/cache.mjs'
 // prefix for cached mime trees, so they can be cleared selectively via Cache.clearStartWith
 const MIME_TREE_CACHE_PREFIX = 'imapMimeTree_'
 
-// a client fetches structure and body parts of the same message within seconds,
-// so a short ttl is enough to keep the mime boundaries stable across those calls
-const MIME_TREE_CACHE_TTL = 5 * 60 * 1000
+// clients fetch structure and body parts in separate calls, sometimes minutes apart,
+// so the composed message has to stay available long enough to cover all of them
+const MIME_TREE_CACHE_TTL = 60 * 60 * 1000
 
 // large messages are usually fetched in one go and would bloat the heap
 const MIME_TREE_CACHE_MAX_SIZE = 2 * 1024 * 1024
 
-
-function headerLinesToMimeTreeHeaders(headerLines) {
-    const headers = {};
-    for (const { key, line } of headerLines) {
-        // Extract the value after the first colon and optional whitespace
-        const idx = line.indexOf(':');
-        if (idx !== -1) {
-            const name = line.slice(0, idx).trim();
-            const value = line.slice(idx + 1).replace(/^\s+/, ''); // Remove leading whitespace
-            headers[name] = value;
-        }
-    }
-    return headers;
-}
 
 /*
  getAttachmentContentFromFile may return a BSON Binary (mongodb driver), a Buffer,
@@ -88,46 +74,257 @@ function normalizeAttachmentContent(content) {
     return content
 }
 
-function convertSimpleParserToMimeTree(parsed) {
-    const root = {
-        headers: headerLinesToMimeTreeHeaders(parsed.headerLines),
-        parsedHeader: parsed.headers,
-        children: []
-    };
+// search terms that can be answered from the stored fields alone,
+// without composing the message and building a mime tree.
+// uid and modseq are deliberately excluded: their values can be imap
+// sequence sets (1:*, 100:200, 4,7,9:12) and are left to matchSearchQuery
+const LOCAL_SEARCH_KEYS = new Set([
+    'all',
+    'seen', 'unseen', 'answered', 'unanswered', 'flagged', 'unflagged',
+    'deleted', 'undeleted', 'draft', 'undraft', 'recent', 'new', 'old',
+    'subject', 'from', 'to', 'cc', 'bcc', 'header',
+    'since', 'before', 'senton', 'on', 'sentsince', 'sentbefore',
+    'or', 'not'
+])
 
-    // Handle multipart/alternative for text and html
-    if (parsed.text && parsed.html) {
-        const altNode = {
-            headers: { 'Content-Type': 'multipart/alternative' },
-            children: [
-                { headers: { 'Content-Type': 'text/plain' }, content: parsed.text },
-                { headers: { 'Content-Type': 'text/html' }, content: parsed.html }
-            ]
-        };
-        root.children.push(altNode);
-    } else if (parsed.text) {
-        root.children.push({ headers: { 'Content-Type': 'text/plain' }, content: parsed.text });
-    } else if (parsed.html) {
-        root.children.push({ headers: { 'Content-Type': 'text/html' }, content: parsed.html });
+// header names that are stored as dedicated fields by simpleParser
+const HEADER_FIELD_MAP = {
+    'message-id': 'messageId',
+    'in-reply-to': 'inReplyTo',
+    'references': 'references',
+    'subject': 'subject',
+    'date': 'date'
+}
+
+function canMatchLocally(query) {
+    if (!Array.isArray(query)) {
+        return false
     }
-
-    // Add attachments
-    if (parsed.attachments) {
-        for (const att of parsed.attachments) {
-            root.children.push({
-                headers: {
-                    'Content-Type': att.contentType,
-                    'Content-Disposition': att.contentDisposition || 'attachment',
-                    'Content-Transfer-Encoding': att.transferEncoding || 'base64',
-                    'Filename': att.filename
-                },
-                parsedHeader: att.headers,
-                content: att.content // Buffer
-            });
+    return query.every(term => {
+        const key = (term.key || '').toLowerCase()
+        if (!LOCAL_SEARCH_KEYS.has(key)) {
+            return false
         }
+        if (key === 'or' || key === 'not') {
+            // value holds nested term lists
+            const nested = Array.isArray(term.value) ? term.value : []
+            return nested.every(sub => canMatchLocally(Array.isArray(sub) ? sub : [sub]))
+        }
+        return true
+    })
+}
+
+// address fields are stored as {text, value:[...]}, plain fields as strings
+function fieldToText(value) {
+    if (!value) {
+        return ''
+    }
+    if (typeof value === 'string') {
+        return value
+    }
+    if (value.text) {
+        return value.text
+    }
+    if (Array.isArray(value)) {
+        return value.join(' ')
+    }
+    return ''
+}
+
+function getHeaderText(data, name) {
+    if (!data) {
+        return ''
+    }
+    const lower = (name || '').toLowerCase()
+    const mapped = HEADER_FIELD_MAP[lower]
+    if (mapped && data[mapped]) {
+        return fieldToText(data[mapped])
+    }
+    if (['from', 'to', 'cc', 'bcc', 'reply-to', 'sender'].includes(lower)) {
+        const key = lower === 'reply-to' ? 'replyTo' : lower
+        return fieldToText(data[key])
+    }
+    if (data.headers) {
+        // stored headers may be a plain object or a Map
+        if (typeof data.headers.get === 'function') {
+            return fieldToText(data.headers.get(lower))
+        }
+        return fieldToText(data.headers[lower] || data.headers[name])
+    }
+    return ''
+}
+
+function contains(haystack, needle) {
+    if (needle === undefined || needle === null || needle === '') {
+        return true
+    }
+    return String(haystack || '').toLowerCase().indexOf(String(needle).toLowerCase()) >= 0
+}
+
+/*
+ matches a message against a search query using the stored fields only.
+ getIdate is a lazy getter: flag and header searches never need the date,
+ so it is not built for every message of the folder up front.
+ */
+function matchLocally(message, query, getIdate) {
+    const flags = message.flags || []
+    const data = message.data || {}
+
+    return query.every(term => {
+        const key = (term.key || '').toLowerCase()
+        const value = term.value
+
+        switch (key) {
+            case 'all':
+                return true
+
+            case 'seen':      return flags.includes('\\Seen')
+            case 'unseen':    return !flags.includes('\\Seen')
+            case 'answered':  return flags.includes('\\Answered')
+            case 'unanswered':return !flags.includes('\\Answered')
+            case 'flagged':   return flags.includes('\\Flagged')
+            case 'unflagged': return !flags.includes('\\Flagged')
+            case 'deleted':   return flags.includes('\\Deleted')
+            case 'undeleted': return !flags.includes('\\Deleted')
+            case 'draft':     return flags.includes('\\Draft')
+            case 'undraft':   return !flags.includes('\\Draft')
+            case 'recent':    return false
+            case 'new':       return false
+            case 'old':       return true
+
+            case 'subject':   return contains(data.subject, value)
+            case 'from':      return contains(fieldToText(data.from), value)
+            case 'to':        return contains(fieldToText(data.to), value)
+            case 'cc':        return contains(fieldToText(data.cc), value)
+            case 'bcc':       return contains(fieldToText(data.bcc), value)
+            case 'header':    return contains(getHeaderText(data, term.header), value)
+
+            case 'since':
+            case 'sentsince':
+                return getIdate() >= new Date(value)
+            case 'before':
+            case 'sentbefore':
+                return getIdate() < new Date(value)
+            case 'on':
+            case 'senton': {
+                const d = new Date(value)
+                return getIdate().toDateString() === d.toDateString()
+            }
+
+            case 'or': {
+                const branches = Array.isArray(value) ? value : []
+                return branches.some(sub =>
+                    matchLocally(message, Array.isArray(sub) ? sub : [sub], getIdate))
+            }
+            case 'not': {
+                const branches = Array.isArray(value) ? value : []
+                return !branches.some(sub =>
+                    matchLocally(message, Array.isArray(sub) ? sub : [sub], getIdate))
+            }
+
+            default:
+                return false
+        }
+    })
+}
+
+function buildMessageData(db, message) {
+    const messageData = {
+        from: message.data.from?.text,
+        sender: message.data.sender?.text,
+        to: message.data.to?.text,
+        replyTo: message.data.replyTo?.text,
+        inReplyTo: message.data.inReplyTo,
+        references: message.data.references,
+        messageId: message.data.messageId,
+        cc: message.data.cc?.text,
+        bcc: message.data.bcc?.text,
+        subject: message.data.subject,
+        text: message.data.text,
+        html: message.data.html,
+        date: new Date(message.data.date || Util.dateFromObjectId(message._id.toString(), new Date())).toUTCString(),
+        attachments: Array.isArray(message.data.attachments) ? message.data.attachments.map(att => {
+            const attachmentContent = normalizeAttachmentContent(getAttachmentContentFromFile(att, {db, message}))
+            return {
+                filename: att.filename,
+                content: attachmentContent,
+                contentType: att.contentType,
+                cid: att.cid,
+                // encoding describes how a given content string is encoded,
+                // a Buffer already holds the decoded bytes
+                encoding: Buffer.isBuffer(attachmentContent)
+                    ? undefined
+                    : (att.encoding !== 'quoted-printable' ? att.encoding : undefined),
+                contentDisposition: att.contentDisposition,
+            }
+        }) : [],
     }
 
-    return root;
+    if (message.data.headers) {
+        ['x-spam-reason', 'x-spam-score'].forEach(headerKey => {
+            if (message.data.headers[headerKey]) {
+                if (!messageData.headers) {
+                    messageData.headers = {}
+                }
+                messageData.headers[headerKey.toLowerCase()] = message.data.headers[headerKey]
+            }
+        })
+    }
+
+    if (messageData.date === 'Invalid Date') {
+        messageData.date = new Date().toUTCString()
+    }
+
+    return messageData
+}
+
+/*
+ composes the raw message and caches it, so fetch and search always operate on the
+ identical byte stream and the same mime boundaries.
+ the cache key must not contain modseq: the mime boundaries generated by MailComposer
+ are random, and a flag change (e.g. \Seen on open) between the BODYSTRUCTURE fetch and
+ the following BODY[..] fetch would otherwise hand the client two different messages.
+ messageData is only returned when the message was actually composed, on a cache hit
+ it is null.
+ */
+function composeMessage(db, message, logger, sessionId) {
+    return new Promise((resolve, reject) => {
+        const cacheKey = `${MIME_TREE_CACHE_PREFIX}${message._id}`
+        const cached = Cache.get(cacheKey)
+        if (cached) {
+            return resolve({raw: cached, messageData: null})
+        }
+
+        let messageData
+        try {
+            messageData = buildMessageData(db, message)
+        } catch (err) {
+            return reject(err)
+        }
+
+        const composerInput = {
+            ...messageData,
+            // shallow clone instead of a JSON roundtrip, so attachment buffers
+            // are not serialized into {type:'Buffer',data:[...]} objects
+            attachments: messageData.attachments.map(att => ({...att}))
+        }
+
+        try {
+            new MailComposer(composerInput).compile().build((err, builtMailMessage) => {
+                if (err) {
+                    return reject(err)
+                }
+                if (builtMailMessage.length <= MIME_TREE_CACHE_MAX_SIZE) {
+                    Cache.set(cacheKey, builtMailMessage, MIME_TREE_CACHE_TTL)
+                } else if (logger) {
+                    logger.debug('[%s] message with uid "%s" too large to cache (%s bytes)', sessionId, message.uid, builtMailMessage.length)
+                }
+                resolve({raw: builtMailMessage, messageData})
+            })
+        } catch (err) {
+            reject(err)
+        }
+    })
 }
 
 const mongoDbMatchProjectFromIMapData = (options) => {
@@ -147,9 +344,7 @@ const mongoDbMatchProjectFromIMapData = (options) => {
         })
         if(project.bodystructure || project.body || project.content || project['rfc822.size']){
             project.data = 1
-            // uid, flags and modseq are always needed: modseq is part of the mime tree
-            // cache key and must be present in every fetch that composes a message,
-            // otherwise the same message would be rebuilt with different mime boundaries
+            // uid and flags are needed for the fetch response and the markAsSeen handling
             project.uid = 1
             project.flags = 1
             project.modseq = 1
@@ -203,6 +398,16 @@ const startListening = async (db, context) => {
         info: (...args) => {server.logger.info(null,...args)},
         debug: (...args) => {server.logger.debug(null,...args)},
         error: (...args) => {server.logger.error(null,...args)}
+    }
+
+    // writes an error to the Log entity, shared by onFetch and onSearch
+    const logImapError = (message, meta) => {
+        GenericResolver.createEntity(db, {context: context}, 'Log', {
+            location: 'mailserver',
+            type: 'imapError',
+            message: message,
+            meta
+        })
     }
 
     server.notifier = new MemoryNotifier({
@@ -706,14 +911,9 @@ const startListening = async (db, context) => {
 
         let messageData
         const logError = (message) => {
-            GenericResolver.createEntity(db, {context: context}, 'Log', {
-                location: 'mailserver',
-                type: 'imapError',
-                message: message,
-                meta: {
-                    messageData,
-                    debug: JSON.parse(JSON.stringify({folderId, options, session}, getCircularReplacer()))
-                }
+            logImapError(message, {
+                messageData,
+                debug: JSON.parse(JSON.stringify({folderId, options, session}, getCircularReplacer()))
             })
         }
 
@@ -816,112 +1016,24 @@ const startListening = async (db, context) => {
                         })
                     }
 
-                    // the mime boundaries generated by MailComposer are random, so composing
-                    // the same message twice yields different boundaries. clients fetch the
-                    // body structure and the single body parts in separate FETCH calls, so the
-                    // composed message has to stay identical across those calls
-                    const cacheKey = `${MIME_TREE_CACHE_PREFIX}${message._id}_${message.modseq}`
-                    const cachedMailMessage = Cache.get(cacheKey)
+                    composeMessage(db, message, logger, session.id).then(({raw, messageData: composed}) => {
+                        // on a cache hit no messageData is built, so it must be reset:
+                        // otherwise the logs and the hook would carry the data of the
+                        // previously processed message
+                        messageData = composed || undefined
 
-                    if (cachedMailMessage) {
-                        // cache hit: no need to read attachments from disk or recompose
                         try {
-                            sendMailMessage(cachedMailMessage)
+                            sendMailMessage(raw)
                         } catch (error) {
                             logError(error.message)
-                            console.error('error sending cached email', error)
+                            console.error('error sending email', error)
                             setImmediate(processMessage)
                         }
-                        return
-                    }
-
-                    // Extract fields from parsed email
-                    messageData = {
-                        from: message.data.from?.text,            // 'From' header
-                        sender: message.data.sender?.text,        // 'Sender' header
-                        to: message.data.to?.text,                // 'To' header
-                        replyTo: message.data.replyTo?.text,      // 'Reply-To' header
-                        inReplyTo: message.data.inReplyTo,        // 'In-Reply-To' header
-                        references: message.data.references,      // 'References' header
-                        messageId: message.data.messageId,        // Custom Message-ID header
-                        cc: message.data.cc?.text,
-                        bcc: message.data.bcc?.text,
-                        subject: message.data.subject,
-                        text: message.data.text,
-                        html: message.data.html,
-                        date: new Date(message.data.date || Util.dateFromObjectId(message._id.toString(), new Date())).toUTCString(), // important for preserving sent date
-                        // alternatives: message.data.alternatives,
-                        attachments: Array.isArray(message.data.attachments) ? message.data.attachments.map(att => {
-                            const attachmentContent = normalizeAttachmentContent(getAttachmentContentFromFile(att, {db, message}))
-
-                            return {
-                                filename: att.filename,
-                                content: attachmentContent,
-                                contentType: att.contentType,
-                                cid: att.cid,
-                                // encoding describes how a given content string is encoded,
-                                // a Buffer already holds the decoded bytes
-                                encoding: Buffer.isBuffer(attachmentContent)
-                                    ? undefined
-                                    : (att.encoding !== 'quoted-printable' ? att.encoding : undefined),
-                                contentDisposition: att.contentDisposition,
-                            }
-                        }): [],
-                    }
-
-                    if(message.data.headers) {
-                        ['x-spam-reason', 'x-spam-score'].forEach(headerKey => {
-                            if (message.data.headers[headerKey]) {
-                                if (!messageData.headers){
-                                    messageData.headers = {}
-                                }
-                                messageData.headers[headerKey.toLowerCase()] = message.data.headers[headerKey]
-                            }
-                        })
-                    }
-
-
-                    if(messageData.date==='Invalid Date'){
-                        messageData.date = new Date().toUTCString()
-                    }
-
-                    try {
-                        // shallow clone instead of a JSON roundtrip, so attachment buffers
-                        // are not serialized into {type:'Buffer',data:[...]} objects
-                        const composerInput = {
-                            ...messageData,
-                            attachments: messageData.attachments.map(att => ({...att}))
-                        }
-
-                        const mailComposer = new MailComposer(composerInput)
-
-                        mailComposer.compile().build((err, builtMailMessage) => {
-                            if (err) {
-                                logError(err.message)
-                                console.error('error building email', err)
-                                return setImmediate(processMessage)
-                            }
-
-                            if (builtMailMessage.length <= MIME_TREE_CACHE_MAX_SIZE) {
-                                Cache.set(cacheKey, builtMailMessage, MIME_TREE_CACHE_TTL)
-                            } else {
-                                logger.debug('[%s] message with uid "%s" too large to cache (%s bytes)', session.id, message.uid, builtMailMessage.length)
-                            }
-
-                            try {
-                                sendMailMessage(builtMailMessage)
-                            } catch (error) {
-                                logError(error.message)
-                                console.error('error sending email', error)
-                                setImmediate(processMessage)
-                            }
-                        })
-
-                    } catch (error) {
+                    }).catch(error => {
                         logError(error.message)
                         console.error('error building email', error)
                         setImmediate(processMessage)
-                    }
+                    })
                 }else{
                     const stream = imapHandler.compileStream(
                         session.formatResponse('FETCH', message.uid, {
@@ -964,47 +1076,112 @@ const startListening = async (db, context) => {
             return callback(null, 'NONEXISTENT');
         }
 
-        //console.log('imap search', options)
-        const {match} = mongoDbMatchProjectFromIMapData(options)
-
-        const hasBodySearch = options.terms?.includes('body')
-
-        const project = hasBodySearch
-            ? {'data.text': 1, 'data.html': 1, uid: 1, flags: 1, modseq: 1}
-            : {data: 0}
-
-        const messages = await getMessagesForFolder(db,folder._id,match, project)
-
-
-        logger.debug('[%s] folder %s number of messages found %s', session.id, folder.path, messages.length)
-
-        let highestModseq = 0
-
-        let uidList = []
-        let checked = 0
-        let checkNext = () => {
-            if (checked >= messages.length) {
-                return callback(null, {
-                    uidList,
-                    highestModseq
-                });
-            }
-            let message = messages[checked++];
-            session.matchSearchQuery(message, options.query, (err, match) => {
-                if (err) {
-                    console.error('IMAP Search', err, folder)
-                    // ignore
-                }
-                if (match && highestModseq < message.modseq) {
-                    highestModseq = message.modseq
-                }
-                if (match) {
-                    uidList.push(message.uid)
-                }
-                checkNext()
+        const logError = (message) => {
+            logImapError(message, {
+                debug: JSON.parse(JSON.stringify({folderId, options, session}, getCircularReplacer()))
             })
         }
-        checkNext()
+
+        const {match} = mongoDbMatchProjectFromIMapData(options)
+
+        const useLocalMatching = canMatchLocally(options.query)
+
+        // header fields are small, the body and the attachment metadata are not:
+        // only pull what the query actually needs
+        const project = useLocalMatching
+            ? {
+                'data.subject': 1, 'data.from': 1, 'data.to': 1, 'data.cc': 1, 'data.bcc': 1,
+                'data.messageId': 1, 'data.inReplyTo': 1, 'data.references': 1,
+                'data.date': 1, 'data.headers': 1,
+                uid: 1, flags: 1, modseq: 1
+            }
+            : {data: 1, uid: 1, flags: 1, modseq: 1}
+
+        const messages = await getMessagesForFolder(db, folder._id, match, project)
+
+        logger.debug('[%s] folder %s number of messages found %s (local matching: %s)',
+            session.id, folder.path, messages.length, useLocalMatching)
+
+        let highestModseq = 0
+        let uidList = []
+        let checked = 0
+
+        const collect = (message, isMatch) => {
+            if (isMatch) {
+                if (highestModseq < message.modseq) {
+                    highestModseq = message.modseq
+                }
+                uidList.push(message.uid)
+            }
+        }
+
+        // the callback has to be called exactly once, otherwise the client blocks
+        // until its own timeout, so every async step is guarded
+        const finish = () => callback(null, {uidList, highestModseq})
+
+        const scheduleNext = () => {
+            setImmediate(() => {
+                checkNext().catch(err => {
+                    console.error('IMAP Search checkNext', err)
+                    logError('search failed: ' + err.message)
+                    finish()
+                })
+            })
+        }
+
+        const checkNext = async () => {
+            if (checked >= messages.length) {
+                return finish()
+            }
+            const message = messages[checked++]
+
+            if (useLocalMatching) {
+                // the date is only needed for date based terms, so it is built lazily
+                let idate
+                const getIdate = () => {
+                    if (!idate) {
+                        idate = new Date(message.data?.date ||
+                            Util.dateFromObjectId(message._id.toString(), new Date()))
+                    }
+                    return idate
+                }
+
+                try {
+                    collect(message, matchLocally(message, options.query, getIdate))
+                } catch (e) {
+                    console.error('IMAP Search local match', e)
+                    logError('local match failed: ' + e.message)
+                }
+                return scheduleNext()
+            }
+
+            // fallback: body searches need the composed mime tree
+            try {
+                const idate = new Date(message.data?.date ||
+                    Util.dateFromObjectId(message._id.toString(), new Date()))
+                const {raw} = await composeMessage(db, message, logger, session.id)
+                const searchTarget = {...message, idate, mimeTree: parseMimeTree(raw)}
+
+                session.matchSearchQuery(searchTarget, options.query, (err, isMatch) => {
+                    if (err) {
+                        console.error('IMAP Search', err, folder)
+                        logError('match query failed: ' + err.message)
+                    }
+                    collect(message, isMatch)
+                    scheduleNext()
+                })
+            } catch (e) {
+                console.error('IMAP Search compose', e)
+                logError('search compose failed: ' + e.message)
+                scheduleNext()
+            }
+        }
+
+        checkNext().catch(err => {
+            console.error('IMAP Search checkNext', err)
+            logError('search failed: ' + err.message)
+            finish()
+        })
     }
 
 
@@ -1020,67 +1197,3 @@ const stopListening = () => {
 }
 
 export default {startListening, stopListening}
-
-/*
-
-function buildRFC822Email(message) {
-    const headers = [];
-
-    if (message.from) headers.push(`From: ${message.from}`);
-    if (message.sender) headers.push(`Sender: ${message.sender}`);
-    if (message.to) headers.push(`To: ${message.to}`);
-    if (message.replyTo) headers.push(`Reply-To: ${message.replyTo}`);
-    if (message.inReplyTo) headers.push(`In-Reply-To: ${message.inReplyTo}`);
-    if (message.references) headers.push(`References: ${message.references}`);
-    if (message.messageId) headers.push(`Message-ID: ${message.messageId}`);
-    if (message.cc) headers.push(`Cc: ${message.cc}`);
-    if (message.bcc) headers.push(`Bcc: ${message.bcc}`);
-    if (message.subject) headers.push(`Subject: ${message.subject}`);
-    if (message.date) headers.push(`Date: ${message.date}`);
-
-    // Standard MIME headers for multipart message with alternatives and attachments
-    const boundaryMain = "==BOUNDARY_MAIN_" + Date.now();
-    headers.push("MIME-Version: 1.0");
-    headers.push(`Content-Type: multipart/mixed; boundary="${boundaryMain}"`);
-
-    // Start composing the body
-    let body = `--${boundaryMain}\r\n`;
-
-    // Multipart alternative for text and html
-    const boundaryAlt = "==BOUNDARY_ALT_" + Date.now();
-    body += `Content-Type: multipart/alternative; boundary="${boundaryAlt}"\r\n\r\n`;
-
-    // HTML part
-    if (message.html) {
-        body += `--${boundaryAlt}\r\nContent-Type: text/html; charset="utf-8"\r\nContent-Transfer-Encoding: 8bit\r\n\r\n`;
-        body += `${message.html}\r\n\r\n`;
-    }
-
-    // Plain text part
-    if (message.text) {
-        body += `--${boundaryAlt}\r\nContent-Type: text/plain; charset="utf-8"\r\nContent-Transfer-Encoding: 8bit\r\n\r\n`;
-        body += `${message.text}\r\n\r\n`;
-    }
-
-    body += `--${boundaryAlt}--\r\n`;
-
-    // Attachments
-    if (message.attachments && message.attachments.length > 0) {
-        message.attachments.forEach(att => {
-            body += `--${boundaryMain}\r\n`;
-            body += `Content-Type: ${att.contentType}; name="${att.filename}"\r\n`;
-            body += `Content-Disposition: ${att.contentDisposition || "attachment"}; filename="${att.filename}"\r\n`;
-            body += `Content-Transfer-Encoding: ${att.encoding || att?.headers?.['content-transfer-encoding'] || 'base64'}\r\n`;
-            if (att.cid) {
-                body += `Content-ID: <${att.cid}>\r\n`;
-            }
-            body += `\r\n${att.content}\r\n\r\n`;
-        });
-    }
-
-    body += `--${boundaryMain}--\r\n`;
-
-    // Combine headers and body with separator line between headers and body
-    return headers.join("\r\n") + "\r\n\r\n" + body;
-}
- */

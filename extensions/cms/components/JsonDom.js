@@ -706,6 +706,31 @@ class JsonDom extends React.Component {
         return {id, isUniqueStyle, needParsing}
     }
 
+    parseStyle(props) {
+        const {style} = props
+        if (!isString(style) || style.indexOf('${') < 0) {
+            return style
+        }
+        try {
+            return new Function(DomUtil.toES5(`const {scope,Util}=this;return \`${style}\``)).call({
+                scope: this.getScope(props),
+                Util,
+                set: (key, value) => {
+                    this.styles[key] = value
+                    return ''
+                },
+                get: (key) => {
+                    return this.styles[key]
+                }
+            })
+        } catch (error) {
+            this.emitJsonError(error, {loc: 'Style'})
+            Hook.call('JsonDomStyleError', {error, style, slug: props.slug, editMode: props.editMode})
+            console.log(error)
+            return style
+        }
+    }
+
     addStyle(props, styleEdited) {
         let {id, isUniqueStyle, needParsing} = this.getMainStyleId(props)
         if(isUniqueStyle && !styleEdited){
@@ -724,34 +749,9 @@ class JsonDom extends React.Component {
         }
         const {style} = props
         if (style) {
-            let parsedStyle
-            if (needParsing) {
-                try {
-                    parsedStyle = new Function(DomUtil.toES5(`const {scope,Util}=this;return \`${style}\``)).call({
-                        scope: this.scope,
-                        Util: Util,
-                        set: (key, value) => {
-                            this.styles[key] = value
-                            return ''
-                        },
-                        get: (key) => {
-                            return this.styles[key]
-                        }
-                    })
-                } catch (error) {
-                    parsedStyle = style
-
-                    this.emitJsonError(error, {loc: 'Style'})
-                    Hook.call('JsonDomStyleError', {error, style, slug: this.props.slug, editMode: this.props.editMode})
-                    console.log(error)
-                }
-            } else {
-                parsedStyle = style
-            }
-            this.setStyle(parsedStyle, this.props.editMode || !this.props.ssrStyle, id)
+            this.setStyle(this.parseStyle(props), this.props.editMode || !this.props.ssrStyle, id)
         } else {
             const el = document.getElementById(id)
-
             if (el) {
                 el.parentNode.removeChild(el)
             }
@@ -1433,10 +1433,9 @@ class JsonDom extends React.Component {
             }
             if (_app_.ssr && props.style && this.json) {
                 // add style
-                if (this.json.constructor !== Array) {
-                    this.json = [this.json]
-                }
-                this.json.unshift({t: 'style', c: preprocessCss(props.style)})
+
+                if (this.json.constructor !== Array) this.json = [this.json]
+                this.json.unshift({t: 'style', c: preprocessCss(this.parseStyle(props))})
             }
         }
         return this.json
