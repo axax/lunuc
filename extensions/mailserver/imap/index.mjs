@@ -40,7 +40,7 @@ const MIME_TREE_CACHE_PREFIX = 'imapMimeTree_'
 const MIME_TREE_CACHE_TTL = 60 * 60 * 1000
 
 // large messages are usually fetched in one go and would bloat the heap
-const MIME_TREE_CACHE_MAX_SIZE = 2 * 1024 * 1024
+const MIME_TREE_CACHE_MAX_SIZE = 10 * 1024 * 1024
 
 
 /*
@@ -79,7 +79,7 @@ function normalizeAttachmentContent(content) {
 // uid and modseq are deliberately excluded: their values can be imap
 // sequence sets (1:*, 100:200, 4,7,9:12) and are left to matchSearchQuery
 const LOCAL_SEARCH_KEYS = new Set([
-    'all',
+    'all', 'uid',
     'seen', 'unseen', 'answered', 'unanswered', 'flagged', 'unflagged',
     'deleted', 'undeleted', 'draft', 'undraft', 'recent', 'new', 'old',
     'subject', 'from', 'to', 'cc', 'bcc', 'header',
@@ -106,9 +106,13 @@ function canMatchLocally(query) {
             return false
         }
         if (key === 'or' || key === 'not') {
-            // value holds nested term lists
             const nested = Array.isArray(term.value) ? term.value : []
             return nested.every(sub => canMatchLocally(Array.isArray(sub) ? sub : [sub]))
+        }
+        if (key === 'uid') {
+            // imap-core resolves sequence sets into a flat array before they get here.
+            // anything else is left to matchSearchQuery
+            return Array.isArray(term.value)
         }
         return true
     })
@@ -177,6 +181,8 @@ function matchLocally(message, query, getIdate) {
         switch (key) {
             case 'all':
                 return true
+            case 'uid':
+                return value.includes(message.uid)
 
             case 'seen':      return flags.includes('\\Seen')
             case 'unseen':    return !flags.includes('\\Seen')
