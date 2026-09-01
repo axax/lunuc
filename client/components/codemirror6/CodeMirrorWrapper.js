@@ -1,12 +1,16 @@
 import React, { useRef, useEffect, useState } from 'react'
 import { EditorView } from '@codemirror/view'
 import { oneDark } from '@codemirror/theme-one-dark'
-import { EditorState } from "@codemirror/state"
+import { EditorState, Annotation } from "@codemirror/state"
 import {basicSetup} from './basicSetup'
 import {scrollToLine} from './utils'
 import './style.css'
 import {MergeView} from '@codemirror/merge'
 
+
+// marks transactions that were dispatched programmatically, so the update
+// listener can tell them apart from real user input
+const externalUpdate = Annotation.define()
 
 
 const CodeMirrorWrapper = (props) => {
@@ -26,26 +30,30 @@ const CodeMirrorWrapper = (props) => {
         },
     })
 
-    if (controlled){
-        React.useEffect(() => {
-            if(editorViewRef.current && editorViewRef.current.state.doc.toString() !== value) {
-                const view = editorViewRef.current
-                const oldPos = view.state.selection.main.head
-                const scrollInfo = view.scrollDOM.scrollTop;  // or view.scrollDOM.getBoundingClientRect()
+    useEffect(() => {
+        // the merge view has no top level state, so it is not supported here
+        if (!controlled || mergeView) {
+            return
+        }
+        const view = editorViewRef.current
+        if (!view || view.state.doc.toString() === value) {
+            return
+        }
 
+        // keep the cursor where it was, but never outside the new document
+        const oldPos = Math.min(view.state.selection.main.head, (value || '').length)
+        const scrollTop = view.scrollDOM.scrollTop
 
-                view._lastUpdate = Date.now()
-                view.dispatch({
-                    changes: { from: 0, to: view.state.doc.length, insert: value },
-                    selection: { anchor: oldPos, head: oldPos }  // Retains cursor; adjust pos if needed (e.g., value.length for end)
-                })
-                requestAnimationFrame(() => {
-                    view.scrollDOM.scrollTop = scrollInfo;
-                    // OR for more precision: view.scrollTo(null, scrollInfo);
-                });
-            }
-        }, [value])
-    }
+        view.dispatch({
+            changes: {from: 0, to: view.state.doc.length, insert: value},
+            selection: {anchor: oldPos, head: oldPos},
+            annotations: externalUpdate.of(true)
+        })
+
+        requestAnimationFrame(() => {
+            view.scrollDOM.scrollTop = scrollTop
+        })
+    }, [value, controlled])
 
     useEffect(() => {
         const extensions = [defaultThemeOption,
@@ -70,10 +78,10 @@ const CodeMirrorWrapper = (props) => {
                     }
                 }
             }),
-            onChange && EditorView.updateListener.of((view) => {
-                // prevent endless changes
-                if(view.docChanged && (!editorViewRef.current._lastUpdate || (Date.now() - editorViewRef.current._lastUpdate) > 100)) {
-                    const codeAsString = view.state.doc.toString()
+            onChange && EditorView.updateListener.of((update) => {
+                // ignore changes that this component dispatched itself
+                if(update.docChanged && !update.transactions.some(tr => tr.annotation(externalUpdate))) {
+                    const codeAsString = update.state.doc.toString()
                     onChange(codeAsString)
                 }
             })].filter(ex => !!ex)
@@ -105,9 +113,9 @@ const CodeMirrorWrapper = (props) => {
 
     if(mergeView){
         return <><div style={{display:'flex',width:'100%'}}>
-                <div style={{flex:1}}>Old Version</div>
-                <div style={{flex:1}}>Your Version</div>
-            </div>
+            <div style={{flex:1}}>Old Version</div>
+            <div style={{flex:1}}>Your Version</div>
+        </div>
             <div ref={editor}></div></>
     }else{
         return <div ref={editor}></div>
