@@ -100,10 +100,12 @@ for(let i = 0; i<1000000;i++){
 }
 console.log(`xxxxx time to check ${Date.now()-start}ms ${z}`)*/
 
-class JsonDom extends React.Component {
+const isEventProp = (key) => key.length > 2 &&
+    key.charCodeAt(0) === 111 &&    // 'o'
+    key.charCodeAt(1) === 110 &&    // 'n'
+    key.charCodeAt(2) >= 65 && key.charCodeAt(2) <= 90   // uppercase
 
-    /* Events that are listened to */
-    static events = ['onScroll', 'onTouchStart','onTouchEnd','onTouchCancel','onTouchMove','onDragEnd', 'onDragStart', 'onError', 'onLoad','onClose','onRef','onAnimationEnd','onMouseMove','onMouseOver', 'onMouseOut', 'onMouseEnter', 'onMouseLeave', 'onMouseDown', 'onMouseUp', 'onPointerDown', 'onClick', 'onKeyDown', 'onKeyUp', 'onFocus', 'onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput', 'onForwardRef','onPaste']
+class JsonDom extends React.Component {
 
     /*
      * Default components
@@ -282,7 +284,7 @@ class JsonDom extends React.Component {
     }
 
     // Makes sure that the hook is only called once on the first instantiation of this class
-    static callHock = true
+    static callHook = true
 
     // This is a counter each instance of JsonDom get a unique number
     static instanceCounter = 0
@@ -315,9 +317,9 @@ class JsonDom extends React.Component {
             props.subscriptionCallback(this.onSubscription.bind(this))
         }
         /* HOOK */
-        if (JsonDom.callHock) {
+        if (JsonDom.callHook) {
             // Call only once on the first instantiation of JsonDom
-            JsonDom.callHock = false
+            JsonDom.callHook = false
 
             // In this hook extensions can add custom components
             Hook.call('JsonDom', JsonDom)
@@ -328,7 +330,7 @@ class JsonDom extends React.Component {
 
     shouldComponentUpdate(props, state) {
         const resolvedDataChanged = this.props.resolvedData !== props.resolvedData
-        const searchChanged = this.props.location && (
+        const searchChanged = this.props.location && props.location && (
             this.props.location.search !== props.location.search ||
             this.props.location.hash !== props.location.hash ||
             this.props.location.pathname !== props.location.pathname
@@ -628,10 +630,8 @@ class JsonDom extends React.Component {
 
 
                 // find root parent
-                let root = this, parent = this.props._parentRef
-                while (root.props._parentRef) {
-                    root = root.props._parentRef
-                }
+                const root = this.getRootComponent(),
+                    parent = this.props._parentRef
                 scope.root = root
                 scope.parent = parent
 
@@ -944,12 +944,15 @@ class JsonDom extends React.Component {
                     }
                 }
 
-                if (t === '#') {
-                    // hidden element
-                    if (c || $c) {
-                        h.push(this.parseRec(c?c:[{$c}], rootKey + '.' + aIdx, scope))
+                if (isString(t) && t.charAt(0) === '#') {
+                    // "#" alone is always hidden. "#<tag>" renders as <tag> in the editor
+                    // (needed as a drop target for the top level) but is skipped in production.
+                    if (t.length === 1 || !this.props.editMode) {
+                        if (c || $c) {
+                            h.push(this.parseRec(c ? c : [{$c}], rootKey + '.' + aIdx, scope))
+                        }
+                        return
                     }
-                    return
                 }
 
                 //set
@@ -987,12 +990,7 @@ class JsonDom extends React.Component {
                 }
 
                 // loop is deprecated. Use "for" instead, as it is better performance-wise
-                let loopOrFor
-                if ($for) {
-                    loopOrFor = $for
-                } else {
-                    loopOrFor = $loop
-                }
+                const loopOrFor = $for || $loop
 
                 if (loopOrFor) {
                     const {$d, $sort, d, c} = loopOrFor
@@ -1129,6 +1127,9 @@ class JsonDom extends React.Component {
                     let tagName, className
                     if (!t || !isString(t) || t.indexOf('.')===0) {
                         tagName = 'div'
+                    } else if (t.charAt(0) === '#') {
+                        // "#div" -> "div"; only reached in editMode, see the block above
+                        tagName = t.substring(1)
                     } else if (t === '$children') {
                         if (children) {
                             h.push(children)
@@ -1159,17 +1160,19 @@ class JsonDom extends React.Component {
                         // remove properties with empty values unless they start with $
                         // translate localized properties
                         Object.keys(p).forEach(elKey => {
-                            if(p[elKey]?._localized){
-                                p[elKey] = _t(p[elKey])
+                            let pValue = p[elKey]
+                            if (pValue?._localized) {
+                                // resolve for this render only - writing it back would bake the
+                                // current language into the template
+                                pValue = _t(pValue)
                             }
                             if (elKey === '#') {
                                 // ignore
                             } else if (elKey.startsWith('$')) {
-                                eleProps[elKey.substring(1)] = p[elKey]
-                            } else if (p[elKey] !== '') {
-                                if (JsonDom.events.indexOf(elKey) > -1 && p[elKey].constructor === Object) {
-                                    // replace events with real functions and pass payload
-                                    const payload = p[elKey]
+                                eleProps[elKey.substring(1)] = pValue
+                            } else if (pValue != null && pValue !== '') {
+                                if (isEventProp(elKey) && pValue.constructor === Object) {
+                                    const payload = pValue
 
                                     eleProps[elKey] = (...args) => {
                                         const eLower = elKey.substring(2).toLowerCase()
@@ -1190,16 +1193,18 @@ class JsonDom extends React.Component {
                                     let cur = eleProps[curKey]
                                     if (cur) {
                                         if(curKey==='style'){
-                                            eleProps[curKey] = Object.assign(parseStyles(cur), parseStyles(p[elKey]))
+                                            eleProps[curKey] = Object.assign(parseStyles(cur), parseStyles(pValue))
                                         }else if (isString(cur)) {
-                                            eleProps[curKey] = cur + ' ' + p[elKey]
+                                            eleProps[curKey] = cur + ' ' + pValue
                                         } else if (cur.constructor === Object) {
-                                            eleProps[curKey] = Object.assign(cur, p[elKey])
+                                            // cur may still be the very object from the template (assigned by
+                                            // reference in an earlier iteration) - merge into a new one
+                                            eleProps[curKey] = Object.assign({}, cur, pValue)
                                         } else {
-                                            eleProps[curKey] = p[elKey]
+                                            eleProps[curKey] = pValue
                                         }
                                     } else {
-                                        eleProps[curKey] = p[elKey]
+                                        eleProps[curKey] = pValue
                                     }
                                 }
                             }
@@ -1427,13 +1432,19 @@ class JsonDom extends React.Component {
                  This is the modified version of the json (placeholder are replaced)
                  */
                 this.json = JSON.parse(renderedTemplate)
+
+                // an array root has no element of its own, which leaves the editor
+                // without a drop target for the top level - wrap it in a container
+                // that is only rendered in edit mode
+                if (this.json && this.json.constructor === Array) {
+                    this.json = {t: '#div', c: this.json}
+                }
             } catch (e) {
                 console.warn('getJson', template, e)
                 this.error = {type: 'template parse', e, code: renderedTemplate}
             }
             if (_app_.ssr && props.style && this.json) {
                 // add style
-
                 if (this.json.constructor !== Array) this.json = [this.json]
                 this.json.unshift({t: 'style', c: preprocessCss(this.parseStyle(props))})
             }
@@ -1457,6 +1468,12 @@ class JsonDom extends React.Component {
                  jsonRaw is the unmodified json for editing
                  */
                 this.jsonRaw = JSON.parse(template)
+
+                // keep the same shape as getJson, otherwise the keys used for
+                // rendering no longer match the json the editor works on
+                if (this.jsonRaw && this.jsonRaw.constructor === Array) {
+                    this.jsonRaw = {t: '#div', c: this.jsonRaw}
+                }
             } catch (e) {
                 console.log(e, template)
                 if (!ignoreError) {

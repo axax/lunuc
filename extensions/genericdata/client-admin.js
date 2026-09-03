@@ -157,7 +157,6 @@ export default () => {
                 if(dataFieldIndex>=0 && !structure.titleTemplate){
                     columns.splice(dataFieldIndex, 1)
                 }
-console.log(structureColumns)
                 structureColumns.reverse().forEach(col=>{
                     columns.splice(1, 0, {
                         title: col.label || col.field,
@@ -242,6 +241,12 @@ console.log(structureColumns)
 
                     const structure = meta && meta.structure? meta.structure : dataToEdit.definition.structure,
                         dataObject = dataToEdit.data || {}
+
+
+                    if(structure.fullScreen) {
+                        props.fullScreen = true
+                        delete props.fullScreenMobile
+                    }
 
                     if(structure.css){
                         DomUtil.createAndAddTag('style', 'head', {
