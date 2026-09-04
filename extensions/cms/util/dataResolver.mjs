@@ -36,7 +36,9 @@ function addDebugInfos(resolvedData, segment, startTime, startTimeSegment, debug
         log: debugLog
     }
 }
-
+function unescapeControlChars(str) {
+    return str.replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\r/g, '\r')
+}
 const UNESCAPE_RE = /\\([nrtbf\\'"`])/g;
 const UNESCAPE_MAP = { n:'\n', r:'\r', t:'\t', b:'\b', f:'\f' };
 
@@ -94,7 +96,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         const _e = Util.escapeForJson
                         const ApiUtil = this.ApiUtil
                         const ObjectId = this.ObjectId
-                        return \`${segmentStr}\`
+                        return \`${unescapeControlChars(segmentStr)}\`
                     `)
 
                     const replacedSegmentStr = tpl.call({

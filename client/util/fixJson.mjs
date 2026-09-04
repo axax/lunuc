@@ -488,6 +488,7 @@ export const fixAndParseJSON = (jsonString) => {
     try {
         return {json: JSON.parse(jsonString), errors: [], success: true}
     } catch (e) {
+        console.error('fixAndParseJSON', e)
         // fall through to the lenient parser
     }
 

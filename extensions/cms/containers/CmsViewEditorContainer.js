@@ -334,6 +334,8 @@ class CmsViewEditorContainer extends React.Component {
         if (!result.EditorOptions) {
             result.EditorOptions = DEFAULT_EDITOR_SETTINGS
         }
+        result.liveDevToolsBoxHeight = result.EditorOptions.devToolsBoxHeight
+
         if (!result.EditorPageOptions) {
             result.EditorPageOptions = {}
         }
@@ -495,6 +497,7 @@ class CmsViewEditorContainer extends React.Component {
             state.redoCount !== this.state.redoCount ||
             state.manual !== this.state.manual ||
             state.EditorOptions !== this.state.EditorOptions ||
+            state.liveDevToolsBoxHeight !== this.state.liveDevToolsBoxHeight ||
             Util.shallowCompare(state.EditorPageOptions, this.state.EditorPageOptions,
                 {ignoreKeys:['styleScroll','dataResolverScroll','serverScriptScroll','templateScroll','scriptScroll','manualScroll']}) ||
             state.cmsStatusData !== this.state.cmsStatusData ||
@@ -573,9 +576,10 @@ class CmsViewEditorContainer extends React.Component {
                     this.handleSettingChange( 'devToolsTab', false, tab)
                 }}
                 onBoxHeightChange={(height)=>{
+                    this.setState({liveDevToolsBoxHeight: height})
                     clearTimeout(this.boxHeightTimeout)
                     this.boxHeightTimeout = setTimeout(()=>{
-                        this.handleSettingChange( 'devToolsBoxHeight', false, height)
+                        this.handleSettingChange('devToolsBoxHeight', false, height)
                     },1000)
                 }} />,
             !props.dynamic && <ErrorHandler key="errorHandler" snackbar/>,
@@ -1267,7 +1271,7 @@ class CmsViewEditorContainer extends React.Component {
                               drawerWidth={EditorOptions.drawerWidth}
                               onDrawerOpenClose={this.drawerOpenClose}
                               onDrawerWidthChange={this.drawerWidthChange}
-                              contentStyle={{marginBottom:EditorOptions.devToolsTab?EditorOptions.devToolsBoxHeight:0}}
+                              contentStyle={{marginBottom: EditorOptions.devToolsTab ? (this.state.liveDevToolsBoxHeight || 200) : 0}}
                               toolbarLeft={<IconButton
                                   sx={{mr:1}}
                                   onClick={()=>{

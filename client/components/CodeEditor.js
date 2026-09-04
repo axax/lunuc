@@ -405,7 +405,7 @@ function CodeEditor(props,ref){
                         }}/>
                     </SimpleDialog>
                     :
-                    <SimpleDialog disablePortal={renderInWindow} fullWidth={true} maxWidth="md" key="newSiteDialog" open={true}
+                    <SimpleDialog disablePortal={renderInWindow} fullWidth={true} maxWidth="md" key="editDataDialog" open={true}
                                   onClose={(action) => {
                                       if (action.key === 'ok') {
                                           const formValidation = editDataFormRef.current.validate()
@@ -428,7 +428,7 @@ function CodeEditor(props,ref){
                                                       setFileIndex(files && files.length > 0 ? finalFileIndex + 1 : 1)
                                                   }
                                               } else {
-                                                  replaceLineWithText(editorViewRef.current, editData.lineData.number, `"${editData.key}":"${Util.escapeForJson(editDataFormRef.current.state.fields.data).replace(/\\/g, '\\\\\\')}"${editData.lineData.endsWithComma ? ',' : ''}`)
+                                                  replaceLineWithText(editorViewRef.current, editData.lineData.number, `"${editData.key}":"${Util.escapeForJson(editDataFormRef.current.state.fields.data)}"${editData.lineData.endsWithComma ? ',' : ''}`)
                                                   formatCode(editorViewRef.current)
                                               }
                                           }
@@ -446,7 +446,7 @@ function CodeEditor(props,ref){
                                   }]}
                                   title={'Edit'}>
                         <GenericForm ref={editDataFormRef} primaryButton={false} values={editData.values || {data: editData.value}} fields={editData.fields || {
-                            data: {fullWidth: true,label: editData.key,uitype: editData.uitype}}}/></SimpleDialog>)}
+                            data: {fullWidth: true,label: editData.key,uitype: 'editor'}}}/></SimpleDialog>)}
         <StyledEditorResizer onMouseDown={(e)=>{
             editorViewRef.resizerState = {pageY:e.pageY}
         }} onDblclick={(e)=>{

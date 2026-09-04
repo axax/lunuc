@@ -12,14 +12,25 @@ export function scrollToLine(view, firstVisibleLine) {
         }
     }
 }
-export function replaceLineWithText(view, lineNumberToReplace, newText) {
+
+export function replaceLineWithText(view, lineNumberToReplace, newText, preserveIndent = true) {
     const lineInfo = view.state.doc.line(lineNumberToReplace)
+    let textToInsert = newText
+
+    if (preserveIndent) {
+        const indent = (lineInfo.text.match(/^[ \t]*/) || [''])[0]
+        // avoid double-indenting if newText already carries the same indent
+        if (indent && !textToInsert.startsWith(indent)) {
+            textToInsert = indent + textToInsert.replace(/^[ \t]*/, '')
+        }
+    }
+
     // Replace the entire line
     view.dispatch({
         changes: {
             from: lineInfo.from, // Start position of the line
             to: lineInfo.to,     // End position of the line
-            insert: newText      // New text to insert
+            insert: textToInsert // New text to insert
         }
     })
 }
