@@ -33,6 +33,18 @@ const parser = md => {
             .split('|')
             .map(c => c.trim());
 
+        // Plain-text version of the headers for data-label: strip any inline HTML
+        // that may already be present (<b>, <code>, …) and escape attribute
+        // special characters, so content:attr(data-label) in the mobile card
+        // layout shows clean text instead of raw markup.
+        const headerLabels = headerCells.map(c =>
+            c.replace(/<[^>]*>/g, '')
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+        );
+
         // ----- alignment row (---, :---, :---:, ---:) -------------------
         const alignLine = lines[1];
         const alignments = alignLine
@@ -62,10 +74,13 @@ const parser = md => {
             .map((c, i) => `<th${alignments[i] ? ` style="text-align:${alignments[i]}"` : ''}>${c}</th>`)
             .join('')}</tr></thead>`;
 
-        // build <tbody>
+        // build <tbody> — each <td> gets its data-label attached right away
         const tbody = `<tbody>${bodyRows
             .map(cells => `<tr>${cells
-                .map((c, i) => `<td${alignments[i] ? ` style="text-align:${alignments[i]}"` : ''}>${c}</td>`)
+                .map((c, i) => {
+                    const label = headerLabels[i];
+                    return `<td${alignments[i] ? ` style="text-align:${alignments[i]}"` : ''}${label ? ` data-label="${label}"` : ''}>${c}</td>`;
+                })
                 .join('')}</tr>`)
             .join('')}</tbody>`;
 
