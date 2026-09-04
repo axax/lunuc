@@ -12,6 +12,10 @@ export const ALLOW_DROP = ['Cms', 'Print', 'Col', 'Row','div', 'main', 'footer',
 export const ALLOW_DROP_IN = {'Col': ['Row'], 'li': ['ul'], 'tr': ['tbody','thead','tfood','table']}
 export const ALLOW_DROP_FROM = {'Row': ['Col'],'tr':['td','th'],'table':['tbody','thead','tfood','tr']}
 
+// how far container drop areas are pushed outwards so they don't overlap
+// with the drop areas of their first / last child
+const CONTAINER_AREA_OFFSET = 14
+
 export const JsonDomDraggable = {
     clientX:0,
     clientY: 0
@@ -130,10 +134,13 @@ const getDistanceToDiv = (mouseX, mouseY, divElement) => {
 }
 
 
-function getOrCreateDropArea(tag, {create, isChild, index}) {
-    let key = tag.getAttribute('_key')
-    if(isChild){
-        key = key.slice(0, key.lastIndexOf('.'))
+function getOrCreateDropArea(tag, {create, isChild, index, forceKey}) {
+    let key = forceKey
+    if (!key) {
+        key = tag.getAttribute('_key')
+        if (isChild) {
+            key = key.slice(0, key.lastIndexOf('.'))
+        }
     }
     const id = 'dropArea-' + key + '--' + index
     // Check if the overlay already exists to prevent duplicates
@@ -195,6 +202,18 @@ function getOrCreateDropArea(tag, {create, isChild, index}) {
     }
 
     return dropArea
+}
+
+/**
+ * A position between rendered loop instances does not exist in the json:
+ * getComponentByKey drops the index after $loop, so every instance resolves
+ * to the same $for object. Positions further inside an instance are fine -
+ * they point into the loop template and can take a new sibling.
+ */
+function isLoopInstancePosition(key) {
+    const parts = key.split('.')
+    // parts[length-1] is the child index, so the parent position ends at -2
+    return parts.length > 2 && parts[parts.length - 3] === '$loop'
 }
 
 function isChildOf(child, parent) {
@@ -274,7 +293,7 @@ export const onJsonDomDrag = (e) => {
             })
 
             for (let i = 0; i < targetElements.length; i++) {
-                const {domEl, isChild, prevSibling, nextSibling, index, isLastChild} = targetElements[i]
+                const {domEl, isChild, prevSibling, nextSibling, index, isLastChild, isBeforeLoop} = targetElements[i]
 
                 if(domEl.dataset.allowDropSelector && !draggable.matches(domEl.dataset.allowDropSelector)){
                     continue
@@ -287,31 +306,75 @@ export const onJsonDomDrag = (e) => {
                     continue
                 }
 
-                const distance = getDistanceToDiv(JsonDomDraggable.clientX, JsonDomDraggable.clientY, domEl)
+                let distance = getDistanceToDiv(JsonDomDraggable.clientX, JsonDomDraggable.clientY, domEl)
+                if (distance >= 100 && !isChild && domEl.getBoundingClientRect().height < 10 &&
+                    domEl.querySelectorAll(':scope > [_key]').length === 0) {
+                    // an empty container collapses to zero height, so measuring against
+                    // it would keep its drop area out of reach almost everywhere
+                    const parentRect = domEl.parentNode.getBoundingClientRect()
+                    distance = getDistanceToDiv(JsonDomDraggable.clientX, JsonDomDraggable.clientY, {
+                        getBoundingClientRect: () => parentRect
+                    })
+                }
                 if (distance < 100) {
-                    const children = domEl.querySelectorAll(':scope > [_key]')
+                    const children = Array.from(domEl.querySelectorAll(':scope > [_key]'))
+                        .filter(child => !isLoopInstancePosition(child.getAttribute('_key')))
                     if (children.length > 0 && !isChild) {
+
+                        // the index must be the real position in the json, not the
+                        // position in this list - loop instances were filtered out
+                        // above, so the two would drift apart
+                        const jsonIndexOf = (child) => {
+                            const childKey = child.getAttribute('_key')
+                            return parseInt(childKey.substring(childKey.lastIndexOf('.') + 1))
+                        }
+
+                        // when the first rendered child was filtered out (a loop
+                        // instance) there is no position in front of it yet - add
+                        // one anchored to the first child that is actually rendered
+                        const renderedChildren = domEl.querySelectorAll(':scope > [_key]')
+                        if (renderedChildren.length > 0 && children.indexOf(renderedChildren[0]) < 0) {
+                            targetElements.push({domEl: renderedChildren[0],
+                                nextSibling: children[0] || null,
+                                isChild: true, index: 0, isBeforeLoop: true})
+                        }
 
                         for (let i = 0; i < children.length; i++) {
                             targetElements.push({domEl: children[i],
                                 prevSibling:i>0?children[i-1]:null,
                                 nextSibling:i<children.length-1?children[i+1]:null,
-                                isChild: true, index:i})
+                                isChild: true, index: jsonIndexOf(children[i])})
                         }
                         //last element
                         targetElements.push({domEl: children[children.length-1],
                             prevSibling:children.length>1?children[children.length-2]:null,
-                            isChild: true, index: children.length, isLastChild:true})
+                            isChild: true, index: jsonIndexOf(children[children.length-1]) + 1, isLastChild:true})
 
+                        // same as above for the end: when the last rendered child is a
+                        // loop instance there is no position behind it yet
+                        const lastRendered = renderedChildren[renderedChildren.length - 1]
+                        if (renderedChildren.length > 0 && children.indexOf(lastRendered) < 0) {
+                            targetElements.push({domEl: lastRendered,
+                                prevSibling: children[children.length - 1] || null,
+                                isChild: true, isLastChild: true, isBeforeLoop: true,
+                                index: domEl.querySelectorAll(':scope > [_key]').length > 0
+                                    ? jsonIndexOf(children[children.length - 1]) + 2 : 1})
+                        }
                     } else {
-
-
-                        const dropArea = getOrCreateDropArea(domEl, {create:true, isChild, index})
+                        let dropArea = getOrCreateDropArea(domEl, {create:true, isChild, index,
+                            // anchored to a loop instance, but the position belongs
+                            // to the container around it
+                            forceKey: isBeforeLoop ? domEl.parentNode.getAttribute('_key') : undefined})
                         // getBoundingClientRect returns the size and position relative to the viewport.
                         const rect = domEl.getBoundingClientRect()
 
                         let newDistance = distance
                         if (isChild) {
+                            if (isBeforeLoop) {
+                                // anchored to a loop instance, but the position
+                                // belongs to the container around it
+                                dropArea.dataset.key = domEl.parentNode.getAttribute('_key')
+                            }
                             const dropAreaIndex = parseInt(dropArea.dataset.index)
                             if(draggable.parentNode === domEl.parentNode && dropAreaIndex === draggableIndex+1){
                                 continue
@@ -354,15 +417,62 @@ export const onJsonDomDrag = (e) => {
                                 delete dropArea.style.writingMode
                             }
 
+                            if (isBeforeLoop) {
+                                // this position belongs to the container, but is anchored
+                                // to a loop instance whose own area sits at the same spot -
+                                // push it outwards, which is upwards at the start of the
+                                // container and downwards at its end
+                                dropArea.dataset.key = domEl.parentNode.getAttribute('_key')
+                                dropArea.style.top = (parseFloat(dropArea.style.top) +
+                                    (isLastChild ? CONTAINER_AREA_OFFSET : -CONTAINER_AREA_OFFSET)) + 'px'
+                            }
+
 
                         } else {
-                            // Apply the calculated dimensions and position
+                            const renderedChildren = domEl.querySelectorAll(':scope > [_key]')
                             dropArea.style.left = rect.left + window.scrollX + 'px'
                             dropArea.style.width = rect.width + 'px'
-                            dropArea.style.top = rect.top + window.scrollY + 'px'
-                            dropArea.style.height = rect.height + 'px'
-                            dropArea.dataset.fill = true
                             dropArea.classList.remove(CSS_DROPAREA_CHILD)
+
+                            if (renderedChildren.length > 0) {
+                                // The container has content but no usable positions
+                                // between its children (loop instances). Covering it
+                                // completely would hide their drop areas, so offer a
+                                // strip before and after the existing content instead.
+                                const firstRect = renderedChildren[0].getBoundingClientRect()
+                                const lastRect = renderedChildren[renderedChildren.length - 1].getBoundingClientRect()
+
+                                // offset outwards so the container position does not sit
+                                // exactly on top of the first child's own drop area
+                                dropArea.style.top = (firstRect.top + window.scrollY - 5 - CONTAINER_AREA_OFFSET) + 'px'
+                                dropArea.style.height = '10px'
+                                delete dropArea.dataset.fill
+                                dropArea.dataset.index = 0
+
+                                const endArea = getOrCreateDropArea(domEl, {create: true, index: 1})
+                                endArea.style.left = rect.left + window.scrollX + 'px'
+                                endArea.style.width = rect.width + 'px'
+                                endArea.style.top = (lastRect.bottom + window.scrollY - 5 + CONTAINER_AREA_OFFSET) + 'px'
+                                endArea.style.height = '10px'
+                                endArea.classList.remove(CSS_DROPAREA_CHILD)
+                                delete endArea.dataset.fill
+
+                                const endDistance = getDistanceToDiv(JsonDomDraggable.clientX, JsonDomDraggable.clientY, endArea)
+                                if (endDistance < 100) {
+                                    activeDropAreas.push({domEl: endArea, distance: endDistance})
+                                }
+                            } else {
+                                // an empty container collapses to zero height - fall back
+                                // to the space its parent offers below it
+                                let height = rect.height
+                                if (height < 10 && domEl.parentNode && domEl.parentNode.getBoundingClientRect) {
+                                    const parentRect = domEl.parentNode.getBoundingClientRect()
+                                    height = Math.max(parentRect.bottom - rect.top, 60)
+                                }
+                                dropArea.style.top = rect.top + window.scrollY + 'px'
+                                dropArea.style.height = height + 'px'
+                                dropArea.dataset.fill = true
+                            }
                         }
 
                         newDistance = getDistanceToDiv(JsonDomDraggable.clientX, JsonDomDraggable.clientY, dropArea)
