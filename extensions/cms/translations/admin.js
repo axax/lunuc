@@ -3,6 +3,7 @@ import CmsDataEditDialog from "../components/CmsDataEditDialog";
 
 export const translations = {
     de: {
+        'JsonViewer.copy.value': 'Wert kopieren',
         'CmsViewEditorContainer.save': 'Speichern',
         'CmsViewEditorContainer.editPage': 'Seite bearbeiten',
         'CmsViewEditorContainer.pageTitle': 'Seitentitel',
@@ -319,6 +320,7 @@ export const translations = {
         'CmsDataEditDialog.noAccess':'Sie haben vermutlich keine Berechtigung diese Daten zu bearbeiten'
     },
     en: {
+        'JsonViewer.copy.value': 'Copy value',
         'CmsViewEditorContainer.save': 'Save',
         'CmsViewEditorContainer.editPage': 'Edit page',
         'CmsViewEditorContainer.pageTitle': 'Page title',

@@ -232,6 +232,10 @@ class CmsViewEditorContainer extends React.Component {
        so the button shows up instantly, and gets closed by saveCmsPage */
     _openUndoEntry = null
     _isApplyingHistory = false
+    /* once true, the corresponding toolbar button stays visible (just disabled)
+       instead of disappearing, so the toolbar layout doesn't jump around */
+    _hasHadUndo = false
+    _hasHadRedo = false
 
     constructor(props) {
         super(props)
@@ -1090,33 +1094,41 @@ class CmsViewEditorContainer extends React.Component {
 
             if(canMangeCmsContent) {
 
-                if (this.undoHistory.length > 0) {
+                const showUndoButton = this.undoHistory.length > 0 || this._hasHadUndo
+                const showRedoButton = this.redoHistory.length > 0 || this._hasHadRedo
+
+                if (showRedoButton) {
+                    const redoDisabled = this.redoHistory.length === 0
+                    toolbarRight.push(
+                        <Tooltip key="redoButton" arrow placement="bottom"
+                                 title={redoDisabled ? '' : this.renderHistoryTooltip(this.redoHistory[0], _t('CmsViewEditorContainer.redochange'))}>
+                            <span>
+                                <Button startIcon={<ReplayIcon style={{transform: 'scaleX(-1)'}}/>}
+                                        size="small"
+                                        color="inherit"
+                                        disabled={redoDisabled}
+                                        onClick={() => {
+                                            this.redoLastChange()
+                                        }}>{_t('CmsViewEditorContainer.redochange')}{!redoDisabled ? ` (${this.redoHistory.length})` : ''}</Button>
+                            </span>
+                        </Tooltip>)
+                }
+
+
+                if (showUndoButton) {
+                    const undoDisabled = this.undoHistory.length === 0
                     toolbarRight.push(
                         <Tooltip key="undoButton" arrow placement="bottom"
-                                 title={this.renderHistoryTooltip(this.undoHistory[0], _t('CmsViewEditorContainer.undochange'))}>
+                                 title={undoDisabled ? '' : this.renderHistoryTooltip(this.undoHistory[0], _t('CmsViewEditorContainer.undochange'))}>
                             {/* the span is needed so the tooltip can attach its ref and mouse handlers */}
                             <span>
                                 <Button startIcon={<ReplayIcon/>}
                                         size="small"
                                         color="inherit"
+                                        disabled={undoDisabled}
                                         onClick={() => {
                                             this.undoLastChange()
-                                        }}>{_t('CmsViewEditorContainer.undochange')} ({this.undoHistory.length})</Button>
-                            </span>
-                        </Tooltip>)
-                }
-
-                if (this.redoHistory.length > 0) {
-                    toolbarRight.push(
-                        <Tooltip key="redoButton" arrow placement="bottom"
-                                 title={this.renderHistoryTooltip(this.redoHistory[0], _t('CmsViewEditorContainer.redochange'))}>
-                            <span>
-                                <Button startIcon={<ReplayIcon style={{transform: 'scaleX(-1)'}}/>}
-                                        size="small"
-                                        color="inherit"
-                                        onClick={() => {
-                                            this.redoLastChange()
-                                        }}>{_t('CmsViewEditorContainer.redochange')} ({this.redoHistory.length})</Button>
+                                        }}>{_t('CmsViewEditorContainer.undochange')}{!undoDisabled ? ` (${this.undoHistory.length})` : ''}</Button>
                             </span>
                         </Tooltip>)
                 }
@@ -1430,6 +1442,12 @@ class CmsViewEditorContainer extends React.Component {
         if (this._isUnmounted) {
             return
         }
+        if (this.undoHistory.length > 0) {
+            this._hasHadUndo = true
+        }
+        if (this.redoHistory.length > 0) {
+            this._hasHadRedo = true
+        }
         this.setState({undoCount: this.undoHistory.length, redoCount: this.redoHistory.length})
     }
 
@@ -1438,6 +1456,8 @@ class CmsViewEditorContainer extends React.Component {
         this.redoHistory.length = 0
         this._historyValues = {}
         this._openUndoEntry = null
+        this._hasHadUndo = false
+        this._hasHadRedo = false
     }
 
     handleCleanUpTranslations() {

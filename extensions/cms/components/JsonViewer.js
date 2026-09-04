@@ -1,7 +1,12 @@
-import React from 'react';
-import { useState } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { styled } from '@mui/material/styles';
 import Box from '@mui/material/Box';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import {_t} from '../../../util/i18n.mjs'
 
 // Styled Components
 const JsonContainer = styled(Box)(({ theme }) => ({
@@ -11,7 +16,7 @@ const JsonContainer = styled(Box)(({ theme }) => ({
     padding: theme.spacing(3),
     overflow: 'auto',
     maxHeight: '80vh',
-    height:'100%',
+    height: '100%',
     lineHeight: 1.5,
 }));
 
@@ -36,15 +41,26 @@ const JsonBracket = styled('span')({ color: '#546e7a', fontWeight: 600 });
 const JsonLength = styled('span')({ color: '#78909c', fontSize: '0.8em', marginLeft: '4px' });
 const CircularRef = styled('span')({ color: '#d32f2f', fontStyle: 'italic' });
 
+// Context, um den Rechtsklick-Handler an alle Nodes weiterzugeben,
+// ohne ihn manuell durch jede Ebene durchzureichen
+const JsonViewerContext = createContext(null);
+
 // ====================== JSON NODE ======================
 const JsonNode = ({ data, name = null, level = 0, ancestors = [] }) => {
     const [isExpanded, setIsExpanded] = useState(level === 0);
     const indent = level * 10;
+    const { openContextMenu } = useContext(JsonViewerContext);
+
+    const handleContextMenu = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        openContextMenu(event, data);
+    };
 
     // Primitives
     if (data === null) {
         return (
-            <JsonLine indent={indent}>
+            <JsonLine indent={indent} onContextMenu={handleContextMenu}>
                 {name && <JsonKey>{name}: </JsonKey>}
                 <JsonNull>null</JsonNull>
             </JsonLine>
@@ -52,7 +68,7 @@ const JsonNode = ({ data, name = null, level = 0, ancestors = [] }) => {
     }
     if (typeof data === 'boolean') {
         return (
-            <JsonLine indent={indent}>
+            <JsonLine indent={indent} onContextMenu={handleContextMenu}>
                 {name && <JsonKey>{name}: </JsonKey>}
                 <JsonBoolean>{data.toString()}</JsonBoolean>
             </JsonLine>
@@ -60,7 +76,7 @@ const JsonNode = ({ data, name = null, level = 0, ancestors = [] }) => {
     }
     if (typeof data === 'number') {
         return (
-            <JsonLine indent={indent}>
+            <JsonLine indent={indent} onContextMenu={handleContextMenu}>
                 {name && <JsonKey>{name}: </JsonKey>}
                 <JsonNumber>{data}</JsonNumber>
             </JsonLine>
@@ -68,7 +84,7 @@ const JsonNode = ({ data, name = null, level = 0, ancestors = [] }) => {
     }
     if (typeof data === 'string') {
         return (
-            <JsonLine indent={indent}>
+            <JsonLine indent={indent} onContextMenu={handleContextMenu}>
                 {name && <JsonKey>{name}: </JsonKey>}
                 <JsonString>"{data}"</JsonString>
             </JsonLine>
@@ -82,7 +98,7 @@ const JsonNode = ({ data, name = null, level = 0, ancestors = [] }) => {
 
         if (ancestors.includes(data)) {
             return (
-                <JsonLine indent={indent}>
+                <JsonLine indent={indent} onContextMenu={handleContextMenu}>
                     {name && <JsonKey>{name}: </JsonKey>}
                     <CircularRef>[Circular Reference]</CircularRef>
                 </JsonLine>
@@ -98,6 +114,7 @@ const JsonNode = ({ data, name = null, level = 0, ancestors = [] }) => {
                 <JsonLine
                     indent={0}
                     onClick={toggle}
+                    onContextMenu={handleContextMenu}
                     sx={{ cursor: 'pointer', userSelect: 'none' }}
                 >
                     {name && <JsonKey>{name}: </JsonKey>}
@@ -149,10 +166,64 @@ const JsonNode = ({ data, name = null, level = 0, ancestors = [] }) => {
 
 // ====================== MAIN COMPONENT ======================
 const JsonViewer = ({ json }) => {
+    const [contextMenu, setContextMenu] = useState(null); // { mouseX, mouseY, data }
+
+    const openContextMenu = useCallback((event, data) => {
+        setContextMenu({
+            mouseX: event.clientX + 2,
+            mouseY: event.clientY - 6,
+            data,
+        });
+    }, []);
+
+    const handleClose = () => setContextMenu(null);
+
+    const handleCopy = async () => {
+        if (contextMenu) {
+            try {
+                const seen = new WeakSet();
+                const jsonString = JSON.stringify(
+                    contextMenu.data,
+                    (key, value) => {
+                        if (typeof value === 'object' && value !== null) {
+                            if (seen.has(value)) return '[Circular Reference]';
+                            seen.add(value);
+                        }
+                        return value;
+                    },
+                    2
+                );
+                await navigator.clipboard.writeText(jsonString);
+            } catch (err) {
+                console.error('Kopieren fehlgeschlagen', err);
+            }
+        }
+        handleClose();
+    };
+
     return (
-        <JsonContainer>
-            <JsonNode data={json} />
-        </JsonContainer>
+        <JsonViewerContext.Provider value={{ openContextMenu }}>
+            <JsonContainer>
+                <JsonNode data={json} />
+            </JsonContainer>
+            <Menu
+                open={contextMenu !== null}
+                onClose={handleClose}
+                anchorReference="anchorPosition"
+                anchorPosition={
+                    contextMenu !== null
+                        ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+                        : undefined
+                }
+            >
+                <MenuItem onClick={handleCopy}>
+                    <ListItemIcon>
+                        <ContentCopyIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>{_t('JsonViewer.copy.value')}</ListItemText>
+                </MenuItem>
+            </Menu>
+        </JsonViewerContext.Provider>
     );
 };
 
