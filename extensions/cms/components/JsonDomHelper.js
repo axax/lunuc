@@ -1025,6 +1025,7 @@ class JsonDomHelper extends React.Component {
             return <_WrappedComponent
                 onClick={onClick}
                 onChange={onChange}
+                _this={_this}
                 {...rest}>{children}</_WrappedComponent>
         }
         const hasRichTextBar = !!_options.richText // && rest['data-element-key'] === 'richText'
