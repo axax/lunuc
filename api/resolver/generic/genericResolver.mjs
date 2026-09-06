@@ -246,6 +246,11 @@ const GenericResolver = {
 
         //console.log(JSON.stringify(dataQuery,null,4))
 
+        const GenericResolverOptions = await Util.getKeyValueGlobal(db, null, 'GenericResolverOptions', true) || {}
+
+        if(GenericResolverOptions.debug) {
+            debugInfo.push({label: 'Data Query', json: dataQuery})
+        }
         // ── run aggregate ──────────────────────────────────────────────────────
         const collection = db.collection(collectionName)
         const startTimeAggregate = performance.now()

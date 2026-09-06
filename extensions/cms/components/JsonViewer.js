@@ -5,11 +5,17 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import DataObjectIcon from '@mui/icons-material/DataObject';
+import CheckIcon from '@mui/icons-material/Check';
 import {_t} from '../../../util/i18n.mjs'
 
 // Styled Components
 const JsonContainer = styled(Box)(({ theme }) => ({
+    position: 'relative',
     fontFamily: 'monospace',
     fontSize: '0.875rem',
     backgroundColor: theme.palette.grey[50],
@@ -19,6 +25,30 @@ const JsonContainer = styled(Box)(({ theme }) => ({
     height: '100%',
     lineHeight: 1.5,
 }));
+
+const ToolbarActions = styled(Box)(({ theme }) => ({
+    position: 'sticky',
+    top: 0,
+    float: 'right',
+    display: 'flex',
+    gap: theme.spacing(0.5),
+    marginTop: theme.spacing(-2),
+    marginRight: theme.spacing(-2),
+    zIndex: 1,
+}));
+
+const ToolbarButton = styled(IconButton)(({ theme }) => ({
+    backgroundColor: theme.palette.grey[50],
+    '&:hover': {
+        backgroundColor: theme.palette.grey[200],
+    },
+}));
+
+const RawJson = styled('pre')({
+    margin: 0,
+    whiteSpace: 'pre-wrap',
+    wordBreak: 'break-all',
+});
 
 const JsonLine = styled(Box)(({ theme, indent = 0 }) => ({
     padding: '3px 2px',
@@ -44,6 +74,19 @@ const CircularRef = styled('span')({ color: '#d32f2f', fontStyle: 'italic' });
 // Context, um den Rechtsklick-Handler an alle Nodes weiterzugeben,
 // ohne ihn manuell durch jede Ebene durchzureichen
 const JsonViewerContext = createContext(null);
+
+// Sicheres Stringify, das zirkuläre Referenzen abfängt.
+// Wird sowohl vom Kopieren-Menü als auch von der RAW-Ansicht/Toolbar genutzt.
+const safeStringify = (data) => {
+    const seen = new WeakSet();
+    return JSON.stringify(data, (key, value) => {
+        if (typeof value === 'object' && value !== null) {
+            if (seen.has(value)) return '[Circular Reference]';
+            seen.add(value);
+        }
+        return value;
+    }, 2);
+};
 
 // ====================== JSON NODE ======================
 const JsonNode = ({ data, name = null, level = 0, ancestors = [] }) => {
@@ -165,8 +208,10 @@ const JsonNode = ({ data, name = null, level = 0, ancestors = [] }) => {
 };
 
 // ====================== MAIN COMPONENT ======================
-const JsonViewer = ({ json }) => {
+const JsonViewer = ({ json, initialRaw = false }) => {
     const [contextMenu, setContextMenu] = useState(null); // { mouseX, mouseY, data }
+    const [isRaw, setIsRaw] = useState(initialRaw);
+    const [copied, setCopied] = useState(false);
 
     const openContextMenu = useCallback((event, data) => {
         setContextMenu({
@@ -181,19 +226,7 @@ const JsonViewer = ({ json }) => {
     const handleCopy = async () => {
         if (contextMenu) {
             try {
-                const seen = new WeakSet();
-                const jsonString = JSON.stringify(
-                    contextMenu.data,
-                    (key, value) => {
-                        if (typeof value === 'object' && value !== null) {
-                            if (seen.has(value)) return '[Circular Reference]';
-                            seen.add(value);
-                        }
-                        return value;
-                    },
-                    2
-                );
-                await navigator.clipboard.writeText(jsonString);
+                await navigator.clipboard.writeText(safeStringify(contextMenu.data));
             } catch (err) {
                 console.error('Kopieren fehlgeschlagen', err);
             }
@@ -201,10 +234,48 @@ const JsonViewer = ({ json }) => {
         handleClose();
     };
 
+    const handleCopyAll = async () => {
+        try {
+            await navigator.clipboard.writeText(safeStringify(json));
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+        } catch (err) {
+            console.error('Kopieren fehlgeschlagen', err);
+        }
+    };
+
     return (
         <JsonViewerContext.Provider value={{ openContextMenu }}>
             <JsonContainer>
-                <JsonNode data={json} />
+                <ToolbarActions>
+                    <Tooltip arrow title={copied
+                        ? _t('JsonViewer.copied', null, 'Copied!')
+                        : _t('JsonViewer.copy.all', null, 'Copy to clipboard')}>
+                        <ToolbarButton size="small" onClick={handleCopyAll}>
+                            {copied
+                                ? <CheckIcon fontSize="small" color="success"/>
+                                : <ContentCopyIcon fontSize="small"/>}
+                        </ToolbarButton>
+                    </Tooltip>
+                    <Tooltip arrow title={isRaw
+                        ? _t('JsonViewer.view.tree', null, 'Tree view')
+                        : _t('JsonViewer.view.raw', null, 'Raw view')}>
+                        <ToolbarButton size="small" onClick={() => setIsRaw(!isRaw)}>
+                            {isRaw
+                                ? <AccountTreeIcon fontSize="small"/>
+                                : <DataObjectIcon fontSize="small"/>}
+                        </ToolbarButton>
+                    </Tooltip>
+                </ToolbarActions>
+                {isRaw
+                    ? (
+                        <RawJson onContextMenu={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            openContextMenu(event, json);
+                        }}>{safeStringify(json)}</RawJson>
+                    )
+                    : <JsonNode data={json} />}
             </JsonContainer>
             <Menu
                 open={contextMenu !== null}

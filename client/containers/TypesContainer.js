@@ -70,6 +70,7 @@ import SelectCollection from '../components/types/SelectCollection'
 import {parseOrElse} from '../util/json.mjs'
 import {isFieldVisibleForCurrentUser} from '../util/user.mjs'
 import BulkEdit from '../components/BulkEdit'
+import JsonViewer from "../../extensions/cms/components/JsonViewer";
 
 
 const DEFAULT_RESULT_LIMIT = 10
@@ -93,6 +94,43 @@ const StyledTableScript = styled('span')({
     fontSize: '85%'
 })
 
+
+const StyledDebugLabel = styled('div')({
+    fontSize: '0.7rem',
+    fontWeight: 600,
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+    opacity: 0.6,
+    marginBottom: '0.15rem'
+})
+
+const StyledDebugList = styled('div')({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.75rem',
+    maxHeight: '60vh',
+    overflowY: 'auto'
+})
+
+const StyledDebugEntry = styled('div')({
+    borderLeft: '2px solid rgba(0,0,0,0.12)',
+    paddingLeft: '0.75rem'
+})
+
+const StyledDebugMessage = styled('div')({
+    fontFamily: '"Courier 10 Pitch", Courier, monospace',
+    fontSize: '85%',
+    whiteSpace: 'pre-wrap',
+    wordBreak: 'break-word'
+})
+
+const StyledDebugJson = styled('div')({
+    marginTop: '0.25rem',
+    padding: '0.5rem',
+    borderRadius: '4px',
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    overflowX: 'auto'
+})
 
 function getFieldTitle(type, field) {
     return _t(`${type}.field.${field.name}`, null, (field.label || field.name) + (field.localized ? ' [' + _app_.lang + ']' : ''));
@@ -953,9 +991,11 @@ class TypesContainer extends React.Component {
                         </Paper>
                     </Col>
                 </Row>
-                <Typography mb={2} mt={0.5} color="text.disabled" component="div" key="searchHint"
-                            variant="caption">{this.searchHint()}</Typography>
-
+                <Typography color="text.disabled" component="div" key="searchHint"
+                            variant="caption"
+                            sx={{display: 'flex', alignItems: 'center', gap: 1, minHeight: '22px', mb:2, mt:0.5 }}>
+                    {this.searchHint()}
+                </Typography>
 
                 <Stack
                     direction="row"
@@ -1053,14 +1093,65 @@ class TypesContainer extends React.Component {
     }
 
     searchHint() {
-        if(Util.hasCapability({userData: _app_.user}, CAPABILITY_ADMIN_OPTIONS)) {
-            const {data} = this.state
-            if (data && data.meta) {
-                const meta = JSON.parse(data.meta)
-                return _t('TypesContainer.queryTime', meta) + (meta.debugInfo && meta.debugInfo.length > 0 ? ' - ' + meta.debugInfo.map(f => f.message).join(' | ') : '')
-            }
+        if (!Util.hasCapability({userData: _app_.user}, CAPABILITY_ADMIN_OPTIONS)) {
+            return ' '
         }
-        return ' '
+        const {data, showDebugInfo} = this.state
+        if (!data || !data.meta) {
+            return ' '
+        }
+
+        const meta = parseOrElse(data.meta, {})
+        const debugInfo = meta.debugInfo || []
+
+
+        return <>
+            {_t('TypesContainer.queryTime', meta)}
+            {debugInfo.length > 0 &&
+                <Chip size="small"
+                      variant="outlined"
+                      style={{margin:0,height: 18, fontSize: '0.65rem', cursor: 'pointer'}}
+                      label={`Debug (${debugInfo.length})`}
+                      onClick={() => {
+                          this.setState({
+                              simpleDialog: {
+                                  title: 'Debug Info',
+                                  maxWidth: 'md',
+                                  fullWidth: true,
+                                  children: this.renderDebugInfo(debugInfo)
+                              }
+                          })
+                      }}/>
+            }
+        </>
+    }
+
+    renderDebugInfo(debugInfo) {
+        return <StyledDebugList>
+            {debugInfo.map((entry, i) => {
+                // json can be delivered as a string or as an already parsed object
+                const json = entry.json && entry.json.constructor === String
+                    ? parseOrElse(entry.json, null)
+                    : entry.json
+                return <StyledDebugEntry key={i}>
+                    {entry.label &&
+                        <StyledDebugLabel>{entry.label}</StyledDebugLabel>
+                    }
+                    {entry.message &&
+                        <StyledDebugMessage>{entry.message}</StyledDebugMessage>
+                    }
+                    {json &&
+                        <StyledDebugJson><JsonViewer json={json}/></StyledDebugJson>
+                    }
+                    {!json && entry.json &&
+                        <StyledDebugMessage>{entry.json}</StyledDebugMessage>
+                    }
+                    {!entry.message && !entry.json &&
+                        <StyledDebugJson><JsonViewer json={entry}/></StyledDebugJson>
+                    }
+                </StyledDebugEntry>
+            })}
+        </StyledDebugList>
     }
 
     isColumnActive(type, id) {
