@@ -11,7 +11,7 @@ import React from 'react'
 import {ObjectId} from 'mongodb'
 import Util from '../../api/util/index.mjs'
 import { CAPABILITY_RUN_COMMAND} from '../../util/capabilities.mjs'
-import {uploadImageToStorage}  from './googleupload.mjs'
+//import {uploadImageToStorage}  from './googleupload.mjs'
 import {createMediaEntry, removeMediaScreenshots, removeMediaVariants} from './util/index.mjs'
 import { fileURLToPath } from 'url'
 import {_t, registerTrs} from '../../util/i18nServer.mjs'
@@ -152,8 +152,8 @@ Hook.on('FileUpload', async ({db, req, context, file, data, response}) => {
     let uploadResult
     if( data.useCdn ) {
 
-        uploadResult = await uploadImageToStorage({file})
-        data.src = uploadResult.url
+       // uploadResult = await uploadImageToStorage({file})
+        //data.src = uploadResult.url
     }
 
     if( !uploadResult || uploadResult.error ){

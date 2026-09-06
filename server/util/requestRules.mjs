@@ -179,7 +179,7 @@ export function applyRequestRules(req, res, parsedUrl, remoteAddress, rules, hos
         }
 
         if (matched) {
-            console.log(`Request Rule action match "${action.type}" --> ${req.url}`)
+            console.log(`Request Rule action match "${action.type}" remoteAddress=${remoteAddress} --> ${req.url}`)
 
             if (executeAction(action, req, res)) {
                 return true

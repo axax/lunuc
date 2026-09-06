@@ -1,6 +1,6 @@
 import {speechLanguages, translateLanguages} from '../data/common.mjs'
-import {v2} from '@google-cloud/translate'
 
+const GOOGLE_TRANSLATE_URL = 'https://translation.googleapis.com/language/translate/v2'
 
 export const commonResolver = (db) => ({
     Query: {
@@ -14,14 +14,30 @@ export const commonResolver = (db) => ({
             if (!toIso) {
                 toIso = 'en'
             }
-            const translator = new v2.Translate({
-                key: process.env.GOOGLE_API_KEY,
+
+            const payload = {q: text, target: toIso, format: 'text'}
+            if (fromIso) {
+                payload.source = fromIso
+            }
+
+            const response = await fetch(`${GOOGLE_TRANSLATE_URL}?key=${process.env.GOOGLE_API_KEY}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
             })
 
+            if (!response.ok) {
+                throw new Error(`Google Translate failed (${response.status}): ${await response.text()}`)
+            }
 
-            let [translation] = await translator.translate(text, toIso)
+            const {data} = await response.json()
+            const translation = data.translations[0]
 
-            return {text: translation, fromIso, toIso}
+            return {
+                text: translation.translatedText,
+                fromIso: fromIso || translation.detectedSourceLanguage,
+                toIso
+            }
         }
     }
 })
