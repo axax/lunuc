@@ -1,7 +1,7 @@
 import React from 'react'
 import {EditIcon, CodeIcon, AddIcon, AutoFixHighIcon, RepeatIcon, AutoAwesomeIcon} from 'ui/admin'
 import {_t} from '../../../util/i18n.mjs'
-import {formatCode} from './utils'
+import {formatCode, runTransformScript} from './utils'
 import {openWindow} from '../../util/window'
 import {fixAndParseJSON} from '../../util/fixJson.mjs'
 import {BuildIcon, CompareArrowsIcon, ApprovalIcon} from '../../../gensrc/ui/admin'
@@ -197,6 +197,13 @@ export function generateContextMenu({
                 name: _t('CodeEditor.applyPatch'),
                 onClick: () => {
                     setEditData({applyPatch: true})
+                }
+            })
+            contextMenuItems.push({
+                icon: <BuildIcon/>,
+                name: _t('CodeEditor.runTransformScript'),
+                onClick: () => {
+                    setEditData({transformScript: true})
                 }
             })
         }

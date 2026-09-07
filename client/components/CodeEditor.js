@@ -4,7 +4,7 @@ import {SimpleMenu,SimpleDialog} from 'ui/admin'
 import GenericForm from './GenericForm'
 import RenderInNewWindow from './layout/RenderInNewWindow'
 import {generateContextMenu} from './codemirror6/contextMenu'
-import {replaceLineWithText, formatCode, applyUnifiedDiff, scrollToLine} from './codemirror6/utils'
+import {replaceLineWithText, formatCode, applyUnifiedDiff, scrollToLine, runTransformScript} from './codemirror6/utils'
 import {StyledFile, seperateFiles, putFilesTogether, SPLIT_SIGN} from './codemirror6/fileSeperation'
 import styled from '@emotion/styled'
 import Util from '../util/index.mjs'
@@ -404,7 +404,77 @@ function CodeEditor(props,ref){
                             diff: {fullWidth: true, label: _t('CodeEditor.diffInput'), uitype: 'textarea', required: true}
                         }}/>
                     </SimpleDialog>
-                    :
+                    : editData.transformScript ?
+                        <SimpleDialog disablePortal={renderInWindow} fullWidth={true} maxWidth="md" key="transformDialog" open={true}
+                                      title={_t('CodeEditor.runTransformScript')}
+                                      actions={[
+                                          {key: 'cancel', label: _t('core.cancel'), type: 'secondary'},
+                                          ...(editData.preview && !editData.preview.error
+                                              ? [{key: 'apply', label: _t('core.save'), type: 'primary'}]
+                                              : [{key: 'run', label: _t('CodeEditor.transformPreview'), type: 'primary'}])
+                                      ]}
+                                      onClose={(action) => {
+                                          if (action.key === 'run') {
+                                              const formValidation = editDataFormRef.current.validate()
+                                              if (!formValidation.isValid) return
+                                              const script = editDataFormRef.current.state.fields.script
+                                              const current = putFilesTogether(files, finalFileIndex, editorViewRef.current.state.doc.toString())
+                                              setEditData({transformScript: true, script, preview: runTransformScript(current, script)})
+                                              return
+                                          }
+                                          if (action.key === 'apply' && editData.preview && !editData.preview.error) {
+                                              const firstVisibleLine = editorViewRef.current.state.doc.lineAt(
+                                                  editorViewRef.current.elementAtHeight(
+                                                      editorViewRef.current.dom.getBoundingClientRect().top -
+                                                      editorViewRef.current.documentTop).from).number
+
+                                              // Show only the current split in the editor, keep the whole
+                                              // document in state — same handling as applyPatch above.
+                                              let displayContent = editData.preview.content
+                                              if (files && showFileSplit) {
+                                                  const newFiles = seperateFiles(displayContent)
+                                                  if (newFiles.length > 0) {
+                                                      const idx = finalFileIndex < newFiles.length ? finalFileIndex : 0
+                                                      displayContent = newFiles[idx].content
+                                                  }
+                                              }
+                                              triggerOnChange(editData.preview.content)
+                                              editorViewRef.current.dispatch({
+                                                  changes: {from: 0, to: editorViewRef.current.state.doc.length, insert: displayContent}
+                                              })
+                                              scrollToLine(editorViewRef.current, firstVisibleLine)
+                                              setStateError(false)
+                                          }
+                                          setEditData(false)
+                                      }}>
+                            <GenericForm ref={editDataFormRef} primaryButton={false}
+                                         values={{script: editData.script || ''}} fields={{
+                                script: {
+                                    fullWidth: true,
+                                    label: _t('CodeEditor.transformScriptInput'),
+                                    uitype: 'textarea',
+                                    required: true,
+                                    helperText: _t('CodeEditor.transformScriptHelp')
+                                }
+                            }}/>
+                            {editData.preview && (editData.preview.error
+                                ? <div style={{color: 'red', whiteSpace: 'pre-wrap', marginTop: '1rem'}}>
+                                    {editData.preview.error}
+                                </div>
+                                : <div style={{marginTop: '1rem'}}>
+                                    <strong>{editData.preview.unchanged
+                                        ? _t('CodeEditor.transformNoChange')
+                                        : _t('CodeEditor.transformResult', {
+                                            lines: editData.preview.deltaLines,
+                                            chars: editData.preview.deltaChars
+                                        })}</strong>
+                                    {editData.preview.logs.length > 0 &&
+                                        <pre style={{maxHeight: '30vh', overflow: 'auto', fontSize: '12px'}}>
+                                          {editData.preview.logs.join('\n')}
+                                      </pre>}
+                                </div>)}
+                        </SimpleDialog>
+                        :
                     <SimpleDialog disablePortal={renderInWindow} fullWidth={true} maxWidth="md" key="editDataDialog" open={true}
                                   onClose={(action) => {
                                       if (action.key === 'ok') {

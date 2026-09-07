@@ -199,3 +199,48 @@ export function applyUnifiedDiff(originalText, diffText) {
 
     return lines.join('\n')
 }
+
+/**
+ * Runs a user-supplied transform script against the editor content.
+ *
+ * The script body receives `content` (string) and returns the new content.
+ * A bare expression works too — `content.replace(/a/g, 'b')` — because the
+ * body is wrapped in a return when it contains no `return` of its own.
+ *
+ * Deliberately synchronous: a transform that awaits network calls would make
+ * "preview, then apply" meaningless, since the result could differ on apply.
+ */
+export function runTransformScript(source, script) {
+    const body = /(^|[^.\w])return[\s(;]/.test(script) ? script : `return (${script})`
+
+    let fn
+    try {
+        fn = new Function('content', 'log', `"use strict";\n${body}`)
+    } catch (e) {
+        return { error: `Script does not compile: ${e.message}` }
+    }
+
+    const logs = []
+    let result
+    try {
+        result = fn(source, (...a) => logs.push(a.map(String).join(' ')))
+    } catch (e) {
+        return { error: `Script threw: ${e.message}`, logs }
+    }
+
+    if (typeof result !== 'string') {
+        return {
+            error: `Script must return a string, got ${result === undefined ? 'undefined' : typeof result}. ` +
+                `Make sure the last statement returns the new content.`,
+            logs
+        }
+    }
+
+    return {
+        content: result,
+        logs,
+        unchanged: result === source,
+        deltaChars: result.length - source.length,
+        deltaLines: result.split('\n').length - source.split('\n').length
+    }
+}
