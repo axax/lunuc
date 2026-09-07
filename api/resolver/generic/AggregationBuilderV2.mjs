@@ -84,7 +84,12 @@ export default class AggregationBuilderV2 {
      */
     createAndAddLookup({ type, name, multi, localized }, lookups, { usePipeline, language }) {
 
-        if (lookups.some(l => l.$lookup.from === type && l.$lookup.localField === name)) {
+        // Dedup on `as`: it is the output slot and must be unique, so two lookups
+        // sharing it are always duplicates. The previous check compared localField,
+        // which is undefined for pipeline lookups and `name.lang` for localized
+        // ones - it never matched those and let duplicate joins through.
+        const asField = language ? `${name}_${language}` : name
+        if (lookups.some(l => l.$lookup?.as === asField)) {
             return
         }
 
@@ -459,6 +464,14 @@ export default class AggregationBuilderV2 {
         const sort       = this.getSort()
         // Ensure the facet sort always has a stable tiebreaker on _id
         const facetSort  = sort._id ? sort : { ...sort, _id: -1 }
+        // The sort that actually establishes the order of the paginated result.
+        // Only the includeCount/no-limitCount branch paginates inside the facet and
+        // therefore already sorts with the tiebreaker; the other two branches
+        // paginate in dataQuery using the raw sort, so a trailing $sort: facetSort
+        // is a real reordering there and must not be dropped.
+        const paginationSort = includeCount && !this.options.limitCount ? facetSort : sort
+        // $skip: 0 is a no-op stage - omit it instead of pushing it
+        const skipStages = offset > 0 ? [{ $skip: offset }] : []
         const typeFields = this._getFormFieldsByType(this.type, true)
         const filters        = this.getParsedFilter(this.options.filter)
         const resultFilters  = this.getParsedFilter(this.options.resultFilter)
@@ -560,7 +573,7 @@ export default class AggregationBuilderV2 {
         if (includeCount) {
             if (this.options.limitCount) {
                 // Pre-limit the dataset before the facet split
-                dataQuery.push({ $sort: sort }, { $skip: offset }, { $limit: this.options.limitCount })
+                dataQuery.push({ $sort: sort }, ...skipStages, { $limit: this.options.limitCount })
                 if (!lookupFilters) {
                     // $skip: 0 was a no-op here, only $limit is needed
                     dataFacetQuery.push({ $limit: limit })
@@ -568,11 +581,11 @@ export default class AggregationBuilderV2 {
             } else {
                 dataFacetQuery.push({ $sort: facetSort })
                 if (!lookupFilters) {
-                    dataFacetQuery.push({ $skip: offset }, { $limit: limit })
+                    dataFacetQuery.push(...skipStages, { $limit: limit })
                 }
             }
         } else {
-            dataQuery.push({ $sort: sort }, { $skip: offset }, { $limit: limit })
+            dataQuery.push({ $sort: sort }, ...skipStages, { $limit: limit })
         }
 
         // Add any caller-provided lookups and the built-in field lookups
@@ -598,32 +611,34 @@ export default class AggregationBuilderV2 {
 
         // Re-group documents by _id after lookups have been applied.
         //
-        // The $group stage is only strictly required when something in the
-        // pipeline can change the document shape or multiply the document count
-        // for a given _id, i.e.:
-        //   - $lookup stages were added (single-value refs need $arrayElemAt /
-        //     localized refs need per-language sub-doc assembly)
+        // $group is only strictly required when a stage can emit MORE THAN ONE
+        // document for the same _id. $lookup does not qualify: it adds an array
+        // field, it never multiplies documents. What does qualify:
         //   - the caller provided its own group accumulators (this.options.group)
-        //   - the caller injected beforeGroup / before stages (potentially $unwind)
+        //   - the caller injected before / beforeGroup / afterRootMatch stages
+        //     (potentially $unwind)
+        //   - the caller provided raw lookups (not guaranteed to be $lookup)
         //
-        // Without any of those, each _id maps to exactly one input document, so
-        // $group degrades to a pure no-op. In that case an equivalent $project is
-        // used instead, which is significantly cheaper (no accumulator buffering)
-        // while producing the exact same documents, fields and ordering.
-        const hasLookups = lookups.length > 0
+        // Without any of those, each _id maps to exactly one input document and
+        // $group is a no-op that can be expressed as a $project - saving both the
+        // accumulator buffering AND the trailing $sort (see below), since $project
+        // preserves document order while $group does not.
         const groupEntries = Object.entries(groups)
-        // In the no-lookup case every group entry is of the form { $first: '$path' }.
-        // Guard against anything unexpected so we always fall back to $group then.
-        const allSimpleFirst = groupEntries.every(
-            ([, value]) => value && typeof value.$first === 'string'
-        )
+        // Every entry produced by createGroup() / _processRegularField() is a
+        // { $first: <expr> }. Fall back to $group for anything unexpected.
+        const allFirst = groupEntries.every(([, value]) => value && '$first' in value)
 
         const needsGroupStage =
-            hasLookups ||
-            this.options.group ||
-            this.options.beforeGroup ||
-            this.options.before ||
-            !allSimpleFirst
+            !!this.options.group ||
+            !!this.options.before ||
+            !!this.options.beforeGroup ||
+            !!this.options.afterRootMatch ||
+            !!this.options.lookups ||
+            !allFirst ||
+            // A tiebreaker was appended to the sort, so the trailing
+            // $sort: facetSort is NOT a no-op and must be kept - which requires
+            // the $group path (dropping $group only pays off together with it).
+            facetSort !== paginationSort
 
         if (needsGroupStage) {
             dataFacetQuery.push({
@@ -635,11 +650,20 @@ export default class AggregationBuilderV2 {
             })
         } else {
             // Equivalent projection for the single-document-per-_id case.
-            // { $first: '$slug' } with key 'slug' → { slug: 1 }; differing paths
-            // keep their field-path expression.
+            //
+            // $ifNull on EVERY entry is deliberate and required for bit-identical
+            // output, for two independent reasons:
+            //   1. $first materializes a missing value as null, whereas an
+            //      inclusion projection ({ field: 1 }) drops the field entirely.
+            //      This matters for every sparse field and every reference whose
+            //      $lookup found nothing ($arrayElemAt on [] yields missing).
+            //   2. BSON key order: included fields keep their position from the
+            //      input document, computed fields follow the projection spec
+            //      order. Making all of them computed reproduces the $group
+            //      order (_id first, then accumulators as defined).
             const projectGroup = { _id: 1 }
             for (const [key, value] of groupEntries) {
-                projectGroup[key] = value.$first === `$${key}` ? 1 : value.$first
+                projectGroup[key] = { $ifNull: [value.$first, null] }
             }
             dataFacetQuery.push({ $project: projectGroup })
         }
