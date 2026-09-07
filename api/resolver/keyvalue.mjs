@@ -110,6 +110,16 @@ export const keyvalueResolver = (db) => ({
             })
 
             if(global){
+                // TODO: is this needed?
+
+                GenericResolver.createEntity(db, {context: context}, 'Log', {
+                    location: 'keyvalueResolver',
+                    type: 'deprecatedCode',
+                    message: `gobal flag is deprecated. keys ${keys.join(',')}`,
+                    meta: {match}
+                })
+
+
                 const foundKeys = result.results.map(f=>f.key)
                 const notFoundKeys = keys.filter(k => foundKeys.indexOf(k)<0 )
 

@@ -12,7 +12,7 @@ import {
     QUERY_SET_KEY_VALUE,
     QUERY_SET_KEY_VALUE_GLOBAL,
     setKeyValueToLS,
-    getKeyValueFromLS
+    getKeyValueFromLS, QUERY_KEY_VALUES_GLOBAL
 } from '../../../client/util/keyvalue'
 import {NO_SESSION_KEY_VALUES} from '../../../client/constants/index.mjs'
 import {_t, registerTrs} from '../../../util/i18n.mjs'
@@ -178,12 +178,11 @@ export default function (WrappedComponent) {
         /**
          * get a user or gobal value by a key
          * @param {String} key
-         * @param {Boolean} server if true the values are sent to the server on a request
          * @param {Boolean} global if true the value is stored as globally for all users
          * @param {Boolean} local only lookup in localStorage
          * @param {Function} callback a function that gets called at the end
          */
-        getKeyValue({key, global, local, server, callback}){
+        getKeyValue({key, global, local, callback}){
 
             if (!key) {
                 return
@@ -195,7 +194,7 @@ export default function (WrappedComponent) {
             }
 
             client.query({
-                query: QUERY_KEY_VALUES,
+                query: global ? QUERY_KEY_VALUES_GLOBAL : QUERY_KEY_VALUES,
                 variables: {keys: key.constructor!==Array?[key]:key}
             }).then(callback).catch(callback)
         }
