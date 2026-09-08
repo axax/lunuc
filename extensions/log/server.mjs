@@ -12,6 +12,7 @@ import {
 } from '../../api/constants/index.mjs'
 import Util from '../../api/util/index.mjs'
 import {parseOrElse} from '../../client/util/json.mjs'
+import {analyseQueryPlan} from '../../api/util/queryPlanAnalysis.mjs'
 
 let mydb
 Hook.on('dbready', ({db}) => {
@@ -98,6 +99,20 @@ Hook.on('typeLoaded', async ({type,cacheKey,db, req, context, result, dataQuery,
       const explanation = await db.collection(collectionName)
           .aggregate(dataQuery, {allowDiskUse: true}).explain('queryPlanner')
 
+      // A collection scan is only worth reporting on a collection big enough for
+      // it to hurt. estimatedDocumentCount reads collection metadata and does not
+      // touch any document.
+      let documentCount
+      try {
+          documentCount = await db.collection(collectionName).estimatedDocumentCount()
+      } catch (e) {
+          console.warn(`log: could not count ${collectionName}`, e.message)
+      }
+
+      // Turns the plan into concrete hints. Reads the explain that was fetched
+      // above - no further query, nothing executed.
+      const findings = analyseQueryPlan(explanation, dataQuery, {documentCount})
+
       const headers =  req.headers || {}
 
       const host = getHostFromHeaders(headers)
@@ -111,6 +126,8 @@ Hook.on('typeLoaded', async ({type,cacheKey,db, req, context, result, dataQuery,
           meta: {
               aggregateTime,
               queryTime,
+              findings,
+              documentCount,
               resultCount: result.results.length,
               resultTotal: result.total,
               type,

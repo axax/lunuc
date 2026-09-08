@@ -5,6 +5,7 @@ import {Typography, ExpansionPanel, Button, SimpleSwitch, ContentBlock,
     SimpleTabPanel,
     SimpleDialog,
     DeleteIconButton,
+    TextField,
     SimpleTabs} from 'ui/admin'
 import Hook from 'util/hook.cjs'
 import {client, Query} from '../middleware/graphql'
@@ -72,7 +73,7 @@ class SystemContainer extends React.Component {
         Object.keys(extensions).map(k => {
             extensionStates[k] = fromStorage[k] || {enabled: true}
         })
-        this.state = {extensionStates, tabValue:0, message:'', confirmDeletionDialog:false}
+        this.state = {extensionStates, tabValue:0, message:'', confirmDeletionDialog:false, indexSearch:''}
     }
 
     setExtensionState(k, e) {
@@ -93,7 +94,7 @@ class SystemContainer extends React.Component {
     }
 
     render() {
-        const {extensionStates, tabValue, message, confirmDeletionDialog} = this.state
+        const {extensionStates, tabValue, message, confirmDeletionDialog, indexSearch} = this.state
 
         return <>
             <Typography variant="h3" component="h1" gutterBottom>System</Typography>
@@ -182,16 +183,41 @@ class SystemContainer extends React.Component {
                 }} variant="contained">Create DB Indexes</Button>
 
 
+                <TextField fullWidth size="small" sx={{mt: 2}}
+                           label="Filter collections and indexes"
+                           placeholder="e.g. slug, text, GenericData"
+                           value={indexSearch}
+                           onChange={e => this.setState({indexSearch: e.target.value})}/>
+
                 <Query key="query" query="query{getAllCollectionIndexes{results{name indexes}}}"
                        fetchPolicy="cache-and-network">
                     {({loading, error, data}) => {
                         if (loading) return 'Loading...'
                         if (error) return `Error! ${error.message}`
                         if (!data.getAllCollectionIndexes.results) return 'No data'
+                        const search = indexSearch.trim().toLowerCase()
+
                         // Biggest index footprint first - that is where dropping
                         // something actually pays off.
                         const collections = [...data.getAllCollectionIndexes.results]
                             .sort((a, b) => (b.totalIndexSize || 0) - (a.totalIndexSize || 0))
+                            .map(collection => {
+                                if (!search) return collection
+
+                                // A hit on the collection name keeps all of its
+                                // indexes, otherwise only the matching ones. The
+                                // raw index JSON is searched, so the key fields and
+                                // flags are covered too, not just the name.
+                                if (collection.name.toLowerCase().includes(search)) return collection
+
+                                const indexes = collection.indexes.filter(
+                                    index => index.toLowerCase().includes(search))
+
+                                return indexes.length ? {...collection, indexes} : null
+                            })
+                            .filter(Boolean)
+
+                        if (!collections.length) return 'No match'
 
                         return collections.map(collection => <div key={collection.name}>
                             <Typography variant="h6" component="h3" sx={{mt: 2}}>
