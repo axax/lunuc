@@ -8,11 +8,19 @@ import {getBestMatchingHostRule} from '../../../util/hostrules.mjs'
 import Hook from '../../../util/hook.cjs'
 
 
-export const getCmsPageCacheKey = ({_version, slug, host, inEditor, hostrule}) => {
+export const getCmsPageCacheKey = ({_version, slug, host, inEditor, hostrule, includeNonPublic}) => {
     return 'cmsPage-' + (_version ? _version + '-' : 'default-') + slug +
         (host ? '-' + host : '') +
         (inEditor ? '-inEditor' : '') +
-        (hostrule && hostrule.host ? '-' + hostrule.host : '')
+        (hostrule && hostrule.host ? '-' + hostrule.host : '') +
+        // A request that may see non-public pages runs a different match, so it
+        // must not share an entry with an anonymous one. Without this a negative
+        // entry cached by a visitor (or a bot) hides an unpublished page from an
+        // editor for the whole negative TTL.
+        // Appended AFTER the slug on purpose: cache invalidation in
+        // resolver/index.mjs uses Cache.clearStartWith() on the
+        // 'cmsPage-<version>-<slug>' prefix, which keeps matching this way.
+        (includeNonPublic ? '-nonpublic' : '')
 }
 
 function pathMatches(path, pathPatterns) {
@@ -48,9 +56,13 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
         hostrule = getBestMatchingHostRule(host, false, true).hostrule
     }
 
+    // Decides whether {public: true} ends up in the match below - and therefore
+    // belongs in the cache key. Single source of truth for both.
+    const includeNonPublic = !!(ignorePublicState || Util.isUserLoggedIn(context))
+
     // cache key only depends on request parameters, not on the resolved slugMatch,
     // so the cache lookup can happen before any slugMatch computation
-    const cacheKey = getCmsPageCacheKey({_version, slug, host, inEditor, hostrule})
+    const cacheKey = getCmsPageCacheKey({_version, slug, host, inEditor, hostrule, includeNonPublic})
 
     let cmsPages
     if (!editmode) {
@@ -98,11 +110,11 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
             parts.splice(-1,1)
         }*/
 
-        if (!ignorePublicState && !Util.isUserLoggedIn(context)) {
+        if (includeNonPublic) {
+            match = slugMatch
+        } else {
             // if no user only match public entries
             match = {$and: [slugMatch, {public: true}]}
-        } else {
-            match = slugMatch
         }
 
         cmsPages = await GenericResolver.entities(db, {headers, context}, 'CmsPage',
@@ -199,7 +211,7 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
             //only cache if public
             if (!editmode && cmsPages.results[0].public) {
                 if (slug !== cmsPages.results[0].slug) {
-                    const cacheKeyAlias = getCmsPageCacheKey({_version, slug: cmsPages.results[0].slug, host, hostrule})
+                    const cacheKeyAlias = getCmsPageCacheKey({_version, slug: cmsPages.results[0].slug, host, hostrule, includeNonPublic})
                     Cache.setAlias(cacheKeyAlias, cacheKey)
                 }
                 Cache.set(cacheKey, cmsPages, 6000000) // cache expires in 1h40min
