@@ -290,7 +290,13 @@ export const systemResolver = (db) => ({
             const jsonParsed = JSON.parse(json)
             findAndReplaceObjectIds(jsonParsed)
             const startTimeAggregate = new Date()
-            const explanation = await db.collection(collection).aggregate(jsonParsed, {allowDiskUse: true}).explain()
+            // 'executionStats' MUST be passed explicitly. Without a verbosity the
+            // driver sends allPlansExecution, which executes EVERY candidate plan
+            // in full - on a heavy pipeline that alone can exhaust the server.
+            // executionStats runs only the winning plan and is what an explain
+            // tool actually needs.
+            const explanation = await db.collection(collection)
+                .aggregate(jsonParsed, {allowDiskUse: true}).explain('executionStats')
             let results = await (db.collection(collection).aggregate(jsonParsed, {allowDiskUse: true}).toArray())
             const aggregateTime = new Date() - startTimeAggregate
             console.log(`Aggregate time = ${aggregateTime}ms`)

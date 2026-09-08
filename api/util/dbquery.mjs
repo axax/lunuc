@@ -8,6 +8,30 @@ import Cache from '../../util/cache.mjs'
 // How long subQuery results are cached (in milliseconds)
 const SUBQUERY_CACHE_TTL_MS = 10000
 
+/**
+ * Key under which a deep search match entry carries its metadata. The property
+ * is defined non-enumerable, so neither JSON.stringify nor the BSON serializer
+ * ever sees it - it exists purely so AggregationBuilderV2 can recognise and
+ * merge several deep searches on the same field.
+ */
+export const DEEP_SEARCH_META = '__deepSearch__'
+
+/**
+ * Body of the server-side deep search function. It takes an ARRAY of patterns:
+ * non-negated requires every pattern to match, negated requires none to match -
+ * which is exactly the AND semantics of separate $expr entries inside an $and.
+ * Emitting the array form even for a single pattern is what allows several deep
+ * searches to be merged later without generating a different body.
+ */
+const deepSearchFunctionBody = (negate) => `function(data, patterns) {
+                if (data === null || data === undefined) return false;
+                var haystack = (typeof data === 'object') ? JSON.stringify(data) : String(data);
+                for (var i = 0; i < patterns.length; i++) {
+                    if (${negate ? '' : '!'}new RegExp(patterns[i], 'i').test(haystack)) return false;
+                }
+                return true;
+            }`
+
 // ─── Comparator maps ──────────────────────────────────────────────────────────
 
 export const comparatorMap = {
@@ -37,11 +61,11 @@ const makeAccentInsensitive = (str) => {
         .replace(/ae|ä/gi, '(?:ae|ä)')
         .replace(/oe|ö/gi, '(?:oe|ö)')
         .replace(/ue|ü/gi, '(?:ue|ü)')
-        .replace(/[aáàâåã]/gi, '[aáàâåã]')
+        .replace(/[aáàâåãä]/gi, '[aáàâåãä]')
         .replace(/[eéèêë]/gi, '[eéèêë]')
         .replace(/[iíìîï]/gi, '[iíìîï]')
-        .replace(/[oóòôõ]/gi, '[oóòôõ]')
-        .replace(/[uúùû]/gi, '[uúùû]')
+        .replace(/[oóòôõö]/gi, '[oóòôõö]')
+        .replace(/[uúùûü]/gi, '[uúùûü]')
         .replace(/[cç]/gi, '[cç]')
         .replace(/[nñ]/gi, '[nñ]')
 }
@@ -51,6 +75,10 @@ export const addFilterToMatchV2 = async ({ db, debugInfo, filterKey, filterValue
     // Normalize once so every branch below can access these unguarded.
     const options = filterOptions ?? {}
     const rawComparator = options.comparator ?? ''
+
+    // Set by the deep search branch below so the pushed match entry can be
+    // tagged for later merging.
+    let deepSearchMeta = null
 
     if (rawComparator && !comparatorMap[rawComparator] && debugInfo) {
         debugInfo.push({ code: 'unknownComparator',
@@ -101,20 +129,31 @@ export const addFilterToMatchV2 = async ({ db, debugInfo, filterKey, filterValue
 
         const negate = rawComparator.startsWith('!')
 
-        // The pattern is passed in via `args` rather than interpolated into the
-        // function body, and pre-escaped, so it can never break out of the
+        // The patterns are passed in via `args` rather than interpolated into
+        // the function body, and pre-escaped, so they can never break out of the
         // generated JS source (which MongoDB executes server-side via $function).
-        const escapedPattern = ClientUtil.escapeRegex(String(filterValue))
+        const escapedValue = ClientUtil.escapeRegex(String(filterValue))
+
+        // Same accent handling as the plain $regex branch below. Without it a
+        // filter on a concrete field would match "Mueller" against "Müller"
+        // while the vague search over the same data would not - one input box,
+        // two behaviours. Note what makeAccentInsensitive actually does: it
+        // equates the German transliterations (ue/ü, ae/ä, oe/ö, ss/ß) and adds
+        // diacritic classes; a bare "u" is NOT treated as "ü".
+        const escapedPattern = options.ignoreAccents !== false
+            ? makeAccentInsensitive(escapedValue)
+            : escapedValue
 
         filterValue = {
-            body: `function(data, pattern) {
-                if (data === null || data === undefined) return false;
-                var haystack = (typeof data === 'object') ? JSON.stringify(data) : String(data);
-                return ${negate ? '!' : ''}new RegExp(pattern, 'i').test(haystack);
-            }`,
-            args: ['$' + filterKey, {$literal: escapedPattern}],
+            body: deepSearchFunctionBody(negate),
+            args: ['$' + filterKey, {$literal: [escapedPattern]}],
             lang: 'js'
         }
+
+        // Remember what this expression tests, so several deep searches on the
+        // same field can be collapsed into one $function call downstream.
+        deepSearchMeta = { field: filterKey, negate }
+
         comparator = '$function'
         filterKey  = '$expr'
 
@@ -310,7 +349,20 @@ export const addFilterToMatchV2 = async ({ db, debugInfo, filterKey, filterValue
         matchExpression = { [isNegated ? '$nin' : '$in']: ids }
     }
 
-    match.push({ [filterKey]: matchExpression })
+    const matchEntry = { [filterKey]: matchExpression }
+
+    if (deepSearchMeta) {
+        // Non-enumerable: invisible to JSON.stringify and to BSON serialization,
+        // so it never reaches MongoDB.
+        Object.defineProperty(matchEntry, DEEP_SEARCH_META, {
+            value: deepSearchMeta,
+            enumerable: false,
+            writable: true,
+            configurable: true
+        })
+    }
+
+    match.push(matchEntry)
 
     return true
 }

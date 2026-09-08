@@ -5,7 +5,8 @@ import config from '../../../gensrc/config.mjs'
 import Hook from '../../../util/hook.cjs'
 import {
     addFilterToMatchV2,
-    makeAllMatchAnAndMatch
+    makeAllMatchAnAndMatch,
+    DEEP_SEARCH_META
 } from '../../util/dbquery.mjs'
 
 
@@ -1140,6 +1141,56 @@ export default class AggregationBuilderV2 {
         }
     }
 
+    /**
+     * Merges several deep search $expr entries on the same field into one
+     * $function call.
+     *
+     * Entries sitting directly in an $and are combined with AND semantics, and
+     * that is precisely what the generated function body implements for an array
+     * of patterns - so the rewrite is semantically transparent. The win is per
+     * document and per additional search term: one JSON.stringify of the whole
+     * field instead of N, and one JS invocation instead of N. That matters most
+     * during plan selection, where the trial phase runs this filter once per
+     * candidate plan.
+     */
+    mergeDeepSearchExpressions(match) {
+        const conditions = match?.$and
+        if (!Array.isArray(conditions) || conditions.length < 2) return
+
+        // Group by field + negation; only entries carrying the marker qualify.
+        const groups = new Map()
+
+        for (const condition of conditions) {
+            const meta = condition?.[DEEP_SEARCH_META]
+            if (!meta) continue
+
+            const key = `${meta.field}\u0000${meta.negate ? 1 : 0}`
+            const group = groups.get(key)
+            group ? group.push(condition) : groups.set(key, [condition])
+        }
+
+        const merged = new Set()
+
+        for (const group of groups.values()) {
+            if (group.length < 2) continue
+
+            const [target, ...rest] = group
+            const patterns = target.$expr?.$function?.args?.[1]?.$literal
+            if (patterns?.constructor !== Array) continue
+
+            for (const condition of rest) {
+                const additional = condition.$expr?.$function?.args?.[1]?.$literal
+                if (additional?.constructor !== Array) continue
+                patterns.push(...additional)
+                merged.add(condition)
+            }
+        }
+
+        if (merged.size > 0) {
+            match.$and = conditions.filter(condition => !merged.has(condition))
+        }
+    }
+
     /** Removes empty or redundant $and/$or clauses from a match object. */
     cleanupMatch(match) {
         // Collapse same-operator nesting first ($and-in-$and, $or-in-$or). This
@@ -1147,6 +1198,11 @@ export default class AggregationBuilderV2 {
         // unwrap/empty-removal steps below operate on the result.
         this.flattenSameOperator(match, '$and')
         this.flattenSameOperator(match, '$or')
+
+        // Collapse several deep searches on the same field into a single
+        // $function call. Must run after flattening, so all $and members sit at
+        // one level, and before the unwrap steps, which may dissolve $and.
+        this.mergeDeepSearchExpressions(match)
 
         // Unwrap single-element $or into $and
         if (match.$or?.length === 1) {

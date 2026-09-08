@@ -34,6 +34,23 @@ export const createAllIndexes = async (db) => {
         const type = types[typeName]
         const textIndex = {}
         for (const field of type.fields) {
+
+            // A compound index names its own fields, so it does not depend on
+            // this field being indexed itself. It used to sit inside the
+            // field.index check below, which silently dropped every
+            // compoundIndex declared on a field without an `index` property.
+            if (field.compoundIndex) {
+                field.compoundIndex.forEach(idx => {
+                    console.log(`Creating compound index for ${JSON.stringify(idx)}`)
+                    db.collection(typeName).createIndex(idx.fields, {
+                        background: true,
+                        unique: idx.unique
+                    }).catch(async e => {
+                        console.error(`Error creating compound index for ${typeName}`, e)
+                    })
+                })
+            }
+
             if (field.index) {
                 console.log(`Creating index for ${typeName}.${field.name}`)
                 if (field.localized) {
@@ -51,18 +68,6 @@ export const createAllIndexes = async (db) => {
                     if( field.index === 'text') {
                         textIndex[field.name] = 'text'
                     }else{
-                        if( field.compoundIndex){
-                            field.compoundIndex.forEach(idx=>{
-                                console.log(`Creating compound index for ${JSON.stringify(idx)}`)
-                                db.collection(typeName).createIndex(idx.fields, {
-                                    background: true,
-                                    unique: idx.unique
-                                }).catch(async e=>{
-                                    console.error(`Error creating compound index for ${typeName}`, e)
-                                })
-                            })
-                        }
-
                         if( field.index.constructor === Object){
                             Object.keys(field.index).forEach(k=>{
                                 const idx = field.index[k]

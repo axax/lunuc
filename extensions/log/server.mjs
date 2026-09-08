@@ -39,11 +39,18 @@ process.on('uncaughtException', async (error, origin) => {
     }
 
     if(mydb && error) {
-        await GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {
-            type: 'uncaughtException',
-            message: (error.message?error.message + '\n\n' + error.stack:JSON.stringify(error))+'\n\n'+origin,
-            meta: {debug:error.debugData, globalDebug: _app_.errorDebug, systemName: os.hostname()}
-        })
+        // A failing write here would raise a fresh unhandledRejection, which
+        // feeds the counter below and can drive the process into process.exit(1)
+        // on the logger's account rather than on the original error's.
+        try {
+            await GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {
+                type: 'uncaughtException',
+                message: (error.message?error.message + '\n\n' + error.stack:JSON.stringify(error))+'\n\n'+origin,
+                meta: {debug:error.debugData, globalDebug: _app_.errorDebug, systemName: os.hostname()}
+            })
+        } catch (logError) {
+            console.error('log: could not persist uncaughtException', logError.message)
+        }
     }
 
 
@@ -59,11 +66,17 @@ process.on('unhandledRejection', async (error) => {
 
     unhandledRejectionCount++
     if(mydb && error) {
-        await GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {
-            type: 'unhandledRejection',
-            message: error.message?error.message + '\n\n' + error.stack:JSON.stringify(error),
-            meta: error.debugData
-        })
+        // Without this catch a failing write turns into another
+        // unhandledRejection, re-entering this very handler.
+        try {
+            await GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {
+                type: 'unhandledRejection',
+                message: error.message?error.message + '\n\n' + error.stack:JSON.stringify(error),
+                meta: error.debugData
+            })
+        } catch (logError) {
+            console.error('log: could not persist unhandledRejection', logError.message)
+        }
     }
 
     if(unhandledRejectionCount>10){
@@ -77,7 +90,13 @@ Hook.on('typeLoaded', async ({type,cacheKey,db, req, context, result, dataQuery,
 
   if(aggregateTime > 1000) {
 
-      const explanation = await  db.collection(collectionName).aggregate(dataQuery, {allowDiskUse: true}).explain()
+      // 'queryPlanner' MUST be passed explicitly: without a verbosity the driver
+      // sends allPlansExecution, which re-runs the pipeline for EVERY candidate
+      // plan. On an already slow query that is the most expensive thing the
+      // server can be asked to do - it was turning slow searches into OOMs.
+      // queryPlanner does not execute anything and still shows the chosen index.
+      const explanation = await db.collection(collectionName)
+          .aggregate(dataQuery, {allowDiskUse: true}).explain('queryPlanner')
 
       const headers =  req.headers || {}
 
@@ -102,6 +121,46 @@ Hook.on('typeLoaded', async ({type,cacheKey,db, req, context, result, dataQuery,
           }
       })
   }
+})
+
+/**
+ * Failed aggregations from GenericResolver. The report already carries a
+ * queryPlanner explain, so nothing is re-executed here.
+ */
+Hook.on('genericResolverAggregateError', async ({
+    label, collection, code, codeName, message, filter, sort, limit, limitCount,
+    hint, allowDiskUse, match, plan, planError, type, req, context
+}) => {
+    // Never log a failure of the Log type itself - that would loop.
+    if (!mydb || type === 'Log') return
+
+    const headers = req?.headers || {}
+
+    try {
+        await GenericResolver.createEntity(
+            mydb,
+            {context: context || {lang: config.DEFAULT_LANGUAGE}},
+            'Log',
+            {
+                location: collection,
+                type: 'aggregateError',
+                message: `[${codeName || code || 'unknown'}] ${message}`,
+                meta: {
+                    label, type, code, codeName,
+                    filter, sort, limit, limitCount, hint, allowDiskUse,
+                    match, plan, planError,
+                    host: getHostFromHeaders(headers),
+                    agent: headers[TRACK_USER_AGENT_HEADER] || headers['user-agent'] || '',
+                    referer: headers[TRACK_REFERER_HEADER] || headers['referer'] || '',
+                    systemName: os.hostname()
+                }
+            }
+        )
+    } catch (e) {
+        // The hook is fired synchronously and not awaited, so an unhandled
+        // rejection here would land in the unhandledRejection counter above.
+        console.error('log: could not persist aggregateError', e.message)
+    }
 })
 
 Hook.on('typeBeforeCreate', ({type, data, req}) => {

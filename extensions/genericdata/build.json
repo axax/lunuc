@@ -30,44 +30,9 @@
           "name": "data",
           "uitype": "json",
           "type": "Object",
-          "index": 1,
           "vagueSearchable": true,
           "compoundIndex": [
-            {
-              "unique": false,
-              "fields": {
-                "definition": 1,
-                "data.id": 1
-              }
-            },
-            {
-              "unique": false,
-              "fields": {
-                "definition": 1,
-                "data.name": 1
-              }
-            },
-            {
-              "unique": false,
-              "fields": {
-                "definition": 1,
-                "data.date": 1
-              }
-            },
-            {
-              "unique": false,
-              "fields": {
-                "definition": 1,
-                "data.createdon": 1
-              }
-            },
-            {
-              "unique": false,
-              "fields": {
-                "definition": 1,
-                "data.datetimeFrom": 1
-              }
-            }
+            { "unique": false, "fields": { "definition": 1, "data.$**": 1 } }
           ]
         },
         {
@@ -83,13 +48,7 @@
           "index": 1,
           "alwaysUpdate": true,
           "compoundIndex": [
-            {
-              "unique": true,
-              "fields": {
-                "definition": 1,
-                "_id": 1
-              }
-            }
+            { "unique": true, "fields": { "definition": 1, "_id": 1 } }
           ]
         },
         {

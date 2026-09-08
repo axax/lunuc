@@ -172,11 +172,15 @@ function addGenericTypeLookupForType(field, otherOptions, projection) {
     // A $lookup join is deduplicated by _id and has no guaranteed order. Rebuild the array
     // positionally from the (order- and duplicate-preserving) id list and join each position
     // back against the lookup result. Unresolved references are dropped (null filtered out).
+    // Bound once through the $let below. ensureArray() expands to a nested
+    // $cond/$isArray/$type chain, and referencing it directly from the
+    // per-element expressions re-evaluated that chain for every
+    // (position, lookup row) pair, i.e. O(n^2) times per document.
     const oidArray = ensureArray(`$${field.name}ObjectId`)
 
     const resolve = {
         $arrayElemAt: [
-            {$filter: {input: `$data.${field.name}`, cond: {$eq: ['$$this._id', {$arrayElemAt: [oidArray, '$$i']}]}}},
+            {$filter: {input: `$data.${field.name}`, cond: {$eq: ['$$this._id', {$arrayElemAt: ['$$ids', '$$i']}]}}},
             0
         ]
     }
@@ -184,36 +188,43 @@ function addGenericTypeLookupForType(field, otherOptions, projection) {
     otherOptions.lookups.push({
         $addFields: {
             [`data.${field.name}`]: {
-                $filter: {
-                    input: {
-                        $map: {
-                            input: {$range: [0, {$size: oidArray}]},
-                            as: 'i',
-                            in: field.metaFields
-                                ? {
-                                    $let: {
-                                        vars: {
-                                            rel: resolve,
-                                            orig: {$arrayElemAt: [ensureArray(`$data.${field.name}_Original`), '$$i']}
-                                        },
-                                        in: {
-                                            $cond: [
-                                                {$eq: ['$$rel', null]},
-                                                null,
-                                                {
-                                                    $mergeObjects: [
-                                                        '$$rel',
-                                                        {$cond: [{$eq: [{$type: '$$orig'}, 'object']}, '$$orig', {}]}
+                $let: {
+                    vars: field.metaFields
+                        ? {ids: oidArray, origs: ensureArray(`$data.${field.name}_Original`)}
+                        : {ids: oidArray},
+                    in: {
+                        $filter: {
+                            input: {
+                                $map: {
+                                    input: {$range: [0, {$size: '$$ids'}]},
+                                    as: 'i',
+                                    in: field.metaFields
+                                        ? {
+                                            $let: {
+                                                vars: {
+                                                    rel: resolve,
+                                                    orig: {$arrayElemAt: ['$$origs', '$$i']}
+                                                },
+                                                in: {
+                                                    $cond: [
+                                                        {$eq: ['$$rel', null]},
+                                                        null,
+                                                        {
+                                                            $mergeObjects: [
+                                                                '$$rel',
+                                                                {$cond: [{$eq: [{$type: '$$orig'}, 'object']}, '$$orig', {}]}
+                                                            ]
+                                                        }
                                                     ]
                                                 }
-                                            ]
+                                            }
                                         }
-                                    }
+                                        : resolve
                                 }
-                                : resolve
+                            },
+                            cond: {$ne: ['$$this', null]}
                         }
-                    },
-                    cond: {$ne: ['$$this', null]}
+                    }
                 }
             }
         }
@@ -430,22 +441,29 @@ function buildNestedLookupStages(parentType, projectionData, parentProject, dept
         })
 
         // restore order + duplicates, drop unresolved refs
+        // ids is bound once: ensureArray() is a nested $cond chain and was
+        // previously re-evaluated for every (position, lookup row) pair.
         const oidArray = ensureArray(`$${oidField}`)
         const rebuilt = {
-            $filter: {
-                input: {
-                    $map: {
-                        input: {$range: [0, {$size: oidArray}]},
-                        as: 'i',
-                        in: {
-                            $arrayElemAt: [
-                                {$filter: {input: `$${nestedName}`, cond: {$eq: ['$$this._id', {$arrayElemAt: [oidArray, '$$i']}]}}},
-                                0
-                            ]
-                        }
+            $let: {
+                vars: {ids: oidArray},
+                in: {
+                    $filter: {
+                        input: {
+                            $map: {
+                                input: {$range: [0, {$size: '$$ids'}]},
+                                as: 'i',
+                                in: {
+                                    $arrayElemAt: [
+                                        {$filter: {input: `$${nestedName}`, cond: {$eq: ['$$this._id', {$arrayElemAt: ['$$ids', '$$i']}]}}},
+                                        0
+                                    ]
+                                }
+                            }
+                        },
+                        cond: {$ne: ['$$this', null]}
                     }
-                },
-                cond: {$ne: ['$$this', null]}
+                }
             }
         }
 

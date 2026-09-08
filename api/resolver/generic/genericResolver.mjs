@@ -157,6 +157,60 @@ export const prepareDataForUpdate = (typeName, data) => {
     return dataSet
 }
 
+/**
+ * Builds the aggregate runner for a single request.
+ *
+ * The returned function runs a pipeline and, when it fails, logs everything
+ * needed to diagnose it without reproducing the query by hand: the driver error
+ * code, the filter it originated from, and the winning plan. The error is
+ * rethrown unchanged - this only observes.
+ *
+ * The explicit 'queryPlanner' verbosity must stay: passing none makes the driver
+ * send allPlansExecution, which executes the pipeline once per candidate plan -
+ * the worst possible thing to do to a query that just ran out of memory.
+ * queryPlanner executes nothing and still names the chosen index.
+ */
+function createAggregateRunner({collection, collectionName, typeName, otherOptions, db, req, context}) {
+
+    return async (label, pipeline, aggOptions) => {
+        try {
+            return await collection.aggregate(pipeline, aggOptions).toArray()
+        } catch (error) {
+            const report = {
+                label,
+                collection: collectionName,
+                code: error.code,
+                codeName: error.codeName,
+                message: error.message,
+                filter: otherOptions.filter,
+                sort: otherOptions.sort,
+                limit: otherOptions.limit,
+                limitCount: otherOptions.limitCount,
+                hint: aggOptions?.hint,
+                allowDiskUse: aggOptions?.allowDiskUse,
+                match: JSON.stringify(pipeline.find(stage => stage.$match))
+            }
+
+            try {
+                report.plan = JSON.stringify(
+                    await collection.aggregate(pipeline, aggOptions).explain('queryPlanner')
+                )
+            } catch (explainError) {
+                report.planError = explainError.message
+            }
+
+            console.error('GenericResolver: aggregate failed', report)
+
+            // Lets a project route this into its own monitoring.
+            Hook.call('genericResolverAggregateError', {
+                ...report, error, pipeline, type: typeName, db, req, context
+            })
+
+            throw error
+        }
+    }
+}
+
 const GenericResolver = {
     entities: async (db, reqOrContext, typeName, data, options) => {
         const { context, req } = resolveRequestContext(reqOrContext)
@@ -244,7 +298,7 @@ const GenericResolver = {
 
         const { dataQuery, countQuery, debugInfo } = await aggregationBuilder.query()
 
-        //console.log(JSON.stringify(dataQuery,null,4))
+        console.log(JSON.stringify(dataQuery,null,4))
 
         const GenericResolverOptions = await Util.getKeyValueGlobal(db, null, 'GenericResolverOptions', true) || {}
 
@@ -253,8 +307,13 @@ const GenericResolver = {
         }
         // ── run aggregate ──────────────────────────────────────────────────────
         const collection = db.collection(collectionName)
+
+        const runAggregate = createAggregateRunner({
+            collection, collectionName, typeName, otherOptions, db, req, context
+        })
+
         const startTimeAggregate = performance.now()
-        const queryResults = await collection.aggregate(dataQuery, finalAggregateOptions).toArray()
+        const queryResults = await runAggregate('dataQuery', dataQuery, finalAggregateOptions)
 
         let queryResponse
         if(otherOptions.skipFacetQuery) {
@@ -282,7 +341,12 @@ const GenericResolver = {
 
                     if (queryResponse.results.length > queryResponse.total && countQuery) {
                         //console.log('estimatedDocumentCount is not accurate', queryResponse.total, queryResponse.results.length)
-                        const countResults = await collection.aggregate(countQuery, {allowDiskUse: true}).toArray()
+                        // countQuery is dataQuery minus the $sort stages, so it
+                        // carries the same root $match and belongs on the same index.
+                        const countResults = await runAggregate('countQuery', countQuery,
+                            finalAggregateOptions.hint
+                                ? {allowDiskUse: true, hint: finalAggregateOptions.hint}
+                                : {allowDiskUse: true})
                         if (countResults.length > 0) queryResponse.total = countResults[0].count
                     }
                 }
