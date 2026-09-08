@@ -452,27 +452,59 @@ export const systemResolver = (db) => ({
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_ADMIN_OPTIONS);
 
             const collections = await db.listCollections().toArray();
-            const results = [];
 
-            for (const collection of collections) {
-                // Wir holen die Statistiken der Collection
-                // 'indexSizes' ist ein Objekt: { "indexName": sizeInBytes }
-                const stats = await db.command({ collStats: collection.name });
-                const indexSizes = stats.indexSizes;
+            // Every collection needs three independent reads. Sequentially that
+            // is 3 x <number of collections> round trips before the page renders,
+            // so they run per collection in parallel.
+            const results = await Promise.all(collections.map(async (collection) => {
+                const name = collection.name
+                let indexSizes = {}, totalIndexSize = 0, indexes = [], usageByName = {}
 
-                // Wir holen die Index-Definitionen
-                const indexes = await db.collection(collection.name).indexes();
+                // Views and collections dropped mid-listing have no collStats /
+                // indexes / indexStats. A failure on one must not take out the
+                // whole listing, so each read is guarded on its own.
+                try {
+                    const stats = await db.command({ collStats: name })
+                    indexSizes = stats.indexSizes || {}
+                    totalIndexSize = stats.totalIndexSize || 0
+                } catch (e) {
+                    console.warn(`getAllCollectionIndexes: no collStats for ${name}`, e.message)
+                }
 
-                results.push({
-                    name: collection.name,
-                    totalIndexSize: stats.totalIndexSize, // Gesamtgröße aller Indizes
+                try {
+                    indexes = await db.collection(name).indexes()
+                } catch (e) {
+                    console.warn(`getAllCollectionIndexes: no indexes for ${name}`, e.message)
+                }
+
+                try {
+                    // $indexStats returns the usage counters of every index of the
+                    // collection in one call, so it is folded into this listing
+                    // instead of being fetched per index on demand.
+                    const usage = await db.collection(name).aggregate([{ $indexStats: {} }]).toArray()
+                    for (const stat of usage) {
+                        usageByName[stat.name] = {
+                            // Counter lives in the mongod process and resets on
+                            // restart - only meaningful together with `since`.
+                            ops: Number(stat.accesses?.ops ?? 0),
+                            since: stat.accesses?.since
+                        }
+                    }
+                } catch (e) {
+                    console.warn(`getAllCollectionIndexes: no indexStats for ${name}`, e.message)
+                }
+
+                return {
+                    name,
+                    totalIndexSize,
                     indexes: indexes.map(index => JSON.stringify({
                         ...index,
-                        // Wir mappen die Größe aus den Stats zum jeweiligen Index
-                        sizeOnDisk: indexSizes[index.name] || 0
+                        sizeOnDisk: indexSizes[index.name] || 0,
+                        ops: usageByName[index.name]?.ops,
+                        opsSince: usageByName[index.name]?.since
                     }))
-                });
-            }
+                }
+            }))
 
             return { results };
         },

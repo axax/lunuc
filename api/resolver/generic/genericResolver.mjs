@@ -315,6 +315,12 @@ const GenericResolver = {
         const startTimeAggregate = performance.now()
         const queryResults = await runAggregate('dataQuery', dataQuery, finalAggregateOptions)
 
+        // Time of the data aggregation alone. aggregateTime below also covers
+        // postQueryConvert, an optional estimatedDocumentCount and a possible
+        // second count aggregation - so the two together tell whether a slow
+        // request was the database or everything around it.
+        const queryTime = Math.round(performance.now() - startTimeAggregate)
+
         let queryResponse
         if(otherOptions.skipFacetQuery) {
             queryResponse = queryResults.length > 0 ? queryResults[0] : null
@@ -339,7 +345,17 @@ const GenericResolver = {
                 } else {
                     queryResponse.total = estimateCount ? await collection.estimatedDocumentCount() : 0
 
-                    if (queryResponse.results.length > queryResponse.total && countQuery) {
+                    if (includeCount === false) {
+                        // The caller explicitly asked for no count, so no exact
+                        // count is run. total is still set to the number of
+                        // delivered results: without it total would stay 0 next
+                        // to a non-empty results array - the inconsistent state
+                        // the fallback below was written to repair. It is a lower
+                        // bound, not a total, whenever more documents match than
+                        // the page returns.
+                        queryResponse.total = queryResponse.results.length
+
+                    } else if (queryResponse.results.length > queryResponse.total && countQuery) {
                         //console.log('estimatedDocumentCount is not accurate', queryResponse.total, queryResponse.results.length)
                         // countQuery is dataQuery minus the $sort stages, so it
                         // carries the same root $match and belongs on the same index.
@@ -361,7 +377,8 @@ const GenericResolver = {
         // ── hooks: after load ──────────────────────────────────────────────────
         await HookAsync.call('typeLoaded', {
             type: typeName, cacheKey, data, db, req, context,
-            otherOptions, result: queryResponse, dataQuery, collectionName, aggregateTime, debugInfo,
+            otherOptions, result: queryResponse, dataQuery, collectionName,
+            aggregateTime, queryTime, debugInfo,
         })
 
         // ── meta ───────────────────────────────────────────────────────────────
@@ -369,6 +386,7 @@ const GenericResolver = {
             queryResponse.meta = {
                 ...(queryResponse.meta ?? {}),
                 aggregateTime,
+                queryTime,
                 totalTime,
                 debugInfo,
             }
@@ -379,7 +397,7 @@ const GenericResolver = {
         // ── cache (write) ──────────────────────────────────────────────────────
         if (cacheKey) Cache.set(cacheKey, queryResponse, cacheOpts.cacheTime)
 
-        console.debug(`GenericResolver: for ${collectionName} complete: aggregate time = ${aggregateTime}ms total time ${totalTime}ms`)
+        console.debug(`GenericResolver: for ${collectionName} complete: query time = ${queryTime}ms aggregate time = ${aggregateTime}ms total time ${totalTime}ms`)
         return queryResponse
     },
     createEntity: async (db, req, typeName, {_version, ...data}, options) => {

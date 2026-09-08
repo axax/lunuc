@@ -86,7 +86,7 @@ process.on('unhandledRejection', async (error) => {
 
 
 
-Hook.on('typeLoaded', async ({type,cacheKey,db, req, context, result, dataQuery, collectionName, aggregateTime}) => {
+Hook.on('typeLoaded', async ({type,cacheKey,db, req, context, result, dataQuery, collectionName, aggregateTime, queryTime}) => {
 
   if(aggregateTime > 1000) {
 
@@ -110,6 +110,7 @@ Hook.on('typeLoaded', async ({type,cacheKey,db, req, context, result, dataQuery,
           message: JSON.stringify(explanation, null, 2),
           meta: {
               aggregateTime,
+              queryTime,
               resultCount: result.results.length,
               resultTotal: result.total,
               type,
