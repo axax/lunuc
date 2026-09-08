@@ -7,8 +7,44 @@
  *   – ordered & unordered lists (including nested continuation lines)
  *   – **GitHub‑flavour tables** (| … |)
  *   – final cleanup & paragraph wrapping
+ *
+ * Untrusted input (LLM output, user text) is HTML-escaped by default, so a
+ * literal tag such as `<style>` can never become real, unclosed markup that
+ * swallows everything after it. Caller-produced HTML (KaTeX output) is passed
+ * through a <safe_html> marker – see step 0 below.
+ *
+ * @param md        Markdown source (untrusted)
+ * @param options   { escapeHtml: true } – escapeHtml:false restores the old
+ *                  behaviour (raw HTML passes through). Needed for callers that
+ *                  intentionally put HTML into markdown fields.
  */
-const parser = md => {
+const parser = (md, options = {}) => {
+    const escapeHtml = options.escapeHtml !== false;
+    md = String(md == null ? '' : md);
+
+    // -----------------------------------------------------------------
+    // 0️⃣ Pull out <safe_html> blocks BEFORE escaping. The marker does NOT
+    // mean "sanitized", it means "produced by the caller, may go into the DOM
+    // as-is" (e.g. KaTeX output). Only the caller sets it – any occurrence
+    // coming from the model is stripped there first.
+    // The placeholder uses \u0000 because that character never appears in real
+    // input and is not matched by any markdown rule.
+    // -----------------------------------------------------------------
+    const trusted = [];
+    md = md.replace(/<safe_html>([\s\S]*?)<\/safe_html>/g, (m, inner) => {
+        trusted.push(inner);
+        return `\u0000H${trusted.length - 1}\u0000`;
+    });
+    // an unpaired, still-open <safe_html> (aborted stream) must not survive as markup
+    md = md.replace(/<\/?safe_html>/g, '');
+
+    if (escapeHtml) {
+        md = md
+            .replace(/&(?!#?\w+;)/g, '&amp;')   // don't double-escape existing entities
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
     // -----------------------------------------------------------------
     // 1️⃣ Protect URLs from being mangled by later regexes
     // -----------------------------------------------------------------
@@ -39,7 +75,8 @@ const parser = md => {
         // layout shows clean text instead of raw markup.
         const headerLabels = headerCells.map(c =>
             c.replace(/<[^>]*>/g, '')
-                .replace(/&/g, '&amp;')
+                .replace(/\u0000H\d+\u0000/g, '')   // never let a placeholder into an attribute
+                .replace(/&(?!#?\w+;)/g, '&amp;')
                 .replace(/"/g, '&quot;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
@@ -115,7 +152,9 @@ const parser = md => {
         [/`(.*?)`/gm, "<code>$1</code>"],
 
         /* ---------- Blockquote ---------- */
-        [/^> ([^\n]*)$/gm, "<blockquote>$1</blockquote>"],
+        // "&gt;" is accepted as well: with escapeHtml on, a typed ">" has already
+        // been escaped by the time this rule runs.
+        [/^(?:>|&gt;) ([^\n]*)$/gm, "<blockquote>$1</blockquote>"],
 
         /* ---------- Headings (h1‑h6) ---------- */
         [/^(#{1,6})(.*)$/gm, (m, h, p) => `<h${h.length}>${p.trim()}</h${h.length}>`],
@@ -181,6 +220,8 @@ const parser = md => {
 
     // -----------------------------------------------------------------
     // 5️⃣ Clean‑up: fix stray paragraph tags around headings, remove empty tags, etc.
+    //     The trusted <safe_html> fragments are put back last, so no markdown rule
+    //     and no cleanup step ever touches them.
     // -----------------------------------------------------------------
     parsed = parsed
         .replace(/<p><h([0-6])/g, '<h$1')
@@ -188,7 +229,9 @@ const parser = md => {
         .replace(/<p><\/p>/g, '')
         .replace(/<br\s*\/?>\s*<\/p>/g, '</p>')
         .replace(/>\s*<br\s*\/>/g, '>')
-        .replace(/\n+/g, '').replace(/%%URL(\d+)%%/g, (m, i) => urlPlaceholders[+i]);
+        .replace(/\n+/g, '')
+        .replace(/%%URL(\d+)%%/g, (m, i) => urlPlaceholders[+i])
+        .replace(/\u0000H(\d+)\u0000/g, (m, i) => trusted[+i]);
 
     // -----------------------------------------------------------------
     // 6️⃣ Wrap the whole thing in a single <p> (mirrors original behaviour)

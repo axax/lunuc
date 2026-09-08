@@ -233,7 +233,8 @@ export function generateContextMenu({
             icon: <AutoAwesomeIcon/>,
             name: _t('CodeEditor.aiAssistent') + ' (Alt-Cmd-A)',
             onClick: () => {
-                winAndReplace(`/system/aiassistent?preview=true&input=${encodeURIComponent(selectedContent || '')}&type=${type}`)
+                sessionStorage.setItem('llm_input', selectedContent)
+                winAndReplace(`/system/aiassistent?preview=true&inputkey=llm_input&type=${type}`)
             }
         })
 
