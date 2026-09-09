@@ -569,7 +569,7 @@ class CmsViewEditorContainer extends React.Component {
                 style={{left:EditorOptions.drawerOpen?EditorOptions.drawerWidth:0}}
                 boxHeight={EditorOptions.devToolsBoxHeight}
                 tab={EditorOptions.devToolsTab}
-                data={{slug:props.slug, template, style, script, serverScript, dataResolver}}
+                data={{slug:cmsPage.realSlug, template, style, script, serverScript, dataResolver}}
                 setCmsPageValue={this.setCmsPageValue.bind(this)}
                 onTemplateChange={this.handleTemplateChange.bind(this)}
                 onTab={(tab)=>{
