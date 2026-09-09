@@ -93,6 +93,8 @@ const sendError = ({location, message, meta, fingerprint}) => {
                 href: window.location.href,
                 parser: window._lunucWebParser,
                 headless: isHeadlessBrowser(),
+                lacksOptionalChaining: _app_.lacksOptionalChaining,
+                lacksBasicEs6: _app_.lacksBasicEs6,
                 ...meta
             })
         }

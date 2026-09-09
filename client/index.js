@@ -182,7 +182,7 @@ if (!window.LUNUC_PREPARSED) {
 
     _app_.lacksBasicEs6 = morePolyfill && (() => {
         try {
-            new Function('(a={x:1})=>{const {x}=a;let b=1;}')
+            new Function('(a={x:1})=>{const {x}=a;let b={...a};}')
             return false
         } catch (err) {
             console.log(err)
