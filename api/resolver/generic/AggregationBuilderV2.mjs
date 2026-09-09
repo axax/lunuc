@@ -58,7 +58,7 @@ export default class AggregationBuilderV2 {
      * makes query() omit the $sort stage entirely.
      */
     getSort() {
-        const { sort, lang } = this.options;
+        const { sort, lang, filter } = this.options;
         // Opting out matters for more than saving a stage: a $sort lets the
         // planner prefer an index that provides the ORDER over one that actually
         // narrows the query. On a wildcard index it even decides which single
@@ -67,8 +67,13 @@ export default class AggregationBuilderV2 {
         // 'false' / 'none' as a STRING matters: the GraphQL schema declares sort
         // as String, so a boolean never survives that path - and without this the
         // string would be parsed as a field name and produce {false: 1}.
-        if (sort === false || sort === 'false' || sort === 'none') return {};
-        if (!sort) return { _id: -1 };
+        if (sort === false) return {};
+        if (!sort) {
+            if(filter){
+                return {}
+            }
+            return {_id: -1};
+        }
         if (typeof sort !== 'string') return sort;
 
         const typeFields = this._getFormFieldsByType(this.type);
