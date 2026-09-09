@@ -2117,6 +2117,9 @@ class JsonDomHelper extends React.Component {
             let val = propertyByPath(key, subJson, '_')
 
             if (val && val.constructor === Array) {
+
+                const firtstField = newJsonElement.groupOptions[key] ? Object.values(newJsonElement.groupOptions[key])[0] ?? {}: {};
+
                 newJsonElement.options['!' + key + '!add'] = {
                     uitype: 'button',
                     key,
@@ -2124,7 +2127,7 @@ class JsonDomHelper extends React.Component {
                     label: _t('core.add'),
                     action: 'add',
                     newLine: true,
-                    tab: 'Slides',
+                    tab: firtstField.tab || 'elements.slidesTab',
                     tabPosition: 0,
                     style: {marginBottom: '2rem'},
                     ...newJsonElement.groupOptions[key]._addButton
