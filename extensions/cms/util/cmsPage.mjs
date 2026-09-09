@@ -33,6 +33,37 @@ function pathMatches(path, pathPatterns) {
     })
 }
 
+// Fields loaded for a CmsPage. Module level on purpose: the lookup below can run
+// once per slug candidate, and two inline copies of this list would silently
+// drift apart - a newly added field would then be missing on fallback pages only.
+const CMS_PAGE_FIELDS = [
+    'slug',
+    'ownerGroup',
+    'name',
+    'keyword',
+    'author',
+    'description',
+    'template',
+    'script',
+    'style',
+    'serverScript',
+    'dataResolver',
+    'manual',
+    'resources',
+    'ssr',
+    'public',
+    'urlSensitiv',
+    'parseResolvedData',
+    'fetchPolicy',
+    'alwaysLoadAssets',
+    'loadPageOptions',
+    'ssrStyle',
+    'uniqueStyle',
+    'publicEdit',
+    'disableRendering',
+    'compress'
+]
+
 export const getCmsPage = async ({db, context, headers, ...params}) => {
 
     if (Hook.hooks['beforeCmsPage'] && Hook.hooks['beforeCmsPage'].length) {
@@ -60,8 +91,8 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
     // belongs in the cache key. Single source of truth for both.
     const includeNonPublic = !!(ignorePublicState || Util.isUserLoggedIn(context))
 
-    // cache key only depends on request parameters, not on the resolved slugMatch,
-    // so the cache lookup can happen before any slugMatch computation
+    // cache key only depends on request parameters, not on the resolved slug
+    // candidates, so the cache lookup can happen before any candidate computation
     const cacheKey = getCmsPageCacheKey({_version, slug, host, inEditor, hostrule, includeNonPublic})
 
     let cmsPages
@@ -70,7 +101,16 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
     }
     if (!cmsPages) {
 
-        let slugMatch = {slug}
+        // Slug candidates in descending priority. The first candidate that resolves
+        // to a page wins, so the order of this array IS the precedence rule:
+        // hostrule.slugContext, then slugFallback.slugContexts in config order,
+        // then - only if slugFallback allows it - the bare slug.
+        //
+        // They must NOT be collapsed into a single $in: sort:false keeps the $sort
+        // stage out of the pipeline, so MongoDB walks the slug index bounds in
+        // index (= alphabetical) order and returns whichever candidate it happens
+        // to hit first, not the one that should take precedence.
+        let slugCandidates
 
         if (hostrule && hostrule.slugContext && !(slug + '/').startsWith(hostrule.slugContext + '/')) {
 
@@ -80,76 +120,56 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
                 slugFallback = {default: slugFallback === true}
             }
 
-            // Additional slugContexts to OR-match against, e.g. slugFallback.slugContexts = ['ctxA', 'ctxB']
+            // Additional slugContexts, tried after the hostrule's own slugContext,
+            // e.g. slugFallback.slugContexts = ['ctxA', 'ctxB'].
             // Empty or non-string entries are filtered out to avoid invalid slug variants
             const extraContexts = Array.isArray(slugFallback.slugContexts)
                 ? slugFallback.slugContexts.filter(ctx => typeof ctx === 'string' && ctx.length > 0)
                 : []
 
-            // Build all slug candidates and remove potential duplicates
-            const uniqueModSlugs = [...new Set([
+            slugCandidates = [
                 modSlug,
                 ...extraContexts.map(ctx => ctx + (slug.length > 0 ? '/' : '') + slug)
-            ])]
+            ]
 
+            // The bare slug becomes a candidate ONLY when slugFallback opts in -
+            // never implicitly, and never ahead of a slugContext.
             if (slugFallback.default === true || (Array.isArray(slugFallback.exceptions) && pathMatches(slug, slugFallback.exceptions))) {
-                // $in is more efficient than $or for equality matches on the same field
-                slugMatch = {slug: {$in: [...uniqueModSlugs, slug]}}
-            } else if (uniqueModSlugs.length > 1) {
-                slugMatch = {slug: {$in: uniqueModSlugs}}
-            } else {
-                slugMatch = {slug: uniqueModSlugs[0]}
+                slugCandidates.push(slug)
             }
-        }
 
-        let match
-
-        /*const parts = slug.split('/')
-        for(let i = parts.length; i>0;i--){
-            ors.push({slug: `${parts.join('/')}/*`})
-            parts.splice(-1,1)
-        }*/
-
-        if (includeNonPublic) {
-            match = slugMatch
+            // drop duplicates, keeping the first (= highest priority) occurrence
+            slugCandidates = [...new Set(slugCandidates)]
         } else {
-            // if no user only match public entries
-            match = {$and: [slugMatch, {public: true}]}
+            // No slugContext applies - either there is no hostrule, or the slug
+            // already carries the context. The requested slug is the only candidate.
+            slugCandidates = [slug]
         }
 
-        cmsPages = await GenericResolver.entities(db, {headers, context}, 'CmsPage',
-            ['slug',
-                'ownerGroup',
-                'name',
-                'keyword',
-                'author',
-                'description',
-                'template',
-                'script',
-                'style',
-                'serverScript',
-                'dataResolver',
-                'manual',
-                'resources',
-                'ssr',
-                'public',
-                'urlSensitiv',
-                'parseResolvedData',
-                'fetchPolicy',
-                'alwaysLoadAssets',
-                'loadPageOptions',
-                'ssrStyle',
-                'uniqueStyle',
-                'publicEdit',
-                'disableRendering',
-                'compress'],
+        // slug is a unique index, so one candidate resolves to at most one page.
+        // That is what makes sort:false safe: with a single slug per query there is
+        // nothing left for a $sort to disambiguate, and the index scan can stop at
+        // the first hit instead of sorting in memory.
+        const queryCmsPage = (candidateSlug) => GenericResolver.entities(db, {headers, context}, 'CmsPage',
+            CMS_PAGE_FIELDS,
             {
-                match,
+                // if no user only match public entries
+                match: includeNonPublic
+                    ? {slug: candidateSlug}
+                    : {$and: [{slug: candidateSlug}, {public: true}]},
+                sort: false,
                 limit: 1,
                 includeCount: false,
                 noLookupFields: ['createdBy', 'ownerGroup'],
                 _version
             })
+
+        for (const candidateSlug of slugCandidates) {
+            cmsPages = await queryCmsPage(candidateSlug)
+            if (cmsPages.results && cmsPages.results.length) {
+                break
+            }
+        }
 
         // minify template if no user is logged in
         if (cmsPages.results && cmsPages.results.length) {
@@ -217,7 +237,7 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
                 Cache.set(cacheKey, cmsPages, 6000000) // cache expires in 1h40min
             }
         } else {
-            console.warn(`CmsPage not found ${slug}. host=${host} match=${JSON.stringify(match)}`)
+            console.warn(`CmsPage not found ${slug}. host=${host} slugCandidates=${JSON.stringify(slugCandidates)} includeNonPublic=${includeNonPublic}`)
 
             // negative caching: avoid hitting the db for every request to a non existing page
             // (e.g. bots scanning random urls). short ttl so newly created pages show up quickly
