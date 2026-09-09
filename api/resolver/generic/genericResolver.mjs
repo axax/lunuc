@@ -298,7 +298,7 @@ const GenericResolver = {
 
         const { dataQuery, countQuery, debugInfo } = await aggregationBuilder.query()
 
-        //console.log(JSON.stringify(dataQuery,null,4))
+        //console.log(JSON.stringify(dataQuery,null,4),JSON.stringify(otherOptions,null,4))
 
         const GenericResolverOptions = await Util.getKeyValueGlobal(db, null, 'GenericResolverOptions', true) || {}
 

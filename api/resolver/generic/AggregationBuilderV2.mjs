@@ -59,14 +59,7 @@ export default class AggregationBuilderV2 {
      */
     getSort() {
         const { sort, lang, filter } = this.options;
-        // Opting out matters for more than saving a stage: a $sort lets the
-        // planner prefer an index that provides the ORDER over one that actually
-        // narrows the query. On a wildcard index it even decides which single
-        // data path the scan can bind. Where the order is meaningless - a lookup
-        // by a unique business key, say - the $sort costs real work.
-        // 'false' / 'none' as a STRING matters: the GraphQL schema declares sort
-        // as String, so a boolean never survives that path - and without this the
-        // string would be parsed as a field name and produce {false: 1}.
+
         if (sort === false) return {};
         if (!sort) {
             if(filter){

@@ -145,6 +145,7 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
                 'compress'],
             {
                 match,
+                sort:false,
                 limit: 1,
                 includeCount: false,
                 noLookupFields: ['createdBy', 'ownerGroup'],
