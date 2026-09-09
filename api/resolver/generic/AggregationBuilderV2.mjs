@@ -52,9 +52,22 @@ export default class AggregationBuilderV2 {
         return this.options.page || 1
     }
 
-    /** Parses the sort option string (e.g. "field1 asc, field2 desc") into a MongoDB sort object. */
+    /**
+     * Parses the sort option string (e.g. "field1 asc, field2 desc") into a
+     * MongoDB sort object. An explicit `false` returns an empty object, which
+     * makes query() omit the $sort stage entirely.
+     */
     getSort() {
         const { sort, lang } = this.options;
+        // Opting out matters for more than saving a stage: a $sort lets the
+        // planner prefer an index that provides the ORDER over one that actually
+        // narrows the query. On a wildcard index it even decides which single
+        // data path the scan can bind. Where the order is meaningless - a lookup
+        // by a unique business key, say - the $sort costs real work.
+        // 'false' / 'none' as a STRING matters: the GraphQL schema declares sort
+        // as String, so a boolean never survives that path - and without this the
+        // string would be parsed as a field name and produce {false: 1}.
+        if (sort === false || sort === 'false' || sort === 'none') return {};
         if (!sort) return { _id: -1 };
         if (typeof sort !== 'string') return sort;
 
@@ -463,8 +476,11 @@ export default class AggregationBuilderV2 {
         const offset     = this.getOffset()
         const page       = this.getPage()
         const sort       = this.getSort()
-        // Ensure the facet sort always has a stable tiebreaker on _id
-        const facetSort  = sort._id ? sort : { ...sort, _id: -1 }
+        const hasSort    = Object.keys(sort).length > 0
+        // Ensure the facet sort always has a stable tiebreaker on _id. With no
+        // sort at all there are no ties to break, so it stays empty - otherwise
+        // the tiebreaker would smuggle the sort back into the facet.
+        const facetSort  = hasSort ? (sort._id ? sort : { ...sort, _id: -1 }) : sort
         // The sort that actually establishes the order of the paginated result.
         // Only the includeCount/no-limitCount branch paginates inside the facet and
         // therefore already sorts with the tiebreaker; the other two branches
@@ -574,19 +590,21 @@ export default class AggregationBuilderV2 {
         if (includeCount) {
             if (this.options.limitCount) {
                 // Pre-limit the dataset before the facet split
-                dataQuery.push({ $sort: sort }, ...skipStages, { $limit: this.options.limitCount })
+                if (hasSort) dataQuery.push({ $sort: sort })
+                dataQuery.push(...skipStages, { $limit: this.options.limitCount })
                 if (!lookupFilters) {
                     // $skip: 0 was a no-op here, only $limit is needed
                     dataFacetQuery.push({ $limit: limit })
                 }
             } else {
-                dataFacetQuery.push({ $sort: facetSort })
+                if (hasSort) dataFacetQuery.push({ $sort: facetSort })
                 if (!lookupFilters) {
                     dataFacetQuery.push(...skipStages, { $limit: limit })
                 }
             }
         } else {
-            dataQuery.push({ $sort: sort }, ...skipStages, { $limit: limit })
+            if (hasSort) dataQuery.push({ $sort: sort })
+            dataQuery.push(...skipStages, { $limit: limit })
         }
 
         // Add any caller-provided lookups and the built-in field lookups
@@ -691,7 +709,7 @@ export default class AggregationBuilderV2 {
         // order-changing to stay safe. Without a $group the order established by the
         // earlier $sort (in dataQuery or dataFacetQuery) is still intact, so a
         // re-sort here would be a pure no-op with cost.
-        if (needsGroupStage || this.options.beforeProject) {
+        if (hasSort && (needsGroupStage || this.options.beforeProject)) {
             dataFacetQuery.push({ $sort: facetSort })
         }
 

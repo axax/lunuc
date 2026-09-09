@@ -87,6 +87,34 @@ process.on('unhandledRejection', async (error) => {
 
 
 
+/**
+ * Makes a pipeline safe to store and to replay.
+ *
+ * JSON.stringify turns a RegExp into {} and an ObjectId into a bare hex string,
+ * so a logged query silently loses its regex predicates and an ObjectId can no
+ * longer be told apart from an ordinary string. Both are rewritten into the
+ * forms MongoDB understands - {$regex,$options} is even a valid predicate, so
+ * the logged pipeline stays copy-pasteable.
+ */
+const toLoggableQuery = (value) => {
+    if (value === null || value === undefined) return value
+    if (Array.isArray(value)) return value.map(toLoggableQuery)
+    if (value instanceof RegExp) return {$regex: value.source, $options: value.flags}
+    if (value instanceof Date) return {$date: value.toISOString()}
+    // BSONRegExp carries pattern/options instead of source/flags
+    if (typeof value.pattern === 'string' && typeof value.options === 'string') {
+        return {$regex: value.pattern, $options: value.options}
+    }
+    // ObjectId and anything else BSON that knows its hex form
+    if (typeof value.toHexString === 'function') return {$oid: value.toHexString()}
+    if (value.constructor === Object) {
+        const converted = {}
+        for (const key of Object.keys(value)) converted[key] = toLoggableQuery(value[key])
+        return converted
+    }
+    return value
+}
+
 Hook.on('typeLoaded', async ({type,cacheKey,db, req, context, result, dataQuery, collectionName, aggregateTime, queryTime}) => {
 
   if(aggregateTime > 1000) {
@@ -135,7 +163,7 @@ Hook.on('typeLoaded', async ({type,cacheKey,db, req, context, result, dataQuery,
               cacheKey,
               agent: headers[TRACK_USER_AGENT_HEADER] || headers['user-agent'] || '',
               referer: headers[TRACK_REFERER_HEADER] || headers['referer'] || '',
-              query: dataQuery
+              query: toLoggableQuery(dataQuery)
           }
       })
   }

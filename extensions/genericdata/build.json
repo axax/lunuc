@@ -45,7 +45,6 @@
             }
           },
           "required": true,
-          "index": 1,
           "alwaysUpdate": true,
           "compoundIndex": [
             { "unique": true, "fields": { "definition": 1, "_id": 1 } }
