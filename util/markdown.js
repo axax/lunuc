@@ -167,7 +167,7 @@ const parser = (md, options = {}) => {
         [/\*([^\s*][^*\n]*?)\*/gm, "<i>$1</i>"],
 
         /* ---------- Italic – _text_ (protected against URL underscores) ---------- */
-        [/(?<![="'a-zA-Z0-9\/])_([^_\n]+?)_(?![a-zA-Z0-9\/])/gm, "<i>$1</i>"],
+        [/(^|[^="'a-zA-Z0-9\/])_([^_\n]+?)_(?![a-zA-Z0-9\/])/gm, "$1<i>$2</i>"],
 
         /* ---------- Horizontal rule ---------- */
         [/^---\s*$/gm, "<hr/>"],

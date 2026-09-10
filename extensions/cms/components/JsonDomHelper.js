@@ -2219,7 +2219,7 @@ class JsonDomHelper extends React.Component {
                 Object.keys(fields).forEach(key => {
                     let val = fields[key]
                     if(isString(val)){
-                        val = val.replace(/(?<![\$\\])\`/g, '\\`')
+                        val = val.replace(/`/g, function(m,o,s){ var p=s[o-1]; return (p==='$'||p==='\\') ? m : '\\`' })
 
                         if(currentElement.options[key] && currentElement.options[key].escapeTemplateVars){
                             val = val.replace(/\$\{/g, '$.__ignore__{');

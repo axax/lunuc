@@ -256,11 +256,12 @@ export default function CmsRevision(props){
                 {name: 'Style', value: 'style'}]}
         /> }
         <Query
-            query={'query historys($filter:String,$limit:Int,$offset:Int,$page:Int){historys(filter:$filter,limit:$limit,offset:$offset,page:$page){total offset results{_id action meta createdBy{username}}}}'}
+            query={'query historys($sort:String,$filter:String,$limit:Int,$offset:Int,$page:Int){historys(sort:$sort,filter:$filter,limit:$limit,offset:$offset,page:$page){total offset results{_id action meta createdBy{username}}}}'}
             fetchPolicy="cache-and-network"
             variables={{
                 offset:1 + ((historyPage-1) * historyLimit),
                 limit: historyLimit,
+                sort: '_id desc',
                 filter: `data._id==${cmsPage._id} && meta.keys==${historyType || 'script'}`
             }}>
             {({loading, error, data}) => {
