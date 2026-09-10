@@ -217,6 +217,15 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
     // Hoist frequently accessed config into locals. Avoids repeated nested property
     // lookups (re.loop.xyz) inside the per-item hot loop.
     const reAssign = re.assign
+    // Grouping: keep one item per value of group.key. Same contract as
+    // lookup.group, applied to the iterated data instead of a lookup table.
+    // null prototype because the keys come from the data - '__proto__' must not
+    // resolve to an inherited member.
+    const loopGroup = re.loop.group
+    const groupKey  = loopGroup && loopGroup.key
+    const groupSeen = loopGroup && loopGroup.keepOnlyOne ? Object.create(null) : null
+    // Items that passed the filters, counted before grouping.
+    let matchedTotal = 0
     const loopReduce = re.loop.reduce
     const loopAssign = re.loop.assign
     const loopToArray = re.loop.toArray
@@ -242,8 +251,28 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
             createFacets(loopFacet, item, true)
         }
         const filter = checkFilter(activeFilters, value, key)
-        if (filter) {
-            if (filter.or && loopFacet) {
+
+        // After the filters, before total/facets/toArray. An item rejected by a
+        // filter must not claim its group, and a duplicate must count towards
+        // neither total nor the facets - only then do total, facets and toArray
+        // describe the same set that is actually delivered. This is the one
+        // reason to group here rather than in a following lookup step, where
+        // the facets are already counted by the time grouping happens.
+        let groupDuplicate = false
+        if (!filter) {
+            matchedTotal++
+            if (groupSeen) {
+                const groupValue = item ? item[groupKey] : undefined
+                if (groupSeen[groupValue]) {
+                    groupDuplicate = true
+                } else {
+                    groupSeen[groupValue] = true
+                }
+            }
+        }
+
+        if (filter || groupDuplicate) {
+            if (filter && filter.or && loopFacet) {
                 let filteredFacets
                 if (filter.facetKey) {
                     filteredFacets = orFacetCache[filter.facetKey] ||
@@ -308,7 +337,7 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
             if (debugEnabled) {
                 debugInfo.messages.push(`loop through array data ${value.length} with filter ${JSON.stringify(activeFilters)}`)
             }
-            if (reAssign && hasActiveFilters) {
+            if (reAssign && (hasActiveFilters || groupSeen)) {
                 // Uint8Array is cheap to allocate and zero-initialized
                 removedFlags = new Uint8Array(value.length)
             }
@@ -343,6 +372,12 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
     if (re.loop.total) {
         setPropertyByPath(total, re.loop.total.path, rootData)
         cacheData[re.loop.total.path] = total
+    }
+
+    // Count before grouping. Goes through the same cache as total.
+    if (loopGroup && loopGroup.total) {
+        setPropertyByPath(matchedTotal, loopGroup.total.path, rootData)
+        cacheData[loopGroup.total.path] = matchedTotal
     }
 
     if (loopToArray) {
