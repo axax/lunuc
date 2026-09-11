@@ -217,15 +217,17 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
     // Hoist frequently accessed config into locals. Avoids repeated nested property
     // lookups (re.loop.xyz) inside the per-item hot loop.
     const reAssign = re.assign
-    // Grouping: keep one item per value of group.key. Same contract as
-    // lookup.group, applied to the iterated data instead of a lookup table.
+    // Grouping: collect at most one item per value of group.key. Deliberately
+    // confined to toArray - filters, total, facets and loop.reduce see exactly
+    // what they saw before, so switching grouping on never moves a count.
+    // Same division of labour as lookup.group, which also leaves the facets
+    // alone and only thins out the collected result.
     // null prototype because the keys come from the data - '__proto__' must not
     // resolve to an inherited member.
     const loopGroup = re.loop.group
     const groupKey  = loopGroup && loopGroup.key
     const groupSeen = loopGroup && loopGroup.keepOnlyOne ? Object.create(null) : null
-    // Items that passed the filters, counted before grouping.
-    let matchedTotal = 0
+    let groupCount  = 0
     const loopReduce = re.loop.reduce
     const loopAssign = re.loop.assign
     const loopToArray = re.loop.toArray
@@ -251,28 +253,8 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
             createFacets(loopFacet, item, true)
         }
         const filter = checkFilter(activeFilters, value, key)
-
-        // After the filters, before total/facets/toArray. An item rejected by a
-        // filter must not claim its group, and a duplicate must count towards
-        // neither total nor the facets - only then do total, facets and toArray
-        // describe the same set that is actually delivered. This is the one
-        // reason to group here rather than in a following lookup step, where
-        // the facets are already counted by the time grouping happens.
-        let groupDuplicate = false
-        if (!filter) {
-            matchedTotal++
-            if (groupSeen) {
-                const groupValue = item ? item[groupKey] : undefined
-                if (groupSeen[groupValue]) {
-                    groupDuplicate = true
-                } else {
-                    groupSeen[groupValue] = true
-                }
-            }
-        }
-
-        if (filter || groupDuplicate) {
-            if (filter && filter.or && loopFacet) {
+        if (filter) {
+            if (filter.or && loopFacet) {
                 let filteredFacets
                 if (filter.facetKey) {
                     filteredFacets = orFacetCache[filter.facetKey] ||
@@ -307,7 +289,20 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
                 createFacets(loopFacet, item)
             }
 
-            if (loopToArray) {
+            // Read AFTER loop.reduce, like the toArray value itself: a nested
+            // pipeline may have replaced the entry.
+            let isNewGroup = true
+            if (groupSeen) {
+                const groupValue = item ? item[groupKey] : undefined
+                if (groupSeen[groupValue]) {
+                    isNewGroup = false
+                } else {
+                    groupSeen[groupValue] = true
+                    groupCount++
+                }
+            }
+
+            if (loopToArray && isNewGroup) {
                 const v = loopToArray.key ? item[loopToArray.key] : item
                 if (loopToArray.duplicates) {
                     newArray.push(v)
@@ -337,7 +332,7 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
             if (debugEnabled) {
                 debugInfo.messages.push(`loop through array data ${value.length} with filter ${JSON.stringify(activeFilters)}`)
             }
-            if (reAssign && (hasActiveFilters || groupSeen)) {
+            if (reAssign && hasActiveFilters) {
                 // Uint8Array is cheap to allocate and zero-initialized
                 removedFlags = new Uint8Array(value.length)
             }
@@ -374,10 +369,11 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
         cacheData[re.loop.total.path] = total
     }
 
-    // Count before grouping. Goes through the same cache as total.
+    // Number of distinct groups among the items that passed the filters - the
+    // counterpart to lookup.sum. Goes through the same cache as total.
     if (loopGroup && loopGroup.total) {
-        setPropertyByPath(matchedTotal, loopGroup.total.path, rootData)
-        cacheData[loopGroup.total.path] = matchedTotal
+        setPropertyByPath(groupCount, loopGroup.total.path, rootData)
+        cacheData[loopGroup.total.path] = groupCount
     }
 
     if (loopToArray) {
