@@ -1,4 +1,3 @@
-
 export const translations = {
     de: {
         'FilesContainer.deleteFile':'Datei löschen',
@@ -153,6 +152,7 @@ export const translations = {
         'CodeEditor.transformPreview': 'Vorschau',
         'CodeEditor.transformResult': '%lines% Zeilen, %chars% Zeichen Differenz.',
         'CodeEditor.transformNoChange': 'Keine Änderung.',
+        'CodeEditor.saveAsFile': 'Als Datei speichern',
         'GlobalSearch.placeholder':'Schnellsuche',
         'TypeEdit.closeConfirmText':'Möchten Sie die Änderung speichern?',
         'TypeEdit.closeConfirmTitle':'Daten Speichern'
@@ -312,6 +312,7 @@ export const translations = {
         'CodeEditor.transformPreview': 'Preview',
         'CodeEditor.transformResult': '%lines% lines, %chars% characters difference.',
         'CodeEditor.transformNoChange': 'No change.',
+        'CodeEditor.saveAsFile': 'Save as file',
         'GlobalSearch.placeholder':'Quick search',
         'TypeEdit.closeConfirmText':'Would you like to save the change?',
         'TypeEdit.closeConfirmTitle':'Save data'

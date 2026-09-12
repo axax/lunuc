@@ -191,6 +191,23 @@ export function generateContextMenu({
             })
         }
 
+        contextMenuItems.push({
+            icon: <CodeIcon/>,
+            name: _t('CodeEditor.saveAsFile'),
+            onClick: () => {
+                const fullContent = putFilesTogether(files, finalFileIndex, editorView.state.doc.toString());
+                const defaultFilename = 'content.' + (type || 'txt');
+                const filename = prompt('Filename:', defaultFilename) || defaultFilename;
+                const blob = new Blob([fullContent], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+        });
+
         if (setEditData) {
             contextMenuItems.push({
                 icon: <ApprovalIcon/>,

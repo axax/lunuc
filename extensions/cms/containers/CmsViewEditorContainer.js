@@ -1271,7 +1271,7 @@ class CmsViewEditorContainer extends React.Component {
                               drawerWidth={EditorOptions.drawerWidth}
                               onDrawerOpenClose={this.drawerOpenClose}
                               onDrawerWidthChange={this.drawerWidthChange}
-                              contentStyle={{marginBottom: EditorOptions.devToolsTab ? (this.state.liveDevToolsBoxHeight || 200) : 0}}
+                              contentStyle={{marginBottom: EditorOptions.devTools ? (EditorOptions.devToolsTab ? (this.state.liveDevToolsBoxHeight || 0)+40 : 40): 0}}
                               toolbarLeft={<IconButton
                                   sx={{mr:1}}
                                   onClick={()=>{
