@@ -84,7 +84,7 @@ const BASE_URL_REGEX = new RegExp(BASE_URL, 'g')
 const options = {
     allowHTTP1: true,
     SNICallback: (domain, cb) => {
-
+console.log(`SNICallback ${domain}`)
         const {hostrule} = getBestMatchingHostRule(domain)
 
         if (hostrule && hostrule.certContext) {
@@ -1082,7 +1082,8 @@ if (USE_HTTPX) {
             userAgent: socket?._lastUserAgent || '(unknown)'
         })
 
-        if (err.code === 'ECONNRESET' || !socket.writable) {
+        if (err.code === 'ECONNRESET' || err.code === 'EPROTO' || !socket.writable) {
+            socket.destroy()
             return
         }
         socket.end('HTTP/1.1 400 Bad Request\r\n\r\n')
@@ -1099,9 +1100,23 @@ if (USE_HTTPX) {
 
     app.http.on('clientError', onClientError('http'))
     app.https.on('clientError', onClientError('https'))
+    // Note: tlsClientError for app.https is already handled in httpx.mjs on
+    // the underlying http2Server (destroy) - no second handler needed here.
 } else {
     app.on('upgrade', proxyWsToApiServer)
 }
+// Without this handler, an error on the underlying net.Server (e.g.
+// EADDRINUSE at startup) falls through to the global uncaughtException
+// handler - the process keeps running ("Node NOT Exiting...") but isn't
+// listening on anything.
+app.on('error', (err) => {
+    console.error('unified server error', err)
+    if (err.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} already in use - exiting`)
+        process.exit(1)
+    }
+})
+
 // Start server
 app.listen(PORT, () => console.log(
     `Listening at localhost:${PORT}`

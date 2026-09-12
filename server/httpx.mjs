@@ -41,6 +41,7 @@ const createServer = (tlsOpts, handler) => {
     const http2Server = http2.createSecureServer(
         {
             allowHTTP1: true,
+            ciphers: "DEFAULT:@SECLEVEL=0",
             maxSessionMemory: H2_MAX_SESSION_MEMORY,
             settings: {
                 initialWindowSize: H2_STREAM_WINDOW_SIZE
@@ -110,8 +111,17 @@ const createServer = (tlsOpts, handler) => {
             // server sets up its own timeout/error handling from here on.
             socket.pause()
             socket.setTimeout(0)
-            socket.removeListener('error', onError)
             socket.removeListener('timeout', onTimeout)
+            // Instead of just removeListener('error', onError): replace the
+            // detection-phase handler with a silent no-op. The downstream
+            // server (http2Server / httpServer) attaches its own error
+            // handling, but if the raw socket fires an 'error' right before
+            // or during this handoff (especially during the TLS handshake)
+            // and nobody is listening yet, it becomes an uncaughtException.
+            // An empty listener keeps EventEmitter satisfied without
+            // interfering with the downstream handling.
+            socket.removeListener('error', onError)
+            socket.on('error', () => {})
 
             // Defensive: the 'data' event normally carries >= 1 byte, but guard
             // against an empty buffer just in case.

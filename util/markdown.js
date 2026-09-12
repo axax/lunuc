@@ -146,7 +146,7 @@ const parser = (md, options = {}) => {
             (m, t, i) => `<a href='${urlPlaceholders[+i]}'>${t}</a>`],
 
         /* ---------- Code block (fenced) ---------- */
-        [/```[a-z]*\n([\s\S]*?)\n```/g, "<pre>$1</pre>"],
+        [/```[a-z]*\n([\s\S]*?)\n\s*```/g, "<pre>$1</pre>"],
 
         /* ---------- Inline code ---------- */
         [/`(.*?)`/gm, "<code>$1</code>"],
