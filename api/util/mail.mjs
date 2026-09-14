@@ -3,6 +3,7 @@ import Hook from '../../util/hook.cjs'
 import nodemailer from 'nodemailer'
 import {replacePlaceholders} from '../../util/placeholders.mjs'
 import nodemailerDirectTransport from 'nodemailer-direct-transport'
+import {isString} from '../../client/util/json.mjs'
 
 
 
@@ -98,7 +99,7 @@ ${finalHtml}
         replyToFinal = mailSettings.replyTo
     }
 
-    let finalText = text?text.trim():''
+    let finalText = isString(text)?text.trim():''
     if(!finalText){
         finalText = finalHtml.replace(/<(script|style)\b[^<]*(?:(?!<\/\1>)<[^<]*)*<\/\1>|<[^>]+>/gi, '').trim()
     }else{
