@@ -125,60 +125,72 @@ const parser = (md, options = {}) => {
     };
 
     // -----------------------------------------------------------------
-    // 2️⃣b Helper: inline code spans, without regex lookaround (see the
-    // rule below for why). Walks every backtick run left to right and pairs
-    // each one with the next run of the same length.
+    // 2️⃣b Helper: inline code spans (Highly optimized, zero side-effects)
     // -----------------------------------------------------------------
-    const parseInlineCode = str => {
-        const runs = [...str.matchAll(/`+/g)];
-        if (runs.length === 0) return str;
-
+    const parseInlineCode = (str) => {
         let result = '';
-        let cursor = 0; // everything before this index has already been copied to `result`
-        let i = 0;
+        let cursor = 0;
 
-        while (i < runs.length) {
-            const open = runs[i];
-            if(open[0] === undefined){
-                break
+        while (cursor < str.length) {
+            // 1. Find the start of the next backtick sequence
+            const openIdx = str.indexOf('`', cursor);
+            if (openIdx === -1) {
+                // No more backticks found. Append the rest of the string and finish.
+                result += str.slice(cursor);
+                break;
             }
-            const openEnd = open.index + open[0].length;
 
-            // find the next run of exactly the same length -> valid closing delimiter
-            let j = i + 1;
-            while (j < runs.length && runs[j][0].length !== open[0].length) j++;
+            // 2. Count consecutive backticks to determine the length of the opening delimiter
+            let runLen = 1;
+            while (openIdx + runLen < str.length && str[openIdx + runLen] === '`') {
+                runLen++;
+            }
 
-            if (j < runs.length) {
-                const close = runs[j];
-                result += str.slice(cursor, open.index);
-                const content = str.slice(openEnd, close.index)
-                    // A backslash immediately followed by a *real* newline is
-                    // treated as the literal two-character escape sequence
-                    // "\n" (backslash + the letter n), not an actual line
-                    // break. This restores an intended, literal "\n" (e.g.
-                    // used to document a newline character, as in `\n`) that
-                    // arrived here as a real newline instead of that text -
-                    // typically because something upstream (an extra JSON
-                    // encode/decode round trip, for example) turned the
-                    // literal escape sequence into an actual line break
-                    // before it ever reached this parser. Doing this here,
-                    // before the code span is wrapped, keeps that newline
-                    // from later being turned into a stray space (the
-                    // general code-span rule two steps down) or a <br/>.
-                    .replace(/\\\n/g, '\\n');
+            // 3. Search for a matching closing delimiter of the EXACT same length
+            const delimiter = '`'.repeat(runLen);
+            let searchIdx = openIdx + runLen;
+            let closeIdx = -1;
+
+            while (searchIdx < str.length) {
+                const matchIdx = str.indexOf(delimiter, searchIdx);
+                if (matchIdx === -1) break; // No closing delimiter exists
+
+                // Ensure the matched delimiter isn't just the beginning of an even longer sequence.
+                // We check if the character immediately following our match is also a backtick.
+                if (str[matchIdx + runLen] !== '`') {
+                    // Valid closing delimiter found
+                    closeIdx = matchIdx;
+                    break;
+                } else {
+                    // The matched sequence is too long. Skip past this entire block of backticks.
+                    let skipIdx = matchIdx + runLen;
+                    while (skipIdx < str.length && str[skipIdx] === '`') {
+                        skipIdx++;
+                    }
+                    searchIdx = skipIdx;
+                }
+            }
+
+            // 4. Append the parsed HTML or treat the unpaired backticks as literal text
+            if (closeIdx !== -1) {
+                // Valid code block found: Append text before the code block
+                result += str.slice(cursor, openIdx);
+
+                // Extract inner content and preserve explicit escaped newlines
+                const content = str.slice(openIdx + runLen, closeIdx).replace(/\\\n/g, '\\n');
                 result += `<code>${content}</code>`;
-                cursor = close.index + close[0].length;
-                i = j + 1;
+
+                // Move the cursor past the closing delimiter
+                cursor = closeIdx + runLen;
             } else {
-                // no closing run of the same length exists anywhere later ->
-                // this run stays literal; cursor is left untouched so it gets
-                // copied through as-is, and the next run becomes the fresh
-                // candidate opener
-                i += 1;
+                // Unpaired opening run: Treat the backticks as literal text
+                result += str.slice(cursor, openIdx + runLen);
+
+                // Move the cursor past the current unmatched run to evaluate the next ones
+                cursor = openIdx + runLen;
             }
         }
 
-        result += str.slice(cursor);
         return result;
     };
 
