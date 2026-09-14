@@ -21,10 +21,13 @@ export default db => ({
                 req.headers.host = host
             }
 
+            console.log(`sendNewsletter: starting (mailing=${mailing}, testReceiver=${testReceiver || 'none'}, batchSize=${batchSize})`)
+
             const mailingId = new ObjectId(mailing)
 
             if(!batchSize){
                 batchSize = 10
+                console.log('sendNewsletter: no batchSize given, using default of 10')
             }
 
             const mailingData = await db.collection('NewsletterMailing').findOne(
@@ -58,6 +61,8 @@ export default db => ({
                 if(unsubscribeHeader === undefined){
                     unsubscribeHeader = mailingData.unsubscribeHeader
                 }
+            }else{
+                console.warn(`sendNewsletter: mailing ${mailing} not found`)
             }
 
             const languageToSend = mailingData.language ? mailingData.language.split(',') : []
@@ -93,6 +98,8 @@ export default db => ({
                 }
             }
 
+            console.log(`sendNewsletter: ${subscribers.length} subscriber(s) selected for mailing ${mailing}`)
+
             const sentToEmailAddresses = []
 
             for (let i = 0; i < subscribers.length; i++) {
@@ -118,6 +125,10 @@ export default db => ({
                         mailing: mailingId
                     }
                 )
+                if (sent) {
+                    console.log(`sendNewsletter: skipping subscriber ${sub.email || userAccountId || sub._id} - mailing already sent`)
+                    continue
+                }
                 if (!sent) {
 
 
@@ -131,7 +142,7 @@ export default db => ({
                         if(sub.account) {
                             sub.email = sub.account.email
                         }else{
-                            console.warn('account not found')
+                            console.warn(`sendNewsletter: user account ${userAccountId} not found, skipping`)
                             continue
                         }
                     }
@@ -170,6 +181,7 @@ export default db => ({
 
                     if(languageToSend.length>0 && languageToSend.indexOf(subLang)<0){
                         // don't send
+                        console.log(`sendNewsletter: skipping subscriber ${sub.email} - language '${subLang}' not in mailing languages [${languageToSend.join(',')}]`)
                         continue
                     }
 
@@ -195,6 +207,7 @@ export default db => ({
                         if(mailingData.attachment && mailingData.attachment[subLang]){
                             finalAttachments = []
                             const upload_dir = path.join(path.resolve(), config.UPLOAD_DIR)
+                            console.log(`sendNewsletter: attaching ${mailingData.attachment[subLang].length} attachment(s) for language ${subLang}`)
                             for(const id of mailingData.attachment[subLang]){
                                 const media = await db.collection('Media').findOne({_id: id})
                                 if(media){
@@ -235,7 +248,7 @@ export default db => ({
                         finalHtml = replaceRelativeUrls(finalHtml, (req.isHttps ? 'https://' : 'http://') + (host === 'localhost' ? host + ':8080' : host))
                     }
 
-                    console.log(`sendNewsletter preparing body`, sub, finalText, finalHtml)
+                    console.log(`sendNewsletter: preparing body for ${sub.email} (lang=${subLang}, test=${!!sub.testOnly})`)
                     const body = Object.assign({html: finalHtml},sub)
 
                     if(mailingData && mailingData.contextProps){
@@ -255,7 +268,7 @@ export default db => ({
                         }
                     }
 
-                    console.log('send newsletter', sub.email, body)
+                    console.log(`sendNewsletter: sending mail to ${sub.email} (lang=${subLang}, template=${template || 'none'}, subject=${finalSubject})`)
 
                     const result = await sendMail(db, Object.assign(req.context, {lang: subLang}), {
                         slug: template,
@@ -269,6 +282,7 @@ export default db => ({
                         settings
                     })
                     sentToEmailAddresses.push(sub.email)
+                    console.log(`sendNewsletter: sent to ${sub.email} (${sentToEmailAddresses.length}/${batchSize} in this batch)`, result?.messageId || result)
 
                     if(sentResult && sentResult.insertedId) {
                         await db.collection('NewsletterSent').updateOne({_id: sentResult.insertedId}, {$set: {mailResponse: result}})
@@ -277,7 +291,10 @@ export default db => ({
 
             }
 
+            console.log(`sendNewsletter: finished, sent to ${sentToEmailAddresses.length} recipient(s): ${sentToEmailAddresses.join(', ')}`)
+
             if(!testReceiver && mailingId && sentToEmailAddresses.length===0){
+                console.log(`sendNewsletter: no recipients left, marking mailing ${mailing} as finished`)
                 await genResolver(db).Mutation.updateNewsletterMailing({
                     createdBy: mailingData.createdBy._id,
                     _id:mailingId,
