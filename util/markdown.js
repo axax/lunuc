@@ -139,6 +139,9 @@ const parser = (md, options = {}) => {
 
         while (i < runs.length) {
             const open = runs[i];
+            if(open[0] === undefined){
+                break
+            }
             const openEnd = open.index + open[0].length;
 
             // find the next run of exactly the same length -> valid closing delimiter
