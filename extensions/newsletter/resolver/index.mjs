@@ -207,21 +207,21 @@ export default db => ({
                         }
                     }
 
-                    if(finalSubject.constructor === Object){
+                    if(finalSubject instanceof Object){
                         if(finalSubject[subLang]){
                             finalSubject = finalSubject[subLang]
                         }else{
                             finalSubject = finalSubject[config.DEFAULT_LANGUAGE]
                         }
                     }
-                    if(finalText.constructor === Object){
+                    if(finalText instanceof Object){
                         if(finalText[subLang]){
                             finalText = finalText[subLang]
                         }else{
                             finalText = finalText[config.DEFAULT_LANGUAGE]
                         }
                     }
-                    if(finalHtml && finalHtml.constructor === Object){
+                    if(finalHtml && finalHtml instanceof Object){
                         if(finalHtml[subLang]){
                             finalHtml = finalHtml[subLang]
                         }else{
