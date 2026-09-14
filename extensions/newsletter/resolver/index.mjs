@@ -162,11 +162,11 @@ export default db => ({
                     }*/
 
 
-                    let subLang = sub.language || config.DEFAULT_LANGUAGE,
-                        finalSubject = subject,
-                        finalText = text && text._localized ? text[subLang] || text[config.DEFAULT_LANGUAGE] || '': text,
-                        finalHtml = html && html._localized ? html[subLang] || html[config.DEFAULT_LANGUAGE] || '': html,
-                        finalAttachments
+                    let finalSubject = subject,
+                        finalText = text,
+                        finalHtml = html,
+                        finalAttachments,
+                        subLang = sub.language || config.DEFAULT_LANGUAGE
 
                     if(languageToSend.length>0 && languageToSend.indexOf(subLang)<0){
                         // don't send
@@ -235,7 +235,7 @@ export default db => ({
                         finalHtml = replaceRelativeUrls(finalHtml, (req.isHttps ? 'https://' : 'http://') + (host === 'localhost' ? host + ':8080' : host))
                     }
 
-
+                    console.log(`sendNewsletter preparing body`, sub, finalText, finalHtml)
                     const body = Object.assign({html: finalHtml},sub)
 
                     if(mailingData && mailingData.contextProps){
