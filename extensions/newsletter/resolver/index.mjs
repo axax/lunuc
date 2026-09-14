@@ -9,6 +9,7 @@ import {CAPABILITY_SEND_NEWSLETTER} from '../constants/index.mjs'
 import path from 'path'
 import genResolver from '../gensrc/resolver.mjs'
 import {replaceRelativeUrls} from '../../../api/util/toAbsoluteUrls.mjs'
+import {_t} from 'util/i18n.mjs'
 
 export default db => ({
     Query: {
@@ -163,8 +164,8 @@ export default db => ({
 
 
                     let finalSubject = subject,
-                        finalText = text,
-                        finalHtml = html,
+                        finalText = _t(text),
+                        finalHtml = _t(html),
                         finalAttachments,
                         subLang = sub.language || config.DEFAULT_LANGUAGE
 
