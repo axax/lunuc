@@ -6,13 +6,11 @@ _app_.markdownParser = markdown
 
 function MarkDown({children, className, id}) {
 
-     // nur neu rendern, wenn sich der Inhalt (children) ändert.
-     // Hook muss unbedingtaufrufen werden (Rules of Hooks), daher kein
-     // early return davor.
+
     const html = useMemo(() => {
         if (!children) return null
         const startTime = new Date()
-        const result = markdown(children.replace(/\\n/g,'\n'))
+        const result = markdown(children)
         console.info(`render markdown in ${new Date() - startTime}ms`)
         return result
      }, [children])
