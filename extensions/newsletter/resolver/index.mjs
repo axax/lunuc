@@ -207,21 +207,21 @@ export default db => ({
                         }
                     }
 
-                    if(Object.getPrototypeOf(finalSubject) === Object.prototype){
+                    if(finalSubject && typeof finalSubject === 'object'){
                         if(finalSubject[subLang]){
                             finalSubject = finalSubject[subLang]
                         }else{
                             finalSubject = finalSubject[config.DEFAULT_LANGUAGE]
                         }
                     }
-                    if(finalText && Object.getPrototypeOf(finalText) === Object.prototype){
+                    if(finalText && typeof finalText === 'object'){
                         if(finalText[subLang]){
                             finalText = finalText[subLang]
                         }else{
                             finalText = finalText[config.DEFAULT_LANGUAGE]
                         }
                     }
-                    if(finalHtml && Object.getPrototypeOf(finalHtml) === Object.prototype){
+                    if(finalHtml && typeof finalHtml === 'object'){
                         if(finalHtml[subLang]){
                             finalHtml = finalHtml[subLang]
                         }else{
