@@ -18,40 +18,72 @@
  *                  behaviour (raw HTML passes through). Needed for callers that
  *                  intentionally put HTML into markdown fields.
  */
+
+// 0️⃣ Pre-processing Regex
+const RX_SAFE_HTML = /<safe_html>([\s\S]*?)<\/safe_html>/g;
+const RX_SAFE_HTML_ORPHAN = /<\/?safe_html>/g;
+const RX_AMP = /&(?!#?\w+;)/g;
+const RX_LT = /</g;
+const RX_GT = />/g;
+
+// 1️⃣ URL Protection Regex
+const RX_URL_PROTECT = /\]\(([^)]+)\)/g;
+
+// 3️⃣ Markdown Rules Regex
+const RX_IMG_LINK = /\[!\[((?:[^\[\]\n]|\[[^\]\n]*\])*)\]\(%%URL(\d+)%%\)\]\(%%URL(\d+)%%\)/gm;
+const RX_IMG_ALONE = /!\[((?:[^\[\]\n]|\[[^\]\n]*\])*)\]\(%%URL(\d+)%%\)/gm;
+const RX_LINK_ATTR = /\[((?:[^\[\]\n]|\[[^\]\n]*\])*)\]\(%%URL(\d+)%%\)\{:([^}]*)\}/gm;
+const RX_LINK_PLAIN = /\[((?:[^\[\]\n]|\[[^\]\n]*\])*)\]\(%%URL(\d+)%%\)/gm;
+const RX_FENCED_CODE = /```[a-z]*\n([\s\S]*?)\n\s*```/g;
+const RX_BLOCKQUOTE = /^(?:>|&gt;) ([^\n]*)$/gm;
+const RX_HEADING = /^(#{1,6})(.*)$/gm;
+
+const RX_BOLD = /(\*\*|__)(.*?)\1/gm;
+
+const RX_ITALIC_AST = /\*([^\s*][^*\n]*?)\*/gm;
+const RX_ITALIC_UND = /(^|[^="'a-zA-Z0-9\/])_([^_\n]+?)_(?![a-zA-Z0-9\/])/gm;
+const RX_HR = /^---\s*$/gm;
+const RX_TABLE = /((?:\|?.*\|.*\n)+?)\|? *-+:?-+(?:\| *-+:?-+)*\|?\n((?:\|?.*\|.*\n?)*)/gm;
+const RX_LIST_OL = /\n\d+\.\s.*(?:\n[ \t]+\S.*)*(?:\n+\d+\.\s.*(?:\n[ \t]+\S.*)*)*/gm;
+const RX_LIST_UL = /\n[-*+]\s.*(?:\n[ \t]+\S.*)*(?:\n+[-*+]\s.*(?:\n[ \t]+\S.*)*)*/gm;
+const RX_P_BREAK = /\n\n/gm;
+const RX_BR = /\n(?!\s*<|$)/gm;
+
+// 5️⃣ Cleanup Regex
+const RX_CLEAN_H_OPEN = /<p><h([0-6])/g;
+const RX_CLEAN_H_CLOSE = /<\/h([0-6])><\/p>/g;
+const RX_CLEAN_EMPTY_P = /<p><\/p>/g;
+const RX_CLEAN_BR_P = /<br\s*\/?>\s*<\/p>/g;
+const RX_CLEAN_GT_BR = />\s*<br\s*\/>/g;
+const RX_CLEAN_NEWLINES = /\n+/g;
+const RX_RESTORE_URL = /%%URL(\d+)%%/g;
+const RX_RESTORE_HTML = /\u0000H(\d+)\u0000/g;
+
+
 const parser = (md, options = {}) => {
     const escapeHtml = options.escapeHtml !== false;
     md = String(md == null ? '' : md);
 
     // -----------------------------------------------------------------
-    // 0️⃣ Pull out <safe_html> blocks BEFORE escaping. The marker does NOT
-    // mean "sanitized", it means "produced by the caller, may go into the DOM
-    // as-is" (e.g. KaTeX output). Only the caller sets it – any occurrence
-    // coming from the model is stripped there first.
-    // The placeholder uses \u0000 because that character never appears in real
-    // input and is not matched by any markdown rule.
+    // 0️⃣ Pull out <safe_html> blocks (now using the global Regex variables)
     // -----------------------------------------------------------------
     const trusted = [];
-    md = md.replace(/<safe_html>([\s\S]*?)<\/safe_html>/g, (m, inner) => {
+    md = md.replace(RX_SAFE_HTML, (m, inner) => {
         trusted.push(inner);
         return `\u0000H${trusted.length - 1}\u0000`;
     });
-    // an unpaired, still-open <safe_html> (aborted stream) must not survive as markup
-    md = md.replace(/<\/?safe_html>/g, '');
+    md = md.replace(RX_SAFE_HTML_ORPHAN, '');
 
     if (escapeHtml) {
-        md = md
-            .replace(/&(?!#?\w+;)/g, '&amp;')   // don't double-escape existing entities
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;');
+        md = md.replace(RX_AMP, '&amp;').replace(RX_LT, '&lt;').replace(RX_GT, '&gt;');
     }
 
     // -----------------------------------------------------------------
-    // 1️⃣ Protect URLs from being mangled by later regexes
+    // 1️⃣ Protect URLs
     // -----------------------------------------------------------------
     const urlPlaceholders = [];
-    const protectedMd = md.replace(/\]\(([^)]+)\)/g, (m, url) => {
+    const protectedMd = md.replace(RX_URL_PROTECT, (m, url) => {
         urlPlaceholders.push(url.trim());
-        // placeholder will be replaced later with the real URL
         return `](%%URL${urlPlaceholders.length - 1}%%)`;
     });
 
@@ -195,87 +227,30 @@ const parser = (md, options = {}) => {
     };
 
     // -----------------------------------------------------------------
-    // 3️⃣ Array of markdown rules (regex + replacement, or a plain
-    // string -> string function for rules that can't be a single regex)
+    // 3️⃣ Array of markdown rules (now using the global Regex variables)
     // -----------------------------------------------------------------
     const mdRules = [
-        /* ---------- Images inside links ---------- */
-        [/\[!\[((?:[^\[\]\n]|\[[^\]\n]*\])*)\]\(%%URL(\d+)%%\)\]\(%%URL(\d+)%%\)/gm,
-            (m, alt, img, lnk) =>
-                `<a target='_blank' href='${urlPlaceholders[+lnk]}'><img src='${urlPlaceholders[+img]}' alt='${alt}' /></a>`],
+        [RX_IMG_LINK, (m, alt, img, lnk) => `<a target='_blank' href='${urlPlaceholders[+lnk]}'><img src='${urlPlaceholders[+img]}' alt='${alt}' /></a>`],
+        [RX_IMG_ALONE, (m, alt, i) => `<img src='${urlPlaceholders[+i]}' alt='${alt}' />`],
+        [RX_LINK_ATTR, (m, t, i, a) => `<a href='${urlPlaceholders[+i]}' ${a}>${t}</a>`],
+        [RX_LINK_PLAIN, (m, t, i) => `<a href='${urlPlaceholders[+i]}'>${t}</a>`],
+        [RX_FENCED_CODE, "<pre>$1</pre>"],
 
-        /* ---------- Stand-alone images ---------- */
-        [/!\[((?:[^\[\]\n]|\[[^\]\n]*\])*)\]\(%%URL(\d+)%%\)/gm,
-            (m, alt, i) => `<img src='${urlPlaceholders[+i]}' alt='${alt}' />`],
-
-        /* ---------- Links with attributes ---------- */
-        [/\[((?:[^\[\]\n]|\[[^\]\n]*\])*)\]\(%%URL(\d+)%%\)\{:([^}]*)\}/gm,
-            (m, t, i, a) => `<a href='${urlPlaceholders[+i]}' ${a}>${t}</a>`],
-
-        /* ---------- Plain links ---------- */
-        [/\[((?:[^\[\]\n]|\[[^\]\n]*\])*)\]\(%%URL(\d+)%%\)/gm,
-            (m, t, i) => `<a href='${urlPlaceholders[+i]}'>${t}</a>`],
-
-        /* ---------- Code block (fenced) ---------- */
-        [/```[a-z]*\n([\s\S]*?)\n\s*```/g, "<pre>$1</pre>"],
-
-        /* ---------- Inline code ----------
-           A run of N backticks is closed by the *next* run of exactly N
-           backticks (CommonMark rule). This keeps ` ```json ` intact: the
-           single backticks pair up and the inner ``` stays literal inside
-           the code.
-
-           This used to be a single regex with a backreference
-           (`/(`+)([^`]|[\s\S]*?[^`])\1(?!`)/gm`). That approach needs
-           lookaround (`(?<!`)…(?!`)`) to stop the engine from backtracking
-           an opening run down to a shorter, non-maximal backtick count once
-           the full-length run finds no match – otherwise a leftover run
-           (like a stray ``) latches onto some unrelated, far-away backtick
-           run later in the text and swallows everything in between into one
-           <code> span. Since lookaround isn't an option here, this walks the
-           backtick runs by hand instead: find every run of backticks, then
-           for each one (left to right) look for the *next* run of the same
-           length to close it. A run with no same-length partner anywhere
-           later is left as literal text and never reconsidered. */
         parseInlineCode,
 
-        /* ---------- Blockquote ---------- */
-        // "&gt;" is accepted as well: with escapeHtml on, a typed ">" has already
-        // been escaped by the time this rule runs.
-        [/^(?:>|&gt;) ([^\n]*)$/gm, "<blockquote>$1</blockquote>"],
+        [RX_BLOCKQUOTE, "<blockquote>$1</blockquote>"],
+        [RX_HEADING, (m, h, p) => `<h${h.length}>${p.trim()}</h${h.length}>`],
 
-        /* ---------- Headings (h1‑h6) ---------- */
-        [/^(#{1,6})(.*)$/gm, (m, h, p) => `<h${h.length}>${p.trim()}</h${h.length}>`],
+        // Both bold rules were combined into one:
+        [RX_BOLD, "<b>$2</b>"],
 
-        /* ---------- Bold (**, __) ---------- */
-        [/\*\*(.*?)\*\*/gm, "<b>$1</b>"],
-        [/__(.*?)__/gm, "<b>$1</b>"],
-
-        /* ---------- Italic – *text* ---------- */
-        [/\*([^\s*][^*\n]*?)\*/gm, "<i>$1</i>"],
-
-        /* ---------- Italic – _text_ (protected against URL underscores) ---------- */
-        [/(^|[^="'a-zA-Z0-9\/])_([^_\n]+?)_(?![a-zA-Z0-9\/])/gm, "$1<i>$2</i>"],
-
-        /* ---------- Horizontal rule ---------- */
-        [/^---\s*$/gm, "<hr/>"],
-
-        /* ---------- **Tables** (GitHub‑flavour) ---------- */
-        [
-            // Captures:
-            //   1️⃣ header block (one or more lines that contain at least one '|')
-            //   2️⃣ alignment separator line (---, :---, etc.)
-            //   3️⃣ optional body rows
-            /((?:\|?.*\|.*\n)+?)\|? *-+:?-+(?:\| *-+:?-+)*\|?\n((?:\|?.*\|.*\n?)*)/gm,
-            (m, headerBlock, bodyBlock) => {
-                // Re‑assemble a minimal markdown table string for the helper
-                const tableMd = `${headerBlock.trim()}\n${bodyBlock.trim()}`;
-                return markdownTableToHtml(tableMd);
-            }
-        ],
+        [RX_ITALIC_AST, "<i>$1</i>"],
+        [RX_ITALIC_UND, "$1<i>$2</i>"],
+        [RX_HR, "<hr/>"],
+        [RX_TABLE, (m, headerBlock, bodyBlock) => markdownTableToHtml(`${headerBlock.trim()}\n${bodyBlock.trim()}`)],
 
         /* ---------- Ordered list (including continuation lines) ---------- */
-        [/\n\d+\.\s.*(?:\n[ \t]+\S.*)*(?:\n+\d+\.\s.*(?:\n[ \t]+\S.*)*)*/gm, m => {
+        [RX_LIST_OL, m => {
             const items = m.replace(/^\n+/, "").split(/\n+(?=\d+\.\s)/);
             const lis = items.map(it =>
                 "<li>" + it.replace(/^\d+\.\s*/, "")
@@ -285,7 +260,7 @@ const parser = (md, options = {}) => {
         }],
 
         /* ---------- Unordered list (including continuation lines) ---------- */
-        [/\n[-*+]\s.*(?:\n[ \t]+\S.*)*(?:\n+[-*+]\s.*(?:\n[ \t]+\S.*)*)*/gm, m => {
+        [RX_LIST_UL, m => {
             const items = m.replace(/^\n+/, "").split(/\n+(?=[-*+]\s)/);
             const lis = items.map(it =>
                 "<li>" + it.replace(/^[-*+]\s*/, "")
@@ -294,45 +269,25 @@ const parser = (md, options = {}) => {
             return "<ul>" + lis + "</ul>";
         }],
 
-        /* ---------- Paragraph breaks (double newline) ---------- */
-        [/\n\n/gm, "</p><p>"],
 
-        /* ---------- Single newline → <br/> (unless already inside a tag) ---------- */
-        [/\n(?!\s*<|$)/gm, "<br/>"]
+        [RX_P_BREAK, "</p><p>"],
+        [RX_BR, "<br/>"]
     ];
 
-    // -----------------------------------------------------------------
-    // 4️⃣ Apply every rule sequentially
-    // -----------------------------------------------------------------
+    // 4️⃣ Apply every rule
     let parsed = mdRules.reduce((s, r) => (typeof r === 'function' ? r(s) : s.replace(r[0], r[1])), protectedMd);
 
-    // -----------------------------------------------------------------
-    // 5️⃣ Clean‑up: fix stray paragraph tags around headings, remove empty tags, etc.
-    //     The trusted <safe_html> fragments are put back last, so no markdown rule
-    //     and no cleanup step ever touches them.
-    // -----------------------------------------------------------------
+    // 5️⃣ Clean‑up (now using the global Regex variables)
     parsed = parsed
-        .replace(/<p><h([0-6])/g, '<h$1')
-        .replace(/<\/h([0-6])><\/p>/g, '</h$1>')
-        .replace(/<p><\/p>/g, '')
-        .replace(/<br\s*\/?>\s*<\/p>/g, '</p>')
-        .replace(/>\s*<br\s*\/>/g, '>')
-        // Any newline that's still here made it through rule 18 untouched
-        // (single newline -> <br/>) because it sat right before a "<" -
-        // typically a closing inline tag like </code> or </b>, where rule 18
-        // deliberately skips it to avoid an unwanted <br/> right before a
-        // tag. That newline is still real content though (e.g. a line break
-        // that was part of the text inside a code span), so it must not be
-        // deleted outright - that used to silently drop it, corrupting the
-        // content. Collapse it to a space instead, matching how a browser
-        // would render a stray newline as whitespace anyway.
-        .replace(/\n+/g, ' ')
-        .replace(/%%URL(\d+)%%/g, (m, i) => urlPlaceholders[+i])
-        .replace(/\u0000H(\d+)\u0000/g, (m, i) => trusted[+i]);
+        .replace(RX_CLEAN_H_OPEN, '<h$1')
+        .replace(RX_CLEAN_H_CLOSE, '</h$1>')
+        .replace(RX_CLEAN_EMPTY_P, '')
+        .replace(RX_CLEAN_BR_P, '</p>')
+        .replace(RX_CLEAN_GT_BR, '>')
+        .replace(RX_CLEAN_NEWLINES, ' ')
+        .replace(RX_RESTORE_URL, (m, i) => urlPlaceholders[+i])
+        .replace(RX_RESTORE_HTML, (m, i) => trusted[+i]);
 
-    // -----------------------------------------------------------------
-    // 6️⃣ Wrap the whole thing in a single <p> (mirrors original behaviour)
-    // -----------------------------------------------------------------
     return '<p>' + parsed + '</p>';
 };
 
