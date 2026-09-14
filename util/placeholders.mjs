@@ -8,7 +8,7 @@ import {_t} from './i18n.mjs'
 export const replacePlaceholders = (template, context, name) => {
 
     // fast path: no '$' means no interpolation possible -> skip new Function/toES5
-    if (!context || !template.includes('$')) {
+    if (!context || !template || template.constructor !== String || !template.includes('$')) {
         return template
     }
 
