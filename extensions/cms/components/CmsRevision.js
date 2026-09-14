@@ -23,6 +23,20 @@ const CodeEditor = (props) => <Async {...props} load={() =>import(/* webpackChun
 function CmsRevisionDialog(props){
     const {onClose, onChange, cmsPage, historyType, revision, canMangeCmsTemplate, ...rest} = props
 
+    // Bei 'all' (chronologisch) den tatsächlichen Typ aus den meta.keys der Revision bestimmen
+    let effectiveHistoryType = historyType
+    if (historyType === 'all' && revision && revision.meta) {
+        try {
+            const meta = JSON.parse(revision.meta)
+            const keys = meta.keys || []
+            if (keys.indexOf('template') >= 0) effectiveHistoryType = 'template'
+            else if (keys.indexOf('style') >= 0) effectiveHistoryType = 'style'
+            else if (keys.indexOf('dataResolver') >= 0) effectiveHistoryType = 'dataResolver'
+            else if (keys.indexOf('serverScript') >= 0) effectiveHistoryType = 'serverScript'
+            else if (keys.indexOf('script') >= 0) effectiveHistoryType = 'script'
+        } catch (e) { /* ignore */ }
+    }
+
     let parsedData
     return <SimpleDialog fullWidth={true}
                          maxWidth="lg"
@@ -52,16 +66,16 @@ function CmsRevisionDialog(props){
                 filter: `_id==${revision._id}`
             }}>
             {({loading, error, data}) => {
-                if (loading) return 'Loading...'
-                if (error) return `Error! ${error.message}`
+                if (loading) return _t('CmsRevision.loading')
+                if (error) return _t('CmsRevision.error', {message: error.message})
 
-                if (data.historys.results === 0) return 'No entry'
+                if (data.historys.results === 0) return _t('CmsRevision.noEntry')
                 parsedData = JSON.parse(data.historys.results[0].data)
 
-                if (historyType === 'dataResolver') {
+                if (effectiveHistoryType === 'dataResolver') {
 
                     return <div>
-                        <Typography gutterBottom>Data resolver changed</Typography>
+                        <Typography gutterBottom>{_t('CmsRevision.dataResolverChanged')}</Typography>
 
                         <CodeEditor mergeView={true}
                                     style={{border: 0,width:'100%',height:'calc(100vh - 19.8rem)',overflow:'auto'}}
@@ -71,7 +85,7 @@ function CmsRevisionDialog(props){
 
                     </div>
 
-                } else if (historyType === 'template') {
+                } else if (effectiveHistoryType === 'template') {
                     const [tabValue, setTabValue] = React.useState(0)
                     return <>
 
@@ -83,7 +97,7 @@ function CmsRevisionDialog(props){
                             }}
                         >
                             <SimpleTab key="tabView" label={_t('CmsRevision.view')}/>
-                            {canMangeCmsTemplate && <SimpleTab key="tabCode" label="Code"/>}
+                            {canMangeCmsTemplate && <SimpleTab key="tabCode" label={_t('CmsRevision.code')} />}
                         </SimpleTabs>
 
                         <SimpleTabPanel style={{border:'solid 1px rgba(234,234,234)'}} key="tabPanelView" value={tabValue} index={0}>
@@ -126,7 +140,7 @@ function CmsRevisionDialog(props){
                                 filter: `data._id==${cmsPage._id} && meta.keys==template`
                             }}>
                             {({loading, error, data}) => {
-                                if (error) return `Error! ${error.message}`
+                                if (error) return _t('CmsRevision.error', {message: error.message})
 
                                 const defaultValue = Util.dateFromObjectId(revision._id, new Date()).getTime()
                                 let year
@@ -155,7 +169,7 @@ function CmsRevisionDialog(props){
                                         step={null}
                                         disabled={true}
                                         valueLabelDisplay="auto"
-                                        marks={[{value: defaultValue, label: 'loading'}]}
+                                        marks={[{value: defaultValue, label: _t('CmsRevision.loading')}]}
                                     />
                                 }
                                 const max = Util.dateFromObjectId(data.historys.results[0]._id, new Date()).getTime()
@@ -185,10 +199,10 @@ function CmsRevisionDialog(props){
                             }}
                         </Query>
                     </>
-                } else if (historyType === 'style') {
+                } else if (effectiveHistoryType === 'style') {
 
                     return <div>
-                        <Typography gutterBottom>Style changed</Typography>
+                        <Typography gutterBottom>{_t('CmsRevision.styleChanged')}</Typography>
 
                         <CodeEditor mergeView={true}
                                     style={{border: 0,width:'100%',height:'calc(100vh - 19.8rem)',overflow:'auto'}}
@@ -196,10 +210,10 @@ function CmsRevisionDialog(props){
                                     lineNumbers type="css" readOnly={true}>{parsedData.style}</CodeEditor>
                     </div>
 
-                } else if (historyType === 'script') {
+                } else if (effectiveHistoryType === 'script') {
 
                     return <div>
-                        <p>Script changed</p>
+                        <p>{_t('CmsRevision.scriptChanged')}</p>
 
 
                         <CodeEditor mergeView={true}
@@ -209,10 +223,10 @@ function CmsRevisionDialog(props){
 
                     </div>
 
-                } else if (historyType === 'serverScript') {
+                } else if (effectiveHistoryType === 'serverScript') {
 
                     return <div>
-                        <p>Server Script changed</p>
+                        <p>{_t('CmsRevision.serverScriptChanged')}</p>
 
                         <CodeEditor mergeView={true}
                                     style={{border: 0,width:'100%',height:'calc(100vh - 19.8rem)',overflow:'auto'}}
@@ -242,18 +256,19 @@ export default function CmsRevision(props){
     return <>
         {canMangeCmsTemplate && <SimpleSelect
             fullWidth={true}
-            label="Type"
+            label={_t('CmsRevision.type')}
             value={historyType}
             style={{marginBottom:0,marginTop:0}}
             onChange={(e)=>{
                 setHistoryPage(1)
                 setHistoryType(e.target.value)
             }}
-            items={[{name: 'Script', value: 'script'},
-                {name: 'Server Script', value: 'serverScript'},
-                {name: 'Data Resolver', value: 'dataResolver'},
-                {name: 'Template', value: 'template'},
-                {name: 'Style', value: 'style'}]}
+            items={[{name: _t('CmsRevision.all'), value: 'all'},
+                  {name: _t('CmsRevision.script'), value: 'script'},
+                {name: _t('CmsRevision.serverScript'), value: 'serverScript'},
+                {name: _t('CmsRevision.dataResolver'), value: 'dataResolver'},
+                {name: _t('CmsRevision.template'), value: 'template'},
+                {name: _t('CmsRevision.style'), value: 'style'}]}
         /> }
         <Query
             query={'query historys($sort:String,$filter:String,$limit:Int,$offset:Int,$page:Int){historys(sort:$sort,filter:$filter,limit:$limit,offset:$offset,page:$page){total offset results{_id action meta createdBy{username}}}}'}
@@ -262,11 +277,13 @@ export default function CmsRevision(props){
                 offset:1 + ((historyPage-1) * historyLimit),
                 limit: historyLimit,
                 sort: '_id desc',
-                filter: `data._id==${cmsPage._id} && meta.keys==${historyType || 'script'}`
+                filter: historyType === 'all'
+                     ? `data._id==${cmsPage._id}`
+                     : `data._id==${cmsPage._id} && meta.keys==${historyType || 'script'}`
             }}>
             {({loading, error, data}) => {
-                if (loading) return <p>Loading...</p>
-                if (error) return <p>Error! {error.message}</p>
+                if (loading) return <p>{_t('CmsRevision.loading')}</p>
+                if (error) return <p>{_t('CmsRevision.error', {message: error.message})}</p>
 
                 const menuItems = []
                 data.historys.results.forEach(revision => {
@@ -281,15 +298,15 @@ export default function CmsRevision(props){
                     if (meta.keys.indexOf('template') >= 0) {
                         secondary = _t('CmsRevision.templateChanged')
                     } else if (meta.keys.indexOf('style') >= 0) {
-                        secondary = 'Style hat geändert'
+                        secondary = _t('CmsRevision.styleChangedSecondary')
                     } else if (meta.keys.indexOf('dataResolver') >= 0) {
-                        secondary = 'Data resolver hat geändert'
+                        secondary = _t('CmsRevision.dataResolverChangedSecondary')
                     } else if (meta.keys.indexOf('serverScript') >= 0) {
-                        secondary = 'Server script hat geändert'
+                        secondary = _t('CmsRevision.serverScriptChangedSecondary')
                     } else if (meta.keys.indexOf('script') >= 0) {
-                        secondary = 'Script hat geändert'
+                        secondary = _t('CmsRevision.scriptChangedSecondary')
                     } else {
-                        secondary = 'Änderung'
+                        secondary = _t('CmsRevision.change')
                     }
 
                     menuItems.push(<MenuListItem key={'history' + revision._id} onClick={() => {

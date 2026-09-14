@@ -125,7 +125,63 @@ const parser = (md, options = {}) => {
     };
 
     // -----------------------------------------------------------------
-    // 3️⃣ Array of markdown rules (regex + replacement)
+    // 2️⃣b Helper: inline code spans, without regex lookaround (see the
+    // rule below for why). Walks every backtick run left to right and pairs
+    // each one with the next run of the same length.
+    // -----------------------------------------------------------------
+    const parseInlineCode = str => {
+        const runs = [...str.matchAll(/`+/g)];
+        if (runs.length === 0) return str;
+
+        let result = '';
+        let cursor = 0; // everything before this index has already been copied to `result`
+        let i = 0;
+
+        while (i < runs.length) {
+            const open = runs[i];
+            const openEnd = open.index + open[0].length;
+
+            // find the next run of exactly the same length -> valid closing delimiter
+            let j = i + 1;
+            while (j < runs.length && runs[j][0].length !== open[0].length) j++;
+
+            if (j < runs.length) {
+                const close = runs[j];
+                result += str.slice(cursor, open.index);
+                const content = str.slice(openEnd, close.index)
+                    // A backslash immediately followed by a *real* newline is
+                    // treated as the literal two-character escape sequence
+                    // "\n" (backslash + the letter n), not an actual line
+                    // break. This restores an intended, literal "\n" (e.g.
+                    // used to document a newline character, as in `\n`) that
+                    // arrived here as a real newline instead of that text -
+                    // typically because something upstream (an extra JSON
+                    // encode/decode round trip, for example) turned the
+                    // literal escape sequence into an actual line break
+                    // before it ever reached this parser. Doing this here,
+                    // before the code span is wrapped, keeps that newline
+                    // from later being turned into a stray space (the
+                    // general code-span rule two steps down) or a <br/>.
+                    .replace(/\\\n/g, '\\n');
+                result += `<code>${content}</code>`;
+                cursor = close.index + close[0].length;
+                i = j + 1;
+            } else {
+                // no closing run of the same length exists anywhere later ->
+                // this run stays literal; cursor is left untouched so it gets
+                // copied through as-is, and the next run becomes the fresh
+                // candidate opener
+                i += 1;
+            }
+        }
+
+        result += str.slice(cursor);
+        return result;
+    };
+
+    // -----------------------------------------------------------------
+    // 3️⃣ Array of markdown rules (regex + replacement, or a plain
+    // string -> string function for rules that can't be a single regex)
     // -----------------------------------------------------------------
     const mdRules = [
         /* ---------- Images inside links ---------- */
@@ -148,8 +204,25 @@ const parser = (md, options = {}) => {
         /* ---------- Code block (fenced) ---------- */
         [/```[a-z]*\n([\s\S]*?)\n\s*```/g, "<pre>$1</pre>"],
 
-        /* ---------- Inline code ---------- */
-        [/`(.*?)`/gm, "<code>$1</code>"],
+        /* ---------- Inline code ----------
+           A run of N backticks is closed by the *next* run of exactly N
+           backticks (CommonMark rule). This keeps ` ```json ` intact: the
+           single backticks pair up and the inner ``` stays literal inside
+           the code.
+
+           This used to be a single regex with a backreference
+           (`/(`+)([^`]|[\s\S]*?[^`])\1(?!`)/gm`). That approach needs
+           lookaround (`(?<!`)…(?!`)`) to stop the engine from backtracking
+           an opening run down to a shorter, non-maximal backtick count once
+           the full-length run finds no match – otherwise a leftover run
+           (like a stray ``) latches onto some unrelated, far-away backtick
+           run later in the text and swallows everything in between into one
+           <code> span. Since lookaround isn't an option here, this walks the
+           backtick runs by hand instead: find every run of backticks, then
+           for each one (left to right) look for the *next* run of the same
+           length to close it. A run with no same-length partner anywhere
+           later is left as literal text and never reconsidered. */
+        parseInlineCode,
 
         /* ---------- Blockquote ---------- */
         // "&gt;" is accepted as well: with escapeHtml on, a typed ">" has already
@@ -216,7 +289,7 @@ const parser = (md, options = {}) => {
     // -----------------------------------------------------------------
     // 4️⃣ Apply every rule sequentially
     // -----------------------------------------------------------------
-    let parsed = mdRules.reduce((s, r) => s.replace(r[0], r[1]), protectedMd);
+    let parsed = mdRules.reduce((s, r) => (typeof r === 'function' ? r(s) : s.replace(r[0], r[1])), protectedMd);
 
     // -----------------------------------------------------------------
     // 5️⃣ Clean‑up: fix stray paragraph tags around headings, remove empty tags, etc.
@@ -229,7 +302,16 @@ const parser = (md, options = {}) => {
         .replace(/<p><\/p>/g, '')
         .replace(/<br\s*\/?>\s*<\/p>/g, '</p>')
         .replace(/>\s*<br\s*\/>/g, '>')
-        .replace(/\n+/g, '')
+        // Any newline that's still here made it through rule 18 untouched
+        // (single newline -> <br/>) because it sat right before a "<" -
+        // typically a closing inline tag like </code> or </b>, where rule 18
+        // deliberately skips it to avoid an unwanted <br/> right before a
+        // tag. That newline is still real content though (e.g. a line break
+        // that was part of the text inside a code span), so it must not be
+        // deleted outright - that used to silently drop it, corrupting the
+        // content. Collapse it to a space instead, matching how a browser
+        // would render a stray newline as whitespace anyway.
+        .replace(/\n+/g, ' ')
         .replace(/%%URL(\d+)%%/g, (m, i) => urlPlaceholders[+i])
         .replace(/\u0000H(\d+)\u0000/g, (m, i) => trusted[+i]);
 

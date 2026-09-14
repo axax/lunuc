@@ -92,7 +92,7 @@ ${finalHtml}
     let replyToFinal = replyTo
 
     if(!replyToFinal && settings && settings.replyTo){
-        replyToFinal = settings.replyTo
+        replyToFinal = replacePlaceholders(settings.replyTo, body)
     }
     if(!replyToFinal && mailSettings && mailSettings.replyTo){
         replyToFinal = mailSettings.replyTo
@@ -101,6 +101,8 @@ ${finalHtml}
     let finalText = text?text.trim():''
     if(!finalText){
         finalText = finalHtml.replace(/<(script|style)\b[^<]*(?:(?!<\/\1>)<[^<]*)*<\/\1>|<[^>]+>/gi, '').trim()
+    }else{
+        finalText = replacePlaceholders(finalText, body)
     }
 
     const message = {

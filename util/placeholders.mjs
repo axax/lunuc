@@ -6,6 +6,12 @@ import {_t} from './i18n.mjs'
  */
 
 export const replacePlaceholders = (template, context, name) => {
+
+    // fast path: no '$' means no interpolation possible -> skip new Function/toES5
+    if (!context || !template.includes('$')) {
+        return template
+    }
+
     if (name !== undefined) {
         const re = new RegExp('\\$\\.' + name + '{', 'g')
         template = template.replace(re, '${')
