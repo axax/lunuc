@@ -121,16 +121,28 @@ const Util = {
 
             Cache.clearStartWith('KeyValue_' + finalContext.id + '_' + key)
 
-            const createdBy= new ObjectId(finalContext.id)
+            const createdBy = new ObjectId(finalContext.id)
             let aggregation = {$set: {createdBy, key, value}}
 
-            if(options && options.aggregation){
+            if (options && options.aggregation) {
                 aggregation = options.aggregation
             }
-            return await db.collection('KeyValue').updateOne({
-                createdBy,
-                key
-            }, aggregation, {upsert: true})
+
+            try {
+                return await db.collection('KeyValue').updateOne({
+                    createdBy,
+                    key
+                }, aggregation, {upsert: true})
+            } catch (err) {
+                console.error('[setKeyValue] MongoDB update failed', {
+                    key,
+                    keyContainsDot: typeof key === 'string' && key.includes('.'),
+                    value,
+                    aggregation: JSON.stringify(aggregation),
+                    error: err.message
+                })
+                throw err
+            }
         }
     },
     setKeyValueGlobal: async (db, context, key, value, options) => {

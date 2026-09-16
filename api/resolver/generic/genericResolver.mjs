@@ -703,7 +703,8 @@ const GenericResolver = {
     updateEnity: async (db, context, typeName, data, options) => {
         return GenericResolver.updateEntity(db, context, typeName, data, options)
     },
-    updateEntity: async (db, context, typeName, {_version, _meta, ...data}, options) => {
+    updateEntity: async (db, reqOrContext, typeName, {_version, _meta, ...data}, options) => {
+        let { context } = resolveRequestContext(reqOrContext)
 
         if (!options) {
             options = {forceAdminContext:false, skipCheck:false, ignoreHooks:false}
@@ -829,7 +830,6 @@ const GenericResolver = {
         }
 
         let newData
-
         if(options.returnDocument){
             updateOptions.returnDocument = options.returnDocument
 
