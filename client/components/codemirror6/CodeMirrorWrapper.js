@@ -14,7 +14,7 @@ const externalUpdate = Annotation.define()
 
 
 const CodeMirrorWrapper = (props) => {
-    const {controlled, mergeView, darkMode, onFirstVisibleLineChange, onEditorView, onContextMenu, style, onChange, onBlur, type, lineNumbers, identifier, value, mergeValue, readOnly} = props
+    const {controlled, mergeView, darkMode, onFirstVisibleLineChange, onEditorView, onContextMenu, style, onChange, onBlur, type, lineNumbers, identifier, value, mergeValue, readOnly, onToggleAiAssistent} = props
     const editor = useRef()
     const editorViewRef = useRef()
 
@@ -57,7 +57,7 @@ const CodeMirrorWrapper = (props) => {
 
     useEffect(() => {
         const extensions = [defaultThemeOption,
-            ...basicSetup({type,lineNumbers,readOnly}),
+            ...basicSetup({type,lineNumbers,readOnly,onToggleAiAssistent}),
             darkMode && oneDark,
             onFirstVisibleLineChange && EditorView.domEventHandlers({
                 scroll: (scollEvent, view) => {

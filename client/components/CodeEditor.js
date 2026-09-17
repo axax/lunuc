@@ -3,6 +3,8 @@ import CodeMirrorWrapper from './codemirror6/CodeMirrorWrapper'
 import {SimpleMenu,SimpleDialog} from 'ui/admin'
 import GenericForm from './GenericForm'
 import RenderInNewWindow from './layout/RenderInNewWindow'
+import ResizableDivider from './ResizableDivider'
+import {applyPatch, PatchError, buildPatchFeedback} from '../../extensions/cms/util/patch-utils.mjs'
 import {generateContextMenu} from './codemirror6/contextMenu'
 import {replaceLineWithText, formatCode, applyUnifiedDiff, scrollToLine, runTransformScript} from './codemirror6/utils'
 import {StyledFile, seperateFiles, putFilesTogether, SPLIT_SIGN} from './codemirror6/fileSeperation'
@@ -87,6 +89,59 @@ const StyledCopyButton = styled('button')(({ copied, theme }) => ({
     }
 }))
 
+const StyledSplitRow = styled('div')({
+    display: 'flex',
+    alignItems: 'stretch',
+    width: '100%'
+})
+
+const StyledSplitMain = styled('div')({
+    flex: '1 1 auto',
+    minWidth: 0
+})
+
+const StyledAiPane = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'width' && prop !== 'hidden'
+})(({width, hidden}) => ({
+    flex: '0 0 auto',
+    width: `${width}px`,
+    minWidth: '240px',
+    maxWidth: '70vw',
+    position: 'relative',
+    display: hidden ? 'none' : 'flex',
+    flexDirection: 'column',
+    borderLeft: '1px solid rgba(0,0,0,0.12)'
+}))
+
+const StyledAiPaneHeader = styled('div')(({theme}) => ({
+    flex: '0 0 auto',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '0.5rem',
+    padding: '0.25rem 0.25rem 0.25rem 0.75rem',
+    fontSize: '0.75rem',
+    fontWeight: 600,
+    color: theme.palette ? theme.palette.text.secondary : '#6b7280',
+    background: theme.palette ? theme.palette.background.default : '#f9fafb',
+    borderBottom: '1px solid rgba(0,0,0,0.12)'
+}))
+
+const StyledAiPaneClose = styled('button')(({theme}) => ({
+    border: 'none',
+    background: 'transparent',
+    cursor: 'pointer',
+    lineHeight: 1,
+    fontSize: '0.875rem',
+    padding: '0.25rem 0.5rem',
+    borderRadius: '4px',
+    color: 'inherit',
+    '&:hover': {
+        background: 'rgba(0,0,0,0.08)',
+        color: theme.palette ? theme.palette.text.primary : '#111827'
+    }
+}))
+
 function CodeEditor(props,ref){
     const {controlled, hasContextMenu, mergeView, mergeValue, children, onScroll, onFullSize, onFileChange, showFab, fabButtonStyle, actions, onChange, onError, onBlur, lineNumbers, type, style, className, error, templates, propertyTemplates, fileSplit, identifier, readOnly, showCopyButton} = props
 
@@ -109,6 +164,16 @@ function CodeEditor(props,ref){
     const [isDataJson] = useState(props.forceJson || children && (children.constructor === Object || children.constructor === Array))
     const editorViewRef = useRef()
     const editDataFormRef = useRef()
+    const [showAiAssistent, setShowAiAssistent] = useState(false)
+    const [aiAssistentMounted, setAiAssistentMounted] = useState(false)
+    const [aiAssistentWidth, setAiAssistentWidth] = useState(420)
+    const [aiAssistentUrl] = useState(() => `/system/aiassistent?preview=true&inputkey=${encodeURIComponent('lunuc_code_llm_input_' + (identifier || 'code'))}&type=${encodeURIComponent(type || '')}`)
+    const aiWidthRef = useRef(420)
+    const dragStartWidthRef = useRef(null)
+    // The Alt-Cmd-A keymap closure is only rebuilt when `identifier` changes, so
+    // it would toggle against a stale showAiAssistent. Read the live value.
+    const showAiAssistentRef = useRef(false)
+    showAiAssistentRef.current = showAiAssistent
 
     if(props.onRef){
         props.onRef(editorViewRef)
@@ -140,6 +205,7 @@ function CodeEditor(props,ref){
             delete editorViewRef.resizerState
             setHeight(editorViewRef.current.dom.getBoundingClientRect().height+'px')
         }
+        dragStartWidthRef.current = null
     }
 
     const handleCopy = () => {
@@ -148,6 +214,63 @@ function CodeEditor(props,ref){
             setCopied(true)
             setTimeout(() => setCopied(false), 2000)
         })
+    }
+
+    // Opens (or reveals) the AI assistant split view. Primes the assistant's
+    // input with an instruction that tells it how to send changes back: as a
+    // <lunuc_component key="..." op="replace" type="codeEditor"> block - the
+    // same tag/wire-format CmsPageTools already understands for CMS component
+    // edits, just with an extra type="codeEditor" attribute so client-llm.js
+    // can tell the two apart (different Apply-button gate, see there) without
+    // a second tag. Matched here by `identifier`, which the message listener
+    // below uses to recognize a change meant for this editor instance -
+    // CmsPageTools' own ALLOWED_KEYS whitelist never matches an arbitrary
+    // identifier, so the two listeners never step on each other.
+    const openAiAssistent = (selectedContent) => {
+        const storeKey = 'lunuc_code_llm_input_' + (identifier || 'code')
+        // Without a selection the whole document is handed over, so the assistant
+        // always has the code it is supposed to change.
+        const view = editorViewRef.current
+        const code = selectedContent ||
+            (view ? putFilesTogether(files, finalFileIndex, view.state.doc.toString()) : '')
+
+        const instructionLines = [
+            `You are working on the code editor "${identifier}"${type ? ' (type: ' + type + ')' : ''}.`,
+            `Return every change as <lunuc_component key="${identifier}" type="codeEditor" op="replace"${type ? ` lang="${type}"` : ''}><old_data>ORIGINAL SNIPPET</old_data><data>NEW SNIPPET</data></lunuc_component> - both snippets as plain code, without markdown fences. The type="codeEditor" attribute is required.`,
+            'Keep old_data as short as possible but unique, and copy it byte for byte from the code below, including indentation and blank lines. Everything old_data matches is replaced by data, so any line you leave out of data is deleted - repeat the lines you want to keep.'
+        ]
+        if (code) {
+            instructionLines.push('', selectedContent ? 'Selected code:' : 'Current code:', code)
+        }
+        try {
+            sessionStorage.setItem(storeKey, instructionLines.join('\n'))
+        } catch (e) {
+            console.warn('CodeEditor: could not write llm_input to sessionStorage', e)
+        }
+        setAiAssistentMounted(true)
+        setShowAiAssistent(true)
+    }
+
+    // The fab entry and Alt-Cmd-A toggle; the context menu entry always opens
+    // (it carries the current selection).
+    const toggleAiAssistent = (selectedContent) => {
+        if (showAiAssistentRef.current) {
+            setShowAiAssistent(false)
+        } else {
+            openAiAssistent(selectedContent)
+        }
+    }
+
+    const handleAiResize = (newPosition) => {
+        if (dragStartWidthRef.current === null) {
+            dragStartWidthRef.current = aiWidthRef.current
+        }
+        const maxWidth = window.innerWidth * 0.7
+        const next = Math.min(Math.max(dragStartWidthRef.current - newPosition, 240), maxWidth)
+        if (next !== aiWidthRef.current) {
+            aiWidthRef.current = next
+            setAiAssistentWidth(next)
+        }
     }
 
     useEffect(() => {
@@ -215,6 +338,102 @@ function CodeEditor(props,ref){
         })
     }
 
+    allActions.push({
+        divider: true,
+        icon: showAiAssistent ? 'visibilityOff' : 'autoAwesome',
+        name: showAiAssistent ? _t('CodeEditor.hideAiAssistent') : _t('CodeEditor.showAiAssistent'),
+        onClick: () => {
+            toggleAiAssistent()
+        }
+    })
+
+    // Receives "Apply change" messages posted by the /system/aiassistent
+    // iframe (same protocol/shape CmsPageTools listens for), scoped to this
+    // editor instance via `identifier`. Mirrors the manual "Apply Patch"
+    // dialog below: fuzzy patch when old_data is given, full replace otherwise.
+    useEffect(() => {
+        if (!aiAssistentMounted) {
+            return
+        }
+
+        const handleAiAssistentMessage = (event) => {
+            if (event.origin !== window.location.origin) {
+                return
+            }
+            const d = event.data
+            if (!d || !d.lunuc_component || d.type !== 'codeEditor' || !d.key || d.key !== identifier) {
+                return
+            }
+
+            const operation = d.op || d.operation
+            const respond = (success, error, extra) => {
+                if (event.source && event.source.postMessage) {
+                    event.source.postMessage({
+                        lunuc_component_result: true,
+                        key: d.key,
+                        operation,
+                        path: d.path,
+                        success,
+                        error: error || null,
+                        ...extra
+                    }, event.origin)
+                }
+            }
+
+            const view = editorViewRef.current
+            if (!view) {
+                respond(false, 'Editor not ready')
+                return
+            }
+
+            try {
+                const currentFull = putFilesTogether(files, finalFileIndex, view.state.doc.toString())
+                let newFull, matchedVia
+                const isPatch = typeof d.old_data === 'string' && d.old_data.length > 0
+
+                if (isPatch) {
+                    const patchKey = type === 'css' ? 'style' : 'script'
+                    const applied = applyPatch(currentFull, {oldData: d.old_data, data: d.data == null ? '' : d.data}, {key: patchKey})
+                    newFull = applied.result
+                    matchedVia = applied.matchedVia
+                } else {
+                    newFull = d.data == null ? '' : (d.data.constructor === String ? d.data : JSON.stringify(d.data, null, 2))
+                }
+
+                let displayContent = newFull
+                if (files && showFileSplit) {
+                    const newFiles = seperateFiles(newFull)
+                    if (newFiles.length > 0) {
+                        const idx = finalFileIndex < newFiles.length ? finalFileIndex : 0
+                        displayContent = newFiles[idx].content
+                    }
+                }
+
+                const firstVisibleLine = view.state.doc.lineAt(
+                    view.elementAtHeight(view.dom.getBoundingClientRect().top - view.documentTop).from).number
+
+                triggerOnChange(newFull)
+                view.dispatch({
+                    changes: {from: 0, to: view.state.doc.length, insert: displayContent}
+                })
+                scrollToLine(view, firstVisibleLine)
+                respond(true, null, matchedVia ? {matchedVia} : undefined)
+            } catch (e) {
+                if (e instanceof PatchError) {
+                    respond(false, buildPatchFeedback(e, 'script'))
+                    return
+                }
+                console.error('CodeEditor: error applying AI assistant change:', e)
+                respond(false, e.message)
+            }
+        }
+
+        window.addEventListener('message', handleAiAssistentMessage)
+        return () => {
+            window.removeEventListener('message', handleAiAssistentMessage)
+        }
+    }, [aiAssistentMounted, files, finalFileIndex, showFileSplit, type, identifier])
+
     function triggerOnChange(fullCodeAsString) {
         let asJson
         if (isDataJson || type === 'json') {
@@ -244,7 +463,12 @@ function CodeEditor(props,ref){
         }
     }
 
-    const comp = <StyledRoot error={hasError} inWindow={renderInWindow} className={className} style={style}>
+    // In the split view the frame the consumer styles (border, margin, ...) belongs
+    // around BOTH columns, so it moves up to StyledSplitRow - otherwise the editor
+    // sits 16px lower than the assistant beside it and the border cuts between them.
+    const comp = <StyledRoot error={hasError} inWindow={renderInWindow}
+                             className={aiAssistentMounted ? undefined : className}
+                             style={aiAssistentMounted ? undefined : style}>
         {files && <div>{files.map((file, i) => {
                 return (<StyledFile key={'file' + i}
                                 onClick={() => {
@@ -281,6 +505,7 @@ function CodeEditor(props,ref){
             }}
             lineNumbers={lineNumbers}
             type={type} readOnly={readOnly}
+            onToggleAiAssistent={toggleAiAssistent}
             onBlur={(event, view)=>{
                 if(onBlur) {
                     onBlur(event, view.state.doc.toString())
@@ -307,7 +532,12 @@ function CodeEditor(props,ref){
                         showFileSplit,
                         propertyTemplates,
                         templates,
-                        setEditData
+                        setEditData,
+                        toggleAiAssistent,
+                        // read through the ref: this handler closure is only
+                        // rebuilt when `identifier` changes, so a state value
+                        // captured here would be stale
+                        aiAssistentVisible: showAiAssistentRef.current
                     }))
                 }
             }}
@@ -546,11 +776,27 @@ function CodeEditor(props,ref){
         </SimpleDialog>}
     </StyledRoot>
 
+    const withAiAssistent = !aiAssistentMounted ? comp : (
+        <StyledSplitRow className={className} style={style}>
+            <StyledSplitMain>{comp}</StyledSplitMain>
+            <StyledAiPane width={aiAssistentWidth} hidden={!showAiAssistent}>
+                <ResizableDivider direction="horizontal" onResize={handleAiResize}/>
+                <StyledAiPaneHeader>
+                    <span>{_t('CodeEditor.aiAssistent')}</span>
+                    <StyledAiPaneClose type="button" title={_t('CodeEditor.hideAiAssistent')}
+                                       onClick={() => {setShowAiAssistent(false)}}>&#10005;</StyledAiPaneClose>
+                </StyledAiPaneHeader>
+                <iframe src={aiAssistentUrl} title={_t('CodeEditor.aiAssistent')}
+                        style={{flex: '1 1 auto', width: '100%', border: 'none', display: 'block'}}/>
+            </StyledAiPane>
+        </StyledSplitRow>
+    )
+
     if(renderInWindow){
-        return <RenderInNewWindow title="Code Editor" onClose={()=>{setRenderInWindow(false)}}>{comp}</RenderInNewWindow>
+        return <RenderInNewWindow title="Code Editor" onClose={()=>{setRenderInWindow(false)}}>{withAiAssistent}</RenderInNewWindow>
     }
 
-    return comp
+    return withAiAssistent
 }
 
 export default memo(forwardRef(CodeEditor), (prev, next)=>{

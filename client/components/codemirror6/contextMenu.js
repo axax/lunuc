@@ -32,7 +32,8 @@ function endsWithAny(str, chars) {
 export function generateContextMenu({
                                         type, clickEvent, editorView, propertyTemplates, templates, setEditData,
                                         fileSplit, showFileSplit, files, finalFileIndex,
-                                        setShowFileSplit, setStateValue, setCompareData
+                                        setShowFileSplit, setStateValue, setCompareData,
+                                        toggleAiAssistent, aiAssistentVisible
                                     }) {
     let contextMenuItems = []
 
@@ -248,10 +249,13 @@ export function generateContextMenu({
         contextMenuItems.push({
             divider: true,
             icon: <AutoAwesomeIcon/>,
-            name: _t('CodeEditor.aiAssistent') + ' (Alt-Cmd-A)',
+            name: aiAssistentVisible ? _t('CodeEditor.hideAiAssistent') : _t('CodeEditor.showAiAssistent'),
             onClick: () => {
-                sessionStorage.setItem('llm_input', selectedContent)
-                winAndReplace(`/system/aiassistent?preview=true&inputkey=llm_input&type=${type}`)
+                if (toggleAiAssistent) {
+                    // without a selection the editor hands over the whole
+                    // document itself (see openAiAssistent)
+                    toggleAiAssistent(selectedContent)
+                }
             }
         })
 

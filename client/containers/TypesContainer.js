@@ -748,6 +748,7 @@ class TypesContainer extends React.Component {
                 <SimpleSelect
                     value={type}
                     onChange={this.handleTypeChange}
+                    searchable
                     items={this.typesToSelect}/>
             </>
         }
@@ -925,6 +926,7 @@ class TypesContainer extends React.Component {
                             <SimpleSelect
                                 value={type}
                                 onChange={this.handleTypeChange}
+                                searchable
                                 items={this.typesToSelect}
                             />
                         </Col>

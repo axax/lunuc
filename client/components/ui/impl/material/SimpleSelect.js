@@ -10,8 +10,11 @@ import Avatar from '@mui/material/Avatar'
 import InputLabel from '@mui/material/InputLabel';
 import FormControl from '@mui/material/FormControl';
 import FormHelperText from '@mui/material/FormHelperText';
+import TextField from '@mui/material/TextField'
+import InputAdornment from '@mui/material/InputAdornment'
 import styled from '@emotion/styled'
 import {getIconByKey} from './icon'
+import {_t} from 'util/i18n.mjs'
 
 const StyledChips = styled.div`
     display: flex;
@@ -22,6 +25,10 @@ const StyledChip = styled(Chip)({
     padding: '2px',
     margin: '-2px 2px'
 })
+
+const StyledSearchBox = styled.div`
+    padding: 4px 8px 8px 8px;
+`
 
 
 function matchSingleValue(value, list) {
@@ -35,7 +42,26 @@ function matchSingleValue(value, list) {
     return value
 }
 
+function itemMatchesSearch(item, search) {
+    if (!search) {
+        return true
+    }
+    const needle = search.toLowerCase()
+    if (item.constructor === Object) {
+        return (item.name && String(item.name).toLowerCase().includes(needle)) ||
+            (item.value !== undefined && item.value !== null && String(item.value).toLowerCase().includes(needle)) ||
+            (item.hint && String(item.hint).toLowerCase().includes(needle))
+    }
+    return String(item).toLowerCase().includes(needle)
+}
+
 class SimpleSelect extends React.Component {
+
+    state = {
+        search: ''
+    }
+
+    searchInputRef = React.createRef()
 
     itemNameByValue(value) {
 
@@ -52,8 +78,37 @@ class SimpleSelect extends React.Component {
 
     }
 
+    handleSearchChange = event => {
+        this.setState({search: event.target.value})
+    }
+
+    handleSearchKeyDown = event => {
+        // Stop keystrokes from reaching the Select/Menu (which would otherwise
+        // treat them as type-ahead navigation or close the menu on Space).
+        if (event.key !== 'Escape') {
+            event.stopPropagation()
+        }
+    }
+
+    handleClose = () => {
+        if (this.props.searchable) {
+            this.setState({search: ''})
+        }
+    }
+
+    handleMenuEntered = () => {
+        // Focus the search field once the menu has fully opened (after its enter
+        // transition), rather than relying on TextField's autoFocus alone: that fires
+        // at mount time while the Menu is still animating in / effectively hidden, so
+        // browsers can silently ignore it. Doing it here also overrides MUI's own
+        // default focus-the-selected-item behaviour.
+        if (this.props.searchable && this.searchInputRef.current) {
+            this.searchInputRef.current.focus()
+        }
+    }
+
     render() {
-        const {onChange, slotProps = {}, items, label, readOnly, className, multi, disabled, hint, fullWidth, error, style, sx} = this.props
+        const {onChange, slotProps = {}, items, label, readOnly, className, multi, disabled, hint, fullWidth, error, style, sx, searchable, searchPlaceholder} = this.props
         const name = this.props.name || ('name_' + Math.random())
         let value = this.props.value===undefined?'':this.props.value
         if (value) {
@@ -63,7 +118,9 @@ class SimpleSelect extends React.Component {
         } else if (multi) {
             value = []
         }
-        console.log('value', value, items)
+        const {search} = this.state
+        const filteredItems = searchable ? items.filter(item => itemMatchesSearch(item, search)) : items
+        const SearchIcon = searchable ? getIconByKey('search') : null
         return <FormControl className={className}
                             sx={sx}
                             disabled={disabled}
@@ -78,6 +135,14 @@ class SimpleSelect extends React.Component {
                 value={value}
                 readOnly={readOnly}
                 onChange={onChange}
+                onClose={this.handleClose}
+                MenuProps={searchable ? {
+                    slotProps: {
+                        list: {sx: {pt: 0}},
+                        paper: {sx: {pt: 0}},
+                        transition: {onEntered: this.handleMenuEntered}
+                    }
+                } : undefined}
                 slotProps={{
                     input: {
                         name,
@@ -93,8 +158,35 @@ class SimpleSelect extends React.Component {
                         </StyledChips> : this.itemNameByValue(selected)
                 )}
             >
+                {searchable && <ListSubheader key="__search" sx={{
+                    bgcolor: 'background.paper',
+                    zIndex: 1
+                }}>
+                    <StyledSearchBox>
+                        <TextField
+                            size="small"
+                            fullWidth
+                            autoFocus
+                            inputRef={this.searchInputRef}
+                            value={search}
+                            placeholder={searchPlaceholder || _t('core.searchPlaceholder')}
+                            onChange={this.handleSearchChange}
+                            onKeyDown={this.handleSearchKeyDown}
+                            onClick={event => event.stopPropagation()}
+                            slotProps={{
+                                input: {
+                                    startAdornment: SearchIcon && <InputAdornment position="start">
+                                        <SearchIcon fontSize="small"/>
+                                    </InputAdornment>
+                                }
+                            }}
+                        />
+                    </StyledSearchBox>
+                </ListSubheader>}
                 {
-                    items.map(item => {
+                    searchable && filteredItems.length === 0 ?
+                        <MenuItem disabled>{_t('core.noResults')}</MenuItem> :
+                        filteredItems.map(item => {
                         if (item.constructor === Object) {
                             const Icon = getIconByKey(item.icon, item.icon)
                             return [item.subHeader ? <ListSubheader>{item.subHeader}</ListSubheader> : null,
@@ -127,7 +219,9 @@ SimpleSelect.propTypes = {
     items: PropTypes.array.isRequired,
     label: PropTypes.string,
     name: PropTypes.string,
-    hint: PropTypes.string
+    hint: PropTypes.string,
+    searchable: PropTypes.bool,
+    searchPlaceholder: PropTypes.string
 }
 
 export default SimpleSelect

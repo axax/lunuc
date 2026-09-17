@@ -31,7 +31,7 @@ import {keywordDecorator} from './keywordDecorator'
 import {jsSnippets,cssSnippets} from './snippets'
 import {formatCode,jumpToLine} from './utils'
 
-const typeSpecific = type=>{
+const typeSpecific = (type, onToggleAiAssistent)=>{
     console.log(`style for ${type}`)
 
 
@@ -40,7 +40,16 @@ const typeSpecific = type=>{
             formatCode(view, type)
             return true
         }},
-        { key: "Alt-Cmd-g", run: jumpToLine }
+        { key: "Alt-Cmd-g", run: jumpToLine },
+        { key: "Alt-Cmd-a", run: (view) => {
+            if(onToggleAiAssistent){
+                // Without a selection the editor hands over the whole document
+                // itself (and reassembles file splits while doing so).
+                const selectedContent = view.state.sliceDoc(view.state.selection.main.from, view.state.selection.main.to)
+                onToggleAiAssistent(selectedContent)
+            }
+            return true
+        }}
     ])
 
     if(type==='css'){
@@ -143,7 +152,7 @@ const basicSetup = (config={}) => {
         ]),
         /* custom */
         keymap.of([indentWithTab]),
-        ...typeSpecific(config.type),
+        ...typeSpecific(config.type, config.onToggleAiAssistent),
         config.emptyLineGutter && emptyLineGutter,
         keywordDecorator,
         config.readOnly && EditorState.readOnly.of(true),

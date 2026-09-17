@@ -140,6 +140,8 @@ export const translations = {
         'CodeEditor.diffInput': 'Diff',
         'CodeEditor.applyPatch': 'Patch anwenden',
         'CodeEditor.aiAssistent':'KI Assistent',
+        'CodeEditor.showAiAssistent':'KI-Assistent einblenden',
+        'CodeEditor.hideAiAssistent':'KI-Assistent ausblenden',
         'CodeEditor.newFileSplit':'Neuer Dateisplit',
         'CodeEditor.editFileSplitName':'Umbenennen',
         'CodeEditor.deleteFileSplitConfirmTitle':'Dateisplit löschen',
@@ -155,7 +157,9 @@ export const translations = {
         'CodeEditor.saveAsFile': 'Als Datei speichern',
         'GlobalSearch.placeholder':'Schnellsuche',
         'TypeEdit.closeConfirmText':'Möchten Sie die Änderung speichern?',
-        'TypeEdit.closeConfirmTitle':'Daten Speichern'
+        'TypeEdit.closeConfirmTitle':'Daten Speichern',
+        'core.searchPlaceholder':'Suchen…',
+        'core.noResults':'Keine Treffer'
     },
     en: {
         'FilesContainer.renameFile':'Rename',
@@ -293,6 +297,8 @@ export const translations = {
         'CodeEditor.editAsHtml':'Edit as HTML',
         'CodeEditor.repeatSelection':'Repeat selection',
         'CodeEditor.aiAssistent':'AI assistent',
+        'CodeEditor.showAiAssistent':'Show AI assistent',
+        'CodeEditor.hideAiAssistent':'Hide AI assistent',
         'CodeEditor.openPage': 'Open page',
         'CodeEditor.reformatCode': 'Reformat',
         'CodeEditor.openInNewWindow':'Open in new window',
@@ -315,6 +321,8 @@ export const translations = {
         'CodeEditor.saveAsFile': 'Save as file',
         'GlobalSearch.placeholder':'Quick search',
         'TypeEdit.closeConfirmText':'Would you like to save the change?',
-        'TypeEdit.closeConfirmTitle':'Save data'
+        'TypeEdit.closeConfirmTitle':'Save data',
+        'core.searchPlaceholder':'Search…',
+        'core.noResults':'No results'
     }
 }
