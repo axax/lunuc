@@ -116,6 +116,58 @@ function setFacetToObject(path, rootData, loopFacet) {
     }
 }
 
+// Resolve `lookups` on a facets config: for every facet value entry, look the value
+// up in a keyed table (resolved from the root scope) and copy the mapped fields onto
+// the facet value. map maps sourceField (in the table entry) -> facetField.
+// [{ path: "pim.map.object", map: { title: "name" } }] turns
+// { value: 139, count: 3 } into { name: "T139", value: 139, count: 3 }.
+function applyFacetLookups(facetsConfig, loopFacet, rootData) {
+    const lookups = facetsConfig.lookups
+    if (!lookups || !loopFacet) return
+    // resolve each lookup table once - constant for the whole facet run
+    const tables = new Array(lookups.length)
+    for (let i = 0; i < lookups.length; i++) {
+        tables[i] = lookups[i].path ? propertyByPath(lookups[i].path, rootData) : null
+    }
+    for (let j = 0; j < loopFacet.length; j++) {
+        const facet = loopFacet[j]
+        // enrich every values dict of this facet (values + beforeFilter.values)
+        let valuesDicts = facet.values ? [facet.values] : []
+        if (facet.beforeFilter && facet.beforeFilter.values) {
+            valuesDicts = valuesDicts.concat([facet.beforeFilter.values])
+        }
+        for (let d = 0; d < valuesDicts.length; d++) {
+            const valuesDict = valuesDicts[d]
+            for (const valueKey in valuesDict) {
+                const facetValue = valuesDict[valueKey]
+                for (let i = 0; i < lookups.length; i++) {
+                    const table = tables[i]
+                    if (!table) continue
+                    const entry = table[facetValue.value]
+                    if (!entry) continue
+                    const map = lookups[i].map
+                    if (map) {
+                        // map: sourceField (table entry) -> facetValue field
+                        for (const sourceField in map) {
+                            const entryValue = entry[sourceField]
+                            if (entryValue !== undefined) {
+                                facetValue[map[sourceField]] = entryValue
+                            }
+                        }
+                    } else {
+                        // no map: merge all fields of the table entry except count/value
+                        for (const field in entry) {
+                            if (field !== 'count' && field !== 'value' && entry[field] !== undefined) {
+                                facetValue[field] = entry[field]
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 function doSorting(re, currentData) {
     const value = propertyByPath(re.path, currentData, '.', re.assign)
     if (!value || !Array.isArray(value)) return
@@ -371,6 +423,7 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
 
     const cacheData = {}
     if (loopFacet) {
+        applyFacetLookups(re.loop.facets, loopFacet, rootData)
         setFacetToObject(re.loop.facets.path, rootData, loopFacet)
         cacheData[re.loop.facets.path] = propertyByPath(re.loop.facets.path, rootData)
     }
@@ -507,6 +560,7 @@ export const resolveReduce = (reducePipe, rootData, currentData, { debugLog, dep
                         }
 
                         if (loopFacet) {
+                            applyFacetLookups(re.lookup.facets, loopFacet, rootData)
                             setFacetToObject(re.lookup.facets.path, rootData, loopFacet)
                         }
                     }
