@@ -43,7 +43,7 @@ const RX_BOLD = /(\*\*|__)(.*?)\1/gm;
 const RX_ITALIC_AST = /\*([^\s*][^*\n]*?)\*/gm;
 const RX_ITALIC_UND = /(^|[^="'a-zA-Z0-9\/])_([^_\n]+?)_(?![a-zA-Z0-9\/])/gm;
 const RX_HR = /^---\s*$/gm;
-const RX_TABLE = /((?:\|?.*\|.*\n)+?)\|? *-+:?-+(?:\| *-+:?-+)*\|?\n((?:\|?.*\|.*\n?)*)/gm;
+const RX_TABLE = /((?:\|?.*\|.*\n)+?)(\|? *-+:?-+(?:\| *-+:?-+)*\|?)\n((?:\|?.*\|.*\n?)*)/gm;
 const RX_LIST_OL = /\n\d+\.\s.*(?:\n[ \t]+\S.*)*(?:\n+\d+\.\s.*(?:\n[ \t]+\S.*)*)*/gm;
 const RX_LIST_UL = /\n[-*+]\s.*(?:\n[ \t]+\S.*)*(?:\n+[-*+]\s.*(?:\n[ \t]+\S.*)*)*/gm;
 const RX_P_BREAK = /\n\n/gm;
@@ -247,7 +247,7 @@ const parser = (md, options = {}) => {
         [RX_ITALIC_AST, "<i>$1</i>"],
         [RX_ITALIC_UND, "$1<i>$2</i>"],
         [RX_HR, "<hr/>"],
-        [RX_TABLE, (m, headerBlock, bodyBlock) => markdownTableToHtml(`${headerBlock.trim()}\n${bodyBlock.trim()}`)],
+        [RX_TABLE, (m, headerBlock, alignLine, bodyBlock) => markdownTableToHtml(`${headerBlock.trim()}\n${alignLine.trim()}\n${bodyBlock.trim()}`)],
 
         /* ---------- Ordered list (including continuation lines) ---------- */
         [RX_LIST_OL, m => {
