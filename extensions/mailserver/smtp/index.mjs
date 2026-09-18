@@ -41,7 +41,7 @@ const startListening = async (db, context) => {
         console.log(`Start SMTP Server listening on port ${port}`, context)
 
         serverPorts[port] = new SMTPServer({
-            logger: false,
+            logger: !!settings.logger,
             secure: false,
             banner: 'Welcome to Lunuc SMTP Server',
             authMethods: ['PLAIN', 'LOGIN', /*'CRAM-MD5','XOAUTH2'*/ ],
@@ -382,8 +382,24 @@ const startListening = async (db, context) => {
 
             }
         })
-        serverPorts[port].on("error", (err) => {
+        serverPorts[port].on("error", async (err) => {
             console.log("SMTP Error", err)
+            try {
+                await GenericResolver.createEntity(db, {context}, 'Log', {
+                    location: 'mailserver',
+                    type: 'smtpConnectionError',
+                    message: err.message,
+                    meta: {
+                        code: err.code,
+                        remoteAddress: err.remoteAddress,
+                        stage: err.meta?.stage,
+                        tlsProtocol: err.meta?.tlsProtocol,
+                        port
+                    }
+                })
+            } catch (e) {
+                console.error('failed to log smtp connection error', e)
+            }
         })
         serverPorts[port].listen(port)
     }

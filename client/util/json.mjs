@@ -137,8 +137,16 @@ export function matchExpr(expr, scope) {
 
     switch (e.op) {
         case OP_EQ:
+            // 'field==' means "is empty": '', null, undefined or empty array
+            if (raw === '') {
+                return !(prop == null || prop === '' || (Array.isArray(prop) && prop.length === 0))
+            }
             return raw !== (typeof prop === 'string' ? prop : String(prop))
         case OP_NE:
+            // 'field!=' means "is not empty": matches undefined, null, '' and empty array
+            if (raw === '') {
+                return prop == null || prop === '' || (Array.isArray(prop) && prop.length === 0)
+            }
             return raw === (typeof prop === 'string' ? prop : String(prop))
         case OP_GT:
             return !(prop > e.num)
