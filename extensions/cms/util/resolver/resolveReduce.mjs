@@ -232,6 +232,8 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
     const loopAssign = re.loop.assign
     const loopToArray = re.loop.toArray
     const hasActiveFilters = !!(activeFilters && activeFilters.length > 0)
+    // loop.limit: stop the loop once this many items have passed the filters
+    const loopLimit = re.loop.limit
 
     // Deferred removal for arrays: value.splice(i, 1) inside the loop is O(n) per
     // removal and degrades to O(n²) overall when many items are filtered out.
@@ -247,7 +249,11 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
     const orFacetCache = Object.create(null)
 
     let total = 0
+    // returns true when the loop should stop (loop.limit reached)
     const inLoop = (key, isObject) => {
+        if (loopLimit !== undefined && total >= loopLimit) {
+            return true
+        }
         let item = value[key]
         if (loopFacet) {
             createFacets(loopFacet, item, true)
@@ -326,7 +332,7 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
             }
             const keysLen = keys.length
             for (let i = 0; i < keysLen; i++) {
-                inLoop(keys[i], true)
+                if (inLoop(keys[i], true)) break
             }
         } else if (Array.isArray(value)) {
             if (debugEnabled) {
@@ -338,7 +344,7 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
             }
             // Reverse iteration kept so that toArray push order stays identical
             for (let i = value.length - 1; i >= 0; i--) {
-                inLoop(i, false)
+                if (inLoop(i, false)) break
             }
             if (hasRemovals) {
                 // Single in-place compaction pass (O(n)) - keeps the order of the
