@@ -251,9 +251,6 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
     let total = 0
     // returns true when the loop should stop (loop.limit reached)
     const inLoop = (key, isObject) => {
-        if (loopLimit !== undefined && total >= loopLimit) {
-            return true
-        }
         let item = value[key]
         if (loopFacet) {
             createFacets(loopFacet, item, true)
@@ -312,8 +309,16 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
                 const v = loopToArray.key ? item[loopToArray.key] : item
                 if (loopToArray.duplicates) {
                     newArray.push(v)
+
+                    if (loopLimit !== undefined && newArray.length >= loopLimit) {
+                        return true
+                    }
                 } else {
                     newSet.add(v)
+
+                    if (loopLimit !== undefined && newSet.size >= loopLimit) {
+                        return true
+                    }
                 }
             }
         }
