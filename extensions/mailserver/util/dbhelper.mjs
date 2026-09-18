@@ -16,7 +16,11 @@ const MAX_ATTACHMENT_SIZE_FOR_DB = 100000 // 100kb
 
 
 export const getMailAccountByEmail = async (db, address)=> {
-    const addressParts = address.split('@'),
+    // normalize case: RFC 5321 treats the domain part as case-insensitive, and in
+    // practice virtually every mail system also treats the local part that way -
+    // without this, e.g. RCPT TO with an uppercase address (seen from some senders)
+    // would silently fail to match an account stored in lowercase
+    const addressParts = (address || '').toLowerCase().split('@'),
         username = addressParts[0],
         host = addressParts[1]
     const mailAccount = await db.collection('MailAccount').findOne({username, host})
