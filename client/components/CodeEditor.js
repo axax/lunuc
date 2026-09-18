@@ -167,7 +167,19 @@ function CodeEditor(props,ref){
     const [showAiAssistent, setShowAiAssistent] = useState(false)
     const [aiAssistentMounted, setAiAssistentMounted] = useState(false)
     const [aiAssistentWidth, setAiAssistentWidth] = useState(420)
-    const [aiAssistentUrl] = useState(() => `/system/aiassistent?preview=true&inputkey=${encodeURIComponent('lunuc_code_llm_input_' + (identifier || 'code'))}&type=${encodeURIComponent(type || '')}`)
+    const [aiAssistentUrl] = useState(() => {
+        // Goes into the prompt as contextInstructions. Without it the model opens
+        // with getComponentPart / getDocumentation for a CMS component that does
+        // not exist here, and burns a round on it.
+        const contextInstructions = 'This chat is embedded next to a plain code editor. ' +
+            'There is no lunuc CMS component involved here, so do not call getComponentPart, ' +
+            'getDocumentation or any other component tool to look up the code - the complete ' +
+            'code is part of the user message.'
+        return '/system/aiassistent?preview=true' +
+            '&inputkey=' + encodeURIComponent('lunuc_code_llm_input_' + (identifier || 'code')) +
+            '&type=' + encodeURIComponent(type || '') +
+            '&contextInstructions=' + encodeURIComponent(contextInstructions)
+    })
     const aiWidthRef = useRef(420)
     const dragStartWidthRef = useRef(null)
     // The Alt-Cmd-A keymap closure is only rebuilt when `identifier` changes, so
