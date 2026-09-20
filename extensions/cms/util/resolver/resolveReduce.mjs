@@ -151,7 +151,7 @@ function applyFacetLookups(facetsConfig, loopFacet, rootData) {
                     if (activeFilters && activeFilters.length) {
                         // checkFilter returns a truthy value if it matches, or false if it does not.
                         // We want to delete the entry if it does NOT match the filter.
-                        if (!checkFilter(activeFilters, table, facetValue.value)) {
+                        if (checkFilter(activeFilters, table, facetValue.value)) {
                             delete valuesDict[valueKey]
                             continue // No further lookups for this deleted facetValue
                         }
