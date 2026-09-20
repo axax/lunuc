@@ -149,9 +149,9 @@ function applyFacetLookups(facetsConfig, loopFacet, rootData) {
                     // same semantics as lookup.filter (expr against { key, value: entry })
                     const activeFilters = lookups[i].filter && lookups[i].filter.filter(f => isNotFalse(f.is))
                     if (activeFilters && activeFilters.length) {
-                        // If a filter is defined and DOES NOT match, remove the facetValue from the list.
-                        // Note: checkFilter returns false if no match, true if match.
-                        if (checkFilter(activeFilters, table, facetValue.value) === false) {
+                        // checkFilter returns a truthy value if it matches, or false if it does not.
+                        // We want to delete the entry if it does NOT match the filter.
+                        if (!checkFilter(activeFilters, table, facetValue.value)) {
                             delete valuesDict[valueKey]
                             continue // No further lookups for this deleted facetValue
                         }
