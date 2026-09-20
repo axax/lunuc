@@ -84,7 +84,6 @@ const BASE_URL_REGEX = new RegExp(BASE_URL, 'g')
 const options = {
     allowHTTP1: true,
     SNICallback: (domain, cb) => {
-console.log(`SNICallback ${domain}`)
         const {hostrule} = getBestMatchingHostRule(domain)
 
         if (hostrule && hostrule.certContext) {

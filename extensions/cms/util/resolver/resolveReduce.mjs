@@ -145,6 +145,10 @@ function applyFacetLookups(facetsConfig, loopFacet, rootData) {
                     if (!table) continue
                     const entry = table[facetValue.value]
                     if (!entry) continue
+                    // optional filter: keep-condition on the table entry,
+                    // same semantics as lookup.filter (expr against { key, value: entry })
+                    const activeFilters = lookups[i].filter && lookups[i].filter.filter(f => isNotFalse(f.is))
+                    if (activeFilters && activeFilters.length && checkFilter(activeFilters, table, facetValue.value)) continue
                     const map = lookups[i].map
                     if (map) {
                         // map: sourceField (table entry) -> facetValue field
@@ -252,6 +256,9 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
         cacheKey = `resolveReduce${re.loop.cache.keyPrefix || ''}-${re.path}-${loopJson}`
         const fromCache = Cache.get(cacheKey)
         if (fromCache) {
+            if(debugEnabled) {
+                debugInfo.messages.push(`loaded from cache ${cacheKey}`)
+            }
             const paths = Object.keys(fromCache)
             const pathsLen = paths.length
             for (let i = 0; i < pathsLen; i++) {
