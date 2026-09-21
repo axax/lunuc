@@ -125,12 +125,38 @@ function applyFacetLookups(facetsConfig, loopFacet, rootData) {
     const lookups = facetsConfig.lookups
     if (!lookups || !loopFacet) return
     // resolve each lookup table once - constant for the whole facet run
+    // Resolve each lookup table once - constant for the whole facet run.
+    // A lookup with `facetKey` only applies to the facet with that name (loopFacet key);
+    // lookups without facetKey apply to all facets. Precompute the tables and the
+    // pre-filtered filter arrays per lookup, and the matching lookup indices per facet,
+    // so the per-value work stays O(lookups-for-that-facet).
     const tables = new Array(lookups.length)
+    const activeFiltersPerLookup = new Array(lookups.length)
     for (let i = 0; i < lookups.length; i++) {
         tables[i] = lookups[i].path ? propertyByPath(lookups[i].path, rootData) : null
+        const f = lookups[i].filter
+        activeFiltersPerLookup[i] = f ? f.filter(fl => isNotFalse(fl.is)) : null
+    }
+    // Precompute the facet -> lookup indices mapping ONCE for the whole run:
+    // lookups without facetKey apply to all facets (global list), lookups with
+    // facetKey are grouped by that key. Per facet we only concat two (usually
+    // small) lists instead of scanning all lookups again.
+    const globalLookupIndices = []
+    const byFacetKey = {}
+    for (let i = 0; i < lookups.length; i++) {
+        const facetKey = lookups[i].facetKey
+        if (facetKey) {
+            (byFacetKey[facetKey] || (byFacetKey[facetKey] = [])).push(i)
+        } else {
+            globalLookupIndices.push(i)
+        }
     }
     for (let j = 0; j < loopFacet.length; j++) {
         const facet = loopFacet[j]
+        // facet name = the facet's key as set by getFacetAsArray (facet.key)
+        const scoped = byFacetKey[facet.key]
+        if (!globalLookupIndices.length && !scoped) continue
+        const lookupIndices = globalLookupIndices.concat(scoped || [])
         // enrich every values dict of this facet (values + beforeFilter.values)
         let valuesDicts = facet.values ? [facet.values] : []
         if (facet.beforeFilter && facet.beforeFilter.values) {
@@ -140,17 +166,19 @@ function applyFacetLookups(facetsConfig, loopFacet, rootData) {
             const valuesDict = valuesDicts[d]
             for (const valueKey in valuesDict) {
                 const facetValue = valuesDict[valueKey]
-                for (let i = 0; i < lookups.length; i++) {
+                for (let n = 0; n < lookupIndices.length; n++) {
+                    const i = lookupIndices[n]
                     const table = tables[i]
                     if (!table) continue
                     const entry = table[facetValue.value]
                     if (!entry) continue
                     // optional filter: keep-condition on the table entry,
                     // same semantics as lookup.filter (expr against { key, value: entry })
-                    const activeFilters = lookups[i].filter && lookups[i].filter.filter(f => isNotFalse(f.is))
+                    const activeFilters = activeFiltersPerLookup[i]
                     if (activeFilters && activeFilters.length) {
-                        // checkFilter returns a truthy value if it matches, or false if it does not.
-                        // We want to delete the entry if it does NOT match the filter.
+                        // NOTE: matchExpr semantics are INVERTED here - a filter expr is a
+                        // REMOVE-condition (same as lookup.filter, where a match skips the entry).
+                        // So a truthy checkFilter means: drop this facet value from the list.
                         if (checkFilter(activeFilters, table, facetValue.value)) {
                             delete valuesDict[valueKey]
                             continue // No further lookups for this deleted facetValue
