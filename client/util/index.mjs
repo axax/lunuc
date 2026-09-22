@@ -98,12 +98,15 @@ const Util = {
     escapeRegex: (str) => {
         return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
     },
-    tryCatch: function (str, ignoreError) {
+    tryCatch: function (x, ignoreError) {
         try {
-            return new Function(DomUtil.toES5(`const {${Object.keys(this).join(',')}}=this;return ${str}`)).bind(this).call()
+            if (typeof x === 'function') {
+                return x()
+            }
+            return new Function(DomUtil.toES5(`const {${Object.keys(this).join(',')}}=this;return ${x}`)).bind(this).call()
         } catch (e) {
             if (!ignoreError)
-                console.log(e, str)
+                console.log(e, x)
         }
 
         return ''
