@@ -519,6 +519,9 @@ export const parseAndSendFile = async (req, res, {filename, headers, statusCode,
                 headers: {
                     'Content-Language': contextLanguage,
                     'Content-Type': 'application/json',
+                    // loopback request: compressing in the api and decompressing
+                    // here again is pure overhead - ask for the plain response
+                    'Accept-Encoding': 'identity',
                     'User-Agent': req.headers['user-agent'],
                     [TRACK_IP_HEADER]: req.headers[TRACK_IP_HEADER] || remoteAddress,
                     [TRACK_URL_HEADER]: req.headers[TRACK_URL_HEADER] || req.url,
@@ -602,11 +605,15 @@ const buildIndexServerTiming = (req, timing, gzipMs) => {
     return entries.length ? entries.join(', ') : undefined
 }
 
+// level 4: roughly twice as fast as the default (6) at only a few percent
+// larger output - same trade-off as the api compression (api/server.mjs)
+const INDEX_GZIP_OPTIONS = {level: 4}
+
 const compressContentAndSend = (req, res, finalContent, statusCode, data, headers, timing) => {
     // Check if the client accepts gzip
     if (req.headers['accept-encoding'] && req.headers['accept-encoding'].includes('gzip')) {
         const gzipStart = performance.now()
-        zlib.gzip(finalContent, (err, compressed) => {
+        zlib.gzip(finalContent, INDEX_GZIP_OPTIONS, (err, compressed) => {
             if (!err) {
                 const timingValue = SERVER_TIMING_ENABLED ? buildIndexServerTiming(req, timing, performance.now() - gzipStart) : undefined
                 const timingHeader = timingValue ? {'Server-Timing': timingValue} : null
