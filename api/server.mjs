@@ -16,6 +16,7 @@ import {createSubscriptionServer} from './subscription.mjs'
 import {createUsers} from './data/initialData.mjs'
 import {getDynamicConfig} from '../util/config.mjs'
 import {gunzipJsonBody} from './util/unzip.mjs'
+import {appendServerTiming, timingEntry, eventLoopEntry, SERVER_TIMING_ENABLED} from '../util/serverTiming.mjs'
 
 const dynamicConfig = getDynamicConfig()
 
@@ -123,6 +124,12 @@ export const start = (done) => {
             // Initialize http api
             const app = express()
 
+            // start mark for the Server-Timing header (diagnostic only)
+            app.use((req, res, next) => {
+                req._lunucApiStartTime = performance.now()
+                next()
+            })
+
             app.use(compression({
                 level: COMPRESSION_LEVEL,
                 threshold: 1024, // don't bother compressing tiny responses
@@ -220,6 +227,19 @@ export const start = (done) => {
                                 extensions: { code: 'FORBIDDEN_QUERY' }
                             }]
                         }));
+                    }
+                }
+
+                // Server-Timing: api total + event loop health, added right before
+                // the headers go out (diagnostic only, never changes the response)
+                if (SERVER_TIMING_ENABLED) {
+                    const originalWriteHead = res.writeHead
+                    res.writeHead = function (...args) {
+                        appendServerTiming(res, [
+                            timingEntry('api-total', performance.now() - req._lunucApiStartTime),
+                            eventLoopEntry('api-eventloop')
+                        ].filter(Boolean))
+                        return originalWriteHead.apply(this, args)
                     }
                 }
 

@@ -25,7 +25,7 @@ import Util from '../../client/util/index.mjs'
 import {parseCookies} from '../../api/util/parseCookies.mjs'
 import {decodeToken} from '../../api/util/jwt.mjs'
 import Hook from '../../util/hook.cjs'
-import {SERVER_TIMING_ENABLED, timingEntry} from '../../util/serverTiming.mjs'
+import {SERVER_TIMING_ENABLED, timingEntry, eventLoopEntry} from '../../util/serverTiming.mjs'
 
 const config = getDynamicConfig()
 
@@ -601,6 +601,10 @@ const buildIndexServerTiming = (req, timing, gzipMs) => {
     }
     if (req._lunucStartTime !== undefined) {
         entries.push(timingEntry('server-total', performance.now() - req._lunucStartTime))
+    }
+    const el = eventLoopEntry('server-eventloop')
+    if (el) {
+        entries.push(el)
     }
     return entries.length ? entries.join(', ') : undefined
 }
