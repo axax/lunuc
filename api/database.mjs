@@ -54,6 +54,37 @@ export const dbConnectionCached = (dburl, cachKey, cb) =>{
     }
 }
 
+/**
+ * true if every host of a mongodb:// url is on this machine (loopback or
+ * unix socket). Wire compression brings nothing there - it only costs cpu on
+ * mongod and in the driver (inflate runs in the libuv thread pool).
+ * mongodb+srv:// and unparsable urls are treated as remote (keep compression).
+ */
+export const isLocalMongoUrl = (dburl) => {
+    try {
+        const m = /^mongodb:\/\/(?:[^@/]*@)?([^/?]+)/i.exec(dburl.trim())
+        if (!m) {
+            return false
+        }
+        const hosts = m[1].split(',')
+        return hosts.length > 0 && hosts.every(h => {
+            h = h.trim().toLowerCase()
+            if (h.startsWith('%2f') || h.startsWith('/')) {
+                return true // unix domain socket
+            }
+            let host
+            if (h.startsWith('[')) {
+                host = h.substring(1, h.indexOf(']'))
+            } else {
+                host = h.split(':')[0]
+            }
+            return host === 'localhost' || host === '::1' || /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host)
+        })
+    } catch (e) {
+        return false
+    }
+}
+
 export const dbConnection = (dburl, cb) => {
     if (!dburl) {
         console.error('Mongo URL missing. Please set env variable (export MONGO_URL=mongodb://user:password@mongodb/)')
@@ -72,9 +103,13 @@ export const dbConnection = (dburl, cb) => {
             socketTimeoutMS: 480000,
             keepAlive: 300000,
             sslValidate: false,*/
-            compressors:'zlib',
             /*useUnifiedTopology: true,*/
             ...urlParams
+        }
+        // compression only for remote servers; an explicit compressors
+        // parameter in the url always wins (e.g. ?compressors=zlib)
+        if (urlParams.compressors === undefined && !isLocalMongoUrl(urlParts[0])) {
+            options.compressors = 'zlib'
         }
         if (MONGO_MONITOR_ENABLED) {
             // diagnostic only - see util/mongoMonitor.mjs
@@ -82,7 +117,7 @@ export const dbConnection = (dburl, cb) => {
         }
         const client = new MongoClient(urlParts[0], options)
         attachMongoMonitor(client)
-        console.log(`Start connecting to db ${dburl}... ${new Date() - _app_.start}ms`)
+        console.log(`Start connecting to db ${dburl} (compressors: ${options.compressors || 'none'})... ${new Date() - _app_.start}ms`)
 
         client.connect().then( async client => {
                 const metadata = (typeof client.options.metadata.then === 'function') ? await client.options.metadata : client.options.metadata

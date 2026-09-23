@@ -145,6 +145,62 @@ export const getFileFromOtherServer = async (urlPath, filename, baseResponse, re
 }
 
 
+// Server-Timing for static files (diagnostic only). Hooks writeHead once per
+// response and appends the timings at the moment the headers are sent, so
+// every path (200/304/br/gzip/raw/range) is covered without touching it.
+const trackStaticFileTiming = (req, res) => {
+    if (!SERVER_TIMING_ENABLED || res._lunucFileTiming || typeof res.writeHead !== 'function') {
+        return null
+    }
+    const t = {start: performance.now(), stat: 0, prep: 0, sendStart: 0}
+    res._lunucFileTiming = t
+    try {
+        const originalWriteHead = res.writeHead
+        res.writeHead = function (...args) {
+            try {
+                // only when headers are passed as object (or not at all) -
+                // mixing setHeader with raw header arrays is not allowed
+                const last = args[args.length - 1]
+                if (!Array.isArray(last) && !this.headersSent) {
+                    const now = performance.now()
+                    const entries = []
+                    if (req._lunucStartTime !== undefined) {
+                        entries.push(timingEntry('server-pre', t.start - req._lunucStartTime))
+                    }
+                    entries.push(timingEntry('file-stat', t.stat))
+                    entries.push(timingEntry('file-prep', t.prep))
+                    if (t.sendStart) {
+                        const enc = last && typeof last === 'object' ? last['Content-Encoding'] : undefined
+                        entries.push(timingEntry('file-send', now - t.sendStart, enc || 'raw'))
+                    }
+                    entries.push(timingEntry('file-total', now - t.start))
+                    if (req._lunucStartTime !== undefined) {
+                        entries.push(timingEntry('server-total', now - req._lunucStartTime))
+                    }
+                    const el = eventLoopEntry('server-eventloop')
+                    if (el) {
+                        entries.push(el)
+                    }
+                    const current = this.getHeader('Server-Timing')
+                    const value = entries.join(', ')
+                    this.setHeader('Server-Timing', current ? current + ', ' + value : value)
+                }
+            } catch (e) {
+                // timing must never break a response
+            }
+            res.writeHead = originalWriteHead
+            return originalWriteHead.apply(this, args)
+        }
+        t.restore = () => {
+            res.writeHead = originalWriteHead
+            res._lunucFileTiming = undefined
+        }
+    } catch (e) {
+        return null
+    }
+    return t
+}
+
 export const sendFileFromDir = async (req, res, {
     send404 = false,
     filename,
@@ -155,7 +211,11 @@ export const sendFileFromDir = async (req, res, {
     cacheControl = 'public, max-age=31536000' /* default: long cache for immutable assets */
 }) => {
 
+    const fileTiming = trackStaticFileTiming(req, res)
     let statMain = await statSafe(filename)
+    if (fileTiming) {
+        fileTiming.stat = performance.now() - fileTiming.start
+    }
     let mimeType
 
     // If the path points to a directory, try each indexFiles candidate in order
@@ -209,6 +269,9 @@ export const sendFileFromDir = async (req, res, {
         // etag back exactly as sent (including quotes) in the If-None-Match header,
         // so the comparison must be done against the quoted value.
         const etag = `"${createSimpleEtag({content: filename, stats: stat})}"`
+        if (fileTiming) {
+            fileTiming.prep = performance.now() - fileTiming.start - fileTiming.stat
+        }
 
         if (req.headers['if-none-match'] === etag) {
             // native http.ServerResponse - res.status() is Express-only.
@@ -240,6 +303,9 @@ export const sendFileFromDir = async (req, res, {
             headersExtended['Connection'] = 'Keep-Alive'
         }
 
+        if (fileTiming) {
+            fileTiming.sendStart = performance.now()
+        }
         if (transcodeOptions && !transcodeOptions.exists) {
             await transcodeAndStreamVideo({options: transcodeOptions, headers: headersExtended, req, res, filename})
         } else {
@@ -248,6 +314,12 @@ export const sendFileFromDir = async (req, res, {
         return true
     } else if (send404) {
         sendError(res, 404)
+        return false
+    }
+    // nothing sent - remove the timing hook so a fallback response of the
+    // caller is not tagged with file timings
+    if (fileTiming && fileTiming.restore) {
+        fileTiming.restore()
     }
     return false
 }
