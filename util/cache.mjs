@@ -79,10 +79,27 @@ const Cache = {
     },
     remove: function (key) {
         console.debug(`Cache: remove key from cache ${key}`)
+        Cache.notifyClear([key])
         delete Cache.cache[key]
+    },
+    // listeners notified on invalidation (e.g. to stop in-flight loads from
+    // writing an already invalidated value back into the cache)
+    clearListeners: [],
+    onClear: (listener) => {
+        Cache.clearListeners.push(listener)
+    },
+    notifyClear: (prefixes) => {
+        for (const listener of Cache.clearListeners) {
+            try {
+                listener(prefixes)
+            } catch (e) {
+                console.warn('Cache: clear listener failed', e)
+            }
+        }
     },
     clearStartWith: (startkey) => {
         const allStartKeys = [].concat(startkey)  // handles both string and array
+        Cache.notifyClear(allStartKeys)
 
         const matches = key => allStartKeys.some(f => key.startsWith(f))
 

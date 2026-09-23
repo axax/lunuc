@@ -54,6 +54,127 @@ const resolveKeyValueFilePath = (fileName) => {
 }
 
 
+/* ------------------------------------------------------------------ */
+/* KeyValueGlobal loading                                               */
+/* ------------------------------------------------------------------ */
+
+// cacheKey -> {promise, resolve, reject, stale} of loads currently running
+const keyValueGlobalInFlight = new Map()
+
+// A cache invalidation while a load is running marks that load as stale: its
+// result is still returned to the callers that started it (as before), but it
+// is not written into the cache and new readers start a fresh load.
+Cache.onClear((prefixes) => {
+    for (const [key, entry] of keyValueGlobalInFlight) {
+        if (prefixes.some(p => key.startsWith(p))) {
+            entry.stale = true
+            keyValueGlobalInFlight.delete(key)
+        }
+    }
+})
+
+const formatBytes = (n) => n >= 1048576 ? (n / 1048576).toFixed(1) + 'MB' : (n / 1024).toFixed(1) + 'KB'
+
+/**
+ * Loads the given KeyValueGlobal keys from the db (incl. file-backed values)
+ * and returns {key: value}. Same value resolution as before: file content,
+ * optional JSON.parse, null for missing keys, optional meta data.
+ */
+const loadKeyValueGlobals = async (db, keys, allOptions, cachedMap) => {
+    const startTime = Date.now()
+    const match = {key: {$in: keys}}
+
+    if (allOptions.public) {
+        match.ispublic = true
+    }
+
+    const keyvalues = (await db.collection('KeyValueGlobal').find(match).toArray())
+
+    for (const k of keys) {
+        if (keyvalues.find(kv => kv.key === k) === undefined) {
+            keyvalues.push({key: k, value: null})
+        }
+    }
+
+    console.debug(`load KeyValueGlobal "${keys.join(',')}" db ${Date.now() - startTime}ms` +
+        (cachedMap && Object.keys(cachedMap).length ? ` (from cache: ${Object.keys(cachedMap).join(',')})` : ''))
+
+    const result = {}
+    for (const obj of keyvalues) {
+        let finalValue
+
+        if (obj.value && obj.value.constructor === String) {
+            finalValue = obj.value
+            let fileInfo
+            if (obj.value.startsWith('@FILE:KeyValueGlobal_')) {
+                // Defense in depth: validate again here that the resolved
+                // path really lies inside KEYVALUE_DIR_ABS - regardless of
+                // whether the value came through the validated write path
+                // above or ended up in the DB some other way. Prevents
+                // arbitrary file read (e.g. @FILE:KeyValueGlobal_../../../../etc/shadow).
+                try {
+                    const fileName = obj.value.substring(6)
+                    const fileAbs = resolveKeyValueFilePath(fileName)
+                    const readStart = Date.now()
+                    // async: reading a large file must not block the event loop
+                    finalValue = await fs.promises.readFile(fileAbs, 'utf8')
+                    fileInfo = {size: Buffer.byteLength(finalValue), readMs: Date.now() - readStart}
+                } catch (e) {
+                    console.error(`load KeyValueGlobal - refusing to read file for key "${obj.key}": ${e.message}`)
+                    finalValue = null
+                }
+            }
+            if (allOptions.parse && finalValue !== null) {
+                const parseStart = Date.now()
+                try {
+                    finalValue = JSON.parse(finalValue)
+                } catch (e) {
+                    console.warn(`load KeyValueGlobal - "${obj.key}" is not a json`)
+                }
+                if (fileInfo) {
+                    fileInfo.parseMs = Date.now() - parseStart
+                }
+            }
+            if (fileInfo) {
+                console.debug(`load KeyValueGlobal file "${obj.key}" ${formatBytes(fileInfo.size)} read ${fileInfo.readMs}ms` +
+                    (fileInfo.parseMs !== undefined ? ` parse ${fileInfo.parseMs}ms` : ''))
+            }
+        } else {
+            finalValue = obj.value
+        }
+
+        if (finalValue === undefined) {
+            finalValue = null
+        }
+
+        if (allOptions.includeMetaData) {
+            result[obj.key] = {...obj, value: finalValue}
+        } else {
+            result[obj.key] = finalValue
+        }
+        if (cachedMap) {
+            cachedMap[obj.key] = result[obj.key]
+        }
+    }
+    return result
+}
+
+/**
+ * Writes a file-backed KeyValueGlobal atomically: tmp file + rename, so a
+ * concurrent reader never sees a partially written file.
+ */
+const writeKeyValueFileAtomic = async (fileAbs, content) => {
+    const tmpFile = `${fileAbs}.tmp-${process.pid}-${Date.now()}`
+    try {
+        await fs.promises.writeFile(tmpFile, content)
+        await fs.promises.rename(tmpFile, fileAbs)
+    } catch (e) {
+        fs.promises.unlink(tmpFile).catch(() => {})
+        throw e
+    }
+}
+
+
 const seed = crypto.createHash('sha256').update(SECRET_KEY).digest()
 const privateKey = crypto.createPrivateKey({
     key: Buffer.concat([
@@ -160,11 +281,14 @@ const Util = {
                 // path traversal on write.
                 const fileName = safeKeyValueFileName(key)
                 const fileAbs = resolveKeyValueFilePath(fileName)
-                fs.writeFile(fileAbs, value.constructor!==String?JSON.stringify(value):value,  (err) => {
-                    if (err) {
-                        console.log(err)
-                    }
-                })
+                // awaited (tmp file + rename) BEFORE the db update and the cache
+                // invalidation below - otherwise a reader could load the new
+                // "@FILE:" reference while the file is still being written
+                try {
+                    await writeKeyValueFileAtomic(fileAbs, value.constructor!==String?JSON.stringify(value):value)
+                } catch (err) {
+                    console.log(err)
+                }
 
                 value = `@FILE:${fileName}`
             }
@@ -272,87 +396,97 @@ const Util = {
         const allOptions = Object.assign({public: false, cache: true, parse: true}, options)
 
         const cacheKeyPrefix = 'KeyValueGlobal_'
+        const cacheKeyFor = (k) => cacheKeyPrefix + k + allOptions.parse + allOptions.public + allOptions.includeMetaData
 
-        // check if all keys are in the cache
+        // Keys are served from the cache individually: only the keys that are
+        // missing get loaded. Previously a single missing key caused ALL keys
+        // to be reloaded (e.g. a huge file-backed value together with a small,
+        // frequently invalidated one). The values are identical either way.
+        const map = {}
+        let missingKeys = []
         if (allOptions.cache) {
-            let map = {}
             for (const k of keys) {
-                const fromCache = Cache.get(cacheKeyPrefix + k + allOptions.parse + allOptions.public + allOptions.includeMetaData)
+                const fromCache = Cache.get(cacheKeyFor(k))
                 if (fromCache !== undefined) {
                     map[k] = fromCache
                 } else {
-                    map = false
-                    break
+                    missingKeys.push(k)
                 }
             }
-            if (map) {
-                //console.log(`load KeyValueGlobal "${keys.join(',')}" from cache`)
+            if (missingKeys.length === 0) {
                 return map
             }
+        } else {
+            missingKeys = [...keys]
         }
+        missingKeys = [...new Set(missingKeys)]
 
-        const match = {key: {$in: keys}}
-
-        if (allOptions.public) {
-            match.ispublic = true
-        }
-
-        const keyvalues = (await db.collection('KeyValueGlobal').find(match).toArray())
-
-        for (const k of keys) {
-            if(keyvalues.find(kv=>kv.key===k)===undefined){
-                keyvalues.push({key: k, value: null})
-            }
-        }
-
-        console.debug(`load KeyValueGlobal "${keys.join(',')}" ${new Date() - _app_.start}ms`)
-        return keyvalues.reduce((map, obj) => {
-            let finalValue
-
-            if(obj.value && obj.value.constructor === String){
-                finalValue = obj.value
-                if(obj.value.startsWith('@FILE:KeyValueGlobal_')){
-                    // Defense in depth: validate again here that the resolved
-                    // path really lies inside KEYVALUE_DIR_ABS - regardless of
-                    // whether the value came through the validated write path
-                    // above or ended up in the DB some other way. Prevents
-                    // arbitrary file read (e.g. @FILE:KeyValueGlobal_../../../../etc/shadow).
-                    try {
-                        const fileName = obj.value.substring(6)
-                        const fileAbs = resolveKeyValueFilePath(fileName)
-                        finalValue = fs.readFileSync(fileAbs, 'utf8')
-                    } catch (e) {
-                        console.error(`load KeyValueGlobal - refusing to read file for key "${obj.key}": ${e.message}`)
-                        finalValue = null
-                    }
-                }
-                if (allOptions.parse && finalValue !== null) {
-                    try {
-                        finalValue = JSON.parse(finalValue)
-                    } catch (e) {
-                        console.warn(`load KeyValueGlobal - "${obj.key}" is not a json`)
-                    }
-                }
+        // Concurrent readers of the same (still missing) key share one load
+        // instead of each reading and parsing it again.
+        const waitFor = []
+        const toLoad = []
+        for (const k of missingKeys) {
+            const inFlight = allOptions.cache ? keyValueGlobalInFlight.get(cacheKeyFor(k)) : undefined
+            if (inFlight) {
+                waitFor.push(inFlight.promise.then(v => { map[k] = v }))
             } else {
-                finalValue = obj.value
+                toLoad.push(k)
             }
+        }
 
-            if(finalValue===undefined){
-                finalValue = null
-            }
-
-            if(allOptions.includeMetaData){
-                map[obj.key] = {...obj, value: finalValue}
-            }else {
-                map[obj.key] = finalValue
-            }
+        if (toLoad.length > 0) {
+            // one shared promise per key, resolved when this load is done
+            const entries = {}
             if (allOptions.cache) {
-                Cache.set(cacheKeyPrefix + obj.key + allOptions.parse + allOptions.public + allOptions.includeMetaData, map[obj.key])
+                for (const k of toLoad) {
+                    const entry = {stale: false}
+                    entry.promise = new Promise((resolve, reject) => {
+                        entry.resolve = resolve
+                        entry.reject = reject
+                    })
+                    // avoid unhandled rejections for entries nobody else waits on
+                    entry.promise.catch(() => {})
+                    entries[k] = entry
+                    keyValueGlobalInFlight.set(cacheKeyFor(k), entry)
+                }
             }
+            try {
+                const loaded = await loadKeyValueGlobals(db, toLoad, allOptions, map)
+                for (const k of toLoad) {
+                    const entry = entries[k]
+                    // do not cache a value that was invalidated while loading
+                    if (allOptions.cache && !entry.stale) {
+                        Cache.set(cacheKeyFor(k), loaded[k])
+                    }
+                    if (entry) entry.resolve(loaded[k])
+                }
+            } catch (e) {
+                for (const k of toLoad) {
+                    if (entries[k]) entries[k].reject(e)
+                }
+                throw e
+            } finally {
+                for (const k of toLoad) {
+                    const key = cacheKeyFor(k)
+                    if (entries[k] && keyValueGlobalInFlight.get(key) === entries[k]) {
+                        keyValueGlobalInFlight.delete(key)
+                    }
+                }
+            }
+        }
 
-            return map
-        }, {})
+        if (waitFor.length > 0) {
+            await Promise.all(waitFor)
+        }
 
+        // keep the order of the requested keys
+        const result = {}
+        for (const k of keys) {
+            if (k in map) {
+                result[k] = map[k]
+            }
+        }
+        return result
     },
     hashPassword: (pw) => {
         return bcrypt.hashSync(pw, bcrypt.genSaltSync(10))
