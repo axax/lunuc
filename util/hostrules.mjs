@@ -8,14 +8,46 @@ import {getRegexCached} from '../server/util/regexCache.mjs'
 const {HOSTRULES_ABSPATH} = config
 
 const CERT_BASE_DIR = '/etc/letsencrypt/live/'
+
+// Memo for the duration of ONE loadAllHostrules run: the cert base dir is
+// otherwise read (readdirSync) once per hostrule and the same dirs stat'ed
+// repeatedly - all synchronous on the event loop. Only successful results are
+// memoized, errors behave exactly as before (thrown/caught per call).
+let certDirMemo = null // {entries: Dirent[]|undefined, mtimes: Map<name, number>}
+
+const readCertBaseDir = () => {
+    if (certDirMemo && certDirMemo.entries) {
+        return certDirMemo.entries
+    }
+    const entries = fs.readdirSync(CERT_BASE_DIR, {withFileTypes: true})
+    if (certDirMemo) {
+        certDirMemo.entries = entries
+    }
+    return entries
+}
+
+const certDirMtime = (name) => {
+    if (certDirMemo) {
+        const cached = certDirMemo.mtimes.get(name)
+        if (cached !== undefined) {
+            return cached
+        }
+    }
+    const time = fs.statSync(CERT_BASE_DIR + name).mtime.getTime()
+    if (certDirMemo) {
+        certDirMemo.mtimes.set(name, time)
+    }
+    return time
+}
+
 const certDirs = (domainname) => {
     try {
-        return fs.readdirSync(CERT_BASE_DIR, {withFileTypes: true})
+        return readCertBaseDir()
             .filter(d => d.isDirectory() && d.name.startsWith(domainname) )
             .map((v) => {
                 return {
                     name:v.name,
-                    time:fs.statSync(CERT_BASE_DIR + v.name).mtime.getTime()
+                    time:certDirMtime(v.name)
                 }
             })
             .sort((a, b) => {
@@ -160,21 +192,113 @@ const loadHostRules = (dir, withCertContext, hostrules, isDefault) => {
 }
 
 const loadAllHostrules = (withCertContext, hostrules = {}, refresh = false) => {
-    console.debug(`Hostrules: load all rules from ${HOSTRULES_ABSPATH}`)
-    loadHostRules(HOSTRULES_ABSPATH, withCertContext, hostrules)
-    if(!refresh) {
-        const hostRulePath = path.join(path.resolve(), './hostrules/')
-        console.debug(`Hostrules: load all rules from default ${hostRulePath}`)
-        loadHostRules(hostRulePath, withCertContext, hostrules, true)
+    certDirMemo = {entries: undefined, mtimes: new Map()}
+    try {
+        console.debug(`Hostrules: load all rules from ${HOSTRULES_ABSPATH}`)
+        loadHostRules(HOSTRULES_ABSPATH, withCertContext, hostrules)
+        if(!refresh) {
+            const hostRulePath = path.join(path.resolve(), './hostrules/')
+            console.debug(`Hostrules: load all rules from default ${hostRulePath}`)
+            loadHostRules(hostRulePath, withCertContext, hostrules, true)
+        }
+    } finally {
+        certDirMemo = null
     }
 
     return hostrules
+}
+
+// Negative cache for hosts WITHOUT an own hostrule file (e.g. www.example.ch when
+// the rule is example.ch.json, ip hosts, random bot hosts). Previously every such
+// request (and every TLS handshake via SNICallback) did a blocking fs.existsSync.
+// The hostrules dir watcher below clears the cache as soon as anything changes
+// there, so newly created hostrule files are still picked up immediately; the
+// TTL is only the fallback if the watcher cannot be started.
+const MISSING_HOSTRULE_TTL_MS = 20000
+const MISSING_HOSTRULE_MAX = 10000
+const missingHostruleChecks = new Map() // host -> time of last negative check
+
+
+/* ------------------------------------------------------------------ */
+/* Change detection: watchers instead of polling                        */
+/* ------------------------------------------------------------------ */
+
+// Previously every getHostRules call older than 60s triggered a full
+// synchronous reload (all hostrule files + all cert dirs), just to notice
+// changes. Now two watchers mark the loaded rules as dirty and the reload
+// only happens when something actually changed:
+//   - HOSTRULES_ABSPATH: new/changed hostrule files
+//   - CERT_BASE_DIR (recursive): new/renewed letsencrypt certs
+// The reload itself is exactly the same code path as before (lazy, inside
+// getHostRules), only the trigger changed. If a watcher cannot be started or
+// fails later, the old 60s interval is used again for what it covers.
+// A long safety interval covers missed events (e.g. inotify queue overflow).
+const RELOAD_INTERVAL_MS = 60000               // old behaviour / fallback
+const RELOAD_SAFETY_INTERVAL_MS = 10 * 60000   // with working watchers
+
+let hostrulesWatchState = 'none' // 'none' | 'active' | 'failed'
+let certWatchState = 'none'
+let hostrulesDirty = false
+let certsDirty = false
+
+const startWatcher = (dir, options, onChange, onFail) => {
+    try {
+        const watcher = fs.watch(dir, options, onChange)
+        watcher.on('error', (e) => {
+            console.warn(`Hostrules: watcher for ${dir} failed (${e.message}) - falling back to interval`)
+            try { watcher.close() } catch (err) {}
+            onFail()
+        })
+        // must never keep the process alive (module is used by scripts too)
+        watcher.unref()
+        return true
+    } catch (e) {
+        return false
+    }
+}
+
+// the cert watcher is only needed by processes that actually load certs
+// (the web server) - api/cms processes call getHostRules without them
+const ensureWatchers = (withCerts) => {
+    if (hostrulesWatchState === 'none') {
+        hostrulesWatchState = startWatcher(HOSTRULES_ABSPATH, {}, () => {
+            missingHostruleChecks.clear()
+            hostrulesDirty = true
+        }, () => {
+            missingHostruleChecks.clear()
+            hostrulesDirty = true
+            hostrulesWatchState = 'failed'
+        }) ? 'active' : 'failed'
+    }
+    if (withCerts && certWatchState === 'none') {
+        certWatchState = startWatcher(CERT_BASE_DIR, {recursive: true}, () => {
+            certsDirty = true
+        }, () => {
+            certsDirty = true
+            certWatchState = 'failed'
+        }) ? 'active' : 'failed'
+    }
+}
+
+// true if the loaded rules must be reloaded (replaces the plain 60s check)
+const isReloadDue = (now) => {
+    const age = now - _loadedHostRulesTime.all
+    if (hostrulesWatchState !== 'active') {
+        return age >= RELOAD_INTERVAL_MS // hostrule files not watched -> old behaviour
+    }
+    if (_loadedHostRulesWithCertContext && certWatchState !== 'active') {
+        return age >= RELOAD_INTERVAL_MS // certs not watched -> old behaviour
+    }
+    return hostrulesDirty ||
+        (_loadedHostRulesWithCertContext && certsDirty) ||
+        age >= RELOAD_SAFETY_INTERVAL_MS
 }
 
 let _loadedHostRules = {},
     _loadedHostRulesTime = {all:0},
     _loadedHostRulesWithCertContext = false
 export const resetHostRules = () => {
+    missingHostruleChecks.clear()
     _loadedHostRules = {}
     _loadedHostRulesTime = {all:0}
     _loadedHostRulesWithCertContext = false
@@ -186,25 +310,42 @@ export const getHostRules =(withCertContext, hostToCheck)=>{
             !_loadedHostRules[hostToCheck] &&
             (!_loadedHostRulesTime[hostToCheck] || new Date().getTime() - _loadedHostRulesTime[hostToCheck] < 20000)) {
 
-            const hostruleFilePath = path.join(HOSTRULES_ABSPATH, hostToCheck + '.json')
+            ensureWatchers(false)
+            const now = Date.now()
+            const lastMiss = missingHostruleChecks.get(hostToCheck)
 
-            if (fs.existsSync(hostruleFilePath)) {
-                // newly created hostrules
-                console.debug(`Hostrules: load single rule for ${hostToCheck}`)
-                loadSingleHostrule({
-                    isDefault: false,
-                    domainname: hostToCheck,
-                    hostruleFilePath,
-                    hostrules: _loadedHostRules,
-                    withCertContext
-                })
+            if (lastMiss === undefined || now - lastMiss >= MISSING_HOSTRULE_TTL_MS) {
+                const hostruleFilePath = path.join(HOSTRULES_ABSPATH, hostToCheck + '.json')
+
+                if (fs.existsSync(hostruleFilePath)) {
+                    missingHostruleChecks.delete(hostToCheck)
+                    // newly created hostrules
+                    console.debug(`Hostrules: load single rule for ${hostToCheck}`)
+                    loadSingleHostrule({
+                        isDefault: false,
+                        domainname: hostToCheck,
+                        hostruleFilePath,
+                        hostrules: _loadedHostRules,
+                        withCertContext
+                    })
+                } else {
+                    if (missingHostruleChecks.size >= MISSING_HOSTRULE_MAX) {
+                        missingHostruleChecks.clear()
+                    }
+                    missingHostruleChecks.set(hostToCheck, now)
+                }
             }
             return _loadedHostRules
-        } else if ((new Date().getTime() - _loadedHostRulesTime.all < 60000) &&
+        } else if (!isReloadDue(Date.now()) &&
             (!withCertContext || _loadedHostRulesWithCertContext)) {
             return _loadedHostRules
         }
     }
+    ensureWatchers(_loadedHostRulesWithCertContext || withCertContext)
+    // reset BEFORE loading: events fired during the (synchronous) load are
+    // delivered afterwards and correctly mark the rules dirty again
+    hostrulesDirty = false
+    certsDirty = false
     loadAllHostrules(_loadedHostRulesWithCertContext || withCertContext, _loadedHostRules,_loadedHostRulesTime.all > 0 )
 
 

@@ -498,6 +498,11 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
 }
 
 
+// Raw template file content, keyed by absolute path and validated against
+// mtime + size of the fresh fs.stat below - saves the readFile per request.
+// Placeholder replacement still runs per request (it depends on the request).
+const templateContentCache = new Map()
+
 const sendFileFromTemplateDir = (req, res, urlPathname, headers, parsedUrl, host) => {
     //console.log(`load ${urlPathname} from template dir`)
 
@@ -517,12 +522,7 @@ const sendFileFromTemplateDir = (req, res, urlPathname, headers, parsedUrl, host
             return
         }
 
-        fs.readFile(templateFile, 'utf8', (err, data) => {
-            if (err) {
-                sendError(res, 404)
-                return
-            }
-
+        const sendContent = (data) => {
             const ext = path.extname(urlPathname).split('.')[1]
             const mimeType = MimeType.detectByExtension(ext)
 
@@ -534,7 +534,11 @@ const sendFileFromTemplateDir = (req, res, urlPathname, headers, parsedUrl, host
                 pathname: urlPathname
             })
             const etag = createSimpleEtag({content})
-            if (req.headers['if-none-match'] === etag) {
+            // the etag is SENT quoted below and browsers echo it back exactly
+            // like that - compare against the quoted value (the unquoted
+            // comparison of the previous version is kept as well)
+            const ifNoneMatch = req.headers['if-none-match']
+            if (ifNoneMatch === `"${etag}"` || ifNoneMatch === etag) {
                 // native http.ServerResponse - res.status() is Express-only
                 res.writeHead(304)
                 res.end()
@@ -551,6 +555,21 @@ const sendFileFromTemplateDir = (req, res, urlPathname, headers, parsedUrl, host
             res.writeHead(200, headerExtra)
             res.write(content)
             res.end()
+        }
+
+        const cached = templateContentCache.get(templateFile)
+        if (cached && cached.mtimeMs === stats.mtimeMs && cached.size === stats.size) {
+            sendContent(cached.data)
+            return
+        }
+
+        fs.readFile(templateFile, 'utf8', (err, data) => {
+            if (err) {
+                sendError(res, 404)
+                return
+            }
+            templateContentCache.set(templateFile, {mtimeMs: stats.mtimeMs, size: stats.size, data})
+            sendContent(data)
         })
     })
 }
@@ -612,6 +631,63 @@ const hasHttpsWwwRedirect = ({parsedUrl, hostrule, host, req, res, remoteAddress
 
 
 
+/* ------------------------------------------------------------------ */
+/* Performance: merged hostrule cache                                   */
+/* ------------------------------------------------------------------ */
+
+// The per-request merge of general + matched hostrule (plus headers) produced
+// identical objects for every request of a host. Cached per source hostrule
+// object (WeakMap: reloaded hostrules are new objects -> automatic miss).
+// The only fields mutated IN PLACE after loading are certDir/certContext
+// (util/hostrules.mjs extendHostrulesWithCert) - they are part of the
+// validation, so a new/renewed cert immediately produces a fresh merge.
+// Downstream code only reads the merged hostrule (headers get spread into new
+// objects before being modified), so sharing it between requests is safe.
+const mergedHostruleCache = new WeakMap()
+
+const mergeHostrule = (general, source) => {
+    const hostrule = {...general, ...source}
+    hostrule.headers = {...general.headers, ...hostrule.headers}
+    if (!hostrule.headers.common) {
+        hostrule.headers.common = {}
+    }
+    return hostrule
+}
+
+const getMergedHostrule = (general, source) => {
+    if (!general || !source || typeof source !== 'object') {
+        // uncached, identical to the previous inline code (incl. its errors)
+        const hostrule = {...general, ...source}
+        hostrule.headers = {...general.headers, ...hostrule.headers}
+        if (!hostrule.headers.common) {
+            hostrule.headers.common = {}
+        }
+        return hostrule
+    }
+    const entry = mergedHostruleCache.get(source)
+    if (entry &&
+        entry.general === general &&
+        entry.generalHeaders === general.headers &&
+        entry.certDir === source.certDir &&
+        entry.certContext === source.certContext &&
+        entry.generalCertDir === general.certDir &&
+        entry.generalCertContext === general.certContext) {
+        return entry.hostrule
+    }
+    const hostrule = mergeHostrule(general, source)
+    mergedHostruleCache.set(source, {
+        general,
+        generalHeaders: general.headers,
+        certDir: source.certDir,
+        certContext: source.certContext,
+        generalCertDir: general.certDir,
+        generalCertContext: general.certContext,
+        hostrule
+    })
+    return hostrule
+}
+
+
 // Initialize http api
 const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req, res) {
 
@@ -668,17 +744,11 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             return
         }
 
-        const allHostrules = getHostRules(true),
-            hostrule = {...allHostrules.general, ...bestHostruleData.hostrule}
-
         // Merge general headers into hostrule headers ONCE and EARLY, so both
         // sendIndexFile and the static file paths below see the same merged
-        // headers. Previously this merge happened only in the static branch,
-        // which meant index requests missed the general headers.
-        hostrule.headers = {...allHostrules.general.headers, ...hostrule.headers}
-        if (!hostrule.headers.common) {
-            hostrule.headers.common = {}
-        }
+        // headers. Cached per hostrule - see getMergedHostrule.
+        const allHostrules = getHostRules(true),
+            hostrule = getMergedHostrule(allHostrules.general, bestHostruleData.hostrule)
 
         const geoResult = await checkGeoPolicy({
             ip: remoteAddress,

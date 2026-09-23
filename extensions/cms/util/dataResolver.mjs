@@ -193,7 +193,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     }
                 } else if (segment.reduce) {
                     try {
-                        resolveReduce(segment.reduce, resolvedData, resolvedData, {debugLog})
+                        resolveReduce(segment.reduce, resolvedData, resolvedData, {debugLog, debug: !!segment.debug})
                     } catch (e) {
                         debugLog.push({type:'error', message:`segment ${segment.key} can not be reduced: ${e.message}`})
                         console.warn(`segment ${segment.key} can not be reduced`, e)

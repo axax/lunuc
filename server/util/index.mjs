@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer'
 import ApiUtil from '../../api/util/index.mjs'
 import {isTemporarilyBlocked} from './requestBlocker.mjs'
+import {getRegexCached} from './regexCache.mjs'
 
 // Same private-network check as server/index.mjs's isPrivateNetworkTarget.
 // Duplicated intentionally: this module must stay defensive on its own,
@@ -212,7 +213,11 @@ export const regexRedirectUrl = (url, redirectMap) => {
         //    .replace(/\*/g, '.*?') // Convert * to non-greedy match
 
         // Create regex from pattern, preserving capturing groups
-        const regex = new RegExp(`^${pattern}$`)
+        // cached via the shared regex cache. The key starts with '^', so it can
+        // never be taken for a '/.../flags' literal there - the result is
+        // exactly new RegExp(`^${pattern}$`) as before. Invalid patterns are
+        // not cached and keep throwing on every call.
+        const regex = getRegexCached(`^${pattern}$`)
 
         // Test if URL matches pattern
         const match = url.match(regex)

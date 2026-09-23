@@ -384,6 +384,8 @@ const isIpInCrawlerRanges = (ip) => {
  * in the module header. Only invoked once a policy has already flagged
  * the ip as listed.
  */
+const crawlerVerifyInFlight = new Map() // ip -> Promise<boolean>
+
 export const isVerifiedCrawler = async (ip) => {
     const cacheKey = 'asnCrawler-' + ip
     const cached = Cache.get(cacheKey)
@@ -391,9 +393,18 @@ export const isVerifiedCrawler = async (ip) => {
         return cached.verified
     }
 
-    const verified = isIpInCrawlerRanges(ip) || await isDnsVerifiedCrawler(ip)
-    Cache.set(cacheKey, {verified}, DNS_VERIFY_TTL)
-    return verified
+    // concurrent requests from the same ip share one verification instead
+    // of each firing its own reverse/forward dns lookups
+    let inFlight = crawlerVerifyInFlight.get(ip)
+    if (!inFlight) {
+        inFlight = (async () => {
+            const verified = isIpInCrawlerRanges(ip) || await isDnsVerifiedCrawler(ip)
+            Cache.set(cacheKey, {verified}, DNS_VERIFY_TTL)
+            return verified
+        })().finally(() => crawlerVerifyInFlight.delete(ip))
+        crawlerVerifyInFlight.set(ip, inFlight)
+    }
+    return inFlight
 }
 
 
