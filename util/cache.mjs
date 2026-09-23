@@ -1,3 +1,4 @@
+import {registerWatchdogActivity} from './eventLoopWatchdog.mjs'
 /*
  A very basic cache implementation
  */
@@ -101,4 +102,7 @@ const Cache = {
         })
     }
 }
+// diagnostic only: cache size shows up in event loop stall logs
+registerWatchdogActivity('cache', () => [`${Object.keys(Cache.cache).length} keys`])
+
 export default Cache
