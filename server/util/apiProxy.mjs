@@ -5,6 +5,7 @@ import {Socket} from 'net'
 import {clientAddress} from '../../util/host.mjs'
 import {getGatewayIp} from '../../util/gatewayIp.mjs'
 import {FORWARDED_FOF_HEADER, HOSTRULE_HEADER} from '../../api/constants/index.mjs'
+import {SERVER_TIMING_ENABLED, timingEntry, eventLoopEntry} from '../../util/serverTiming.mjs'
 
 const API_PORT = (process.env.API_PORT || process.env.LUNUC_API_PORT || 3000)
 const API_HOST = 'localhost'
@@ -251,6 +252,9 @@ const executeProxyRequest = (originalReq, originalRes, options, state) => {
         newHeaders['x-forwarded-server'] = server
     }
 
+    // diagnostic only (Server-Timing): start of this proxy attempt
+    const proxyStart = performance.now()
+
     // Create the outgoing request stream
     const proxyReq = (secure ? https : http).request({
         hostname: server || API_HOST,
@@ -267,6 +271,29 @@ const executeProxyRequest = (originalReq, originalRes, options, state) => {
     }, (proxyRes) => {
         delete proxyRes.headers['keep-alive']
         delete proxyRes.headers['transfer-encoding']
+
+        if (SERVER_TIMING_ENABLED) {
+            // append the server-side share to the api timings:
+            // server-pre  = request entered the server -> proxy request started
+            // proxy       = proxy request started -> api response headers received
+            try {
+                const now = performance.now()
+                const entries = []
+                if (originalReq._lunucStartTime !== undefined) {
+                    entries.push(timingEntry('server-pre', proxyStart - originalReq._lunucStartTime))
+                }
+                entries.push(timingEntry('proxy', now - proxyStart, tries > 0 ? 'retry ' + tries : undefined))
+                if (originalReq._lunucStartTime !== undefined) {
+                    entries.push(timingEntry('server-total', now - originalReq._lunucStartTime))
+                }
+                const el = eventLoopEntry('server-eventloop')
+                if (el) entries.push(el)
+                const existing = proxyRes.headers['server-timing']
+                proxyRes.headers['server-timing'] = (existing ? existing + ', ' : '') + entries.join(', ')
+            } catch (e) {
+                // diagnostic only
+            }
+        }
 
         originalRes.writeHead(proxyRes.statusCode, proxyRes.headers)
         // push headers out immediately - matters for SSE / streaming responses
