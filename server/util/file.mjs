@@ -25,6 +25,7 @@ import Util from '../../client/util/index.mjs'
 import {parseCookies} from '../../api/util/parseCookies.mjs'
 import {decodeToken} from '../../api/util/jwt.mjs'
 import Hook from '../../util/hook.cjs'
+import {SERVER_TIMING_ENABLED, timingEntry} from '../../util/serverTiming.mjs'
 
 const config = getDynamicConfig()
 
@@ -486,6 +487,7 @@ export const parseAndSendFile = async (req, res, {filename, headers, statusCode,
     if (preloadPlaceHolderIndex >= 0) {
         // make first graphql request and return result
         const startTime = Date.now(),
+            preloadStart = performance.now(),
             cookies = parseCookies(req),
             query = getCmsPageQuery({dynamic: false}),
             cleanPathname = parsedUrl.pathname.substring(1).split(`/${config.PRETTYURL_SEPERATOR}/`)[0],
@@ -510,6 +512,7 @@ export const parseAndSendFile = async (req, res, {filename, headers, statusCode,
                 query: parsedUrl.search ? parsedUrl.search.substring(1) : ''
             }
             const clientId = Date.now().toString(36) + Math.random().toString(36).substring(2, 9)
+            const timing = {}
 
             fetch(`http://localhost:${API_PORT}/graphql`, {
                 method: 'POST',
@@ -533,8 +536,13 @@ export const parseAndSendFile = async (req, res, {filename, headers, statusCode,
                     query,
                     variables: Object.assign({}, variables, {meta: JSON.stringify({referer: req.headers.referer})})
                 }),
-            }).then(response => response.json()) // Parse JSON response
+            }).then(response => {
+                // pass the api timings through to the browser (diagnostic only)
+                timing.api = response.headers.get('server-timing')
+                return response.json() // Parse JSON response
+            })
                 .then(result => {
+                    timing.preload = performance.now() - preloadStart
                     let additionalContent = `/*time${Date.now() - startTime}ms*/\n`
                     if (result?.data?.cmsPage) {
                         if (!result.data.cmsPage.fetchPolicy) {
@@ -561,11 +569,14 @@ window.addEventListener('appReady', (event) => {
                         additionalContent = `_app_.show404=true`
                     }
                     finalContent = finalContent.replace(PRELOAD_DATA_PLACEHOLDER, additionalContent)
-                    compressContentAndSend(req, res, finalContent, statusCode, data, headers)
+                    compressContentAndSend(req, res, finalContent, statusCode, data, headers, timing)
                 })
                 .catch(error => {
                     console.error('parseAndSendFile Error:', error)
-                    compressContentAndSend(req, res, finalContent, statusCode, data, headers)
+                    if (timing.preload === undefined) {
+                        timing.preload = performance.now() - preloadStart
+                    }
+                    compressContentAndSend(req, res, finalContent, statusCode, data, headers, timing)
                 })
         }
     } else {
@@ -573,14 +584,36 @@ window.addEventListener('appReady', (event) => {
     }
 }
 
-const compressContentAndSend = (req, res, finalContent, statusCode, data, headers) => {
+// Server-Timing header value for the index response (diagnostic only)
+const buildIndexServerTiming = (req, timing, gzipMs) => {
+    const entries = []
+    if (timing && timing.api) {
+        entries.push(timing.api)
+    }
+    if (timing && timing.preload !== undefined) {
+        entries.push(timingEntry('preload', timing.preload))
+    }
+    if (gzipMs !== undefined) {
+        entries.push(timingEntry('gzip', gzipMs))
+    }
+    if (req._lunucStartTime !== undefined) {
+        entries.push(timingEntry('server-total', performance.now() - req._lunucStartTime))
+    }
+    return entries.length ? entries.join(', ') : undefined
+}
+
+const compressContentAndSend = (req, res, finalContent, statusCode, data, headers, timing) => {
     // Check if the client accepts gzip
     if (req.headers['accept-encoding'] && req.headers['accept-encoding'].includes('gzip')) {
+        const gzipStart = performance.now()
         zlib.gzip(finalContent, (err, compressed) => {
             if (!err) {
+                const timingValue = SERVER_TIMING_ENABLED ? buildIndexServerTiming(req, timing, performance.now() - gzipStart) : undefined
+                const timingHeader = timingValue ? {'Server-Timing': timingValue} : null
                 res.writeHead(statusCode, {
                     'Last-Modified': data.mtime.toUTCString(),
                     'Content-Length': compressed.length,
+                    ...timingHeader,
                     ...headers,
                     'Content-Encoding': 'gzip'
                 })
@@ -596,9 +629,12 @@ const compressContentAndSend = (req, res, finalContent, statusCode, data, header
         // If gzip is not accepted, send the uncompressed data.
         // Buffer.byteLength: Content-Length must be bytes, not string length
         // (differs as soon as the HTML contains umlauts or other multi-byte chars)
+        const timingValue = SERVER_TIMING_ENABLED ? buildIndexServerTiming(req, timing) : undefined
+        const timingHeader = timingValue ? {'Server-Timing': timingValue} : null
         res.writeHead(statusCode, {
             'Last-Modified': data.mtime.toUTCString(),
             'Content-Length': Buffer.byteLength(finalContent),
+            ...timingHeader,
             ...headers
         })
         res.write(finalContent)

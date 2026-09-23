@@ -234,7 +234,7 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
                     const cacheKeyAlias = getCmsPageCacheKey({_version, slug: cmsPages.results[0].slug, host, hostrule, includeNonPublic})
                     Cache.setAlias(cacheKeyAlias, cacheKey)
                 }
-                Cache.set(cacheKey, cmsPages, 6000000) // cache expires in 1h40min
+                Cache.set(cacheKey, cmsPages, 86400000) // cache expires in 24h
             }
         } else {
             console.warn(`CmsPage not found ${slug}. host=${host} slugCandidates=${JSON.stringify(slugCandidates)} includeNonPublic=${includeNonPublic}`)

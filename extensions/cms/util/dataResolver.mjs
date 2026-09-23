@@ -42,7 +42,7 @@ function unescapeControlChars(str) {
 const UNESCAPE_RE = /\\([nrtbf\\'"`])/g;
 const UNESCAPE_MAP = { n:'\n', r:'\r', t:'\t', b:'\b', f:'\f' };
 
-export const resolveData = async ({db, context, dataResolver, scope, nosession, req, editmode, dynamic}) => {
+export const resolveData = async ({db, context, dataResolver, scope, nosession, req, editmode, dynamic, timings}) => {
     const startTime = Date.now()
 
     const resolvedData = {_meta: {}}, subscriptions = []
@@ -71,6 +71,12 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
             }
 
             for (let i = 0; i < segments.length; i++) {
+
+                // optional, diagnostic only (Server-Timing): start mark per segment,
+                // durations are derived by the caller from consecutive marks
+                if (timings) {
+                    timings.push({index: i, key: segments[i].key, start: performance.now()})
+                }
 
                 const debugLog = []
                 const startTimeSegment = Date.now()

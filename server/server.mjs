@@ -691,6 +691,9 @@ const getMergedHostrule = (general, source) => {
 // Initialize http api
 const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req, res) {
 
+    // start mark for the Server-Timing header (diagnostic only)
+    req._lunucStartTime = performance.now()
+
     // Generous timeout instead of 0 (disabled): protects against clients
     // that start a request and never finish sending it. Long-running
     // streaming responses reset the timer with every write.

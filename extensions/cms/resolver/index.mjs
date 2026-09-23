@@ -18,6 +18,7 @@ import {
     settingKeyPrefix
 } from '../util/cmsView.mjs'
 import renderReact from '../renderReact.mjs'
+import {appendServerTiming, timingEntry, SERVER_TIMING_ENABLED} from '../../../util/serverTiming.mjs'
 import {createRequireForScript} from '../../../util/require.mjs'
 import {DEFAULT_DATA_RESOLVER, DEFAULT_SCRIPT, DEFAULT_STYLE, DEFAULT_TEMPLATE} from '../constants/cmsDefaults.mjs'
 import {CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities.mjs'
@@ -111,7 +112,13 @@ export default db => ({
             const {context, headers} = req
             meta = parseOrElse(meta,{})
 
+            // Server-Timing (diagnostic only, no influence on the result)
+            const tStart = performance.now()
+            const segmentTimings = SERVER_TIMING_ENABLED ? [] : undefined
+            let tGetPage = 0, tResolveData = 0, tSsr = 0
+
             let cmsPages = await getCmsPage({db, context, slug, _version, checkHostrules: !dynamic, inEditor, headers, editmode})
+            tGetPage = performance.now() - tStart
 
             if (!cmsPages.results || cmsPages.results.length === 0) {
                 Hook.call('track404', {req, event: '404', slug, db, context, data: query, meta})
@@ -138,6 +145,7 @@ export default db => ({
                 editmode
             }
 
+            const tResolveStart = performance.now()
             const {resolvedData, subscriptions} = await resolveData({
                 db,
                 context,
@@ -146,8 +154,11 @@ export default db => ({
                 nosession,
                 req,
                 editmode,
-                dynamic
+                dynamic,
+                timings: segmentTimings
             })
+            const tResolveEnd = performance.now()
+            tResolveData = tResolveEnd - tResolveStart
 
             // access restrictions based on data resolver
             if(resolvedData.access ){
@@ -191,6 +202,7 @@ export default db => ({
             if (ssr) {
 
                 // Server side rendering
+                const tSsrStart = performance.now()
                 try {
                     result.html = await renderReact({
                         req,
@@ -207,6 +219,7 @@ export default db => ({
                     console.log(e)
                     result.html = e.message
                 }
+                tSsr = performance.now() - tSsrStart
                 if(editmode){
                     result.template = template
                 }
@@ -284,6 +297,29 @@ export default db => ({
 
             if(elapsedTime>20) {
                 console.debug(`CMS: resolver for ${slug} got data in ${elapsedTime}ms`)
+            }
+
+            if (SERVER_TIMING_ENABLED) {
+                const entries = [
+                    timingEntry('cms-getpage', tGetPage),
+                    timingEntry('cms-resolvedata', tResolveData)
+                ]
+                if (ssr) {
+                    entries.push(timingEntry('cms-ssr', tSsr))
+                }
+                entries.push(timingEntry('cms-total', performance.now() - tStart, slug))
+                // the 5 slowest dataResolver segments (end = start of the next one)
+                if (segmentTimings && segmentTimings.length) {
+                    const segs = segmentTimings.map((s, i) => ({
+                        ...s,
+                        dur: (i + 1 < segmentTimings.length ? segmentTimings[i + 1].start : tResolveEnd) - s.start
+                    }))
+                    segs.sort((a, b) => b.dur - a.dur)
+                    for (const s of segs.slice(0, 5)) {
+                        entries.push(timingEntry(`cms-seg-${s.index}`, s.dur, s.key || ('segment ' + s.index)))
+                    }
+                }
+                appendServerTiming(req.res, entries)
             }
             return result
         },
