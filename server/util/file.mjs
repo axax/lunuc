@@ -26,6 +26,7 @@ import {parseCookies} from '../../api/util/parseCookies.mjs'
 import {decodeToken} from '../../api/util/jwt.mjs'
 import Hook from '../../util/hook.cjs'
 import {SERVER_TIMING_ENABLED, timingEntry, eventLoopEntry} from '../../util/serverTiming.mjs'
+import {API_CONNECT_HOST} from '../../util/apiHost.mjs'
 
 const config = getDynamicConfig()
 
@@ -514,7 +515,8 @@ export const parseAndSendFile = async (req, res, {filename, headers, statusCode,
             const clientId = Date.now().toString(36) + Math.random().toString(36).substring(2, 9)
             const timing = {}
 
-            fetch(`http://localhost:${API_PORT}/graphql`, {
+            // IP instead of 'localhost': see util/apiHost.mjs
+            fetch(`http://${API_CONNECT_HOST.includes(':') ? '[' + API_CONNECT_HOST + ']' : API_CONNECT_HOST}:${API_PORT}/graphql`, {
                 method: 'POST',
                 headers: {
                     'Content-Language': contextLanguage,

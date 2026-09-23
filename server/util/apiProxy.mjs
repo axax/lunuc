@@ -5,10 +5,11 @@ import {Socket} from 'net'
 import {clientAddress} from '../../util/host.mjs'
 import {getGatewayIp} from '../../util/gatewayIp.mjs'
 import {FORWARDED_FOF_HEADER, HOSTRULE_HEADER} from '../../api/constants/index.mjs'
+import {API_CONNECT_HOST} from '../../util/apiHost.mjs'
 import {SERVER_TIMING_ENABLED, timingEntry, eventLoopEntry} from '../../util/serverTiming.mjs'
 
 const API_PORT = (process.env.API_PORT || process.env.LUNUC_API_PORT || 3000)
-const API_HOST = 'localhost'
+const API_HOST = API_CONNECT_HOST // see util/apiHost.mjs (was 'localhost')
 const LUNUC_SERVER_NODES = process.env.LUNUC_SERVER_NODES || ''
 
 // Connect timeout for the websocket proxy target. Without it a hanging
