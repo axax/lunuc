@@ -10,6 +10,7 @@ import {fileURLToPath} from 'url'
 import {Worker} from 'node:worker_threads'
 import Hook from "../../util/hook.cjs";
 import Cache from "../../util/cache.mjs";
+import {registerWatchdogActivity} from '../../util/eventLoopWatchdog.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -22,6 +23,10 @@ const DEFAULT_MAX_RUNTIME = 1000 * 60 * 60
  * value = {startTime, executionId, watchdog, kill, forceEnd}
  */
 const RUNNING_CRONJOBS = new Map()
+
+// diagnostic only: running cronjobs show up in event loop stall logs
+registerWatchdogActivity('cronjobs', () =>
+    [...RUNNING_CRONJOBS.entries()].map(([id, v]) => `${id} (${Math.round((Date.now() - v.startTime) / 1000)}s)`))
 
 const cronjobUtil = {
 

@@ -47,6 +47,7 @@ const Cache = {
     /* removes all expired entries and aliases pointing to removed keys */
     sweep: function () {
         const now = Date.now()
+        const sweepStart = performance.now()
         let removed = 0
 
         for (const key of Object.keys(Cache.cache)) {
@@ -65,6 +66,12 @@ const Cache = {
                 }
             }
             console.debug(`Cache: swept ${removed} expired entries`)
+        }
+
+        // diagnostic only: a sweep walks all keys synchronously
+        const sweepMs = performance.now() - sweepStart
+        if (sweepMs > 20) {
+            console.warn(`Cache: sweep took ${Math.round(sweepMs)}ms for ${Object.keys(Cache.cache).length} entries (${removed} removed)`)
         }
 
         return removed

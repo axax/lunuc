@@ -17,6 +17,7 @@ import {createUsers} from './data/initialData.mjs'
 import {getDynamicConfig} from '../util/config.mjs'
 import {gunzipJsonBody} from './util/unzip.mjs'
 import {appendServerTiming, timingEntry, eventLoopEntry, SERVER_TIMING_ENABLED} from '../util/serverTiming.mjs'
+import {startEventLoopWatchdog, trackRequestForWatchdog} from '../util/eventLoopWatchdog.mjs'
 
 const dynamicConfig = getDynamicConfig()
 
@@ -124,9 +125,13 @@ export const start = (done) => {
             // Initialize http api
             const app = express()
 
+            // diagnostic only: logs event loop stalls with the requests in flight
+            startEventLoopWatchdog('api')
+
             // start mark for the Server-Timing header (diagnostic only)
             app.use((req, res, next) => {
                 req._lunucApiStartTime = performance.now()
+                trackRequestForWatchdog(req, res)
                 next()
             })
 

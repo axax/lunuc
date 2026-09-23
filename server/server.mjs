@@ -48,6 +48,10 @@ import {
     resetCountryStats
 } from './util/asnBlocker.mjs'
 import {handleChallengeConfirm, renderChallengePage} from './util/botChallenge.mjs'
+import {startEventLoopWatchdog, trackRequestForWatchdog} from '../util/eventLoopWatchdog.mjs'
+
+// diagnostic only: logs event loop stalls with the requests in flight
+startEventLoopWatchdog('server')
 
 const config = getDynamicConfig()
 
@@ -693,6 +697,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
     // start mark for the Server-Timing header (diagnostic only)
     req._lunucStartTime = performance.now()
+    trackRequestForWatchdog(req, res)
 
     // Generous timeout instead of 0 (disabled): protects against clients
     // that start a request and never finish sending it. Long-running
