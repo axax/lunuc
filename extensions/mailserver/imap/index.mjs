@@ -13,7 +13,7 @@ import {
     getMessageUidsForFolderId,
     getMessagesForFolder,
     getFolderForMailAccountById,
-    deleteMessagesForFolderByUids, getAttachmentContentFromFile
+    deleteMessagesForFolderByUids, getAttachmentContentFromFileAsync
 } from '../util/dbhelper.mjs'
 import {getCircularReplacer} from '../util/index.mjs'
 import ApiUtil from '../../../api/util/index.mjs'
@@ -27,6 +27,11 @@ import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
 import Hook from '../../../util/hook.cjs'
 import Util from '../../../client/util/index.mjs'
 import Cache from '../../../util/cache.mjs'
+import {hasTooManyInvalidLoginAttempts, addInvalidLoginAttempt, clearInvalidLoginAttempt} from '../../../api/util/loginBlocker.mjs'
+
+// more lenient than the default (5 / 180s): mail clients open several
+// connections at once and retry on their own after a password change
+const IMAP_LOGIN_LOCKOUT_OPTIONS = {maxAttempts: 10, delayInSec: 180}
 
 // open port 993 on your server
 // sudo ufw allow 993
@@ -44,7 +49,7 @@ const MIME_TREE_CACHE_MAX_SIZE = 10 * 1024 * 1024
 
 
 /*
- getAttachmentContentFromFile may return a BSON Binary (mongodb driver), a Buffer,
+ getAttachmentContentFromFileAsync may return a BSON Binary (mongodb driver), a Buffer,
  a string or a serialized buffer object. MailComposer only accepts strings, Buffers
  or streams, everything else fails with "chunk argument must be of type string or
  an instance of Buffer" as soon as nodemailer writes it to the stream.
@@ -307,7 +312,25 @@ function matchLocally(message, query, getIdate) {
     })
 }
 
-function buildMessageData(db, message) {
+/*
+ reads the file based attachment contents of a message without blocking the
+ event loop (one after the other to keep the memory peak low). The result is
+ handed to buildMessageData, which then does not have to read synchronously.
+ */
+async function loadAttachmentContents(db, message) {
+    if (!Array.isArray(message.data?.attachments)) {
+        return undefined
+    }
+    const contents = []
+    for (const att of message.data.attachments) {
+        contents.push(await getAttachmentContentFromFileAsync(att, {db, message}))
+    }
+    return contents
+}
+
+// loadedContents: result of loadAttachmentContents (same order as
+// message.data.attachments) - attachments are never read here
+function buildMessageData(db, message, loadedContents) {
     const messageData = {
         from: message.data.from?.text,
         sender: message.data.sender?.text,
@@ -322,8 +345,8 @@ function buildMessageData(db, message) {
         text: message.data.text,
         html: message.data.html,
         date: new Date(message.data.date || Util.dateFromObjectId(message._id.toString(), new Date())).toUTCString(),
-        attachments: Array.isArray(message.data.attachments) ? message.data.attachments.map(att => {
-            const attachmentContent = normalizeAttachmentContent(getAttachmentContentFromFile(att, {db, message}))
+        attachments: Array.isArray(message.data.attachments) ? message.data.attachments.map((att, attIndex) => {
+            const attachmentContent = normalizeAttachmentContent(loadedContents[attIndex])
             return {
                 filename: att.filename,
                 content: attachmentContent,
@@ -374,9 +397,13 @@ function composeMessage(db, message, logger, sessionId) {
             return resolve({raw: cached, messageData: null})
         }
 
+        // attachment files are read asynchronously first, then the message
+        // data is built exactly as before
+        loadAttachmentContents(db, message).then(loadedContents => {
+
         let messageData
         try {
-            messageData = buildMessageData(db, message)
+            messageData = buildMessageData(db, message, loadedContents)
         } catch (err) {
             return reject(err)
         }
@@ -403,6 +430,8 @@ function composeMessage(db, message, logger, sessionId) {
         } catch (err) {
             reject(err)
         }
+
+        }).catch(reject)
     })
 }
 
@@ -501,11 +530,21 @@ const startListening = async (db, context) => {
 
         logger.debug('IMAP onAuth %s', login.username)
 
-        const mailAccount = await getMailAccountByEmail(db, login.username)
-
-        if (!mailAccount || !ApiUtil.compareWithHashedPassword(login.password, mailAccount.password)) {
+        // failed logins are limited per ip (same blocker as ftp) - every check
+        // of an existing account costs a bcrypt run
+        const loginBlockKey = (session?.remoteAddress || '') + ':imap'
+        if (hasTooManyInvalidLoginAttempts(loginBlockKey, IMAP_LOGIN_LOCKOUT_OPTIONS)) {
+            console.warn(`[AUDIT] imap login blocked (too many failed attempts) - ip=${session?.remoteAddress} username=${login.username} - ${new Date().toISOString()}`)
             return callback(new Error(`Mail account ${login.username} doesen't exist or invalid credentials`))
         }
+
+        const mailAccount = await getMailAccountByEmail(db, login.username)
+
+        if (!mailAccount || !await ApiUtil.compareWithHashedPasswordAsync(login.password, mailAccount.password)) {
+            addInvalidLoginAttempt(loginBlockKey)
+            return callback(new Error(`Mail account ${login.username} doesen't exist or invalid credentials`))
+        }
+        clearInvalidLoginAttempt(loginBlockKey)
 
         callback(null, {
             user: {
@@ -764,6 +803,10 @@ const startListening = async (db, context) => {
 
         const messages = await getMessagesForFolder(db,folder._id,{uid: { $in: update.messages }}, { uid: 1, flags: 1, modseq: 1, _id:1})
 
+        // Set lookup instead of indexOf per message (O(n) instead of O(n²))
+        const storeUids = Array.isArray(update.messages) ? new Set(update.messages) : null
+        const isStoreUid = uid => storeUids ? storeUids.has(uid) : update.messages.indexOf(uid) >= 0
+
         let condstoreEnabled = !!session.selected.condstoreEnabled
 
         let modified = []
@@ -780,7 +823,7 @@ const startListening = async (db, context) => {
             if(!message.flags){
                 message.flags = []
             }
-            if (update.messages.indexOf(message.uid) < 0) {
+            if (!isStoreUid(message.uid)) {
                 return processMessages()
             }
 
@@ -935,7 +978,7 @@ const startListening = async (db, context) => {
             if(destinationMessage?.data?.attachments?.length) {
 
                 for(const attachment of destinationMessage.data.attachments) {
-                    attachment.content = getAttachmentContentFromFile(attachment, {db, message: destinationMessage})
+                    attachment.content = await getAttachmentContentFromFileAsync(attachment, {db, message: destinationMessage})
                 }
             }
 
@@ -988,6 +1031,10 @@ const startListening = async (db, context) => {
         const {match, project} = mongoDbMatchProjectFromIMapData(options)
         const messages = await getMessagesForFolder(db,folder._id,match, project)
 
+        // Set lookup instead of indexOf per message (O(n) instead of O(n²))
+        const requestedUids = Array.isArray(options.messages) ? new Set(options.messages) : null
+        const isRequestedUid = uid => requestedUids ? requestedUids.has(uid) : options.messages.indexOf(uid) >= 0
+
         let messageData
         const logError = (message) => {
             logImapError(message, {
@@ -1009,7 +1056,7 @@ const startListening = async (db, context) => {
         if (options.markAsSeen) {
             // mark all matching messages as seen
             messages.forEach(message => {
-                if (options.messages.indexOf(message.uid) < 0) {
+                if (!isRequestedUid(message.uid)) {
                     return
                 }
 
@@ -1047,7 +1094,7 @@ const startListening = async (db, context) => {
                 logger.debug('[%s] imap process message with uid "%s"', session.id, message.uid)
 
 
-                if (options.messages.indexOf(message.uid) < 0) {
+                if (!isRequestedUid(message.uid)) {
                     logger.debug('[%s] imap skip message with uid "%s"', session.id, message.uid)
                     return setImmediate(processMessage)
                 }

@@ -3,7 +3,6 @@ import config from '../../../gensrc/config.mjs'
 
 import {ObjectId} from 'mongodb'
 import path from 'path'
-import fs from 'fs'
 import fsp from 'fs/promises'
 import Util from '../../../api/util/index.mjs'
 import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
@@ -182,12 +181,17 @@ export const getMailAccountsFromMailData = async (db, data) => {
     return mailAccounts
 }
 
-export const getAttachmentContentFromFile = (attachment, {db, message})=>{
+/**
+ * Returns the content of an attachment. Content stored on disk ("@FILE:<name>")
+ * is read without blocking the event loop (fs.promises), otherwise the stored
+ * content is returned as is.
+ */
+export const getAttachmentContentFromFileAsync = async (attachment, {db, message})=>{
     if(attachment.content && attachment.content.startsWith && attachment.content.startsWith('@FILE:')){
         const fileAbs = path.join(ATTACHMENT_DIR_ABS, attachment.content.substring(6))
         console.log('reading attachment from file: ', fileAbs)
         try {
-            return fs.readFileSync(fileAbs, {encoding: attachment.encoding || 'base64'})
+            return await fsp.readFile(fileAbs, {encoding: attachment.encoding || 'base64'})
         }catch (error){
             console.error('Error reading attachment from file: ', error)
             GenericResolver.createEntity(db, {context: {lang: 'en'}}, 'Log', {
@@ -203,7 +207,7 @@ export const getAttachmentContentFromFile = (attachment, {db, message})=>{
 /**
  * Offloads large attachment content to disk and replaces attachment.content
  * with a "@FILE:<name>" marker, mirroring the encoding used by
- * getAttachmentContentFromFile so read/write stay symmetric.
+ * getAttachmentContentFromFileAsync so read/write stay symmetric.
  *
  * Safety properties:
  * - Async / non-blocking (fs.promises instead of sync calls).
@@ -231,7 +235,7 @@ export const replaceAttachmentInMailData = async (attachment, identifier, {db}) 
 
     console.warn(`attachment ${attachment.filename} is too big (${attachment.size} bytes) for db`)
 
-    // encoding used for on-disk storage must match what getAttachmentContentFromFile
+    // encoding used for on-disk storage must match what getAttachmentContentFromFileAsync
     // will use when reading it back
     const encoding = attachment.encoding || 'base64'
 

@@ -24,7 +24,7 @@ const startProxyServer = (db, port = DEFAULT_PORT)=> {
 
         const proxyUser = await db.collection('ProxyUser').findOne({active:true,username: user})
         if(proxyUser){
-            if (Util.compareWithHashedPassword(pass, proxyUser.password)) {
+            if (await Util.compareWithHashedPasswordAsync(pass, proxyUser.password)) {
                 return true
             }
         }

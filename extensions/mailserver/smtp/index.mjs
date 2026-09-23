@@ -88,7 +88,7 @@ const startListening = async (db, context) => {
 
 
                 if (auth.method === 'LOGIN' || auth.method === 'PLAIN') {
-                    if (!Util.compareWithHashedPassword(auth.password, mailAccount.password)) {
+                    if (!await Util.compareWithHashedPasswordAsync(auth.password, mailAccount.password)) {
                         return callback(new Error(generalInvalidLoginMessage))
                     }
                 }else if (auth.method === 'CRAM-MD5'){

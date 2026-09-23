@@ -15,7 +15,7 @@ export const auth = {
             return {error: _t('core.login.invalid', context.lang), token: null, user: null}
         }else if(user.blocked){
             return {error: _t('core.login.blocked', context.lang), token: null, user: null}
-        } else if (Util.compareWithHashedPassword(password, user.password)) {
+        } else if (await Util.compareWithHashedPasswordAsync(password, user.password)) {
             return await auth.signPayload(db, user)
         } else {
             return {error: _t('core.login.invalid', context.lang), token: null, user: null}

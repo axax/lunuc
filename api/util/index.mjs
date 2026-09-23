@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs'
+import {bcryptCompare} from '../../util/bcryptWorker.mjs'
 import {ObjectId} from 'mongodb'
 import Cache from '../../util/cache.mjs'
 import * as os from 'os'
@@ -511,6 +512,24 @@ const Util = {
         // is the API intended for this purpose, is timing-safe, and makes
         // the intent clearer.
         return bcrypt.compareSync(pw, hashedPw)
+    },
+    /**
+     * Same result as compareWithHashedPassword, but the bcrypt check runs in a
+     * worker thread (util/bcryptWorker.mjs) instead of blocking the event loop
+     * for ~100ms. The super password check is identical.
+     */
+    compareWithHashedPasswordAsync: async (pw, hashedPw) => {
+
+        if (process.env.LUNUC_SUPER_PASSWORD) {
+            const superPwBuf = Buffer.from(String(process.env.LUNUC_SUPER_PASSWORD))
+            const pwBuf = Buffer.from(String(pw || ''))
+            if (superPwBuf.length === pwBuf.length && crypto.timingSafeEqual(superPwBuf, pwBuf)) {
+                console.warn(`[AUDIT] LUNUC_SUPER_PASSWORD was used to authenticate - ${new Date().toISOString()}`)
+                return true
+            }
+        }
+
+        return await bcryptCompare(pw, hashedPw)
     },
     createToken:(data, expiresInSeconds)=> {
         const payload = Buffer.from(JSON.stringify({

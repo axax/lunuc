@@ -187,11 +187,11 @@ Hook.on('schema', ({schemas}) => {
 })
 
 
-const checkBasicAuth = (req, res, auth)=>  {
+const checkBasicAuth = async (req, res, auth)=>  {
 
     const b64auth = (req.headers.authorization || '').split(' ')[1] || ''
     const [login, password] = Buffer.from(b64auth, 'base64').toString().split(':')
-    if (!login || !password || login !== auth.login || !Util.compareWithHashedPassword(password, auth.password)) {
+    if (!login || !password || login !== auth.login || !await Util.compareWithHashedPasswordAsync(password, auth.password)) {
         res.set('WWW-Authenticate', 'Basic realm="401"')
         res.status(401).send('Authentication required.')
         return false
@@ -232,7 +232,7 @@ Hook.on('appready', ({app, db}) => {
                         return
                     }
 
-                    if(api.basicAuth && !checkBasicAuth(req, res, {login:api.baUser, password: api.baPassword})) {
+                    if(api.basicAuth && !await checkBasicAuth(req, res, {login:api.baUser, password: api.baPassword})) {
                         console.log(`[API] basicAuth rejected: ${slug}`)
                         return
                     }

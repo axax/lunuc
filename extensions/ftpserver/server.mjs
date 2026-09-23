@@ -100,7 +100,7 @@ const startFtpServer = async (db)=> {
 
         const ftpUser = await db.collection('FtpUser').findOne({active:true,username: data.username})
         if(ftpUser){
-            if (Util.compareWithHashedPassword(data.password, ftpUser.password)) {
+            if (await Util.compareWithHashedPasswordAsync(data.password, ftpUser.password)) {
                 clearInvalidLoginAttempt(ip+':ftp')
                 clearInvalidLoginAttempt(userKey)
 

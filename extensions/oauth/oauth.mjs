@@ -106,7 +106,7 @@ export async function oauthToken(db, req, res) {
     }
 
     // 4. client_secret prüfen
-    if (!Util.compareWithHashedPassword(client_secret, clientData.clientSecretHash)) {
+    if (!await Util.compareWithHashedPasswordAsync(client_secret, clientData.clientSecretHash)) {
         return res.status(401).json({ error: 'invalid_client' })
     }
 
