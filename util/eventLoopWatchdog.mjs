@@ -34,6 +34,10 @@ const STALL_PROFILE = process.env.LUNUC_STALL_PROFILE === 'true'
 const STALL_PROFILE_MS = parseInt(process.env.LUNUC_STALL_PROFILE_MS) || 300
 const STALL_PROFILE_MAX_FILES = parseInt(process.env.LUNUC_STALL_PROFILE_MAX_FILES) || 10
 const PROFILE_WINDOW_MS = 10000
+// start profiling only after this delay - the first minutes after a restart
+// are dominated by startup work (loading caches etc.) and would use up all
+// MAX_FILES before normal operation is ever recorded
+const STALL_PROFILE_DELAY_MS = (parseInt(process.env.LUNUC_STALL_PROFILE_DELAY_S) || 300) * 1000
 const HEAPSNAPSHOT_SIGNAL = process.env.LUNUC_HEAPSNAPSHOT_SIGNAL === 'true'
 const DIAG_DIR = process.env.LUNUC_DIAG_DIR || path.join(os.tmpdir(), 'lunuc-diag')
 
@@ -255,9 +259,16 @@ export const startEventLoopWatchdog = (processName) => {
     if (HEAPSNAPSHOT_SIGNAL) {
         installHeapSnapshotSignal(processName)
     }
-    const profiler = STALL_PROFILE ? createStallProfiler(processName) : null
-    if (profiler) {
-        console.log(`[eventloop] ${processName}: stall profiler enabled (>= ${STALL_PROFILE_MS}ms) -> ${DIAG_DIR}`)
+    let profiler = null
+    if (STALL_PROFILE) {
+        console.log(`[eventloop] ${processName}: stall profiler starts in ${STALL_PROFILE_DELAY_MS / 1000}s (>= ${STALL_PROFILE_MS}ms) -> ${DIAG_DIR}`)
+        const delayTimer = setTimeout(() => {
+            profiler = createStallProfiler(processName)
+            if (profiler) {
+                console.log(`[eventloop] ${processName}: stall profiler running`)
+            }
+        }, STALL_PROFILE_DELAY_MS)
+        delayTimer.unref()
     }
 
     let expected = performance.now() + INTERVAL_MS

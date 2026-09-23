@@ -1,4 +1,5 @@
 import {MongoClient} from 'mongodb'
+import {attachMongoMonitor, MONGO_MONITOR_ENABLED} from '../util/mongoMonitor.mjs'
 import {createAllInitialData} from './data/initialData.mjs'
 import ClientUtil from '../client/util/index.mjs'
 import Hook from '../util/hook.cjs'
@@ -75,7 +76,12 @@ export const dbConnection = (dburl, cb) => {
             /*useUnifiedTopology: true,*/
             ...urlParams
         }
+        if (MONGO_MONITOR_ENABLED) {
+            // diagnostic only - see util/mongoMonitor.mjs
+            options.monitorCommands = true
+        }
         const client = new MongoClient(urlParts[0], options)
+        attachMongoMonitor(client)
         console.log(`Start connecting to db ${dburl}... ${new Date() - _app_.start}ms`)
 
         client.connect().then( async client => {
