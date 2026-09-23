@@ -124,16 +124,16 @@ const runApiScript = ({api, slug, db, req, res, startTime}) => {
 
                 worker.on('message', msg => {
                     if(msg.clearCache){
-                        console.log(`Worker-thread: clearCache ${msg.clearCache}`)
+                        console.log(`[worker-thread] clearCache ${msg.clearCache}`)
                         Cache.clearStartWith(msg.clearCache)
                     }else if(msg.console) {
-                        console[msg.console.type]('Worker-thread:', ...msg.console.args)
+                        console[msg.console.type]('[worker-thread]', ...msg.console.args)
                     }else if(msg.returnValue){
                         returnValue = msg.returnValue
                     }else if(msg.httpResponse){
                         res[msg.httpResponse.method](...msg.httpResponse.args)
                     }else{
-                        console.log(`Worker-thread: ${msg}`)
+                        console.log(`[worker-thread] ${msg}`)
                     }
                 })
 

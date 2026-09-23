@@ -119,6 +119,79 @@ function canMatchLocally(query) {
 }
 
 // address fields are stored as {text, value:[...]}, plain fields as strings
+// Fields read by matchLocally/getHeaderText for 'header' terms. Identical to
+// the fixed header projection used before, so header searches see exactly the
+// same data as before.
+const HEADER_SEARCH_FIELDS = [
+    'data.subject', 'data.from', 'data.to', 'data.cc', 'data.bcc',
+    'data.messageId', 'data.inReplyTo', 'data.references',
+    'data.date', 'data.headers'
+]
+const DATE_SEARCH_KEYS = new Set(['since', 'sentsince', 'before', 'sentbefore', 'on', 'senton'])
+
+/*
+ Projection for local matching, derived from the query: only the fields that
+ matchLocally actually reads for these terms. A pure flag / uid search (the
+ common periodic client sync, e.g. UNSEEN / UNDELETED / UID x:*) then loads
+ just uid, flags and modseq instead of subject, addresses and all headers of
+ every message in the folder. _id is always included by MongoDB (needed for
+ the date fallback in getIdate). The match result is identical: every field a
+ term reads is projected, fields no term reads are never looked at.
+ */
+function localSearchProjection(query) {
+    const project = {uid: 1, flags: 1, modseq: 1}
+    const walk = (terms) => {
+        for (const term of terms) {
+            const key = (term.key || '').toLowerCase()
+            if (key === 'subject') {
+                project['data.subject'] = 1
+            } else if (key === 'from' || key === 'to' || key === 'cc' || key === 'bcc') {
+                project['data.' + key] = 1
+            } else if (key === 'header') {
+                for (const f of HEADER_SEARCH_FIELDS) project[f] = 1
+            } else if (DATE_SEARCH_KEYS.has(key)) {
+                project['data.date'] = 1
+            } else if (key === 'or' || key === 'not') {
+                const nested = Array.isArray(term.value) ? term.value : []
+                for (const sub of nested) walk(Array.isArray(sub) ? sub : [sub])
+            }
+        }
+    }
+    walk(Array.isArray(query) ? query : [])
+    return project
+}
+
+const FLAG_SEARCH_TERMS = {
+    seen: ['\\Seen', true], unseen: ['\\Seen', false],
+    answered: ['\\Answered', true], unanswered: ['\\Answered', false],
+    flagged: ['\\Flagged', true], unflagged: ['\\Flagged', false],
+    deleted: ['\\Deleted', true], undeleted: ['\\Deleted', false],
+    draft: ['\\Draft', true], undraft: ['\\Draft', false]
+}
+
+/*
+ Mongo pre-filter for local matching: conditions that EVERY hit must fulfil,
+ taken from the top-level (AND-ed) flag and uid terms. MongoDB then only
+ returns candidates instead of the whole folder; matchLocally still checks
+ every candidate, so the result is identical. OR/NOT, dates and text terms
+ are not translated (they stay local-only). flags is always a string array
+ (schema [String]), so {flags: x} / {flags: {$ne: x}} behave exactly like
+ flags.includes(x) / !flags.includes(x) in matchLocally (missing -> []).
+ */
+function localSearchPrefilter(query) {
+    const conditions = []
+    for (const term of (Array.isArray(query) ? query : [])) {
+        const key = (term.key || '').toLowerCase()
+        const flag = FLAG_SEARCH_TERMS[key]
+        if (flag) {
+            conditions.push(flag[1] ? {flags: flag[0]} : {flags: {$ne: flag[0]}})
+        } else if (key === 'uid' && Array.isArray(term.value)) {
+            conditions.push({uid: {$in: term.value}})
+        }
+    }
+    return conditions
+}
+
 function fieldToText(value) {
     if (!value) {
         return ''
@@ -1088,19 +1161,23 @@ const startListening = async (db, context) => {
             })
         }
 
-        const {match} = mongoDbMatchProjectFromIMapData(options)
+        let {match} = mongoDbMatchProjectFromIMapData(options)
 
         const useLocalMatching = canMatchLocally(options.query)
 
+        if (useLocalMatching) {
+            // let the db drop messages that can never match (see localSearchPrefilter)
+            const prefilter = localSearchPrefilter(options.query)
+            if (prefilter.length > 0) {
+                match = {...match, $and: prefilter}
+            }
+        }
+
         // header fields are small, the body and the attachment metadata are not:
         // only pull what the query actually needs
+        // (only the fields the query terms actually read - see localSearchProjection)
         const project = useLocalMatching
-            ? {
-                'data.subject': 1, 'data.from': 1, 'data.to': 1, 'data.cc': 1, 'data.bcc': 1,
-                'data.messageId': 1, 'data.inReplyTo': 1, 'data.references': 1,
-                'data.date': 1, 'data.headers': 1,
-                uid: 1, flags: 1, modseq: 1
-            }
+            ? localSearchProjection(options.query)
             : {data: 1, uid: 1, flags: 1, modseq: 1}
 
         const messages = await getMessagesForFolder(db, folder._id, match, project)
