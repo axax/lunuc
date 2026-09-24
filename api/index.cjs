@@ -20,6 +20,9 @@ require('@babel/register')({
 })
 console.timeEnd('api-boot')
 
+// diagnostic only, opt-in via LUNUC_JSON_MONITOR=true
+require('../util/jsonMonitor.mjs').startJsonMonitor('api')
+
 require('./util/localStorage')
 
 
