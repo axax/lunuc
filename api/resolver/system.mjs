@@ -79,6 +79,8 @@ export const systemResolver = (db) => ({
 
 
                     Cache.cache = {}
+                    // tell cache listeners (e.g. dataResolver workers) that everything was cleared
+                    Cache.notifyClear([''])
 
                 } else if (command === 'memusage') {
                     const memusage = process.memoryUsage().heapUsed / 1024 / 1024

@@ -81,10 +81,21 @@ const downloadUrl = (url, timeoutMs = REMOTE_FILE_TIMEOUT_MS) => {
  * Writes to a temp file first and renames atomically on success, so an aborted
  * transfer never leaves a partial file behind that would later be served as valid.
  */
-const streamAndPersist = (response, baseResponse, filename) => {
+// HEAD must answer with the headers only. A body stream piped into a HEAD
+// response is never drained over HTTP/2 (the stream is already closed after
+// the headers) - the pipe stalls forever and leaks the open file descriptor
+// and the response. Callers send the identical headers and then end here.
+export const isHeadRequest = (req) => req && req.method === 'HEAD'
+
+const streamAndPersist = (response, baseResponse, filename, req) => {
     const passStream = new PassThrough()
     response.pipe(passStream)
-    passStream.pipe(baseResponse)
+    if (isHeadRequest(req)) {
+        // no body for HEAD - the file is still persisted locally
+        baseResponse.end()
+    } else {
+        passStream.pipe(baseResponse)
+    }
 
     const tmpFilename = `${filename}.tmp${process.pid}`
     const file = fs.createWriteStream(tmpFilename)
@@ -123,7 +134,7 @@ export const getFileFromOtherServer = async (urlPath, filename, baseResponse, re
                 console.log('load from ' + url + ' - ' + remoteAdr)
                 const response = await downloadUrl(url)
                 if (!response.error && response.statusCode == 200) {
-                    streamAndPersist(response, baseResponse, filename)
+                    streamAndPersist(response, baseResponse, filename, req)
                     return true
                 }
             }
@@ -136,7 +147,7 @@ export const getFileFromOtherServer = async (urlPath, filename, baseResponse, re
         console.log('load from backup server - ' + backupUrl)
         const response = await downloadUrl(backupUrl)
         if (!response.error && response.statusCode == 200) {
-            streamAndPersist(response, baseResponse, filename)
+            streamAndPersist(response, baseResponse, filename, req)
             return true
         }
     }
@@ -384,17 +395,21 @@ export const sendFile = async (req, res, {headers, filename, fileStat, neverComp
             delete headers['Content-Length']
             res.writeHead(statusCode, {...headers, 'Content-Encoding': encoding})
 
-            // 1. fast compression for the waiting client
-            const fastCompressor = encoding === 'br'
-                ? zlib.createBrotliCompress(brotliOptions(FAST_BROTLI_QUALITY, statsMainFile.size))
-                : zlib.createGzip({level: 6})
+            if (isHeadRequest(req)) {
+                res.end()
+            } else {
+                // 1. fast compression for the waiting client
+                const fastCompressor = encoding === 'br'
+                    ? zlib.createBrotliCompress(brotliOptions(FAST_BROTLI_QUALITY, statsMainFile.size))
+                    : zlib.createGzip({level: 6})
 
-            const fileStream = fs.createReadStream(filename)
-            fileStream.pipe(fastCompressor).pipe(res)
-            fileStream.on('error', (err) => {
-                console.error('sendFile: read error', filename, err)
-                res.destroy()
-            })
+                const fileStream = fs.createReadStream(filename)
+                fileStream.pipe(fastCompressor).pipe(res)
+                fileStream.on('error', (err) => {
+                    console.error('sendFile: read error', filename, err)
+                    res.destroy()
+                })
+            }
 
             // 2. max-quality cache build in the background (nobody waits for it)
             const cacheKey = filename + fileExt
@@ -438,9 +453,13 @@ export const sendFile = async (req, res, {headers, filename, fileStat, neverComp
             if (brStats) {
                 // pre-compressed br version is available - serve it directly
                 res.writeHead(statusCode, {...headers, 'Content-Length': brStats.size, 'Content-Encoding': 'br'})
-                const fileStream = fs.createReadStream(filename + '.br')
-                fileStream.on('error', (err) => console.error('sendFile: Stream error:', err))
-                fileStream.pipe(res)
+                if (isHeadRequest(req)) {
+                    res.end()
+                } else {
+                    const fileStream = fs.createReadStream(filename + '.br')
+                    fileStream.on('error', (err) => console.error('sendFile: Stream error:', err))
+                    fileStream.pipe(res)
+                }
             } else {
                 streamCompressAndCache('br', '.br')
             }
@@ -451,9 +470,13 @@ export const sendFile = async (req, res, {headers, filename, fileStat, neverComp
             if (gzStats) {
                 // pre-compressed gz version is available - serve it directly
                 res.writeHead(statusCode, {...headers, 'Content-Length': gzStats.size, 'Content-Encoding': 'gzip'})
-                const fileStream = fs.createReadStream(filename + '.gz')
-                fileStream.on('error', (err) => console.error('sendFile: Stream error:', err))
-                fileStream.pipe(res)
+                if (isHeadRequest(req)) {
+                    res.end()
+                } else {
+                    const fileStream = fs.createReadStream(filename + '.gz')
+                    fileStream.on('error', (err) => console.error('sendFile: Stream error:', err))
+                    fileStream.pipe(res)
+                }
             } else {
                 streamCompressAndCache('gzip', '.gz')
             }
@@ -478,9 +501,13 @@ export const sendFile = async (req, res, {headers, filename, fileStat, neverComp
                 ...headers
             })
 
-            const fileStream = fs.createReadStream(filename, streamOption)
-            fileStream.on('error', (err) => console.error('sendFile: Stream error:', err))
-            fileStream.pipe(res).on('error', (err) => console.error('sendFile: Pipe error:', err))
+            if (isHeadRequest(req)) {
+                res.end()
+            } else {
+                const fileStream = fs.createReadStream(filename, streamOption)
+                fileStream.on('error', (err) => console.error('sendFile: Stream error:', err))
+                fileStream.pipe(res).on('error', (err) => console.error('sendFile: Pipe error:', err))
+            }
 
         }
     } catch (err) {

@@ -1,5 +1,5 @@
 import fs from 'fs'
-import {sendFileFromDir} from './file.mjs'
+import {isHeadRequest, sendFileFromDir} from './file.mjs'
 import ffmpeg from 'fluent-ffmpeg'
 import ffprobeInstaller from '@ffprobe-installer/ffprobe'
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg'
@@ -275,7 +275,14 @@ export const transcodeAndStreamVideo = async ({options, headers, req, res, filen
         //headers['Transfer-Encoding'] = 'chunked'
         headers['Accept-Ranges'] = 'bytes'
         res.writeHead(200, headers)
-        video.pipe(res, {end: true})
+        if (isHeadRequest(req)) {
+            // headers only - piping the stream into a HEAD response never drains
+            // (HTTP/2) and would leave the ffmpeg process running forever. The
+            // streamed transcode is not persisted, so nothing is lost by not starting it.
+            res.end()
+        } else {
+            video.pipe(res, {end: true})
+        }
     }
 
     return true

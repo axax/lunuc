@@ -1,4 +1,4 @@
-import {sendError, sendFileFromDir} from './file.mjs'
+import {isHeadRequest, sendError, sendFileFromDir} from './file.mjs'
 import {SECRET_KEY} from '../../api/constants/index.mjs'
 import jwt from 'jsonwebtoken'
 import path from 'path'
@@ -18,7 +18,7 @@ export const verifyTokenAndResponse = (req, res, token, parsedUrl) => {
         if (!err) {
 
             if (decoded.mediaIds) {
-                zipAndSendMedias(res, decoded)
+                zipAndSendMedias(res, decoded, req)
             } else if (!await sendFileFromDir(req, res, {
                 filename: path.join(ROOT_DIR, decoded.filePath),
                 neverCompress: true, headers: {}, parsedUrl
@@ -35,7 +35,7 @@ export const verifyTokenAndResponse = (req, res, token, parsedUrl) => {
 
 
 
-export const zipAndSendMedias = (res, decoded) => {
+export const zipAndSendMedias = (res, decoded, req) => {
 
     dbConnectionCached(MONGO_URL, 'server',async (err, db) => {
 
@@ -46,6 +46,13 @@ export const zipAndSendMedias = (res, decoded) => {
             // Set the headers to indicate a file attachment of type zip
             res.setHeader('Content-Disposition', 'attachment; filename=files.zip')
             res.setHeader('Content-Type', 'application/zip')
+
+            if (isHeadRequest(req)) {
+                // headers only - an archive piped into a HEAD response never
+                // drains (HTTP/2) and keeps the zip stream and files open
+                res.end()
+                return
+            }
 
             // Create a zip archive and pipe it to the response
             const archive = new ZipArchive({

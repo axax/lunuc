@@ -3,24 +3,29 @@ import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
 import Cache from '../../../util/cache.mjs'
 import request from '../../../api/util/request.mjs'
 import ApiUtil from '../../../api/util/index.mjs'
-import ClientUtil from '../../../client/util/index.mjs'
-import {CAPABILITY_MANAGE_KEYVALUES, CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities.mjs'
+import {CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities.mjs'
 import {addToWebsiteQueue} from './browser.mjs'
 import Hook from '../../../util/hook.cjs'
 import {translations} from '../../../util/i18nServer.mjs'
 import {pubsubDelayed} from '../../../api/subscription.mjs'
 import fs from 'fs'
-import config from '../../../gensrc/config.mjs'
 import path from 'path'
 import {fileURLToPath} from 'url'
 import {typeResolver} from './resolver/typeResolver.mjs'
 import {resolveFrom} from './resolver/resolveFrom.mjs'
-import {resolveReduce} from './resolver/resolveReduce.mjs'
 import {TRACK_USER_AGENT_HEADER} from '../../../api/constants/index.mjs'
 import {getBestMatchingHostRule, getHostRules} from '../../../util/hostrules.mjs'
 import Util from '../../../api/util/index.mjs'
 import {clientAddress} from '../../../util/host.mjs'
-import {fixAndParseJSON} from '../../../client/util/fixJson.mjs'
+import {
+    addDebugInfos,
+    templateSegment,
+    resolveDataSegment,
+    resolveEvalSegment,
+    resolveReduceSegment,
+    resolveKeyValueGlobalsSegment
+} from './dataResolverCore.mjs'
+import {isDataResolverWorkerEnabled, runDataResolverInWorker, WorkerUnavailableError} from './dataResolverWorkerPool.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -29,18 +34,6 @@ const DEFAULT_PARAM_MAX_LENGTH = 100,
     DEFAULT_PARAM_NOT_ALLOWED_REGEX = new RegExp(DEFAULT_PARAM_NOT_ALLOWED_CHARS.join('|'), 'gi')
 
 
-function addDebugInfos(resolvedData, segment, startTime, startTimeSegment, debugLog) {
-    resolvedData[segment.debug.key || segment.debug] = {
-        totalTime: new Date().getTime() - startTime,
-        segmentTime: new Date().getTime() - startTimeSegment,
-        log: debugLog
-    }
-}
-function unescapeControlChars(str) {
-    return str.replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\r/g, '\r')
-}
-const UNESCAPE_RE = /\\([nrtbf\\'"`])/g;
-const UNESCAPE_MAP = { n:'\n', r:'\r', t:'\t', b:'\b', f:'\f' };
 
 export const resolveData = async ({db, context, dataResolver, scope, nosession, req, editmode, dynamic, timings}) => {
     const startTime = Date.now()
@@ -70,7 +63,50 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                 }
             }
 
-            for (let i = 0; i < segments.length; i++) {
+            // Optional: a dataResolver with {"worker": "<pool>"} on its first segment runs
+            // its leading data/reduce/keyValueGlobals segments in a worker thread (same
+            // code, see dataResolverWorkerPool.mjs). The api thread continues with the
+            // first segment of another type. Any problem with the worker -> the whole
+            // dataResolver runs here as before.
+            let startIndex = 0, pendingSegment = null
+            const workerPool = segments.length > 0 && segments[0] && typeof segments[0].worker === 'string' ? segments[0].worker : null
+            if (workerPool && isDataResolverWorkerEnabled()) {
+                let workerResult = null
+                try {
+                    workerResult = await runDataResolverInWorker(workerPool, {
+                        dataResolver, scope, context, editmode, dynamic, startTime, wantTimings: !!timings
+                    })
+                } catch (e) {
+                    if (!(e instanceof WorkerUnavailableError)) {
+                        throw e
+                    }
+                    if (!e.quiet) {
+                        console.warn(`dataResolver worker "${workerPool}" not available (${e.message}) - resolving ${scope.page && scope.page.slug} in the api thread`)
+                    }
+                }
+                if (workerResult) {
+                    for (const k of Object.keys(resolvedData)) {
+                        delete resolvedData[k]
+                    }
+                    Object.assign(resolvedData, workerResult.resolvedData)
+                    subscriptions.push(...workerResult.subscriptions)
+                    if (timings && workerResult.timings) {
+                        for (const t of workerResult.timings) {
+                            timings.push({index: t.index, key: t.key, start: t.startAbs - performance.timeOrigin})
+                        }
+                    }
+                    if (workerResult.error) {
+                        // same handling as an error thrown in the loop below
+                        const err = new Error(workerResult.error.message)
+                        err.stack = workerResult.error.stack
+                        throw err
+                    }
+                    startIndex = workerResult.nextIndex
+                    pendingSegment = workerResult.nextSegment
+                }
+            }
+
+            for (let i = startIndex; i < segments.length; i++) {
 
                 // optional, diagnostic only (Server-Timing): start mark per segment,
                 // durations are derived by the caller from consecutive marks
@@ -81,69 +117,10 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                 const debugLog = []
                 const startTimeSegment = Date.now()
 
-                let tempBrowser
-                if (segments[i].website) {
-                    // exclude pipline from replacements
-                    tempBrowser = segments[i].website.pipeline
-                    segments[i].website.pipeline = null
-                }
-
-                let segmentStr = JSON.stringify(segments[i])
-
-                // tpl nur ausführen wenn Template-Expressions vorhanden
-                const needsTemplate = segmentStr.includes('${')
-
-                let segment
-                if (needsTemplate) {
-                    const tpl = new Function(`
-                        const {${Object.keys(scope).join(',')}} = this.scope
-                        const {data} = this
-                        const Util = this.ClientUtil
-                        const _e = Util.escapeForJson
-                        const ApiUtil = this.ApiUtil
-                        const ObjectId = this.ObjectId
-                        return \`${unescapeControlChars(segmentStr)}\`
-                    `)
-
-                    const replacedSegmentStr = tpl.call({
-                        scope,
-                        data: resolvedData,
-                        context,
-                        editmode,
-                        dynamic,
-                        ClientUtil,
-                        ApiUtil,
-                        config,
-                        ObjectId
-                    }).replace(/"###/g, '').replace(/###"/g, '')
-
-                    const parsedJson = fixAndParseJSON(replacedSegmentStr)
-                    if(!parsedJson.fixed && parsedJson.errors.length > 0) {
-                        throw new Error(parsedJson.errors[0])
-                    }
-                    segment = parsedJson.json
-                } else {
-                    const needsUnescape = segmentStr.includes('\\')
-                    if(needsUnescape || segmentStr.includes('###')){
-                        segmentStr = segmentStr.replace(/"###/g, '').replace(/###"/g, '')
-                        if(needsUnescape) {
-                            try {
-                                segment = JSON.parse(segmentStr.replace(UNESCAPE_RE, (_, c) => UNESCAPE_MAP[c] ?? c))
-                            }catch (e){
-                                segment = JSON.parse(segmentStr)
-                            }
-                        }else{
-                            segment = JSON.parse(segmentStr)
-                        }
-                    }else{
-                        segment = segments[i]
-                    }
-                }
-
-
-                if (tempBrowser) {
-                    segment.website.pipeline = tempBrowser
-                }
+                // a segment the worker already templated (and handed back) is not templated again
+                const segment = (pendingSegment && i === startIndex)
+                    ? pendingSegment
+                    : templateSegment(segments[i], {scope, resolvedData, context, editmode, dynamic})
 
                 if (segment.if === false || segment.if === 'false') {
                     if(segment.debug){
@@ -175,9 +152,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                 } else if (segment.resolveFrom) {
                     await resolveFrom({segment, db, context, resolvedData, scope, nosession, req, editmode, dynamic})
                 } else if (segment.data) {
-                    Object.keys(segment.data).forEach(k => {
-                        resolvedData[k] = segment.data[k]
-                    })
+                    resolveDataSegment(segment, resolvedData)
                 } else if (segment.t) {
 
                     await typeResolver({segment, resolvedData, scope, db, req, context, subscriptions})
@@ -190,20 +165,9 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     resolveTranslations(resolvedData, segment, context)
 
                 } else if (segment['eval']) {
-                    try {
-                        const tpl = new Function('const {' + Object.keys(scope).join(',') + '} = this.scope; const {data} = this;' + segment.eval)
-                        tpl.call({data: resolvedData, scope, context})
-                    } catch (e) {
-                        if (!segment.ignoreError)
-                            throw e
-                    }
+                    resolveEvalSegment(segment, resolvedData, scope, context)
                 } else if (segment.reduce) {
-                    try {
-                        resolveReduce(segment.reduce, resolvedData, resolvedData, {debugLog, debug: !!segment.debug})
-                    } catch (e) {
-                        debugLog.push({type:'error', message:`segment ${segment.key} can not be reduced: ${e.message}`})
-                        console.warn(`segment ${segment.key} can not be reduced`, e)
-                    }
+                    resolveReduceSegment(segment, resolvedData, debugLog)
                 } else if (segment.subscription) {
 
                     if (segment.subscription.filter && segment.subscription.filter.create) {
@@ -216,28 +180,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                 } else if (segment.system) {
                     await resolveSystemData({segment, req, resolvedData, context, db})
                 } else if (segment.keyValueGlobals) {
-
-                    // if user don't have capability to manage keys he can only see the public ones
-                    const onlyPublic = segment.public!==undefined?segment.public:!await ApiUtil.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)
-                    const dataKey = segment.key || 'keyValueGlobals'
-
-                    const map = await ApiUtil.keyValueGlobalMap(db, context, segment.keyValueGlobals, {
-                        public: onlyPublic,
-                        cache: true,
-                        parse: true,
-                        includeMetaData: segment.includeMetaData
-                    })
-
-                    resolvedData[dataKey] = map
-
-                    if(segment.subscribe) {
-                        subscriptions.push({query: 'action keys data{_id key value}',
-                            variables:{'keys':JSON.stringify(segment.keyValueGlobals)},
-                            autoUpdate:true,
-                            updateMap: [{toKey:`${dataKey}.\${fromKey}`,fromKey:'key', fromValueKey: 'value', parse:true}],
-                            callback: false, name: 'subscribeKeyValueGlobal'})
-                    }
-
+                    await resolveKeyValueGlobalsSegment({segment, db, context, resolvedData, subscriptions})
                 } else if (segment.session) {
                     resolvedData.session = {id: context.session}
                 } else if (segment.user) {

@@ -40,7 +40,6 @@ const STALL_PROFILE_MAX_FILES = parseInt(process.env.LUNUC_STALL_PROFILE_MAX_FIL
 const STALL_SUMMARY_MS = parseInt(process.env.LUNUC_STALL_SUMMARY_MS) || 150
 const MAX_SUMMARIES_PER_MINUTE = 20
 const SUMMARY_TOP = 4
-const PROFILE_WINDOW_MS = 10000
 // start profiling only after this delay - the first minutes after a restart
 // are dominated by startup work (loading caches etc.) and would use up all
 // MAX_FILES before normal operation is ever recorded
@@ -170,7 +169,7 @@ const SPECIAL_NODES = new Set(['(idle)', '(program)', '(garbage collector)', '(r
  * (with up to 2 application callers) plus the leaf function it was actually
  * executing (e.g. JSON.parse, a regex, a library call).
  */
-export const summarizeProfileWindow = (profile, fromUs, toUs, top = SUMMARY_TOP) => {
+const summarizeProfileWindow = (profile, fromUs, toUs, top = SUMMARY_TOP) => {
     const nodes = new Map()
     const parent = new Map()
     for (const n of profile.nodes) {

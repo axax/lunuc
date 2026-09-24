@@ -9,7 +9,6 @@ import Util from '../../api/util/index.mjs'
 import {parseOrElse} from '../../client/util/json.mjs'
 import {getGatewayIp} from '../../util/gatewayIp.mjs'
 import {encodeName, buildRawQuery, scanTtls, materializeRaw, truncateRaw} from './dnsWire.mjs'
-import {registerWatchdogActivity} from '../../util/eventLoopWatchdog.mjs'
 
 // Registered for log output / type names only. dns2 has no Resource codec for
 // these - they are never handed to its parser, see needsParsedAnswer().
@@ -338,52 +337,11 @@ const clientUdpSize = (request) => {
     return Math.min(Math.max(size, 512), 4096)
 }
 
-// diagnostic only: DNS load shows up in event loop stall logs (DNS queries are
-// not HTTP requests, so the watchdog's in-flight list never sees them)
-const DNS_STATS_WINDOW_MS = 10000
-const dnsStats = {start: Date.now(), count: 0, clients: new Map(), names: new Map(), prev: null}
-const bumpStat = (map, key) => {
-    if (map.size < 1000 || map.has(key)) {
-        map.set(key, (map.get(key) || 0) + 1)
-    }
-}
-const topOf = (map) => [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => `${k}(${v})`).join(' ')
-const recordDnsQuery = (address, request, transport) => {
-    const now = Date.now()
-    if (now - dnsStats.start >= DNS_STATS_WINDOW_MS) {
-        dnsStats.prev = {count: dnsStats.count, clients: topOf(dnsStats.clients), names: topOf(dnsStats.names)}
-        dnsStats.start = now
-        dnsStats.count = 0
-        dnsStats.clients = new Map()
-        dnsStats.names = new Map()
-    }
-    dnsStats.count++
-    bumpStat(dnsStats.clients, `${address || '?'}/${transport}`)
-    const q = request && request.questions && request.questions[0]
-    if (q && q.name) {
-        bumpStat(dnsStats.names, String(q.name).toLowerCase().substring(0, 60))
-    }
-}
-registerWatchdogActivity('dns', () => {
-    const cur = `${dnsStats.count} queries in ${Math.round((Date.now() - dnsStats.start) / 1000)}s`
-    if (dnsStats.count === 0 && !dnsStats.prev) {
-        return []
-    }
-    const top = dnsStats.count > 0 ? `${topOf(dnsStats.clients)} | ${topOf(dnsStats.names)}` : ''
-    const prev = dnsStats.prev ? ` (prev 10s: ${dnsStats.prev.count}, ${dnsStats.prev.clients} | ${dnsStats.prev.names})` : ''
-    return [cur + (top ? ' ' + top : '') + prev]
-})
-
 const createHandler = (transport) => async (request, send, rinfo) => {
     let response
 
     try {
         const address = clientAddress(rinfo)
-        try {
-            recordDnsQuery(address, request, transport)
-        } catch (e) {
-            // diagnostic only
-        }
 
         // Build the response first: if anything below throws, the catch still
         // has a packet to answer with instead of leaving the client hanging.
