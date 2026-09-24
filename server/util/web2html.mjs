@@ -33,6 +33,8 @@
 //   aborting requests that were seconds away from completing.
 
 import puppeteer from 'puppeteer'
+import os from 'os'
+import fsp from 'fs/promises'
 import {isTemporarilyBlocked} from './requestBlocker.mjs'
 import {
     HOSTRULE_HEADER,
@@ -155,6 +157,63 @@ const isBrowserHealthy = async () => {
     }
 }
 
+/*
+ * Chrome renders for crawlers only - it must never take cpu away from the
+ * web server / api. Its processes get a lower scheduling priority (nice).
+ * On Linux the priority is per thread, so every thread of the browser and of
+ * its child processes is lowered; processes and threads created later inherit
+ * it from the (already lowered) browser process.
+ *   LUNUC_SSR_CHROME_NICE=10 (default), 'off' keeps the inherited priority
+ */
+const CHROME_NICE = process.env.LUNUC_SSR_CHROME_NICE === 'off' ? null : (parseInt(process.env.LUNUC_SSR_CHROME_NICE) || 10)
+
+const lowerChromePriority = async (rootPid) => {
+    if (CHROME_NICE === null || !rootPid || process.platform !== 'linux') {
+        return
+    }
+    try {
+        // pid -> parent pid of all processes, to find the descendants of chrome
+        const parents = new Map()
+        for (const entry of await fsp.readdir('/proc')) {
+            if (!/^\d+$/.test(entry)) continue
+            try {
+                const stat = await fsp.readFile(`/proc/${entry}/stat`, 'utf8')
+                // format: pid (comm) state ppid ... - comm may contain spaces
+                const ppid = parseInt(stat.substring(stat.lastIndexOf(')') + 2).split(' ')[1])
+                parents.set(parseInt(entry), ppid)
+            } catch (e) {
+                // process already gone
+            }
+        }
+        const pids = [rootPid]
+        for (let i = 0; i < pids.length; i++) {
+            for (const [pid, ppid] of parents) {
+                if (ppid === pids[i]) pids.push(pid)
+            }
+        }
+        let count = 0
+        for (const pid of pids) {
+            let tids = [pid]
+            try {
+                tids = (await fsp.readdir(`/proc/${pid}/task`)).map(t => parseInt(t))
+            } catch (e) {
+                // no task list - at least the main thread
+            }
+            for (const tid of tids) {
+                try {
+                    os.setPriority(tid, CHROME_NICE)
+                    count++
+                } catch (e) {
+                    // thread/process already gone
+                }
+            }
+        }
+        console.log(`chrome priority set to nice ${CHROME_NICE} (${pids.length} processes, ${count} threads)`)
+    } catch (e) {
+        console.warn('could not lower chrome priority:', e.message)
+    }
+}
+
 const getBrowser = async () => {
     if (browserLaunchPromise) {
         // another request is already launching -> wait for it
@@ -203,6 +262,12 @@ const getBrowser = async () => {
     }).then(browser => {
         parseWebsiteBrowser = browser
         browserLaunchPromise = null
+        const proc = browser.process()
+        if (proc && proc.pid) {
+            // now and once more after startup (helper processes spawned during launch)
+            lowerChromePriority(proc.pid)
+            setTimeout(() => lowerChromePriority(proc.pid), 5000).unref()
+        }
         return browser
     }).catch(e => {
         browserLaunchPromise = null
