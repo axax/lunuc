@@ -274,7 +274,7 @@ const createStallProfiler = (processName) => {
     let rotating = false
     let heapSampling = false
     let ownFrom = -1, ownTo = -1          // last restart of the profiler (performance.now ms)
-    const pendingStalls = []              // {from, to, lag} in performance.now() ms
+    const pendingStalls = []              // {fromUs, toUs, lag} - monotonic µs (profile clock)
     let summariesThisMinute = 0, summaryMinuteStart = Date.now(), summariesSuppressed = 0
 
     const post = (method, params) => new Promise((resolve) => {
@@ -307,10 +307,11 @@ const createStallProfiler = (processName) => {
         })
     }
 
-    const logSummaries = (profile, stopPerfMs, stalls) => {
-        // map performance.now() (ms) onto the profile clock (µs): endTime is
-        // (almost) the moment Profiler.stop returned
-        const offsetUs = profile.endTime - stopPerfMs * 1000
+    const logSummaries = (profile, stalls) => {
+        // stall windows are recorded with process.hrtime (CLOCK_MONOTONIC) in
+        // µs - the same clock V8 uses for the profile timestamps, so no offset
+        // is needed (an offset taken around Profiler.stop was off by the
+        // duration of the stop itself)
         for (const st of stalls) {
             if (Date.now() - summaryMinuteStart > 60000) {
                 if (summariesSuppressed > 0) {
@@ -325,11 +326,15 @@ const createStallProfiler = (processName) => {
                 continue
             }
             try {
-                const sum = summarizeProfileWindow(profile, st.from * 1000 + offsetUs, st.to * 1000 + offsetUs)
+                const sum = summarizeProfileWindow(profile, st.fromUs, st.toUs)
                 if (!sum) {
                     continue
                 }
-                console.warn(`[eventloop] ${processName} stall ${Math.round(st.lag)}ms top (${sum.samples} samples): ` +
+                // sampling interval is 2ms: far fewer samples than expected
+                // means the sampler thread did not run either
+                const expected = Math.round((st.lag + INTERVAL_MS) / 2)
+                const lowSamples = sum.samples < expected * 0.3 ? ` - only ${sum.samples} of ~${expected} expected samples` : ''
+                console.warn(`[eventloop] ${processName} stall ${Math.round(st.lag)}ms top (${sum.samples} samples${lowSamples}): ` +
                     sum.top.join(' | ') + (sum.extra.length ? ' / ' + sum.extra.join(', ') : ''))
             } catch (e) {
                 // never break anything
@@ -345,11 +350,12 @@ const createStallProfiler = (processName) => {
         const stall = windowMaxStall
         const stalls = pendingStalls.splice(0, pendingStalls.length)
         const cpu = await post('Profiler.stop')
-        const stopPerfMs = performance.now()
+        const cpuStopMs = performance.now() - rotateStart
         const heap = heapSampling ? await post('HeapProfiler.stopSampling') : null
+        const heapStopMs = performance.now() - rotateStart - cpuStopMs
 
         if (cpu && cpu.profile && stalls.length) {
-            logSummaries(cpu.profile, stopPerfMs, stalls)
+            logSummaries(cpu.profile, stalls)
         }
         if (stall >= STALL_PROFILE_MS && filesWritten < STALL_PROFILE_MAX_FILES && ensureDiagDir()) {
             filesWritten++
@@ -361,10 +367,13 @@ const createStallProfiler = (processName) => {
                 console.warn(`[eventloop] ${processName}: max profile files reached - only stall summaries from now on`)
             }
         }
+        const startBegin = performance.now()
         await start()
         ownFrom = rotateStart
         ownTo = performance.now()
-        console.warn(`[eventloop] ${processName}: profiler restart took ${Math.round(ownTo - ownFrom)}ms (this stall is caused by the profiler itself and ignored)`)
+        console.warn(`[eventloop] ${processName}: profiler restart took ${Math.round(ownTo - ownFrom)}ms ` +
+            `(cpu stop ${Math.round(cpuStopMs)}ms, heap stop ${Math.round(heapStopMs)}ms, start ${Math.round(ownTo - startBegin)}ms, ` +
+            `${cpu && cpu.profile ? cpu.profile.nodes.length : 0} nodes - caused by the profiler itself and ignored)`)
         rotating = false
     }
 
@@ -376,19 +385,27 @@ const createStallProfiler = (processName) => {
         console.warn(`[eventloop] ${processName}: profiler start took ${Math.round(ownTo - ownFrom)}ms (ignored)`)
     }
     initialStart()
+    // a stall counts as caused by the profiler only if the restart makes up
+    // most of it - a stall that merely touches the restart is still reported
+    const isOwnStall = (lag, now) => {
+        if (ownFrom < 0) return false
+        const from = now - lag - INTERVAL_MS
+        const overlap = Math.min(now, ownTo) - Math.max(from, ownFrom)
+        return overlap > 0 && overlap >= lag * 0.5
+    }
     return {
-        // true if a stall window overlaps the last profiler restart
-        isOwnStall: (from, to) => ownFrom >= 0 && from <= ownTo + INTERVAL_MS && to >= ownFrom,
+        isOwnStall,
         noteStall: (lag, now) => {
             if (!active) return
-            const from = now - lag - INTERVAL_MS
-            if (ownFrom >= 0 && from <= ownTo + INTERVAL_MS && now >= ownFrom) {
+            if (isOwnStall(lag, now)) {
                 return // caused by the profiler restart
             }
             if (lag > windowMaxStall) windowMaxStall = lag
             if (lag >= STALL_SUMMARY_MS) {
-                // the loop was blocked from (now - lag) until now
-                pendingStalls.push({from, to: now, lag})
+                // the loop was blocked from (now - lag) until now, recorded on
+                // the profile clock (monotonic µs)
+                const toUs = Number(process.hrtime.bigint() / 1000n)
+                pendingStalls.push({fromUs: toUs - (lag + INTERVAL_MS) * 1000, toUs, lag})
             }
         },
         tick: (now) => {
@@ -496,7 +513,7 @@ export const startEventLoopWatchdog = (processName) => {
             const heapMb = Math.round(process.memoryUsage().heapUsed / 1048576)
             const requests = [...inFlight].slice(0, MAX_LISTED).map(e => describeRequest(e, now))
             const finished = recentDone.filter(d => d.end >= windowStart).slice(-MAX_LISTED).map(d => d.desc)
-            if (profiler && profiler.isOwnStall(now - lag - INTERVAL_MS, now)) {
+            if (profiler && profiler.isOwnStall(lag, now)) {
                 // caused by the stall profiler restart - already logged there
                 return
             }
