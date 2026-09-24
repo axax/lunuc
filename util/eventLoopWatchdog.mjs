@@ -25,7 +25,8 @@ const MAX_LOGS_PER_MINUTE = 30
 const MAX_LISTED = 5
 
 // Optional diagnostics (all opt-in via env):
-//   LUNUC_STALL_PROFILE=true      rolling 10s cpu + allocation profiles, a window
+//   LUNUC_STALL_PROFILE=true      cpu + allocation profiles (restarted at most every
+//                                 LUNUC_STALL_ROTATE_S, default 120s), a window
 //                                 containing a stall >= LUNUC_STALL_PROFILE_MS
 //                                 (default 300) is written to LUNUC_DIAG_DIR
 //                                 and every stall >= LUNUC_STALL_SUMMARY_MS
@@ -238,16 +239,25 @@ export const summarizeProfileWindow = (profile, fromUs, toUs, top = SUMMARY_TOP)
 }
 
 /*
- * Rolling cpu (+ allocation) sampling profiler (in-process inspector session).
- * Every PROFILE_WINDOW_MS - or right after a stall - the profile is stopped:
+ * Cpu (+ allocation) sampling profiler (in-process inspector session).
+ *
+ * IMPORTANT: restarting the V8 cpu profiler is expensive in a big process -
+ * Profiler.start has to register every compiled function, which blocks the
+ * event loop for up to a second. So the profile is NOT rotated per stall:
+ *   - it keeps running and is only stopped/restarted when stalls are pending
+ *     and at least LUNUC_STALL_ROTATE_S (default 120s) have passed, or after
+ *     PROFILE_MAX_WINDOW_MS to limit memory
+ *   - the stall caused by the restart itself is detected and ignored
+ * On every restart:
  *   - every stall >= STALL_SUMMARY_MS is summarized into one log line
  *   - a window with a stall >= STALL_PROFILE_MS is written to disk (max
  *     STALL_PROFILE_MAX_FILES), open in Chrome DevTools:
  *       .cpuprofile  -> Performance tab -> "Load profile"
  *       .heapprofile -> Memory tab -> "Load" (allocation sampling)
- * After the file limit is reached only the (cheaper) cpu profiler keeps
- * running for the summaries.
  */
+const ROTATE_MIN_MS = (parseInt(process.env.LUNUC_STALL_ROTATE_S) || 120) * 1000
+const PROFILE_MAX_WINDOW_MS = 10 * 60 * 1000
+
 const createStallProfiler = (processName) => {
     let session
     try {
@@ -263,7 +273,8 @@ const createStallProfiler = (processName) => {
     let active = false
     let rotating = false
     let heapSampling = false
-    const pendingStalls = []   // {from, to, lag} in performance.now() ms
+    let ownFrom = -1, ownTo = -1          // last restart of the profiler (performance.now ms)
+    const pendingStalls = []              // {from, to, lag} in performance.now() ms
     let summariesThisMinute = 0, summaryMinuteStart = Date.now(), summariesSuppressed = 0
 
     const post = (method, params) => new Promise((resolve) => {
@@ -316,7 +327,6 @@ const createStallProfiler = (processName) => {
             try {
                 const sum = summarizeProfileWindow(profile, st.from * 1000 + offsetUs, st.to * 1000 + offsetUs)
                 if (!sum) {
-                    console.warn(`[eventloop] ${processName} stall ${Math.round(st.lag)}ms: no cpu samples (profiler was restarting)`)
                     continue
                 }
                 console.warn(`[eventloop] ${processName} stall ${Math.round(st.lag)}ms top (${sum.samples} samples): ` +
@@ -331,6 +341,7 @@ const createStallProfiler = (processName) => {
         if (rotating) return
         rotating = true
         active = false
+        const rotateStart = performance.now()
         const stall = windowMaxStall
         const stalls = pendingStalls.splice(0, pendingStalls.length)
         const cpu = await post('Profiler.stop')
@@ -351,24 +362,41 @@ const createStallProfiler = (processName) => {
             }
         }
         await start()
+        ownFrom = rotateStart
+        ownTo = performance.now()
+        console.warn(`[eventloop] ${processName}: profiler restart took ${Math.round(ownTo - ownFrom)}ms (this stall is caused by the profiler itself and ignored)`)
         rotating = false
     }
 
-    start()
+    const initialStart = async () => {
+        const t = performance.now()
+        await start()
+        ownFrom = t
+        ownTo = performance.now()
+        console.warn(`[eventloop] ${processName}: profiler start took ${Math.round(ownTo - ownFrom)}ms (ignored)`)
+    }
+    initialStart()
     return {
+        // true if a stall window overlaps the last profiler restart
+        isOwnStall: (from, to) => ownFrom >= 0 && from <= ownTo + INTERVAL_MS && to >= ownFrom,
         noteStall: (lag, now) => {
             if (!active) return
+            const from = now - lag - INTERVAL_MS
+            if (ownFrom >= 0 && from <= ownTo + INTERVAL_MS && now >= ownFrom) {
+                return // caused by the profiler restart
+            }
             if (lag > windowMaxStall) windowMaxStall = lag
             if (lag >= STALL_SUMMARY_MS) {
                 // the loop was blocked from (now - lag) until now
-                pendingStalls.push({from: now - lag - INTERVAL_MS, to: now, lag})
-                // summarize soon, while the samples are still in this profile
-                setImmediate(rotate)
+                pendingStalls.push({from, to: now, lag})
             }
         },
         tick: (now) => {
-            if (active && now - windowStart >= PROFILE_WINDOW_MS) {
-                rotate()
+            if (!active) return
+            const age = now - windowStart
+            if ((pendingStalls.length && age >= ROTATE_MIN_MS) || age >= PROFILE_MAX_WINDOW_MS) {
+                // setImmediate: never restart inside the watchdog timer callback
+                setImmediate(rotate)
             }
         }
     }
@@ -468,6 +496,10 @@ export const startEventLoopWatchdog = (processName) => {
             const heapMb = Math.round(process.memoryUsage().heapUsed / 1048576)
             const requests = [...inFlight].slice(0, MAX_LISTED).map(e => describeRequest(e, now))
             const finished = recentDone.filter(d => d.end >= windowStart).slice(-MAX_LISTED).map(d => d.desc)
+            if (profiler && profiler.isOwnStall(now - lag - INTERVAL_MS, now)) {
+                // caused by the stall profiler restart - already logged there
+                return
+            }
             const parts = [
                 `[eventloop] ${processName} blocked ${Math.round(lag)}ms`,
                 `heap ${heapMb}MB`,
