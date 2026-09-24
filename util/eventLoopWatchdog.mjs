@@ -28,11 +28,17 @@ const MAX_LISTED = 5
 //   LUNUC_STALL_PROFILE=true      rolling 10s cpu + allocation profiles, a window
 //                                 containing a stall >= LUNUC_STALL_PROFILE_MS
 //                                 (default 300) is written to LUNUC_DIAG_DIR
+//                                 and every stall >= LUNUC_STALL_SUMMARY_MS
+//                                 (default 150) gets a log line with the
+//                                 functions that ran during exactly that stall
 //   LUNUC_HEAPSNAPSHOT_SIGNAL=true  `kill -USR2 <pid>` writes a heap snapshot
 //   LUNUC_DIAG_DIR                output dir (default <tmp>/lunuc-diag)
 const STALL_PROFILE = process.env.LUNUC_STALL_PROFILE === 'true'
 const STALL_PROFILE_MS = parseInt(process.env.LUNUC_STALL_PROFILE_MS) || 300
 const STALL_PROFILE_MAX_FILES = parseInt(process.env.LUNUC_STALL_PROFILE_MAX_FILES) || 10
+const STALL_SUMMARY_MS = parseInt(process.env.LUNUC_STALL_SUMMARY_MS) || 150
+const MAX_SUMMARIES_PER_MINUTE = 20
+const SUMMARY_TOP = 4
 const PROFILE_WINDOW_MS = 10000
 // start profiling only after this delay - the first minutes after a restart
 // are dominated by startup work (loading caches etc.) and would use up all
@@ -130,14 +136,117 @@ const ensureDiagDir = () => {
 
 const timestampForFile = () => new Date().toISOString().replace(/[:.]/g, '-')
 
+/* ------------------------------------------------------------------ */
+/* Stall summary: which code ran during a stall                         */
+/* ------------------------------------------------------------------ */
+
+const APP_ROOT = process.cwd()
+
+const shortUrl = (url) => {
+    if (!url) return ''
+    let u = url.startsWith('file://') ? url.substring(7) : url
+    if (u.startsWith(APP_ROOT + '/')) u = u.substring(APP_ROOT.length + 1)
+    return u
+}
+
+// application code = files of this project outside node_modules
+const isAppFrame = (cf) => {
+    const u = cf.url || ''
+    return !!u && !u.includes('/node_modules/') && !u.startsWith('node:') && (u.includes(APP_ROOT) || !u.startsWith('/'))
+}
+
+const frameName = (cf) => {
+    const fn = cf.functionName || '(anonymous)'
+    const u = shortUrl(cf.url)
+    return u ? `${fn} ${u}:${cf.lineNumber + 1}` : fn
+}
+
+const SPECIAL_NODES = new Set(['(idle)', '(program)', '(garbage collector)', '(root)'])
+
+/**
+ * Summarizes the cpu samples of a profile between fromUs and toUs (profile
+ * clock). Every sample is attributed to its innermost application frame
+ * (with up to 2 application callers) plus the leaf function it was actually
+ * executing (e.g. JSON.parse, a regex, a library call).
+ */
+export const summarizeProfileWindow = (profile, fromUs, toUs, top = SUMMARY_TOP) => {
+    const nodes = new Map()
+    const parent = new Map()
+    for (const n of profile.nodes) {
+        nodes.set(n.id, n)
+    }
+    for (const n of profile.nodes) {
+        if (n.children) {
+            for (const c of n.children) parent.set(c, n.id)
+        }
+    }
+    const buckets = new Map()
+    let total = 0, gc = 0, program = 0, idle = 0
+    let t = profile.startTime
+    const samples = profile.samples || [], deltas = profile.timeDeltas || []
+    for (let i = 0; i < samples.length; i++) {
+        t += deltas[i] || 0
+        if (t < fromUs) continue
+        if (t > toUs) break
+        const leaf = nodes.get(samples[i])
+        if (!leaf) continue
+        total++
+        const leafName = leaf.callFrame.functionName
+        if (leafName === '(garbage collector)') { gc++; continue }
+        if (leafName === '(idle)') { idle++; continue }
+        if (leafName === '(program)') { program++; continue }
+
+        // walk up: collect up to 3 application frames
+        const app = []
+        let id = leaf.id
+        while (id !== undefined && app.length < 3) {
+            const n = nodes.get(id)
+            if (!n) break
+            if (!SPECIAL_NODES.has(n.callFrame.functionName) && isAppFrame(n.callFrame)) {
+                app.push(frameName(n.callFrame))
+            }
+            id = parent.get(id)
+        }
+        const chain = app.length ? app.join(' < ') : '(no app code)'
+        let bucket = buckets.get(chain)
+        if (!bucket) {
+            bucket = {count: 0, leaves: new Map()}
+            buckets.set(chain, bucket)
+        }
+        bucket.count++
+        if (!isAppFrame(leaf.callFrame)) {
+            // the library / builtin that was actually executing
+            const leafName = frameName(leaf.callFrame)
+            bucket.leaves.set(leafName, (bucket.leaves.get(leafName) || 0) + 1)
+        }
+    }
+    if (total === 0) {
+        return null
+    }
+    const pct = (n) => Math.round(n * 100 / total)
+    const topList = [...buckets.entries()].sort((a, b) => b[1].count - a[1].count).slice(0, top)
+        .map(([chain, bucket]) => {
+            const leaves = [...bucket.leaves.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3)
+                .map(([name, n]) => `${name} ${pct(n)}%`)
+            return `${pct(bucket.count)}% ${chain}` + (leaves.length ? ` (in: ${leaves.join(', ')})` : '')
+        })
+    const extra = []
+    if (gc) extra.push(`gc ${pct(gc)}%`)
+    if (program) extra.push(`native/v8 ${pct(program)}%`)
+    if (idle) extra.push(`idle ${pct(idle)}%`)
+    return {samples: total, top: topList, extra}
+}
+
 /*
- * Rolling cpu + allocation sampling profiler (in-process inspector session).
- * Every PROFILE_WINDOW_MS the current profiles are stopped; if the window
- * contained a stall >= STALL_PROFILE_MS they are written to disk, then new
- * profiles start. Open the files in Chrome DevTools:
- *   .cpuprofile  -> Performance tab -> "Load profile"
- *   .heapprofile -> Memory tab -> "Load" (allocation sampling, incl. objects
- *                   already collected -> shows WHO allocates)
+ * Rolling cpu (+ allocation) sampling profiler (in-process inspector session).
+ * Every PROFILE_WINDOW_MS - or right after a stall - the profile is stopped:
+ *   - every stall >= STALL_SUMMARY_MS is summarized into one log line
+ *   - a window with a stall >= STALL_PROFILE_MS is written to disk (max
+ *     STALL_PROFILE_MAX_FILES), open in Chrome DevTools:
+ *       .cpuprofile  -> Performance tab -> "Load profile"
+ *       .heapprofile -> Memory tab -> "Load" (allocation sampling)
+ * After the file limit is reached only the (cheaper) cpu profiler keeps
+ * running for the summaries.
  */
 const createStallProfiler = (processName) => {
     let session
@@ -152,6 +261,10 @@ const createStallProfiler = (processName) => {
     let windowStart = performance.now()
     let windowMaxStall = 0
     let active = false
+    let rotating = false
+    let heapSampling = false
+    const pendingStalls = []   // {from, to, lag} in performance.now() ms
+    let summariesThisMinute = 0, summaryMinuteStart = Date.now(), summariesSuppressed = 0
 
     const post = (method, params) => new Promise((resolve) => {
         session.post(method, params || {}, (err, result) => resolve(err ? null : result))
@@ -161,12 +274,15 @@ const createStallProfiler = (processName) => {
         await post('Profiler.enable')
         await post('Profiler.setSamplingInterval', {interval: 2000}) // µs - low overhead
         await post('Profiler.start')
-        await post('HeapProfiler.enable')
-        await post('HeapProfiler.startSampling', {
-            samplingInterval: 128 * 1024,
-            includeObjectsCollectedByMajorGC: true,
-            includeObjectsCollectedByMinorGC: true
-        })
+        heapSampling = filesWritten < STALL_PROFILE_MAX_FILES
+        if (heapSampling) {
+            await post('HeapProfiler.enable')
+            await post('HeapProfiler.startSampling', {
+                samplingInterval: 128 * 1024,
+                includeObjectsCollectedByMajorGC: true,
+                includeObjectsCollectedByMinorGC: true
+            })
+        }
         windowStart = performance.now()
         windowMaxStall = 0
         active = true
@@ -180,30 +296,75 @@ const createStallProfiler = (processName) => {
         })
     }
 
+    const logSummaries = (profile, stopPerfMs, stalls) => {
+        // map performance.now() (ms) onto the profile clock (µs): endTime is
+        // (almost) the moment Profiler.stop returned
+        const offsetUs = profile.endTime - stopPerfMs * 1000
+        for (const st of stalls) {
+            if (Date.now() - summaryMinuteStart > 60000) {
+                if (summariesSuppressed > 0) {
+                    console.warn(`[eventloop] ${processName}: ${summariesSuppressed} stall summaries not logged (rate limit)`)
+                }
+                summaryMinuteStart = Date.now()
+                summariesThisMinute = 0
+                summariesSuppressed = 0
+            }
+            if (++summariesThisMinute > MAX_SUMMARIES_PER_MINUTE) {
+                summariesSuppressed++
+                continue
+            }
+            try {
+                const sum = summarizeProfileWindow(profile, st.from * 1000 + offsetUs, st.to * 1000 + offsetUs)
+                if (!sum) {
+                    console.warn(`[eventloop] ${processName} stall ${Math.round(st.lag)}ms: no cpu samples (profiler was restarting)`)
+                    continue
+                }
+                console.warn(`[eventloop] ${processName} stall ${Math.round(st.lag)}ms top (${sum.samples} samples): ` +
+                    sum.top.join(' | ') + (sum.extra.length ? ' / ' + sum.extra.join(', ') : ''))
+            } catch (e) {
+                // never break anything
+            }
+        }
+    }
+
     const rotate = async () => {
+        if (rotating) return
+        rotating = true
         active = false
         const stall = windowMaxStall
+        const stalls = pendingStalls.splice(0, pendingStalls.length)
         const cpu = await post('Profiler.stop')
-        const heap = await post('HeapProfiler.stopSampling')
+        const stopPerfMs = performance.now()
+        const heap = heapSampling ? await post('HeapProfiler.stopSampling') : null
+
+        if (cpu && cpu.profile && stalls.length) {
+            logSummaries(cpu.profile, stopPerfMs, stalls)
+        }
         if (stall >= STALL_PROFILE_MS && filesWritten < STALL_PROFILE_MAX_FILES && ensureDiagDir()) {
             filesWritten++
             const base = `${processName}-stall-${timestampForFile()}-${Math.round(stall)}ms`
             if (cpu && cpu.profile) write(base + '.cpuprofile', cpu.profile)
             if (heap && heap.profile) write(base + '.heapprofile', heap.profile)
             console.warn(`[eventloop] ${processName}: stall profile written to ${path.join(DIAG_DIR, base)}.* (${filesWritten}/${STALL_PROFILE_MAX_FILES})`)
-        }
-        if (filesWritten >= STALL_PROFILE_MAX_FILES) {
-            console.warn(`[eventloop] ${processName}: stall profiler stopped (max files reached)`)
-            session.disconnect()
-            return
+            if (filesWritten >= STALL_PROFILE_MAX_FILES) {
+                console.warn(`[eventloop] ${processName}: max profile files reached - only stall summaries from now on`)
+            }
         }
         await start()
+        rotating = false
     }
 
     start()
     return {
-        noteStall: (lag) => {
+        noteStall: (lag, now) => {
+            if (!active) return
             if (lag > windowMaxStall) windowMaxStall = lag
+            if (lag >= STALL_SUMMARY_MS) {
+                // the loop was blocked from (now - lag) until now
+                pendingStalls.push({from: now - lag - INTERVAL_MS, to: now, lag})
+                // summarize soon, while the samples are still in this profile
+                setImmediate(rotate)
+            }
         },
         tick: (now) => {
             if (active && now - windowStart >= PROFILE_WINDOW_MS) {
@@ -280,7 +441,7 @@ export const startEventLoopWatchdog = (processName) => {
         expected = now + INTERVAL_MS
         if (profiler) {
             // note the stall BEFORE rotating, so it lands in the window it happened in
-            profiler.noteStall(lag)
+            profiler.noteStall(lag, now)
             profiler.tick(now)
         }
         if (lag < WARN_MS) {
