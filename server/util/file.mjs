@@ -31,6 +31,16 @@ import {API_CONNECT_HOST} from '../../util/apiHost.mjs'
 // JSON.stringify for embedding inside an inline <script>: the value stays
 // identical for the JS parser, but '</script>' / '<!--' in the data can no
 // longer terminate the script block, and U+2028/U+2029 are escaped as well
+// same check the cmsPage resolver runs first (ClientUtil.extractQueryParams -> decodeURI)
+const isDecodableUri = (str) => {
+    try {
+        decodeURI(str)
+        return true
+    } catch (e) {
+        return false
+    }
+}
+
 const jsonForScript = (value) => JSON.stringify(value)
     .replace(/</g, '\\u003c')
     .replace(/\u2028/g, '\\u2028')
@@ -608,16 +618,24 @@ export const parseAndSendFile = async (req, res, {filename, headers, statusCode,
 
         slug = removePrettyUrlPart(slug)
 
+        const preloadQuery = parsedUrl.search ? parsedUrl.search.substring(1) : ''
+
         if (cookies.auth || req.headers[AUTH_HEADER] || slug.startsWith(config.ADMIN_BASE_URL.slice(1))) {
             // we don't preload data if auth data exists
             finalContent = finalContent.replace(PRELOAD_DATA_PLACEHOLDER, '/*preload disabled*/')
             compressContentAndSend(req, res, finalContent, statusCode, data, headers)
+        } else if (!isDecodableUri(preloadQuery)) {
+            // malformed percent-encoding (scanners, e.g. "?%ADd+allow_url_include..."):
+            // the cmsPage resolver would throw "URI malformed" -> no cmsPage -> 404 page.
+            // same response as before, but without the api roundtrip and the error log
+            finalContent = finalContent.replace(PRELOAD_DATA_PLACEHOLDER, () => '_app_.show404=true')
+            compressContentAndSend(req, res, finalContent, 404, data, headers)
         } else {
 
             const variables = {
                 dynamic: false,
                 slug,
-                query: parsedUrl.search ? parsedUrl.search.substring(1) : ''
+                query: preloadQuery
             }
             const clientId = Date.now().toString(36) + Math.random().toString(36).substring(2, 9)
             const timing = {}

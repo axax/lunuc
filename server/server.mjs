@@ -649,8 +649,25 @@ const hasHttpsWwwRedirect = ({parsedUrl, hostrule, host, req, res, remoteAddress
 // objects before being modified), so sharing it between requests is safe.
 const mergedHostruleCache = new WeakMap()
 
+// requestRules of the general hostrule apply to every host: a host with its
+// own requestRules gets general's rules first, then its own (first terminating
+// match wins). "requestRulesInheritGeneral": false in a host hostrule restores
+// the plain override. The merged array is created once per cached merge, so
+// the compiled rules (WeakMap in requestRules.mjs) stay cached as well.
+const mergeRequestRules = (general, source, hostrule) => {
+    const generalRules = general.requestRules
+    const sourceRules = source.requestRules
+    if (source !== general &&
+        source.requestRulesInheritGeneral !== false &&
+        Array.isArray(generalRules) && generalRules.length > 0 &&
+        Array.isArray(sourceRules) && sourceRules !== generalRules) {
+        hostrule.requestRules = [...generalRules, ...sourceRules]
+    }
+}
+
 const mergeHostrule = (general, source) => {
     const hostrule = {...general, ...source}
+    mergeRequestRules(general, source, hostrule)
     hostrule.headers = {...general.headers, ...hostrule.headers}
     if (!hostrule.headers.common) {
         hostrule.headers.common = {}

@@ -31,6 +31,16 @@
     "/de/\\\\?product=(.*)": "/produkte"
   },
   "blockUrlPathRegex": "(\\/.DS_Store|php:\\/\\/|\\/.env|\\/.git|\\/.aws|\\/.svn|\\/index.php\\/|\\/wp-json|\\/wp-admin\\/|\\/wp-includes\\/|\\/\\.\\.\\/|%2F\\.\\.%2F|\\/wp-content\\/|\\/cgi-bin\\/|\\.php$|\\.cgi$|\\.aspx$)",
+  "requestRules": [
+    {
+      "match": {"search": "/allow_url_include|auto_prepend_file|php(:|%3a)(\\/|%2f){2}/i"},
+      "action": {"type": "block", "statusCode": 403}
+    },
+    {
+      "match": {"userAgent": "/libredtail-http/i"},
+      "action": {"type": "block", "statusCode": 403}
+    }
+  ],
   "rateLimit": [
     {
       "userAgent": "meta-externalagent/1.1 (+https://developers.facebook.com/docs/sharing/webmasters/crawler)",
