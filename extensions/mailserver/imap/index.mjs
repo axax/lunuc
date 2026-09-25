@@ -487,12 +487,11 @@ const startListening = async (db, context) => {
         maxMessage: 25 * 1024 * 1024,
         enableCompression: !!settings.enableCompression,
         SNICallback: (domain, cb) => {
-            console.log('IMAP SNICallback',domain)
 
             const {hostrule, host} = getBestMatchingHostRule(domain)
 
             if(hostrule && hostrule.certContext){
-                console.log(`imap server certContext for ${host}`)
+                console.log(`[imap] server certContext for ${host}`)
 
                 cb(null, hostrule.certContext)
             }else{

@@ -28,6 +28,14 @@ import Hook from '../../util/hook.cjs'
 import {SERVER_TIMING_ENABLED, timingEntry, eventLoopEntry} from '../../util/serverTiming.mjs'
 import {API_CONNECT_HOST} from '../../util/apiHost.mjs'
 
+// JSON.stringify for embedding inside an inline <script>: the value stays
+// identical for the JS parser, but '</script>' / '<!--' in the data can no
+// longer terminate the script block, and U+2028/U+2029 are escaped as well
+const jsonForScript = (value) => JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029')
+
 const config = getDynamicConfig()
 
 const {UPLOAD_DIR} = config
@@ -653,7 +661,9 @@ export const parseAndSendFile = async (req, res, {filename, headers, statusCode,
                             result.data.cmsPage.fetchPolicy = 'cache-first'
                         }
                         if (result.data.cmsPage.name) {
-                            finalContent = finalContent.replace(PAGE_TITLE_PLACEHOLDER, result.data.cmsPage.name[contextLanguage || config.DEFAULT_LANGUAGE] || '')
+                            // replacer function: a '$&', '$$' or "$'" in the title must be inserted literally
+                            const pageTitle = result.data.cmsPage.name[contextLanguage || config.DEFAULT_LANGUAGE] || ''
+                            finalContent = finalContent.replace(PAGE_TITLE_PLACEHOLDER, () => pageTitle)
                         }
 
                         additionalContent += `
@@ -662,8 +672,8 @@ window.addEventListener('appReady', (event) => {
     _app_.defaultFetchPolicy = {['${result.data.cmsPage.slug}']:'${result.data.cmsPage.fetchPolicy || (result.data.cmsPage.subscriptions ? 'cache-first' : 'cache-first')}'}     
     event.detail.client.writeQuery({
         query: '${query}',
-        variables: ${JSON.stringify(variables)},
-        data: ${JSON.stringify(result.data)}
+        variables: ${jsonForScript(variables)},
+        data: ${jsonForScript(result.data)}
     })
 })`
 
@@ -672,7 +682,8 @@ window.addEventListener('appReady', (event) => {
                         statusCode = 404
                         additionalContent = `_app_.show404=true`
                     }
-                    finalContent = finalContent.replace(PRELOAD_DATA_PLACEHOLDER, additionalContent)
+                    // replacer function: '$' patterns in the data must be inserted literally
+                    finalContent = finalContent.replace(PRELOAD_DATA_PLACEHOLDER, () => additionalContent)
                     compressContentAndSend(req, res, finalContent, statusCode, data, headers, timing)
                 })
                 .catch(error => {
@@ -689,7 +700,7 @@ window.addEventListener('appReady', (event) => {
 }
 
 // Server-Timing header value for the index response (diagnostic only)
-const buildIndexServerTiming = (req, timing, gzipMs) => {
+const buildIndexServerTiming = (req, timing, compressMs, compressName = 'gzip') => {
     const entries = []
     if (timing && timing.api) {
         entries.push(timing.api)
@@ -697,8 +708,8 @@ const buildIndexServerTiming = (req, timing, gzipMs) => {
     if (timing && timing.preload !== undefined) {
         entries.push(timingEntry('preload', timing.preload))
     }
-    if (gzipMs !== undefined) {
-        entries.push(timingEntry('gzip', gzipMs))
+    if (compressMs !== undefined) {
+        entries.push(timingEntry(compressName, compressMs))
     }
     if (req._lunucStartTime !== undefined) {
         entries.push(timingEntry('server-total', performance.now() - req._lunucStartTime))
@@ -714,21 +725,42 @@ const buildIndexServerTiming = (req, timing, gzipMs) => {
 // larger output - same trade-off as the api compression (api/server.mjs)
 const INDEX_GZIP_OPTIONS = {level: 4}
 
+// brotli quality 4: about the same cpu time as gzip level 4, but a clearly
+// smaller html (preload data included). LUNUC_INDEX_BROTLI=false -> gzip only (old behaviour)
+const INDEX_BROTLI_ENABLED = process.env.LUNUC_INDEX_BROTLI !== 'false'
+const INDEX_BROTLI_QUALITY = 4
+
+// the response differs by Accept-Encoding - tell shared caches (Cache-Control is public).
+// a Vary set by the hostrule headers is kept as it is
+const withVary = (headers) => {
+    for (const key in headers) {
+        if (key.toLowerCase() === 'vary') {
+            return headers
+        }
+    }
+    return {...headers, 'Vary': 'Accept-Encoding'}
+}
+
 const compressContentAndSend = (req, res, finalContent, statusCode, data, headers, timing) => {
-    // Check if the client accepts gzip
-    if (req.headers['accept-encoding'] && req.headers['accept-encoding'].includes('gzip')) {
-        const gzipStart = performance.now()
-        zlib.gzip(finalContent, INDEX_GZIP_OPTIONS, (err, compressed) => {
+    const acceptEncoding = req.headers['accept-encoding']
+    // same detection as sendFile for br, unchanged check for gzip
+    const encoding = acceptEncoding
+        ? (INDEX_BROTLI_ENABLED && /\bbr\b/.test(acceptEncoding) ? 'br' : (acceptEncoding.includes('gzip') ? 'gzip' : null))
+        : null
+
+    if (encoding) {
+        const compressStart = performance.now()
+        const done = (err, compressed) => {
             if (!err) {
-                const timingValue = SERVER_TIMING_ENABLED ? buildIndexServerTiming(req, timing, performance.now() - gzipStart) : undefined
+                const timingValue = SERVER_TIMING_ENABLED ? buildIndexServerTiming(req, timing, performance.now() - compressStart, encoding) : undefined
                 const timingHeader = timingValue ? {'Server-Timing': timingValue} : null
-                res.writeHead(statusCode, {
+                res.writeHead(statusCode, withVary({
                     'Last-Modified': data.mtime.toUTCString(),
                     'Content-Length': compressed.length,
                     ...timingHeader,
                     ...headers,
-                    'Content-Encoding': 'gzip'
-                })
+                    'Content-Encoding': encoding
+                }))
                 res.write(compressed)
                 res.end()
             } else {
@@ -736,19 +768,31 @@ const compressContentAndSend = (req, res, finalContent, statusCode, data, header
                 res.writeHead(500)
                 res.end('Error occurred during compression.')
             }
-        })
+        }
+        if (encoding === 'br') {
+            const input = Buffer.from(finalContent)
+            zlib.brotliCompress(input, {
+                params: {
+                    [zlib.constants.BROTLI_PARAM_QUALITY]: INDEX_BROTLI_QUALITY,
+                    [zlib.constants.BROTLI_PARAM_MODE]: zlib.constants.BROTLI_MODE_TEXT,
+                    [zlib.constants.BROTLI_PARAM_SIZE_HINT]: input.length
+                }
+            }, done)
+        } else {
+            zlib.gzip(finalContent, INDEX_GZIP_OPTIONS, done)
+        }
     } else {
-        // If gzip is not accepted, send the uncompressed data.
+        // If compression is not accepted, send the uncompressed data.
         // Buffer.byteLength: Content-Length must be bytes, not string length
         // (differs as soon as the HTML contains umlauts or other multi-byte chars)
         const timingValue = SERVER_TIMING_ENABLED ? buildIndexServerTiming(req, timing) : undefined
         const timingHeader = timingValue ? {'Server-Timing': timingValue} : null
-        res.writeHead(statusCode, {
+        res.writeHead(statusCode, withVary({
             'Last-Modified': data.mtime.toUTCString(),
             'Content-Length': Buffer.byteLength(finalContent),
             ...timingHeader,
             ...headers
-        })
+        }))
         res.write(finalContent)
         res.end()
     }

@@ -13,6 +13,7 @@ import {
 import Util from '../../api/util/index.mjs'
 import {parseOrElse} from '../../client/util/json.mjs'
 import {analyseQueryPlan} from '../../api/util/queryPlanAnalysis.mjs'
+import util from 'node:util'
 
 let mydb
 Hook.on('dbready', ({db}) => {
@@ -47,7 +48,11 @@ process.on('uncaughtException', async (error, origin) => {
             await GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {
                 type: 'uncaughtException',
                 message: (error.message?error.message + '\n\n' + error.stack:JSON.stringify(error))+'\n\n'+origin,
-                meta: {debug:error.debugData, globalDebug: _app_.errorDebug, systemName: os.hostname()}
+                meta: {
+                    ...(error.debugData ? {debug: error.debugData} : {}),
+                    inspect: util.inspect(error, {depth: 5, showHidden: true}),
+                    systemName: os.hostname()
+                }
             })
         } catch (logError) {
             console.error('log: could not persist uncaughtException', logError.message)
@@ -73,7 +78,11 @@ process.on('unhandledRejection', async (error) => {
             await GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {
                 type: 'unhandledRejection',
                 message: error.message?error.message + '\n\n' + error.stack:JSON.stringify(error),
-                meta: error.debugData
+                meta: {
+                    ...(error.debugData ? {debug: error.debugData} : {}),
+                    inspect: util.inspect(error, {depth: 5, showHidden: true}),
+                    systemName: os.hostname()
+                }
             })
         } catch (logError) {
             console.error('log: could not persist unhandledRejection', logError.message)

@@ -18,6 +18,7 @@ import {getDynamicConfig} from '../util/config.mjs'
 import {gunzipJsonBody} from './util/unzip.mjs'
 import {appendServerTiming, timingEntry, eventLoopEntry, SERVER_TIMING_ENABLED} from '../util/serverTiming.mjs'
 import {startEventLoopWatchdog, trackRequestForWatchdog} from '../util/eventLoopWatchdog.mjs'
+import {cachedParse, cachedValidate} from './util/graphqlDocumentCache.mjs'
 
 const dynamicConfig = getDynamicConfig()
 
@@ -274,6 +275,9 @@ export const start = (done) => {
                     // would be silently exposed to the internet with full
                     // schema introspection.
                     graphiql: process.env.NODE_ENV === 'development',
+                    // parse/validate results are memoized per query text + schema
+                    customParseFn: cachedParse,
+                    customValidateFn: cachedValidate,
                     customFormatErrorFn: (error)=>{
 
                         return formatAndLogError(db,req,error)
