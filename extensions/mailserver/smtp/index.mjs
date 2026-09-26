@@ -11,7 +11,7 @@ import Util from '../../../api/util/index.mjs'
 import {detectSpam} from './spam.mjs'
 import {dynamicSettings} from '../../../api/util/settings.mjs'
 import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
-import {decodeHtmlEntities, removeStyleAndScriptTags} from '../util/index.mjs'
+import {decodeHtmlEntities, removeStyleAndScriptTags, MAIL_TLS_CIPHERS} from '../util/index.mjs'
 
 
 /*
@@ -43,6 +43,7 @@ const startListening = async (db, context) => {
         serverPorts[port] = new SMTPServer({
             logger: !!settings.logger,
             secure: false,
+            ciphers: MAIL_TLS_CIPHERS, // ECDSA first, see MAIL_TLS_CIPHERS
             banner: 'Welcome to Lunuc SMTP Server',
             authMethods: ['PLAIN', 'LOGIN', /*'CRAM-MD5','XOAUTH2'*/ ],
             useXClient: true,

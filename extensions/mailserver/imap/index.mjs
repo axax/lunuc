@@ -15,7 +15,7 @@ import {
     getFolderForMailAccountById,
     deleteMessagesForFolderByUids, getAttachmentContentFromFileAsync
 } from '../util/dbhelper.mjs'
-import {getCircularReplacer} from '../util/index.mjs'
+import {getCircularReplacer, MAIL_TLS_CIPHERS} from '../util/index.mjs'
 import ApiUtil from '../../../api/util/index.mjs'
 import MemoryNotifier from './MemoryNotifier.js'
 import MailComposer from 'nodemailer/lib/mail-composer'
@@ -471,6 +471,7 @@ const startListening = async (db, context) => {
     // Setup server
     server = server = new Wildduck.IMAPServer({
         secure:true,
+        ciphers: MAIL_TLS_CIPHERS, // ECDSA first, see MAIL_TLS_CIPHERS
         name: 'Lunuc IMAP Server',
         version: '1.0.0',
         vendor: 'lunuc.com',

@@ -55,3 +55,38 @@ export const decodeHtmlEntities = (input) => {
 }
 
 //console.log(decodeHtmlEntities(removeHtmlTags('&#119558; ---- <p align=\\"center\\" dir=\\"auto\\" style=\\"color: rgb(43, 46, 47); font-size: 18px; line-height: 24px; margin: 5px 0px;\\">Foo &#xA9; bar &#x1D306; baz &#x2603; &#xE4;Versandkosten bitte best&auml;tigen (1,48 CHF) und Paketversand,</p>')))
+
+/*
+ * Cipher order for the SMTP/IMAP TLS contexts: ECDSA suites before RSA suites.
+ *
+ * Why: smtp-server and wildduck always create a default ('*') context with their
+ * built-in self-signed RSA cert (CN=localhost). When the SNICallback returns a
+ * hostrule context, Node only overwrites the certificate slot of the SAME key type
+ * (SSL_use_certificate). With a Let's Encrypt ECDSA cert the RSA slot keeps the
+ * localhost cert, and since Node's default list prefers ECDHE-RSA and
+ * honorCipherOrder is on, TLS 1.2 clients (e.g. iOS Mail) got the expired
+ * localhost cert or "no shared cipher". Preferring ECDSA picks the hostrule cert;
+ * RSA hostrule certs still overwrite the RSA slot, so they keep working.
+ */
+export const MAIL_TLS_CIPHERS = [
+    'TLS_AES_256_GCM_SHA384',
+    'TLS_CHACHA20_POLY1305_SHA256',
+    'TLS_AES_128_GCM_SHA256',
+    'ECDHE-ECDSA-AES128-GCM-SHA256',
+    'ECDHE-ECDSA-AES256-GCM-SHA384',
+    'ECDHE-ECDSA-CHACHA20-POLY1305',
+    'ECDHE-RSA-AES128-GCM-SHA256',
+    'ECDHE-RSA-AES256-GCM-SHA384',
+    'ECDHE-RSA-CHACHA20-POLY1305',
+    'DHE-RSA-AES128-GCM-SHA256',
+    'ECDHE-ECDSA-AES128-SHA256',
+    'ECDHE-RSA-AES128-SHA256',
+    'DHE-RSA-AES128-SHA256',
+    'ECDHE-ECDSA-AES256-SHA384',
+    'ECDHE-RSA-AES256-SHA384',
+    'DHE-RSA-AES256-SHA384',
+    'ECDHE-RSA-AES256-SHA256',
+    'DHE-RSA-AES256-SHA256',
+    'HIGH',
+    '!aNULL', '!eNULL', '!EXPORT', '!DES', '!RC4', '!MD5', '!PSK', '!SRP', '!CAMELLIA'
+].join(':')
