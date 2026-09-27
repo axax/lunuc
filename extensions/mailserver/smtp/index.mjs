@@ -148,7 +148,9 @@ const startListening = async (db, context) => {
                 if (session.localAddress !== session.remoteAddress &&
                     session.servername && mailserverList.indexOf(session.servername)<0) {
 
-                    return callback(new Error(`Only connections for ${session.localAddress} are allowed`))
+                    const err = new Error(`Only connections for ${session.localAddress} are allowed`)
+                    err.skipLog = true
+                    return callback(err)
                 }
                 return callback(); // Accept the connection
             },
@@ -385,6 +387,9 @@ const startListening = async (db, context) => {
         })
         serverPorts[port].on("error", async (err) => {
             console.log("SMTP Error", err)
+            if (err?.skipLog || err?.message?.startsWith('Only connections for ')) {
+                return
+            }
             try {
                 await GenericResolver.createEntity(db, {context}, 'Log', {
                     location: 'mailserver',

@@ -12,6 +12,7 @@ import AggregationBuilderV2 from './AggregationBuilderV2.mjs'
 import Cache from '../../../util/cache.mjs'
 import {_t} from '../../../util/i18nServer.mjs'
 import {createMatchForCurrentUser} from '../../util/dbquery.mjs'
+import {findQueryHint} from '../../util/queryHint.mjs'
 import postQueryConvert from './postQueryConverter.mjs'
 import {ApiError} from "../../error.mjs";
 
@@ -312,6 +313,18 @@ const GenericResolver = {
             collection, collectionName, typeName, otherOptions, db, req, context
         })
 
+        // Pin an index where the multi-planner reliably picks badly ($function
+        // in the match, or a regex on an indexed field losing against the _id
+        // scan) - see queryHint.mjs. Skipped with a collation, as the index
+        // might not honour it.
+        if (!finalAggregateOptions.hint && !finalAggregateOptions.collation) {
+            const queryHint = await findQueryHint(collection, dataQuery)
+            if (queryHint) {
+                finalAggregateOptions.hint = queryHint.hint
+                debugInfo.push({code: 'queryHint', message: `index ${queryHint.hint} used as hint (${queryHint.reason})`})
+            }
+        }
+
         const startTimeAggregate = performance.now()
         const queryResults = await runAggregate('dataQuery', dataQuery, finalAggregateOptions)
 
@@ -379,6 +392,7 @@ const GenericResolver = {
             type: typeName, cacheKey, data, db, req, context,
             otherOptions, result: queryResponse, dataQuery, collectionName,
             aggregateTime, queryTime, debugInfo,
+            hint: finalAggregateOptions.hint,
         })
 
         // ── meta ───────────────────────────────────────────────────────────────

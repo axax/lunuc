@@ -124,7 +124,7 @@ const toLoggableQuery = (value) => {
     return value
 }
 
-Hook.on('typeLoaded', async ({type,cacheKey,db, req, context, result, dataQuery, collectionName, aggregateTime, queryTime}) => {
+Hook.on('typeLoaded', async ({type,cacheKey,db, req, context, result, dataQuery, collectionName, aggregateTime, queryTime, hint}) => {
 
   if(aggregateTime > 1000) {
 
@@ -134,7 +134,7 @@ Hook.on('typeLoaded', async ({type,cacheKey,db, req, context, result, dataQuery,
       // server can be asked to do - it was turning slow searches into OOMs.
       // queryPlanner does not execute anything and still shows the chosen index.
       const explanation = await db.collection(collectionName)
-          .aggregate(dataQuery, {allowDiskUse: true}).explain('queryPlanner')
+          .aggregate(dataQuery, hint ? {allowDiskUse: true, hint} : {allowDiskUse: true}).explain('queryPlanner')
 
       // A collection scan is only worth reporting on a collection big enough for
       // it to hurt. estimatedDocumentCount reads collection metadata and does not
@@ -165,6 +165,7 @@ Hook.on('typeLoaded', async ({type,cacheKey,db, req, context, result, dataQuery,
               queryTime,
               findings,
               documentCount,
+              hint,
               resultCount: result.results.length,
               resultTotal: result.total,
               type,

@@ -130,15 +130,11 @@ export const classifyPredicates = (parsedQuery) => {
     return result
 }
 
-export const analyseQueryPlan = (explanation, pipeline, {documentCount} = {}) => {
-    const planner = explanation?.stages?.[0]?.$cursor?.queryPlanner || explanation?.queryPlanner
-    if (!planner) return []
-
-    // The SBE engine nests the tree one level deeper than the classic one.
+/** All stages of a plan tree. The SBE engine nests the tree one level deeper than the classic one. */
+export const flattenPlan = (plan) => {
     const stages = []
-    const queue = []
-    const root = planner.winningPlan?.queryPlan || planner.winningPlan
-    if (root) queue.push(root)
+    const root = plan?.queryPlan || plan
+    const queue = root ? [root] : []
 
     while (queue.length) {
         const stage = queue.shift()
@@ -146,6 +142,53 @@ export const analyseQueryPlan = (explanation, pipeline, {documentCount} = {}) =>
         if (stage.inputStage) queue.push(stage.inputStage)
         if (Array.isArray(stage.inputStages)) queue.push(...stage.inputStages)
     }
+    return stages
+}
+
+// An index scan whose bounds are [MinKey, MaxKey] on every key narrows nothing.
+const isUnboundedScan = (stage) => {
+    const bounds = stage.indexBounds
+    if (!bounds) return false
+    return Object.values(bounds).every(list =>
+        Array.isArray(list) && list.length === 1 &&
+        (list[0] === '[MinKey, MaxKey]' || list[0] === '[MaxKey, MinKey]'))
+}
+
+/**
+ * true if the suggested key is useless: only _id (always indexed, and the
+ * direction of a single-field index does not matter), or a prefix of an index
+ * the plans already show - forward or fully reversed, both scan the same way.
+ */
+export const isRedundantSuggestion = (key, existingKeyPatterns) => {
+    const fields = Object.keys(key || {})
+    if (fields.length === 0) return true
+    if (fields.length === 1 && fields[0] === '_id') return true
+
+    return existingKeyPatterns.some(pattern => {
+        const patternFields = Object.keys(pattern)
+        if (patternFields.length < fields.length) return false
+        let same = true, reversed = true
+        for (let i = 0; i < fields.length; i++) {
+            if (patternFields[i] !== fields[i]) return false
+            if (pattern[fields[i]] !== key[fields[i]]) same = false
+            if (pattern[fields[i]] !== -key[fields[i]]) reversed = false
+        }
+        return same || reversed
+    })
+}
+
+export const analyseQueryPlan = (explanation, pipeline, {documentCount} = {}) => {
+    const planner = explanation?.stages?.[0]?.$cursor?.queryPlanner || explanation?.queryPlanner
+    if (!planner) return []
+
+    const stages = flattenPlan(planner.winningPlan)
+    const rejectedStages = (planner.rejectedPlans || []).map(flattenPlan)
+
+    // Every index the plans reveal - enough to tell whether a suggestion exists already.
+    const existingKeyPatterns = [stages, ...rejectedStages]
+        .flat()
+        .filter(stage => stage.keyPattern)
+        .map(stage => stage.keyPattern)
 
     const {equality, range, orFields} = classifyPredicates(planner.parsedQuery)
     const sort = pipeline?.find(stage => stage.$sort)?.$sort
@@ -169,7 +212,7 @@ export const analyseQueryPlan = (explanation, pipeline, {documentCount} = {}) =>
         ;[...range].sort(byMatchOrder).forEach(field => {
             if (key[field] === undefined) key[field] = 1
         })
-        return Object.keys(key).length > 0 ? key : undefined
+        return isRedundantSuggestion(key, existingKeyPatterns) ? undefined : key
     }
 
     const findings = []
@@ -202,6 +245,30 @@ export const analyseQueryPlan = (explanation, pipeline, {documentCount} = {}) =>
             fields,
             suggestedIndex: suggestedIndex()
         })
+    }
+
+    // The planner ranks by steps, not bytes: a FETCH of a huge document costs one
+    // "work" like any other. So a plan that reads every document and filters
+    // afterwards can beat one that filters on the index keys and fetches only
+    // the matches - typically because the loser needs a sort. Seen on
+    // KeyValueGlobal (regex on key, sort by _id): 175 documents, 2.5 s.
+    if (residual && stages.filter(stage => stage.stage === 'IXSCAN').every(isUnboundedScan)) {
+        const residualFields = collectFilterFields(residual.filter)
+        for (const rejected of rejectedStages) {
+            const keyFiltered = rejected.find(stage =>
+                stage.stage === 'IXSCAN' && stage.filter &&
+                collectFilterFields(stage.filter).some(field => residualFields.includes(field)))
+            if (keyFiltered) {
+                findings.push({
+                    code: 'betterPlanRejected',
+                    message: `The winning plan fetches every document and filters afterwards, while the rejected ` +
+                        `plan on index ${keyFiltered.indexName} filters on the index keys and fetches only the matches. ` +
+                        `The planner counts steps, not document size - a hint on ${keyFiltered.indexName} is likely faster`,
+                    index: keyFiltered.indexName
+                })
+                break
+            }
+        }
     }
 
     // The decisive one for a wildcard index: it has a single $_path key, so one
