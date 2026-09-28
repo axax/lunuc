@@ -12,7 +12,7 @@ import AggregationBuilderV2 from './AggregationBuilderV2.mjs'
 import Cache from '../../../util/cache.mjs'
 import {_t} from '../../../util/i18nServer.mjs'
 import {createMatchForCurrentUser} from '../../util/dbquery.mjs'
-import {findQueryHint} from '../../util/queryHint.mjs'
+import {findQueryHint, findCoveringIndex} from '../../util/queryHint.mjs'
 import postQueryConvert from './postQueryConverter.mjs'
 import {ApiError} from "../../error.mjs";
 
@@ -297,7 +297,7 @@ const GenericResolver = {
 
         const aggregationBuilder = new AggregationBuilderV2(...builderArgs)
 
-        const { dataQuery, countQuery, debugInfo } = await aggregationBuilder.query()
+        const { dataQuery, countQuery, splitQuery, debugInfo } = await aggregationBuilder.query()
 
         //console.log(JSON.stringify(dataQuery,null,4),JSON.stringify(otherOptions,null,4))
 
@@ -325,8 +325,60 @@ const GenericResolver = {
             }
         }
 
+        // Without $facet when an index covers the match: the count then comes
+        // from the index keys alone and the data pipeline stops after one page,
+        // instead of the $facet reading every matching document in full.
+        // Can be switched off globally via GenericResolverOptions.splitCount = false.
+        // Not with a collation: an index without the same collation cannot
+        // compare strings, so the count would fetch every document after all.
+        const coveringIndex = splitQuery && GenericResolverOptions.splitCount !== false &&
+            !finalAggregateOptions.collation
+            ? await findCoveringIndex(collection, splitQuery.match)
+            : null
+
+        // The pipeline that actually ran - handed to the typeLoaded hook, so the
+        // slow query log explains what was executed and not the unused variant.
+        let executedQuery = dataQuery
+        let executedHint = finalAggregateOptions.hint
+
         const startTimeAggregate = performance.now()
-        const queryResults = await runAggregate('dataQuery', dataQuery, finalAggregateOptions)
+        let queryResults
+        if (coveringIndex) {
+            // Pin the covering index unless the caller chose one. The data query
+            // has a different shape ($limit 10 instead of 10000 + $facet), so it
+            // gets its own plan cache entry - without a hint the planner could
+            // pick another index, and for an unsorted query that would change
+            // WHICH documents come first. Pinned, the order is the index order.
+            // Only without a sort or with an _id sort: sorting by another field,
+            // a different index might deliver the order and stop after one page,
+            // so the planner keeps the choice there (the order is defined anyway).
+            const splitSort = splitQuery.dataQuery.find(stage => stage.$sort)?.$sort
+            const sortKeys = splitSort ? Object.keys(splitSort) : []
+            const pinIndex = !finalAggregateOptions.hint &&
+                (sortKeys.length === 0 || (sortKeys.length === 1 && sortKeys[0] === '_id'))
+            const splitOptions = pinIndex
+                ? {...finalAggregateOptions, hint: coveringIndex}
+                : finalAggregateOptions
+            const [results, count] = await Promise.all([
+                runAggregate('splitDataQuery', splitQuery.dataQuery, splitOptions),
+                // The count never sorts, so the covering index is always right for it
+                runAggregate('splitCountQuery', splitQuery.countQuery,
+                    finalAggregateOptions.hint ? finalAggregateOptions : {...finalAggregateOptions, hint: coveringIndex})
+            ])
+            // Same shape the $facet + $addFields stages produce
+            queryResults = [{
+                results,
+                count,
+                limit: splitQuery.limit,
+                offset: splitQuery.offset,
+                page: splitQuery.page
+            }]
+            executedQuery = splitQuery.dataQuery
+            executedHint = splitOptions.hint
+            debugInfo.push({code: 'splitCount', message: `count separated from data, covered by index ${coveringIndex}`})
+        } else {
+            queryResults = await runAggregate('dataQuery', dataQuery, finalAggregateOptions)
+        }
 
         // Time of the data aggregation alone. aggregateTime below also covers
         // postQueryConvert, an optional estimatedDocumentCount and a possible
@@ -390,9 +442,9 @@ const GenericResolver = {
         // ── hooks: after load ──────────────────────────────────────────────────
         await HookAsync.call('typeLoaded', {
             type: typeName, cacheKey, data, db, req, context,
-            otherOptions, result: queryResponse, dataQuery, collectionName,
+            otherOptions, result: queryResponse, dataQuery: executedQuery, collectionName,
             aggregateTime, queryTime, debugInfo,
-            hint: finalAggregateOptions.hint,
+            hint: executedHint,
         })
 
         // ── meta ───────────────────────────────────────────────────────────────

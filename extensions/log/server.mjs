@@ -148,7 +148,11 @@ Hook.on('typeLoaded', async ({type,cacheKey,db, req, context, result, dataQuery,
 
       // Turns the plan into concrete hints. Reads the explain that was fetched
       // above - no further query, nothing executed.
-      const findings = analyseQueryPlan(explanation, dataQuery, {documentCount})
+      const findings = analyseQueryPlan(explanation, dataQuery, {
+          documentCount,
+          resultTotal: result?.total,
+          resultCount: result?.results?.length
+      })
 
       const headers =  req.headers || {}
 
@@ -166,7 +170,7 @@ Hook.on('typeLoaded', async ({type,cacheKey,db, req, context, result, dataQuery,
               findings,
               documentCount,
               hint,
-              resultCount: result.results.length,
+              resultCount: result.results?.length ?? 0,
               resultTotal: result.total,
               type,
               host,

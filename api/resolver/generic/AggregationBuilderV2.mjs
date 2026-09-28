@@ -742,6 +742,39 @@ export default class AggregationBuilderV2 {
             }
         }
 
+        // Alternative without $facet: the data pipeline and a separate count.
+        //
+        // The $facet count consumes EVERY match, and $facet receives full
+        // documents - so a page of 10 results reads all matching documents from
+        // storage (measured: 3787 blog entries = 40 MB read for 10 results).
+        // A separate $count over the same root match can be answered from the
+        // index alone, and the data pipeline stops after `limit` documents.
+        //
+        // Only offered when the result is structurally identical: nothing in the
+        // facet filters or multiplies documents, and the root stages are just
+        // match / sort / skip / limitCount. The resolver decides whether to use
+        // it (it only pays off when an index covers the match - otherwise the
+        // count has to fetch everything too and the work doubles).
+        let splitQuery = null
+        const rootLimit = dataQuery[dataQuery.length - 1]
+        if (
+            this.options.splitCount !== false &&
+            includeCount && this.options.limitCount && hasMatch &&
+            !hasResultMatch && !lookupFilters && !hasLookupMatch &&
+            !this.options.before && !this.options.afterRootMatch && !this.options.resultLimit &&
+            !this.options.$facet && !this.options.$addFields &&
+            rootLimit?.$limit === this.options.limitCount &&
+            dataFacetQuery[0]?.$limit === limit
+        ) {
+            splitQuery = {
+                match,
+                dataQuery: [...dataQuery.slice(0, -1), { $limit: limit }, ...dataFacetQuery.slice(1)],
+                // match / skip / limitCount / $count - same semantics as the facet count
+                countQuery,
+                limit, offset, page
+            }
+        }
+
         // Wrap both sub-pipelines in a $facet stage to get results and count in one round-trip
         const facet = {
             $facet: {
@@ -771,7 +804,7 @@ export default class AggregationBuilderV2 {
             console.log(`AggregationBuilderV2: Aggregation time for ${this.type} query ${Date.now()-this.startTimeAggregate}ms`)
         }
 
-        return { dataQuery, countQuery, debugInfo: this.debugInfo }
+        return { dataQuery, countQuery, splitQuery, debugInfo: this.debugInfo }
     }
 
     // ─── Field query orchestration ────────────────────────────────────────────

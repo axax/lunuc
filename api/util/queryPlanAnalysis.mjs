@@ -177,7 +177,13 @@ export const isRedundantSuggestion = (key, existingKeyPatterns) => {
     })
 }
 
-export const analyseQueryPlan = (explanation, pipeline, {documentCount} = {}) => {
+// A $facet count below this many documents is cheap enough not to mention.
+export const FACET_COUNT_THRESHOLD = 500
+
+/** Sub-pipelines of the first $facet stage, or null. */
+const facetOf = (pipeline) => pipeline?.find(stage => stage.$facet)?.$facet || null
+
+export const analyseQueryPlan = (explanation, pipeline, {documentCount, resultTotal, resultCount} = {}) => {
     const planner = explanation?.stages?.[0]?.$cursor?.queryPlanner || explanation?.queryPlanner
     if (!planner) return []
 
@@ -289,6 +295,38 @@ export const analyseQueryPlan = (explanation, pipeline, {documentCount} = {}) =>
         findings.push({
             code: 'manyCandidates',
             message: `${planner.rejectedPlans.length + 1} candidate plans - likely redundant indexes sharing a prefix`
+        })
+    }
+
+    // Filters that only sit inside the $facet are applied after the cursor has
+    // read every document - no index can serve them. Typical cause: the
+    // resolver options resultFilter / before, which the builder places inside
+    // the facet (seen on the thal.ch search: 1254 CmsPages read for 0 results).
+    const facet = facetOf(pipeline)
+    const rootMatch = pipeline?.[0]?.$match
+    const rootMatchEmpty = !rootMatch || Object.keys(rootMatch).length === 0
+    const facetMatches = facet
+        ? Object.values(facet).some(sub => Array.isArray(sub) && sub.some(stage => stage.$match))
+        : false
+    if (rootMatchEmpty && facetMatches) {
+        findings.push({
+            code: 'filterOnlyInFacet',
+            message: 'The root $match is empty - all filters sit inside the $facet, so every document is read ' +
+                'before any filter applies. Move the conditions to the root match (option filter / match ' +
+                'instead of resultFilter / before)'
+        })
+    }
+
+    // The $facet count consumes every match in full, even when only one page is
+    // returned (seen on the onyou.ch blog: 3787 entries read for 10 results).
+    if (facet?.count && resultTotal >= FACET_COUNT_THRESHOLD && resultTotal >= 10 * Math.max(resultCount || 0, 1)) {
+        findings.push({
+            code: 'facetCountReadsAll',
+            message: `The $facet count reads all ${resultTotal} matching documents in full to return ${resultCount}. ` +
+                'A count answered from an index would avoid that - it is used automatically when an index ' +
+                'covers the match; otherwise consider includeCount: false',
+            resultTotal,
+            resultCount
         })
     }
 

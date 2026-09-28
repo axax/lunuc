@@ -94,7 +94,10 @@ export const createAllIndexes = async (db) => {
 
 
 
-        if(!type.noUserRelation) {
+        // createdByIndex: false skips the automatic createdBy index for types
+        // that keep the user relation but never query by it (e.g. UserTracking,
+        // where every index costs cache on each insert).
+        if(!type.noUserRelation && type.createdByIndex !== false) {
             // create index for createdBy
             console.log(`Creating index for ${typeName}.createdBy`)
 

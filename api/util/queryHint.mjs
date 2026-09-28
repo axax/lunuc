@@ -168,3 +168,76 @@ export const findQueryHint = async (collection, pipeline) => {
         return null
     }
 }
+
+const COVERABLE_OPERATORS = new Set(['$eq', '$in', '$gt', '$gte', '$lt', '$lte'])
+
+const isCoverableCondition = (value) => {
+    if (isScalarValue(value)) return true
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+    const keys = Object.keys(value)
+    if (keys.length === 0) return false
+    return keys.every(op => {
+        if (!COVERABLE_OPERATORS.has(op)) return false
+        if (op === '$in') return Array.isArray(value.$in) && value.$in.length > 0 && value.$in.every(isScalarValue)
+        return isScalarValue(value[op])
+    })
+}
+
+/**
+ * Fields of a match that consists ONLY of equality/range conditions on plain
+ * fields (top level or in a top-level $and). Anything else - $or, $expr,
+ * regex, $exists, $not ... - returns null, since it cannot be decided on the
+ * index keys alone.
+ */
+export const coverableMatchFields = (match) => {
+    const fields = new Set()
+    let coverable = true
+    const visit = (m) => {
+        if (!coverable) return
+        if (!m || typeof m !== 'object' || Array.isArray(m)) { coverable = false; return }
+        for (const [key, value] of Object.entries(m)) {
+            if (key === '$and' && Array.isArray(value)) {
+                value.forEach(visit)
+            } else if (!key.startsWith('$') && isCoverableCondition(value)) {
+                fields.add(key)
+            } else {
+                coverable = false
+                return
+            }
+        }
+    }
+    visit(match)
+    return coverable && fields.size > 0 ? fields : null
+}
+
+/**
+ * Name of a plain index that can answer the whole match from its keys (its
+ * leading field is in the match and every match field is part of the key),
+ * or null. Used to decide whether a separate count can run without fetching
+ * documents. A multikey index cannot cover - listIndexes does not tell, so
+ * in that rare case the count fetches and costs about what the $facet did.
+ */
+export const pickCoveringIndex = (indexes, fields) => {
+    let best = null
+    for (const index of indexes || []) {
+        if (!index?.key || index.partialFilterExpression || index.sparse || index.collation) continue
+        const keys = Object.keys(index.key)
+        if (keys.some(k => k.includes('$**') || typeof index.key[k] !== 'number')) continue
+        if (!fields.has(keys[0])) continue
+        if (![...fields].every(f => keys.includes(f))) continue
+        if (!best || keys.length < best.length) best = {name: index.name, length: keys.length}
+    }
+    return best ? best.name : null
+}
+
+/** Covering index for the match of the given collection, or null. Never throws. */
+export const findCoveringIndex = async (collection, match) => {
+    try {
+        const fields = coverableMatchFields(match)
+        if (!fields) return null
+        return pickCoveringIndex(await getIndexes(collection), fields)
+    } catch (e) {
+        console.warn('findCoveringIndex failed', e.message)
+        return null
+    }
+}
