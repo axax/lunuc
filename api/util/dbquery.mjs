@@ -32,6 +32,28 @@ const deepSearchFunctionBody = (negate) => `function(data, patterns) {
                 return true;
             }`
 
+/**
+ * Splits the inner part of an array filter value ("a, \"b, c\"") at commas
+ * that are not inside double quotes, trims each item and removes the quotes:
+ * ['a', 'b, c']. A plain split(',') tore "Bern, Stadt" apart.
+ */
+export const splitArrayValues = (inner) => {
+    const items = []
+    let current = '', inQuote = false
+    for (let i = 0; i < inner.length; i++) {
+        const c = inner[i]
+        if (c === '\\' && inQuote && inner[i + 1] === '"') { current += '"'; i++; continue }
+        if (c === '"') { inQuote = !inQuote; current += c; continue }
+        if (c === ',' && !inQuote) { items.push(current); current = ''; continue }
+        current += c
+    }
+    items.push(current)
+    return items.map(f => {
+        f = f.trim()
+        return f.length > 1 && f.startsWith('"') && f.endsWith('"') ? f.slice(1, -1) : f
+    })
+}
+
 // ─── Comparator maps ──────────────────────────────────────────────────────────
 
 export const comparatorMap = {
@@ -289,10 +311,7 @@ export const addFilterToMatchV2 = async ({ db, debugInfo, filterKey, filterValue
                 filterValue.endsWith(']')
             ) {
                 matchExpression = {
-                    $in: filterValue.slice(1, -1).split(',').map(f => {
-                        f = f.trim()
-                        return f.startsWith('"') && f.endsWith('"') ? f.slice(1, -1) : f
-                    })
+                    $in: splitArrayValues(filterValue.slice(1, -1))
                 }
             } else {
                 matchExpression = { [comparator]: filterValue }

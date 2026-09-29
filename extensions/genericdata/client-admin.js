@@ -266,8 +266,12 @@ export default () => {
                     const userHasCapa = Util.hasCapability({userData: _app_.user}, CAPABILITY_ADMIN_OPTIONS)
 
                     const actions = structure.actions
-                    if (actions) {
-                        props.actions.unshift(...structure.actions)
+                    if (actions && actions.length) {
+                        for(const action of actions) {
+                            if(action.if!==false && action.if !== 'false') {
+                                props.actions.unshift(action)
+                            }
+                        }
                     }
 
                     props.title = <React.Fragment>

@@ -267,9 +267,29 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
         }, effectiveTimeout)
         : null
 
+    // Diagnose über ALLE Versuche: der Timeout läuft ab Request-Start, nicht pro Versuch.
+    // Ohne diese Werte sah ein Timeout nach Retry wie ein 476ms-Timeout aus.
+    const requestStart = typeof performance !== 'undefined' ? performance.now() : Date.now()
+    let attempts = 0
+    let firstError = null
+
+    // War die Seite während des Requests im Hintergrund (oder das Gerät im Ruhezustand)?
+    // Dann hängen Requests und Timer "verschlafen" - ein Timeout/Netzwerkfehler ist dann
+    // kein Backend-Problem.
+    let wasHidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
+    const onVisibilityChange = () => {
+        if (document.visibilityState === 'hidden') wasHidden = true
+    }
+    if (typeof document !== 'undefined') {
+        document.addEventListener('visibilitychange', onVisibilityChange)
+    }
+
     const finalizeRequest = () => {
         if (timeoutId !== null) clearTimeout(timeoutId)
         if (cacheKey) delete FETCHING_BY_CACHEKEY[cacheKey]
+        if (typeof document !== 'undefined') {
+            document.removeEventListener('visibilitychange', onVisibilityChange)
+        }
     }
 
     // RETRY: kurzer Backoff (mit etwas Jitter, damit nicht alle Clients gleichzeitig retrien)
@@ -308,6 +328,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
         const attempt = async (attemptsLeft) => {
 
             addLoader()
+            attempts++
 
             const startTime = performance.now()   // NEU
             const headers = getHeaders(lang, headersExtra)
@@ -385,6 +406,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
                     // Diese kommen typischerweise vom Proxy, wenn der Upstream einen
                     // Keep-Alive-Socket abgerissen hat.
                     if (attemptsLeft > 0 && RETRYABLE_STATUS.indexOf(r.status) > -1) {
+                        if (!firstError) firstError = r.status + ' - ' + r.statusText
                         console.log(`finalFetch: transient ${r.status}, retry in ${RETRY_BACKOFF}ms (${cacheKey})`)
                         setTimeout(() => attempt(attemptsLeft - 1), RETRY_BACKOFF)
                         return
@@ -416,6 +438,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
                 // RETRY: transienter Netzwerkfehler ("Failed to fetch", Reset) -> ein Query-Retry.
                 // NICHT bei Timeout (Backend ist eh zu langsam) und NICHT offline (zwecklos).
                 if (attemptsLeft > 0 && !isTimeout && !isOffline) {
+                    if (!firstError) firstError = (error.name ? error.name + ': ' : '') + error.message
                     console.log(`finalFetch: transient network error, retry in ${RETRY_BACKOFF}ms (${cacheKey})`)
                     setTimeout(() => attempt(attemptsLeft - 1), RETRY_BACKOFF)
                     return
@@ -430,6 +453,13 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
                         : `Network Error: ${error.message}`
 
                 reject({error, loading: false, networkStatus: NetworkStatus.error})
+
+                // Seite war im Hintergrund / Gerät schlief: kein Backend-Problem, nicht melden.
+                if (wasHidden) {
+                    console.warn(`finalFetch: ${msg} while page was hidden - not reported (${cacheKey})`)
+                    return
+                }
+
                 _app_.dispatcher.addError({
                     key: 'api_error',
                     msg,
@@ -447,7 +477,11 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
                         isOffline,
                         requestType: type === RequestType.mutate ? 'mutation' : 'query',
                         effectiveTimeout,                              // welcher Timeout galt (0 = disabled)
-                        durationMs: Math.round(performance.now() - startTime),
+                        durationMs: Math.round(performance.now() - startTime),   // nur der letzte Versuch
+                        totalDurationMs: Math.round(performance.now() - requestStart), // seit dem ersten Versuch
+                        attempts,
+                        firstError,                                    // woran der erste Versuch scheiterte (bei Retry)
+                        wasHidden,
                         bodySize: body ? body.length : 0,             // Payload-Grösse in Bytes
                         attemptsLeft,                                  // verbleibende Retries zum Fehlerzeitpunkt
                         online: typeof navigator !== 'undefined' ? navigator.onLine : null,

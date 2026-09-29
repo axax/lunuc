@@ -347,10 +347,31 @@ Hook.on('typeUpdated_GenericDataDefinition', ({db, result}) => {
     Cache.clearStartWith('GenericDataDefinition')
 })
 
-// Clear cache when the type GenericData has changed
+// Clear cache when the type GenericData has changed.
+// Cache keys starting with the definition name are cleared on create, update and delete.
+// On update the result often carries `definition` as a plain string id, or not at all
+// (only the changed fields are sent) - previously only {_id} was handled, so updates
+// left those cache entries stale. The definition is then read from the document.
 Hook.on(['typeUpdated_GenericData', 'typeCreated_GenericData'], async ({db, result}) => {
-    if (result.definition && result.definition._id) {
-        const def = await getGenericTypeDefinitionWithStructure(db, {id: result.definition._id})
+    if (!result) return
+
+    let defQuery = null
+    const definition = result.definition
+    if (definition && definition.constructor === Object) {
+        if (definition._id) defQuery = {id: definition._id}
+        else if (definition.name) defQuery = {name: definition.name}
+    } else if (definition && ObjectId.isValid(String(definition))) {
+        defQuery = {id: definition}
+    }
+
+    if (!defQuery && result._id && ObjectId.isValid(String(result._id))) {
+        const doc = await db.collection('GenericData').findOne(
+            {_id: new ObjectId(String(result._id))}, {projection: {definition: 1}})
+        if (doc?.definition) defQuery = {id: doc.definition}
+    }
+
+    if (defQuery) {
+        const def = await getGenericTypeDefinitionWithStructure(db, defQuery)
         if (def) {
             Cache.clearStartWith(def.name)
         }

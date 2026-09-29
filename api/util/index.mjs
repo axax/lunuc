@@ -938,6 +938,16 @@ const Util = {
                         continue
                     }
                     if (cc === 34) { inQuote = true; i++; continue }
+                    // A value in array notation right after a comparator
+                    // ("data.ort==[Interlaken Liga]") is kept together up to its
+                    // closing bracket. Before, the whitespace split it into
+                    // "[Interlaken" plus a free search term "Liga]", which became
+                    // an expensive deep search ($function) and matched nothing.
+                    // Only when a closing bracket exists - otherwise as before.
+                    if (cc === 91 && i > start && '=~<>:!'.includes(str[i - 1])) {
+                        const close = str.indexOf(']', i + 1)
+                        if (close > 0) { i = close + 1; continue }
+                    }
                     if (cc === 32 || cc === 9 || cc === 10 || cc === 13) break
                     if (cc === 40 || cc === 41) break
                     if (cc === 124 && str.charCodeAt(i+1) === 124) break

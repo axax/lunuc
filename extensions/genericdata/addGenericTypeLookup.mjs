@@ -3,6 +3,27 @@ import GenericResolver from '../../api/resolver/generic/genericResolver.mjs'
 import {findProjection} from '../../util/project.mjs'
 import {getGenericTypeDefinitionWithStructure} from './util/index.mjs'
 
+/**
+ * Element of the lookup result `rows` whose _id equals ids[i], or MISSING if
+ * there is none - exactly what the former
+ *   {$arrayElemAt: [{$filter: {input: rows, cond: {$eq: ['$$this._id', ids[i]]}}}, 0]}
+ * produced ($arrayElemAt on an empty array is missing, not null).
+ *
+ * The $filter variant evaluated an expression for every lookup row at every
+ * position. $indexOfArray does the same equality scan natively on the id list,
+ * which is bound once per document ('$$rowIds'). Measured on the pokerraum
+ * player page (135 tournaments, up to 109 participants): the rebuild step
+ * took about as long as both $lookups together.
+ *
+ * Expects $$ids, $$i, $$rows and $$rowIds to be bound by the caller.
+ */
+const resolveByIndex = {
+    $let: {
+        vars: {idx: {$indexOfArray: ['$$rowIds', {$arrayElemAt: ['$$ids', '$$i']}]}},
+        in: {$cond: [{$lt: ['$$idx', 0]}, '$$REMOVE', {$arrayElemAt: ['$$rows', '$$idx']}]}
+    }
+}
+
 
 export async function addGenericTypeLookup(field, otherOptions, projection, db, key) {
 
@@ -159,13 +180,15 @@ function addGenericTypeLookupForType(field, otherOptions, projection) {
     pipeline.push(...nestedStages)
 
     // single $lookup for all cases — order & duplicates are restored afterwards, so no keepOrder sorting needed
+    // An empty sub-pipeline is left out: the plain localField/foreignField form
+    // is equivalent and can run in the faster SBE engine.
     otherOptions.lookups.push({
         $lookup: {
             from: field.type,
             localField: `${field.name}ObjectId`,
             foreignField: '_id',
             as: `data.${field.name}`,
-            pipeline,
+            ...(pipeline.length > 0 ? {pipeline} : {}),
         }
     })
 
@@ -178,20 +201,16 @@ function addGenericTypeLookupForType(field, otherOptions, projection) {
     // (position, lookup row) pair, i.e. O(n^2) times per document.
     const oidArray = ensureArray(`$${field.name}ObjectId`)
 
-    const resolve = {
-        $arrayElemAt: [
-            {$filter: {input: `$data.${field.name}`, cond: {$eq: ['$$this._id', {$arrayElemAt: ['$$ids', '$$i']}]}}},
-            0
-        ]
-    }
+    const resolve = resolveByIndex
+    const rowVars = {rows: `$data.${field.name}`, rowIds: `$data.${field.name}._id`}
 
     otherOptions.lookups.push({
         $addFields: {
             [`data.${field.name}`]: {
                 $let: {
                     vars: field.metaFields
-                        ? {ids: oidArray, origs: ensureArray(`$data.${field.name}_Original`)}
-                        : {ids: oidArray},
+                        ? {ids: oidArray, ...rowVars, origs: ensureArray(`$data.${field.name}_Original`)}
+                        : {ids: oidArray, ...rowVars},
                     in: {
                         $filter: {
                             input: {
@@ -446,19 +465,14 @@ function buildNestedLookupStages(parentType, projectionData, parentProject, dept
         const oidArray = ensureArray(`$${oidField}`)
         const rebuilt = {
             $let: {
-                vars: {ids: oidArray},
+                vars: {ids: oidArray, rows: `$${nestedName}`, rowIds: `$${nestedName}._id`},
                 in: {
                     $filter: {
                         input: {
                             $map: {
                                 input: {$range: [0, {$size: '$$ids'}]},
                                 as: 'i',
-                                in: {
-                                    $arrayElemAt: [
-                                        {$filter: {input: `$${nestedName}`, cond: {$eq: ['$$this._id', {$arrayElemAt: ['$$ids', '$$i']}]}}},
-                                        0
-                                    ]
-                                }
+                                in: resolveByIndex
                             }
                         },
                         cond: {$ne: ['$$this', null]}

@@ -14,6 +14,7 @@ import Util from '../../api/util/index.mjs'
 import {parseOrElse} from '../../client/util/json.mjs'
 import {analyseQueryPlan} from '../../api/util/queryPlanAnalysis.mjs'
 import util from 'node:util'
+import {SLOW_QUERY_THRESHOLD_MS, shapeKeyOf, claimSlowQueryLog} from './slowQueryThrottle.mjs'
 
 let mydb
 Hook.on('dbready', ({db}) => {
@@ -124,63 +125,94 @@ const toLoggableQuery = (value) => {
     return value
 }
 
-Hook.on('typeLoaded', async ({type,cacheKey,db, req, context, result, dataQuery, collectionName, aggregateTime, queryTime, hint}) => {
+// ─── slow query log ──────────────────────────────────────────────────────────
+//
+// Each entry costs an explain, an estimatedDocumentCount and an insert - and
+// slow queries come in bursts exactly when the server is already under load
+// (crawlers hitting many pages at once). So:
+//   - one entry per query shape and SLOW_QUERY_LOG_INTERVAL_MS; repeats in
+//     between are only counted and reported with the next entry (suppressed)
+//   - never more than one explain per shape at the same time
+//   - the work runs detached: the request that was slow no longer waits for it
 
-  if(aggregateTime > 1000) {
+const logSlowQuery = async ({claim, db, dataQuery, collectionName, hint, info}) => {
+    try {
+        // 'queryPlanner' MUST be passed explicitly: without a verbosity the driver
+        // sends allPlansExecution, which re-runs the pipeline for EVERY candidate
+        // plan. On an already slow query that is the most expensive thing the
+        // server can be asked to do - it was turning slow searches into OOMs.
+        // queryPlanner does not execute anything and still shows the chosen index.
+        const explanation = await db.collection(collectionName)
+            .aggregate(dataQuery, hint ? {allowDiskUse: true, hint} : {allowDiskUse: true}).explain('queryPlanner')
 
-      // 'queryPlanner' MUST be passed explicitly: without a verbosity the driver
-      // sends allPlansExecution, which re-runs the pipeline for EVERY candidate
-      // plan. On an already slow query that is the most expensive thing the
-      // server can be asked to do - it was turning slow searches into OOMs.
-      // queryPlanner does not execute anything and still shows the chosen index.
-      const explanation = await db.collection(collectionName)
-          .aggregate(dataQuery, hint ? {allowDiskUse: true, hint} : {allowDiskUse: true}).explain('queryPlanner')
+        // A collection scan is only worth reporting on a collection big enough for
+        // it to hurt. estimatedDocumentCount reads collection metadata and does not
+        // touch any document.
+        let documentCount
+        try {
+            documentCount = await db.collection(collectionName).estimatedDocumentCount()
+        } catch (e) {
+            console.warn(`log: could not count ${collectionName}`, e.message)
+        }
 
-      // A collection scan is only worth reporting on a collection big enough for
-      // it to hurt. estimatedDocumentCount reads collection metadata and does not
-      // touch any document.
-      let documentCount
-      try {
-          documentCount = await db.collection(collectionName).estimatedDocumentCount()
-      } catch (e) {
-          console.warn(`log: could not count ${collectionName}`, e.message)
-      }
+        // Turns the plan into concrete hints. Reads the explain that was fetched
+        // above - no further query, nothing executed.
+        const findings = analyseQueryPlan(explanation, dataQuery, {
+            documentCount,
+            resultTotal: info.resultTotal,
+            resultCount: info.resultCount
+        })
 
-      // Turns the plan into concrete hints. Reads the explain that was fetched
-      // above - no further query, nothing executed.
-      const findings = analyseQueryPlan(explanation, dataQuery, {
-          documentCount,
-          resultTotal: result?.total,
-          resultCount: result?.results?.length
-      })
+        await GenericResolver.createEntity(mydb, {context: info.context}, 'Log', {
+            location: collectionName,
+            type: 'slowQuery',
+            message: JSON.stringify(explanation, null, 2),
+            meta: {
+                aggregateTime: info.aggregateTime,
+                queryTime: info.queryTime,
+                findings,
+                documentCount,
+                hint,
+                // slow runs of the same query shape since the last entry that got no entry of their own
+                suppressed: claim.suppressed,
+                resultCount: info.resultCount,
+                resultTotal: info.resultTotal,
+                type: info.type,
+                host: info.host,
+                cacheKey: info.cacheKey,
+                agent: info.agent,
+                referer: info.referer,
+                query: toLoggableQuery(dataQuery)
+            }
+        })
+    } catch (e) {
+        console.error('log: could not write slow query entry', e.message)
+    } finally {
+        claim.done()
+    }
+}
 
-      const headers =  req.headers || {}
+Hook.on('typeLoaded', async ({type, cacheKey, db, req, context, result, dataQuery, collectionName, aggregateTime, queryTime, hint}) => {
 
-      const host = getHostFromHeaders(headers)
-      //const stackTrace = Error().stack.substring(6).replace(/\n/g,'').split('    at ').filter(n => n.trim())
+    if (aggregateTime <= SLOW_QUERY_THRESHOLD_MS || !mydb || type === 'Log') return
 
+    const claim = claimSlowQueryLog(shapeKeyOf(collectionName, dataQuery))
+    if (!claim) return
 
-      await GenericResolver.createEntity(mydb, {context}, 'Log', {
-          location: collectionName,
-          type: 'slowQuery',
-          message: JSON.stringify(explanation, null, 2),
-          meta: {
-              aggregateTime,
-              queryTime,
-              findings,
-              documentCount,
-              hint,
-              resultCount: result.results?.length ?? 0,
-              resultTotal: result.total,
-              type,
-              host,
-              cacheKey,
-              agent: headers[TRACK_USER_AGENT_HEADER] || headers['user-agent'] || '',
-              referer: headers[TRACK_REFERER_HEADER] || headers['referer'] || '',
-              query: toLoggableQuery(dataQuery)
-          }
-      })
-  }
+    // Everything the entry needs is read NOW - the response object is changed
+    // further (meta, serialisation) after this hook returns.
+    const headers = req?.headers || {}
+    const info = {
+        type, cacheKey, context, aggregateTime, queryTime,
+        resultCount: result?.results?.length ?? 0,
+        resultTotal: result?.total,
+        host: getHostFromHeaders(headers),
+        agent: headers[TRACK_USER_AGENT_HEADER] || headers['user-agent'] || '',
+        referer: headers[TRACK_REFERER_HEADER] || headers['referer'] || ''
+    }
+
+    // detached on purpose: the slow request must not also wait for the log entry
+    logSlowQuery({claim, db, dataQuery, collectionName, hint, info})
 })
 
 /**

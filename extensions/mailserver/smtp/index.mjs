@@ -13,6 +13,9 @@ import {dynamicSettings} from '../../../api/util/settings.mjs'
 import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
 import {decodeHtmlEntities, removeStyleAndScriptTags, MAIL_TLS_CIPHERS} from '../util/index.mjs'
 
+// network errors caused by the remote side - not written to the Log collection
+const NOISE_ERROR_CODES = new Set(['ECONNRESET', 'EPIPE', 'ETIMEDOUT', 'ECONNABORTED'])
+
 
 /*
 // open port 25 and 587 on your server
@@ -388,6 +391,11 @@ const startListening = async (db, context) => {
         serverPorts[port].on("error", async (err) => {
             console.log("SMTP Error", err)
             if (err?.skipLog || err?.message?.startsWith('Only connections for ')) {
+                return
+            }
+            // A client that drops or times out the TCP connection (scanners,
+            // aborted handshakes) is noise, not a server problem.
+            if (NOISE_ERROR_CODES.has(err?.code)) {
                 return
             }
             try {
