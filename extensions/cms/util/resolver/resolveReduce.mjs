@@ -218,6 +218,11 @@ function indexHas(arr, v) {
 // ---------------------------------------------------------------------------
 
 function createFacetSliderMinMax(value, facetData) {
+    // a missing attribute is not a value of the slider (would otherwise end up
+    // as null entries in otherValues)
+    if (value === undefined) {
+        return
+    }
     if (!isNaN(value)) {
         if (facetData.min === undefined || facetData.min > value) {
             facetData.min = value === null ? 0 : value
@@ -663,15 +668,23 @@ function doLoopThroughData(re, currentData, rootData, debugLog, depth, debugInfo
         const filter = hasActiveFilters && checkFilter(activeFilters, value[key], key)
         if (filter) {
             filteredCount++
-            if (filter.or && loopFacet) {
-                let filteredFacets
-                if (filter.facetKey) {
-                    filteredFacets = orFacetCache[filter.facetKey] ||
-                        (orFacetCache[filter.facetKey] = facetSlots.filter(slot => slot.key === filter.facetKey))
-                } else {
-                    filteredFacets = facetSlots
+            if (loopFacet) {
+                // Disjunctive faceting: an item that fails ONLY the filters of one
+                // facet still counts for that facet, so the facet shows what
+                // selecting another value / widening the range would add. Applies
+                // to or-facets and sliders. An item that also fails a filter of
+                // another facet does not count anywhere.
+                const facetKey = filter.facetKey
+                if (facetKey) {
+                    const filteredFacets = orFacetCache[facetKey] ||
+                        (orFacetCache[facetKey] = facetSlots.filter(slot => slot.key === facetKey))
+                    if ((filter.or || (filteredFacets.length > 0 && filteredFacets[0].isSlider)) &&
+                        !failsOtherFacet(activeFilters, facetKey, value[key], key)) {
+                        createFacets(filteredFacets, item, false)
+                    }
+                } else if (filter.or) {
+                    createFacets(facetSlots, item, false)
                 }
-                createFacets(filteredFacets, item, false)
             }
 
             if (reAssign) {
@@ -1284,6 +1297,21 @@ function runPipe(reducePipe, rootData, currentData, debugLog, depth, debug) {
 // re-reading it for every single filter (dictionary lookups on large keyed objects
 // like pim tables are not free). Nothing in the filter loop modifies the collection,
 // so every filter still sees the same value.
+// true if the item fails any active filter that does NOT belong to facetKey
+const failsOtherFacet = (filters, facetKey, item, key) => {
+    for (let i = 0, len = filters.length; i < len; i++) {
+        const filter = filters[i]
+        if (filter.facetKey === facetKey) {
+            continue
+        }
+        const single = filter._single || defineHidden(filter, '_single', [filter])
+        if (checkFilter(single, item, key)) {
+            return true
+        }
+    }
+    return false
+}
+
 const checkFilter = (filters, item, key) => {
     if (filters && filters.length > 0) {
         const filtersLen = filters.length

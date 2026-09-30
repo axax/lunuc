@@ -15,6 +15,7 @@ import {parseOrElse} from '../../client/util/json.mjs'
 import {analyseQueryPlan} from '../../api/util/queryPlanAnalysis.mjs'
 import util from 'node:util'
 import {SLOW_QUERY_THRESHOLD_MS, shapeKeyOf, claimSlowQueryLog} from './slowQueryThrottle.mjs'
+import {getEventLoopDelay, eventLoopFinding} from './eventLoopMonitor.mjs'
 
 let mydb
 Hook.on('dbready', ({db}) => {
@@ -162,6 +163,8 @@ const logSlowQuery = async ({claim, db, dataQuery, collectionName, hint, info}) 
             resultTotal: info.resultTotal,
             resultCount: info.resultCount
         })
+        const loopFinding = eventLoopFinding(info.eventLoop, info.queryTime)
+        if (loopFinding) findings.unshift(loopFinding)
 
         await GenericResolver.createEntity(mydb, {context: info.context}, 'Log', {
             location: collectionName,
@@ -173,6 +176,8 @@ const logSlowQuery = async ({claim, db, dataQuery, collectionName, hint, info}) 
                 findings,
                 documentCount,
                 hint,
+                // Node event loop delay around the query - high = the time was lost in Node, not MongoDB
+                eventLoop: info.eventLoop,
                 // slow runs of the same query shape since the last entry that got no entry of their own
                 suppressed: claim.suppressed,
                 resultCount: info.resultCount,
@@ -204,6 +209,8 @@ Hook.on('typeLoaded', async ({type, cacheKey, db, req, context, result, dataQuer
     const headers = req?.headers || {}
     const info = {
         type, cacheKey, context, aggregateTime, queryTime,
+        // read immediately - later the window may no longer cover this query
+        eventLoop: getEventLoopDelay(),
         resultCount: result?.results?.length ?? 0,
         resultTotal: result?.total,
         host: getHostFromHeaders(headers),
