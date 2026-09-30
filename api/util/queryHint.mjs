@@ -98,7 +98,8 @@ export const collectRegexFields = (match) => collectFields(match, isRegex)
 export const pickHintIndex = (indexes, fields) => {
     let best = null
     for (const index of indexes || []) {
-        if (!index?.key || index.partialFilterExpression || index.sparse || index.collation) continue
+        // hidden: a hint on a hidden index is rejected by MongoDB
+        if (!index?.key || index.hidden || index.partialFilterExpression || index.sparse || index.collation) continue
         const keys = Object.keys(index.key)
         if (keys.some(k => k.includes('$**') || typeof index.key[k] !== 'number')) continue
 
@@ -112,6 +113,12 @@ export const pickHintIndex = (indexes, fields) => {
         }
     }
     return best ? best.name : null
+}
+
+/** Forget the cached index list, e.g. after a hint was rejected because an index was hidden or dropped. */
+export const clearIndexCache = (collectionName) => {
+    if (collectionName) indexCache.delete(collectionName)
+    else indexCache.clear()
 }
 
 // The promise is cached, so concurrent requests on a cold cache share one
@@ -220,7 +227,8 @@ export const coverableMatchFields = (match) => {
 export const pickCoveringIndex = (indexes, fields) => {
     let best = null
     for (const index of indexes || []) {
-        if (!index?.key || index.partialFilterExpression || index.sparse || index.collation) continue
+        // hidden: a hint on a hidden index is rejected by MongoDB
+        if (!index?.key || index.hidden || index.partialFilterExpression || index.sparse || index.collation) continue
         const keys = Object.keys(index.key)
         if (keys.some(k => k.includes('$**') || typeof index.key[k] !== 'number')) continue
         if (!fields.has(keys[0])) continue

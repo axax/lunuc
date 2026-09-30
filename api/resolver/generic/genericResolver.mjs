@@ -12,7 +12,7 @@ import AggregationBuilderV2 from './AggregationBuilderV2.mjs'
 import Cache from '../../../util/cache.mjs'
 import {_t} from '../../../util/i18nServer.mjs'
 import {createMatchForCurrentUser} from '../../util/dbquery.mjs'
-import {findQueryHint, findCoveringIndex} from '../../util/queryHint.mjs'
+import {findQueryHint, findCoveringIndex, clearIndexCache} from '../../util/queryHint.mjs'
 import postQueryConvert from './postQueryConverter.mjs'
 import {ApiError} from "../../error.mjs";
 
@@ -317,9 +317,12 @@ const GenericResolver = {
         // in the match, or a regex on an indexed field losing against the _id
         // scan) - see queryHint.mjs. Skipped with a collation, as the index
         // might not honour it.
+        // true when the hint below was chosen automatically (not by the caller)
+        let autoHint = false
         if (!finalAggregateOptions.hint && !finalAggregateOptions.collation) {
             const queryHint = await findQueryHint(collection, dataQuery)
             if (queryHint) {
+                autoHint = true
                 finalAggregateOptions.hint = queryHint.hint
                 debugInfo.push({code: 'queryHint', message: `index ${queryHint.hint} used as hint (${queryHint.reason})`})
             }
@@ -341,6 +344,25 @@ const GenericResolver = {
         let executedQuery = dataQuery
         let executedHint = finalAggregateOptions.hint
 
+        // An automatically chosen hint must never break a query: if MongoDB rejects
+        // it (index hidden or dropped since the index list was cached), the cache
+        // is cleared and the query runs once more without the automatic hint.
+        const withoutHint = (options, remove) => {
+            if (!remove) return options
+            const {hint, ...rest} = options
+            return rest
+        }
+        const runWithHintFallback = async (run, runWithoutHint, allowed = true) => {
+            try {
+                return await run()
+            } catch (error) {
+                if (!allowed || !/hint/i.test(error?.message || '')) throw error
+                clearIndexCache(collectionName)
+                console.warn(`GenericResolver: automatic hint rejected for ${collectionName} (${error.message}) - retry without hint`)
+                return await runWithoutHint()
+            }
+        }
+
         const startTimeAggregate = performance.now()
         let queryResults
         if (coveringIndex) {
@@ -359,12 +381,16 @@ const GenericResolver = {
             const splitOptions = pinIndex
                 ? {...finalAggregateOptions, hint: coveringIndex}
                 : finalAggregateOptions
-            const [results, count] = await Promise.all([
+            const [results, count] = await runWithHintFallback(() => Promise.all([
                 runAggregate('splitDataQuery', splitQuery.dataQuery, splitOptions),
                 // The count never sorts, so the covering index is always right for it
                 runAggregate('splitCountQuery', splitQuery.countQuery,
                     finalAggregateOptions.hint ? finalAggregateOptions : {...finalAggregateOptions, hint: coveringIndex})
-            ])
+            ]), () => Promise.all([
+                runAggregate('splitDataQuery', splitQuery.dataQuery, withoutHint(splitOptions, pinIndex || autoHint)),
+                runAggregate('splitCountQuery', splitQuery.countQuery,
+                    withoutHint(finalAggregateOptions.hint ? finalAggregateOptions : {...finalAggregateOptions, hint: coveringIndex}, true))
+            ]))
             // Same shape the $facet + $addFields stages produce
             queryResults = [{
                 results,
@@ -377,7 +403,10 @@ const GenericResolver = {
             executedHint = splitOptions.hint
             debugInfo.push({code: 'splitCount', message: `count separated from data, covered by index ${coveringIndex}`})
         } else {
-            queryResults = await runAggregate('dataQuery', dataQuery, finalAggregateOptions)
+            queryResults = await runWithHintFallback(
+                () => runAggregate('dataQuery', dataQuery, finalAggregateOptions),
+                () => runAggregate('dataQuery', dataQuery, withoutHint(finalAggregateOptions, autoHint)),
+                autoHint)
         }
 
         // Time of the data aggregation alone. aggregateTime below also covers

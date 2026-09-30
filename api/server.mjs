@@ -391,9 +391,19 @@ export const start = (done) => {
 
     if (BACKUP_MONGO_URL) {
         dbConnection(BACKUP_MONGO_URL, async (err, db, client) => {
-            await createUsers(db)
+            // The backup db is optional: when it is unreachable the server keeps
+            // running without it. Before, createUsers(null) threw
+            // "Cannot read properties of null (reading 'collection')".
+            if (err || !db) {
+                console.warn(`backup db not available (${BACKUP_MONGO_URL.replace(/\/\/[^@/]*@/, '//***@')}): ${err?.message || 'no connection'}`)
+                return
+            }
+            try {
+                await createUsers(db)
+            } catch (e) {
+                console.error('backup db: createUsers failed', e.message)
+            }
             _app_.backupDb = db
-
         })
     }
 }

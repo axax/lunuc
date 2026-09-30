@@ -37,7 +37,6 @@
           "name": "group",
           "type": "MediaGroup",
           "multi": true,
-          "index": 1,
           "bulkEditable": true,
           "tab": "elements.generalTab",
           "compoundIndex": [{
@@ -52,7 +51,6 @@
           "name": "mimeType",
           "vagueSearchable": false,
           "tab": "Optionen",
-          "index": 1,
           "alwaysLoad": true
         },
         {

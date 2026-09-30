@@ -268,7 +268,22 @@ export default () => {
                     const actions = structure.actions
                     if (actions && actions.length) {
                         for(const action of actions) {
-                            if(action.if!==false && action.if !== 'false') {
+
+                            let condition = action.if
+                            if (typeof condition === 'string' && condition.indexOf('${') >= 0) {
+                                try {
+                                    condition = new Function('const data=this.data,_id=this._id,Util=this.Util;return `' + condition.replace(/`/g, '\\`') + '`').call({
+                                        data: dataObject,
+                                        _id: dataToEdit._id,
+                                        Util
+                                    })
+                                } catch (e) {
+                                    console.log('Error in action.if', action.key, e)
+                                    condition = false
+                                }
+                            }
+
+                            if (condition !== false && condition !== 'false') {
                                 props.actions.unshift(action)
                             }
                         }
