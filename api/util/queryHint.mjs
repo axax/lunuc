@@ -147,6 +147,70 @@ const sortsOnlyById = (pipeline) => {
  * Returns {hint, reason} for the given pipeline, or null.
  * Never throws - a failed lookup simply means no hint.
  */
+const NEGATION_OPERATORS = new Set(['$ne', '$nin', '$not'])
+
+/**
+ * Wildcard indexes like {definition: 1, 'data.$**': 1} whose fields before the
+ * wildcard are all bound by equalities - only those can be picked by the
+ * planner here at all. Returns their path prefixes ('data.').
+ */
+const usableWildcardPrefixes = (indexes, equalityFields) => {
+    const prefixes = []
+    for (const index of indexes || []) {
+        if (!index?.key || index.hidden) continue
+        const keys = Object.keys(index.key)
+        const wildcardPos = keys.findIndex(k => k.includes('$**'))
+        if (wildcardPos < 0) continue
+        if (!keys.slice(0, wildcardPos).every(k => equalityFields.has(k))) continue
+        prefixes.push(keys[wildcardPos].replace('$**', ''))
+    }
+    return prefixes
+}
+
+/**
+ * true if nothing in the match can bound a wildcard path: every condition on a
+ * field under one of the prefixes is a plain negation ($ne / $nin / $not) at
+ * the top level or in a top-level $and, and there is no $expr. Then the
+ * wildcard index can only be scanned with $_path [MinKey, MaxKey], i.e. one
+ * key per FIELD of every matching document instead of one per document.
+ */
+const wildcardCannotBound = (match, prefixes) => {
+    const under = key => prefixes.some(prefix => prefix === '' || key.startsWith(prefix))
+    let allOccurrences = 0, negationOccurrences = 0, hasExpr = false
+
+    const countAll = (node) => {
+        if (!node || typeof node !== 'object') return
+        if (Array.isArray(node)) { node.forEach(countAll); return }
+        if (node.constructor !== Object) return
+        for (const [key, value] of Object.entries(node)) {
+            if (key === '$expr' || key === '$where' || key === '$function') hasExpr = true
+            if (!key.startsWith('$') && under(key)) allOccurrences++
+            countAll(value)
+        }
+    }
+    const countNegations = (node) => {
+        if (!node || typeof node !== 'object' || Array.isArray(node)) return
+        for (const [key, value] of Object.entries(node)) {
+            if (key === '$and' && Array.isArray(value)) {
+                value.forEach(countNegations)
+            } else if (!key.startsWith('$') && under(key) && value && value.constructor === Object) {
+                const ops = Object.keys(value)
+                if (ops.length > 0 && ops.every(op => NEGATION_OPERATORS.has(op))) negationOccurrences++
+            }
+        }
+    }
+    countAll(match)
+    countNegations(match)
+    return !hasExpr && allOccurrences === negationOccurrences
+}
+
+/** true if the pipeline sorts right after the match by a field under one of the prefixes */
+const sortsByWildcardPath = (pipeline, prefixes) => {
+    const sort = pipeline?.[1]?.$sort
+    if (!sort) return false
+    return Object.keys(sort).some(key => prefixes.some(prefix => prefix === '' || key.startsWith(prefix)))
+}
+
 export const findQueryHint = async (collection, pipeline) => {
     try {
         const match = pipeline?.[0]?.$match
@@ -156,7 +220,7 @@ export const findQueryHint = async (collection, pipeline) => {
         const equalityFields = collectEqualityFields(match)
         const regexFields = hasFunction ? new Set() : collectRegexFields(match)
 
-        if (!(hasFunction && equalityFields.size > 0) && regexFields.size === 0) return null
+        if (equalityFields.size === 0 && regexFields.size === 0) return null
 
         const indexes = await getIndexes(collection)
         const equalityHint = equalityFields.size > 0 ? pickHintIndex(indexes, equalityFields) : null
@@ -164,6 +228,22 @@ export const findQueryHint = async (collection, pipeline) => {
         if (hasFunction) {
             return equalityHint ? {hint: equalityHint, reason: 'function'} : null
         }
+
+        // 3. A usable wildcard index that nothing in the match can bound: the
+        //    plain equality index reads one key per document, the wildcard one
+        //    key per field of every document (pokerhelden title list: 300
+        //    tournaments with hundreds of fields each). Not when the sort is on
+        //    a wildcard path - there the wildcard index may deliver the order.
+        if (equalityHint && regexFields.size === 0) {
+            const prefixes = usableWildcardPrefixes(indexes, equalityFields)
+            // only without a sort or with an _id sort: another index might deliver a different order
+            if (prefixes.length > 0 && wildcardCannotBound(match, prefixes) &&
+                !sortsByWildcardPath(pipeline, prefixes) && sortsOnlyById(pipeline)) {
+                return {hint: equalityHint, reason: 'wildcard'}
+            }
+        }
+
+        if (regexFields.size === 0) return null
 
         // An indexed equality is a real alternative - leave the choice to the planner.
         if (equalityHint || !sortsOnlyById(pipeline)) return null

@@ -277,6 +277,24 @@ export const analyseQueryPlan = (explanation, pipeline, {documentCount, resultTo
         }
     }
 
+    // A wildcard index without a bound on $_path scans one key per FIELD of every
+    // matching document - with arrays of objects easily hundreds per document.
+    // Seen on the pokerhelden title list (only $ne on data.status, nothing that
+    // bounds a path). A plain index on the same prefix reads one key per document.
+    const unboundedWildcard = stages.find(stage => stage.stage === 'IXSCAN' &&
+        stage.keyPattern && Object.keys(stage.keyPattern).includes('$_path') &&
+        Array.isArray(stage.indexBounds?.$_path) && stage.indexBounds.$_path.length === 1 &&
+        stage.indexBounds.$_path[0] === '[MinKey, MaxKey]')
+    if (unboundedWildcard) {
+        findings.push({
+            code: 'unboundedWildcard',
+            message: `The wildcard index ${unboundedWildcard.indexName} is scanned without a path bound - ` +
+                'one key per field of every matching document. Nothing in the match narrows a wildcard path; ' +
+                'a plain index on the same prefix (e.g. definition_1__id_1) reads one key per document',
+            index: unboundedWildcard.indexName
+        })
+    }
+
     // The decisive one for a wildcard index: it has a single $_path key, so one
     // scan can bind exactly one path. An $or over several fields therefore has
     // no indexable form at all and stays a post-fetch filter.
