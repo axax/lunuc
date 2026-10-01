@@ -159,10 +159,48 @@ const isUnboundedScan = (stage) => {
  * direction of a single-field index does not matter), or a prefix of an index
  * the plans already show - forward or fully reversed, both scan the same way.
  */
+/**
+ * Wildcard indexes among the key patterns, as {prefix: ['definition'], root: 'data.'}.
+ * Explain shows them in two forms: the definition ({definition: 1, 'data.$**': 1})
+ * and the expanded scan form ({definition: 1, $_path: 1, 'data.datumzeit': 1}),
+ * where the root is taken from the first path segment of the scanned field.
+ */
+const wildcardPatternsOf = (keyPatterns) => {
+    const result = []
+    for (const pattern of keyPatterns) {
+        const keys = Object.keys(pattern)
+        let pos = keys.findIndex(k => k.includes('$**'))
+        let root = null
+        if (pos >= 0) {
+            root = keys[pos].replace('$**', '')
+        } else {
+            pos = keys.indexOf('$_path')
+            const scanned = pos >= 0 ? keys[pos + 1] : undefined
+            if (scanned && scanned.includes('.')) root = scanned.split('.')[0] + '.'
+        }
+        if (root !== null) result.push({prefix: keys.slice(0, pos), root})
+    }
+    return result
+}
+
+/**
+ * true if a wildcard index already serves the suggested key: the suggestion is
+ * the wildcard's prefix fields (same order) followed by at most ONE field under
+ * its root - a compound wildcard index bounds exactly one path after the prefix.
+ */
+const coveredByWildcard = (fields, keyPatterns) =>
+    wildcardPatternsOf(keyPatterns).some(({prefix, root}) => {
+        if (fields.length < prefix.length || fields.length > prefix.length + 1) return false
+        if (!prefix.every((field, i) => fields[i] === field)) return false
+        const rest = fields.slice(prefix.length)
+        return rest.every(field => root === '' || field.startsWith(root))
+    })
+
 export const isRedundantSuggestion = (key, existingKeyPatterns) => {
     const fields = Object.keys(key || {})
     if (fields.length === 0) return true
     if (fields.length === 1 && fields[0] === '_id') return true
+    if (coveredByWildcard(fields, existingKeyPatterns)) return true
 
     return existingKeyPatterns.some(pattern => {
         const patternFields = Object.keys(pattern)
