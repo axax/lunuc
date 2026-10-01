@@ -954,7 +954,17 @@ export const checkCountryPolicy = async ({ip, urlPathname, userAgent, host, host
  *
  * @returns {Promise<{action, type?: 'asn'|'country', isCrawler: boolean|null, ...}>}
  */
+// ACME http-01 validation (Let's Encrypt) must always reach the challenge files.
+// Let's Encrypt validates from several countries and cloud networks at once,
+// so a country or ASN policy would otherwise answer with the challenge page and
+// certificate renewal fails ("Invalid response ... <!DOCTYPE html><html lang=de>").
+// Safe to exempt: this path only ever serves the token files certbot writes.
+const ACME_CHALLENGE_PREFIX = '/.well-known/acme-challenge/'
+
 export const checkGeoPolicy = async (params) => {
+    if (params.urlPathname && params.urlPathname.startsWith(ACME_CHALLENGE_PREFIX)) {
+        return {action: 'allow', isCrawler: null}
+    }
     const asnResult = await checkAsnPolicy(params)
     if (asnResult.action !== 'allow') {
         return {...asnResult, type: 'asn'}
