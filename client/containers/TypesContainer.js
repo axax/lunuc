@@ -663,14 +663,14 @@ class TypesContainer extends React.Component {
                 })
             }
 
-            const multiSelectActions = [{name: _t('TypesContainer.delete'), value: 'delete'}]
+            const multiSelectActions = [{name: _t('TypesContainer.delete'), value: 'delete', icon: 'delete'}]
 
             if(Util.hasCapability({userData: _app_.user}, CAPABILITY_BULK_EDIT) && hasFieldsForBulkEdit(type)){
-                multiSelectActions.push( {name: _t('TypesContainer.bulkEdit'), value: 'edit'})
+                multiSelectActions.push( {name: _t('TypesContainer.bulkEdit'), value: 'edit', icon: 'edit'})
             }
 
             if(Util.hasCapability({userData: _app_.user}, CAPABILITY_BULK_EDIT_SCRIPT)){
-                multiSelectActions.push( {name: _t('TypesContainer.bulkEditScript'), value: 'editScript'})
+                multiSelectActions.push( {name: _t('TypesContainer.bulkEditScript'), value: 'editScript', icon: 'code'})
             }
 
 
