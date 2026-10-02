@@ -37,6 +37,40 @@ const compareDataReferences = (prev, current, fieldDefinition) => {
 }
 
 /*
+confirmation shown when the edit popup is closed with unsaved changes.
+It keeps its own state on purpose: a re-render of TypeEdit re-initializes
+the GenericForm (new fields object) and the changes would no longer be dirty.
+ */
+class SaveConfirmDialog extends React.Component {
+    state = {open: false}
+
+    show() {
+        if (!this.state.open) {
+            this.setState({open: true})
+        }
+    }
+
+    render() {
+        return <SimpleDialog open={this.state.open}
+                             maxWidth="xs"
+                             fullWidth
+                             onClose={(action) => {
+                                 this.setState({open: false})
+                                 // escape and backdrop click (no action key) keep editing
+                                 this.props.onAction(action && action.key ? action.key : 'continue')
+                             }}
+                             actions={[
+                                 {key: 'continue', label: _t('TypeEdit.continueEditing')},
+                                 {key: 'discard', label: _t('TypeEdit.discard'), type: 'error', divider: true},
+                                 {key: 'save', label: _t('core.save'), type: 'primary', variant: 'contained', autoFocus: true}
+                             ]}
+                             title={_t('TypeEdit.closeConfirmTitle')}>
+            {_t('TypeEdit.closeConfirmText')}
+        </SimpleDialog>
+    }
+}
+
+/*
 edit popup with form to edit an object of a type
  */
 class TypeEdit extends React.Component {
@@ -49,17 +83,37 @@ class TypeEdit extends React.Component {
     }
 
     componentDidMount() {
-        this.blocker = _app_.history.block(() => {
-            this.blocker()
-            if(this.needsAskForSaving()){
-                return false
+        // in app navigation (links, history.push, browser back)
+        this.blocker = _app_.history.block((newPath) => {
+            if (this._allowNavigation || !this.hasUnsavedChanges()) {
+                return true
             }
-            return true
+            if (typeof location !== 'undefined' && newPath === location.pathname + location.search + location.hash) {
+                // browser back/forward: the url has already changed, restore it while the user decides
+                const currentUrl = _app_.history._urlStack && _app_.history._urlStack[0]
+                if (currentUrl) {
+                    window.history.pushState({}, '', Util.addUrlContext(currentUrl))
+                }
+            }
+            this.askForSaving({pendingPath: newPath})
+            return false
         })
+
+        // reload, closing the tab / window, external links.
+        // Browsers only show their own generic message here, a custom text is not possible.
+        this._beforeUnload = (e) => {
+            if (this.hasUnsavedChanges()) {
+                e.preventDefault()
+                e.returnValue = ''
+                return ''
+            }
+        }
+        window.addEventListener('beforeunload', this._beforeUnload)
     }
 
     componentWillUnmount() {
         this.blocker()
+        window.removeEventListener('beforeunload', this._beforeUnload)
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
@@ -74,21 +128,19 @@ class TypeEdit extends React.Component {
             forceSave: false,
             dataToEditOri: props.dataToEdit,
             dataToEdit: props.dataToEdit,
-            open: props.open,
-            askForSaving: false
+            open: props.open
         }
     }
 
     shouldComponentUpdate(nextProps, nextState) {
         return this.state.open !== nextState.open ||
-            this.state.askForSaving !== nextState.askForSaving ||
             this.state.dataToEdit !== nextState.dataToEdit ||
             Util.shallowCompare(this.props.meta, nextProps.meta)
     }
 
     render() {
         const {title, type, meta, disableEscapeKeyDown} = this.props
-        let {dataToEdit, open, askForSaving} = this.state
+        let {dataToEdit, open} = this.state
 
 
         if(!open){
@@ -112,7 +164,7 @@ class TypeEdit extends React.Component {
             title,
             fullWidth: true,
             fullScreenMobile: true,
-            disableEscapeKeyDown: askForSaving || disableEscapeKeyDown,
+            disableEscapeKeyDown,
             maxWidth: 'xl',
             open,
             onClose: this.handleSaveData.bind(this),
@@ -143,21 +195,12 @@ class TypeEdit extends React.Component {
             }} primaryButton={false} fields={formFields} values={dataToEdit}/>
         }
 
-        Hook.call('TypeCreateEdit', {type, props, dataToEdit, formFields, meta, askForSaving, parentRef: this})
+        // askForSaving is kept for hooks that still read it, the confirmation has its own state now
+        Hook.call('TypeCreateEdit', {type, props, dataToEdit, formFields, meta, askForSaving: false, parentRef: this})
         return <><SimpleDialog {...props}/>
-            <SimpleDialog open={askForSaving}
-                          onClose={(action) => {
-                              if(action.key==='yes') {
-                                  this.saveDataIfNeeded({key:'save_close'}, dataToEdit)
-                              }else if(action.key==='no') {
-                                  this.closeModal({key:'cancel'})
-                              }
-                          }}
-                          disableEscapeKeyDown={true}
-                          actions={[{key: 'no', label: 'No'},{key: 'yes', label: 'Yes', type: 'primary'}]}
-                          title={_t('TypeEdit.closeConfirmTitle')}>
-                {_t('TypeEdit.closeConfirmText')}
-            </SimpleDialog>
+            <SaveConfirmDialog ref={ref => {
+                this.saveConfirmDialog = ref
+            }} onAction={this.handleConfirmAction.bind(this)}/>
         </>
     }
 
@@ -165,27 +208,67 @@ class TypeEdit extends React.Component {
         const {onClose, type} = this.props
         const {dataToEdit} = this.state
         onClose(action, {optimisticData, dataToEdit, type})
+
+        // continue a navigation that was held back because of unsaved changes
+        if (this._pendingPath) {
+            const path = this._pendingPath
+            this._pendingPath = null
+            this._allowNavigation = true
+            try {
+                _app_.history.push(path)
+            } finally {
+                this._allowNavigation = false
+            }
+        }
     }
 
+    hasUnsavedChanges = () => {
+        return !!(this.props.open && this.createEditForm &&
+            this.createEditForm.state.fieldsDirty &&
+            Object.keys(this.createEditForm.state.fieldsDirty).length > 0)
+    }
+
+    askForSaving = ({pendingPath} = {}) => {
+        this._pendingPath = pendingPath || null
+        if (this.saveConfirmDialog) {
+            this.saveConfirmDialog.show()
+        }
+    }
+
+    // kept for compatibility, returns true if the confirmation is shown
     needsAskForSaving = () => {
-        if(this.props.open && this.createEditForm && Object.keys(this.createEditForm.state.fieldsDirty).length>0){
-            const {dataToEdit} = this.state
-            this.setState({askForSaving:true, forceSave:true, dataToEdit: Object.assign({}, dataToEdit, this.createEditForm.state.fields)})
+        if (this.hasUnsavedChanges()) {
+            this.askForSaving()
             return true
         }
         return false
     }
 
+    handleConfirmAction(key) {
+        if (key === 'save') {
+            this.handleSaveData({key: 'save_close'})
+        } else if (key === 'discard') {
+            this.closeModal({key: 'cancel'})
+        } else {
+            // keep editing
+            this._pendingPath = null
+        }
+    }
+
     handleSaveData = (action, extraDataToSave) => {
         const {type,meta} = this.props
         const {dataToEdit} = this.state
-        if(action && (action.key === undefined || action.key === 'Escape') && this.needsAskForSaving()){
+        if (action && (action.key === undefined || action.key === 'Escape' || action.key === 'cancel') && this.hasUnsavedChanges()) {
+            // backdrop click, escape or cancel button with unsaved changes
+            this.askForSaving()
             return
         }
         if (action && ['save', 'save_close'].indexOf(action.key) >= 0) {
             const formValidation = this.createEditForm.validate(this.createEditForm.state, true, {changeTab: true})
             if (!formValidation.isValid) {
                 console.warn('validation error',formValidation)
+                // stay in the form, a held back navigation is dropped
+                this._pendingPath = null
                 return
             }
 
@@ -250,6 +333,8 @@ class TypeEdit extends React.Component {
                 if (Object.keys(fieldErrors).length) {
                     this.createEditForm.setState({fieldErrors})
                 }
+                // saving failed, stay in the form
+                this._pendingPath = null
             } else {
 
                 // set use for newly created objects

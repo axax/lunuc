@@ -71,6 +71,7 @@ import styled from '@emotion/styled'
 import PrettyErrorMessage from '../components/PrettyErrorMessage'
 import {useKeyValuesGlobal, setKeyValue} from '../../../client/util/keyvalue'
 import {downloadAs} from '../../../client/util/download'
+import {exportCmsPagesAsZip, pickZipFile, importCmsPagesFromZip, formatImportResult} from '../util/cmsPageFilesClient'
 import FileDrop from '../../../client/components/FileDrop'
 import {csvToJson} from '../../../client/util/csv.mjs'
 import GenericSettings from '../../../client/components/GenericSettings'
@@ -889,6 +890,48 @@ class CmsViewEditorContainer extends React.Component {
                             this.setState({showPageSettings: true})
                         }
                     })
+
+                if (canMangeCmsTemplate && cmsPage._id) {
+                    const {_version: pageVersion} = getSlugVersion(props.slug)
+                    moreMenu.push({
+                            icon: 'download',
+                            name: _t('CmsPageFiles.exportPage'), onClick: () => {
+                                // save pending changes first, the export reads the page from the db
+                                this.saveCmsPage().then(() =>
+                                    exportCmsPagesAsZip({ids: [cmsPage._id], _version: pageVersion})
+                                ).catch(e => {
+                                    _app_.dispatcher.addError({key: 'cmsExport', msg: e.message})
+                                })
+                            }
+                        },
+                        {
+                            icon: 'upload',
+                            name: _t('CmsPageFiles.importPages'), onClick: () => {
+                                pickZipFile().then(file => {
+                                    if (!file) {
+                                        return
+                                    }
+                                    return importCmsPagesFromZip(file, {_version: pageVersion}).then(result => {
+                                        const changed = result.created > 0 || result.updated > 0
+                                        this.setState({
+                                            simpleDialog: {
+                                                title: _t('CmsPageFiles.importPages'),
+                                                text: <div style={{whiteSpace: 'pre-wrap'}}>{formatImportResult(result)}</div>,
+                                                onClose: () => {
+                                                    if (changed) {
+                                                        // the current page might have been changed
+                                                        location.href = location.href.split('#')[0]
+                                                    }
+                                                }
+                                            }
+                                        })
+                                    })
+                                }).catch(e => {
+                                    _app_.dispatcher.addError({key: 'cmsImport', msg: e.message})
+                                })
+                            }
+                        })
+                }
             }
 
             if (config.LANGUAGES.length > 1) {
@@ -1591,13 +1634,16 @@ class CmsViewEditorContainer extends React.Component {
             this.closeUndoEntry()
             const {updateCmsPage, cmsPage} = this.props
             console.log('save cms values for', keys)
-            updateCmsPage({
+            const result = updateCmsPage({
                 _id: cmsPage._id,
                 slug: cmsPage.slug,
                 realSlug: cmsPage.realSlug, ...this._keyValueMap
             }, () => {})
             this._keyValueMap = {}
+            // returns the mutation promise, so callers can wait until the page is saved (e.g. export)
+            return Promise.resolve(result)
         }
+        return Promise.resolve()
     }
 
     handleFlagChange = (key, event, value) => {

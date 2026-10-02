@@ -460,6 +460,16 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
                     return
                 }
 
+                // Timeout-Timer feuerte deutlich vor Ablauf der echten Zeit: die Uhr wurde
+                // manipuliert (z.B. Render-Bot mit "virtual time"). Kein Backend-Problem.
+                if (isTimeout && effectiveTimeout > 0) {
+                    const elapsedMs = performance.now() - requestStart
+                    if (elapsedMs < effectiveTimeout * 0.9) {
+                        console.warn(`finalFetch: timeout after ${Math.round(elapsedMs)}ms of ${effectiveTimeout}ms - clock manipulated, not reported (${cacheKey})`)
+                        return
+                    }
+                }
+
                 _app_.dispatcher.addError({
                     key: 'api_error',
                     msg,

@@ -98,7 +98,8 @@ export const SimpleTab = (props) => <StyledTab disableRipple {...props} />
 
 
 export const SimpleTabPanel = (props) => {
-    const {children, value, index, ...other} = props
+    // contentSx: optional sx for the content box (default: mt 3, ml 3)
+    const {children, value, index, contentSx, ...other} = props
 
     return (
         <Typography
@@ -106,7 +107,7 @@ export const SimpleTabPanel = (props) => {
             hidden={value !== index}
             {...other}
         >
-            {value === index && <Box sx={{ mt: 3, ml:3, minHeight:'100%' }}>{children}</Box>}
+            {value === index && <Box sx={contentSx || { mt: 3, ml:3, minHeight:'100%' }}>{children}</Box>}
         </Typography>
     )
 }

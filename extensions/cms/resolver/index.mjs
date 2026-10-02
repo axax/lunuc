@@ -7,6 +7,7 @@ import {pubsub, pubsubHooked} from '../../../api/subscription.mjs'
 import {
     CAPABILITY_MANAGE_CMS_PAGES,
     CAPABILITY_MANAGE_CMS_CONTENT,
+    CAPABILITY_MANAGE_CMS_TEMPLATE,
     CAPABILITY_VIEW_CMS_EDITOR
 } from '../constants/index.mjs'
 import Cache from '../../../util/cache.mjs'
@@ -25,6 +26,8 @@ import {CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities.mjs'
 import {createMatchForCurrentUser} from '../../../api/util/dbquery.mjs'
 import {matchExpr, parseOrElse} from '../../../client/util/json.mjs'
 import {userHasAccessToObject} from '../../../api/util/access.mjs'
+import {getCmsPagesForExport, createCmsPagesZip, readCmsPagesZip, importCmsPages} from '../util/cmsPageFilesServer.mjs'
+import {filesToCmsPages} from '../util/cmsPageFiles.mjs'
 
 
 const createScopeForDataResolver = (query, _props) => {
@@ -60,6 +63,27 @@ const cmsPageStatus = {}, globalScope = {}
 
 export default db => ({
     Query: {
+        exportCmsPages: async ({ids, slugs, _version}, {context}) => {
+            // the export contains scripts and server scripts
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_CMS_TEMPLATE)
+
+            if ((!ids || ids.length === 0) && (!slugs || slugs.length === 0)) {
+                throw new Error('ids or slugs are required')
+            }
+            const pages = await getCmsPagesForExport({db, context, ids, slugs, _version})
+            if (pages.length === 0) {
+                throw new Error('no pages found')
+            }
+            const date = new Date().toISOString().substring(0, 10)
+            const baseName = pages.length === 1 ?
+                'cmspage-' + (pages[0].slug || 'root').replace(/[^A-Za-z0-9._-]/g, '_') :
+                'cmspages-' + pages.length
+            return {
+                name: `${baseName}-${date}.zip`,
+                count: pages.length,
+                data: createCmsPagesZip(pages).toString('base64')
+            }
+        },
         cmsPages: async ({limit, page, offset, filter, sort, _version}, {headers, context}) => {
             Util.checkIfUserIsLoggedIn(context)
             const fields = ['public', 'slug', 'hostRule', 'name', 'author','keyword', 'description', 'urlSensitiv', 'fetchPolicy', 'parseResolvedData', 'alwaysLoadAssets', 'loadPageOptions', 'ssrStyle', 'uniqueStyle', 'publicEdit', 'compress', 'isTemplate','ownerGroup$[UserGroup]','disableRendering']
@@ -507,6 +531,23 @@ export default db => ({
         }
     },
     Mutation: {
+        importCmsPages: async ({data, _version, createMissing, dryRun}, {context}) => {
+            // server scripts are executed on the server, so only template managers may import
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_CMS_TEMPLATE)
+
+            const files = readCmsPagesZip(Buffer.from(data, 'base64'))
+            const {pages, errors} = filesToCmsPages(files)
+            if (pages.length === 0) {
+                return {created: 0, updated: 0, unchanged: 0, skipped: 0, slugs: [], errors: errors.length ? errors : ['no page.json found in zip']}
+            }
+            const result = await importCmsPages({
+                db, context, pages, _version,
+                createMissing: createMissing !== false,
+                dryRun: !!dryRun
+            })
+            result.errors.unshift(...errors)
+            return result
+        },
         createCmsPage: async ({slug,ownerGroup,template,style,script,resources,meta, ...rest}, req) => {
             await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_MANAGE_CMS_CONTENT)
 

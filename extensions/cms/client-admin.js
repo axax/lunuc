@@ -35,6 +35,8 @@ import SimpleFileExplorer from '../../client/components/ui/impl/material/SimpleF
 import {parseOrElse} from "../../client/util/json.mjs";
 import Util from '../../client/util/index.mjs'
 import {CAPABILITY_MANAGE_OTHER_USERS} from '../../util/capabilities.mjs'
+import {CAPABILITY_MANAGE_CMS_TEMPLATE} from './constants/index.mjs'
+import {exportCmsPagesAsZip, pickZipFile, importCmsPagesFromZip, formatImportResult} from './util/cmsPageFilesClient'
 
 registerTrs(translations, 'CmsViewEditorContainer')
 registerTrs(adminTranslations, 'AdminTranslations')
@@ -232,6 +234,18 @@ export default () => {
         }
     })
 
+    Hook.on('TypeTableMultiSelectAction', function ({action, selectedRows}) {
+        if (action === 'exportCmsPageFiles') {
+            const ids = Object.keys(selectedRows)
+            if (ids.length === 0) {
+                return
+            }
+            exportCmsPagesAsZip({ids, _version: this.pageParams._version}).catch(e => {
+                this.setState({simpleDialog: {title: _t('CmsPageFiles.exportSelected'), children: e.message}})
+            })
+        }
+    })
+
     // add an entry actions
     Hook.on('TypeTableEntryAction', ({type, actions, item, container}) => {
         if (type === 'CmsPage') {
@@ -249,8 +263,39 @@ export default () => {
 
 
     // add some extra data to the table
-    Hook.on('TypeTableAction', function ({type, actions, pageParams, data}) {
+    Hook.on('TypeTableAction', function ({type, actions, multiSelectActions, pageParams, data}) {
         if (type === 'CmsPage') {
+
+            if (Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
+                multiSelectActions.unshift({name: _t('CmsPageFiles.exportSelected'), value: 'exportCmsPageFiles', icon: 'folderZip'})
+
+                actions.push({
+                    divider: true,
+                    name: _t('CmsPageFiles.importPages'),
+                    icon: 'upload',
+                    onClick: () => {
+                        pickZipFile().then(file => {
+                            if (!file) {
+                                return
+                            }
+                            return importCmsPagesFromZip(file, {_version: this.pageParams._version}).then(result => {
+                                this.setState({
+                                    simpleDialog: {
+                                        title: _t('CmsPageFiles.importPages'),
+                                        children: <div style={{whiteSpace: 'pre-wrap'}}>{formatImportResult(result)}</div>
+                                    }
+                                })
+                                if (result.created > 0 || result.updated > 0) {
+                                    this.getData(this.pageParams, false)
+                                }
+                            })
+                        }).catch(e => {
+                            this.setState({simpleDialog: {title: _t('CmsPageFiles.importPages'), children: e.message}})
+                        })
+                    }
+                })
+            }
+
             actions.unshift({
                 name: _t('CmsMenu.addFromHtml'),
                 onClick: () => {

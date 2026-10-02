@@ -5,7 +5,12 @@ import {getComponentByKey} from "./jsonDomUtil";
 import JsonDomHelper from '../components/JsonDomHelper'
 import Util from '../../../client/util/index.mjs'
 import {CAPABILITY_ADMIN_OPTIONS} from '../../../util/capabilities.mjs'
-import {getZIndexBasis} from '../components/jsondomhelper/JsonDomStyledElements'
+import {ZINDEX_VAR, ZINDEX_BASIS_DEFAULT} from '../components/jsondomhelper/JsonDomStyledElements'
+
+// the css classes below are created once at module load, so the z-index must
+// follow the css variable - otherwise the drop areas stay at the default basis
+// and end up behind dialogs (e.g. a CmsEditor field in a GenericForm)
+const zIndex = (offset) => `calc(var(${ZINDEX_VAR}, ${ZINDEX_BASIS_DEFAULT}) + ${offset})`
 
 
 export const ALLOW_DROP = ['Cms', 'Print', 'Col', 'Row','div', 'main', 'footer', 'header', 'nav', 'section', 'aside', 'article', 'td', 'table']
@@ -31,7 +36,7 @@ const CSS_DROPAREA = css`
     transition: visibility .5s ease-out, opacity .5s ease-out;
     visibility: hidden;
     opacity: 0;
-    z-index: ${getZIndexBasis() +1};
+    z-index: ${zIndex(1)};
     display: flex;
     justify-content:center;
     align-items:center;
@@ -63,7 +68,7 @@ const CSS_DROPAREA_ACTIVE = css`
     opacity: 0.8;
 `
 const CSS_DROPAREA_OVER = css`
-    z-index: ${getZIndexBasis() + 2};
+    z-index: ${zIndex(2)};
     visibility: visible;
     background: red;
     &:after {

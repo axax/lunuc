@@ -40,6 +40,9 @@ import Async from './Async'
 import styled from '@emotion/styled'
 import { useTheme } from '@mui/material/styles'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import AddIcon from '@mui/icons-material/Add'
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
+import IconButton from '@mui/material/IconButton'
 import {showTooltip, hideTooltip} from '../util/tooltip'
 import {translateText} from '../util/translate.mjs'
 import {QUERY_KEY_VALUES_GLOBAL} from '../util/keyvalue'
@@ -47,6 +50,7 @@ import {replacePlaceholders} from '../../util/placeholders.mjs'
 import {SimpleAutosuggest} from './ui/impl/material'
 import { CAPABILITY_MANAGE_TYPES} from '../../util/capabilities.mjs'
 import CmsViewContainer from '../../extensions/cms/containers/CmsViewContainer'
+import CmsElement from '../../extensions/cms/components/CmsElement'
 import {
     DEFAULT_STYLE_EDITOR, DEFAULT_STYLE_ENVIRONMENT,
     DEFAULT_TEMPLATE_MINIMAL
@@ -55,12 +59,64 @@ import {
 const CodeEditor = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "codeeditor" */ './CodeEditor')}/>
 
 
+// plain tabs: small labels, thin underline, colors from the theme.
+// Selectors are nested on purpose so they win over the default SimpleTab styles.
 const StyledTabContainer = styled('div')(({ theme }) => ({
-    backgroundColor: theme.palette.background.paper
+    backgroundColor: theme.palette.background.paper,
+    '& .MuiTabs-root': {
+        minHeight: 36,
+        borderBottom: `1px solid ${theme.palette.divider}`,
+        borderRight: 'none'
+    },
+    '& .MuiTabs-root .MuiTabs-indicator': {
+        height: 2,
+        borderRadius: '2px 2px 0 0',
+        backgroundColor: theme.palette.primary.main
+    },
+    '& .MuiTabs-root .MuiTab-root': {
+        minHeight: 36,
+        minWidth: 0,
+        padding: '6px 12px',
+        marginRight: 0,
+        fontFamily: 'inherit',
+        fontSize: '0.875rem',
+        fontWeight: theme.typography.fontWeightRegular,
+        textTransform: 'none',
+        color: theme.palette.text.secondary,
+        transition: 'color .15s'
+    },
+    '& .MuiTabs-root .MuiTab-root:hover': {
+        color: theme.palette.text.primary
+    },
+    '& .MuiTabs-root .MuiTab-root.Mui-selected': {
+        color: theme.palette.text.primary,
+        fontWeight: theme.typography.fontWeightMedium
+    },
+    '& .MuiTabs-root .MuiTab-root.Mui-focusVisible': {
+        backgroundColor: 'transparent',
+        outline: `2px solid ${theme.palette.primary.main}`,
+        outlineOffset: -2,
+        borderRadius: 4
+    },
+    '& .MuiTabs-scrollButtons': {
+        width: 28
+    },
+    '& .MuiTabs-scrollButtons.Mui-disabled': {
+        opacity: 0.3
+    }
 }))
+
+// the form fields bring their own margin, so the panel only needs a little space below the tabs
+const TAB_PANEL_SX = {mt: 2, minHeight: '100%'}
 
 const StyledCmsEditorFrame = styled('div')(({theme}) => ({
     position: 'relative',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+    [theme.breakpoints.up('md')]: {
+        flexDirection: 'row'
+    },
     padding: '10px',
     borderRadius: '12px',
     border: `1px solid ${theme.palette.divider}`,
@@ -71,6 +127,8 @@ const StyledCmsEditorFrame = styled('div')(({theme}) => ({
 }))
 
 const StyledCmsEditorCanvas = styled('div')(({theme}) => ({
+    flex: 1,
+    minWidth: 0,
     minHeight: '8rem',
     borderRadius: '8px',
     backgroundColor: theme.palette.background.paper,
@@ -78,6 +136,48 @@ const StyledCmsEditorCanvas = styled('div')(({theme}) => ({
     // room for the editor chrome: drag bar (-8px), context menu (-2.45rem)
     // and the action bar above the element
     padding: '1rem'
+}))
+
+// element palette inside the editor frame (left of the canvas on desktop, above it on mobile)
+const StyledCmsElementsPanel = styled('div')(({theme, collapsed}) => ({
+    flexShrink: 0,
+    borderRadius: '8px',
+    backgroundColor: theme.palette.background.paper,
+    boxShadow: theme.shadows[1],
+    [theme.breakpoints.up('md')]: {
+        // stretch to the full height of the editor frame (the canvas decides the height)
+        alignSelf: 'stretch',
+        position: 'relative',
+        // two dense tiles (2 x 96px) + padding + scrollbar
+        width: collapsed ? 40 : 216,
+        // keeps the palette usable while the canvas is still (almost) empty
+        minHeight: collapsed ? 'auto' : '24rem'
+    }
+}))
+
+// scroll area inside the panel: on desktop it is pinned to the panel, so the palette
+// never makes the frame taller than the canvas but uses all of its height
+const StyledCmsElementsScroll = styled('div')(({theme, collapsed}) => ({
+    padding: '4px',
+    overflowY: 'auto',
+    maxHeight: collapsed ? 'none' : '14rem',
+    [theme.breakpoints.up('md')]: {
+        position: collapsed ? 'static' : 'absolute',
+        inset: 0,
+        maxHeight: 'none'
+    }
+}))
+
+const StyledCmsElementsHeader = styled('div')(({theme, collapsed}) => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: collapsed ? 'center' : 'space-between',
+    padding: collapsed ? 0 : '0 0 0 6px',
+    color: theme.palette.text.secondary,
+    fontSize: '0.75rem',
+    fontWeight: 600,
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em'
 }))
 
 const getSxProps = (field,theme) => ({
@@ -837,6 +937,8 @@ class GenericForm extends React.Component {
                 {tabs.length > 0 && <StyledTabContainer>
                     <SimpleTabs
                         style={{width:'100%'}}
+                        variant="scrollable"
+                        scrollButtons="auto"
                         value={tabValue}
                         onChange={(e, newValue) => {
                             this.setState({tabValue: newValue})
@@ -852,12 +954,12 @@ class GenericForm extends React.Component {
                     </SimpleTabs>
 
                     {tabs.map((tab, i) =>
-                        <SimpleTabPanel key={'tabPanel-' + i} value={tabValue} index={i}>
+                        <SimpleTabPanel key={'tabPanel-' + i} value={tabValue} index={i} contentSx={TAB_PANEL_SX}>
                             {tab.fields}
                         </SimpleTabPanel>
                     )}
                     {formFields.length > 0 &&
-                    <SimpleTabPanel key={'tabPanel-' + tabs.length} value={tabValue} index={tabs.length}>
+                    <SimpleTabPanel key={'tabPanel-' + tabs.length} value={tabValue} index={tabs.length} contentSx={TAB_PANEL_SX}>
                         {formFields}
                     </SimpleTabPanel>}
 
@@ -1183,6 +1285,10 @@ class GenericForm extends React.Component {
             </FormControl>)
 
         } else if (uitype === 'CmsEditor') {
+           // element palette is shown by default, set showElements: false to hide it
+           const showCmsElements = field.showElements !== false && !field.readOnly && !field.uiReadOnly
+           const cmsElementsCollapsed = this.state.cmsElementsCollapsed && this.state.cmsElementsCollapsed[fieldKey] !== undefined ?
+               this.state.cmsElementsCollapsed[fieldKey] : !!field.elementsCollapsed
            currentFormFields.push(<FormControl key={'control' + fieldKey}
                                                className={field.className}
                                                error={!!this.state.fieldErrors[fieldKey]}
@@ -1198,6 +1304,27 @@ class GenericForm extends React.Component {
                            }}
                            shrink>{field.label + (languageCode ? ' [' + languageCode + ']' : '')}</InputLabel>
                <StyledCmsEditorFrame>
+                   {showCmsElements && <StyledCmsElementsPanel collapsed={cmsElementsCollapsed}>
+                       <StyledCmsElementsScroll collapsed={cmsElementsCollapsed}>
+                       <StyledCmsElementsHeader collapsed={cmsElementsCollapsed}>
+                           {!cmsElementsCollapsed && <span>{_t('CmsElement.elements')}</span>}
+                           <Tooltip title={_t(cmsElementsCollapsed ? 'CmsElement.showElements' : 'CmsElement.hideElements')}>
+                               <IconButton size="small" onClick={() => {
+                                   this.setState({
+                                       cmsElementsCollapsed: {
+                                           ...this.state.cmsElementsCollapsed,
+                                           [fieldKey]: !cmsElementsCollapsed
+                                       }
+                                   })
+                               }}>{cmsElementsCollapsed ? <AddIcon fontSize="small"/> :
+                                   <ChevronLeftIcon fontSize="small"/>}</IconButton>
+                           </Tooltip>
+                       </StyledCmsElementsHeader>
+                       {!cmsElementsCollapsed && <CmsElement dense
+                                                             hideAddCustom
+                                                             advanced={field.advancedElements}/>}
+                       </StyledCmsElementsScroll>
+                   </StyledCmsElementsPanel>}
                    <StyledCmsEditorCanvas>
                <CmsViewContainer
                    slug=""

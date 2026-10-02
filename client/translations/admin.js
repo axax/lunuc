@@ -156,8 +156,10 @@ export const translations = {
         'CodeEditor.transformNoChange': 'Keine Änderung.',
         'CodeEditor.saveAsFile': 'Als Datei speichern',
         'GlobalSearch.placeholder':'Schnellsuche',
-        'TypeEdit.closeConfirmText':'Möchten Sie die Änderung speichern?',
-        'TypeEdit.closeConfirmTitle':'Daten Speichern',
+        'TypeEdit.closeConfirmText':'Es gibt ungespeicherte Änderungen. Möchten Sie diese speichern, bevor Sie fortfahren?',
+        'TypeEdit.closeConfirmTitle':'Ungespeicherte Änderungen',
+        'TypeEdit.discard':'Verwerfen',
+        'TypeEdit.continueEditing':'Weiter bearbeiten',
         'core.searchPlaceholder':'Suchen…',
         'core.noResults':'Keine Treffer'
     },
@@ -320,8 +322,10 @@ export const translations = {
         'CodeEditor.transformNoChange': 'No change.',
         'CodeEditor.saveAsFile': 'Save as file',
         'GlobalSearch.placeholder':'Quick search',
-        'TypeEdit.closeConfirmText':'Would you like to save the change?',
-        'TypeEdit.closeConfirmTitle':'Save data',
+        'TypeEdit.closeConfirmText':'You have unsaved changes. Do you want to save them before you continue?',
+        'TypeEdit.closeConfirmTitle':'Unsaved changes',
+        'TypeEdit.discard':'Discard',
+        'TypeEdit.continueEditing':'Keep editing',
         'core.searchPlaceholder':'Search…',
         'core.noResults':'No results'
     }
