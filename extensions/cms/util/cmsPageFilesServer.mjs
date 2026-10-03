@@ -25,6 +25,7 @@ import {CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities.mjs'
 import {createMatchForCurrentUser} from '../../../api/util/dbquery.mjs'
 import {getCmsPageCacheKey} from './cmsPage.mjs'
 import {toPlainJson, fromPlainJson} from '../../../api/util/plainJson.mjs'
+import {readExportState, writeExportState, hashFields, hashValue, threeWayDiff} from '../../../api/util/exportState.mjs'
 import {
     cmsPagesToFiles,
     filesToCmsPages,
@@ -33,7 +34,8 @@ import {
     CMS_PAGE_META_FILE,
     CMS_PAGE_ATTRIBUTES_FILE,
     CMS_PAGE_RUNTIME_FIELDS,
-    CMS_PAGE_INFO_FIELDS
+    CMS_PAGE_INFO_FIELDS,
+    CMS_PAGE_META_FIELDS
 } from './cmsPageFiles.mjs'
 
 const MAX_ZIP_ENTRIES = 5000
@@ -43,6 +45,22 @@ const CODE_FIELDS = CMS_PAGE_CODE_FILES.map(f => f.field)
 // never written by an import
 const NOT_IMPORTED_FIELDS = [...CMS_PAGE_INFO_FIELDS, ...CMS_PAGE_RUNTIME_FIELDS]
 
+
+/**
+ * all fields of an export page that are compared on import, in the representation of the
+ * files: standard attributes are null if not set, code fields '' if not set
+ */
+const comparableFields = (page) => {
+    const values = {}
+    CMS_PAGE_META_FIELDS.forEach(field => values[field] = null)
+    CODE_FIELDS.forEach(field => values[field] = '')
+    Object.keys(page).forEach(field => {
+        if (!field.startsWith('_') && NOT_IMPORTED_FIELDS.indexOf(field) < 0 && page[field] !== undefined) {
+            values[field] = page[field]
+        }
+    })
+    return values
+}
 
 const docToExportPage = (doc) => {
     const page = {}
@@ -236,9 +254,35 @@ export const importCmsPages = async ({db, context, pages, _version, createMissin
  * are no longer part of the page (e.g. an emptied manual.md) are removed, other files
  * in the directory are never touched.
  */
-export const exportCmsPagesToDirectory = async ({db, context, dir, ids, slugs, filter, _version}) => {
+export const exportCmsPagesToDirectory = async ({db, context, dir, ids, slugs, filter, _version, force = false}) => {
     const root = resolveDir(dir)
-    const pages = await getCmsPagesForExport({db, context, ids, slugs, filter, _version})
+    const allPages = await getCmsPagesForExport({db, context, ids, slugs, filter, _version})
+    const state = readExportState(root)
+
+    // pages whose files were changed since the last export and not imported yet are not
+    // overwritten (unless force), otherwise the export would destroy these changes
+    const keptLocal = []
+    if (!force && fs.existsSync(root)) {
+        const {pages: localPages} = filesToCmsPages(readDirRecursive(root, root, []))
+        localPages.forEach(localPage => {
+            const itemState = localPage._id && state.items[localPage._id]
+            if (!itemState) {
+                return
+            }
+            const modified = Object.keys(localPage).some(field => {
+                if (field.startsWith('_') || NOT_IMPORTED_FIELDS.indexOf(field) >= 0) {
+                    return false
+                }
+                const isCode = CODE_FIELDS.indexOf(field) >= 0
+                const base = itemState.fields[field] !== undefined ? itemState.fields[field] : hashValue(null, isCode)
+                return hashValue(localPage[field], isCode) !== base
+            })
+            if (modified) {
+                keptLocal.push(localPage._id)
+            }
+        })
+    }
+    const pages = allPages.filter(page => keptLocal.indexOf(page._id) < 0)
     const files = cmsPagesToFiles(pages)
 
     // clean up known files in the page folders first
@@ -262,7 +306,14 @@ export const exportCmsPagesToDirectory = async ({db, context, dir, ids, slugs, f
         fs.writeFileSync(absFile, file.content, 'utf8')
     })
 
-    return {dir: root, pages: pages.length, files: files.length, slugs: pages.map(p => p.slug)}
+    // baseline for importChangedCmsPagesFromDirectory
+    state.type = 'CmsPage'
+    pages.forEach(page => {
+        state.items[page._id] = {slug: page.slug, fields: hashFields(comparableFields(page), CODE_FIELDS)}
+    })
+    writeExportState(root, state)
+
+    return {dir: root, pages: pages.length, files: files.length, keptLocal: keptLocal.length, slugs: pages.map(p => p.slug)}
 }
 
 
@@ -289,6 +340,130 @@ export const importCmsPagesFromDirectory = async ({db, context, dir, _version, c
     const {pages, errors} = filesToCmsPages(readDirRecursive(root, root, []))
     const result = await importCmsPages({db, context, pages, _version, createMissing, dryRun})
     result.errors.unshift(...errors)
+    return result
+}
+
+
+/**
+ * imports only what was changed in the files since the last export (three way compare
+ * against .export-state.json, see api/util/exportState.mjs). Changes made in the admin
+ * after the export are never overwritten - such fields are reported as conflicts.
+ *
+ * - page with baseline, changed in file only  -> the changed fields are updated
+ * - page in the db without baseline           -> skipped (run an export first)
+ * - page with baseline that no longer exists  -> skipped (deleted in the admin)
+ * - new folder (no _id, slug unknown)         -> created if createMissing, _id is written to page.json
+ */
+export const importChangedCmsPagesFromDirectory = async ({db, context, dir, _version, createMissing = true, dryRun = false}) => {
+    const root = resolveDir(dir)
+    const collectionName = await resolveCollectionName(db, context, _version)
+    const state = readExportState(root)
+    const {pages, errors} = filesToCmsPages(readDirRecursive(root, root, []))
+
+    const result = {created: 0, updated: 0, unchanged: 0, conflicts: 0, skipped: 0, slugs: [], errors: [...errors]}
+    const projection = {}
+    CMS_PAGE_RUNTIME_FIELDS.forEach(f => projection[f] = 0)
+
+    for (const page of pages) {
+        const label = page.slug + ' [' + page._path + ']'
+        try {
+            const fileValues = {}
+            Object.keys(page).forEach(field => {
+                if (!field.startsWith('_') && NOT_IMPORTED_FIELDS.indexOf(field) < 0) {
+                    fileValues[field] = page[field]
+                }
+            })
+
+            let doc = null
+            if (page._id && ObjectId.isValid(page._id)) {
+                doc = await db.collection(collectionName).findOne({_id: new ObjectId(page._id)}, {projection})
+                if (!doc && state.items[page._id]) {
+                    result.skipped++
+                    result.slugs.push(label + ': deleted in the admin, skipped')
+                    continue
+                }
+            }
+            if (!doc) {
+                doc = await db.collection(collectionName).findOne({slug: page.slug}, {projection})
+            }
+
+            if (!doc) {
+                if (!createMissing) {
+                    result.skipped++
+                    continue
+                }
+                if (!dryRun) {
+                    const data = {}
+                    Object.keys(fileValues).forEach(field => {
+                        data[field] = CODE_FIELDS.indexOf(field) >= 0 ? fileValues[field] : fromPlainJson(fileValues[field])
+                    })
+                    const created = await GenericResolver.createEntity(db, {context: {lang: 'de', ...context}}, 'CmsPage', {_version, ...data})
+                    const newId = created._id.toString()
+                    // remember the id in page.json, so the next import updates this page
+                    const metaFile = path.join(root, page._path, CMS_PAGE_META_FILE)
+                    assertInside(root, metaFile)
+                    const {_id: ignore, ...meta} = JSON.parse(fs.readFileSync(metaFile, 'utf8'))
+                    fs.writeFileSync(metaFile, JSON.stringify({_id: newId, ...meta}, null, 2) + '\n', 'utf8')
+                    state.items[newId] = {slug: page.slug, fields: hashFields(comparableFields(page), CODE_FIELDS)}
+                    Cache.clearStartWith(getCmsPageCacheKey({_version, slug: page.slug}))
+                }
+                result.created++
+                result.slugs.push(label + ': new')
+                continue
+            }
+
+            const docId = doc._id.toString()
+            const itemState = state.items[docId]
+            if (!itemState) {
+                result.skipped++
+                result.slugs.push(label + ': no export baseline, skipped (run the export first)')
+                continue
+            }
+
+            const diff = threeWayDiff({
+                fileValues,
+                dbValues: comparableFields(docToExportPage(doc)),
+                base: itemState.fields,
+                codeFields: CODE_FIELDS
+            })
+            const changedFields = Object.keys(diff.changed)
+
+            if (diff.conflicts.length) {
+                result.conflicts++
+                result.slugs.push(label + ': conflict, changed in file and admin: ' + diff.conflicts.join(', '))
+            }
+
+            if (changedFields.length === 0) {
+                if (!diff.conflicts.length) {
+                    result.unchanged++
+                }
+            } else {
+                if (!dryRun) {
+                    const data = {}
+                    changedFields.forEach(field => {
+                        data[field] = CODE_FIELDS.indexOf(field) >= 0 ? diff.changed[field] : fromPlainJson(diff.changed[field])
+                    })
+                    await GenericResolver.updateEntity(db, context, 'CmsPage', {_id: docId, _version, ...data})
+                    Cache.clearStartWith(getCmsPageCacheKey({_version, slug: doc.slug}))
+                    if (data.slug && data.slug !== doc.slug) {
+                        Cache.clearStartWith(getCmsPageCacheKey({_version, slug: data.slug}))
+                    }
+                }
+                result.updated++
+                result.slugs.push(label + ': ' + changedFields.join(', '))
+            }
+            if (!dryRun) {
+                state.items[docId] = {slug: fileValues.slug || doc.slug, fields: diff.base}
+            }
+        } catch (e) {
+            result.errors.push(`${label}: ${e.message}`)
+        }
+    }
+
+    if (!dryRun) {
+        state.type = 'CmsPage'
+        writeExportState(root, state)
+    }
     return result
 }
 

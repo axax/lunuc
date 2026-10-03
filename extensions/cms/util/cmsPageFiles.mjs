@@ -256,6 +256,10 @@ export const filesToCmsPages = (files) => {
                 page[field] = content
             }
         })
+        if (typeof meta._id === 'string' && meta._id) {
+            // identifies the page for the import of changes (see importChangedCmsPagesFromDirectory)
+            page._id = meta._id
+        }
         page._path = dir || './'
         pages.push(page)
     })
