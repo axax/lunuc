@@ -1083,6 +1083,8 @@ class JsonDomHelper extends React.Component {
 
 
                 const elementKey = rest['data-element-key'] || _tagName
+
+                const label = (_t(`elements.key.${elementKey}`,null,elementKey)) + (rest.id?` (${rest.id})`:(rest.slug?` (${rest.slug})`:''))
                 toolbar = <StyledToolbarButton
                     key={rest._key + '.toolbar'}
                     data-toolbar={rest._key}
@@ -1098,7 +1100,7 @@ class JsonDomHelper extends React.Component {
                                                    onDrag={helperEvents.onDrag}
                                                    onDragEnd={helperEvents.onDragEnd}/>}
 
-                    <StyledInfoBox>{(_t(`elements.key.${elementKey}`,null,elementKey)) + (rest.id?` (${rest.id})`:(rest.slug?` (${rest.slug})`:''))}</StyledInfoBox>
+                    {label && <StyledInfoBox>{label}</StyledInfoBox>}
                     {quickActions.length > 0 && <StyledActionBar flipped={this.state.top < 40}>
                         {quickActions.map(action => <button
                             key={action.id}
