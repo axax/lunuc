@@ -22,6 +22,12 @@ import {getKeyValuesFromLS} from '../../../client/util/keyvalue'
 import {createManifest} from '../util/manifest.mjs'
 import {AppContext} from '../../../client/components/AppContext'
 
+// Steuerzeichen (U+0000-U+001F) sind in JSON-Strings nicht erlaubt. Neben \t \n \r
+// kommen z.B. \v oder \f aus kopiertem Word-/PDF-Text in die Daten und liessen JSON.parse scheitern.
+const CONTROL_CHARS_RE = /[\u0000-\u001f]/g
+const CONTROL_CHAR_SHORT = {'\t': '\\t', '\n': '\\n', '\r': '\\r', '\b': '\\b', '\f': '\\f'}
+const escapeControlChar = c => CONTROL_CHAR_SHORT[c] || '\\u' + ('000' + c.charCodeAt(0).toString(16)).slice(-4)
+
 const JsonDomHelper = (props) => <Async {...props}
                                         load={() =>import(/* webpackChunkName: "jsondom" */ './JsonDomHelper')}/>
 
@@ -525,7 +531,8 @@ class JsonDom extends React.Component {
         DomUtil.createAndAddTag('link', 'head', {
             rel: 'manifest',
             jsonDomId: this.instanceId,
-            href: `data:application/json;base64,${btoa(JSON.stringify(manifest,null,4))}`
+            // encodeURIComponent statt btoa: btoa wirft bei Zeichen ausserhalb Latin1 (Emoji, €, –, ...)
+            href: `data:application/json;charset=utf-8,${encodeURIComponent(JSON.stringify(manifest))}`
         })
     }
 
@@ -1097,7 +1104,7 @@ class JsonDom extends React.Component {
                                 scope,
                                 Util: Util,
                                 _t
-                            }).replace(/\t/g, '\\t').replace(/\n/g, '\\n').replace(/\r/g, '\\r')
+                            }).replace(CONTROL_CHARS_RE, escapeControlChar)
 
                             const json = JSON.parse(jsonString)
 
