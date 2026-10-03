@@ -961,8 +961,15 @@ export const checkCountryPolicy = async ({ip, urlPathname, userAgent, host, host
 // Safe to exempt: this path only ever serves the token files certbot writes.
 const ACME_CHALLENGE_PREFIX = '/.well-known/acme-challenge/'
 
+// Crawler entry points must never sit behind a country/asn gate: search and AI
+// crawlers that cannot be verified (e.g. Anthropic, which publishes no ip ranges)
+// would otherwise get the challenge page instead of robots.txt/sitemap.xml and
+// cannot learn the site's crawl rules or urls at all. These files contain no
+// sensitive data and are cheap to serve.
+const CRAWLER_ENTRY_PATHS = new Set(['/robots.txt', '/sitemap.xml', '/llms.txt'])
+
 export const checkGeoPolicy = async (params) => {
-    if (params.urlPathname && params.urlPathname.startsWith(ACME_CHALLENGE_PREFIX)) {
+    if (params.urlPathname && (params.urlPathname.startsWith(ACME_CHALLENGE_PREFIX) || CRAWLER_ENTRY_PATHS.has(params.urlPathname))) {
         return {action: 'allow', isCrawler: null}
     }
     const asnResult = await checkAsnPolicy(params)

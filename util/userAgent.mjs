@@ -102,10 +102,17 @@ const computeUserAgentResult = (agent, botRegex, noJsRenderingBotRegex) => {
     let result = {}
     if (agent) {
         const agentLower = agent.toLowerCase().trim()
-        result.isBot = botRegex.test(agentLower)
+        // noJsRenderingBotRegex is checked independently of botRegex: several
+        // listed agents (Claude-User, Perplexity-User, Google-InspectionTool,
+        // Iframely, Bluesky, Mastodon, ...) contain none of the generic
+        // bot/crawl/spider tokens, so gating the noJs check behind botRegex
+        // served them the empty js shell instead of the ssr render.
+        // Anything explicitly listed for ssr is by definition a bot.
+        const noJsBot = noJsRenderingBotRegex.test(agentLower)
+        result.isBot = noJsBot || botRegex.test(agentLower)
 
         if (result.isBot) {
-            result.noJsRendering = noJsRenderingBotRegex.test(agentLower)
+            result.noJsRendering = noJsBot
         } else {
 
             const raw = parseUserAgentRaw(agentLower)

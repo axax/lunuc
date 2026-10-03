@@ -68,6 +68,50 @@ const NETWORK_IDLE_TIMEOUT_MS = parseInt(process.env.LUNUC_SSR_NETIDLE_TIMEOUT_M
 // still pending after appReady. Prevents a GraphQL fetch that's about to
 // finish from being hard-aborted by page.close().
 const CLOSE_GRACE_TIMEOUT_MS = parseInt(process.env.LUNUC_SSR_CLOSE_GRACE_MS) || 2000
+// After appReady the render counts as settled once no request has been in
+// flight for this long. Replaces the former fixed waitForNetworkIdle(200ms)
+// + separate grace loop. Upper bound for the whole settle phase is
+// NETWORK_IDLE_TIMEOUT_MS + CLOSE_GRACE_TIMEOUT_MS (same worst case as before).
+const SETTLE_QUIET_MS = parseInt(process.env.LUNUC_SSR_SETTLE_QUIET_MS) || 100
+
+// Resource types that never contribute to the rendered DOM text. Images are
+// additionally disabled via --blink-settings. websocket: the app connection
+// is disabled via window._disableWsConnection anyway.
+const BLOCKED_RESOURCE_TYPES = new Set([
+    'image', 'stylesheet', 'font', 'manifest', 'media', 'other',
+    'texttrack', 'eventsource', 'websocket', 'ping', 'cspviolationreport', 'prefetch'
+])
+
+// Requests to foreign hosts (analytics, tag manager, consent banners, maps,
+// captchas, ...) are blocked by default - they cost load + cpu time and keep
+// the network busy, which delays the settle phase. Hosts that deliver
+// content which must be part of the render can be allowed per hostrule:
+//   "ssrAllowedExternalHosts": ["api.example.com", ".cdn.example.com"]
+// An entry starting with "." matches the domain itself and all subdomains.
+const isHostAllowed = (hostname, ownHosts, allowedExternalHosts) => {
+    if (ownHosts.has(hostname)) {
+        return true
+    }
+    if (Array.isArray(allowedExternalHosts)) {
+        for (const entry of allowedExternalHosts) {
+            if (!entry) continue
+            if (entry.startsWith('.')) {
+                if (hostname === entry.substring(1) || hostname.endsWith(entry)) return true
+            } else if (hostname === entry) {
+                return true
+            }
+        }
+    }
+    return false
+}
+
+const getHostname = (url) => {
+    try {
+        return new URL(url).hostname
+    } catch (e) {
+        return null // data:, blob:, about: ... - not a network host
+    }
+}
 
 let parseWebsiteBrowser
 let browserLaunchPromise // prevents parallel launches (race condition)
@@ -277,7 +321,7 @@ const getBrowser = async () => {
     return browserLaunchPromise
 }
 
-export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, remoteAddress, cookies}) => {
+export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, remoteAddress, cookies, allowedExternalHosts}) => {
 
     // emergency brake ONLY: the render semaphore in index.mjs is the actual
     // concurrency control. These thresholds are deliberately high - if this
@@ -297,10 +341,21 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
     // frame. Tracked via the request/response listeners so we can briefly
     // wait for in-flight fetches (e.g. the initial GraphQL cmsPage query)
     // before closing the page, instead of hard-aborting them.
-    let pendingRequestCount = 0
+    // Set instead of a plain counter: on redirects 'request' fires for every
+    // hop but 'requestfinished' only for the last one, so a counter drifted
+    // upwards and the grace wait ran its full length for nothing.
+    const pendingRequests = new Set()
+    // phase timings for the log line, to see where render time is spent
+    const timings = {}
 
     try {
-        const startTime = new Date().getTime()
+        const startTime = Date.now()
+        let phaseStart = startTime
+        const markPhase = (name) => {
+            const now = Date.now()
+            timings[name] = now - phaseStart
+            phaseStart = now
+        }
 
         console.log(`parseWebsite fetch ${urlToFetch}`)
 
@@ -357,6 +412,7 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
         // newPage() can also hang on a stuck browser
         try {
             page = await withTimeout(browser.newPage(), CDP_HEALTH_TIMEOUT_MS, 'newPage')
+            markPhase('newPage')
         } catch (e) {
             console.warn('newPage hung -> killing browser')
             await killBrowser()
@@ -379,36 +435,29 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
 
         page.setDefaultTimeout(NAV_TIMEOUT_MS)
         page.setDefaultNavigationTimeout(NAV_TIMEOUT_MS)
-        await page.setRequestInterception(true)
 
-        // always clear auth cookie.
-        await page.setCookie({domain: 'localhost', name: 'auth', value: ''})
-
-        if (cookies && Object.keys(cookies).length > 0 && !isBot) {
-            console.log(`Taking over the session can be dangerous. ${urlToFetch}`, Object.keys(cookies))
-            const cookiesToSet = Object.keys(cookies).map(k => ({domain: 'localhost', name: k, value: cookies[k]}))
-            await page.setCookie(...cookiesToSet)
-        }
-
-        await page.setExtraHTTPHeaders({[HOSTRULE_HEADER]: host, [WEB_PARSER_HEADER]: 'true'})
+        const ownHosts = new Set([getHostname(urlToFetch), host, host && host.startsWith('www.') ? host.substring(4) : 'www.' + host].filter(Boolean))
 
         page.on('request', (request) => {
             // request.frame() can be null (service workers, detached
             // contexts) - a null frame is not an iframe, so let it continue
             // instead of throwing inside the event handler
             const frame = request.frame()
-            if (['image', 'stylesheet', 'font', 'manifest', 'media', 'other'].indexOf(request.resourceType()) !== -1 ||
-                (frame && frame.url() !== page.mainFrame().url()) /* in iframe */) {
+            const hostname = getHostname(request.url())
+            if (BLOCKED_RESOURCE_TYPES.has(request.resourceType()) ||
+                (frame && frame !== page.mainFrame()) /* in iframe */ ||
+                (hostname && !isHostAllowed(hostname, ownHosts, allowedExternalHosts))) {
                 request.abort('blockedbyclient')
             } else {
-                pendingRequestCount++
-                const headers = request.headers()
-                headers[TRACK_REFERER_HEADER] = referer || ''
-                headers[TRACK_IP_HEADER] = remoteAddress
-                headers[TRACK_IS_BOT_HEADER] = isBot
-                headers[TRACK_USER_AGENT_HEADER] = agent
-                headers[HOSTRULE_HEADER] = host
-                request.continue({headers})
+                // a redirect hop never gets requestfinished - the previous
+                // hop is done once its follow-up request starts
+                const chain = request.redirectChain()
+                if (chain.length > 0) {
+                    pendingRequests.delete(chain[chain.length - 1])
+                }
+                pendingRequests.add(request)
+                // tracking headers are set once per page via setExtraHTTPHeaders
+                request.continue()
             }
         })
 
@@ -427,58 +476,81 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
                 statusCode = 404
             }
         })
-        // NEW: count the request counter back down, regardless of whether it
-        // succeeded, failed, or was aborted
-        page.on('requestfinished', () => { pendingRequestCount-- })
-        page.on('requestfailed', () => { pendingRequestCount-- })
+        page.on('requestfinished', (request) => { pendingRequests.delete(request) })
+        page.on('requestfailed', (request) => { pendingRequests.delete(request) })
 
-        await page.evaluateOnNewDocument((data) => {
-            window._disableWsConnection = true
-            window._lunucWebParser = data
-            window.addEventListener('appReady', () => {
-                if (window._app_) {
-                    if (!_app_.JsonDom) {
-                        _app_.JsonDom = {}
+        // always clear auth cookie; session takeover only for non-bots
+        const cookiesToSet = [{domain: 'localhost', name: 'auth', value: ''}]
+        if (cookies && Object.keys(cookies).length > 0 && !isBot) {
+            console.log(`Taking over the session can be dangerous. ${urlToFetch}`, Object.keys(cookies))
+            cookiesToSet.push(...Object.keys(cookies).filter(k => k !== 'auth').map(k => ({domain: 'localhost', name: k, value: cookies[k]})))
+        }
+
+        // independent page setup calls run in parallel instead of one CDP
+        // roundtrip after the other. Header values must be strings.
+        await Promise.all([
+            page.setRequestInterception(true),
+            page.setCookie(...cookiesToSet),
+            page.setExtraHTTPHeaders({
+                [HOSTRULE_HEADER]: String(host || ''),
+                [WEB_PARSER_HEADER]: 'true',
+                [TRACK_REFERER_HEADER]: String(referer || ''),
+                [TRACK_IP_HEADER]: String(remoteAddress || ''),
+                [TRACK_IS_BOT_HEADER]: String(!!isBot),
+                [TRACK_USER_AGENT_HEADER]: String(agent || '')
+            }),
+            page.evaluateOnNewDocument((data) => {
+                window._disableWsConnection = true
+                window._lunucWebParser = data
+                window.addEventListener('appReady', () => {
+                    if (window._app_) {
+                        if (!_app_.JsonDom) {
+                            _app_.JsonDom = {}
+                        }
+                        _app_.JsonDom.elementWatchForceVisible = true
                     }
-                    _app_.JsonDom.elementWatchForceVisible = true
-                }
-                // signal for waitForFunction below
-                window.__LUNUC_APP_READY__ = true
-            })
-        }, {host, agent, isBot, remoteAddress})
+                    // signal for waitForFunction below
+                    window.__LUNUC_APP_READY__ = true
+                })
+            }, {host, agent, isBot, remoteAddress})
+        ])
+        markPhase('setup')
 
-        // NEW: appReady status is now tracked explicitly instead of merely
-        // being logged - decides below whether the page counts as complete
-        // or a 503 is returned instead.
+        // appReady status is tracked explicitly - decides below whether the
+        // page counts as complete or a 503 is returned instead.
         let appReadyReceived = false
 
         try {
-            // domcontentloaded instead of networkidle2 -> we wait for the app signal instead
-            await page.goto(urlToFetch, {waitUntil: 'networkidle2'})
+            // domcontentloaded: readiness is decided by the appReady signal
+            // below, networkidle2 only added a fixed >=500ms idle wait on top
+            await page.goto(urlToFetch, {waitUntil: 'domcontentloaded'})
+            markPhase('goto')
 
-            // wait until the app signals readiness; fall back to current DOM on timeout
             await page.waitForFunction('window.__LUNUC_APP_READY__ === true', {timeout: APP_READY_TIMEOUT_MS})
                 .then(() => { appReadyReceived = true })
                 .catch(() => console.warn(`appReady signal not received for ${urlToFetch} -> continue with current DOM`))
+            markPhase('appReady')
 
-            // small settle window for async data rendering after appReady
-            await page.waitForNetworkIdle({idleTime: 200, timeout: NETWORK_IDLE_TIMEOUT_MS})
-                .catch(() => {})
-
-            // NEW: if appReady fired but requests are still pending (e.g. a
-            // GraphQL query that just barely missed the waitForNetworkIdle
-            // window), give it a short grace period instead of closing
-            // immediately. This prevents part of the "Failed to fetch"
-            // aborts that are caused purely by the context teardown while a
-            // fetch is still in flight.
-            if (appReadyReceived && pendingRequestCount > 0) {
-                const graceStart = Date.now()
-                while (pendingRequestCount > 0 && Date.now() - graceStart < CLOSE_GRACE_TIMEOUT_MS) {
-                    await new Promise(r => setTimeout(r, 100))
+            // settle: async data rendering after appReady. Done once no
+            // request was in flight for SETTLE_QUIET_MS. Skipped without
+            // appReady - that render is discarded as 503 anyway.
+            if (appReadyReceived) {
+                const settleDeadline = Date.now() + NETWORK_IDLE_TIMEOUT_MS + CLOSE_GRACE_TIMEOUT_MS
+                let quietSince = pendingRequests.size === 0 ? Date.now() : 0
+                while (Date.now() < settleDeadline && !pageAbandonedReason) {
+                    if (pendingRequests.size > 0) {
+                        quietSince = 0
+                    } else if (!quietSince) {
+                        quietSince = Date.now()
+                    } else if (Date.now() - quietSince >= SETTLE_QUIET_MS) {
+                        break
+                    }
+                    await new Promise(r => setTimeout(r, 25))
                 }
-                if (pendingRequestCount > 0) {
-                    console.warn(`${pendingRequestCount} request(s) still pending after grace window for ${urlToFetch}`)
+                if (pendingRequests.size > 0) {
+                    console.warn(`${pendingRequests.size} request(s) still pending after settle window for ${urlToFetch}: ${[...pendingRequests].slice(0, 3).map(r => r.url()).join(', ')}`)
                 }
+                markPhase('settle')
             }
         } catch (e) {
             console.warn('parseWebsite:', e)
@@ -497,7 +569,7 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
         // the DOM snapshot is very likely a loading state or an empty page -
         // it must not be indexed. 503 tells crawlers "try again later".
         if (!appReadyReceived) {
-            console.warn(`render incomplete (no appReady) -> 503 ${urlToFetch}`)
+            console.warn(`render incomplete (no appReady) -> 503 ${urlToFetch} [${Object.entries(timings).map(([k, v]) => `${k}=${v}`).join(' ')}]`)
             clearTimeout(stuckTimer)
             await withTimeout(page.close(), 3000, 'page.close').catch(() => {})
             consecutiveFailures = 0
@@ -506,8 +578,9 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
 
         let html = await page.content()
         html = html.replace('</head>', '<script>window.LUNUC_PREPARSED=true</script></head>')
+        markPhase('content')
 
-        console.log(`url fetched ${urlToFetch} (statusCode ${statusCode}) in ${new Date().getTime() - startTime}ms`)
+        console.log(`url fetched ${urlToFetch} (statusCode ${statusCode}) in ${Date.now() - startTime}ms [${Object.entries(timings).map(([k, v]) => `${k}=${v}`).join(' ')}]`)
 
         clearTimeout(stuckTimer)
         await withTimeout(page.close(), 3000, 'page.close').catch(() => {})

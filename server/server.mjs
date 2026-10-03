@@ -430,7 +430,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
         // deduplicated render: concurrent requests for the same url share one
         // render; the semaphore caps total concurrency across different urls
         const pageData = await renderOnce(cacheFileName, () =>
-            parseWebsite(urlToFetch, {host, agent, referer: req.headers.referer, isBot, remoteAddress, cookies}))
+            parseWebsite(urlToFetch, {host, agent, referer: req.headers.referer, isBot, remoteAddress, cookies, allowedExternalHosts: hostrule.ssrAllowedExternalHosts}))
 
         if (pageData.overloaded) {
             // render capacity exhausted. If stale content was already sent,
@@ -786,8 +786,11 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
         if (geoResult.action === 'challenge') {
             console.log(`country challenge shown to ${remoteAddress} ${geoResult.country} (${geoResult.countryName}) ${req.headers['user-agent']} ${parsedUrl.pathname} isCrawler=${!!geoResult.isCrawler}`)
-            res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store'})
-            res.write(renderChallengePage(req.url))
+            // 403 instead of 200: crawlers/AI fetchers must never treat the
+            // interstitial (with its noindex) as the real content of this url.
+            // Browsers render the html body regardless of the status code.
+            res.writeHead(403, {'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex'})
+            res.write(renderChallengePage(req.url, req.headers['accept-language']))
             res.end()
             return
         }
