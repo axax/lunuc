@@ -250,20 +250,46 @@ export const importCmsPages = async ({db, context, pages, _version, createMissin
 
 
 /**
+ * removes the known files of a page folder, then the folder and its parents as long as
+ * they are empty. Other files (and sub folders of other pages) are never touched.
+ */
+const removePageFolder = (root, folder) => {
+    let absFolder = path.join(root, folder)
+    assertInside(root, absFolder)
+    if (!fs.existsSync(absFolder)) {
+        return
+    }
+    KNOWN_FILES.forEach(file => {
+        const absFile = path.join(absFolder, file)
+        if (fs.existsSync(absFile)) {
+            fs.unlinkSync(absFile)
+        }
+    })
+    while (absFolder !== root && absFolder.startsWith(root + path.sep) && fs.readdirSync(absFolder).length === 0) {
+        fs.rmdirSync(absFolder)
+        absFolder = path.dirname(absFolder)
+    }
+}
+
+/**
  * writes the pages into dir (one folder per page). Known files of a page folder that
  * are no longer part of the page (e.g. an emptied manual.md) are removed, other files
  * in the directory are never touched.
+ *
+ * @param force overwrite files with changes that were not imported yet
+ * @param removeStale remove folders of pages that were renamed (slug changed) or deleted in
+ *        the admin. Folders with changes that were not imported yet are kept.
  */
-export const exportCmsPagesToDirectory = async ({db, context, dir, ids, slugs, filter, _version, force = false}) => {
+export const exportCmsPagesToDirectory = async ({db, context, dir, ids, slugs, filter, _version, force = false, removeStale = true}) => {
     const root = resolveDir(dir)
     const allPages = await getCmsPagesForExport({db, context, ids, slugs, filter, _version})
     const state = readExportState(root)
+    const localPages = fs.existsSync(root) ? filesToCmsPages(readDirRecursive(root, root, [])).pages : []
 
     // pages whose files were changed since the last export and not imported yet are not
     // overwritten (unless force), otherwise the export would destroy these changes
     const keptLocal = []
-    if (!force && fs.existsSync(root)) {
-        const {pages: localPages} = filesToCmsPages(readDirRecursive(root, root, []))
+    if (!force) {
         localPages.forEach(localPage => {
             const itemState = localPage._id && state.items[localPage._id]
             if (!itemState) {
@@ -285,6 +311,43 @@ export const exportCmsPagesToDirectory = async ({db, context, dir, ids, slugs, f
     const pages = allPages.filter(page => keptLocal.indexOf(page._id) < 0)
     const files = cmsPagesToFiles(pages)
 
+    // folder of every exported page (by _id)
+    const exportedFolders = {}
+    files.forEach(file => {
+        if (file.path.endsWith('/' + CMS_PAGE_META_FILE)) {
+            exportedFolders[JSON.parse(file.content)._id] = file.path.substring(0, file.path.length - CMS_PAGE_META_FILE.length)
+        }
+    })
+
+    // folders of renamed or deleted pages
+    const staleFolders = []
+    if (removeStale) {
+        const localIds = localPages.map(p => p._id).filter(id => id && ObjectId.isValid(id) && keptLocal.indexOf(id) < 0)
+        const missingIds = localIds.filter(id => !exportedFolders[id])
+        const existing = new Set()
+        if (missingIds.length) {
+            const collectionName = await resolveCollectionName(db, context, _version)
+            const docs = await db.collection(collectionName).find({_id: {$in: missingIds.map(id => new ObjectId(id))}}, {projection: {_id: 1}}).toArray()
+            docs.forEach(doc => existing.add(doc._id.toString()))
+        }
+        localPages.forEach(localPage => {
+            const id = localPage._id
+            if (!id || localIds.indexOf(id) < 0) {
+                // no id (new page, not imported yet) or local changes
+                return
+            }
+            if (exportedFolders[id] !== undefined) {
+                if (exportedFolders[id] !== localPage._path) {
+                    // renamed: the page was written to its new folder
+                    staleFolders.push({folder: localPage._path, id, reason: 'renamed'})
+                }
+            } else if (!existing.has(id)) {
+                // deleted in the admin (pages that still exist but were not part of this export stay)
+                staleFolders.push({folder: localPage._path, id, reason: 'deleted'})
+            }
+        })
+    }
+
     // clean up known files in the page folders first
     const folders = new Set(files.filter(f => f.path.endsWith('/' + CMS_PAGE_META_FILE))
         .map(f => f.path.substring(0, f.path.length - CMS_PAGE_META_FILE.length - 1)))
@@ -297,6 +360,14 @@ export const exportCmsPagesToDirectory = async ({db, context, dir, ids, slugs, f
                 fs.unlinkSync(absFile)
             }
         })
+    })
+
+    // remove before writing, a renamed page may get the folder of a deleted one
+    staleFolders.forEach(({folder, id, reason}) => {
+        removePageFolder(root, folder)
+        if (reason === 'deleted') {
+            delete state.items[id]
+        }
     })
 
     files.forEach(file => {
@@ -313,7 +384,15 @@ export const exportCmsPagesToDirectory = async ({db, context, dir, ids, slugs, f
     })
     writeExportState(root, state)
 
-    return {dir: root, pages: pages.length, files: files.length, keptLocal: keptLocal.length, slugs: pages.map(p => p.slug)}
+    return {
+        dir: root,
+        pages: pages.length,
+        files: files.length,
+        keptLocal: keptLocal.length,
+        removed: staleFolders.length,
+        removedFolders: staleFolders.map(f => f.folder + ' (' + f.reason + ')'),
+        slugs: pages.map(p => p.slug)
+    }
 }
 
 
