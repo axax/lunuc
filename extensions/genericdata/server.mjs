@@ -14,6 +14,58 @@ import {resolveDynamicFieldQuery} from '../../api/resolver/generic/postQueryConv
 import {schema as fieldTemplatesSchema, resolver as fieldTemplatesResolver} from './fieldTemplates.mjs'
 
 
+/*
+ dynamic.action 'map' computes an attribute on every entry of an array field (see postQueryConverter).
+ If only the computed attribute is requested (e.g. teilnehmer[_id,publicDisplayName]) the sub fields
+ the template needs (dynamic.requires) are not loaded. Replace the target by the required sub fields
+ in the requested projection and remember which ones were only added for the calculation.
+ */
+const prepareDynamicMapProjection = (field, projection, otherOptions) => {
+    const dyn = field.dynamic
+    if (!dyn || dyn.action !== 'map' || !dyn.target || !Array.isArray(projection)) {
+        return
+    }
+    const dataEntry = projection.find(p => p && p.constructor === Object && Array.isArray(p.data))
+    if (!dataEntry) {
+        return
+    }
+    const sourceKey = dyn.source || field.name
+    const sub = dataEntry.data.find(p => p && p.constructor === Object && Array.isArray(p[sourceKey]))
+    if (!sub) {
+        // field not requested or requested as a whole
+        return
+    }
+    const list = sub[sourceKey]
+    const targetIndex = list.indexOf(dyn.target)
+    if (targetIndex < 0) {
+        return
+    }
+    list.splice(targetIndex, 1)
+    const added = []
+    ;(dyn.requires || []).forEach(key => {
+        if (list.includes(key)) {
+            return
+        }
+        const objIndex = list.findIndex(p => p && p.constructor === Object && p[key])
+        if (objIndex >= 0) {
+            // e.g. {meta:['virtualId']} requested -> the template needs the whole meta
+            list[objIndex] = key
+        } else {
+            list.push(key)
+            added.push(key)
+        }
+    })
+    if (!list.includes('_id')) {
+        list.unshift('_id')
+    }
+    if (added.length > 0) {
+        if (!otherOptions.dynamicMapStrip) {
+            otherOptions.dynamicMapStrip = {}
+        }
+        otherOptions.dynamicMapStrip[sourceKey] = added
+    }
+}
+
 const postCheckResult = async (def, result, db, context, otherOptions) => {
     for (let i = 0; i < def.structure.fields.length; i++) {
         const field = def.structure.fields[i]
@@ -52,6 +104,17 @@ const postCheckResult = async (def, result, db, context, otherOptions) => {
                         item.data[field.name] = subData.results
                     } else {
                         await resolveDynamicFieldQuery(db, field, item, item.data)
+
+                        // remove sub fields that were only loaded for the calculation
+                        const sourceKey = field.dynamic.source || field.name
+                        const strip = otherOptions.dynamicMapStrip && otherOptions.dynamicMapStrip[sourceKey]
+                        if (field.dynamic.action === 'map' && strip && Array.isArray(item.data[sourceKey])) {
+                            item.data[sourceKey].forEach(entry => {
+                                if (entry && entry.constructor === Object) {
+                                    strip.forEach(key => delete entry[key])
+                                }
+                            })
+                        }
                     }
                     if (!wasObject) {
                         // make it a string again if it was a string initially
@@ -197,6 +260,7 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions
 
                     for (let i = 0; i < struct.fields.length; i++) {
                         const field = struct.fields[i]
+                        prepareDynamicMapProjection(field, data, otherOptions)
                         await addGenericTypeLookup(field, otherOptions, data, db)
                     }
                 }
