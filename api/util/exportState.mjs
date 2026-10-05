@@ -12,8 +12,10 @@
  *   file == base           -> the file was not touched, the db is newer -> keep the db
  *   file != base, db == base -> only the file was changed -> import
  *   file != base, db != base -> both were changed -> conflict, nothing is written
+ *                               (with force: the file wins, reported as forced)
  *
- * So an import never overwrites a change that was made in the admin after the export.
+ * So an import never overwrites a change that was made in the admin after the export,
+ * unless force is set.
  */
 import fs from 'fs'
 import path from 'path'
@@ -77,11 +79,12 @@ export const hashFields = (values, codeFields = []) => {
  * @param fileValues {field: value} from the files
  * @param dbValues {field: value} current values in the db (plain json, code fields as text)
  * @param base {field: hash} from the export state
- * @returns {changed: {field: value}, conflicts: [field], unchanged: [field], base: {field: hash}}
+ * @param force on a conflict the file wins: the field is in changed and forced, not in conflicts
+ * @returns {changed: {field: value}, conflicts: [field], forced: [field], base: {field: hash}}
  *          base is the new baseline for the fields that are equal now
  */
-export const threeWayDiff = ({fileValues, dbValues, base, codeFields = []}) => {
-    const changed = {}, conflicts = [], newBase = {...base}
+export const threeWayDiff = ({fileValues, dbValues, base, codeFields = [], force = false}) => {
+    const changed = {}, conflicts = [], forced = [], newBase = {...base}
     Object.keys(fileValues).forEach(field => {
         const isCode = codeFields.indexOf(field) >= 0
         const fileHash = hashValue(fileValues[field], isCode)
@@ -96,9 +99,13 @@ export const threeWayDiff = ({fileValues, dbValues, base, codeFields = []}) => {
         } else if (dbHash === baseHash) {
             changed[field] = fileValues[field]
             newBase[field] = fileHash
+        } else if (force) {
+            changed[field] = fileValues[field]
+            forced.push(field)
+            newBase[field] = fileHash
         } else {
             conflicts.push(field)
         }
     })
-    return {changed, conflicts, base: newBase}
+    return {changed, conflicts, forced, base: newBase}
 }

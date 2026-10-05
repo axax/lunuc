@@ -309,7 +309,7 @@ const readEntryFolders = (dir, result) => {
  * see exportState.mjs). Entries without baseline and entries that were deleted in the admin
  * are skipped, new entries are never created.
  */
-export const importChangedTypeScriptsFromDirectory = async ({db, context, type, dir, dryRun = false}) => {
+export const importChangedTypeScriptsFromDirectory = async ({db, context, type, dir, dryRun = false, force = false}) => {
     const definition = TYPE_SCRIPT_DEFINITIONS[type]
     if (!definition) {
         throw new Error(`no script definition for type ${type}`)
@@ -353,7 +353,8 @@ export const importChangedTypeScriptsFromDirectory = async ({db, context, type, 
                 fileValues,
                 dbValues: comparableValues(type, doc),
                 base: itemState.fields,
-                codeFields: scriptFields
+                codeFields: scriptFields,
+                force
             })
             const changedFields = Object.keys(diff.changed)
             if (diff.conflicts.length) {
@@ -374,7 +375,8 @@ export const importChangedTypeScriptsFromDirectory = async ({db, context, type, 
                     await GenericResolver.updateEntity(db, context, type, {_id: meta._id, ...data})
                 }
                 result.updated++
-                result.details.push(label + ': ' + changedFields.join(', '))
+                result.details.push(label + ': ' + changedFields.join(', ') +
+                    (diff.forced.length ? ' (forced, admin changes overwritten: ' + diff.forced.join(', ') + ')' : ''))
             }
             if (!dryRun) {
                 state.items[meta._id] = {fields: diff.base}

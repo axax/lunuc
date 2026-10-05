@@ -433,7 +433,7 @@ export const importCmsPagesFromDirectory = async ({db, context, dir, _version, c
  * - page with baseline that no longer exists  -> skipped (deleted in the admin)
  * - new folder (no _id, slug unknown)         -> created if createMissing, _id is written to page.json
  */
-export const importChangedCmsPagesFromDirectory = async ({db, context, dir, _version, createMissing = true, dryRun = false}) => {
+export const importChangedCmsPagesFromDirectory = async ({db, context, dir, _version, createMissing = true, dryRun = false, force = false}) => {
     const root = resolveDir(dir)
     const collectionName = await resolveCollectionName(db, context, _version)
     const state = readExportState(root)
@@ -503,7 +503,8 @@ export const importChangedCmsPagesFromDirectory = async ({db, context, dir, _ver
                 fileValues,
                 dbValues: comparableFields(docToExportPage(doc)),
                 base: itemState.fields,
-                codeFields: CODE_FIELDS
+                codeFields: CODE_FIELDS,
+                force
             })
             const changedFields = Object.keys(diff.changed)
 
@@ -529,7 +530,8 @@ export const importChangedCmsPagesFromDirectory = async ({db, context, dir, _ver
                     }
                 }
                 result.updated++
-                result.slugs.push(label + ': ' + changedFields.join(', '))
+                result.slugs.push(label + ': ' + changedFields.join(', ') +
+                    (diff.forced.length ? ' (forced, admin changes overwritten: ' + diff.forced.join(', ') + ')' : ''))
             }
             if (!dryRun) {
                 state.items[docId] = {slug: fileValues.slug || doc.slug, fields: diff.base}
