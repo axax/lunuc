@@ -2,7 +2,10 @@ import path from 'path'
 import Util from '../util/index.mjs'
 import fs from 'fs'
 import config from '../../gensrc/config.mjs'
-import {exec, execFileSync} from 'child_process'
+import {execFile, execFileSync} from 'child_process'
+
+// suffix for backups that are still being written
+const PARTIAL_SUFFIX = '.part'
 import os from 'os'
 import zipper from 'zip-local'
 import {MONGO_URL} from '../database.mjs'
@@ -63,7 +66,7 @@ export const listBackups = type => {
 
     const files = []
     fs.readdirSync(backup_dir).forEach(file => {
-        if (file !== '.DS_Store') {
+        if (file !== '.DS_Store' && !file.endsWith(PARTIAL_SUFFIX)) {
             const stats = fs.statSync(backup_dir + '/' + file)
             files.push({
                 name: file,
@@ -149,10 +152,30 @@ export const createDbBackup = (options = {}) => {
         })
     }
 
-    // exec() is intentionally kept here (async, fire-and-forget like the
-    // original) - MONGO_URL comes from our own config and is not user
-    // input. If that ever changes, switch this to execFile as well.
-    exec(`mongodump ${args.map(a => `"${a}"`).join(' ')}`)
+    // mongodump writes into a temporary ".part" file which is only renamed
+    // to its final name once the dump has finished successfully. Otherwise
+    // the half-written .gz shows up in the backup list immediately and can
+    // be downloaded truncated (-> "unexpected EOF" on restore).
+    // Still async/fire-and-forget so the GraphQL call returns immediately.
+    const partName = fullName + PARTIAL_SUFFIX
+    args[args.indexOf('--archive=' + fullName)] = '--archive=' + partName
+
+    execFile('mongodump', args, (error, stdout, stderr) => {
+        if (error) {
+            console.error('createDbDump failed', error.message, stderr)
+            try {
+                fs.unlinkSync(partName)
+            } catch (e) {
+            }
+            return
+        }
+        try {
+            fs.renameSync(partName, fullName)
+            console.log('createDbDump finished', fullName)
+        } catch (e) {
+            console.error('createDbDump rename failed', e.message)
+        }
+    })
     console.log('createDbDump', 'mongodump', args)
     return {fullName, name, date}
 }

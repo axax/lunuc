@@ -1,5 +1,6 @@
 import formidable from 'formidable'
 import path from 'path'
+import fs from 'fs'
 import Util from './util/index.mjs'
 import config from '../gensrc/config.mjs'
 import Hook from '../util/hook.cjs'
@@ -295,6 +296,8 @@ export const handleDbDumpUpload = (db, client) => async (req, res) => {
 
         res.writeHead(200, {'content-type': 'application/json'})
 
+        let restoreError = null
+
         form.on('file', function (field, file) {
 
             // execFileSync instead of execSync: no shell parsing, arguments are
@@ -304,18 +307,36 @@ export const handleDbDumpUpload = (db, client) => async (req, res) => {
             // --drop deletes ALL existing collections before the restore -
             // make sure CAPABILITY_MANAGE_BACKUPS is tightly scoped and
             // restores are logged/audited (see below).
-            console.log(`[AUDIT] DB restore triggered by user=${authContext.username || authContext.id} at ${new Date().toISOString()}`)
+            console.log(`[AUDIT] DB restore triggered by user=${authContext.username || authContext.id} at ${new Date().toISOString()} file=${file.originalFilename} size=${file.size}`)
 
-            const response = execFileSync('mongorestore', [
-                '--nsInclude=lunuc.*',
-                '--noIndexRestore',
-                `--uri=${client.s.url}`,
-                '--drop',
-                '--gzip',
-                `--archive=${file.filepath}`
-            ])
-            console.log('restoreDbDump', response.toString())
-
+            try {
+                if (!file.size) {
+                    throw new Error('Uploaded file is empty')
+                }
+                // a mongodump --gzip archive must start with the gzip magic bytes 1f 8b
+                const fd = fs.openSync(file.filepath, 'r')
+                const magic = Buffer.alloc(2)
+                fs.readSync(fd, magic, 0, 2, 0)
+                fs.closeSync(fd)
+                if (magic[0] !== 0x1f || magic[1] !== 0x8b) {
+                    throw new Error(`Uploaded file is not a gzip archive (size=${file.size} bytes)`)
+                }
+                const response = execFileSync('mongorestore', [
+                    '--nsInclude=lunuc.*',
+                    '--noIndexRestore',
+                    `--uri=${client.s.url}`,
+                    '--drop',
+                    '--gzip',
+                    `--archive=${file.filepath}`
+                ], {maxBuffer: 50 * 1024 * 1024})
+                console.log('restoreDbDump', response.toString())
+            } catch (e) {
+                // mongorestore writes its actual error message to stderr
+                const stderr = e.stderr ? e.stderr.toString() : ''
+                const failedLine = stderr.split('\n').find(l => l.includes('Failed:'))
+                restoreError = failedLine ? failedLine.replace(/^.*Failed:\s*/, '') : e.message
+                console.error('restoreDbDump failed', restoreError, stderr)
+            }
         })
 
         // log any errors that occur
@@ -334,7 +355,11 @@ export const handleDbDumpUpload = (db, client) => async (req, res) => {
 
         // once all the files have been uploaded, send a response to the client
         form.on('end', function () {
-            res.end('{"status":"success"}')
+            if (restoreError) {
+                res.end(JSON.stringify({status: 'error', message: 'Restore failed: ' + restoreError}))
+            } else {
+                res.end('{"status":"success"}')
+            }
         })
 
         // parse the incoming request containing the form data

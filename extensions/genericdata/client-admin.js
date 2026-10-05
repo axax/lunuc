@@ -380,6 +380,25 @@ export default () => {
 
                     }
 
+                    // CmsEditor fields can take over the content of the same field of another entry
+                    // of this type (template picker in the GenericForm). After extendFields, so a
+                    // uitype set there counts as well
+                    const genericTypeName = newDataToEdit.definition && newDataToEdit.definition.name
+                    if (genericTypeName) {
+                        Object.keys(newFields).forEach(key => {
+                            const formField = newFields[key]
+                            if (key.startsWith('data_') && formField && formField.uitype === 'CmsEditor' && formField.showTemplates !== false) {
+                                newFields[key] = Object.assign({}, formField, {
+                                    templateSource: {
+                                        genericType: genericTypeName,
+                                        field: key.substring(5),
+                                        excludeId: dataToEdit._id
+                                    }
+                                })
+                            }
+                        })
+                    }
+
                     // override default
                     props.children = <GenericForm autoFocus
                                         onRef={ref => {

@@ -265,7 +265,8 @@ class FileDrop extends React.Component {
                         }
                     })
                 } else if (uploadTo) {
-                    this.uploadData(URL.createObjectURL(file), file, uploadTo)
+                    // pass the File itself (no objectURL/ArrayBuffer roundtrip) -> works for large files
+                    this.uploadData(null, file, uploadTo)
                 }
 
                 if (onFileContent) {
@@ -329,6 +330,8 @@ class FileDrop extends React.Component {
         this.setState({uploadQueue, uploading: true, successMessage: null, errorMessage: null, uploadCompleted: 0, uploadingFile:file.name})
         UploadUtil.uploadData({
             dataUrl,
+            // no dataUrl -> upload the original File directly
+            blob: dataUrl ? undefined : file,
             data: this.props.data,
             fileName: file.name,
             uploadTo,

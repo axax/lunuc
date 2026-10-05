@@ -2,6 +2,7 @@ import {getType} from '../../util/types.mjs'
 import GenericResolver from '../../api/resolver/generic/genericResolver.mjs'
 import {findProjection} from '../../util/project.mjs'
 import {getGenericTypeDefinitionWithStructure} from './util/index.mjs'
+import {narrowLookupProjection} from './narrowLookupProjection.mjs'
 
 /**
  * Element of the lookup result `rows` whose _id equals ids[i], or MISSING if
@@ -167,7 +168,11 @@ function addGenericTypeLookupForType(field, otherOptions, projection) {
     const pipeline = []
     const $projectParent = {}
     if (field.projection) {
-        field.projection.forEach(key => $projectParent[key] = 1)
+        // only resolve the sub fields the query requests (intersected with the type's whitelist)
+        const narrowed = fieldProjection && Array.isArray(fieldProjection.data)
+            ? narrowLookupProjection(field.projection, buildProjectionFromArray(fieldProjection.data, field.type), field.name, otherOptions)
+            : null
+        ;(narrowed || field.projection).forEach(key => $projectParent[key] = 1)
     }
 
     // resolve nested references (e.g. User.group -> UserGroup) driven by the requested projection.

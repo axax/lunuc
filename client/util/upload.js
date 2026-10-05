@@ -4,9 +4,16 @@ import Util from 'client/util/index.mjs'
  * Object with helper methods to handle file upload
  */
 const UploadUtil = {
-    uploadData: ({dataUrl, fileName, uploadTo, onProgress, onError, onLoad, data}) => {
+    uploadData: ({dataUrl, blob: givenBlob, fileName, uploadTo, onProgress, onError, onLoad, data}) => {
 
-        UploadUtil.dataURLtoBlob(dataUrl, (blob) => {
+        // If a Blob/File is given directly it is sent as is (streamed by the
+        // browser). Only fall back to the dataUrl -> ArrayBuffer -> Blob
+        // roundtrip when needed (e.g. resized images). That roundtrip loads
+        // the whole file into one ArrayBuffer, which fails for files > ~2GB:
+        // xhr.response is then null and new Blob([null]) uploads the 4 bytes "null".
+        const withBlob = givenBlob ? (cb) => cb(givenBlob) : (cb) => UploadUtil.dataURLtoBlob(dataUrl, cb, onError)
+
+        withBlob((blob) => {
 
             const xhr = new XMLHttpRequest()
             xhr.timeout = 1000 * 60 * 60
@@ -36,14 +43,27 @@ const UploadUtil = {
 
         })
     },
-    dataURLtoBlob: (dataUrl, callback) => {
+    dataURLtoBlob: (dataUrl, callback, onError) => {
         const req = new XMLHttpRequest
 
         req.open('GET', dataUrl)
         req.responseType = 'arraybuffer' // Can't use blob directly because of https://crbug.com/412752
 
         req.onload = () => {
+            if (!req.response) {
+                // e.g. file too large for a single ArrayBuffer
+                console.error('dataURLtoBlob: could not read file data')
+                if (onError) {
+                    onError(new Error('Could not read file data'))
+                }
+                return
+            }
             callback(new Blob([req.response], {type: req.getResponseHeader('content-type')}))
+        }
+        req.onerror = (e) => {
+            if (onError) {
+                onError(e)
+            }
         }
 
         req.send()

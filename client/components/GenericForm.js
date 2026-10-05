@@ -51,6 +51,7 @@ import {SimpleAutosuggest} from './ui/impl/material'
 import { CAPABILITY_MANAGE_TYPES} from '../../util/capabilities.mjs'
 import CmsViewContainer from '../../extensions/cms/containers/CmsViewContainer'
 import CmsElement from '../../extensions/cms/components/CmsElement'
+import CmsTemplatePicker from '../../extensions/cms/components/CmsTemplatePicker'
 import {
     DEFAULT_STYLE_EDITOR, DEFAULT_STYLE_ENVIRONMENT,
     DEFAULT_TEMPLATE_MINIMAL
@@ -1289,6 +1290,33 @@ class GenericForm extends React.Component {
            const showCmsElements = field.showElements !== false && !field.readOnly && !field.uiReadOnly
            const cmsElementsCollapsed = this.state.cmsElementsCollapsed && this.state.cmsElementsCollapsed[fieldKey] !== undefined ?
                this.state.cmsElementsCollapsed[fieldKey] : !!field.elementsCollapsed
+           // other entries of the same generic type as template (templateSource is set by the GenericData extension),
+           // set showTemplates: false to hide it
+           const showCmsTemplates = !!field.templateSource && field.showTemplates !== false && !field.readOnly && !field.uiReadOnly
+           const cmsEditorRevision = (this.state.cmsEditorRevision && this.state.cmsEditorRevision[fieldKey]) || 0
+           const cmsHasContent = typeof value === 'string' && !!value.trim() && value.trim() !== DEFAULT_TEMPLATE_MINIMAL.trim()
+           const cmsTemplatePicker = showCmsTemplates && <CmsTemplatePicker
+               dense
+               source={field.templateSource}
+               hasContent={cmsHasContent}
+               onApply={(template) => {
+                   this.handleInputChange({
+                       target: {
+                           dataset: {
+                               language: languageCode
+                           },
+                           name: fieldKey,
+                           value: template
+                       }
+                   })
+                   // remount the editor, it keeps the template in its own state
+                   this.setState({
+                       cmsEditorRevision: {
+                           ...this.state.cmsEditorRevision,
+                           [fieldKey]: cmsEditorRevision + 1
+                       }
+                   })
+               }}/>
            currentFormFields.push(<FormControl key={'control' + fieldKey}
                                                className={field.className}
                                                error={!!this.state.fieldErrors[fieldKey]}
@@ -1303,6 +1331,7 @@ class GenericForm extends React.Component {
                                hideTooltip()
                            }}
                            shrink>{field.label + (languageCode ? ' [' + languageCode + ']' : '')}</InputLabel>
+               {!showCmsElements && cmsTemplatePicker && <div style={{marginTop: 16, maxWidth: 320}}>{cmsTemplatePicker}</div>}
                <StyledCmsEditorFrame>
                    {showCmsElements && <StyledCmsElementsPanel collapsed={cmsElementsCollapsed}>
                        <StyledCmsElementsScroll collapsed={cmsElementsCollapsed}>
@@ -1320,6 +1349,7 @@ class GenericForm extends React.Component {
                                    <ChevronLeftIcon fontSize="small"/>}</IconButton>
                            </Tooltip>
                        </StyledCmsElementsHeader>
+                       {!cmsElementsCollapsed && cmsTemplatePicker}
                        {!cmsElementsCollapsed && <CmsElement dense
                                                              hideAddCustom
                                                              advanced={field.advancedElements}/>}
@@ -1327,6 +1357,7 @@ class GenericForm extends React.Component {
                    </StyledCmsElementsPanel>}
                    <StyledCmsEditorCanvas>
                <CmsViewContainer
+                   key={'cmsEditor-' + fieldKey + '-' + cmsEditorRevision}
                    slug=""
                    forceEditMode={true}
                    cmsData={{

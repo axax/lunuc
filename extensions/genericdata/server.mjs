@@ -11,6 +11,7 @@ import {getGenericTypeDefinitionWithStructure} from './util/index.mjs'
 import {addGenericTypeLookup, postLookupResult} from './addGenericTypeLookup.mjs'
 import ClientUtil from '../../client/util/index.mjs'
 import {resolveDynamicFieldQuery} from '../../api/resolver/generic/postQueryConverter.mjs'
+import {schema as fieldTemplatesSchema, resolver as fieldTemplatesResolver} from './fieldTemplates.mjs'
 
 
 const postCheckResult = async (def, result, db, context, otherOptions) => {
@@ -99,11 +100,13 @@ const fromAnyToIdStrings = (any) => {
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
     deepMergeToFirst(resolvers, resolver(db))
+    deepMergeToFirst(resolvers, fieldTemplatesResolver(db))
 })
 
 // Hook to add mongodb schema
 Hook.on('schema', ({schemas}) => {
     schemas.push(schema)
+    schemas.push(fieldTemplatesSchema)
 })
 
 Hook.on('beforePubSub', async ({triggerName, payload, db, context}) => {

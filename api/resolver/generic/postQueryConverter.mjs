@@ -40,6 +40,28 @@ export const resolveDynamicFieldQuery = async (db, field, item, setItem) => {
                 setItem[field.name] = JSON.stringify(setItem[field.name])
             }
         }
+    }else if(dyn.action==='map'){
+        // computes an additional attribute on every entry of an array field (e.g. resolved users)
+        // dyn.source: array field (default: field.name), dyn.target: name of the new attribute
+        // dyn.template: placeholder template; context: data (whole item), entry (current element), index
+        const sourceKey = dyn.source || field.name
+        let list = setItem[sourceKey]
+        if (list && dyn.target && dyn.template) {
+            const wasString = isString(list)
+            if (wasString) {
+                list = parseOrElse(list, null)
+            }
+            if (Array.isArray(list)) {
+                list.forEach((entry, index) => {
+                    if (entry && entry.constructor === Object) {
+                        const meta = isString(entry.meta) ? parseOrElse(entry.meta, {}) : entry.meta
+                        const value = replacePlaceholders(dyn.template, {data: setItem, entry: {...entry, meta}, index})
+                        entry[dyn.target] = isString(value) ? value.trim() : value
+                    }
+                })
+                setItem[sourceKey] = wasString ? JSON.stringify(list) : list
+            }
+        }
     }
 }
 
