@@ -56,7 +56,8 @@ export const resolveDynamicFieldQuery = async (db, field, item, setItem) => {
                     if (entry && entry.constructor === Object) {
                         const meta = isString(entry.meta) ? parseOrElse(entry.meta, {}) : entry.meta
                         const value = replacePlaceholders(dyn.template, {data: setItem, entry: {...entry, meta}, index})
-                        entry[dyn.target] = isString(value) ? value.trim() : value
+                        const trimmed = isString(value) ? value.trim() : value
+                        entry[dyn.target] = trimmed === '' || trimmed === 'undefined' || trimmed === 'null' ? null : trimmed
                     }
                 })
                 setItem[sourceKey] = wasString ? JSON.stringify(list) : list

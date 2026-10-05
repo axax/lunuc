@@ -30,19 +30,41 @@ const prepareDynamicMapProjection = (field, projection, otherOptions) => {
         return
     }
     const sourceKey = dyn.source || field.name
+    const requires = dyn.requires || []
+    const remember = (key, value) => {
+        if (!otherOptions[key]) {
+            otherOptions[key] = {}
+        }
+        otherOptions[key][sourceKey] = value
+    }
+
+    const plainIndex = dataEntry.data.indexOf(sourceKey)
+    if (plainIndex >= 0) {
+        // requested as a whole (e.g. "teilnehmer"): without sub fields no lookup is done and
+        // only the ids are returned -> request the required sub fields and strip them afterwards
+        if (requires.length > 0) {
+            dataEntry.data[plainIndex] = {[sourceKey]: ['_id', ...requires.filter(k => k !== '_id')]}
+            remember('dynamicMapStrip', requires.filter(k => k !== '_id'))
+        }
+        return
+    }
+
     const sub = dataEntry.data.find(p => p && p.constructor === Object && Array.isArray(p[sourceKey]))
     if (!sub) {
-        // field not requested or requested as a whole
+        // field not requested
+        remember('dynamicMapSkip', true)
         return
     }
     const list = sub[sourceKey]
     const targetIndex = list.indexOf(dyn.target)
     if (targetIndex < 0) {
+        // sub fields requested but not the computed attribute
+        remember('dynamicMapSkip', true)
         return
     }
     list.splice(targetIndex, 1)
     const added = []
-    ;(dyn.requires || []).forEach(key => {
+    requires.forEach(key => {
         if (list.includes(key)) {
             return
         }
@@ -59,10 +81,7 @@ const prepareDynamicMapProjection = (field, projection, otherOptions) => {
         list.unshift('_id')
     }
     if (added.length > 0) {
-        if (!otherOptions.dynamicMapStrip) {
-            otherOptions.dynamicMapStrip = {}
-        }
-        otherOptions.dynamicMapStrip[sourceKey] = added
+        remember('dynamicMapStrip', added)
     }
 }
 
@@ -103,6 +122,12 @@ const postCheckResult = async (def, result, db, context, otherOptions) => {
 
                         item.data[field.name] = subData.results
                     } else {
+                        if (field.dynamic.action === 'map' && otherOptions.dynamicMapSkip && otherOptions.dynamicMapSkip[field.dynamic.source || field.name]) {
+                            if (!wasObject) {
+                                item.data = JSON.stringify(item.data)
+                            }
+                            continue
+                        }
                         await resolveDynamicFieldQuery(db, field, item, item.data)
 
                         // remove sub fields that were only loaded for the calculation
