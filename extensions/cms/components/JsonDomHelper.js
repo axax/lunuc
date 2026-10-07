@@ -104,6 +104,52 @@ document.addEventListener('keyup', (e) => {
 document.addEventListener('scroll', highlighterScrollHandler, {capture: true, passive: true})
 
 
+// slug of the component that is referenced by a Cms element ({t:'Cms', p:{component:[{slug}]}} or {p:{slug}})
+const getCmsComponentSlug = (json) => {
+    if (!json || !json.p) {
+        return null
+    }
+    let component = json.p.component
+    if (isString(component)) {
+        try {
+            component = JSON.parse(component)
+        } catch (e) {
+            return component.trim() || null
+        }
+    }
+    if (Array.isArray(component)) {
+        component = component[0]
+    }
+    if (component && component.slug) {
+        return component.slug
+    }
+    return isString(json.p.slug) && json.p.slug.indexOf('${') < 0 ? json.p.slug : null
+}
+
+// the manual is either pure JSON ({description, fields}) or markdown containing a ```json block with fields
+const parseManualFields = (manual) => {
+    if (!manual || !manual.trim()) {
+        return null
+    }
+    const candidates = [manual.trim()]
+    const codeBlockRegex = /```(?:json)?\s*([\s\S]*?)```/g
+    let match
+    while ((match = codeBlockRegex.exec(manual)) !== null) {
+        candidates.push(match[1].trim())
+    }
+    for (const candidate of candidates) {
+        try {
+            const parsed = JSON.parse(candidate)
+            if (parsed && parsed.fields && parsed.fields.constructor === Object) {
+                return parsed.fields
+            }
+        } catch (e) {
+            // not json, try next candidate
+        }
+    }
+    return null
+}
+
 class JsonDomHelper extends React.Component {
     static disableEvents = false
     static altKeyDown = false
@@ -757,6 +803,79 @@ class JsonDomHelper extends React.Component {
         _cmsActions.editTemplate(_key, _json, _scope)
         this.setState({toolbarHovered: false, hovered: false, dragging: false})
 
+    }
+
+    /*
+     * Reads the manual of the referenced cms component and merges its "fields" into
+     * $inlineEditor.options of the Cms element. Fields from the manual overwrite existing
+     * options with the same key, options that are not in the manual are kept.
+     */
+    async updateOptionsFromManual(componentSlug, subJson, _json) {
+        const notify = (message) => _app_.dispatcher.addNotification({
+            horizontal: 'right',
+            autoHideDuration: 4000,
+            closeButton: false,
+            message
+        })
+        try {
+            const {data} = await client.query({
+                fetchPolicy: 'network-only',
+                query: 'query cmsPages($filter:String,$limit:Int){cmsPages(filter:$filter,limit:$limit){results{_id slug manual}}}',
+                variables: {
+                    limit: 1,
+                    // the manual part in the filter is needed so that the resolver returns the manual field
+                    filter: `slug=="${componentSlug}" && manual!=="__no_manual__"`
+                }
+            })
+            const page = data?.cmsPages?.results?.find(p => p.slug === componentSlug)
+            if (!page) {
+                notify(_t('JsonDomHelper.update.options.from.manual.notFound', {slug: componentSlug}))
+                return
+            }
+            const fields = parseManualFields(page.manual)
+            if (!fields) {
+                notify(_t('JsonDomHelper.update.options.from.manual.noFields', {slug: componentSlug}))
+                return
+            }
+
+            if (!subJson.$inlineEditor || subJson.$inlineEditor.constructor !== Object) {
+                subJson.$inlineEditor = {elementKey: 'Cms'}
+            }
+            const currentOptions = subJson.$inlineEditor.options || {}
+            const newOptions = {}
+            let added = 0, updated = 0
+
+            // order of the manual first, then options that only exist in the template
+            Object.keys(fields).forEach(key => {
+                if (!currentOptions[key]) {
+                    added++
+                } else if (JSON.stringify(currentOptions[key]) !== JSON.stringify(fields[key])) {
+                    updated++
+                }
+                newOptions[key] = fields[key]
+            })
+            const kept = Object.keys(currentOptions).filter(key => !fields[key])
+            kept.forEach(key => {
+                newOptions[key] = currentOptions[key]
+            })
+
+            if (added === 0 && updated === 0 && Object.keys(currentOptions).length === Object.keys(newOptions).length) {
+                notify(_t('JsonDomHelper.update.options.from.manual.unchanged'))
+                return
+            }
+
+            subJson.$inlineEditor.options = newOptions
+            this.props._onTemplateChange(_json, true)
+
+            notify(_t('JsonDomHelper.update.options.from.manual.done', {
+                added,
+                updated,
+                kept: kept.length ? kept.join(', ') : '-'
+            }))
+        } catch (e) {
+            console.error(e)
+            notify(_t('JsonDomHelper.update.options.from.manual.error', {message: e.message}))
+        }
     }
 
     handleCopyClick(e) {
@@ -1596,6 +1715,20 @@ class JsonDomHelper extends React.Component {
                         icon: <BuildIcon/>,
                         onClick: this.handleTemplateEditClick.bind(this)
                     })
+                }
+
+                if (isCms && !isInLoop && _options.menu.updateFromManual !== false && Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
+                    const componentSlug = getCmsComponentSlug(subJson)
+                    if (componentSlug) {
+                        menuItems.push({
+                            name: _t('JsonDomHelper.update.options.from.manual'),
+                            icon: <TransformIcon/>,
+                            onClick: () => {
+                                this.setState({toolbarHovered: false, hovered: false, toolbarMenuOpen: false})
+                                this.updateOptionsFromManual(componentSlug, subJson, _json)
+                            }
+                        })
+                    }
                 }
 
                 if (_options.menu.clone !== false) {

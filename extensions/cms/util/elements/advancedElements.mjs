@@ -197,10 +197,10 @@ export const buildAdvancedElements = () => [
                 fullWidth: true
             },
             p_forceInlineEditor: {
-                tab: 'elements.cmsComponent',
+                tab: DEFAULT_TAB,
                 type: 'Boolean',
                 newLine: true,
-                label: _t('elements.forceInlineEditor')
+                label: _t('elements.key.contentEditable')
             },
             p_slug: {
                 tab: DEFAULT_TAB,
