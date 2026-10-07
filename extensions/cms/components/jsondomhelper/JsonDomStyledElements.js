@@ -114,6 +114,30 @@ export const StyledHighlighter = styled('span', noForward('color', 'selected'))(
     }
 })
 
+/**
+ * Frame along the viewport edges for a cms component that is larger than the
+ * viewport (e.g. a layout component wrapping the whole page). Its real
+ * highlighter box lies mostly outside of the screen, so neither the border nor
+ * the centered label would be visible.
+ */
+export const StyledViewportFrame = styled('div')({
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100vw',
+    height: '100vh',
+    boxSizing: 'border-box',
+    zIndex: z(1),
+    pointerEvents: 'none',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    paddingTop: '0.5rem',
+    boxShadow: `inset 0 0 0 2px rgba(${T.cms}, 0.9), inset 0 0 0 6px rgba(${T.cms}, 0.18)`,
+    background: `rgba(${T.cms}, 0.04)`,
+    animation: `${fadeIn} 90ms ${T.ease}`
+})
+
 export const StyledPicker = styled('div')({
     cursor: 'pointer',
     pointerEvents: 'auto',

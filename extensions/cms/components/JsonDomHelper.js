@@ -34,7 +34,7 @@ import {
     removeComponent,
     isTargetAbove,
     copyComponent,
-    recalculatePixelValue, highlighterHandler, getHighlightPosition, checkIfElementOrParentHasDataKey,
+    recalculatePixelValue, highlighterHandler, getHighlightPosition, getVisibleRect, checkIfElementOrParentHasDataKey,
     highlighterScrollHandler
 } from '../util/jsonDomUtil'
 import {ALLOW_DROP, JsonDomDraggable, onJsonDomDrag, onJsonDomDragEnd} from '../util/jsonDomDragUtil'
@@ -55,7 +55,7 @@ import {
     StyledHighlighter,
     StyledPicker,
     StyledActionBar,
-    StyledHorizontalDivider, StyledRichTextBar, StyledDragBar, getZIndexBasis
+    StyledHorizontalDivider, StyledRichTextBar, StyledDragBar, StyledViewportFrame, getZIndexBasis
 } from './jsondomhelper/JsonDomStyledElements'
 import CmsViewContainer from '../containers/CmsViewContainer'
 import {SimpleSwitch} from '../../../client/components/ui/impl/material'
@@ -212,6 +212,55 @@ class JsonDomHelper extends React.Component {
             this.stopWatchSelectionChange()
             this.stopWatchScroll()
             this.setState({richTextBarFocused: false, richTextBarFloating: false})
+        }
+
+        // An element without highlight (e.g. the layout) has no mouseover/mouseout of its own.
+        // Once its toolbar is shown, nothing would ever hide it again if the pointer leaves
+        // the toolbar without a mouseout (window left, page re-rendered underneath).
+        if (this.props._options && this.props._options.highlight === false) {
+            if (this.isElementActive() && !this.state.toolbarMenuOpen) {
+                this.watchToolbarLeave()
+            } else {
+                this.stopWatchToolbarLeave()
+            }
+        }
+    }
+
+    watchToolbarLeave() {
+        if (this._toolbarWatch) {
+            return
+        }
+        const reset = () => {
+            this.stopWatchToolbarLeave()
+            if (!this.state.toolbarMenuOpen) {
+                this.setState({hovered: false, toolbarHovered: false})
+            }
+        }
+        this._toolbarWatch = (e) => {
+            const key = this.props._key
+            const target = e.target
+            if (target && target.closest && key &&
+                (target.closest('[data-toolbar="' + key + '"]') || target.closest('[data-picker="' + key + '"]'))) {
+                return
+            }
+            reset()
+        }
+        // pointer left the window
+        this._toolbarWindowLeave = (e) => {
+            if (!e.relatedTarget) {
+                reset()
+            }
+        }
+        document.addEventListener('mousemove', this._toolbarWatch, {passive: true})
+        document.addEventListener('mouseout', this._toolbarWindowLeave)
+    }
+
+    stopWatchToolbarLeave() {
+        if (this._toolbarWatch) {
+            document.removeEventListener('mousemove', this._toolbarWatch)
+            document.removeEventListener('mouseout', this._toolbarWindowLeave)
+            this._toolbarWatch = null
+            this._toolbarWindowLeave = null
         }
     }
 
@@ -534,6 +583,7 @@ class JsonDomHelper extends React.Component {
     }
 
     componentWillUnmount() {
+        this.stopWatchToolbarLeave()
         clearTimeout(this.helperTimeoutIn)
         clearTimeout(this.helperTimeoutOut)
         clearTimeout(this.toolbarTimeoutOut)
@@ -613,6 +663,9 @@ class JsonDomHelper extends React.Component {
 
         if (!hovered && node) {
             const stat = getHighlightPosition(node)
+            if (this.props._tagName === 'Cms') {
+                stat.visibleRect = getVisibleRect(node)
+            }
             this.helperTimeoutIn = setTimeout(() => {
                 this.setState(stat,()=>{
                     highlighterHandler(node)
@@ -1058,7 +1111,23 @@ class JsonDomHelper extends React.Component {
         if(this.isElementActive() || this.props._tagName === 'Cms') {
             e.stopPropagation()
             e.preventDefault()
+            let position = {}
+            if (this.props._options && this.props._options.highlight === false && !this.isElementActive()) {
+                // without highlight there was no mouseover, so the position for the highlighter is missing
+                try {
+                    const node = ReactDOM.findDOMNode(this)
+                    if (node && node.nodeType === Node.ELEMENT_NODE) {
+                        position = getHighlightPosition(node)
+                        position.visibleRect = getVisibleRect(node)
+                        // no hover state - nothing would reset it without mouseout
+                        delete position.hovered
+                    }
+                } catch (err) {
+                    console.warn(err)
+                }
+            }
             this.setState({
+                ...position,
                 toolbarMenuOpen: true,
                 toolbarHovered: true,
                 mouseX: e.clientX - 2,
@@ -1257,7 +1326,8 @@ class JsonDomHelper extends React.Component {
                         mini items={menuItems}/> }
                 </StyledToolbarButton>
             }
-            if (isSelected || _options.highlight !== false) {
+            // a cms component without highlight (e.g. the layout wrapping the page) is shown while its context menu is open
+            if (isSelected || _options.highlight !== false || (isCms && toolbarMenuOpen)) {
                 const highligherColor = _dynamic && !_forceInlineEditor ? 'red' : isCms || _options.picker ? 'blue' : 'yellow'
                 let marginBottomStyle = subJson?.p?.style?.marginBottom?.trim()
                 if(isContentEditable){
@@ -1295,6 +1365,26 @@ class JsonDomHelper extends React.Component {
                     }
                 }
 
+                const openCmsComponent = (e) => {
+                    e.stopPropagation()
+                    if (_options.openOnClick === false) {
+                        return
+                    }
+                    if (subJson.p.component && subJson.p.component.length > 0) {
+                        this.props.history.push('/' + subJson.p.component[0].slug)
+                    } else {
+                        this.props.history.push('/' + subJson.p.slug)
+                    }
+                }
+                const cmsLabel = isCms && subJson && subJson.p ? (subJson.p.id ? subJson.p.id.replace(/\$\.\w+\{[^}]*\}/g, '') : getCmsComponentSlug(subJson)) : null
+
+                // a cms component larger than the viewport (e.g. a layout wrapping the whole page):
+                // its box lies mostly off screen, so the frame and the label are shown along the viewport instead
+                // only for components without own highlight (layout) - a normal cms component keeps its
+                // regular highlighter, which scrolls with the element
+                const isOversizedCms = isCms && !isSelected && _options.highlight === false && typeof window !== 'undefined' &&
+                    this.state.height > window.innerHeight * 0.9
+
                 highlighter = <StyledHighlighter
                     key={rest._key + '.highlighter'}
                     data-highlighter={rest._key}
@@ -1305,28 +1395,20 @@ class JsonDomHelper extends React.Component {
                         width: this.state.width + 2
                     }}
                     selected={isSelected}
-                    color={highligherColor}>{_options.picker || isCms ?
+                    color={highligherColor}>{(_options.picker || isCms) && !isOversizedCms ?
                     <StyledPicker
                         data-picker={rest._key}
                         onMouseOver={this.onToolbarMouseOver.bind(this)}
                         onMouseOut={this.onToolbarMouseOut.bind(this)}
                         onContextMenu={this.triggerContextMenu.bind(this)}
                         onClick={(e) => {
-                            e.stopPropagation()
-                            if(_options.openOnClick===false){
-                                return
-                            }
                             if (isCms) {
-                                if(subJson.p.component && subJson.p.component.length > 0){
-                                    this.props.history.push('/' + subJson.p.component[0].slug)
-                                }else {
-                                    this.props.history.push('/' + subJson.p.slug)
-                                }
+                                openCmsComponent(e)
                             } else {
+                                e.stopPropagation()
                                 this.openPicker(_options)
                             }
-                        }}>{isCms && subJson && subJson.p ? (subJson.p.id ? subJson.p.id.replace(/\$\.\w+\{[^}]*\}/g, ''): subJson.p.slug) :
-                        <ImageIcon/>}</StyledPicker> : ''}
+                        }}>{isCms && subJson && subJson.p ? <><LayersIcon/>{_t('JsonDomHelper.componentFrame', {slug: cmsLabel})}</> : <ImageIcon/>}</StyledPicker> : ''}
                     <StyledHorizontalDivider style={{height:this.state.marginBottomNew || this.state.marginBottom}}
                                              onMouseDown={(e)=>{
                                                  this.setState({dividerMousePos:e.pageY})
@@ -1373,6 +1455,22 @@ class JsonDomHelper extends React.Component {
                                                  }
                                              }}>{this.state.marginBottom!='0px'?(Math.round(parseFloat(this.state.marginBottomNew || this.state.marginBottom) * 100) / 100 + 'px')+(marginBottomStyle && this.state.marginBottom!=marginBottomStyle?` = ${marginBottomStyle}`:''):''}</StyledHorizontalDivider>
                 </StyledHighlighter>
+
+                if (isOversizedCms) {
+                    const vr = this.state.visibleRect
+                    highlighter = [highlighter, <StyledViewportFrame key={rest._key + '.viewportFrame'}
+                        style={vr ? {top: vr.top, left: vr.left, width: vr.width, height: vr.height} : undefined}>
+                        <StyledPicker
+                            data-picker={rest._key}
+                            title={_t('JsonDomHelper.openComponent', {slug: cmsLabel})}
+                            onMouseOver={this.onToolbarMouseOver.bind(this)}
+                            onMouseOut={this.onToolbarMouseOut.bind(this)}
+                            onContextMenu={this.triggerContextMenu.bind(this)}
+                            onClick={openCmsComponent}>
+                            <LayersIcon/>{_t('JsonDomHelper.componentFrame', {slug: cmsLabel})}
+                        </StyledPicker>
+                    </StyledViewportFrame>]
+                }
 
                 if (hasRichTextBar && this.state.richTextBarFocused) {
                     // Rendered as its own fixed-position element (sibling of

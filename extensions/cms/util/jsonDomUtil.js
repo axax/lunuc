@@ -171,6 +171,43 @@ export const recalculatePixelValue = (currentValue='', newValue, currentValuePx)
     return newValue
 }
 
+/**
+ * Part of a node that is really visible: its rect clipped to the viewport and
+ * shrunk by fixed overlays that do not belong to the node (e.g. the app bar and
+ * the console bar of the cms editor). Found by probing with elementFromPoint,
+ * so it works without knowing the overlays. Used for components larger than the
+ * viewport (layout), whose own box lies mostly off screen.
+ */
+export const getVisibleRect = (node) => {
+    const rect = node.getBoundingClientRect()
+    let top = Math.max(rect.top, 0),
+        left = Math.max(rect.left, 0),
+        bottom = Math.min(rect.bottom, window.innerHeight),
+        right = Math.min(rect.right, window.innerWidth)
+
+    if (bottom <= top || right <= left) {
+        return {top, left, width: 0, height: 0}
+    }
+
+    const STEP = 4, MAX = 400
+    const inside = (x, y) => {
+        const el = document.elementFromPoint(x, y)
+        return !!el && (el === node || node.contains(el))
+    }
+    const midX = (left + right) / 2
+    let t = top
+    while (t < bottom && t - top < MAX && !inside(midX, t + 1)) t += STEP
+    let b = bottom
+    while (b > t && bottom - b < MAX && !inside(midX, b - 1)) b -= STEP
+    const midY = (t + b) / 2
+    let l = left
+    while (l < right && l - left < MAX && !inside(l + 1, midY)) l += STEP
+    let r = right
+    while (r > l && right - r < MAX && !inside(r - 1, midY)) r -= STEP
+
+    return {top: t, left: l, width: Math.max(0, r - l), height: Math.max(0, b - t)}
+}
+
 export const getHighlightPosition = (node)=>  {
     let childMaxTop = 0,
         childMaxLeft = 0,
