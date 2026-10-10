@@ -931,21 +931,31 @@ class GenericForm extends React.Component {
                     let tab = this.getOrCreateTab(tabs, expandableField)
                     holder = tab.fields
                 }
-                holder.push(<div key={"expandableWrap" + fieldKey} style={{position: 'relative'}}>
-                    <ExpandLessIconButton
-                        onClick={(e) => {
-                            if (this.props.onPosChange) {
-                                this.props.onPosChange({field, newIndex: field.index - 1})
-                            }
-                        }}
-                        style={{position: 'absolute', left: '-40px', top: '-10px'}}/>
-                    <ExpandMoreIconButton style={{position: 'absolute', left: '-40px', top: '10px'}}
-                                          onClick={() => {
-                                              if (this.props.onPosChange) {
-                                                  this.props.onPosChange({field, newIndex: field.index + 1})
-                                              }
-                                          }}/>
-
+                // move buttons in an own column inside the form (not absolutely positioned outside of it)
+                holder.push(<div key={"expandableWrap" + fieldKey}
+                                 style={{display: 'flex', alignItems: 'flex-start', gap: '0.25rem'}}>
+                    <div style={{display: 'flex', flexDirection: 'column', flex: '0 0 auto', paddingTop: '0.3rem'}}>
+                        <ExpandLessIconButton
+                            size="small"
+                            style={{padding: '1px'}}
+                            title={_t('GenericForm.moveUp')}
+                            disabled={field.index === 0}
+                            onClick={() => {
+                                if (this.props.onPosChange) {
+                                    this.props.onPosChange({field, newIndex: field.index - 1})
+                                }
+                            }}/>
+                        <ExpandMoreIconButton
+                            size="small"
+                            style={{padding: '1px'}}
+                            title={_t('GenericForm.moveDown')}
+                            onClick={() => {
+                                if (this.props.onPosChange) {
+                                    this.props.onPosChange({field, newIndex: field.index + 1})
+                                }
+                            }}/>
+                    </div>
+                    <div style={{flex: '1 1 auto', minWidth: 0}}>
                     <Expandable title={expandableField.expandable}
                                 key={"expandable" + fieldKey}
                                 onChange={(e) => {
@@ -953,7 +963,7 @@ class GenericForm extends React.Component {
                                 }}
                                 expanded={this.state.expanded === fieldKey}>
                         {currentFormFields}
-                    </Expandable></div>)
+                    </Expandable></div></div>)
 
                 expandableField = null
             }
