@@ -30,6 +30,9 @@ export default () => {
     if(!_app_.JsonDom){
         _app_.JsonDom = {}
     }
+    // templates can check for the component (e.g. the Jahresbericht falls back to the plain content on
+    // systems where the client was built without it)
+    _app_.JsonDom.hasGenericDataContent = true
 
     _app_.JsonDom.render = (props) =>{
         render(

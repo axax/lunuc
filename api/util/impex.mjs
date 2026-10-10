@@ -271,7 +271,11 @@ export const runImpexFile = async ({db, context, filePath, dryRun = false, allow
         if (!upload) return
         const {name} = upload
         const size = upload.buffer ? upload.buffer.length : fs.statSync(upload.path).size
-        const dir = uploadDir || (await import('../../gensrc/config.mjs')).default.UPLOAD_DIR_ABSPATH
+        // same folder the server delivers /uploads from (server/server.mjs: path.join(path.resolve(), UPLOAD_DIR)).
+        // Not UPLOAD_DIR_ABSPATH: that path is written into gensrc at build time and is wrong when the build
+        // was made on another machine.
+        const dir = uploadDir || path.join(path.resolve(), (await import('../../gensrc/config.mjs')).default.UPLOAD_DIR)
+        if (!fs.existsSync(dir)) throw new Error(`upload folder ${dir} does not exist`)
         const dest = path.join(dir, String(id))
         if (fs.existsSync(dest) && fs.statSync(dest).size === size) {
             out(`  file ${name}: already in the upload folder`)
@@ -283,7 +287,8 @@ export const runImpexFile = async ({db, context, filePath, dryRun = false, allow
             } else {
                 fs.copyFileSync(upload.path, dest)
             }
-            out(`  file ${name}: written to the upload folder`)
+            if (fs.statSync(dest).size !== size) throw new Error(`file ${name}: written size differs (${dest})`)
+            out(`  file ${name}: written to ${dest}`)
         }
     }
 
