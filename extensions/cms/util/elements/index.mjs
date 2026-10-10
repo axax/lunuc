@@ -1,6 +1,9 @@
 import {buildBaseElements} from './baseElements.mjs'
 import {buildAdvancedElements} from './advancedElements.mjs'
-import {MEDIA_PROJECTION, SLIDES_TAB} from './optionHelpers.mjs'
+import {
+    MEDIA_PROJECTION, SLIDES_TAB, DEFAULT_TAB, EXTENDED_TAB, MISC_TAB, RESPONSIVE_TAB, IMAGE_OPTIMIZATION_TAB,
+    MARGIN_TAB, VISIBILITY_TAB, TRANSLATION_TAB, EVENT_TAB
+} from './optionHelpers.mjs'
 import {_t} from '../../../../util/i18n.mjs'
 
 /**
@@ -11,6 +14,44 @@ import {_t} from '../../../../util/i18n.mjs'
  * and cached.
  */
 const cacheByLang = new Map()
+
+// order of the tabs in the settings dialog; element specific tabs (video, slides ...) come after "Allgemein"
+const TAB_RANK = {
+    [DEFAULT_TAB]: 0, [MISC_TAB]: 2, [RESPONSIVE_TAB]: 3, [IMAGE_OPTIMIZATION_TAB]: 4, [MARGIN_TAB]: 5,
+    [VISIBILITY_TAB]: 6, [TRANSLATION_TAB]: 7, [EXTENDED_TAB]: 8, [EVENT_TAB]: 9
+}
+const tabRank = field => TAB_RANK[field.tab] !== undefined ? TAB_RANK[field.tab] : 1
+
+/**
+ * Arranges the options for the settings dialog (keys and stored values are unchanged):
+ * options without tab go to "Erweitert", the tabs get a fixed order (the dialog creates them in the order of
+ * the first field) and the options listed in element.optionOrder come first in their tab.
+ */
+const arrangeElementOptions = element => {
+    const options = element.options
+    if (!options) {
+        return element
+    }
+    const order = element.optionOrder || []
+    const keys = Object.keys(options)
+    keys.forEach(key => {
+        const field = options[key]
+        if (field && typeof field === 'object' && !field.tab && !field.invisible && !field.noTab) {
+            options[key] = {...field, tab: EXTENDED_TAB}
+        }
+    })
+    const pos = key => {
+        const i = order.indexOf(key)
+        return i < 0 ? order.length + keys.indexOf(key) : i
+    }
+    const arranged = {}
+    keys.sort((a, b) => (tabRank(options[a]) - tabRank(options[b])) || (pos(a) - pos(b)))
+        .forEach(key => {
+            arranged[key] = options[key]
+        })
+    element.options = arranged
+    return element
+}
 
 const indexByKey = elements => {
     const map = {}
@@ -27,8 +68,9 @@ const getCache = () => {
     const lang = (typeof _app_ !== 'undefined' && _app_.lang) || 'default'
     let cache = cacheByLang.get(lang)
     if (!cache) {
-        const base = buildBaseElements()
-        const advanced = buildAdvancedElements()
+        // options arranged for the settings dialog (tab order, technical options in "Erweitert", widths)
+        const base = buildBaseElements().map(arrangeElementOptions)
+        const advanced = buildAdvancedElements().map(arrangeElementOptions)
         cache = {
             base,
             advanced,

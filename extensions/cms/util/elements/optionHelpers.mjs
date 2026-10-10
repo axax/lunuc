@@ -35,22 +35,25 @@ export const imageOptions = key => ({
         }</i>`,
         tab: IMAGE_OPTIMIZATION_TAB
     },
-    [`${key}options_quality`]: {
-        type: 'number',
-        newLine: true,
-        label: _t('elements.image.quality'),
-        tab: IMAGE_OPTIMIZATION_TAB
-    },
     [`${key}options_resize_width`]: {
         label: _t('elements.image.resizeWidth'),
+        thirdWidth: true,
         tab: IMAGE_OPTIMIZATION_TAB
     },
     [`${key}options_resize_height`]: {
         label: _t('elements.image.resizeHeight'),
+        thirdWidth: true,
+        tab: IMAGE_OPTIMIZATION_TAB
+    },
+    [`${key}options_quality`]: {
+        type: 'number',
+        label: _t('elements.image.quality'),
+        thirdWidth: true,
         tab: IMAGE_OPTIMIZATION_TAB
     },
     [`${key}options_position`]: {
         label: _t('elements.image.position'),
+        thirdWidth: true,
         tab: IMAGE_OPTIMIZATION_TAB,
         enum: [
             {value: '', name: _t('elements.none')},
@@ -71,8 +74,8 @@ export const imageOptions = key => ({
             {value: '', name: _t('elements.image.noConversion')},
             'png', 'gif', 'jpeg'
         ],
-        newLine: false,
         label: _t('elements.image.convertTo'),
+        thirdWidth: true,
         tab: IMAGE_OPTIMIZATION_TAB
     },
     [`${key}options_removebg_tolerance`]: {
@@ -82,39 +85,43 @@ export const imageOptions = key => ({
         min: 0,
         defaultValue: 0,
         label: _t('elements.image.removebg'),
+        thirdWidth: true,
         tab: IMAGE_OPTIMIZATION_TAB
     },
     [`${key}options_webp`]: {
         type: 'Boolean',
-        newLine: true,
         label: 'WebP',
+        thirdWidth: true,
         tab: IMAGE_OPTIMIZATION_TAB
     },
     [`${key}options_resize_responsive`]: {
         type: 'Boolean',
         label: _t('elements.image.autoResponsive'),
+        thirdWidth: true,
         tab: IMAGE_OPTIMIZATION_TAB
     },
     [`${key}options_flip`]: {
         type: 'Boolean',
         label: 'Flip (Vertical Y)',
+        thirdWidth: true,
         tab: IMAGE_OPTIMIZATION_TAB
     },
     [`${key}options_flop`]: {
         type: 'Boolean',
         label: 'Flop (Horizontal X)',
+        thirdWidth: true,
         tab: IMAGE_OPTIMIZATION_TAB
     },
     [`${key}options_noenlarge`]: {
         type: 'Boolean',
         label: _t('elements.image.noEnlarge'),
+        thirdWidth: true,
         tab: IMAGE_OPTIMIZATION_TAB
     }
 })
 
 export const lazyImageOptions = key => ({
     [`${key}lazyImage_width`]: {
-        newLine: true,
         label: _t('elements.lazyImage.width'),
         tab: IMAGE_OPTIMIZATION_TAB
     },
@@ -153,15 +160,15 @@ export const trOptions = key => ({
     }
 })
 
+// technical options, shown in the tab "Erweitert"
 export const classOptions = (key, tab) => ({
     [`${key}id`]: {
-        newLine: true,
         label: 'ID',
-        tab: tab || DEFAULT_TAB
+        tab: tab || EXTENDED_TAB
     },
     [`${key}className`]: {
         label: _t('elements.cssClass'),
-        tab: tab || DEFAULT_TAB,
+        tab: tab || EXTENDED_TAB,
         uitype: 'autosuggest',
         multipleSeparator: ' ',
         autosuggestUrl: '/lunucapi/autosuggest/classnames?slug=${props.slug}&s=%search%'
@@ -169,7 +176,7 @@ export const classOptions = (key, tab) => ({
     [`${key}style@custom`]: {
         label: 'CSS Style',
         fullWidth: true,
-        tab: tab || DEFAULT_TAB
+        tab: tab || EXTENDED_TAB
     }
 })
 
@@ -180,7 +187,7 @@ export const invisibleOptions = key => ({
         value: false,
         placeholder: _t('elements.hideElement'),
         label: _t('elements.hideElement'),
-        tab: DEFAULT_TAB
+        tab: VISIBILITY_TAB
     }
 })
 
@@ -305,7 +312,8 @@ export const classLayoutColumnOptions = (count, options = {}) => {
         obj[`c_${i}_p_className`] = {
             fullWidth: true,
             label: `${_t('elements.classOfColumn')} ${i + 1}`,
-            value: ''
+            value: '',
+            tab: EXTENDED_TAB
         }
     }
     return obj
@@ -350,6 +358,7 @@ export const classTextOptions = key => ({
 export const classLayoutOptions = (key, {tabPosition = 0} = {}) => ({
     [`${key}className@space`]: {
         label: _t('elements.columnSpacing'),
+        thirdWidth: true,
         tab: DEFAULT_TAB,
         tabPosition,
         enum: [
@@ -360,6 +369,7 @@ export const classLayoutOptions = (key, {tabPosition = 0} = {}) => ({
     },
     [`${key}className@align`]: {
         label: _t('elements.alignment'),
+        thirdWidth: true,
         tab: DEFAULT_TAB,
         enum: [
             {value: '', name: _t('elements.without')},
@@ -369,6 +379,7 @@ export const classLayoutOptions = (key, {tabPosition = 0} = {}) => ({
     },
     [`${key}className@order`]: {
         label: _t('elements.order'),
+        thirdWidth: true,
         tab: DEFAULT_TAB,
         enum: [
             {value: '', name: _t('elements.without')},
@@ -377,11 +388,12 @@ export const classLayoutOptions = (key, {tabPosition = 0} = {}) => ({
     }
 })
 
+// one row with the four margins, padding below (css values, e.g. 2rem)
 export const marginOptions = key => ({
-    [`${key}style_marginTop`]: {label: _t('elements.marginTop'), tab: MARGIN_TAB},
-    [`${key}style_marginBottom`]: {label: _t('elements.marginBottom'), tab: MARGIN_TAB},
-    [`${key}style_marginLeft`]: {label: _t('elements.marginLeft'), tab: MARGIN_TAB},
-    [`${key}style_marginRight`]: {label: _t('elements.marginRight'), tab: MARGIN_TAB},
+    [`${key}style_marginTop`]: {label: _t('elements.marginTop'), fourthWidth: true, tab: MARGIN_TAB},
+    [`${key}style_marginBottom`]: {label: _t('elements.marginBottom'), fourthWidth: true, tab: MARGIN_TAB},
+    [`${key}style_marginLeft`]: {label: _t('elements.marginLeft'), fourthWidth: true, tab: MARGIN_TAB},
+    [`${key}style_marginRight`]: {label: _t('elements.marginRight'), fourthWidth: true, tab: MARGIN_TAB},
     [`${key}style_padding`]: {label: _t('elements.padding'), tab: MARGIN_TAB}
 })
 
@@ -404,7 +416,7 @@ export const eventOptions = key => ({
         height: '10rem',
         type: 'Object',
         label: 'onClick',
-        tab: EVENT_TAB
+        tab: EXTENDED_TAB
     },
     [`${key}onChange`]: {
         fullWidth: true,
@@ -412,7 +424,7 @@ export const eventOptions = key => ({
         height: '10rem',
         type: 'Object',
         label: 'onChange',
-        tab: EVENT_TAB
+        tab: EXTENDED_TAB
     }
 })
 
@@ -470,22 +482,25 @@ export const sizeOptions = (key, {srcKey} = {}) => ({
     }
 })
 
+// image caption: in the general tab with the image, the caption field is only shown when enabled
 export const imgFigureOptions = key => ({
     [`${key}wrapper`]: {
         label: _t('elements.imageWithCaption'),
         type: 'Boolean',
         defaultValue: false,
-        tab: MISC_TAB
+        fullWidth: true,
+        tab: DEFAULT_TAB
     },
     [`${key}caption`]: {
         label: _t('elements.description'),
         uitype: 'html',
         fullWidth: true,
         localized: true,
-        tab: MISC_TAB
+        tab: DEFAULT_TAB,
+        uistate: {visible: `${key}wrapper==true`}
     },
     [`${key}figureClassName`]: {
         label: _t('elements.figureClassName'),
-        tab: MISC_TAB
+        tab: EXTENDED_TAB
     }
 })

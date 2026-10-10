@@ -62,7 +62,8 @@ class CmsViewContainer extends React.Component {
                 cmsPage.style !== cmsPageOld.style ||
                 props.cmsEditData !== this.props.cmsEditData ||
                 /* because it is passed to the JsonDom */
-                (props.settings && this.props.settings.inlineEditor !== props.settings.inlineEditor)))
+                (props.settings && this.props.settings.inlineEditor !== props.settings.inlineEditor) ||
+                props._parentInlineEditor !== this.props._parentInlineEditor))
 
     }
 
@@ -78,7 +79,7 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {slug, cmsPage, children, dynamic, settings, setKeyValue, getKeyValue, updateResolvedData, cmsLocal, readCmsPage, writeCmsPage, _props, loaderClass, ...props} = this.props
+        const {slug, cmsPage, children, dynamic, settings, setKeyValue, getKeyValue, updateResolvedData, cmsLocal, readCmsPage, writeCmsPage, _props, loaderClass, _parentInlineEditor, ...props} = this.props
         const editMode = isEditMode(this.props)
         if (!cmsPage) {
             // show a loader here
@@ -127,7 +128,8 @@ class CmsViewContainer extends React.Component {
             author={cmsPage.author}
             urlSensitiv={cmsPage.urlSensitiv}
             editMode={editMode}
-            inlineEditor={(cmsPage.publicEdit || Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_CONTENT)) && settings && !!settings.inlineEditor}
+            // an included component (Cms element) follows the edit mode switch of the page it is included in
+            inlineEditor={(cmsPage.publicEdit || Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_CONTENT)) && settings && !!settings.inlineEditor && _parentInlineEditor !== false}
             slug={cmsPage.realSlug}
             title={cmsPage.name}
             publicEdit={cmsPage.publicEdit}

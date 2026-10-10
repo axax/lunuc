@@ -25,7 +25,11 @@ import {
     Grid
 } from 'ui/admin'
 import {translations} from './translations/admin'
-import TypesContainer from 'client/containers/TypesContainer'
+import Async from 'client/components/Async'
+
+// loaded on demand - only needed when a page embeds a TypesContainer
+const TypesContainer = (props) => <Async {...props}
+                                         load={() => import(/* webpackChunkName: "admin" */ 'client/containers/TypesContainer')}/>
 import GenericForm from 'client/components/GenericForm'
 import {translations as adminTranslations} from 'client/translations/admin'
 import Expandable from '../../client/components/Expandable'

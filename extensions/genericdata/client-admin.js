@@ -365,7 +365,10 @@ export default () => {
                         } else {
                             newDataToEdit[newName] = dataObject[oriName] && dataObject[oriName].constructor === Object ? JSON.stringify(dataObject[oriName]) : dataObject[oriName]
                         }
-                        if (field.defaultValue && !newDataToEdit[newName]) {
+                        // only a missing value gets the default: false (switch off) and 0 are values
+                        const currentValue = newDataToEdit[newName]
+                        if (field.defaultValue !== undefined && field.defaultValue !== null && field.defaultValue !== '' &&
+                            (currentValue === undefined || currentValue === null || currentValue === '')) {
                             try {
                                 newDataToEdit[newName] = eval(field.defaultValue)
                             } catch (e) {

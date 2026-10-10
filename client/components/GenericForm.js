@@ -52,10 +52,49 @@ import { CAPABILITY_MANAGE_TYPES} from '../../util/capabilities.mjs'
 import CmsViewContainer from '../../extensions/cms/containers/CmsViewContainer'
 import CmsElement from '../../extensions/cms/components/CmsElement'
 import CmsTemplatePicker from '../../extensions/cms/components/CmsTemplatePicker'
+import {loadEditorStyles} from '../../extensions/cms/util/editorStyles'
 import {
     DEFAULT_STYLE_EDITOR, DEFAULT_STYLE_ENVIRONMENT,
     DEFAULT_TEMPLATE_MINIMAL
 } from '../../extensions/cms/constants/cmsDefaults.mjs'
+
+/*
+ CmsEditor field with the styles of other cms pages, so the content is shown as on the page.
+ Field options: editorStyleSlugs (slug or list of slugs of cms pages whose style is loaded),
+ editorClassName (class name or list of class names for nested wrappers), editorStyle (additional css).
+ The styles are scoped to the editor canvas and do not affect the admin.
+ */
+const CmsEditorWithStyles = ({fieldKey, field, children}) => {
+    const slugs = [].concat(field.editorStyleSlugs || []).filter(Boolean)
+    const hasStyles = slugs.length > 0 || !!field.editorStyle
+    const scopeClass = 'cms-editor-scope-' + String(fieldKey).replace(/[^a-zA-Z0-9_-]/g, '_')
+    const [styles, setStyles] = React.useState(hasStyles ? null : {imports: '', css: ''})
+    const configKey = JSON.stringify([slugs, field.editorStyle || ''])
+    React.useEffect(() => {
+        if (!hasStyles) {
+            return
+        }
+        let active = true
+        loadEditorStyles({slugs, extraStyle: field.editorStyle, scope: '.' + scopeClass}).then(result => {
+            if (active) setStyles(result)
+        })
+        return () => {
+            active = false
+        }
+    }, [configKey])
+    if (!styles) {
+        return <div style={{padding: '1rem', opacity: 0.6}}>{_t('GenericForm.loading', null, 'Loading...')}</div>
+    }
+    const content = children(styles)
+    if (!hasStyles) {
+        return content
+    }
+    // editorClassName: a class name or a list of class names for nested wrappers (outermost first),
+    // e.g. ["page", "jb", "jb-content"] for selectors like ".page .jb .jb-content p"
+    const wrapped = [].concat(field.editorClassName || []).filter(Boolean).reduceRight(
+        (inner, className) => <div className={className}>{inner}</div>, content)
+    return <div className={scopeClass}>{wrapped}</div>
+}
 
 const CodeEditor = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "codeeditor" */ './CodeEditor')}/>
 
@@ -861,7 +900,9 @@ class GenericForm extends React.Component {
                             fieldKey: fieldKeyTr,
                             fieldIndex,
                             languageCode,
-                            translateButton
+                            translateButton,
+                            // translateButton is recreated on every render - its inputs decide instead
+                            cacheExtra: [value, showTranslations, config.LANGUAGES.length]
                         })
                     }
                 })
@@ -1160,8 +1201,59 @@ class GenericForm extends React.Component {
     }
 
 
-    createInputField({uitype, field, value, currentFormFields, fieldKey, fieldIndex, languageCode, translateButton}) {
+    /*
+     * Render cache per field: on every keystroke the whole form re-renders. Returning the identical
+     * element objects for unchanged fields lets react skip them entirely (bailout on same element).
+     * Fields whose output depends on other form values (placeholders, $enum, filters) also depend on
+     * the state references, so they are rebuilt whenever anything changes - as before.
+     */
+    createInputField(params) {
+        // hook must be called on every render in the same order
         const theme = useTheme()
+        const {field, value, currentFormFields, fieldKey, languageCode, cacheExtra} = params
+        const {state, props} = this
+
+        if (!this._fieldCache) {
+            this._fieldCache = {}
+        }
+
+        let dynamic = this._dynamicFields && this._dynamicFields.get(field)
+        if (dynamic === undefined) {
+            if (!this._dynamicFields) {
+                this._dynamicFields = new WeakMap()
+            }
+            let json = ''
+            try {
+                json = JSON.stringify(field) || ''
+            } catch (e) {
+                json = '${'
+            }
+            dynamic = /\$\{|"replacePlaceholders"|"filter"|"highlight"|"helperText"|"autosuggestUrl"|"titleTemplate"|"\$enum"/.test(json)
+            this._dynamicFields.set(field, dynamic)
+        }
+
+        const deps = [field, value, params.uitype, params.fieldIndex, languageCode, theme,
+            state.fieldErrors[fieldKey],
+            state.cmsEditorRevision && state.cmsEditorRevision[fieldKey],
+            state.cmsElementsCollapsed && state.cmsElementsCollapsed[fieldKey],
+            props.autoFocus, props.onKeyDown, props.onButtonClick, props.values, props.id,
+            ...(cacheExtra || []),
+            ...(dynamic ? [state.fields, state.valuesOri, state.fieldsTmp] : [])]
+
+        const cached = this._fieldCache[fieldKey]
+        if (cached && cached.deps.length === deps.length && cached.deps.every((d, i) => d === deps[i])) {
+            currentFormFields.push(...cached.elements)
+            return cached.result
+        }
+
+        const elements = []
+        const result = this.createInputFieldUncached({...params, currentFormFields: elements}, theme)
+        this._fieldCache[fieldKey] = {deps, elements, result}
+        currentFormFields.push(...elements)
+        return result
+    }
+
+    createInputFieldUncached({uitype, field, value, currentFormFields, fieldKey, fieldIndex, languageCode, translateButton}, theme) {
         const {onKeyDown, autoFocus} = this.props
         let langButtonWasInserted = false
         if (!field.label) {
@@ -1356,14 +1448,18 @@ class GenericForm extends React.Component {
                        </StyledCmsElementsScroll>
                    </StyledCmsElementsPanel>}
                    <StyledCmsEditorCanvas>
-               <CmsViewContainer
+               <CmsEditorWithStyles fieldKey={fieldKey} field={field}>{editorStyles => <CmsViewContainer
                    key={'cmsEditor-' + fieldKey + '-' + cmsEditorRevision}
                    slug=""
                    forceEditMode={true}
                    cmsData={{
                        slug: '',
                        template: value ? value : DEFAULT_TEMPLATE_MINIMAL,
-                       style: DEFAULT_STYLE_ENVIRONMENT + '\n\n' + DEFAULT_STYLE_EDITOR
+                       // @import of the page styles first, then the environment, the page styles and the editor styles
+                       style: (editorStyles.imports ? editorStyles.imports + '\n\n' : '') +
+                           DEFAULT_STYLE_ENVIRONMENT + '\n\n' +
+                           (editorStyles.css ? editorStyles.css + '\n\n' : '') +
+                           DEFAULT_STYLE_EDITOR
                    }}
                    onCmsDataChange={cmsPage => {
                        // the complete updated json, no graphql write happened
@@ -1378,7 +1474,7 @@ class GenericForm extends React.Component {
                            }
                        })
                    }}
-               /></StyledCmsEditorCanvas></StyledCmsEditorFrame></FormControl>
+               />}</CmsEditorWithStyles></StyledCmsEditorCanvas></StyledCmsEditorFrame></FormControl>
            )
 
         } else if (uitype === 'html') {

@@ -127,6 +127,9 @@ class JsonDom extends React.Component {
         },
 
         /* Other components */
+        // inline editing of a CmsEditor field of a GenericData entry (only used in edit mode, admin chunk)
+        GenericDataContent: (props) => <Async {...props}
+                                              load={() => import(/* webpackChunkName: "admin" */ './GenericDataContent')}/>,
         FileDrop,
         MarkDown,
         ShadowRoot,
@@ -271,6 +274,7 @@ class JsonDom extends React.Component {
                                           slug={slug}
                                           _props={_props}
                                           _parentRef={_this}
+                                          _parentInlineEditor={!!_this.props.inlineEditor}
                                           fetchPolicy='cache-first'
                                           dynamic={true} {...rest}/>
 

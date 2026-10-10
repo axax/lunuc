@@ -222,6 +222,13 @@ export const getHighlightPosition = (node)=>  {
 
             if (childNode.nodeType === Node.ELEMENT_NODE) {
                 const style = window.getComputedStyle(childNode)
+                if (style.position === 'fixed') {
+                    // not part of the layout of this node: e.g. the editor chrome of a child
+                    // (highlighter, toolbar, viewport frame) which is rendered inside the element
+                    // with viewport coordinates and would stretch the box over the whole screen
+                    allAbs = false
+                    continue
+                }
                 if (style.display !== 'none' && style.opacity > 0) {
                     const rect = childNode.getBoundingClientRect()
                     const marginLeft = parseFloat(style.marginLeft);
@@ -274,7 +281,6 @@ export const getHighlightPosition = (node)=>  {
 }
 
 
-let aftershockTimeout
 let rafPending = false
 
 /**
@@ -293,33 +299,94 @@ export const highlighterScrollHandler = (e) => {
     })
 }
 
+/**
+ * first element matching the selector in the nearest ancestor of `el` that contains one
+ */
+const findClosestBySelector = (el, selector) => {
+    let parent = el.parentElement
+    while (parent) {
+        const found = parent.querySelector(selector)
+        if (found) {
+            return found
+        }
+        parent = parent.parentElement
+    }
+    return null
+}
+
+/*
+ * Elements that currently have a highlighter are watched for size changes, so the frame grows and shrinks
+ * with them (new line in a contentEditable, image loaded, ...). The MutationObserver of JsonDomHelper only
+ * covers [data-layout-content], not e.g. a CmsEditor field in a dialog, and does not see plain text edits.
+ */
+let resizeObserver = null
+const observedNodes = new Set()
+const syncResizeObserver = (nodes) => {
+    if (typeof ResizeObserver === 'undefined') {
+        return
+    }
+    if (!resizeObserver) {
+        resizeObserver = new ResizeObserver(() => {
+            highlighterHandler(null, null, true)
+        })
+    }
+    observedNodes.forEach(node => {
+        if (!nodes.has(node)) {
+            resizeObserver.unobserve(node)
+            observedNodes.delete(node)
+        }
+    })
+    nodes.forEach(node => {
+        if (!observedNodes.has(node)) {
+            resizeObserver.observe(node)
+            observedNodes.add(node)
+        }
+    })
+}
+
 export const highlighterHandler = (e, observer, after) => {
     const hightlighters = document.querySelectorAll('[data-highlighter]')
 
     // nothing to reposition - never schedule the aftershock in that case
     if (hightlighters.length === 0) {
+        syncResizeObserver(new Set())
         return
     }
+    const highlightedNodes = new Set()
 
     hightlighters.forEach(hightlighter => {
         const key = hightlighter.getAttribute('data-highlighter')
-        const node = document.querySelector('[_key="' + key + '"]')
+        // keys are only unique within one JsonDom: a CmsEditor field in a dialog has the same keys
+        // as the page behind it. The highlighter is rendered next to its element, so search from there.
+        const uid = hightlighter.getAttribute('data-helper-uid')
+        let node = null
+        try {
+            node = hightlighter.__getHighlightTarget ? hightlighter.__getHighlightTarget() : null
+        } catch (e) {
+            node = null
+        }
+        if (!node) {
+            node = findClosestBySelector(hightlighter, '[_key="' + key + '"]')
+        }
+        const byUid = (attr) => uid ? document.querySelector('[' + attr + '="' + key + '"][data-helper-uid="' + uid + '"]') :
+            findClosestBySelector(hightlighter, '[' + attr + '="' + key + '"]')
 
         if (node) {
+            highlightedNodes.add(node)
             const pos = getHighlightPosition(node)
             hightlighter.style.top = pos.top-1 + 'px'
             hightlighter.style.left = pos.left-1 + 'px'
             hightlighter.style.width = pos.width+2 + 'px'
             hightlighter.style.height = pos.height+2 + 'px'
 
-            const toolbar = document.querySelector('[data-toolbar="' + key + '"]')
+            const toolbar = byUid('data-toolbar')
             if (toolbar) {
                 toolbar.style.top = pos.top + 'px'
                 toolbar.style.left = pos.left + 'px'
                 toolbar.style.height = pos.height + 'px'
             }
 
-            const toolbarRichtext = document.querySelector('[data-richtext-toolbar="' + key + '"]')
+            const toolbarRichtext = byUid('data-richtext-toolbar')
             if (toolbarRichtext) {
                 const rect = node.getBoundingClientRect()
                 let top = rect.top - 130
@@ -334,16 +401,43 @@ export const highlighterHandler = (e, observer, after) => {
         }
     })
 
+    syncResizeObserver(highlightedNodes)
+
     if (!after) {
-        clearTimeout(aftershockTimeout)
-        aftershockTimeout = setTimeout(() => {
-            highlighterHandler(e, observer, true)
-            for (let i = 0; i < 25; i++) {
-                setTimeout(() => {
-                    highlighterHandler(e, observer, true)
-                }, i * 20)
-            }
-        }, 50)
+        scheduleHighlighterFollowUps()
+    }
+}
+
+/*
+ * Follow-ups replace the former aftershock (26 calls within ~550ms). Layout changes after a click/drop
+ * (react re-render, css transitions, images) are caught by one frame-aligned update plus two delayed ones.
+ * Continuous size changes are handled by the ResizeObserver anyway.
+ */
+let frameScheduled = false
+const runInFrame = () => {
+    if (frameScheduled) {
+        return
+    }
+    frameScheduled = true
+    requestAnimationFrame(() => {
+        frameScheduled = false
+        highlighterHandler(null, null, true)
+    })
+}
+const FOLLOW_UP_DELAYS = [120, 450]
+let followUpTimeouts = []
+const scheduleHighlighterFollowUps = () => {
+    runInFrame()
+    followUpTimeouts.forEach(clearTimeout)
+    followUpTimeouts = FOLLOW_UP_DELAYS.map(delay => setTimeout(runInFrame, delay))
+}
+
+/**
+ * Coalesced variant for high frequency sources (MutationObserver): at most one update per frame
+ */
+export const scheduleHighlighterUpdate = () => {
+    if (document.querySelector('[data-highlighter]')) {
+        scheduleHighlighterFollowUps()
     }
 }
 

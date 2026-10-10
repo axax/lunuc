@@ -469,6 +469,8 @@ class CmsViewEditorContainer extends React.Component {
             props.user !== this.props.user ||
             (props.children != this.props.children && !state.cmsEditData) ||
             props._props !== this.props._props ||
+            // edit mode switch of the page this component is included in
+            props._parentInlineEditor !== this.props._parentInlineEditor ||
             state.template !== this.state.template ||
             state.showPageSettings !== this.state.showPageSettings ||
             state.script !== this.state.script ||
@@ -1633,6 +1635,19 @@ class CmsViewEditorContainer extends React.Component {
         if(keys.length>0) {
             this.closeUndoEntry()
             const {updateCmsPage, cmsPage} = this.props
+            if (!this.isLocal && (!cmsPage || !cmsPage._id)) {
+                // e.g. a sub component that was not loaded with its _id: nothing can be saved here
+                // (local mode, e.g. a CmsEditor field in a form, has no _id and is saved by updateCmsPage itself)
+                console.warn('cms page has no _id, changes not saved', keys, cmsPage && cmsPage.slug)
+                this._keyValueMap = {}
+                if (_app_.dispatcher && _app_.dispatcher.addNotification) {
+                    _app_.dispatcher.addNotification({
+                        key: 'cmsPageNotSaved',
+                        message: 'Änderung nicht gespeichert: die Komponente ' + ((cmsPage && cmsPage.slug) || '') + ' kann hier nicht bearbeitet werden'
+                    })
+                }
+                return Promise.resolve()
+            }
             console.log('save cms values for', keys)
             const result = updateCmsPage({
                 _id: cmsPage._id,
@@ -1682,7 +1697,9 @@ class CmsViewEditorContainer extends React.Component {
             this.setCmsPageValue({
                 key: 'template',
                 timeoutSetState:instantSave?0:300,
-                timeoutUpdate: instantSave?0:5000
+                // local mode (CmsEditor field, GenericDataContent): nothing is written here, the json is only
+                // passed on, so it can be done quickly - the owner decides when to persist it
+                timeoutUpdate: instantSave?0:(this.isLocal?400:5000)
             }, str)
             this._isApplyingHistory = wasApplyingHistory
         }

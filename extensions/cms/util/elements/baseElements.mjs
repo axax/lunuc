@@ -2,6 +2,7 @@ import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../../constants/index.mjs'
 import {_t} from '../../../../util/i18n.mjs'
 import {
     DEFAULT_TAB,
+    EXTENDED_TAB,
     MARGIN_TAB,
     MISC_TAB,
     MEDIA_PROJECTION,
@@ -94,6 +95,8 @@ export const buildBaseElements = () => [
                 ['data-element-key']: 'image'
             }
         },
+        // main options first in their tab (see arrangeElementOptions in index.mjs)
+        optionOrder: ['p_src', 'p_alt', 'p_style@align', 'p_wrapper', 'p_caption'],
         options: {
             p_src: {
                 fullWidth: true,
@@ -110,15 +113,14 @@ export const buildBaseElements = () => [
                 keepTextValue: true
             },
             'p_src@imageSrc': {
-                fullWidth: true,
                 value: '',
                 label: _t('elements.image.enterUrl'),
-                tab: DEFAULT_TAB
+                tab: EXTENDED_TAB
             },
             p_alt: {
-                fullWidth: true,
                 label: _t('elements.altText'),
-                tab: DEFAULT_TAB
+                tab: DEFAULT_TAB,
+                fullWidth: false
             },
             ...marginOptions('p_'),
             'p_style@align': {
@@ -159,11 +161,14 @@ export const buildBaseElements = () => [
                 id: '__uid__'
             }
         },
+        // main options first in their tab (see arrangeElementOptions in index.mjs)
+        optionOrder: ['$set_url', '$set_yt'],
         options: {
             $set_transcode: {
                 fullWidth: true,
                 value: '',
-                label: 'Transcode'
+                label: 'Transcode',
+                tab: VIDEO_TAB
             },
             $set_poster: {
                 fullWidth: true,
@@ -185,31 +190,31 @@ export const buildBaseElements = () => [
             },
             $set_controls: {
                 type: 'Boolean',
-                newLine: true,
                 label: _t('elements.video.controls'),
                 value: true,
-                tab: VIDEO_TAB
+                tab: VIDEO_TAB,
+                fourthWidth: true
             },
             $set_autoplay: {
                 type: 'Boolean',
-                newLine: true,
                 label: _t('elements.video.autoplay'),
                 value: true,
-                tab: VIDEO_TAB
+                tab: VIDEO_TAB,
+                fourthWidth: true
             },
             $set_loop: {
                 type: 'Boolean',
-                newLine: true,
                 label: _t('elements.video.loop'),
                 value: true,
-                tab: VIDEO_TAB
+                tab: VIDEO_TAB,
+                fourthWidth: true
             },
             $set_muted: {
                 type: 'Boolean',
-                newLine: true,
                 label: _t('elements.video.muted'),
                 value: true,
-                tab: VIDEO_TAB
+                tab: VIDEO_TAB,
+                fourthWidth: true
             },
             $set_preload: {
                 fullWidth: true,
@@ -243,10 +248,9 @@ export const buildBaseElements = () => [
                 template: YOUTUBE_TAG_TEMPLATE
             },
             $set_style: {
-                fullWidth: true,
                 value: '',
                 label: 'Style',
-                tab: DEFAULT_TAB
+                tab: EXTENDED_TAB
             },
             $c: {
                 template: '${_comp.$set.url?_comp.$set.url:_comp.$set.yt}',
@@ -293,22 +297,22 @@ export const buildBaseElements = () => [
                 tab: SCREENSHOT_TAB
             },
             $set_width: {
-                fullWidth: true,
                 value: '',
                 label: _t('elements.width'),
-                tab: SCREENSHOT_TAB
+                tab: SCREENSHOT_TAB,
+                thirdWidth: true
             },
             $set_height: {
-                fullWidth: true,
                 value: '',
                 label: _t('elements.height'),
-                tab: SCREENSHOT_TAB
+                tab: SCREENSHOT_TAB,
+                thirdWidth: true
             },
             $set_padding: {
-                fullWidth: true,
                 value: '',
                 label: _t('elements.screenshot.padding'),
-                tab: SCREENSHOT_TAB
+                tab: SCREENSHOT_TAB,
+                thirdWidth: true
             },
             c_1_c: {
                 label: _t('elements.caption'),
@@ -317,17 +321,17 @@ export const buildBaseElements = () => [
             },
             $set_islink: {
                 type: 'Boolean',
-                newLine: true,
                 label: _t('elements.screenshot.asLink'),
                 value: true,
-                tab: SCREENSHOT_TAB
+                tab: SCREENSHOT_TAB,
+                fullWidth: false
             },
             $set_timestamp: {
                 uitype: 'timestamp',
-                newLine: true,
                 label: _t('elements.screenshot.newVariant'),
                 value: true,
-                tab: SCREENSHOT_TAB
+                tab: SCREENSHOT_TAB,
+                fullWidth: false
             },
             c_0_p_src: {
                 readOnly: true,
@@ -430,6 +434,8 @@ export const buildBaseElements = () => [
             p: {['data-element-key']: 'headline'},
             c: 'Headline'
         },
+        // main options first in their tab (see arrangeElementOptions in index.mjs)
+        optionOrder: ['t', 'p_className@text', 'c', '$c', 'p_style_textAlign', 'p_for'],
         options: {
             ...trOptions('$inlineEditor_options_c_'),
             t: {
@@ -472,15 +478,13 @@ export const buildBaseElements = () => [
             },
             $toHtml: {
                 label: _t('elements.key.keepLineBreaks'),
-                fullWidth: false,
                 type: 'Boolean',
-                tab: DEFAULT_TAB
+                tab: EXTENDED_TAB
             },
             $contentEditable: {
                 label: _t('elements.key.contentEditable'),
-                fullWidth: false,
                 type: 'Boolean',
-                tab: DEFAULT_TAB
+                tab: EXTENDED_TAB
             },
             ...alignmentOptions('p_'),
             ...marginOptions('p_'),
@@ -503,13 +507,16 @@ export const buildBaseElements = () => [
             },
             p: {['data-element-key']: 'richText'}
         },
+        // main options first in their tab (see arrangeElementOptions in index.mjs)
+        optionOrder: ['$c', 'p_className@linkstyling'],
         options: {
             ...trOptions('$inlineEditor_options_$c_'),
             $c: {
                 label: _t('elements.text'),
                 uitype: 'html',
                 tab: DEFAULT_TAB,
-                tabPosition: 0
+                tabPosition: 0,
+                fullWidth: true
             },
             ...classLinkStylingOptions('p_'),
             ...classOptions('p_'),
@@ -529,6 +536,8 @@ export const buildBaseElements = () => [
             },
             p: {['data-element-key']: 'link'}
         },
+        // main options first in their tab (see arrangeElementOptions in index.mjs)
+        optionOrder: ['c', 'p_href', 'p_title', 'p_target', 'p_className@icons', 'p_gotop'],
         options: {
             ...trOptions('$inlineEditor_options_c_'),
             c: {
@@ -541,9 +550,8 @@ export const buildBaseElements = () => [
             },
             $toHtml: {
                 label: _t('elements.key.keepLineBreaks'),
-                fullWidth: false,
                 type: 'Boolean',
-                tab: DEFAULT_TAB
+                tab: EXTENDED_TAB
             },
             p_href: {
                 fullWidth: true,
@@ -553,15 +561,14 @@ export const buildBaseElements = () => [
                 tab: DEFAULT_TAB
             },
             p_title: {
-                fullWidth: true,
                 value: '',
                 placeholder: _t('elements.linkTitle'),
                 label: _t('elements.linkTitleSeo'),
-                tab: DEFAULT_TAB
+                tab: DEFAULT_TAB,
+                fullWidth: false
             },
             ...classIconListOptions('p_'),
             p_target: {
-                fullWidth: false,
                 value: '',
                 label: 'Target',
                 enum: [
@@ -570,15 +577,16 @@ export const buildBaseElements = () => [
                     {name: '_parent', value: '_parent'},
                     {name: '_top', value: '_top'}
                 ],
-                tab: DEFAULT_TAB
+                tab: DEFAULT_TAB,
+                fullWidth: false
             },
             ...classOptions('p_'),
             p_gotop: {
-                fullWidth: true,
                 defaultValue: true,
                 type: 'Boolean',
                 label: _t('elements.scrollTop'),
-                tab: DEFAULT_TAB
+                tab: DEFAULT_TAB,
+                fullWidth: false
             },
             ...marginOptions('p_'),
             ...eventOptions('p_'),
@@ -601,6 +609,8 @@ export const buildBaseElements = () => [
                 {$inlineEditor: false, t: 'span', c: ''}
             ]
         },
+        // main options first in their tab (see arrangeElementOptions in index.mjs)
+        optionOrder: ['c_0_p_src', 'p_href', 'p_title', 'p_target', 'p_gotop', 'c_0_p_wrapper', 'c_0_p_caption'],
         options: {
             c_0_p_src: {
                 fullWidth: true,
@@ -626,31 +636,31 @@ export const buildBaseElements = () => [
                 tab: DEFAULT_TAB
             },
             p_title: {
-                fullWidth: true,
                 value: '',
                 placeholder: _t('elements.enterUrlTitle'),
                 label: _t('elements.urlTitle'),
                 localized: true,
-                tab: DEFAULT_TAB
+                tab: DEFAULT_TAB,
+                fullWidth: false
             },
             p_target: {
-                fullWidth: true,
                 value: '',
                 placeholder: 'Target',
                 label: 'Target',
-                tab: DEFAULT_TAB
+                tab: DEFAULT_TAB,
+                fullWidth: false
             },
             p_gotop: {
-                fullWidth: true,
                 defaultValue: true,
                 type: 'Boolean',
                 label: _t('elements.scrollTop'),
-                tab: DEFAULT_TAB
+                tab: DEFAULT_TAB,
+                fullWidth: false
             },
             ...imgFigureOptions('c_0_p_'),
             c_0_p_className: {
                 label: _t('elements.cssClassImage'),
-                tab: MISC_TAB
+                tab: EXTENDED_TAB
             },
             c_1_c: {
                 fullWidth: true,
@@ -692,6 +702,8 @@ export const buildBaseElements = () => [
             },
             $inlineEditor: {elementKey: 'documentLink'}
         },
+        // main options first in their tab (see arrangeElementOptions in index.mjs)
+        optionOrder: ['c', 'p_href', 'p_className@icons', 'p_className@extension'],
         options: {
             ...trOptions('$inlineEditor_options_c_'),
             p_href: {
@@ -941,34 +953,41 @@ export const buildBaseElements = () => [
                 }
             }
         },
+        // main options first in their tab (see arrangeElementOptions in index.mjs)
+        optionOrder: ['p_data-slide-timeout', '$set_0_chunk', '$set_0_chunkOptions_randomize', '$set_0_chunkOptions_fill'],
         options: {
             ['p_data-slide-timeout']: {
                 tab: DEFAULT_TAB,
                 value: '7000',
-                label: _t('elements.slider.timeout')
+                label: _t('elements.slider.timeout'),
+                fullWidth: false
             },
             'p_style@timeout': {
                 value: '7000',
                 invisible: true,
                 template: '${_comp.p["data-slide-timeout"]?"--timeout:"+_comp.p["data-slide-timeout"]+"ms;":""}'
             },
-            $set_0_chunk: {value: '1', label: _t('elements.slider.perPage')},
+            $set_0_chunk: {value: '1', label: _t('elements.slider.perPage'), tab: DEFAULT_TAB, fullWidth: false},
             $set_0_chunkOptions_randomize: {
                 type: 'Boolean',
                 value: '1',
-                label: _t('elements.slider.randomize')
+                label: _t('elements.slider.randomize'),
+                tab: DEFAULT_TAB,
+                fullWidth: false
             },
             $set_0_chunkOptions_fill: {
                 type: 'Boolean',
                 value: '1',
-                label: _t('elements.slider.fill')
+                label: _t('elements.slider.fill'),
+                tab: DEFAULT_TAB,
+                fullWidth: false
             },
             ...classOptions('p_'),
             ...marginOptions('p_'),
             ...imageOptions('c_1_c_$for_c_c_1_$for_c_c_1_p_'),
             c_1_c_$for_c_c_1_$for_c_c_1_p_className: {
                 label: _t('elements.cssClassImage'),
-                tab: DEFAULT_TAB
+                tab: EXTENDED_TAB
             },
             ...lazyImageOptions('c_1_c_$for_c_c_1_$for_c_c_1_$observe_'),
             ...invisibleOptions('p_'),
@@ -990,6 +1009,8 @@ export const buildBaseElements = () => [
                 options: {$c: {trKey: '__uid__'}}
             }
         },
+        // main options first in their tab (see arrangeElementOptions in index.mjs)
+        optionOrder: ['$c', 'p_style_textAlign', 'p_className@text'],
         options: {
             ...trOptions('$inlineEditor_options_$c_'),
             $c: {
@@ -1002,9 +1023,8 @@ export const buildBaseElements = () => [
             },
             $contentEditable: {
                 label: _t('elements.key.contentEditable'),
-                fullWidth: true,
                 type: 'Boolean',
-                tab: DEFAULT_TAB
+                tab: EXTENDED_TAB
             },
             ...alignmentOptions('p_'),
             ...marginOptions('p_'),
@@ -1026,12 +1046,14 @@ export const buildBaseElements = () => [
                 'style': 'border:0;'
             }
         },
+        // main options first in their tab (see arrangeElementOptions in index.mjs)
+        optionOrder: ['p_src', 'p_width', 'p_height', 'p_frameBorder'],
         options: {
             p_src: {fullWidth: true, value: '', label: 'Url', tab: DEFAULT_TAB},
-            p_width: {value: '', label: _t('elements.width'), tab: DEFAULT_TAB},
-            p_height: {value: '', label: _t('elements.height'), tab: DEFAULT_TAB},
-            p_frameBorder: {fullWidth: true, value: '', label: 'Frameborder', tab: DEFAULT_TAB},
-            p_style: {fullWidth: true, value: '', label: 'Style', tab: DEFAULT_TAB},
+            p_width: {value: '', label: _t('elements.width'), tab: DEFAULT_TAB, thirdWidth: true},
+            p_height: {value: '', label: _t('elements.height'), tab: DEFAULT_TAB, thirdWidth: true},
+            p_frameBorder: {value: '', label: 'Frameborder', tab: DEFAULT_TAB, thirdWidth: true},
+            p_style: {value: '', label: 'Style', tab: EXTENDED_TAB},
             ...marginOptions('p_'),
             ...classOptions('p_'),
             ...observeOptions(),
@@ -1180,22 +1202,26 @@ export const buildBaseElements = () => [
             'p_style@xs_--grid-template-columns-xs': {
                 value: 'repeat(1, 1fr)',
                 label: 'Grid Template Columns (xs)',
-                tab: DEFAULT_TAB
+                tab: DEFAULT_TAB,
+                fourthWidth: true
             },
             'p_style@sm_--grid-template-columns-sm': {
                 value: 'repeat(2, 1fr)',
                 label: 'Grid Template Columns (sm)',
-                tab: DEFAULT_TAB
+                tab: DEFAULT_TAB,
+                fourthWidth: true
             },
             'p_style@md_--grid-template-columns-md': {
                 value: 'repeat(4, 1fr)',
                 label: 'Grid Template Columns (md)',
-                tab: DEFAULT_TAB
+                tab: DEFAULT_TAB,
+                fourthWidth: true
             },
             'p_style@lg_--grid-template-columns-lg': {
                 value: 'repeat(5, 1fr)',
                 label: 'Grid Template Columns (lg)',
-                tab: DEFAULT_TAB
+                tab: DEFAULT_TAB,
+                fourthWidth: true
             },
             ...marginOptions('p_'),
             ...classLinkStylingOptions('p_'),
@@ -1231,21 +1257,26 @@ export const buildBaseElements = () => [
             $inlineEditor: {elementKey: 'background'},
             p: {['data-element-key']: 'background'}
         },
+        // main options first in their tab (see arrangeElementOptions in index.mjs)
+        optionOrder: ['p_style_backgroundImage', '$set_image_mobileImage', '$set_image_mobileBreak', 'p_style_backgroundColor', 'p_style_backgroundSize', 'p_style_backgroundPosition', 'p_style_backgroundRepeat'],
         options: {
             t: {value: '', label: _t('elements.tagName')},
             p_href: {value: '', label: 'Href'},
             $set_image_mobileImage: {
-                fullWidth: true,
                 value: '',
                 label: _t('elements.background.mobileImage'),
                 uitype: 'type_picker',
                 type: 'Media',
                 filter: 'mimeType=image',
-                projection: MEDIA_PROJECTION
+                projection: MEDIA_PROJECTION,
+                fullWidth: true,
+                tab: DEFAULT_TAB
             },
             $set_image_mobileBreak: {
                 value: '',
-                label: _t('elements.background.mobileBreak')
+                label: _t('elements.background.mobileBreak'),
+                tab: DEFAULT_TAB,
+                fullWidth: false
             },
             ...imageOptions('$set_image_'),
             $set_image_options_background: {
@@ -1269,17 +1300,20 @@ export const buildBaseElements = () => [
             p_style_backgroundSize: {
                 value: '',
                 label: _t('elements.size'),
-                tab: DEFAULT_TAB
+                tab: DEFAULT_TAB,
+                thirdWidth: true
             },
             p_style_backgroundPosition: {
                 value: '',
                 label: _t('elements.position'),
-                tab: DEFAULT_TAB
+                tab: DEFAULT_TAB,
+                thirdWidth: true
             },
             p_style_backgroundColor: {
                 value: '',
                 label: _t('elements.color'),
-                tab: DEFAULT_TAB
+                tab: DEFAULT_TAB,
+                fullWidth: false
             },
             p_style_backgroundRepeat: {
                 value: '',
@@ -1288,7 +1322,8 @@ export const buildBaseElements = () => [
                     {name: _t('elements.none'), value: 'no-repeat'},
                     {name: _t('elements.bothSides'), value: 'repeat'}
                 ],
-                tab: DEFAULT_TAB
+                tab: DEFAULT_TAB,
+                thirdWidth: true
             },
             ...invisibleOptions('p_'),
             ...classLinkStylingOptions('p_'),

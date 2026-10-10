@@ -199,12 +199,13 @@ export const buildAdvancedElements = () => [
             p_forceInlineEditor: {
                 tab: DEFAULT_TAB,
                 type: 'Boolean',
-                newLine: true,
-                label: _t('elements.key.contentEditable')
+                label: _t('elements.key.contentEditable'),
+                fullWidth: false
             },
             p_slug: {
                 tab: DEFAULT_TAB,
-                label: 'Slug (deprecated)'
+                label: 'Slug (deprecated)',
+                fullWidth: false
             },
             ...marginOptions('p_'),
             ...classOptions('p_'),

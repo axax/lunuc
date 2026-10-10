@@ -402,15 +402,3 @@ export const StyledHorizontalDivider = styled('div')({
     borderRadius: `0 0 ${T.radiusSm} ${T.radiusSm}`,
     cursor: 'ns-resize'
 })
-
-export const StyledVerticalDivider = styled('div')({
-    ...dividerBase,
-    width: '4px',
-    height: '100%',
-    top: 0,
-    bottom: 0,
-    left: '100%',
-    borderRadius: `0 ${T.radiusSm} ${T.radiusSm} 0`,
-    cursor: 'ew-resize',
-    writingMode: 'vertical-rl'
-})

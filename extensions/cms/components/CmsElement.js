@@ -3,7 +3,7 @@ import {
     SettingsIcon,
     SimpleDialog
 } from 'ui/admin'
-import {getJsonDomElements, createElementByKeyFromList} from '../util/elements'
+import {getJsonDomElements, createElementByKeyFromList, replaceUidPlaceholder} from '../util/elements'
 import InputBase from '@mui/material/InputBase'
 import IconButton from '@mui/material/IconButton'
 import Tooltip from '@mui/material/Tooltip'
@@ -19,6 +19,9 @@ import {JsonDomDraggable, onJsonDomDrag, onJsonDomDragEnd} from '../util/jsonDom
 import {_t} from '../../../util/i18n.mjs'
 import GenericForm from '../../../client/components/GenericForm'
 import {useKeyValuesGlobal, setKeyValue} from '../../../client/util/keyvalue'
+import {client} from '../../../client/middleware/graphql'
+import config from 'gen/config-client'
+import {isCustomElementVisible, createCustomElementFromCmsPage} from '../util/customElements.mjs'
 
 const STORAGE_COLLAPSED = 'CmsElement.collapsedGroups'
 const STORAGE_RECENT = 'CmsElement.recent'
@@ -235,6 +238,8 @@ export default function CmsElement(props) {
     const [recent, setRecent] = React.useState(() => readStorage(STORAGE_RECENT, []))
     const [draggingId, setDraggingId] = React.useState(null)
     const editDataForm = React.useRef(null)
+    // values of the custom element dialog, the key remounts the form when values are set programmatically
+    const [customForm, setCustomForm] = React.useState({key: 0, values: null})
 
     const keyValues = useKeyValuesGlobal(['CmsCustomElements'], {})
 
@@ -242,7 +247,9 @@ export default function CmsElement(props) {
         return null
     }
 
-    const customElements = keyValues.data.CmsCustomElements || []
+    // all entries (they are saved back as a whole) and the ones available for the current user (user groups)
+    const allCustomElements = keyValues.data.CmsCustomElements || []
+    const customElements = allCustomElements.filter(element => isCustomElementVisible(element))
     const elements = getJsonDomElements(null, {advanced: props.advanced})
     const allElements = [...elements, ...customElements]
 
@@ -298,8 +305,10 @@ export default function CmsElement(props) {
     const renderTile = ({element, isCustom}, groupKey) => {
         const id = getElementId(element, isCustom)
         const Icon = getIconByKey(element.icon, SettingsIcon)
+        const groupNames = isCustom ? [].concat(element.ownerGroup || []).map(g => g && (g.name || g._id || g)).filter(Boolean) : []
         return <Tooltip key={groupKey + '-' + id}
-                        title={disabled ? _t('CmsElement.disabledHint') : element.name}
+                        title={disabled ? _t('CmsElement.disabledHint') :
+                            element.name + (groupNames.length ? ' (' + groupNames.join(', ') + ')' : '')}
                         placement="top"
                         enterDelay={600}
                         disableInteractive>
@@ -317,10 +326,11 @@ export default function CmsElement(props) {
                     e.stopPropagation()
                     if (!JsonDomDraggable.element) {
                         JsonDomDraggable.element = self
-                        const newElement = createElementByKeyFromList(element.defaults.$inlineEditor.elementKey, allElements)
-                        if (element.defaults.$inlineEditor.options && !newElement.options) {
-                            newElement.options = element.defaults.$inlineEditor.options
-                        }
+                        // custom elements all share the elementKey 'customElement', a lookup by key would return
+                        // another custom element: use the dragged definition itself (copy with fresh __uid__)
+                        const newElement = isCustom ?
+                            replaceUidPlaceholder({...element, options: element.defaults.$inlineEditor.options || {}}) :
+                            createElementByKeyFromList(element.defaults.$inlineEditor.elementKey, allElements)
                         JsonDomDraggable.props = {element: newElement}
                     }
                     // defer the state change, some browsers cancel the drag when the source changes synchronously
@@ -340,7 +350,7 @@ export default function CmsElement(props) {
                                 onMouseDown={(e) => e.stopPropagation()}
                                 onClick={(e) => {
                                     e.stopPropagation()
-                                    setShowCustomElement(element)
+                                    openCustomElement(element)
                                 }}><EditIcon sx={{fontSize: 14}}/></IconButton>}
             </StyledTile>
         </Tooltip>
@@ -362,8 +372,72 @@ export default function CmsElement(props) {
         <span className="tile-name">{_t('CmsElement.addCustom')}</span>
     </StyledTile>
 
+    const openCustomElement = (element, isNew) => {
+        setCustomForm({
+            key: customForm.key + 1,
+            values: {
+                name: element.name,
+                icon: element.icon,
+                ownerGroup: element.ownerGroup || [],
+                fromCmsPage: element.fromCmsPage ? [{slug: element.fromCmsPage, __typename: 'CmsPage'}] : null,
+                defaults: element.defaults
+            }
+        })
+        setShowCustomElement({element, isNew: !!isNew})
+    }
+
+    // a cms page was chosen in the dialog: options from its manual, the Cms child renders the page
+    const applyCmsPage = (value) => {
+        const picked = Array.isArray(value) ? value[0] : value
+        if (!picked || !picked.slug) {
+            return
+        }
+        client.query({
+            fetchPolicy: 'network-only',
+            // name is a LocalizedString: one subfield per language
+            query: `query cmsPages($filter:String,$limit:Int){cmsPages(filter:$filter,limit:$limit){results{_id slug name{${config.LANGUAGES.join(' ')}} manual}}}`,
+            variables: {
+                limit: 1,
+                // the manual part in the filter is needed so that the resolver returns the manual field
+                filter: `slug=="${picked.slug}" && manual!=="__no_manual__"`
+            }
+        }).then(({data}) => {
+            const page = data?.cmsPages?.results?.find(p => p.slug === picked.slug) || {slug: picked.slug}
+            const current = (editDataForm.current && editDataForm.current.state.fields) || {}
+            const isDefaultName = !current.name || current.name === 'Element Name'
+            const generated = createCustomElementFromCmsPage(page, {
+                name: isDefaultName ? undefined : current.name,
+                icon: current.icon
+            })
+            setCustomForm({
+                key: customForm.key + 1,
+                values: {
+                    ...current,
+                    name: generated.name,
+                    icon: generated.icon,
+                    fromCmsPage: [{slug: page.slug, __typename: 'CmsPage'}],
+                    defaults: generated.defaults
+                }
+            })
+            _app_.dispatcher.addNotification({
+                horizontal: 'right',
+                autoHideDuration: 4000,
+                closeButton: false,
+                message: _t(page.manual ? 'CmsElement.custom.fromPageDone' : 'CmsElement.custom.fromPageNoManual', {slug: page.slug})
+            })
+        }).catch(e => console.error(e))
+    }
+
+    const saveCustomElements = (newElements) => {
+        setKeyValue({global: true, key: 'CmsCustomElements', value: newElements, clearCache: false}).then(() => {
+            if (self && self.forceUpdate) {
+                self.forceUpdate()
+            }
+        })
+    }
+
     const openNewCustomElement = () => {
-        setShowCustomElement({
+        openCustomElement({
             tagName: 'div',
             icon: 'member',
             name: 'Element Name',
@@ -421,7 +495,7 @@ export default function CmsElement(props) {
                     ['data-element-key']: 'customElement'
                 }
             }
-        })
+        }, true)
     }
 
     const content = []
@@ -487,50 +561,118 @@ export default function CmsElement(props) {
                                          maxWidth="md"
                                          key="customElementDialog"
                                          open={!!showCustomElement} onClose={(action) => {
+            const original = showCustomElement && showCustomElement.element
+            const originalName = showCustomElement && !showCustomElement.isNew && original ? original.name : null
             if (action.key === 'save' && editDataForm.current) {
-                const newElement = editDataForm.current.state.fields.data
+                const fields = editDataForm.current.state.fields
+                let defaults = fields.defaults
+                if (typeof defaults === 'string') {
+                    try {
+                        defaults = JSON.parse(defaults)
+                    } catch (e) {
+                        _app_.dispatcher.addNotification({message: _t('CmsElement.custom.invalidJson')})
+                        return
+                    }
+                }
+                const pickedPage = Array.isArray(fields.fromCmsPage) ? fields.fromCmsPage[0] : fields.fromCmsPage
+                const newElement = {
+                    ...(original || {}),
+                    tagName: (original && original.tagName) || 'div',
+                    name: (fields.name || '').trim() || 'Element',
+                    icon: fields.icon || '',
+                    defaults
+                }
+                // user groups: id and name (the name is shown in the palette)
+                const groups = [].concat(fields.ownerGroup || []).filter(Boolean).map(g => (g && typeof g === 'object') ? {_id: g._id, name: g.name} : {_id: g})
+                if (groups.length) {
+                    newElement.ownerGroup = groups
+                } else {
+                    delete newElement.ownerGroup
+                }
+                if (pickedPage && pickedPage.slug) {
+                    newElement.fromCmsPage = pickedPage.slug
+                } else {
+                    delete newElement.fromCmsPage
+                }
                 const newElements = []
-
                 let exists = false
-                customElements.forEach(element => {
-                    if (element.name == newElement.name) {
+                allCustomElements.forEach(element => {
+                    if (element.name === (originalName || newElement.name)) {
                         exists = true
                         element = newElement
+                    } else if (originalName && element.name === newElement.name) {
+                        // renamed onto another element: replace that one too
+                        return
                     }
                     newElements.push(element)
                 })
                 if (!exists) {
                     newElements.push(newElement)
                 }
-
-                setKeyValue({global: true, key: 'CmsCustomElements', value: newElements, clearCache: false}).then(() => {
-                    if (self && self.forceUpdate) {
-                        self.forceUpdate()
-                    }
-                })
-
+                saveCustomElements(newElements)
+            } else if (action.key === 'delete' && originalName &&
+                window.confirm(_t('CmsElement.custom.deleteConfirm', {name: originalName}))) {
+                saveCustomElements(allCustomElements.filter(element => element.name !== originalName))
             }
             setShowCustomElement(null)
         }}
-                                         actions={[{
-                                             key: 'no',
-                                             label: _t('core.cancel'),
-                                             type: 'primary'
-                                         }, {key: 'save', label: _t('core.save')}]}
+                                         actions={[
+                                             ...(showCustomElement && !showCustomElement.isNew ? [{
+                                                 key: 'delete',
+                                                 label: _t('core.delete')
+                                             }] : []),
+                                             {
+                                                 key: 'no',
+                                                 label: _t('core.cancel'),
+                                                 type: 'primary'
+                                             }, {key: 'save', label: _t('core.save')}]}
                                          title={_t('CmsElement.customTypes')}>
-            {showCustomElement && <GenericForm onRef={(e) => {
-                editDataForm.current = e
-            }} primaryButton={false}
-                                               values={{data: showCustomElement}}
-                                               onChange={() => {
-                                               }}
-                                               fields={{
-                                                   data: {
-                                                       fullWidth: true,
-                                                       label: 'Json',
-                                                       uitype: 'json'
-                                                   }
-                                               }}/>}
+            {showCustomElement && customForm.values && <GenericForm key={'customElementForm' + customForm.key}
+                                                                    onRef={(e) => {
+                                                                        editDataForm.current = e
+                                                                    }}
+                                                                    primaryButton={false}
+                                                                    values={customForm.values}
+                                                                    onChange={({name, value}) => {
+                                                                        if (name === 'fromCmsPage' && value) {
+                                                                            applyCmsPage(value)
+                                                                        }
+                                                                    }}
+                                                                    fields={{
+                                                                        name: {
+                                                                            label: _t('CmsElement.custom.name'),
+                                                                            required: true
+                                                                        },
+                                                                        icon: {
+                                                                            label: _t('CmsElement.custom.icon')
+                                                                        },
+                                                                        ownerGroup: {
+                                                                            label: _t('CmsElement.custom.userGroups'),
+                                                                            type: 'UserGroup',
+                                                                            uitype: 'type_picker',
+                                                                            multi: true,
+                                                                            fullWidth: true,
+                                                                            fields: ['name'],
+                                                                            pickerField: ['name']
+                                                                        },
+                                                                        fromCmsPage: {
+                                                                            label: _t('CmsElement.custom.fromCmsPage'),
+                                                                            type: 'CmsPage',
+                                                                            uitype: 'type_picker',
+                                                                            multi: false,
+                                                                            fullWidth: true,
+                                                                            projection: ['slug'],
+                                                                            queryFields: ['slug'],
+                                                                            searchFields: ['slug', 'name'],
+                                                                            pickerField: ['slug']
+                                                                        },
+                                                                        defaults: {
+                                                                            label: _t('CmsElement.custom.definition'),
+                                                                            type: 'Object',
+                                                                            uitype: 'json',
+                                                                            fullWidth: true
+                                                                        }
+                                                                    }}/>}
         </SimpleDialog>}
     </StyledRoot>
 }

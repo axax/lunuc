@@ -14,6 +14,15 @@
  *         "key": ["slug"],                      // fields that identify an existing entry
  *         "replace": ["data"],                  // object fields that are replaced instead of merged
  *         "defaults": {},                       // merged into every item
+ *         "stringify": ["value"],               // fields written as JSON string
+ *         "mergeArray": {"value": "name"},      // upsert array elements by a property instead of replacing,
+ *                                               // an element {"name": "x", "$remove": true} removes it
+ *         "multi": true,                        // UPDATE only: update every entry matching the key
+ *                                               // (otherwise a key matching several entries is an error),
+ *                                               // with "key": [] all entries of the type/definition
+ *         "transform": {"$file": "x.js"},       // UPDATE only: js function body, called per entry with
+ *                                               // {doc, data, values, item}, returns the fields to write
+ *                                               // (GenericData: fields of data) or null to skip the entry
  *         "items": [ { "slug": "finanzen", "name": "Finanzen" } ]
  *       }
  *     ]
@@ -31,6 +40,10 @@
  *   {"$json": {...}}                                       value stored as JSON string
  *   {"$oid": "..."} / {"$date": "..."}                     mongo extended json
  *
+ * Media items: "$uploadFile": "files/x.jpg" (relative to the impex file) or "$uploadBase64": "<base64>"
+ * (content inside the impex) is written into the upload folder under the _id of the entry
+ * (key ["_id"] with {"$oid": ...} keeps the _id of the source system).
+ *
  * Objects (e.g. data, structure) are merged into the existing value on update, only the given
  * properties change. List a field in "replace" to overwrite it completely.
  *
@@ -42,7 +55,7 @@ import path from 'path'
 import {ObjectId} from 'mongodb'
 
 export const IMPEX_MODES = ['INSERT', 'UPDATE', 'INSERT_UPDATE', 'REMOVE']
-export const DEFAULT_ALLOWED_TYPES = ['GenericDataDefinition', 'GenericData', 'CronJob', 'Hook', 'Api', 'KeyValue']
+export const DEFAULT_ALLOWED_TYPES = ['GenericDataDefinition', 'GenericData', 'CronJob', 'Hook', 'Api', 'KeyValue', 'KeyValueGlobal', 'Media']
 
 const isPlainObject = v => v !== null && typeof v === 'object' && v.constructor === Object
 
@@ -108,7 +121,7 @@ const DATA_PREFIXED = k => k === '_id' || k === 'definition' || k.startsWith('da
  *   resolver, cache        injectable for tests (default GenericResolver / util/cache)
  *   log                    function(line)
  */
-export const runImpex = async ({db, context, dir, file, dryRun = false, doneDir, allowedTypes = DEFAULT_ALLOWED_TYPES, resolver, cache, log = console.log}) => {
+export const runImpex = async ({db, context, dir, file, dryRun = false, doneDir, allowedTypes = DEFAULT_ALLOWED_TYPES, resolver, cache, uploadDir, log = console.log}) => {
     if (!resolver) {
         resolver = (await import('../resolver/generic/genericResolver.mjs')).default
     }
@@ -123,7 +136,7 @@ export const runImpex = async ({db, context, dir, file, dryRun = false, doneDir,
     const summary = []
     for (const name of files) {
         const result = await runImpexFile({
-            db, context, filePath: path.join(root, name), dryRun, allowedTypes, resolver, cache, log
+            db, context, filePath: path.join(root, name), dryRun, allowedTypes, resolver, cache, uploadDir, log
         })
         summary.push(result)
         if (!dryRun && doneDir && result.errors.length === 0) {
@@ -142,7 +155,7 @@ export const runImpex = async ({db, context, dir, file, dryRun = false, doneDir,
     return summary
 }
 
-export const runImpexFile = async ({db, context, filePath, dryRun = false, allowedTypes = DEFAULT_ALLOWED_TYPES, resolver, cache, log = console.log}) => {
+export const runImpexFile = async ({db, context, filePath, dryRun = false, allowedTypes = DEFAULT_ALLOWED_TYPES, resolver, cache, uploadDir, log = console.log}) => {
     const name = path.basename(filePath)
     const result = {file: name, created: 0, updated: 0, unchanged: 0, removed: 0, errors: [], lines: []}
     const out = (line) => {
@@ -198,11 +211,13 @@ export const runImpexFile = async ({db, context, filePath, dryRun = false, allow
 
     const matchesDoc = (doc, match) => Object.keys(match).every(k => isEqual(getPath(doc, k), match[k]))
 
-    const findEntries = async (type, match) => {
+    const findEntries = async (type, match, all = false) => {
         const fromRegistry = registry.filter(r => r.type === type && matchesDoc(r.doc, match)).map(r => r.doc)
         if (fromRegistry.length) return fromRegistry
         if (Object.values(match).some(v => typeof v === 'string' && v.startsWith('impex-new-'))) return []
-        return db.collection(type).find(match).limit(2).toArray()
+        // 2 are enough to detect a key that is not unique; multi updates need all entries
+        const cursor = db.collection(type).find(match)
+        return (all ? cursor : cursor.limit(2)).toArray()
     }
 
     const resolveRef = async (ref, op) => {
@@ -249,6 +264,29 @@ export const runImpexFile = async ({db, context, filePath, dryRun = false, allow
         return obj
     }
 
+    // Media: "$uploadFile" of an item is copied to the upload folder under the _id of the media entry
+    // (only when it is not there yet), so a media keeps its _id and the references in contents stay valid
+    // upload = {name, path} (file next to the impex) or {name, buffer} (base64 inside the impex)
+    const placeUpload = async (upload, id) => {
+        if (!upload) return
+        const {name} = upload
+        const size = upload.buffer ? upload.buffer.length : fs.statSync(upload.path).size
+        const dir = uploadDir || (await import('../../gensrc/config.mjs')).default.UPLOAD_DIR_ABSPATH
+        const dest = path.join(dir, String(id))
+        if (fs.existsSync(dest) && fs.statSync(dest).size === size) {
+            out(`  file ${name}: already in the upload folder`)
+        } else if (dryRun || String(id).startsWith('impex-new-')) {
+            out(`  file ${name}: would be written to the upload folder`)
+        } else {
+            if (upload.buffer) {
+                fs.writeFileSync(dest, upload.buffer)
+            } else {
+                fs.copyFileSync(upload.path, dest)
+            }
+            out(`  file ${name}: written to the upload folder`)
+        }
+    }
+
     const allowRemove = content.allowRemove === true
     const operations = Array.isArray(content.operations) ? content.operations : []
 
@@ -272,9 +310,25 @@ export const runImpexFile = async ({db, context, filePath, dryRun = false, allow
         const isGenericData = op.type === 'GenericData'
         const keyFields = [].concat(op.key || (op.type === 'GenericDataDefinition' ? ['name'] : []))
             .map(k => (isGenericData && !DATA_PREFIXED(k)) ? 'data.' + k : k)
-        if (keyFields.length === 0 && mode !== 'INSERT') {
+        const multiOp = op.multi === true && mode === 'UPDATE'
+        if (keyFields.length === 0 && mode !== 'INSERT' && !multiOp) {
             fail(`${opLabel}: "key" is missing`)
             continue
+        }
+        let transformFn = null
+        if (op.transform) {
+            if (mode !== 'UPDATE') {
+                fail(`${opLabel}: "transform" is only allowed with mode UPDATE`)
+                continue
+            }
+            try {
+                const code = typeof op.transform === 'string' ? op.transform :
+                    fs.readFileSync(path.resolve(path.dirname(filePath), op.transform.$file), 'utf8')
+                transformFn = new Function('input', code)
+            } catch (e) {
+                fail(`${opLabel}: transform: ${e.message}`)
+                continue
+            }
         }
         const replace = [].concat(op.replace || [])
         out(`${opLabel}: ${(op.items || []).length} item(s)`)
@@ -291,19 +345,55 @@ export const runImpexFile = async ({db, context, filePath, dryRun = false, allow
             }
             let label = `${opLabel} item ${i + 1}`
             try {
-                const values = await resolveValue(item, op)
+                let uploadFile = null
+                if (item && (item.$uploadFile !== undefined || item.$uploadBase64 !== undefined)) {
+                    if (op.type !== 'Media') throw new Error('$uploadFile / $uploadBase64 are only allowed for the type Media')
+                    if (item.$uploadBase64 !== undefined) {
+                        // file content inside the impex: "$uploadBase64": "<base64>" (a data url prefix is ignored)
+                        const b64 = String(item.$uploadBase64).replace(/^data:[^,]*,/, '')
+                        uploadFile = {name: item.name || 'file', buffer: Buffer.from(b64, 'base64')}
+                        if (uploadFile.buffer.length === 0) throw new Error('$uploadBase64 is empty')
+                    } else {
+                        const p = path.resolve(path.dirname(filePath), item.$uploadFile)
+                        if (!fs.existsSync(p)) throw new Error(`$uploadFile not found: ${item.$uploadFile}`)
+                        uploadFile = {name: path.basename(p), path: p}
+                    }
+                    item = {...item}
+                    delete item.$uploadFile
+                    delete item.$uploadBase64
+                    if (item.size === undefined) item.size = uploadFile.buffer ? uploadFile.buffer.length : fs.statSync(uploadFile.path).size
+                }
+                const baseValues = await resolveValue(item, op)
                 const criteria = {}
                 for (const k of keyFields) {
-                    const v = getPath(values, k)
+                    const v = getPath(baseValues, k)
                     if (v === undefined) throw new Error(`key ${k} has no value`)
                     criteria[k] = v
                 }
                 label += ' [' + keyFields.map(k => `${k}=${normalize(criteria[k])}`).join(', ') + ']'
 
                 const {match, definitionId} = await buildMatch(op.type, op.definition, criteria)
-                const existing = keyFields.length ? await findEntries(op.type, match) : []
-                if (existing.length > 1) throw new Error('key is not unique, ' + existing.length + ' entries match')
-                const doc = existing[0]
+                const multi = multiOp
+                const existing = (keyFields.length || multi) ? await findEntries(op.type, match, multi) : []
+                if (existing.length > 1 && !multi) throw new Error('key is not unique, ' + existing.length + ' entries match')
+                const docs = multi && existing.length > 0 ? existing : [existing[0]]
+                const baseLabel = label
+                for (const doc of docs) {
+                const values = {...baseValues}
+                if (multi && docs.length > 1) label = baseLabel + ' (' + doc._id + ')'
+                if (transformFn && doc) {
+                    const fields = await transformFn({doc, data: doc.data || {}, values, item})
+                    if (!fields) {
+                        result.unchanged++
+                        out(`${label}: skipped by transform`)
+                        continue
+                    }
+                    if (isGenericData) {
+                        values.data = {...(values.data || {}), ...fields}
+                    } else {
+                        Object.assign(values, fields)
+                    }
+                }
 
                 if (mode === 'REMOVE') {
                     if (!doc) {
@@ -319,13 +409,39 @@ export const runImpexFile = async ({db, context, filePath, dryRun = false, allow
                     continue
                 }
 
+                // arrays that are merged into an existing array by a property (e.g. KeyValueGlobal value)
+                const mergeArray = op.mergeArray || {}
+                const stringify = [].concat(op.stringify || [])
+                for (const field of Object.keys(mergeArray)) {
+                    if (!Array.isArray(values[field])) throw new Error(`mergeArray: ${field} must be an array`)
+                    const by = mergeArray[field]
+                    const current = parseJsonValue(doc ? doc[field] : null)
+                    if (current !== null && !Array.isArray(current)) throw new Error(`mergeArray: existing ${field} is not an array`)
+                    const merged = current ? [...current] : []
+                    values[field].forEach(el => {
+                        const idx = merged.findIndex(e => e && el && e[by] === el[by])
+                        if (el && el.$remove === true) {
+                            // {"name": "x", "$remove": true} removes the element
+                            if (idx >= 0) merged.splice(idx, 1)
+                        } else if (idx >= 0) merged[idx] = el
+                        else merged.push(el)
+                    })
+                    values[field] = merged
+                }
+                const encode = (data) => {
+                    stringify.forEach(f => {
+                        if (data[f] !== undefined && typeof data[f] !== 'string') data[f] = JSON.stringify(data[f])
+                    })
+                    return data
+                }
+
                 if (doc && mode === 'INSERT') throw new Error(`already exists (${doc._id})`)
                 if (!doc && mode === 'UPDATE') throw new Error('not found')
 
                 if (!doc) {
                     let created
                     if (!dryRun) {
-                        const data = {...values}
+                        const data = encode({...values})
                         if (isGenericData) data.definition = String(definitionId)
                         created = await resolver.createEntity(db, {context}, op.type, data, {skipCheck: false})
                     }
@@ -333,10 +449,15 @@ export const runImpexFile = async ({db, context, filePath, dryRun = false, allow
                     registry.push({type: op.type, doc: {...values, _id, ...(isGenericData ? {definition: definitionId} : {})}})
                     result.created++
                     out(`${label}: created (${_id})`)
+                    await placeUpload(uploadFile, _id)
                 } else {
                     const update = {...values}
                     delete update._id
-                    const changes = diffValues(doc, update, replace)
+                    const compareDoc = {...doc}
+                    stringify.concat(Object.keys(mergeArray)).forEach(f => {
+                        compareDoc[f] = parseJsonValue(doc[f])
+                    })
+                    const changes = diffValues(compareDoc, update, replace)
                     if (changes.length === 0) {
                         result.unchanged++
                         out(`${label}: unchanged`)
@@ -347,12 +468,14 @@ export const runImpexFile = async ({db, context, filePath, dryRun = false, allow
                                 // a json string replaces an object field completely, an object is merged
                                 data[k] = (replace.indexOf(k) >= 0 && isPlainObject(update[k])) ? JSON.stringify(update[k]) : update[k]
                             })
-                            await resolver.updateEntity(db, context, op.type, data)
+                            await resolver.updateEntity(db, context, op.type, encode(data))
                         }
                         result.updated++
                         out(`${label}: updated ${changes.join(', ')}`)
                     }
+                    await placeUpload(uploadFile, doc._id)
                     registry.push({type: op.type, doc: mergeForRegistry(doc, update, replace)})
+                }
                 }
             } catch (e) {
                 fail(`${label}: ${e.message}`)
@@ -366,6 +489,11 @@ export const runImpexFile = async ({db, context, filePath, dryRun = false, allow
     }
     out(`${name}: ${result.created} created, ${result.updated} updated, ${result.unchanged} unchanged, ${result.removed} removed, ${result.errors.length} errors`)
     return result
+}
+
+const parseJsonValue = v => {
+    if (typeof v !== 'string') return v === undefined ? null : v
+    return v.trim() ? JSON.parse(v) : null
 }
 
 const mergeDefaults = (defaults, item) => {

@@ -1,229 +1,70 @@
 import React from 'react'
-import {
-    ApprovalIcon,
-    HomeIcon,
-    BuildIcon,
-    SettingsIcon,
-    AccountCircleIcon,
-    EditIcon,
-    InsertDriveFileIcon,
-    FolderIcon,
-    SubjectIcon,
-    CloudUploadIcon,
-    ChatIcon,
-    LaunchIcon,
-    ShoppingCartIcon,
-    WebIcon,
-    ImageIcon,
-    DoneIcon,
-    ViewListIcon,
-    ViewModuleIcon,
-    LabelIcon,
-    BusinessIcon,
-    EventIcon,
-    SchoolIcon,
-    ScheduleIcon,
-    ShopIcon,
-    BeachAccessIcon,
-    GroupIcon,
-    ThumbUpIcon,
-    SettingsInputComponentIcon,
-    TrainIcon,
-    TrafficIcon,
-    MailIcon,
-    CardMembershipIcon,
-    MoneyIcon,
-    BarChartIcon,
-    StoreIcon,
-    HouseIcon,
-    WorkIcon,
-    LocalCafeIcon,
-    SportsTennisIcon,
-    AccessibleIcon,
-    AccountBalanceIcon,
-    DirectionsBoatIcon,
-    FilterListIcon,
-    CasinoIcon,
-    SaveIcon,
-    BookIcon,
-    SearchIcon,
-    BackupIcon,
-    VideoSettingsIcon,
-    ScreenshotMonitorIcon,
-    CollectionsIcon,
-    FormatSizeIcon,
-    HtmlIcon,
-    LinkIcon,
-    DatasetLinkedIcon,
-    AttachmentIcon,
-    HorizontalRuleIcon,
-    SlideshowIcon,
-    WebAssetIcon,
-    ViewColumnIcon,
-    WallpaperIcon,
-    WysiwygIcon,
-    CodeIcon,
-    TimelineIcon,
-    HorizontalSplitIcon,
-    StorageIcon,
-    WidgetsIcon,
-    FunctionsIcon,
-    TextFormatIcon,
-    PauseIcon,
-    LogoutIcon,
-    PreviewIcon,
-    SyncIcon,
-    AddIcon,
-    DisplaySettingsIcon,
-    TranslateIcon,
-    AutoFixHighIcon,
-    CssIcon,
-    JavascriptIcon,
-    HistoryIcon,
-    NotificationsIcon,
-    SupportIcon,
-    DevicesIcon,
-    GridOnIcon,
-    LanguageIcon,
-    ReplayIcon,
-    GoogleIcon,
-    ShieldIcon,
-    FingerprintIcon,
-    DeleteIcon,
-    HighlightAltIcon,
-    AccountTreeIcon,
-    RefreshIcon,
-    QrCode2Icon,
-    InputIcon,
-    AddToQueueIcon,
-    FolderZipIcon,
-    EditNoteIcon,
-    PlaylistAddIcon,
-    VisibilityIcon,
-    VisibilityOffIcon,
-    AssignmentIcon,
-    DownloadIcon,
-    ArticleIcon,
-    ContentCutIcon,
-    LayersIcon,
-    AutoAwesomeIcon
-} from 'gensrc/ui/admin/icons'
-import SourceIcon from '@mui/icons-material/Source'
 
-const iconComponents = {
-    source:SourceIcon,
-    delete:DeleteIcon,
-    refresh:RefreshIcon,
-    magic:AutoFixHighIcon,
-    translate: TranslateIcon,
-    displaySetting:DisplaySettingsIcon,
-    add: AddIcon,
-    sync: SyncIcon,
-    preview: PreviewIcon,
-    logout: LogoutIcon,
-    home: HomeIcon,
-    build: BuildIcon,
-    settings: SettingsIcon,
-    account: AccountCircleIcon,
-    edit: EditIcon,
-    drive: InsertDriveFileIcon,
-    folder: FolderIcon,
-    subject: SubjectIcon,
-    chat: ChatIcon,
-    launch: LaunchIcon,
-    web: WebIcon,
-    cart: ShoppingCartIcon,
-    image: ImageIcon,
-    done: DoneIcon,
-    view: ViewListIcon,
-    module: ViewModuleIcon,
-    label: LabelIcon,
-    business: BusinessIcon,
-    event: EventIcon,
-    school: SchoolIcon,
-    schedule: ScheduleIcon,
-    shop: ShopIcon,
-    beach: BeachAccessIcon,
-    group: GroupIcon,
-    thumbup: ThumbUpIcon,
-    component: SettingsInputComponentIcon,
-    train: TrainIcon,
-    traffic: TrafficIcon,
-    mail: MailIcon,
-    member: CardMembershipIcon,
-    money: MoneyIcon,
-    store: StoreIcon,
-    barchart: BarChartIcon,
-    house: HouseIcon,
-    work: WorkIcon,
-    cafe: LocalCafeIcon,
-    sport: SportsTennisIcon,
-    accessible: AccessibleIcon,
-    politics: AccountBalanceIcon,
-    boat: DirectionsBoatIcon,
-    filter: FilterListIcon,
-    casino: CasinoIcon,
-    book: BookIcon,
-    save: SaveIcon,
-    search: SearchIcon,
-    backup: BackupIcon,
-    video: VideoSettingsIcon,
-    screenshot:ScreenshotMonitorIcon,
-    collections:CollectionsIcon,
-    format:FormatSizeIcon,
-    html:HtmlIcon,
-    link:LinkIcon,
-    datasetLink:DatasetLinkedIcon,
-    attachment:AttachmentIcon,
-    horizontalRule:HorizontalRuleIcon,
-    slideshow:SlideshowIcon,
-    webAsset:WebAssetIcon,
-    viewColum:ViewColumnIcon,
-    wallpaper:WallpaperIcon,
-    wysiwyg:WysiwygIcon,
-    code:CodeIcon,
-    timeline:TimelineIcon,
-    horizontalSplit:HorizontalSplitIcon,
-    storage:StorageIcon,
-    widgets:WidgetsIcon,
-    functions:FunctionsIcon,
-    textFormat:TextFormatIcon,
-    pause:PauseIcon,
-    css: CssIcon,
-    js: JavascriptIcon,
-    history: HistoryIcon,
-    notification: NotificationsIcon,
-    support: SupportIcon,
-    devices: DevicesIcon,
-    upload: CloudUploadIcon,
-    grid: GridOnIcon,
-    replay:ReplayIcon,
-    language: LanguageIcon,
-    google: GoogleIcon,
-    shield:ShieldIcon,
-    fingerprint: FingerprintIcon,
-    highlight:HighlightAltIcon,
-    tree:AccountTreeIcon,
-    qrcode:QrCode2Icon,
-    input:InputIcon,
-    addQueue:AddToQueueIcon,
-    folderZip:FolderZipIcon,
-    addList:PlaylistAddIcon,
-    editList:EditNoteIcon,
-    visibility:VisibilityIcon,
-    visibilityOff: VisibilityOffIcon,
-    assignment: AssignmentIcon,
-    download: DownloadIcon,
-    doc: ArticleIcon,
-    contentCut: ContentCutIcon,
-    layers: LayersIcon,
-    autoAwesome:AutoAwesomeIcon,
-    approval: ApprovalIcon
+/*
+ * The icon map (iconMap.js) contains ~100 svg icons. It is only loaded when an icon is rendered for the
+ * first time. getIconByKey stays synchronous: it returns a stable wrapper component per key which
+ * renders an empty placeholder of icon size until the map is available.
+ * Keep ICON_KEYS in sync with iconMap.js (a warning is logged in dev mode if not).
+ */
+const ICON_KEYS = new Set(["source", "delete", "refresh", "magic", "translate", "displaySetting", "add", "sync", "preview", "logout", "home", "build", "settings", "account", "edit", "drive", "folder", "subject", "chat", "launch", "web", "cart", "image", "done", "view", "module", "label", "business", "event", "school", "schedule", "shop", "beach", "group", "thumbup", "component", "train", "traffic", "mail", "member", "money", "store", "barchart", "house", "work", "cafe", "sport", "accessible", "politics", "boat", "filter", "casino", "book", "save", "search", "backup", "video", "screenshot", "collections", "format", "html", "link", "datasetLink", "attachment", "horizontalRule", "slideshow", "webAsset", "viewColum", "wallpaper", "wysiwyg", "code", "timeline", "horizontalSplit", "storage", "widgets", "functions", "textFormat", "pause", "css", "js", "history", "notification", "support", "devices", "upload", "grid", "replay", "language", "google", "shield", "fingerprint", "highlight", "tree", "qrcode", "input", "addQueue", "folderZip", "addList", "editList", "visibility", "visibilityOff", "assignment", "download", "doc", "contentCut", "layers", "autoAwesome", "approval"])
+
+let iconMap = null, iconMapPromise = null
+const listeners = new Set()
+
+const loadIconMap = () => {
+    if (!iconMapPromise) {
+        iconMapPromise = import(/* webpackChunkName: "icons" */ './iconMap').then(module => {
+            iconMap = module.default
+            if (process.env.NODE_ENV !== 'production') {
+                const missing = Object.keys(iconMap).filter(key => !ICON_KEYS.has(key))
+                if (missing.length > 0) {
+                    console.warn('icon.js: add keys to ICON_KEYS', missing)
+                }
+            }
+            listeners.forEach(fn => fn())
+            listeners.clear()
+        })
+    }
+    return iconMapPromise
+}
+
+const placeholderStyle = {display: 'inline-block', width: '1em', height: '1em', fontSize: '1.5rem', flexShrink: 0}
+
+const wrappers = {}
+const createLazyIcon = (key) => {
+    const LazyIcon = React.forwardRef((props, ref) => {
+        const [, forceUpdate] = React.useReducer(x => x + 1, 0)
+        React.useEffect(() => {
+            if (!iconMap) {
+                listeners.add(forceUpdate)
+                loadIconMap()
+                return () => listeners.delete(forceUpdate)
+            }
+        }, [])
+        if (iconMap && iconMap[key]) {
+            const Icon = iconMap[key]
+            return <Icon ref={ref} {...props}/>
+        }
+        const style = props.fontSize === 'small' ? {...placeholderStyle, fontSize: '1.25rem'} :
+            props.fontSize === 'large' ? {...placeholderStyle, fontSize: '2.1875rem'} : placeholderStyle
+        return <span ref={ref} className={props.className} style={style}/>
+    })
+    LazyIcon.displayName = 'LazyIcon(' + key + ')'
+    LazyIcon.muiName = 'SvgIcon'
+    return LazyIcon
 }
 
 export const getIconByKey = (key, defaultIcon) => {
-    if(key && key.constructor !== String){
+    if (key && key.constructor !== String) {
         return defaultIcon || key
     }
-    return iconComponents[key] || defaultIcon
+    if (iconMap) {
+        return iconMap[key] || defaultIcon
+    }
+    if (ICON_KEYS.has(key)) {
+        return wrappers[key] || (wrappers[key] = createLazyIcon(key))
+    }
+    return defaultIcon
 }
+
+export const preloadIcons = loadIconMap
