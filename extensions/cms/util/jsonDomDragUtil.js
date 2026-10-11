@@ -293,9 +293,15 @@ export const onJsonDomDrag = (e) => {
                 activeDropAreas.splice(i, 1)
             }
 
-            const targetElements = Array.from(document.querySelectorAll('[_key]:not([_rootkey])[data-allow-drop="true"]')).map(domEl => {
-                return {domEl}
-            })
+            // an element can only be moved inside its own editor: containers marked with data-drop-boundary
+            // (e.g. GenericDataContent, one cms editor per data entry) have their own json, a move into
+            // another one can not work. New elements (from the element list, without _key) can go anywhere.
+            const boundary = dragableProps._key ? draggable.closest('[data-drop-boundary]') : undefined
+            const targetElements = Array.from(document.querySelectorAll('[_key]:not([_rootkey])[data-allow-drop="true"]'))
+                .filter(domEl => boundary === undefined || domEl.closest('[data-drop-boundary]') === boundary)
+                .map(domEl => {
+                    return {domEl}
+                })
 
             for (let i = 0; i < targetElements.length; i++) {
                 const {domEl, isChild, prevSibling, nextSibling, index, isLastChild, isBeforeLoop} = targetElements[i]

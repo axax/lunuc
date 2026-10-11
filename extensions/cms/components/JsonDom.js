@@ -685,7 +685,11 @@ class JsonDom extends React.Component {
                     this.jsOnStack = {}
                 }
                 if(!this.error) {
-                    content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope)
+                    // _keyPrefix: unique element keys for a json that is edited on its own while other editors are
+                    // on the same page (e.g. GenericDataContent), unlike _key it does not mark the elements as
+                    // part of an included component (_rootKey)
+                    const keyRoot = _key || this.props._keyPrefix
+                    content = this.parseRec(this.getJson(this.props), keyRoot ? keyRoot + '-0' : 0, scope)
                 }
             }
         }

@@ -43,6 +43,7 @@ import {getJsonDomElements, MEDIA_PROJECTION, replaceUidPlaceholder} from '../ut
 import {deepMergeOptional, deepMerge} from '../../../util/deepMerge.mjs'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants/index.mjs'
 import {parseManualFields} from '../util/customElements.mjs'
+import {isSourceSortable, moveSourceEntry, registerSourceSort} from '../util/sourceSort'
 import {client} from '../../../client/middleware/graphql'
 import {openWindow} from '../../../client/util/window'
 import {convertRawValuesFromPicker} from '../../../client/util/picker'
@@ -1750,6 +1751,20 @@ class JsonDomHelper extends React.Component {
                 })
             }
 
+            // data entries with source.sortable: change the position (util/sourceSort)
+            if (parsedSource.sortable && isSourceSortable(this)) {
+                menuItems.push({
+                    name: _options.menuTitle.sourceUp || _t('JsonDomHelper.sort.up'),
+                    icon: <ArrowUpwardIcon/>,
+                    onClick: () => moveSourceEntry(this, -1)
+                })
+                menuItems.push({
+                    name: _options.menuTitle.sourceDown || _t('JsonDomHelper.sort.down'),
+                    icon: <ArrowDownwardIcon/>,
+                    onClick: () => moveSourceEntry(this, 1)
+                })
+            }
+
             if (parsedSource.allowRemove) {
                 menuItems.push({
                     name: _options.menuTitle.sourceRemove || 'Eintrag löschen',
@@ -2673,5 +2688,7 @@ JsonDomHelper.propTypes = {
 }
 */
 
+
+registerSourceSort(JsonDomHelper)
 
 export default JsonDomHelper

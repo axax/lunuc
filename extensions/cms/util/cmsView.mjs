@@ -42,6 +42,12 @@ export const isEditMode = (props) => {
         return true
     }
 
+    // forceEditMode also counts before the page is loaded: the first request of an included component
+    // must already be made in edit mode (data resolver with editmode, e.g. drafts for editors)
+    if (!cmsPage && isTrue(forceEditMode) && Util.hasCapability(_app_.user, CAPABILITY_VIEW_CMS_EDITOR) && !isPreview()) {
+        return true
+    }
+
     if(cmsPage) {
         // with cmsPage
         if(isTrue(forceEditMode) || cmsPage.publicEdit) {

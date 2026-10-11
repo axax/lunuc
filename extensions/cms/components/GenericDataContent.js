@@ -13,7 +13,8 @@ import {DEFAULT_TEMPLATE_MINIMAL} from '../constants/cmsDefaults.mjs'
  *    "p": {"dataId": "<id of the entry>", "genericType": "ThalGeschaeftsberichtBeitrag", "field": "content", "value": "<json>"}}
  *
  * The field is rendered in an own (local) cms editor: elements are edited and dragged in like in the form.
- * Until the pointer/focus reaches the content it is only rendered (no editor), see `active`.
+ * Until the pointer/focus reaches the content it is only rendered (no editor), see `active`; the optional prop
+ * `preview` (json) is shown instead of `value` in that state.
  * Every change is saved after a short delay as partial update of data.<field> (other fields stay untouched).
  */
 
@@ -43,7 +44,7 @@ const notify = message => _app_.dispatcher.addNotification({
     message
 })
 
-export default function GenericDataContent({dataId, genericType, field = 'content', value, className, saveDelay = 600}) {
+function GenericDataContentEditor({dataId, genericType, field = 'content', value, preview, className, saveDelay = 600}) {
     const _id = dataId
     // the json of the editor; the parent can re-render with stale data until the page is reloaded,
     // so the value is only taken over initially
@@ -65,6 +66,9 @@ export default function GenericDataContent({dataId, genericType, field = 'conten
         }
     }, [status])
     const cmsData = React.useMemo(() => ({slug: '', template: latest.current, style: ''}), [_id, field])
+    // until the editor starts the content is only shown; `preview` can be the rendered version of the content
+    // (e.g. with generated parts like the cards of the Jahresbericht instead of their placeholders)
+    const previewData = React.useMemo(() => ({slug: '', template: preview && preview.trim() ? preview : latest.current, style: ''}), [_id, field, preview])
 
     const save = React.useCallback(() => {
         clearTimeout(timer.current)
@@ -104,6 +108,7 @@ export default function GenericDataContent({dataId, genericType, field = 'conten
     const activateProps = active ? {} : {onMouseEnter: activate, onFocus: activate, onPointerDown: activate, onTouchStart: activate}
 
     return <div className={className} data-generic-data-content={_id} data-generic-data-content-active={active}
+                data-drop-boundary="true"
                 style={{position: 'relative'}} {...activateProps}>
         {status && <span data-generic-data-content-status={status} style={{
             position: 'absolute', right: 0, top: '-1.6em', zIndex: 2, fontSize: '0.7rem', lineHeight: 1.4,
@@ -113,8 +118,12 @@ export default function GenericDataContent({dataId, genericType, field = 'conten
         {!active ? <CmsViewContainer key={'gdc-view-' + _id + '-' + field}
                                       slug=""
                                       _parentInlineEditor={false}
-                                      cmsData={cmsData}/> :
+                                      cmsData={previewData}/> :
         <CmsViewContainer key={'gdc-' + _id + '-' + field}
+                          // own key prefix: every entry has its own editor with its own json, without the prefix
+                          // the element keys (0.0, 0.0.1 ...) of all entries on the page are the same and the
+                          // helpers / drop areas of one entry are mixed up with the ones of another
+                          _keyPrefix={'gdc_' + String(_id).replace(/[^a-zA-Z0-9]/g, '') + '_' + String(field).replace(/[^a-zA-Z0-9]/g, '')}
                           slug=""
                           forceEditMode={true}
                           cmsData={cmsData}
@@ -125,4 +134,14 @@ export default function GenericDataContent({dataId, genericType, field = 'conten
                               timer.current = setTimeout(save, saveDelay)
                           }}/>}
     </div>
+}
+
+/**
+ * One editor instance per entry and field: in a list (e.g. the beiträge of a bereich) the template engine
+ * re-uses the component of a position for whatever entry is rendered there. After a reorder the editor
+ * would keep the content of the previous entry and save it under the id of the new one. The key starts a
+ * fresh editor instead (a pending change of the previous entry is still saved under its own id on unmount).
+ */
+export default function GenericDataContent(props) {
+    return <GenericDataContentEditor key={(props.dataId || '') + '|' + (props.field || 'content')} {...props}/>
 }

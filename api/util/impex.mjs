@@ -156,6 +156,13 @@ export const runImpex = async ({db, context, dir, file, dryRun = false, doneDir,
 }
 
 export const runImpexFile = async ({db, context, filePath, dryRun = false, allowedTypes = DEFAULT_ALLOWED_TYPES, resolver, cache, uploadDir, log = console.log}) => {
+    // also usable directly (e.g. from an api script), not only through runImpex
+    if (!resolver) {
+        resolver = (await import('../resolver/generic/genericResolver.mjs')).default
+    }
+    if (cache === undefined) {
+        cache = (await import('../../util/cache.mjs')).default
+    }
     const name = path.basename(filePath)
     const result = {file: name, created: 0, updated: 0, unchanged: 0, removed: 0, errors: [], lines: []}
     const out = (line) => {
@@ -450,7 +457,17 @@ export const runImpexFile = async ({db, context, filePath, dryRun = false, allow
                         if (isGenericData) data.definition = String(definitionId)
                         created = await resolver.createEntity(db, {context}, op.type, data, {skipCheck: false})
                     }
-                    const _id = created && created._id ? created._id : 'impex-new-' + (++fakeId)
+                    // the created _id can be an ObjectId or still the extended json {$oid} of the item
+                    // the created _id can be a string, an ObjectId or a copy of one (String() gives [object Object])
+                    const idString = v => {
+                        if (!v) return ''
+                        if (typeof v === 'string') return v
+                        if (v.$oid) return String(v.$oid)
+                        if (typeof v.toHexString === 'function') return v.toHexString()
+                        const str = String(v)
+                        return str === '[object Object]' ? '' : str
+                    }
+                    const _id = idString(created && created._id) || idString(values._id) || 'impex-new-' + (++fakeId)
                     registry.push({type: op.type, doc: {...values, _id, ...(isGenericData ? {definition: definitionId} : {})}})
                     result.created++
                     out(`${label}: created (${_id})`)
