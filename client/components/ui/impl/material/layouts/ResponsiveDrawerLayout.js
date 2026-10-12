@@ -18,6 +18,7 @@ import ExpandMore from '@mui/icons-material/ExpandMore'
 import Collapse from '@mui/material/Collapse'
 import styled from '@emotion/styled'
 import Box from '@mui/material/Box'
+import {useTheme} from '@mui/material/styles'
 
 const drawerWidth = 300;
 
@@ -184,12 +185,15 @@ const ResponsiveDrawer = React.memo((props) => {
         setMobileOpen(false)
     }, [])
 
-    const {onMenuChange, menuItems, children, headerLeft, headerRight, title, loading, logo, toolbarStyle, headerStyle, extra} = props
+    const {onMenuChange, menuItems, children, headerLeft, headerRight, title, loading, logo, logoDark, toolbarStyle, headerStyle, extra} = props
+    const isDark = useTheme()?.palette?.mode === 'dark'
 
     const drawer = (
         <div key="drawer">
             <Toolbar sx={{ padding: '0.5rem !important'}}>
-                {!loading && <img style={{maxHeight:'2.1rem', maxWidth:'calc(100% - 2rem)', height:'auto'}} src={logo || 'https://www.lunuc.com/lunuc-logo.svg'}/>}
+                {!loading && <img style={{maxHeight:'2.1rem', maxWidth:'calc(100% - 2rem)', height:'auto',
+                    ...(isDark && !logoDark && {filter: 'invert(1) hue-rotate(180deg)'})}}
+                                  src={(isDark && logoDark) || logo || 'https://www.lunuc.com/lunuc-logo.svg'}/>}
                 <div style={{marginLeft:'auto'}}>{headerLeft}</div>
             </Toolbar>
             <Divider/>
@@ -213,7 +217,7 @@ const ResponsiveDrawer = React.memo((props) => {
                             sx={{display: { xs: 'block', lg: 'none' } }}
                         ><MenuIcon />
                         </IconButton>
-                        <Typography sx={{display: { flex: 1 } }} variant="subtitle" color="primary" noWrap>
+                        <Typography sx={theme => ({display: {flex: 1}, color: theme.lunuc?.headerAccentColor || 'inherit'})} variant="subtitle" noWrap>
                             {title}
                         </Typography>
                         {headerRight}
@@ -252,7 +256,8 @@ const ResponsiveDrawer = React.memo((props) => {
 }, (prev, next) => {
     let equal = prev.menuItems.map(f=>f.key).join('-') === next.menuItems.map(f=>f.key).join('-') &&
         prev.children[prev.children.length-1] === next.children[next.children.length-1] &&
-        prev.logo === next.logo && prev.title === next.title
+        prev.logo === next.logo && prev.logoDark === next.logoDark && prev.title === next.title &&
+        prev.themeName === next.themeName
 
     return equal
 })

@@ -82,7 +82,7 @@ const StyledDrawer = styled(Drawer, {
 
 
 const StyledDrawerHeader = styled('div')(({ theme }) => ({
-    backgroundColor: '#fff',
+    backgroundColor: theme.palette.background.paper,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'flex-end',
@@ -290,7 +290,8 @@ class DrawerLayout extends React.Component {
                                 <MenuIcon/>
                             </StyledMenuButton>
                             {toolbarLeft}
-                            <Typography variant="subtitle" color="primary" noWrap style={{flex: 1}}>
+                            <Typography variant="subtitle" noWrap style={{flex: 1}}
+                                        sx={theme => ({color: theme.lunuc?.headerAccentColor || 'inherit'})}>
                                 {title}
                             </Typography>
                             {toolbarRight}

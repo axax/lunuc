@@ -89,6 +89,10 @@ export const defaultTheme = createTheme({
             }
         },
         MuiFormControl: {
+            // same variant as MuiInputLabel / MuiTextField, otherwise label and outline don't match (e.g. SimpleSelect)
+            defaultProps: {
+                variant: 'standard',
+            },
             styleOverrides: {
                 root: {
                     margin: '8px',
@@ -111,6 +115,11 @@ export const defaultTheme = createTheme({
             defaultProps: {
                 variant: 'standard',
             },
+        },
+        MuiSelect: {
+            defaultProps: {
+                variant: 'standard',
+            }
         },
         MuiNativeSelect: {
             defaultProps: {

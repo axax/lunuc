@@ -110,6 +110,8 @@ import {
     AutoAwesomeIcon
 } from 'gensrc/ui/admin/icons'
 import SourceIcon from '@mui/icons-material/Source'
+import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import PaletteIcon from '@mui/icons-material/Palette'
 
 const iconComponents = {
     source:SourceIcon,
@@ -217,6 +219,8 @@ const iconComponents = {
     download: DownloadIcon,
     doc: ArticleIcon,
     contentCut: ContentCutIcon,
+    contentCopy: ContentCopyIcon,
+    palette: PaletteIcon,
     layers: LayersIcon,
     autoAwesome:AutoAwesomeIcon,
     approval: ApprovalIcon

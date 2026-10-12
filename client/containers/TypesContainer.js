@@ -1,4 +1,5 @@
 import React from 'react'
+import {loadTypeFilesTypes, exportTypeFilesAsZip, pickZipFile, importTypeFilesFromZip, formatTypeFilesResult} from '../util/typeFiles'
 import PropTypes from 'prop-types'
 import ManageCollectionClones from '../components/types/ManageCollectionClones'
 import SyncCollectionDialog from '../components/types/SyncCollectionDialog'
@@ -214,6 +215,11 @@ class TypesContainer extends React.Component {
 
     componentDidMount() {
         this.getData(this.pageParams, true)
+        loadTypeFilesTypes().then(typeFilesTypes => {
+            if (!this._typeFilesUnmounted) {
+                this.setState({typeFilesTypes})
+            }
+        })
         if (this.props.onRef)
             this.props.onRef(this)
 
@@ -238,6 +244,7 @@ class TypesContainer extends React.Component {
     }
 
     componentWillUnmount() {
+        this._typeFilesUnmounted = true
         setTimeout(() => {
             this.saveSettings()
         }, 1)
@@ -673,6 +680,32 @@ class TypesContainer extends React.Component {
                 multiSelectActions.push( {name: _t('TypesContainer.bulkEditScript'), value: 'editScript', icon: 'code'})
             }
 
+
+            // export / import as files (zip) for the types with a handler on the server (api/util/typeFiles.mjs)
+            if (this.state.typeFilesTypes && this.state.typeFilesTypes.indexOf(type) >= 0) {
+                multiSelectActions.push({name: _t('TypeFiles.exportSelected'), value: 'exportTypeFiles', icon: 'folderZip'})
+                actions.push({
+                    divider: true,
+                    name: _t('TypeFiles.import'),
+                    icon: 'upload',
+                    onClick: () => {
+                        pickZipFile().then(file => {
+                            if (!file) return
+                            return importTypeFilesFromZip(file, {type}).then(result => {
+                                this.setState({
+                                    simpleDialog: {
+                                        title: _t('TypeFiles.import'),
+                                        children: <div style={{whiteSpace: 'pre-wrap'}}>{formatTypeFilesResult(result)}</div>
+                                    }
+                                })
+                                this.getData(this.pageParams, false)
+                            })
+                        }).catch(e => {
+                            this.setState({simpleDialog: {title: _t('TypeFiles.import'), children: e.message}})
+                        })
+                    }
+                })
+            }
 
             Hook.call('TypeTableAction', {type, actions, multiSelectActions, pageParams: this.pageParams, data}, this)
             const actionColumn = columnsFiltered.find(c => c.id === '_action')
@@ -1218,6 +1251,13 @@ class TypesContainer extends React.Component {
                 items.push(_id)
             })
             this.setState({dataToBulkEdit:{items,action:action, values:data.results.find(entry=>entry._id===items[0])}})
+        } else if (action === 'exportTypeFiles') {
+            const ids = Object.keys(selectedRows)
+            if (ids.length > 0) {
+                exportTypeFilesAsZip({type: this.pageParams.type, ids}).catch(e => {
+                    this.setState({simpleDialog: {title: _t('TypeFiles.exportSelected'), children: e.message}})
+                })
+            }
         } else {
 
             Hook.call('TypeTableMultiSelectAction', {data, action, selectedRows}, this)

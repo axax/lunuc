@@ -11,7 +11,7 @@ import {
 import Util from 'client/util/index.mjs'
 import {COLLECTIONS_QUERY} from '../../constants/index.mjs'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
-import {theme} from 'ui/admin'
+import {getCurrentTheme} from 'ui/admin'
 import {client, Query} from '../../middleware/graphql'
 import {_t} from 'util/i18n.mjs'
 
@@ -70,7 +70,7 @@ class ManageCollectionClones extends React.PureComponent {
                     }
 
                     a.push({
-                        style: versions[type] === value ? {backgroundColor: theme.palette.primary.light} : {},
+                        style: versions[type] === value ? {backgroundColor: getCurrentTheme().palette.primary.light} : {},
                         selected: false,
                         primary: name,
                         secondary: Util.formattedDatetime(date),
@@ -84,7 +84,7 @@ class ManageCollectionClones extends React.PureComponent {
                 }, [])
 
                 listItems.unshift({
-                    style: !versions || !versions[type] || versions[type] === 'default' ? {backgroundColor: theme.palette.primary.light} : {},
+                    style: !versions || !versions[type] || versions[type] === 'default' ? {backgroundColor: getCurrentTheme().palette.primary.light} : {},
                     actions: <Tooltip title="Set collection as active" key="select"><DoneIconButton
                         onClick={this.handleSelectClick.bind(this, {name: "default"})}/></Tooltip>,
                     primary: 'Default',

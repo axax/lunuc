@@ -104,6 +104,21 @@ export const systemSchemaRaw = `
         token: String
     }
     
+    type TypeFilesExport{
+        name: String
+        count: Int
+        data: String
+    }
+
+    type TypeFilesImportResult{
+        created: Int
+        updated: Int
+        unchanged: Int
+        skipped: Int
+        names: [String]
+        errors: [String]
+    }
+
     type SystemInfoResult{
         dbUrl: String
     }
@@ -124,6 +139,8 @@ export const systemSchemaRaw = `
     	exportQuery (type: String!, query: String): ExportQueryResult
         getTokenLink(filePath:String,mediaIds: [ID]): TokenLinkResult
         getAllCollectionIndexes: CollectionIndexResult
+        typeFilesTypes: [String]
+        exportTypeFiles(type: String!, ids: [ID]!): TypeFilesExport
     }
     
       
@@ -135,6 +152,7 @@ export const systemSchemaRaw = `
     	cloneCollection(type: String!, name: String, empty: Boolean): CloneCollectionResult
     	deleteCollection(name: String!): DeleteCollectionResult
     	syncCollectionEntries(fromVersion:String!,toVersion:String!,type:String!,ids:[ID]!): CollectionSyncResult
+    	importTypeFiles(type: String!, data: String!, dryRun: Boolean, createMissing: Boolean): TypeFilesImportResult
     }
     
     type Subscription{

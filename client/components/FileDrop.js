@@ -21,22 +21,24 @@ const DEFAULT_MAX_FILE_SIZE_MB = 20,
     DEFAULT_ACCEPT = 'image/*'
 
 
-const StyledUploader = styled('div')(({isHover, theme}) => ({
+const StyledUploader = styled('div')(({isHover, theme}) => {
+    const palette = theme?.palette || defaultTheme.palette
+    return {
     boxSizing: 'border-box',
     position: 'relative',
     maxWidth: '100%',
     padding: '1rem 1rem',
     textAlign: 'center',
-    background: '#fff',
+    background: palette.background.paper,
     borderRadius: '7px',
-    border: '3px solid #eee',
+    border: '3px solid ' + palette.divider,
     transition: 'all .2s ease',
     ...(isHover && {
-        border: '3px solid ' + theme.palette ? theme.palette.primary.light : defaultTheme.palette.primary.light,
-        boxShadow: 'inset 0 0 0 6px #eee'
+        border: '3px solid ' + palette.primary.light,
+        boxShadow: 'inset 0 0 0 6px ' + palette.divider
     }),
     '&:hover': {
-        borderColor: theme.palette ? theme.palette.secondary.light : defaultTheme.palette.secondary.light,
+        borderColor: palette.secondary.light,
     },
     '> input': {
         position: 'absolute',
@@ -49,7 +51,7 @@ const StyledUploader = styled('div')(({isHover, theme}) => ({
         opacity: 0,
         zIndex: 2
     }
-}))
+}})
 
 
 const StyledUploadedImage = styled('div')({

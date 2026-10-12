@@ -1,10 +1,34 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import compose from 'util/compose'
-import {Button, Typography, TextField, DeleteIconButton, Chip, ContentBlock} from 'ui/admin'
+import {
+    Button,
+    Typography,
+    TextField,
+    DeleteIconButton,
+    Chip,
+    ContentBlock,
+    SimpleSelect,
+    THEMES,
+    useThemeName
+} from 'ui/admin'
+import {saveUserTheme} from '../util/theme'
 import {graphql} from '../middleware/graphql'
 import {_t} from 'util/i18n.mjs'
 import TypePicker from '../components/TypePicker'
+
+const ThemeSelect = () => {
+    const themeName = useThemeName()
+    return <SimpleSelect
+        label={_t('Profile.theme')}
+        fullWidth={true}
+        value={themeName}
+        onChange={(e) => {
+            saveUserTheme(e.target.value)
+        }}
+        items={THEMES.map(({value, name}) => ({value, name}))}
+    />
+}
 
 class UserProfileContainer extends React.Component {
 
@@ -190,6 +214,12 @@ class UserProfileContainer extends React.Component {
                     <Button onClick={this.updateProfile.bind(this)} variant="contained" color="primary">{_t('core.save')}</Button>
                     {usernameError ? <strong>{usernameError}</strong> : ''}
 
+                </ContentBlock>
+
+                <Typography variant="h4" component="h2" gutterBottom>{_t('Profile.appearance')}</Typography>
+
+                <ContentBlock style={{maxWidth: '600px'}}>
+                    <ThemeSelect/>
                 </ContentBlock>
 
                 <Typography variant="h4" component="h2" gutterBottom>{_t('Profile.changePassword')}</Typography>

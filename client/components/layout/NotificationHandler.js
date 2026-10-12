@@ -1,5 +1,5 @@
 import React, {useContext, useEffect, useState} from 'react'
-import {Snackbar, CloseIconButton, theme} from 'ui/admin'
+import {Snackbar, CloseIconButton, useTheme} from 'ui/admin'
 import {Link} from '../../util/route'
 import {client} from '../../middleware/graphql'
 import {AppContext} from '../AppContext'
@@ -7,6 +7,7 @@ import {AppContext} from '../AppContext'
 
 function NotificationHandler() {
     const globalContext = useContext(AppContext)
+    const theme = useTheme()
     const [notificationOpen, setNotificationOpen] = useState(true)
 
     useEffect(() => {

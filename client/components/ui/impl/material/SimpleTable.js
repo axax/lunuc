@@ -29,7 +29,7 @@ const StyledScrollArea = styled.div`
     }
     ::-webkit-scrollbar-thumb {
       border-radius: 4px;
-      background-color: rgba(0, 0, 0, .5);
+      background-color: ${({theme}) => theme?.palette?.mode === 'dark' ? 'rgba(255, 255, 255, .3)' : 'rgba(0, 0, 0, .5)'};
       -webkit-box-shadow: 0 0 1px rgba(255, 255, 255, .5);
     }
 `
@@ -45,9 +45,9 @@ const StyledActions = styled('div')(({ theme }) => ({
     position:'relative'
 }))
 
-const StyledTableRow = styled(TableRow)(() => ({
+const StyledTableRow = styled(TableRow)(({theme}) => ({
     '&.MuiTableRow-hover:hover > .MuiTableCell-root':{
-        backgroundColor:'rgb(244, 244, 244) !important'
+        backgroundColor: (theme?.palette?.background?.subtle || 'rgb(244, 244, 244)') + ' !important'
     }
 }))
 

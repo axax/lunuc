@@ -137,7 +137,9 @@ fi`
                         if(e.key==='save') {
                             if(nameFileDialog.input.checkValidity()) {
                                 let currentCommand
-                                if(nameFileDialog.isRenaming){
+                                if(nameFileDialog.isCopying){
+                                    currentCommand = `cp -Rn "${space}${dir}/${nameFileDialog.fileName}" "${space}${dir}/${nameFileDialog.input.value}"`
+                                }else if(nameFileDialog.isRenaming){
                                     currentCommand = `mv "${space}${dir}/${nameFileDialog.fileName}" "${space}${dir}/${nameFileDialog.input.value}"`
                                 }else {
                                     currentCommand = `${nameFileDialog.isFolder?'mkdir':'touch'} "${space}${dir}/${nameFileDialog.input.value}"`
@@ -162,15 +164,15 @@ fi`
                         }
 
                     }} actions={[{key: 'cancel', label: _t('core.cancel')}, {key: 'save', label: _t('core.save'), type: 'primary'}]}
-                                  title={_t('FilesContainer.'+ (nameFileDialog.isRenaming ? 'renameFile':(nameFileDialog.isFolder?'createFolder':'createFile')))}>
+                                  title={_t('FilesContainer.'+ (nameFileDialog.isCopying ? 'copyFile' : nameFileDialog.isRenaming ? 'renameFile':(nameFileDialog.isFolder?'createFolder':'createFile')))}>
 
                         <StyledTextField inputRef={(ref)=>{
                             nameFileDialog.input = ref
                             if(ref && nameFileDialog.fileName) {
-                                nameFileDialog.input.value = nameFileDialog.fileName
+                                nameFileDialog.input.value = nameFileDialog.newFileName || nameFileDialog.fileName
                             }
                         }}
-                        slotProps={{htmlInput:{pattern: '[a-zA-Z0-9._-]{1,15}'}}}
+                        slotProps={{htmlInput:{pattern: '[a-zA-Z0-9._-]{1,255}'}}}
                         placeholder="Name" required={true}></StyledTextField>
 
                     </SimpleDialog>
@@ -301,6 +303,16 @@ fi`
                                                            this.setState({nameFileDialog:{open:true, isRenaming:true, fileName:payload.primary}})
                                                        },
                                                        icon: 'edit'
+                                                   },
+                                                   {
+                                                       name: _t('FilesContainer.copyFile'),
+                                                       onClick: (e, payload)=>{
+                                                           const fileName = payload.primary
+                                                           const pos = fileName.lastIndexOf('.')
+                                                           const newFileName = pos > 0 ? fileName.substring(0, pos) + '_copy' + fileName.substring(pos) : fileName + '_copy'
+                                                           this.setState({nameFileDialog:{open:true, isCopying:true, fileName, newFileName}})
+                                                       },
+                                                       icon: 'contentCopy'
                                                    }
                                                ]}
                                                count={listItems.length}/>

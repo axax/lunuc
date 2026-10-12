@@ -23,6 +23,7 @@ import {csv2json} from '../util/csv.mjs'
 import {setPropertyByPath} from '../../client/util/json.mjs'
 import Hook from '../../util/hook.cjs'
 import {createAllIndexes} from '../index/indexes.mjs'
+import {getTypeFilesTypes, exportTypeFiles, importTypeFiles} from '../util/typeFiles.mjs'
 import jwt from 'jsonwebtoken'
 import {SECRET_KEY} from '../constants/index.mjs'
 import {MONGO_URL} from '../database.mjs'
@@ -46,6 +47,14 @@ const killExec = (id) => {
 
 export const systemResolver = (db) => ({
     Query: {
+        // types that can be exported / imported as files (zip), see api/util/typeFiles.mjs
+        typeFilesTypes: async ({}, {context}) => {
+            Util.checkIfUserIsLoggedIn(context)
+            return getTypeFilesTypes()
+        },
+        exportTypeFiles: async ({type, ids}, {context}) => {
+            return exportTypeFiles({db, context, type, ids})
+        },
         killRun: async ({id}, {context}) => {
             killExec(id)
             return {id}
@@ -516,6 +525,9 @@ export const systemResolver = (db) => ({
         }
     },
     Mutation: {
+        importTypeFiles: async ({type, data, dryRun, createMissing}, {context}) => {
+            return importTypeFiles({db, context, type, data, dryRun, createMissing})
+        },
         createDbIndexes: async ({}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
             return await createAllIndexes(db)

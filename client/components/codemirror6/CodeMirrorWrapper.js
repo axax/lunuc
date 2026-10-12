@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react'
 import { EditorView } from '@codemirror/view'
 import { oneDark } from '@codemirror/theme-one-dark'
+import { useTheme } from '@mui/material/styles'
 import { EditorState, Annotation } from "@codemirror/state"
 import {basicSetup} from './basicSetup'
 import {scrollToLine} from './utils'
@@ -17,18 +18,28 @@ const CodeMirrorWrapper = (props) => {
     const {controlled, mergeView, darkMode, onFirstVisibleLineChange, onEditorView, onContextMenu, style, onChange, onBlur, type, lineNumbers, identifier, value, mergeValue, readOnly, onToggleAiAssistent} = props
     const editor = useRef()
     const editorViewRef = useRef()
+    const muiTheme = useTheme()
+    // dark mode follows the active admin theme unless it is set explicitly
+    const isDark = darkMode !== undefined ? !!darkMode : muiTheme?.palette?.mode === 'dark'
+    const editorBackground = isDark ? (muiTheme?.palette?.background?.paper || '#282c34') : '#ffffff'
 
     const defaultThemeOption = EditorView.theme({
 
         '&': {
             height: '30rem',
-            backgroundColor: '#ffffff',
+            backgroundColor: editorBackground,
             ...style
         },
         '& .cm-scroller': {
             height: '100% !important',
         },
-    })
+        ...(isDark && {
+            '& .cm-gutters': {
+                backgroundColor: editorBackground,
+                borderRight: '1px solid ' + (muiTheme?.palette?.divider || '#3b4048')
+            }
+        })
+    }, {dark: isDark})
 
     useEffect(() => {
         // the merge view has no top level state, so it is not supported here
@@ -58,7 +69,7 @@ const CodeMirrorWrapper = (props) => {
     useEffect(() => {
         const extensions = [defaultThemeOption,
             ...basicSetup({type,lineNumbers,readOnly,onToggleAiAssistent}),
-            darkMode && oneDark,
+            isDark && oneDark,
             onFirstVisibleLineChange && EditorView.domEventHandlers({
                 scroll: (scollEvent, view) => {
                     const newFistVisibleLine = view.state.doc.lineAt(view.elementAtHeight(view.dom.getBoundingClientRect().top - view.documentTop).from).number
@@ -109,7 +120,7 @@ const CodeMirrorWrapper = (props) => {
         return () => {
             view.destroy()
         }
-    }, [identifier])
+    }, [identifier, isDark])
 
     if(mergeView){
         return <><div style={{display:'flex',width:'100%'}}>

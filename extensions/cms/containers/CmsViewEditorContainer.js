@@ -1323,11 +1323,10 @@ class CmsViewEditorContainer extends React.Component {
                               onDrawerWidthChange={this.drawerWidthChange}
                               contentStyle={{marginBottom: EditorOptions.devTools ? (EditorOptions.devToolsTab ? (this.state.liveDevToolsBoxHeight || 0)+40 : 40): 0}}
                               toolbarLeft={<IconButton
-                                  sx={{mr:1}}
+                                  sx={theme => ({mr: 1, color: theme.lunuc?.headerAccentColor || 'inherit'})}
                                   onClick={()=>{
                                       this.props.history.push(config.ADMIN_BASE_URL + '/cms' + (_app_._cmsLastSearch ? _app_._cmsLastSearch : ''))
-                                  }}
-                                  color="primary"><ArrowBackIcon/></IconButton>}
+                                  }}><ArrowBackIcon/></IconButton>}
                               toolbarRight={toolbarRight}
                               title={`${_t('CmsViewEditorContainer.editPage')} "${props.slug}"${cmsPage.online ? ' - Online' : ''}`}>
                     {inner}

@@ -391,3 +391,104 @@ export const importChangedTypeScriptsFromDirectory = async ({db, context, type, 
     }
     return result
 }
+
+/**
+ * loads the entries (with the rights of the user) for the zip export
+ */
+export const getTypeScriptItems = async ({db, context, type, ids}) => {
+    let match = {_id: {$in: (ids || []).filter(id => ObjectId.isValid(id)).map(id => new ObjectId(id))}}
+    if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
+        match = {$and: [match, await createMatchForCurrentUser({typeName: type, db, context})]}
+    }
+    return db.collection(type).find(match).sort({_id: 1}).toArray()
+}
+
+/**
+ * imports files of an export (e.g. from a zip): [{path, content}]. Every folder with a meta.json is
+ * one entry, matched by the _id in meta.json. Changed fields are written (scripts and attributes),
+ * an entry that does not exist is created with that _id if createMissing is set.
+ * Secret fields and info fields (createdBy, modifiedAt) are never imported.
+ * @returns {created, updated, unchanged, skipped, names, errors}
+ */
+export const importTypeScriptFiles = async ({db, context, type, files, dryRun = false, createMissing = true}) => {
+    const definition = TYPE_SCRIPT_DEFINITIONS[type]
+    if (!definition) {
+        throw new Error(`no script definition for type ${type}`)
+    }
+    const scriptFields = definition.scripts.map(s => s.field)
+    const secretFields = definition.secretFields || []
+    const result = {created: 0, updated: 0, unchanged: 0, skipped: 0, names: [], errors: []}
+
+    const byPath = {}
+    files.forEach(f => byPath[f.path] = f.content)
+    const folders = files.filter(f => f.path === META_FILE || f.path.endsWith('/' + META_FILE))
+        .map(f => f.path.substring(0, f.path.length - META_FILE.length).replace(/\/$/, ''))
+
+    for (const folder of folders) {
+        const label = folder || '.'
+        try {
+            const meta = JSON.parse(byPath[(folder ? folder + '/' : '') + META_FILE])
+            const values = {}
+            Object.keys(meta).forEach(key => {
+                if (INFO_FIELDS.indexOf(key) >= 0 || secretFields.indexOf(key) >= 0 || scriptFields.indexOf(key) >= 0) {
+                    return
+                }
+                if (key.startsWith('_') || key.startsWith('$') || key.indexOf('.') >= 0) {
+                    result.errors.push(`${label}: attribute "${key}" is not allowed, ignored`)
+                    return
+                }
+                values[key] = meta[key]
+            })
+            definition.scripts.forEach(({field, file}) => {
+                const content = byPath[(folder ? folder + '/' : '') + file(fromPlainJson(values))]
+                if (content !== undefined) {
+                    values[field] = content
+                }
+            })
+
+            const _id = meta._id && ObjectId.isValid(meta._id) ? meta._id : null
+            const doc = _id ? await db.collection(type).findOne({_id: new ObjectId(_id)}) : null
+            if (!doc) {
+                if (!createMissing) {
+                    result.skipped++
+                    result.names.push(label + ': does not exist, skipped')
+                    continue
+                }
+                if (!dryRun) {
+                    const data = {}
+                    Object.keys(values).forEach(field => {
+                        data[field] = scriptFields.indexOf(field) >= 0 ? values[field] : fromPlainJson(values[field])
+                    })
+                    // triggers typeCreated_<type>
+                    await GenericResolver.createEntity(db, {context}, type, _id ? {_id: new ObjectId(_id), ...data} : data)
+                }
+                result.created++
+                result.names.push(label + ': created')
+                continue
+            }
+            const dbValues = comparableValues(type, doc)
+            const changed = Object.keys(values).filter(field =>
+                JSON.stringify(values[field] === undefined ? null : values[field]) !== JSON.stringify(dbValues[field] === undefined ? null : dbValues[field]))
+            if (changed.length === 0) {
+                result.unchanged++
+                continue
+            }
+            if (!dryRun) {
+                const data = {}
+                changed.forEach(field => {
+                    data[field] = scriptFields.indexOf(field) >= 0 ? values[field] : fromPlainJson(values[field])
+                })
+                // triggers typeUpdated_<type>, so cronjobs, hooks and apis are reloaded
+                await GenericResolver.updateEntity(db, context, type, {_id, ...data})
+            }
+            result.updated++
+            result.names.push(label + ': ' + changed.join(', '))
+        } catch (e) {
+            result.errors.push(`${label}: ${e.message}`)
+        }
+    }
+    if (folders.length === 0) {
+        result.errors.push(`no ${META_FILE} found`)
+    }
+    return result
+}

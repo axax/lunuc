@@ -22,7 +22,8 @@ import NotificationHandler from './NotificationHandler'
 import NetworkStatusHandler from './NetworkStatusHandler'
 import Hook from 'util/hook.cjs'
 import config from 'gen/config-client'
-import {UIProvider} from 'ui/admin'
+import {UIProvider, THEME_KEY, THEMES, setThemeName, useThemeName} from 'ui/admin'
+import {saveUserTheme} from '../../util/theme'
 import 'gen/extensions-client-admin'
 import {Link} from '../../util/route'
 import {useKeyValues, setKeyValue} from '../../util/keyvalue'
@@ -115,8 +116,23 @@ function getSettingsFromKeys(userKeys) {
     return {}
 }
 
+// loads the theme stored in the user profile (key value) and applies it
+// needed when the user logs in on another device / browser
+const UserThemeSync = () => {
+    const {data, loading} = useKeyValues([THEME_KEY])
+    const themeName = data ? data[THEME_KEY] : undefined
+    React.useEffect(() => {
+        if (!loading && themeName) {
+            setThemeName(themeName)
+        }
+    }, [loading, themeName])
+    return null
+}
+
 const BaseLayout = props => {
     const {children} = props
+    // re-render the user menu when the theme changes (check mark)
+    const themeName = useThemeName()
 
     const user = _app_.user
 
@@ -301,6 +317,16 @@ const BaseLayout = props => {
                 _app_.history.push(ADMIN_BASE_URL + '/profile')
             }
         },{
+            name: _t('Profile.theme'),
+            icon: 'palette',
+            items: THEMES.map(({value, name}) => ({
+                name,
+                icon: value === themeName ? 'done' : <span style={{width: 24, display: 'inline-block'}}/>,
+                onClick: () => {
+                    saveUserTheme(value)
+                }
+            }))
+        },{
             name: `Logout ${username}`,
             icon:'logout',
             onClick: e => {
@@ -332,6 +358,8 @@ const BaseLayout = props => {
     return <UIProvider>
         <ResponsiveDrawerLayout title={settings.title || ''}
                                 logo={settings.logo}
+                                logoDark={settings.logoDark}
+                                themeName={themeName}
                                 loading={userKeys.loading}
                                 contentStyle={props.contentStyle}
                                 menuItems={menuItems}
@@ -376,6 +404,7 @@ const BaseLayout = props => {
                                 ]}/>}
                                 headerRight={headerRight}>
 
+            {user && <UserThemeSync/>}
             {<ErrorHandler/>}
             {!userKeys.loading && <NotificationHandler/>}
             {!userKeys.loading && <NetworkStatusHandler/>}

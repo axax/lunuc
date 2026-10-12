@@ -1,19 +1,24 @@
 import styled from '@emotion/styled'
 
 export const SPLIT_SIGN = '//!#'
-export const StyledFile = styled('a')(({ active }) => ({
-    display: 'inline-block',
-    padding: '0.5rem',
-    background: '#efefef',
-    borderRadius: '0.1rem',
-    cursor: 'pointer',
-    '&:hover': {
-        background: '#aaa'
-    },
-    ...(active && {
-        background: '#aaa'
-    })
-}))
+export const StyledFile = styled('a')(({ active, theme }) => {
+    const dark = theme?.palette?.mode === 'dark'
+    const bg = dark ? theme.palette.background.paper : '#efefef',
+        bgActive = dark ? theme.palette.action.selected : '#aaa'
+    return {
+        display: 'inline-block',
+        padding: '0.5rem',
+        background: bg,
+        borderRadius: '0.1rem',
+        cursor: 'pointer',
+        '&:hover': {
+            background: bgActive
+        },
+        ...(active && {
+            background: bgActive
+        })
+    }
+})
 
 export function seperateFiles(value){
     const fileContents = value.split(`\n${SPLIT_SIGN}`)

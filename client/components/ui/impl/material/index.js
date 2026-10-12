@@ -8,8 +8,16 @@ import CssBaseline from '@mui/material/CssBaseline'
 
 
 import {defaultTheme as theme} from './theme-iris'
+import {THEMES, getTheme} from './themes'
+import {THEME_KEY, getThemeName, setThemeName, subscribeThemeName} from './themeState'
 
-export {theme}
+// `theme` is the static default theme (iris). Use useTheme() or getCurrentTheme() to get the active theme.
+export {theme, THEMES, THEME_KEY, getThemeName, setThemeName}
+export {useTheme} from '@mui/material/styles'
+
+export const getCurrentTheme = () => getTheme(getThemeName())
+
+export const useThemeName = () => React.useSyncExternalStore(subscribeThemeName, getThemeName, getThemeName)
 
 import {CacheProvider} from '@emotion/react'
 import createCache from '@emotion/cache'
@@ -21,7 +29,8 @@ const emotionCache = createCache({
 
 // Theme provider
 export const UIProvider = ({children, ...rest}) => {
-    return <ThemeProvider theme={theme} {...rest}>
+    const themeName = useThemeName()
+    return <ThemeProvider theme={getTheme(themeName)} {...rest}>
         <CacheProvider value={emotionCache}>
             {children}
         </CacheProvider>
