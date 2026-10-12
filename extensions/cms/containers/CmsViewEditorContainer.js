@@ -78,6 +78,7 @@ import GenericSettings from '../../../client/components/GenericSettings'
 import {DEFAULT_STYLE} from '../constants/cmsDefaults.mjs'
 import CmsPageTools from '../components/CmsPageTools'
 import CmsDataEditDialog from '../components/CmsDataEditDialog'
+import CmsContentImport, {addElementsToTemplate} from '../components/CmsContentImport'
 import {
     setEditorZIndexActive
 } from '../components/jsondomhelper/JsonDomStyledElements'
@@ -720,7 +721,11 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>
                 </StyledBox>}
                 {EditorOptions.bottomNavigation===1 && <StyledBox style={{padding: '10px'}}>
-
+                    {/* documents, web pages, text -> elements of the template (Api system/content2json) */}
+                    <CmsContentImport hasContent={!!this.state.template && this.state.template.replace(/\s/g, '').length > 2}
+                                      onApply={(elements, mode) => {
+                                          this.handleTemplateChange(addElementsToTemplate(this.state.template, elements, mode), true)
+                                      }}/>
                     <CmsElement disabled={!EditorOptions.inlineEditor}
                                 advanced={canMangeCmsTemplate}/>
                 </StyledBox>}

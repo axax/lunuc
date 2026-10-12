@@ -92,7 +92,7 @@ export const SimpleDialog = ({
                     }
                     return <React.Fragment key={i}>
                         {action.divider && <div style={{flex: '1 0 0'}}/>}
-                        <Button autoFocus={action.autoFocus} onClick={() => {
+                        <Button autoFocus={action.autoFocus} disabled={!!action.disabled} onClick={() => {
                             onClose(action)
                         }} color={action.type} variant={action.variant} size={action.size}>
                             {action.label}

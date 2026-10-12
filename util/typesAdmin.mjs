@@ -578,6 +578,9 @@ Hook.on('Types', ({types}) => {
                 fullWidth: false,
                 required: false,
                 alwaysUpdate: true,
+                // not part of the free text search (e.g. "digithal" in the user picker would match all users of that domain),
+                // an explicit filter domain=... still works
+                vagueSearchable: false,
                 hideColumnInTypesByDefault: true,
                 tab: _t('Types.accessControl'),
                 access: {

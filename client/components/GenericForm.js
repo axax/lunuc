@@ -52,6 +52,7 @@ import { CAPABILITY_MANAGE_TYPES} from '../../util/capabilities.mjs'
 import CmsViewContainer from '../../extensions/cms/containers/CmsViewContainer'
 import CmsElement from '../../extensions/cms/components/CmsElement'
 import CmsTemplatePicker from '../../extensions/cms/components/CmsTemplatePicker'
+import CmsContentImport, {addElementsToTemplate} from '../../extensions/cms/components/CmsContentImport'
 import {loadEditorStyles} from '../../extensions/cms/util/editorStyles'
 import {
     DEFAULT_STYLE_EDITOR, DEFAULT_STYLE_ENVIRONMENT,
@@ -1419,6 +1420,27 @@ class GenericForm extends React.Component {
                        }
                    })
                }}/>
+           // import of documents / web pages / text as elements (set showImport: false to hide it)
+           const cmsContentImport = field.showImport !== false && !field.readOnly && !field.uiReadOnly && <CmsContentImport
+               hasContent={cmsHasContent}
+               onApply={(elements, mode) => {
+                   this.handleInputChange({
+                       target: {
+                           dataset: {
+                               language: languageCode
+                           },
+                           name: fieldKey,
+                           value: addElementsToTemplate(typeof value === 'string' ? value : '', elements, mode)
+                       }
+                   })
+                   // remount the editor, it keeps the template in its own state
+                   this.setState({
+                       cmsEditorRevision: {
+                           ...this.state.cmsEditorRevision,
+                           [fieldKey]: cmsEditorRevision + 1
+                       }
+                   })
+               }}/>
            currentFormFields.push(<FormControl key={'control' + fieldKey}
                                                className={field.className}
                                                error={!!this.state.fieldErrors[fieldKey]}
@@ -1433,7 +1455,7 @@ class GenericForm extends React.Component {
                                hideTooltip()
                            }}
                            shrink>{field.label + (languageCode ? ' [' + languageCode + ']' : '')}</InputLabel>
-               {!showCmsElements && cmsTemplatePicker && <div style={{marginTop: 16, maxWidth: 320}}>{cmsTemplatePicker}</div>}
+               {!showCmsElements && (cmsTemplatePicker || cmsContentImport) && <div style={{marginTop: 16, maxWidth: 320}}>{cmsTemplatePicker}{cmsContentImport}</div>}
                <StyledCmsEditorFrame>
                    {showCmsElements && <StyledCmsElementsPanel collapsed={cmsElementsCollapsed}>
                        <StyledCmsElementsScroll collapsed={cmsElementsCollapsed}>
@@ -1452,6 +1474,7 @@ class GenericForm extends React.Component {
                            </Tooltip>
                        </StyledCmsElementsHeader>
                        {!cmsElementsCollapsed && cmsTemplatePicker}
+                       {!cmsElementsCollapsed && cmsContentImport}
                        {!cmsElementsCollapsed && <CmsElement dense
                                                              hideAddCustom
                                                              advanced={field.advancedElements}/>}

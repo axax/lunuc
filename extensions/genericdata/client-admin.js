@@ -41,6 +41,83 @@ const findField = (definition, key) => {
     }
 }
 
+// labels of referenced entries (GenericData fields) shown in the type table, by _id
+const refLabels = {}
+let refLoading = null
+
+const refLabelOf = (data, field) => {
+    if (!data) return ''
+    if (typeof data === 'string') {
+        try {
+            data = JSON.parse(data)
+        } catch (e) {
+            return ''
+        }
+    }
+    const keys = [].concat(field && field.pickerField ? field.pickerField : ['name', 'title'])
+    const parts = keys.map(k => {
+        let v = data[k]
+        if (v && v.constructor === Object) v = v[_app_.lang] || Object.values(v)[0]
+        return v
+    }).filter(v => v !== undefined && v !== null && v !== '')
+    return parts.join(' | ')
+}
+
+/*
+ a reference is stored as id, as {_id, data} or as an array of them; ids without data are loaded once
+ (one query for all missing ids) and the table is rendered again
+ */
+const renderReference = (value, field, missing) => {
+    const list = (Array.isArray(value) ? value : [value]).filter(Boolean)
+    return list.map(v => {
+        if (typeof v === 'object') {
+            const label = v.data ? refLabelOf(v.data, field) : ''
+            if (label) {
+                if (v._id) refLabels[v._id] = label
+                return label
+            }
+            v = v._id
+        }
+        if (!v) return ''
+        if (refLabels[v] !== undefined) return refLabels[v] || v
+        missing.add(String(v))
+        return '…'
+    }).filter(Boolean).join(', ')
+}
+
+const loadReferences = (missing, container) => {
+    const ids = Array.from(missing).filter(id => refLabels[id] === undefined && /^[0-9a-f]{24}$/.test(id))
+    if (!ids.length || refLoading) return
+    refLoading = client.query({
+        fetchPolicy: 'cache-first',
+        query: 'query genericDatas($filter:String,$limit:Int){genericDatas(filter:$filter,limit:$limit){results{_id data definition{structure}}}}',
+        variables: {limit: ids.length, filter: ids.map(id => `_id==${id}`).join(' || ')}
+    }).then(({data}) => {
+        const results = (data && data.genericDatas && data.genericDatas.results) || []
+        results.forEach(r => {
+            let structure = r.definition && r.definition.structure
+            if (typeof structure === 'string') {
+                try {
+                    structure = JSON.parse(structure)
+                } catch (e) {
+                    structure = null
+                }
+            }
+            refLabels[r._id] = refLabelOf(r.data, structure && structure.pickerField ? {pickerField: structure.pickerField} : null)
+        })
+        // ids that were not found are shown as they are
+        ids.forEach(id => {
+            if (refLabels[id] === undefined) refLabels[id] = ''
+        })
+    }).catch(e => {
+        console.warn('references could not be loaded', e)
+        ids.forEach(id => refLabels[id] = '')
+    }).finally(() => {
+        refLoading = null
+        if (container && container.forceUpdate) container.forceUpdate()
+    })
+}
+
 export default () => {
 
 
@@ -51,6 +128,7 @@ export default () => {
      */
     Hook.on('TypeTable', ({type, dataSource, data, container}) => {
         if (type === 'GenericData' && data.results.length > 0) {
+            const missingRefs = new Set()
             dataSource.forEach((row, i) => {
                 const item = data.results[i],
                     structure = item.definition ? item.definition.structure : {}
@@ -65,13 +143,20 @@ export default () => {
                     }
 
                     if (structure && structure.columns) {
-                        structure.columns.reverse().forEach(col=>{
+                        // (no reverse() here: it changed the shared structure and the order of the columns on every render)
+                        structure.columns.forEach(col=>{
+                            const field = structure.fields && structure.fields.find(f => f.name === col.field)
                             if(col.format==='image'){
                                 row['data_' + col.field] = getImageTag(item.data[col.field], {size:'avatar',height: 40})
                             }else if(col.format==='date'){
                                 row['data_' + col.field] =  Util.formattedDatetime(item.data[col.field],{hour:undefined, minute:undefined, second:undefined})
+                            }else if(field && field.type === 'GenericData' && !col.format){
+                                // reference: name of the referenced entry instead of its id
+                                row['data_' + col.field] = renderReference(item.data[col.field], field, missingRefs)
                             }else{
-                                row['data_' + col.field] = propertyByPath(col.field,item.data)
+                                const value = propertyByPath(col.field,item.data)
+                                // a boolean is not rendered by react
+                                row['data_' + col.field] = typeof value === 'boolean' ? (value ? '✓' : '') : value
                             }
                         })
 
@@ -141,6 +226,9 @@ export default () => {
                 }
 
             })
+            if (missingRefs.size) {
+                loadReferences(missingRefs, container)
+            }
         }
     })
 
