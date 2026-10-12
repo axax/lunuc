@@ -206,35 +206,31 @@ export const userResolver = (db) => ({
                 sort
             }
             if(filter && filter.indexOf('=')<0 && !sort){
-                // boost username
-                options.projectResult = res.req.body.query.indexOf('role{_id')<0
-                options.project = {
-                    _id: 1,
-                    customOrder:{
-                        $cond: {
-                            if: {
-                                $regexMatch: {
-                                    input: "$username",
-                                    regex: '^'+filter,
-                                    options: "i"
-                                }
-                            },
-                            then: 20,
-                            else: {
-                                $cond: {
-                                    if: {
-                                        $regexMatch: {
-                                            input: "$username",
-                                            regex: filter,
-                                            options: "i"
-                                        }
-                                    },
-                                    then: 10,
-                                    else: 0
-                                }
+                // free text search: hits in username and email first (the search also covers e.g. meta),
+                // username before email, a match at the beginning before a match inside
+                const term = filter.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+                const score = (field, points) => ({
+                    $cond: {
+                        if: {$regexMatch: {input: {$ifNull: ['$' + field, '']}, regex: '^' + term, options: 'i'}},
+                        then: points * 2,
+                        else: {
+                            $cond: {
+                                if: {$regexMatch: {input: {$ifNull: ['$' + field, '']}, regex: term, options: 'i'}},
+                                then: points,
+                                else: 0
                             }
                         }
                     }
+                })
+                const customOrder = {$add: [score('username', 20), score('email', 5)]}
+                options.projectResult = res.req.body.query.indexOf('role{_id')<0
+                // computed before sort and limit (otherwise only the entries of the first page are reordered)
+                options.afterRootMatch = [{$addFields: {customOrder}}]
+                // keep it through the grouping, so the page can be sorted by it again at the end
+                options.group = {customOrder: {$first: '$customOrder'}}
+                options.project = {
+                    _id: 1,
+                    customOrder: 1
                 }
                 options.sort = 'customOrder desc'
                 options.afterProject = [{$sort:{customOrder: -1}}]
