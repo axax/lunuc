@@ -24,6 +24,7 @@ export default `
         body: String
         editor: String
         status: String
+        modifiedAt: Float
         search: PostSearch
         searchScore: Float
     }

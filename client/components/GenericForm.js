@@ -1527,8 +1527,10 @@ class GenericForm extends React.Component {
                             onMouseLeave={()=>{
                                 hideTooltip()
                             }}
+                            // static instead of floating: the floating label sits far above the editor
+                            sx={{position: 'relative', transform: 'none', fontSize: '0.75rem', lineHeight: 1.4, mb: 0.5}}
                             shrink>{field.label + (languageCode ? ' [' + languageCode + ']' : '')}</InputLabel>
-                <TinyEditor key={fieldKey} id={fieldKey} error={hasError} style={{marginTop: '1.5rem'}}
+                <TinyEditor key={fieldKey} id={fieldKey} error={hasError}
 
                             onChange={(newValue) => this.handleInputChange({
                                 target: {

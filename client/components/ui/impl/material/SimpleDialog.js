@@ -6,17 +6,27 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
 import Button from '@mui/material/Button'
+import IconButton from '@mui/material/IconButton'
+import Tooltip from '@mui/material/Tooltip'
+import OpenInFullIcon from '@mui/icons-material/OpenInFull'
+import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
 import Draggable from 'react-draggable'
 
 
+// lets the paper know that the dialog is maximized without swapping the
+// PaperComponent - swapping it would remount the whole dialog content
+const MaximizedContext = React.createContext(false)
+
 function DraggablePaper(props) {
     // react-draggable needs a real DOM node ref, Paper forwards it
     const nodeRef = React.useRef(null)
+    const maximized = React.useContext(MaximizedContext)
     return (
         <Draggable
             nodeRef={nodeRef}
+            disabled={maximized}
             handle="#responsive-dialog-title"
             cancel={'[class*="MuiDialogContent-root"]'}>
             <Paper {...props} ref={nodeRef}/>
@@ -27,6 +37,8 @@ function DraggablePaper(props) {
 /**
  * @param overflowVisible set to true only if a popper/menu inside the content
  *        must escape the dialog bounds. This disables content scrolling.
+ * @param maximizable shows a button (and double click on the title) to
+ *        toggle between windowed and fullscreen. Default true.
  */
 export const SimpleDialog = ({
                                  children,
@@ -36,19 +48,29 @@ export const SimpleDialog = ({
                                  fullScreen,
                                  fullScreenMobile,
                                  overflowVisible,
+                                 maximizable = true,
                                  ...rest
                              }) => {
     const theme = useTheme()
 
     // hooks must never be called conditionally
     const isMobile = useMediaQuery(theme.breakpoints.down('md'))
-    const fullScreenFinal = fullScreenMobile ? isMobile : !!fullScreen
+    const fullScreenByProps = fullScreenMobile ? isMobile : !!fullScreen
+    // user toggled maximize - only relevant when not fullscreen anyway
+    const [maximized, setMaximized] = React.useState(false)
+    const canMaximize = maximizable && !fullScreenByProps
+    const fullScreenFinal = fullScreenByProps || (canMaximize && maximized)
+    const toggleMaximized = () => {
+        setMaximized(m => !m)
+        // editors like TinyMCE/CodeMirror measure on window resize
+        setTimeout(() => window.dispatchEvent(new Event('resize')), 0)
+    }
 
     // dragging a fullscreen dialog makes no sense and the transform breaks
     // position:fixed children, so only use the draggable paper when windowed
-    const paperComponent = fullScreenFinal ? Paper : DraggablePaper
+    const paperComponent = fullScreenByProps ? Paper : DraggablePaper
 
-    return <Dialog
+    return <MaximizedContext.Provider value={fullScreenFinal}><Dialog
         aria-labelledby="responsive-dialog-title"
         onClose={onClose}
         disableEnforceFocus={true}
@@ -65,15 +87,31 @@ export const SimpleDialog = ({
                     height: ['100vh', '100dvh'],
                     maxHeight: '100%',
                     margin: 0,
-                    borderRadius: 0
+                    borderRadius: 0,
+                    // a drag offset would move the maximized dialog off screen
+                    // and a transform breaks position:fixed children
+                    transform: 'none !important'
                 }
             })
         }}
         {...rest}>
         <DialogTitle
             style={fullScreenFinal ? undefined : {cursor: 'move'}}
+            sx={canMaximize ? {pr: 7} : undefined}
+            onDoubleClick={canMaximize ? toggleMaximized : undefined}
             id="responsive-dialog-title">
             {title}
+            {canMaximize && <Tooltip title={maximized ? 'Verkleinern' : 'Vergrössern'}>
+                <IconButton
+                    aria-label={maximized ? 'Verkleinern' : 'Vergrössern'}
+                    onClick={toggleMaximized}
+                    // keep react-draggable from starting a drag on the button
+                    onMouseDown={e => e.stopPropagation()}
+                    size="small"
+                    sx={{position: 'absolute', right: 16, top: 16}}>
+                    {maximized ? <CloseFullscreenIcon fontSize="small"/> : <OpenInFullIcon fontSize="small"/>}
+                </IconButton>
+            </Tooltip>}
         </DialogTitle>
         <DialogContent
             dividers={fullScreenFinal}
@@ -101,7 +139,7 @@ export const SimpleDialog = ({
                 })}
             </DialogActions>
             : null}
-    </Dialog>
+    </Dialog></MaximizedContext.Provider>
 }
 
 export default SimpleDialog

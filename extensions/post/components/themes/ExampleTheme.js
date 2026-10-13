@@ -9,7 +9,9 @@ const exampleTheme = {
         h2: "editor-heading-h2",
         h3: "editor-heading-h3",
         h4: "editor-heading-h4",
-        h5: "editor-heading-h5"
+        h4: "editor-heading-h4",
+        h5: "editor-heading-h5",
+        h6: "editor-heading-h6"
     },
     list: {
         nested: {
@@ -17,8 +19,19 @@ const exampleTheme = {
         },
         ol: "editor-list-ol",
         ul: "editor-list-ul",
-        listitem: "editor-listitem"
+        listitem: "editor-listitem",
+        listitemChecked: "editor-listitem-checked",
+        listitemUnchecked: "editor-listitem-unchecked",
+        checklist: "editor-checklist"
     },
+    hr: "editor-hr",
+    table: "editor-table",
+    tableCell: "editor-table-cell",
+    tableCellHeader: "editor-table-cell-header",
+    tableRow: "editor-table-row",
+    tableSelection: "editor-table-selection",
+    tableCellSelected: "editor-table-cell-selected",
+    tableScrollableWrapper: "editor-table-scrollable-wrapper",
     image: "editor-image",
     link: "editor-link",
     text: {
@@ -29,7 +42,10 @@ const exampleTheme = {
         underline: "editor-text-underline",
         strikethrough: "editor-text-strikethrough",
         underlineStrikethrough: "editor-text-underlineStrikethrough",
-        code: "editor-text-code"
+        code: "editor-text-code",
+        subscript: "editor-text-subscript",
+        superscript: "editor-text-superscript",
+        highlight: "editor-text-highlight"
     },
     code: "editor-code",
     codeHighlight: {
