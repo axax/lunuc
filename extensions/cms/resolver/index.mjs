@@ -284,7 +284,7 @@ export default db => ({
 
                     result.meta = JSON.stringify(pageDataMeta)
                 }else if( loadPageOptions ){
-                    await setPageOptionsAsMeta()
+                    await setPageOptionsAsMeta(db, context, result)
                 }
 
                 if (userHasRightsToChangePage) {
