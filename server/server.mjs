@@ -737,8 +737,9 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             return
         }
 
-        const host = getHostFromHeaders(req.headers),
-            parsedUrl = url.parse(req.url, true)
+        const host = getHostFromHeaders(req.headers)
+        // let: may be replaced by a requestRules rewrite (see below)
+        let parsedUrl = url.parse(req.url, true)
 
         if (!host) {
             console.log(`no host found in request: ${req.method} ${remoteAddress}`, req.url, req.headers)
@@ -823,6 +824,14 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             console.log(`ip ${remoteAddress} is blocked by hostrule for ${host}`)
             sendError(res, 403)
             return
+        }
+
+        if (req.rewrittenUrl) {
+            // internal rewrite (after www/https redirects, so they keep the original url): everything below (files, proxy, api) works with the new url
+            console.log(`Request Rule rewrite ${req.url} --> ${req.rewrittenUrl}`)
+            req.originalUrl = req.url
+            req.url = req.rewrittenUrl
+            parsedUrl = url.parse(req.url, true)
         }
 
         let urlPathname

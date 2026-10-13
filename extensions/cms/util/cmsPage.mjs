@@ -33,6 +33,66 @@ function pathMatches(path, pathPatterns) {
     })
 }
 
+const trimSlashes = s => (s || '').replace(/^\/+|\/+$/g, '')
+
+// compiled slugMapping per hostrule object (hostrules are reloaded as new objects on change)
+const slugMappingCache = new WeakMap()
+
+function compileSlugMapping(slugMapping) {
+    let compiled = slugMappingCache.get(slugMapping)
+    if (!compiled) {
+        compiled = {exact: new Map(), prefixes: []}
+        for (const [from, to] of Object.entries(slugMapping)) {
+            if (typeof to !== 'string') {
+                console.warn(`slugMapping: target for "${from}" must be a string - ignored`)
+                continue
+            }
+            if (from.endsWith('*')) {
+                compiled.prefixes.push({
+                    from: trimSlashes(from.slice(0, -1)),
+                    to: trimSlashes(to.endsWith('*') ? to.slice(0, -1) : to)
+                })
+            } else {
+                compiled.exact.set(trimSlashes(from), trimSlashes(to))
+            }
+        }
+        // longest prefix first, so the most specific rule wins
+        compiled.prefixes.sort((a, b) => b.from.length - a.from.length)
+        slugMappingCache.set(slugMapping, compiled)
+    }
+    return compiled
+}
+
+/*
+ * Internal mapping of a requested slug to another cms page (the url in the browser stays the same).
+ * Hostrule example:
+ *   "slugMapping": {
+ *     "produktfinder": "produktfinder/v3",       // exact:  produktfinder        -> produktfinder/v3
+ *     "shop/*": "shop/v2/*"                      // prefix: shop, shop/a/b        -> shop/v2, shop/v2/a/b
+ *   }
+ * Leading/trailing slashes are ignored. Exact entries win over prefix entries,
+ * longer prefixes win over shorter ones. The mapping is applied once (no chaining)
+ * and before slugContext/slugFallback, so those still apply to the mapped slug.
+ */
+export function mapSlug(slug, slugMapping) {
+    if (!slugMapping || slugMapping.constructor !== Object) {
+        return slug
+    }
+    const compiled = compileSlugMapping(slugMapping)
+    const normalized = trimSlashes(slug)
+
+    if (compiled.exact.has(normalized)) {
+        return compiled.exact.get(normalized)
+    }
+    for (const {from, to} of compiled.prefixes) {
+        if (normalized === from || normalized.startsWith(from + '/') || from === '') {
+            const rest = from === '' ? normalized : normalized.slice(from.length + 1)
+            return to + (to && rest ? '/' : '') + rest
+        }
+    }
+    return slug
+}
+
 // Fields loaded for a CmsPage. Module level on purpose: the lookup below can run
 // once per slug candidate, and two inline copies of this list would silently
 // drift apart - a newly added field would then be missing on fallback pages only.
@@ -72,7 +132,8 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
         }
     }
 
-    const {slug, editmode, checkHostrules, inEditor, _version, ignorePublicState} = params
+    const {editmode, checkHostrules, inEditor, _version, ignorePublicState} = params
+    let {slug} = params
 
     let host = getHostFromHeaders(headers)
 
@@ -85,6 +146,15 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
     let hostrule
     if (checkHostrules) {
         hostrule = getBestMatchingHostRule(host, false, true).hostrule
+    }
+
+    // internal slug mapping from the hostrule - before the cache key on purpose,
+    // so all requested slugs that map to the same page share its cache entry
+    if (hostrule && hostrule.slugMapping) {
+        const mappedSlug = mapSlug(slug, hostrule.slugMapping)
+        if (mappedSlug !== slug) {
+            slug = mappedSlug
+        }
     }
 
     // Decides whether {public: true} ends up in the match below - and therefore

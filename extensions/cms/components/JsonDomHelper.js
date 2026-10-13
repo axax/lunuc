@@ -64,7 +64,8 @@ import {SimpleSwitch} from '../../../client/components/ui/impl/material'
 
 const {DEFAULT_LANGUAGE} = config
 const CONVERTABLE_ELEMENTS = ['image','layout-1-2','layout-1-3','layout-1-4','layout-1-6','headline','p','richText','link']
-const deleteDialogActions = [
+// a function: the translations are registered after this module is loaded
+const deleteDialogActions = () => [
     {
         key: 'cancel',
         label: _t('core.cancel'),
@@ -1560,7 +1561,7 @@ class JsonDomHelper extends React.Component {
                                   this.enableEvents()
                                   this.deselectSelected()
                               }}
-                              actions={deleteDialogActions}
+                              actions={deleteDialogActions()}
                               title={_t('JsonDomHelper.confirm.deletion')}>
                     {_t('JsonDomHelper.delete.selected.question')}
                 </SimpleDialog>
@@ -1599,7 +1600,7 @@ class JsonDomHelper extends React.Component {
                                       this.setState({deleteConfirmDialog: null})
                                       this.enableEvents()
                                   }}
-                                  actions={deleteDialogActions}
+                                  actions={deleteDialogActions()}
                                   title={_t('JsonDomHelper.confirm.deletion')}>
                         {_t('JsonDomHelper.delete.element.question')}
                     </SimpleDialog>
@@ -1622,7 +1623,7 @@ class JsonDomHelper extends React.Component {
                                       //JsonDomHelper.disableEvents = false
                                       this.setState({deleteSourceConfirmDialog: null})
                                   }}
-                                  actions={deleteDialogActions}
+                                  actions={deleteDialogActions()}
                                   title={_t('JsonDomHelper.confirm.deletion')}>
                         {_t('JsonDomHelper.delete.element.question')}
                     </SimpleDialog>

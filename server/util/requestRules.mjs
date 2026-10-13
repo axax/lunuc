@@ -28,6 +28,17 @@
 //   - rewrite:  NON-terminating - sets the rewritten url on req and lets
 //               the pipeline continue. The caller must consume it (see
 //               applyRequestRules return contract below).
+//               {"match": {"pathname": "/^\\/docs\\/(.*)$/"},
+//                "action": {"type": "rewrite", "url": "/static/docs/$1"}}
+//               - url must be a local path starting with "/"
+//               - $1..$9 are replaced with the capture groups of a regex
+//                 pathname match
+//               - the original query string is kept, unless url has its own
+//               - the first matching rewrite wins
+//               - this rewrites the url on the server (files, proxy, api).
+//                 For CMS pages use the hostrule option "slugMapping"
+//                 instead: the browser app resolves the page from
+//                 window.location, which a server side rewrite can't change.
 //
 // Robustness:
 //   - g/y regex flags are stripped at compile time: RegExp#test with /g
@@ -106,7 +117,23 @@ function getFieldValue(field, req, parsedUrl, remoteAddress, host) {
  * @returns {boolean} true if the action TERMINATED the request
  *                    (response was sent), false if processing continues
  */
-function executeAction(action, req, res) {
+function resolveRewriteUrl(action, match, parsedUrl) {
+    let target = action.url
+    if (typeof target !== 'string' || !target.startsWith('/') || target.startsWith('//')) {
+        console.error(`requestRules: rewrite action needs a local url starting with "/" - got ${JSON.stringify(target)}`)
+        return null
+    }
+    if (match.pathname instanceof RegExp && /\$\d/.test(target)) {
+        const groups = (parsedUrl.pathname || '').match(match.pathname) || []
+        target = target.replace(/\$(\d)/g, (_, i) => groups[i] ?? '')
+    }
+    if (!target.includes('?') && parsedUrl.search) {
+        target += parsedUrl.search
+    }
+    return target
+}
+
+function executeAction(action, req, res, match, parsedUrl) {
     switch (action.type) {
         case 'block':
             res.writeHead(action.statusCode ?? 403)
@@ -131,7 +158,12 @@ function executeAction(action, req, res) {
             // Previously this returned true like the others - the caller
             // then returned without ever sending a response, leaving the
             // connection hanging until the request timeout.
-            req.rewrittenUrl = action.url
+            if (!req.rewrittenUrl) {
+                const target = resolveRewriteUrl(action, match, parsedUrl)
+                if (target) {
+                    req.rewrittenUrl = target
+                }
+            }
             return false
 
         default:
@@ -181,7 +213,7 @@ export function applyRequestRules(req, res, parsedUrl, remoteAddress, rules, hos
         if (matched) {
             console.log(`Request Rule action match "${action.type}" remoteAddress=${remoteAddress} --> ${req.url}`)
 
-            if (executeAction(action, req, res)) {
+            if (executeAction(action, req, res, match, parsedUrl)) {
                 return true
             }
             // non-terminating action (rewrite): continue with further rules
