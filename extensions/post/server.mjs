@@ -1,6 +1,6 @@
 import Hook from '../../util/hook.cjs'
 import schema from './schema/index.mjs'
-import resolver from './resolver/index.mjs'
+import resolver, {searchFieldsForBody} from './resolver/index.mjs'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 
 // Hook to add mongodb resolver
@@ -45,8 +45,25 @@ Hook.on('index', ({db}) => {
             'search.styleCode': 2,
             'search.codeBlock': 1
         }
-    })
+    }).catch(e => console.warn('post: could not create text index', e.message))
     postCollection.createIndex( { 'title': 1 }, { unique: false } )
+
+    // Suchfelder für Lexical-Posts nachträglich befüllen (wurden früher nicht gesetzt)
+    backfillSearchFields(postCollection).catch(e => console.warn('post: search backfill failed', e.message))
 
 
 })
+
+
+const backfillSearchFields = async (postCollection) => {
+    const cursor = postCollection.find({editor: 'lexical', body: {$exists: true, $ne: ''}}, {projection: {body: 1, editor: 1}})
+    let count = 0
+    for await (const post of cursor) {
+        const search = searchFieldsForBody(post.body, post.editor)
+        await postCollection.updateOne({_id: post._id}, {$set: {search}})
+        count++
+    }
+    if (count) {
+        console.log(`post: search fields updated for ${count} posts`)
+    }
+}

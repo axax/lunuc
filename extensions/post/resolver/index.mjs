@@ -78,7 +78,15 @@ const lexicalToSearchFields = (body) => {
     return fields
 }
 
-const searchFieldsForBody = (body, editor) => {
+const SEARCH_FIELDS = ['title', ...[
+    'headerOne', 'headerTwo', 'headerThree', 'headerFour', 'headerFive', 'headerSix',
+    'blockquote', 'codeBlock', 'orderedListItem', 'unorderedListItem', 'unstyled',
+    'styleBold', 'styleCode', 'styleItalic', 'styleUnderline'
+].map(f => 'search.' + f)]
+
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+export const searchFieldsForBody = (body, editor) => {
     if (editor === 'lexical') {
         return lexicalToSearchFields(body)
     }
@@ -94,9 +102,14 @@ export default db => ({
             let finalSort = sort || '_id desc',
                 match = {createdBy: new ObjectId(context.id)}
 
-            if (query) {
-                match.$or = [{title: {$regex: query, $options: 'i'}}, {$text: {$search: query}}]
-                finalSort = {score: {$meta: 'textScore'}}
+            if (query && query.trim()) {
+                // Suche ohne Abhängigkeit vom Textindex: jedes Wort muss im Titel
+                // oder in einem der Suchfelder vorkommen (Teilwörter erlaubt)
+                const words = query.trim().split(/\s+/).slice(0, 10)
+                match.$and = words.map(word => {
+                    const regex = {$regex: escapeRegex(word), $options: 'i'}
+                    return {$or: SEARCH_FIELDS.map(field => ({[field]: regex}))}
+                })
             }
             const posts = await GenericResolver.entities(db, context, 'Post', ['title', 'body', 'editor', 'modifiedAt', 'search', 'searchScore'], {
                 match,

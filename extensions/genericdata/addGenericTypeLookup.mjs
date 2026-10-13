@@ -692,58 +692,62 @@ function lookupMetaFields(field, key, otherOptions) {
 
 
 export async function postLookupResult(result, field, db, context) {
-    const itemCache = {}
+    const toArray = item => item.constructor === Array ? item : [item]
 
+    // 1. collect all referenced ids (unique, original order) across all results
+    const idSet = new Set()
     for (let j = 0; j < result.results.length; j++) {
         const item = result.results[j].data[field.name]
-
         if (item) {
+            toArray(item).forEach(id => idSet.add(String(id)))
+        }
+    }
+    if (idSet.size === 0) {
+        return
+    }
 
-            let tempItem = item
-            if (tempItem.constructor !== Array) {
-                tempItem = [tempItem]
-            }
+    let dataResolve, projectResult
+    if (result.tempProjection && result.tempProjection[field.name]) {
+        dataResolve = structuredClone(result.tempProjection[field.name])
+        projectResult = true
+    } else {
+        dataResolve = ['data']
+        projectResult = false
+    }
 
+    // 2. resolve all ids with one query instead of one query per id (N+1)
+    const ids = [...idSet]
+    const itemResults = await GenericResolver.entities(db, context, 'GenericData', ['_id', {definition: ['_id']}, ...dataResolve],
+        {
+            filter: `_id==[${ids.join(',')}]`,
+            limit: ids.length,
+            includeCount: false,
+            match: {},
+            meta: field.genericType,
+            genericType: field.genericType,
+            postLookup: true,
+            postConvert: false,
+            projectResult,
+            lookupLevel: 0
+        })
+
+    const itemCache = {}
+    itemResults.results.forEach(entry => {
+        itemCache[String(entry._id)] = entry
+    })
+
+    // 3. map back in original order, unresolved ids are dropped (as before)
+    for (let j = 0; j < result.results.length; j++) {
+        const item = result.results[j].data[field.name]
+        if (item) {
             const newItems = []
-            for (let k = 0; k < tempItem.length; k++) {
-
-                if (!itemCache[tempItem[k]]) {
-                    let dataResolve, projectResult
-                    if (result.tempProjection && result.tempProjection[field.name]) {
-                        dataResolve = JSON.parse(JSON.stringify(result.tempProjection[field.name]))
-                        projectResult = true
-                    } else {
-                        dataResolve = ['data']
-                        projectResult = false
-                    }
-
-                    const itemResults = await GenericResolver.entities(db, context, 'GenericData', ['_id', {definition: ['_id']}, ...dataResolve],
-                        {
-                            filter: `_id==${tempItem[k]}`,
-                            limit: 1,
-                            includeCount: false,
-                            match: {},
-                            meta: field.genericType,
-                            genericType: field.genericType,
-                            postLookup: true,
-                            postConvert: false,
-                            projectResult,
-                            lookupLevel: 0
-                        })
-
-                    itemCache[tempItem[k]] = itemResults.results.length > 0 ? itemResults.results[0] : null
-
-                    if (itemCache[tempItem[k]]) {
-                        newItems.push(itemCache[tempItem[k]])
-                    }
-                } else {
-                    newItems.push(itemCache[tempItem[k]])
+            toArray(item).forEach(id => {
+                const entry = itemCache[String(id)]
+                if (entry) {
+                    newItems.push(entry)
                 }
-
-            }
+            })
             result.results[j].data[field.name] = newItems
-
-
         }
     }
 }

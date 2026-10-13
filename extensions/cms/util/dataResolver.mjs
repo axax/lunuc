@@ -343,19 +343,17 @@ const resolveSystemData = async ({segment, req, resolvedData, context, db}) => {
     }
     if (segment.system.ls) {
         data.ls = {}
-        segment.system.ls.forEach(ls => {
+        // async + parallel instead of blocking readdirSync during rendering.
+        // Note: options recursive/withFileTypes were never applied before (passed to forEach),
+        // they are intentionally still ignored to keep the output unchanged.
+        await Promise.all(segment.system.ls.map(async ls => {
             if (ls.key) {
-                const files = []
                 const dir = ls.abspath || path.join(__dirname, ls.path)
-                fs.readdirSync(dir).forEach(file => {
-                    files.push(file)
-                },{ recursive: !!ls.recursive, withFileTypes: !!ls.withFileTypes })
-                data.ls[ls.key] = files
+                data.ls[ls.key] = await fs.promises.readdir(dir)
             } else {
                 console.warn('key for ls is missing')
             }
-
-        })
+        }))
     }
     if (segment.system.cache) {
         data.cache = {}
