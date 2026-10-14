@@ -1,8 +1,42 @@
 export const translations = {
     de: {
-        'StaticFile.multiUpload': 'Mehrfach Upload'
+        'StaticFile.multiUpload': 'Mehrfach Upload',
+        'StaticFile.multiUpload.settings': 'Einstellungen',
+        'StaticFile.multiUpload.prefix': 'Prefix / Ordner',
+        'StaticFile.multiUpload.prefixHint': 'Beispiel: %example%',
+        'StaticFile.multiUpload.overwrite': 'Bestehende Dateien überschreiben',
+        'StaticFile.multiUpload.overwriteOn': 'Gleichnamige Dateien werden ersetzt.',
+        'StaticFile.multiUpload.overwriteOff': 'Gleichnamige Dateien bleiben erhalten, die neue Datei erhält eine Laufnummer (z.B. datei-1.svg).',
+        'StaticFile.multiUpload.dropArea': 'Dateien hierher ziehen oder klicken (SVG, CSS, JS, JSON, HTML, Text)',
+        'StaticFile.multiUpload.progress': '%done% / %total% verarbeitet',
+        'StaticFile.multiUpload.open': 'Datei öffnen',
+        'StaticFile.multiUpload.col.status': 'Status',
+        'StaticFile.multiUpload.col.file': 'Datei',
+        'StaticFile.multiUpload.col.target': 'Ziel',
+        'StaticFile.multiUpload.status.pending': 'Wartend',
+        'StaticFile.multiUpload.status.added': 'Neu',
+        'StaticFile.multiUpload.status.replaced': 'Ersetzt',
+        'StaticFile.multiUpload.status.renamed': 'Umbenannt',
+        'StaticFile.multiUpload.status.error': 'Fehler'
     },
     en: {
-        'StaticFile.multiUpload': 'Multi Upload'
+        'StaticFile.multiUpload': 'Multi Upload',
+        'StaticFile.multiUpload.settings': 'Settings',
+        'StaticFile.multiUpload.prefix': 'Prefix / folder',
+        'StaticFile.multiUpload.prefixHint': 'Example: %example%',
+        'StaticFile.multiUpload.overwrite': 'Overwrite existing files',
+        'StaticFile.multiUpload.overwriteOn': 'Files with the same name are replaced.',
+        'StaticFile.multiUpload.overwriteOff': 'Existing files are kept, the new file gets a sequence number (e.g. file-1.svg).',
+        'StaticFile.multiUpload.dropArea': 'Drop files here or click (SVG, CSS, JS, JSON, HTML, text)',
+        'StaticFile.multiUpload.progress': '%done% / %total% processed',
+        'StaticFile.multiUpload.open': 'Open file',
+        'StaticFile.multiUpload.col.status': 'Status',
+        'StaticFile.multiUpload.col.file': 'File',
+        'StaticFile.multiUpload.col.target': 'Target',
+        'StaticFile.multiUpload.status.pending': 'Pending',
+        'StaticFile.multiUpload.status.added': 'Added',
+        'StaticFile.multiUpload.status.replaced': 'Replaced',
+        'StaticFile.multiUpload.status.renamed': 'Renamed',
+        'StaticFile.multiUpload.status.error': 'Error'
     }
 }
