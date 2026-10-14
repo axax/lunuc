@@ -499,7 +499,7 @@ class Print extends React.PureComponent {
      * ------------------------------------------------------------------ */
 
     calculatePageBreaks({printAreaInner, metrics, ignoreRoots}) {
-        const {manualBreakSelector} = this.props
+        const {manualBreakSelector, optionalBreakSelector} = this.props
 
         this.removeExistingPageBreaks(printAreaInner)
 
@@ -518,6 +518,7 @@ class Print extends React.PureComponent {
         const ctx = {
             metrics,
             manualBreakSelector,
+            optionalBreakSelector,
             pageIndex: 0,
             // bottom edge of the last inserted break = top of the current page content
             lastBreakBottom: metrics.contentTop + metrics.paddingTop,
@@ -708,6 +709,18 @@ class Print extends React.PureComponent {
                     this.setBreakRec(childNode, ctx)
                 }
                 continue
+            }
+
+            // An optional marker keeps the element together: it moves to the next
+            // page as a whole, but only when it does not fit here. If it is taller
+            // than a whole page it is split like any other element.
+            if (ctx.optionalBreakSelector && this.safeMatches(childNode, ctx.optionalBreakSelector)) {
+                const height = this.outerHeight(childNode),
+                    atPageTop = nodeTop - ctx.lastBreakBottom <= 1
+                if (!atPageTop && height <= this.availableHeight(metrics, ctx.pageIndex + 1)) {
+                    this.insertBreakBefore(childNode, ctx)
+                    continue
+                }
             }
 
             if (this.isNoBreak(childNode, noBreakClassName)) {
@@ -1272,6 +1285,7 @@ Print.propTypes = {
     headerSelector: PropTypes.string,
     footerSelector: PropTypes.string,
     manualBreakSelector: PropTypes.string,
+    optionalBreakSelector: PropTypes.string, // kept together, moved to the next page only if it does not fit
     // deprecated: manual markers always force a break, automatic breaks are
     // always added on top of them. Kept so existing templates do not crash.
     forceManuelBreak: PropTypes.bool,
