@@ -833,13 +833,20 @@ const Util = {
         const filters = filter.split(' ')
         for (let i = 0; i < filters.length; i++) {
             const filter = filters[i]
-            const pos = filter.indexOf('=')
+            let pos = filter.indexOf('!=')
+            let isNegated = pos !== -1
+
+            if (!isNegated) {
+                pos = filter.indexOf('=')
+            }
+
             if (pos >= 0) {
                 const key = filter.substring(0, pos).trim()
-                const value = filter.substring(pos + 1).trim()
+                const value = filter.substring(pos + (isNegated ? 2 : 1)).trim()
                 const re = new RegExp(value, 'i')
 
-                if (re.test(data[key])) {
+                const isMatch = re.test(data[key])
+                if (isNegated ? !isMatch : isMatch) {
                     match = true
                 } else {
                     match = false
