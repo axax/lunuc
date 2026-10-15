@@ -384,6 +384,10 @@ export const systemResolver = (db) => ({
                             entry[field.name] = new ObjectId(entry[field.name].$oid)
                         }
 
+                        // fields missing in the import data stay unchanged (e.g. an export of only some columns)
+                        if (entry[field.name] === undefined) {
+                            return
+                        }
                         if (field.unique) {
                             match[field.name] = entry[field.name]
                         } else {
@@ -414,9 +418,17 @@ export const systemResolver = (db) => ({
                             const {_id, ...uniqueMatch} = match
                             let filter = match
                             if (_id !== undefined && Object.keys(uniqueMatch).length > 0) {
-                                const byUnique = await col.findOne(uniqueMatch, {projection: {_id: 1}})
-                                if (byUnique) {
-                                    filter = {_id: byUnique._id}
+                                const byUnique = await col.find(uniqueMatch, {projection: {_id: 1}}).limit(10).toArray()
+                                if (byUnique.length > 1) {
+                                    // duplicates (e.g. from an earlier import): update all of them, otherwise it is
+                                    // random whether the entry that is actually used gets the new content
+                                    const res = await col.updateMany(uniqueMatch, {$set: set})
+                                    stats.updated += res.matchedCount
+                                    stats.errors.push(`${match.slug || JSON.stringify(uniqueMatch)} exists ${byUnique.length} times (${byUnique.map(e => e._id).join(', ')}), all updated - please delete the duplicates`)
+                                    continue
+                                }
+                                if (byUnique.length === 1) {
+                                    filter = {_id: byUnique[0]._id}
                                 } else if (await col.findOne({_id}, {projection: {_id: 1}})) {
                                     filter = {_id}
                                     Object.assign(set, uniqueMatch)

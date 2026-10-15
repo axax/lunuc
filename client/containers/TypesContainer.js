@@ -589,14 +589,23 @@ class TypesContainer extends React.Component {
                     }
                 },
                 {
-                    name: 'Export JSON', onClick: () => {
+                    name: 'Export JSON', onClick: async () => {
+                        // the list only contains the visible columns: load the entries of the current page with all
+                        // fields, otherwise an import elsewhere would only update these columns (e.g. no template)
+                        let results = this.state.data && this.state.data.results
+                        try {
+                            results = await this.loadAllFieldsOfCurrentPage()
+                        } catch (e) {
+                            console.warn('Export JSON: could not load all fields', e)
+                        }
+                        const json = JSON.stringify(results, null, 2)
                         this.setState({
                             simpleDialog: {
                                 title: 'Export',
                                 actions: [{key: 'close', label: 'Ok'}, {key: 'download', label: 'Download'}],
                                 onClose: (e) => {
                                     if (e.key === 'download') {
-                                        downloadAs(JSON.stringify(this.state.data.results, null, 2), 'export.json')
+                                        downloadAs(json, 'export.json')
                                         this.setState({simpleDialog: false})
                                     } else {
                                         this.setState({simpleDialog: false})
@@ -605,7 +614,7 @@ class TypesContainer extends React.Component {
                                 children: <textarea style={{
                                     width: '30rem',
                                     height: '30rem'
-                                }}>{JSON.stringify(this.state.data.results, null, 2)}</textarea>
+                                }} defaultValue={json}/>
                             }
                         })
                     }
@@ -1542,6 +1551,28 @@ class TypesContainer extends React.Component {
         Object.keys(this.subscriptions).forEach(key => {
             this.subscriptions[key].unsubscribe()
             delete this.subscriptions[key]
+        })
+    }
+
+    // entries of the current list page (same filter, sort and paging) with all fields of the type
+    async loadAllFieldsOfCurrentPage() {
+        const {type, page, limit, sort, filter, meta, _version} = this.pageParams
+        const queries = getTypeQueries(type, null, {loadAll: true})
+        const response = await client.query({
+            fetchPolicy: 'network-only',
+            query: queries.query,
+            variables: {limit, page, sort: this.extendSort(sort), meta, _version, filter: this.extendFilter(filter)}
+        })
+        // fields without a value are left out: some list resolvers return null for fields they do not load
+        // (e.g. the template of a CmsPage), an import would overwrite the real value with null
+        return response.data[this.getStoreKey(type)].results.map(entry => {
+            const clean = {}
+            Object.keys(entry).forEach(key => {
+                if (entry[key] !== null && key !== '__typename') {
+                    clean[key] = entry[key]
+                }
+            })
+            return clean
         })
     }
 
