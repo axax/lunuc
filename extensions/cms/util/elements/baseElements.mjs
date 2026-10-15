@@ -388,44 +388,49 @@ export const buildBaseElements = () => [
                 elementKey: 'gallery',
                 allowDrop: false
             },
-            p: {['data-element-key']: 'gallery'},
-            c: {
-                $loop: {
-                    d: [],
-                    s: 'item',
-                    convert: 'String',
-                    c: [
-                        // the lightbox, once per gallery (before the first image, so it is at the top of the
-                        // gallery). It is only loaded when the gallery becomes visible; it opens on a click on an
-                        // image of any gallery of the page. Absolute and 1px: no cell in the grid, but observable
-                        {
-                            $is: '$.item{_index === 0 ? true : false}',
-                            $inlineEditor: false,
-                            // passProps: the placeholder before loading gets the same style (no grid cell)
-                            $observe: {waitVisible: true, passProps: true},
-                            t: 'Cms',
-                            p: {
-                                id: 'galleryLightbox__uid__',
-                                slug: 'core/lightbox',
-                                style: {position: 'absolute', width: '1px', height: '1px', overflow: 'hidden'}
-                            }
-                        },
-                        {
+            p: {
+                ['data-element-key']: 'gallery',
+                // links the images with the lightbox of this gallery
+                'data-gallery-id': '__uid__',
+                // the lightbox placeholder is positioned at the top of the gallery
+                style: {position: 'relative'}
+            },
+            c: [
+                {
+                    $loop: {
+                        d: [],
+                        s: 'item',
+                        convert: 'String',
+                        c: {
                             $inlineEditor: false,
                             t: 'SmartImage',
                             p: {
                                 wrapper: 'true',
                                 src: '$.item{data}',
-                                // media for the lightbox (core/lightbox opens it on click)
+                                // media for the lightbox
                                 'data-lightbox-src': '$.item{data}'
                             }
                         }
-                    ]
+                    }
+                },
+                // the lightbox of the gallery: opens on a click on one of its images. It is only loaded when
+                // the gallery becomes visible (absolute, 1px at the top: no cell in the grid, but observable)
+                {
+                    $inlineEditor: false,
+                    // passProps: the placeholder before loading gets the same style
+                    $observe: {waitVisible: true, passProps: true},
+                    t: 'Cms',
+                    p: {
+                        id: 'galleryLightbox__uid__',
+                        slug: 'core/lightbox',
+                        props: {galleryId: '__uid__'},
+                        style: {position: 'absolute', top: 0, left: 0, width: '1px', height: '1px', overflow: 'hidden'}
+                    }
                 }
-            }
+            ]
         },
         options: {
-            c_$loop_d: {
+            c_0_$loop_d: {
                 fullWidth: true,
                 value: '',
                 label: _t('elements.images'),
@@ -436,7 +441,7 @@ export const buildBaseElements = () => [
                 multi: true,
                 tab: DEFAULT_TAB
             },
-            // a click on an image opens the lightbox (cms component core/lightbox, part of the element)
+            // a click on an image opens the lightbox (cms component core/lightbox, second child of the element)
             'p_data-no-lightbox': {
                 type: 'Boolean',
                 label: _t('elements.gallery.noLightbox'),
@@ -445,7 +450,7 @@ export const buildBaseElements = () => [
             ...marginOptions('p_'),
             ...classOptions('p_'),
             // image optimization for all images of the gallery (options of the SmartImage in the loop)
-            ...imageOptions('c_$loop_c_1_p_')
+            ...imageOptions('c_0_$loop_c_p_')
         }
     },
     {
