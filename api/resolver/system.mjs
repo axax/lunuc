@@ -323,6 +323,7 @@ export const systemResolver = (db) => ({
             }
 
             const typeDefinition = getType(collection)
+            let stats
             if (typeDefinition) {
                 let jsonParsed
                 try {
@@ -348,6 +349,7 @@ export const systemResolver = (db) => ({
                 if (jsonParsed.constructor !== Array) {
                     jsonParsed = [jsonParsed]
                 }
+                stats = {created: 0, updated: 0, errors: []}
 
                 for(let i = 0; i<jsonParsed.length; i++){
 
@@ -399,13 +401,41 @@ export const systemResolver = (db) => ({
                     }
 
                     const col = db.collection(collection)
-                    if(Object.keys(match).length===0){
-                        col.insertOne(set)
-                    }else {
-                        col.updateOne(match, {$set: set}, {upsert: true})
+                    try {
+                        if (Object.keys(match).length === 0) {
+                            await col.insertOne(set)
+                            stats.created++
+                        } else {
+                            // match on _id AND the unique fields (e.g. slug) fails when the entry comes from another
+                            // system (same slug, other _id): the upsert then inserted a duplicate. Here:
+                            // 1. an entry with the same unique values exists -> update it (keeps its _id)
+                            // 2. otherwise an entry with the same _id exists -> update it, incl. the unique fields
+                            // 3. otherwise insert it
+                            const {_id, ...uniqueMatch} = match
+                            let filter = match
+                            if (_id !== undefined && Object.keys(uniqueMatch).length > 0) {
+                                const byUnique = await col.findOne(uniqueMatch, {projection: {_id: 1}})
+                                if (byUnique) {
+                                    filter = {_id: byUnique._id}
+                                } else if (await col.findOne({_id}, {projection: {_id: 1}})) {
+                                    filter = {_id}
+                                    Object.assign(set, uniqueMatch)
+                                }
+                            }
+                            const res = await col.updateOne(filter, {$set: set}, {upsert: true})
+                            if (res.upsertedCount) {
+                                stats.created++
+                            } else {
+                                stats.updated++
+                            }
+                        }
+                    } catch (e) {
+                        stats.errors.push((match.slug || match._id || i) + ': ' + e.message)
                     }
 
                 }
+
+                Hook.call('SystemAfterCollectionImport', {collection, db, context})
             }
             /*findAndReplaceObjectIds(jsonParsed)
              const startTimeAggregate = new Date()
@@ -413,7 +443,11 @@ export const systemResolver = (db) => ({
              let a = await (db.collection(collection).aggregate(jsonParsed, {allowDiskUse: true}).toArray())
              console.log(`Aggregate time = ${new Date() - startTimeAggregate}ms`)*/
 
-            return {result: 'imported'}
+            if (!stats) {
+                return {result: 'imported'}
+            }
+            return {result: `imported: ${stats.updated} updated, ${stats.created} created` +
+                    (stats.errors.length ? `, ${stats.errors.length} errors: ` + stats.errors.join('; ') : '')}
         },
         searchInCollections: async ({search}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)

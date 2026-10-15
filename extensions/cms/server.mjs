@@ -2,6 +2,7 @@ import genSchema from './gensrc/schema.mjs'
 import schema from './schema/index.mjs'
 import resolver from './resolver/index.mjs'
 import Hook from '../../util/hook.cjs'
+import Cache from '../../util/cache.mjs'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import {
     CAPABILITY_VIEW_CMS_EDITOR,
@@ -16,6 +17,13 @@ import {resolveData} from './util/dataResolver.mjs'
 const PORT = (process.env.PORT || 3000)
 
 // Hook to add mongodb resolver
+// imported pages (Types > CmsPage > Import): the cached versions are outdated
+Hook.on('SystemAfterCollectionImport', ({collection}) => {
+    if (collection === 'CmsPage') {
+        Cache.clearStartWith('cmsPage-')
+    }
+})
+
 Hook.on('resolver', ({db, resolvers}) => {
     deepMergeToFirst(resolvers, resolver(db))
 })

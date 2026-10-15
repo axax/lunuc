@@ -63,6 +63,10 @@ import CmsViewContainer from '../containers/CmsViewContainer'
 import {SimpleSwitch} from '../../../client/components/ui/impl/material'
 
 const {DEFAULT_LANGUAGE} = config
+// Set by the richtext toolbar (core/wysiwyg) while e.g. a native color picker is open.
+// The editable element loses focus/hover then, but the toolbar must stay open.
+const isRichTextBarHold = () => typeof window !== 'undefined' && !!window.__lunucRichTextBarHold
+
 const CONVERTABLE_ELEMENTS = ['image','layout-1-2','layout-1-3','layout-1-4','layout-1-6','headline','p','richText','link']
 // a function: the translations are registered after this module is loaded
 const deleteDialogActions = () => [
@@ -196,7 +200,7 @@ class JsonDomHelper extends React.Component {
         // Once the element goes inactive its contentEditable prop is dropped,
         // so a blur may never reach react and richTextBarFocused would stay
         // true forever - clear it here instead of relying on onBlur alone.
-        if (this.state.richTextBarFocused && !this.isElementActive()) {
+        if (this.state.richTextBarFocused && !this.isElementActive() && !isRichTextBarHold()) {
             this.stopWatchSelectionChange()
             this.stopWatchScroll()
             this.setState({richTextBarFocused: false, richTextBarFloating: false})
@@ -494,12 +498,19 @@ class JsonDomHelper extends React.Component {
         this.stopWatchSelectionChange()
         this._selectionChangeHandler = () => this.updateRichTextBarPosition()
         document.addEventListener('selectionchange', this._selectionChangeHandler)
+        // the toolbar was kept open by window.__lunucRichTextBarHold - re-evaluate once released
+        this._richTextBarReleaseHandler = () => this.forceUpdate()
+        window.addEventListener('lunucrichtextbarrelease', this._richTextBarReleaseHandler)
     }
 
     stopWatchSelectionChange() {
         if (this._selectionChangeHandler) {
             document.removeEventListener('selectionchange', this._selectionChangeHandler)
             this._selectionChangeHandler = null
+        }
+        if (this._richTextBarReleaseHandler) {
+            window.removeEventListener('lunucrichtextbarrelease', this._richTextBarReleaseHandler)
+            this._richTextBarReleaseHandler = null
         }
     }
 
@@ -1125,7 +1136,8 @@ class JsonDomHelper extends React.Component {
     }
 
     isElementActive(){
-        return !JsonDomHelper.disableEvents && (this.state.hovered || this.state.toolbarHovered || this.state.richTextBarHover || this.state.toolbarMenuOpen)
+        return !JsonDomHelper.disableEvents && (this.state.hovered || this.state.toolbarHovered || this.state.richTextBarHover || this.state.toolbarMenuOpen ||
+            (this.state.richTextBarFocused && isRichTextBarHold()))
     }
 
     render() {
@@ -1332,7 +1344,7 @@ class JsonDomHelper extends React.Component {
                     }
                     helperEvents.onBlur = (e) => {
                         delete this.focusTime
-                        if (hasRichTextBar) {
+                        if (hasRichTextBar && !isRichTextBarHold()) {
                             this._lastCaretRect = null
                             this.stopWatchSelectionChange()
                             this.stopWatchScroll()

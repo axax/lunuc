@@ -291,7 +291,7 @@ const cronjobUtil = {
 
             worker.on('error', (err) => {
                 if (err && err.message) {
-                    args.error(err.message + ' ' + err.stack + ' -> line: ' + err.lineNumber)
+                    args.error(err.message + ' ' + err.stack + ' -> line: ' + err.lineNumber + (args.cronjobId ? ' -> in ' + args.cronjobId : ''))
                 }
                 args.end()
             })
