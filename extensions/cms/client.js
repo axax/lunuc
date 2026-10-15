@@ -7,7 +7,7 @@ import {
     CAPABILITY_VIEW_CMS_EDITOR,
     CAPABILITY_MANAGE_CMS_PAGES,
     CAPABILITY_MANAGE_CMS_TEMPLATE,
-    CAPABILITY_MANAGE_CMS_CONTENT
+    CAPABILITY_MANAGE_CMS_CONTENT, CAPABILITY_MANAGE_CMS_ELEMENTS
 } from './constants/index.mjs'
 import Async from 'client/components/Async'
 import CmsViewContainer from './containers/CmsViewContainer'
@@ -43,7 +43,7 @@ export default () => {
 
     // Hook to add user capabilities
     Hook.on('userCapabilities', ({capabilities}) => {
-        capabilities.push(CAPABILITY_VIEW_CMS_EDITOR, CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_TEMPLATE, CAPABILITY_MANAGE_CMS_CONTENT)
+        capabilities.push(CAPABILITY_VIEW_CMS_EDITOR, CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_TEMPLATE, CAPABILITY_MANAGE_CMS_CONTENT, CAPABILITY_MANAGE_CMS_ELEMENTS)
     })
 
     // add routes

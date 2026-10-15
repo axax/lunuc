@@ -11,7 +11,7 @@
  */
 import {setPropertyByPath} from '../../../client/util/json.mjs'
 import Util from '../../../client/util/index.mjs'
-import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants/index.mjs'
+import {CAPABILITY_MANAGE_CMS_ELEMENTS} from '../constants/index.mjs'
 
 // the manual is either pure JSON ({description, fields}) or markdown containing a ```json block with fields
 export const parseManualFields = (manual) => {
@@ -43,7 +43,7 @@ const getGroupIds = groups => [].concat(groups || [])
     .map(String)
 
 const canManageCustomElements = (user = (typeof _app_ !== 'undefined' ? _app_.user : null)) =>
-    !!user && Util.hasCapability(user, CAPABILITY_MANAGE_CMS_TEMPLATE)
+    !!user && Util.hasCapability(user, CAPABILITY_MANAGE_CMS_ELEMENTS)
 
 /**
  * is the custom element available for the user (no groups, or one of the groups of the user)
