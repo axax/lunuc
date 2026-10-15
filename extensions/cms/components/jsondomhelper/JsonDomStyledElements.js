@@ -74,6 +74,15 @@ const HIGHLIGHT_COLORS = {
     blue: T.cms
 }
 
+// The overlay sits above everything while the editor is active (basis 10000, MUI dialogs use 1300).
+// A highlighter can stay visible when a dialog opens (the dialog covers the element, so no mouseout
+// fires): hide the overlay while a dialog is open, it shows again when the dialog closes.
+const HIDE_WHILE_DIALOG_OPEN = {
+    'body:has(.MuiDialog-root) &': {
+        display: 'none !important'
+    }
+}
+
 // Custom props must not end up as DOM attributes
 const noForward = (...props) => ({
     shouldForwardProp: (prop) => props.indexOf(prop) === -1
@@ -99,6 +108,7 @@ export const StyledHighlighter = styled('span', noForward('color', 'selected'))(
         boxShadow: `0 0 0 3px rgba(${rgb}, 0.14), 0 8px 24px -8px rgba(15, 23, 42, 0.45)`,
         animation: `${fadeIn} 90ms ${T.ease}`,
         transition: `box-shadow 120ms ${T.ease}, border-color 120ms ${T.ease}, background-color 120ms ${T.ease}`,
+        ...HIDE_WHILE_DIALOG_OPEN,
         ...(color === 'blue' && {
             color: '#0F172A',
             fontFamily: T.fontUi,
@@ -135,7 +145,8 @@ export const StyledViewportFrame = styled('div')({
     paddingTop: '0.5rem',
     boxShadow: `inset 0 0 0 2px rgba(${T.cms}, 0.9), inset 0 0 0 6px rgba(${T.cms}, 0.18)`,
     background: `rgba(${T.cms}, 0.04)`,
-    animation: `${fadeIn} 90ms ${T.ease}`
+    animation: `${fadeIn} 90ms ${T.ease}`,
+    ...HIDE_WHILE_DIALOG_OPEN
 })
 
 export const StyledPicker = styled('div')({
@@ -176,7 +187,8 @@ export const StyledToolbarButton = styled('div')({
     pointerEvents: 'none',
     '> *': {
         pointerEvents: 'auto'
-    }
+    },
+    ...HIDE_WHILE_DIALOG_OPEN
 })
 
 export const StyledToolbarMenu = styled(SimpleMenu)({
