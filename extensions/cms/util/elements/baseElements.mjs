@@ -394,14 +394,33 @@ export const buildBaseElements = () => [
                     d: [],
                     s: 'item',
                     convert: 'String',
-                    c: {
-                        $inlineEditor: false,
-                        t: 'SmartImage',
-                        p: {
-                            wrapper: 'true',
-                            src: '$.item{data}'
+                    c: [
+                        // the lightbox, once per gallery (before the first image, so it is at the top of the
+                        // gallery). It is only loaded when the gallery becomes visible; it opens on a click on an
+                        // image of any gallery of the page. Absolute and 1px: no cell in the grid, but observable
+                        {
+                            $is: '$.item{_index === 0 ? true : false}',
+                            $inlineEditor: false,
+                            // passProps: the placeholder before loading gets the same style (no grid cell)
+                            $observe: {waitVisible: true, passProps: true},
+                            t: 'Cms',
+                            p: {
+                                id: 'galleryLightbox__uid__',
+                                slug: 'core/lightbox',
+                                style: {position: 'absolute', width: '1px', height: '1px', overflow: 'hidden'}
+                            }
+                        },
+                        {
+                            $inlineEditor: false,
+                            t: 'SmartImage',
+                            p: {
+                                wrapper: 'true',
+                                src: '$.item{data}',
+                                // media for the lightbox (core/lightbox opens it on click)
+                                'data-lightbox-src': '$.item{data}'
+                            }
                         }
-                    }
+                    ]
                 }
             }
         },
@@ -417,8 +436,16 @@ export const buildBaseElements = () => [
                 multi: true,
                 tab: DEFAULT_TAB
             },
+            // a click on an image opens the lightbox (cms component core/lightbox, part of the element)
+            'p_data-no-lightbox': {
+                type: 'Boolean',
+                label: _t('elements.gallery.noLightbox'),
+                tab: DEFAULT_TAB
+            },
             ...marginOptions('p_'),
-            ...classOptions('p_')
+            ...classOptions('p_'),
+            // image optimization for all images of the gallery (options of the SmartImage in the loop)
+            ...imageOptions('c_$loop_c_1_p_')
         }
     },
     {

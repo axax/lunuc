@@ -14,7 +14,7 @@ import {
 } from '@mui/x-tree-view/TreeItem';
 import { TreeItemIcon } from '@mui/x-tree-view/TreeItemIcon';
 import { TreeItemProvider } from '@mui/x-tree-view/TreeItemProvider';
-import { useTreeItemModel } from '@mui/x-tree-view/hooks';
+import { useTreeItemModel, useRichTreeViewApiRef } from '@mui/x-tree-view/hooks';
 import { useEffect, useState, useImperativeHandle } from "react";
 import { getIconByKey } from "./icon";
 
@@ -277,7 +277,9 @@ export const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, re
                     <TreeItemIconContainer {...getIconContainerProps()}>
                         <TreeItemIcon status={status} />
                     </TreeItemIconContainer>
-                    <TreeItemCheckbox {...getCheckboxProps()} />
+                    <TreeItemCheckbox {...getCheckboxProps()}
+                                      size="small"
+                                      sx={{ order: 1, p: 0.25, color: 'inherit', '&.Mui-checked': { color: 'inherit' } }} />
                     <CustomLabel
                         {...getLabelProps({
                             icon,
@@ -338,7 +340,12 @@ const FileExplorer = React.forwardRef(function FileExplorer({
                                                                 ContextMenu,
                                                                 onItemAction,
                                                                 defaultExpandedItems,
-                                                                enableDragAndDrop = false
+                                                                enableDragAndDrop = false,
+                                                                checkboxSelection = false,
+                                                                multiSelect = false,
+                                                                selectionPropagation,
+                                                                isItemSelectionDisabled,
+                                                                onSelectionChange
                                                             }, ref) {
 
     const [data, setData] = useState(null);
@@ -348,6 +355,21 @@ const FileExplorer = React.forwardRef(function FileExplorer({
     const [draggedId, setDraggedId] = useState(null);
     const [selectedItems, setSelectedItems] = useState([]);
     const [loadingItems, setLoadingItems] = useState(new Set());
+    const apiRef = useRichTreeViewApiRef();
+
+    // Keep the latest values reachable from the imperative handle (created once)
+    const latestRef = React.useRef({});
+    latestRef.current = { data, selectedItems };
+
+    const updateSelection = (newSelected) => setSelectedItems(newSelected);
+
+    // Report every selection change (user clicks, programmatic toggles, propagation to lazy loaded children)
+    useEffect(() => {
+        onSelectionChange?.(selectedItems);
+    }, [selectedItems]);
+
+    // Clicking the checkbox also fires the item click. It must neither expand nor trigger item actions.
+    const isCheckboxClick = (event) => !!(checkboxSelection && event?.target?.closest?.('.MuiCheckbox-root'));
 
 
     // Stable ref passed via context so CustomTreeItem always has latest data
@@ -355,7 +377,8 @@ const FileExplorer = React.forwardRef(function FileExplorer({
     contextMenuRef.current = {
         loadingItems,
         onContextMenu: (event, item) => {
-            setSelectedItems([item.id]);
+            // In checkbox mode the selection belongs to the user, a right click must not reset it
+            if (!checkboxSelection) setSelectedItems([item.id]);
             setContextMenu({
                 position: { top: event.clientY, left: event.clientX },
                 item,
@@ -515,6 +538,17 @@ const FileExplorer = React.forwardRef(function FileExplorer({
             });
         },
 
+        getItem: (id) => findById(latestRef.current.data || [], id),
+
+        getSelectedItemIds: () => latestRef.current.selectedItems,
+
+        // Select / deselect an item programmatically (selection propagation is applied by the tree)
+        toggleItemSelection: (id, event) => {
+            if (!id || id === 'root') return;
+            if (isItemSelectionDisabled?.(findById(latestRef.current.data || [], id))) return;
+            apiRef.current?.setItemSelection({ itemId: id, event, keepExistingSelection: true });
+        },
+
         // Escape hatch: force a full reload of the tree from the data source
         reload: () => {
             setData(null);
@@ -529,10 +563,14 @@ const FileExplorer = React.forwardRef(function FileExplorer({
     return (
         <TreeContextMenuContext.Provider value={contextMenuRef}>
             <RichTreeView
-                controlled
-                selectedItems={selectedItems}
+                apiRef={apiRef}
+                checkboxSelection={checkboxSelection}
+                multiSelect={multiSelect}
+                selectionPropagation={selectionPropagation}
+                isItemSelectionDisabled={isItemSelectionDisabled}
+                selectedItems={multiSelect ? selectedItems : (selectedItems[0] ?? null)}
                 onSelectedItemsChange={(event, newSelected) => {
-                    setSelectedItems(newSelected);
+                    updateSelection(Array.isArray(newSelected) ? newSelected : (newSelected ? [newSelected] : []));
                 }}
                 expandedItems={expandedItems}
                 items={data}
@@ -544,7 +582,7 @@ const FileExplorer = React.forwardRef(function FileExplorer({
                     return [];
                 }}
                 onItemClick={(event, id) => {
-                    if (id === 'root') return;
+                    if (id === 'root' || isCheckboxClick(event)) return;
 
                     const wasExpanded = expandedItems.includes(id);
                     const item = findById(data, id);
@@ -564,6 +602,15 @@ const FileExplorer = React.forwardRef(function FileExplorer({
                             });
 
                             setData(newData);
+
+                            // Children loaded after their folder was checked inherit the selection
+                            if (checkboxSelection && multiSelect && selectionPropagation?.descendants && hasChildren) {
+                                setSelectedItems(prev => {
+                                    if (!prev.includes(id)) return prev;
+                                    const childIds = fetchedItem.children.map(c => c.id).filter(c => !prev.includes(c));
+                                    return childIds.length ? [...prev, ...childIds] : prev;
+                                });
+                            }
 
                             if (hasChildren && !wasExpanded) {
                                 setExpandedItems(prev => [...prev, id]);

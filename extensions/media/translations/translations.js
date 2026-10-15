@@ -30,7 +30,11 @@ export const translations = {
         'MediaFileExplorer.newFolder':'Verzeichnis erstellen',
         'MediaFileExplorer.newFile':'Media hochladen',
         'MediaFileExplorer.delete':'Löschen',
-        'MediaFileExplorer.edit':'Bearbeiten'
+        'MediaFileExplorer.edit':'Bearbeiten',
+        'MediaFileExplorer.select':'Auswählen',
+        'MediaFileExplorer.selectFolder':'Ganzen Ordner auswählen',
+        'MediaFileExplorer.takeSelection':'Auswahl übernehmen',
+        'MediaFileExplorer.loading':'Lade...'
     },
     en: {
         'Media.editImage': 'Edit image',
@@ -64,6 +68,10 @@ export const translations = {
         'MediaFileExplorer.newFolder': 'Create directory',
         'MediaFileExplorer.newFile': 'Upload media',
         'MediaFileExplorer.delete': 'Delete',
-        'MediaFileExplorer.edit': 'Edit'
+        'MediaFileExplorer.edit': 'Edit',
+        'MediaFileExplorer.select': 'Select',
+        'MediaFileExplorer.selectFolder': 'Select whole folder',
+        'MediaFileExplorer.takeSelection': 'Apply selection',
+        'MediaFileExplorer.loading': 'Loading...'
     }
 }

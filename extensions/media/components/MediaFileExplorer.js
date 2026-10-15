@@ -1,4 +1,5 @@
-import React, {useRef} from 'react'
+import React, {useMemo, useRef, useState} from 'react'
+import {AppBar, Toolbar, Button} from '@mui/material'
 import SimpleFileExplorer from '../../../client/components/ui/impl/material/SimpleFileExplorer'
 import {client} from '../../../client/middleware/graphql'
 import Util from '../../../client/util/index.mjs'
@@ -6,6 +7,8 @@ import DriveFileRenameOutlineRounded from '@mui/icons-material/DriveFileRenameOu
 import DeleteRounded from '@mui/icons-material/DeleteRounded';
 import CreateNewFolderRounded from '@mui/icons-material/CreateNewFolderRounded';
 import AddPhotoAlternateRoundedIcon from '@mui/icons-material/AddPhotoAlternateRounded';
+import CheckCircleOutlineRounded from '@mui/icons-material/CheckCircleOutlineRounded';
+import LibraryAddCheckRounded from '@mui/icons-material/LibraryAddCheckRounded';
 import SimpleMenu from "../../../client/components/ui/impl/material/SimpleMenu";
 import {getImageSrc} from "../../../client/util/media";
 import {_t} from '../../../util/i18n.mjs'
@@ -36,6 +39,67 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pa
     // Gives access to the tree's state so changes actually trigger a re-render
     const explorerRef = useRef(null)
 
+    // Picker mode: the media view was opened from a TypePicker / editor to choose media
+    const isPicker = !!(typeof window !== 'undefined' && window.opener && pageParams.opener)
+    const isMulti = pageParams.multi === 'true'
+    const [selectedIds, setSelectedIds] = useState([])
+    const [resolving, setResolving] = useState(false)
+
+    // Stable component type, otherwise the menu would remount on every render
+    const PickerContextMenu = useMemo(() => (props) => <ContextMenu {...props} isPicker={isPicker} isMulti={isMulti}/>, [isPicker, isMulti])
+
+    const mediaQueries = () => TypeContainerRef.getTypeQueriesFiltered('Media', {loadAll: false})
+
+    // baseFilter (e.g. mimeType=image) of the picker also applies to the tree
+    const mediaFilter = (filter) => TypeContainerRef.extendFilter ? TypeContainerRef.extendFilter(filter) : filter
+
+    // Loads all media that are directly inside a folder
+    const fetchFolderMedia = async (folderId) => {
+        const response = await client.query({
+            query: mediaQueries().query, fetchPolicy: 'network-only',
+            variables: {filter: mediaFilter(`group==${folderId}`), limit: 1000}
+        })
+        return response?.data?.medias?.results || []
+    }
+
+    // Turns tree ids into the raw media objects the opener expects (folders are resolved to their media)
+    const resolveSelection = async (ids) => {
+        const result = [], seen = new Set()
+        const add = (media) => {
+            if (media?._id && !seen.has(media._id)) {
+                seen.add(media._id)
+                result.push(media)
+            }
+        }
+        for (const id of ids) {
+            const item = explorerRef.current?.getItem(id)
+            if (!item || item.fileType === 'root') continue
+            if (item.fileType === 'folder') {
+                (await fetchFolderMedia(item.id)).forEach(add)
+            } else {
+                add(item.original)
+            }
+        }
+        return result
+    }
+
+    const closeWithResult = (value) => {
+        window.resultValue = value
+        window.close()
+    }
+
+    const takeSelection = async (ids = selectedIds) => {
+        if (!ids.length || resolving) return
+        setResolving(true)
+        try {
+            const items = await resolveSelection(ids)
+            if (!items.length) return
+            closeWithResult(isMulti ? items : items.slice(0, 1))
+        } finally {
+            setResolving(false)
+        }
+    }
+
     const editItem = (item) => {
         TypeContainerRef.handleEditDataClick(item.original, {
             type: item.fileType === 'folder' ? 'MediaGroup' : 'Media',
@@ -51,11 +115,17 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pa
         })
     }
 
-    return <SimpleFileExplorer
+    return <><SimpleFileExplorer
         ref={explorerRef}
+        checkboxSelection={isPicker}
+        multiSelect={isPicker && isMulti}
+        selectionPropagation={isMulti ? {descendants: true, parents: true} : undefined}
+        // Folders can only be picked when multiple media are allowed
+        isItemSelectionDisabled={(item) => item?.fileType === 'root' || (item?.fileType === 'folder' && (!isPicker || !isMulti))}
+        onSelectionChange={setSelectedIds}
         defaultExpandedItems={defaultExpandedItems}
         key={'mediaTree' + (pageParams.filter || '')}
-        ContextMenu={ContextMenu}
+        ContextMenu={PickerContextMenu}
         enableDragAndDrop={true}
         onItemAction={(item, action, parentItem) => {
             if (action.key === 'delete') {
@@ -89,6 +159,10 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pa
                 })
             } else if (action.key === 'edit') {
                 editItem(item)
+            } else if (action.key === 'select') {
+                explorerRef.current?.toggleItemSelection(item.id)
+            } else if (action.key === 'select-folder') {
+                takeSelection([item.id])
             } else if (action.key === 'new-folder') {
                 TypeContainerRef.setState({
                     createEditDialog: true,
@@ -139,13 +213,21 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pa
                 item.singleClicked = false
                 event.preventDefault()
                 event.stopPropagation()
-                if (window.opener && pageParams.opener) {
-                    window.resultValue = item.fileType === 'folder' ? item.children : item
-                    window.close()
+                if (isPicker) {
+                    if (item.fileType === 'folder') {
+                        if (isMulti) takeSelection([item.id])
+                    } else {
+                        closeWithResult(item.original)
+                    }
                 } else {
                     editItem(item)
                 }
                 return
+            } else if (isPicker) {
+                // In the picker a single click selects the media instead of opening it
+                if (item.fileType === 'doc') {
+                    explorerRef.current?.toggleItemSelection(item.id, event)
+                }
             } else if (item.fileType === 'doc') {
                 item.singleClicked = true
                 setTimeout(() => {
@@ -167,7 +249,7 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pa
                 }),
                 client.query({
                     query: mediaQueries.query, fetchPolicy: 'cache-and-network',
-                    variables: {filter: (pageParams.filter ? pageParams.filter : `group==${id}`), limit: 500}
+                    variables: {filter: mediaFilter(pageParams.filter ? pageParams.filter : `group==${id}`), limit: 500}
                 })
             ])
 
@@ -176,15 +258,31 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pa
 
             return [...mapItems(mediaGroupResponse?.data?.mediaGroups), ...mapItems(mediaResponse?.data?.medias)]
         }}/>
+        {isPicker && selectedIds.length > 0 &&
+        <AppBar position="fixed" color="primary" style={{top: 'auto', bottom: 0}}>
+            <Toolbar>
+                <Button color="secondary" variant="contained" disabled={resolving}
+                        onClick={() => takeSelection()}>
+                    {resolving ? _t('MediaFileExplorer.loading') : `${_t('MediaFileExplorer.takeSelection')} (${selectedIds.length})`}
+                </Button>
+            </Toolbar>
+        </AppBar>}
+    </>
 }
 
 // ─── Context Menu ─────────────────────────────────────────────────────────────
-function ContextMenu({anchorPosition, onClose, item, onAction}) {
+function ContextMenu({anchorPosition, onClose, item, onAction, isPicker, isMulti}) {
     const open = Boolean(anchorPosition);
 
     let actions = []
+    if (isPicker && item?.fileType === 'doc') {
+        actions.push({key: 'select', name: _t('MediaFileExplorer.select'), icon: <CheckCircleOutlineRounded fontSize="small"/>})
+    }
+    if (isPicker && isMulti && item?.fileType === 'folder') {
+        actions.push({key: 'select-folder', name: _t('MediaFileExplorer.selectFolder'), icon: <LibraryAddCheckRounded fontSize="small"/>})
+    }
     if (item?.fileType === 'folder' || item?.fileType === 'root') {
-        actions = [
+        actions = [...actions,
             {key: 'new-folder', name: _t('MediaFileExplorer.newFolder'), icon: <CreateNewFolderRounded fontSize="small"/>},
             {key: 'new-file', name: _t('MediaFileExplorer.newFile'), icon: <AddPhotoAlternateRoundedIcon fontSize="small"/>}
         ]
