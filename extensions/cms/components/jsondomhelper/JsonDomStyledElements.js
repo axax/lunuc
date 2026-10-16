@@ -77,8 +77,13 @@ const HIGHLIGHT_COLORS = {
 // The overlay sits above everything while the editor is active (basis 10000, MUI dialogs use 1300).
 // A highlighter can stay visible when a dialog opens (the dialog covers the element, so no mouseout
 // fires): hide the overlay while a dialog is open, it shows again when the dialog closes.
+// An editor that is itself inside a dialog (e.g. the cms editor field of a GenericForm) marks its overlay
+// with data-in-dialog: it is only hidden when another dialog opens on top of its own one.
 const HIDE_WHILE_DIALOG_OPEN = {
-    'body:has(.MuiDialog-root) &': {
+    'body:has(.MuiDialog-root) &:not([data-in-dialog])': {
+        display: 'none !important'
+    },
+    'body:has(.MuiDialog-root ~ .MuiDialog-root) &[data-in-dialog]': {
         display: 'none !important'
     }
 }

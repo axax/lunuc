@@ -67,6 +67,15 @@ const {DEFAULT_LANGUAGE} = config
 // The editable element loses focus/hover then, but the toolbar must stay open.
 const isRichTextBarHold = () => typeof window !== 'undefined' && !!window.__lunucRichTextBarHold
 
+// hide the native browser focus ring (blue outline) on inline editable elements,
+// the editor highlighter already marks the element being edited
+if (typeof document !== 'undefined' && !document.getElementById('lunuc-inline-edit-style')) {
+    const styleEl = document.createElement('style')
+    styleEl.id = 'lunuc-inline-edit-style'
+    styleEl.textContent = '[data-lunuc-editable]:focus,[data-lunuc-editable]:focus-visible{outline:none !important}'
+    document.head.appendChild(styleEl)
+}
+
 const CONVERTABLE_ELEMENTS = ['image','layout-1-2','layout-1-3','layout-1-4','layout-1-6','headline','p','richText','link']
 // a function: the translations are registered after this module is loaded
 const deleteDialogActions = () => [
@@ -169,6 +178,14 @@ class JsonDomHelper extends React.Component {
     }
 
     componentDidMount() {
+        // the editor chrome is portaled to body - remember whether this element lives inside a dialog
+        // (e.g. the cms editor field of a GenericForm), so the overlay is not hidden by its own dialog
+        try {
+            const node = ReactDOM.findDOMNode(this)
+            this.inDialog = !!(node && node.closest && node.closest('.MuiDialog-root'))
+        } catch (e) {
+            this.inDialog = false
+        }
         JsonDomHelper.instances[this.props._key] = this
         if (!JsonDomHelper.mutationObserver) {
             JsonDomHelper.mutationObserver = new MutationObserver(scheduleHighlighterUpdate)
@@ -1274,6 +1291,7 @@ class JsonDomHelper extends React.Component {
                 const label = (_t(`elements.key.${elementKey}`,null,elementKey)) + (rest.id?` (${rest.id})`:(rest.slug?` (${rest.slug})`:''))
                 toolbar = <StyledToolbarButton
                     key={rest._key + '.toolbar'}
+                    data-in-dialog={this.inDialog ? '' : undefined}
                     data-toolbar={rest._key}
                     data-helper-uid={this.helperUid}
                     onMouseOver={this.onToolbarMouseOver.bind(this)}
@@ -1332,6 +1350,7 @@ class JsonDomHelper extends React.Component {
                 let marginBottomStyle = subJson?.p?.style?.marginBottom?.trim()
                 if(isContentEditable){
                     helperEvents.contentEditable = true
+                    helperEvents['data-lunuc-editable'] = true
                     helperEvents.onFocus = (e) => {
                         this.focusTime = Date.now()
                         if (hasRichTextBar) {
@@ -1390,6 +1409,7 @@ class JsonDomHelper extends React.Component {
 
                 highlighter = <StyledHighlighter
                     key={rest._key + '.highlighter'}
+                    data-in-dialog={this.inDialog ? '' : undefined}
                     data-highlighter={rest._key}
                     data-helper-uid={this.helperUid}
                     ref={el => {
@@ -1471,6 +1491,7 @@ class JsonDomHelper extends React.Component {
                 if (isOversizedCms) {
                     const vr = this.state.visibleRect
                     highlighter = [highlighter, <StyledViewportFrame key={rest._key + '.viewportFrame'}
+                        data-in-dialog={this.inDialog ? '' : undefined}
                         style={vr ? {top: vr.top, left: vr.left, width: vr.width, height: vr.height} : undefined}>
                         <StyledPicker
                             data-picker={rest._key}
