@@ -28,36 +28,48 @@ const CONTROL_CHARS_RE = /[\u0000-\u001f]/g
 const CONTROL_CHAR_SHORT = {'\t': '\\t', '\n': '\\n', '\r': '\\r', '\b': '\\b', '\f': '\\f'}
 const escapeControlChar = c => CONTROL_CHAR_SHORT[c] || '\\u' + ('000' + c.charCodeAt(0).toString(16)).slice(-4)
 
-const JsonDomHelper = (props) => <Async {...props}
-                                        load={() =>import(/* webpackChunkName: "jsondom" */ './JsonDomHelper')}/>
+// Names eval'd code (new Function) so stack traces and window error logs point to a
+// recognizable virtual file (e.g. jsondom-<slug>-<loc>.js) instead of <anonymous>
+// deterministic name (no counter): keeps V8's eval cache effective and lets the log
+// extension group identical errors by filename
+const withSourceURL = (code, loc) => code + '\n//# sourceURL=jsondom-' + String(loc || 'code').replace(/[^a-zA-Z0-9_-]+/g, '-') + '.js'
 
-const PrettyErrorMessage = (props) => <Async {...props}
-                                             load={() =>import(/* webpackChunkName: "admin" */ './PrettyErrorMessage')}/>
+// Cache for compiled template/expression functions. The code strings contain the
+// ${} placeholders (not the rendered values) - data is passed in via `this` at call time,
+// so identical code can safely reuse the same compiled function.
+// Bounded, because some code (e.g. nested loops) can contain values and never repeat.
+const FN_CACHE_MAX = 1000
+const fnCache = new Map()
+const compile = (code, loc, es5 = true) => {
+    const cacheKey = loc + '\n' + code
+    let fn = fnCache.get(cacheKey)
+    if (!fn) {
+        // throws on syntax errors -> nothing gets cached
+        fn = new Function(withSourceURL(es5 ? DomUtil.toES5(code) : code, loc))
+        if (fnCache.size >= FN_CACHE_MAX) {
+            fnCache.clear()
+        }
+        fnCache.set(cacheKey, fn)
+    }
+    return fn
+}
 
-const ContentEditable = (props) => <Async {...props}
-                                          load={() =>import(/* webpackChunkName: "admin" */ '../../../client/components/ContentEditable')}/>
+// "\nconst a=this.scope.a\nconst b=this.scope.b..." - makes all scope keys accessible by name
+const scopeConsts = (scope) => Object.keys(scope).reduce((str, key) => str + '\nconst ' + key + '=this.scope.' + key, '')
 
-const FileDrop = (props) => <Async {...props}
-                                   load={() =>import(/* webpackChunkName: "admin" */ '../../../client/components/FileDrop')}/>
+// lazy loaded component (code splitting)
+const lazy = (load) => (props) => <Async {...props} load={load}/>
 
-const Print = (props) => <Async {...props}
-                                load={() =>import(/* webpackChunkName: "admin" */ '../../../client/components/Print')}/>
-
-const QuillEditor = (props) => <Async {...props}
-                                      load={() =>import(/* webpackChunkName: "admin" */ '../../../client/components/QuillEditor')}/>
-
-const CodeEditor = (props) => <Async {...props}
-                                     load={() =>import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
-
-const MarkDown = (props) => <Async {...props}
-                                   load={() =>import(/* webpackChunkName: "markdown" */ '../../../client/components/MarkDown')}/>
-
-const ShadowRoot = (props) => <Async {...props}
-                                   load={() =>import(/* webpackChunkName: "shadowroot" */ '../../../client/components/ShadowRoot')}/>
-
-const AddToBody = (props) => <Async {...props}
-                                   load={() =>import(/* webpackChunkName: "addtobody" */ './AddToBody')}/>
-
+const JsonDomHelper = lazy(() => import(/* webpackChunkName: "jsondom" */ './JsonDomHelper'))
+const PrettyErrorMessage = lazy(() => import(/* webpackChunkName: "admin" */ './PrettyErrorMessage'))
+const ContentEditable = lazy(() => import(/* webpackChunkName: "admin" */ '../../../client/components/ContentEditable'))
+const FileDrop = lazy(() => import(/* webpackChunkName: "admin" */ '../../../client/components/FileDrop'))
+const Print = lazy(() => import(/* webpackChunkName: "admin" */ '../../../client/components/Print'))
+const QuillEditor = lazy(() => import(/* webpackChunkName: "admin" */ '../../../client/components/QuillEditor'))
+const CodeEditor = lazy(() => import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor'))
+const MarkDown = lazy(() => import(/* webpackChunkName: "markdown" */ '../../../client/components/MarkDown'))
+const ShadowRoot = lazy(() => import(/* webpackChunkName: "shadowroot" */ '../../../client/components/ShadowRoot'))
+const AddToBody = lazy(() => import(/* webpackChunkName: "addtobody" */ './AddToBody'))
 
 const hasNativeLazyLoadSupport = !_app_.ssr && window.HTMLImageElement && 'loading' in HTMLImageElement.prototype
 
@@ -90,6 +102,38 @@ const POST_TEMPLATE_REPLACE_REGEX = new RegExp(
     'g'
 )
 
+
+/**
+ * File name of an image (media object, JSON string of it, url or path) without the file extension,
+ * e.g. {name: 'sunset_2024.jpg'} -> 'sunset_2024'
+ */
+const imageNameWithoutExtension = (src) => {
+    let image = src
+    if (isString(image) && (image.startsWith('{') || image.startsWith('['))) {
+        try {
+            image = JSON.parse(image)
+        } catch (e) {
+        }
+    }
+    if (Array.isArray(image)) {
+        image = image[0]
+    }
+    if (!image) {
+        return ''
+    }
+    let name = isString(image) ? image : (image.name || image.src || '')
+    if (!isString(name) || !name) {
+        return ''
+    }
+    // last path segment without query/hash
+    name = name.split(/[?#]/)[0].split('/').pop()
+    try {
+        name = decodeURIComponent(name)
+    } catch (e) {
+    }
+    const dot = name.lastIndexOf('.')
+    return dot > 0 ? name.substring(0, dot) : name
+}
 
 /*function isString(variable) {
     return typeof variable === 'string'
@@ -128,13 +172,12 @@ class JsonDom extends React.Component {
 
         /* Other components */
         // inline editing of a CmsEditor field of a GenericData entry (only used in edit mode, admin chunk)
-        GenericDataContent: (props) => <Async {...props}
-                                              load={() => import(/* webpackChunkName: "admin" */ './GenericDataContent')}/>,
+        GenericDataContent: lazy(() => import(/* webpackChunkName: "admin" */ './GenericDataContent')),
         FileDrop,
         MarkDown,
         ShadowRoot,
         AddToBody,
-        SmartImage: ({src, options, caption, wrapper, inlineSvg, svgData, tagName, figureCaptionClassName, figureProps, ...props}) => {
+        SmartImage: ({src, options, caption, captionFromName, wrapper, inlineSvg, svgData, tagName, figureCaptionClassName, figureProps, ...props}) => {
             const imgTag = () => {
                 let imageData = Util.getImageObject(src, options)
                 imageData['data-smartimage'] = true
@@ -154,8 +197,11 @@ class JsonDom extends React.Component {
                 }
             }
 
+            // captionFromName: the file name of the image without extension as caption (as text, no html)
+            const nameCaption = !caption && captionFromName && !isFalse(captionFromName) ? imageNameWithoutExtension(src) : ''
+
             /*TODO remove  figureStyle, figureClassName use figureProps instead */
-            if (caption || wrapper) {
+            if (caption || nameCaption || wrapper) {
                 const propsToCopyToFigure = ['figureStyle', 'figureClassName', '_key','data-allow-drop','data-element-key','data-tag-name']
                 const copiedFigureProps = {}
                 propsToCopyToFigure.forEach(key=>{
@@ -171,6 +217,7 @@ class JsonDom extends React.Component {
                 return <figure {...copiedFigureProps} {...figureProps}>
                     {imgTag()}
                     {caption && <figcaption className={figureCaptionClassName} dangerouslySetInnerHTML={{__html: _t(caption)}}/>}
+                    {nameCaption && <figcaption className={figureCaptionClassName}>{nameCaption}</figcaption>}
                 </figure>
             }
             return imgTag()
@@ -184,8 +231,8 @@ class JsonDom extends React.Component {
             return <JsonDomInput {...rest} />
         },
         textarea: (props) => <JsonDomInput textarea={true} {...props}/>,
-        QuillEditor: (props) => <QuillEditor {...props}/>,
-        CodeEditor: (props) => <CodeEditor {...props}/>,
+        QuillEditor,
+        CodeEditor,
         select: (props) => <JsonDomInput select={true} {...props}/>,
         Redirect: ({to, push, _this,...props}) => {
             if (_this && Util.hasCapability(_this.props.user, CAPABILITY_MANAGE_CMS_PAGES)) {
@@ -609,7 +656,7 @@ class JsonDom extends React.Component {
                     if (parseResolvedData) {
                         // if there are placeholders ${} in the resolvedData String that needs to be parsed with the client scope
                         // the flag parseResolvedData needs to be set to true
-                        this.resolvedDataJson = JSON.parse(new Function(DomUtil.toES5(`const Util=this.Util;const {${Object.keys(scope).join(',')}}=this.scope;return \`${resolvedData.replace(/\\/g, '\\\\')}\``)).call({
+                        this.resolvedDataJson = JSON.parse(new Function(withSourceURL(DomUtil.toES5(`const Util=this.Util;const {${Object.keys(scope).join(',')}}=this.scope;return \`${resolvedData.replace(/\\/g, '\\\\')}\``), 'resolver-' + (this.props.slug || ''))).call({
                             scope,
                             Util
                         }))
@@ -650,16 +697,16 @@ class JsonDom extends React.Component {
                     if (this.runScript) {
                         this.runScript = false
                         this.runJsEvent('beforerunscript', false, scope)
-                        const code = DomUtil.toES5('\'use strict\';const __this=this._this;' +
+                        const code = '\'use strict\';const __this=this._this;' +
                             'const {serverMethod,on,setLocal,getLocal,refresh,getComponent,addMetaTag,setStyle,fetchMore}=__this;' +
                             'const {history,clientQuery,setKeyValue,getKeyValue,updateResolvedData}=__this.props;' +
                             'const {scope,parent,root,Util,DomUtil}=this;' +
                             'this.serverMethod = serverMethod;' +
-                            'const _t=this._t.bind(scope.data),forceUpdate=refresh;' + script)
+                            'const _t=this._t.bind(scope.data),forceUpdate=refresh;' + script
 
                         try {
                             this.jsOnStack = {}
-                            this.scriptResult = new Function(code).call({
+                            this.scriptResult = compile(code, 'script-' + (this.props.slug || '')).call({
                                 _this: this,
                                 scope,
                                 Util,
@@ -671,7 +718,7 @@ class JsonDom extends React.Component {
                                 parent
                             })
                         } catch (e) {
-                            this.error = {type: 'script', e, code: script, offset: 3}
+                            this.error = {type: 'script', e, code: script, offset: 3, meta: {elementKey: this.props._key || this.props['data-element-key'], codeSnippet: String(script).slice(0, 500)}}
                             console.error(e)
                         }
                         scope.script = this.scriptResult || {}
@@ -727,7 +774,7 @@ class JsonDom extends React.Component {
             return style
         }
         try {
-            return new Function(DomUtil.toES5(`const {scope,Util}=this;return \`${style}\``)).call({
+            return compile(`const {scope,Util}=this;return \`${style}\``, 'style-' + (props.slug || '')).call({
                 scope: this.getScope(props),
                 Util,
                 set: (key, value) => {
@@ -739,7 +786,7 @@ class JsonDom extends React.Component {
                 }
             })
         } catch (error) {
-            this.emitJsonError(error, {loc: 'Style'})
+            this.emitJsonError(error, {loc: 'Style', styleSnippet: String(style).slice(0, 500)})
             Hook.call('JsonDomStyleError', {error, style, slug: props.slug, editMode: props.editMode})
             console.log(error)
             return style
@@ -890,7 +937,15 @@ class JsonDom extends React.Component {
 
 
     emitJsonError(e, data) {
-        Hook.call('JsonDomError', {error: {type: data.loc, meta: data.meta, e}, slug: this.props.slug, editMode: this.props.editMode})
+        const slug = this.props.slug
+        // keep the last rendered slug/element globally available so window-level
+        // error handlers can attribute errors from eval'd code to a page
+        _app_.currentSlug = slug
+        // enrich error meta with element context so the log extension can attribute
+        // errors thrown inside eval'd (new Function) code to a page/element
+        const elementKey = this.props._key || this.props._keyPrefix || this.props['data-element-key']
+        const meta = {...data.meta, ...(elementKey ? {elementKey} : {}), ...(data.codeSnippet ? {codeSnippet: data.codeSnippet} : {}), ...(data.styleSnippet ? {styleSnippet: data.styleSnippet} : {})}
+        Hook.call('JsonDomError', {error: {type: data.loc, meta, e}, slug, editMode: this.props.editMode})
 
         const {onError} = this.props
 
@@ -949,7 +1004,7 @@ class JsonDom extends React.Component {
                 if ($if) {
                     // check condition --> slower than to check with $ifexist or $is
                     try {
-                        const tpl = new Function(`${Object.keys(scope).reduce((str, key) => str + '\nconst ' + key + '=this.scope.' + key, '')};return  ${$if}`)
+                        const tpl = compile(`${scopeConsts(scope)};return  ${$if}`, 'if-' + (this.props.slug || ''), false)
                         if (!tpl.call({scope})) {
                             return
                         }
@@ -1027,7 +1082,7 @@ class JsonDom extends React.Component {
                     } else {
                         if (isString(d)) {
                             try {
-                                data = Function(`${Object.keys(scope).reduce((str, key) => str + '\nconst ' + key + '=this.scope.' + key, '')};const Util = this.Util;return ${d}`).call({
+                                data = compile(`${scopeConsts(scope)};const Util = this.Util;return ${d}`, 'loopdata-' + (this.props.slug || ''), false).call({
                                     scope,
                                     Util,
                                     serverMethod: (name, args) => {
@@ -1090,7 +1145,7 @@ class JsonDom extends React.Component {
 
                         let tpl
                         if ($for) {
-                            tpl = new Function(DomUtil.toES5(`const ${s}=this.${s}${SCRIPT_UTIL_PART}this.scope.data);${loopOrFor.eval ? loopOrFor.eval : ''};return \`${cStr}\``))
+                            tpl = compile(`const ${s}=this.${s}${SCRIPT_UTIL_PART}this.scope.data);${loopOrFor.eval ? loopOrFor.eval : ''};return \`${cStr}\``, 'loop-' + (this.props.slug || ''))
                         }
                         data.forEach((loopChild, childIdx) => {
                             if (loopOrFor.convert === 'String') {
@@ -1100,10 +1155,13 @@ class JsonDom extends React.Component {
                                 loopChild = {data: loopChild}
                             }
                             // back to json
+                            // NOTE: on purpose the original item (no copy) and the loop item is also set on the
+                            // parent scope - page scripts rely on it (e.g. core/table: this.scope.result in
+                            // script functions, system/notepad: loop===this.scope.resizingElement)
                             loopChild._index = childIdx
 
                             if ($loop) {
-                                tpl = new Function(DomUtil.toES5(`const {${Object.keys(loopChild).join(',')}}=this.${s}${SCRIPT_UTIL_PART}this.scope.data);return \`${cStr}\``))
+                                tpl = compile(`const {${Object.keys(loopChild).join(',')}}=this.${s}${SCRIPT_UTIL_PART}this.scope.data);return \`${cStr}\``, 'loop-' + (this.props.slug || ''))
                             }
 
                             // remove tabs and parse
@@ -1537,10 +1595,10 @@ class JsonDom extends React.Component {
             }).replace(/`/g, '\\`')
         }
 
-        const code = DomUtil.toES5(`const {${Object.keys(scope).join(',')}}=this.scope${SCRIPT_UTIL_PART}data),_r=this.addToPostRender;return \`${str}\``)
+        const code = `const {${Object.keys(scope).join(',')}}=this.scope${SCRIPT_UTIL_PART}data),_r=this.addToPostRender;return \`${str}\``
         try {
             // Scope properties get destructed so they can be accessed directly by property name
-            return new Function(code).call({
+            return compile(code, 'template-' + (this.props.slug || '')).call({
                 scope,
                 parent: this.props._parentRef,
                 Util,
@@ -1552,8 +1610,10 @@ class JsonDom extends React.Component {
             }).replace(POST_TEMPLATE_REPLACE_REGEX, m => POST_TEMPLATE_REPLACEMENTS[m])
 
         } catch (e) {
-            this.error = {type: 'template render', e, code, offset:3}
-            this.emitJsonError(e, {loc: 'Template'})
+            // es5 version as before, so line numbers in the error view still match
+            const es5Code = DomUtil.toES5(code)
+            this.error = {type: 'template render', e, code: es5Code, offset:3}
+            this.emitJsonError(e, {loc: 'Template', codeSnippet: String(es5Code).slice(0, 500)})
             console.error('Error in renderTemplate', e)
         }
     }

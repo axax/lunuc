@@ -1,9 +1,11 @@
 /**
- * Exports entries of types that contain scripts (CronJob, Hook, Api, ...) as files,
- * so they can be edited with an editor or an AI. One folder per entry:
+ * Exports entries of types that contain scripts (CronJob, Hook, Api, ...) or other
+ * code-like fields (GenericDataDefinition structure) as files, so they can be edited with
+ * an editor or an AI. One folder per entry:
  *
- *   <dir>/<name>/script.js     the script (script.py for Python cronjobs)
- *   <dir>/<name>/meta.json     all other attributes, ids as {"$oid": "..."}
+ *   <dir>/<name>/script.js       the script (script.py for Python cronjobs)
+ *   <dir>/<name>/structure.json  the structure of a GenericDataDefinition
+ *   <dir>/<name>/meta.json       all other attributes, ids as {"$oid": "..."}
  *
  * Usage in a cronjob:
  *   const {exportTypeScriptsToDirectory} = await requireAsync('@api/util/typeScriptFiles.mjs')
@@ -38,7 +40,27 @@ export const TYPE_SCRIPT_DEFINITIONS = {
         folderFields: ['slug', 'name'],
         scripts: [{field: 'script', file: () => 'script.js'}],
         secretFields: ['baPassword']
+    },
+    GenericDataDefinition: {
+        folderFields: ['name'],
+        // stored as object, written as formatted json (the resolver parses the text on save)
+        scripts: [{field: 'structure', file: () => 'structure.json'}]
     }
+}
+
+// files written for the script fields, removed together with meta.json for stale entries
+const SCRIPT_FILE_RE = /^(script\.(js|py)|structure\.json)$/
+
+/**
+ * text of a script field as it is written to the file. Object fields (e.g. structure)
+ * become formatted json - the same text the export state is hashed with
+ */
+const scriptText = (item, field) => {
+    const value = item[field]
+    if (value === null || value === undefined) {
+        return ''
+    }
+    return typeof value === 'string' ? value : JSON.stringify(value, null, 2)
 }
 
 const README = (type) => `# ${type} export
@@ -47,7 +69,7 @@ One folder per ${type} entry.
 
 | File | Content |
 |---|---|
-| script.js / script.py | the script |
+| script.js / script.py / structure.json | the script (structure for GenericDataDefinition) |
 | meta.json | all other attributes (ids as \`{"$oid": "..."}\`, dates as \`{"$date": "..."}\`) |
 
 \`_id\` in meta.json identifies the entry. Secrets (e.g. passwords) are not exported.
@@ -66,7 +88,7 @@ const comparableValues = (type, item) => {
     const scriptFields = definition.scripts.map(s => s.field)
     const secretFields = definition.secretFields || []
     const values = {}
-    scriptFields.forEach(field => values[field] = item[field] || '')
+    scriptFields.forEach(field => values[field] = scriptText(item, field))
     Object.keys(item).forEach(key => {
         if (INFO_FIELDS.indexOf(key) < 0 && scriptFields.indexOf(key) < 0 && secretFields.indexOf(key) < 0 && !key.startsWith('_')) {
             values[key] = toPlainJson(item[key])
@@ -127,7 +149,7 @@ export const typeItemsToFiles = (type, items) => {
         files.push({path: folder + '/' + META_FILE, content: JSON.stringify(meta, null, 2) + '\n', _id: meta._id})
 
         definition.scripts.forEach(({field, file}) => {
-            files.push({path: folder + '/' + file(item), content: item[field] || ''})
+            files.push({path: folder + '/' + file(item), content: scriptText(item, field)})
         })
     })
     if (items.length > 0) {
@@ -247,7 +269,7 @@ export const exportTypeScriptsToDirectory = async ({db, context, type, dir, filt
         findManagedFolders(root, root, []).forEach(({abs, _id}) => {
             if (!ids.has(_id)) {
                 for (const name of fs.readdirSync(abs)) {
-                    if (name === META_FILE || /^script\.(js|py)$/.test(name)) {
+                    if (name === META_FILE || SCRIPT_FILE_RE.test(name)) {
                         fs.unlinkSync(path.join(abs, name))
                     }
                 }

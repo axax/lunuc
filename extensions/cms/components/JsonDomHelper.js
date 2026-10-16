@@ -2145,10 +2145,11 @@ class JsonDomHelper extends React.Component {
             }
             if (customElement.options) {
                 Object.keys(customElement.options).forEach(optKey => {
-                    if (customElement.options[optKey].value !== undefined) {
+                    const opt = customElement.options[optKey]
+                    if (opt.value !== undefined && opt.value !== '') {
                         const prop = propertyByPath(optKey, subJson, '_')
-                        if (prop === undefined || prop === null || customElement.options[optKey].forceOverride) {
-                            setPropertyByPath(customElement.options[optKey].value, optKey, subJson, '_')
+                        if (prop === undefined || prop === null || opt.forceOverride) {
+                            setPropertyByPath(opt.value, optKey, subJson, '_')
                         }
                     }
                 })
@@ -2157,7 +2158,20 @@ class JsonDomHelper extends React.Component {
         }
 
         const items = []
-        if (['button','input','select'].indexOf(subJson.t)>=0) {
+
+        if((subJson.t==='a' || subJson.t==='Link') && (subJson?.c?.t==='SmartImage' || subJson?.c?.[0]?.t==='SmartImage')){
+
+            items.push({
+                name: _t('elements.key.imageLink'),
+                icon: 'datasetLink',
+                onClick: () => {
+                    if(!Array.isArray(subJson.c)){
+                        subJson.c = [subJson.c]
+                    }
+                    changeToType('imageLink')
+                }
+            })
+        }else if (['button','input','select'].indexOf(subJson.t)>=0) {
             items.push({
                 name: _t('elements.key.formElement'),
                 icon: 'subject',
@@ -2221,7 +2235,7 @@ class JsonDomHelper extends React.Component {
         }else if (_options?.elementKey?.startsWith('layout-')) {
             const layouts = ['layout-1-2', 'layout-1-3', 'layout-1-4', 'layout-1-6']
             layouts.forEach(layout => {
-                if (layout == _options.elementKey) {
+                if (layout === _options.elementKey) {
                     return
                 }
                 items.push({

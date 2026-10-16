@@ -13,7 +13,7 @@ import {SimpleDialog} from 'ui/admin'
 import {_t} from '../../../util/i18n.mjs'
 
 /**
- * "Inhalt importieren" in the element palette of the cms editor: converts a document (Word, PDF, Excel, HTML,
+ * "Inhalt importieren" in the element palette of the cms editor: converts a document (Word, PDF, Pages, Excel, HTML,
  * Markdown/Text, pictures), a web page or pasted text into elements of the template
  * (server: Api system/content2json -> api/util/contentToJson.mjs).
  *
@@ -23,7 +23,7 @@ import {_t} from '../../../util/i18n.mjs'
  */
 
 const API = '/lunucapi/system/content2json'
-const ACCEPT = '.docx,.pdf,.xlsx,.xlsm,.xls,.csv,.html,.htm,.md,.txt,image/*'
+const ACCEPT = '.docx,.doc,.pdf,.pages,.numbers,.odt,.ods,.rtf,.xlsx,.xlsm,.xls,.csv,.html,.htm,.md,.txt,image/*'
 
 // same look as the template picker / the search field of the element palette
 const StyledButton = styled('button')(({theme}) => ({

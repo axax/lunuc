@@ -16,6 +16,17 @@ const H2_STREAM_WINDOW_SIZE = 1024 * 1024 // 1MB per stream
 const H2_SESSION_WINDOW_SIZE = 2 * 1024 * 1024 // 2MB per connection
 const H2_MAX_SESSION_MEMORY = 32 // MB, default is 10 - give headroom for larger windows
 
+// Keepalive for idle connections.
+// Firewalls / NAT / VPNs drop idle TCP state silently (no FIN/RST reaches the
+// browser). Chrome then pings the dead HTTP/2 session, waits 10s for the ack
+// and only afterwards opens a new connection -> requests "stalled" for 10s.
+// TCP keepalive + H2 PING keep that state alive, and sessions without any
+// stream activity are closed cleanly (GOAWAY) so the browser reconnects
+// immediately instead of reusing a dead connection.
+const TCP_KEEPALIVE_MS = 30 * 1000
+const H2_PING_INTERVAL_MS = 30 * 1000
+const H2_IDLE_CLOSE_MS = 5 * 60 * 1000
+
 /**
  * Creates a single server instance that routes connections to either
  * a cleartext HTTP/1.1 server or a secure HTTP/2 server, based on whether
@@ -59,6 +70,47 @@ const createServer = (tlsOpts, handler) => {
         } catch (e) {
             // session may already be closed/destroyed - safe to ignore
         }
+
+        // Track stream activity ourselves: session.setTimeout() would never
+        // fire because our own PING frames count as activity.
+        let openStreams = 0
+        let lastStreamActivity = Date.now()
+        session.on('stream', stream => {
+            openStreams++
+            lastStreamActivity = Date.now()
+            stream.once('close', () => {
+                openStreams--
+                lastStreamActivity = Date.now()
+            })
+        })
+
+        const pingTimer = setInterval(() => {
+            if (session.destroyed || session.closed) {
+                clearInterval(pingTimer)
+                return
+            }
+            if (openStreams <= 0 && Date.now() - lastStreamActivity > H2_IDLE_CLOSE_MS) {
+                // idle for too long -> GOAWAY, browser opens a fresh connection next time
+                clearInterval(pingTimer)
+                try {
+                    session.close()
+                } catch (e) {
+                    // ignore
+                }
+                return
+            }
+            try {
+                session.ping(() => {
+                    // no ack within the socket timeout is handled by node/tcp - nothing to do
+                })
+            } catch (e) {
+                // session closing or too many outstanding pings - ignore
+            }
+        }, H2_PING_INTERVAL_MS)
+        if (pingTimer.unref) {
+            pingTimer.unref()
+        }
+        session.once('close', () => clearInterval(pingTimer))
     })
 
     // TLS handshake failures (port scans, ancient clients, aborted handshakes)
@@ -86,6 +138,10 @@ const createServer = (tlsOpts, handler) => {
         // Disable Nagle's algorithm so small packets (TLS handshake records,
         // HTTP/2 frames) are sent immediately instead of being buffered.
         socket.setNoDelay(true)
+
+        // TCP keepalive keeps NAT / firewall state of idle connections alive
+        // (also applies to the TLS socket that later wraps this socket)
+        socket.setKeepAlive(true, TCP_KEEPALIVE_MS)
 
         // Detection-phase handlers. These only guard the brief window before we
         // hand the socket off; afterwards the chosen server owns the socket.

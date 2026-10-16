@@ -121,7 +121,13 @@ const LINK_CLASS_LIST = [
     }
 ]
 
-const ALIGN_SELECTOR = 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img'
+const ALIGN_SELECTOR = 'p,h1,h2,h3,h4,h5,h6,div,ul,ol,li,table,img'
+// table cells get text-align: the classes left / right are floats in the site css and break the table
+const CELL_ALIGN_SELECTOR = 'td,th'
+const alignFormat = (cls, textAlign) => [
+    {selector: CELL_ALIGN_SELECTOR, styles: {textAlign}},
+    {selector: ALIGN_SELECTOR, classes: cls}
+]
 
 class TinyEditor extends React.Component {
 
@@ -367,13 +373,17 @@ class TinyEditor extends React.Component {
             image_advtab: true,
             image_caption: true,
             image_title: true,
-            table_toolbar: 'tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol',
+            table_toolbar: 'tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol | tablemergecells tablesplitcells | tablerowheader | tablecellprops',
+            // tables: no fixed pixel widths from the editor, the site css decides
+            table_sizing_mode: 'relative',
+            table_default_attributes: {},
+            table_default_styles: {width: '100%'},
             formats: {
                 // the alignment buttons add a class instead of an inline style
-                alignleft: {selector: ALIGN_SELECTOR, classes: 'left'},
-                aligncenter: {selector: ALIGN_SELECTOR, classes: 'center'},
-                alignright: {selector: ALIGN_SELECTOR, classes: 'right'},
-                alignjustify: {selector: ALIGN_SELECTOR, classes: 'full'}
+                alignleft: alignFormat('left', 'left'),
+                aligncenter: alignFormat('center', 'center'),
+                alignright: alignFormat('right', 'right'),
+                alignjustify: alignFormat('full', 'justify')
             },
             file_picker_types: 'file image media',
             file_picker_callback: (callback, value, meta) => this.filePicker(callback, value, meta),

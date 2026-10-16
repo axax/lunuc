@@ -441,11 +441,51 @@ export const buildBaseElements = () => [
                 multi: true,
                 tab: DEFAULT_TAB
             },
+            // number of columns: empty = layout of the site css (unchanged behavior), otherwise an inline css grid
+            $set_columns: {
+                label: _t('elements.gallery.columns'),
+                thirdWidth: true,
+                tab: DEFAULT_TAB,
+                enum: [
+                    {value: '', name: _t('elements.gallery.columnsAuto')},
+                    ...Array.from({length: 8}, (_, i) => ({value: String(i + 1), name: String(i + 1)}))
+                ]
+            },
+            // spacing between the images, any css length (e.g. 1rem, 10px). Only used with a column count
+            $set_gap: {
+                label: _t('elements.gallery.gap'),
+                placeholder: '1rem',
+                thirdWidth: true,
+                tab: DEFAULT_TAB
+            },
+            // the file name of each image (without extension) as caption below the image
+            c_0_$loop_c_p_captionFromName: {
+                type: 'Boolean',
+                label: _t('elements.gallery.showNames'),
+                tab: DEFAULT_TAB
+            },
             // a click on an image opens the lightbox (cms component core/lightbox, second child of the element)
             'p_data-no-lightbox': {
                 type: 'Boolean',
                 label: _t('elements.gallery.noLightbox'),
                 tab: DEFAULT_TAB
+            },
+            // computed from $set_columns / $set_gap (see above)
+            p_style_display: {
+                invisible: true,
+                template: "${_comp.$set && _comp.$set.columns ? 'grid' : ''}"
+            },
+            p_style_gridTemplateColumns: {
+                invisible: true,
+                template: "${_comp.$set && _comp.$set.columns ? 'repeat(' + _comp.$set.columns + ', minmax(0, 1fr))' : ''}"
+            },
+            p_style_gap: {
+                invisible: true,
+                template: "${_comp.$set && _comp.$set.columns ? (_comp.$set.gap || '1rem') : ''}"
+            },
+            'p_data-columns': {
+                invisible: true,
+                template: "${_comp.$set && _comp.$set.columns ? _comp.$set.columns : ''}"
             },
             ...marginOptions('p_'),
             ...classOptions('p_'),

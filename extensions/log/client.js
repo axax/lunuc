@@ -121,7 +121,12 @@ export default () => {
                 'URL: ' + e.filename,
                 'Line: ' + e.lineno + ', Column: ' + e.colno,
                 'Stack: ' + (e.error && e.error.stack || '(no stack trace)')
-            ].join('\n')
+            ].join('\n'),
+            meta: {
+                // last CMS page/slug that was rendered - errors from eval'd code
+                // (new Function) can be attributed to it when the filename is <anonymous>
+                currentSlug: typeof _app_ !== 'undefined' && _app_ ? _app_.currentSlug : undefined
+            }
         })
     })
 

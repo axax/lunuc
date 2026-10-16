@@ -395,9 +395,17 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
                         // JSON-Parse-Fehler: keine sinnvolle Retry-Situation -> terminal
                         finalizeRequest()
                         reject({error, loading: false, networkStatus: NetworkStatus.error})
+
+                        // Intentional abort (e.g. useQuery cleanup) while the body was still being read:
+                        // r.json() then rejects with the abort reason (e.g. 'useQuery') -> fail silently.
+                        if (controller.signal.aborted && !controller._timeout) {
+                            return
+                        }
+
+                        console.error('graphql post-processing error', error, {query, variables})
                         _app_.dispatcher.addError({
                             key: 'graphql_error',
-                            msg: error.message + (error.path ? ' (in operation ' + error.path.join('/') + ')' : '')
+                            msg: (error?.message || String(error)) + (error?.path ? ' (in operation ' + error.path.join('/') + ')' : '')
                         })
                     })
 
