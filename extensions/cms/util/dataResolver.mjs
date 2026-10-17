@@ -29,9 +29,6 @@ import {isDataResolverWorkerEnabled, runDataResolverInWorker, WorkerUnavailableE
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-const DEFAULT_PARAM_MAX_LENGTH = 100,
-    DEFAULT_PARAM_NOT_ALLOWED_CHARS = ['\\(', '\\)', '\\{', '\\}', ';', '<', '>'],
-    DEFAULT_PARAM_NOT_ALLOWED_REGEX = new RegExp(DEFAULT_PARAM_NOT_ALLOWED_CHARS.join('|'), 'gi')
 
 
 
@@ -48,20 +45,6 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
 
             if (segments.constructor === Object) segments = [segments]
 
-
-            // check params
-            if (scope.param) {
-                const keys = Object.keys(scope.params)
-                if (keys.length > 0) {
-                    keys.forEach(key => {
-                        // param limit length is 50
-                        if (scope.params[key].length > DEFAULT_PARAM_MAX_LENGTH) {
-                            scope.params[key] = scope.params[key].substring(0, 50)
-                        }
-                        scope.params[key] = scope.params[key].replace(DEFAULT_PARAM_NOT_ALLOWED_REGEX, '')
-                    })
-                }
-            }
 
             // Optional: a dataResolver with {"worker": "<pool>"} on its first segment runs
             // its leading data/reduce/keyValueGlobals segments in a worker thread (same

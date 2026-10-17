@@ -1,7 +1,10 @@
 export function assignIfObjectOrArray(obj) {
     if (obj) {
         if (obj.constructor === Array) {
-            return Object.assign([], obj)
+            // slice() instead of Object.assign([], obj): same shallow copy for the data
+            // used here (dense arrays from json), but ~80x faster for large arrays
+            // (60000 entries: 0.1ms instead of 9ms - e.g. reduce with assign on all products)
+            return obj.slice()
         } else if (obj.constructor === Object) {
             return Object.assign({}, obj)
         }

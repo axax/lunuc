@@ -143,7 +143,7 @@ const StyledAiPaneClose = styled('button')(({theme}) => ({
 }))
 
 function CodeEditor(props,ref){
-    const {controlled, hasContextMenu, mergeView, mergeValue, children, onScroll, onFullSize, onFileChange, showFab, fabButtonStyle, actions, onChange, onError, onBlur, lineNumbers, type, style, className, error, templates, propertyTemplates, fileSplit, identifier, readOnly, showCopyButton} = props
+    const {controlled, hasContextMenu, mergeView, mergeValue, children, onScroll, onFullSize, onFileChange, showFab, fabButtonStyle, actions, onChange, onError, onBlur, lineNumbers, type, style, className, error, templates, propertyTemplates, fileSplit, identifier, readOnly, showCopyButton, lint} = props
 
     if(!identifier){
         console.warn('CodeEditor identifier is missing')
@@ -517,6 +517,7 @@ function CodeEditor(props,ref){
             }}
             lineNumbers={lineNumbers}
             type={type} readOnly={readOnly}
+            lint={lint}
             onToggleAiAssistent={toggleAiAssistent}
             onBlur={(event, view)=>{
                 if(onBlur) {

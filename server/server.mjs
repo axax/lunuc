@@ -363,7 +363,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
             } else {
                 indexfile = path.join(BUILD_DIR, '/index.min.html')
             }
-            await parseAndSendFile(req, res, {filename: indexfile, headers, statusCode, parsedUrl, host, remoteAddress, hostrule})
+            await parseAndSendFile(req, res, {filename: indexfile, headers, statusCode, parsedUrl, host, remoteAddress, hostrule, isBot})
             return
         }
 
@@ -497,7 +497,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
             // default index
             indexfile = path.join(BUILD_DIR, '/index.min.html')
         }
-        await parseAndSendFile(req, res, {filename: indexfile, headers, statusCode, parsedUrl, host, remoteAddress, hostrule})
+        await parseAndSendFile(req, res, {filename: indexfile, headers, statusCode, parsedUrl, host, remoteAddress, hostrule, isBot})
     }
 }
 

@@ -204,7 +204,7 @@ export const translations = {
         'TypesContainer.selectedRows':'%count% selected entry',
         'TypesContainer.tableSettings':'View settings',
         'TypesContainer.saveQuery':'Save query',
-        'TypesContainer.multiSelectAction': 'Select atcion',
+        'TypesContainer.multiSelectAction': 'Select action',
         'TypesContainer.delete': 'Delete',
         'TypesContainer.bulkEditExecute': 'Execute',
         'TypesContainer.bulkEdit': 'Bulk edit',

@@ -5,6 +5,16 @@ import Async from '../../../client/components/Async'
 import {_t} from '../../../util/i18n.mjs'
 import GenericForm from '../../../client/components/GenericForm'
 import {getType} from '../../../util/types.mjs'
+import {lintDataResolver} from '../util/dataResolverLint.mjs'
+
+// editor warning for params/props that are inserted into ${...} without escaping
+const lintUnescapedValues = (text) => lintDataResolver(text).map(({from, to, name}) => ({
+    from,
+    to,
+    severity: 'warning',
+    source: 'lunuc',
+    message: _t('DataResolverEditor.unescapedValue', {name})
+}))
 
 const CodeEditor = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor')}/>
 
@@ -334,7 +344,7 @@ class DataResolverEditor extends React.Component {
                                icon: <CleaningServicesIcon/>,
                                onClick: this.props.onCleanUpTranslations
                            }
-                       ]} lineNumbers type="json" {...this.props}/>
+                       ]} lineNumbers type="json" lint={lintUnescapedValues} {...this.props}/>
         </>
     }
 }

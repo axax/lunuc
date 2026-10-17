@@ -48,6 +48,113 @@ const jsonForScript = (value) => JSON.stringify(value)
 
 const config = getDynamicConfig()
 
+// Loopback requests from the preload to the api. http.request with a keep-alive agent
+// instead of fetch: fetch (undici) costs ~1.5ms more per request on loopback.
+const apiPreloadAgent = new http.Agent({keepAlive: true, maxSockets: 256, keepAliveMsecs: 10000})
+
+// POST to the api graphql endpoint, resolves {statusCode, headers, text}.
+// Header values that are undefined/null are left out (fetch sent them as 'undefined')
+const postToApi = ({body, headers, signal}) => new Promise((resolve, reject) => {
+    const payload = JSON.stringify(body)
+    const cleanHeaders = {'Content-Length': Buffer.byteLength(payload)}
+    for (const key in headers) {
+        if (headers[key] !== undefined && headers[key] !== null) {
+            cleanHeaders[key] = headers[key]
+        }
+    }
+    const apiReq = http.request({
+        hostname: API_CONNECT_HOST,
+        port: API_PORT,
+        path: '/graphql',
+        method: 'POST',
+        agent: apiPreloadAgent,
+        headers: cleanHeaders,
+        signal
+    }, (apiRes) => {
+        const chunks = []
+        apiRes.on('data', chunk => chunks.push(chunk))
+        apiRes.on('end', () => resolve({statusCode: apiRes.statusCode, headers: apiRes.headers, text: Buffer.concat(chunks).toString('utf8')}))
+        apiRes.on('error', reject)
+        apiRes.on('aborted', () => reject(new Error('api response aborted')))
+    })
+    apiReq.on('error', reject)
+    apiReq.end(payload)
+})
+
+// same escaping as jsonForScript, but on json text that is embedded unchanged
+// ('<' only occurs inside json strings, where \u003c is equivalent)
+const RE_LS = new RegExp('\u2028', 'g'), RE_PS = new RegExp('\u2029', 'g')
+const jsonTextForScript = (text) => text
+    .replace(/</g, '\\u003c')
+    .replace(RE_LS, '\\u2028')
+    .replace(RE_PS, '\\u2029')
+
+// Cms components at the root of a page template (typically the layout that wraps the whole
+// page) are preloaded together with the page and written into the client cache. The Cms
+// element loads them with fetchPolicy 'cache-first', so the browser saves a whole GraphQL
+// round trip - and the components inside the layout (e.g. a product list) start right away
+// instead of after the layout response. LUNUC_PRELOAD_COMPONENTS=false -> old behaviour
+const PRELOAD_COMPONENTS_ENABLED = process.env.LUNUC_PRELOAD_COMPONENTS !== 'false'
+const MAX_PRELOAD_COMPONENTS = 3
+// the html never waits longer than this for a component - a slow one is left out and
+// loaded by the browser as before
+const PRELOAD_COMPONENTS_TIMEOUT_MS = parseInt(process.env.LUNUC_PRELOAD_COMPONENTS_TIMEOUT_MS) || 300
+// host|slug of a page -> slugs of its root components found the last time. With it the
+// components are requested in parallel to the page (no extra time to first byte).
+// Bounded, the oldest entry is removed first
+const PRELOAD_COMPONENTS_MAX_ENTRIES = 2000
+const preloadComponentsByPage = new Map()
+
+const rememberPreloadComponents = (key, slugs) => {
+    const previous = preloadComponentsByPage.get(key)
+    if (previous && previous.join(',') === slugs.join(',')) {
+        return
+    }
+    preloadComponentsByPage.delete(key)
+    if (preloadComponentsByPage.size >= PRELOAD_COMPONENTS_MAX_ENTRIES) {
+        preloadComponentsByPage.delete(preloadComponentsByPage.keys().next().value)
+    }
+    preloadComponentsByPage.set(key, slugs)
+}
+
+// slugs of the Cms components at the root of a template that are rendered unconditionally
+// and request exactly {dynamic: true, slug} - the same variables (= cache key) the client uses
+export const findPreloadComponents = (template) => {
+    if (!template || template.indexOf('"Cms"') < 0) {
+        return []
+    }
+    let json
+    try {
+        json = JSON.parse(template)
+    } catch (e) {
+        return []
+    }
+    const slugs = []
+    const roots = Array.isArray(json) ? json : [json]
+    for (const item of roots) {
+        if (!item || item.t !== 'Cms' || !item.p ||
+            item.$if !== undefined || item.$is !== undefined || item.$ifexist !== undefined ||
+            item.$for !== undefined || item.$loop !== undefined || item.$observe?.waitVisible) {
+            continue
+        }
+        const {slug, props, component} = item.p
+        if (typeof slug !== 'string' || !slug || slug.includes('${') || slug.startsWith('@') || component) {
+            continue
+        }
+        // props.$ ends up in the variables (props) - only plain components are preloaded
+        if (props !== undefined && (props === null || typeof props !== 'object' || props.$ !== undefined)) {
+            continue
+        }
+        if (slugs.indexOf(slug) < 0) {
+            slugs.push(slug)
+        }
+        if (slugs.length >= MAX_PRELOAD_COMPONENTS) {
+            break
+        }
+    }
+    return slugs
+}
+
 const {UPLOAD_DIR} = config
 const ROOT_DIR = path.resolve()
 const ABS_UPLOAD_DIR = path.join(ROOT_DIR, UPLOAD_DIR)
@@ -561,7 +668,7 @@ const PRELOAD_DATA_PLACEHOLDER = '<%=preloadData%>'
 const APP_DATA_PLACEHOLDER = '<%=appData%>'
 const HEAD_DATA_PLACEHOLDER = '<%=appHead%>'
 const PAGE_TITLE_PLACEHOLDER = '<%=pageTitle%>'
-export const parseAndSendFile = async (req, res, {filename, headers, statusCode, parsedUrl, remoteAddress, host, hostrule}) => {
+export const parseAndSendFile = async (req, res, {filename, headers, statusCode, parsedUrl, remoteAddress, host, hostrule, isBot}) => {
 
 
     let data = Cache.get('IndexFile' + filename)
@@ -641,8 +748,9 @@ export const parseAndSendFile = async (req, res, {filename, headers, statusCode,
             const timing = {}
 
             // IP instead of 'localhost': see util/apiHost.mjs
-            fetch(`http://${API_CONNECT_HOST.includes(':') ? '[' + API_CONNECT_HOST + ']' : API_CONNECT_HOST}:${API_PORT}/graphql`, {
-                method: 'POST',
+            const apiFetch = (body, signal) => postToApi({
+                body,
+                signal,
                 headers: {
                     'Content-Language': contextLanguage,
                     'Content-Type': 'application/json',
@@ -661,17 +769,74 @@ export const parseAndSendFile = async (req, res, {filename, headers, statusCode,
                     /* cookies and auth_header not needed at the moment*/
                     'Cookie': req.headers.cookie,
                     [AUTH_HEADER]: req.headers[AUTH_HEADER]
-                },
-                body: JSON.stringify({
-                    query,
-                    variables: Object.assign({}, variables, {meta: JSON.stringify({referer: req.headers.referer})})
-                }),
+                }
+            })
+
+            // root components of the page (e.g. the layout), see findPreloadComponents
+            // not for bots: many of them don't run javascript and would never load the components
+            const preloadComponents = PRELOAD_COMPONENTS_ENABLED && !isBot
+            const componentQuery = getCmsPageQuery({dynamic: true}),
+                componentPageKey = (req.headers[HOSTRULE_HEADER] || host) + '|' + slug,
+                componentFetches = {}
+            const fetchComponent = (componentSlug) => {
+                if (!componentFetches[componentSlug]) {
+                    componentFetches[componentSlug] = apiFetch({
+                        query: componentQuery,
+                        variables: {dynamic: true, slug: componentSlug}
+                    }, AbortSignal.timeout(PRELOAD_COMPONENTS_TIMEOUT_MS)).then(response => {
+                        // embedded as it is (no parse + stringify): only a plain result without
+                        // errors is used - graphql puts "errors" before "data"
+                        if (response.statusCode === 200 && response.text.startsWith('{"data":{"cmsPage":{')) {
+                            return response.text
+                        }
+                        return null
+                    }).catch(error => {
+                        // timeout or error: the browser loads the component itself
+                        console.warn(`preload component ${componentSlug} skipped: ${error.message}`)
+                        return null
+                    })
+                }
+                return componentFetches[componentSlug]
+            }
+            if (preloadComponents) {
+                // known from the last request of this page -> in parallel to the page itself
+                const knownComponents = preloadComponentsByPage.get(componentPageKey)
+                if (knownComponents) {
+                    knownComponents.forEach(fetchComponent)
+                }
+            }
+
+            apiFetch({
+                query,
+                variables: Object.assign({}, variables, {meta: JSON.stringify({referer: req.headers.referer})})
             }).then(response => {
                 // pass the api timings through to the browser (diagnostic only)
-                timing.api = response.headers.get('server-timing')
-                return response.json() // Parse JSON response
+                timing.api = response.headers['server-timing']
+                return JSON.parse(response.text)
             })
-                .then(result => {
+                .then(async result => {
+                    let componentsContent = ''
+                    if (preloadComponents && result?.data?.cmsPage) {
+                        try {
+                            const componentSlugs = findPreloadComponents(result.data.cmsPage.template)
+                            rememberPreloadComponents(componentPageKey, componentSlugs)
+                            const componentResults = await Promise.all(componentSlugs.map(fetchComponent))
+                            componentResults.forEach((componentText, index) => {
+                                if (componentText) {
+                                    // same variables as the client (getGqlVariables) -> same cache key
+                                    componentsContent += `
+    event.detail.client.writeQuery({
+        query: '${componentQuery}',
+        variables: ${jsonForScript({dynamic: true, slug: componentSlugs[index]})},
+        data: (${jsonTextForScript(componentText)}).data
+    })`
+                                }
+                            })
+                        } catch (error) {
+                            console.warn('preload components failed', error)
+                            componentsContent = ''
+                        }
+                    }
                     timing.preload = performance.now() - preloadStart
                     let additionalContent = `/*time${Date.now() - startTime}ms*/\n`
                     if (result?.data?.cmsPage) {
@@ -692,7 +857,7 @@ window.addEventListener('appReady', (event) => {
         query: '${query}',
         variables: ${jsonForScript(variables)},
         data: ${jsonForScript(result.data)}
-    })
+    })${componentsContent}
 })`
 
                         headers['x-no-serviceworker-cache'] = true

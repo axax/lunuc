@@ -1101,6 +1101,8 @@ class TypesContainer extends React.Component {
                 this.setState({viewSyncDialog:false})
             }} _version={this.pageParams._version} type={type}/>,
             window.opener && this.pageParams.opener && selectedLength > 0 &&
+            <div key="appbarSpacer" style={{height: 88}}/>,
+            window.opener && this.pageParams.opener && selectedLength > 0 &&
             <AppBar key="appbar" position="fixed" color="primary" style={{
                 top: 'auto',
                 bottom: 0

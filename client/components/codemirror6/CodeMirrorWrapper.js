@@ -7,6 +7,7 @@ import {basicSetup} from './basicSetup'
 import {scrollToLine} from './utils'
 import './style.css'
 import {MergeView} from '@codemirror/merge'
+import {linter, lintGutter} from '@codemirror/lint'
 
 
 // marks transactions that were dispatched programmatically, so the update
@@ -15,7 +16,7 @@ const externalUpdate = Annotation.define()
 
 
 const CodeMirrorWrapper = (props) => {
-    const {controlled, mergeView, darkMode, onFirstVisibleLineChange, onEditorView, onContextMenu, style, onChange, onBlur, type, lineNumbers, identifier, value, mergeValue, readOnly, onToggleAiAssistent} = props
+    const {controlled, mergeView, darkMode, onFirstVisibleLineChange, onEditorView, onContextMenu, style, onChange, onBlur, type, lineNumbers, identifier, value, mergeValue, readOnly, onToggleAiAssistent, lint} = props
     const editor = useRef()
     const editorViewRef = useRef()
     const muiTheme = useTheme()
@@ -23,7 +24,8 @@ const CodeMirrorWrapper = (props) => {
     const isDark = darkMode !== undefined ? !!darkMode : muiTheme?.palette?.mode === 'dark'
     const editorBackground = isDark ? (muiTheme?.palette?.background?.paper || '#282c34') : '#ffffff'
 
-    const defaultThemeOption = EditorView.theme({
+    // only called when the editor is (re)created - not on every render (every keystroke re-renders this component)
+    const createThemeOption = () => EditorView.theme({
 
         '&': {
             height: '30rem',
@@ -67,16 +69,24 @@ const CodeMirrorWrapper = (props) => {
     }, [value, controlled])
 
     useEffect(() => {
-        const extensions = [defaultThemeOption,
+        // the scroll handler reads the layout - at most once per frame
+        let scrollFrame = 0
+        const extensions = [createThemeOption(),
             ...basicSetup({type,lineNumbers,readOnly,onToggleAiAssistent}),
             isDark && oneDark,
             onFirstVisibleLineChange && EditorView.domEventHandlers({
                 scroll: (scollEvent, view) => {
-                    const newFistVisibleLine = view.state.doc.lineAt(view.elementAtHeight(view.dom.getBoundingClientRect().top - view.documentTop).from).number
-                    if(props.firstVisibleLine !== newFistVisibleLine){
-                        props.firstVisibleLine=newFistVisibleLine
-                        onFirstVisibleLineChange(props.firstVisibleLine)
+                    if (scrollFrame) {
+                        return
                     }
+                    scrollFrame = requestAnimationFrame(() => {
+                        scrollFrame = 0
+                        const newFistVisibleLine = view.state.doc.lineAt(view.elementAtHeight(view.dom.getBoundingClientRect().top - view.documentTop).from).number
+                        if(props.firstVisibleLine !== newFistVisibleLine){
+                            props.firstVisibleLine=newFistVisibleLine
+                            onFirstVisibleLineChange(props.firstVisibleLine)
+                        }
+                    })
                 },
                 contextmenu:(clickEvent, view)=>{
                     if(onContextMenu){
@@ -95,7 +105,11 @@ const CodeMirrorWrapper = (props) => {
                     const codeAsString = update.state.doc.toString()
                     onChange(codeAsString)
                 }
-            })].filter(ex => !!ex)
+            }),
+            // optional warnings: lint(text) returns [{from, to, severity, message}]
+            // the linter runs debounced after the user stopped typing, never on the initial render path
+            lint && linter(view => lint(view.state.doc.toString()), {delay: 750}),
+            lint && lintGutter()].filter(ex => !!ex)
 
         let view
         if(mergeView){
@@ -118,6 +132,9 @@ const CodeMirrorWrapper = (props) => {
 
         scrollToLine(view, props.firstVisibleLine)
         return () => {
+            if (scrollFrame) {
+                cancelAnimationFrame(scrollFrame)
+            }
             view.destroy()
         }
     }, [identifier, isDark])
