@@ -12,8 +12,16 @@ import Button from '@mui/material/Button'
 import {_t} from 'util/i18n.mjs'
 import SimpleMenu from './SimpleMenu.js'
 
-export const SimpleList = ({sx, paperProps, onCheck, items, allChecked, count, page, contextMenu, rowsPerPage, onChangePage, onChangeRowsPerPage, onFilterKeyDown, onFilterChange, filter, ...rest}) => {
-    const [checked, setChecked] = React.useState(allChecked?items.map((e,i)=>i):[])
+export const SimpleList = ({sx, paperProps, onCheck, checked: checkedProp, items, allChecked, count, page, contextMenu, rowsPerPage, onChangePage, onChangeRowsPerPage, onFilterKeyDown, onFilterChange, filter, ...rest}) => {
+    const [checkedState, setCheckedState] = React.useState(allChecked?items.map((e,i)=>i):[])
+    // if checked is passed as prop the component is controlled
+    const checked = checkedProp || checkedState
+    const setChecked = (newChecked) => {
+        setCheckedState(newChecked)
+        if(onCheck) {
+            onCheck(newChecked)
+        }
+    }
     const [showContextMenu, setShowContextMenu] = React.useState(null)
 
     const handleToggle = (i) => {
@@ -24,9 +32,6 @@ export const SimpleList = ({sx, paperProps, onCheck, items, allChecked, count, p
             newChecked.push(i)
         } else {
             newChecked.splice(currentIndex, 1)
-        }
-        if(onCheck) {
-            onCheck(newChecked)
         }
         setChecked(newChecked)
     }

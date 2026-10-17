@@ -32,6 +32,7 @@ A Type can be define in the build.json of an extension. Types can also have refe
 * mutationResult = The type that is returned after a mutation (default is {TypeName}Status)
 * access = Control who has access -> Object {create: 'anonymous'}
 * noUserRelation = if true the createdBy field won't be created
+* backupEssential = if set to false the collection is not essential (logs, tracking, history...) and is deselected when choosing "Essential only" in the db dump dialog (admin/backup)
 
 **Field properties**
 

@@ -41,8 +41,19 @@ class BackupContainer extends React.Component {
         const types = getTypes()
         this.typesToSelect = []
         Object.keys(types).sort().map((k) => {
-            this.typesToSelect.push({primary: k,checkbox:true,checked:true})
+            this.typesToSelect.push({primary: k, checkbox: true, essential: types[k].backupEssential !== false})
         })
+        this.state.checkedTypes = this.typesToSelect.map((e, i) => i)
+    }
+
+    selectTypes(filter) {
+        const checkedTypes = []
+        this.typesToSelect.forEach((type, index) => {
+            if (filter(type)) {
+                checkedTypes.push(index)
+            }
+        })
+        this.setState({checkedTypes})
     }
 
     createDump(options) {
@@ -103,7 +114,8 @@ class BackupContainer extends React.Component {
 
     handleCreateDumpDialog(action) {
         if(action.key === 'create'){
-            const excludeCollection = this.typesToSelect.filter(type=>!type.checked).map(type=>type.primary)
+            const {checkedTypes} = this.state
+            const excludeCollection = this.typesToSelect.filter((type, index) => checkedTypes.indexOf(index) < 0).map(type => type.primary)
             this.createDump({excludeCollection})
         }
         this.setState({createDumpDialog: {...this.state.createDumpDialog,open:false}})
@@ -144,7 +156,7 @@ class BackupContainer extends React.Component {
 
     render() {
         const {dbDumps, mediaDumps, hostruleDumps} = this.props
-        const {createDumpDialog, linkDialog, creatingDump, creatingMediaDump, creatingHostruleDump, importingMediaDump, importingHostruleDump, importMediaDumpDialog, importDbDumpDialog, importHostruleDumpDialog, importingDbDump} = this.state
+        const {checkedTypes, createDumpDialog, linkDialog, creatingDump, creatingMediaDump, creatingHostruleDump, importingMediaDump, importingHostruleDump, importMediaDumpDialog, importDbDumpDialog, importHostruleDumpDialog, importingDbDump} = this.state
         return <>
                 <Typography variant="h3" gutterBottom>Backups</Typography>
 
@@ -303,16 +315,23 @@ class BackupContainer extends React.Component {
                     <Typography variant="h6" color="inherit">
                         {_t('BackupContainer.includedCollections')}
                     </Typography>
+                    <div style={{marginBottom: '0.5rem'}}>
+                        <SimpleButton size="small" color="primary" onClick={() => this.selectTypes(() => true)}>
+                            {_t('core.selectAll')}
+                        </SimpleButton>
+                        <SimpleButton size="small" color="primary" onClick={() => this.selectTypes(type => type.essential)}>
+                            {_t('BackupContainer.essentialOnly')}
+                        </SimpleButton>
+                    </div>
                     <SimpleList
-                        onCheck={(checked)=>{
-                            this.typesToSelect.forEach((type,index)=>{
-                                type.checked = checked.indexOf(index)>=0
-                            })
+                        checked={checkedTypes}
+                        onCheck={(checked) => {
+                            this.setState({checkedTypes: checked})
                         }}
                         sx={{
                         overflow: 'auto',
                         maxHeight: 300
-                    }} allChecked={true} items={this.typesToSelect}/>
+                    }} items={this.typesToSelect}/>
 
                 </SimpleDialog>
 

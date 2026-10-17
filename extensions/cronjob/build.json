@@ -78,6 +78,7 @@
     },
     {
       "name": "CronJobExecution",
+      "backupEssential": false,
       "entryClonable": true,
       "fields": [
         {

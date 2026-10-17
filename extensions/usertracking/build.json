@@ -8,6 +8,7 @@
         }
       },
       "name": "UserTracking",
+      "backupEssential": false,
       "searchOnKeyDown": false,
       "createdByIndex": false,
       "indexes": [

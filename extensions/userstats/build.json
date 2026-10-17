@@ -2,6 +2,7 @@
   "types": [
     {
       "name": "UserStats",
+      "backupEssential": false,
       "noUserRelation": true,
       "fields": [
         {

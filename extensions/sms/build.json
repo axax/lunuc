@@ -2,6 +2,7 @@
   "types": [
     {
       "name": "SmsLog",
+      "backupEssential": false,
       "subscription": false,
       "access": {
         "create": "anonymous",

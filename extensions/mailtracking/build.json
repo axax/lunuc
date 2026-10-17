@@ -5,6 +5,7 @@
         "create": "anonymous"
       },
       "name": "MailTracking",
+      "backupEssential": false,
       "fields": [
         {
           "name": "slug",

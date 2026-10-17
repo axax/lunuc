@@ -403,6 +403,7 @@
     },
     {
       "name": "NewsletterTracking",
+      "backupEssential": false,
       "noUserRelation": true,
       "fields": [
         {
