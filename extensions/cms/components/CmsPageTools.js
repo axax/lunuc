@@ -133,6 +133,11 @@ export default function CmsPageTools(props) {
     // Keys changed locally that are not yet reflected in props.data.
     const pendingKeysRef = useRef({})
 
+    // Last template value received via props. A new value there (save, undo,
+    // manual edit, other page) replaces the local working copy; otherwise
+    // operations would run against a stale tree and paths would not match.
+    const lastIncomingTemplateRef = useRef(props.data?.template)
+
     // Mirrors the last COMMITTED boxHeight so the resize handler can read the
     // current value without being re-created on every render.
     const boxHeightRef = useRef(boxHeight)
@@ -150,7 +155,12 @@ export default function CmsPageTools(props) {
         boxHeightRef.current = boxHeight
 
         const incoming = props.data || {}
-        const merged = {...incoming, template: dataRef.current.template ?? incoming.template}
+        let template = dataRef.current.template
+        if (incoming.template !== lastIncomingTemplateRef.current) {
+            lastIncomingTemplateRef.current = incoming.template
+            template = incoming.template
+        }
+        const merged = {...incoming, template: template ?? incoming.template}
 
         for (const key of Object.keys(pendingKeysRef.current)) {
             // Once the parent reports the value we applied, the edit has round

@@ -132,6 +132,13 @@ export function applyTemplateOperation(template, {path, operation, data, locatio
             `Operation "add" needs a path ending in an array index, got "${path}"`
         )
     }
+    // The addressed sibling must exist. Clamping a guessed index silently put
+    // nodes at the end of the wrong container.
+    if (index >= parent.length) {
+        throw new TemplateOpError(
+            `Index ${index} out of range at "${path}" (the container has ${parent.length} children)`
+        )
+    }
     const at = location === 'before' ? index : index + 1
     parent.splice(Math.max(0, Math.min(at, parent.length)), 0, newNode)
     return template
