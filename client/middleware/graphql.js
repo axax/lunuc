@@ -828,12 +828,21 @@ export const graphql = (query, operationOptions = {}) => {
                         data = deepMerge({}, prevData, res.data)
                     } else {
                         res.lang = _app_.lang
-                        // Keep last good data as fallback ONLY during a refetch (overlapping refetches),
-                        // otherwise a second rapid refetch loses cmsPage and the JsonDom remounts.
-                        // For organic slug changes we must NOT retain stale data, so the
-                        // "page no longer exists" case can still resolve to the ErrorPage.
-                        this.prevRespone = (refetchProps && !res.data && res.loading && prevData)
-                            ? {...res, data: prevData}
+                        // Keep last good data as fallback while loading, otherwise a second rapid
+                        // request (overlapping refetches, or fast url param changes e.g. typing in a
+                        // search field on a urlSensitiv page) loses the data and the JsonDom remounts.
+                        // - always during a refetch
+                        // - otherwise only if operationOptions.keepPrevData allows it (e.g. same cms slug).
+                        //   For organic slug changes we must NOT retain stale data, so the
+                        //   "page no longer exists" case can still resolve to the ErrorPage.
+                        const keepPrevData = !res.data && res.loading && prevData && (
+                            refetchProps ||
+                            (operationOptions.keepPrevData && operationOptions.keepPrevData(finalProps, prevData))
+                        )
+                        // keep the lang of the retained data as well: otherwise skip() would see
+                        // the NEW lang together with the OLD data and could skip the reload
+                        this.prevRespone = keepPrevData
+                            ? {...res, data: prevData, lang: this.prevRespone.lang}
                             : res
                     }
                     const props = operationOptions.props({

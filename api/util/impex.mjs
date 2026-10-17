@@ -49,10 +49,20 @@
  *
  * Writes go through GenericResolver, so access checks, hooks (typeCreated_..., typeUpdated_...)
  * and cache invalidation work exactly as when an entry is saved in the admin.
+ *
+ * Owner of new entries: option createdBy of runImpex / runImpexFile (user id or username), otherwise
+ * "createdBy" on the top level of the file, otherwise the user that runs the import. New entries get
+ * createdBy of that user and, for types with an ownerGroup field, its groups (unless the item sets
+ * ownerGroup), like an entry the user creates in the admin. Existing entries keep their owner.
+ * Setting another user needs the capability manage_other_users.
+ *
+ * Running an impex (also a dry run) needs the capability admin_options.
  */
 import fs from 'fs'
 import path from 'path'
 import {ObjectId} from 'mongodb'
+import Util from './index.mjs'
+import {CAPABILITY_ADMIN_OPTIONS} from '../../util/capabilities.mjs'
 
 export const IMPEX_MODES = ['INSERT', 'UPDATE', 'INSERT_UPDATE', 'REMOVE']
 export const DEFAULT_ALLOWED_TYPES = ['GenericDataDefinition', 'GenericData', 'CronJob', 'Hook', 'Api', 'KeyValue', 'KeyValueGlobal', 'Media']
@@ -121,7 +131,9 @@ const DATA_PREFIXED = k => k === '_id' || k === 'definition' || k.startsWith('da
  *   resolver, cache        injectable for tests (default GenericResolver / util/cache)
  *   log                    function(line)
  */
-export const runImpex = async ({db, context, dir, file, dryRun = false, doneDir, allowedTypes = DEFAULT_ALLOWED_TYPES, resolver, cache, uploadDir, log = console.log}) => {
+export const runImpex = async ({db, context, dir, file, dryRun = false, doneDir, allowedTypes = DEFAULT_ALLOWED_TYPES, resolver, cache, uploadDir, createdBy, log = console.log}) => {
+    // before anything is read or moved
+    await Util.checkIfUserHasCapability(db, context, CAPABILITY_ADMIN_OPTIONS)
     if (!resolver) {
         resolver = (await import('../resolver/generic/genericResolver.mjs')).default
     }
@@ -136,7 +148,7 @@ export const runImpex = async ({db, context, dir, file, dryRun = false, doneDir,
     const summary = []
     for (const name of files) {
         const result = await runImpexFile({
-            db, context, filePath: path.join(root, name), dryRun, allowedTypes, resolver, cache, uploadDir, log
+            db, context, filePath: path.join(root, name), dryRun, allowedTypes, resolver, cache, uploadDir, createdBy, log
         })
         summary.push(result)
         if (!dryRun && doneDir && result.errors.length === 0) {
@@ -155,7 +167,8 @@ export const runImpex = async ({db, context, dir, file, dryRun = false, doneDir,
     return summary
 }
 
-export const runImpexFile = async ({db, context, filePath, dryRun = false, allowedTypes = DEFAULT_ALLOWED_TYPES, resolver, cache, uploadDir, log = console.log}) => {
+export const runImpexFile = async ({db, context, filePath, dryRun = false, allowedTypes = DEFAULT_ALLOWED_TYPES, resolver, cache, uploadDir, createdBy, log = console.log}) => {
+    await Util.checkIfUserHasCapability(db, context, CAPABILITY_ADMIN_OPTIONS)
     // also usable directly (e.g. from an api script), not only through runImpex
     if (!resolver) {
         resolver = (await import('../resolver/generic/genericResolver.mjs')).default
@@ -183,6 +196,34 @@ export const runImpexFile = async ({db, context, filePath, dryRun = false, allow
         return result
     }
     out(`${name}: ${content.description || ''} (${new Date().toISOString()})`)
+
+    // owner of new entries (see header): option, then "createdBy" of the file, else the running user
+    let owner = null
+    const ownerRef = createdBy || content.createdBy
+    if (ownerRef) {
+        const ref = String(ownerRef).trim()
+        owner = await db.collection('User').findOne(
+            ObjectId.isValid(ref) && /^[0-9a-f]{24}$/i.test(ref) ? {_id: new ObjectId(ref)} : {username: ref},
+            {projection: {_id: 1, username: 1, group: 1}})
+        if (!owner) {
+            fail(`${name}: user ${ref} for new entries not found`)
+            return result
+        }
+        out(`${name}: new entries are created as user ${owner.username} (${owner._id})`)
+    }
+    const ownerGroupFieldCache = {}
+    const typeHasOwnerGroup = async (type) => {
+        if (ownerGroupFieldCache[type] === undefined) {
+            try {
+                const {getType} = await import('../../util/types.mjs')
+                const typeDef = getType(type)
+                ownerGroupFieldCache[type] = !!(typeDef && (typeDef.fields || []).some(f => f.name === 'ownerGroup'))
+            } catch (e) {
+                ownerGroupFieldCache[type] = false
+            }
+        }
+        return ownerGroupFieldCache[type]
+    }
 
     if (!context.lang) {
         context = {...context, lang: 'de'}
@@ -455,6 +496,13 @@ export const runImpexFile = async ({db, context, filePath, dryRun = false, allow
                     if (!dryRun) {
                         const data = encode({...values})
                         if (isGenericData) data.definition = String(definitionId)
+                        if (owner) {
+                            data.createdBy = String(owner._id)
+                            if (data.ownerGroup === undefined && Array.isArray(owner.group) && owner.group.length > 0 &&
+                                await typeHasOwnerGroup(op.type)) {
+                                data.ownerGroup = owner.group.map(g => String(g))
+                            }
+                        }
                         created = await resolver.createEntity(db, {context}, op.type, data, {skipCheck: false})
                     }
                     // the created _id can be an ObjectId or still the extended json {$oid} of the item

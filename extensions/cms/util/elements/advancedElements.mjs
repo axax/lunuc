@@ -177,6 +177,8 @@ export const buildAdvancedElements = () => [
         tagName: 'Cms',
         name: _t('elements.cmsComponent'),
         icon: 'functions',
+        // component settings first, they are what is edited most of the time
+        primaryTab: 'elements.cmsComponent',
         defaults: {
             $inlineEditor: {elementKey: 'Cms'},
             p: {

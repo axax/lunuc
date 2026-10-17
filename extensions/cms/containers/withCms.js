@@ -323,6 +323,9 @@ export default function (WrappedComponent) {
                 }
                 return false
             },
+            // keep the current page visible while the same page reloads with new url params
+            // (e.g. ?s=... on every keystroke), even if a previous request got canceled
+            keepPrevData: (props, prevData) => !!(prevData && prevData.cmsPage && prevData.cmsPage.slug === props.slug),
             options(ownProps) {
                 let hiddenVariables
                 if (!ownProps.dynamic) {

@@ -118,6 +118,112 @@ const loadReferences = (missing, container) => {
     })
 }
 
+/*
+ pickerField with a path into a referenced entry, e.g. ["name", "parent.name"] for a Bereich with its parent:
+ the label is "Erfolgsrechnung / Feuerwehr RTL". The reference can be an id, {_id, data} or an array of them;
+ the data of entries that are only referenced by id are loaded once (batched) and cached by _id.
+ Dotted paths into normal objects (e.g. "meta.mobile") keep working as before.
+ */
+const OBJECT_ID = /^[0-9a-f]{24}$/
+const refData = {}
+let refDataQueue = null
+
+const parseRefData = data => {
+    if (typeof data === 'string') {
+        try {
+            return JSON.parse(data)
+        } catch (e) {
+            return {}
+        }
+    }
+    return data || {}
+}
+
+const loadRefData = (id, onUpdate) => {
+    if (!refDataQueue) {
+        refDataQueue = {ids: new Set(), callbacks: new Set()}
+        setTimeout(() => {
+            const {ids, callbacks} = refDataQueue
+            refDataQueue = null
+            const list = Array.from(ids)
+            client.query({
+                fetchPolicy: 'cache-first',
+                query: 'query genericDatas($filter:String,$limit:Int){genericDatas(filter:$filter,limit:$limit){results{_id data}}}',
+                variables: {limit: list.length, filter: list.map(i => `_id==${i}`).join(' || ')}
+            }).then(({data}) => {
+                ((data && data.genericDatas && data.genericDatas.results) || []).forEach(r => {
+                    refData[r._id] = parseRefData(r.data)
+                })
+            }).catch(e => {
+                console.warn('references for label could not be loaded', e)
+            }).finally(() => {
+                // not found: no further requests
+                list.forEach(i => {
+                    if (refData[i] === undefined) refData[i] = null
+                })
+                callbacks.forEach(cb => cb())
+            })
+        }, 0)
+    }
+    if (refData[id] === undefined) {
+        refDataQueue.ids.add(id)
+    }
+    if (onUpdate) {
+        refDataQueue.callbacks.add(onUpdate)
+    }
+}
+
+const labelText = v => {
+    if (v && v.constructor === Object) {
+        v = v[_app_.lang] || Object.values(v).find(x => typeof x === 'string')
+    }
+    return v === undefined || v === null ? '' : String(v)
+}
+
+// returns {isRef, value}: isRef false if the first part of the path is not a reference
+const referencedValue = (data, path, onUpdate) => {
+    const dot = path.indexOf('.')
+    let ref = data[path.substring(0, dot)]
+    const subPath = path.substring(dot + 1)
+    if (Array.isArray(ref)) {
+        ref = ref[0]
+    }
+    if (ref && ref.constructor === Object && ref._id) {
+        if (ref.data) {
+            return {isRef: true, value: propertyByPath(subPath, parseRefData(ref.data))}
+        }
+        ref = String(ref._id)
+    }
+    if (typeof ref !== 'string' || !OBJECT_ID.test(ref)) {
+        return {isRef: false}
+    }
+    if (refData[ref] === undefined) {
+        loadRefData(ref, onUpdate)
+        return {isRef: true, value: ''}
+    }
+    return {isRef: true, value: refData[ref] ? propertyByPath(subPath, refData[ref]) : ''}
+}
+
+const labelWithReferences = (data, pickerField, onUpdate) => {
+    const pickers = [].concat(pickerField || [])
+    if (!data || !pickers.some(p => typeof p === 'string' && p.indexOf('.') > 0)) {
+        return null
+    }
+    let hasRef = false
+    const parts = pickers.map(p => {
+        if (typeof p !== 'string') return ''
+        if (p.indexOf('.') > 0) {
+            const {isRef, value} = referencedValue(data, p, onUpdate)
+            if (isRef) {
+                hasRef = true
+                return labelText(value)
+            }
+        }
+        return labelText(propertyByPath(p, data))
+    })
+    return hasRef ? parts.filter(Boolean).join(' / ') : null
+}
+
 export default () => {
 
 
@@ -699,6 +805,19 @@ export default () => {
             } else {
                 dataFieldsToProject = fieldsToProject.slice(0)
             }
+            if (dataFieldsToProject) {
+                // "parent.name": keep the reference (id) itself, the label is resolved from it
+                dataFieldsToProject = dataFieldsToProject.map(f => {
+                    if (typeof f === 'string' && f.indexOf('.') > 0) {
+                        const first = f.substring(0, f.indexOf('.'))
+                        const v = parseRefData(rawValue.data)[first]
+                        if (typeof v === 'string' && OBJECT_ID.test(v)) {
+                            return first
+                        }
+                    }
+                    return f
+                }).filter((f, i, arr) => arr.indexOf(f) === i)
+            }
 
             if (dataFieldsToProject && dataFieldsToProject.length > 0) {
                 // project data
@@ -876,6 +995,14 @@ export default () => {
                     } catch (e) {
                         console.log(e)
                     }
+                }
+            }
+
+            // e.g. ["name", "parent.name"] -> "Erfolgsrechnung / Feuerwehr RTL"
+            if (context.item && context.item.constructor === Object) {
+                const label = labelWithReferences(context.item, context.pickerField, context.onUpdate)
+                if (label !== null) {
+                    context.item = label
                 }
             }
         }

@@ -130,7 +130,8 @@ Special values:
 - `{"$file": "scripts/hook.js"}` → text of a file (relative to the impex file) · `{"$json": {…}}` → stored as JSON string · `{"$oid"}`, `{"$date"}` → Mongo extended JSON.
 - Media: item with `"$uploadFile": "../files/x.jpg"` or `"$uploadBase64": "<base64>"` → file written to the upload folder under the entry's `_id` (skipped if same size exists). Use `"key": ["_id"]` + `"_id": {"$oid": "…"}` to keep source-system ids so references stay valid; `size` is filled from the file.
 
-Writes go through `GenericResolver` (access rights of the cronjob creator, hooks, cache invalidation).
+Writes go through `GenericResolver` (access rights of the cronjob creator, hooks, cache invalidation). Running an impex (also dry run) needs the capability `admin_options` (checked in `runImpex` / `runImpexFile`).
+Owner of new entries: user chosen on the page `system/impex`, else `"createdBy": "<username or id>"` on the top level of the file, else the running user. New entries get that user's `createdBy` (+ its `ownerGroup` if the item sets none); existing entries keep their owner. Needs `manage_other_users`.
 
 ## Commands
 

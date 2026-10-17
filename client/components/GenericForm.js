@@ -45,6 +45,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import IconButton from '@mui/material/IconButton'
 import {showTooltip, hideTooltip} from '../util/tooltip'
 import {translateText} from '../util/translate.mjs'
+import {convertRawValuesFromPicker, openTypePickerWindow} from '../util/picker'
 import {QUERY_KEY_VALUES_GLOBAL} from '../util/keyvalue'
 import {replacePlaceholders} from '../../util/placeholders.mjs'
 import {SimpleAutosuggest} from './ui/impl/material'
@@ -1183,6 +1184,8 @@ class GenericForm extends React.Component {
 
                                            }}>{field.addButton || field.label}</Button>)
 
+            this.renderBulkAddButton(field, fieldKey, subFields, subFieldValues, currentFormFields)
+
         } else {
 
 
@@ -1211,6 +1214,72 @@ class GenericForm extends React.Component {
         currentFormFields.push(<br key={'brMeta' + fieldKey}/>)
     }
 
+
+    /*
+     * Multi wrapper fields (multi + subFields) can set "bulkAdd" to add many entries at once:
+     * the type picker of one sub field (uitype type_picker, e.g. Media) is opened with multi selection
+     * and a new entry is created for every picked item.
+     *   "bulkAdd": "image"
+     *   "bulkAdd": {"field": "image", "label": "Mehrere Bilder auswählen", "defaults": {"size": "m"}}
+     */
+    renderBulkAddButton(field, fieldKey, subFields, subFieldValues, currentFormFields) {
+        if (!field.bulkAdd) {
+            return
+        }
+        const bulkAdd = isString(field.bulkAdd) ? {field: field.bulkAdd} : field.bulkAdd
+        const pickerField = subFields[bulkAdd.field]
+        if (!pickerField || !pickerField.type) {
+            console.warn(`GenericForm: bulkAdd field ${bulkAdd.field} not found or has no type`)
+            return
+        }
+        currentFormFields.push(<Button key={'bulkAdd' + fieldKey}
+                                       color={field.addButtonColor || 'primary'}
+                                       variant="outlined"
+                                       size="small"
+                                       startIcon={<AddIcon/>}
+                                       disabled={field.readOnly || field.uiReadOnly}
+                                       style={{marginLeft: '0.5rem', ...field.style}}
+                                       onClick={() => {
+                                           openTypePickerWindow({
+                                               type: pickerField.type,
+                                               multi: true,
+                                               filter: pickerField.filter,
+                                               genericType: pickerField.genericType,
+                                               label: bulkAdd.label || pickerField.label,
+                                               onSelect: (rawValue) => {
+                                                   const rawItems = Array.isArray(rawValue) ? rawValue : [rawValue]
+                                                   if (rawItems.length === 0) {
+                                                       return
+                                                   }
+                                                   let fieldsToProject = pickerField.projection || pickerField.queryFields
+                                                   if (!fieldsToProject && pickerField.pickerField) {
+                                                       fieldsToProject = [].concat(pickerField.pickerField, '_id')
+                                                   }
+                                                   // read the current values again, the form may have changed in the meantime
+                                                   const currentValues = propertyByPath(fieldKey, this.state.fields)
+                                                   const newValues = Array.isArray(currentValues) ? currentValues.slice(0) : subFieldValues.slice(0)
+                                                   rawItems.forEach(raw => {
+                                                       const picked = convertRawValuesFromPicker({
+                                                           type: pickerField.type,
+                                                           fieldsToProject: fieldsToProject ? fieldsToProject.slice(0) : [],
+                                                           rawValue: {...raw},
+                                                           multi: false
+                                                       })
+                                                       newValues.push({
+                                                           ...JSON.parse(JSON.stringify(bulkAdd.defaults || {})),
+                                                           [pickerField.name]: picked
+                                                       })
+                                                   })
+                                                   this.handleInputChange({
+                                                       target: {
+                                                           name: fieldKey,
+                                                           value: newValues
+                                                       }
+                                                   })
+                                               }
+                                           })
+                                       }}>{bulkAdd.label || _t('GenericForm.bulkAdd')}</Button>)
+    }
 
     /*
      * Render cache per field: on every keystroke the whole form re-renders. Returning the identical

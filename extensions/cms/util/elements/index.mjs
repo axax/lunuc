@@ -26,6 +26,7 @@ const tabRank = field => TAB_RANK[field.tab] !== undefined ? TAB_RANK[field.tab]
  * Arranges the options for the settings dialog (keys and stored values are unchanged):
  * options without tab go to "Erweitert", the tabs get a fixed order (the dialog creates them in the order of
  * the first field) and the options listed in element.optionOrder come first in their tab.
+ * element.primaryTab: this tab comes first (before "Allgemein") and is the one opened in the dialog.
  */
 const arrangeElementOptions = element => {
     const options = element.options
@@ -45,7 +46,8 @@ const arrangeElementOptions = element => {
         return i < 0 ? order.length + keys.indexOf(key) : i
     }
     const arranged = {}
-    keys.sort((a, b) => (tabRank(options[a]) - tabRank(options[b])) || (pos(a) - pos(b)))
+    const rank = field => element.primaryTab && field.tab === element.primaryTab ? -1 : tabRank(field)
+    keys.sort((a, b) => (rank(options[a]) - rank(options[b])) || (pos(a) - pos(b)))
         .forEach(key => {
             arranged[key] = options[key]
         })

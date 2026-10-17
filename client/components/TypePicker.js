@@ -149,6 +149,17 @@ class TypePicker extends React.Component {
 
     pickTimeout = 0
 
+    // labels can be completed asynchronously (see typeDataToLabel onUpdate)
+    refreshLabels = () => {
+        if (!this.unmounted) {
+            this.forceUpdate()
+        }
+    }
+
+    componentWillUnmount() {
+        this.unmounted = true
+    }
+
     shouldComponentUpdate(props, state) {
         return state.textValue !== this.state.textValue ||
             state.value !== this.state.value ||
@@ -268,7 +279,7 @@ class TypePicker extends React.Component {
                         }}
                     >
                         {isValidImage(item) ? getImageTag(item, {size:'avatar',style:'margin-right:5px',height: 40}) : ''}
-                        {typeDataToLabel(item, pickerField)}
+                        {typeDataToLabel(item, pickerField, this.refreshLabels)}
                     </MenuItem>
                 )}
 
@@ -328,7 +339,7 @@ class TypePicker extends React.Component {
 
                                 <StyledDummyImage isMulti={multi}
                                      src={getImageSrc(singleValue,'thumbnail')}/>
-                                <StyledDummyImageText>{typeDataToLabel(singleValue, pickerField)}</StyledDummyImageText>
+                                <StyledDummyImageText>{typeDataToLabel(singleValue, pickerField, this.refreshLabels)}</StyledDummyImageText>
 
                                 {!readOnly && <StyledDummyButton sx={{left:'4px'}} edge="end"
                                                           onClick={this.handleRemovePick.bind(this, singleValueIndex)}>
@@ -354,7 +365,7 @@ class TypePicker extends React.Component {
                                                           e.dataTransfer.setData('text', e.target.getAttribute('data-index'));
                                                       }}>
                                     <CardContent>
-                                        {fieldTemplate ? Util.replacePlaceholders(fieldTemplate, singleValue) : typeDataToLabel(singleValue, pickerField)}
+                                        {fieldTemplate ? Util.replacePlaceholders(fieldTemplate, singleValue) : typeDataToLabel(singleValue, pickerField, this.refreshLabels)}
                                         <GenericForm autoFocus
                                                      onBlur={event => {
                                                      }}
@@ -410,7 +421,7 @@ class TypePicker extends React.Component {
                                                           e.dataTransfer.setData('text', e.target.getAttribute('data-index'))
                                                       }}
                                                       key={singleValueIndex}
-                                                      label={(multi && value.length > 1?(singleValueIndex+1) + '. ':'') +typeDataToLabel(singleValue, pickerField)}
+                                                      label={(multi && value.length > 1?(singleValueIndex+1) + '. ':'') +typeDataToLabel(singleValue, pickerField, this.refreshLabels)}
                                                       onDelete={!readOnly && this.handleRemovePick.bind(this, singleValueIndex)}
                                                       onClick={() => {
                                                           if (singleValue.type === 'Media' || singleValue.__typename === 'Media') {

@@ -23,14 +23,18 @@ Object.keys(extensionsPrivate).forEach(key => {
 
 const typeFormFields = {}
 
-export const typeDataToLabel = (item, pickerField) => {
+/*
+ onUpdate (optional): called when a hook loads missing data for the label asynchronously
+ (e.g. GenericData pickerField "parent.name"), the caller renders the label again
+ */
+export const typeDataToLabel = (item, pickerField, onUpdate) => {
     let label = []
 
     if (!item) {
         return 'null'
     }
 
-    const context = {item, pickerField}
+    const context = {item, pickerField, onUpdate}
 
     Hook.call('typeDataToLabel', context)
 
