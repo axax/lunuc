@@ -12,6 +12,7 @@ import {addGenericTypeLookup, postLookupResult} from './addGenericTypeLookup.mjs
 import ClientUtil from '../../client/util/index.mjs'
 import {resolveDynamicFieldQuery} from '../../api/resolver/generic/postQueryConverter.mjs'
 import {schema as fieldTemplatesSchema, resolver as fieldTemplatesResolver} from './fieldTemplates.mjs'
+import {narrowDefinitionProjection} from './narrowDefinitionProjection.mjs'
 
 
 /*
@@ -265,6 +266,7 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions
         const genericType = otherOptions.genericType || otherOptions.meta
 
         if (genericType) {
+            narrowDefinitionProjection(data, otherOptions)
             const def = await getGenericTypeDefinitionWithStructure(db, {name: genericType})
             if (def && def.structure) {
                 const struct = def.structure

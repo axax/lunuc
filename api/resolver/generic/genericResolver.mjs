@@ -14,6 +14,7 @@ import {_t} from '../../../util/i18nServer.mjs'
 import {createMatchForCurrentUser} from '../../util/dbquery.mjs'
 import {findQueryHint, findCoveringIndex, clearIndexCache} from '../../util/queryHint.mjs'
 import postQueryConvert from './postQueryConverter.mjs'
+import {unbatchPipeline} from './lookupBatching.mjs'
 import {ApiError} from "../../error.mjs";
 
 // ─── helpers (module-level, not inside the method) ──────────────────────────
@@ -287,11 +288,19 @@ const GenericResolver = {
 
         otherOptions.limitCount = 10000
 
+        const GenericResolverOptions = await Util.getKeyValueGlobal(db, null, 'GenericResolverOptions', true) || {}
+
         const builderArgs = [typeName, data, db, {
             match,
             includeCount: includeCount !== false && !estimateCount,
             lang: context.lang,
             includeUserFilter: userCanManageOtherUsers,
+            // Batched reference lookups (lookupBatching.mjs) - can be switched off
+            // globally with GenericResolverOptions.batchLookups = false or per call;
+            // lookupBatchMaxIds / lookupBatchMaxDocs bound the size of a batch.
+            batchLookups: GenericResolverOptions.batchLookups !== false,
+            ...(GenericResolverOptions.lookupBatchMaxIds ? {lookupBatchMaxIds: GenericResolverOptions.lookupBatchMaxIds} : {}),
+            ...(GenericResolverOptions.lookupBatchMaxDocs ? {lookupBatchMaxDocs: GenericResolverOptions.lookupBatchMaxDocs} : {}),
             ...otherOptions,
         }]
 
@@ -301,17 +310,29 @@ const GenericResolver = {
 
         //console.log(JSON.stringify(dataQuery,null,4),JSON.stringify(otherOptions,null,4))
 
-        const GenericResolverOptions = await Util.getKeyValueGlobal(db, null, 'GenericResolverOptions', true) || {}
-
         if(GenericResolverOptions.debug) {
             debugInfo.push({label: 'Data Query', json: dataQuery})
         }
         // ── run aggregate ──────────────────────────────────────────────────────
         const collection = db.collection(collectionName)
 
-        const runAggregate = createAggregateRunner({
+        const runAggregateOnce = createAggregateRunner({
             collection, collectionName, typeName, otherOptions, db, req, context
         })
+        // Batched lookups must never break a query: if MongoDB rejects the batched
+        // form (MongoDB < 5.0, memory limit of a batch ...), it runs once more in
+        // the original per-document form - the result is the same either way.
+        // Not after a timeout or an interruption, a retry would only double that.
+        const runAggregate = async (label, pipeline, aggOptions) => {
+            try {
+                return await runAggregateOnce(label, pipeline, aggOptions)
+            } catch (error) {
+                const plain = unbatchPipeline(pipeline)
+                if (plain === pipeline || [50, 262, 11601].includes(error?.code)) throw error
+                console.warn(`GenericResolver: batched lookups rejected for ${collectionName} (${error.message}) - retry without batching`)
+                return await runAggregateOnce(label + ' (unbatched)', plain, aggOptions)
+            }
+        }
 
         // Pin an index where the multi-planner reliably picks badly ($function
         // in the match, or a regex on an indexed field losing against the _id

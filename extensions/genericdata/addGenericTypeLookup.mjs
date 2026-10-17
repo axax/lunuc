@@ -3,6 +3,7 @@ import GenericResolver from '../../api/resolver/generic/genericResolver.mjs'
 import {findProjection} from '../../util/project.mjs'
 import {getGenericTypeDefinitionWithStructure} from './util/index.mjs'
 import {narrowLookupProjection} from './narrowLookupProjection.mjs'
+import {markBatchableLookup} from '../../api/resolver/generic/lookupBatching.mjs'
 
 /**
  * Element of the lookup result `rows` whose _id equals ids[i], or MISSING if
@@ -187,7 +188,9 @@ function addGenericTypeLookupForType(field, otherOptions, projection) {
     // single $lookup for all cases — order & duplicates are restored afterwards, so no keepOrder sorting needed
     // An empty sub-pipeline is left out: the plain localField/foreignField form
     // is equivalent and can run in the faster SBE engine.
-    otherOptions.lookups.push({
+    // Batchable: the $addFields below reads the lookup rows only by _id, so the
+    // builder may run one lookup for a whole batch of documents (lookupBatching.mjs).
+    otherOptions.lookups.push(markBatchableLookup({
         $lookup: {
             from: field.type,
             localField: `${field.name}ObjectId`,
@@ -195,7 +198,7 @@ function addGenericTypeLookupForType(field, otherOptions, projection) {
             as: `data.${field.name}`,
             ...(pipeline.length > 0 ? {pipeline} : {}),
         }
-    })
+    }))
 
     // A $lookup join is deduplicated by _id and has no guaranteed order. Rebuild the array
     // positionally from the (order- and duplicate-preserving) id list and join each position

@@ -8,6 +8,7 @@ import {
     makeAllMatchAnAndMatch,
     DEEP_SEARCH_META
 } from '../../util/dbquery.mjs'
+import {batchLookups, onlyPerDocumentStages} from './lookupBatching.mjs'
 
 
 export default class AggregationBuilderV2 {
@@ -607,7 +608,33 @@ export default class AggregationBuilderV2 {
 
         // Add any caller-provided lookups and the built-in field lookups
         if (this.options.lookups) lookups.push(...this.options.lookups)
-        for (const lookup of lookups) dataFacetQuery.push(lookup)
+        // Reference lookups marked as batchable run once per batch of documents
+        // instead of once per document (lookupBatching.mjs). The batches leave in
+        // a different order, so only when nothing depends on that order:
+        //  - a sort exists: the lookups come from options.lookups, which forces
+        //    the $group path below and with it the trailing $sort: facetSort
+        //    (with _id tiebreaker) - the final order is fully determined;
+        //  - every stage around the lookups treats documents one by one. An
+        //    $unwind + $push (wrapper fields), custom group accumulators or
+        //    injected before / beforeGroup / afterRootMatch stages could depend
+        //    on the order of the documents or see several per _id - not batched;
+        //  - more than one document can reach the lookups.
+        const beforeProjectStages = this.options.beforeProject
+            ? (this.options.beforeProject.constructor === Array ? this.options.beforeProject : [this.options.beforeProject])
+            : []
+        const canBatchLookups =
+            hasSort && !!this.options.lookups && this.options.batchLookups !== false &&
+            !this.options.group && !this.options.before && !this.options.beforeGroup && !this.options.afterRootMatch &&
+            Object.values(groups).every(value => value && '$first' in value) &&
+            onlyPerDocumentStages(lookups) && onlyPerDocumentStages(beforeProjectStages) &&
+            (!!lookupFilters || limit > 1)
+        const batchedLookups = canBatchLookups
+            ? batchLookups(lookups, {maxIds: this.options.lookupBatchMaxIds, maxDocs: this.options.lookupBatchMaxDocs})
+            : lookups
+        if (batchedLookups !== lookups) {
+            this.debugInfo?.push({code: 'batchLookups', message: 'reference lookups batched (lookupBatching.mjs)'})
+        }
+        for (const lookup of batchedLookups) dataFacetQuery.push(lookup)
 
         if (hasLookupMatch) {
             dataFacetQuery.push({ $match: lookupMatch })
