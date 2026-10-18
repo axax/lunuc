@@ -28,6 +28,7 @@ import {matchExpr, parseOrElse} from '../../../client/util/json.mjs'
 import {userHasAccessToObject} from '../../../api/util/access.mjs'
 import {getCmsPagesForExport, createCmsPagesZip, readCmsPagesZip, importCmsPages} from '../util/cmsPageFilesServer.mjs'
 import {filesToCmsPages} from '../util/cmsPageFiles.mjs'
+import {findCmsIncludes, cmsPageForInclude, MAX_INCLUDE_DEPTH, MAX_INCLUDES} from '../util/cmsIncludes.mjs'
 
 
 const createScopeForDataResolver = (query, _props) => {
@@ -131,10 +132,16 @@ export default db => ({
             })
             return data
         },
-        cmsPage: async ({slug, query, props, nosession, editmode, dynamic, inEditor, meta, _version}, req) => {
+        cmsPage: async function resolveCmsPage({slug, query, props, nosession, editmode, dynamic, inEditor, meta, _version}, req, info) {
+            // set when the page is resolved as include of another page (see util/cmsIncludes.mjs)
+            const includeState = info && info.__cmsInclude ? info : null
             const startTime = Date.now()
             const {context, headers} = req
             meta = parseOrElse(meta,{})
+            // included components the client already has (withCms.js). Removed from meta,
+            // meta is passed to the data resolver and stored by the tracking
+            const cachedIncludeKeys = Array.isArray(meta.includes) ? meta.includes : null
+            delete meta.includes
 
             // Server-Timing (diagnostic only, no influence on the result)
             const tStart = performance.now()
@@ -145,7 +152,9 @@ export default db => ({
             tGetPage = performance.now() - tStart
 
             if (!cmsPages.results || cmsPages.results.length === 0) {
-                Hook.call('track404', {req, event: '404', slug, db, context, data: query, meta})
+                if (!includeState) {
+                    Hook.call('track404', {req, event: '404', slug, db, context, data: query, meta})
+                }
                 throw new Error('Cms page doesn\'t exist')
             }
 
@@ -308,7 +317,57 @@ export default db => ({
                 }
             }
 
-            if(meta === 'fetchMore' || meta.isFetchMore /* || meta.isRefetch*/){
+            // Optional: embedded components with p.include are resolved right away and returned in
+            // `includes`, so the client does not need an extra request for them (util/cmsIncludes.mjs).
+            // Not for editors: their components can be requested in edit mode (forceEditMode)
+            const isFetchMore = meta === 'fetchMore' || meta.isFetchMore
+            if (result.template && !editmode && !inEditor && !isFetchMore &&
+                (!includeState || includeState.depth < MAX_INCLUDE_DEPTH)) {
+                const specs = findCmsIncludes(result.template, `${result.realSlug}|${_version || ''}|${modifiedAt}`)
+                if (specs.length > 0 && !await Util.userHasCapability(db, context, CAPABILITY_VIEW_CMS_EDITOR)) {
+                    // components the client already has in its cache are not sent again (meta.includes)
+                    const shared = includeState ? includeState.shared : {
+                        count: 0, list: [],
+                        done: new Set(cachedIncludeKeys ? cachedIncludeKeys.slice(0, 50).filter(k => typeof k === 'string') : [])
+                    }
+                    const depth = includeState ? includeState.depth : 0
+                    await Promise.all(specs.map(async spec => {
+                        const key = spec.slug + '|' + spec.props
+                        if (shared.done.has(key) || shared.count >= MAX_INCLUDES) {
+                            return
+                        }
+                        shared.done.add(key)
+                        shared.count++
+                        // same variables as the request of the component (getGqlVariables / getSlugVersion)
+                        let childSlug = spec.slug, childVersion
+                        if (childSlug.indexOf('@') === 0) {
+                            const pos = childSlug.indexOf('/')
+                            childVersion = pos >= 0 ? childSlug.substring(1, pos) : childSlug.substring(1)
+                            childSlug = pos >= 0 ? childSlug.substring(pos + 1) : ''
+                        }
+                        try {
+                            const child = await resolveCmsPage({
+                                slug: childSlug,
+                                _version: childVersion,
+                                props: spec.props || undefined,
+                                nosession,
+                                dynamic: true
+                            }, req, {__cmsInclude: true, depth: depth + 1, shared})
+                            if (child) {
+                                shared.list.push({slug: spec.slug, props: spec.props, cmsPage: cmsPageForInclude(child)})
+                            }
+                        } catch (e) {
+                            // not included -> the component is loaded by its own request as before
+                            console.warn(`CMS: include ${spec.slug} in ${slug} failed: ${e.message}`)
+                        }
+                    }))
+                    if (!includeState && shared.list.length > 0) {
+                        result.includes = JSON.stringify(shared.list)
+                    }
+                }
+            }
+
+            if(isFetchMore /* || meta.isRefetch*/){
                 delete result.dataResolver
                 delete result.serverScript
                 delete result.manual
@@ -323,7 +382,7 @@ export default db => ({
                 console.debug(`CMS: resolver for ${slug} got data in ${elapsedTime}ms`)
             }
 
-            if (SERVER_TIMING_ENABLED) {
+            if (SERVER_TIMING_ENABLED && !includeState) {
                 const entries = [
                     timingEntry('cms-getpage', tGetPage),
                     timingEntry('cms-resolvedata', tResolveData)

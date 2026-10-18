@@ -26,6 +26,76 @@ const ErrorPage = (props) => <Async {...props}
 const CmsViewEditorContainer = (props) => <Async {...props}
                                                  load={() =>import(/* webpackChunkName: "admin" */ './CmsViewEditorContainer')}/>
 
+/*
+ Embedded components that the server returned together with the page (option "include" of a Cms
+ component, see util/cmsIncludes.mjs). They are put into the query cache under the same cache key
+ the component uses for its own request (getGqlVariables), so the component renders from the cache
+ without a request. If the variables of the component differ, it is a cache miss and the component
+ loads as before.
+ */
+const writtenIncludes = new WeakSet()
+// include key (slug|props) -> cache location, to tell the server which includes are already cached
+const cachedIncludes = new Map()
+const MAX_CACHED_INCLUDE_KEYS = 50
+
+// keys of included components that are still in the cache -> the server does not send them again
+const getCachedIncludeKeys = () => {
+    const keys = []
+    cachedIncludes.forEach((location, key) => {
+        if (keys.length < MAX_CACHED_INCLUDE_KEYS) {
+            if (client.readQuery(location)) {
+                keys.push(key)
+            } else {
+                cachedIncludes.delete(key)
+            }
+        }
+    })
+    return keys
+}
+
+const writeCmsIncludesToCache = (cmsPage) => {
+    if (!cmsPage || !cmsPage.includes || writtenIncludes.has(cmsPage)) {
+        return
+    }
+    writtenIncludes.add(cmsPage)
+    let list
+    try {
+        list = JSON.parse(cmsPage.includes)
+    } catch (e) {
+        return
+    }
+    if (!Array.isArray(list)) {
+        return
+    }
+    list.forEach(include => {
+        if (!include || !include.slug) {
+            return
+        }
+        let _props
+        if (include.props) {
+            try {
+                _props = {$: JSON.parse(include.props)}
+            } catch (e) {
+                return
+            }
+        }
+        const componentProps = {slug: include.slug, dynamic: true, _props}
+        const variables = getGqlVariables(componentProps)
+        const query = getCmsPageQuery(componentProps)
+        const isCached = !!client.readQuery({query, variables})
+        if (!include.cmsPage) {
+            // marker without data: the component was preloaded into the html (server/util/file.mjs)
+            if (!isCached) {
+                return
+            }
+        } else if (!isCached) {
+            // do not overwrite data that is already in the cache (e.g. updated by a subscription)
+            client.writeQuery({query, variables, data: {cmsPage: include.cmsPage}})
+        }
+        cachedIncludes.set(include.slug + '|' + (include.props || null), {query, variables})
+    })
+}
+
 // enhance cmsview with editor functionalities if in edit mode
 export default function (WrappedComponent) {
 
@@ -330,8 +400,14 @@ export default function (WrappedComponent) {
                 let hiddenVariables
                 if (!ownProps.dynamic) {
                     const urlStack = ownProps.history && ownProps.history._urlStack
+                    const cachedIncludeKeys = getCachedIncludeKeys()
                     hiddenVariables = {
-                        meta: JSON.stringify({isRefetch: ownProps.isRefetch, referer: urlStack && urlStack.length > 1 ? urlStack[1] : document.referrer})
+                        meta: JSON.stringify({
+                            isRefetch: ownProps.isRefetch,
+                            referer: urlStack && urlStack.length > 1 ? urlStack[1] : document.referrer,
+                            // included components the client already has (see writeCmsIncludesToCache)
+                            ...(cachedIncludeKeys.length > 0 && {includes: cachedIncludeKeys})
+                        })
                     }
                 }
                 return {
@@ -358,6 +434,8 @@ export default function (WrappedComponent) {
                         result.aboutToChange = true
                     }
                     urlSensitivMap[cmsPage.slug] = cmsPage.urlSensitiv
+                    // before the embedded components are rendered
+                    writeCmsIncludesToCache(cmsPage)
                 }
                 return result
             }

@@ -198,6 +198,14 @@ export const buildAdvancedElements = () => [
                 multi: false,
                 fullWidth: true
             },
+            // the server returns the component together with the page (util/cmsIncludes.mjs)
+            p_include: {
+                tab: 'elements.cmsComponent',
+                type: 'Boolean',
+                label: _t('elements.cmsInclude'),
+                description: _t('elements.cmsIncludeHint'),
+                fullWidth: true
+            },
             p_forceInlineEditor: {
                 tab: DEFAULT_TAB,
                 type: 'Boolean',

@@ -298,7 +298,8 @@ class JsonDom extends React.Component {
                 }} to={Util.addUrlContext(url)} {...rest}/>
             }
         },
-        Cms: ({props, _this, style, className, component, slug, ...rest}) => {
+        // include: the server returns the component together with the page (see util/cmsIncludes.mjs)
+        Cms: ({props, _this, style, className, component, slug, include, ...rest}) => {
 
             if(component && component.length > 0){
                 slug = component[0].slug

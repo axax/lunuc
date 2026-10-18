@@ -506,8 +506,10 @@ class CmsViewEditorContainer extends React.Component {
                 {ignoreKeys:['styleScroll','dataResolverScroll','serverScriptScroll','templateScroll','scriptScroll','manualScroll']}) ||
             state.cmsStatusData !== this.state.cmsStatusData ||
             (
+                // same as in CmsViewContainer: pretty url parts (/-/indoor -> /-/outdoor) change the pathname only
                 ['full','client',true].indexOf(props.cmsPage.urlSensitiv)>=0 && this.props.location && (
                     props.location.search !== this.props.location.search ||
+                    props.location.pathname !== this.props.location.pathname ||
                     props.location.hash !== this.props.location.hash)
             )
 

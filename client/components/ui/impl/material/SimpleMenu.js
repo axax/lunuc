@@ -23,6 +23,33 @@ class SimpleMenu extends React.Component {
         collapse: {}
     }
 
+    menuAction = React.createRef()
+    resizeObserver = null
+
+    // MUI positions the popover only once when it opens. If the content size changes afterwards
+    // (lazy loaded icons, web fonts, expanded sub items) the menu can end up partially outside the viewport.
+    // Observe the paper and reposition whenever its size changes.
+    observePaper = (element) => {
+        this.disconnectObserver()
+        if (element && typeof ResizeObserver !== 'undefined') {
+            this.resizeObserver = new ResizeObserver(() => {
+                this.menuAction.current?.updatePosition()
+            })
+            this.resizeObserver.observe(element)
+        }
+    }
+
+    disconnectObserver = () => {
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect()
+            this.resizeObserver = null
+        }
+    }
+
+    componentWillUnmount() {
+        this.disconnectObserver()
+    }
+
     handleClick = e => {
         e.stopPropagation()
         this.setState({anchorEl: e.currentTarget})
@@ -88,14 +115,26 @@ class SimpleMenu extends React.Component {
                     anchorEl={anchorEl}
                     open={open !== undefined ? !!open : Boolean(anchorEl)}
                     onClose={this.handleClose}
+                    action={this.menuAction}
                     {...rest}
                     slotProps={{
+                        ...rest.slotProps,
                         root: {
                             // z-index must be on the modal root, the paper is inside its stacking context
                             style: {zIndex: zIndex ? zIndex: 9999},
                             ...rest.slotProps?.root
                         },
-                        ...rest.slotProps
+                        transition: {
+                            ...rest.slotProps?.transition,
+                            onEntering: (element, isAppearing) => {
+                                this.observePaper(element)
+                                rest.slotProps?.transition?.onEntering?.(element, isAppearing)
+                            },
+                            onExited: (element) => {
+                                this.disconnectObserver()
+                                rest.slotProps?.transition?.onExited?.(element)
+                            }
+                        }
                     }}
                 >
                     {this.renderMenu(items)}
@@ -132,9 +171,8 @@ class SimpleMenu extends React.Component {
                   sx={item.danger ? { color: 'error.main' } : {}}
                   onClick={(e) => {
                     if (item.items) {
+                        // repositioning of the menu is handled by the ResizeObserver (see observePaper)
                         this.setState({collapse: { ...collapse, [i]: {open: !(collapse[i] && collapse[i].open) }}})
-                        // triggers repositioning of menu https://github.com/mui/material-ui/issues/10595
-                        window.dispatchEvent(new CustomEvent('resize'))
                     } else if (item.onClick) {
                         item.onClick(e, this.props.payload, item)
                         this.handleClose(e)

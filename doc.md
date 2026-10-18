@@ -249,6 +249,22 @@ In the template we can iterate through it with the $loop expression:
 + If the data is not an object use $.loop{data} to access it
 + Use _index to get the current position in the loop
 
+#### Embedded Cms components (include)
+An embedded component (`{"t": "Cms", "p": {"component": [{"slug": "..."}]}}`) is normally loaded with its own
+cmsPage request after the parent page has been rendered (one round trip per nesting level).
+With `"p": {"include": true}` (editor: CMS component -> "Load with the page") the server resolves the component
+together with the page and returns it in the field `includes`; the client puts it into its query cache and the
+component renders without a request. Implementation: `extensions/cms/util/cmsIncludes.mjs`, resolver `cmsPage`,
+`writeCmsIncludesToCache` in `extensions/cms/containers/withCms.js`.
++ Only possible if the server knows the request of the component: no placeholders (`${...}`, `$.x{...}`, `###`) in
+  the slug or in the server props `props.$` (other props are client side only and may contain placeholders),
+  no `forceInlineEditor`, no `urlSensitiv`. Otherwise the flag is ignored and the component loads as before.
++ Not for editors (capability view cms editor), in edit mode and for fetchMore requests.
++ Included components can include components themselves (max. 3 levels, max. 30 components per request).
++ The client sends the keys of included components it already has in its cache (`meta.includes`), they are not
+  sent again on the next page.
++ If anything does not match (other variables, include failed) the component simply loads with its own request.
+
 
 
 ### Script

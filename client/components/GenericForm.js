@@ -99,6 +99,8 @@ const CmsEditorWithStyles = ({fieldKey, field, children}) => {
 }
 
 const CodeEditor = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "codeeditor" */ './CodeEditor')}/>
+// color picker field (uitype color_picker): own chunk, only loaded when such a field is rendered
+const ColorPicker = (props) => <Async {...props} asyncKey="colorpicker" load={() => import(/* webpackChunkName: "colorpicker" */ './ColorPicker')}/>
 
 
 // plain tabs: small labels, thin underline, colors from the theme.
@@ -550,69 +552,6 @@ class GenericForm extends React.Component {
         }
 
     }
-
-   /* loadColorpicker(id) {
-        if(!this._colorPickerLoaded) {
-            this._colorPickerLoaded = true
-            DomUtil.addScript('https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js', {
-                id: 'colorpicker',
-                onload: () => {
-                    this.initColorpicker(id)
-                }
-            }, {ignoreIfExist: true})
-
-            DomUtil.addStyle('https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css', {id: 'colorpickerstyle'}, {ignoreIfExist: true})
-        }else{
-            this.initColorpicker(id)
-        }
-    }
-
-    initColorpicker(id) {
-        if(!this._colorPickers){
-            this._colorPickers = {}
-        }
-
-        if(this._colorPickers[id]){
-            return
-        }
-
-        DomUtil.waitForVariable('Pickr').then(()=>{
-
-            this._colorPickers[id] = new Pickr({
-                el: `input#${id}`,
-                useAsButton: true,
-                defaultRepresentation: 'HEX',
-                components: {
-                    palette: true,
-                    preview: true,
-                    opacity: true,
-                    hue: true,
-                    interaction: {
-                        hex: false,
-                        rgba: false,
-                        hsla: false,
-                        hsva: false,
-                        cmyk: false,
-                        input: false,
-                        save: false
-                    },
-                }
-            })
-
-            let timeout
-            this._colorPickers[id].on('change', (color, type, instance) => {
-                const inp = instance._root.button
-                clearTimeout(timeout)
-                timeout = setTimeout(() => {
-                    this.handleInputChange({target: {name: inp.name, value: color.toHEXA().toString()}})
-                }, 300)
-            }).on('show', (color, instance) => {
-                const inp = instance._root.button
-                this._colorPickers[id].setColor(inp.value)
-            })
-
-        })
-    }*/
 
     newStateForField(prevState, {name, value, originalValue, localized}) {
         const newState = Object.assign({}, {fields: {}, fieldsDirty:{}}, prevState)
@@ -1656,20 +1595,25 @@ class GenericForm extends React.Component {
                     }
                 })
             }} accept={field.accept || '*/*'} key={fieldKey} className={field.className} value={value}/>)
-       /* } else if (uitype === 'color_picker') {
-
-            currentFormFields.push(<FormControl key={'control' + fieldKey}
+        } else if (uitype === 'color_picker') {
+            langButtonWasInserted = true
+            currentFormFields.push(<ColorPicker key={fieldKey}
+                                                name={fieldKey}
                                                 className={field.className}
-                                                sx={getSxProps({fullWidth:true})}>
-                <InputLabel key={'label' + fieldKey} shrink>{field.label}</InputLabel><Input data-colorpicker=""
-                                                                                             onChange={this.handleInputChange}
-                                                                                             name={fieldKey}
-                                                                                             key={fieldKey}
-                                                                                             id={fieldKey}
-                                                                                             value={value}/></FormControl>)
-
-            this.loadColorpicker(fieldKey)*/
-
+                                                sx={getSxProps(field, theme)}
+                                                fullWidth={field.fullWidth}
+                                                label={(field.label || field.name) + (languageCode ? ' [' + languageCode + ']' : '')}
+                                                value={value || field.defaultValue || ''}
+                                                placeholder={field.placeholder}
+                                                presets={field.presets}
+                                                alpha={field.alpha}
+                                                readOnly={field.readOnly || field.uiReadOnly}
+                                                error={!!this.state.fieldErrors[fieldKey]}
+                                                helperText={this.state.fieldErrors[fieldKey] || field.helperText || ''}
+                                                languageCode={languageCode}
+                                                endAdornment={languageCode === _app_.lang ? translateButton : null}
+                                                onBlur={this.handleBlur}
+                                                onChange={this.handleInputChange}/>)
 
         } else if (uitype === 'type_picker') {
             langButtonWasInserted =true

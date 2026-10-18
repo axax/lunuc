@@ -117,6 +117,35 @@ const rememberPreloadComponents = (key, slugs) => {
     preloadComponentsByPage.set(key, slugs)
 }
 
+// Components that are preloaded into the html are removed from the `includes` of the page
+// (option "include" of a Cms component, extensions/cms/util/cmsIncludes.mjs), otherwise they would be
+// in the html twice. A marker without data stays, so the client knows that the component is
+// in its cache and does not request it again with the next page (meta.includes in withCms.js)
+export const removePreloadedIncludes = (cmsPage, preloadedSlugs) => {
+    if (!cmsPage || !cmsPage.includes || preloadedSlugs.length === 0) {
+        return
+    }
+    try {
+        const includes = JSON.parse(cmsPage.includes)
+        if (!Array.isArray(includes)) {
+            return
+        }
+        let changed = false
+        includes.forEach(include => {
+            // preloaded components have no props (findPreloadComponents)
+            if (include && include.cmsPage && !include.props && preloadedSlugs.indexOf(include.slug) >= 0) {
+                include.cmsPage = null
+                changed = true
+            }
+        })
+        if (changed) {
+            cmsPage.includes = JSON.stringify(includes)
+        }
+    } catch (e) {
+        // includes stay as they are
+    }
+}
+
 // slugs of the Cms components at the root of a template that are rendered unconditionally
 // and request exactly {dynamic: true, slug} - the same variables (= cache key) the client uses
 export const findPreloadComponents = (template) => {
@@ -821,6 +850,7 @@ export const parseAndSendFile = async (req, res, {filename, headers, statusCode,
                             const componentSlugs = findPreloadComponents(result.data.cmsPage.template)
                             rememberPreloadComponents(componentPageKey, componentSlugs)
                             const componentResults = await Promise.all(componentSlugs.map(fetchComponent))
+                            removePreloadedIncludes(result.data.cmsPage, componentSlugs.filter((slug, index) => !!componentResults[index]))
                             componentResults.forEach((componentText, index) => {
                                 if (componentText) {
                                     // same variables as the client (getGqlVariables) -> same cache key
