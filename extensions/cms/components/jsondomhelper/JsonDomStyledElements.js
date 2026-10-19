@@ -335,6 +335,35 @@ export const StyledActionBar = styled('div', noForward('flipped'))(({flipped}) =
  * for its own display purposes while the caret rect from
  * getBoundingClientRect() never is - mixing the two produced an offset bar.
  */
+// small "+" at the left of the caret line: opens the rich text toolbar when no text is selected
+export const StyledRichTextPlus = styled('button')(() => ({
+    pointerEvents: 'auto',
+    zIndex: z(5),
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '24px',
+    height: '24px',
+    padding: 0,
+    border: 'none',
+    borderRadius: '50%',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '18px',
+    lineHeight: 1,
+    color: T.surfaceText,
+    background: T.surface,
+    boxShadow: '0 2px 6px -2px rgba(15, 23, 42, 0.4)',
+    opacity: 0.75,
+    animation: `${fadeIn} 120ms ${T.ease}`,
+    '&:hover, &:focus-visible': {
+        opacity: 1,
+        background: T.accentDark
+    }
+}))
+
 export const StyledRichTextBar = styled('div', noForward('floating'))(({floating}) => ({
     pointerEvents: 'auto',
     zIndex: z(5),

@@ -442,7 +442,8 @@ class CmsViewEditorContainer extends React.Component {
         if (!saveStatus || this.isLocal) {
             return null
         }
-        const label = _t('CmsViewEditorContainer.saveStatus.' + saveStatus)
+        // pending and saving are shown the same way, otherwise the label flickers through three states
+        const label = _t('CmsViewEditorContainer.saveStatus.' + (saveStatus === 'pending' ? 'saving' : saveStatus))
         const hint = saveStatus === 'error' ?
             _t('CmsViewEditorContainer.saveStatus.retry') :
             _t('CmsViewEditorContainer.saveStatus.shortcut')
@@ -1795,12 +1796,16 @@ class CmsViewEditorContainer extends React.Component {
                 // the caller does not want an undo entry for this change (e.g. auto translation)
                 this._isApplyingHistory = true
             }
+            // instantSave === 'typing': inline text input. Saved shortly after the last key instead of on every
+            // key stroke (one request per character before), and re-rendered only after a short pause
+            const isTyping = instantSave === 'typing',
+                saveNow = instantSave === true
             this.setCmsPageValue({
                 key: 'template',
-                timeoutSetState:instantSave?0:300,
+                timeoutSetState: saveNow ? 0 : 300,
                 // local mode (CmsEditor field, GenericDataContent): nothing is written here, the json is only
                 // passed on, so it can be done quickly - the owner decides when to persist it
-                timeoutUpdate: instantSave?0:(this.isLocal?400:5000)
+                timeoutUpdate: saveNow ? 0 : (this.isLocal ? 400 : (isTyping ? 1500 : 5000))
             }, str)
             this._isApplyingHistory = wasApplyingHistory
         }

@@ -57,7 +57,7 @@ import {
     StyledHighlighter,
     StyledPicker,
     StyledActionBar,
-    StyledHorizontalDivider, StyledRichTextBar, StyledDragBar, StyledViewportFrame, getZIndexBasis
+    StyledHorizontalDivider, StyledRichTextBar, StyledRichTextPlus, StyledDragBar, StyledViewportFrame, getZIndexBasis
 } from './jsondomhelper/JsonDomStyledElements'
 import CmsViewContainer from '../containers/CmsViewContainer'
 import {SimpleSwitch} from '../../../client/components/ui/impl/material'
@@ -144,6 +144,54 @@ const getCmsComponentSlug = (json) => {
 
 let helperUidCounter = 0
 
+/*
+ * Own undo / redo for inline (contentEditable) text.
+ * Every input writes the text into the template and re-renders the element, which destroys the
+ * native undo history of the browser - so Cmd/Ctrl+Z did nothing while typing.
+ * Snapshots are taken per typing burst (pause > INLINE_UNDO_PAUSE ms), caret positions are kept as
+ * text offsets, so they survive the re-render.
+ */
+const INLINE_UNDO_PAUSE = 800
+const INLINE_UNDO_LIMIT = 100
+
+const getCaretTextOffset = (el) => {
+    const sel = window.getSelection()
+    if (!sel || sel.rangeCount === 0 || !el.contains(sel.focusNode)) {
+        return null
+    }
+    const range = document.createRange()
+    range.selectNodeContents(el)
+    range.setEnd(sel.focusNode, sel.focusOffset)
+    return range.toString().length
+}
+
+const setCaretTextOffset = (el, offset) => {
+    const sel = window.getSelection()
+    if (!sel) {
+        return
+    }
+    const range = document.createRange()
+    if (offset !== null && offset !== undefined) {
+        const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+        let remaining = offset, node
+        while ((node = walker.nextNode())) {
+            if (remaining <= node.length) {
+                range.setStart(node, remaining)
+                range.collapse(true)
+                sel.removeAllRanges()
+                sel.addRange(range)
+                return
+            }
+            remaining -= node.length
+        }
+    }
+    // unknown or out of range: caret at the end
+    range.selectNodeContents(el)
+    range.collapse(false)
+    sel.removeAllRanges()
+    sel.addRange(range)
+}
+
 class JsonDomHelper extends React.Component {
     // the editor chrome (highlighter, toolbar) is rendered into a portal on body; _key alone is not unique
     // there (e.g. a CmsEditor field in a dialog has the same keys as the page), so it is linked by this id
@@ -159,6 +207,9 @@ class JsonDomHelper extends React.Component {
     state = {
         hovered: false,
         richTextBarFocused: false,
+        // rich text toolbar: shown in full only with selected text or after a click on the "+"
+        richTextHasSelection: false,
+        richTextBarOpened: false,
         top: 0,
         left: 0,
         height: 0,
@@ -205,6 +256,15 @@ class JsonDomHelper extends React.Component {
     }
 
     componentDidUpdate(prevProps) {
+        // directly editable text: the re-render replaced the text node and the browser put the caret at the
+        // start - restore it before the next key is handled (a requestAnimationFrame was too late for fast typing)
+        if (this._pendingCaret) {
+            const {el, offset} = this._pendingCaret
+            this._pendingCaret = null
+            if (document.activeElement === el && getCaretTextOffset(el) !== offset) {
+                setCaretTextOffset(el, offset)
+            }
+        }
         // keys are index based - on reorder react reuses the instance and
         // only swaps the key, so the registry has to follow
         if (prevProps._key !== this.props._key) {
@@ -217,7 +277,7 @@ class JsonDomHelper extends React.Component {
         // Once the element goes inactive its contentEditable prop is dropped,
         // so a blur may never reach react and richTextBarFocused would stay
         // true forever - clear it here instead of relying on onBlur alone.
-        if (this.state.richTextBarFocused && !this.isElementActive() && !isRichTextBarHold()) {
+        if (this.state.richTextBarFocused && !this.isElementActive() && !this.state.inlineFocused && !isRichTextBarHold()) {
             this.stopWatchSelectionChange()
             this.stopWatchScroll()
             this.setState({richTextBarFocused: false, richTextBarFloating: false})
@@ -461,7 +521,13 @@ class JsonDomHelper extends React.Component {
             }
             this._lastCaretRect = rect
 
-            this.setState(this.clampRichTextBarPosition(rect))
+            const nodeRect = node.getBoundingClientRect()
+            this.setState({
+                ...this.clampRichTextBarPosition(rect),
+                richTextCaretTop: rect.top + (rect.height || 0) / 2,
+                // left of the drag handle (which sits about 8-24px left of the element)
+                richTextPlusLeft: Math.max(4, nodeRect.left - 54)
+            })
         })
     }
 
@@ -511,9 +577,22 @@ class JsonDomHelper extends React.Component {
         }
     }
 
+    updateRichTextSelectionState() {
+        const node = ReactDOM.findDOMNode(this)
+        const sel = window.getSelection()
+        const hasSelection = !!(node && sel && sel.rangeCount > 0 && !sel.isCollapsed &&
+            node.contains(sel.anchorNode) && node.contains(sel.focusNode))
+        if (hasSelection !== this.state.richTextHasSelection) {
+            this.setState({richTextHasSelection: hasSelection})
+        }
+    }
+
     watchSelectionChange() {
         this.stopWatchSelectionChange()
-        this._selectionChangeHandler = () => this.updateRichTextBarPosition()
+        this._selectionChangeHandler = () => {
+            this.updateRichTextSelectionState()
+            this.updateRichTextBarPosition()
+        }
         document.addEventListener('selectionchange', this._selectionChangeHandler)
         // the toolbar was kept open by window.__lunucRichTextBarHold - re-evaluate once released
         this._richTextBarReleaseHandler = () => this.forceUpdate()
@@ -633,8 +712,13 @@ class JsonDomHelper extends React.Component {
             props._json !== this.props._json ||
             props.children !== this.props.children ||
             state.hovered !== this.state.hovered ||
+            state.inlineFocused !== this.state.inlineFocused ||
             state.richTextBarHover !== this.state.richTextBarHover ||
             state.richTextBarFocused !== this.state.richTextBarFocused ||
+            state.richTextHasSelection !== this.state.richTextHasSelection ||
+            state.richTextBarOpened !== this.state.richTextBarOpened ||
+            state.richTextCaretTop !== this.state.richTextCaretTop ||
+            state.richTextPlusLeft !== this.state.richTextPlusLeft ||
             state.richTextBarFloating !== this.state.richTextBarFloating ||
             state.richTextBarTop !== this.state.richTextBarTop ||
             state.richTextBarLeft !== this.state.richTextBarLeft ||
@@ -1233,7 +1317,15 @@ class JsonDomHelper extends React.Component {
                 {...rest}>{children}</_WrappedComponent>
         }
         const hasRichTextBar = !!_options.richText // && rest['data-element-key'] === 'richText'
-        const isContentEditable = hasRichTextBar || _options.contentEditable
+        // "Content directly editable" ($contentEditable in the template): the element itself is editable,
+        // but nothing took over the input - typed text was never written to the template or saved
+        // not inside a loop and not for placeholders ($.loop{...}, ${...}): the template holds no literal text there
+        const directValue = hasJsonToEdit && subJson ? (isString(subJson.$c) ? subJson.$c : subJson.c) : null
+        const isDirectlyEditable = !hasRichTextBar && !_options.contentEditable && !!rest.contentEditable &&
+            hasJsonToEdit && !isInLoop && rest._key.indexOf('$loop') < 0 &&
+            (directValue === undefined || directValue === null ||
+                (isString(directValue) && directValue.indexOf('${') < 0 && directValue.indexOf('$.') < 0))
+        const isContentEditable = hasRichTextBar || _options.contentEditable || isDirectlyEditable
         const isDraggable = !isInLoop && hasJsonToEdit && _options.allowDrag !== false
 
         if (isDraggable) {
@@ -1268,11 +1360,13 @@ class JsonDomHelper extends React.Component {
             }
         }
 
-        if (isElementActive || isSelected) {
+        // an element with the caret in it stays in edit mode when the mouse leaves - otherwise the input handlers
+        // (saving, undo) were dropped while typing continued, and the native focus ring showed up
+        if (isElementActive || isSelected || this.state.inlineFocused) {
             if(isElementActive) {
                 const menuItems = this.createContextMenu({
                     isCms, subJson, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange,_forceInlineEditor,
-                    overrideEvents, onChange, _options, _dynamic, rest, _json, isInLoop, isSelected, hasRichTextBar
+                    overrideEvents, onChange, _options, _dynamic, rest, _json, isInLoop, isSelected, hasRichTextBar, isContentEditable
                 })
 
                 const flatMenuItems = menuItems.reduce((acc, item) => acc.concat(item, item.items || []), [])
@@ -1353,9 +1447,21 @@ class JsonDomHelper extends React.Component {
                     helperEvents['data-lunuc-editable'] = true
                     helperEvents.onFocus = (e) => {
                         this.focusTime = Date.now()
+                        if (!this.state.inlineFocused) {
+                            this.setState({inlineFocused: true})
+                        }
+                        if (!this._inlineHistory || this._inlineHistory.el !== e.currentTarget) {
+                            this._inlineHistory = {
+                                el: e.currentTarget,
+                                undo: [],
+                                redo: [],
+                                current: {html: e.currentTarget.innerHTML, caret: null},
+                                lastInput: 0
+                            }
+                        }
                         if (hasRichTextBar) {
                             this._lastCaretRect = null
-                            this.setState({richTextBarFocused: true})
+                            this.setState({richTextBarFocused: true, richTextBarOpened: false, richTextHasSelection: false})
                             this.updateRichTextBarPosition()
                             this.watchSelectionChange()
                             this.watchScroll()
@@ -1363,16 +1469,91 @@ class JsonDomHelper extends React.Component {
                     }
                     helperEvents.onBlur = (e) => {
                         delete this.focusTime
+                        if (this.state.inlineFocused) {
+                            this.setState({inlineFocused: false})
+                        }
                         if (hasRichTextBar && !isRichTextBarHold()) {
                             this._lastCaretRect = null
                             this.stopWatchSelectionChange()
                             this.stopWatchScroll()
-                            this.setState({richTextBarFocused: false, richTextBarFloating: false})
+                            this.setState({richTextBarFocused: false, richTextBarFloating: false,
+                                richTextBarOpened: false, richTextHasSelection: false})
+                        }
+                    }
+                    const applyInlineContent = (el) => {
+                        if (isDirectlyEditable && !isString(subJson.$c)) {
+                            // plain text element (e.g. a headline): keep it as text in c
+                            const caret = getCaretTextOffset(el)
+                            if (caret !== null) {
+                                // restored in componentDidUpdate, right after the re-render
+                                this._pendingCaret = {el, offset: caret}
+                            }
+                            setPropertyByPath(el.innerText,'c',subJson)
+                            _onTemplateChange(_json, 'typing')
+                            // fallback, in case the re-render did not go through this component
+                            requestAnimationFrame(() => {
+                                if (this._pendingCaret && this._pendingCaret.el === el) {
+                                    this._pendingCaret = null
+                                    if (document.activeElement === el && getCaretTextOffset(el) !== caret) {
+                                        setCaretTextOffset(el, caret)
+                                    }
+                                }
+                            })
+                        } else {
+                            setPropertyByPath(el.innerHTML,'$c',subJson)
+                            _onTemplateChange(_json, 'typing')
+                        }
+                    }
+                    helperEvents.onKeyDown = (e) => {
+                        const key = e.key ? e.key.toLowerCase() : ''
+                        if (!(e.metaKey || e.ctrlKey) || e.altKey || (key !== 'z' && key !== 'y')) {
+                            return
+                        }
+                        const history = this._inlineHistory
+                        const el = e.currentTarget
+                        if (!history || history.el !== el) {
+                            return
+                        }
+                        e.preventDefault()
+                        e.stopPropagation()
+                        const redo = key === 'y' || e.shiftKey
+                        const from = redo ? history.redo : history.undo,
+                            to = redo ? history.undo : history.redo
+                        if (from.length === 0) {
+                            return
+                        }
+                        to.push({html: el.innerHTML, caret: getCaretTextOffset(el)})
+                        const entry = from.pop()
+                        el.innerHTML = entry.html
+                        setCaretTextOffset(el, entry.caret)
+                        history.current = entry
+                        // the next input starts a new undo step
+                        history.lastInput = 0
+                        applyInlineContent(el)
+                        highlighterHandler()
+                        if (hasRichTextBar) {
+                            this.updateRichTextBarPosition()
                         }
                     }
                     helperEvents.onInput=(e)=>{
-                        setPropertyByPath(e.target.innerHTML,'$c',subJson)
-                        _onTemplateChange(_json, true)
+                        if (hasRichTextBar && this.state.richTextBarOpened && !this.state.richTextBarHover) {
+                            this.setState({richTextBarOpened: false})
+                        }
+                        const history = this._inlineHistory
+                        if (history && history.el === e.currentTarget) {
+                            const now = Date.now()
+                            // a new typing burst: remember the state before it
+                            if (now - history.lastInput > INLINE_UNDO_PAUSE) {
+                                history.undo.push(history.current)
+                                if (history.undo.length > INLINE_UNDO_LIMIT) {
+                                    history.undo.shift()
+                                }
+                            }
+                            history.redo = []
+                            history.lastInput = now
+                            history.current = {html: e.currentTarget.innerHTML, caret: getCaretTextOffset(e.currentTarget)}
+                        }
+                        applyInlineContent(e.currentTarget)
                         // the element may have grown (new line): the global MutationObserver only watches
                         // [data-layout-content], not e.g. a CmsEditor field in a dialog, so re-measure here
                         highlighterHandler()
@@ -1505,7 +1686,29 @@ class JsonDomHelper extends React.Component {
                     </StyledViewportFrame>]
                 }
 
-                if (hasRichTextBar && this.state.richTextBarFocused) {
+                const showFullRichTextBar = this.state.richTextHasSelection || this.state.richTextBarOpened ||
+                    this.state.richTextBarHover || isRichTextBarHold()
+                if (hasRichTextBar && this.state.richTextBarFocused && !showFullRichTextBar) {
+                    // only a caret, no selected text: a small "+" next to the line instead of the whole toolbar
+                    if (this.state.richTextCaretTop !== undefined) {
+                        richTextBar = <StyledRichTextPlus
+                            key={rest._key + '.richtextplus'}
+                            type="button"
+                            title={_t('JsonDomHelper.richTextPlus')}
+                            aria-label={_t('JsonDomHelper.richTextPlus')}
+                            data-helper-uid={this.helperUid}
+                            style={{top: this.state.richTextCaretTop - 12, left: this.state.richTextPlusLeft}}
+                            onMouseDown={(e) => {
+                                // keep the caret in the text
+                                e.preventDefault()
+                            }}
+                            onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                this.setState({richTextBarOpened: true})
+                            }}>+</StyledRichTextPlus>
+                    }
+                } else if (hasRichTextBar && this.state.richTextBarFocused) {
                     // Rendered as its own fixed-position element (sibling of
                     // the highlighter in the AddToBody portal) rather than
                     // nested inside StyledHighlighter. That highlighter's
@@ -1578,7 +1781,9 @@ class JsonDomHelper extends React.Component {
                 {...rest}
                 children={children}/>
         }
-        if (toolbar || isSelected) {
+        // also while the caret is in the element: highlighter and rich text bar / "+" must not vanish when the
+        // mouse leaves the element (e.g. on its way to the "+" next to the text)
+        if (toolbar || isSelected || richTextBar || this.state.inlineFocused) {
             return [comp, <AddToBody key="hover">{highlighter}{toolbar}{richTextBar}</AddToBody>,(deleteSelectionConfirmDialog &&
                 <SimpleDialog fullWidth={true} maxWidth="sm" key="deleteSelectionConfirm" open={true}
                               onClose={(e) => {
@@ -1679,7 +1884,7 @@ class JsonDomHelper extends React.Component {
         }
     }
 
-    createContextMenu({isCms, subJson, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange, overrideEvents, onChange, _options, _dynamic, _forceInlineEditor, rest, _json, isInLoop, isSelected, hasRichTextBar}) {
+    createContextMenu({isCms, subJson, hasJsonToEdit, parsedSource, _onDataResolverPropertyChange, overrideEvents, onChange, _options, _dynamic, _forceInlineEditor, rest, _json, isInLoop, isSelected, hasRichTextBar, isContentEditable}) {
         const menuItems = []
         if(isSelected){
             menuItems.push({
@@ -1845,7 +2050,8 @@ class JsonDomHelper extends React.Component {
                         const doEditElement = ()=>{
                             this.handleEditElement({jsonElement, subJson, isCms, json: _json, key: rest._key})
                         }
-                        if(!hasRichTextBar) {
+                        // editable text: a double click selects a word, the dialog is opened via the toolbar
+                        if(!isContentEditable) {
                             overrideEvents.onDoubleClick = doEditElement
                         }
                         menuItems.push({
