@@ -1344,6 +1344,59 @@ class JsonDomHelper extends React.Component {
             }
         }
 
+        if (isContentEditable) {
+            // one click to edit: the element only becomes editable 80ms after the mouse entered it (hover).
+            // A fast click right away, or a tap on a touch device (no hover), only selected it - a second click
+            // was needed. Activate it on mouse down instead and put the caret where the user clicked.
+            const dragMouseDown = helperEvents.onMouseDown
+            helperEvents.onMouseDown = (e) => {
+                if (dragMouseDown) {
+                    dragMouseDown(e)
+                }
+                const node = e.currentTarget
+                if (e.button !== 0 || e.shiftKey || e.altKey || e.metaKey || e.ctrlKey ||
+                    node.isContentEditable || JsonDomHelper.disableEvents) {
+                    return
+                }
+                const x = e.clientX, y = e.clientY
+                clearTimeout(this.helperTimeoutIn)
+                this.setState(getHighlightPosition(node), () => {
+                    highlighterHandler(node)
+                    requestAnimationFrame(() => {
+                        if (!node.isContentEditable) {
+                            return
+                        }
+                        // the browser may already have focused the now editable element on mouse up -
+                        // but with the caret at the end of the line, not where the user clicked
+                        const current = window.getSelection()
+                        if (current && current.rangeCount > 0 && !current.isCollapsed && node.contains(current.anchorNode)) {
+                            // the user dragged a selection, keep it
+                            return
+                        }
+                        if (document.activeElement !== node) {
+                            node.focus()
+                        }
+                        let range = null
+                        if (document.caretRangeFromPoint) {
+                            range = document.caretRangeFromPoint(x, y)
+                        } else if (document.caretPositionFromPoint) {
+                            const pos = document.caretPositionFromPoint(x, y)
+                            if (pos) {
+                                range = document.createRange()
+                                range.setStart(pos.offsetNode, pos.offset)
+                                range.collapse(true)
+                            }
+                        }
+                        if (range && node.contains(range.startContainer)) {
+                            const sel = window.getSelection()
+                            sel.removeAllRanges()
+                            sel.addRange(range)
+                        }
+                    })
+                })
+            }
+        }
+
         helperEvents.onDragStart = e => {
             if (isDraggable && (!this.focusTime || (Date.now() - this.focusTime) < 500)) {
                 this.onDragStart(e)

@@ -1338,9 +1338,6 @@ class GenericForm extends React.Component {
             field.label = ''
         }
 
-        if (field.description) {
-            currentFormFields.push(<p>{field.description}</p>)
-        }
         if(uitype==='timestamp') {
             currentFormFields.push(<><Button key={fieldKey}
                                            className={field.className}
@@ -1961,6 +1958,25 @@ class GenericForm extends React.Component {
                                                                                marginTop: '-0.5rem',
                                                                                position: 'absolute',
                                                                                zIndex: 2}}>{translateButton}</div>)
+        }
+
+        // description below the field as a muted hint (it used to be a full paragraph above the field,
+        // which read like regular content and pushed the label away from its control)
+        if (field.description) {
+            const isSwitch = field.type === 'Boolean' && !field.uitype
+            currentFormFields.push(<Typography key={'desc' + fieldKey}
+                                               component="div"
+                                               variant="caption"
+                                               color="text.secondary"
+                                               sx={{
+                                                   display: 'block',
+                                                   lineHeight: 1.45,
+                                                   // a switch: align with its label text, right of the toggle
+                                                   pl: isSwitch ? '3.6rem' : '0.875rem',
+                                                   mt: isSwitch ? '-0.375rem' : '0.25rem',
+                                                   mb: 1.5,
+                                                   maxWidth: '48rem'
+                                               }}>{field.description}</Typography>)
         }
 
     }

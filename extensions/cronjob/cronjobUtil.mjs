@@ -316,7 +316,7 @@ const cronjobUtil = {
                         }
                         await runScript();
                     } catch(e) {
-                        this.error(e.message+' '+e.stack + ${args.cronjobId ? "' -> in " + args.cronjobId + "'" : ''});
+                        this.error(e.message+' '+e.stack + ${JSON.stringify(args.cronjobId ? ' -> in ' + String(args.cronjobId) : '')});
                     }
                     this.end();
                 })();
