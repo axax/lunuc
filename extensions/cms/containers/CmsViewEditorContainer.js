@@ -78,6 +78,7 @@ import GenericSettings from '../../../client/components/GenericSettings'
 import {DEFAULT_STYLE} from '../constants/cmsDefaults.mjs'
 import CmsPageTools from '../components/CmsPageTools'
 import CmsDataEditDialog from '../components/CmsDataEditDialog'
+import RemoteEditorMarkers from '../components/RemoteEditorMarkers'
 import CmsContentImport, {addElementsToTemplate} from '../components/CmsContentImport'
 import {
     setEditorZIndexActive
@@ -319,7 +320,6 @@ class CmsViewEditorContainer extends React.Component {
             publicEdit,
             compress,
             addNewSite: null,
-            ignoreStatus: false,
             translatePageTitle:true
         }
 
@@ -369,6 +369,8 @@ class CmsViewEditorContainer extends React.Component {
             window.addEventListener('beforeunload', this._handleSaveEvent)
             window.addEventListener('blur', this._handleSaveEvent)
             window.addEventListener('keydown', this.handleEditorKeyDown)
+            document.addEventListener('focusin', this.reportActivity)
+            document.addEventListener('focusout', this.reportActivity)
             this._unblockHistory = history.block(() => {
                 this.saveCmsPage()
                 return true
@@ -390,6 +392,12 @@ class CmsViewEditorContainer extends React.Component {
         }
         setEditorZIndexActive(false)
         clearTimeout(this._watchCmsPageStatus)
+        // ending the subscription removes this editor from the list of the others
+        this.removeLiveSubscriptions()
+        clearTimeout(this._activityTimeout)
+        clearTimeout(this._remoteReloadTimeout)
+        document.removeEventListener('focusin', this.reportActivity)
+        document.removeEventListener('focusout', this.reportActivity)
         this.saveCmsPage()
     }
 
@@ -433,7 +441,7 @@ class CmsViewEditorContainer extends React.Component {
 
     setSaveStatus(saveStatus) {
         if (!this._isUnmounted && !this.isLocal && this.state.saveStatus !== saveStatus) {
-            this.setState({saveStatus})
+            this.setState({saveStatus}, this.reportActivity)
         }
     }
 
@@ -465,49 +473,238 @@ class CmsViewEditorContainer extends React.Component {
         </Tooltip>
     }
 
-    watchCmsPageStatus(instant) {
+    /**
+     * Presence and changes of others arrive live via subscriptions (setupLiveSubscriptions): the server registers
+     * this editor while its subscription is running, so there is no heartbeat/polling any more.
+     * cmsPageStatus is only asked once per page, for the current editor list and the data of the
+     * cmsPageStatus hook (e.g. the page views box of the usertracking extension).
+     */
+    watchCmsPageStatus() {
         clearTimeout(this._watchCmsPageStatus)
+        // deferred: it is called from shouldComponentUpdate, this.props are the new props only after the update
         this._watchCmsPageStatus = setTimeout(() => {
-            if (!this.state.ignoreStatus && !this.isLocal && !this.props.dynamic && this.props.cmsPage && this.props.cmsPage.realSlug !== undefined) {
+            if (!this.isLocal && !this.props.dynamic && this.props.cmsPage && this.props.cmsPage.realSlug !== undefined) {
+                const slug = this.props.cmsPage.realSlug
+                this.setupLiveSubscriptions(slug)
+                this._lastActivity = null
                 client.query({
                     fetchPolicy: 'no-cache',
-                    query: `query cmsPageStatus($slug: String!){cmsPageStatus(slug: $slug){data user{username _id}}}`,
-                    variables: {
-                        slug: this.props.cmsPage.realSlug
-                    },
+                    query: `query cmsPageStatus($slug: String!){cmsPageStatus(slug: $slug){data editors}}`,
+                    variables: {slug},
                 }).then((res) => {
                     if (this._isUnmounted) return
-                    this.watchCmsPageStatus()
-                    if (res.data.cmsPageStatus && res.data.cmsPageStatus.user && this.props.user._id) {
-
-                        if (res.data.cmsPageStatus.user._id !== this.props.user._id) {
-                            this.setState({
-                                simpleDialog: {
-                                    title: "Seite in Bearbeitung von einem anderen Benutzer",
-                                    text: "Die Seite wird gerade von " + res.data.cmsPageStatus.user.username + " bearbeitet. Möchten Sie die Seite trotzdem bearbeiten?",
-                                    actions: [
-                                        {
-                                            key: 'ok',
-                                            label: 'Ja trotzdem bearbeiten',
-                                            type: 'primary'
-                                        }
-                                    ],
-                                    onClose: () => {
-                                        this.setState({ignoreStatus: true})
-                                    }
-                                }
-                            })
-                        } else if (res.data.cmsPageStatus.data !== JSON.stringify(this.state.cmsStatusData)) {
-                            this.setState({cmsStatusData: JSON.parse(res.data.cmsPageStatus.data)})
-                        }
+                    const status = res.data && res.data.cmsPageStatus
+                    if (!status) return
+                    if (status.editors) {
+                        this.setEditors(status.editors)
+                    }
+                    if (status.data && status.data !== JSON.stringify(this.state.cmsStatusData)) {
+                        this.setState({cmsStatusData: JSON.parse(status.data)})
                     }
                 }).catch((e) => {
-                    if (this._isUnmounted) return
                     console.warn('cmsPageStatus failed', e)
-                    this.watchCmsPageStatus()
                 })
             }
-        }, instant ? 0 : 10000)
+        }, 0)
+    }
+
+    /**
+     * Tells the others what this editor is doing: typing (unsaved changes) and the element with the caret.
+     * Only sent when something changed.
+     */
+    reportActivity = () => {
+        clearTimeout(this._activityTimeout)
+        this._activityTimeout = setTimeout(() => {
+            if (this._isUnmounted || !this._liveSlug) return
+            const active = document.activeElement
+            let elementKey = null, elementLabel = null
+            if (active && active.isContentEditable) {
+                const el = active.closest('[_key]')
+                if (el) {
+                    elementKey = el.getAttribute('_key')
+                    const type = el.getAttribute('data-element-key')
+                    elementLabel = type ? _t('elements.key.' + type, null, type) : null
+                }
+            }
+            const {saveStatus} = this.state
+            const typing = saveStatus === 'pending' || saveStatus === 'saving'
+            const key = JSON.stringify([typing, elementKey])
+            if (key === this._lastActivity) return
+            this._lastActivity = key
+            client.query({
+                fetchPolicy: 'no-cache',
+                query: 'query cmsPageActivity($slug: String!, $typing: Boolean, $elementKey: String, $elementLabel: String){cmsPageActivity(slug: $slug, typing: $typing, elementKey: $elementKey, elementLabel: $elementLabel){editors}}',
+                variables: {slug: this._liveSlug, typing, elementKey, elementLabel}
+            }).catch(() => {
+                this._lastActivity = null
+            })
+        }, 300)
+    }
+
+    setEditors(editorsJson) {
+        let editors = []
+        try {
+            editors = JSON.parse(editorsJson) || []
+        } catch (e) {
+        }
+        // other tabs only (the own tab is identified by the clientId)
+        const others = editors.filter(e => e.clientId !== _app_.clientId)
+        const key = JSON.stringify(others.map(e => [e.clientId, e.typing, e.elementKey]))
+        if (key !== this._editorsKey) {
+            this._editorsKey = key
+            this.setState({cmsEditors: others})
+        }
+    }
+
+    setupLiveSubscriptions(slug) {
+        if (this._liveSlug === slug && this._liveSubscriptions) {
+            return
+        }
+        this.removeLiveSubscriptions()
+        this._liveSlug = slug
+        const _this = this
+        this._liveSubscriptions = [
+            client.subscribe({
+                query: 'subscription cmsPageEditors($slug: String){cmsPageEditors(slug: $slug){slug editors}}',
+                variables: {slug}
+            }).subscribe({
+                next(res) {
+                    const data = res && res.data && res.data.cmsPageEditors
+                    if (data && !_this._isUnmounted) {
+                        _this.setEditors(data.editors)
+                    }
+                }
+            }),
+            client.subscribe({
+                query: 'subscription cmsPageChanged($slug: String){cmsPageChanged(slug: $slug){slug userId username modifiedAt fields}}',
+                variables: {slug}
+            }).subscribe({
+                next(res) {
+                    const data = res && res.data && res.data.cmsPageChanged
+                    if (data && !_this._isUnmounted) {
+                        _this.handleRemoteChange(data)
+                    }
+                }
+            })
+        ]
+    }
+
+    removeLiveSubscriptions() {
+        if (this._liveSubscriptions) {
+            this._liveSubscriptions.forEach(sub => {
+                try {
+                    sub.unsubscribe()
+                } catch (e) {
+                }
+            })
+            this._liveSubscriptions = null
+        }
+        this._liveSlug = null
+    }
+
+    hasLocalChanges() {
+        const {saveStatus} = this.state
+        const active = document.activeElement
+        return Object.keys(this._keyValueMap).length > 0 ||
+            saveStatus === 'pending' || saveStatus === 'saving' || saveStatus === 'error' ||
+            !!(active && active.isContentEditable)
+    }
+
+    /**
+     * Another user (or tab) saved this page. Without own open changes the page is reloaded quietly (bundled:
+     * 1s after the last change, the other one may still be typing), otherwise one notice offers to reload -
+     * nothing is overwritten silently on this side.
+     */
+    handleRemoteChange(change) {
+        this._remoteChangeBy = change.username || '?'
+        clearTimeout(this._remoteReloadTimeout)
+        this._remoteReloadTimeout = setTimeout(() => {
+            if (this._isUnmounted) return
+            if (!this.hasLocalChanges()) {
+                this.reloadFromServer()
+            } else {
+                this.showRemoteChangeNotice()
+            }
+        }, 1000)
+    }
+
+    showRemoteChangeNotice() {
+        if (this._remoteNoticeShown) return
+        this._remoteNoticeShown = true
+        _app_.dispatcher.addNotification({
+            key: 'cmsRemoteChange',
+            autoHideDuration: null,
+            message: <span>{_t('CmsViewEditorContainer.remoteChange.conflict', {name: this._remoteChangeBy})}{' '}
+                <Button size="small" color="secondary" variant="contained" onClick={() => {
+                    this._keyValueMap = {}
+                    clearTimeout(this._saveCmsPageTimeout)
+                    this.reloadFromServer(true)
+                }}>{_t('CmsViewEditorContainer.remoteChange.reload')}</Button></span>
+        })
+    }
+
+    /**
+     * Loads the page from the server and takes it over into the editor state.
+     * (refetch() of the query HOC does not request again when the variables are unchanged)
+     */
+    reloadFromServer(discardLocal) {
+        if (this._reloading) {
+            this._reloadAgain = true
+            return
+        }
+        this._reloading = true
+        const query = getCmsPageQuery(this.props),
+            variables = getGqlVariables(this.props)
+        client.query({fetchPolicy: 'network-only', query, variables}).then(res => {
+            const cmsPage = res && res.data && res.data.cmsPage
+            if (!cmsPage || this._isUnmounted) return
+            if (!discardLocal && this.hasLocalChanges()) {
+                // started typing meanwhile: do not replace the text under the caret
+                this.showRemoteChangeNotice()
+                return
+            }
+            client.writeQuery({query, variables, data: res.data})
+            const fresh = CmsViewEditorContainer.propsToState({...this.props, cmsPage}, this.state)
+            const counts = {}
+            Object.keys(this.state).forEach(key => {
+                if (key.endsWith('ChangeCount')) {
+                    // the code editors only reload their value when the count changes
+                    counts[key] = (this.state[key] || 0) + 1
+                }
+            })
+            this._keyValueMap = {}
+            this._remoteNoticeShown = false
+            this.resetHistory()
+            this.setState({...fresh, ...counts, saveStatus: null})
+        }).catch(e => {
+            console.warn('reload of the cms page failed', e)
+        }).finally(() => {
+            this._reloading = false
+            if (this._reloadAgain) {
+                this._reloadAgain = false
+                this.reloadFromServer()
+            }
+        })
+    }
+
+    renderEditors() {
+        const editors = this.state.cmsEditors
+        if (!editors || editors.length === 0) {
+            return null
+        }
+        const names = [...new Set(editors.map(e => e.username + (e.typing ? ' (' + _t('CmsViewEditorContainer.editors.typing') + ')' : '')))]
+        const details = editors.map(e => e.username + (e.elementLabel ? ': ' + e.elementLabel : '') + (e.typing ? ', ' + _t('CmsViewEditorContainer.editors.typing') : ''))
+        return <Tooltip key="cmsEditors" arrow placement="bottom"
+                        title={<span>{_t('CmsViewEditorContainer.editors.hint')}{details.map(d => <span key={d}><br/>{d}</span>)}</span>}>
+            <span style={{
+                fontSize: '0.8125rem',
+                marginRight: '0.75rem',
+                whiteSpace: 'nowrap',
+                padding: '0.125rem 0.5rem',
+                borderRadius: '1rem',
+                background: 'rgba(255,255,255,0.18)'
+            }}>{_t('CmsViewEditorContainer.editors.alsoOpen', {names: names.join(', ')})}</span>
+        </Tooltip>
     }
 
     shouldComponentUpdate(props, state) {
@@ -516,7 +713,7 @@ class CmsViewEditorContainer extends React.Component {
 
         if (slugChanged) {
             JsonDomHelper.disableEvents = false
-            this.watchCmsPageStatus(true)
+            this.watchCmsPageStatus()
             this.resetHistory()
         }
 
@@ -573,6 +770,7 @@ class CmsViewEditorContainer extends React.Component {
             state.serverScriptChangeCount !== this.state.serverScriptChangeCount ||
             state.undoCount !== this.state.undoCount ||
             state.saveStatus !== this.state.saveStatus ||
+            state.cmsEditors !== this.state.cmsEditors ||
             state.redoCount !== this.state.redoCount ||
             state.manual !== this.state.manual ||
             state.EditorOptions !== this.state.EditorOptions ||
@@ -666,6 +864,10 @@ class CmsViewEditorContainer extends React.Component {
             !props.dynamic && <ErrorHandler key="errorHandler" snackbar/>,
             !props.dynamic && <NotificationHandler />,
             <NetworkStatusHandler key="networkStatus"/>,
+            // frames around the elements other users are editing right now
+            this.state.cmsEditors && this.state.cmsEditors.length > 0 &&
+                <RemoteEditorMarkers key="remoteEditorMarkers" editors={this.state.cmsEditors}
+                                     typingLabel={_t('CmsViewEditorContainer.editors.typing')}/>,
             simpleDialog && <SimpleDialog open={true}
                                           fullWidth={true}
                                           maxWidth={simpleDialog.maxWidth || 'md'}
@@ -1225,6 +1427,10 @@ class CmsViewEditorContainer extends React.Component {
 
             if(canMangeCmsContent) {
 
+                const editorsElement = this.renderEditors()
+                if (editorsElement) {
+                    toolbarRight.push(editorsElement)
+                }
                 const saveStatusElement = this.renderSaveStatus()
                 if (saveStatusElement) {
                     toolbarRight.push(saveStatusElement)

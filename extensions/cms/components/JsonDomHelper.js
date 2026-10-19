@@ -151,6 +151,23 @@ let helperUidCounter = 0
  * Snapshots are taken per typing burst (pause > INLINE_UNDO_PAUSE ms), caret positions are kept as
  * text offsets, so they survive the re-render.
  */
+// translation option of an inline edited field ($inlineEditor.options.<field> with tr and trKey)
+const getInlineTrOption = (subJson, field) => {
+    const opt = subJson && subJson.$inlineEditor && subJson.$inlineEditor.options && subJson.$inlineEditor.options[field]
+    return opt && opt.tr && opt.trKey && !opt.trGlobal ? opt : null
+}
+
+// translated text is stored in the data resolver under tr.<lang>.<trKey>, the template only keeps this placeholder
+const getTrPlaceholder = ({trKey, trContext}) => `$\{_t('${trKey}'${trContext ? ',' + trContext : ''})\}`
+
+const writeTranslation = (onDataResolverPropertyChange, trKey, value, instantSave) => {
+    onDataResolverPropertyChange({
+        value: Util.escapeForJson(Util.escapeForJson(value)),
+        path: 'tr.' + _app_.lang + '.' + trKey,
+        instantSave
+    })
+}
+
 const INLINE_UNDO_PAUSE = 800
 const INLINE_UNDO_LIMIT = 100
 
@@ -262,6 +279,13 @@ class JsonDomHelper extends React.Component {
             const {el, offset} = this._pendingCaret
             this._pendingCaret = null
             if (document.activeElement === el && getCaretTextOffset(el) !== offset) {
+                setCaretTextOffset(el, offset)
+            }
+        } else if (this._lastCaret && document.activeElement === this._lastCaret.el) {
+            // a later re-render (e.g. the saved translation comes back as resolvedData) replaced the text node:
+            // the browser puts the caret to the start - put it back where the user was typing
+            const {el, offset} = this._lastCaret
+            if (offset > 0 && getCaretTextOffset(el) === 0) {
                 setCaretTextOffset(el, offset)
             }
         }
@@ -1320,10 +1344,12 @@ class JsonDomHelper extends React.Component {
         // "Content directly editable" ($contentEditable in the template): the element itself is editable,
         // but nothing took over the input - typed text was never written to the template or saved
         // not inside a loop and not for placeholders ($.loop{...}, ${...}): the template holds no literal text there
-        const directValue = hasJsonToEdit && subJson ? (isString(subJson.$c) ? subJson.$c : subJson.c) : null
+        const directField = hasJsonToEdit && subJson && isString(subJson.$c) ? '$c' : 'c'
+        const directValue = hasJsonToEdit && subJson ? subJson[directField] : null
+        const directTr = getInlineTrOption(subJson, directField)
         const isDirectlyEditable = !hasRichTextBar && !_options.contentEditable && !!rest.contentEditable &&
             hasJsonToEdit && !isInLoop && rest._key.indexOf('$loop') < 0 &&
-            (directValue === undefined || directValue === null ||
+            (directValue === undefined || directValue === null || !!directTr ||
                 (isString(directValue) && directValue.indexOf('${') < 0 && directValue.indexOf('$.') < 0))
         const isContentEditable = hasRichTextBar || _options.contentEditable || isDirectlyEditable
         const isDraggable = !isInLoop && hasJsonToEdit && _options.allowDrag !== false
@@ -1534,28 +1560,41 @@ class JsonDomHelper extends React.Component {
                         }
                     }
                     const applyInlineContent = (el) => {
-                        if (isDirectlyEditable && !isString(subJson.$c)) {
-                            // plain text element (e.g. a headline): keep it as text in c
-                            const caret = getCaretTextOffset(el)
-                            if (caret !== null) {
-                                // restored in componentDidUpdate, right after the re-render
-                                this._pendingCaret = {el, offset: caret}
+                        const field = isDirectlyEditable && !isString(subJson.$c) ? 'c' : '$c'
+                        const value = field === 'c' ? el.innerText : el.innerHTML
+                        const caret = getCaretTextOffset(el)
+                        if (caret !== null) {
+                            // restored in componentDidUpdate, right after a re-render replaced the text node
+                            this._pendingCaret = {el, offset: caret}
+                            this._lastCaret = {el, offset: caret}
+                        }
+                        const trOption = getInlineTrOption(subJson, field)
+                        if (trOption && _onDataResolverPropertyChange) {
+                            // translated text: like the element dialog - the text goes to tr.<lang>.<trKey> in the
+                            // data resolver, the template keeps (or gets back) the _t placeholder
+                            let trValue = value
+                            if (field === 'c' && !subJson.$toHtml) {
+                                trValue = trValue.replace(/\n/g, '')
                             }
-                            setPropertyByPath(el.innerText,'c',subJson)
-                            _onTemplateChange(_json, 'typing')
-                            // fallback, in case the re-render did not go through this component
-                            requestAnimationFrame(() => {
-                                if (this._pendingCaret && this._pendingCaret.el === el) {
-                                    this._pendingCaret = null
-                                    if (document.activeElement === el && getCaretTextOffset(el) !== caret) {
-                                        setCaretTextOffset(el, caret)
-                                    }
-                                }
-                            })
+                            writeTranslation(_onDataResolverPropertyChange, trOption.trKey, trValue, false)
+                            const placeholder = getTrPlaceholder(trOption)
+                            if (subJson[field] !== placeholder) {
+                                setPropertyByPath(placeholder, field, subJson)
+                                _onTemplateChange(_json, 'typing')
+                            }
                         } else {
-                            setPropertyByPath(el.innerHTML,'$c',subJson)
+                            setPropertyByPath(value, field, subJson)
                             _onTemplateChange(_json, 'typing')
                         }
+                        // fallback, in case the re-render did not go through this component
+                        requestAnimationFrame(() => {
+                            if (this._pendingCaret && this._pendingCaret.el === el) {
+                                this._pendingCaret = null
+                                if (document.activeElement === el && caret !== null && getCaretTextOffset(el) !== caret) {
+                                    setCaretTextOffset(el, caret)
+                                }
+                            }
+                        })
                     }
                     helperEvents.onKeyDown = (e) => {
                         const key = e.key ? e.key.toLowerCase() : ''
@@ -2660,9 +2699,14 @@ class JsonDomHelper extends React.Component {
             }
 
             if (newJsonElement.options[key].tr && newJsonElement.options[key].trKey) {
-                if (this.props._scope.data.tr) {
-                    const trEl = this.props._scope.data.tr[newJsonElement.options[key].trKey]
-                    newJsonElement.options[key].value = trEl ? trEl.replace(/\\"/g, '"').replace(/\\n/g, '\n') : ''
+                const trData = this.props._scope && this.props._scope.data && this.props._scope.data.tr
+                const trEl = trData ? trData[newJsonElement.options[key].trKey] : null
+                if (trEl) {
+                    newJsonElement.options[key].value = trEl.replace(/\\"/g, '"').replace(/\\n/g, '\n')
+                } else {
+                    // no translation yet (e.g. translation was just switched on): show the text of the template,
+                    // unless it is already the _t placeholder - saving moves it into the translation
+                    newJsonElement.options[key].value = isString(val) && val.indexOf('_t(') < 0 ? val : ''
                 }
             } else {
                 newJsonElement.options[key].value = val
@@ -2881,14 +2925,10 @@ class JsonDomHelper extends React.Component {
                                 if(currentOpt.trGlobal) {
                                     // handle global tr
                                 }else{
-                                    _onDataResolverPropertyChange({
-                                        value: Util.escapeForJson(Util.escapeForJson(val)),
-                                        path: 'tr.' + _app_.lang + '.' + currentOpt.trKey,
-                                        instantSave: true
-                                    })
+                                    writeTranslation(_onDataResolverPropertyChange, currentOpt.trKey, val, true)
                                 }
                             }
-                            setPropertyByPath(`$\{_t('${currentOpt.trKey}'${currentOpt.trContext?','+currentOpt.trContext:''})\}`, key, comp, '_')
+                            setPropertyByPath(getTrPlaceholder(currentOpt), key, comp, '_')
 
                         } else if(val!==null && val!==undefined){
                             setPropertyByPath(val, key, comp, '_')

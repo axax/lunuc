@@ -60,7 +60,57 @@ const setPageOptionsAsMeta = async (db, context, result)=>{
     result.meta = JSON.stringify(meta)
 }
 
-const cmsPageStatus = {}, globalScope = {}
+const globalScope = {}
+
+/*
+ * Who has a page open in the editor - one entry per browser tab (clientId).
+ * An editor is registered while its subscription cmsPageEditors is running: it is added when the subscription
+ * starts and removed when it ends (editor closed, tab closed, connection lost - the websocket server ends all
+ * subscriptions of a closed connection). So no heartbeat/polling is needed.
+ * What the editor is doing (typing, element with the caret) is reported via cmsPageActivity, only on change.
+ * Kept in memory: fine for one API process (app.yml instances: 1), several processes would need a shared store.
+ */
+const cmsPageEditors = {} // slug -> {clientId: {_id, username, since, typing, elementKey, elementLabel}}
+
+const getActiveEditors = (slug) => {
+    const entries = cmsPageEditors[slug] || {}
+    return Object.keys(entries)
+        .map(clientId => ({clientId, ...entries[clientId]}))
+        .sort((a, b) => a.since - b.since)
+}
+
+const publishEditors = (slug) => {
+    pubsub.publish('cmsPageEditors', {slug, cmsPageEditors: {slug, editors: JSON.stringify(getActiveEditors(slug))}})
+}
+
+const addEditor = (slug, context) => {
+    if (!slug || !context || !context.id || !context.clientId) {
+        return null
+    }
+    if (!cmsPageEditors[slug]) {
+        cmsPageEditors[slug] = {}
+    }
+    cmsPageEditors[slug][context.clientId] = {
+        _id: context.id,
+        username: context.username,
+        since: Date.now(),
+        typing: false,
+        elementKey: null,
+        elementLabel: null
+    }
+    publishEditors(slug)
+    return context.clientId
+}
+
+const removeEditor = (slug, clientId) => {
+    if (cmsPageEditors[slug] && cmsPageEditors[slug][clientId]) {
+        delete cmsPageEditors[slug][clientId]
+        if (Object.keys(cmsPageEditors[slug]).length === 0) {
+            delete cmsPageEditors[slug]
+        }
+        publishEditors(slug)
+    }
+}
 
 export default db => ({
     Query: {
@@ -406,27 +456,31 @@ export default db => ({
             }
             return result
         },
+        cmsPageActivity: async ({slug, typing, elementKey, elementLabel}, req) => {
+            const {context} = req
+            const entry = context.id && context.clientId && cmsPageEditors[slug] && cmsPageEditors[slug][context.clientId]
+            if (entry) {
+                entry.typing = !!typing
+                entry.elementKey = elementKey || null
+                entry.elementLabel = elementLabel || null
+                publishEditors(slug)
+            }
+            return {editors: JSON.stringify(getActiveEditors(slug))}
+        },
         cmsPageStatus: async ({slug}, req) => {
             if (!req.context.id) {
                 return {user: null}
             }
-            if (!cmsPageStatus[slug] || (new Date() - cmsPageStatus[slug].time) > 6000) {
-                cmsPageStatus[slug] = {user: {username: req.context.username, _id: req.context.id}}
-            }
-
-            if (cmsPageStatus[slug].user._id === req.context.id) {
-                cmsPageStatus[slug].time = new Date()
-            }
-
+            const editors = getActiveEditors(slug)
             const data = {}
             if (Hook.hooks['cmsPageStatus'] && Hook.hooks['cmsPageStatus'].length) {
-                let c = Hook.hooks['cmsPageStatus'].length
                 for (let i = 0; i < Hook.hooks['cmsPageStatus'].length; ++i) {
                     await Hook.hooks['cmsPageStatus'][i].callback({db, slug, req, data})
                 }
             }
 
-            return {user: cmsPageStatus[slug].user, data: JSON.stringify(data)}
+            // user (the former single owner of the page) is not used any more, see editors
+            return {user: null, data: JSON.stringify(data), editors: JSON.stringify(editors)}
         },
         cmsPageGroups: async ({path ='', _version}, req) => {
             const {context} = req
@@ -695,6 +749,19 @@ export default db => ({
                 pubsubHooked.publish('subscribeCmsPage', {userId:context.id,subscribeCmsPage: {_meta, action: 'update', data: [result]}}, db, context)
             }
 
+            // lightweight notice for open editors of this page (no page content)
+            pubsub.publish('cmsPageChanged', {
+                slug: rest.slug,
+                clientId: context.clientId,
+                cmsPageChanged: {
+                    slug: rest.slug,
+                    userId: context.id,
+                    username: context.username,
+                    modifiedAt: result.modifiedAt ? String(result.modifiedAt) : String(Date.now()),
+                    fields: Object.keys(rest).filter(key => ['slug', '_version'].indexOf(key) < 0)
+                }
+            })
+
             return result
         },
         deleteCmsPage: async ({_id, _version}, {context}) => {
@@ -711,6 +778,43 @@ export default db => ({
         cmsPageData: withFilter(() => pubsub.asyncIterableIterator('cmsPageData'),
             (payload, context) => {
                 return payload && context.clientId === payload.clientId
+            }
+        ),
+        // root field function: called with (args, context, info) when the subscription starts
+        cmsPageEditors: async (args, context, info) => {
+            // withFilter returns a promise of the iterator
+            const filtered = await withFilter(() => pubsub.asyncIterableIterator('cmsPageEditors'),
+                async (payload, ctx) => {
+                    return !!(payload && ctx && ctx.id && ctx.variables &&
+                        payload.slug === ctx.variables.slug &&
+                        await Util.userHasCapability(db, ctx, CAPABILITY_VIEW_CMS_EDITOR))
+                }
+            )(args, context, info)
+            // the websocket server does not pass the graphql variables on, they are in context.variables
+            // (see api/subscription.mjs) - same as for the other subscriptions
+            const slug = (args && args.slug) || (context && context.variables && context.variables.slug)
+            const clientId = addEditor(slug, context)
+            if (clientId) {
+                // ends when the editor unsubscribes or the websocket connection is closed
+                const originalReturn = filtered.return ? filtered.return.bind(filtered) : null
+                let removed = false
+                filtered.return = (value) => {
+                    if (!removed) {
+                        removed = true
+                        removeEditor(slug, clientId)
+                    }
+                    return originalReturn ? originalReturn(value) : Promise.resolve({value, done: true})
+                }
+            }
+            return filtered
+        },
+        cmsPageChanged: withFilter(() => pubsub.asyncIterableIterator('cmsPageChanged'),
+            async (payload, context) => {
+                // not to the tab that saved
+                return !!(payload && context && context.id && context.variables &&
+                    payload.slug === context.variables.slug &&
+                    (!payload.clientId || payload.clientId !== context.clientId) &&
+                    await Util.userHasCapability(db, context, CAPABILITY_VIEW_CMS_EDITOR))
             }
         ),
         cmsCustomData: withFilter(() => pubsub.asyncIterableIterator('cmsCustomData'),

@@ -9,6 +9,20 @@ type CmsCustomData{
 type CmsPageStatus{
     user: UserPublic  
     data: String  
+    editors: String
+}
+
+type CmsPageEditors{
+    slug: String
+    editors: String
+}
+
+type CmsPageChanged{
+    slug: String
+    userId: ID
+    username: String
+    modifiedAt: String
+    fields: [String]
 }
 
 type CmsPageGroupResult{
@@ -40,6 +54,7 @@ type Query {
     cmsPage(slug: String!, props: String, query: String, nosession: String, editmode: Boolean, inEditor: Boolean, meta: String, dynamic: Boolean, _version: String): CmsPage
     cmsServerMethod(slug: String!, methodName: String!, args: String, props: String, query: String, _version: String, dynamic: Boolean): CmsServerMethod
     cmsPageStatus(slug: String!): CmsPageStatus
+    cmsPageActivity(slug: String!, typing: Boolean, elementKey: String, elementLabel: String): CmsPageStatus
 }
 
 type Mutation {
@@ -49,5 +64,7 @@ type Mutation {
 type Subscription{
     cmsPageData: CmsPage
     cmsCustomData(filter:String): CmsCustomData
+    cmsPageEditors(slug: String): CmsPageEditors
+    cmsPageChanged(slug: String): CmsPageChanged
 }
 `
