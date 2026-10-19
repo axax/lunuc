@@ -13,7 +13,7 @@ import {
     marginOptions,
     observeOptions,
     styleIndented,
-    trOptions
+    trOptions, EXTENDED_TAB
 } from './optionHelpers.mjs'
 
 
@@ -200,7 +200,7 @@ export const buildAdvancedElements = () => [
             },
             // the server returns the component together with the page (util/cmsIncludes.mjs)
             p_include: {
-                tab: 'elements.cmsComponent',
+                tab: EXTENDED_TAB,
                 type: 'Boolean',
                 label: _t('elements.cmsInclude'),
                 description: _t('elements.cmsIncludeHint'),

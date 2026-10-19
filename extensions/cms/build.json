@@ -155,12 +155,14 @@
         {
           "name": "template",
           "hideColumnInTypes": true,
+          "alwaysLoad": false,
           "searchable": true,
           "vagueSearchable": false
         },
         {
           "name": "script",
           "hideColumnInTypes": true,
+          "alwaysLoad": false,
           "searchable": true,
           "vagueSearchable": false
         },
@@ -197,6 +199,7 @@
         {
           "name": "resources",
           "hideColumnInTypes": true,
+          "alwaysLoad": false,
           "searchable": true,
           "vagueSearchable": false,
           "access": {
@@ -208,6 +211,7 @@
         {
           "name": "style",
           "hideColumnInTypes": true,
+          "alwaysLoad": false,
           "searchable": true,
           "vagueSearchable": false
         },
