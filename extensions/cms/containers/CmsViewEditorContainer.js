@@ -368,6 +368,7 @@ class CmsViewEditorContainer extends React.Component {
             }
             window.addEventListener('beforeunload', this._handleSaveEvent)
             window.addEventListener('blur', this._handleSaveEvent)
+            window.addEventListener('keydown', this.handleEditorKeyDown)
             this._unblockHistory = history.block(() => {
                 this.saveCmsPage()
                 return true
@@ -380,6 +381,7 @@ class CmsViewEditorContainer extends React.Component {
         if (this._handleSaveEvent) {
             window.removeEventListener('beforeunload', this._handleSaveEvent)
             window.removeEventListener('blur', this._handleSaveEvent)
+            window.removeEventListener('keydown', this.handleEditorKeyDown)
             this._handleSaveEvent = null
         }
         if (this._unblockHistory) {
@@ -389,6 +391,77 @@ class CmsViewEditorContainer extends React.Component {
         setEditorZIndexActive(false)
         clearTimeout(this._watchCmsPageStatus)
         this.saveCmsPage()
+    }
+
+    /**
+     * Ctrl/Cmd+S saves pending changes immediately.
+     * Ctrl/Cmd+Z undoes, Ctrl/Cmd+Shift+Z or Ctrl+Y redoes the last page change - but only when the focus
+     * is not in a field with its own undo (input, textarea, contenteditable, code editor)
+     */
+    handleEditorKeyDown = (e) => {
+        if (!(e.metaKey || e.ctrlKey) || e.altKey) {
+            return
+        }
+        const key = e.key.toLowerCase()
+        if (key === 's') {
+            e.preventDefault()
+            clearTimeout(this._saveCmsPageTimeout)
+            this.saveCmsPage().catch(() => {})
+            return
+        }
+        if (key !== 'z' && key !== 'y') {
+            return
+        }
+        const target = e.target
+        if (target && (target.isContentEditable ||
+            (target.closest && target.closest('input,textarea,select,.cm-editor,[contenteditable]')))) {
+            return
+        }
+        if (!Util.hasCapability(this.props.user, CAPABILITY_MANAGE_CMS_CONTENT)) {
+            return
+        }
+        const redo = key === 'y' || e.shiftKey
+        e.preventDefault()
+        if (redo) {
+            if (this.redoHistory.length > 0) {
+                this.redoLastChange()
+            }
+        } else if (this.undoHistory.length > 0) {
+            this.undoLastChange()
+        }
+    }
+
+    setSaveStatus(saveStatus) {
+        if (!this._isUnmounted && !this.isLocal && this.state.saveStatus !== saveStatus) {
+            this.setState({saveStatus})
+        }
+    }
+
+    renderSaveStatus() {
+        const {saveStatus} = this.state
+        if (!saveStatus || this.isLocal) {
+            return null
+        }
+        const label = _t('CmsViewEditorContainer.saveStatus.' + saveStatus)
+        const hint = saveStatus === 'error' ?
+            _t('CmsViewEditorContainer.saveStatus.retry') :
+            _t('CmsViewEditorContainer.saveStatus.shortcut')
+        return <Tooltip key="saveStatus" arrow placement="bottom" title={hint}>
+            <span role="status" aria-live="polite"
+                  onClick={saveStatus === 'error' || saveStatus === 'pending' ? () => {
+                      clearTimeout(this._saveCmsPageTimeout)
+                      this.saveCmsPage().catch(() => {})
+                  } : undefined}
+                  style={{
+                      fontSize: '0.8125rem',
+                      marginRight: '0.75rem',
+                      whiteSpace: 'nowrap',
+                      cursor: saveStatus === 'error' || saveStatus === 'pending' ? 'pointer' : 'default',
+                      opacity: saveStatus === 'saved' ? 0.8 : 1,
+                      fontWeight: saveStatus === 'error' ? 'bold' : 'normal',
+                      color: saveStatus === 'error' ? '#ffd5d5' : 'inherit'
+                  }}>{label}</span>
+        </Tooltip>
     }
 
     watchCmsPageStatus(instant) {
@@ -498,6 +571,7 @@ class CmsViewEditorContainer extends React.Component {
             state.scriptChangeCount !== this.state.scriptChangeCount ||
             state.serverScriptChangeCount !== this.state.serverScriptChangeCount ||
             state.undoCount !== this.state.undoCount ||
+            state.saveStatus !== this.state.saveStatus ||
             state.redoCount !== this.state.redoCount ||
             state.manual !== this.state.manual ||
             state.EditorOptions !== this.state.EditorOptions ||
@@ -1150,6 +1224,11 @@ class CmsViewEditorContainer extends React.Component {
 
             if(canMangeCmsContent) {
 
+                const saveStatusElement = this.renderSaveStatus()
+                if (saveStatusElement) {
+                    toolbarRight.push(saveStatusElement)
+                }
+
                 const showUndoButton = this.undoHistory.length > 0 || this._hasHadUndo
                 const showRedoButton = this.redoHistory.length > 0 || this._hasHadRedo
 
@@ -1610,6 +1689,7 @@ class CmsViewEditorContainer extends React.Component {
         }
         this.trackHistoryValue(key, value)
         this._keyValueMap[key] = value
+        this.setSaveStatus('pending')
         this._keyValueMapState[key] = value
         clearTimeout(this._setCmsPageStateTimeout)
         clearTimeout(this._saveCmsPageTimeout)
@@ -1646,6 +1726,7 @@ class CmsViewEditorContainer extends React.Component {
                 // (local mode, e.g. a CmsEditor field in a form, has no _id and is saved by updateCmsPage itself)
                 console.warn('cms page has no _id, changes not saved', keys, cmsPage && cmsPage.slug)
                 this._keyValueMap = {}
+                this.setSaveStatus(null)
                 if (_app_.dispatcher && _app_.dispatcher.addNotification) {
                     _app_.dispatcher.addNotification({
                         key: 'cmsPageNotSaved',
@@ -1655,14 +1736,28 @@ class CmsViewEditorContainer extends React.Component {
                 return Promise.resolve()
             }
             console.log('save cms values for', keys)
+            const sentValues = this._keyValueMap
             const result = updateCmsPage({
                 _id: cmsPage._id,
                 slug: cmsPage.slug,
-                realSlug: cmsPage.realSlug, ...this._keyValueMap
+                realSlug: cmsPage.realSlug, ...sentValues
             }, () => {})
             this._keyValueMap = {}
+            const saveId = this._saveId = (this._saveId || 0) + 1
+            this.setSaveStatus('saving')
             // returns the mutation promise, so callers can wait until the page is saved (e.g. export)
-            return Promise.resolve(result)
+            return Promise.resolve(result).then(res => {
+                // only the newest save decides the status, and only if nothing new is waiting
+                if (saveId === this._saveId && Object.keys(this._keyValueMap).length === 0) {
+                    this.setSaveStatus('saved')
+                }
+                return res
+            }, error => {
+                // keep the values that were not saved (unless they changed meanwhile), so the next save retries them
+                this._keyValueMap = {...sentValues, ...this._keyValueMap}
+                this.setSaveStatus('error')
+                throw error
+            })
         }
         return Promise.resolve()
     }
