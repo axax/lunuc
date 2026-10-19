@@ -19,6 +19,7 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import {getIconByKey} from '../../client/components/ui/impl/material/icon'
 import MediaFileExplorer from './components/MediaFileExplorer'
 import {QuickMediaUploader} from './components/QuickMediaUploader'
+import {ExcelSheetSelect, ExcelPreview} from './components/ExcelFields'
 
 const ImageIcon = (props) => <Async {...props} expose="ImageIcon" load={() =>import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 
@@ -344,6 +345,17 @@ export default () => {
         }
     })
 
+
+    // excel fields: sheet selection and preview of a Media (xlsx) chosen in another field of the form
+    Hook.on('GenericFormField', function ({field, fieldKey, value, result}) {
+        if (field.uitype === 'excelSheet') {
+            result.component = <ExcelSheetSelect key={fieldKey} form={this} field={field} fieldKey={fieldKey}
+                                                 value={value} values={this.state.fields}/>
+        } else if (field.uitype === 'excelPreview') {
+            result.component = <ExcelPreview key={fieldKey} form={this} field={field} fieldKey={fieldKey}
+                                             values={this.state.fields}/>
+        }
+    })
 
     Hook.on('GenericFormField', function ({field, value, result}) {
         if (field.uitype === 'mediaReferences') {

@@ -16,6 +16,13 @@ import {decodeHtmlEntities, removeStyleAndScriptTags, MAIL_TLS_CIPHERS} from '..
 // network errors caused by the remote side - not written to the Log collection
 const NOISE_ERROR_CODES = new Set(['ECONNRESET', 'EPIPE', 'ETIMEDOUT', 'ECONNABORTED'])
 
+// On port 25 (MTA-to-MTA, opportunistic STARTTLS) a failed handshake is almost
+// always a scanner/prober offering only obsolete ciphers; real MTAs fall back to
+// plaintext. On submission ports (587/465) these errors point to a real client
+// problem, so they are still logged there.
+const MX_PORT = 25
+const MX_NOISE_ERROR_CODES = new Set(['ERR_SSL_NO_SHARED_CIPHER'])
+
 
 /*
 // open port 25 and 587 on your server
@@ -396,6 +403,9 @@ const startListening = async (db, context) => {
             // A client that drops or times out the TCP connection (scanners,
             // aborted handshakes) is noise, not a server problem.
             if (NOISE_ERROR_CODES.has(err?.code)) {
+                return
+            }
+            if (Number(port) === MX_PORT && MX_NOISE_ERROR_CODES.has(err?.code)) {
                 return
             }
             try {

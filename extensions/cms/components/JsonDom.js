@@ -32,7 +32,21 @@ const escapeControlChar = c => CONTROL_CHAR_SHORT[c] || '\\u' + ('000' + c.charC
 // recognizable virtual file (e.g. jsondom-<slug>-<loc>.js) instead of <anonymous>
 // deterministic name (no counter): keeps V8's eval cache effective and lets the log
 // extension group identical errors by filename
-const withSourceURL = (code, loc) => code + '\n//# sourceURL=jsondom-' + String(loc || 'code').replace(/[^a-zA-Z0-9_-]+/g, '-') + '.js'
+// The code is also kept in window._jsonDomSources (bounded) so the log extension can
+// attach the failing source lines to an error report.
+const JSONDOM_SOURCES_MAX = 300
+const withSourceURL = (code, loc) => {
+    const name = 'jsondom-' + String(loc || 'code').replace(/[^a-zA-Z0-9_-]+/g, '-') + '.js'
+    if (typeof window !== 'undefined') {
+        const sources = window._jsonDomSources || (window._jsonDomSources = new Map())
+        sources.delete(name) // re-insert -> newest at the end
+        sources.set(name, code)
+        if (sources.size > JSONDOM_SOURCES_MAX) {
+            sources.delete(sources.keys().next().value)
+        }
+    }
+    return code + '\n//# sourceURL=' + name
+}
 
 // Cache for compiled template/expression functions. The code strings contain the
 // ${} placeholders (not the rendered values) - data is passed in via `this` at call time,
@@ -1117,6 +1131,14 @@ class JsonDom extends React.Component {
                         }
                     }
                     if (!data) return
+                    if (c === undefined || c === null) {
+                        // a loop without template (e.g. a broken gallery element with only its images in d):
+                        // nothing to render, instead of an error for the whole page
+                        if (this.props.editMode) {
+                            console.warn('JsonDom: loop without template (c) ignored', {slug: this.props.slug, key: rootKey})
+                        }
+                        return
+                    }
                     if (data.constructor === Object) {
                         data = Object.keys(data).map((k) => {
                             return {key: k, value: data[k]}

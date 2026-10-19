@@ -50,6 +50,12 @@ A Type can be define in the build.json of an extension. Types can also have refe
 * pickerField = When the type is a reference you can define which field you want to show in the frontend for type picking
 * alwaysUpdate = always sends the data even if there was no change
 * dynamic = the value of the field is calculated dynamically
+* placement = `header`: the field is shown in the header of the dialog (element with `data-form-header-slot`, e.g. the GenericData dialog), otherwise above the form. Good for small fields like a draft switch
+* fullWidth / twoThirdWidth / thirdWidth / fourthWidth = width of the field from md on (default half width). fourthWidth: 4 per row from lg on, half width on md
+* dependsOnForm = if true the field is re-rendered whenever another value of the form changes (needed for custom fields from the hook `GenericFormField` that read other form values)
+* uitype excelSheet = select with the sheets of an excel file chosen in another field (`mediaField`, default `excel`). Choosing a sheet writes its used range to `rangeField` (default `excelRange`, `false` = keep the range)
+* uitype excelPreview = preview of an excel file (result of `excelSheet`/range/header rows, or the whole sheet where a range can be selected with the mouse). Properties: `mediaField`, `sheetField`, `rangeField`, `headerRowsField`, `sumOnlyField`, `maxHeight`. Both excel uitypes need `dependsOnForm: true`
+* cms component `ExcelTable` (element «Excel-Tabelle», extensions/media/components/ExcelTable.js) renders the same table on a page: props `excel`, `sheet`, `range`, `headerRows`, `sumOnly`, `caption`; css classes `.excel-table`, `tr.is-sum`, `tr.is-section`, `.is-num`
 
 **An example of a type definition**
 ```json

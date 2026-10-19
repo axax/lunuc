@@ -34,7 +34,20 @@ export const translations = {
         'MediaFileExplorer.select':'Auswählen',
         'MediaFileExplorer.selectFolder':'Ganzen Ordner auswählen',
         'MediaFileExplorer.takeSelection':'Auswahl übernehmen',
-        'MediaFileExplorer.loading':'Lade...'
+        'MediaFileExplorer.loading':'Lade...',
+        'ExcelField.firstSheet': 'Erstes Tabellenblatt',
+        'ExcelField.hidden': 'ausgeblendet',
+        'ExcelField.sheetNotFound': 'Tabellenblatt nicht in der Datei gefunden',
+        'ExcelField.selectFileFirst': 'Zuerst eine Excel-Datei wählen',
+        'ExcelField.preview': 'Vorschau',
+        'ExcelField.modeResult': 'Ergebnis',
+        'ExcelField.modeSheet': 'Ganzes Tabellenblatt',
+        'ExcelField.sheetHint': 'Mit der Maus einen Bereich markieren, um den Zellbereich zu setzen.',
+        'ExcelField.resultInfo': 'Blatt «%sheet%», Bereich %range%, %rows% Zeilen',
+        'ExcelField.wholeSheet': 'ganzes Blatt',
+        'ExcelField.truncated': '(nur die ersten %rows% von %total% Zeilen)',
+        'ExcelField.invalidRange': 'Ungültiger Zellbereich «%range%», z.B. A9:H38',
+        'ExcelField.noData': 'Keine Daten im gewählten Bereich'
     },
     en: {
         'Media.editImage': 'Edit image',
@@ -72,6 +85,19 @@ export const translations = {
         'MediaFileExplorer.select': 'Select',
         'MediaFileExplorer.selectFolder': 'Select whole folder',
         'MediaFileExplorer.takeSelection': 'Apply selection',
-        'MediaFileExplorer.loading': 'Loading...'
+        'MediaFileExplorer.loading': 'Loading...',
+        'ExcelField.firstSheet': 'First sheet',
+        'ExcelField.hidden': 'hidden',
+        'ExcelField.sheetNotFound': 'Sheet not found in the file',
+        'ExcelField.selectFileFirst': 'Select an excel file first',
+        'ExcelField.preview': 'Preview',
+        'ExcelField.modeResult': 'Result',
+        'ExcelField.modeSheet': 'Whole sheet',
+        'ExcelField.sheetHint': 'Drag over cells to set the cell range.',
+        'ExcelField.resultInfo': 'Sheet «%sheet%», range %range%, %rows% rows',
+        'ExcelField.wholeSheet': 'whole sheet',
+        'ExcelField.truncated': '(only the first %rows% of %total% rows)',
+        'ExcelField.invalidRange': 'Invalid cell range «%range%», e.g. A9:H38',
+        'ExcelField.noData': 'No data in the selected range'
     }
 }

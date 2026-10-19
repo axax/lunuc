@@ -420,6 +420,84 @@ export const buildAdvancedElements = () => [
         }
     },
     {
+        // excel file (Media) as html table, component ExcelTable (extensions/media/components/ExcelTable.js)
+        tagName: 'ExcelTable',
+        name: _t('elements.key.excelTable'),
+        icon: 'grid',
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'excelTable',
+                allowDrop: false
+            },
+            p: {
+                headerRows: 1,
+                ['data-element-key']: 'excelTable'
+            }
+        },
+        optionOrder: ['p_excel', 'p_sheet', 'p_range', 'p_headerRows', 'p_sumOnly', 'excelPreview'],
+        options: {
+            p_excel: {
+                fullWidth: true,
+                value: '',
+                label: _t('elements.excelTable.file'),
+                uitype: 'type_picker',
+                type: 'Media',
+                filter: 'mimeType=spreadsheetml',
+                projection: ['_id', 'name', 'mimeType'],
+                tab: DEFAULT_TAB
+            },
+            p_sheet: {
+                label: _t('elements.excelTable.sheet'),
+                uitype: 'excelSheet',
+                dependsOnForm: true,
+                mediaField: 'p_excel',
+                rangeField: 'p_range',
+                thirdWidth: true,
+                tab: DEFAULT_TAB
+            },
+            p_range: {
+                label: _t('elements.excelTable.range'),
+                placeholder: 'z.B. A9:H38',
+                thirdWidth: true,
+                tab: DEFAULT_TAB
+            },
+            p_headerRows: {
+                label: _t('elements.excelTable.headerRows'),
+                type: 'Int',
+                thirdWidth: true,
+                tab: DEFAULT_TAB
+            },
+            p_sumOnly: {
+                label: _t('elements.excelTable.sumOnly'),
+                type: 'Boolean',
+                fullWidth: true,
+                tab: DEFAULT_TAB
+            },
+            // only shown in the dialog, has no value
+            excelPreview: {
+                label: _t('elements.excelTable.preview'),
+                uitype: 'excelPreview',
+                dependsOnForm: true,
+                mediaField: 'p_excel',
+                sheetField: 'p_sheet',
+                rangeField: 'p_range',
+                headerRowsField: 'p_headerRows',
+                sumOnlyField: 'p_sumOnly',
+                fullWidth: true,
+                tab: DEFAULT_TAB
+            },
+            p_caption: {
+                label: _t('elements.excelTable.caption'),
+                fullWidth: true,
+                tab: DEFAULT_TAB
+            },
+            ...condition(),
+            ...marginOptions('p_'),
+            ...classOptions('p_'),
+            ...invisibleOptions('p_')
+        }
+    },
+    {
         tagName: 'div',
         name: _t('elements.key.web'),
         icon: 'html',

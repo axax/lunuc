@@ -22,6 +22,13 @@ Hook.on('Routes', ({routes, container}) => {
 }, 99)
 
 
+// cms component for excel tables (element «Excel-Tabelle»)
+const ExcelTable = (props) => <Async {...props} load={() => import(/* webpackChunkName: "excel" */ './components/ExcelTable')}/>
+
+Hook.on('JsonDom', ({components}) => {
+    components['ExcelTable'] = ExcelTable
+})
+
 // Hook to add user capabilities
 Hook.on('userCapabilities', ({capabilities}) => {
     capabilities.push(CAPABILITY_MEDIA_REFERENCES)

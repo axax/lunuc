@@ -1,4 +1,5 @@
 import React from 'react'
+import {createPortal} from 'react-dom'
 import {
     Divider,
     Button,
@@ -206,9 +207,11 @@ const StyledCmsElementsScroll = styled('div')(({theme, collapsed}) => ({
     overflowY: 'auto',
     maxHeight: collapsed ? 'none' : '14rem',
     [theme.breakpoints.up('md')]: {
-        position: collapsed ? 'static' : 'absolute',
-        inset: 0,
-        maxHeight: 'none'
+        // stays in view while a long content is scrolled (sticky inside the stretched panel)
+        position: collapsed ? 'static' : 'sticky',
+        top: 8,
+        // never higher than the panel (= height of the canvas) nor than the visible area
+        maxHeight: collapsed ? 'none' : 'min(100%, calc(100vh - 13rem))'
     }
 }))
 
@@ -224,16 +227,28 @@ const StyledCmsElementsHeader = styled('div')(({theme, collapsed}) => ({
     letterSpacing: '0.04em'
 }))
 
-const getSxProps = (field,theme) => ({
-    margin: 1,
-    display: 'inline-flex',
-    width: 'calc(100% - ' + theme.spacing(2) + ')',
-    ...(!field.fullWidth && {
-        [theme.breakpoints.up('md')]: {
-            width: `calc(${field.twoThirdWidth?'66.66':field.fourthWidth?'25':field.thirdWidth?'33.33':'50'}% - ${theme.spacing(2)})`
-        }
-    })
-})
+const getSxProps = (field,theme) => {
+    if (field.placement === 'header') {
+        // field in the header of the dialog (see renderHeaderFields): only as wide as its content
+        return {margin: 0, display: 'inline-flex', width: 'auto', verticalAlign: 'middle'}
+    }
+    return {
+        margin: 1,
+        display: 'inline-flex',
+        width: 'calc(100% - ' + theme.spacing(2) + ')',
+        ...(!field.fullWidth && {
+            [theme.breakpoints.up('md')]: {
+                // 4 per row only from lg on, on md they would be too narrow
+                width: `calc(${field.twoThirdWidth ? '66.66' : field.thirdWidth ? '33.33' : '50'}% - ${theme.spacing(2)})`
+            },
+            ...(field.fourthWidth && {
+                [theme.breakpoints.up('lg')]: {
+                    width: `calc(25% - ${theme.spacing(2)})`
+                }
+            })
+        })
+    }
+}
 
 
 const autoIncrement = (key, cb) => {
@@ -482,6 +497,44 @@ class GenericForm extends React.Component {
     componentDidMount() {
         if (this.props.onRef)
             this.props.onRef(this)
+        this.updateHeaderSlot()
+    }
+
+    componentDidUpdate() {
+        this.updateHeaderSlot()
+    }
+
+    /*
+     * Fields with placement: 'header' are rendered into an element with the attribute data-form-header-slot
+     * in the dialog of the form (e.g. the title of the GenericData dialog). Without such an element they
+     * are shown above the form.
+     */
+    updateHeaderSlot() {
+        if (!this._hasHeaderFields || !this._rootRef) {
+            return
+        }
+        const current = this.state.headerSlot
+        if (current && current.isConnected) {
+            return
+        }
+        const container = this._rootRef.closest('.MuiDialog-paper') || this._rootRef.parentElement
+        const slot = (container && container.querySelector('[data-form-header-slot]')) || false
+        if (slot !== (current || false)) {
+            this.setState({headerSlot: slot})
+        }
+    }
+
+    renderHeaderFields(headerFields) {
+        if (headerFields.length === 0) {
+            return null
+        }
+        const content = <span className="generic-form-header-fields"
+                              style={{display: 'inline-flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap',
+                                  fontSize: '1rem', fontWeight: 'normal', textAlign: 'left', verticalAlign: 'middle'}}>{headerFields}</span>
+        if (this.state.headerSlot) {
+            return createPortal(content, this.state.headerSlot)
+        }
+        return <div style={{display: 'flex', justifyContent: 'flex-end', marginBottom: 8}}>{content}</div>
     }
 
     validate(state = this.state, updateState = true, options) {
@@ -691,7 +744,7 @@ class GenericForm extends React.Component {
 
     render() {
         const {fields, primaryButton, caption, subForm} = this.props
-        const fieldKeys = Object.keys(fields), formFields = [], tabs = [], formFieldsNoTabs = []
+        const fieldKeys = Object.keys(fields), formFields = [], tabs = [], formFieldsNoTabs = [], headerFields = []
 
         let expandableField, expandableData, datePolyfill = false
         for (let fieldIndex = 0; fieldIndex < fieldKeys.length; fieldIndex++) {
@@ -726,7 +779,9 @@ class GenericForm extends React.Component {
 
             let currentFormFields = formFields
 
-            if (expandableField) {
+            if (field.placement === 'header' && !expandableField) {
+                currentFormFields = headerFields
+            } else if (expandableField) {
                 currentFormFields = expandableData
             } else if (field.expandable) {
                 expandableField = field
@@ -914,6 +969,7 @@ class GenericForm extends React.Component {
         if (datePolyfill) {
             this.loadFlatpickr()
         }
+        this._hasHeaderFields = headerFields.length > 0
         const {tabValue} = this.state
         console.log('render GenericForm')
         const Wrapper = subForm ? 'div' : 'form'
@@ -924,7 +980,10 @@ class GenericForm extends React.Component {
         }
 
         return (
-            <Wrapper style={this.props.style} id={this.props.id}>
+            <Wrapper style={this.props.style} id={this.props.id} ref={el => {
+                this._rootRef = el
+            }}>
+                {this.renderHeaderFields(headerFields)}
                 {tabs.length === 0 && formFields}
                 {formFieldsNoTabs.length > 0 && formFieldsNoTabs}
                 {tabs.length > 0 && <StyledTabContainer>
@@ -1247,7 +1306,7 @@ class GenericForm extends React.Component {
             } catch (e) {
                 json = '${'
             }
-            dynamic = /\$\{|"replacePlaceholders"|"filter"|"highlight"|"helperText"|"autosuggestUrl"|"titleTemplate"|"\$enum"/.test(json)
+            dynamic = /\$\{|"replacePlaceholders"|"filter"|"highlight"|"helperText"|"autosuggestUrl"|"titleTemplate"|"\$enum"|"dependsOnForm"/.test(json)
             this._dynamicFields.set(field, dynamic)
         }
 

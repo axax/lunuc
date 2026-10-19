@@ -73,6 +73,66 @@ function shouldReport(fingerprint) {
     return true
 }
 
+// --- source context for errors in eval'd JsonDom code -----------------------
+// JsonDom compiles CMS scripts with new Function and names them via sourceURL
+// (jsondom-<slug>-<loc>.js). The code is kept in window._jsonDomSources, so the
+// reported line can be resolved to the actual source.
+
+// new Function() puts a wrapper header in front of the body (V8: 2 lines), so the
+// reported line is shifted. Measured once per engine instead of hardcoding it.
+let fnLineOffset
+const getFnLineOffset = () => {
+    if (fnLineOffset === undefined) {
+        fnLineOffset = 0
+        try {
+            new Function('throw new Error("probe")\n//# sourceURL=jsondom-lineprobe.js')()
+        } catch (e) {
+            const m = String(e && e.stack).match(/jsondom-lineprobe\.js:(\d+)/)
+            if (m) fnLineOffset = parseInt(m[1]) - 1
+        }
+    }
+    return fnLineOffset
+}
+
+const JSONDOM_LOCATION_RES = [
+    /(jsondom-[\w-]+\.js):(\d+):(\d+)/, // stack frame (Chrome/Firefox/Safari)
+    /URL: (jsondom-[\w-]+\.js)\nLine: (\d+), Column: (\d+)/ // window error message
+]
+
+const getSourceContext = (text) => {
+    try {
+        const sources = window._jsonDomSources
+        if (!sources || !text) return null
+        let m
+        for (const re of JSONDOM_LOCATION_RES) {
+            m = String(text).match(re)
+            if (m) break
+        }
+        if (!m) return null
+        const file = m[1].replace(/^.*\//, '')
+        const code = sources.get(file)
+        if (!code) return null
+
+        const lines = code.split('\n')
+        const line = parseInt(m[2]) - getFnLineOffset() // 1-based line in the script
+        const col = parseInt(m[3])
+        if (line < 1 || line > lines.length) return null
+
+        const from = Math.max(1, line - 2), to = Math.min(lines.length, line + 2)
+        const out = []
+        for (let i = from; i <= to; i++) {
+            const marker = i === line ? '>' : ' '
+            out.push(marker + ' ' + String(i).padStart(4) + ' | ' + lines[i - 1].slice(0, 300))
+            if (i === line && col > 0 && col <= 300) {
+                out.push('  ' + ' '.repeat(4) + ' | ' + ' '.repeat(col - 1) + '^')
+            }
+        }
+        return {file, line, column: col, snippet: out.join('\n')}
+    } catch (e) {
+        return null
+    }
+}
+
 const sendError = ({location, message, meta, fingerprint}) => {
 
     // dedupe/throttle: default fingerprint is location + first line of message
@@ -80,6 +140,12 @@ const sendError = ({location, message, meta, fingerprint}) => {
     if (!shouldReport(fp)) return Promise.resolve()
 
     const entry = errorLog.seen.get(fp)
+
+    const source = getSourceContext(message)
+    if (source) {
+        message += '\n\nSource (' + source.file + ', line ' + source.line + '):\n' + source.snippet
+        meta = {...meta, sourceFile: source.file, sourceLine: source.line, sourceColumn: source.column}
+    }
 
     const queries = getTypeQueries('Log')
     return client.mutate({

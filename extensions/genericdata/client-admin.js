@@ -486,7 +486,10 @@ export default () => {
                     props.title = <React.Fragment>
                         {structure.title || newDataToEdit.definition.name}{newDataToEdit._id && userHasCapa ? ' (' + newDataToEdit._id + ')' : ''}
                         <div
-                            style={{float: 'right', textAlign: 'right'}}>{userHasCapa && [<SimpleButton
+                            style={{float: 'right', textAlign: 'right', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', justifyContent: 'flex-end'}}>
+                            {/* fields with placement: 'header' are rendered here by GenericForm */}
+                            <span data-form-header-slot="" style={{display: 'contents'}}/>
+                            {userHasCapa && [<SimpleButton
                             key="showJson" size="small" variant="contained"
                             color="primary"
                             onClick={() => {

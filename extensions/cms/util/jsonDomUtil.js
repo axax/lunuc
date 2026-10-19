@@ -344,6 +344,39 @@ const syncResizeObserver = (nodes) => {
     })
 }
 
+/*
+ * Visible area of a node inside its scrolling ancestors (e.g. the content of a dialog), in viewport coordinates.
+ * The editor chrome (highlighter, toolbar) is position: fixed and would otherwise be drawn over the
+ * dialog title or outside the dialog while the content is scrolled.
+ */
+const getScrollClipRect = node => {
+    let el = node.parentElement, clip = null
+    while (el && el !== document.body && el !== document.documentElement) {
+        const style = window.getComputedStyle(el)
+        if (/(auto|scroll|overlay)/.test(style.overflowY + ' ' + style.overflowX)) {
+            const r = el.getBoundingClientRect()
+            clip = clip ? {
+                top: Math.max(clip.top, r.top), left: Math.max(clip.left, r.left),
+                bottom: Math.min(clip.bottom, r.bottom), right: Math.min(clip.right, r.right)
+            } : {top: r.top, left: r.left, bottom: r.bottom, right: r.right}
+        }
+        el = el.parentElement
+    }
+    return clip
+}
+
+// clips a fixed element (incl. its overflowing children like labels) to the given viewport rect
+const applyScrollClip = (el, clip, top, left) => {
+    if (!clip) {
+        if (el.style.clipPath) {
+            el.style.clipPath = ''
+        }
+        return
+    }
+    const t = clip.top - top, l = clip.left - left, b = clip.bottom - top, r = clip.right - left
+    el.style.clipPath = `polygon(${l}px ${t}px, ${r}px ${t}px, ${r}px ${b}px, ${l}px ${b}px)`
+}
+
 export const highlighterHandler = (e, observer, after) => {
     const hightlighters = document.querySelectorAll('[data-highlighter]')
 
@@ -379,11 +412,16 @@ export const highlighterHandler = (e, observer, after) => {
             hightlighter.style.width = pos.width+2 + 'px'
             hightlighter.style.height = pos.height+2 + 'px'
 
+            // only in dialogs (CmsEditor field): on a page the window scrolls and nothing has to be clipped
+            const clip = hightlighter.hasAttribute('data-in-dialog') ? getScrollClipRect(node) : null
+            applyScrollClip(hightlighter, clip, pos.top - 1, pos.left - 1)
+
             const toolbar = byUid('data-toolbar')
             if (toolbar) {
                 toolbar.style.top = pos.top + 'px'
                 toolbar.style.left = pos.left + 'px'
                 toolbar.style.height = pos.height + 'px'
+                applyScrollClip(toolbar, clip, pos.top, pos.left)
             }
 
             const toolbarRichtext = byUid('data-richtext-toolbar')
