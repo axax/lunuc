@@ -276,18 +276,20 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
     // War die Seite während des Requests im Hintergrund (oder das Gerät im Ruhezustand)?
     // Dann hängen Requests und Timer "verschlafen" - ein Timeout/Netzwerkfehler ist dann
     // kein Backend-Problem.
-    let wasHidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
+    // Auf dem Server (SSR) gibt es nur einen Dummy (global.document in api/index.mjs) ohne Event-API
+    const hasDocumentEvents = typeof document !== 'undefined' && typeof document.addEventListener === 'function'
+    let wasHidden = hasDocumentEvents && document.visibilityState === 'hidden'
     const onVisibilityChange = () => {
         if (document.visibilityState === 'hidden') wasHidden = true
     }
-    if (typeof document !== 'undefined') {
+    if (hasDocumentEvents) {
         document.addEventListener('visibilitychange', onVisibilityChange)
     }
 
     const finalizeRequest = () => {
         if (timeoutId !== null) clearTimeout(timeoutId)
         if (cacheKey) delete FETCHING_BY_CACHEKEY[cacheKey]
-        if (typeof document !== 'undefined') {
+        if (hasDocumentEvents) {
             document.removeEventListener('visibilitychange', onVisibilityChange)
         }
     }
@@ -434,7 +436,8 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
 
                 const isTimeout = controller._timeout
                 const isAborted = !isTimeout && (error.name === 'AbortError' || controller.signal.aborted)
-                const isOffline = typeof navigator !== 'undefined' && !navigator.onLine
+                // Node >= 21 hat ein globales navigator ohne onLine -> nur echtes boolean auswerten
+                const isOffline = typeof navigator !== 'undefined' && typeof navigator.onLine === 'boolean' && !navigator.onLine
 
                 // Bewusste Aborts (z.B. Unmount): nie retrien, still scheitern.
                 if (isAborted) {

@@ -52,7 +52,7 @@ const renderToCollectFetchRec = async (component, context)=>{
 
 export const renderToString = (component, context) => {
 
-    return new Promise(async (resolve) => {
+    return new Promise(async (resolve, reject) => {
 
         const backupLang = _app_.lang
         try {
@@ -65,7 +65,10 @@ export const renderToString = (component, context) => {
             resolve(ReactDOMServer.renderToString(component))
 
         }catch (e) {
-            console.log(e)
+            // finalFetch rejected mit einem Objekt ({error, loading, networkStatus}), nicht mit einem Error
+            const error = e instanceof Error ? e : new Error(e?.error?.message || e?.message || String(e))
+            console.error(`ssr renderToString failed (lang=${context?.lang || _app_.lang}): ${error.message}`, e)
+            reject(error)
         }
 
         _app_.lang = backupLang

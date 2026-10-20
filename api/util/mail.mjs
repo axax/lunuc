@@ -56,6 +56,7 @@ export const sendMail = async (db, context, {settings, recipient, from, fromName
                 req
             })
         }catch (e){
+            console.error(`sendMail: rendering template "${slug}" failed: ${e.message}`)
             return {error: e.message}
         }
 
