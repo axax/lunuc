@@ -275,6 +275,10 @@
           "hidden": true
         },
         {
+          "name": "baseVersions",
+          "hidden": true
+        },
+        {
           "name": "meta",
           "type": "Object",
           "hidden": true,

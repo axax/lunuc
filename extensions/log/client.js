@@ -199,13 +199,44 @@ export default () => {
     // unhandled promise rejections
     window.addEventListener('unhandledrejection', (e) => {
         const reason = e.reason
-        const message = reason instanceof Error
-            ? reason.message + '\n\n' + (reason.stack || '(no stack trace)')
-            : String(reason)
+
+        // intentional aborts are not errors: graphql requests cancelled on unmount,
+        // via clearFetchById or superseded by a newer request (e.g. search-as-you-type)
+        if (reason && (reason.aborted === true || reason.name === 'AbortError' ||
+            (reason.error && reason.error.name === 'AbortError'))) return
+
+        // graphql client rejects with {error, loading, networkStatus} -> unwrap the error
+        const err = reason instanceof Error
+            ? reason
+            : reason && reason.error instanceof Error ? reason.error : null
+
+        let message
+        if (err) {
+            message = (err.name && err.name !== 'Error' ? err.name + ': ' : '') + err.message +
+                '\n\n' + (err.stack || '(no stack trace)')
+        } else if (reason && typeof reason === 'object') {
+            // plain object -> describe it instead of logging "[object Object]"
+            const firstLine = (reason.error && reason.error.message) || reason.message ||
+                'Non-Error rejection (' + (reason.constructor && reason.constructor.name || 'Object') + ')'
+            let json
+            try {
+                json = JSON.stringify(reason, (k, v) => v instanceof Error
+                    ? {name: v.name, message: v.message, stack: v.stack}
+                    : typeof v === 'function' ? undefined : v, 2)
+            } catch (jsonError) {
+                json = '(not serializable: ' + jsonError.message + ') keys: ' + Object.keys(reason).join(', ')
+            }
+            message = firstLine + '\n\nReason: ' + (json && json.length > 3000 ? json.slice(0, 3000) + '...' : json)
+        } else {
+            message = 'Non-Error rejection: ' + String(reason)
+        }
 
         sendError({
             location: 'unhandledrejection',
-            message
+            message,
+            meta: {
+                currentSlug: typeof _app_ !== 'undefined' && _app_ ? _app_.currentSlug : undefined
+            }
         })
     })
 

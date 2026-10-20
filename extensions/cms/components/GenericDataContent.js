@@ -16,7 +16,40 @@ import {DEFAULT_TEMPLATE_MINIMAL} from '../constants/cmsDefaults.mjs'
  * Until the pointer/focus reaches the content it is only rendered (no editor), see `active`; the optional prop
  * `preview` (json) is shown instead of `value` in that state.
  * Every change is saved after a short delay as partial update of data.<field> (other fields stay untouched).
+ *
+ * `slots` (json or object): {"attribute": "data-jb-slot", "values": {"themenfelder": [<json>]}} shows generated
+ * content in placeholder elements while editing (e.g. the cards instead of "Themenfelder (Kacheln ...)").
+ * Only for the display, the placeholder stays in the saved content and can be moved or removed.
  */
+
+// generated content must not be edited inline: its elements are not part of the edited json
+const lockSlotJson = node => {
+    if (Array.isArray(node)) return node.map(lockSlotJson)
+    if (node && typeof node === 'object') {
+        const copy = {...node, $inlineEditor: false}
+        if (copy.c && typeof copy.c === 'object') copy.c = lockSlotJson(copy.c)
+        return copy
+    }
+    return node
+}
+const parseSlots = slots => {
+    if (!slots) return null
+    let parsed = slots
+    if (typeof slots === 'string') {
+        try {
+            parsed = JSON.parse(slots)
+        } catch (e) {
+            console.warn('GenericDataContent: invalid slots', e)
+            return null
+        }
+    }
+    if (!parsed || !parsed.values) return null
+    const values = {}
+    Object.keys(parsed.values).forEach(key => {
+        if (parsed.values[key]) values[key] = lockSlotJson(parsed.values[key])
+    })
+    return {attribute: parsed.attribute, values}
+}
 
 const definitionIds = {}
 const getDefinitionId = genericType => {
@@ -44,7 +77,7 @@ const notify = message => _app_.dispatcher.addNotification({
     message
 })
 
-function GenericDataContentEditor({dataId, genericType, field = 'content', value, preview, className, saveDelay = 600}) {
+function GenericDataContentEditor({dataId, genericType, field = 'content', value, preview, slots, className, saveDelay = 600}) {
     const _id = dataId
     // the json of the editor; the parent can re-render with stale data until the page is reloaded,
     // so the value is only taken over initially
@@ -57,6 +90,7 @@ function GenericDataContentEditor({dataId, genericType, field = 'content', value
     // A report with many entries would otherwise mount one full cms editor per entry on page load.
     const [active, setActive] = React.useState(false)
     const activate = React.useCallback(() => setActive(true), [])
+    const slotDefinition = React.useMemo(() => parseSlots(slots), [slots])
 
     // the "saved" badge disappears again after a moment (errors stay visible)
     React.useEffect(() => {
@@ -118,6 +152,7 @@ function GenericDataContentEditor({dataId, genericType, field = 'content', value
         {!active ? <CmsViewContainer key={'gdc-view-' + _id + '-' + field}
                                       slug=""
                                       _parentInlineEditor={false}
+                                      slots={slotDefinition}
                                       cmsData={previewData}/> :
         <CmsViewContainer key={'gdc-' + _id + '-' + field}
                           // own key prefix: every entry has its own editor with its own json, without the prefix
@@ -126,6 +161,7 @@ function GenericDataContentEditor({dataId, genericType, field = 'content', value
                           _keyPrefix={'gdc_' + String(_id).replace(/[^a-zA-Z0-9]/g, '') + '_' + String(field).replace(/[^a-zA-Z0-9]/g, '')}
                           slug=""
                           forceEditMode={true}
+                          slots={slotDefinition}
                           cmsData={cmsData}
                           onCmsDataChange={cmsPage => {
                               latest.current = cmsPage.template

@@ -18,14 +18,17 @@ export const ZINDEX_BASIS_DEFAULT = 998
 export const ZINDEX_BASIS_CMS = 10000
 
 let currentBasis = ZINDEX_BASIS_DEFAULT
+// number of editors that need the raised basis (several can be open at once, e.g. nested dialogs)
+let activeCount = 0
 
 /**
  * The overlay is portaled to document.body, so it can not inherit the
  * variable from the dialog it belongs to - it has to live on the root element.
- * Call with true while an editor with cmsData is mounted.
+ * Call with true when an editor inside a dialog mounts and with false when it unmounts (counted).
  */
 export const setEditorZIndexActive = (active) => {
-    currentBasis = active ? ZINDEX_BASIS_CMS : ZINDEX_BASIS_DEFAULT
+    activeCount = Math.max(0, activeCount + (active ? 1 : -1))
+    currentBasis = activeCount > 0 ? ZINDEX_BASIS_CMS : ZINDEX_BASIS_DEFAULT
     if (typeof document !== 'undefined') {
         document.documentElement.style.setProperty(ZINDEX_VAR, String(currentBasis))
     }

@@ -372,10 +372,13 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
                         if (response.errors) {
                             const rejectData = {...response, loading: false, networkStatus: NetworkStatus.ready}
                             rejectData.error = response.errors[0]
-                            _app_.dispatcher.addError({
-                                key: 'graphql_error',
-                                msg: rejectData.error.message
-                            })
+                            // a conflict while saving a cms page is handled by the editor itself (dialog)
+                            if (rejectData.error.key !== 'cms_page_conflict') {
+                                _app_.dispatcher.addError({
+                                    key: 'graphql_error',
+                                    msg: rejectData.error.message
+                                })
+                            }
                             reject(rejectData)
                         } else {
                             const resolveData = {...response, loading: false, networkStatus: NetworkStatus.ready}
@@ -396,11 +399,12 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
                     }).catch(error => {
                         // JSON-Parse-Fehler: keine sinnvolle Retry-Situation -> terminal
                         finalizeRequest()
-                        reject({error, loading: false, networkStatus: NetworkStatus.error})
+                        const intentionalAbort = controller.signal.aborted && !controller._timeout
+                        reject({error, loading: false, networkStatus: NetworkStatus.error, aborted: intentionalAbort})
 
                         // Intentional abort (e.g. useQuery cleanup) while the body was still being read:
                         // r.json() then rejects with the abort reason (e.g. 'useQuery') -> fail silently.
-                        if (controller.signal.aborted && !controller._timeout) {
+                        if (intentionalAbort) {
                             return
                         }
 
@@ -442,7 +446,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
                 // Bewusste Aborts (z.B. Unmount): nie retrien, still scheitern.
                 if (isAborted) {
                     finalizeRequest()
-                    reject({error, loading: false, networkStatus: NetworkStatus.error})
+                    reject({error, loading: false, networkStatus: NetworkStatus.error, aborted: true})
                     return
                 }
 

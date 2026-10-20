@@ -41,7 +41,7 @@ function parseCacheOptions(cache) {
     }
 }
 
-const buildCollectionName = async (db, context, typeName, _version) => {
+export const buildCollectionName = async (db, context, typeName, _version) => {
 
     if (!_version) {
         const values = await Util.keyValueGlobalMap(db, context, ['TypesSelectedVersions'])

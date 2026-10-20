@@ -1,4 +1,5 @@
-import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
+import GenericResolver, {buildCollectionName} from '../../../api/resolver/generic/genericResolver.mjs'
+import {contentVersion, VERSIONED_FIELDS} from '../util/contentVersion.mjs'
 import Util from '../../../api/util/index.mjs'
 import ClientUtil from '../../../client/util/index.mjs'
 import {getCmsPage, getCmsPageCacheKey} from '../util/cmsPage.mjs'
@@ -61,6 +62,61 @@ const setPageOptionsAsMeta = async (db, context, result)=>{
 }
 
 const globalScope = {}
+
+class CmsPageConflictError extends Error {
+    constructor(message, data) {
+        super(message)
+        this.key = 'cms_page_conflict'
+        this.data = data
+    }
+}
+
+/**
+ * throws CmsPageConflictError if a field that is saved was changed by someone else since the editor loaded it
+ * (baseVersions: {field: contentVersion of the value the change is based on})
+ */
+const checkCmsPageConflicts = async ({db, context, _id, _version, baseVersions, values}) => {
+    let base
+    try {
+        base = typeof baseVersions === 'string' ? JSON.parse(baseVersions) : baseVersions
+    } catch (e) {
+        return
+    }
+    const fields = Object.keys(base || {}).filter(field => VERSIONED_FIELDS.indexOf(field) >= 0 && values[field] !== undefined)
+    if (fields.length === 0 || !ObjectId.isValid(_id)) {
+        return
+    }
+    const projection = {}
+    fields.forEach(field => projection[field] = 1)
+    const collectionName = await buildCollectionName(db, context, 'CmsPage', _version)
+    const current = await db.collection(collectionName).findOne({_id: new ObjectId(_id)}, {projection})
+    if (!current) {
+        return
+    }
+    const conflicts = fields.filter(field => {
+        const now = current[field]
+        // the same value as the new one is no conflict (e.g. both did the same change)
+        return contentVersion(now) !== base[field] && contentVersion(now) !== contentVersion(values[field])
+    })
+    if (conflicts.length === 0) {
+        return
+    }
+    // who saved last (best effort)
+    let username = null
+    try {
+        const last = await db.collection('History').findOne(
+            {'data._id': {$in: [new ObjectId(_id), String(_id)]}},
+            {sort: {_id: -1}, projection: {createdBy: 1}})
+        if (last && last.createdBy) {
+            const user = await db.collection('User').findOne({_id: new ObjectId(String(last.createdBy._id || last.createdBy))}, {projection: {username: 1}})
+            username = user ? user.username : null
+        }
+    } catch (e) {
+    }
+    throw new CmsPageConflictError(
+        (username ? username + ' hat' : 'Jemand hat') + ' die Seite inzwischen geändert (' + conflicts.join(', ') + ')',
+        {fields: conflicts, username})
+}
 
 /*
  * Who has a page open in the editor - one entry per browser tab (clientId).
@@ -467,6 +523,26 @@ export default db => ({
             }
             return {editors: JSON.stringify(getActiveEditors(slug))}
         },
+        cmsPageHistoryChanges: async ({_id, field, limit = 1000}, req) => {
+            await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_MANAGE_CMS_CONTENT)
+            if (VERSIONED_FIELDS.indexOf(field) < 0 || !ObjectId.isValid(_id)) {
+                throw new Error('invalid field or _id')
+            }
+            // a save contains every field that was sent, also unchanged ones (e.g. imports). Compared here, so the
+            // client gets one flag per entry instead of the whole content of every save
+            const entries = await db.collection('History').find(
+                {'data._id': {$in: [new ObjectId(_id), String(_id)]}, 'meta.keys': field},
+                {projection: {['data.' + field]: 1}, sort: {_id: -1}, limit: Math.min(Math.max(1, limit), 5000)}
+            ).toArray()
+            const result = {}
+            let previous = null
+            entries.reverse().forEach((entry, i) => {
+                const version = contentVersion(entry.data ? entry.data[field] : undefined)
+                result[String(entry._id)] = i === 0 || version !== previous
+                previous = version
+            })
+            return JSON.stringify(result)
+        },
         cmsPageStatus: async ({slug}, req) => {
             if (!req.context.id) {
                 return {user: null}
@@ -688,13 +764,19 @@ export default db => ({
 
             return await GenericResolver.createEntity(db, req, 'CmsPage', data)
         },
-        updateCmsPage: async ({_id, _meta, slug, realSlug, query, props, createdBy, ownerGroup, ...rest}, req, options) => {
+        updateCmsPage: async ({_id, _meta, slug, realSlug, query, props, createdBy, ownerGroup, baseVersions, ...rest}, req, options) => {
             const {context, headers} = req
 
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_CMS_CONTENT)
 
 
             const {_version} = rest
+
+            // concurrent editing: the editor sends the version of each field its change is based on.
+            // if someone else saved one of these fields meanwhile, nothing is saved and the editor asks what to do
+            if (baseVersions) {
+                await checkCmsPageConflicts({db, context, _id, _version, baseVersions, values: rest})
+            }
 
 
             if (realSlug) {

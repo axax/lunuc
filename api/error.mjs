@@ -51,7 +51,8 @@ export function formatAndLogError(db, req, error) {
 		}
 	}
 
-	if (error.message !== "Cms page doesn't exist") {
+	// expected cases, not logged: a missing page and a concurrent change in the cms editor (handled by a dialog)
+	if (error.message !== "Cms page doesn't exist" && o.key !== 'cms_page_conflict') {
 		// Erweitere den errorContext um Request-Informationen
 		Hook.call('graphqlError', {
 			db,

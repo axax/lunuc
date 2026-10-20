@@ -8,6 +8,7 @@ import {
 } from '../util/cmsView.mjs'
 import PropTypes from 'prop-types'
 import compose from 'util/compose'
+import {contentVersion} from '../util/contentVersion.mjs'
 import Expandable from 'client/components/Expandable'
 import ErrorHandler from 'client/components/layout/ErrorHandler'
 import NotificationHandler from 'client/components/layout/NotificationHandler'
@@ -360,7 +361,12 @@ class CmsViewEditorContainer extends React.Component {
 
     componentDidMount() {
         const {history, dynamic} = this.props
-        setEditorZIndexActive(!!this.props.cmsLocal)
+        // the overlay has to be above a dialog only for an editor inside a dialog (e.g. a CmsEditor field).
+        // a local editor embedded in the page (cmsData) must stay below the editor header and sidebar
+        if (this.props.cmsLocal && document.querySelector('.MuiDialog-root')) {
+            this._raisedZIndex = true
+            setEditorZIndexActive(true)
+        }
 
         if (!dynamic && history) {
             this._handleSaveEvent = () => {
@@ -390,7 +396,10 @@ class CmsViewEditorContainer extends React.Component {
             this._unblockHistory()
             this._unblockHistory = null
         }
-        setEditorZIndexActive(false)
+        if (this._raisedZIndex) {
+            this._raisedZIndex = false
+            setEditorZIndexActive(false)
+        }
         clearTimeout(this._watchCmsPageStatus)
         // ending the subscription removes this editor from the list of the others
         this.removeLiveSubscriptions()
@@ -440,6 +449,10 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     setSaveStatus(saveStatus) {
+        if (this._conflict && saveStatus !== 'conflict') {
+            // nothing is saved until the conflict is resolved, the header keeps showing it
+            saveStatus = 'conflict'
+        }
         if (!this._isUnmounted && !this.isLocal && this.state.saveStatus !== saveStatus) {
             this.setState({saveStatus}, this.reportActivity)
         }
@@ -452,6 +465,12 @@ class CmsViewEditorContainer extends React.Component {
         }
         // pending and saving are shown the same way, otherwise the label flickers through three states
         const label = _t('CmsViewEditorContainer.saveStatus.' + (saveStatus === 'pending' ? 'saving' : saveStatus))
+        if (saveStatus === 'conflict') {
+            return <span key="saveStatus" role="status" aria-live="polite"
+                         onClick={() => this.setState({cmsConflict: this._conflict || {}})}
+                         style={{fontSize: '0.8125rem', marginRight: '0.75rem', whiteSpace: 'nowrap', cursor: 'pointer',
+                             fontWeight: 'bold', color: '#ffe08a'}}>{_t('CmsViewEditorContainer.saveStatus.conflict')}</span>
+        }
         const hint = saveStatus === 'error' ?
             _t('CmsViewEditorContainer.saveStatus.retry') :
             _t('CmsViewEditorContainer.saveStatus.shortcut')
@@ -673,6 +692,13 @@ class CmsViewEditorContainer extends React.Component {
                 }
             })
             this._keyValueMap = {}
+            // base of the next save: the values just loaded (the props can still be the old page for a moment)
+            this._lastSavedValues = {}
+            HISTORY_KEYS.forEach(key => {
+                if (typeof cmsPage[key] === 'string') {
+                    this._lastSavedValues[key] = cmsPage[key]
+                }
+            })
             this._remoteNoticeShown = false
             this.resetHistory()
             this.setState({...fresh, ...counts, saveStatus: null})
@@ -685,6 +711,59 @@ class CmsViewEditorContainer extends React.Component {
                 this.reloadFromServer()
             }
         })
+    }
+
+    /**
+     * someone else saved a field that was changed here too (the server refused the save).
+     * the own changes are kept until the user decides
+     */
+    renderConflictDialog() {
+        const conflict = this.state.cmsConflict || {}
+        const fields = (conflict.fields || []).map(field => HISTORY_KEY_LABELS[field] || field).join(', ')
+        return <SimpleDialog key="cmsConflict"
+                             open={true}
+                             maxWidth="sm"
+                             title={_t('CmsViewEditorContainer.conflict.title')}
+                             onClose={(action) => {
+                                 const key = action && action.key
+                                 if (key === 'overwrite') {
+                                     this.resolveConflict(true)
+                                 } else if (key === 'reload') {
+                                     this.resolveConflict(false)
+                                 } else {
+                                     // closed without a decision: nothing is saved, the status in the header reopens it
+                                     this.setState({cmsConflict: null})
+                                 }
+                             }}
+                             actions={[
+                                 {key: 'reload', label: _t('CmsViewEditorContainer.conflict.reload'), type: 'secondary'},
+                                 {key: 'overwrite', label: _t('CmsViewEditorContainer.conflict.overwrite'), type: 'primary', variant: 'contained'}
+                             ]}>
+            {_t('CmsViewEditorContainer.conflict.text', {
+                name: conflict.username || _t('CmsViewEditorContainer.conflict.someone'),
+                fields
+            })}
+        </SimpleDialog>
+    }
+
+    resolveConflict(overwrite) {
+        this._conflict = null
+        this.setState({cmsConflict: null})
+        if (overwrite) {
+            // the own values are saved without version check
+            this._forceSave = true
+            clearTimeout(this._saveCmsPageTimeout)
+            this.saveCmsPage().catch(() => {
+            }).finally(() => {
+                this._forceSave = false
+            })
+        } else {
+            // the changes of the other user are loaded, the own ones are discarded (the revision view still has them
+            // only if they were saved before)
+            this._keyValueMap = {}
+            this.setSaveStatus(null)
+            this.reloadFromServer(true)
+        }
     }
 
     renderEditors() {
@@ -712,6 +791,7 @@ class CmsViewEditorContainer extends React.Component {
             slugChanged = noCmsPage || props.cmsPage.slug !== this.props.cmsPage.slug
 
         if (slugChanged) {
+            this._lastSavedValues = {}
             JsonDomHelper.disableEvents = false
             this.watchCmsPageStatus()
             this.resetHistory()
@@ -771,6 +851,7 @@ class CmsViewEditorContainer extends React.Component {
             state.undoCount !== this.state.undoCount ||
             state.saveStatus !== this.state.saveStatus ||
             state.cmsEditors !== this.state.cmsEditors ||
+            state.cmsConflict !== this.state.cmsConflict ||
             state.redoCount !== this.state.redoCount ||
             state.manual !== this.state.manual ||
             state.EditorOptions !== this.state.EditorOptions ||
@@ -868,6 +949,7 @@ class CmsViewEditorContainer extends React.Component {
             this.state.cmsEditors && this.state.cmsEditors.length > 0 &&
                 <RemoteEditorMarkers key="remoteEditorMarkers" editors={this.state.cmsEditors}
                                      typingLabel={_t('CmsViewEditorContainer.editors.typing')}/>,
+            this.state.cmsConflict && this.renderConflictDialog(),
             simpleDialog && <SimpleDialog open={true}
                                           fullWidth={true}
                                           maxWidth={simpleDialog.maxWidth || 'md'}
@@ -984,9 +1066,8 @@ class CmsViewEditorContainer extends React.Component {
                                      canMangeCmsTemplate={canMangeCmsTemplate}
                                      slug={slug}
                                      user={props.user}
-                                     onScriptChange={this.setCmsPageValue.bind(this, {key:'script', timeoutSetState: 500, timeoutUpdate: 5000})}
-                                     onDataResolverChange={this.handleDataResolverChange.bind(this)}
-                                     onTemplateChange={this.handleTemplateChange.bind(this)}/>
+                                     getCurrentValues={this.getCurrentHistoryValues.bind(this)}
+                                     onRestore={this.restoreRevision.bind(this)}/>
 
                     </Expandable>}
 
@@ -1724,8 +1805,16 @@ class CmsViewEditorContainer extends React.Component {
             toStack.length = HISTORY_LIMIT
         }
 
+        this.applyValues(entry.values)
+        this.syncHistoryState()
+    }
+
+    /**
+     * sets the values of several keys and saves them with one mutation, without tracking them in the history
+     */
+    applyValues(values) {
         this._isApplyingHistory = true
-        const keys = Object.keys(entry.values)
+        const keys = Object.keys(values)
         keys.forEach((key, idx) => {
             this.setCmsPageValue({
                 key,
@@ -1738,9 +1827,37 @@ class CmsViewEditorContainer extends React.Component {
                         this._tmpDataResolver = null
                     }
                 }
-            }, entry.values[key])
+            }, values[key])
         })
         this._isApplyingHistory = false
+    }
+
+    /**
+     * restores an older version from the revision view (several keys at once).
+     * the current values go to the undo stack, so Cmd+Z brings them back
+     */
+    restoreRevision(values) {
+        if (this._openUndoEntry) {
+            clearTimeout(this._saveCmsPageTimeout)
+            this.saveCmsPage()
+        }
+        const currentValues = this.getCurrentHistoryValues()
+        const changed = {}, previous = {}
+        Object.keys(values).forEach(key => {
+            if (HISTORY_KEYS.indexOf(key) >= 0 && values[key] !== undefined && values[key] !== currentValues[key]) {
+                changed[key] = values[key]
+                previous[key] = currentValues[key]
+            }
+        })
+        if (Object.keys(changed).length === 0) {
+            return
+        }
+        this.undoHistory.unshift({time: Date.now(), values: previous})
+        if (this.undoHistory.length > HISTORY_LIMIT) {
+            this.undoHistory.length = HISTORY_LIMIT
+        }
+        this.redoHistory.length = 0
+        this.applyValues(changed)
         this.syncHistoryState()
     }
 
@@ -1925,6 +2042,10 @@ class CmsViewEditorContainer extends React.Component {
         if (this._saveSettings)
             this._saveSettings()
         const keys = Object.keys(this._keyValueMap)
+        if (this._conflict) {
+            // waiting for the decision in the conflict dialog, the changes stay in _keyValueMap
+            return Promise.resolve()
+        }
         if(keys.length>0) {
             this.closeUndoEntry()
             const {updateCmsPage, cmsPage} = this.props
@@ -1942,14 +2063,56 @@ class CmsViewEditorContainer extends React.Component {
                 }
                 return Promise.resolve()
             }
-            console.log('save cms values for', keys)
-            const sentValues = this._keyValueMap
+            // values that are the same as the last saved ones (e.g. a blur after typing and undoing) are not
+            // sent again: no request and no history entry without a change
+            if (!this._lastSavedValues) {
+                this._lastSavedValues = {}
+            }
+            // the value on the server this editor knows of: the last one sent, else the one the page was loaded with
+            const lastSaved = key => this._lastSavedValues.hasOwnProperty(key) ? this._lastSavedValues[key] : cmsPage[key]
+            const sentValues = {}
+            keys.forEach(key => {
+                const value = this._keyValueMap[key]
+                if (HISTORY_KEYS.indexOf(key) < 0 || typeof value !== 'string' || value !== lastSaved(key)) {
+                    sentValues[key] = value
+                }
+            })
+            if (Object.keys(sentValues).length === 0) {
+                this._keyValueMap = {}
+                this.setSaveStatus('saved')
+                return Promise.resolve()
+            }
+            console.log('save cms values for', Object.keys(sentValues))
+            // version of the value each change is based on: the server refuses the save if someone else
+            // changed the same field meanwhile (not when "save my version" was chosen in the conflict dialog)
+            let baseVersions
+            if (!this.isLocal && !this._forceSave) {
+                const base = {}
+                HISTORY_KEYS.forEach(key => {
+                    if (sentValues.hasOwnProperty(key) && typeof lastSaved(key) === 'string') {
+                        base[key] = contentVersion(lastSaved(key))
+                    }
+                })
+                if (Object.keys(base).length > 0) {
+                    baseVersions = JSON.stringify(base)
+                }
+            }
             const result = updateCmsPage({
                 _id: cmsPage._id,
                 slug: cmsPage.slug,
-                realSlug: cmsPage.realSlug, ...sentValues
+                realSlug: cmsPage.realSlug, ...sentValues,
+                ...(baseVersions ? {baseVersions} : {})
             }, () => {})
             this._keyValueMap = {}
+            // the sent values are the base of the next save right away: a second save while this one is still
+            // running would otherwise be based on the old value and be refused as conflict with the own save
+            const previousSaved = {}
+            HISTORY_KEYS.forEach(key => {
+                if (sentValues.hasOwnProperty(key)) {
+                    previousSaved[key] = this._lastSavedValues.hasOwnProperty(key) ? this._lastSavedValues[key] : undefined
+                    this._lastSavedValues[key] = sentValues[key]
+                }
+            })
             const saveId = this._saveId = (this._saveId || 0) + 1
             this.setSaveStatus('saving')
             // returns the mutation promise, so callers can wait until the page is saved (e.g. export)
@@ -1962,6 +2125,23 @@ class CmsViewEditorContainer extends React.Component {
             }, error => {
                 // keep the values that were not saved (unless they changed meanwhile), so the next save retries them
                 this._keyValueMap = {...sentValues, ...this._keyValueMap}
+                // not saved: the server still has the previous value (unless a newer save changed the base meanwhile)
+                Object.keys(previousSaved).forEach(key => {
+                    if (this._lastSavedValues[key] === sentValues[key]) {
+                        if (previousSaved[key] === undefined) {
+                            delete this._lastSavedValues[key]
+                        } else {
+                            this._lastSavedValues[key] = previousSaved[key]
+                        }
+                    }
+                })
+                const gqlError = error && error.error
+                if (gqlError && gqlError.key === 'cms_page_conflict') {
+                    this._conflict = gqlError.data || {}
+                    this.setSaveStatus('conflict')
+                    this.setState({cmsConflict: this._conflict})
+                    return
+                }
                 this.setSaveStatus('error')
                 throw error
             })
@@ -2208,7 +2388,7 @@ const CmsViewEditorContainerWithGql = compose(
     // the result only contains what the update callback below reads (modifiedAt, status, resolvedData,
     // subscriptions). template, script, style ... are taken from the client values, requesting them
     // again would send the whole page back on every save (e.g. 340 KB for a large page)
-    graphql(`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$realSlug:String,$name:LocalizedStringInput,$author:String,$keyword:LocalizedStringInput,$description:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$manual:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:String,$parseResolvedData:Boolean,$fetchPolicy:String,$alwaysLoadAssets:Boolean,$loadPageOptions:Boolean,$ssrStyle:Boolean,$uniqueStyle:Boolean,$publicEdit:Boolean,$disableRendering:Boolean,$compress:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,realSlug:$realSlug,name:$name,author:$author,keyword:$keyword,description:$description,script:$script,style:$style,serverScript:$serverScript,manual:$manual,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,loadPageOptions:$loadPageOptions,compress:$compress,ssrStyle:$ssrStyle,uniqueStyle:$uniqueStyle,publicEdit:$publicEdit,disableRendering:$disableRendering,parseResolvedData:$parseResolvedData,fetchPolicy:$fetchPolicy,query:$query,props:$props){_id modifiedAt status resolvedData subscriptions}}`, {
+    graphql(`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$realSlug:String,$name:LocalizedStringInput,$author:String,$keyword:LocalizedStringInput,$description:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$manual:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:String,$parseResolvedData:Boolean,$fetchPolicy:String,$alwaysLoadAssets:Boolean,$loadPageOptions:Boolean,$ssrStyle:Boolean,$uniqueStyle:Boolean,$publicEdit:Boolean,$disableRendering:Boolean,$compress:Boolean,$query:String,$props:String,$baseVersions:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,realSlug:$realSlug,name:$name,author:$author,keyword:$keyword,description:$description,script:$script,style:$style,serverScript:$serverScript,manual:$manual,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,loadPageOptions:$loadPageOptions,compress:$compress,ssrStyle:$ssrStyle,uniqueStyle:$uniqueStyle,publicEdit:$publicEdit,disableRendering:$disableRendering,parseResolvedData:$parseResolvedData,fetchPolicy:$fetchPolicy,query:$query,props:$props,baseVersions:$baseVersions){_id modifiedAt status resolvedData subscriptions}}`, {
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, realSlug, ...rest}, cb) => {
 

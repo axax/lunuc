@@ -40,7 +40,7 @@ class Expandable extends React.Component {
 
 
     render() {
-        const {title, children, disableGutters, icon, draggable, index, passThrough, className} = this.props
+        const {title, children, disableGutters, icon, draggable, index, passThrough, className, actions} = this.props
 
         let Icon
         if(icon) {
@@ -62,7 +62,18 @@ class Expandable extends React.Component {
                                                 container
                                                 direction="row"
                                                 justifyContent="flex-start"
-                                                alignItems="center">{Icon ? <Icon color="action"  fontSize="medium" sx={{mr:2}}/>: null}<Typography variant="h6">{title}</Typography></Grid>}>
+                                                wrap="nowrap"
+                                                // full width, so the actions can be pushed to the right edge
+                                                style={actions ? {width: '100%', flex: '1 1 auto'} : undefined}
+                                                alignItems="center">{Icon ? <Icon color="action"  fontSize="medium" sx={{mr:2}}/>: null}<Typography variant="h6"
+                                                    sx={actions ? {m: 0, lineHeight: '1.75rem', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'} : undefined}>{title}</Typography>
+                                                {actions ? <div className="expandable-actions"
+                                                                // fixed height: the row must not grow when the delete question is shown
+                                                                style={{marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.125rem',
+                                                                    height: '1.75rem', paddingLeft: '0.5rem', flexShrink: 0}}
+                                                                // buttons in the heading must not open / close the panel
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                onFocus={(e) => e.stopPropagation()}>{actions}</div> : null}</Grid>}>
             {this.state.expanded ? <div style={{width: '100%'}}>
                 {children}
             </div> : null}
@@ -110,6 +121,8 @@ class Expandable extends React.Component {
 Expandable.propTypes = {
     children: PropTypes.any,
     title: PropTypes.string,
+    // buttons shown in the heading (e.g. delete), usable without expanding the panel
+    actions: PropTypes.node,
     onChange: PropTypes.func,
     expanded: PropTypes.bool
 }

@@ -88,7 +88,8 @@ export default function RemoteEditorMarkers({editors, typingLabel}) {
                         border: `2px solid ${color}`,
                         borderRadius: '4px',
                         pointerEvents: 'none',
-                        zIndex: 99998,
+                        // above the page, below the editor header (MUI AppBar 1100) and the sidebar (Drawer 1200)
+                        zIndex: 1050,
                         boxSizing: 'border-box'
                     }}>
             <span style={{

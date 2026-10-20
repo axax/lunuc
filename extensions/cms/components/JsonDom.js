@@ -1414,7 +1414,18 @@ class JsonDom extends React.Component {
                     }
 
 
-                    if ($c || $toHtml) {
+                    // display only: a placeholder element (e.g. data-jb-slot="themenfelder") shows generated content,
+                    // the template keeps the placeholder (prop slots = {attribute, values: {name: json}})
+                    let slotContent = null
+                    const slots = this.props.slots
+                    if (slots && slots.values) {
+                        const slotName = eleProps[slots.attribute || 'data-slot']
+                        if (slotName !== undefined && slots.values[slotName]) {
+                            slotContent = slots.values[slotName]
+                        }
+                    }
+
+                    if (($c || $toHtml) && !slotContent) {
                         eleProps.dangerouslySetInnerHTML = {__html: $c || (isString(c)?c.replace(/(?:\r\n|\r|\n)/g, '<br>'):'')}
                     }
                     if (_app_.JsonDom.elementWatch != false &&
@@ -1455,7 +1466,8 @@ class JsonDom extends React.Component {
                         h.push(React.createElement(
                             eleType,
                             eleProps,
-                            ($c || $toHtml ? null : this.parseRec(c, key, scope))
+                            slotContent ? this.parseRec(slotContent, key + '.slot', scope) :
+                                ($c || $toHtml ? null : this.parseRec(c, key, scope))
                         ))
                     }
                 }

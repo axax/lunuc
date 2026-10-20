@@ -486,6 +486,8 @@ class GenericForm extends React.Component {
 
 
     componentWillUnmount() {
+        this._isUnmounted = true
+        clearTimeout(this._confirmDeleteTimeout)
         if (this._colorPickers) {
             Object.keys(this._colorPickers).forEach(key=>{
                 this._colorPickers[key].destroy()
@@ -1058,8 +1060,66 @@ class GenericForm extends React.Component {
                 }
 
                 const expandedKey = `expanded-${field.name}-${fieldKey}`
+                const readOnly = field.readOnly || field.uiReadOnly
+                const removeEntry = () => {
+                    subFieldValues.splice(index, 1)
+                    this.handleInputChange({
+                        target: {
+                            name: fieldKey,
+                            value: subFieldValues
+                        }
+                    })
+                }
+                const cloneEntry = () => {
+                    const clone = JSON.parse(JSON.stringify(subFieldValues[index]))
+                    subFieldValues.push(clone)
+                    this.handleInputChange({
+                        target: {
+                            name: fieldKey,
+                            value: subFieldValues
+                        }
+                    })
+                }
+                // delete and duplicate directly in the heading, without expanding the entry.
+                // delete needs a second click (within 3s), so a slip of the mouse does not remove an entry.
+                // only one entry of the whole form asks at a time. kept outside of the state: handleInputChange builds
+                // the new state from a copy of the old one and would bring the question back after the delete
+                const confirmDelete = this._confirmDeleteEntry === valueFieldKey
+                const setConfirmDelete = (key) => {
+                    this._confirmDeleteEntry = key
+                    // only to re-render (shouldComponentUpdate compares the state object)
+                    this.setState({confirmDeleteTick: Date.now()})
+                }
+                const headerActions = readOnly || field.accordion === false ? null : <>
+                    <Tooltip title={_t('GenericForm.clone')}>
+                        <IconButton size="small" aria-label={_t('GenericForm.clone')} onClick={cloneEntry}>
+                            <ContentCopyIcon fontSize="small"/>
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title={confirmDelete ? _t('GenericForm.deleteConfirm') : _t('GenericForm.delete')}>
+                        {confirmDelete ?
+                            <Button size="small" color="error" variant="contained" disableElevation
+                                    sx={{ml: 0.5, py: 0, px: 1, height: '1.75rem', minWidth: 0, whiteSpace: 'nowrap', fontSize: '0.75rem', lineHeight: 1}}
+                                    onClick={() => {
+                                        clearTimeout(this._confirmDeleteTimeout)
+                                        this._confirmDeleteEntry = null
+                                        removeEntry()
+                                    }}>{_t('GenericForm.deleteConfirm')}</Button> :
+                            <IconButton size="small" aria-label={_t('GenericForm.delete')}
+                                        onClick={() => {
+                                            clearTimeout(this._confirmDeleteTimeout)
+                                            setConfirmDelete(valueFieldKey)
+                                            this._confirmDeleteTimeout = setTimeout(() => {
+                                                if (!this._isUnmounted) setConfirmDelete(null)
+                                            }, 3000)
+                                        }}>
+                                <DeleteIcon fontSize="small"/>
+                            </IconButton>}
+                    </Tooltip>
+                </>
                 currentFormFields.push(
                     <Expandable title={title}
+                                actions={headerActions}
                                 draggable={true}
                                 index={index}
                                 passThrough={field.accordion === false}
@@ -1109,33 +1169,16 @@ class GenericForm extends React.Component {
                         <Button key={'delete' + valueFieldKey}
                                 color="secondary"
                                 size="small"
-                                disabled={field.readOnly || field.uiReadOnly}
+                                disabled={readOnly}
                                 startIcon={<DeleteIcon/>}
-                                onClick={() => {
-                                    subFieldValues.splice(index, 1)
-                                    this.handleInputChange({
-                                        target: {
-                                            name: fieldKey,
-                                            value: subFieldValues
-                                        }
-                                    })
-                                }}
+                                onClick={removeEntry}
                                 variant="contained">{_t('GenericForm.delete')}</Button>
                         <Button key={'clone' + valueFieldKey}
                                 color="primary"
                                 startIcon={<ContentCopyIcon/>}
                                 size="small"
-                                disabled={field.readOnly || field.uiReadOnly}
-                                onClick={() => {
-                                    const clone = JSON.parse(JSON.stringify(subFieldValues[index]))
-                                    subFieldValues.push(clone)
-                                    this.handleInputChange({
-                                        target: {
-                                            name: fieldKey,
-                                            value: subFieldValues
-                                        }
-                                    })
-                                }}
+                                disabled={readOnly}
+                                onClick={cloneEntry}
                                 variant="contained">{_t('GenericForm.clone')}</Button>
 
                     </Expandable>)

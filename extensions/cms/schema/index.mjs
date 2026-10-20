@@ -54,6 +54,8 @@ type Query {
     cmsPage(slug: String!, props: String, query: String, nosession: String, editmode: Boolean, inEditor: Boolean, meta: String, dynamic: Boolean, _version: String): CmsPage
     cmsServerMethod(slug: String!, methodName: String!, args: String, props: String, query: String, _version: String, dynamic: Boolean): CmsServerMethod
     cmsPageStatus(slug: String!): CmsPageStatus
+    # which saves of a page really changed a field: json {historyId: true|false} (revision view filter)
+    cmsPageHistoryChanges(_id: ID!, field: String!, limit: Int): String
     cmsPageActivity(slug: String!, typing: Boolean, elementKey: String, elementLabel: String): CmsPageStatus
 }
 
