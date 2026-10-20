@@ -360,7 +360,8 @@ export const addFilterToMatchV2 = async ({ db, debugInfo, filterKey, filterValue
 
         let ids = Cache.get(cacheKey)
         if (!ids) {
-            ids = (await db.collection(subQuery.type).find({ [subQuery.name]: subFilter }).toArray())
+            // only _id is used - don't transfer and decode the whole documents
+            ids = (await db.collection(subQuery.type).find({ [subQuery.name]: subFilter }, { projection: { _id: 1 } }).toArray())
                 .map(item => item._id)
             Cache.set(cacheKey, ids, SUBQUERY_CACHE_TTL_MS)
         }

@@ -275,6 +275,15 @@ const streamAndPersist = (response, baseResponse, filename, req) => {
     })
 }
 
+// A response that is not used (status != 200) must still be consumed,
+// otherwise its socket stays busy until the response is garbage collected.
+// downloadUrl resolves with a plain {error} object on errors - nothing to drain then.
+const drainUnusedResponse = (response) => {
+    if (response && !response.error && typeof response.resume === 'function') {
+        response.resume()
+    }
+}
+
 export const getFileFromOtherServer = async (urlPath, filename, baseResponse, req) => {
 
     const remoteAdr = clientAddress(req),
@@ -291,6 +300,7 @@ export const getFileFromOtherServer = async (urlPath, filename, baseResponse, re
                     streamAndPersist(response, baseResponse, filename, req)
                     return true
                 }
+                drainUnusedResponse(response)
             }
         }
     }
@@ -304,6 +314,7 @@ export const getFileFromOtherServer = async (urlPath, filename, baseResponse, re
             streamAndPersist(response, baseResponse, filename, req)
             return true
         }
+        drainUnusedResponse(response)
     }
 
     return false
@@ -508,6 +519,21 @@ const brotliOptions = (quality, size) => {
     return {params}
 }
 
+// pipe() only unpipes when the response closes early (client abort, e.g. a
+// video seek or a navigation): the source streams stay paused and keep their
+// file descriptor and buffers until they are garbage collected. Destroying
+// them on 'close' releases them right away. After a completed response the
+// sources have already ended, so this is a no-op then.
+const destroyOnResponseClose = (res, ...streams) => {
+    res.once('close', () => {
+        for (const stream of streams) {
+            if (!stream.destroyed) {
+                stream.destroy()
+            }
+        }
+    })
+}
+
 export const sendFile = async (req, res, {headers, filename, fileStat, neverCompress = false, statusCode = 200}) => {
     let acceptEncoding = req.headers['accept-encoding'] || ''
 
@@ -559,6 +585,7 @@ export const sendFile = async (req, res, {headers, filename, fileStat, neverComp
 
                 const fileStream = fs.createReadStream(filename)
                 fileStream.pipe(fastCompressor).pipe(res)
+                destroyOnResponseClose(res, fileStream, fastCompressor)
                 fileStream.on('error', (err) => {
                     console.error('sendFile: read error', filename, err)
                     res.destroy()
@@ -613,6 +640,7 @@ export const sendFile = async (req, res, {headers, filename, fileStat, neverComp
                     const fileStream = fs.createReadStream(filename + '.br')
                     fileStream.on('error', (err) => console.error('sendFile: Stream error:', err))
                     fileStream.pipe(res)
+                    destroyOnResponseClose(res, fileStream)
                 }
             } else {
                 streamCompressAndCache('br', '.br')
@@ -630,6 +658,7 @@ export const sendFile = async (req, res, {headers, filename, fileStat, neverComp
                     const fileStream = fs.createReadStream(filename + '.gz')
                     fileStream.on('error', (err) => console.error('sendFile: Stream error:', err))
                     fileStream.pipe(res)
+                    destroyOnResponseClose(res, fileStream)
                 }
             } else {
                 streamCompressAndCache('gzip', '.gz')
@@ -661,6 +690,7 @@ export const sendFile = async (req, res, {headers, filename, fileStat, neverComp
                 const fileStream = fs.createReadStream(filename, streamOption)
                 fileStream.on('error', (err) => console.error('sendFile: Stream error:', err))
                 fileStream.pipe(res).on('error', (err) => console.error('sendFile: Pipe error:', err))
+                destroyOnResponseClose(res, fileStream)
             }
 
         }

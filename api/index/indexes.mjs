@@ -94,6 +94,10 @@ const createAllIndexesImpl = async (db) => {
 
     db.collection('User').createIndex({email: 1, domain: 1}, {unique: true})
     db.collection('User').createIndex({username: 1}, {unique: true})
+    // token lookups of the public newPassword / confirmEmail mutations;
+    // partial: only documents that carry a token are indexed
+    db.collection('User').createIndex({resetToken: 1}, {partialFilterExpression: {resetToken: {$type: 'string'}}})
+    db.collection('User').createIndex({signupToken: 1}, {partialFilterExpression: {signupToken: {$type: 'string'}}})
 
     //db.collection('StaticFile').dropIndex( 'name_1')
     //db.collection('MailAccount').dropIndex( 'username_1')

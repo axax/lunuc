@@ -59,58 +59,66 @@ export const doScreenCapture = async (url, filename, options, cookies) => {
         acceptInsecureCerts:true,
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--no-zygote']
     })
-    const page = await browser.newPage()
+    // If the setup below fails, close the browser before passing the error
+    // on - otherwise the chromium process keeps running.
+    let page
+    try {
+        page = await browser.newPage()
 
-    // Only forward the requesting user's session cookies for our OWN
-    // internal render calls (e.g. rendering an auth-gated page for SSR).
-    // Never forward them to an external, user-supplied target - doing so
-    // previously allowed an attacker to have a victim's session cookie
-    // sent straight to an attacker-controlled server, by pointing the
-    // screenshot feature at a domain the attacker owns.
-    if (cookies && Object.keys(cookies).length > 0 && isSelfRenderCall) {
-        console.log(`doScreenCapture: Taking over the session can be dangerous. ${filename}`, Object.keys(cookies))
+        // Only forward the requesting user's session cookies for our OWN
+        // internal render calls (e.g. rendering an auth-gated page for SSR).
+        // Never forward them to an external, user-supplied target - doing so
+        // previously allowed an attacker to have a victim's session cookie
+        // sent straight to an attacker-controlled server, by pointing the
+        // screenshot feature at a domain the attacker owns.
+        if (cookies && Object.keys(cookies).length > 0 && isSelfRenderCall) {
+            console.log(`doScreenCapture: Taking over the session can be dangerous. ${filename}`, Object.keys(cookies))
 
-        const parsedUrl = new URL(url)
-        const domain = parsedUrl.hostname
+            const parsedUrl = new URL(url)
+            const domain = parsedUrl.hostname
 
-        const cookiesToSet = Object.keys(cookies).map(k => ({
-            domain,
-            name: k,
-            value: cookies[k],
-            path: '/',
-            httpOnly: false,
-            secure: parsedUrl.protocol === 'https:',
-        }))
+            const cookiesToSet = Object.keys(cookies).map(k => ({
+                domain,
+                name: k,
+                value: cookies[k],
+                path: '/',
+                httpOnly: false,
+                secure: parsedUrl.protocol === 'https:',
+            }))
 
-        await page.setCookie(...cookiesToSet)
-    } else if (cookies && Object.keys(cookies).length > 0 && !isSelfRenderCall) {
-        console.warn(`doScreenCapture: refusing to forward session cookies to external target ${url}`)
-    }
+            await page.setCookie(...cookiesToSet)
+        } else if (cookies && Object.keys(cookies).length > 0 && !isSelfRenderCall) {
+            console.warn(`doScreenCapture: refusing to forward session cookies to external target ${url}`)
+        }
 
-    // For external targets, defend against SSRF via redirect: the caller
-    // already validated the INITIAL url, but page.goto() follows redirects
-    // automatically, and a redirect chain could still point at an internal
-    // address. Intercept every request (including redirects and
-    // subresources) and abort anything that resolves to a private network
-    // host. Not needed for our own self-render calls, which are internal
-    // by design.
-    if (!isSelfRenderCall) {
-        await page.setRequestInterception(true)
-        page.on('request', (req) => {
-            let reqHostname
-            try {
-                reqHostname = new URL(req.url()).hostname
-            } catch (e) {
-                req.abort()
-                return
-            }
-            if (isPrivateNetworkHost(reqHostname)) {
-                console.warn(`doScreenCapture: blocking request to internal host during external capture: ${req.url()}`)
-                req.abort()
-                return
-            }
-            req.continue()
-        })
+        // For external targets, defend against SSRF via redirect: the caller
+        // already validated the INITIAL url, but page.goto() follows redirects
+        // automatically, and a redirect chain could still point at an internal
+        // address. Intercept every request (including redirects and
+        // subresources) and abort anything that resolves to a private network
+        // host. Not needed for our own self-render calls, which are internal
+        // by design.
+        if (!isSelfRenderCall) {
+            await page.setRequestInterception(true)
+            page.on('request', (req) => {
+                let reqHostname
+                try {
+                    reqHostname = new URL(req.url()).hostname
+                } catch (e) {
+                    req.abort()
+                    return
+                }
+                if (isPrivateNetworkHost(reqHostname)) {
+                    console.warn(`doScreenCapture: blocking request to internal host during external capture: ${req.url()}`)
+                    req.abort()
+                    return
+                }
+                req.continue()
+            })
+        }
+    } catch (e) {
+        await browser.close().catch(() => {})
+        throw e
     }
 
     try {

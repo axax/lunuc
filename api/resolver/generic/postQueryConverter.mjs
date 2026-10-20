@@ -16,7 +16,6 @@ export const resolveDynamicFieldQuery = async (db, field, item, setItem) => {
                     }  else if(query[k].startsWith('${')){
                         query[k] = replacePlaceholders(query[k],item)
 
-                        console.log( query[k],item)
                         if(!isNaN(query[k])){
                             query[k] = {$in:[query[k],parseInt(query[k])]}
                         }
@@ -74,6 +73,10 @@ export default async function (response, {typeName, db, graphqlInfo}){
         const typeDefinition = getType(typeName) || {}
         if (typeDefinition.fields) {
             let hasField = false
+
+            // the requested fields only depend on graphqlInfo: resolve them once
+            // (lazily, on the first dynamic field) instead of per row and field
+            let requestedFields
 
             for (let i = 0; i < response.results.length; i++) {
                 const item = response.results[i]
@@ -152,7 +155,10 @@ export default async function (response, {typeName, db, graphqlInfo}){
                             if(graphqlInfo && graphqlInfo.fieldNodes && graphqlInfo.fieldNodes.length>0) {
 
                                 // is field requested
-                                const fields = getFieldsFromGraphqlInfoSelectionSet(graphqlInfo.fieldNodes[0].selectionSet.selections)
+                                if (requestedFields === undefined) {
+                                    requestedFields = getFieldsFromGraphqlInfoSelectionSet(graphqlInfo.fieldNodes[0].selectionSet.selections)
+                                }
+                                const fields = requestedFields
                                 if(!fields || !fields.results || !fields.results[field.name]){
                                     console.log(`dynamic field ${field.name} is not calculated as it is not requested`)
                                     continue

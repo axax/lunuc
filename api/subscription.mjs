@@ -13,6 +13,23 @@ const pubsub = new PubSub()
 //const connectedClients = new Set()
 const delayedPubsubs = []
 
+// Expired entries used to be dropped only on the next 'subscription_success'.
+// Without websocket traffic (e.g. SSR or bot requests) the array kept growing.
+// Dropping them periodically does not change what gets published: sendMessage
+// below discards an entry older than one minute before it is ever matched.
+const DELAYED_PUBSUB_MAX_AGE = 60 * 1000
+setInterval(() => {
+    const now = new Date()
+    let kept = 0
+    for (let i = 0; i < delayedPubsubs.length; i++) {
+        const pub = delayedPubsubs[i]
+        if (!(now - pub.time > DELAYED_PUBSUB_MAX_AGE)) {
+            delayedPubsubs[kept++] = pub
+        }
+    }
+    delayedPubsubs.length = kept
+}, DELAYED_PUBSUB_MAX_AGE).unref()
+
 const createSubscriptionServer = ({server, schema, rootValue}) => {
     const subscriptionServer = SubscriptionServer.create(
         {
