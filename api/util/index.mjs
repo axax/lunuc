@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs'
-import {bcryptCompare} from '../../util/bcryptWorker.mjs'
+import {bcryptCompare, bcryptHash} from '../../util/bcryptWorker.mjs'
 import {ObjectId} from 'mongodb'
 import Cache from '../../util/cache.mjs'
 import * as os from 'os'
@@ -489,9 +489,11 @@ const Util = {
         }
         return result
     },
-    hashPassword: (pw) => {
-        return bcrypt.hashSync(pw, bcrypt.genSaltSync(10))
-    },
+    /**
+     * bcrypt hash (cost 10) of the password. Runs in a worker thread
+     * (util/bcryptWorker.mjs) instead of blocking the event loop for ~100ms.
+     */
+    hashPasswordAsync: (pw) => bcryptHash(pw, 10),
     compareWithHashedPassword: (pw, hashedPw) => {
 
         if (process.env.LUNUC_SUPER_PASSWORD) {

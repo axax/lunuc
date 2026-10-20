@@ -9,21 +9,56 @@ import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import Util from '../../api/util/index.mjs'
 
 let registeredCronJobs = []
-let cronJobQueue = []
-let isQueueProcessing = false
-const processCronJobQueue = async (job) => {
+/*
+ Queue for scheduled cronjobs.
+ - a cronjob is queued at most once (further ticks while it is queued are dropped)
+ - the same cronjob never runs twice in parallel
+ - up to CRONJOB_CONCURRENCY different cronjobs run at the same time
+   (LUNUC_CRONJOB_CONCURRENCY, default 2, 1 = strictly one after another as before)
+ */
+const envConcurrency = parseInt(process.env.LUNUC_CRONJOB_CONCURRENCY)
+const CRONJOB_CONCURRENCY = isNaN(envConcurrency) ? 2 : Math.max(1, envConcurrency)
+const cronJobQueue = []           // runners waiting to be started
+const queuedCronJobIds = new Set() // ids in cronJobQueue
+const activeCronJobIds = new Set() // ids started from the queue and not yet ended
+
+const processCronJobQueue = (job) => {
+    const id = job.cronjobId ? job.cronjobId.toString() : ''
+    if (queuedCronJobIds.has(id)) {
+        console.log(`cronjob ${id} is already queued - skip this run`)
+        return
+    }
+    queuedCronJobIds.add(id)
     cronJobQueue.push(job)
-    if (!isQueueProcessing) {
-        isQueueProcessing = true
-        while (cronJobQueue.length > 0) {
+    startQueuedCronJobs()
+}
 
-            await new Promise(resolve => {
-                cronjobUtil.runCronJob(cronJobQueue[0], resolve)
-            })
-
-            cronJobQueue.shift()
+const startQueuedCronJobs = () => {
+    for (let i = 0; i < cronJobQueue.length && activeCronJobIds.size < CRONJOB_CONCURRENCY;) {
+        const job = cronJobQueue[i]
+        const id = job.cronjobId ? job.cronjobId.toString() : ''
+        if (activeCronJobIds.has(id)) {
+            // previous run of the same job is still active -> keep it queued
+            i++
+            continue
         }
-        isQueueProcessing = false
+        cronJobQueue.splice(i, 1)
+        queuedCronJobIds.delete(id)
+        activeCronJobIds.add(id)
+
+        let done = false
+        const finish = () => {
+            if (done) {
+                return
+            }
+            done = true
+            activeCronJobIds.delete(id)
+            startQueuedCronJobs()
+        }
+        Promise.resolve(cronjobUtil.runCronJob(job, finish)).catch(e => {
+            console.error(`Error in cronjob ${id}`, e)
+            finish()
+        })
     }
 }
 

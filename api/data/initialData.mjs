@@ -164,7 +164,7 @@ export const createUsers = async (db) => {
                 requestNewPassword: false,
                 email: 'info@lunuc.com',
                 username: 'admin',
-                password: Util.hashPassword('password')
+                password: await Util.hashPasswordAsync('password')
             }
         }, {upsert: true})
 
@@ -178,7 +178,7 @@ export const createUsers = async (db) => {
                 requestNewPassword: false,
                 email: '',
                 username: 'anonymous',
-                password: Util.hashPassword('password')
+                password: await Util.hashPasswordAsync('password')
             }
         }, {upsert: true})
     }else{

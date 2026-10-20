@@ -113,9 +113,22 @@ async function resolveReferences(typeName, result, db, context) {
     }
 }
 
-export const prepareDataForUpdate = (typeName, data) => {
+export const prepareDataForUpdate = async (typeName, data) => {
     //check if this field is a reference
     const fields = getFormFieldsByType(typeName)
+
+    // hash password fields up front in a worker thread (no event loop block)
+    const hashed = {}
+    for (const k of Object.keys(data)) {
+        // same branch conditions as in the reduce below
+        if (k !== '_id' && k !== '_version' && data[k] !== undefined &&
+            !(data[k] && data[k].constructor === Object) &&
+            !(data[k] && fields[k] && fields[k].type === 'Object') &&
+            fields[k] && fields[k].hash) {
+            hashed[k] = await Util.hashPasswordAsync(data[k])
+        }
+    }
+
     // clone object but without _id, _version and undefined property
     // null is when a refrence has been removed
     const dataSet = Object.keys(data).reduce((o, k) => {
@@ -147,7 +160,7 @@ export const prepareDataForUpdate = (typeName, data) => {
                 // store as object
                 o[k] = {$literal: JSON.parse(data[k])}
             } else if (fields[k] && fields[k].hash) {
-                o[k] = {$literal:Util.hashPassword(data[k])}
+                o[k] = {$literal:hashed[k]}
             } else {
                 o[k] = {$literal:data[k]}
             }
@@ -583,12 +596,22 @@ const GenericResolver = {
         //check if this field is a reference
         const fields = getFormFieldsByType(typeName)
 
+        // hash password fields up front in a worker thread (no event loop block)
+        // same branch conditions as in the reduce below
+        const hashed = {}
+        for (const k of Object.keys(data)) {
+            if (!(fields[k] && fields[k].type === 'Object' && data[k] && data[k].constructor !== Object) &&
+                fields[k] && fields[k].hash && data[k]) {
+                hashed[k] = await Util.hashPasswordAsync(data[k])
+            }
+        }
+
         const dataSet = Object.keys(data).reduce((o, k) => {
             if (fields[k] && fields[k].type === 'Object' && data[k] && data[k].constructor !== Object) {
                 // store as object
                 o[k] = JSON.parse(data[k])
             } else if(fields[k] && fields[k].hash && data[k]){
-                o[k] =Util.hashPassword(data[k])
+                o[k] = hashed[k]
             } else {
                 o[k] = data[k]
             }
@@ -938,7 +961,7 @@ const GenericResolver = {
         const collection = db.collection(collectionName)
 
         // convert to dot notation for partial update
-        const dataSet = prepareDataForUpdate(typeName, data)
+        const dataSet = await prepareDataForUpdate(typeName, data)
 
         const updateOptions = {}
         if (options.upsert) {

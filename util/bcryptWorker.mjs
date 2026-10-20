@@ -1,7 +1,8 @@
 // util/bcryptWorker.mjs
 //
-// Runs bcryptjs.compareSync in worker threads, so a password check (~80-150ms
-// of pure JS at cost 10) no longer blocks the event loop of the main thread.
+// Runs bcryptjs.compareSync / hashSync in worker threads, so a password check
+// or hash (~80-150ms of pure JS at cost 10) no longer blocks the event loop of
+// the main thread.
 // Uses the SAME library and the SAME function as before, so results are
 // identical. bcryptjs' own async API is not used on purpose: it only yields
 // every 100ms, which is about the duration of a whole check.
@@ -25,9 +26,12 @@ const WORKER_COUNT = isNaN(envWorkers) ? 2 : Math.max(0, envWorkers)
 const WORKER_CODE = `
 const {parentPort, workerData} = require('node:worker_threads')
 const bcrypt = require(workerData.bcryptPath)
-parentPort.on('message', ({id, pw, hash}) => {
+parentPort.on('message', ({id, op, pw, hash, rounds}) => {
     try {
-        parentPort.postMessage({id, result: bcrypt.compareSync(pw, hash)})
+        const result = op === 'hash'
+            ? bcrypt.hashSync(pw, bcrypt.genSaltSync(rounds))
+            : bcrypt.compareSync(pw, hash)
+        parentPort.postMessage({id, result})
     } catch (e) {
         parentPort.postMessage({id, error: e && e.message ? e.message : String(e)})
     }
@@ -50,7 +54,7 @@ const failPendingToSync = (slot) => {
     // the worker died - finish its open checks on the main thread
     for (const [, p] of slot.pending) {
         try {
-            p.resolve(bcrypt.compareSync(p.pw, p.hash))
+            p.resolve(p.sync())
         } catch (e) {
             p.reject(e)
         }
@@ -116,6 +120,35 @@ const getWorkerSlot = () => {
     return workers[index]
 }
 
+// posts one job to a worker; "sync" computes the same result on the main
+// thread and is used as fallback (no worker, worker died, postMessage failed)
+const runInWorker = (msg, sync) => {
+    const slot = getWorkerSlot()
+    if (!slot) {
+        return Promise.resolve().then(sync)
+    }
+    return new Promise((resolve, reject) => {
+        const id = nextId++
+        if (slot.pending.size === 0) {
+            slot.worker.ref() // keep the process alive until the answer arrives
+        }
+        slot.pending.set(id, {resolve, reject, sync})
+        try {
+            slot.worker.postMessage({id, ...msg})
+        } catch (e) {
+            slot.pending.delete(id)
+            if (slot.pending.size === 0) {
+                slot.worker.unref()
+            }
+            try {
+                resolve(sync())
+            } catch (e2) {
+                reject(e2)
+            }
+        }
+    })
+}
+
 /**
  * Same result as bcrypt.compareSync(pw, hash), computed off the main thread.
  * Invalid arguments are handled by compareSync itself on the main thread, so
@@ -126,28 +159,17 @@ export const bcryptCompare = (pw, hash) => {
         // throws the original "Illegal arguments" error (or returns) - cheap
         return Promise.resolve().then(() => bcrypt.compareSync(pw, hash))
     }
-    const slot = getWorkerSlot()
-    if (!slot) {
-        return Promise.resolve().then(() => bcrypt.compareSync(pw, hash))
+    return runInWorker({op: 'compare', pw, hash}, () => bcrypt.compareSync(pw, hash))
+}
+
+/**
+ * Same result as bcrypt.hashSync(pw, bcrypt.genSaltSync(rounds)), computed off
+ * the main thread. Invalid arguments are handled on the main thread, so the
+ * thrown error stays exactly the same as before.
+ */
+export const bcryptHash = (pw, rounds = 10) => {
+    if (typeof pw !== 'string') {
+        return Promise.resolve().then(() => bcrypt.hashSync(pw, bcrypt.genSaltSync(rounds)))
     }
-    return new Promise((resolve, reject) => {
-        const id = nextId++
-        if (slot.pending.size === 0) {
-            slot.worker.ref() // keep the process alive until the answer arrives
-        }
-        slot.pending.set(id, {resolve, reject, pw, hash})
-        try {
-            slot.worker.postMessage({id, pw, hash})
-        } catch (e) {
-            slot.pending.delete(id)
-            if (slot.pending.size === 0) {
-                slot.worker.unref()
-            }
-            try {
-                resolve(bcrypt.compareSync(pw, hash))
-            } catch (e2) {
-                reject(e2)
-            }
-        }
-    })
+    return runInWorker({op: 'hash', pw, rounds}, () => bcrypt.hashSync(pw, bcrypt.genSaltSync(rounds)))
 }

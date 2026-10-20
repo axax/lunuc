@@ -1,12 +1,91 @@
 import Hook from '../../util/hook.cjs'
 import {getTypes} from '../../util/types.mjs'
 import config from '../../gensrc/config.mjs'
+import crypto from 'crypto'
 
 const {LANGUAGES} = config
 /*
 Here all mongodb indexes are created
  */
-export const createAllIndexes = async (db) => {
+/*
+ Wraps db so that every collection(...).createIndex(...) - also the ones in
+ Hook.on('index') handlers - is tracked and never ends as an unhandled
+ rejection (e.g. a unique index failing because of duplicates).
+ All other methods are passed through unchanged.
+ */
+const trackIndexCreation = (db) => {
+    const results = []
+    const wrapCollection = (collection, name) => new Proxy(collection, {
+        get(target, prop) {
+            if (prop === 'createIndex') {
+                return (...args) => {
+                    const p = target.createIndex(...args)
+                    const tracked = p.catch(e => {
+                        console.error(`Error creating index for ${name} ${JSON.stringify(args[0])}`, e.message)
+                        throw e
+                    })
+                    // own handler so the tracked promise never is unhandled
+                    results.push(tracked.then(() => true, () => false))
+                    return tracked
+                }
+            }
+            const value = Reflect.get(target, prop, target)
+            return typeof value === 'function' ? value.bind(target) : value
+        }
+    })
+    const proxy = new Proxy(db, {
+        get(target, prop) {
+            if (prop === 'collection') {
+                return (name, ...rest) => wrapCollection(target.collection(name, ...rest), name)
+            }
+            const value = Reflect.get(target, prop, target)
+            return typeof value === 'function' ? value.bind(target) : value
+        }
+    })
+    return {db: proxy, results}
+}
+
+/*
+ Hash over everything that defines the indexes: index related type
+ properties, the languages, the source of the index hooks and of
+ createAllIndexes itself. Changes whenever an index definition changes.
+ */
+export const getIndexFingerprint = () => {
+    const types = getTypes()
+    const spec = Object.keys(types).sort().map(typeName => {
+        const type = types[typeName]
+        return [
+            typeName,
+            (type.fields || []).filter(f => f.index || f.compoundIndex)
+                .map(f => [f.name, f.index, f.compoundIndex, f.localized, f.unique, f.type]),
+            type.noUserRelation, type.createdByIndex, type.wildcardIndex, type.wildcardTextIndex, type.indexes
+        ]
+    })
+    const hooks = (Hook.hooks.index || []).map(h => h.callback.toString())
+    return crypto.createHash('md5')
+        .update(JSON.stringify([spec, LANGUAGES, hooks, createAllIndexesImpl.toString()]))
+        .digest('hex')
+}
+
+/*
+ Creates all indexes and resolves once all createIndex calls have finished.
+ ok is false if at least one index could not be created.
+ */
+export const createAllIndexesAndWait = async (rawDb) => {
+    const {db, results} = trackIndexCreation(rawDb)
+    const status = await createAllIndexesImpl(db)
+    const all = await Promise.all(results)
+    const failed = all.filter(r => !r).length
+    return {...status, ok: failed === 0, total: all.length, failed}
+}
+
+export const createAllIndexes = async (rawDb) => {
+    // createIndex calls are tracked, so failures are logged instead of
+    // ending as unhandled rejections (fire and forget as before)
+    return createAllIndexesImpl(trackIndexCreation(rawDb).db)
+}
+
+const createAllIndexesImpl = async (db) => {
 
     console.log(`Creating indexes... ${new Date() - _app_.start}ms`)
     db.collection('KeyValue').createIndex({createdBy: 1, key: 1}, {unique: true})

@@ -5,6 +5,7 @@ import ClientUtil from '../client/util/index.mjs'
 import Hook from '../util/hook.cjs'
 import Util from './util/index.mjs'
 import {registerTrs} from '../util/i18nServer.mjs'
+import {createAllIndexesAndWait, getIndexFingerprint} from './index/indexes.mjs'
 
 
 
@@ -28,7 +29,7 @@ export const dbPreparation = async (db, cb) => {
 
         Hook.call('dbready', {db})
 
-       // await createAllIndexes(db)
+        ensureIndexesOnStartup(db)
 
         console.log('load global translations from key/value store')
         const globalTranslations = (await Util.getKeyValueGlobal(db, null, "GlobalTranslations", true)) || {}
@@ -38,6 +39,58 @@ export const dbPreparation = async (db, cb) => {
     }
 
     cb(db)
+}
+
+/*
+ Creates the mongodb indexes in the background after startup, but only when
+ the index definitions (build.json, Hook.on('index'), indexes.mjs) changed
+ since the last successful run. The fingerprints of the last successful runs
+ are stored in KeyValueGlobal as JSON array - several servers with different
+ code versions or buildconfigs on the same db don't trigger each other.
+
+ LUNUC_INDEXES_ON_START: auto (default) | always | never
+ */
+const INDEX_FINGERPRINT_KEY = 'SystemIndexFingerprint'
+const ensureIndexesOnStartup = (db) => {
+    const mode = (process.env.LUNUC_INDEXES_ON_START || 'auto').toLowerCase()
+    if (mode === 'never') {
+        return
+    }
+    // delayed, so it doesn't compete with the startup and the first requests
+    setTimeout(async () => {
+        try {
+            const fingerprint = getIndexFingerprint()
+            const readKnown = async () => {
+                const stored = await db.collection('KeyValueGlobal').findOne({key: INDEX_FINGERPRINT_KEY}, {projection: {value: 1}})
+                if (!stored || !stored.value) {
+                    return []
+                }
+                try {
+                    const parsed = JSON.parse(stored.value)
+                    return Array.isArray(parsed) ? parsed : [stored.value]
+                } catch (e) {
+                    return [stored.value]
+                }
+            }
+            if (mode !== 'always' && (await readKnown()).includes(fingerprint)) {
+                console.log('Indexes are up to date')
+                return
+            }
+            console.log('Index definitions changed - creating indexes in background')
+            const result = await createAllIndexesAndWait(db)
+            if (result.ok) {
+                // re-read right before writing: the other server may have added its own
+                const known = [fingerprint, ...(await readKnown()).filter(f => f !== fingerprint)].slice(0, 10)
+                await Util.setKeyValueGlobal(db, null, INDEX_FINGERPRINT_KEY, JSON.stringify(known), {skipCheck: true})
+                console.log(`All ${result.total} indexes are in place`)
+            } else {
+                // fingerprint not stored -> retried on next start
+                console.warn(`${result.failed} of ${result.total} indexes could not be created - see errors above`)
+            }
+        } catch (e) {
+            console.error('ensureIndexesOnStartup failed', e)
+        }
+    }, 10000).unref()
 }
 
 const DbConnectionCache = {}

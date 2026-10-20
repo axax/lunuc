@@ -87,7 +87,7 @@ export const createUser = async ({username, role, junior, group, setting, passwo
 
 
     const signupToken = crypto.randomBytes(16).toString("hex")
-    const hashedPw = Util.hashPassword(password)
+    const hashedPw = await Util.hashPasswordAsync(password)
 
     let roleId
     if(role){
@@ -179,7 +179,7 @@ export const createUser = async ({username, role, junior, group, setting, passwo
 }
 
 
-const validateAndHashPassword = ({password, passwordConfirm, context}) => {
+const validateAndHashPassword = async ({password, passwordConfirm, context}) => {
     if (passwordConfirm && password !== passwordConfirm) {
         throw new ApiError(`Make sure the passwords match`, 'password.match')
     }
@@ -191,7 +191,7 @@ const validateAndHashPassword = ({password, passwordConfirm, context}) => {
     }
 
 
-    return Util.hashPassword(password)
+    return await Util.hashPasswordAsync(password)
 }
 
 export const userResolver = (db) => ({
@@ -427,7 +427,7 @@ export const userResolver = (db) => ({
         },
         newPassword: async ({token, password, passwordConfirm}, {context}) => {
 
-            const hashedPassword = validateAndHashPassword({password, passwordConfirm, context})
+            const hashedPassword = await validateAndHashPassword({password, passwordConfirm, context})
             const user = await  db.collection('User').findOneAndUpdate({$and: [{'resetToken': token}, {passwordReset: {$gte: (new Date().getTime()) - 3600000}}]}, {
                 $set: {
                     password: hashedPassword,
@@ -527,7 +527,7 @@ export const userResolver = (db) => ({
                             user.group && context.group && user.group.some(item => context.group.includes(item.toString()))
                     )) {
                         const password = generatePassword()
-                        const hashedPw = Util.hashPassword(password)
+                        const hashedPw = await Util.hashPasswordAsync(password)
                         await db.collection('User').findOneAndUpdate({_id:new ObjectId(id)}, {$set: {requestNewPassword:true, password: hashedPw}}, {returnOriginal: false})
 
                         sendMail(db, context, {
@@ -678,7 +678,7 @@ export const userResolver = (db) => ({
                 if (err.length > 0) {
                     errors.push({key: 'passwordError', message: 'Invalid Password: \n' + err.join('\n')})
                 } else {
-                    user.password = Util.hashPassword(password)
+                    user.password = await Util.hashPasswordAsync(password)
                     if(user.requestNewPassword===undefined) {
                         user.requestNewPassword = false
                     }
@@ -858,7 +858,7 @@ export const userResolver = (db) => ({
                 }
 
                 if (password && passwordConfirm) {
-                    user.password = validateAndHashPassword({password, passwordConfirm, context})
+                    user.password = await validateAndHashPassword({password, passwordConfirm, context})
                 }
 
                 const result = await userCollection.findOneAndUpdate({_id: new ObjectId(context.id)}, {$set: user}, { includeResultMetadata: true })
