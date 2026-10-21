@@ -3,6 +3,9 @@ import Util from '../../../client/util/index.mjs'
 
 
 
+// requestAnimationFrame is missing in old browsers (e.g. Safari 5.1)
+const nextFrame = (fn) => (window.requestAnimationFrame ? window.requestAnimationFrame(fn) : setTimeout(fn, 16))
+
 let manualScroll
 const manualScrollEvent = ()=>{
     manualScroll = true
@@ -55,7 +58,7 @@ const scrollToElement = (el, options, tries = 0, winHash) => {
             // element might still move due to lazy loaded content above it,
             // so keep watching a few frames without actually scrolling
             tries++
-            requestAnimationFrame(() => scrollToElement(el, options, tries, winHash))
+            nextFrame(() => scrollToElement(el, options, tries, winHash))
         }
         return
     }
@@ -69,7 +72,7 @@ const scrollToElement = (el, options, tries = 0, winHash) => {
     win.scrollTo(0, scrollY + step)
 
     // still moving -> reset the lazy-load try budget
-    requestAnimationFrame(() => scrollToElement(el, options, 0, winHash))
+    nextFrame(() => scrollToElement(el, options, 0, winHash))
 }
 
 // expose to global Util

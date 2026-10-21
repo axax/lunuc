@@ -165,6 +165,7 @@ The public site must keep running on old browsers, **including Internet Explorer
 - Prefer plain promises over `async/await` in code that lands in the main bundle (avoids the regenerator runtime, ~7 KB).
 - Modern APIs (`Object.assign`, `Promise`, `Map`, `fetch`, …) are polyfilled at runtime (`BASE_POLYFILL` in `index.html`, `/polyfill/more.js` in `client/index.js`); don't rely on APIs without a polyfill or feature check.
 - Don't remove IE fallbacks as "dead code", e.g. the `location.origin` fallback in `client/index.js` (IE11 has no `location.origin`; without it the page redirects to `/undefined/<lang>` and `RouteHistory` crashes). Check guards like `typeof window.CustomEvent === 'function'` and `navigator.serviceWorker` too.
+- Very old browsers (e.g. Safari 5.1 on Windows, served over http) lack even more than IE11: `window.performance`, `requestAnimationFrame`, `MutationObserver`, the `Event`/`CustomEvent` constructors. Guard them (see `now()` in `client/middleware/graphql.js`, `nextFrame` in `extensions/cms/util/urlUtil.js`). An unguarded `performance.now()` in the graphql client made every request fail → redirect to the 404 page.
 - CMS scripts in the database are converted at runtime for old browsers (`legacyjs.js`, `DomUtil.toES5`), not by the build.
 - Check after building: every `build/*.bundle.js` must parse as ES5 (e.g. `acorn` with `ecmaVersion: 5`); `serviceworker.js` is not loaded by IE11 and is exempt.
 

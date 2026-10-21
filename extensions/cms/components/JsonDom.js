@@ -624,7 +624,15 @@ class JsonDom extends React.Component {
                 if(!this.props.dynamic && !firstMount) {
                     // window load event
                     // can be used in puppeteer waitForNavigation with load
-                    dispatchEvent(new Event('load'))
+                    let loadEvent
+                    try {
+                        loadEvent = new Event('load')
+                    } catch (e) {
+                        // no Event constructor (IE11, Safari 5.1)
+                        loadEvent = document.createEvent('Event')
+                        loadEvent.initEvent('load', false, false)
+                    }
+                    dispatchEvent(loadEvent)
                 }
             }, 0)
         }else{

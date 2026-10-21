@@ -16,6 +16,10 @@ const RETRYABLE_STATUS = [502, 503, 504, 512]
 
 const CACHE_FIRST = 'cache-first'
 
+// window.performance is missing in old browsers (e.g. Safari 5.1) - an unguarded performance.now()
+// throws there and every request fails (-> redirect to the 404 page)
+const now = () => typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()
+
 let GRAPHQL_URL, GRAPHQL_WS_URL
 
 export let SSR_FETCH_CHAIN = {}
@@ -269,7 +273,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
 
     // Diagnose über ALLE Versuche: der Timeout läuft ab Request-Start, nicht pro Versuch.
     // Ohne diese Werte sah ein Timeout nach Retry wie ein 476ms-Timeout aus.
-    const requestStart = typeof performance !== 'undefined' ? performance.now() : Date.now()
+    const requestStart = now()
     let attempts = 0
     let firstError = null
 
@@ -332,7 +336,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
             addLoader()
             attempts++
 
-            const startTime = performance.now()   // NEU
+            const startTime = now()   // NEU
             const headers = getHeaders(lang, headersExtra)
 
             // plain promises instead of async/await: avoids the regenerator runtime in the main bundle (IE11 build)
@@ -483,7 +487,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
                     // Timeout-Timer feuerte deutlich vor Ablauf der echten Zeit: die Uhr wurde
                     // manipuliert (z.B. Render-Bot mit "virtual time"). Kein Backend-Problem.
                     if (isTimeout && effectiveTimeout > 0) {
-                        const elapsedMs = performance.now() - requestStart
+                        const elapsedMs = now() - requestStart
                         if (elapsedMs < effectiveTimeout * 0.9) {
                             console.warn(`finalFetch: timeout after ${Math.round(elapsedMs)}ms of ${effectiveTimeout}ms - clock manipulated, not reported (${cacheKey})`)
                             return
@@ -507,8 +511,8 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
                             isOffline,
                             requestType: type === RequestType.mutate ? 'mutation' : 'query',
                             effectiveTimeout,                              // welcher Timeout galt (0 = disabled)
-                            durationMs: Math.round(performance.now() - startTime),   // nur der letzte Versuch
-                            totalDurationMs: Math.round(performance.now() - requestStart), // seit dem ersten Versuch
+                            durationMs: Math.round(now() - startTime),   // nur der letzte Versuch
+                            totalDurationMs: Math.round(now() - requestStart), // seit dem ersten Versuch
                             attempts,
                             firstError,                                    // woran der erste Versuch scheiterte (bei Retry)
                             wasHidden,
