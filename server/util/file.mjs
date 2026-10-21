@@ -909,10 +909,12 @@ export const parseAndSendFile = async (req, res, {filename, headers, statusCode,
                             finalContent = finalContent.replace(PAGE_TITLE_PLACEHOLDER, () => pageTitle)
                         }
 
+                        // inline script -> must stay ES5 (IE11): no arrow functions, no computed keys etc.
                         additionalContent += `
-window.addEventListener('appReady', (event) => {
+window.addEventListener('appReady', function (event) {
     _app_.clientId = '${clientId}'
-    _app_.defaultFetchPolicy = {['${result.data.cmsPage.slug}']:'${result.data.cmsPage.fetchPolicy || (result.data.cmsPage.subscriptions ? 'cache-first' : 'cache-first')}'}     
+    _app_.defaultFetchPolicy = {}
+    _app_.defaultFetchPolicy['${result.data.cmsPage.slug}'] = '${result.data.cmsPage.fetchPolicy || (result.data.cmsPage.subscriptions ? 'cache-first' : 'cache-first')}'
     event.detail.client.writeQuery({
         query: '${query}',
         variables: ${jsonForScript(variables)},

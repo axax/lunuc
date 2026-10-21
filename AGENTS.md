@@ -156,6 +156,17 @@ Requires `MONGO_URL` (e.g. `mongodb://localhost:27017/lunuc`).
 - Globals: `_app_` (app state, user, config, language) exists on client and in API/SSR — don't introduce new globals.
 - Keep changes minimal and local; don't refactor unrelated code.
 
+## Browser support (IE11 must keep working)
+
+The public site must keep running on old browsers, **including Internet Explorer 11**. Keep `main.bundle.js` and all lazy chunks ES5:
+- `webpack.config.js`: `target: ['web', 'es5']` — never switch to `es2017`/`es6` (the webpack runtime would start with `(()=>{` → IE11 "Syntax error").
+- `babel.config.json` → `env.client_build`: browser targets must contain `"ie 11"` explicitly (`">0.25%"` alone no longer includes IE11 with current browser data).
+- `@babel/plugin-transform-runtime` with `"regenerator": true` — with `false` the code needs a global `regeneratorRuntime` and breaks in ES5 mode.
+- Prefer plain promises over `async/await` in code that lands in the main bundle (avoids the regenerator runtime, ~7 KB).
+- Modern APIs (`Object.assign`, `Promise`, `Map`, `fetch`, …) are polyfilled at runtime (`BASE_POLYFILL` in `index.html`, `/polyfill/more.js` in `client/index.js`); don't rely on APIs without a polyfill or feature check.
+- CMS scripts in the database are converted at runtime for old browsers (`legacyjs.js`, `DomUtil.toES5`), not by the build.
+- Check after building: every `build/*.bundle.js` must parse as ES5 (e.g. `acorn` with `ecmaVersion: 5`); `serviceworker.js` is not loaded by IE11 and is exempt.
+
 ## Do not touch / ignore
 
 - `gensrc/`, `extensions/*/gensrc/` — generated, regenerate via build.

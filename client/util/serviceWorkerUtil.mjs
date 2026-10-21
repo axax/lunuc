@@ -1,4 +1,9 @@
 export const unregisterAllServiceworker = (callback) => {
+    // no service worker support (e.g. IE11)
+    if (!navigator.serviceWorker) {
+        if (callback) callback()
+        return
+    }
     // plain promises instead of async/await: avoids the regenerator runtime in the main bundle (IE11 build)
     navigator.serviceWorker.getRegistrations().then((registrations) =>
         // one after the other, like before
