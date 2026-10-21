@@ -389,6 +389,33 @@ const resolveSystemData = async ({segment, req, resolvedData, context, db}) => {
 }
 
 
+// Identical requests of a cached request segment that run at the same time share
+// one call to the remote service (e.g. many page views right after the cache
+// expired). The key covers the complete request options - incl. a cookie taken
+// over from the current request - so different requests never share a response.
+const inFlightRequests = new Map()
+const requestShared = (cacheKey, options) => {
+    let key
+    try {
+        key = cacheKey + '\n' + JSON.stringify(options)
+    } catch (e) {
+        // options not serializable - don't share
+        return request(options)
+    }
+    let promise = inFlightRequests.get(key)
+    if (!promise) {
+        promise = request(options)
+        inFlightRequests.set(key, promise)
+        const done = () => {
+            if (inFlightRequests.get(key) === promise) {
+                inFlightRequests.delete(key)
+            }
+        }
+        promise.then(done, done)
+    }
+    return promise
+}
+
 async function resolveRequest({segment, resolvedData, context, addDataResolverSubsription, req}) {
     console.log(`resolve request ${segment.request.url}`)
     const dataKey = segment.key || 'request'
@@ -410,7 +437,8 @@ async function resolveRequest({segment, resolvedData, context, addDataResolverSu
             segment.request.headers.cookie = req.headers.cookie
         }
 
-        request(segment.request).then((body) => {
+        const pendingRequest = cacheKey ? requestShared(cacheKey, segment.request) : request(segment.request)
+        pendingRequest.then((body) => {
             const result = {body}
             if (segment.meta) {
                 result.meta = segment.meta

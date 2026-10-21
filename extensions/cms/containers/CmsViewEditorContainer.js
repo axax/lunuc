@@ -903,7 +903,9 @@ class CmsViewEditorContainer extends React.Component {
         // extend with value from state because they are more update to date
         const cmsPageWithState = Object.assign({}, cmsPage, {script, style, template, meta: {PageOptions, PageExtensions}})
 
-        console.log(`render CmsViewEditorContainer ${this.props.slug} (loading=${loadingState})`, cmsPage)
+        // without the cmsPage object: with template and resolvedData it is large, and the
+        // editor console (ConsoleCapture) has to serialize it on every render
+        console.log(`render CmsViewEditorContainer ${this.props.slug} (loading=${loadingState})`)
 
         const canViewCmsEditor = Util.hasCapability(props.user, CAPABILITY_VIEW_CMS_EDITOR),
             canMangeCmsContent = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_CONTENT),

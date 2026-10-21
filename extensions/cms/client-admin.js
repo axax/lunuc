@@ -34,6 +34,7 @@ import GenericForm from 'client/components/GenericForm'
 import {translations as adminTranslations} from 'client/translations/admin'
 import Expandable from '../../client/components/Expandable'
 import SimpleImageList from '../../client/components/ui/impl/material/SimpleImageList'
+import PreviewImage from './components/PreviewImage'
 import {client} from '../../client/middleware/graphql'
 import SimpleFileExplorer from '../../client/components/ui/impl/material/SimpleFileExplorer'
 import {parseOrElse} from "../../client/util/json.mjs";
@@ -85,9 +86,12 @@ const addAdminComponents = (components) => {
     }
 }*/
 
+// size of a generated page preview (rwidth / rheight)
+const PREVIEW_WIDTH = 240, PREVIEW_HEIGHT = 160
+
 const getImageFromCmsPageItem = (item) => {
     if (item.public) {
-        return `/lunucapi/generate/png?url=/${item.slug}${encodeURI('?preview=true')}&width=1200&height=800&rwidth=240&rheight=160&cache=true&cacheExpire=${new Date(item.modifiedAt).getTime()}`
+        return `/lunucapi/generate/png?url=/${item.slug}${encodeURI('?preview=true')}&width=1200&height=800&rwidth=${PREVIEW_WIDTH}&rheight=${PREVIEW_HEIGHT}&cache=true&cacheExpire=${new Date(item.modifiedAt).getTime()}`
     } else {
         return `/lunucapi/system/genimage?width=120&height=80&text=Kein Bild&fontsize=1em`
     }
@@ -216,10 +220,13 @@ export default () => {
                         const slugWithoutSlugContext = Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_OTHER_USERS) ? item.slug :  Util.removeSlugContext('/'+item.slug).substring(1)
 
                         d.preview =  <Link style={{display:'block', lineHeight: '0'}} to={cmsPageEditorUrl(slugWithoutSlugContext, container.pageParams._version)}>
-                            <img style={{borderRadius:'0.5rem',maxWidth:'20vw',height:'auto'}}
+                            <PreviewImage style={{borderRadius:'0.5rem',maxWidth:'20vw',height:'auto'}}
                                  width={120} height={80}
                                  id={'img-'+item._id}
                                  key={'key-'+item._id}
+                                 loading="lazy"
+                                 previewWidth={item.public ? PREVIEW_WIDTH : 0}
+                                 previewHeight={item.public ? PREVIEW_HEIGHT : 0}
                                  src={getImageFromCmsPageItem(item)}/>
                         </Link>
 

@@ -1,5 +1,42 @@
 import React, { useEffect, useState, useRef } from 'react'
 
+// One rendered log line. Entries never change once captured, so memo() renders
+// each line once instead of re-rendering (and re-serializing) all previous
+// entries on every new log.
+const LogEntry = React.memo(({log}) => (
+                    <div
+                        style={{
+                            marginBottom: "4px",
+                            color:
+                                log.type === "error"
+                                    ? "red"
+                                    : log.type === "warn"
+                                        ? "orange"
+                                        : "black",
+                        }}
+                    >
+                        <strong>[{log.timestamp.toLocaleTimeString()}]</strong>{" "}
+                        <em>{log.type.toUpperCase()}:</em>{" "}
+                        {log.message.map((item, i) =>
+                                typeof item === "object" ? (
+                                    <pre
+                                        key={i}
+                                        style={{
+                                            display: "inline",
+                                            background: "#efefef",
+                                            padding: "2px 4px",
+                                            borderRadius: "4px",
+                                        }}
+                                    >
+                                      {JSON.stringify(item, null, 2)}
+                                    </pre>
+                                ) : (
+                                    <span key={i}>{item} </span>
+                                )
+                        )}
+                    </div>
+))
+
 const ConsoleCapture = () => {
     const [logs, setLogs] = useState([]);
     const logContainerRef = useRef(null); // Ref for the log container
@@ -57,38 +94,7 @@ const ConsoleCapture = () => {
                 }}
             >
                 {logs.map((log, index) => (
-                    <div
-                        key={index}
-                        style={{
-                            marginBottom: "4px",
-                            color:
-                                log.type === "error"
-                                    ? "red"
-                                    : log.type === "warn"
-                                        ? "orange"
-                                        : "black",
-                        }}
-                    >
-                        <strong>[{log.timestamp.toLocaleTimeString()}]</strong>{" "}
-                        <em>{log.type.toUpperCase()}:</em>{" "}
-                        {log.message.map((item, i) =>
-                                typeof item === "object" ? (
-                                    <pre
-                                        key={i}
-                                        style={{
-                                            display: "inline",
-                                            background: "#efefef",
-                                            padding: "2px 4px",
-                                            borderRadius: "4px",
-                                        }}
-                                    >
-                                      {JSON.stringify(item, null, 2)}
-                                    </pre>
-                                ) : (
-                                    <span key={i}>{item} </span>
-                                )
-                        )}
-                    </div>
+                    <LogEntry key={index} log={log}/>
                 ))}
             </div>
     );

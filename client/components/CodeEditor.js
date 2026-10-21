@@ -559,7 +559,9 @@ function CodeEditor(props,ref){
             value={finalValue}/>
 
         {showCopyButton && (
-            <StyledCopyButtonWrapper>
+            <StyledCopyButtonWrapper className="code-editor-copy-button">
+                {/* plain style tag so the print rule also applies where emotion styles are missing (e.g. new window / print) */}
+                <style>{'@media print{.code-editor-copy-button{display:none!important}}'}</style>
                 <StyledCopyButton copied={copied} onClick={handleCopy} title="Copy to clipboard">
                     {copied ? (
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"

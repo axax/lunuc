@@ -54,22 +54,55 @@ const withSourceURL = (code, loc) => {
 // Bounded, because some code (e.g. nested loops) can contain values and never repeat.
 const FN_CACHE_MAX = 1000
 const fnCache = new Map()
+
+// Bounded caches evict the least recently used entry. (The function cache used to be
+// cleared completely when full, so the hot functions - page template, script - had to
+// be compiled again as well.) A Map keeps insertion order: re-inserting on a hit moves
+// the entry to the end, so the first key is always the least recently used one.
+const lruGet = (cache, key) => {
+    const value = cache.get(key)
+    if (value !== undefined) {
+        cache.delete(key)
+        cache.set(key, value)
+    }
+    return value
+}
+const lruSet = (cache, key, value, max) => {
+    if (cache.size >= max) {
+        cache.delete(cache.keys().next().value)
+    }
+    cache.set(key, value)
+}
+
 const compile = (code, loc, es5 = true) => {
     const cacheKey = loc + '\n' + code
-    let fn = fnCache.get(cacheKey)
+    let fn = lruGet(fnCache, cacheKey)
     if (!fn) {
         // throws on syntax errors -> nothing gets cached
         fn = new Function(withSourceURL(es5 ? DomUtil.toES5(code) : code, loc))
-        if (fnCache.size >= FN_CACHE_MAX) {
-            fnCache.clear()
-        }
-        fnCache.set(cacheKey, fn)
+        lruSet(fnCache, cacheKey, fn, FN_CACHE_MAX)
     }
     return fn
 }
 
 // "\nconst a=this.scope.a\nconst b=this.scope.b..." - makes all scope keys accessible by name
 const scopeConsts = (scope) => Object.keys(scope).reduce((str, key) => str + '\nconst ' + key + '=this.scope.' + key, '')
+
+// The function of a $if condition only depends on the condition and the names of the
+// scope keys - cache it by exactly that, so the scopeConsts code (one line per scope
+// key) is not rebuilt for every evaluation. On a miss the function is created by
+// compile() from the identical code as before.
+const IF_FN_CACHE_MAX = 1000
+const ifFnCache = new Map()
+const compileIf = ($if, loc, scope) => {
+    const cacheKey = loc + '\n' + $if + '\n' + JSON.stringify(Object.keys(scope))
+    let fn = lruGet(ifFnCache, cacheKey)
+    if (!fn) {
+        fn = compile(`${scopeConsts(scope)};return  ${$if}`, loc, false)
+        lruSet(ifFnCache, cacheKey, fn, IF_FN_CACHE_MAX)
+    }
+    return fn
+}
 
 // lazy loaded component (code splitting)
 const lazy = (load) => (props) => <Async {...props} load={load}/>
@@ -1022,7 +1055,7 @@ class JsonDom extends React.Component {
                 if ($if) {
                     // check condition --> slower than to check with $ifexist or $is
                     try {
-                        const tpl = compile(`${scopeConsts(scope)};return  ${$if}`, 'if-' + (this.props.slug || ''), false)
+                        const tpl = compileIf($if, 'if-' + (this.props.slug || ''), scope)
                         if (!tpl.call({scope})) {
                             return
                         }
