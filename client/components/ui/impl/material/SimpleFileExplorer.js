@@ -5,6 +5,8 @@ import Box from '@mui/material/Box';
 import Collapse from '@mui/material/Collapse';
 import Typography from '@mui/material/Typography';
 import FolderRounded from '@mui/icons-material/FolderRounded';
+import KeyboardArrowUpRounded from '@mui/icons-material/KeyboardArrowUpRounded';
+import KeyboardArrowDownRounded from '@mui/icons-material/KeyboardArrowDownRounded';
 import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
 import { useTreeItem } from '@mui/x-tree-view/useTreeItem';
 import {
@@ -114,11 +116,13 @@ const TreeItemLabelText = styled(Typography)({
 });
 
 // ─── Custom Label ─────────────────────────────────────────────────────────────
-function CustomLabel({ icon: Icon, image, expandable, children, ...other }) {
+function CustomLabel({ icon: Icon, image, expandable, listView, children, ...other }) {
     return (
         <TreeItemLabel
             {...other}
-            sx={{ display: 'flex', alignItems: 'center' }}
+            sx={listView
+                ? { display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, overflow: 'hidden' }
+                : { display: 'flex', alignItems: 'center' }}
         >
             {image ? (
                 <Box
@@ -142,7 +146,7 @@ function CustomLabel({ icon: Icon, image, expandable, children, ...other }) {
                     sx={{ mr: 1, fontSize: '1.5rem' }}
                 />
             ) : null}
-            <TreeItemLabelText variant="body2">{children}</TreeItemLabelText>
+            <TreeItemLabelText variant="body2" noWrap={!!listView}>{children}</TreeItemLabelText>
             {expandable && <DotIcon />}
         </TreeItemLabel>
     );
@@ -168,7 +172,8 @@ export const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, re
 
     // Consume the module-level context via ref
     const contextMenuRef = React.useContext(TreeContextMenuContext);
-    const { loadingItems } = React.useContext(TreeContextMenuContext).current;
+    const { loadingItems, columns } = React.useContext(TreeContextMenuContext).current;
+    const listView = !!columns?.length;
     const isLoading = loadingItems?.has(itemId);
 
     // ── Drag-over visual state ─────────────────────────────────────
@@ -259,7 +264,7 @@ export const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, re
         <TreeItemProvider {...getContextProviderProps()}>
             <TreeItemRoot {...getRootProps(other)}>
                 <TreeItemContent
-                    {...getContentProps()}
+                    {...getContentProps({ className: 'fe-row' })}
                     onContextMenu={handleContextMenu}
                     draggable={dndEnabled}
                     onDragStart={dndEnabled ? handleDragStart : undefined}
@@ -284,7 +289,8 @@ export const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, re
                         {...getLabelProps({
                             icon,
                             image,
-                            expandable: status.expandable && status.expanded
+                            expandable: !listView && status.expandable && status.expanded,
+                            listView
                         })}
                     >
                         {isLoading
@@ -292,11 +298,114 @@ export const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, re
                             : label
                         }
                     </CustomLabel>
+                    {listView && columns.map(column => (
+                        <Box key={column.key}
+                             className="fe-cell"
+                             sx={columnSx(column)}>
+                            {itemId === 'root' ? '' : column.render ? column.render(item) : item[column.key]}
+                        </Box>
+                    ))}
                 </TreeItemContent>
                 {children && <CustomCollapse {...getGroupTransitionProps()} />}
             </TreeItemRoot>
         </TreeItemProvider>
     );
+});
+
+// ─── List view (Finder like columns) ──────────────────────────────────────────
+const LIST_ROW_HEIGHT = 28;
+
+// same width / alignment for the header and the cells, so they line up
+const columnSx = (column) => ({
+    width: column.width || 140,
+    flexShrink: 0,
+    textAlign: column.align || 'left',
+    fontSize: '0.8125rem',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    opacity: 0.75,
+    display: column.hideBelow ? { xs: 'none', [column.hideBelow]: 'block' } : 'block',
+});
+
+function ListHeader({ columns, nameLabel, sort, onSortChange, checkboxSelection }) {
+    const headerCell = (key, label, sx) => {
+        const active = sort?.field === key;
+        const SortIcon = sort?.dir === 'desc' ? KeyboardArrowDownRounded : KeyboardArrowUpRounded;
+        return (
+            <Box key={key}
+                 role="columnheader"
+                 aria-sort={active ? (sort.dir === 'desc' ? 'descending' : 'ascending') : undefined}
+                 onClick={onSortChange ? () => onSortChange(key) : undefined}
+                 sx={{
+                     ...sx,
+                     opacity: 1,
+                     display: sx.display || 'flex',
+                     alignItems: 'center',
+                     justifyContent: sx.textAlign === 'right' ? 'flex-end' : 'flex-start',
+                     gap: 0.5,
+                     fontWeight: active ? 700 : 500,
+                     cursor: onSortChange ? 'pointer' : 'default',
+                     userSelect: 'none',
+                     borderLeft: key === 'name' ? 'none' : '1px solid',
+                     borderColor: 'divider',
+                     pl: key === 'name' ? 0 : 1,
+                     '&:hover': onSortChange ? { color: 'primary.main' } : undefined,
+                 }}>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
+                {active && <SortIcon fontSize="small" />}
+            </Box>
+        );
+    };
+    return (
+        <Box role="row" sx={(theme) => ({
+            position: 'sticky',
+            top: 0,
+            zIndex: 2,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            height: 34,
+            px: 1,
+            // expand icon (16px) + gap, checkbox
+            pl: `calc(${theme.spacing(1)} + 24px + ${checkboxSelection ? '32px' : '0px'})`,
+            backgroundColor: theme.palette.background.paper,
+            borderBottom: `1px solid ${theme.palette.divider}`,
+            fontSize: '0.8125rem',
+            color: theme.palette.text.secondary,
+        })}>
+            {headerCell('name', nameLabel || 'Name', { flex: 1, minWidth: 0 })}
+            {columns.map(column => headerCell(column.key, column.label, { ...columnSx(column), display: column.hideBelow ? { xs: 'none', [column.hideBelow]: 'flex' } : 'flex' }))}
+        </Box>
+    );
+}
+
+// row styles of the list view (compact rows, zebra stripes through a background with the row height)
+const listViewSx = (theme) => ({
+    border: `1px solid ${theme.palette.divider}`,
+    borderRadius: 1,
+    overflow: 'hidden',
+    backgroundColor: theme.palette.background.paper,
+    '& .fe-tree': {
+        backgroundImage: `repeating-linear-gradient(to bottom, transparent 0, transparent ${LIST_ROW_HEIGHT}px, ${alpha(theme.palette.text.primary, 0.035)} ${LIST_ROW_HEIGHT}px, ${alpha(theme.palette.text.primary, 0.035)} ${LIST_ROW_HEIGHT * 2}px)`,
+        backgroundAttachment: 'local',
+        padding: 0,
+        margin: 0,
+    },
+    '& .fe-row': {
+        flexDirection: 'row',
+        height: LIST_ROW_HEIGHT,
+        marginTop: 0,
+        marginBottom: 0,
+        paddingTop: 0,
+        paddingBottom: 0,
+        borderRadius: '6px',
+    },
+    '& .fe-row .MuiCheckbox-root': { order: 0 },
+    '& .fe-row .labelIcon': { width: '1.25rem !important', height: '1.25rem !important', fontSize: '1.25rem !important' },
+    '& .fe-row .labelIcon::before': { display: 'none' },
+    '& .fe-row[data-focused] .fe-cell, & .fe-row[data-selected] .fe-cell': { opacity: 0.9 },
+    '& ul': { padding: 0, margin: 0 },
 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -334,6 +443,22 @@ const removeItemById = (nodes, id) => {
 const getRootNode = (nodes) => (nodes?.[0]?.fileType === 'root' ? nodes[0] : null);
 
 // ─── File Explorer ────────────────────────────────────────────────────────────
+/**
+ * Returns a sorted copy of the tree. The root node (id 'root') stays on top, its children are the
+ * top level items themselves (see init), so it is not recursed into.
+ */
+const sortTreeItems = (items, compareItems) => {
+    if (!items || !compareItems) return items;
+    const sortLevel = (list) => {
+        const rootNodes = list.filter(item => item.id === 'root');
+        const rest = list.filter(item => item.id !== 'root')
+            .map(item => item.children?.length ? { ...item, children: sortLevel(item.children) } : item)
+            .sort(compareItems);
+        return [...rootNodes, ...rest];
+    };
+    return sortLevel(items);
+};
+
 const FileExplorer = React.forwardRef(function FileExplorer({
                                                                 onFetch,
                                                                 onItemClick,
@@ -345,7 +470,13 @@ const FileExplorer = React.forwardRef(function FileExplorer({
                                                                 multiSelect = false,
                                                                 selectionPropagation,
                                                                 isItemSelectionDisabled,
-                                                                onSelectionChange
+                                                                onSelectionChange,
+                                                                compareItems,
+                                                                // list view like the Finder: [{key, label, width, align, hideBelow, render(item)}]
+                                                                columns,
+                                                                nameLabel,
+                                                                sort,
+                                                                onSortChange
                                                             }, ref) {
 
     const [data, setData] = useState(null);
@@ -376,6 +507,7 @@ const FileExplorer = React.forwardRef(function FileExplorer({
     const contextMenuRef = React.useRef(null);
     contextMenuRef.current = {
         loadingItems,
+        columns,
         onContextMenu: (event, item) => {
             // In checkbox mode the selection belongs to the user, a right click must not reset it
             if (!checkboxSelection) setSelectedItems([item.id]);
@@ -557,12 +689,23 @@ const FileExplorer = React.forwardRef(function FileExplorer({
         },
     }), []);
 
+    // Sorted copy for rendering only: the state (data) keeps its order, so the imperative api, drag and drop
+    // and lazy loading keep working on the same objects. Changing the sort keeps expanded folders open.
+    const items = React.useMemo(() => sortTreeItems(data, compareItems), [data, compareItems]);
+
     if (error) return error.message;
     if (!data) return null;
 
     return (
         <TreeContextMenuContext.Provider value={contextMenuRef}>
+            <Box sx={columns?.length ? listViewSx : undefined}>
+            {columns?.length > 0 && <ListHeader columns={columns}
+                                                nameLabel={nameLabel}
+                                                sort={sort}
+                                                onSortChange={onSortChange}
+                                                checkboxSelection={checkboxSelection}/>}
             <RichTreeView
+                className="fe-tree"
                 apiRef={apiRef}
                 checkboxSelection={checkboxSelection}
                 multiSelect={multiSelect}
@@ -573,7 +716,7 @@ const FileExplorer = React.forwardRef(function FileExplorer({
                     updateSelection(Array.isArray(newSelected) ? newSelected : (newSelected ? [newSelected] : []));
                 }}
                 expandedItems={expandedItems}
-                items={data}
+                items={items}
                 onExpandedItemsChange={(event, newExpandedItems) => {
                     setExpandedItems(newExpandedItems);
                 }}
@@ -625,8 +768,9 @@ const FileExplorer = React.forwardRef(function FileExplorer({
                 }}
                 sx={{ height: 'fit-content', flexGrow: 1, maxWidth: 'auto', overflowY: 'auto' }}
                 slots={{ item: CustomTreeItem }}
-                itemChildrenIndentation={24}
+                itemChildrenIndentation={columns?.length ? 20 : 24}
             />
+            </Box>
             {ContextMenu && <ContextMenu
                 anchorPosition={contextMenu?.position}
                 item={contextMenu?.item}

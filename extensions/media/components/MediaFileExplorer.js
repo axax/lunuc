@@ -25,6 +25,93 @@ const createNewEntry = (item) => {
     };
 }
 
+// creation time from the mongo ObjectId (first 4 bytes = seconds)
+const createdTime = (item) => item?._id && /^[0-9a-f]{24}$/i.test(item._id) ? parseInt(item._id.substring(0, 8), 16) * 1000 : 0
+
+export const SORT_FIELDS = ['name', 'created', 'modified', 'size', 'type']
+const DEFAULT_SORT = {field: 'name', dir: 'asc'}
+
+// server sort (Media), keeps the first 500 entries of a folder in the right order
+const SERVER_SORT = {name: 'name', created: '_id', modified: 'modifiedAt', size: 'size', type: 'mimeType'}
+
+const collator = typeof Intl !== 'undefined' ? new Intl.Collator(undefined, {numeric: true, sensitivity: 'base'}) : null
+const compareStrings = (a, b) => collator ? collator.compare(a || '', b || '') : (a || '').localeCompare(b || '')
+
+// folders first, then by the chosen field; folders have no size / type -> sorted by name
+const createCompare = ({field, dir}) => {
+    const factor = dir === 'desc' ? -1 : 1
+    return (a, b) => {
+        const aFolder = a.fileType !== 'doc', bFolder = b.fileType !== 'doc'
+        if (aFolder !== bFolder) return aFolder ? -1 : 1
+        let result = 0
+        if (field === 'created') {
+            result = createdTime(a) - createdTime(b)
+        } else if (field === 'modified') {
+            result = modifiedTime(a) - modifiedTime(b)
+        } else if (!aFolder && field === 'size') {
+            result = (a.size || 0) - (b.size || 0)
+        } else if (!aFolder && field === 'type') {
+            result = compareStrings(a.mimeType, b.mimeType)
+        }
+        if (result === 0) result = compareStrings(a.label, b.label)
+        return result * factor
+    }
+}
+
+// ─── Column values (Finder like list view) ────────────────────────────────────
+const startOfDay = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+
+// "Heute, 11:31" / "Gestern, 09:12" / "21.10.2026, 11:31"
+const formatDate = (time) => {
+    if (!time) return '--'
+    const date = new Date(time)
+    const lang = _app_.lang || undefined
+    const clock = date.toLocaleTimeString(lang, {hour: '2-digit', minute: '2-digit'})
+    const days = Math.round((startOfDay(new Date()) - startOfDay(date)) / 86400000)
+    if (days === 0) return `${_t('MediaFileExplorer.today')}, ${clock}`
+    if (days === 1) return `${_t('MediaFileExplorer.yesterday')}, ${clock}`
+    return `${date.toLocaleDateString(lang, {day: '2-digit', month: '2-digit', year: 'numeric'})}, ${clock}`
+}
+
+// like the Finder: decimal units
+const formatSize = (bytes) => {
+    if (bytes === undefined || bytes === null || isNaN(bytes)) return '--'
+    if (bytes < 1000) return `${bytes} Byte`
+    const units = ['KB', 'MB', 'GB', 'TB']
+    let value = bytes, unit = -1
+    do {
+        value /= 1000
+        unit++
+    } while (value >= 1000 && unit < units.length - 1)
+    return `${value < 10 && unit > 0 ? value.toFixed(1) : Math.round(value)} ${units[unit]}`
+}
+
+const KIND_SUBTYPES = {'svg+xml': 'SVG', 'jpeg': 'JPEG', 'x-icon': 'ICO', 'vnd.microsoft.icon': 'ICO', 'plain': 'Text', 'quicktime': 'QuickTime', 'mpeg': 'MPEG'}
+
+// "JPEG-Bild", "PDF-Dokument", "Ordner"
+const formatKind = (item) => {
+    if (item.fileType !== 'doc') return _t('MediaFileExplorer.kind.folder')
+    const mimeType = item.mimeType || ''
+    const [category, subtype = ''] = mimeType.split('/')
+    const name = KIND_SUBTYPES[subtype] || subtype.replace(/^(x-|vnd\.)/, '').split(/[.+-]/)[0].toUpperCase()
+    if (['image', 'video', 'audio', 'text', 'font'].indexOf(category) >= 0) {
+        return _t('MediaFileExplorer.kind.' + category, {type: name})
+    }
+    return name ? _t('MediaFileExplorer.kind.document', {type: name}) : _t('MediaFileExplorer.kind.unknown')
+}
+
+const modifiedTime = (item) => item.modifiedAt || createdTime(item)
+
+const COLUMNS = [
+    {key: 'modified', label: 'MediaFileExplorer.sort.modified', width: 160, render: item => formatDate(modifiedTime(item))},
+    {key: 'created', label: 'MediaFileExplorer.sort.created', width: 160, hideBelow: 'lg', render: item => formatDate(createdTime(item))},
+    {key: 'size', label: 'MediaFileExplorer.sort.size', width: 90, align: 'right', hideBelow: 'sm', render: item => item.fileType === 'doc' ? formatSize(item.size) : '--'},
+    {key: 'type', label: 'MediaFileExplorer.sort.type', width: 150, hideBelow: 'md', render: formatKind}
+]
+
+// date and size columns start with the newest / biggest entries, like the Finder
+const DESC_FIRST = ['modified', 'created', 'size']
+
 // Normalizes the ids returned by a delete mutation: depending on the type they
 // arrive either as documents or as plain id strings.
 const extractIds = (ids) => {
@@ -38,6 +125,30 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pa
 
     // Gives access to the tree's state so changes actually trigger a re-render
     const explorerRef = useRef(null)
+
+    // sorting, remembered in the settings of the type
+    const [sort, setSort] = useState(() => {
+        const saved = TypeContainerRef.getSettingsForType?.('Media', pageParams.meta)?.treeSort
+        return saved && SORT_FIELDS.indexOf(saved.field) >= 0 ? {...DEFAULT_SORT, ...saved} : DEFAULT_SORT
+    })
+    const sortRef = useRef(sort)
+    sortRef.current = sort
+    const compareItems = useMemo(() => createCompare(sort), [sort.field, sort.dir])
+    const changeSort = (changes) => {
+        const newSort = {...sort, ...changes}
+        setSort(newSort)
+        TypeContainerRef.setSettingsForType?.('Media', {treeSort: newSort})
+    }
+    // click on a column header: same column -> toggle the direction
+    const onSortChange = (field) => {
+        if (field === sort.field) {
+            changeSort({dir: sort.dir === 'asc' ? 'desc' : 'asc'})
+        } else {
+            changeSort({field, dir: DESC_FIRST.indexOf(field) >= 0 ? 'desc' : 'asc'})
+        }
+    }
+    const columns = useMemo(() => COLUMNS.map(column => ({...column, label: _t(column.label)})), [])
+    const serverSort = () => `${SERVER_SORT[sortRef.current.field] || 'name'} ${sortRef.current.dir}`
 
     // Picker mode: the media view was opened from a TypePicker / editor to choose media
     const isPicker = !!(typeof window !== 'undefined' && window.opener && pageParams.opener)
@@ -117,6 +228,11 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pa
 
     return <><SimpleFileExplorer
         ref={explorerRef}
+        compareItems={compareItems}
+        columns={columns}
+        nameLabel={_t('MediaFileExplorer.sort.name')}
+        sort={sort}
+        onSortChange={onSortChange}
         checkboxSelection={isPicker}
         multiSelect={isPicker && isMulti}
         selectionPropagation={isMulti ? {descendants: true, parents: true} : undefined}
@@ -245,11 +361,11 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pa
             const [mediaGroupResponse, mediaResponse] = await Promise.all([
                 pageParams.filter ? null : client.query({
                     query: mediaGroupQueries.query, fetchPolicy: 'cache-and-network',
-                    variables: {filter: `group==${id}`, limit: 500}
+                    variables: {filter: `group==${id}`, limit: 500, sort: sortRef.current.field === 'created' ? `_id ${sortRef.current.dir}` : `name ${sortRef.current.dir}`}
                 }),
                 client.query({
                     query: mediaQueries.query, fetchPolicy: 'cache-and-network',
-                    variables: {filter: mediaFilter(pageParams.filter ? pageParams.filter : `group==${id}`), limit: 500}
+                    variables: {filter: mediaFilter(pageParams.filter ? pageParams.filter : `group==${id}`), limit: 500, sort: serverSort()}
                 })
             ])
 
