@@ -13,6 +13,7 @@ import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
 import Draggable from 'react-draggable'
+import {_t} from '../../../../../util/i18n.mjs'
 
 
 // lets the paper know that the dialog is maximized without swapping the
@@ -101,9 +102,9 @@ export const SimpleDialog = ({
             onDoubleClick={canMaximize ? toggleMaximized : undefined}
             id="responsive-dialog-title">
             {title}
-            {canMaximize && <Tooltip title={maximized ? 'Verkleinern' : 'Vergrössern'}>
+            {canMaximize && <Tooltip title={_t(maximized ? 'SimpleDialog.restore' : 'SimpleDialog.maximize')}>
                 <IconButton
-                    aria-label={maximized ? 'Verkleinern' : 'Vergrössern'}
+                    aria-label={_t(maximized ? 'SimpleDialog.restore' : 'SimpleDialog.maximize')}
                     onClick={toggleMaximized}
                     // keep react-draggable from starting a drag on the button
                     onMouseDown={e => e.stopPropagation()}

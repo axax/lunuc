@@ -332,7 +332,10 @@ class JsonDom extends React.Component {
             if (isString(_props)) {
                 _props = parseOrElse(_props)
             }
-            const cvc = <CmsViewContainer key={rest.id}
+            // forceInlineEditor / forceEditMode need another query (full cmsPage with editor fields) and
+            // another container (CmsViewEditorContainer). The cached response would be reused (skip in withCms)
+            // and shouldComponentUpdate ignores these props -> remount when they change, so no reload is needed
+            const cvc = <CmsViewContainer key={rest.id + (isTrue(rest.forceInlineEditor) ? '_fie' : '') + (isTrue(rest.forceEditMode) ? '_fem' : '')}
                                           slug={slug}
                                           _props={_props}
                                           _parentRef={_this}

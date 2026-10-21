@@ -29,6 +29,7 @@ import TinyEditor from './TinyEditor'
 import {checkFieldType} from 'util/typesAdmin.mjs'
 import Hook from '../../util/hook.cjs'
 import Expandable from 'client/components/Expandable'
+import {getImageSrc} from 'client/util/media'
 import {_t} from '../../util/i18n.mjs'
 import Util from '../util/index.mjs'
 import DomUtil from '../util/dom.mjs'
@@ -285,6 +286,19 @@ function convertFieldValueToDate(value, field) {
     return value;
 }
 
+/*
+ * Tab names written as text in element definitions (e.g. "tab": "Erweitert" in a manual.md) and the tabs of the
+ * system (translation keys) end up in the same tab, labelled in the language of the user. Without this the dialog
+ * shows "Extended" and "Erweitert" side by side.
+ */
+const TAB_ALIASES = {
+    'Erweitert': 'elements.extendedTab',
+    'Extended': 'elements.extendedTab',
+    'Allgemein': 'elements.generalTab',
+    'General': 'elements.generalTab'
+}
+const tabName = tab => TAB_ALIASES[tab] || tab
+
 function convertArrayToObjectByAttr(subFields, attrName) {
     if (Array.isArray(subFields)) {
         return subFields.reduce((acc, cur, i) => {
@@ -389,8 +403,8 @@ class GenericForm extends React.Component {
             }
 
             if (field.tab && options.changeTab) {
-                if (tabs.indexOf(field.tab) < 0) {
-                    tabs.push(field.tab)
+                if (tabs.indexOf(tabName(field.tab)) < 0) {
+                    tabs.push(tabName(field.tab))
                 }
             }
             if ((field.required || field.validatePattern) &&
@@ -455,11 +469,11 @@ class GenericForm extends React.Component {
             for (const key in validationState.fieldErrors) {
                 // = validationState.fieldErrors[key]
                 if (fields[key] && fields[key].tab) {
-                    if (fields[key].tab === tabs[state.tabValue]) {
+                    if (tabName(fields[key].tab) === tabs[state.tabValue]) {
                         foundTab = true
                         break
                     } else {
-                        relevantTabs.push(tabs.indexOf(fields[key].tab))
+                        relevantTabs.push(tabs.indexOf(tabName(fields[key].tab)))
                     }
                 }
             }
@@ -1117,8 +1131,20 @@ class GenericForm extends React.Component {
                             </IconButton>}
                     </Tooltip>
                 </>
+                // first image of the entry as small preview in the heading (entries with the same title can be told apart)
+                let thumbnail = null
+                for (const subKey of Object.keys(subFields)) {
+                    if (subFields[subKey].type !== 'Media') continue
+                    let media = values[subKey]
+                    if (Array.isArray(media)) media = media[0]
+                    if (media && (media._id || media.src) && (!media.mimeType || media.mimeType.indexOf('image') === 0)) {
+                        thumbnail = getImageSrc(media, 'thumbnail')
+                        break
+                    }
+                }
                 currentFormFields.push(
                     <Expandable title={title}
+                                thumbnail={thumbnail}
                                 actions={headerActions}
                                 draggable={!readOnly}
                                 index={index}
@@ -2027,10 +2053,11 @@ class GenericForm extends React.Component {
     }
 
     getOrCreateTab(tabs, field) {
-        const filteredTabs = tabs.filter(i => i.name === field.tab)
+        const name = tabName(field.tab)
+        const filteredTabs = tabs.filter(i => i.name === name)
         let tab
         if (filteredTabs.length === 0) {
-            tab = {name: field.tab, fields: []}
+            tab = {name, fields: []}
 
             if (field.tabPosition >= 0) {
                 tabs.splice(field.tabPosition, 0, tab)

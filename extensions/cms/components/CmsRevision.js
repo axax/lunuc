@@ -47,7 +47,17 @@ const summaryLabels = () => ({
     textsMoved: _t('CmsRevision.textsMoved'),
     properties: _t('CmsRevision.properties'),
     fieldChanged: (field) => _t('CmsRevision.fieldChanged', {field: fieldLabel(field)}),
-    firstRecorded: (field) => _t('CmsRevision.firstRecorded', {field: fieldLabel(field)})
+    firstRecorded: (field) => _t('CmsRevision.firstRecorded', {field: fieldLabel(field)}),
+    // "Button «eine Stelle»: Link, CSS class changed"
+    propertyChanged: (element, props) => {
+        const type = element.key ? _t('elements.key.' + element.key, null, element.key) : element.tag
+        const name = type + (element.text ? ' «' + element.text + '»' : '')
+        return _t('CmsRevision.propertyChanged', {
+            element: name,
+            props: props.map(prop => _t('CmsRevision.prop.' + prop, null, prop)).join(', ')
+        })
+    },
+    moreElements: (count) => _t('CmsRevision.moreElements', {count})
 })
 
 const formatTime = (time, options) => Util.getDateTimeFormat(options).format(new Date(time))

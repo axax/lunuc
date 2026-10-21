@@ -170,6 +170,9 @@ const sendError = ({location, message, meta, fingerprint}) => {
 }
 
 
+// messages that only browser extensions produce (their apis or their script urls)
+const EXTENSION_ERROR_RE = /runtime\.sendMessage|Extension context invalidated|Receiving end does not exist|(chrome|moz|safari-web|safari)-extension:\/\//
+
 export default () => {
 
     window.addEventListener('error', (e) => {
@@ -230,6 +233,10 @@ export default () => {
         } else {
             message = 'Non-Error rejection: ' + String(reason)
         }
+
+        // rejections from browser extensions (no filename here, so recognised by the extension api or url),
+        // e.g. Safari "Invalid call to runtime.sendMessage(). Tab not found."
+        if (EXTENSION_ERROR_RE.test(message)) return
 
         sendError({
             location: 'unhandledrejection',

@@ -295,6 +295,99 @@ const extractTexts = (template, tr) => {
     return {texts, elements}
 }
 
+    // every element of a template with its path (same paths = same position in both versions)
+const walkElements = (template, callback) => {
+    let json
+    try {
+        json = typeof template === 'string' ? JSON.parse(template) : template
+    } catch (e) {
+        return false
+    }
+    const walk = (node, path) => {
+        if (!node || typeof node !== 'object') return
+        if (Array.isArray(node)) {
+            node.forEach((child, i) => walk(child, path + '.' + i))
+            return
+        }
+        if (node.t !== undefined) {
+            callback(node, path)
+        }
+        ;['c', '$c'].forEach(key => {
+            if (node[key] && typeof node[key] === 'object') walk(node[key], path + '.' + key)
+        })
+    }
+    walk(json, '')
+    return true
+}
+
+// first text inside an element, to name it ("Button «eine Stelle»")
+const elementText = (node, tr) => {
+    let text = ''
+    const find = n => {
+        if (text || !n) return
+        if (typeof n === 'string') {
+            text = toPlainText(n, tr)
+        } else if (Array.isArray(n)) {
+            n.forEach(find)
+        } else if (typeof n === 'object') {
+            find(n.$c !== undefined ? n.$c : n.c)
+            if (!text && n.p && (n.p.alt || n.p.title)) text = String(n.p.alt || n.p.title)
+        }
+    }
+    find(node)
+    return text.length > 25 ? text.substring(0, 25) + '…' : text
+}
+
+// keys of an element that are compared (the content is compared as text, the editor options are not shown)
+const IGNORED_ELEMENT_KEYS = ['c', '$c', '$inlineEditor', '_key']
+
+/**
+ * elements whose properties changed while the structure stayed the same:
+ * [{element: {key, tag, text}, props: ['href', 'className' ...]}]
+ */
+const findPropertyChanges = (prevTemplate, template, tr) => {
+    const before = {}
+    if (!walkElements(prevTemplate, (node, path) => before[path] = node)) return []
+    const changes = []
+    walkElements(template, (node, path) => {
+        const old = before[path]
+        if (!old) return
+        const props = []
+        const add = name => {
+            // className@style -> className
+            const base = name.split('@')[0]
+            if (props.indexOf(base) < 0) props.push(base)
+        }
+        if (old.t !== node.t) add('t')
+        const oldP = old.p || {}, newP = node.p || {}
+        Object.keys({...oldP, ...newP}).forEach(key => {
+            if (JSON.stringify(oldP[key]) !== JSON.stringify(newP[key])) add(key)
+        })
+        Object.keys({...old, ...node}).forEach(key => {
+            if (key === 't' || key === 'p' || IGNORED_ELEMENT_KEYS.indexOf(key) >= 0) return
+            if (JSON.stringify(old[key]) !== JSON.stringify(node[key])) add(key)
+        })
+        // the text became a translation placeholder (or the other way round), the visible text stays the same
+        ;['c', '$c'].forEach(key => {
+            const isTr = value => typeof value === 'string' && value.indexOf('_t(') >= 0
+            if (isTr(old[key]) !== isTr(node[key]) && (typeof old[key] === 'string' || typeof node[key] === 'string')) {
+                add('translation')
+            }
+        })
+        // only the options of the inline editor
+        if (props.length === 0 && JSON.stringify(old.$inlineEditor) !== JSON.stringify(node.$inlineEditor)) {
+            add('$inlineEditor')
+        }
+        if (props.length > 0) {
+            changes.push({
+                element: {key: newP['data-element-key'] || oldP['data-element-key'], tag: String(node.t), text: elementText(node, tr)},
+                props
+            })
+        }
+    })
+    return changes
+}
+
 // only the part that changed, with a bit of context
 const shortenChange = (from, to, max = 40) => {
     let start = 0
@@ -359,7 +452,16 @@ export const summarizeChange = (prev, state, labels, onlyFields = REVISION_FIELD
             }
             textsChanged = result.texts.length > 0 || result.lines.length > 0
             if (!textsChanged && prev.template !== state.template && onlyFields.indexOf('template') >= 0) {
-                result.lines.push(labels.properties)
+                // same structure and texts: which elements got other properties (link, image, css class ...)
+                const changes = elementDiff === 0 ? findPropertyChanges(prev.template, state.template, extractTranslations(state.dataResolver)) : []
+                if (changes.length > 0 && labels.propertyChanged) {
+                    changes.slice(0, 3).forEach(change => result.lines.push(labels.propertyChanged(change.element, change.props)))
+                    if (changes.length > 3) {
+                        result.lines.push(labels.moreElements(changes.length - 3))
+                    }
+                } else {
+                    result.lines.push(labels.properties)
+                }
                 textsChanged = true
             }
         }

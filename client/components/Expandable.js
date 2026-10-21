@@ -5,6 +5,7 @@ import Grid from '@mui/material/Grid'
 import Box from '@mui/material/Box'
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
 import {getIconByKey} from './ui/impl/material/icon'
+import {_t} from '../../util/i18n.mjs'
 
 /*
  * Drag and drop of the entries of a list (e.g. the images of a multi field in GenericForm):
@@ -101,7 +102,7 @@ class Expandable extends React.Component {
     }
 
     render() {
-        const {title, children, disableGutters, icon, draggable, passThrough, className, actions} = this.props
+        const {title, children, disableGutters, icon, draggable, passThrough, className, actions, thumbnail} = this.props
         const {dragging, dropPosition} = this.state
 
         let Icon
@@ -125,7 +126,8 @@ class Expandable extends React.Component {
                               onDragEnd={this.handleDragEnd}
                               // the handle must not open / close the panel
                               onClick={(e) => e.stopPropagation()}
-                              aria-label="Verschieben"
+                              aria-label={_t('Expandable.move')}
+                              title={_t('Expandable.move')}
                               sx={{
                                   display: 'flex', alignItems: 'center', ml: -1, mr: 0.5, p: 0.25, borderRadius: 1,
                                   cursor: 'grab', color: 'text.disabled',
@@ -133,6 +135,13 @@ class Expandable extends React.Component {
                                   '&:active': {cursor: 'grabbing'}
                               }}><DragIndicatorIcon fontSize="small"/></Box> : null}
             {Icon ? <Icon color="action" fontSize="medium" sx={{mr: 2}}/> : null}
+            {thumbnail ? <Box component="img" src={thumbnail} alt="" loading="lazy" draggable={false}
+                              // e.g. a pdf without mime type: no broken image icon
+                              onError={(e) => e.currentTarget.style.display = 'none'}
+                              sx={{
+                                  width: '2rem', height: '2rem', mr: 1.25, flexShrink: 0, objectFit: 'cover',
+                                  borderRadius: '4px', bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider'
+                              }}/> : null}
             <Typography variant="h6"
                         sx={actions || draggable ? {
                             m: 0, lineHeight: '1.75rem', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
@@ -197,6 +206,8 @@ Expandable.propTypes = {
     title: PropTypes.string,
     // buttons shown in the heading (e.g. delete), usable without expanding the panel
     actions: PropTypes.node,
+    // url of a small image shown before the title
+    thumbnail: PropTypes.string,
     onChange: PropTypes.func,
     expanded: PropTypes.bool,
     // entries of a list can be reordered by dragging their handle

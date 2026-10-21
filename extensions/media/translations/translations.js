@@ -52,7 +52,6 @@ export const translations = {
     en: {
         'Media.editImage': 'Edit image',
         'Media.clearVariants': 'Clear variants',
-        'Media.send': 'Clear variants',
         'Media.uploadMedia': 'Upload medias',
         'Media.selectGroup': 'Select a group',
         'Media.selectConversion': 'Select a conversion',
