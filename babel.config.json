@@ -68,7 +68,7 @@
         "pureGetters": true
       },
       "plugins": [
-        ["@babel/plugin-transform-runtime", { "helpers": true, "regenerator": false, "corejs": false }]
+        ["@babel/plugin-transform-runtime", { "helpers": true, "regenerator": true, "corejs": false }]
       ],
       "presets": [
         [
@@ -77,7 +77,8 @@
             "modules": false,
             "targets": {
               "browsers": [
-                ">0.25%"
+                ">0.25%",
+                "ie 11"
               ]
             },
             "loose": true

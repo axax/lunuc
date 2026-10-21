@@ -155,9 +155,9 @@ function mainInit() {
             } else {
 
                 navigator.serviceWorker.register('/serviceworker.js?v=' + config.BUILD_NUMBER)
-                    .then(async (swReg) => {
+                    .then((swReg) => {
                         console.log('Service Worker is registered')
-                        await swReg.update()
+                        return swReg.update()
                     })
                     .catch(function (error) {
                         console.error('Service Worker Error', error)

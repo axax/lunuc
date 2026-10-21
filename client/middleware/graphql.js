@@ -327,7 +327,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
 
         // RETRY: ein einzelner Netzwerk-Versuch. `attemptsLeft` = verbleibende
         // Wiederholungen NACH diesem Versuch. Nur Queries bekommen attemptsLeft > 0.
-        const attempt = async (attemptsLeft) => {
+        const attempt = (attemptsLeft) => {
 
             addLoader()
             attempts++
@@ -335,191 +335,197 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
             const startTime = performance.now()   // NEU
             const headers = getHeaders(lang, headersExtra)
 
-
-            let sendBody = body
+            // plain promises instead of async/await: avoids the regenerator runtime in the main bundle (IE11 build)
             if (typeof CompressionStream !== 'undefined' && body.length > 10000) {
                 console.log('gzip compression enabled')
-                try {
+                Promise.resolve().then(() => {
                     const stream = new Blob([body]).stream()
                         .pipeThrough(new CompressionStream('gzip'))
-                    sendBody = await new Response(stream).arrayBuffer()
+                    return new Response(stream).arrayBuffer()
+                }).then(compressed => {
                     headers['Content-Encoding'] = 'gzip'
-                } catch (e) {
-                    // Fallback: unkomprimiert (sendBody bleibt der String)
+                    return compressed
+                }, e => {
+                    // Fallback: unkomprimiert
                     console.warn('gzip compression failed, sending uncompressed', e)
-                }
+                    return body
+                }).then(send)
+            } else {
+                send(body)
             }
 
-            fetch(graphQlUrl, {
-                method: 'POST',
-                signal: controller.signal,
-                credentials: 'include',
-                headers,
-                body: sendBody
-            }).then(r => {
-                removeLoader()
+            function send(sendBody) {
+                fetch(graphQlUrl, {
+                    method: 'POST',
+                    signal: controller.signal,
+                    credentials: 'include',
+                    headers,
+                    body: sendBody
+                }).then(r => {
+                    removeLoader()
 
-                if (r.ok) {
-                    _app_.session = r.headers.get('x-session')
+                    if (r.ok) {
+                        _app_.session = r.headers.get('x-session')
 
-                    r.json().then(response => {
-                        finalizeRequest()
+                        r.json().then(response => {
+                            finalizeRequest()
 
-                        if (!response.isAuth && _app_.user && _app_.user._id) {
-                            _app_.dispatcher.setUser(null)
-                        }
-
-                        if (response.errors) {
-                            const rejectData = {...response, loading: false, networkStatus: NetworkStatus.ready}
-                            rejectData.error = response.errors[0]
-                            // a conflict while saving a cms page is handled by the editor itself (dialog)
-                            if (rejectData.error.key !== 'cms_page_conflict') {
-                                _app_.dispatcher.addError({
-                                    key: 'graphql_error',
-                                    msg: rejectData.error.message
-                                })
+                            if (!response.isAuth && _app_.user && _app_.user._id) {
+                                _app_.dispatcher.setUser(null)
                             }
-                            reject(rejectData)
-                        } else {
-                            const resolveData = {...response, loading: false, networkStatus: NetworkStatus.ready}
-                            setUpWsIfNeeded(response.data)
 
-                            if (type === RequestType.query) {
-                                resolveData.fetchMore = getFetchMore({prevData: response.data, fetchPolicy, variables, type, query})
-                                Hook.call('ApiClientQueryResponse', {response})
-                                resolve(resolveData)
-                                if (fetchPolicy !== 'no-cache') {
-                                    client.writeQuery({cacheKey, query, variables, data: response.data})
+                            if (response.errors) {
+                                const rejectData = {...response, loading: false, networkStatus: NetworkStatus.ready}
+                                rejectData.error = response.errors[0]
+                                // a conflict while saving a cms page is handled by the editor itself (dialog)
+                                if (rejectData.error.key !== 'cms_page_conflict') {
+                                    _app_.dispatcher.addError({
+                                        key: 'graphql_error',
+                                        msg: rejectData.error.message
+                                    })
                                 }
+                                reject(rejectData)
                             } else {
-                                resolve(resolveData)
+                                const resolveData = {...response, loading: false, networkStatus: NetworkStatus.ready}
+                                setUpWsIfNeeded(response.data)
+
+                                if (type === RequestType.query) {
+                                    resolveData.fetchMore = getFetchMore({prevData: response.data, fetchPolicy, variables, type, query})
+                                    Hook.call('ApiClientQueryResponse', {response})
+                                    resolve(resolveData)
+                                    if (fetchPolicy !== 'no-cache') {
+                                        client.writeQuery({cacheKey, query, variables, data: response.data})
+                                    }
+                                } else {
+                                    resolve(resolveData)
+                                }
                             }
-                        }
 
-                    }).catch(error => {
-                        // JSON-Parse-Fehler: keine sinnvolle Retry-Situation -> terminal
-                        finalizeRequest()
-                        const intentionalAbort = controller.signal.aborted && !controller._timeout
-                        reject({error, loading: false, networkStatus: NetworkStatus.error, aborted: intentionalAbort})
+                        }).catch(error => {
+                            // JSON-Parse-Fehler: keine sinnvolle Retry-Situation -> terminal
+                            finalizeRequest()
+                            const intentionalAbort = controller.signal.aborted && !controller._timeout
+                            reject({error, loading: false, networkStatus: NetworkStatus.error, aborted: intentionalAbort})
 
-                        // Intentional abort (e.g. useQuery cleanup) while the body was still being read:
-                        // r.json() then rejects with the abort reason (e.g. 'useQuery') -> fail silently.
-                        if (intentionalAbort) {
+                            // Intentional abort (e.g. useQuery cleanup) while the body was still being read:
+                            // r.json() then rejects with the abort reason (e.g. 'useQuery') -> fail silently.
+                            if (intentionalAbort) {
+                                return
+                            }
+
+                            console.error('graphql post-processing error', error, {query, variables})
+                            _app_.dispatcher.addError({
+                                key: 'graphql_error',
+                                msg: (error?.message || String(error)) + (error?.path ? ' (in operation ' + error.path.join('/') + ')' : '')
+                            })
+                        })
+
+                    } else {
+                        // RETRY: transiente Gateway-Fehler (502/503/504/512) -> ein Query-Retry.
+                        // Diese kommen typischerweise vom Proxy, wenn der Upstream einen
+                        // Keep-Alive-Socket abgerissen hat.
+                        if (attemptsLeft > 0 && RETRYABLE_STATUS.indexOf(r.status) > -1) {
+                            if (!firstError) firstError = r.status + ' - ' + r.statusText
+                            console.log(`finalFetch: transient ${r.status}, retry in ${RETRY_BACKOFF}ms (${cacheKey})`)
+                            setTimeout(() => attempt(attemptsLeft - 1), RETRY_BACKOFF)
                             return
                         }
 
-                        console.error('graphql post-processing error', error, {query, variables})
+                        finalizeRequest()
+                        reject({error: {message: r.statusText}, loading: false, networkStatus: NetworkStatus.error})
                         _app_.dispatcher.addError({
-                            key: 'graphql_error',
-                            msg: (error?.message || String(error)) + (error?.path ? ' (in operation ' + error.path.join('/') + ')' : '')
+                            key: 'api_error',
+                            msg: r.status + ' - ' + r.statusText,
+                            meta: {query, variables}
                         })
-                    })
+                    }
 
-                } else {
-                    // RETRY: transiente Gateway-Fehler (502/503/504/512) -> ein Query-Retry.
-                    // Diese kommen typischerweise vom Proxy, wenn der Upstream einen
-                    // Keep-Alive-Socket abgerissen hat.
-                    if (attemptsLeft > 0 && RETRYABLE_STATUS.indexOf(r.status) > -1) {
-                        if (!firstError) firstError = r.status + ' - ' + r.statusText
-                        console.log(`finalFetch: transient ${r.status}, retry in ${RETRY_BACKOFF}ms (${cacheKey})`)
+                }).catch(error => {
+                    removeLoader()
+
+                    const isTimeout = controller._timeout
+                    const isAborted = !isTimeout && (error.name === 'AbortError' || controller.signal.aborted)
+                    // Node >= 21 hat ein globales navigator ohne onLine -> nur echtes boolean auswerten
+                    const isOffline = typeof navigator !== 'undefined' && typeof navigator.onLine === 'boolean' && !navigator.onLine
+
+                    // Bewusste Aborts (z.B. Unmount): nie retrien, still scheitern.
+                    if (isAborted) {
+                        finalizeRequest()
+                        reject({error, loading: false, networkStatus: NetworkStatus.error, aborted: true})
+                        return
+                    }
+
+                    // RETRY: transienter Netzwerkfehler ("Failed to fetch", Reset) -> ein Query-Retry.
+                    // NICHT bei Timeout (Backend ist eh zu langsam) und NICHT offline (zwecklos).
+                    if (attemptsLeft > 0 && !isTimeout && !isOffline) {
+                        if (!firstError) firstError = (error.name ? error.name + ': ' : '') + error.message
+                        console.log(`finalFetch: transient network error, retry in ${RETRY_BACKOFF}ms (${cacheKey})`)
                         setTimeout(() => attempt(attemptsLeft - 1), RETRY_BACKOFF)
                         return
                     }
 
                     finalizeRequest()
-                    reject({error: {message: r.statusText}, loading: false, networkStatus: NetworkStatus.error})
-                    _app_.dispatcher.addError({
-                        key: 'api_error',
-                        msg: r.status + ' - ' + r.statusText,
-                        meta: {query, variables}
-                    })
-                }
 
-            }).catch(error => {
-                removeLoader()
+                    const msg = isTimeout
+                        ? 'Request timeout reached'
+                        : isOffline
+                            ? 'No network connection'
+                            : `Network Error: ${error.message}`
 
-                const isTimeout = controller._timeout
-                const isAborted = !isTimeout && (error.name === 'AbortError' || controller.signal.aborted)
-                // Node >= 21 hat ein globales navigator ohne onLine -> nur echtes boolean auswerten
-                const isOffline = typeof navigator !== 'undefined' && typeof navigator.onLine === 'boolean' && !navigator.onLine
+                    reject({error, loading: false, networkStatus: NetworkStatus.error})
 
-                // Bewusste Aborts (z.B. Unmount): nie retrien, still scheitern.
-                if (isAborted) {
-                    finalizeRequest()
-                    reject({error, loading: false, networkStatus: NetworkStatus.error, aborted: true})
-                    return
-                }
-
-                // RETRY: transienter Netzwerkfehler ("Failed to fetch", Reset) -> ein Query-Retry.
-                // NICHT bei Timeout (Backend ist eh zu langsam) und NICHT offline (zwecklos).
-                if (attemptsLeft > 0 && !isTimeout && !isOffline) {
-                    if (!firstError) firstError = (error.name ? error.name + ': ' : '') + error.message
-                    console.log(`finalFetch: transient network error, retry in ${RETRY_BACKOFF}ms (${cacheKey})`)
-                    setTimeout(() => attempt(attemptsLeft - 1), RETRY_BACKOFF)
-                    return
-                }
-
-                finalizeRequest()
-
-                const msg = isTimeout
-                    ? 'Request timeout reached'
-                    : isOffline
-                        ? 'No network connection'
-                        : `Network Error: ${error.message}`
-
-                reject({error, loading: false, networkStatus: NetworkStatus.error})
-
-                // Seite war im Hintergrund / Gerät schlief: kein Backend-Problem, nicht melden.
-                if (wasHidden) {
-                    console.warn(`finalFetch: ${msg} while page was hidden - not reported (${cacheKey})`)
-                    return
-                }
-
-                // Timeout-Timer feuerte deutlich vor Ablauf der echten Zeit: die Uhr wurde
-                // manipuliert (z.B. Render-Bot mit "virtual time"). Kein Backend-Problem.
-                if (isTimeout && effectiveTimeout > 0) {
-                    const elapsedMs = performance.now() - requestStart
-                    if (elapsedMs < effectiveTimeout * 0.9) {
-                        console.warn(`finalFetch: timeout after ${Math.round(elapsedMs)}ms of ${effectiveTimeout}ms - clock manipulated, not reported (${cacheKey})`)
+                    // Seite war im Hintergrund / Gerät schlief: kein Backend-Problem, nicht melden.
+                    if (wasHidden) {
+                        console.warn(`finalFetch: ${msg} while page was hidden - not reported (${cacheKey})`)
                         return
                     }
-                }
 
-                _app_.dispatcher.addError({
-                    key: 'api_error',
-                    msg,
-                    meta: {
-                        query,
-                        variables,
-                        hiddenVariables,
-                        headers,
-                        name: error.name,
-                        stack: error.stack,
-                        graphQlUrl,
-                        cacheKey,
-                        // --- Zusatz-Diagnose ---
-                        isTimeout,
-                        isOffline,
-                        requestType: type === RequestType.mutate ? 'mutation' : 'query',
-                        effectiveTimeout,                              // welcher Timeout galt (0 = disabled)
-                        durationMs: Math.round(performance.now() - startTime),   // nur der letzte Versuch
-                        totalDurationMs: Math.round(performance.now() - requestStart), // seit dem ersten Versuch
-                        attempts,
-                        firstError,                                    // woran der erste Versuch scheiterte (bei Retry)
-                        wasHidden,
-                        bodySize: body ? body.length : 0,             // Payload-Grösse in Bytes
-                        attemptsLeft,                                  // verbleibende Retries zum Fehlerzeitpunkt
-                        online: typeof navigator !== 'undefined' ? navigator.onLine : null,
-                        connection: typeof navigator !== 'undefined' && navigator.connection
-                            ? {
-                                effectiveType: navigator.connection.effectiveType,   // '4g', '3g', ...
-                                downlink: navigator.connection.downlink,             // Mbit/s
-                                rtt: navigator.connection.rtt                        // ms
-                            }
-                            : null
+                    // Timeout-Timer feuerte deutlich vor Ablauf der echten Zeit: die Uhr wurde
+                    // manipuliert (z.B. Render-Bot mit "virtual time"). Kein Backend-Problem.
+                    if (isTimeout && effectiveTimeout > 0) {
+                        const elapsedMs = performance.now() - requestStart
+                        if (elapsedMs < effectiveTimeout * 0.9) {
+                            console.warn(`finalFetch: timeout after ${Math.round(elapsedMs)}ms of ${effectiveTimeout}ms - clock manipulated, not reported (${cacheKey})`)
+                            return
+                        }
                     }
+
+                    _app_.dispatcher.addError({
+                        key: 'api_error',
+                        msg,
+                        meta: {
+                            query,
+                            variables,
+                            hiddenVariables,
+                            headers,
+                            name: error.name,
+                            stack: error.stack,
+                            graphQlUrl,
+                            cacheKey,
+                            // --- Zusatz-Diagnose ---
+                            isTimeout,
+                            isOffline,
+                            requestType: type === RequestType.mutate ? 'mutation' : 'query',
+                            effectiveTimeout,                              // welcher Timeout galt (0 = disabled)
+                            durationMs: Math.round(performance.now() - startTime),   // nur der letzte Versuch
+                            totalDurationMs: Math.round(performance.now() - requestStart), // seit dem ersten Versuch
+                            attempts,
+                            firstError,                                    // woran der erste Versuch scheiterte (bei Retry)
+                            wasHidden,
+                            bodySize: body ? body.length : 0,             // Payload-Grösse in Bytes
+                            attemptsLeft,                                  // verbleibende Retries zum Fehlerzeitpunkt
+                            online: typeof navigator !== 'undefined' ? navigator.onLine : null,
+                            connection: typeof navigator !== 'undefined' && navigator.connection
+                                ? {
+                                    effectiveType: navigator.connection.effectiveType,   // '4g', '3g', ...
+                                    downlink: navigator.connection.downlink,             // Mbit/s
+                                    rtt: navigator.connection.rtt                        // ms
+                                }
+                                : null
+                        }
+                    })
                 })
-            })
+            }
         }
 
         // RETRY: Mutations sind nicht idempotent -> niemals wiederholen (Doppelausführung!).

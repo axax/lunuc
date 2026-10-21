@@ -141,7 +141,7 @@ if (fs.existsSync(APP_VALUES.HOSTRULES_ABSPATH)) {
 
 const config = {
     entry: ['./client/index.js'],
-    target: ['web', 'es2017'],
+    target: ['web', 'es5'],
     /*target: ['web', 'es2017'],*/
     output: {
         path: path.resolve(__dirname, 'build'),
