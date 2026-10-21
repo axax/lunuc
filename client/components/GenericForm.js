@@ -1120,8 +1120,10 @@ class GenericForm extends React.Component {
                 currentFormFields.push(
                     <Expandable title={title}
                                 actions={headerActions}
-                                draggable={true}
+                                draggable={!readOnly}
                                 index={index}
+                                // per form instance: nested forms can have lists with the same field name
+                                dragGroup={(this._dragGroupId || (this._dragGroupId = 'gf' + Math.random().toString(36).slice(2))) + '-' + fieldKey}
                                 passThrough={field.accordion === false}
                                 key={expandedKey}
                                 onPositionChange={(sourceIndex, targetIndex) => {
