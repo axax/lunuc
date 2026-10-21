@@ -145,6 +145,57 @@ const getCmsComponentSlug = (json) => {
 let helperUidCounter = 0
 
 /*
+ * Copies the json of element(s) to the clipboard and tells the user whether it worked.
+ * navigator.clipboard only exists in a secure context (https / localhost) and its promise can be rejected
+ * (e.g. document not focused) -> fallback with execCommand('copy'), error notification if both fail
+ */
+const copyElementsToClipboard = async (json, length) => {
+    const text = JSON.stringify(json, null, 2)
+    const notify = (message, error) => _app_.dispatcher.addNotification({
+        horizontal: 'right',
+        autoHideDuration: error ? 6000 : 2200,
+        closeButton: !!error,
+        message
+    })
+    const fallbackCopy = () => {
+        const textarea = document.createElement('textarea')
+        textarea.value = text
+        textarea.setAttribute('readonly', '')
+        textarea.style.position = 'fixed'
+        textarea.style.opacity = '0'
+        document.body.appendChild(textarea)
+        textarea.select()
+        try {
+            return document.execCommand('copy')
+        } finally {
+            document.body.removeChild(textarea)
+        }
+    }
+    let error
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text)
+        } else if (!fallbackCopy()) {
+            throw new Error('execCommand copy failed')
+        }
+    } catch (e) {
+        try {
+            if (!fallbackCopy()) {
+                error = e
+            }
+        } catch (e2) {
+            error = e
+        }
+    }
+    if (error) {
+        console.warn('copy to clipboard failed', error)
+        notify(_t('JsonDomHelper.element.copy.to.clipboard.failed', {message: error.message || String(error)}), true)
+    } else {
+        notify(_t('JsonDomHelper.element.copied.to.clipboard', {length}))
+    }
+}
+
+/*
  * Own undo / redo for inline (contentEditable) text.
  * Every input writes the text into the template and re-renders the element, which destroys the
  * native undo history of the browser - so Cmd/Ctrl+Z did nothing while typing.
@@ -2026,12 +2077,8 @@ class JsonDomHelper extends React.Component {
                         subJson = getComponentByKey(element.props._key, element.props._json)
                         return subJson
                     })
-                    navigator.clipboard.writeText(JSON.stringify(allSubJsons, null, 2))
+                    copyElementsToClipboard(allSubJsons, allSubJsons.length)
                     this.deselectSelected()
-                    _app_.dispatcher.addNotification({horizontal:'right',
-                        autoHideDuration:2200,
-                        closeButton:false,
-                        message: _t('JsonDomHelper.element.copied.to.clipboard',{length:allSubJsons.length})})
                 }
             })
             return menuItems
@@ -2346,11 +2393,7 @@ class JsonDomHelper extends React.Component {
                         name: _t('JsonDomHelper.element.to.clipboard'),
                         icon: <FileCopyIcon/>,
                         onClick: () => {
-                            navigator.clipboard.writeText(JSON.stringify(subJson, null, 2))
-                            _app_.dispatcher.addNotification({horizontal:'right',
-                                autoHideDuration:2200,
-                                closeButton:false,
-                                message: _t('JsonDomHelper.element.copied.to.clipboard',{length:1})})
+                            copyElementsToClipboard(subJson, 1)
                         }
                     })
 
