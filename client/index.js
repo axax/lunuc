@@ -52,6 +52,12 @@ function mainInit() {
     let contextLanguage, loc = window.location, basePath,
         hasMultiLanguages = LANGUAGES && LANGUAGES.length > 1
 
+    // IE11 fallback: location.origin is undefined there. Needed before anything else uses it
+    // (redirects below, RouteHistory, ...) - do not remove while IE11 is supported
+    if (!loc.origin) {
+        loc.origin = loc.protocol + "//" + loc.hostname + (loc.port ? ':' + loc.port : '')
+    }
+
     // remove double slashes
     const pathname = loc.pathname
     const cleanPathname = pathname.replace(/\/\/+/g, '/')

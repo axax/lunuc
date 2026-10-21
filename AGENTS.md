@@ -164,6 +164,7 @@ The public site must keep running on old browsers, **including Internet Explorer
 - `@babel/plugin-transform-runtime` with `"regenerator": true` — with `false` the code needs a global `regeneratorRuntime` and breaks in ES5 mode.
 - Prefer plain promises over `async/await` in code that lands in the main bundle (avoids the regenerator runtime, ~7 KB).
 - Modern APIs (`Object.assign`, `Promise`, `Map`, `fetch`, …) are polyfilled at runtime (`BASE_POLYFILL` in `index.html`, `/polyfill/more.js` in `client/index.js`); don't rely on APIs without a polyfill or feature check.
+- Don't remove IE fallbacks as "dead code", e.g. the `location.origin` fallback in `client/index.js` (IE11 has no `location.origin`; without it the page redirects to `/undefined/<lang>` and `RouteHistory` crashes). Check guards like `typeof window.CustomEvent === 'function'` and `navigator.serviceWorker` too.
 - CMS scripts in the database are converted at runtime for old browsers (`legacyjs.js`, `DomUtil.toES5`), not by the build.
 - Check after building: every `build/*.bundle.js` must parse as ES5 (e.g. `acorn` with `ecmaVersion: 5`); `serviceworker.js` is not loaded by IE11 and is exempt.
 
