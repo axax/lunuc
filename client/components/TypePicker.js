@@ -65,6 +65,59 @@ const StyledChip = styled(Chip)(({isMulti,theme}) => ({
     position: isMulti?'relative':'absolute',
 }))
 
+// image with metaFields (e.g. caption per image of a gallery): one compact row per image
+const StyledMetaImageRow = styled('div')(({theme}) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(1.5),
+    width: '100%',
+    padding: theme.spacing(0.75, 1),
+    borderBottom: '1px solid ' + theme.palette.divider,
+    background: theme.palette.background.paper,
+    '&:first-of-type': {
+        borderTop: '1px solid ' + theme.palette.divider
+    },
+    '&.drag-over': {
+        boxShadow: 'inset 0 2px 0 ' + theme.palette.primary.main
+    }
+}))
+
+const StyledMetaImageHandle = styled('div')(({theme}) => ({
+    flex: '0 0 auto',
+    cursor: 'grab',
+    color: theme.palette.text.disabled,
+    fontSize: '0.75rem',
+    minWidth: '1.4em',
+    textAlign: 'right',
+    userSelect: 'none'
+}))
+
+const StyledMetaImageThumb = styled('img')({
+    flex: '0 0 auto',
+    width: '64px',
+    height: '48px',
+    objectFit: 'cover',
+    borderRadius: '3px',
+    cursor: 'zoom-in',
+    display: 'block'
+})
+
+const StyledMetaImageBody = styled('div')({
+    flex: '1 1 auto',
+    minWidth: 0,
+    display: 'flex',
+    flexDirection: 'column'
+})
+
+const StyledMetaImageName = styled('div')(({theme}) => ({
+    fontSize: '0.75rem',
+    color: theme.palette.text.secondary,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    marginBottom: '2px'
+}))
+
 const StyledDropArea = styled('div')(({ theme }) => ({
     padding: '0',
     display:'flex',
@@ -323,7 +376,75 @@ class TypePicker extends React.Component {
 
                         const components = []
 
-                        if (showAlwaysAsImage || isValidImage(singleValue, type)) {
+                        const showAsImage = showAlwaysAsImage || isValidImage(singleValue, type)
+                        // images with metaFields (e.g. a caption per image): a compact row per image
+                        if (showAsImage && metaFields && multi) {
+                            const setMeta = (name, fieldValue) => {
+                                if (readOnly) {
+                                    return
+                                }
+                                const newValue = this.state.value.slice(0),
+                                    newSingleValue = Object.assign({}, newValue[singleValueIndex])
+                                newSingleValue.metaValues = Object.assign({}, newSingleValue.metaValues, {[name]: fieldValue})
+                                newValue[singleValueIndex] = newSingleValue
+                                this.props.onChange({target: {value: newValue, name: this.props.name, dataset: this.props.dataset}})
+                                this.setState({value: newValue})
+                            }
+                            components.push(<StyledMetaImageRow key={'metaImage' + singleValueIndex}
+                                                draggable={!readOnly}
+                                                onDragStart={(e) => {
+                                                    // don't start dragging the row from inside the text field
+                                                    if (e.target.closest && e.target.closest('input, textarea')) {
+                                                        e.preventDefault()
+                                                        return
+                                                    }
+                                                    e.dataTransfer.setData('text', String(singleValueIndex))
+                                                }}
+                                                onDragOver={(e) => {
+                                                    e.preventDefault()
+                                                    e.currentTarget.classList.add('drag-over')
+                                                }}
+                                                onDragLeave={(e) => {
+                                                    e.currentTarget.classList.remove('drag-over')
+                                                }}
+                                                onDrop={(e) => {
+                                                    e.preventDefault()
+                                                    e.currentTarget.classList.remove('drag-over')
+                                                    const sourceIndex = parseInt(e.dataTransfer.getData('text'))
+                                                    if (isNaN(sourceIndex) || sourceIndex === singleValueIndex) {
+                                                        return
+                                                    }
+                                                    // the dragged image is placed before this one
+                                                    const newValue = this.state.value.slice(0),
+                                                        element = newValue.splice(sourceIndex, 1)[0]
+                                                    newValue.splice(sourceIndex < singleValueIndex ? singleValueIndex - 1 : singleValueIndex, 0, element)
+                                                    this.setState({value: newValue})
+                                                    this.props.onChange({target: {value: newValue, name: this.props.name, dataset: this.props.dataset}})
+                                                }}>
+                                <StyledMetaImageHandle title="Ziehen zum Sortieren">{'\u2630 '}{singleValueIndex + 1}</StyledMetaImageHandle>
+                                <StyledMetaImageThumb src={getImageSrc(singleValue, 'thumbnail')} alt=""
+                                                      draggable={false}
+                                                      onClick={() => {
+                                                          window.open(getImageSrc(singleValue, 'full'), '_blank').focus()
+                                                      }}/>
+                                <StyledMetaImageBody>
+                                    <StyledMetaImageName>{typeDataToLabel(singleValue, pickerField, this.refreshLabels)}</StyledMetaImageName>
+                                    {metaFields.map(mf => <TextField key={mf.name}
+                                                                     size="small"
+                                                                     variant="standard"
+                                                                     fullWidth
+                                                                     placeholder={mf.label}
+                                                                     disabled={readOnly}
+                                                                     value={(singleValue.metaValues && singleValue.metaValues[mf.name]) || ''}
+                                                                     onChange={(e) => setMeta(mf.name, e.target.value)}/>)}
+                                </StyledMetaImageBody>
+                                {!readOnly && <IconButton size="small" onClick={this.handleRemovePick.bind(this, singleValueIndex)}>
+                                    <DeleteIcon fontSize="small"/>
+                                </IconButton>}
+                            </StyledMetaImageRow>)
+                            return components
+                        }
+                        if (showAsImage && !metaFields) {
                             components.push(<StyledImageChip
                                                  draggable={true}
                                                  data-index={singleValueIndex}

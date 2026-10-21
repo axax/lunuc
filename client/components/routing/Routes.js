@@ -3,8 +3,7 @@ import Hook from 'util/hook.cjs'
 import config from 'gen/config-client'
 
 const {ADMIN_BASE_URL} = config
-import LogoutContainer from 'client/containers/LogoutContainer'
-import Async from 'client/components/Async'
+import {lazy} from 'client/components/Async'
 import {
     CAPABILITY_ACCESS_ADMIN_PAGE
 } from 'util/capabilities.mjs'
@@ -12,38 +11,21 @@ import {scrollByHash} from '../../../extensions/cms/util/urlUtil'
 import {RouteHistory} from '../../util/route'
 import Util from '../../util/index.mjs'
 
-const BaseLayout = (props) => <Async {...props}
-                                     asyncKey="BaseLayout"
-                                     load={() =>import(/* webpackChunkName: "admin" */ '../../components/layout/BaseLayout')}/>
+const BaseLayout = lazy(() => import(/* webpackChunkName: "admin" */ '../../components/layout/BaseLayout'), {asyncKey: 'BaseLayout'})
 
-const BlankLayout = (props) => <Async {...props}
-                                     asyncKey="BlankLayout"
-                                     load={() =>import(/* webpackChunkName: "admin" */ '../../components/layout/BlankLayout')}/>
+const BlankLayout = lazy(() => import(/* webpackChunkName: "admin" */ '../../components/layout/BlankLayout'), {asyncKey: 'BlankLayout'})
 
-const LoginContainer = (props) => <Async {...props}
-                                         load={() =>import(/* webpackChunkName: "adminLogin" */ '../../containers/LoginContainer')}/>
-const SignUpContainer = (props) => <Async {...props}
-                                          load={() =>import(/* webpackChunkName: "admin" */ '../../containers/SignUpContainer')}/>
-const UserProfileContainer = (props) => <Async {...props}
-                                               asyncKey="UserProfileContainer"
-                                               load={() =>import(/* webpackChunkName: "admin" */ '../../containers/UserProfileContainer')}/>
-const SystemContainer = (props) => <Async {...props}
-                                          asyncKey="SystemContainer"
-                                          load={() =>import(/* webpackChunkName: "admin" */ '../../containers/SystemContainer')}/>
-const BackupContainer = (props) => <Async {...props}
-                                          asyncKey="BackupContainer"
-                                          load={() =>import(/* webpackChunkName: "admin" */ '../../containers/BackupContainer')}/>
-const FilesContainer = (props) => <Async {...props}
-                                         asyncKey="FilesContainer"
-                                         load={() =>import(/* webpackChunkName: "admin" */ '../../containers/FilesContainer')}/>
-const TypesContainer = (props) => <Async {...props}
-                                         asyncKey="TypesContainer"
-                                         load={() =>import(/* webpackChunkName: "admin" */ '../../containers/TypesContainer')}/>
-const HomeContainer = (props) => <Async {...props}
-                                        asyncKey="HomeContainer"
-                                        load={() =>import(/* webpackChunkName: "admin" */ '../../containers/HomeContainer')}/>
-const ErrorPage = (props) => <Async {...props}
-                                    load={() =>import(/* webpackChunkName: "errorPage" */ '../../components/layout/ErrorPage')}/>
+const LoginContainer = lazy(() => import(/* webpackChunkName: "adminLogin" */ '../../containers/LoginContainer'))
+const SignUpContainer = lazy(() => import(/* webpackChunkName: "admin" */ '../../containers/SignUpContainer'))
+const UserProfileContainer = lazy(() => import(/* webpackChunkName: "admin" */ '../../containers/UserProfileContainer'), {asyncKey: 'UserProfileContainer'})
+const SystemContainer = lazy(() => import(/* webpackChunkName: "admin" */ '../../containers/SystemContainer'), {asyncKey: 'SystemContainer'})
+const BackupContainer = lazy(() => import(/* webpackChunkName: "admin" */ '../../containers/BackupContainer'), {asyncKey: 'BackupContainer'})
+const FilesContainer = lazy(() => import(/* webpackChunkName: "admin" */ '../../containers/FilesContainer'), {asyncKey: 'FilesContainer'})
+const TypesContainer = lazy(() => import(/* webpackChunkName: "admin" */ '../../containers/TypesContainer'), {asyncKey: 'TypesContainer'})
+const HomeContainer = lazy(() => import(/* webpackChunkName: "admin" */ '../../containers/HomeContainer'), {asyncKey: 'HomeContainer'})
+// only used on the logout route, which renders the async BlankLayout (admin chunk) anyway
+const LogoutContainer = lazy(() => import(/* webpackChunkName: "admin" */ '../../containers/LogoutContainer'))
+const ErrorPage = lazy(() => import(/* webpackChunkName: "errorPage" */ '../../components/layout/ErrorPage'))
 
 const UnauthorizedPage = () => (
     <ErrorPage code="401" title="Unauthorized" background="#f4a742"/>

@@ -1,11 +1,10 @@
 import React from 'react'
-import Async from 'client/components/Async'
+import {lazy} from 'client/components/Async'
 import config from 'gen/config-client'
 const {ADMIN_BASE_URL} = config
 import Hook from 'util/hook.cjs'
 import {CAPABILITY_MEDIA_REFERENCES} from "./constants/index.mjs";
-const TypesContainer = (props) => <Async {...props}
-                                         load={() =>import(/* webpackChunkName: "admin" */ '../../client/containers/TypesContainer')}/>
+const TypesContainer = lazy(() => import(/* webpackChunkName: "admin" */ '../../client/containers/TypesContainer'))
 
 // add routes
 Hook.on('Routes', ({routes, container}) => {
@@ -23,7 +22,7 @@ Hook.on('Routes', ({routes, container}) => {
 
 
 // cms component for excel tables (element «Excel-Tabelle»)
-const ExcelTable = (props) => <Async {...props} load={() => import(/* webpackChunkName: "excel" */ './components/ExcelTable')}/>
+const ExcelTable = lazy(() => import(/* webpackChunkName: "excel" */ './components/ExcelTable'))
 
 Hook.on('JsonDom', ({components}) => {
     components['ExcelTable'] = ExcelTable

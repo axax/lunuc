@@ -11,7 +11,6 @@ const addScrollEvent = ()=>{
     if(manualScroll===undefined) {
         const ael = window.addEventListener
         ael('wheel', manualScrollEvent, {passive: true})
-        ael('DOMMouseScroll', manualScrollEvent, {passive: true})
         ael('touchmove', manualScrollEvent, {passive: true})
     }
     manualScroll = false

@@ -9,14 +9,13 @@ import {
     CAPABILITY_MANAGE_CMS_TEMPLATE,
     CAPABILITY_MANAGE_CMS_CONTENT, CAPABILITY_MANAGE_CMS_ELEMENTS
 } from './constants/index.mjs'
-import Async from 'client/components/Async'
+import {lazy} from 'client/components/Async'
 import CmsViewContainer from './containers/CmsViewContainer'
 import JsonDom from './components/JsonDom'
 import {render} from 'react-dom'
 import {removePrettyUrlPart} from './util/cmsView.mjs'
 
-const TypesContainer = (props) => <Async {...props}
-                                         load={() =>import(/* webpackChunkName: "admin" */ '../../client/containers/TypesContainer')}/>
+const TypesContainer = lazy(() => import(/* webpackChunkName: "admin" */ '../../client/containers/TypesContainer'))
 
 
 // Extend Util to use in template

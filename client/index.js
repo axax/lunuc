@@ -52,11 +52,6 @@ function mainInit() {
     let contextLanguage, loc = window.location, basePath,
         hasMultiLanguages = LANGUAGES && LANGUAGES.length > 1
 
-    // ie fallback
-    if (!loc.origin) {
-        loc.origin = loc.protocol + "//" + loc.hostname + (loc.port ? ':' + loc.port : '')
-    }
-
     // remove double slashes
     const pathname = loc.pathname
     const cleanPathname = pathname.replace(/\/\/+/g, '/')

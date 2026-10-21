@@ -3,7 +3,7 @@ import {
     SimpleSelect
 } from 'ui/admin'
 import Util from 'client/util/index.mjs'
-import {COLLECTIONS_QUERY} from '../../constants/index.mjs'
+import {COLLECTIONS_QUERY} from '../../constants/admin.mjs'
 import {Query} from '../../middleware/graphql'
 import {_t} from 'util/i18n.mjs'
 

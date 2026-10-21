@@ -60,6 +60,16 @@
       ]
     },
     "client_build": {
+      "assumptions": {
+        "setPublicClassFields": true,
+        "noDocumentAll": true,
+        "noClassCalls": true,
+        "setSpreadProperties": true,
+        "pureGetters": true
+      },
+      "plugins": [
+        ["@babel/plugin-transform-runtime", { "helpers": true, "regenerator": false, "corejs": false }]
+      ],
       "presets": [
         [
           "@babel/preset-env",

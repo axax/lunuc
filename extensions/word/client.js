@@ -2,10 +2,9 @@ import React from 'react'
 import Hook from 'util/hook.cjs'
 import config from 'gen/config-client'
 const {ADMIN_BASE_URL} = config
-import Async from 'client/components/Async'
+import Async, {lazy} from 'client/components/Async'
 
-const WordContainer = (props) => <Async {...props}
-                                        load={() =>import(/* webpackChunkName: "word" */ './containers/WordContainer')}/>
+const WordContainer = lazy(() => import(/* webpackChunkName: "word" */ './containers/WordContainer'))
 const SubjectIcon = (props) => <Async {...props} expose="SubjectIcon"
                                       load={() =>import(/* webpackChunkName: "word" */ '../../gensrc/ui/admin')}/>
 

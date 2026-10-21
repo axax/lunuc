@@ -8,6 +8,13 @@ const TYPENAME = '__typename'
 
 export const types = {}, typeQueries = {}
 
+// clears the cached types and queries -> the next getTypes() builds them again
+// (used by typesAdmin.mjs after the full type definitions have been merged in)
+export const resetTypes = () => {
+    Object.keys(types).forEach(key => delete types[key])
+    Object.keys(typeQueries).forEach(key => delete typeQueries[key])
+}
+
 export const getTypes = () => {
     if (Object.keys(types).length === 0) {
         //  create types object only once

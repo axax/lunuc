@@ -56,7 +56,7 @@ import DomUtil from 'client/util/dom.mjs'
 import {downloadAs} from 'client/util/download.js'
 import {_t} from 'util/i18n.mjs'
 const {ADMIN_BASE_URL, LANGUAGES} = config
-import {COLLECTIONS_QUERY} from '../constants/index.mjs'
+import {COLLECTIONS_QUERY} from '../constants/admin.mjs'
 import GenericForm from '../components/GenericForm'
 import {client, clearFetchById} from '../middleware/graphql'
 import json2csv from 'util/json2csv'

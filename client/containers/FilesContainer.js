@@ -13,7 +13,7 @@ import {
 } from 'ui/admin'
 import Util from 'client/util/index.mjs'
 import {formatBytes} from 'client/util/format.mjs'
-import {COMMAND_QUERY} from '../constants/index.mjs'
+import {COMMAND_QUERY} from '../constants/admin.mjs'
 import PropTypes from 'prop-types'
 import config from 'gen/config-client'
 import {Query, client} from '../middleware/graphql'

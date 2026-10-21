@@ -2,7 +2,7 @@ import React from 'react'
 import {
     getGqlVariables, getCmsPageQuery, isEditMode, urlSensitivMap,
 } from '../util/cmsView.mjs'
-import Async from 'client/components/Async'
+import {lazy} from 'client/components/Async'
 import compose from '../../../util/compose'
 import DomUtil from '../../../client/util/dom.mjs'
 import {setPropertyByPath} from '../../../client/util/json.mjs'
@@ -15,16 +15,13 @@ import {
     getKeyValueFromLS, QUERY_KEY_VALUES_GLOBAL
 } from '../../../client/util/keyvalue'
 import {NO_SESSION_KEY_VALUES} from '../../../client/constants/index.mjs'
-import {_t, registerTrs} from '../../../util/i18n.mjs'
 
 
 // admin pack
-const ErrorPage = (props) => <Async {...props}
-                                    load={() =>import(/* webpackChunkName: "errorPage" */ '../../../client/components/layout/ErrorPage')}/>
+const ErrorPage = lazy(() => import(/* webpackChunkName: "errorPage" */ '../../../client/components/layout/ErrorPage'))
 
 
-const CmsViewEditorContainer = (props) => <Async {...props}
-                                                 load={() =>import(/* webpackChunkName: "admin" */ './CmsViewEditorContainer')}/>
+const CmsViewEditorContainer = lazy(() => import(/* webpackChunkName: "admin" */ './CmsViewEditorContainer'))
 
 /*
  Embedded components that the server returned together with the page (option "include" of a Cms
@@ -102,17 +99,6 @@ export default function (WrappedComponent) {
     class Wrapper extends React.Component {
         constructor(props) {
             super(props)
-
-            registerTrs({
-                de: {
-                    'ErrorPage.title.504': 'Wartungsarbeiten',
-                    'ErrorPage.message.504': 'Bitte haben Sie einen kurzen Moment Geduld. Wir sind gleich zurück.'
-                },
-                en: {
-                    'ErrorPage.title.504': 'Maintenance',
-                    'ErrorPage.message.504': 'We are sorry. Please try again in a moment'
-                }
-            }, 'ErrorPage')
 
             if (props.cmsData) {
                 this._localCmsPage = normalizeCmsData(props.cmsData)
@@ -207,9 +193,7 @@ export default function (WrappedComponent) {
                             setTimeout(() => {
                                 window.location.href = window.location.href
                             }, 10000)
-                            return <ErrorPage code="504" message={_t('ErrorPage.message.504')}
-                                              hideBackButton={true}
-                                              title={_t('ErrorPage.title.504')} background="#f4a742"/>
+                            return <ErrorPage code="504" hideBackButton={true} background="#f4a742"/>
                         }
                         if (isEditMode(this.props)) {
                             return <CmsViewEditorContainer WrappedComponent={WrappedComponent}

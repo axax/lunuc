@@ -8,7 +8,7 @@ import {
     CAPABILITY_MANAGE_USER_ROLE,
     getAllCapabilites
 } from './capabilities.mjs'
-import {getTypes} from './types.mjs'
+import {getTypes, resetTypes} from './types.mjs'
 import {_t} from './i18n.mjs'
 import extensionsPrivate from '../gensrc/extensions-private.mjs'
 import extensions from '../gensrc/extensions.mjs'
@@ -20,6 +20,9 @@ console.log(`replace / merge extension definition with extended version ${new Da
 Object.keys(extensionsPrivate).forEach(key => {
     extensions[key] = extensionsPrivate[key]
 })
+// types that were already built from the reduced public definition (e.g. by a page that was
+// shown before the admin got loaded) are built again from the full definition on the next use
+resetTypes()
 
 const typeFormFields = {}
 

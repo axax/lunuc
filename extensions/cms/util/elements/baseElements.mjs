@@ -439,7 +439,29 @@ export const buildBaseElements = () => [
                 filter: 'mimeType=image',
                 projection: MEDIA_PROJECTION,
                 multi: true,
+                // caption per image, editable at any time (stored as metaValues.caption of the item, see SmartImage)
+                metaFields: [{name: 'caption', label: _t('elements.gallery.caption'), fullWidth: true}],
                 tab: DEFAULT_TAB
+            },
+            // aspect ratio of the images: empty = layout of the site css, otherwise data-ratio for the site css
+            $set_ratio: {
+                label: _t('elements.gallery.ratio'),
+                thirdWidth: true,
+                tab: DEFAULT_TAB,
+                enum: [
+                    {value: '', name: _t('elements.gallery.ratioAuto')},
+                    {value: '16/9', name: _t('elements.gallery.ratioLandscape') + ' 16:9'},
+                    {value: '3/2', name: _t('elements.gallery.ratioLandscape') + ' 3:2'},
+                    {value: '4/3', name: _t('elements.gallery.ratioLandscape') + ' 4:3'},
+                    {value: '1/1', name: _t('elements.gallery.ratioSquare') + ' 1:1'},
+                    {value: '3/4', name: _t('elements.gallery.ratioPortrait') + ' 3:4'},
+                    {value: '2/3', name: _t('elements.gallery.ratioPortrait') + ' 2:3'},
+                    {value: 'original', name: _t('elements.gallery.ratioOriginal')}
+                ]
+            },
+            'p_data-ratio': {
+                invisible: true,
+                template: "${_comp.$set && _comp.$set.ratio ? _comp.$set.ratio : ''}"
             },
             // number of columns: empty = layout of the site css (unchanged behavior), otherwise an inline css grid
             $set_columns: {

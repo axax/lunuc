@@ -1,6 +1,4 @@
-export const COLLECTIONS_QUERY = 'query collections($filter:String){collections(filter:$filter){results{name}}}'
-export const COLLECTIONS_SYNC_QUERY = 'mutation syncCollectionEntries($fromVersion:String!,$toVersion:String!,$type:String!,$ids:[ID]!){syncCollectionEntries(fromVersion:$fromVersion,toVersion:$toVersion,type:$type,ids:$ids){result}}'
-export const COMMAND_QUERY = 'query run($command:String!,$sync:Boolean){run(command:$command,sync:$sync){response}}'
+// admin-only queries are in ./admin.mjs, so they are not part of the main bundle
 
 
 // used to store settings in local storage if there is no session

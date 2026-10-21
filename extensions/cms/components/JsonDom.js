@@ -7,7 +7,7 @@ import {propertyByPath, matchExpr, parseOrElse, isFalse, isString, isTrue} from 
 import {scrollByHash} from '../util/urlUtil'
 import {getComponentByKey} from '../util/jsonDomUtilClient'
 import DomUtil from 'client/util/dom.mjs'
-import Async from 'client/components/Async'
+import {lazy} from 'client/components/Async'
 import CmsViewContainer from '../containers/CmsViewContainer'
 //import {Link, Redirect} from 'react-router-dom'
 import {render} from 'react-dom'
@@ -104,8 +104,6 @@ const compileIf = ($if, loc, scope) => {
     return fn
 }
 
-// lazy loaded component (code splitting)
-const lazy = (load) => (props) => <Async {...props} load={load}/>
 
 const JsonDomHelper = lazy(() => import(/* webpackChunkName: "jsondom" */ './JsonDomHelper'))
 const PrettyErrorMessage = lazy(() => import(/* webpackChunkName: "admin" */ './PrettyErrorMessage'))
@@ -151,10 +149,10 @@ const POST_TEMPLATE_REPLACE_REGEX = new RegExp(
 
 
 /**
- * File name of an image (media object, JSON string of it, url or path) without the file extension,
- * e.g. {name: 'sunset_2024.jpg'} -> 'sunset_2024'
+ * Image value of SmartImage (media object, JSON string of it, array of it, url or path) -> single value.
+ * A string that is no valid JSON is returned as it is.
  */
-const imageNameWithoutExtension = (src) => {
+const parseImageValue = (src) => {
     let image = src
     if (isString(image) && (image.startsWith('{') || image.startsWith('['))) {
         try {
@@ -162,9 +160,15 @@ const imageNameWithoutExtension = (src) => {
         } catch (e) {
         }
     }
-    if (Array.isArray(image)) {
-        image = image[0]
-    }
+    return Array.isArray(image) ? image[0] : image
+}
+
+/**
+ * File name of an image (media object, JSON string of it, url or path) without the file extension,
+ * e.g. {name: 'sunset_2024.jpg'} -> 'sunset_2024'
+ */
+const imageNameWithoutExtension = (src) => {
+    const image = parseImageValue(src)
     if (!image) {
         return ''
     }
@@ -180,6 +184,16 @@ const imageNameWithoutExtension = (src) => {
     }
     const dot = name.lastIndexOf('.')
     return dot > 0 ? name.substring(0, dot) : name
+}
+
+/**
+ * Caption entered for an image in a media picker with metaFields (e.g. the gallery element):
+ * {_id, name, metaValues: {caption}} (or JSON string of it) -> caption
+ */
+const imageMetaCaption = (src) => {
+    const image = parseImageValue(src)
+    const caption = image && image.constructor === Object && image.metaValues && image.metaValues.caption
+    return isString(caption) ? caption.trim() : ''
 }
 
 /*function isString(variable) {
@@ -244,8 +258,10 @@ class JsonDom extends React.Component {
                 }
             }
 
-            // captionFromName: the file name of the image without extension as caption (as text, no html)
-            const nameCaption = !caption && captionFromName && !isFalse(captionFromName) ? imageNameWithoutExtension(src) : ''
+            // caption of the image entered in the picker (metaValues.caption), otherwise with captionFromName
+            // the file name of the image without extension (both as text, no html)
+            const metaCaption = !caption ? imageMetaCaption(src) : ''
+            const nameCaption = !caption && !metaCaption && captionFromName && !isFalse(captionFromName) ? imageNameWithoutExtension(src) : metaCaption
 
             /*TODO remove  figureStyle, figureClassName use figureProps instead */
             if (caption || nameCaption || wrapper) {

@@ -3,11 +3,11 @@ import Hook from 'util/hook.cjs'
 import config from 'gen/config-client'
 
 const {ADMIN_BASE_URL} = config
-import Async from 'client/components/Async'
+import Async, {lazy} from 'client/components/Async'
 
 const PostRenderer = (props) => <Async readOnly={true} {...props} load={() =>import(/* webpackChunkName: "post" */ './components/PostEditor')}/>
 
-const PostContainerAsync = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "admin" */ './containers/PostContainer')}/>
+const PostContainerAsync = lazy(() => import(/* webpackChunkName: "admin" */ './containers/PostContainer'))
 
 export default () => {
 

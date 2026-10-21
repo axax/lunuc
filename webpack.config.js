@@ -141,7 +141,7 @@ if (fs.existsSync(APP_VALUES.HOSTRULES_ABSPATH)) {
 
 const config = {
     entry: ['./client/index.js'],
-    target: ['web', 'es5'],
+    target: ['web', 'es2017'],
     /*target: ['web', 'es2017'],*/
     output: {
         path: path.resolve(__dirname, 'build'),
@@ -166,6 +166,8 @@ const config = {
             {
                 test: /\.(js|mjs|cjs|jsx|tsx|ts)$/,
                 /*exclude: excludeFunction,*/
+                // the shared babel helpers must not be transformed themselves (circular imports)
+                exclude: /node_modules[\\/]@babel[\\/]runtime[\\/]/,
                 loader: 'babel-loader'
             },
             {
@@ -201,6 +203,9 @@ const config = {
     },
     plugins: [
         new GenSourceCode(APP_VALUES), /* Generate some source code based on the buildconfig.json file */
+        /* the browser gets the reduced type definitions (see webpack.gensrc.js) */
+        new webpack.NormalModuleReplacementPlugin(/(^|[\\/])(gensrc|gen)[\\/]extensions\.mjs$/,
+            path.resolve(__dirname, 'gensrc/extensions-browser.mjs')),
         new MiniCssExtractPlugin({
             filename: 'style.css',
             chunkFilename: DEV_MODE ? '[name].css' : '[name].[contenthash:8].css'

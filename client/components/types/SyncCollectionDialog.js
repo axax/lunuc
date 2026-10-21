@@ -3,7 +3,7 @@ import {
     SimpleDialog,
     Box
 } from 'ui/admin'
-import {COLLECTIONS_SYNC_QUERY} from '../../constants/index.mjs'
+import {COLLECTIONS_SYNC_QUERY} from '../../constants/admin.mjs'
 import {client} from '../../middleware/graphql'
 import {_t} from 'util/i18n.mjs'
 import SelectCollection from './SelectCollection'

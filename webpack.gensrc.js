@@ -48,6 +48,12 @@ const DEV_MODE = process.env.NODE_ENV !== 'production' && process.argv.indexOf('
 
 const COMMON_MONGO_TYPES = ['String', 'Int', 'ID', 'Float', 'Boolean', 'Object']
 
+// attributes of the type definitions that are not needed in the browser outside of the admin ui
+// (see extensions-browser.mjs below)
+const BROWSER_REMOVE_TYPE_ATTRIBUTES = ['onlyRequestedFields', 'searchOnKeyDown', 'createdByIndex', 'subscription']
+const BROWSER_REMOVE_FIELD_ATTRIBUTES = ['uitype', 'html', 'enum', 'Tab', 'defaultValue', 'searchable', 'invisible',
+    'dynamic', 'replacePlaceholders', 'unique', 'alwaysUpdate', 'hash', 'default']
+
 var APP_VALUES = false
 
 function GenSourceCode(o) {
@@ -231,6 +237,35 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
         const manifestStr = `${GENSRC_HEADER}const extensions=${JSON.stringify(manifestJson, null, 2)}\nexport default extensions`
 
         fs.writeFile(GENSRC_PATH + "/extensions.mjs", manifestStr, function (err) {
+            if (err) {
+                return console.log(err)
+            }
+        })
+
+        // Browser version of extensions.mjs (webpack.config.js replaces the import in the client build).
+        // extensions.mjs is also used by the api on the server, so it can't be reduced itself.
+        // The attributes removed here are only needed in the admin ui, which loads the full definition
+        // from extensions-private.mjs (util/typesAdmin.mjs).
+        const manifestBrowser = JSON.parse(JSON.stringify(manifestJson))
+        Object.keys(manifestBrowser).forEach(key => {
+            const types = manifestBrowser[key].options && manifestBrowser[key].options.types
+            if (types) {
+                for (const type of types) {
+                    for (const attr of BROWSER_REMOVE_TYPE_ATTRIBUTES) {
+                        delete type[attr]
+                    }
+                    for (const field of type.fields) {
+                        for (const attr of BROWSER_REMOVE_FIELD_ATTRIBUTES) {
+                            // uitype htmlParser is needed in getTypeQueries (util/types.mjs)
+                            if (attr !== 'uitype' || field.uitype !== 'htmlParser') {
+                                delete field[attr]
+                            }
+                        }
+                    }
+                }
+            }
+        })
+        fs.writeFile(GENSRC_PATH + "/extensions-browser.mjs", `${GENSRC_HEADER}const extensions=${JSON.stringify(manifestBrowser, null, 2)}\nexport default extensions`, function (err) {
             if (err) {
                 return console.log(err)
             }

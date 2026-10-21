@@ -9,7 +9,7 @@ import {
     Tooltip
 } from 'ui/admin'
 import Util from 'client/util/index.mjs'
-import {COLLECTIONS_QUERY} from '../../constants/index.mjs'
+import {COLLECTIONS_QUERY} from '../../constants/admin.mjs'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {getCurrentTheme} from 'ui/admin'
 import {client, Query} from '../../middleware/graphql'

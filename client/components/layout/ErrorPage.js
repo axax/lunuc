@@ -8,10 +8,12 @@ class ErrorPage extends React.Component {
 
     getErrorStatus(props) {
 
+        const code = props.code || '404',
+            trKey = code === '504' ? '504' : '404'
         return {
-            code: props.code || '404',
-            title: props.title || _t('ErrorPage.title.404'),
-            message: props.message || (props.code==='401'?_app_.user.username + ' ist nicht berechtigt diese Seite zu öffnen':_t('ErrorPage.message.404')),
+            code,
+            title: props.title || _t('ErrorPage.title.' + trKey),
+            message: props.message || (code==='401'?_app_.user.username + ' ist nicht berechtigt diese Seite zu öffnen':_t('ErrorPage.message.' + trKey)),
             background: props.background || '#33cc99',
             hideBackButton: props.hideBackButton
         }
@@ -25,12 +27,16 @@ class ErrorPage extends React.Component {
             de:{
                 'ErrorPage.title.404':'Seite nicht gefunden',
                 'ErrorPage.message.404':'Bitte entschuldigen Sie - der gesuchte Seite existiert nicht mehr.',
-                'ErrorPage.backButton':'Zurück zur Startseite'
+                'ErrorPage.backButton':'Zurück zur Startseite',
+                'ErrorPage.title.504': 'Wartungsarbeiten',
+                'ErrorPage.message.504': 'Bitte haben Sie einen kurzen Moment Geduld. Wir sind gleich zurück.'
             },
             en:{
                 'ErrorPage.title.404':'Page not found',
                 'ErrorPage.message.404':'We are sorry.',
-                'ErrorPage.backButton': 'Back to Home'
+                'ErrorPage.backButton': 'Back to Home',
+                'ErrorPage.title.504': 'Maintenance',
+                'ErrorPage.message.504': 'We are sorry. Please try again in a moment'
             }
         }, 'ErrorPage')
 

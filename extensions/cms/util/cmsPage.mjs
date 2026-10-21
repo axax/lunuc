@@ -246,53 +246,72 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
 
             if (!editmode) {
                 const result = cmsPages.results[0]
-                //minify script
 
-                if (result.ssrStyle) {
-                    result.style = preprocessCss(result.style)
+                if (result.style) {
+                    if (result.compress && !inEditor) {
+                        // before preprocessCss on purpose: it strips all // lines and with
+                        // them the markers, so the block could not be found afterwards
+                        result.style = result.style.replace(/\/\/<\!\!#REMOVE[\s\S]*?\/\/\!\!#REMOVE>/g, '')
+                    }
+                    if (result.ssrStyle) {
+                        result.style = preprocessCss(result.style)
+                    } else if (result.compress) {
+                        // The client evaluates the style as a template literal (${...}) and always
+                        // runs preprocessCss on it afterwards, so this only has to keep that result
+                        // identical. Line breaks are only removed where they can't matter for the
+                        // js inside ${...} either (no ASI after { ; , and before }).
+                        result.style = result.style
+                            .replace(/\/\*[\s\S]*?\*\//g, '') // block comments first, so the following steps don't touch removed text
+                            .replace(/([^:]|^)\/\/.*$/gm, '$1') // line comments - same rule as preprocessCss
+                            .replace(/[ \t]*([{;,>])[ \t]*/g, '$1') // spaces around { ; , >
+                            .replace(/[ \t]+}/g, '}') // spaces before } - NOT after, "${a} ${b}" must stay separated
+                            .replace(/:[ \t]+/g, ':') // spaces after :
+                            .replace(/^[ \t]+|[ \t\r]+$/gm, '') // indentation and trailing whitespace
+                            .replace(/([{;,])\n+/g, '$1') // line breaks after { ; ,
+                            .replace(/\n+}/g, '}') // line breaks before }
+                            .replace(/\n{2,}/g, '\n') // empty lines
+                            .replace(/;}/g, '}') // last ; in a block
+                            .trim()
+                    }
                 }
+
                 if (result.compress) {
 
                     if (result.script) {
+                        // Never touches whitespace inside a line, so string and regex literals
+                        // stay intact. Line breaks are only removed where ASI can't apply
+                        // (after { ; ( [ and before } ) ]) and only on lines without //, so a
+                        // trailing line comment can't swallow the next line.
                         result.script = result.script
-                            .replace(/\t/g, ' ') // remove tabs
-                            .replace(/ {2,}/g, ' ') // collapse multiple spaces (faster than lookahead)
-                            .replace(/(^[ \t]*\n)/gm, '') // remove empty lines
-                    }
-
-                    if (result.style && !result.ssrStyle) {
-                        result.style = result.style
-                            .replace(/\/\*[\s\S]*?\*\//gm, '') // remove block comments first, so the following steps don't minify text that gets removed anyway
-                            .replace(/\t/g, ' ') // remove tabs
-                            .replace(/ {2,}/g, ' ') // collapse multiple spaces (faster than lookahead)
-                            .replace(/(^[ \t]*\n)/gm, '') // remove empty lines
-                            .replace(/^\s+|\s+$/gm, '') // remove whitespace at beginning/end of line
-                            .replace(/,$\n/gm, ',') // remove line break after ,
-
-                        if (!inEditor) {
-                            result.style = result.style.replace(/\/\/<\!\!#REMOVE([\s\S]*?)\/\/\!\!#REMOVE>/gm, '') // remove any character between marker
-                        }
-
+                            .replace(/^[ \t]+|[ \t\r]+$/gm, '') // indentation and trailing whitespace
+                            .replace(/^\/\/.*$/gm, '') // full line // comments
+                            .replace(/^\/\*(?:[^*]|\*(?!\/))*\*\/$/gm, '') // full line /* */ comments
+                            .replace(/\n{2,}/g, '\n') // empty lines
+                            .replace(/^((?:(?!\/\/)[^\n])*[{;(\[])\n/gm, '$1') // line breaks after { ; ( [
+                            .replace(/^((?:(?!\/\/)[^\n])*)\n(?=[})\]])/gm, '$1') // line breaks before } ) ]
+                            .trim()
                     }
 
                     // Only parse/stringify the template when compress is enabled.
-                    // Without compress the parse/stringify round trip had no effect
-                    // besides whitespace minification and is expensive for large templates.
-                    try {
-                        // TODO: Include sub CMS component to reduce number of requests
-                        // TODO: also check if template is html
+                    // Cheap pre-check, so html templates don't cost an exception + warning.
+                    if (/^\s*[\[{]/.test(result.template)) {
+                        try {
+                            // TODO: Include sub CMS component to reduce number of requests
 
-                        const template = JSON.parse(result.template)
+                            // no JSON.parse reviver here on purpose: in V8 a reviver is ~2.5x
+                            // slower than a plain parse followed by findProperties
+                            const template = JSON.parse(result.template)
 
-                        if (!result.publicEdit) {
-                            DomAdminUtil.findProperties(template, '$inlineEditor').forEach(({element}) => {
-                                delete element.$inlineEditor
-                            })
+                            if (!result.publicEdit) {
+                                DomAdminUtil.findProperties(template, '$inlineEditor').forEach(({element}) => {
+                                    delete element.$inlineEditor
+                                })
+                            }
+
+                            result.template = JSON.stringify(template)
+                        } catch (e) {
+                            console.warn(`${result.slug} is not a valid json template`)
                         }
-
-                        result.template = JSON.stringify(template)
-                    } catch (e) {
-                        console.warn(`${result.slug} is not a valid json template`)
                     }
                 }
             }

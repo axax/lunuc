@@ -1,27 +1,13 @@
 import React from 'react'
 import Hook from 'util/hook.cjs'
 import './style.global.less'
-import Async from 'client/components/Async'
+import {lazy} from 'client/components/Async'
 
-const Login = (props) => <Async {...props}
-                                load={() =>import(/* webpackChunkName: "adminLogin" */ '../../client/containers/LoginContainer')}/>
-const System = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "admin" */ './containers/System')}/>
+const Login = lazy(() => import(/* webpackChunkName: "adminLogin" */ '../../client/containers/LoginContainer'))
+const System = lazy(() => import(/* webpackChunkName: "admin" */ './containers/System'))
 
 
 export default () => {
-
-    Hook.on('ApiResponse', ({data}) => {
-        if (data.products) {
-            const results = data.products.results
-            if (results) {
-                results.forEach(e => {
-                    //e.name = 'ssss'
-                    //console.log(e)
-                })
-            }
-        }
-    })
-
 
     Hook.on('JsonDom', ({components}) => {
         components['Login'] = Login

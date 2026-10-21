@@ -72,3 +72,6 @@ class Async extends React.Component {
 }
 
 export default Async
+
+// lazy loaded component (code splitting): const X = lazy(() => import('./X'), {asyncKey: 'X'})
+export const lazy = (load, options) => (props) => <Async {...props} {...options} load={load}/>
