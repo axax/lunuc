@@ -771,7 +771,7 @@ class CmsViewEditorContainer extends React.Component {
         if (!editors || editors.length === 0) {
             return null
         }
-        const names = [...new Set(editors.map(e => e.username + (e.typing ? ' (' + _t('CmsViewEditorContainer.editors.typing') + ')' : '')))]
+        const names = Array.from(new Set(editors.map(e => e.username + (e.typing ? ' (' + _t('CmsViewEditorContainer.editors.typing') + ')' : ''))))
         const details = editors.map(e => e.username + (e.elementLabel ? ': ' + e.elementLabel : '') + (e.typing ? ', ' + _t('CmsViewEditorContainer.editors.typing') : ''))
         return <Tooltip key="cmsEditors" arrow placement="bottom"
                         title={<span>{_t('CmsViewEditorContainer.editors.hint')}{details.map(d => <span key={d}><br/>{d}</span>)}</span>}>
