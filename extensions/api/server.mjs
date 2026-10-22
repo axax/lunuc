@@ -170,13 +170,98 @@ const runApiScript = ({api, slug, db, req, res, startTime}) => {
 
                 const wildcardPath = getWildcardParam(slug, api.slug)
 
-                tpl.call({resolve, require: requireContext.require, db, context: req.context, req, res, startTime, wildcardPath})
+                tpl.call({resolve, require: requireContext.require, db, context: req.context, req, res, startTime, wildcardPath,
+                    // in-process call of another api script with the same user context
+                    callApi: (targetSlug, options = {}) => callApi({db, slug: targetSlug, context: req.context, ...options})})
             }
         } catch (error) {
             resolve({error})
         }
 
     })
+}
+
+/**
+ * Runs another api script in this process - no HTTP round trip, no proxy or
+ * load balancer in between, no second authentication: the caller's context is
+ * handed over as is. Exposed to api scripts as this.callApi(slug, {body, query}).
+ *
+ * Only for internal calls between scripts (they are written by admins): basic
+ * auth and api tokens of the TARGET api are not checked, the caller's user
+ * context is what counts. Worker-thread apis cannot run in-process.
+ *
+ * Resolves {status, headers, body} where body is the response text.
+ */
+const callApi = async ({db, slug, body, query = {}, context = {}, headers = {}}) => {
+    slug = String(slug || '').replace(/^\/+/, '')
+    const api = await getApi({slug, db})
+    if (!api) {
+        throw new Error(`callApi: api '${slug}' not found`)
+    }
+    if (api.workerThread) {
+        throw new Error(`callApi: api '${slug}' runs in a worker thread - call it over HTTP`)
+    }
+    let status = 200
+    const resHeaders = {}
+    const chunks = []
+    const listeners = {}
+    const res = {
+        headersSent: false,
+        writableEnded: false,
+        responseCode: undefined,
+        writeHead(code, h) {
+            status = code
+            Object.assign(resHeaders, h || {})
+            this.headersSent = true
+            return this
+        },
+        setHeader(k, v) { resHeaders[k] = v },
+        set(k, v) { if (typeof k === 'object') Object.assign(resHeaders, k); else resHeaders[k] = v; return this },
+        header(k, v) { return this.set(k, v) },
+        status(code) { status = code; return this },
+        write(chunk) { if (chunk != null) chunks.push(String(chunk)); this.headersSent = true; return true },
+        end(chunk) {
+            if (chunk != null) chunks.push(String(chunk))
+            this.headersSent = true
+            this.writableEnded = true
+            ;(listeners.finish || []).concat(listeners.close || []).forEach(fn => fn())
+        },
+        json(obj) { this.set('content-type', 'application/json'); this.end(JSON.stringify(obj)) },
+        send(data) { this.end(isString(data) ? data : JSON.stringify(data)) },
+        flush() {},
+        on(ev, fn) { (listeners[ev] || (listeners[ev] = [])).push(fn); return this },
+        once(ev, fn) { return this.on(ev, fn) }
+    }
+    const req = {
+        method: 'POST',
+        url: '/' + slug,
+        path: '/' + slug,
+        query,
+        body,
+        headers,
+        context,
+        protocol: 'internal',
+        socket: {remoteAddress: '127.0.0.1'},
+        on() { return this },
+        once() { return this }
+    }
+
+    const result = await runApiScript({api, slug, db, req, res, startTime: new Date().getTime()})
+    if (result.error) {
+        throw result.error
+    }
+    const data = await result.data
+    if (data && data._error) {
+        throw data._error
+    }
+    if (!res.writableEnded && !(result.responseStatus && result.responseStatus.ignore)) {
+        // same as the HTTP path: a returned value is the response body
+        chunks.push(isString(data) ? data : JSON.stringify(data))
+        if (!resHeaders['content-type'] && !resHeaders['Content-Type']) {
+            resHeaders['content-type'] = api.mimeType || 'application/json'
+        }
+    }
+    return {status: res.responseCode || status, headers: resHeaders, body: chunks.join('')}
 }
 
 // Hook to add mongodb resolver
