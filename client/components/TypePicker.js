@@ -78,7 +78,13 @@ const StyledMetaImageRow = styled('div')(({theme}) => ({
         borderTop: '1px solid ' + theme.palette.divider
     },
     '&.drag-over': {
-        boxShadow: 'inset 0 2px 0 ' + theme.palette.primary.main
+        boxShadow: 'inset 0 3px 0 ' + theme.palette.primary.main
+    },
+    '&.drag-over-after': {
+        boxShadow: 'inset 0 -3px 0 ' + theme.palette.primary.main
+    },
+    '&.dragging': {
+        opacity: 0.4
     }
 }))
 
@@ -116,6 +122,95 @@ const StyledMetaImageName = styled('div')(({theme}) => ({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     marginBottom: '2px'
+}))
+
+// multi image picker: tiles of equal size, reorder by dragging a tile onto another one
+const StyledImageTile = styled('div')(({theme}) => ({
+    position: 'relative',
+    width: '128px',
+    margin: theme.spacing(0, 1.5, 1.5, 0),
+    cursor: 'grab',
+    '&::before': {
+        content: '""',
+        position: 'absolute',
+        left: '-8px',
+        top: 0,
+        bottom: '1.4rem',
+        width: '3px',
+        borderRadius: '2px',
+        background: theme.palette.primary.main,
+        opacity: 0
+    },
+    '&.drag-over::before': {
+        opacity: 1
+    },
+    '&.drag-over-after::before': {
+        opacity: 1,
+        left: 'auto',
+        right: '-8px'
+    },
+    '&.dragging': {
+        opacity: 0.4
+    },
+    '&:hover .tile-actions, &:focus-within .tile-actions': {
+        opacity: 1
+    }
+}))
+
+const StyledImageTileThumb = styled('img')(({theme}) => ({
+    display: 'block',
+    width: '128px',
+    height: '96px',
+    objectFit: 'cover',
+    borderRadius: '4px',
+    background: theme.palette.action.hover,
+    pointerEvents: 'none'
+}))
+
+const StyledImageTileIndex = styled('span')({
+    position: 'absolute',
+    left: '4px',
+    top: '4px',
+    minWidth: '1.4em',
+    padding: '0 0.35em',
+    borderRadius: '3px',
+    background: 'rgba(0,0,0,0.55)',
+    color: '#fff',
+    fontSize: '0.7rem',
+    lineHeight: '1.4em',
+    textAlign: 'center',
+    pointerEvents: 'none'
+})
+
+const StyledImageTileActions = styled('div')({
+    position: 'absolute',
+    right: '4px',
+    top: '4px',
+    display: 'flex',
+    gap: '2px',
+    opacity: 0,
+    transition: 'opacity .15s ease',
+    '& button': {
+        padding: '3px',
+        background: 'rgba(0,0,0,0.55)',
+        color: '#fff',
+        borderRadius: '3px'
+    },
+    '& button:hover': {
+        background: 'rgba(0,0,0,0.8)'
+    },
+    '& svg': {
+        fontSize: '1rem'
+    }
+})
+
+const StyledImageTileName = styled('div')(({theme}) => ({
+    fontSize: '0.75rem',
+    lineHeight: '1.4rem',
+    color: theme.palette.text.secondary,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis'
 }))
 
 const StyledDropArea = styled('div')(({ theme }) => ({
@@ -391,36 +486,7 @@ class TypePicker extends React.Component {
                                 this.setState({value: newValue})
                             }
                             components.push(<StyledMetaImageRow key={'metaImage' + singleValueIndex}
-                                                draggable={!readOnly}
-                                                onDragStart={(e) => {
-                                                    // don't start dragging the row from inside the text field
-                                                    if (e.target.closest && e.target.closest('input, textarea')) {
-                                                        e.preventDefault()
-                                                        return
-                                                    }
-                                                    e.dataTransfer.setData('text', String(singleValueIndex))
-                                                }}
-                                                onDragOver={(e) => {
-                                                    e.preventDefault()
-                                                    e.currentTarget.classList.add('drag-over')
-                                                }}
-                                                onDragLeave={(e) => {
-                                                    e.currentTarget.classList.remove('drag-over')
-                                                }}
-                                                onDrop={(e) => {
-                                                    e.preventDefault()
-                                                    e.currentTarget.classList.remove('drag-over')
-                                                    const sourceIndex = parseInt(e.dataTransfer.getData('text'))
-                                                    if (isNaN(sourceIndex) || sourceIndex === singleValueIndex) {
-                                                        return
-                                                    }
-                                                    // the dragged image is placed before this one
-                                                    const newValue = this.state.value.slice(0),
-                                                        element = newValue.splice(sourceIndex, 1)[0]
-                                                    newValue.splice(sourceIndex < singleValueIndex ? singleValueIndex - 1 : singleValueIndex, 0, element)
-                                                    this.setState({value: newValue})
-                                                    this.props.onChange({target: {value: newValue, name: this.props.name, dataset: this.props.dataset}})
-                                                }}>
+                                                {...this.dragProps(singleValueIndex, 'y')}>
                                 <StyledMetaImageHandle title="Ziehen zum Sortieren">{'\u2630 '}{singleValueIndex + 1}</StyledMetaImageHandle>
                                 <StyledMetaImageThumb src={getImageSrc(singleValue, 'thumbnail')} alt=""
                                                       draggable={false}
@@ -442,6 +508,30 @@ class TypePicker extends React.Component {
                                     <DeleteIcon fontSize="small"/>
                                 </IconButton>}
                             </StyledMetaImageRow>)
+                            return components
+                        }
+                        if (showAsImage && !metaFields && multi) {
+                            components.push(<StyledImageTile key={'tile' + singleValueIndex}
+                                                 title={typeDataToLabel(singleValue, pickerField, this.refreshLabels)}
+                                                 {...this.dragProps(singleValueIndex)}
+                                                 onContextMenu={(e) => {
+                                                     e.preventDefault()
+                                                     this.setState({showContextMenu: {singleValue, left: e.clientX, top: e.clientY}})
+                                                 }}>
+                                <StyledImageTileThumb src={getImageSrc(singleValue, 'thumbnail')} alt=""/>
+                                {value.length > 1 && <StyledImageTileIndex>{singleValueIndex + 1}</StyledImageTileIndex>}
+                                <StyledImageTileActions className="tile-actions">
+                                    <IconButton size="small" onClick={() => {
+                                        window.open(getImageSrc(singleValue, 'full'), '_blank').focus()
+                                    }}>
+                                        <LaunchIcon/>
+                                    </IconButton>
+                                    {!readOnly && <IconButton size="small" onClick={this.handleRemovePick.bind(this, singleValueIndex)}>
+                                        <DeleteIcon/>
+                                    </IconButton>}
+                                </StyledImageTileActions>
+                                <StyledImageTileName>{typeDataToLabel(singleValue, pickerField, this.refreshLabels)}</StyledImageTileName>
+                            </StyledImageTile>)
                             return components
                         }
                         if (showAsImage && !metaFields) {
@@ -626,6 +716,60 @@ class TypePicker extends React.Component {
         this.setState({value, textValue:''})
         this.props.onChange({target: {value, name: this.props.name, dataset:this.props.dataset}})
 
+    }
+
+    // drag & drop to reorder (multi): the dragged item is placed before or after the item it is dropped on,
+    // depending on the mouse position (axis x: left / right half, axis y: upper / lower half)
+    dragProps(index, axis = 'x') {
+        const isAfter = (e) => {
+            const rect = e.currentTarget.getBoundingClientRect()
+            return axis === 'y' ? e.clientY > rect.top + rect.height / 2 : e.clientX > rect.left + rect.width / 2
+        }
+        if (this.props.readOnly) {
+            return {}
+        }
+        return {
+            draggable: true,
+            onDragStart: (e) => {
+                // don't start dragging from inside a text field
+                if (e.target.closest && e.target.closest('input, textarea')) {
+                    e.preventDefault()
+                    return
+                }
+                e.dataTransfer.effectAllowed = 'move'
+                e.dataTransfer.setData('text', String(index))
+                e.currentTarget.classList.add('dragging')
+            },
+            onDragEnd: (e) => {
+                e.currentTarget.classList.remove('dragging')
+            },
+            onDragOver: (e) => {
+                e.preventDefault()
+                e.dataTransfer.dropEffect = 'move'
+                const after = isAfter(e)
+                e.currentTarget.classList.toggle('drag-over', !after)
+                e.currentTarget.classList.toggle('drag-over-after', after)
+            },
+            onDragLeave: (e) => {
+                if (!e.currentTarget.contains(e.relatedTarget)) {
+                    e.currentTarget.classList.remove('drag-over', 'drag-over-after')
+                }
+            },
+            onDrop: (e) => {
+                e.preventDefault()
+                e.currentTarget.classList.remove('drag-over', 'drag-over-after')
+                const sourceIndex = parseInt(e.dataTransfer.getData('text'))
+                if (isNaN(sourceIndex) || sourceIndex === index) {
+                    return
+                }
+                const targetIndex = index + (isAfter(e) ? 1 : 0)
+                const newValue = this.state.value.slice(0),
+                    element = newValue.splice(sourceIndex, 1)[0]
+                newValue.splice(sourceIndex < targetIndex ? targetIndex - 1 : targetIndex, 0, element)
+                this.setState({value: newValue})
+                this.props.onChange({target: {value: newValue, name: this.props.name, dataset: this.props.dataset}})
+            }
+        }
     }
 
     handlePick(idx) {

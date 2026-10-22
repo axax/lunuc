@@ -56,7 +56,9 @@
  * ownerGroup), like an entry the user creates in the admin. Existing entries keep their owner.
  * Setting another user needs the capability manage_other_users.
  *
- * Running an impex (also a dry run) needs the capability admin_options.
+ * Running an impex (also a dry run) needs the capability admin_options. A caller that builds the impex itself
+ * (e.g. an api with a fixed set of types) can lower it with the option capability (e.g. access_admin_page);
+ * the writes still go through GenericResolver with the access rights of the user.
  */
 import fs from 'fs'
 import path from 'path'
@@ -131,9 +133,9 @@ const DATA_PREFIXED = k => k === '_id' || k === 'definition' || k.startsWith('da
  *   resolver, cache        injectable for tests (default GenericResolver / util/cache)
  *   log                    function(line)
  */
-export const runImpex = async ({db, context, dir, file, dryRun = false, doneDir, allowedTypes = DEFAULT_ALLOWED_TYPES, resolver, cache, uploadDir, createdBy, log = console.log}) => {
+export const runImpex = async ({db, context, dir, file, dryRun = false, doneDir, allowedTypes = DEFAULT_ALLOWED_TYPES, resolver, cache, uploadDir, createdBy, capability = CAPABILITY_ADMIN_OPTIONS, log = console.log}) => {
     // before anything is read or moved
-    await Util.checkIfUserHasCapability(db, context, CAPABILITY_ADMIN_OPTIONS)
+    await Util.checkIfUserHasCapability(db, context, capability || CAPABILITY_ADMIN_OPTIONS)
     if (!resolver) {
         resolver = (await import('../resolver/generic/genericResolver.mjs')).default
     }
@@ -148,7 +150,7 @@ export const runImpex = async ({db, context, dir, file, dryRun = false, doneDir,
     const summary = []
     for (const name of files) {
         const result = await runImpexFile({
-            db, context, filePath: path.join(root, name), dryRun, allowedTypes, resolver, cache, uploadDir, createdBy, log
+            db, context, filePath: path.join(root, name), dryRun, allowedTypes, resolver, cache, uploadDir, createdBy, capability, log
         })
         summary.push(result)
         if (!dryRun && doneDir && result.errors.length === 0) {
@@ -167,8 +169,8 @@ export const runImpex = async ({db, context, dir, file, dryRun = false, doneDir,
     return summary
 }
 
-export const runImpexFile = async ({db, context, filePath, dryRun = false, allowedTypes = DEFAULT_ALLOWED_TYPES, resolver, cache, uploadDir, createdBy, log = console.log}) => {
-    await Util.checkIfUserHasCapability(db, context, CAPABILITY_ADMIN_OPTIONS)
+export const runImpexFile = async ({db, context, filePath, dryRun = false, allowedTypes = DEFAULT_ALLOWED_TYPES, resolver, cache, uploadDir, createdBy, capability = CAPABILITY_ADMIN_OPTIONS, log = console.log}) => {
+    await Util.checkIfUserHasCapability(db, context, capability || CAPABILITY_ADMIN_OPTIONS)
     // also usable directly (e.g. from an api script), not only through runImpex
     if (!resolver) {
         resolver = (await import('../resolver/generic/genericResolver.mjs')).default
