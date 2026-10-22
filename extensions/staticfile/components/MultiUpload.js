@@ -133,7 +133,7 @@ const MultiUpload = ({type = 'StaticFile', onUploaded}) => {
                 }
             })
             existingRef.current = map
-            setPrefixOptions([...prefixes].sort())
+            setPrefixOptions(Array.from(prefixes).sort())
             return map
         })
     }, [])
