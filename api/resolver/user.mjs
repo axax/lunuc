@@ -27,6 +27,38 @@ import {
 } from '../util/loginBlocker.mjs'
 import HookAsync from '../../util/hookAsync.mjs'
 import {parseOrElse} from '../../client/util/json.mjs'
+import {getBestMatchingHostRule} from '../../util/hostrules.mjs'
+import {isTemporarilyBlocked} from '../../server/util/requestBlocker.mjs'
+
+/*
+ The reset link in the password mail must point to one of our own hosts.
+ Otherwise anybody could trigger a reset mail for another user with a link to a
+ foreign site and steal the reset token (password reset poisoning).
+ Relative urls are resolved against the request host.
+ */
+const sanitizeResetUrl = (url, req) => {
+    const host = getHostFromHeaders(req.headers)
+    const defaultUrl = `${(req.isHttps ? 'https://' : 'http://') + (host === 'localhost' ? host + ':8080' : host)}/admin/login`
+    if (!url || url.constructor !== String) {
+        return defaultUrl
+    }
+    try {
+        const base = `${req.isHttps ? 'https://' : 'http://'}${host || 'localhost'}`
+        const parsed = new URL(url, base)
+        if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+            return defaultUrl
+        }
+        const hostname = parsed.hostname
+        if (hostname === host || hostname === 'localhost' ||
+            getBestMatchingHostRule(hostname, false).hostrule) {
+            return parsed.toString()
+        }
+    } catch (e) {
+        // invalid url -> default
+    }
+    console.warn(`forgotPassword: url "${url}" is not allowed for host ${host}`)
+    return defaultUrl
+}
 
 
 export const createUser = async ({username, role, junior, group, setting, password, language, email, emailConfirmed, blocked, requestNewPassword, meta, domain, hostrule, picture, db, context}, opts) => {
@@ -383,6 +415,13 @@ export const userResolver = (db) => ({
             const {context} = req
             const userCollection = db.collection('User')
 
+            // prevent mail bombing - the response is the same as usual, so it tells nothing about the user
+            const remoteAddress = clientAddress(req)
+            if (isTemporarilyBlocked({requestTimeInMs: 60000, requestPerTime: 10, requestBlockForInMs: 300000, key: 'forgotPassword-' + remoteAddress}) ||
+                isTemporarilyBlocked({requestTimeInMs: 900000, requestPerTime: 5, requestBlockForInMs: 900000, key: 'forgotPasswordUser-' + String(username).toLowerCase()})) {
+                return {status: 'ok'}
+            }
+
             const resetToken = crypto.randomBytes(16).toString("hex")
 
             const findMatch = {$or: [{'email': username}, {'username': username}]}
@@ -391,10 +430,7 @@ export const userResolver = (db) => ({
                 findMatch.domain = domain
             }
 
-            if(!url){
-                const host = getHostFromHeaders(req.headers)
-                url = `${(req.isHttps ? 'https://' : 'http://') + (host === 'localhost' ? host + ':8080' : host)}/admin/login`
-            }
+            url = sanitizeResetUrl(url, req)
 
             const user = await userCollection.findOneAndUpdate(findMatch, {
                 $set: {
@@ -410,7 +446,7 @@ export const userResolver = (db) => ({
                     slug: 'core/forgot-password/mail',
                     recipient: user.email,
                     subject: subject || 'Password reset',
-                    body: `{"url":"${url}?token=${resetToken}","name":"${user.username}","template":"${template||''}"}`,
+                    body: JSON.stringify({url: `${url}${url.indexOf('?') >= 0 ? '&' : '?'}token=${resetToken}`, name: user.username, template: template || ''}),
                     req
                 })
             } else {
@@ -547,6 +583,11 @@ export const userResolver = (db) => ({
         signUp: async ({password, username, domain, email, mailTemplate, mailSubject, mailUrl, meta, fromEmail, fromName, replyTo}, req) => {
 
             const {context} = req
+
+            // every sign up can send a mail to any address - limit sign ups per ip
+            if (isTemporarilyBlocked({requestTimeInMs: 600000, requestPerTime: 10, requestBlockForInMs: 600000, key: 'signUp-' + clientAddress(req)})) {
+                throw new ApiError('Too many requests. Please try again later.', 'general.error')
+            }
 
             if (email) {
                 email = email.trim()

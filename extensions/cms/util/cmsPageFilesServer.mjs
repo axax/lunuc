@@ -21,7 +21,7 @@ import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
 import Util from '../../../api/util/index.mjs'
 import Cache from '../../../util/cache.mjs'
 import {CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities.mjs'
-import {createMatchForCurrentUser, userCanUpdateDoc, userCanCreate} from '../../../api/util/dbquery.mjs'
+import {createMatchForCurrentUser, userCanUpdateDoc, userCanCreate, filterReadableIds} from '../../../api/util/dbquery.mjs'
 import {CAPABILITY_CMS_PAGE_FILES, CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants/index.mjs'
 import {getCmsPageCacheKey} from './cmsPage.mjs'
 import {toPlainJson, fromPlainJson} from '../../../api/util/plainJson.mjs'
@@ -175,6 +175,10 @@ export const importCmsPages = async ({db, context, pages, _version, createMissin
         const docs = await db.collection(collectionName).find({slug: {$in: slugs}}).toArray()
         docs.forEach(doc => existingBySlug[doc.slug] = doc)
     }
+    // pages of other users are never compared (the result would tell something about their content)
+    const readableIds = await filterReadableIds({
+        db, context, typeName: 'CmsPage', collectionName, ids: Object.values(existingBySlug).map(doc => doc._id)
+    })
     // the cache is cleared once at the end (clearStartWith walks through the whole cache)
     const cacheKeysToClear = []
 
@@ -192,6 +196,9 @@ export const importCmsPages = async ({db, context, pages, _version, createMissin
             data.slug = slug
 
             const existing = existingBySlug[slug]
+            if (existing && !readableIds.has(existing._id.toString())) {
+                throw new Error('the slug is used by a page you have no access to')
+            }
 
             if (!canImportServerCode) {
                 // drop server code that differs from the db (new page: any non empty value) and report it

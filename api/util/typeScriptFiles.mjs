@@ -15,7 +15,7 @@ import fs from 'fs'
 import path from 'path'
 import {ObjectId} from 'mongodb'
 import Util from './index.mjs'
-import {createMatchForCurrentUser, userCanUpdateDoc, userCanCreate} from './dbquery.mjs'
+import {createMatchForCurrentUser, userCanUpdateDoc, userCanCreate, filterReadableIds} from './dbquery.mjs'
 import {CAPABILITY_MANAGE_OTHER_USERS} from '../../util/capabilities.mjs'
 import {toPlainJson, fromPlainJson} from './plainJson.mjs'
 import {readExportState, writeExportState, hashFields, hashValue, threeWayDiff} from './exportState.mjs'
@@ -452,6 +452,24 @@ export const importTypeScriptFiles = async ({db, context, type, files, dryRun = 
     const folders = files.filter(f => f.path === META_FILE || f.path.endsWith('/' + META_FILE))
         .map(f => f.path.substring(0, f.path.length - META_FILE.length).replace(/\/$/, ''))
 
+    // existing entries: one query for all, and only the ones the user may read are compared
+    // (otherwise the result would tell something about entries of other users)
+    const metaIds = folders.map(folder => {
+        try {
+            const id = JSON.parse(byPath[(folder ? folder + '/' : '') + META_FILE])._id
+            return id && ObjectId.isValid(id) ? new ObjectId(id) : null
+        } catch (e) {
+            return null // reported in the loop
+        }
+    }).filter(id => id)
+    const docsById = {}
+    if (metaIds.length) {
+        (await db.collection(type).find({_id: {$in: metaIds}}).toArray()).forEach(doc => docsById[doc._id.toString()] = doc)
+    }
+    const readableIds = await filterReadableIds({
+        db, context, typeName: type, ids: Object.values(docsById).map(doc => doc._id)
+    })
+
     for (const folder of folders) {
         const label = folder || '.'
         try {
@@ -475,7 +493,10 @@ export const importTypeScriptFiles = async ({db, context, type, files, dryRun = 
             })
 
             const _id = meta._id && ObjectId.isValid(meta._id) ? meta._id : null
-            const doc = _id ? await db.collection(type).findOne({_id: new ObjectId(_id)}) : null
+            const doc = _id ? docsById[new ObjectId(_id).toString()] : null
+            if (doc && !readableIds.has(doc._id.toString())) {
+                throw new Error('no permission')
+            }
             if (!doc) {
                 if (!createMissing) {
                     result.skipped++

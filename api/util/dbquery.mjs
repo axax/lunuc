@@ -482,6 +482,29 @@ export const createMatchForCurrentUser = async ({ typeName, db, context, operati
 }
 
 /**
+ * The ids of the given documents the user may read (same match as the lists use, users with
+ * manage_other_users read everything). Imports check this before they compare anything with
+ * an existing document, so the result never tells something about entries of other users.
+ * @param ids [ObjectId]
+ * @returns {Promise<Set<string>>}
+ */
+export const filterReadableIds = async ({db, context, typeName, collectionName, ids}) => {
+    if (!ids || ids.length === 0) {
+        return new Set()
+    }
+    if (await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
+        return new Set(ids.map(id => id.toString()))
+    }
+    const match = await createMatchForCurrentUser({typeName, db, context})
+    if (!match) {
+        return new Set()
+    }
+    const docs = await db.collection(collectionName || typeName)
+        .find({$and: [{_id: {$in: ids}}, match]}, {projection: {_id: 1}}).toArray()
+    return new Set(docs.map(doc => doc._id.toString()))
+}
+
+/**
  * Same rights check as GenericResolver.updateEntity does, without writing (e.g. for dry runs).
  * Keep in sync with updateEntity.
  * @returns {Promise<boolean>}

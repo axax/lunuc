@@ -655,6 +655,14 @@ export default db => ({
                 throw new Error('serverScript doesn\'t exist')
             }
 
+            // methodName is inserted into the generated code - only allow functions that are
+            // declared in the serverScript itself. Otherwise globals like eval or Function
+            // could be called with client controlled args (remote code execution)
+            const declaredNames = new Set([...serverScript.matchAll(/(?:function\s*\*?\s*|(?:const|let|var)\s+)([A-Za-z_$][\w$]*)/g)].map(m => m[1]))
+            if (!declaredNames.has(methodName)) {
+                throw new Error('Invalid methodName')
+            }
+
             if (args) {
                 try {
                     args = JSON.parse(args)

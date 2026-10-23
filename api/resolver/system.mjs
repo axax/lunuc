@@ -35,6 +35,15 @@ const ENDOFCOMMAND = '__ENDOFCOMMAND__\n'
 
 const execs = {}
 
+// a running console belongs to the user (or anonymous session) that started it
+const execOwner = context => context.id || ('session:' + context.session)
+const checkExecOwner = async (db, context, id) => {
+    if (execs[id] && execs[id].owner !== execOwner(context) &&
+        !await Util.userHasCapability(db, context, CAPABILITY_RUN_COMMAND)) {
+        throw new Error('Not allowed to access this console')
+    }
+}
+
 const killExec = (id) => {
     if (execs[id]) {
         //execs[id].kill('SIGINT')
@@ -63,6 +72,7 @@ export const systemResolver = (db) => ({
             return exportAllTypeFiles({db, context, aiGuide: !!aiGuide})
         },
         killRun: async ({id}, {context}) => {
+            await checkExecOwner(db, context, id)
             killExec(id)
             return {id}
         },
@@ -74,6 +84,9 @@ export const systemResolver = (db) => ({
 
             if (SKIP_CAPABILITY_CHECK.indexOf(command) < 0) {
                 await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
+            } else {
+                // the commands without capability check must not be written into the console of another user
+                await checkExecOwner(db, context, currentId)
             }
 
 
@@ -144,6 +157,7 @@ export const systemResolver = (db) => ({
 
                     if (!execs[currentId] || execs[currentId].exitCode !== null) {
                         execs[currentId] = spawn('bash', [], {detached: true})
+                        execs[currentId].owner = execOwner(context)
                         execs[currentId].isRunning = false
                         execs[currentId].stdout.on('data', (data) => {
                             let str = data.toString('utf8')
@@ -213,6 +227,14 @@ export const systemResolver = (db) => ({
             const remoteAddress = clientAddress(req)
             if(isTemporarilyBlocked({requestTimeInMs: 2000, requestPerTime: 2,requestBlockForInMs:6000, key:'graphqlSendMail-'+remoteAddress})){
                 return {response: JSON.stringify({error: 'Too many requests. Please try again later.'})}
+            }
+            if (!Util.isUserLoggedIn(context)) {
+                // public forms (e.g. contact forms) send mails without login - limit how many mails
+                // anonymous users can send, per ip and in total, so the api can't be abused as a mail relay
+                if (isTemporarilyBlocked({requestTimeInMs: 600000, requestPerTime: 5, requestBlockForInMs: 600000, key: 'graphqlSendMailAnonymous-' + remoteAddress}) ||
+                    isTemporarilyBlocked({requestTimeInMs: 600000, requestPerTime: 100, requestBlockForInMs: 600000, key: 'graphqlSendMailAnonymousTotal'})) {
+                    return {response: JSON.stringify({error: 'Too many requests. Please try again later.'})}
+                }
             }
 
             const response = await sendMail(db, context, data)

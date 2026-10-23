@@ -21,7 +21,7 @@ import {parseWebsite} from './util/web2html.mjs'
 import {proxyToApiServer, proxyWsToApiServer} from './util/apiProxy.mjs'
 import {verifyTokenAndResponse} from './util/tokenLink.mjs'
 //import heapdump from 'heapdump'
-import {clientAddress} from '../util/host.mjs'
+import {clientAddress, isFromTrustedProxy} from '../util/host.mjs'
 import Cache from '../util/cache.mjs'
 import {decodeURIComponentSafe, regexRedirectUrl, doScreenCapture, createCanonicalSsrQuery} from './util/index.mjs'
 import {createSimpleEtag} from './util/etag.mjs'
@@ -591,7 +591,7 @@ const hasHttpsWwwRedirect = ({parsedUrl, hostrule, host, req, res, remoteAddress
         }
 
         if (!config.DEV_MODE && !req.isHttps && !req.headers['x-forwarded-server'] &&
-            process.env.LUNUC_FORCE_HTTPS === 'true' && !req.headers[TRACK_IP_HEADER]) {
+            process.env.LUNUC_FORCE_HTTPS === 'true' && !(req.headers[TRACK_IP_HEADER] && isFromTrustedProxy(req))) {
 
             const agent = req.headers['user-agent']
 

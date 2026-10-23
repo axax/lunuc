@@ -4,7 +4,7 @@ import {sendError} from './file.mjs'
 import {Socket} from 'net'
 import {clientAddress} from '../../util/host.mjs'
 import {getGatewayIp} from '../../util/gatewayIp.mjs'
-import {FORWARDED_FOF_HEADER, HOSTRULE_HEADER} from '../../api/constants/index.mjs'
+import {FORWARDED_FOF_HEADER, HOSTRULE_HEADER, TRACK_IP_HEADER} from '../../api/constants/index.mjs'
 import {API_CONNECT_HOST} from '../../util/apiHost.mjs'
 import {SERVER_TIMING_ENABLED, timingEntry, eventLoopEntry} from '../../util/serverTiming.mjs'
 
@@ -193,6 +193,8 @@ export const proxyWsToApiServer = (req, socket, head) => {
             filterForwardableHeaders(req.headers, {keepUpgrade: true})
         )
         forwardHeaders[FORWARDED_FOF_HEADER] = clientAddress(req)
+        // the api prefers x-track-ip - never pass a client supplied value through
+        forwardHeaders[TRACK_IP_HEADER] = forwardHeaders[FORWARDED_FOF_HEADER]
 
         // Defense in depth: header values could in principle contain CRLF
         // depending on the incoming protocol (see containsCrlf comment
@@ -246,6 +248,8 @@ const executeProxyRequest = (originalReq, originalRes, options, state) => {
     const newHeaders = stripInternalHeaders(filterForwardableHeaders(originalReq.headers))
 
     newHeaders[FORWARDED_FOF_HEADER] = clientAddress(originalReq)
+    // the api prefers x-track-ip - never pass a client supplied value through
+    newHeaders[TRACK_IP_HEADER] = newHeaders[FORWARDED_FOF_HEADER]
     newHeaders['x-forwarded-proto'] = originalReq.isHttps ? 'https' : 'http'
     newHeaders['x-forwarded-host'] = host
     if (tries > 0) {

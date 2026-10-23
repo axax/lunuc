@@ -817,7 +817,8 @@ export const parseAndSendFile = async (req, res, {filename, headers, statusCode,
                     // here again is pure overhead - ask for the plain response
                     'Accept-Encoding': 'identity',
                     'User-Agent': req.headers['user-agent'],
-                    [TRACK_IP_HEADER]: req.headers[TRACK_IP_HEADER] || remoteAddress,
+                    // remoteAddress = clientAddress(req), it already contains x-track-ip if the request comes from a trusted proxy
+                    [TRACK_IP_HEADER]: remoteAddress,
                     [TRACK_URL_HEADER]: req.headers[TRACK_URL_HEADER] || req.url,
                     [TRACK_REFERER_HEADER]: req.headers[TRACK_REFERER_HEADER] || '',
                     [TRACK_IS_BOT_HEADER]: req.headers[TRACK_IS_BOT_HEADER] || '',
@@ -1044,6 +1045,11 @@ const compressContentAndSend = (req, res, finalContent, statusCode, data, header
 }
 
 
+const ACTIVE_CONTENT_MIME_TYPES = new Set([
+    'text/html', 'application/xhtml+xml', 'image/svg+xml', 'text/xml', 'application/xml',
+    'text/javascript', 'application/javascript', 'application/x-javascript'
+])
+
 export const resolveUploadedFile = async (req, res, uri, parsedUrl) => {
 
     // remove pretty url part
@@ -1105,7 +1111,17 @@ export const resolveUploadedFile = async (req, res, uri, parsedUrl) => {
         }
     }
 
-    if (await sendFileFromDir(req, res, {filename, parsedUrl, cacheControl: 'public, max-age=60, must-revalidate'})) {
+    // Uploads can come from anyone (also anonymous users) and the content type is derived from
+    // the url (/uploads/<id>/-/name.html or ?ext=html). Active content (html, svg, xml, js) is
+    // therefore served in a sandbox with an opaque origin: scripts still run, but they cannot
+    // access cookies or call the api with the session of the visitor (stored XSS).
+    const uploadHeaders = {'X-Content-Type-Options': 'nosniff'}
+    const urlMimeType = parsedUrl ? MimeType.takeOrDetect(undefined, parsedUrl) : MimeType.detectByFileName(filename)
+    if (ACTIVE_CONTENT_MIME_TYPES.has(urlMimeType)) {
+        uploadHeaders['Content-Security-Policy'] = 'sandbox allow-scripts allow-forms allow-popups allow-modals allow-downloads'
+    }
+
+    if (await sendFileFromDir(req, res, {filename, parsedUrl, headers: uploadHeaders, cacheControl: 'public, max-age=60, must-revalidate'})) {
         // track file access
         Hook.call('UploadedFileAccess', {name: urlWithoutUploadDir, filename})
     } else {

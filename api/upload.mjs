@@ -33,6 +33,9 @@ const beforeUpload = (res, req, upload_dir) => {
 }
 
 
+// max upload size for users that are not logged in (default 100MB), env value in MB
+const ANONYMOUS_MAX_FILE_SIZE = (parseInt(process.env.LUNUC_ANONYMOUS_UPLOAD_MAX_MB) || 100) * 1024 * 1024
+
 const authContextOrError = async (db, res, req, capability) => {
     // check auth token
     const authContext = contextByRequest(req)
@@ -62,10 +65,14 @@ export const handleUpload = db => async (req, res) => {
 
         let context = contextByRequest(req)
 
+        // anonymous uploads (e.g. attachments of public forms) are limited in size,
+        // so nobody can fill up the disk without an account
+        let maxFileSize = 10 * 1024 * 1024 * 1024 // 10GB
         if (!context.id) {
             // use anonymous user
             const anonymousUser = await Util.userByName(db, 'anonymous')
             context = {username: anonymousUser.username, id: anonymousUser._id.toString()}
+            maxFileSize = ANONYMOUS_MAX_FILE_SIZE
         }
 
 
@@ -76,7 +83,7 @@ export const handleUpload = db => async (req, res) => {
             }
 
             /* Process the uploads */
-            const form = formidable({maxFileSize: 10 * 1024 * 1024 * 1024})  // 10GB
+            const form = formidable({maxFileSize, maxTotalFileSize: maxFileSize})
 
             // send header
             res.writeHead(200, {'content-type': 'application/json'})

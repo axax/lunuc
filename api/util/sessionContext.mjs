@@ -20,8 +20,11 @@ const {DEFAULT_LANGUAGE} = config
 export const setAuthCookies = (userData, req, res) => {
 
     const {hostrule} = getBestMatchingHostRule(getHostFromHeaders(req.headers))
+    // only sent over https (if the request came in over https - local development over http still works)
+    const secure = !!req.isHttps
     res.cookie('auth', AUTH_SCHEME + ' ' + userData.token, {
         domain: hostrule?.authCookieDomain,
+        secure,
         httpOnly: true,
         expires: true,
         maxAge: AUTH_EXPIRES_IN_COOKIE,
@@ -30,6 +33,7 @@ export const setAuthCookies = (userData, req, res) => {
     if (userData.user) {
         res.cookie('authRole', userData.user.role.name, {
             domain: hostrule?.authCookieDomain,
+            secure,
             httpOnly: false,
             expires: true,
             maxAge: AUTH_EXPIRES_IN_COOKIE,
