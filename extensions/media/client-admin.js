@@ -18,6 +18,7 @@ import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import {getIconByKey} from '../../client/components/ui/impl/material/icon'
 import MediaFileExplorer from './components/MediaFileExplorer'
+import MediaGridExplorer from './components/MediaGridExplorer'
 import {QuickMediaUploader} from './components/QuickMediaUploader'
 import {ExcelSheetSelect, ExcelPreview} from './components/ExcelFields'
 
@@ -38,12 +39,15 @@ function ViewToggleButton({onChange, value}) {
     const [view, setView] = React.useState(value || 'table')
 
     const handleChange = (event, view) => {
+        // clicking the active button would deselect it
+        if (!view) return
         setView(view);
         onChange(event,view)
     };
 
     const ViewIcon=getIconByKey('view')
     const TreeIcon=getIconByKey('tree')
+    const GridIcon=getIconByKey('grid')
     return (
         <ToggleButtonGroup
             color="primary"
@@ -53,8 +57,9 @@ function ViewToggleButton({onChange, value}) {
             onChange={handleChange}
             aria-label="Platform"
         >
-            <ToggleButton value="tree"><TreeIcon/></ToggleButton>
-            <ToggleButton value="table"><ViewIcon/></ToggleButton>
+            <ToggleButton value="grid" title={_t('MediaFileExplorer.view.grid')}><GridIcon/></ToggleButton>
+            <ToggleButton value="tree" title={_t('MediaFileExplorer.view.tree')}><TreeIcon/></ToggleButton>
+            <ToggleButton value="table" title={_t('MediaFileExplorer.view.table')}><ViewIcon/></ToggleButton>
         </ToggleButtonGroup>
     )
 }
@@ -452,6 +457,8 @@ export default () => {
 
             if( typeSettings.view === 'tree'){
                 renderOptions.alternativeView = <MediaFileExplorer pageParams={pageParams} TypeContainerRef={this} />
+            } else if (typeSettings.view === 'grid') {
+                renderOptions.alternativeView = <MediaGridExplorer pageParams={pageParams} TypeContainerRef={this} />
             }
 
             //content.splice(1, 1, <QuickMediaUploader key="quickMediaUploader" settings={this.settings} pageParams={this.pageParams} getData={this.getData.bind(this)}/>)

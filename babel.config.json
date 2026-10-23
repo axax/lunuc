@@ -65,7 +65,8 @@
         "noDocumentAll": true,
         "noClassCalls": true,
         "setSpreadProperties": true,
-        "pureGetters": true
+        "pureGetters": true,
+        /*"iterableIsArray": false*/
       },
       "plugins": [
         ["@babel/plugin-transform-runtime", { "helpers": true, "regenerator": true, "corejs": false }]

@@ -28,6 +28,8 @@ const StyledDrawerRoot = styled.div`
     height: 100%;
     z-index: 1;
     overflow: hidden;
+    /* clips like hidden, but is no scroll container -> position: sticky keeps working inside */
+    overflow: clip;
 `
 
 const StyledAppFrame = styled.div`

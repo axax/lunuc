@@ -1580,7 +1580,7 @@ class TypesContainer extends React.Component {
 
     getData({type, page, limit, sort, filter, meta, _version}, cacheFirst, typeChanged) {
         const typeSettings = this.getSettingsForType(type)
-        if (type && typeSettings.view!=='tree') {
+        if (type && typeSettings.view!=='tree' && typeSettings.view!=='grid') {
             const queries = this.getTypeQueriesFiltered(type, {loadAll: false})
             if (queries) {
                 const storeKey = this.getStoreKey(type),

@@ -13,7 +13,7 @@ import SimpleMenu from "../../../client/components/ui/impl/material/SimpleMenu";
 import {getImageSrc} from "../../../client/util/media";
 import {_t} from '../../../util/i18n.mjs'
 
-const createNewEntry = (item) => {
+export const createNewEntry = (item) => {
     return {
         original: item,
         ...item,
@@ -26,19 +26,19 @@ const createNewEntry = (item) => {
 }
 
 // creation time from the mongo ObjectId (first 4 bytes = seconds)
-const createdTime = (item) => item?._id && /^[0-9a-f]{24}$/i.test(item._id) ? parseInt(item._id.substring(0, 8), 16) * 1000 : 0
+export const createdTime = (item) => item?._id && /^[0-9a-f]{24}$/i.test(item._id) ? parseInt(item._id.substring(0, 8), 16) * 1000 : 0
 
 export const SORT_FIELDS = ['name', 'created', 'modified', 'size', 'type']
-const DEFAULT_SORT = {field: 'name', dir: 'asc'}
+export const DEFAULT_SORT = {field: 'name', dir: 'asc'}
 
 // server sort (Media), keeps the first 500 entries of a folder in the right order
-const SERVER_SORT = {name: 'name', created: '_id', modified: 'modifiedAt', size: 'size', type: 'mimeType'}
+export const SERVER_SORT = {name: 'name', created: '_id', modified: 'modifiedAt', size: 'size', type: 'mimeType'}
 
 const collator = typeof Intl !== 'undefined' ? new Intl.Collator(undefined, {numeric: true, sensitivity: 'base'}) : null
 const compareStrings = (a, b) => collator ? collator.compare(a || '', b || '') : (a || '').localeCompare(b || '')
 
 // folders first, then by the chosen field; folders have no size / type -> sorted by name
-const createCompare = ({field, dir}) => {
+export const createCompare = ({field, dir}) => {
     const factor = dir === 'desc' ? -1 : 1
     return (a, b) => {
         const aFolder = a.fileType !== 'doc', bFolder = b.fileType !== 'doc'
@@ -62,7 +62,7 @@ const createCompare = ({field, dir}) => {
 const startOfDay = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
 
 // "Heute, 11:31" / "Gestern, 09:12" / "21.10.2026, 11:31"
-const formatDate = (time) => {
+export const formatDate = (time) => {
     if (!time) return '--'
     const date = new Date(time)
     const lang = _app_.lang || undefined
@@ -74,7 +74,7 @@ const formatDate = (time) => {
 }
 
 // like the Finder: decimal units
-const formatSize = (bytes) => {
+export const formatSize = (bytes) => {
     if (bytes === undefined || bytes === null || isNaN(bytes)) return '--'
     if (bytes < 1000) return `${bytes} Byte`
     const units = ['KB', 'MB', 'GB', 'TB']
@@ -89,7 +89,7 @@ const formatSize = (bytes) => {
 const KIND_SUBTYPES = {'svg+xml': 'SVG', 'jpeg': 'JPEG', 'x-icon': 'ICO', 'vnd.microsoft.icon': 'ICO', 'plain': 'Text', 'quicktime': 'QuickTime', 'mpeg': 'MPEG'}
 
 // "JPEG-Bild", "PDF-Dokument", "Ordner"
-const formatKind = (item) => {
+export const formatKind = (item) => {
     if (item.fileType !== 'doc') return _t('MediaFileExplorer.kind.folder')
     const mimeType = item.mimeType || ''
     const [category, subtype = ''] = mimeType.split('/')
@@ -100,7 +100,7 @@ const formatKind = (item) => {
     return name ? _t('MediaFileExplorer.kind.document', {type: name}) : _t('MediaFileExplorer.kind.unknown')
 }
 
-const modifiedTime = (item) => item.modifiedAt || createdTime(item)
+export const modifiedTime = (item) => item.modifiedAt || createdTime(item)
 
 const COLUMNS = [
     {key: 'modified', label: 'MediaFileExplorer.sort.modified', width: 160, render: item => formatDate(modifiedTime(item))},
@@ -110,11 +110,11 @@ const COLUMNS = [
 ]
 
 // date and size columns start with the newest / biggest entries, like the Finder
-const DESC_FIRST = ['modified', 'created', 'size']
+export const DESC_FIRST = ['modified', 'created', 'size']
 
 // Normalizes the ids returned by a delete mutation: depending on the type they
 // arrive either as documents or as plain id strings.
-const extractIds = (ids) => {
+export const extractIds = (ids) => {
     if (!ids) return []
     return (Array.isArray(ids) ? ids : [ids])
         .map(entry => (entry && typeof entry === 'object' ? entry._id : entry))
@@ -387,7 +387,7 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pa
 }
 
 // ─── Context Menu ─────────────────────────────────────────────────────────────
-function ContextMenu({anchorPosition, onClose, item, onAction, isPicker, isMulti}) {
+export function ContextMenu({anchorPosition, onClose, item, onAction, isPicker, isMulti}) {
     const open = Boolean(anchorPosition);
 
     let actions = []
