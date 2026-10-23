@@ -15,7 +15,7 @@ import fs from 'fs'
 import path from 'path'
 import {ObjectId} from 'mongodb'
 import Util from './index.mjs'
-import {createMatchForCurrentUser} from './dbquery.mjs'
+import {createMatchForCurrentUser, userCanUpdateDoc, userCanCreate} from './dbquery.mjs'
 import {CAPABILITY_MANAGE_OTHER_USERS} from '../../util/capabilities.mjs'
 import {toPlainJson, fromPlainJson} from './plainJson.mjs'
 import {readExportState, writeExportState, hashFields, hashValue, threeWayDiff} from './exportState.mjs'
@@ -417,10 +417,16 @@ export const importChangedTypeScriptsFromDirectory = async ({db, context, type, 
 /**
  * loads the entries (with the rights of the user) for the zip export
  */
-export const getTypeScriptItems = async ({db, context, type, ids}) => {
-    let match = {_id: {$in: (ids || []).filter(id => ObjectId.isValid(id)).map(id => new ObjectId(id))}}
+export const getTypeScriptItems = async ({db, context, type, ids, all = false}) => {
+    // all: every entry the user may see (export of everything), otherwise only the given ids
+    let match = all ? {} : {_id: {$in: (ids || []).filter(id => ObjectId.isValid(id)).map(id => new ObjectId(id))}}
     if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
-        match = {$and: [match, await createMatchForCurrentUser({typeName: type, db, context})]}
+        const accessMatch = await createMatchForCurrentUser({typeName: type, db, context})
+        if (!accessMatch) {
+            // no read access to the type
+            return []
+        }
+        match = {$and: [match, accessMatch]}
     }
     return db.collection(type).find(match).sort({_id: 1}).toArray()
 }
@@ -476,7 +482,11 @@ export const importTypeScriptFiles = async ({db, context, type, files, dryRun = 
                     result.names.push(label + ': does not exist, skipped')
                     continue
                 }
-                if (!dryRun) {
+                if (dryRun) {
+                    if (!await userCanCreate({db, context, typeName: type})) {
+                        throw new Error('no permission to create')
+                    }
+                } else {
                     const data = {}
                     Object.keys(values).forEach(field => {
                         data[field] = scriptFields.indexOf(field) >= 0 ? values[field] : fromPlainJson(values[field])
@@ -495,7 +505,11 @@ export const importTypeScriptFiles = async ({db, context, type, files, dryRun = 
                 result.unchanged++
                 continue
             }
-            if (!dryRun) {
+            if (dryRun) {
+                if (!await userCanUpdateDoc({db, context, typeName: type, _id: doc._id})) {
+                    throw new Error('no permission to update')
+                }
+            } else {
                 const data = {}
                 changed.forEach(field => {
                     data[field] = scriptFields.indexOf(field) >= 0 ? values[field] : fromPlainJson(values[field])

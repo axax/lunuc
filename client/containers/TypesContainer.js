@@ -137,6 +137,11 @@ function getFieldTitle(type, field) {
     return _t(`${type}.field.${field.name}`, null, (field.label || field.name) + (field.localized ? ' [' + _app_.lang + ']' : ''));
 }
 
+const MAX_RECENT_TYPES = 8
+// the list of recent types is saved with a delay, so quick switching between types
+// does not cause a mutation per navigation (unmount / beforeunload save anyway)
+const RECENT_TYPES_SAVE_DELAY = 5000
+
 class TypesContainer extends React.Component {
 
 
@@ -154,6 +159,7 @@ class TypesContainer extends React.Component {
         this.parseSettings(props)
 
         this.pageParams = this.determinePageParams(props)
+        this.trackRecentType(this.pageParams.type)
 
         // initial state
         this.state = {
@@ -189,7 +195,12 @@ class TypesContainer extends React.Component {
     }
 
     parseSettings(props) {
+        const pendingRecentTypes = this._recentTypesSaveTimeout && this.settings.recentTypes
         this.settings = Object.assign({}, props.keyValueMap.TypesContainerSettings)
+        if (pendingRecentTypes) {
+            // not saved yet (debounced): keep the local list
+            this.settings.recentTypes = pendingRecentTypes
+        }
     }
 
     setSettingsForType(type, settings) {
@@ -202,6 +213,45 @@ class TypesContainer extends React.Component {
     getSettingsForType(type, meta) {
         const key = type + (meta ? '-' + meta : '')
         return this.settings[key] || {}
+    }
+
+    // remember the most recently opened types (stored per user in TypesContainerSettings)
+    trackRecentType(type, save) {
+        if (!type || this.props.fixType || !this.types[type]) {
+            return
+        }
+        const before = this.settings.recentTypes || []
+        if (before[0] === type) {
+            // already the most recent one: nothing changed
+            return
+        }
+        this.settings.recentTypes = [type, ...before.filter(t => t !== type)].slice(0, MAX_RECENT_TYPES)
+        if (save) {
+            // debounced (and outside of the render cycle); saveSettings only writes when the value differs
+            clearTimeout(this._recentTypesSaveTimeout)
+            this._recentTypesSaveTimeout = setTimeout(() => {
+                this._recentTypesSaveTimeout = null
+                this.saveSettings()
+            }, RECENT_TYPES_SAVE_DELAY)
+        }
+    }
+
+    renderRecentTypes(currentType) {
+        const recent = (this.settings.recentTypes || []).filter(t =>
+            this.types[t] && !(this.settings[t] && this.settings[t].hide))
+        if (recent.length < 2) {
+            return null
+        }
+        return <div style={{display: 'flex', flexWrap: 'wrap', gap: '6px', marginRight: '8px'}}>
+            {recent.map(t => <Chip key={t}
+                                   size="small"
+                                   label={t}
+                                   color={t === currentType ? 'primary' : 'default'}
+                                   variant={t === currentType ? 'filled' : 'outlined'}
+                                   onClick={t === currentType ? undefined : () => {
+                                       this.handleTypeChange({target: {value: t}})
+                                   }}/>)}
+        </div>
     }
 
     saveSettings() {
@@ -245,6 +295,8 @@ class TypesContainer extends React.Component {
 
     componentWillUnmount() {
         this._typeFilesUnmounted = true
+        // the pending recent types are part of this.settings, saved below
+        clearTimeout(this._recentTypesSaveTimeout)
         setTimeout(() => {
             this.saveSettings()
         }, 1)
@@ -290,6 +342,9 @@ class TypesContainer extends React.Component {
             this.pageParams.filter !== pageParams.filter) {
 
             this.pageParams = pageParams
+            if (typeChanged) {
+                this.trackRecentType(pageParams.type, true)
+            }
             this.getData(pageParams, true, typeChanged || metaChanged)
 
             return false
@@ -1038,6 +1093,7 @@ class TypesContainer extends React.Component {
                 <Typography color="text.disabled" component="div" key="searchHint"
                             variant="caption"
                             sx={{display: 'flex', alignItems: 'center', gap: 1, minHeight: '22px', mb:2, mt:0.5 }}>
+                    {!fixType && this.renderRecentTypes(type)}
                     {this.searchHint()}
                 </Typography>
 
@@ -1331,7 +1387,7 @@ class TypesContainer extends React.Component {
                 onChange={this.handleRowSelect.bind(this)}
             />,
             id: 'check',
-            cellStyle:{position:'sticky', zIndex:1, left:0, boxShadow:'inset -1px 0 0 rgb(234,234,234)'}
+            cellStyle:{position:'sticky', zIndex:1, left:0, boxShadow:'inset -1px 0 0 var(--table-sticky-divider, rgb(234,234,234))'}
 
         })
 
@@ -1369,7 +1425,7 @@ class TypesContainer extends React.Component {
             {
                 title: _t('TypesContainer.actions'),
                 id: '_action',
-                cellStyle:{position:'sticky', right:0, boxShadow:'inset 1px 0 0 rgb(234,234,234)'}
+                cellStyle:{position:'sticky', right:0, boxShadow:'inset 1px 0 0 var(--table-sticky-divider, rgb(234,234,234))'}
             })
 
         /* HOOK */

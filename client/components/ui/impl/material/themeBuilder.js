@@ -550,7 +550,7 @@ export const buildTheme = (colors, mode = 'light') => createTheme({
         },
         MuiListItemIcon: {
             styleOverrides: {
-                root: { minWidth: 36, color: 'inherit', transition: 'color 0.15s ease' },
+                root: { minWidth: 44, color: 'inherit', transition: 'color 0.15s ease' },
             },
         },
         MuiListItemText: {

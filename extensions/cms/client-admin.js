@@ -22,7 +22,9 @@ import {
     CircularProgress,
     LinearProgress,
     Paper,
-    Grid
+    Grid,
+    Checkbox,
+    FormControlLabel
 } from 'ui/admin'
 import {translations} from './translations/admin'
 import Async from 'client/components/Async'
@@ -40,8 +42,8 @@ import SimpleFileExplorer from '../../client/components/ui/impl/material/SimpleF
 import {parseOrElse} from "../../client/util/json.mjs";
 import Util from '../../client/util/index.mjs'
 import {CAPABILITY_MANAGE_OTHER_USERS} from '../../util/capabilities.mjs'
-import {CAPABILITY_MANAGE_CMS_TEMPLATE} from './constants/index.mjs'
-import {exportCmsPagesAsZip, pickZipFile, importCmsPagesFromZip, formatImportResult} from './util/cmsPageFilesClient'
+import {CAPABILITY_CMS_PAGE_FILES} from './constants/index.mjs'
+import {exportCmsPagesAsZip, pickZipFile, importCmsPagesFromZip, formatImportResult, getExportAiGuide, setExportAiGuide} from './util/cmsPageFilesClient'
 
 registerTrs(translations, 'CmsViewEditorContainer')
 registerTrs(adminTranslations, 'AdminTranslations')
@@ -251,8 +253,31 @@ export default () => {
             if (ids.length === 0) {
                 return
             }
-            exportCmsPagesAsZip({ids, _version: this.pageParams._version}).catch(e => {
-                this.setState({simpleDialog: {title: _t('CmsPageFiles.exportSelected'), children: e.message}})
+            // ask whether the guide for AI assistants goes into the zip (last choice preselected)
+            let aiGuide = getExportAiGuide()
+            this.setState({
+                simpleDialog: {
+                    title: _t('CmsPageFiles.exportSelected'),
+                    actions: [{key: 'cancel', label: _t('CmsPageFiles.cancel')}, {key: 'export', label: _t('CmsPageFiles.export'), type: 'primary'}],
+                    onClose: (e) => {
+                        this.setState({simpleDialog: false})
+                        if (e && e.key === 'export') {
+                            setExportAiGuide(aiGuide)
+                            exportCmsPagesAsZip({ids, _version: this.pageParams._version, aiGuide}).catch(err => {
+                                this.setState({simpleDialog: {title: _t('CmsPageFiles.exportSelected'), children: err.message}})
+                            })
+                        }
+                    },
+                    children: <div>
+                        <Typography variant="body2">{_t('CmsPageFiles.exportCount', {count: ids.length})}</Typography>
+                        <FormControlLabel
+                            control={<Checkbox defaultChecked={aiGuide} onChange={e => { aiGuide = e.target.checked }}/>}
+                            label={_t('CmsPageFiles.includeAiGuide')}/>
+                        <Typography variant="caption" component="div" sx={{color: 'text.secondary', ml: 4}}>
+                            {_t('CmsPageFiles.includeAiGuideHint')}
+                        </Typography>
+                    </div>
+                }
             })
         }
     })
@@ -277,7 +302,7 @@ export default () => {
     Hook.on('TypeTableAction', function ({type, actions, multiSelectActions, pageParams, data}) {
         if (type === 'CmsPage') {
 
-            if (Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
+            if (Util.hasCapability({userData: _app_.user}, CAPABILITY_CMS_PAGE_FILES)) {
                 multiSelectActions.unshift({name: _t('CmsPageFiles.exportSelected'), value: 'exportCmsPageFiles', icon: 'folderZip'})
 
                 actions.push({

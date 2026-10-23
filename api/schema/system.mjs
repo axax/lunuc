@@ -110,6 +110,11 @@ export const systemSchemaRaw = `
         data: String
     }
 
+    type TypeFilesSource{
+        type: String
+        folder: String
+    }
+
     type TypeFilesImportResult{
         created: Int
         updated: Int
@@ -141,6 +146,8 @@ export const systemSchemaRaw = `
         getAllCollectionIndexes: CollectionIndexResult
         typeFilesTypes: [String]
         exportTypeFiles(type: String!, ids: [ID]!): TypeFilesExport
+        exportAllTypeFilesSources: [TypeFilesSource]
+        exportAllTypeFiles(aiGuide: Boolean): TypeFilesExport
     }
     
       
@@ -153,6 +160,7 @@ export const systemSchemaRaw = `
     	deleteCollection(name: String!): DeleteCollectionResult
     	syncCollectionEntries(fromVersion:String!,toVersion:String!,type:String!,ids:[ID]!): CollectionSyncResult
     	importTypeFiles(type: String!, data: String!, dryRun: Boolean, createMissing: Boolean): TypeFilesImportResult
+    	importAllTypeFiles(data: String!, dryRun: Boolean, createMissing: Boolean): TypeFilesImportResult
     }
     
     type Subscription{

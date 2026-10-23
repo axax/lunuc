@@ -48,6 +48,7 @@ import {translateText} from '../../../client/util/translate.mjs'
 import {
     CAPABILITY_MANAGE_CMS_CONTENT,
     CAPABILITY_MANAGE_CMS_TEMPLATE,
+    CAPABILITY_CMS_PAGE_FILES,
     CAPABILITY_VIEW_CMS_EDITOR
 } from '../constants/index.mjs'
 import {
@@ -1260,7 +1261,7 @@ class CmsViewEditorContainer extends React.Component {
                         }
                     })
 
-                if (canMangeCmsTemplate && cmsPage._id) {
+                if (Util.hasCapability(props.user, CAPABILITY_CMS_PAGE_FILES) && cmsPage._id) {
                     const {_version: pageVersion} = getSlugVersion(props.slug)
                     moreMenu.push({
                             icon: 'download',

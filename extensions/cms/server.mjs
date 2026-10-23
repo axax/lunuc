@@ -8,11 +8,16 @@ import {
     CAPABILITY_VIEW_CMS_EDITOR,
     CAPABILITY_MANAGE_CMS_PAGES,
     CAPABILITY_MANAGE_CMS_CONTENT,
-    CAPABILITY_MANAGE_CMS_TEMPLATE, CAPABILITY_MANAGE_CMS_ELEMENTS
+    CAPABILITY_MANAGE_CMS_TEMPLATE, CAPABILITY_MANAGE_CMS_ELEMENTS, CAPABILITY_CMS_PAGE_FILES
 } from './constants/index.mjs'
 import renderReact from './renderReact.mjs'
 import {getCmsPage} from './util/cmsPage.mjs'
 import {resolveData} from './util/dataResolver.mjs'
+import {registerTypeFiles} from '../../api/util/typeFiles.mjs'
+import {cmsPageTypeFilesHandler} from './util/cmsPageFilesServer.mjs'
+
+// pages are part of the export / import of all data (/admin/system)
+registerTypeFiles('CmsPage', cmsPageTypeFilesHandler)
 
 const PORT = (process.env.PORT || 3000)
 
@@ -39,10 +44,11 @@ Hook.on('createUserRoles', ({userRoles}) => {
     userRoles.forEach(userRole => {
         if (['administrator', 'editor'].indexOf(userRole.name) >= 0) {
             console.log(`Add capabilities ${CAPABILITY_VIEW_CMS_EDITOR}, ${CAPABILITY_MANAGE_CMS_PAGES},${CAPABILITY_MANAGE_CMS_TEMPLATE} and ${CAPABILITY_MANAGE_CMS_CONTENT} for user role "${userRole.name}"`)
-            userRole.capabilities.push(CAPABILITY_VIEW_CMS_EDITOR, CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_CONTENT, CAPABILITY_MANAGE_CMS_TEMPLATE, CAPABILITY_MANAGE_CMS_ELEMENTS)
+            userRole.capabilities.push(CAPABILITY_VIEW_CMS_EDITOR, CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_CONTENT, CAPABILITY_MANAGE_CMS_TEMPLATE, CAPABILITY_MANAGE_CMS_ELEMENTS, CAPABILITY_CMS_PAGE_FILES)
         }else if( userRole.name === 'author'){
             console.log(`Add capability ${CAPABILITY_VIEW_CMS_EDITOR}, ${CAPABILITY_MANAGE_CMS_CONTENT} and ${CAPABILITY_MANAGE_CMS_PAGES} for user role "${userRole.name}"`)
-            userRole.capabilities.push(CAPABILITY_VIEW_CMS_EDITOR, CAPABILITY_MANAGE_CMS_CONTENT, CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_ELEMENTS)
+            // export / import as files (ZIP), e.g. to edit pages with an AI assistant
+            userRole.capabilities.push(CAPABILITY_VIEW_CMS_EDITOR, CAPABILITY_MANAGE_CMS_CONTENT, CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_ELEMENTS, CAPABILITY_CMS_PAGE_FILES)
         }else if( userRole.name === 'contributor'){
             console.log(`Add capability ${CAPABILITY_VIEW_CMS_EDITOR}, ${CAPABILITY_MANAGE_CMS_CONTENT} for user role "${userRole.name}"`)
             userRole.capabilities.push(CAPABILITY_VIEW_CMS_EDITOR, CAPABILITY_MANAGE_CMS_CONTENT)

@@ -30,7 +30,7 @@ import {useKeyValues, setKeyValue} from '../../util/keyvalue'
 import {
     CAPABILITY_MANAGE_TYPES,
     CAPABILITY_MANAGE_BACKUPS,
-    CAPABILITY_RUN_COMMAND, CAPABILITY_EXTRA_OPTIONS
+    CAPABILITY_RUN_COMMAND, CAPABILITY_EXTRA_OPTIONS, CAPABILITY_EXPORT_IMPORT_DATA
 } from '../../../util/capabilities.mjs'
 
 const {ADMIN_BASE_URL, APP_NAME} = config
@@ -196,6 +196,9 @@ const BaseLayout = props => {
         menuItems.push(
             {name: 'System', to: ADMIN_BASE_URL + '/system', auth: true, icon: <SettingsIcon/>},
             {name: 'Types', to: ADMIN_BASE_URL + '/types', auth: true, icon: <BuildIcon/>})
+    } else if (capabilities.indexOf(CAPABILITY_EXPORT_IMPORT_DATA) >= 0) {
+        // author and up: only the export / import of the own data is available on the system page
+        menuItems.push({name: 'System', to: ADMIN_BASE_URL + '/system', auth: true, icon: <SettingsIcon/>})
     }
 
 

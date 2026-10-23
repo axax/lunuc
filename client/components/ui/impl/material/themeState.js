@@ -1,4 +1,5 @@
-import {DEFAULT_THEME, THEMES} from './themes'
+import {DEFAULT_THEME, THEMES, isDarkTheme} from './themes'
+import {setThemeMode} from 'client/util/themeMode.mjs'
 
 /*
  * Holds the name of the active admin theme.
@@ -25,6 +26,9 @@ const readFromStorage = () => {
 }
 
 let currentThemeName = readFromStorage()
+if (typeof window !== 'undefined' && !_app_.ssr) {
+    setThemeMode({name: currentThemeName, dark: isDarkTheme(currentThemeName)})
+}
 const listeners = new Set()
 
 export const getThemeName = () => currentThemeName
@@ -43,6 +47,7 @@ export const setThemeName = (name) => {
         currentThemeName = name
         listeners.forEach(fn => fn())
     }
+    setThemeMode({name, dark: isDarkTheme(name)})
 }
 
 export const subscribeThemeName = (fn) => {

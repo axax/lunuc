@@ -49,7 +49,7 @@ type CmsPagesImportResult{
 }
 
 type Query {
-    exportCmsPages(ids:[ID], slugs:[String], _version: String): CmsPagesExport
+    exportCmsPages(ids:[ID], slugs:[String], _version: String, aiGuide: Boolean): CmsPagesExport
     cmsPageGroups(path:String,_version: String): [CmsPageGroupResult]
     cmsPage(slug: String!, props: String, query: String, nosession: String, editmode: Boolean, inEditor: Boolean, meta: String, dynamic: Boolean, _version: String): CmsPage
     cmsServerMethod(slug: String!, methodName: String!, args: String, props: String, query: String, _version: String, dynamic: Boolean): CmsServerMethod

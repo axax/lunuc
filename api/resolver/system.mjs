@@ -23,7 +23,7 @@ import {csv2json} from '../util/csv.mjs'
 import {setPropertyByPath} from '../../client/util/json.mjs'
 import Hook from '../../util/hook.cjs'
 import {createAllIndexes} from '../index/indexes.mjs'
-import {getTypeFilesTypes, exportTypeFiles, importTypeFiles} from '../util/typeFiles.mjs'
+import {getTypeFilesTypes, exportTypeFiles, importTypeFiles, getExportAllSources, exportAllTypeFiles, importAllTypeFiles} from '../util/typeFiles.mjs'
 import jwt from 'jsonwebtoken'
 import {SECRET_KEY} from '../constants/index.mjs'
 import {MONGO_URL} from '../database.mjs'
@@ -54,6 +54,13 @@ export const systemResolver = (db) => ({
         },
         exportTypeFiles: async ({type, ids}, {context}) => {
             return exportTypeFiles({db, context, type, ids})
+        },
+        // export / import of everything the user has access to (/admin/system), needs capability export_import_data
+        exportAllTypeFilesSources: async ({}, {context}) => {
+            return getExportAllSources({db, context})
+        },
+        exportAllTypeFiles: async ({aiGuide}, {context}) => {
+            return exportAllTypeFiles({db, context, aiGuide: !!aiGuide})
         },
         killRun: async ({id}, {context}) => {
             killExec(id)
@@ -565,7 +572,9 @@ export const systemResolver = (db) => ({
 
             return { results };
         },
-        systemInfo: async () =>{
+        systemInfo: async ({}, {context}) =>{
+            // the url of the database may contain credentials
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_ADMIN_OPTIONS)
 
             return {dbUrl:MONGO_URL}
         }
@@ -573,6 +582,9 @@ export const systemResolver = (db) => ({
     Mutation: {
         importTypeFiles: async ({type, data, dryRun, createMissing}, {context}) => {
             return importTypeFiles({db, context, type, data, dryRun, createMissing})
+        },
+        importAllTypeFiles: async ({data, dryRun, createMissing}, {context}) => {
+            return importAllTypeFiles({db, context, data, dryRun, createMissing})
         },
         createDbIndexes: async ({}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)

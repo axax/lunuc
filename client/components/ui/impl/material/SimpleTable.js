@@ -24,6 +24,7 @@ import {parseStyles} from '../../../../util/style'
 const StyledScrollArea = styled.div`
     width: 100%;
     overflow-y: hidden;
+    --table-sticky-divider: ${({theme}) => theme?.palette?.divider || 'rgb(234,234,234)'};
     ::-webkit-scrollbar {
       height:8px;
     }

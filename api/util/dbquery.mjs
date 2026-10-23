@@ -2,7 +2,7 @@ import {ObjectId} from 'mongodb'
 import ClientUtil from '../../client/util/index.mjs'
 import {getType} from '../../util/types.mjs'
 import Util from './index.mjs'
-import {CAPABILITY_MANAGE_SAME_GROUP} from '../../util/capabilities.mjs'
+import {CAPABILITY_MANAGE_SAME_GROUP, CAPABILITY_MANAGE_OTHER_USERS} from '../../util/capabilities.mjs'
 import Cache from '../../util/cache.mjs'
 
 // How long subQuery results are cached (in milliseconds)
@@ -479,6 +479,41 @@ export const createMatchForCurrentUser = async ({ typeName, db, context, operati
     }
 
     return match
+}
+
+/**
+ * Same rights check as GenericResolver.updateEntity does, without writing (e.g. for dry runs).
+ * Keep in sync with updateEntity.
+ * @returns {Promise<boolean>}
+ */
+export const userCanUpdateDoc = async ({db, context, typeName, collectionName, _id}) => {
+    if (!await Util.userHasAccessRights(db, context, {typeName, access: 'update'})) {
+        return false
+    }
+    if (await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
+        return true
+    }
+    const match = await createMatchForCurrentUser({typeName, db, context, operation: 'update'})
+    if (!match) {
+        return false
+    }
+    return await db.collection(collectionName || typeName).countDocuments({$and: [{_id}, match]}, {limit: 1}) > 0
+}
+
+/**
+ * Same rights check as GenericResolver.createEntity does, without writing (e.g. for dry runs):
+ * access rights of the user plus the capability of the type definition (access.create).
+ * @returns {Promise<boolean>}
+ */
+export const userCanCreate = async ({db, context, typeName}) => {
+    if (!await Util.userHasAccessRights(db, context, {typeName, access: 'create'})) {
+        return false
+    }
+    const typeDefinition = getType(typeName)
+    if (typeDefinition && typeDefinition.access && typeDefinition.access.create) {
+        return await Util.userHasCapability(db, context, typeDefinition.access.create)
+    }
+    return true
 }
 
 // ─── makeAllMatchAnAndMatch ───────────────────────────────────────────────────

@@ -8,6 +8,7 @@ import DomUtil from 'client/util/dom.mjs'
 import Util from 'client/util/index.mjs'
 import {unregisterAllServiceworker} from './util/serviceWorkerUtil.mjs'
 import {client} from './middleware/graphql'
+import {initThemeMode} from './util/themeMode.mjs'
 
 const hasStorageSupport = () => {
     try {
@@ -20,6 +21,8 @@ const hasStorageSupport = () => {
     }
 }
 _app_.noStorage = !hasStorageSupport()
+// light/dark mode of the admin theme for CmsPages (html[data-theme], _app_.theme)
+initThemeMode()
 
 function addCanonicalTag(href) {
     DomUtil.createAndAddTag('link', 'head', {

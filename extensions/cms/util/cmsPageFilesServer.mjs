@@ -16,15 +16,17 @@
  */
 import fs from 'fs'
 import path from 'path'
-import AdmZip from 'adm-zip'
 import {ObjectId} from 'mongodb'
 import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
 import Util from '../../../api/util/index.mjs'
 import Cache from '../../../util/cache.mjs'
 import {CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities.mjs'
-import {createMatchForCurrentUser} from '../../../api/util/dbquery.mjs'
+import {createMatchForCurrentUser, userCanUpdateDoc, userCanCreate} from '../../../api/util/dbquery.mjs'
+import {CAPABILITY_CMS_PAGE_FILES, CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants/index.mjs'
 import {getCmsPageCacheKey} from './cmsPage.mjs'
 import {toPlainJson, fromPlainJson} from '../../../api/util/plainJson.mjs'
+import {buildAiGuideFiles} from './cmsPageAiGuide.mjs'
+import {filesToZip, zipToFiles} from '../../../api/util/zipFiles.mjs'
 import {readExportState, writeExportState, hashFields, hashValue, threeWayDiff} from '../../../api/util/exportState.mjs'
 import {
     cmsPagesToFiles,
@@ -38,10 +40,11 @@ import {
     CMS_PAGE_META_FIELDS
 } from './cmsPageFiles.mjs'
 
-const MAX_ZIP_ENTRIES = 5000
-const MAX_UNCOMPRESSED_SIZE = 100 * 1024 * 1024
 const KNOWN_FILES = [CMS_PAGE_META_FILE, CMS_PAGE_ATTRIBUTES_FILE, ...CMS_PAGE_CODE_FILES.map(f => f.file)]
 const CODE_FIELDS = CMS_PAGE_CODE_FILES.map(f => f.field)
+// fields that run on the server: only imported for users with manage_cms_template (same as the
+// "page development" tab in the editor). For other users they are left as they are in the db.
+const SERVER_CODE_FIELDS = ['serverScript', 'dataResolver']
 // never written by an import
 const NOT_IMPORTED_FIELDS = [...CMS_PAGE_INFO_FIELDS, ...CMS_PAGE_RUNTIME_FIELDS]
 
@@ -119,6 +122,10 @@ export const getCmsPagesForExport = async ({db, context, ids, slugs, filter, _ve
 
     if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
         const accessMatch = await createMatchForCurrentUser({typeName: 'CmsPage', db, context})
+        if (!accessMatch) {
+            // no read access to pages
+            return []
+        }
         match = {$and: [match, accessMatch]}
     }
 
@@ -132,52 +139,23 @@ export const getCmsPagesForExport = async ({db, context, ids, slugs, filter, _ve
 
 
 /**
- * @returns Buffer with a zip containing one folder per page
+ * @returns Buffer with a zip containing one folder per page, README.md and - with
+ * aiGuide (default) - AGENTS.md / CLAUDE.md plus the Lunuc reference for AI assistants
  */
-export const createCmsPagesZip = (pages, {rootFolder} = {}) => {
-    const zip = new AdmZip()
-    cmsPagesToFiles(pages).forEach(file => {
-        zip.addFile((rootFolder ? rootFolder + '/' : '') + file.path, Buffer.from(file.content, 'utf8'))
-    })
-    return zip.toBuffer()
+export const createCmsPagesZip = (pages, {rootFolder, aiGuide = true} = {}) => {
+    const files = cmsPagesToFiles(pages)
+    if (aiGuide && pages.length > 0) {
+        files.push(...buildAiGuideFiles())
+    }
+    return filesToZip(files, {rootFolder})
 }
 
 /**
- * reads a zip (Buffer) into [{path, content}]. Nothing is written to disk, but the
- * entries are still checked to keep the import predictable
+ * reads a zip (Buffer) into [{path, content}], only the known page files
+ * (AGENTS.md, _lunuc/ and other files are ignored)
  */
-export const readCmsPagesZip = (buffer) => {
-    const zip = new AdmZip(buffer)
-    const entries = zip.getEntries()
-    if (entries.length > MAX_ZIP_ENTRIES) {
-        throw new Error(`zip contains too many entries (${entries.length})`)
-    }
-    let totalSize = 0
-    const files = []
-    for (const entry of entries) {
-        if (entry.isDirectory) {
-            continue
-        }
-        const name = entry.entryName.replace(/\\/g, '/')
-        // macOS metadata and hidden files
-        if (name.startsWith('__MACOSX/') || name.split('/').some(s => s.startsWith('.'))) {
-            continue
-        }
-        if (name.split('/').some(s => s === '..') || path.isAbsolute(name)) {
-            throw new Error(`invalid path in zip: "${name}"`)
-        }
-        const baseName = name.substring(name.lastIndexOf('/') + 1)
-        if (KNOWN_FILES.indexOf(baseName) < 0) {
-            continue
-        }
-        totalSize += entry.header.size
-        if (totalSize > MAX_UNCOMPRESSED_SIZE) {
-            throw new Error('zip is too large')
-        }
-        files.push({path: name, content: entry.getData().toString('utf8')})
-    }
-    return files
-}
+export const readCmsPagesZip = (buffer) =>
+    zipToFiles(buffer, {filter: name => KNOWN_FILES.indexOf(name.substring(name.lastIndexOf('/') + 1)) >= 0})
 
 
 /**
@@ -188,6 +166,17 @@ export const readCmsPagesZip = (buffer) => {
 export const importCmsPages = async ({db, context, pages, _version, createMissing = true, dryRun = false}) => {
     const collectionName = await resolveCollectionName(db, context, _version)
     const result = {created: 0, updated: 0, unchanged: 0, skipped: 0, slugs: [], errors: []}
+    const canImportServerCode = await Util.userHasCapability(db, context, CAPABILITY_MANAGE_CMS_TEMPLATE)
+
+    // one query for all pages instead of one per page
+    const existingBySlug = {}
+    const slugs = pages.map(p => p.slug).filter(slug => typeof slug === 'string')
+    if (slugs.length) {
+        const docs = await db.collection(collectionName).find({slug: {$in: slugs}}).toArray()
+        docs.forEach(doc => existingBySlug[doc.slug] = doc)
+    }
+    // the cache is cleared once at the end (clearStartWith walks through the whole cache)
+    const cacheKeysToClear = []
 
     for (const page of pages) {
         const {slug} = page
@@ -202,12 +191,28 @@ export const importCmsPages = async ({db, context, pages, _version, createMissin
             })
             data.slug = slug
 
-            const existing = await db.collection(collectionName).findOne({slug})
+            const existing = existingBySlug[slug]
+
+            if (!canImportServerCode) {
+                // drop server code that differs from the db (new page: any non empty value) and report it
+                const ignored = SERVER_CODE_FIELDS.filter(field => {
+                    if (data[field] === undefined) return false
+                    const current = existing ? JSON.stringify(toPlainJson(existing[field]) ?? '') : '""'
+                    const differs = JSON.stringify(toPlainJson(data[field]) ?? '') !== current
+                    delete data[field]
+                    return differs
+                })
+                if (ignored.length) {
+                    result.errors.push(`${slug}: ${ignored.join(', ')} not imported (needs capability ${CAPABILITY_MANAGE_CMS_TEMPLATE})`)
+                }
+            }
 
             if (existing) {
                 const changed = {}
                 Object.keys(data).forEach(field => {
-                    if (JSON.stringify(toPlainJson(existing[field]) ?? null) !== JSON.stringify(toPlainJson(data[field]) ?? null)) {
+                    // an empty code file is the export of a script that is not set (null / missing in the db)
+                    const emptyValue = CODE_FIELDS.indexOf(field) >= 0 ? '' : null
+                    if (JSON.stringify(toPlainJson(existing[field]) ?? emptyValue) !== JSON.stringify(toPlainJson(data[field]) ?? emptyValue)) {
                         changed[field] = data[field]
                     }
                 })
@@ -215,7 +220,12 @@ export const importCmsPages = async ({db, context, pages, _version, createMissin
                     result.unchanged++
                     continue
                 }
-                if (!dryRun) {
+                if (dryRun) {
+                    // same rights check as updateEntity
+                    if (!await userCanUpdateDoc({db, context, typeName: 'CmsPage', collectionName, _id: existing._id})) {
+                        throw new Error('no permission to update')
+                    }
+                } else {
                     // updateEntity checks the access rights of the user
                     await GenericResolver.updateEntity(db, context, 'CmsPage', {
                         _id: existing._id.toString(),
@@ -226,7 +236,11 @@ export const importCmsPages = async ({db, context, pages, _version, createMissin
                 result.updated++
                 result.slugs.push(slug + ' (' + Object.keys(changed).join(', ') + ')')
             } else if (createMissing) {
-                if (!dryRun) {
+                if (dryRun) {
+                    if (!await userCanCreate({db, context, typeName: 'CmsPage'})) {
+                        throw new Error('no permission to create')
+                    }
+                } else {
                     await GenericResolver.createEntity(db, {context: {lang: 'de', ...context}}, 'CmsPage', {
                         _version,
                         ...data
@@ -239,11 +253,14 @@ export const importCmsPages = async ({db, context, pages, _version, createMissin
             }
 
             if (!dryRun) {
-                Cache.clearStartWith(getCmsPageCacheKey({_version, slug}))
+                cacheKeysToClear.push(getCmsPageCacheKey({_version, slug}))
             }
         } catch (e) {
             result.errors.push(`${slug}: ${e.message}`)
         }
+    }
+    if (cacheKeysToClear.length) {
+        Cache.clearStartWith(cacheKeysToClear)
     }
     return result
 }
@@ -546,6 +563,30 @@ export const importChangedCmsPagesFromDirectory = async ({db, context, dir, _ver
         writeExportState(root, state)
     }
     return result
+}
+
+/**
+ * handler for api/util/typeFiles.mjs: pages are part of "export / import all" (folder cmspages),
+ * the per type export of the pages has its own UI (exportCmsPages / importCmsPages)
+ */
+export const cmsPageTypeFilesHandler = {
+    capability: CAPABILITY_CMS_PAGE_FILES,
+    folder: 'cmspages',
+    perType: false,
+    // AGENTS.md / CLAUDE.md + Lunuc reference, optional part of "export all"
+    aiGuideFiles: () => buildAiGuideFiles(),
+    exportFiles: async ({db, context, ids, all}) => {
+        const pages = await getCmsPagesForExport({db, context, ...(all ? {filter: {}} : {ids})})
+        return cmsPagesToFiles(pages)
+    },
+    importFiles: async ({db, context, files, dryRun, createMissing}) => {
+        const {pages, errors} = filesToCmsPages(files)
+        const result = await importCmsPages({db, context, pages, createMissing, dryRun})
+        return {
+            created: result.created, updated: result.updated, unchanged: result.unchanged, skipped: result.skipped,
+            names: result.slugs, errors: [...errors, ...result.errors]
+        }
+    }
 }
 
 export {slugToFolder, toPlainJson, fromPlainJson}

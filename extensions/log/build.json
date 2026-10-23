@@ -44,7 +44,7 @@
           "name":"solution",
           "uitype": "htmlParser",
           "replacePlaceholders":true,
-          "html":"${sessionStorage.setItem('llm_input', JSON.stringify({message:JSON.stringify(valuesOri.message),type: JSON.stringify(valuesOri.type),location: JSON.stringify(valuesOri.location),meta: JSON.stringify(valuesOri.meta)})) || ''}</script><iframe style=\"min-height:65vh\" src=\"/system/aiassistent?showChats=false&promtTemplate=lunuc_log&inputkey=llm_input\" frameborder=\"0\" width=\"100%\" />",
+          "html":"${sessionStorage.setItem('llm_input', JSON.stringify({message:JSON.stringify(valuesOri.message),type: JSON.stringify(valuesOri.type),location: JSON.stringify(valuesOri.location),meta: JSON.stringify(valuesOri.meta)})) || ''}</script><iframe style=\"display:block;height:calc(100vh - 370px);min-height:400px\" src=\"/system/aiassistent?showChats=false&promtTemplate=lunuc_log&inputkey=llm_input\" frameborder=\"0\" width=\"100%\" />",
           "tab": "KI assistant",
           "access": {
             "ui": {

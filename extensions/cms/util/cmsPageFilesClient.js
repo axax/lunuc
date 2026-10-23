@@ -1,5 +1,8 @@
 import {client} from '../../../client/middleware/graphql'
 import {downloadAs} from '../../../client/util/download'
+import {
+    base64ToBytes, bytesToBase64, firstError, pickZipFile, getExportAiGuide, setExportAiGuide, formatTypeFilesResult
+} from '../../../client/util/typeFiles'
 import {_t} from '../../../util/i18n.mjs'
 
 /**
@@ -7,37 +10,15 @@ import {_t} from '../../../util/i18n.mjs'
  * The conversion itself happens on the server (see cmsPageFilesServer.mjs).
  */
 
-const base64ToBytes = (base64) => {
-    const binary = atob(base64)
-    const bytes = new Uint8Array(binary.length)
-    for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i)
-    }
-    return bytes
-}
-
-const bytesToBase64 = (buffer) => {
-    const bytes = new Uint8Array(buffer)
-    let binary = ''
-    // chunks, String.fromCharCode with a huge argument list overflows the stack
-    for (let i = 0; i < bytes.length; i += 0x8000) {
-        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000))
-    }
-    return btoa(binary)
-}
-
-const firstError = (response) => response && response.errors && response.errors.length > 0 ?
-    new Error(response.errors.map(e => e.message).join(', ')) : null
-
 /**
  * downloads the pages as zip (one folder per page)
  * @returns Promise with the number of exported pages
  */
-export const exportCmsPagesAsZip = ({ids, slugs, _version}) => {
+export const exportCmsPagesAsZip = ({ids, slugs, _version, aiGuide = getExportAiGuide()}) => {
     return client.query({
         fetchPolicy: 'network-only',
-        query: 'query exportCmsPages($ids:[ID],$slugs:[String],$_version:String){exportCmsPages(ids:$ids,slugs:$slugs,_version:$_version){name count data}}',
-        variables: {ids, slugs, _version}
+        query: 'query exportCmsPages($ids:[ID],$slugs:[String],$_version:String,$aiGuide:Boolean){exportCmsPages(ids:$ids,slugs:$slugs,_version:$_version,aiGuide:$aiGuide){name count data}}',
+        variables: {ids, slugs, _version, aiGuide}
     }).then(response => {
         const error = firstError(response)
         if (error) {
@@ -51,28 +32,6 @@ export const exportCmsPagesAsZip = ({ids, slugs, _version}) => {
         return result.count
     })
 }
-
-/**
- * opens a file picker for a zip file
- * @returns Promise with the File or null if nothing was selected
- */
-export const pickZipFile = () => new Promise(resolve => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = '.zip,application/zip,application/x-zip-compressed'
-    input.style.display = 'none'
-    input.addEventListener('change', () => {
-        resolve(input.files && input.files[0] ? input.files[0] : null)
-        input.remove()
-    })
-    // cancel event is not supported everywhere, the promise just stays pending then
-    input.addEventListener('cancel', () => {
-        resolve(null)
-        input.remove()
-    })
-    document.body.appendChild(input)
-    input.click()
-})
 
 /**
  * uploads a zip created by the export (or edited afterwards) and imports it
@@ -92,20 +51,10 @@ export const importCmsPagesFromZip = (file, {_version, createMissing = true, dry
 }
 
 /**
- * short text summary of an import result
+ * short text summary of an import result (translations of the cms extension, they are
+ * also available in the page editor outside of the admin)
  */
-export const formatImportResult = (result) => {
-    const lines = [_t('CmsPageFiles.importSummary', {
-        created: result.created,
-        updated: result.updated,
-        unchanged: result.unchanged,
-        skipped: result.skipped
-    })]
-    if (result.slugs && result.slugs.length) {
-        lines.push('', ...result.slugs.map(s => '• ' + s))
-    }
-    if (result.errors && result.errors.length) {
-        lines.push('', _t('CmsPageFiles.errors'), ...result.errors.map(e => '• ' + e))
-    }
-    return lines.join('\n')
-}
+export const formatImportResult = (result) => formatTypeFilesResult(result, {trPrefix: 'CmsPageFiles'})
+
+// shared with the export / import of other types
+export {pickZipFile, getExportAiGuide, setExportAiGuide}

@@ -536,8 +536,10 @@ export const DEFAULT_STYLE_EDITOR = `//!#Grid
 }
 //!#Editor
 //<!!#REMOVE
+/* editor preview area around the page. A page with a dark design for the dark
+   admin theme sets the variable, e.g. html[data-theme="dark"]{ --editor-content-bg:#262624 } */
 main[data-layout-content=true]{
-  background-color:#fff;
+  background-color:var(--editor-content-bg, #fff);
 }
 [data-force-inline-editor=true]{
   padding:0.75rem;

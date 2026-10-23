@@ -9,6 +9,7 @@ import {
     CAPABILITY_MANAGE_CMS_PAGES,
     CAPABILITY_MANAGE_CMS_CONTENT,
     CAPABILITY_MANAGE_CMS_TEMPLATE,
+    CAPABILITY_CMS_PAGE_FILES,
     CAPABILITY_VIEW_CMS_EDITOR
 } from '../constants/index.mjs'
 import Cache from '../../../util/cache.mjs'
@@ -170,9 +171,9 @@ const removeEditor = (slug, clientId) => {
 
 export default db => ({
     Query: {
-        exportCmsPages: async ({ids, slugs, _version}, {context}) => {
-            // the export contains scripts and server scripts
-            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_CMS_TEMPLATE)
+        exportCmsPages: async ({ids, slugs, _version, aiGuide}, {context}) => {
+            // the export contains scripts and server scripts: own capability (author and up)
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_CMS_PAGE_FILES)
 
             if ((!ids || ids.length === 0) && (!slugs || slugs.length === 0)) {
                 throw new Error('ids or slugs are required')
@@ -188,7 +189,8 @@ export default db => ({
             return {
                 name: `${baseName}-${date}.zip`,
                 count: pages.length,
-                data: createCmsPagesZip(pages).toString('base64')
+                // aiGuide: AGENTS.md / CLAUDE.md + Lunuc reference for AI assistants (default on)
+                data: createCmsPagesZip(pages, {aiGuide: aiGuide !== false}).toString('base64')
             }
         },
         cmsPages: async ({limit, page, offset, filter, sort, _version}, {headers, context}) => {
@@ -721,8 +723,10 @@ export default db => ({
     },
     Mutation: {
         importCmsPages: async ({data, _version, createMissing, dryRun}, {context}) => {
-            // server scripts are executed on the server, so only template managers may import
-            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_CMS_TEMPLATE)
+            // roles with the page files capability may import (author and up). serverScript and
+            // dataResolver run on the server: they are only imported with manage_cms_template
+            // (see importCmsPages), for other users these fields are left unchanged
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_CMS_PAGE_FILES)
 
             const files = readCmsPagesZip(Buffer.from(data, 'base64'))
             const {pages, errors} = filesToCmsPages(files)

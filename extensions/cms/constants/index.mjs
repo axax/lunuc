@@ -3,3 +3,5 @@ export const CAPABILITY_MANAGE_CMS_ELEMENTS = 'manage_cms_elements'
 export const CAPABILITY_MANAGE_CMS_CONTENT = 'manage_cms_content'
 export const CAPABILITY_MANAGE_CMS_TEMPLATE = 'manage_cms_template'
 export const CAPABILITY_VIEW_CMS_EDITOR = 'view_cms_editor'
+// export / import of pages as files (ZIP) - the files include script and serverScript
+export const CAPABILITY_CMS_PAGE_FILES = 'cms_page_files'
