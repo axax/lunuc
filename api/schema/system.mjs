@@ -127,9 +127,52 @@ export const systemSchemaRaw = `
     type SystemInfoResult{
         dbUrl: String
     }
+
+    type SystemUpdateCommit{
+        hash: String
+        shortHash: String
+        date: String
+        author: String
+        subject: String
+    }
+
+    type SystemUpdateInfo{
+        branch: String
+        upstream: String
+        current: SystemUpdateCommit
+        latest: SystemUpdateCommit
+        currentVersion: String
+        buildNumber: String
+        latestVersion: String
+        ahead: Int
+        behind: Int
+        commits: [SystemUpdateCommit]
+        dirtyFiles: [String]
+        dependenciesChanged: Boolean
+        checkedAt: Float
+        fetchError: String
+        error: String
+        runAs: String
+        launcher: String
+        cannotUpdateReason: String
+    }
+
+    type SystemUpdateStatus{
+        running: Boolean
+        state: String
+        restart: String
+        exitCode: Int
+        from: String
+        to: String
+        startedAt: String
+        finishedAt: String
+        log: String
+    }
         
     type Query {
         systemInfo: SystemInfoResult
+        systemUpdateInfo(fetch: Boolean): SystemUpdateInfo
+        systemUpdateStatus: SystemUpdateStatus
         searchInCollections(search: String!): SearchInCollectionsResult
         brokenReferences(type: String!, field: String): BrokenReferencesResult
     	run(command: String!, scope: String, id: String, sync: Boolean, timeout: Int): RunResult
@@ -153,6 +196,7 @@ export const systemSchemaRaw = `
       
     type Mutation {   	
     	createDbIndexes: GenericResult    
+    	startSystemUpdate(restart: String): SystemUpdateStatus
     	dropDbIndexes(name: String!, indexes: [String]!): GenericResult   	
     	createBackup(type: String!, options: String): Backup    	
     	removeBackup(type: String!, name: String!): RemoveBackupResult   

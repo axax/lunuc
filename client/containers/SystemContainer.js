@@ -16,6 +16,9 @@ import {CAPABILITY_MANAGE_TYPES, CAPABILITY_EXPORT_IMPORT_DATA} from '../../util
 import {loadExportAllSources, exportAllTypeFilesAsZip, pickZipFile, importAllTypeFilesFromZip, formatTypeFilesResult, getExportAiGuide, setExportAiGuide} from '../util/typeFiles'
 import {client, Query} from '../middleware/graphql'
 import styled from '@emotion/styled'
+import SystemUpdatePanel from './SystemUpdatePanel'
+import {StyledSystemTable} from './systemStyles'
+import {CAPABILITY_RUN_COMMAND} from '../../util/capabilities.mjs'
 const StyledColumn = styled('div')({
     flexBasis: '50%'
 })
@@ -28,24 +31,6 @@ const StyledExpansionPanel = styled(ExpansionPanel)(({theme}) => ({
     }
 }))
 
-
-const StyledIndexTable = styled('table')(({theme}) => ({
-    borderCollapse: 'collapse',
-    width: '100%',
-    marginBottom: '1.5rem',
-    fontSize: '0.8125rem',
-    'th, td': {
-        textAlign: 'left',
-        padding: '0.25rem 0.5rem',
-        borderBottom: '1px solid rgba(0,0,0,0.08)',
-        verticalAlign: 'top'
-    },
-    th: {whiteSpace: 'nowrap', color: theme.palette.text.secondary, fontWeight: 600},
-    'td.num': {textAlign: 'right', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums'},
-    'td.key': {fontFamily: 'monospace'},
-    // Never used since the counter started - the drop candidates.
-    'tr.unused td': {backgroundColor: 'rgba(255,167,38,0.12)'}
-}))
 
 const formatBytes = (bytes) => {
     if (!bytes) return '0'
@@ -83,6 +68,8 @@ class SystemContainer extends React.Component {
         // the own data is available for every role with the capability (author and up)
         this.isAdmin = Util.hasCapability(_app_.user, CAPABILITY_MANAGE_TYPES)
         this.canExportImport = Util.hasCapability(_app_.user, CAPABILITY_EXPORT_IMPORT_DATA)
+        // update the system (git pull, build, restart) - same capability as the shell console
+        this.canUpdate = Util.hasCapability(_app_.user, CAPABILITY_RUN_COMMAND)
 
         this.state = {extensionStates, tabValue: this.isAdmin ? 'extensions' : 'export', message:'', confirmDeletionDialog:false, indexSearch:'',
             exportSources: null, exportBusy: false, importPreview: null, aiGuide: getExportAiGuide()}
@@ -157,7 +144,7 @@ class SystemContainer extends React.Component {
 
     render() {
         const {extensionStates, tabValue, message, confirmDeletionDialog, indexSearch, exportSources, exportBusy, importPreview, aiGuide} = this.state
-        const {isAdmin, canExportImport} = this
+        const {isAdmin, canExportImport, canUpdate} = this
 
         return <>
             <Typography variant="h3" component="h1" gutterBottom>System</Typography>
@@ -171,6 +158,7 @@ class SystemContainer extends React.Component {
                 {isAdmin && <SimpleTab key="extensions" value="extensions" label="Extensions"/>}
                 {isAdmin && <SimpleTab key="database" value="database" label="Database / Indexes"/>}
                 {isAdmin && <SimpleTab key="cache" value="cache" label="Cache"/>}
+                {canUpdate && <SimpleTab key="update" value="update" label={_t('SystemUpdate.tab')}/>}
                 {canExportImport && <SimpleTab key="export" value="export" label={_t('SystemContainer.exportImport')}/>}
             </SimpleTabs>
 
@@ -291,13 +279,13 @@ class SystemContainer extends React.Component {
                                 </Typography>
                             </Typography>
 
-                            <StyledIndexTable>
+                            <StyledSystemTable>
                                 <thead>
                                     <tr>
                                         <th>Name</th>
                                         <th>Key</th>
-                                        <th style={{textAlign: 'right'}}>Size</th>
-                                        <th style={{textAlign: 'right'}}>Ops</th>
+                                        <th className="num">Size</th>
+                                        <th className="num">Ops</th>
                                         <th>Counting since</th>
                                         <th>Flags</th>
                                         <th/>
@@ -313,7 +301,7 @@ class SystemContainer extends React.Component {
 
                                     return <tr key={name} className={isDroppable && ops === 0 ? 'unused' : ''}>
                                         <td>{name}</td>
-                                        <td className="key">{formatIndexKey(parsed)}</td>
+                                        <td className="mono">{formatIndexKey(parsed)}</td>
                                         <td className="num">{formatBytes(sizeOnDisk)}</td>
                                         <td className="num">{ops === undefined ? '?' : ops}</td>
                                         <td>{opsSince ? new Date(opsSince).toLocaleString() : ''}</td>
@@ -322,7 +310,7 @@ class SystemContainer extends React.Component {
                                             onClick={()=>this.setState({confirmDeletionDialog:{name:collection.name,index,open:true}})} />}</td>
                                     </tr>
                                 })}</tbody>
-                            </StyledIndexTable>
+                            </StyledSystemTable>
                         </div>)
                     }}
                 </Query>
@@ -333,6 +321,9 @@ class SystemContainer extends React.Component {
                 <Button color="secondary" onClick={e => {
                     client.resetStore()
                 }} variant="contained">Clear API cache</Button>
+            </SimpleTabPanel>}
+            {canUpdate && <SimpleTabPanel value={tabValue} index="update">
+                <SystemUpdatePanel/>
             </SimpleTabPanel>}
             {canExportImport && <SimpleTabPanel value={tabValue} index="export">
                 <Typography variant="h4" component="h2" gutterBottom>{_t('SystemContainer.exportImport')}</Typography>

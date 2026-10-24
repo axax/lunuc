@@ -238,7 +238,7 @@ export default () => {
                             style={{
                                 fontWeight: 'bold',
                                 cursor: 'pointer',
-                                color: '#663366',
+                                color: 'inherit',
                                 textDecoration: 'underline'
                             }}>{slugWithoutSlugContext || <WebIcon/>}</span></Link>
                     }
@@ -478,12 +478,13 @@ export default () => {
                 // override default
                 props.children = [dataToEdit && <Typography key="CmsPageLabel" variant="subtitle1" gutterBottom>
                     <Link
+                        style={{color: 'inherit'}}
                         to={cmsPageEditorUrl(dataToEdit.slug, meta.TypeContainer.pageParams._version)}>
                         <span
                             style={{
                                 fontWeight: 'bold',
                                 cursor: 'pointer',
-                                color: '#663366',
+                                color: 'inherit',
                                 textDecoration: 'underline'
                             }}>{_t('CmsPageEdit.goToEditor')}</span></Link>
                 </Typography>,

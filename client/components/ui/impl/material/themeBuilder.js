@@ -511,6 +511,9 @@ export const buildTheme = (colors, mode = 'light') => createTheme({
                     fontSize: '0.875rem',
                     padding: '13px 16px',
                     color: colors.textPrimary,
+                    '& a, & a:visited': {
+                        color: colors.primary,
+                    },
                 },
                 head: {
                     borderBottom: `1px solid ${colors.grey200} !important`,

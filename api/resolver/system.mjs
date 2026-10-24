@@ -29,6 +29,7 @@ import {SECRET_KEY} from '../constants/index.mjs'
 import {MONGO_URL} from '../database.mjs'
 import {isTemporarilyBlocked} from '../../server/util/requestBlocker.mjs'
 import {clientAddress} from "../../util/host.mjs";
+import {getSystemUpdateInfo, getSystemUpdateStatus, startSystemUpdate} from '../util/systemUpdate.mjs'
 
 const SKIP_CAPABILITY_CHECK = ['ls -l', 'pwd', 'ls', 'ping lunuc.com']
 const ENDOFCOMMAND = '__ENDOFCOMMAND__\n'
@@ -599,9 +600,22 @@ export const systemResolver = (db) => ({
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_ADMIN_OPTIONS)
 
             return {dbUrl:MONGO_URL}
+        },
+        // update via git tracking branch + shell/start.sh, see api/util/systemUpdate.mjs
+        systemUpdateInfo: async ({fetch}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
+            return getSystemUpdateInfo({fetch: !!fetch})
+        },
+        systemUpdateStatus: async ({}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
+            return getSystemUpdateStatus()
         }
     },
     Mutation: {
+        startSystemUpdate: async ({restart}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
+            return startSystemUpdate({restart: restart || 'all'})
+        },
         importTypeFiles: async ({type, data, dryRun, createMissing}, {context}) => {
             return importTypeFiles({db, context, type, data, dryRun, createMissing})
         },

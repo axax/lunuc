@@ -226,7 +226,8 @@ export const clearFetchById = (id) => {
 
 const FETCHING_BY_CACHEKEY = {}
 
-export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, query, variables, hiddenVariables, fetchPolicy = CACHE_FIRST, lang, headersExtra, retries = 1}) => {
+// silent: errors are only passed to the caller (rejected), no global error message (e.g. polling while the api restarts)
+export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, query, variables, hiddenVariables, fetchPolicy = CACHE_FIRST, lang, headersExtra, retries = 1, silent = false}) => {
 
     if (!query) {
         console.error('query is missing in finalFetch')
@@ -383,7 +384,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
                                 rejectData.error = response.errors[0]
                                 // a conflict while saving a cms page is handled by the editor itself (dialog)
                                 if (rejectData.error.key !== 'cms_page_conflict') {
-                                    _app_.dispatcher.addError({
+                                    if (!silent) _app_.dispatcher.addError({
                                         key: 'graphql_error',
                                         msg: rejectData.error.message
                                     })
@@ -418,7 +419,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
                             }
 
                             console.error('graphql post-processing error', error, {query, variables})
-                            _app_.dispatcher.addError({
+                            if (!silent) _app_.dispatcher.addError({
                                 key: 'graphql_error',
                                 msg: (error?.message || String(error)) + (error?.path ? ' (in operation ' + error.path.join('/') + ')' : '')
                             })
@@ -437,7 +438,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
 
                         finalizeRequest()
                         reject({error: {message: r.statusText}, loading: false, networkStatus: NetworkStatus.error})
-                        _app_.dispatcher.addError({
+                        if (!silent) _app_.dispatcher.addError({
                             key: 'api_error',
                             msg: r.status + ' - ' + r.statusText,
                             meta: {query, variables}
@@ -494,7 +495,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
                         }
                     }
 
-                    _app_.dispatcher.addError({
+                    if (!silent) _app_.dispatcher.addError({
                         key: 'api_error',
                         msg,
                         meta: {
@@ -580,8 +581,8 @@ _app_.CACHE_ALIASES = CACHE_ALIASES
 const resolveAlias = (cacheKey) => CACHE_ALIASES[cacheKey] || cacheKey
 
 export const client = {
-    query: ({query, variables, fetchPolicy, timeout, id}) => {
-        return finalFetch({id, timeout, query, variables, fetchPolicy})
+    query: ({query, variables, fetchPolicy, timeout, id, silent}) => {
+        return finalFetch({id, timeout, query, variables, fetchPolicy, silent})
     },
     clearCacheWith: ({start}) => {
         const clearedKeys = []
@@ -706,8 +707,8 @@ export const client = {
             delete CACHE_ALIASES[key]
         }
     },
-    mutate: ({mutation, variables, update, optimisticResponse}, _ref) => {
-        const res = finalFetch({type: RequestType.mutate, query: mutation, variables})
+    mutate: ({mutation, variables, update, optimisticResponse, silent}, _ref) => {
+        const res = finalFetch({type: RequestType.mutate, query: mutation, variables, silent})
 
         if (update) {
             let proxy = client
