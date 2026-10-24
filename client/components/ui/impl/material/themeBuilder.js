@@ -232,6 +232,12 @@ export const buildTheme = (colors, mode = 'light') => createTheme({
                         transform: 'translateY(-1px)',
                     },
                     '&:active': { transform: 'translateY(0px)' },
+                    '&.Mui-disabled': {
+                        background: colors.grey200,
+                        color: colors.textSecondary,
+                        boxShadow: 'none',
+                        opacity: 0.85,
+                    },
                 },
                 containedSecondary: {
                     background: `linear-gradient(135deg, ${colors.secondary} 0%, ${colors.secondaryDark} 100%)`,
@@ -239,6 +245,12 @@ export const buildTheme = (colors, mode = 'light') => createTheme({
                     '&:hover': {
                         boxShadow: `0 6px 20px rgba(${colors.secondaryRgb},0.45)`,
                         transform: 'translateY(-1px)',
+                    },
+                    '&.Mui-disabled': {
+                        background: colors.grey200,
+                        color: colors.textSecondary,
+                        boxShadow: 'none',
+                        opacity: 0.85,
                     },
                 },
                 outlined: {
