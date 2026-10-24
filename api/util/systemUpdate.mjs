@@ -203,6 +203,7 @@ export const getSystemUpdateStatus = async () => {
         running: await isUpdateRunning(status),
         state: status.state || null,
         restart: status.restart || null,
+        force: !!status.force,
         exitCode: status.exitCode !== undefined ? status.exitCode : null,
         from: status.from || null,
         to: status.to || null,
@@ -214,7 +215,7 @@ export const getSystemUpdateStatus = async () => {
 
 const shellQuote = str => `'${String(str).replace(/'/g, `'\\''`)}'`
 
-export const startSystemUpdate = async ({restart = 'all'}) => {
+export const startSystemUpdate = async ({restart = 'all', force = false}) => {
     if (RESTART_OPTIONS.indexOf(restart) < 0) {
         throw new Error(`Invalid restart option "${restart}"`)
     }
@@ -234,7 +235,7 @@ export const startSystemUpdate = async ({restart = 'all'}) => {
     }
 
     // sh instead of executing the file directly -> the executable bit of start.sh does not matter
-    const command = `exec /bin/sh ${shellQuote(START_SCRIPT)} -r ${restart} > ${shellQuote(LOG_FILE)} 2>&1`
+    const command = `exec /bin/sh ${shellQuote(START_SCRIPT)} -r ${restart}${force ? ' -f' : ''} > ${shellQuote(LOG_FILE)} 2>&1`
 
     if (launcher.method === 'detached') {
         const child = spawn('/bin/sh', ['-c', command], {cwd: ROOT_DIR, detached: true, stdio: 'ignore', env: process.env})
@@ -257,7 +258,7 @@ export const startSystemUpdate = async ({restart = 'all'}) => {
         }
     }
 
-    console.log(`System update started (${launcher.method}, restart=${restart})`)
+    console.log(`System update started (${launcher.method}, restart=${restart}, force=${!!force})`)
 
     // give start.sh a moment to write its status
     await new Promise(resolve => setTimeout(resolve, 500))

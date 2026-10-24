@@ -612,9 +612,9 @@ export const systemResolver = (db) => ({
         }
     },
     Mutation: {
-        startSystemUpdate: async ({restart}, {context}) => {
+        startSystemUpdate: async ({restart, force}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
-            return startSystemUpdate({restart: restart || 'all'})
+            return startSystemUpdate({restart: restart || 'all', force: !!force})
         },
         importTypeFiles: async ({type, data, dryRun, createMissing}, {context}) => {
             return importTypeFiles({db, context, type, data, dryRun, createMissing})

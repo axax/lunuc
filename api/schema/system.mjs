@@ -161,6 +161,7 @@ export const systemSchemaRaw = `
         running: Boolean
         state: String
         restart: String
+        force: Boolean
         exitCode: Int
         from: String
         to: String
@@ -196,7 +197,7 @@ export const systemSchemaRaw = `
       
     type Mutation {   	
     	createDbIndexes: GenericResult    
-    	startSystemUpdate(restart: String): SystemUpdateStatus
+    	startSystemUpdate(restart: String, force: Boolean): SystemUpdateStatus
     	dropDbIndexes(name: String!, indexes: [String]!): GenericResult   	
     	createBackup(type: String!, options: String): Backup    	
     	removeBackup(type: String!, name: String!): RemoveBackupResult   

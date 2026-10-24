@@ -2,7 +2,11 @@
 #
 # Update lunuc: git pull, npm install, build and restart the services.
 #
-#   start.sh -r all|api|client|none
+#   start.sh -r all|api|client|none [-f]
+#
+#   -f  force: local changes and local commits are overwritten with the tracking branch
+#       (git reset --hard). Changes are saved with "git stash" first, "git stash list" shows them.
+#       Untracked and ignored files (dbscripts, uploads, local_tmp, ...) are not touched.
 #
 # Works with and without sudo:
 #   sudo /opt/lunuc/shell/start.sh -r all
@@ -15,11 +19,13 @@
 set -e
 
 restart=none
-while getopts r: flag
+force=false
+while getopts r:f flag
 do
     case "${flag}" in
         r) restart=${OPTARG};;
-        *) echo "usage: $0 [-r all|api|client|none]"; exit 2;;
+        f) force=true;;
+        *) echo "usage: $0 [-r all|api|client|none] [-f]"; exit 2;;
     esac
 done
 
@@ -55,8 +61,8 @@ TO=""
 write_status() {
     {
         mkdir -p "$STATUS_DIR" &&
-        printf '{"state":"%s","exitCode":%s,"restart":"%s","from":"%s","to":"%s","startedAt":"%s","finishedAt":"%s","pid":%s}\n' \
-            "$1" "${2:-null}" "$restart" "$FROM" "$TO" "$STARTED_AT" "${3:-}" "$$" > "$STATUS_FILE.tmp" &&
+        printf '{"state":"%s","exitCode":%s,"restart":"%s","force":%s,"from":"%s","to":"%s","startedAt":"%s","finishedAt":"%s","pid":%s}\n' \
+            "$1" "${2:-null}" "$restart" "$force" "$FROM" "$TO" "$STARTED_AT" "${3:-}" "$$" > "$STATUS_FILE.tmp" &&
         mv -f "$STATUS_FILE.tmp" "$STATUS_FILE"
     } 2>/dev/null || true
 }
@@ -73,10 +79,20 @@ trap on_exit EXIT
 
 write_status running
 
-echo "=== $(date) update lunuc in $ROOT_DIR as $(id -un), restart: $restart"
+echo "=== $(date) update lunuc in $ROOT_DIR as $(id -un), restart: $restart, force: $force"
 
-echo "=== git pull"
-$GIT pull --ff-only
+if [ "$force" = true ]; then
+    echo "=== git fetch + reset --hard (force)"
+    $GIT fetch
+    if [ -n "$($GIT status --porcelain --untracked-files=no)" ]; then
+        # keep the local changes recoverable: git stash list / git stash show -p
+        $GIT stash push -m "lunuc update $STARTED_AT (force)"
+    fi
+    $GIT reset --hard '@{u}'
+else
+    echo "=== git pull"
+    $GIT pull --ff-only
+fi
 TO=$($GIT rev-parse --short HEAD)
 write_status running
 echo "version: $FROM -> $TO"

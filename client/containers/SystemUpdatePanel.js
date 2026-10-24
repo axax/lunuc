@@ -1,5 +1,5 @@
 import React from 'react'
-import {Typography, Button, Chip, Box, Select, MenuItem, FormControl, InputLabel, LinearProgress, SimpleDialog} from 'ui/admin'
+import {Typography, Button, Chip, Box, Select, MenuItem, FormControl, InputLabel, LinearProgress, SimpleDialog, Checkbox, FormControlLabel} from 'ui/admin'
 import {_t} from 'util/i18n.mjs'
 import {client} from '../middleware/graphql'
 import Util from 'client/util/index.mjs'
@@ -19,9 +19,9 @@ const INFO_QUERY = `query systemUpdateInfo($fetch:Boolean){systemUpdateInfo(fetc
     branch upstream currentVersion buildNumber latestVersion ahead behind dirtyFiles dependenciesChanged checkedAt fetchError error runAs launcher cannotUpdateReason
     current{hash shortHash date author subject} latest{hash shortHash date author subject}
     commits{hash shortHash date author subject}}}`
-const STATUS_FIELDS = 'running state restart exitCode from to startedAt finishedAt log'
+const STATUS_FIELDS = 'running state restart force exitCode from to startedAt finishedAt log'
 const STATUS_QUERY = `query systemUpdateStatus{systemUpdateStatus{${STATUS_FIELDS}}}`
-const START_MUTATION = `mutation startSystemUpdate($restart:String){startSystemUpdate(restart:$restart){${STATUS_FIELDS}}}`
+const START_MUTATION = `mutation startSystemUpdate($restart:String,$force:Boolean){startSystemUpdate(restart:$restart,force:$force){${STATUS_FIELDS}}}`
 
 const StyledLog = styled('pre')(({theme}) => ({
     background: theme.palette.mode === 'dark' ? '#111' : '#1e1e1e',
@@ -68,7 +68,7 @@ class SystemUpdatePanel extends React.Component {
 
     state = {
         info: null, infoLoading: false, infoError: null,
-        status: null, phase: 'idle', restart: 'all', confirm: false, startError: null
+        status: null, phase: 'idle', restart: 'all', force: false, confirm: false, startError: null
     }
 
     componentDidMount() {
@@ -106,10 +106,10 @@ class SystemUpdatePanel extends React.Component {
     }
 
     startUpdate() {
-        const {restart} = this.state
+        const {restart, force} = this.state
         this.setState({confirm: false, startError: null, phase: 'running', status: null})
         this._failedPolls = 0
-        silentMutation(START_MUTATION, {restart}).then(data => {
+        silentMutation(START_MUTATION, {restart, force}).then(data => {
             if (this._unmounted) return
             this.setState({status: data.startSystemUpdate})
             this.poll()
@@ -155,7 +155,7 @@ class SystemUpdatePanel extends React.Component {
 
     renderStatusChip(info) {
         if (info.error) return <Chip color="error" label={_t('SystemUpdate.error')}/>
-        if (info.behind > 0) return <Chip color="warning" label={_t('SystemUpdate.behind', {count: info.behind, upstream: info.upstream})}/>
+        if (info.behind > 0) return <Chip color="warning" label={_t(info.behind === 1 ? 'SystemUpdate.behindOne' : 'SystemUpdate.behind', {count: info.behind, upstream: info.upstream})}/>
         return <Chip color="success" label={_t('SystemUpdate.upToDate')}/>
     }
 
@@ -229,9 +229,11 @@ class SystemUpdatePanel extends React.Component {
     }
 
     renderUpdate() {
-        const {info, status, phase, restart, startError} = this.state
+        const {info, status, phase, restart, force, startError} = this.state
         const busy = phase === 'running' || phase === 'restarting'
-        const blocked = !info || !!info.cannotUpdateReason || (info.dirtyFiles && info.dirtyFiles.length > 0) || !!info.error
+        // local changes / local commits let "git pull --ff-only" fail -> only possible with force (git reset --hard)
+        const hasLocalChanges = !!info && ((info.dirtyFiles && info.dirtyFiles.length > 0) || info.ahead > 0)
+        const blocked = !info || !!info.cannotUpdateReason || !!info.error || (hasLocalChanges && !force)
 
         return <>
             <Typography variant="h5" component="h3" sx={{mt: 3}} gutterBottom>{_t('SystemUpdate.runUpdate')}</Typography>
@@ -250,9 +252,17 @@ class SystemUpdatePanel extends React.Component {
                         <MenuItem value="none">{_t('SystemUpdate.restartNone')}</MenuItem>
                     </Select>
                 </FormControl>
-                <Button variant="contained" color="primary" disabled={busy || blocked}
-                        onClick={() => this.setState({confirm: true})}>{_t('SystemUpdate.updateNow')}</Button>
+                <Button variant="contained" color={force ? 'error' : 'primary'} disabled={busy || blocked}
+                        onClick={() => this.setState({confirm: true})}>{_t(force ? 'SystemUpdate.forceUpdateNow' : 'SystemUpdate.updateNow')}</Button>
             </Box>
+
+            {hasLocalChanges && <Box sx={{mb: 2}}>
+                <FormControlLabel
+                    control={<Checkbox checked={force} disabled={busy} onChange={e => this.setState({force: e.target.checked})}/>}
+                    label={_t('SystemUpdate.force')}/>
+                <Typography variant="caption" component="div" sx={{color: 'text.secondary', ml: 4}}>
+                    {_t('SystemUpdate.forceHint')}</Typography>
+            </Box>}
 
             {startError && <Typography color="error" gutterBottom>{startError}</Typography>}
 
@@ -287,6 +297,7 @@ class SystemUpdatePanel extends React.Component {
                           }}
                           actions={[{key: 'no', label: _t('SystemContainer.cancel')}, {key: 'yes', label: _t('SystemUpdate.updateNow'), type: 'primary'}]}>
                 {_t('SystemUpdate.confirmText', {restart})}
+                {force && <Typography color="error" sx={{mt: 2}}>{_t('SystemUpdate.confirmForce', {count: (info?.dirtyFiles?.length || 0) + (info?.ahead || 0)})}</Typography>}
             </SimpleDialog>
         </>
     }

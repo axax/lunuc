@@ -18,6 +18,24 @@ const report = (type, data) => {
 
 const EXTENSION_URL_RE = /^(chrome|moz|safari)-extension/
 
+// Detects errors from scripts injected by the browser/app into the page (e.g. WKUserScript in iOS
+// browsers, Brave wallet, password managers). Those report the page url as filename, line 1 and a tiny
+// column ("global code@https://example.com/:1:16"), while our own inline scripts sit further down in
+// the html and our bundles have their own filename. Scripts embedded by the page itself (also from
+// other origins) are still reported.
+const isInjectedScript = (e) => {
+    const file = e.filename
+    if (!file) return false
+    try {
+        const url = new URL(file, window.location.href)
+        const strip = u => u.split('#')[0]
+        if (strip(url.href) === strip(window.location.href) && e.lineno <= 1 && e.colno < 100) return true
+    } catch (err) {
+        // invalid url -> treat as our own
+    }
+    return false
+}
+
 export default () => {
 
     window.addEventListener('error', (e) => {
@@ -26,6 +44,9 @@ export default () => {
 
         // ignore errors from browser extensions
         if (e.filename && EXTENSION_URL_RE.test(e.filename)) return
+
+        // ignore errors from scripts injected into the page by the browser/app
+        if (isInjectedScript(e)) return
 
         report('error', e)
     })
