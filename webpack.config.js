@@ -400,6 +400,7 @@ if (DEV_MODE) {
             }
         },
         new CompressionPlugin({
+            exclude: /\.map$/, // source maps are only loaded by devtools, no need to precompress
             minRatio: 0.95
         }),
         new CompressionPlugin({
@@ -410,6 +411,7 @@ if (DEV_MODE) {
                     [zlib.constants.BROTLI_PARAM_QUALITY]: 11,
                 },
             },
+            exclude: /\.map$/,
             threshold: 10240,
             minRatio: 0.95,
         })

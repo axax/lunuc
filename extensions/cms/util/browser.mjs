@@ -17,7 +17,7 @@ const addToWebsiteQueue = async (processData) => {
     const {cacheKey,segment,resolvedData,dataKey} = processData
 
     if (cacheKey) {
-        const cachedData = Cache.cache[cacheKey] // Cache.get(cacheKey, true)
+        const cachedData = Cache.peek(cacheKey) // also returns expired entries (stale-while-revalidate)
         if (cachedData) {
             resolvedData[dataKey] = cachedData.data
             if (Cache.isValid(cachedData)) {

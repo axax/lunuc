@@ -5,7 +5,7 @@
 import AdmZip from 'adm-zip'
 import path from 'path'
 
-export const MAX_ZIP_ENTRIES = 5000
+export const MAX_ZIP_ENTRIES = 50000
 export const MAX_UNCOMPRESSED_SIZE = 100 * 1024 * 1024
 
 export const filesToZip = (files, {rootFolder} = {}) => {
@@ -23,7 +23,8 @@ export const filesToZip = (files, {rootFolder} = {}) => {
 export const zipToFiles = (buffer, {filter} = {}) => {
     const zip = new AdmZip(buffer)
     const entries = zip.getEntries()
-    if (entries.length > MAX_ZIP_ENTRIES) {
+    // hard upper bound on the raw entry count (protects against zip bombs with millions of entries)
+    if (entries.length > MAX_ZIP_ENTRIES * 4) {
         throw new Error(`zip contains too many entries (${entries.length})`)
     }
     let totalSize = 0
@@ -36,6 +37,9 @@ export const zipToFiles = (buffer, {filter} = {}) => {
             throw new Error(`invalid path in zip: "${name}"`)
         }
         if (filter && !filter(name)) continue
+        if (files.length >= MAX_ZIP_ENTRIES) {
+            throw new Error(`zip contains too many files (more than ${MAX_ZIP_ENTRIES})`)
+        }
         totalSize += entry.header.size
         if (totalSize > MAX_UNCOMPRESSED_SIZE) {
             throw new Error('zip is too large')

@@ -4,6 +4,9 @@ import {registerWatchdogActivity} from './eventLoopWatchdog.mjs'
  */
 
 const SWEEP_EVERY_N_SETS = 100
+// expired entries are kept this long before sweep() removes them, so callers
+// doing stale-while-revalidate via peek() can still serve the old data
+const STALE_GRACE_MS = 60 * 60 * 1000
 
 const Cache = {
     cache: Object.create(null),
@@ -42,10 +45,38 @@ const Cache = {
         delete Cache.cache[realKey]
         return
     },
+    /* returns the raw entry {data, validUntil} even if it is expired (no deletion) */
+    peek: function (key) {
+        const o = Cache.cache[key]
+        if (o !== undefined) {
+            return o
+        }
+        const realKey = Cache.aliases[key]
+        return realKey === undefined ? undefined : Cache.cache[realKey]
+    },
+    keys: function () {
+        return Object.keys(Cache.cache)
+    },
+    size: function () {
+        return Object.keys(Cache.cache).length
+    },
+    /* raw key -> entry map, for diagnostics only - do not mutate */
+    getAll: function () {
+        return Cache.cache
+    },
+    /* removes everything incl. aliases, returns the number of removed entries */
+    clearAll: function () {
+        const count = Cache.size()
+        Cache.notifyClear([''])
+        Cache.cache = Object.create(null)
+        Cache.aliases = Object.create(null)
+        Cache.setCount = 0
+        return count
+    },
     isValid: function (o) {
         return o.validUntil === 0 || Date.now() < o.validUntil
     },
-    /* removes all expired entries and aliases pointing to removed keys */
+    /* removes entries expired for longer than STALE_GRACE_MS and aliases pointing to removed keys */
     sweep: function () {
         const now = Date.now()
         const sweepStart = performance.now()
@@ -53,7 +84,7 @@ const Cache = {
 
         for (const key of Object.keys(Cache.cache)) {
             const o = Cache.cache[key]
-            if (o.validUntil !== 0 && now >= o.validUntil) {
+            if (o.validUntil !== 0 && now - o.validUntil >= STALE_GRACE_MS) {
                 delete Cache.cache[key]
                 removed++
             }

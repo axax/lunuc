@@ -99,7 +99,7 @@ export const systemResolver = (db) => ({
                         userId: context.id,
                         subscribeRun: {
                             event: 'end',
-                            response: `${Object.keys(Cache.cache).length} cached items cleared.`,
+                            response: `${Cache.size()} cached items cleared.`,
                             id: currentId
                         }
                     })
@@ -108,9 +108,8 @@ export const systemResolver = (db) => ({
                     //rmDir(path.join(ABS_UPLOAD_DIR, '/screenshots'), true)
 
 
-                    Cache.cache = {}
-                    // tell cache listeners (e.g. dataResolver workers) that everything was cleared
-                    Cache.notifyClear([''])
+                    // also notifies cache listeners (e.g. dataResolver workers)
+                    Cache.clearAll()
 
                 } else if (command === 'memusage') {
                     const memusage = process.memoryUsage().heapUsed / 1024 / 1024

@@ -322,7 +322,6 @@ const resolveSystemData = async ({segment, req, resolvedData, context, db}) => {
     const data = {}
     if (segment.system.properties) {
         data.properties = ApiUtil.systemProperties()
-        //Object.keys(Cache.cache).length
     }
     if (segment.system.ls) {
         data.ls = {}
@@ -342,19 +341,19 @@ const resolveSystemData = async ({segment, req, resolvedData, context, db}) => {
         data.cache = {}
         if (segment.system.cache.data) {
             if(segment.system.cache.data.keysOnly){
-                data.cache.data = Object.keys(Cache.cache).map(key=>({key}))
+                data.cache.data = Cache.keys().map(key=>({key}))
             }else {
-                data.cache.data = Cache.cache
+                data.cache.data = Cache.getAll()
             }
         }
         if (segment.system.cache.count) {
-            data.cache.count = Object.keys(Cache.cache).length
+            data.cache.count = Cache.size()
         }
         if (segment.system.cache.size) {
-            data.cache.size = JSON.stringify(Cache.cache).length
+            data.cache.size = JSON.stringify(Cache.getAll()).length
         }
         if (segment.system.cache.sizePerKey) {
-            data.cache.sizePerKey = Object.keys(Cache.cache).map(key=>({key,size:JSON.stringify(Cache.cache[key]).length}))
+            data.cache.sizePerKey = Cache.keys().map(key=>({key,size:JSON.stringify(Cache.peek(key)).length}))
         }
     }
     if (segment.system.client) {
@@ -421,7 +420,7 @@ async function resolveRequest({segment, resolvedData, context, addDataResolverSu
     const dataKey = segment.key || 'request'
     const cacheKey = createCacheKey(segment, 'request')
     if (cacheKey) {
-        const cachedData = Cache.cache[cacheKey]
+        const cachedData = Cache.peek(cacheKey) // also returns expired entries (stale-while-revalidate)
         if (cachedData) {
             resolvedData[dataKey] = cachedData.data
             if (Cache.isValid(cachedData)) {
