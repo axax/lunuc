@@ -90,6 +90,15 @@ const parser = (md, options = {}) => {
     // -----------------------------------------------------------------
     // 2️⃣ Helper: turn a Markdown table string into an HTML <table>
     // -----------------------------------------------------------------
+    // <br> inside a cell is THE way to break a line in a GFM table (a real newline
+    // ends the row) - the escaped tag is turned back into a break there, but not
+    // inside inline code, where it is meant as text. <br> carries no content and
+    // cannot swallow anything, so this does not weaken the escaping.
+    const cellBreaks = c => escapeHtml
+        ? c.split(/(<code>[\s\S]*?<\/code>)/).map((part, i) =>
+            i % 2 ? part : part.replace(/&lt;br\s*\/?&gt;/gi, '<br/>')).join('')
+        : c;
+
     const markdownTableToHtml = tableMd => {
         // split into lines, drop empty ones
         const lines = tableMd.trim().split('\n').filter(l => l.trim() !== '');
@@ -99,7 +108,7 @@ const parser = (md, options = {}) => {
             .replace(/^\|/, '')   // remove leading pipe
             .replace(/\|$/, '')   // remove trailing pipe
             .split('|')
-            .map(c => c.trim());
+            .map(c => cellBreaks(c.trim()));
 
         // Plain-text version of the headers for data-label: strip any inline HTML
         // that may already be present (<b>, <code>, …) and escape attribute
@@ -134,7 +143,7 @@ const parser = (md, options = {}) => {
                 .replace(/^\|/, '')
                 .replace(/\|$/, '')
                 .split('|')
-                .map(c => c.trim());
+                .map(c => cellBreaks(c.trim()));
             return cells;
         });
 
