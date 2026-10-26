@@ -9,6 +9,8 @@ import IconButton from '@mui/material/IconButton'
 import MenuIcon from '@mui/icons-material/Menu'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import styled from '@emotion/styled'
+import ResizeHandle from '../../../../ResizeHandle'
+import {_t} from 'util/i18n.mjs'
 
 const DRAWER_WIDTH_DEFAULT = 540
 
@@ -90,25 +92,11 @@ const StyledDrawerHeader = styled('div')(({ theme }) => ({
     ...theme.mixins.toolbar
 }))
 
-const StyledDrawerDivider = styled('div', {
-    shouldForwardProp: (prop) => prop !== 'active',
-})(({ active }) => ({
-    position: 'absolute',
-    width: '4px',
-    background: 'black',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    cursor: 'ew-resize',
-    zIndex: 999,
-    opacity: 0,
-    '&:hover': {
-        opacity: 1
-    },
-    ...(active && {
-        opacity: 1
-    })
-}))
+// drag handle on the right edge of the drawer (same as the resizer of the element palette in GenericForm),
+// above the drawer content
+const StyledDrawerDivider = styled(ResizeHandle)({
+    zIndex: 999
+})
 
 const StyledResizeOverlay = styled('div')({
     position: 'fixed',
@@ -215,8 +203,18 @@ class DrawerLayout extends React.Component {
     }
 
     dividerMouseDown = (e) => {
+        // no text selection while dragging
+        e.preventDefault()
         this.mouseDividerPos = e.pageX
         this.setState({isResizing: true})
+    }
+
+    dividerDoubleClick = () => {
+        this.setState({drawerWidth: DRAWER_WIDTH_DEFAULT})
+        const {onDrawerWidthChange} = this.props
+        if (onDrawerWidthChange) {
+            onDrawerWidthChange(DRAWER_WIDTH_DEFAULT)
+        }
     }
 
     dividerMouseMove = (e) => {
@@ -309,7 +307,10 @@ class DrawerLayout extends React.Component {
                         </StyledDrawerHeader>
                         <Divider/>
                         {open && sidebar}
-                        <StyledDrawerDivider onMouseDown={this.dividerMouseDown} active={isResizing}/>
+                        <StyledDrawerDivider onMouseDown={this.dividerMouseDown}
+                                             onDoubleClick={this.dividerDoubleClick}
+                                             title={_t('CmsElement.resizeHint')}
+                                             active={isResizing}/>
                     </StyledDrawer>
                     <StyledContent data-layout-content="true" style={contentFixed} fixed={fixedLayout} open={open}>
                         {children}

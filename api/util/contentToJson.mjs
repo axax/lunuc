@@ -8,7 +8,8 @@
  *
  * Supported: Word (.docx), PDF (text, tables are recognized by the position of the text), Excel (.xlsx/.xlsm/.xls/.csv
  * -> tables), HTML / web page (url), Markdown / text, pictures. Pages, Numbers, .doc, .odt, .rtf are converted with
- * LibreOffice (if installed, SOFFICE_PATH) to Word / Excel first; Pages without LibreOffice: embedded pdf preview.
+ * LibreOffice (if installed, SOFFICE_PATH) to Word / Excel first; Numbers without LibreOffice: read with SheetJS;
+ * Pages without LibreOffice: embedded pdf preview.
  * Tables keep colspan / rowspan, header rows and the alignment (style="text-align:.."). Text becomes rich text elements (headings, lists, tables, links are kept),
  * pictures become image elements: they are stored as Media (scaled down to max. 2400px).
  *
@@ -37,9 +38,17 @@ const genId = () => 'genid_' + crypto.randomBytes(5).toString('hex').slice(0, 8)
 
 // ---------- elements ----------
 
+/**
+ * text that is stored in a JsonDom template: the template is evaluated as a js template literal, so a backtick
+ * (e.g. 12`000 as thousands separator) or ${ in the content would break it. Escaped as the cms editor does it.
+ */
+export const escapeTemplateText = str => String(str === undefined || str === null ? '' : str)
+    .replace(/`/g, (m, o, s) => s[o - 1] === '\\' ? m : '\\`')
+    .replace(/\$\{/g, '$.__ignore__{')
+
 export const richTextElement = html => ({
     t: 'div',
-    $c: html,
+    $c: escapeTemplateText(html),
     $inlineEditor: {elementKey: 'richText', richText: true, options: {$c: {trKey: genId()}}},
     p: {'data-element-key': 'richText'}
 })
@@ -49,7 +58,7 @@ export const mediaRef = m => ({__typename: 'Media', _id: String(m._id), name: m.
 export const imageElement = (m, {alt = '', caption = ''} = {}) => ({
     t: 'SmartImage',
     $inlineEditor: {elementKey: 'image', picker: {type: 'Media', baseFilter: 'mimeType=image'}},
-    p: {wrapper: 'true', 'data-element-key': 'image', src: [mediaRef(m)], alt, caption}
+    p: {wrapper: 'true', 'data-element-key': 'image', src: [mediaRef(m)], alt: escapeTemplateText(alt), caption: escapeTemplateText(caption)}
 })
 
 // blocks [{type: 'html', html} | {type: 'image', media}] -> elements
@@ -706,30 +715,126 @@ export const textToHtml = (text) => {
 
 // ---------- excel -> html ----------
 
+// number as text in swiss notation: thousands with ', up to 2 decimals (0.75, 204'400, -1'250.50)
+const formatSwissNumber = v => {
+    if (!isFinite(v)) return String(v)
+    const neg = v < 0, abs = Math.abs(v)
+    const decimals = Number.isInteger(abs) ? 0 : (Math.round(abs * 100) % 10 === 0 ? 1 : 2)
+    const [int, dec] = abs.toFixed(decimals).split('.')
+    return (neg ? '-' : '') + int.replace(/\B(?=(\d{3})+(?!\d))/g, "'") + (dec ? '.' + dec : '')
+}
+
+/**
+ * Excel / Numbers / csv (read with SheetJS) -> html. Per sheet:
+ * - text rows above and below the table (rows with only one filled cell, e.g. title, introduction, remarks)
+ *   become a subtitle / paragraphs, the table is the part with rows of several values
+ * - the first row of the table is the header, merged cells become colspan / rowspan
+ * - numbers are shown in swiss notation (204'400) and right aligned, like their column header
+ * - empty rows and columns are removed
+ */
 export const excelToHtml = async (buffer, {sheet, maxRows = 500} = {}) => {
     const XLSX = (await import('xlsx')).default || (await import('xlsx'))
     const wb = XLSX.read(buffer, {type: 'buffer', cellDates: true})
     const names = sheet ? [sheet] : wb.SheetNames
     const parts = []
+    const cellText = c => {
+        if (!c || c.v === undefined || c.v === null) return {v: '', n: false}
+        if (c.t === 'n') {
+            // keep an explicit number format of the file (e.g. 12.5 %, CHF 1'000), otherwise swiss notation
+            const w = c.w !== undefined ? String(c.w).trim() : ''
+            // plain numbers and thousands formats (1,234 / 1'234 / 1 234) -> swiss notation
+            const plain = !w || /^-?[\d,'’ \u00a0]+(\.\d+)?(e[+-]?\d+)?$/i.test(w) || w === String(c.v)
+            // a year (e.g. a title or column header 2025) without thousands separator
+            const year = Number.isInteger(c.v) && c.v >= 1900 && c.v <= 2100
+            return {v: year ? String(c.v) : plain ? formatSwissNumber(c.v) : w, n: true, year}
+        }
+        if (c.t === 'd' || c.v instanceof Date) return {v: c.v.toLocaleDateString('de-CH'), n: false}
+        if (c.t === 'b') return {v: c.v ? 'ja' : 'nein', n: false}
+        if (c.t === 'e') return {v: '', n: false}
+        return {v: String(c.w !== undefined && c.t !== 's' ? c.w : c.v).trim(), n: false}
+    }
+    const cellHtml = v => esc(v).replace(/\r?\n/g, '<br>')
     names.forEach(name => {
         const ws = wb.Sheets[name]
-        if (!ws) return
-        const rows = XLSX.utils.sheet_to_json(ws, {header: 1, raw: false, defval: '', blankrows: false})
-            .filter(r => r.some(c => String(c).trim() !== ''))
-            .slice(0, maxRows)
-        if (!rows.length) return
-        // drop empty columns
-        const width = Math.max(...rows.map(r => r.length))
-        const used = []
-        for (let i = 0; i < width; i++) {
-            if (rows.some(r => String(r[i] || '').trim() !== '')) used.push(i)
+        if (!ws || !ws['!ref']) return
+        const range = XLSX.utils.decode_range(ws['!ref'])
+        range.e.r = Math.min(range.e.r, range.s.r + maxRows * 2)
+        range.e.c = Math.min(range.e.c, range.s.c + 49)
+        // merged cells: span on the top-left cell, covered cells are left out
+        const spans = {}, covered = new Set()
+        ;(ws['!merges'] || []).forEach(m => {
+            spans[m.s.r + ',' + m.s.c] = {cols: m.e.c - m.s.c + 1, rows: m.e.r - m.s.r + 1}
+            for (let r = m.s.r; r <= m.e.r; r++) for (let c = m.s.c; c <= m.e.c; c++) if (r !== m.s.r || c !== m.s.c) covered.add(r + ',' + c)
+        })
+        let rows = []
+        for (let r = range.s.r; r <= range.e.r; r++) {
+            const cells = []
+            for (let c = range.s.c; c <= range.e.c; c++) {
+                if (covered.has(r + ',' + c)) {
+                    cells.push(null)
+                    continue
+                }
+                const cell = cellText(ws[XLSX.utils.encode_cell({r, c})])
+                const span = spans[r + ',' + c]
+                if (span) {
+                    cell.span = span.cols
+                    cell.rowspan = span.rows
+                }
+                cells.push(cell)
+            }
+            if (cells.some(c => c && c.v !== '')) rows.push(cells)
         }
-        const html = rows.map((r, ri) => '<tr>' + used.map(i => {
-            const v = esc(String(r[i] === undefined ? '' : r[i]).trim())
-            return ri === 0 ? `<th>${v}</th>` : `<td>${v}</td>`
-        }).join('') + '</tr>').join('')
+        rows = rows.slice(0, maxRows)
+        if (!rows.length) return
+        // remove columns that are empty in all rows (and not covered by a merge)
+        const width = rows[0].length
+        const used = []
+        for (let i = 0; i < width; i++) if (rows.some(r => (r[i] && r[i].v !== '') || r[i] === null)) used.push(i)
+        rows = rows.map(r => used.map(i => r[i]))
+        const filled = r => r.filter(c => c && c.v !== '').length
+        // the table: from the first to the last row with several values
+        const first = rows.findIndex(r => filled(r) >= 2)
+        let last = -1
+        rows.forEach((r, i) => {
+            if (filled(r) >= 2) last = i
+        })
+        const textRows = list => list.map(r => r.filter(c => c && c.v !== '').map(c => c.v).join(' '))
         if (names.length > 1) parts.push(`<h3>${esc(name)}</h3>`)
+        if (first < 0) {
+            textRows(rows).forEach(t => parts.push(`<p>${cellHtml(t)}</p>`))
+            return
+        }
+        textRows(rows.slice(0, first)).forEach((t, i) => {
+            // a short first line is the title of the table
+            parts.push(i === 0 && names.length === 1 && t.length <= 80 && !/[.:,;]$/.test(t) ? `<h3>${esc(t)}</h3>` : `<p>${cellHtml(t)}</p>`)
+        })
+        const table = rows.slice(first, last + 1)
+        const cols = table[0].length
+        // header: the first row of the table, unless it contains values (numbers other than years)
+        const hasHeader = table.length > 1 && !table[0].some(c => c && c.n && !c.year)
+        // numeric columns: mostly numbers below the header -> header right aligned too
+        const numericCol = []
+        for (let i = 0; i < cols; i++) {
+            const body = table.slice(hasHeader ? 1 : 0).map(r => r[i]).filter(c => c && c.v !== '')
+            numericCol[i] = body.length > 0 && body.filter(c => c.n).length >= body.length / 2
+        }
+        const html = table.map((r, ri) => {
+            const isHeader = ri === 0 && hasHeader
+            // a row with only one text (e.g. a section title inside the table) spans the whole width
+            if (!isHeader && filled(r) === 1 && r[0] && r[0].v !== '' && !r[0].n) {
+                return `<tr><td colspan="${cols}"><strong>${cellHtml(r[0].v)}</strong></td></tr>`
+            }
+            return '<tr>' + r.map((c, i) => {
+                if (c === null) return ''
+                const tag = isHeader ? 'th' : 'td'
+                const right = isHeader ? numericCol[i] : c.n
+                const attrs = (c.span > 1 ? ` colspan="${c.span}"` : '') + (c.rowspan > 1 ? ` rowspan="${c.rowspan}"` : '') +
+                    (right ? ' style="text-align: right"' : '')
+                return `<${tag}${attrs}>${cellHtml(c.v)}</${tag}>`
+            }).join('') + '</tr>'
+        }).join('')
         parts.push(`<table><tbody>${html}</tbody></table>`)
+        textRows(rows.slice(last + 1)).forEach(t => parts.push(`<p>${cellHtml(t)}</p>`))
     })
     return parts.join('')
 }
@@ -1181,6 +1286,17 @@ export const convertWithLibreOffice = async (buffer, fileName, target) => {
     }
 }
 
+// SheetJS reads Numbers files (iWork 2013+) directly, without formatting
+const canReadWithSheetJs = async buffer => {
+    try {
+        const XLSX = (await import('xlsx')).default || (await import('xlsx'))
+        const wb = XLSX.read(buffer, {type: 'buffer'})
+        return wb.SheetNames.length > 0 && wb.SheetNames.some(n => wb.Sheets[n] && wb.Sheets[n]['!ref'])
+    } catch (e) {
+        return false
+    }
+}
+
 // ---------- main ----------
 
 const typeOf = (fileName, mimeType) => {
@@ -1257,6 +1373,9 @@ export const convertContent = async ({db, context, buffer, fileName = '', mimeTy
             buffer = converted
             fileName = (fileName.replace(/\.[^.]+$/, '') || 'dokument') + (toXlsx ? '.xlsx' : '.docx')
             type = toXlsx ? 'excel' : 'docx'
+        } else if (x === 'numbers' && await canReadWithSheetJs(buffer)) {
+            // without LibreOffice: Numbers files (iWork 2013 and newer) are read directly with SheetJS
+            type = 'excel'
         } else if (preview) {
             buffer = preview
             type = 'pdf'

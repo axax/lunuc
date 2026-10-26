@@ -62,6 +62,32 @@ class SimpleSelect extends React.Component {
     }
 
     searchInputRef = React.createRef()
+    menuAction = React.createRef()
+    resizeObserver = null
+
+    // MUI positions the menu only once when it opens. If its size changes afterwards (lazy loaded icons,
+    // web fonts) the menu can end up partially outside the viewport: reposition whenever the paper is
+    // resized (same as in SimpleMenu)
+    observePaper = (element) => {
+        this.disconnectObserver()
+        if (element && typeof ResizeObserver !== 'undefined') {
+            this.resizeObserver = new ResizeObserver(() => {
+                this.menuAction.current?.updatePosition()
+            })
+            this.resizeObserver.observe(element)
+        }
+    }
+
+    disconnectObserver = () => {
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect()
+            this.resizeObserver = null
+        }
+    }
+
+    componentWillUnmount() {
+        this.disconnectObserver()
+    }
 
     itemNameByValue(value) {
 
@@ -136,13 +162,20 @@ class SimpleSelect extends React.Component {
                 readOnly={readOnly}
                 onChange={onChange}
                 onClose={this.handleClose}
-                MenuProps={searchable ? {
+                MenuProps={{
+                    action: this.menuAction,
                     slotProps: {
-                        list: {sx: {pt: 0}},
-                        paper: {sx: {pt: 0}},
-                        transition: {onEntered: this.handleMenuEntered}
+                        ...(searchable ? {
+                            list: {sx: {pt: 0}},
+                            paper: {sx: {pt: 0}}
+                        } : {}),
+                        transition: {
+                            onEntering: this.observePaper,
+                            onEntered: this.handleMenuEntered,
+                            onExited: this.disconnectObserver
+                        }
                     }
-                } : undefined}
+                }}
                 slotProps={{
                     input: {
                         name,

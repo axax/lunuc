@@ -54,6 +54,7 @@ import {SimpleAutosuggest} from './ui/impl/material'
 import { CAPABILITY_MANAGE_TYPES} from '../../util/capabilities.mjs'
 import CmsViewContainer from '../../extensions/cms/containers/CmsViewContainer'
 import CmsElement from '../../extensions/cms/components/CmsElement'
+import ResizeHandle from './ResizeHandle'
 import CmsTemplatePicker from '../../extensions/cms/components/CmsTemplatePicker'
 import CmsContentImport, {addElementsToTemplate} from '../../extensions/cms/components/CmsContentImport'
 import {loadEditorStyles} from '../../extensions/cms/util/editorStyles'
@@ -185,7 +186,31 @@ const StyledCmsEditorCanvas = styled('div')(({theme}) => ({
 }))
 
 // element palette inside the editor frame (left of the canvas on desktop, above it on mobile)
-const StyledCmsElementsPanel = styled('div')(({theme, collapsed}) => ({
+const CMS_ELEMENTS_WIDTH_DEFAULT = 216, CMS_ELEMENTS_WIDTH_MIN = 140, CMS_ELEMENTS_WIDTH_MAX = 640
+const CMS_ELEMENTS_WIDTH_KEY = 'GenericForm.cmsElementsWidth'
+
+// width of the element palette, changed by dragging its right edge (stored per browser)
+const loadCmsElementsWidth = () => {
+    try {
+        const w = parseInt(window.localStorage.getItem(CMS_ELEMENTS_WIDTH_KEY))
+        if (w >= CMS_ELEMENTS_WIDTH_MIN && w <= CMS_ELEMENTS_WIDTH_MAX) return w
+    } catch (e) {
+    }
+    return CMS_ELEMENTS_WIDTH_DEFAULT
+}
+
+// drag handle on the right edge of the palette (desktop only), just outside the panel in the gap to the canvas
+const StyledCmsElementsResizer = styled(ResizeHandle)(({theme}) => ({
+    display: 'none',
+    [theme.breakpoints.up('md')]: {
+        display: 'block',
+        right: -8
+    }
+}))
+
+const StyledCmsElementsPanel = styled('div', {
+    shouldForwardProp: prop => prop !== 'collapsed' && prop !== 'panelWidth'
+})(({theme, collapsed, panelWidth}) => ({
     flexShrink: 0,
     borderRadius: '8px',
     backgroundColor: theme.palette.background.paper,
@@ -194,8 +219,8 @@ const StyledCmsElementsPanel = styled('div')(({theme, collapsed}) => ({
         // stretch to the full height of the editor frame (the canvas decides the height)
         alignSelf: 'stretch',
         position: 'relative',
-        // two dense tiles (2 x 96px) + padding + scrollbar
-        width: collapsed ? 40 : 216,
+        // default: two dense tiles (2 x 96px) + padding + scrollbar, wider by dragging the right edge
+        width: collapsed ? 40 : (panelWidth || CMS_ELEMENTS_WIDTH_DEFAULT),
         // keeps the palette usable while the canvas is still (almost) empty
         minHeight: collapsed ? 'auto' : '24rem'
     }
@@ -1385,6 +1410,8 @@ class GenericForm extends React.Component {
             state.fieldErrors[fieldKey],
             state.cmsEditorRevision && state.cmsEditorRevision[fieldKey],
             state.cmsElementsCollapsed && state.cmsElementsCollapsed[fieldKey],
+            // width of the element palette (dragged by its right edge)
+            state.cmsElementsWidth,
             props.autoFocus, props.onKeyDown, props.onButtonClick, props.values, props.id,
             ...(cacheExtra || []),
             ...(dynamic ? [state.fields, state.valuesOri, state.fieldsTmp] : [])]
@@ -1592,7 +1619,45 @@ class GenericForm extends React.Component {
                            shrink>{field.label + (languageCode ? ' [' + languageCode + ']' : '')}</InputLabel>
                {!showCmsElements && (cmsTemplatePicker || cmsContentImport) && <div style={{marginTop: 16, maxWidth: 320}}>{cmsTemplatePicker}{cmsContentImport}</div>}
                <StyledCmsEditorFrame>
-                   {showCmsElements && <StyledCmsElementsPanel collapsed={cmsElementsCollapsed}>
+                   {showCmsElements && <StyledCmsElementsPanel collapsed={cmsElementsCollapsed}
+                                                               panelWidth={this.state.cmsElementsWidth || loadCmsElementsWidth()}>
+                       {!cmsElementsCollapsed && <Tooltip title={_t('CmsElement.resizeHint')} placement="right">
+                           <StyledCmsElementsResizer
+                               onDoubleClick={() => {
+                                   this.setState({cmsElementsWidth: CMS_ELEMENTS_WIDTH_DEFAULT})
+                                   try {
+                                       window.localStorage.removeItem(CMS_ELEMENTS_WIDTH_KEY)
+                                   } catch (e) {
+                                   }
+                               }}
+                               onMouseDown={(e) => {
+                                   e.preventDefault()
+                                   const handle = e.currentTarget
+                                   const startX = e.pageX, startWidth = this.state.cmsElementsWidth || loadCmsElementsWidth()
+                                   handle.classList.add('dragging')
+                                   // overlay: the editor below must not swallow the mouse events while dragging
+                                   const overlay = document.createElement('div')
+                                   overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;cursor:ew-resize'
+                                   document.body.appendChild(overlay)
+                                   let width = startWidth
+                                   const move = ev => {
+                                       width = Math.min(CMS_ELEMENTS_WIDTH_MAX, Math.max(CMS_ELEMENTS_WIDTH_MIN, startWidth + ev.pageX - startX))
+                                       this.setState({cmsElementsWidth: width})
+                                   }
+                                   const up = () => {
+                                       document.removeEventListener('mousemove', move)
+                                       document.removeEventListener('mouseup', up)
+                                       overlay.remove()
+                                       handle.classList.remove('dragging')
+                                       try {
+                                           window.localStorage.setItem(CMS_ELEMENTS_WIDTH_KEY, String(width))
+                                       } catch (e) {
+                                       }
+                                   }
+                                   document.addEventListener('mousemove', move)
+                                   document.addEventListener('mouseup', up)
+                               }}/>
+                       </Tooltip>}
                        <StyledCmsElementsScroll collapsed={cmsElementsCollapsed}>
                        <StyledCmsElementsHeader collapsed={cmsElementsCollapsed}>
                            {!cmsElementsCollapsed && <span>{_t('CmsElement.elements')}</span>}
