@@ -8,10 +8,14 @@ import {translations} from './translations/admin'
 import {openWindow} from '../../client/util/window'
 import Util from '../../client/util/index.mjs'
 import {CAPABILITY_MANAGE_TYPES} from '../../util/capabilities.mjs'
+import {CAPABILITY_SEND_NEWSLETTER} from './constants/index.mjs'
 import GenericForm from '../../client/components/GenericForm'
 import {referencesToIds} from '../../util/typesAdmin.mjs'
+import {lazy} from '../../client/components/Async'
 
 registerTrs(translations, 'Newsletter')
+
+const SubscriberImportDialog = lazy(() => import(/* webpackChunkName: "newsletter-import" */ './components/SubscriberImportDialog'), {asyncKey: 'NewsletterSubscriberImportDialog'})
 
 const SimpleDialog = (props) => <Async {...props} expose="SimpleDialog"
                                        load={() =>import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
@@ -29,6 +33,16 @@ export default () => {
             }
         }
     })*/
+
+    Hook.on('TypeTableAction', function ({type, actions}) {
+        if (type === 'NewsletterSubscriber' && Util.hasCapability({userData: _app_.user}, CAPABILITY_SEND_NEWSLETTER)) {
+            actions.splice(4, 0, {
+                name: 'Adressen aus Excel importieren',
+                icon: 'upload',
+                onClick: () => this.setState({subscriberImportDialog: true})
+            })
+        }
+    })
 
     Hook.on('TypeTable', ({type, dataSource, data, container}) => {
         if (type === 'NewsletterMailing' && data.results.length > 0) {
@@ -179,6 +193,11 @@ export default () => {
 
 
     Hook.on('TypesContainerRender', function ({type, content}) {
+        if (type === 'NewsletterSubscriber' && this.state.subscriberImportDialog) {
+            content.push(<SubscriberImportDialog key="subscriberImportDialog"
+                                                 onClose={() => this.setState({subscriberImportDialog: false})}
+                                                 onImported={() => this.getData(this.pageParams, false)}/>)
+        }
         if (type === 'NewsletterMailing') {
             if (this.state.mailingResponse && this.state.mailingResponse.data.sendNewsletter && this.state.mailingResponse.data.sendNewsletter.status) {
                 content.push(<SimpleDialog key="mailingResponseDialog" open={true} onClose={() => {

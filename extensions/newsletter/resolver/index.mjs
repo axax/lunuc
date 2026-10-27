@@ -9,6 +9,7 @@ import {CAPABILITY_SEND_NEWSLETTER} from '../constants/index.mjs'
 import path from 'path'
 import genResolver from '../gensrc/resolver.mjs'
 import {replaceRelativeUrls} from '../../../api/util/toAbsoluteUrls.mjs'
+import {analyzeSubscriberFile, importSubscribers, removeSubscribersFromLists} from '../util/subscriberImport.mjs'
 
 export default db => ({
     Query: {
@@ -433,6 +434,24 @@ export default db => ({
             if (result.ok) {
                 return {status: 'ok'}
             }
+        }
+    },
+    Mutation: {
+        analyzeSubscriberFile: async ({data, sheet, headerRow}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_SEND_NEWSLETTER)
+            return analyzeSubscriberFile({data, sheet, headerRow})
+        },
+        removeSubscribersFromLists: async (args, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_SEND_NEWSLETTER)
+            return removeSubscribersFromLists({db, ...args})
+        },
+        importSubscribers: async ({metaMapping, ...rest}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_SEND_NEWSLETTER)
+            return importSubscribers({
+                db,
+                ...rest,
+                metaMapping: metaMapping ? JSON.parse(metaMapping) : []
+            })
         }
     }
 })
