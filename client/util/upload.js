@@ -25,6 +25,8 @@ const UploadUtil = {
             }
             xhr.onload = onLoad
             xhr.onerror = onError
+            xhr.ontimeout = onError
+            xhr.onabort = onError
 
 
             xhr.open('POST', uploadTo, true)
@@ -68,7 +70,65 @@ const UploadUtil = {
 
         req.send()
     },
-    resizeImageFromFile: ({file, conversion, onSuccess}) => {
+    // target size for a conversion, null when the image does not have to be scaled down
+    _scaledSize: (width, height, {maxWidth, maxHeight}) => {
+        let w = width, h = height
+        if (maxWidth !== undefined && (w > h || maxHeight === undefined)) {
+            if (w > maxWidth) {
+                h *= maxWidth / w
+                w = maxWidth
+            }
+        } else if (maxHeight !== undefined && h > maxHeight) {
+            w *= maxHeight / h
+            h = maxHeight
+        }
+        w = Math.round(w)
+        h = Math.round(h)
+        return w === width && h === height ? null : {width: w, height: h}
+    },
+    /**
+     * Scales an image down according to conversion[0] and resolves with a Blob.
+     * Resolves with the original file when nothing has to be done (already small enough and no
+     * other output type) or when the image cannot be decoded. Never rejects.
+     * Works without a base64 data url (no blocking toDataURL, no ArrayBuffer roundtrip) and
+     * decodes / encodes off the main thread where the browser supports it.
+     */
+    resizeImageToBlob: async ({file, conversion}) => {
+        if (!conversion || !conversion.length || typeof createImageBitmap === 'undefined') {
+            return file
+        }
+        const {quality, type} = conversion[0]
+        const outputType = type || file.type
+        let bitmap
+        try {
+            bitmap = await createImageBitmap(file)
+            const size = UploadUtil._scaledSize(bitmap.width, bitmap.height, conversion[0])
+            if (!size && outputType === file.type) {
+                // already small enough: re-encoding would only cost time and quality
+                return file
+            }
+            const {width, height} = size || {width: bitmap.width, height: bitmap.height}
+            if (typeof OffscreenCanvas !== 'undefined') {
+                const canvas = new OffscreenCanvas(width, height)
+                canvas.getContext('2d').drawImage(bitmap, 0, 0, width, height)
+                return await canvas.convertToBlob({type: outputType, quality})
+            }
+            const canvas = document.createElement('canvas')
+            canvas.width = width
+            canvas.height = height
+            canvas.getContext('2d').drawImage(bitmap, 0, 0, width, height)
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, outputType, quality))
+            return blob || file
+        } catch (e) {
+            console.warn('resizeImageToBlob: upload original file', e)
+            return file
+        } finally {
+            bitmap?.close?.()
+        }
+    },
+    // legacy callback api with a data url (used where the data url is needed as value)
+    // onSuccess(null) when the image cannot be read -> callers upload the original file
+    resizeImageFromFile: ({file, conversion, onSuccess, onError}) => {
 
         if (!conversion || !conversion.length) {
 
@@ -77,25 +137,16 @@ const UploadUtil = {
             return
         }
 
+        const objectUrl = URL.createObjectURL(file)
         const oriImg = new Image()
         oriImg.onload = () => {
+            URL.revokeObjectURL(objectUrl)
 
             //TODO support for multiple conversions
-            const {maxWidth, maxHeight, quality, type} = conversion[0]
+            const {quality, type} = conversion[0]
+            const {width, height} = UploadUtil._scaledSize(oriImg.width, oriImg.height, conversion[0]) ||
+                {width: oriImg.width, height: oriImg.height}
 
-            let width = oriImg.width, height = oriImg.height
-
-            if ( maxWidth!== undefined && (width > height || maxHeight===undefined)) {
-                if (width > maxWidth) {
-                    height *= maxWidth / width
-                    width = maxWidth
-                }
-            } else {
-                if (height > maxHeight) {
-                    width *= maxHeight / height
-                    height = maxHeight
-                }
-            }
             const canvas = document.createElement('canvas')
             canvas.width = width
             canvas.height = height
@@ -104,16 +155,20 @@ const UploadUtil = {
             ctx.clearRect(0, 0, width, height)
             ctx.drawImage(oriImg, 0, 0, width, height)
 
-            //Some update on canvas
-            /*  ctx.font = '30px serif'
-             ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'
-             ctx.fillText(file.name, 5, height - 8)*/
-
             const dataUrl = canvas.toDataURL(type || file.type, quality)
             onSuccess(dataUrl)
 
         }
-        oriImg.src = URL.createObjectURL(file)
+        oriImg.onerror = (e) => {
+            URL.revokeObjectURL(objectUrl)
+            console.warn('resizeImageFromFile: could not decode image', file.name)
+            if (onError) {
+                onError(e)
+            } else {
+                onSuccess(null)
+            }
+        }
+        oriImg.src = objectUrl
     },
     isImage: (fileName) => {
         return (/\.(?=gif|jpg|png|jpeg)/gi).test(fileName)

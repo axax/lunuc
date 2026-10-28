@@ -1,4 +1,4 @@
-import React, {useMemo, useRef, useState} from 'react'
+import React, {useEffect, useMemo, useRef, useState} from 'react'
 import {AppBar, Toolbar, Button} from '@mui/material'
 import SimpleFileExplorer from '../../../client/components/ui/impl/material/SimpleFileExplorer'
 import {client} from '../../../client/middleware/graphql'
@@ -12,6 +12,7 @@ import LibraryAddCheckRounded from '@mui/icons-material/LibraryAddCheckRounded';
 import SimpleMenu from "../../../client/components/ui/impl/material/SimpleMenu";
 import {getImageSrc} from "../../../client/util/media";
 import {_t} from '../../../util/i18n.mjs'
+import {setUploadTarget, onMediaUploaded, openUploadDialog} from './MediaUploadBar'
 
 export const createNewEntry = (item) => {
     return {
@@ -137,7 +138,7 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pa
     const changeSort = (changes) => {
         const newSort = {...sort, ...changes}
         setSort(newSort)
-        TypeContainerRef.setSettingsForType?.('Media', {treeSort: newSort})
+        TypeContainerRef.setSettingsForType?.('Media', {treeSort: newSort}, {lazy: true})
     }
     // click on a column header: same column -> toggle the direction
     const onSortChange = (field) => {
@@ -149,6 +150,9 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pa
     }
     const columns = useMemo(() => COLUMNS.map(column => ({...column, label: _t(column.label)})), [])
     const serverSort = () => `${SERVER_SORT[sortRef.current.field] || 'name'} ${sortRef.current.dir}`
+
+    // search expression or filter chips: flat result instead of the folder structure
+    const isSearch = !!(pageParams.filter || pageParams.prettyFilter)
 
     // Picker mode: the media view was opened from a TypePicker / editor to choose media
     const isPicker = !!(typeof window !== 'undefined' && window.opener && pageParams.opener)
@@ -226,6 +230,23 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pa
         })
     }
 
+    // ── upload: button, drag & drop and progress live in the shared MediaUploadBar ──
+    // it uploads into the folder that was clicked last (a file counts as its folder)
+    const targetFromItem = (item) => {
+        const folder = item?.fileType === 'doc' ? explorerRef.current?.getItem(item.parent) : item
+        return folder?.fileType === 'folder' ? {_id: folder.id, name: folder.label} : null
+    }
+
+    useEffect(() => {
+        return onMediaUploaded(({folderId, files}) => {
+            if (!files) return
+            const parentId = folderId || 'root'
+            explorerRef.current?.addItems(parentId, files.map(file => createNewEntry({
+                parent: parentId, ...file, _id: String(file._id), modifiedAt: Date.now()
+            })))
+        })
+    }, [])
+
     return <><SimpleFileExplorer
         ref={explorerRef}
         compareItems={compareItems}
@@ -240,7 +261,7 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pa
         isItemSelectionDisabled={(item) => item?.fileType === 'root' || (item?.fileType === 'folder' && (!isPicker || !isMulti))}
         onSelectionChange={setSelectedIds}
         defaultExpandedItems={defaultExpandedItems}
-        key={'mediaTree' + (pageParams.filter || '')}
+        key={'mediaTree' + (pageParams.filter || '') + (pageParams.prettyFilter || '')}
         ContextMenu={PickerContextMenu}
         enableDragAndDrop={true}
         onItemAction={(item, action, parentItem) => {
@@ -302,29 +323,12 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pa
                     }
                 })
             } else if (action.key === 'new-file') {
-                TypeContainerRef.setState({
-                    createEditDialog: true,
-                    createEditDialogOption: {
-                        variant: 'upload',
-                        dataToEdit: {
-                            group: item.id === 'root' ? [] : [item.original],
-                            createdBy: item.original.createdBy,
-                            ownerGroup: item.original.ownerGroup || []
-                        },
-                        callback: ({status, files}) => {
-                            console.log(status, files)
-                            if (status === 'success' && files?.length) {
-                                explorerRef.current?.addItems(
-                                    item.id,
-                                    files.map(file => createNewEntry({parent: item.id, ...file}))
-                                )
-                            }
-                        }
-                    }
-                })
+                setUploadTarget(targetFromItem(item))
+                openUploadDialog()
             }
         }}
         onItemClick={(event, item, isExpanded) => {
+            setUploadTarget(targetFromItem(item))
             if (event.detail === 2) {
                 item.singleClicked = false
                 event.preventDefault()
@@ -359,13 +363,13 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pa
             const mediaQueries = TypeContainerRef.getTypeQueriesFiltered('Media', {loadAll: false})
             const mediaGroupQueries = TypeContainerRef.getTypeQueriesFiltered('MediaGroup', {loadAll: false})
             const [mediaGroupResponse, mediaResponse] = await Promise.all([
-                pageParams.filter ? null : client.query({
+                isSearch ? null : client.query({
                     query: mediaGroupQueries.query, fetchPolicy: 'cache-and-network',
                     variables: {filter: `group==${id}`, limit: 500, sort: sortRef.current.field === 'created' ? `_id ${sortRef.current.dir}` : `name ${sortRef.current.dir}`}
                 }),
                 client.query({
                     query: mediaQueries.query, fetchPolicy: 'cache-and-network',
-                    variables: {filter: mediaFilter(pageParams.filter ? pageParams.filter : `group==${id}`), limit: 500, sort: serverSort()}
+                    variables: {filter: mediaFilter(isSearch ? pageParams.filter : `group==${id}`), limit: 500, sort: serverSort()}
                 })
             ])
 
@@ -420,4 +424,6 @@ export function ContextMenu({anchorPosition, onClose, item, onAction, isPicker, 
 }
 
 
-export default MediaFileExplorer
+// props (pageParams, TypeContainerRef) only change with the page params: no re-render on every
+// state change of the TypesContainer (dialogs, selection, settings)
+export default React.memo(MediaFileExplorer)

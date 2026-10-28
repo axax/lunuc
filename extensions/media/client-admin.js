@@ -14,12 +14,13 @@ import {formatBytes} from '../../client/util/format.mjs'
 import {MediaEditorWrapper} from './components/MediaEditorWrapper.js'
 import {MediaUploader} from './components/MediaUploader'
 import GenericForm from '../../client/components/GenericForm'
+import Box from '@mui/material/Box'
 import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import {getIconByKey} from '../../client/components/ui/impl/material/icon'
 import MediaFileExplorer from './components/MediaFileExplorer'
 import MediaGridExplorer from './components/MediaGridExplorer'
-import {QuickMediaUploader} from './components/QuickMediaUploader'
+import {MediaUploadBar, initUploadTarget} from './components/MediaUploadBar'
 import {ExcelSheetSelect, ExcelPreview} from './components/ExcelFields'
 
 const ImageIcon = (props) => <Async {...props} expose="ImageIcon" load={() =>import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
@@ -146,6 +147,7 @@ export default () => {
             if (userCanManageOtherUser) {
                 actions.unshift(
                     {
+                        icon:'cloudUpload',
                         name: 'Create Media dump (current results)', onClick: () => {
                             const ids = []
                             this.state.data.results.forEach(item => {
@@ -163,6 +165,7 @@ export default () => {
                         }
                     },
                     {
+                        icon:'cleanUp',
                         name: _t('Media.cleanupMedia'), onClick: () => {
                             client.query({
                                 fetchPolicy: 'network-only',
@@ -441,19 +444,16 @@ export default () => {
     })
 
 
-    Hook.on('TypesContainerRender', function ({type, content}) {
-        if (type === 'Media') {
-            content.splice(1, 1, <QuickMediaUploader key="quickMediaUploader" settings={this.settings} pageParams={this.pageParams} getData={this.getData.bind(this)}/>)
-        }
-    })
-
-
-
     Hook.on('TypesContainerBeforeRender', function ({type,typeSettings, renderOptions, pageParams}) {
         if (type === 'Media') {
-            renderOptions.stack.push(<ViewToggleButton onChange={(e,view)=>{
-                this.setSettingsForType(type, {view})
-            }} value={typeSettings.view} />)
+            initUploadTarget(typeSettings.uploadTarget)
+            // upload and view switch share the right side of the toolbar above the list
+            renderOptions.stack.push(<Box key="mediaToolbar" sx={{display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap', justifyContent: 'flex-end'}}>
+                <MediaUploadBar settings={this.settings} view={typeSettings.view} container={this}/>
+                <ViewToggleButton onChange={(e,view)=>{
+                    this.setSettingsForType(type, {view})
+                }} value={typeSettings.view} />
+            </Box>)
 
             if( typeSettings.view === 'tree'){
                 renderOptions.alternativeView = <MediaFileExplorer pageParams={pageParams} TypeContainerRef={this} />
@@ -461,7 +461,6 @@ export default () => {
                 renderOptions.alternativeView = <MediaGridExplorer pageParams={pageParams} TypeContainerRef={this} />
             }
 
-            //content.splice(1, 1, <QuickMediaUploader key="quickMediaUploader" settings={this.settings} pageParams={this.pageParams} getData={this.getData.bind(this)}/>)
         }
     })
 

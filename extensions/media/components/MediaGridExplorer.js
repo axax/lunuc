@@ -12,9 +12,7 @@ import ListItemIcon from '@mui/material/ListItemIcon'
 import ListItemText from '@mui/material/ListItemText'
 import Divider from '@mui/material/Divider'
 import LinearProgress from '@mui/material/LinearProgress'
-import CircularProgress from '@mui/material/CircularProgress'
 import Snackbar from '@mui/material/Snackbar'
-import AddRounded from '@mui/icons-material/AddRounded'
 import CreateNewFolderOutlined from '@mui/icons-material/CreateNewFolderOutlined'
 import MoreHorizRounded from '@mui/icons-material/MoreHorizRounded'
 import PlayArrowRounded from '@mui/icons-material/PlayArrowRounded'
@@ -25,13 +23,10 @@ import OpenInNewRounded from '@mui/icons-material/OpenInNewRounded'
 import DriveFileRenameOutlineRounded from '@mui/icons-material/DriveFileRenameOutlineRounded'
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded'
 import LinkRounded from '@mui/icons-material/LinkRounded'
-import CloseRounded from '@mui/icons-material/CloseRounded'
 import CloudUploadOutlined from '@mui/icons-material/CloudUploadOutlined'
-import CheckCircleRounded from '@mui/icons-material/CheckCircleRounded'
-import ErrorOutlineRounded from '@mui/icons-material/ErrorOutlineRounded'
 import {client} from '../../../client/middleware/graphql'
 import Util from '../../../client/util/index.mjs'
-import UploadUtil from '../../../client/util/upload'
+import {setUploadTarget, getUploadTarget, hasUploadTarget, onMediaUploaded, openUploadDialog} from './MediaUploadBar'
 import {getImageSrc} from '../../../client/util/media'
 import {_t} from '../../../util/i18n.mjs'
 import {
@@ -58,8 +53,6 @@ import {
 
 const PAGE_SIZE = 200
 const DRAG_TYPE = 'application/x-lunuc-media'
-const RESIZABLE_IMAGE = /^image\/(jpe?g|png|webp)$/i
-const DEFAULT_CONVERSION = [{quality: 0.9, maxWidth: 2400}]
 
 // ─── Styled components ───────────────────────────────────────────────────────
 const Root = styled('div')(({theme}) => ({
@@ -195,23 +188,6 @@ const RoundAction = styled(IconButton)(({theme}) => ({
     '&:hover': {background: theme.palette.grey[900]}
 }))
 
-const DropOverlay = styled('div')(({theme}) => ({
-    position: 'absolute',
-    inset: 8,
-    zIndex: 5,
-    borderRadius: theme.spacing(1.5),
-    border: `2px dashed ${theme.palette.primary.main}`,
-    background: alpha(theme.palette.primary.main, 0.08),
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing(1),
-    color: theme.palette.primary.main,
-    fontWeight: 500,
-    pointerEvents: 'none'
-}))
-
 const Panel = styled('aside')(({theme}) => ({
     width: 300,
     flexShrink: 0,
@@ -240,38 +216,6 @@ const Panel = styled('aside')(({theme}) => ({
     '& dt': {color: theme.palette.text.secondary},
     '& dd': {margin: 0, wordBreak: 'break-word'},
     '& .panel-hint': {color: theme.palette.text.secondary, fontSize: '0.875rem', lineHeight: 1.5}
-}))
-
-const UploadToast = styled('div')(({theme}) => ({
-    position: 'fixed',
-    left: theme.spacing(2),
-    bottom: theme.spacing(2),
-    zIndex: theme.zIndex.snackbar,
-    width: 340,
-    maxWidth: 'calc(100vw - 32px)',
-    borderRadius: theme.spacing(1),
-    overflow: 'hidden',
-    boxShadow: theme.shadows[8],
-    background: theme.palette.background.paper,
-    '& .toast-head': {
-        display: 'flex',
-        alignItems: 'center',
-        gap: theme.spacing(1),
-        minHeight: 44,
-        padding: theme.spacing(0.5, 1, 0.5, 2),
-        background: theme.palette.grey[900],
-        color: theme.palette.common.white,
-        fontWeight: 600,
-        fontSize: '0.9375rem'
-    },
-    '& .toast-body': {
-        padding: theme.spacing(1.25, 2),
-        fontSize: '0.8125rem',
-        display: 'flex',
-        alignItems: 'center',
-        gap: theme.spacing(1)
-    },
-    '& .toast-body span': {flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}
 }))
 
 const PickerBar = styled('div')(({theme}) => ({
@@ -365,11 +309,12 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
             {field, dir: sort.dir === 'asc' ? 'desc' : 'asc'} :
             {field, dir: DESC_FIRST.indexOf(field) >= 0 ? 'desc' : 'asc'}
         setSort(newSort)
-        TypeContainerRef.setSettingsForType?.('Media', {treeSort: newSort})
+        TypeContainerRef.setSettingsForType?.('Media', {treeSort: newSort}, {lazy: true})
     }
 
     // ── current folder (remembered, so the user comes back to the same place) ──
-    const isSearch = !!pageParams.filter
+    // the filter chips (pretty filter) work like the search: flat result over all folders
+    const isSearch = !!(pageParams.filter || pageParams.prettyFilter)
     const [path, setPath] = useState(() => {
         const saved = typeSettings().gridPath
         return Array.isArray(saved) ? saved.filter(entry => entry && entry._id) : []
@@ -381,7 +326,7 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
 
     const navigate = (newPath) => {
         setPath(newPath)
-        TypeContainerRef.setSettingsForType?.('Media', {gridPath: newPath.map(({_id, name}) => ({_id, name}))})
+        TypeContainerRef.setSettingsForType?.('Media', {gridPath: newPath.map(({_id, name}) => ({_id, name}))}, {lazy: true})
     }
     const openFolder = (item) => navigate([...path, {_id: item.id, name: item.label}])
 
@@ -400,11 +345,7 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
     const [resolving, setResolving] = useState(false)
     const [dragId, setDragId] = useState(null)
     const [dragOverId, setDragOverId] = useState(null)
-    const [fileDragActive, setFileDragActive] = useState(false)
-    const [upload, setUpload] = useState(null) // {total, done, failed, current, progress, finished}
     const requestRef = useRef(0)
-    const fileDragCounter = useRef(0)
-    const fileInputRef = useRef(null)
 
     // ── data ──
     const mediaFilter = (filter) => TypeContainerRef.extendFilter ? TypeContainerRef.extendFilter(filter) : filter
@@ -445,7 +386,7 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
     useEffect(() => {
         setSelectedIds([])
         load(1)
-    }, [currentFolderId, sort.field, sort.dir, pageParams.filter, pageParams.baseFilter])
+    }, [currentFolderId, sort.field, sort.dir, pageParams.filter, pageParams.prettyFilter, pageParams.baseFilter])
 
     const sortedItems = useMemo(() => [...items].sort(compareItems), [items, compareItems])
     const loadedMediaCount = items.filter(item => item.fileType === 'doc').length
@@ -593,81 +534,36 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
         setMessage(_t('MediaFileExplorer.moved', {folder: target ? target.name : _t('MediaFileExplorer.root')}))
     }
 
-    // ── upload ──
-    const conversion = () => {
-        const media = TypeContainerRef.settings?.Media
-        try {
-            if (media?.conversion?.length) return JSON.parse(media.conversion[0].conversion)
-        } catch (e) {
-            console.warn(e)
-        }
-        return DEFAULT_CONVERSION
-    }
-
-    const uploadOne = (file, folderId) => new Promise((resolve) => {
-        const send = (dataUrl) => UploadUtil.uploadData({
-            dataUrl,
-            blob: dataUrl ? undefined : file,
-            fileName: file.name,
-            uploadTo: '/graphql/upload',
-            data: {group: folderId ? [folderId] : null},
-            onProgress: (e) => e.total && setUpload(u => u && {...u, progress: Math.round(e.loaded * 100 / e.total)}),
-            onLoad: (e) => resolve(e.target.response),
-            onError: () => resolve(null)
-        })
-        if (RESIZABLE_IMAGE.test(file.type)) {
-            // same behaviour as the upload field above: big images are scaled down
-            UploadUtil.resizeImageFromFile({file, conversion: conversion(), onSuccess: send})
-        } else {
-            send(null)
-        }
-    })
-
-    const uploadFiles = async (fileList) => {
-        const files = Array.from(fileList || [])
-        if (!files.length) return
-        const folderId = currentFolderRef.current
-        setUpload({total: files.length, done: 0, failed: 0, current: files[0].name, progress: 0, finished: false})
-        for (const file of files) {
-            setUpload(u => ({...u, current: file.name, progress: 0}))
-            const response = await uploadOne(file, folderId)
-            const ok = response?.status === 'success'
-            if (ok && response.files?.length && currentFolderRef.current === folderId && !isSearch) {
-                addItems(response.files.map(entry => createNewEntry({
-                    parent: folderId, ...entry, _id: String(entry._id), modifiedAt: Date.now()
-                })))
+    // ── upload: button, drag & drop and progress live in the shared MediaUploadBar ──
+    // it uploads into the folder that is open here ...
+    // (when opened it first takes over the target chosen in another view)
+    const targetSynced = useRef(false)
+    useEffect(() => {
+        if (!targetSynced.current) {
+            targetSynced.current = true
+            if (hasUploadTarget()) {
+                const target = getUploadTarget()
+                if ((target?._id || '') !== currentFolderId) {
+                    navigate(target ? [{_id: target._id, name: target.name}] : [])
+                    return
+                }
             }
-            setUpload(u => ({...u, done: u.done + 1, failed: u.failed + (ok ? 0 : 1)}))
         }
-        setUpload(u => ({...u, finished: true}))
-    }
+        setUploadTarget(currentFolder)
+    }, [currentFolderId])
 
-    // ── drag & drop: files from the computer / moving tiles ──
+    // ... and tells us about new files
+    const isSearchRef = useRef(isSearch)
+    isSearchRef.current = isSearch
+    useEffect(() => onMediaUploaded(({folderId, files}) => {
+        if (!files || isSearchRef.current || currentFolderRef.current !== folderId) return
+        addItems(files.map(entry => createNewEntry({
+            parent: folderId, ...entry, _id: String(entry._id), modifiedAt: Date.now()
+        })))
+    }), [])
+
+    // ── drag & drop: moving tiles (files from the computer are handled by the MediaUploadBar) ──
     const isFileDrag = (e) => Array.from(e.dataTransfer?.types || []).indexOf('Files') >= 0
-
-    const gridDragProps = {
-        onDragEnter: (e) => {
-            if (!isFileDrag(e) || isSearch) return
-            e.preventDefault()
-            fileDragCounter.current++
-            setFileDragActive(true)
-        },
-        onDragOver: (e) => {
-            if (isFileDrag(e) && !isSearch) e.preventDefault()
-        },
-        onDragLeave: (e) => {
-            if (!isFileDrag(e)) return
-            fileDragCounter.current = Math.max(0, fileDragCounter.current - 1)
-            if (!fileDragCounter.current) setFileDragActive(false)
-        },
-        onDrop: (e) => {
-            if (!isFileDrag(e) || isSearch) return
-            e.preventDefault()
-            fileDragCounter.current = 0
-            setFileDragActive(false)
-            uploadFiles(e.dataTransfer.files)
-        }
-    }
 
     // folder tiles and breadcrumbs accept dragged tiles
     const dropTargetProps = (target, key) => ({
@@ -740,7 +636,7 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
                 break
             case 'new-file':
                 if (!isRoot) openFolder(item)
-                fileInputRef.current?.click()
+                openUploadDialog()
                 break
             case 'edit':
                 editItem(item)
@@ -786,26 +682,14 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
                                       secondary={sort.field === field ? _t('MediaFileExplorer.sort.' + sort.dir) : null}/>
                     </MenuItem>)}
                 </Menu>
-                {!isSearch && <>
-                    <Tooltip title={_t('MediaFileExplorer.newFolder')}>
-                        <IconButton onClick={() => createFolder()}><CreateNewFolderOutlined/></IconButton>
-                    </Tooltip>
-                    <Button variant="contained" disableElevation startIcon={<AddRounded/>}
-                            sx={{borderRadius: 5, textTransform: 'none', px: 2}}
-                            onClick={() => fileInputRef.current?.click()}>
-                        {_t('MediaFileExplorer.upload')}
-                    </Button>
-                </>}
-                <input ref={fileInputRef} type="file" multiple hidden onChange={(e) => {
-                    uploadFiles(e.target.files)
-                    e.target.value = ''
-                }}/>
+                {!isSearch && <Tooltip title={_t('MediaFileExplorer.newFolder')}>
+                    <IconButton onClick={() => createFolder()}><CreateNewFolderOutlined/></IconButton>
+                </Tooltip>}
             </Bar>
 
             <Box sx={{height: 2}}>{loading && <LinearProgress sx={{height: 2}}/>}</Box>
 
-            <GridArea {...gridDragProps}
-                      onClick={(e) => e.target === e.currentTarget && !(isPicker && isMulti) && setSelectedIds([])}
+            <GridArea onClick={(e) => e.target === e.currentTarget && !(isPicker && isMulti) && setSelectedIds([])}
                       onContextMenu={(e) => {
                           if (e.target !== e.currentTarget || isSearch) return
                           openMenu(e, {id: currentFolderId || 'root', fileType: 'root', original: {createdBy: _app_.user}})
@@ -877,7 +761,7 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
                     {!isSearch && <>
                         <Box sx={{fontSize: '0.875rem'}}>{_t('MediaFileExplorer.emptyHint')}</Box>
                         <Button variant="outlined" startIcon={<CloudUploadOutlined/>} sx={{textTransform: 'none', borderRadius: 5}}
-                                onClick={() => fileInputRef.current?.click()}>{_t('MediaFileExplorer.upload')}</Button>
+                                onClick={() => openUploadDialog()}>{_t('MediaFileExplorer.upload')}</Button>
                     </>}
                 </Box>}
 
@@ -887,10 +771,6 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
                     </Button>
                 </Box>}
 
-                {fileDragActive && <DropOverlay>
-                    <CloudUploadOutlined sx={{fontSize: 48}}/>
-                    {_t('MediaFileExplorer.dropHere', {folder: currentFolder ? currentFolder.name : rootLabel})}
-                </DropOverlay>}
             </GridArea>
 
             {isPicker && <PickerBar>
@@ -958,30 +838,11 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
                      onClose={() => setContextMenu(null)} onAction={onMenuAction}
                      isPicker={isPicker} isMulti={isMulti}/>
 
-        {upload && <UploadToast>
-            <div className="toast-head">
-                <Box sx={{flex: 1}}>
-                    {upload.finished ?
-                        _t('MediaFileExplorer.uploadDone', {count: upload.done - upload.failed}) :
-                        _t('MediaFileExplorer.uploading', {done: upload.done + 1, total: upload.total})}
-                </Box>
-                {upload.finished && <IconButton size="small" sx={{color: 'inherit'}} onClick={() => setUpload(null)}>
-                    <CloseRounded fontSize="small"/>
-                </IconButton>}
-            </div>
-            {!upload.finished && <LinearProgress variant="determinate" value={upload.progress || 0}/>}
-            <div className="toast-body">
-                <span>{upload.finished && upload.failed ? _t('MediaFileExplorer.uploadFailed', {count: upload.failed}) : upload.current}</span>
-                {upload.finished ? (upload.failed ?
-                    <ErrorOutlineRounded color="error" fontSize="small"/> :
-                    <CheckCircleRounded color="primary" fontSize="small"/>) :
-                    <CircularProgress size={16}/>}
-            </div>
-        </UploadToast>}
-
         <Snackbar open={!!message} autoHideDuration={3000} onClose={() => setMessage(null)} message={message}
                   anchorOrigin={{vertical: 'bottom', horizontal: 'center'}}/>
     </Root>
 }
 
-export default MediaGridExplorer
+// props (pageParams, TypeContainerRef) only change with the page params: no re-render on every
+// state change of the TypesContainer (dialogs, selection, settings)
+export default React.memo(MediaGridExplorer)

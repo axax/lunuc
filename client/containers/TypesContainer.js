@@ -141,6 +141,8 @@ const MAX_RECENT_TYPES = 8
 // the list of recent types is saved with a delay, so quick switching between types
 // does not cause a mutation per navigation (unmount / beforeunload save anyway)
 const RECENT_TYPES_SAVE_DELAY = 5000
+// debounce for setSettingsForType(..., {lazy: true})
+const LAZY_SETTINGS_SAVE_DELAY = 5000
 
 class TypesContainer extends React.Component {
 
@@ -197,17 +199,32 @@ class TypesContainer extends React.Component {
     parseSettings(props) {
         const pendingRecentTypes = this._recentTypesSaveTimeout && this.settings.recentTypes
         this.settings = Object.assign({}, props.keyValueMap.TypesContainerSettings)
+        if (this._lazySettings) {
+            // lazy changes that are not saved yet: keep them on top of the new value
+            Object.keys(this._lazySettings).forEach(key => {
+                this.settings[key] = Object.assign({}, this.settings[key], this._lazySettings[key])
+            })
+        }
         if (pendingRecentTypes) {
             // not saved yet (debounced): keep the local list
             this.settings.recentTypes = pendingRecentTypes
         }
     }
 
-    setSettingsForType(type, settings) {
+    // options.lazy: only keep the change locally and save it debounced (or with the next normal save,
+    // on unmount / unload). For values that change often and need no re-render, e.g. the open folder.
+    setSettingsForType(type, settings, options) {
         const key = type + (this.pageParams.meta ? '-' + this.pageParams.meta : '')
         this.settings[key] = Object.assign({}, this.settings[key], settings)
 
-        this.saveSettings()
+        if (options?.lazy) {
+            this._lazySettings = this._lazySettings || {}
+            this._lazySettings[key] = Object.assign({}, this._lazySettings[key], settings)
+            clearTimeout(this._lazySettingsTimeout)
+            this._lazySettingsTimeout = setTimeout(() => this.saveSettings(), LAZY_SETTINGS_SAVE_DELAY)
+        } else {
+            this.saveSettings()
+        }
     }
 
     getSettingsForType(type, meta) {
@@ -255,6 +272,10 @@ class TypesContainer extends React.Component {
     }
 
     saveSettings() {
+        // a full save contains the lazy changes as well
+        clearTimeout(this._lazySettingsTimeout)
+        this._lazySettingsTimeout = null
+        this._lazySettings = null
         const value = JSON.stringify(this.settings)
         if (value !== JSON.stringify(this.props.keyValueMap.TypesContainerSettings)) {
             console.log(`save TypesContainerSettings`)
@@ -347,7 +368,12 @@ class TypesContainer extends React.Component {
             }
             this.getData(pageParams, true, typeChanged || metaChanged)
 
-            return false
+            // Alternative views (grid / tree of media) load their own data, so nobody would set the state and
+            // the list, the filter chips and the view would keep the old params until a page reload.
+            // The table re-renders when getData sets the data (no extra render with the old data).
+            // (Not on a type change: the old data does not fit the new type.)
+            const view = this.getSettingsForType(pageParams.type, pageParams.meta).view
+            return !(typeChanged || metaChanged) && (view === 'grid' || view === 'tree')
         }
 
         return this.state !== state ||
@@ -359,7 +385,7 @@ class TypesContainer extends React.Component {
             settingsChanged
     }
 
-    renderTable(columns, typeSettings) {
+    renderTable(columns, typeSettings, filterActive) {
         const {data, selectedRows} = this.state
         if (data) {
 
@@ -622,7 +648,7 @@ class TypesContainer extends React.Component {
                 {
                     divider:true,
                     key: 'export_csv',
-                    name: 'Export CSV', onClick: () => {
+                    name: 'Export CSV', icon:'download', onClick: () => {
                         this.setState({
                             simpleDialog: {
                                 title: 'Export CSV',
@@ -644,7 +670,7 @@ class TypesContainer extends React.Component {
                     }
                 },
                 {
-                    name: 'Export JSON', onClick: async () => {
+                    name: 'Export JSON', icon:'download', onClick: async () => {
                         // the list only contains the visible columns: load the entries of the current page with all
                         // fields, otherwise an import elsewhere would only update these columns (e.g. no template)
                         let results = this.state.data && this.state.data.results
@@ -675,7 +701,7 @@ class TypesContainer extends React.Component {
                     }
                 },
                 {
-                    name: 'Import', onClick: () => {
+                    name: 'Import', icon:'upload', onClick: () => {
                         this.setState({
                             simpleDialog: {
                                 maxWidth:'lg',
@@ -776,7 +802,7 @@ class TypesContainer extends React.Component {
             if (actionColumn) {
                 actionColumn.title = <SimpleMenu items={actions}/>
             }
-            return <SimpleTable key="typeTable"
+            const table = <SimpleTable key="typeTable"
                                 title=""
                                 style={{flex:1}}
                                 tableRenderer={this.tableRenderer}
@@ -811,6 +837,24 @@ class TypesContainer extends React.Component {
                                 onSort={this.handleSortChange}
                                 onChangePage={this.handleChangePage.bind(this)}
                                 onChangeRowsPerPage={this.handleChangeRowsPerPage.bind(this)}/>
+
+            if (dataSource.length > 0) {
+                return table
+            }
+
+            // nothing to show: say why and offer a way out instead of an empty table
+            return <React.Fragment key="typeTableEmpty">
+                {table}
+                <Stack sx={{alignItems: 'center', gap: 1.5, py: 6, color: 'text.secondary'}}>
+                    <Typography variant="subtitle1" sx={{fontWeight: 600, color: 'text.primary'}}>
+                        {_t(filterActive ? 'TypesContainer.noResults' : 'TypesContainer.noEntries')}
+                    </Typography>
+                    {filterActive &&
+                        <Button variant="outlined" size="small" onClick={() => this.resetFilters()}>
+                            {_t('TypesContainer.filter.resetShort')}
+                        </Button>}
+                </Stack>
+            </React.Fragment>
 
         }
 
@@ -997,18 +1041,30 @@ class TypesContainer extends React.Component {
 
         Hook.call('TypesContainerBeforeRender', {type,renderOptions,typeSettings,_version,pageParams:this.pageParams}, this)
 
-        renderOptions.stack.unshift(<Chip
-            size="small"
-            label={prettyFilter ? this.prettyFilterLabel(prettyFilter) : _t('TypesContainer.noActiveFilter')}
-            onClick={() => {
-                this.setState({viewFilterDialog: true})
-            }}
-            onDelete={prettyFilter ? () => {
-                this.goTo({page: 1, prettyFilter: ''})
-            } : null}
-            deleteIcon={<DeleteIcon/>}
-            variant="outlined"
-        />)
+        // one chip per criterion (removable on its own) and a chip to add another one
+        const filterChips = prettyFilter ? this.prettyFilterChips(prettyFilter) : []
+        const openFilterDialog = () => this.setState({viewFilterDialog: true})
+        renderOptions.stack.unshift(<Stack key="activeFilters" direction="row"
+                                           sx={{flexWrap: 'wrap', alignItems: 'center', gap: 1}}>
+            {filterChips.map(chip => <Chip
+                key={chip.key}
+                size="small"
+                label={chip.label}
+                onClick={openFilterDialog}
+                onDelete={chip.removable ? () => this.removePrettyFilterKey(chip.key) : undefined}
+                variant="outlined"
+                color="primary"
+            />)}
+            <Chip
+                size="small"
+                icon={<FilterListIcon/>}
+                label={_t('TypesContainer.filter.add')}
+                onClick={openFilterDialog}
+                variant="outlined"
+            />
+            {(filterChips.length > 1 || this.pageParams.filter) &&
+                <Button size="small" onClick={() => this.resetFilters()}>{_t('TypesContainer.filter.reset')}</Button>}
+        </Stack>)
 
         const content = [
             !title && !this.pageParams.title ? null :
@@ -1102,7 +1158,7 @@ class TypesContainer extends React.Component {
                     spacing={2}
                     sx={{
                         justifyContent: "space-between",
-                        alignItems: "flex-start",
+                        alignItems: "center",
                         mb:1,
                         mt:1
                     }}
@@ -1112,7 +1168,8 @@ class TypesContainer extends React.Component {
 
                 </Stack>
             </div>,
-            renderOptions.alternativeView?renderOptions.alternativeView:this.renderTable(columns, typeSettings),
+            renderOptions.alternativeView ? renderOptions.alternativeView :
+                this.renderTable(columns, typeSettings, !!(this.pageParams.filter || filterChips.length)),
             <SimpleDialog key="deleteDialog" open={confirmDialog.open} onClose={this.handleConfirmDialog}
                           actions={[{key: 'yes', label: _t('core.yes')}, {
                               key: 'no',
@@ -2037,13 +2094,14 @@ class TypesContainer extends React.Component {
         return newFilter
     }
 
-    prettyFilterLabel(prettyFilter) {
+    // [{key, label, removable}], one entry per active criterion of the pretty filter
+    prettyFilterChips(prettyFilter) {
         const {type} = this.pageParams
-        let newFilter = []
+        const chips = []
 
-        let payload = {prettyFilter}
+        const payload = {prettyFilter}
 
-        Hook.call('TypesContainerBeforeFilterLabel', {type: this.pageParams.type, payload}, this)
+        Hook.call('TypesContainerBeforeFilterLabel', {type, payload}, this)
 
         const getValues = (data) => {
             let str = ''
@@ -2056,48 +2114,61 @@ class TypesContainer extends React.Component {
             }
             return str
         }
+        const formatValue = (value) => {
+            if (typeof value === 'boolean') return value ? _t('core.yes') : _t('core.no')
+            if (value instanceof Date) return Util.formatDate(value)
+            return String(value)
+        }
         const typeDefinition = this.types[type]
         Object.keys(payload.prettyFilter).forEach(fieldKey => {
-            if (!fieldKey.startsWith('__operator.')) {
-                const value = payload.prettyFilter[fieldKey]
-                if (value) {
-                    if (newFilter.length > 0) {
-                        newFilter.push(<span> und </span>)
-                    }
-                    if (fieldKey === '_idFrom' || fieldKey === '_idTo') {
-
-                        newFilter.push(<span>Erstellungszeit{fieldKey === '_idTo' ? '<=' : '>='}</span>)
-
-                        newFilter.push(<strong>{Util.formatDate(value)}</strong>)
-                    } else {
-                        const operator = payload.prettyFilter['__operator.' + fieldKey] || '='
-
-                        let fieldName = fieldKey
-                        if(typeDefinition?.fields){
-                            const field = typeDefinition.fields.find(f=>f.name===fieldKey)
-                            if(field){
-                                fieldName = getFieldTitle(type,field)
-                            }
-                        }
-                        newFilter.push(<span>{fieldName}{operator}</span>)
-                        if (Array.isArray(value)) {
-                            if (value.length > 0) {
-                                value.forEach(item => {
-                                    newFilter.push(<strong>{item.data ? item.data.name || getValues(item.data) : item.name ?? item.username ?? item}</strong>)
-                                })
-                            }
-                        } else if (value.constructor === Object) {
-
-                            newFilter.push(<strong>{getValues(value)}</strong>)
-                        } else {
-
-                            newFilter.push(<strong>{value}</strong>)
-                        }
-                    }
-                }
+            if (fieldKey.startsWith('__operator.')) {
+                return
             }
+            const value = payload.prettyFilter[fieldKey]
+            if (!value || (Array.isArray(value) && value.length === 0)) {
+                return
+            }
+            let label
+            if (fieldKey === '_idFrom' || fieldKey === '_idTo') {
+                label = `${_t(fieldKey === '_idTo' ? 'TypesContainer.filter.createdTo' : 'TypesContainer.filter.createdFrom')}: ${Util.formatDate(value)}`
+            } else {
+                const operator = payload.prettyFilter['__operator.' + fieldKey] || '='
+
+                let fieldName = fieldKey
+                const field = typeDefinition?.fields?.find(f => f.name === fieldKey)
+                if (field) {
+                    fieldName = getFieldTitle(type, field)
+                }
+                let text
+                if (Array.isArray(value)) {
+                    text = value.map(item => item.data ? item.data.name || getValues(item.data) : item.name ?? item.username ?? item).join(', ')
+                } else if (value.constructor === Object) {
+                    text = getValues(value)
+                } else {
+                    text = formatValue(value)
+                }
+                // "=" (contains) reads best as "Name: value"
+                label = operator === '=' ? `${fieldName}: ${text}` : `${fieldName} ${operator} ${text}`
+            }
+            // a hook may have renamed the criteria, then only the dialog can change them
+            chips.push({key: fieldKey, label, removable: Object.prototype.hasOwnProperty.call(prettyFilter, fieldKey)})
         })
-        return newFilter
+        return chips
+    }
+
+    removePrettyFilterKey(key) {
+        const prettyFilter = Object.assign({}, this.getPrettyFilter())
+        delete prettyFilter[key]
+        delete prettyFilter['__operator.' + key]
+        const filter = this.prettyFilterToStringFilter(prettyFilter)
+        this.goTo({page: 1, prettyFilter: filter ? JSON.stringify(prettyFilter) : ''})
+    }
+
+    resetFilters() {
+        const {type} = this.pageParams
+        this.setState({filter: ''})
+        this.setSettingsForType(type, {filter: ''})
+        this.goTo({page: 1, filter: '', prettyFilter: ''})
     }
 
     renderFilterHelp() {
