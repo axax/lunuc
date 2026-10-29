@@ -50,6 +50,7 @@ const T = {
     element: '245, 158, 11',   // amber  - plain template element
     dynamic: '244, 63, 94',    // rose   - dynamic (non editable) element
     cms: '99, 102, 241',       // indigo - cms component / picker
+    data: '13, 148, 136',      // teal   - data entry (mode source, e.g. GenericData), edited via its form
     selected: '139, 61, 255',  // violet - multi selection
 
     // chrome
@@ -74,7 +75,8 @@ const fadeIn = keyframes({
 const HIGHLIGHT_COLORS = {
     yellow: T.element,
     red: T.dynamic,
-    blue: T.cms
+    blue: T.cms,
+    teal: T.data
 }
 
 // The overlay sits above everything while the editor is active (basis 10000, MUI dialogs use 1300).
@@ -393,7 +395,7 @@ export const StyledRichTextBar = styled('div', noForward('floating'))(({floating
     }
 }))
 
-export const StyledInfoBox = styled('div')({
+export const StyledInfoBox = styled('div', noForward('variant'))(({variant}) => ({
     position: 'absolute',
     pointerEvents: 'none',
     top: '-1.35rem',
@@ -414,8 +416,15 @@ export const StyledInfoBox = styled('div')({
     background: T.surface,
     backdropFilter: 'blur(6px)',
     boxShadow: '0 2px 8px -2px rgba(15, 23, 42, 0.45)',
-    animation: `${fadeIn} 90ms ${T.ease}`
-})
+    animation: `${fadeIn} 90ms ${T.ease}`,
+    // data entry: name of the entry type (e.g. «Bereich») in its own colour, with a small data icon
+    ...(variant === 'data' && {
+        gap: '4px',
+        color: '#fff',
+        background: `rgb(${T.data})`,
+        '& svg': {width: '10px', height: '10px', flex: '0 0 auto'}
+    })
+}))
 
 // Devtools style spacing indicator: hatched area + numeric badge
 const dividerBase = {
