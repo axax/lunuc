@@ -16,6 +16,7 @@ import {
     condition,
     eventOptions,
     imageOptions,
+    imagePickDefaults,
     imgFigureOptions,
     invisibleOptions,
     lazyImageOptions,
@@ -110,7 +111,8 @@ export const buildBaseElements = () => [
                 tab: DEFAULT_TAB,
                 projection: MEDIA_PROJECTION,
                 showAlwaysAsImage: true,
-                keepTextValue: true
+                keepTextValue: true,
+                ...imagePickDefaults('p_')
             },
             'p_src@imageSrc': {
                 value: '',
@@ -718,7 +720,8 @@ export const buildBaseElements = () => [
                 localizedFallback: true,
                 tab: DEFAULT_TAB,
                 showAlwaysAsImage: true,
-                keepTextValue: true
+                keepTextValue: true,
+                ...imagePickDefaults('c_0_p_')
             },
             p_href: {
                 fullWidth: true,
@@ -1372,7 +1375,7 @@ export const buildBaseElements = () => [
                 tab: DEFAULT_TAB,
                 fullWidth: false
             },
-            ...imageOptions('$set_image_'),
+            ...imageOptions('$set_image_', {srcKey: 'p_style_backgroundImage'}),
             $set_image_options_background: {
                 newLine: true,
                 fullWidth: true,

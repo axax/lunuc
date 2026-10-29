@@ -12,7 +12,7 @@ const JSON_ESCAPE_MAP = {'\\': '\\\\', '\"': '\\\"','"': '\\\"', '\b': '\\b', '\
 const DATE_FORMATS = {}
 const OBJECT_ID = /^[0-9a-f]{24}$/i
 const ABSOLUTE_URL = /^https?:\/\//
-const IMAGE_PARAM_KEYS = ['quality', 'removebg', 'flop', 'flip', 'position', 'noenlarge']
+const IMAGE_PARAM_KEYS = ['quality', 'removebg', 'flop', 'flip', 'position', 'noenlarge', 'crop']
 const RESPONSIVE_BREAKPOINTS = [720, 1024, 1200, 1400]
 const RESPONSIVE_MAX_WIDTH = 1600
 

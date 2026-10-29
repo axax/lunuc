@@ -24,6 +24,7 @@ import {
 } from 'ui/admin'
 import FileDrop from './FileDrop'
 import TypePicker from './TypePicker'
+import ImageCropper from './ImageCropper'
 import config from 'gen/config-client'
 import TinyEditor from './TinyEditor'
 import {checkFieldType} from 'util/typesAdmin.mjs'
@@ -684,6 +685,51 @@ class GenericForm extends React.Component {
         return newState
     }
 
+    // url of the original image for the crop selection (value of the image picker field)
+    getCropImageSrc = (raw) => {
+        if (!raw) return ''
+        if (!Array.isArray(raw) && typeof raw === 'object' && !raw._id && !raw.src) {
+            // localized value {de: [...], en: [...]}
+            const lang = _app_.lang
+            raw = raw[lang] || raw[Object.keys(raw).find(k => k !== '_localized' && raw[k])]
+            if (!raw) return ''
+        }
+        const src = Util.getImageObject(raw, {addParams: false}).src
+        return src === '/placeholder.svg' ? '' : src
+    }
+
+    // after an image was picked: preset size (original width, max 1600px, same ratio), quality 90 and WebP.
+    // Only for a fresh element (nothing set yet) and not for SVG, which would be converted to PNG.
+    applyImageDefaults = (newState, {widthKey, heightKey, webpKey, qualityKey}, value) => {
+        const img = Array.isArray(value) ? value[0] : value
+        if (!img || !img.mimeType || !img.mimeType.startsWith('image/') || img.mimeType.includes('svg')) {
+            return
+        }
+        const f = newState.fields
+        if (f[widthKey] || f[heightKey] || f[webpKey]) {
+            return
+        }
+        const set = (key, val) => {
+            f[key] = val
+            newState.fieldsDirty[key] = val
+            if (this.props.onChange) {
+                this.props.onChange({name: key, value: val, target: {name: key, value: val}})
+            }
+        }
+        // without the original size nothing is preset (the size must never exceed the image)
+        const info = img.info
+        if (!info || !(info.width > 0) || !(info.height > 0)) {
+            return
+        }
+        const w = Math.min(info.width, 1600)
+        set(widthKey, String(w))
+        set(heightKey, String(Math.round(w * info.height / info.width)))
+        set(webpKey, true)
+        if (qualityKey) {
+            set(qualityKey, 90)
+        }
+    }
+
     handleInputChange = async (e) => {
         const {fields, trigger} = this.props
         const target = e.target, name = target.name
@@ -699,6 +745,11 @@ class GenericForm extends React.Component {
             originalValue,
             localized: target.dataset && !!target.dataset.language
         })
+
+        const imageDefaults = (fields[name.split('.')[0]] || {}).imageDefaults
+        if (imageDefaults) {
+            this.applyImageDefaults(newState, imageDefaults, value)
+        }
 
         let updateState = false
         if(fields[name]) {
@@ -788,6 +839,7 @@ class GenericForm extends React.Component {
         const fieldKeys = Object.keys(fields), formFields = [], tabs = [], formFieldsNoTabs = [], headerFields = []
 
         let expandableField, expandableData, datePolyfill = false
+        const advancedToggles = {}
         for (let fieldIndex = 0; fieldIndex < fieldKeys.length; fieldIndex++) {
             const fieldKey = fieldKeys[fieldIndex],
                 field = fields[fieldKey]
@@ -800,6 +852,27 @@ class GenericForm extends React.Component {
             if (!isFieldVisibleForCurrentUser(field) ||
                 (field.uistate && field.uistate.visible && matchExpr(field.uistate.visible, this.state.fields))){
                 continue
+            }
+
+            if (field.advanced) {
+                // less important options: collapsed behind a toggle (one per tab)
+                const advancedKey = field.tab || ''
+                const advancedOpen = !!(this.state.advancedOpen && this.state.advancedOpen[advancedKey])
+                if (!advancedToggles[advancedKey]) {
+                    advancedToggles[advancedKey] = true
+                    const holder = field.tab ? this.getOrCreateTab(tabs, field).fields : formFields
+                    holder.push(<div key={'advancedToggle' + advancedKey} style={{width: '100%', margin: '0.5rem 0'}}>
+                        <Button size="small"
+                                onClick={() => this.setState(state => ({
+                                    advancedOpen: {...state.advancedOpen, [advancedKey]: !advancedOpen}
+                                }))}>
+                            {(advancedOpen ? '▾ ' : '▸ ') + _t('GenericForm.advancedOptions')}
+                        </Button>
+                    </div>)
+                }
+                if (!advancedOpen) {
+                    continue
+                }
             }
 
             let value = this.state.fieldsTmp[fieldKey] || this.state.fields[fieldKey]
@@ -1766,6 +1839,19 @@ class GenericForm extends React.Component {
 
             currentFormFields.push(<FileDrop key={fieldKey} className={field.className} value={value}/>)
 
+        } else if (uitype === 'imageCrop') {
+            const src = this.getCropImageSrc(this.state.fields[field.srcKey])
+            const w = parseFloat(this.state.fields[field.widthKey]), h = parseFloat(this.state.fields[field.heightKey])
+            currentFormFields.push(<ImageCropper key={fieldKey}
+                                                 src={src}
+                                                 value={value}
+                                                 aspect={w > 0 && h > 0 ? w / h : null}
+                                                 label={field.label}
+                                                 resetLabel={field.resetLabel}
+                                                 onChange={(newValue) => this.handleInputChange({
+                                                     target: {name: fieldKey, value: newValue}
+                                                 })}/>)
+
         } else if (uitype === 'slider') {
 
 
@@ -1773,7 +1859,10 @@ class GenericForm extends React.Component {
                 <Typography gutterBottom>{field.label + (languageCode ? ' [' + languageCode + ']' : '')}</Typography>
                 <Slider name={fieldKey}
                 onChange={this.handleInputChange}
-                defaultValue={field.defaultValue || 50} max={field.max || 100} min={field.min || 0} value={value} aria-label="Default" valueLabelDisplay="auto" /></FormControl>)
+                max={field.max || 100} min={field.min || 0}
+                value={value === undefined || value === null || value === '' ?
+                    (field.defaultValue !== undefined ? field.defaultValue : (field.min || 0)) : Number(value)}
+                aria-label={field.label} valueLabelDisplay="auto" /></FormControl>)
 
         } else if (uitype === 'upload'){
             currentFormFields.push(<FileDrop onZipExtraction={(zipFiles)=>{

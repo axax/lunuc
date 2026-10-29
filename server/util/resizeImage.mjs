@@ -17,7 +17,7 @@ export const resizeImage = async (parsedUrl, req, filename) => {
     // resize image file
     if (parsedUrl &&
         (parsedUrl.query.width || parsedUrl.query.height || parsedUrl.query.format || parsedUrl.query.flip || parsedUrl.query.flop ||
-            parsedUrl.query.removebg)) {
+            parsedUrl.query.removebg || parsedUrl.query.crop)) {
 
         const width = parseInt(parsedUrl.query.width),
             height = parseInt(parsedUrl.query.height),
@@ -28,14 +28,15 @@ export const resizeImage = async (parsedUrl, req, filename) => {
             position = parsedUrl.query.position,
             withoutEnlargement = parsedUrl.query.noenlarge,
             density = parsedUrl.query.density,
-            removeBg = parsedUrl.query.removebg
+            removeBg = parsedUrl.query.removebg,
+            crop = parseCrop(parsedUrl.query.crop)
 
         let format = parsedUrl.query.format
         if (format === 'webp' && req.headers['accept'] && req.headers['accept'].indexOf('image/webp') < 0) {
             format = ''
         }
 
-        if (!isNaN(width) || !isNaN(height) || format || flip || flop || removeBg) {
+        if (!isNaN(width) || !isNaN(height) || format || flip || flop || removeBg || crop) {
 
             const resizeOptions = {fit: fit || sharp.fit.cover, background: bg || {r: 0, g: 0, b: 0, alpha: 0}}
             if (!isNaN(width)) {
@@ -70,7 +71,7 @@ export const resizeImage = async (parsedUrl, req, filename) => {
                 }
             }
 
-            const modfilename = `${filename}@${width}x${height}-${quality}${fit ? '-' + fit : ''}${position ? '-' + position : ''}${format ? '-' + format : ''}${flip ? '-flip' : ''}${flop ? '-flop' : ''}${withoutEnlargement ? '-noenlarge' : ''}${bg ? '-' + bg : ''}${density ? '-' + density : ''}${removeBg ? '-' + removeBg : ''}`
+            const modfilename = `${filename}@${width}x${height}-${quality}${fit ? '-' + fit : ''}${position ? '-' + position : ''}${format ? '-' + format : ''}${flip ? '-flip' : ''}${flop ? '-flop' : ''}${withoutEnlargement ? '-noenlarge' : ''}${bg ? '-' + bg : ''}${density ? '-' + density : ''}${removeBg ? '-' + removeBg : ''}${crop ? '-crop' + crop.join('_') : ''}`
 
             mimeType = MimeType.detectByExtension(format)
             exists = true
@@ -133,6 +134,9 @@ export const resizeImage = async (parsedUrl, req, filename) => {
 
                     try {
                         let pipeline = sharp(sourceFile, sharpOptions)
+                        if (crop) {
+                            pipeline = await cropImage(pipeline, sourceFile, sharpOptions, crop)
+                        }
                         pipeline = await removeBackgroundIfNeeded(removeBg, pipeline)
 
                         let resizedFile = pipeline.resize(resizeOptions)/*.withMetadata()*/
@@ -202,6 +206,40 @@ export const resizeImage = async (parsedUrl, req, filename) => {
         }
     }
     return {filename, exists, mimeType}
+}
+
+
+/**
+ * crop=left,top,width,height as fractions (0..1) of the original image.
+ * Relative values keep the selection valid when the image is replaced by a
+ * different resolution of the same picture.
+ */
+function parseCrop(value) {
+    if (!value || !value.split) return null
+    const [l, t, w, h] = value.split(',').map(parseFloat)
+    if ([l, t, w, h].some(n => isNaN(n)) || l < 0 || t < 0 || w <= 0 || h <= 0 || l >= 1 || t >= 1) {
+        return null
+    }
+    return [l, t, Math.min(w, 1 - l), Math.min(h, 1 - t)]
+}
+
+async function cropImage(pipeline, sourceFile, sharpOptions, [l, t, w, h]) {
+    // the browser shows the image with its EXIF orientation applied, so crop in the same orientation
+    const meta = await sharp(sourceFile, sharpOptions).metadata()
+    const swap = meta.orientation >= 5
+    const imgWidth = swap ? meta.height : meta.width,
+        imgHeight = swap ? meta.width : meta.height
+    if (!imgWidth || !imgHeight) {
+        return pipeline
+    }
+    const left = Math.min(Math.round(l * imgWidth), imgWidth - 1),
+        top = Math.min(Math.round(t * imgHeight), imgHeight - 1)
+    return pipeline.rotate().extract({
+        left,
+        top,
+        width: Math.max(1, Math.min(Math.round(w * imgWidth), imgWidth - left)),
+        height: Math.max(1, Math.min(Math.round(h * imgHeight), imgHeight - top))
+    })
 }
 
 

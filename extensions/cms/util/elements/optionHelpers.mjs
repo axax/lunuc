@@ -27,14 +27,21 @@ export const MEDIA_PROJECTION = Object.freeze([
     Object.freeze({'info': Object.freeze(['width', 'height'])})
 ])
 
-export const imageOptions = key => ({
-    [`${key}options_hint`]: {
-        uitype: 'htmlParser',
-        html: `<i style="display:block;margin-bottom:1rem;font-size:0.8rem;padding:0.5rem;background-color:#fbfce1;">${
-            _t('elements.image.hint', {tab: _t(MARGIN_TAB)})
-        }</i>`,
-        tab: IMAGE_OPTIMIZATION_TAB
-    },
+/**
+ * Spread into the image picker field: after an image was picked the size
+ * (original width, max 1600px, same ratio), quality 90 and WebP are preset, unless an
+ * option is already set or the image is an SVG.
+ */
+export const imagePickDefaults = (key) => ({
+    imageDefaults: {
+        widthKey: `${key}options_resize_width`,
+        heightKey: `${key}options_resize_height`,
+        webpKey: `${key}options_webp`,
+        qualityKey: `${key}options_quality`
+    }
+})
+
+export const imageOptions = (key, {srcKey} = {}) => ({
     [`${key}options_resize_width`]: {
         label: _t('elements.image.resizeWidth'),
         thirdWidth: true,
@@ -47,11 +54,48 @@ export const imageOptions = key => ({
     },
     [`${key}options_quality`]: {
         type: 'number',
+        uitype: 'slider',
+        min: 1,
+        max: 100,
+        defaultValue: 90,
         label: _t('elements.image.quality'),
         thirdWidth: true,
         tab: IMAGE_OPTIMIZATION_TAB
     },
+    [`${key}options_hint`]: {
+        uitype: 'htmlParser',
+        html: `<i style="display:block;margin:0.25rem 0 0.75rem;font-size:0.75rem;opacity:0.6;">${
+            _t('elements.image.hint', {tab: _t(MARGIN_TAB)})
+        }</i>`,
+        tab: IMAGE_OPTIMIZATION_TAB
+    },
+    [`${key}options_webp`]: {
+        type: 'Boolean',
+        label: 'WebP',
+        thirdWidth: true,
+        tab: IMAGE_OPTIMIZATION_TAB
+    },
+    [`${key}options_resize_responsive`]: {
+        type: 'Boolean',
+        label: _t('elements.image.autoResponsive'),
+        thirdWidth: true,
+        tab: IMAGE_OPTIMIZATION_TAB
+    },
+    [`${key}options_crop`]: {
+        uitype: 'imageCrop',
+        advanced: true,
+        label: _t('elements.image.crop'),
+        resetLabel: _t('elements.image.cropReset'),
+        srcKey: srcKey || `${key}src`,
+        widthKey: `${key}options_resize_width`,
+        heightKey: `${key}options_resize_height`,
+        fullWidth: true,
+        // re-render when the image or the target size changes
+        dependsOnForm: true,
+        tab: IMAGE_OPTIMIZATION_TAB
+    },
     [`${key}options_position`]: {
+        advanced: true,
         label: _t('elements.image.position'),
         thirdWidth: true,
         tab: IMAGE_OPTIMIZATION_TAB,
@@ -70,6 +114,7 @@ export const imageOptions = key => ({
         ]
     },
     [`${key}options_format`]: {
+        advanced: true,
         enum: [
             {value: '', name: _t('elements.image.noConversion')},
             'png', 'gif', 'jpeg'
@@ -79,6 +124,7 @@ export const imageOptions = key => ({
         tab: IMAGE_OPTIMIZATION_TAB
     },
     [`${key}options_removebg_tolerance`]: {
+        advanced: true,
         type: 'number',
         uitype: 'slider',
         max: 300,
@@ -88,31 +134,22 @@ export const imageOptions = key => ({
         thirdWidth: true,
         tab: IMAGE_OPTIMIZATION_TAB
     },
-    [`${key}options_webp`]: {
-        type: 'Boolean',
-        label: 'WebP',
-        thirdWidth: true,
-        tab: IMAGE_OPTIMIZATION_TAB
-    },
-    [`${key}options_resize_responsive`]: {
-        type: 'Boolean',
-        label: _t('elements.image.autoResponsive'),
-        thirdWidth: true,
-        tab: IMAGE_OPTIMIZATION_TAB
-    },
     [`${key}options_flip`]: {
+        advanced: true,
         type: 'Boolean',
         label: 'Flip (Vertical Y)',
         thirdWidth: true,
         tab: IMAGE_OPTIMIZATION_TAB
     },
     [`${key}options_flop`]: {
+        advanced: true,
         type: 'Boolean',
         label: 'Flop (Horizontal X)',
         thirdWidth: true,
         tab: IMAGE_OPTIMIZATION_TAB
     },
     [`${key}options_noenlarge`]: {
+        advanced: true,
         type: 'Boolean',
         label: _t('elements.image.noEnlarge'),
         thirdWidth: true,
@@ -122,10 +159,12 @@ export const imageOptions = key => ({
 
 export const lazyImageOptions = key => ({
     [`${key}lazyImage_width`]: {
+        advanced: true,
         label: _t('elements.lazyImage.width'),
         tab: IMAGE_OPTIMIZATION_TAB
     },
     [`${key}lazyImage_height`]: {
+        advanced: true,
         label: _t('elements.lazyImage.height'),
         tab: IMAGE_OPTIMIZATION_TAB
     }

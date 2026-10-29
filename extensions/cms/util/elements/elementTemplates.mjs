@@ -44,6 +44,7 @@ export const BACKGROUND_IMAGE_TEMPLATE =
     '+(_comp?.$set?.image?.options?.flip?\'&flip=\'+_comp?.$set?.image?.options?.flip: \'\')' +
     '+(_comp?.$set?.image?.options?.flop?\'&flop=\'+_comp?.$set?.image?.options?.flop: \'\')' +
     '+(_comp?.$set?.image?.options?.noenlarge?\'&noenlarge=true\': \'\')' +
+    '+(_comp?.$set?.image?.options?.crop?\'&crop=\'+_comp?.$set?.image?.options?.crop: \'\')' +
     '+(_comp?.$set?.image?.options?.position?\'&position=\'+_comp?.$set?.image?.options?.position: \'\')+\'\\\')\':\'\'}'
 
 /** poster image url of the video element */
