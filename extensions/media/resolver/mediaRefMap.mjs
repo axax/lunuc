@@ -16,11 +16,91 @@ const ID_REGEX_PATTERN = /(?<![a-f0-9])[a-f0-9]{24}(?![a-f0-9])/gi
 // resolves a human readable name per collection
 const PRETTY_NAME_RESOLVERS = {
     CmsPage: doc => doc.slug,
-    User: doc => doc.username,
-    GenericData: doc => doc.data && doc.data.name
+    User: doc => doc.username
 }
 
-const getPrettyName = (collectionName, doc) => {
+// ---- GenericData: human readable name + link info derived from the GenericDataDefinition ----
+
+// definition _id -> {name, title, fieldNames} (null = definition not found)
+const definitionCache = new Map()
+
+const NAME_FIELD_CANDIDATES = ['name', 'title', 'titel', 'bezeichnung', 'label']
+const MAX_NAME_LENGTH = 120
+
+const toDefinitionInfo = def => {
+    let structure = def.structure
+    if (typeof structure === 'string') {
+        try {
+            structure = JSON.parse(structure)
+        } catch (e) {
+            structure = {}
+        }
+    }
+    return {
+        name: def.name,
+        title: structure?.title || def.name,
+        fieldNames: (structure?.fields || []).map(f => f && f.name).filter(Boolean)
+    }
+}
+
+const loadAllDefinitions = async (db) => {
+    definitionCache.clear()
+    const defs = await db.collection('GenericDataDefinition').find({}).toArray()
+    for (const def of defs) {
+        definitionCache.set(def._id.toString(), toDefinitionInfo(def))
+    }
+}
+
+// makes sure the definition of a GenericData doc is in the cache
+const ensureDefinition = async (db, collectionName, doc) => {
+    if (collectionName !== 'GenericData' || !doc || !doc.definition || !db) return
+    const key = doc.definition.toString()
+    if (definitionCache.has(key)) return
+    const def = await db.collection('GenericDataDefinition').findOne({_id: new ObjectId(key)})
+    definitionCache.set(key, def ? toDefinitionInfo(def) : null)
+}
+
+const isUsableName = v => typeof v === 'string' && v.trim() !== '' && v.length <= MAX_NAME_LENGTH &&
+    !/^[a-f0-9]{24}$/i.test(v.trim()) && !/<[a-z][\s\S]*>/i.test(v)
+
+// localized values like {de: '...', en: '...'} -> take first string
+const firstString = v => {
+    if (v && typeof v === 'object' && !Array.isArray(v) && v._bsontype === undefined) {
+        v = Object.values(v).find(x => typeof x === 'string' && x)
+    }
+    return isUsableName(v) ? v.trim() : undefined
+}
+
+// name candidates first (name, title, ...), then the first usable text field in the order of the definition
+const getGenericDataName = (doc, info) => {
+    let data = doc.data
+    if (typeof data === 'string') {
+        try {
+            data = JSON.parse(data)
+        } catch (e) {
+            return undefined
+        }
+    }
+    if (!data || typeof data !== 'object') return undefined
+
+    const fieldNames = info ? info.fieldNames : []
+    const ordered = [
+        ...NAME_FIELD_CANDIDATES.filter(c => !info || fieldNames.includes(c)),
+        ...fieldNames,
+        ...(info ? [] : Object.keys(data))
+    ]
+    for (const key of ordered) {
+        const name = firstString(data[key])
+        if (name) return name
+    }
+    return undefined
+}
+
+const getPrettyName = (collectionName, doc, definitionInfo) => {
+    if (collectionName === 'GenericData') {
+        return getGenericDataName(doc, definitionInfo)
+    }
+
     const resolver = PRETTY_NAME_RESOLVERS[collectionName]
     let name = resolver ? resolver(doc) : undefined
 
@@ -37,7 +117,13 @@ const getPrettyName = (collectionName, doc) => {
     return typeof name === 'string' ? name : undefined
 }
 
-Hook.on(['typeUpdated', 'typeCreated', 'typeDeleted'], ({data, type, db}, name) => {
+Hook.on(['typeUpdated', 'typeCreated', 'typeDeleted'], async ({data, type, db}, name) => {
+    if (type === 'GenericDataDefinition') {
+        // definition changed (name/title/fields) -> reload lazily
+        definitionCache.clear()
+        return
+    }
+
     const refMap = Cache.get(REF_MAP_CACHE_KEY)
     if (!refMap || !refMap.collectionsToSearchIn) {
         // no cache -> nothing to update
@@ -83,6 +169,7 @@ Hook.on(['typeUpdated', 'typeCreated', 'typeDeleted'], ({data, type, db}, name) 
 
         if (name === 'typeCreated' || name === 'typeUpdated') {
             if (typeof doc === 'object') {
+                await ensureDefinition(db, collectionName, doc)
                 addDocToRefMap(refMap, collectionName, doc)
                 // new references after adding
                 const newRefIds = refMap.docIndex[`${collectionName}:${docId}`]
@@ -165,7 +252,10 @@ const addDocToRefMap = (refMap, collectionName, doc) => {
     const foundIds = extractIds(doc)
     foundIds.delete(docId)
 
-    const prettyName = getPrettyName(collectionName, doc)
+    const definitionInfo = collectionName === 'GenericData' && doc.definition
+        ? definitionCache.get(doc.definition.toString())
+        : undefined
+    const prettyName = getPrettyName(collectionName, doc, definitionInfo)
 
     // reverse index: which refIds does this document point to
     refMap.docIndex[`${collectionName}:${docId}`] = [...foundIds]
@@ -176,6 +266,11 @@ const addDocToRefMap = (refMap, collectionName, doc) => {
             const entry = {location: collectionName, _id: docId}
             if (prettyName) {
                 entry.name = prettyName
+            }
+            if (definitionInfo) {
+                // needed to build the link to the right GenericData list in the admin
+                entry.meta = definitionInfo.name
+                entry.title = definitionInfo.title
             }
             refMap[refId].push(entry)
         }
@@ -205,6 +300,8 @@ const buildRefMap = async (db, collectionsToSearchIn) => {
     console.log('Building ref map cache...')
     const startTime = new Date().getTime()
     const map = {docIndex: {}}
+
+    await loadAllDefinitions(db)
 
     for (const name of collectionsToSearchIn) {
         console.log(`Scanning ${name}...`)

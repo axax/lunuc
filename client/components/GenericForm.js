@@ -109,6 +109,36 @@ const ColorPicker = (props) => <Async {...props} asyncKey="colorpicker" load={()
 
 // plain tabs: small labels, thin underline, colors from the theme.
 // Selectors are nested on purpose so they win over the default SimpleTab styles.
+// preset values of a text field (field.presets), e.g. small / medium / large for a margin
+const StyledPresets = styled('span')({
+    display: 'inline-flex',
+    gap: '2px',
+    marginRight: '-6px'
+})
+const StyledPreset = styled('button')(({theme}) => ({
+    minWidth: '1.6rem',
+    height: '1.5rem',
+    padding: '0 0.3rem',
+    border: `1px solid ${theme.palette.divider}`,
+    borderRadius: '4px',
+    background: 'transparent',
+    color: theme.palette.text.secondary,
+    font: 'inherit',
+    fontSize: '0.7rem',
+    fontWeight: 600,
+    lineHeight: 1,
+    cursor: 'pointer',
+    '&:hover': {
+        borderColor: theme.palette.primary.main,
+        color: theme.palette.primary.main
+    },
+    '&[data-active="true"]': {
+        background: theme.palette.primary.main,
+        borderColor: theme.palette.primary.main,
+        color: theme.palette.primary.contrastText
+    }
+}))
+
 const StyledTabContainer = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
     '& .MuiTabs-root': {
@@ -2111,6 +2141,19 @@ class GenericForm extends React.Component {
             const isDateOrTime = uitype==='date' || uitype==='datetime'
 
             langButtonWasInserted = true
+            // field.presets: [{name, short, value}] buttons in the field set a predefined value, a custom value
+            // can still be typed in
+            const presets = Array.isArray(field.presets) && field.presets.length > 0 && !(field.readOnly || field.uiReadOnly) ?
+                <StyledPresets>{field.presets.map(preset => <StyledPreset
+                    key={preset.value}
+                    type="button"
+                    tabIndex={-1}
+                    data-active={String(value) === String(preset.value) ? 'true' : 'false'}
+                    title={`${preset.name || preset.short}: ${preset.value}`}
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => {
+                        this.handleInputChange({target: {name: fieldKey, value: String(preset.value) === String(value) ? '' : preset.value}})
+                    }}>{preset.short || preset.name}</StyledPreset>)}</StyledPresets> : null
             currentFormFields.push(<TextField autoFocus={autoFocus && fieldIndex === 0}
                                               error={!!this.state.fieldErrors[fieldKey]}
                                               key={fieldKey}
@@ -2139,9 +2182,10 @@ class GenericForm extends React.Component {
                                                       'data-datetime-field': isDateOrTime
                                                   },
                                                   input:{
-                                                      endAdornment: languageCode === _app_.lang &&
+                                                      endAdornment: (presets || languageCode === _app_.lang) &&
                                                           <InputAdornment position="end">
-                                                              {translateButton}
+                                                              {presets}
+                                                              {languageCode === _app_.lang && translateButton}
                                                           </InputAdornment>
                                                   }
                                               }}

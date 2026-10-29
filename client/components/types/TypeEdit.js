@@ -207,6 +207,12 @@ class TypeEdit extends React.Component {
     closeModal = (action, optimisticData) => {
         const {onClose, type} = this.props
         const {dataToEdit} = this.state
+        // data saved with "save" (the dialog stays open) is passed on when the dialog is closed later,
+        // also with cancel / escape, so the caller can update its view (e.g. the cms page of the entry)
+        if (this._savedData) {
+            optimisticData = Object.assign({}, this._savedData, optimisticData)
+            this._savedData = null
+        }
         onClose(action, {optimisticData, dataToEdit, type})
 
         // continue a navigation that was held back because of unsaved changes
@@ -350,6 +356,7 @@ class TypeEdit extends React.Component {
                 if (action.key === 'save_close') {
                     this.closeModal(action, optimisticData)
                 } else {
+                    this._savedData = Object.assign({}, this._savedData, optimisticData)
                     this.setState({dataToEdit: {...dataToEdit, ...optimisticData}})
                 }
             }

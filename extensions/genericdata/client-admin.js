@@ -67,18 +67,28 @@ const refLabelOf = (data, field) => {
  a reference is stored as id, as {_id, data} or as an array of them; ids without data are loaded once
  (one query for all missing ids) and the table is rendered again
  */
-const renderReference = (value, field, missing) => {
+const renderReference = (value, field, missing, onUpdate) => {
     const list = (Array.isArray(value) ? value : [value]).filter(Boolean)
+    // pickerField with a path into a further reference (e.g. ["name", "parent.name"]): same label as in the picker
+    const withPath = hasReferencePath(field)
     return list.map(v => {
         if (typeof v === 'object') {
-            const label = v.data ? refLabelOf(v.data, field) : ''
+            const label = v.data ? (withPath ? labelOfRefData(v.data, field, onUpdate) : refLabelOf(v.data, field)) : ''
             if (label) {
-                if (v._id) refLabels[v._id] = label
+                if (v._id && !withPath) refLabels[v._id] = label
                 return label
             }
             v = v._id
         }
         if (!v) return ''
+        if (withPath && OBJECT_ID.test(String(v))) {
+            const id = String(v)
+            if (refData[id] === undefined) {
+                loadRefData(id, onUpdate)
+                return '…'
+            }
+            return refData[id] ? (labelOfRefData(refData[id], field, onUpdate) || id) : id
+        }
         if (refLabels[v] !== undefined) return refLabels[v] || v
         missing.add(String(v))
         return '…'
@@ -224,6 +234,14 @@ const labelWithReferences = (data, pickerField, onUpdate) => {
     return hasRef ? parts.filter(Boolean).join(' / ') : null
 }
 
+const hasReferencePath = field => !!field && [].concat(field.pickerField || []).some(p => typeof p === 'string' && p.indexOf('.') > 0)
+
+// label of a referenced entry by the pickerField of the field, paths into references resolved ("Bereich / Parent")
+const labelOfRefData = (data, field, onUpdate) => {
+    const label = labelWithReferences(parseRefData(data), field.pickerField, onUpdate)
+    return label !== null && label !== undefined ? label : refLabelOf(data, field)
+}
+
 export default () => {
 
 
@@ -235,6 +253,10 @@ export default () => {
     Hook.on('TypeTable', ({type, dataSource, data, container}) => {
         if (type === 'GenericData' && data.results.length > 0) {
             const missingRefs = new Set()
+            // one callback for the whole table: references loaded later trigger a single re-render
+            const rerender = () => {
+                if (container && container.forceUpdate) container.forceUpdate()
+            }
             dataSource.forEach((row, i) => {
                 const item = data.results[i],
                     structure = item.definition ? item.definition.structure : {}
@@ -258,7 +280,7 @@ export default () => {
                                 row['data_' + col.field] =  Util.formattedDatetime(item.data[col.field],{hour:undefined, minute:undefined, second:undefined})
                             }else if(field && field.type === 'GenericData' && !col.format){
                                 // reference: name of the referenced entry instead of its id
-                                row['data_' + col.field] = renderReference(item.data[col.field], field, missingRefs)
+                                row['data_' + col.field] = renderReference(item.data[col.field], field, missingRefs, rerender)
                             }else{
                                 const value = propertyByPath(col.field,item.data)
                                 // a boolean is not rendered by react

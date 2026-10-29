@@ -113,3 +113,64 @@ export const createCustomElementFromCmsPage = (page, base = {}) => {
         }
     }
 }
+
+/**
+ * slug of the cms page a custom element was created from: its first child is a Cms element with a fixed slug.
+ * Only the structure is checked (also used for the definition in the palette), null if there is none
+ */
+export const getCustomElementCmsSlug = (json) => {
+    const child = json && Array.isArray(json.c) ? json.c[0] : null
+    const slug = child && child.t === 'Cms' && child.p && child.p.slug
+    return typeof slug === 'string' && slug && slug.indexOf('${') < 0 ? slug : null
+}
+
+/**
+ * fields of the manual of a cms page: {found, fields} (fields null if the manual has none)
+ */
+export const fetchManualFields = (client, slug) => client.query({
+    fetchPolicy: 'network-only',
+    query: 'query cmsPages($filter:String,$limit:Int){cmsPages(filter:$filter,limit:$limit){results{_id slug manual}}}',
+    variables: {
+        limit: 1,
+        // the manual part in the filter is needed so that the resolver returns the manual field
+        filter: `slug=="${slug}" && manual!=="__no_manual__"`
+    }
+}).then(({data}) => {
+    const page = data && data.cmsPages && data.cmsPages.results && data.cmsPages.results.find(p => p.slug === slug)
+    return {found: !!page, fields: page ? parseManualFields(page.manual) : null}
+})
+
+/**
+ * takes the fields of a manual into $inlineEditor.options: new fields are added, changed ones replaced,
+ * options that are not in the manual are kept (after the fields, in the order of the manual).
+ * prefix: '' for a Cms element, 'c_0_' for a custom element (options of its Cms child)
+ * Returns {added, updated, kept: [keys only in the element]}
+ */
+export const syncOptionsFromManual = (json, fields, {prefix = '', elementKey = 'Cms'} = {}) => {
+    const result = {added: 0, updated: 0, kept: []}
+    if (!json || !fields) {
+        return result
+    }
+    if (!json.$inlineEditor || json.$inlineEditor.constructor !== Object) {
+        json.$inlineEditor = {elementKey}
+    }
+    const current = json.$inlineEditor.options || {}
+    const next = {}
+    Object.keys(fields).forEach(key => {
+        const optionKey = prefix + key
+        if (!current[optionKey]) {
+            result.added++
+        } else if (JSON.stringify(current[optionKey]) !== JSON.stringify(fields[key])) {
+            result.updated++
+        }
+        next[optionKey] = fields[key]
+    })
+    Object.keys(current).forEach(key => {
+        if (!(key in next)) {
+            next[key] = current[key]
+            result.kept.push(key)
+        }
+    })
+    json.$inlineEditor.options = next
+    return result
+}

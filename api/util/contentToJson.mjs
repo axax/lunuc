@@ -46,6 +46,13 @@ export const escapeTemplateText = str => String(str === undefined || str === nul
     .replace(/`/g, (m, o, s) => s[o - 1] === '\\' ? m : '\\`')
     .replace(/\$\{/g, '$.__ignore__{')
 
+/**
+ * thousands separators in swiss notation: 12’000 / 12`000 / 12´000 / 12‘000 -> 12'000
+ * (only between a digit and exactly three digits, also an already escaped backtick \` of a template)
+ */
+export const normalizeThousands = str => String(str === undefined || str === null ? '' : str)
+    .replace(/(\d)(?:\\`|[`’‘´′ʼ])(?=\d{3}(?!\d))/g, "$1'")
+
 export const richTextElement = html => ({
     t: 'div',
     $c: escapeTemplateText(html),
@@ -725,16 +732,56 @@ const formatSwissNumber = v => {
 }
 
 /**
+ * bold cells of an xlsx file (SheetJS does not read fonts): {sheetName: Set('row,col')} with 0-based row / col
+ * like SheetJS, null for other formats (xls, csv, Numbers) or when the file can not be read
+ */
+const excelBoldCells = async buffer => {
+    // xlsx / xlsm are zip files
+    if (!buffer || buffer.length < 4 || buffer[0] !== 0x50 || buffer[1] !== 0x4b) return null
+    try {
+        const mod = await import('exceljs')
+        const ExcelJS = mod.default || mod
+        const wb = new ExcelJS.Workbook()
+        await wb.xlsx.load(buffer)
+        const map = {}
+        wb.worksheets.forEach(ws => {
+            const set = new Set()
+            ws.eachRow({includeEmpty: false}, (row, r) => {
+                row.eachCell({includeEmpty: false}, (cell, c) => {
+                    const v = cell.value
+                    // rich text: bold when every run with text is bold
+                    const runs = v && typeof v === 'object' && Array.isArray(v.richText) ? v.richText.filter(t => String(t.text || '').trim()) : null
+                    const bold = runs && runs.length ? runs.every(t => (t.font && t.font.bold) || (!t.font && cell.font && cell.font.bold))
+                        : !!(cell.font && cell.font.bold)
+                    if (bold) set.add((r - 1) + ',' + (c - 1))
+                })
+            })
+            map[ws.name] = set
+        })
+        return map
+    } catch (e) {
+        console.warn('excelBoldCells', e.message)
+        return null
+    }
+}
+
+// a text that is a number in swiss notation (after normalizeThousands), e.g. 12'000 or -1'250.50
+const SWISS_NUMBER = /^[-–]?\s?\d{1,3}('\d{3})+(\.\d+)?$/
+
+/**
  * Excel / Numbers / csv (read with SheetJS) -> html. Per sheet:
  * - text rows above and below the table (rows with only one filled cell, e.g. title, introduction, remarks)
  *   become a subtitle / paragraphs, the table is the part with rows of several values
  * - the first row of the table is the header, merged cells become colspan / rowspan
- * - numbers are shown in swiss notation (204'400) and right aligned, like their column header
+ * - numbers are shown in swiss notation (204'400) and right aligned, like their column header,
+ *   thousands separators in texts (12’000, 12`000) become '
+ * - bold cells (xlsx only, other formats are converted to xlsx with LibreOffice if available) stay bold
  * - empty rows and columns are removed
  */
 export const excelToHtml = async (buffer, {sheet, maxRows = 500} = {}) => {
     const XLSX = (await import('xlsx')).default || (await import('xlsx'))
     const wb = XLSX.read(buffer, {type: 'buffer', cellDates: true})
+    const boldCells = await excelBoldCells(buffer)
     const names = sheet ? [sheet] : wb.SheetNames
     const parts = []
     const cellText = c => {
@@ -744,19 +791,23 @@ export const excelToHtml = async (buffer, {sheet, maxRows = 500} = {}) => {
             const w = c.w !== undefined ? String(c.w).trim() : ''
             // plain numbers and thousands formats (1,234 / 1'234 / 1 234) -> swiss notation
             const plain = !w || /^-?[\d,'’ \u00a0]+(\.\d+)?(e[+-]?\d+)?$/i.test(w) || w === String(c.v)
-            // a year (e.g. a title or column header 2025) without thousands separator
-            const year = Number.isInteger(c.v) && c.v >= 1900 && c.v <= 2100
-            return {v: year ? String(c.v) : plain ? formatSwissNumber(c.v) : w, n: true, year}
+            // a year (e.g. a title or column header 2025) without thousands separator; an amount like 1960 in a
+            // column with other amounts gets the separator when the table is rendered (see below)
+            const year = Number.isInteger(c.v) && c.v >= 1900 && c.v <= 2100 && !/[,'’ \u00a0]/.test(w)
+            return {v: year ? String(c.v) : plain ? formatSwissNumber(c.v) : normalizeThousands(w), n: true, year, num: c.v}
         }
         if (c.t === 'd' || c.v instanceof Date) return {v: c.v.toLocaleDateString('de-CH'), n: false}
         if (c.t === 'b') return {v: c.v ? 'ja' : 'nein', n: false}
         if (c.t === 'e') return {v: '', n: false}
-        return {v: String(c.w !== undefined && c.t !== 's' ? c.w : c.v).trim(), n: false}
+        const v = normalizeThousands(String(c.w !== undefined && c.t !== 's' ? c.w : c.v).trim())
+        // numbers stored as text (12'000)
+        return {v, n: SWISS_NUMBER.test(v)}
     }
     const cellHtml = v => esc(v).replace(/\r?\n/g, '<br>')
     names.forEach(name => {
         const ws = wb.Sheets[name]
         if (!ws || !ws['!ref']) return
+        const bold = boldCells && boldCells[name]
         const range = XLSX.utils.decode_range(ws['!ref'])
         range.e.r = Math.min(range.e.r, range.s.r + maxRows * 2)
         range.e.c = Math.min(range.e.c, range.s.c + 49)
@@ -775,6 +826,7 @@ export const excelToHtml = async (buffer, {sheet, maxRows = 500} = {}) => {
                     continue
                 }
                 const cell = cellText(ws[XLSX.utils.encode_cell({r, c})])
+                if (bold && cell.v !== '' && bold.has(r + ',' + c)) cell.b = true
                 const span = spans[r + ',' + c]
                 if (span) {
                     cell.span = span.cols
@@ -798,25 +850,32 @@ export const excelToHtml = async (buffer, {sheet, maxRows = 500} = {}) => {
         rows.forEach((r, i) => {
             if (filled(r) >= 2) last = i
         })
-        const textRows = list => list.map(r => r.filter(c => c && c.v !== '').map(c => c.v).join(' '))
+        // text rows: {text, bold: every filled cell is bold}
+        const textRows = list => list.map(r => {
+            const cells = r.filter(c => c && c.v !== '')
+            return {text: cells.map(c => c.v).join(' '), bold: cells.length > 0 && cells.every(c => c.b)}
+        })
+        const textHtml = t => t.bold ? `<p><strong>${cellHtml(t.text)}</strong></p>` : `<p>${cellHtml(t.text)}</p>`
         if (names.length > 1) parts.push(`<h3>${esc(name)}</h3>`)
         if (first < 0) {
-            textRows(rows).forEach(t => parts.push(`<p>${cellHtml(t)}</p>`))
+            textRows(rows).forEach(t => parts.push(textHtml(t)))
             return
         }
         textRows(rows.slice(0, first)).forEach((t, i) => {
             // a short first line is the title of the table
-            parts.push(i === 0 && names.length === 1 && t.length <= 80 && !/[.:,;]$/.test(t) ? `<h3>${esc(t)}</h3>` : `<p>${cellHtml(t)}</p>`)
+            parts.push(i === 0 && names.length === 1 && t.text.length <= 80 && !/[.:,;]$/.test(t.text) ? `<h3>${esc(t.text)}</h3>` : textHtml(t))
         })
         const table = rows.slice(first, last + 1)
         const cols = table[0].length
         // header: the first row of the table, unless it contains values (numbers other than years)
         const hasHeader = table.length > 1 && !table[0].some(c => c && c.n && !c.year)
         // numeric columns: mostly numbers below the header -> header right aligned too
-        const numericCol = []
+        const numericCol = [], amountCol = []
         for (let i = 0; i < cols; i++) {
             const body = table.slice(hasHeader ? 1 : 0).map(r => r[i]).filter(c => c && c.v !== '')
             numericCol[i] = body.length > 0 && body.filter(c => c.n).length >= body.length / 2
+            // amounts in the column (numbers that are no year): then a "year" like 1960 is an amount too
+            amountCol[i] = body.some(c => c.n && !c.year)
         }
         const html = table.map((r, ri) => {
             const isHeader = ri === 0 && hasHeader
@@ -830,11 +889,13 @@ export const excelToHtml = async (buffer, {sheet, maxRows = 500} = {}) => {
                 const right = isHeader ? numericCol[i] : c.n
                 const attrs = (c.span > 1 ? ` colspan="${c.span}"` : '') + (c.rowspan > 1 ? ` rowspan="${c.rowspan}"` : '') +
                     (right ? ' style="text-align: right"' : '')
-                return `<${tag}${attrs}>${cellHtml(c.v)}</${tag}>`
+                const v = !isHeader && c.year && amountCol[i] ? formatSwissNumber(c.num) : c.v
+                // bold cells (e.g. sums), the header is bold anyway
+                return `<${tag}${attrs}>${!isHeader && c.b ? `<strong>${cellHtml(v)}</strong>` : cellHtml(v)}</${tag}>`
             }).join('') + '</tr>'
         }).join('')
         parts.push(`<table><tbody>${html}</tbody></table>`)
-        textRows(rows.slice(last + 1)).forEach(t => parts.push(`<p>${cellHtml(t)}</p>`))
+        textRows(rows.slice(last + 1)).forEach(t => parts.push(textHtml(t)))
     })
     return parts.join('')
 }
@@ -1405,6 +1466,19 @@ export const convertContent = async ({db, context, buffer, fileName = '', mimeTy
         if (h) blocks.push({type: 'html', html: h})
         else warnings.push('Im PDF wurde kein Text gefunden (gescanntes Dokument?)')
     } else if (type === 'excel') {
+        if (['xls', 'ods'].includes(ext(fileName))) {
+            // SheetJS reads no fonts from these formats: as xlsx (LibreOffice, if installed) bold cells are kept
+            // (Numbers is converted to xlsx above already)
+            try {
+                const converted = await convertWithLibreOffice(buffer, fileName, 'xlsx')
+                if (converted) {
+                    buffer = converted
+                    fileName = fileName.replace(/\.[^.]+$/, '') + '.xlsx'
+                }
+            } catch (e) {
+                warnings.push('Formatierung (fett) konnte nicht übernommen werden')
+            }
+        }
         const h = ext(fileName) === 'csv' ? await excelToHtml(Buffer.from(buffer.toString('utf8')), {}) : await excelToHtml(buffer)
         if (h) blocks.push({type: 'html', html: h})
     } else if (type === 'text') {

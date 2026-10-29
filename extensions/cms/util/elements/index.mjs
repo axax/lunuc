@@ -2,7 +2,7 @@ import {buildBaseElements} from './baseElements.mjs'
 import {buildAdvancedElements} from './advancedElements.mjs'
 import {
     MEDIA_PROJECTION, SLIDES_TAB, DEFAULT_TAB, EXTENDED_TAB, MISC_TAB, RESPONSIVE_TAB, IMAGE_OPTIMIZATION_TAB,
-    MARGIN_TAB, VISIBILITY_TAB, TRANSLATION_TAB, EVENT_TAB
+    MARGIN_TAB, VISIBILITY_TAB, TRANSLATION_TAB, EVENT_TAB, marginOptions
 } from './optionHelpers.mjs'
 import {_t} from '../../../../util/i18n.mjs'
 
@@ -86,13 +86,14 @@ const getCache = () => {
 }
 
 /**
- * @param value    element key. 'customElement' returns an empty object,
+ * @param value    element key. 'customElement' returns only the margin options,
  *                 undefined returns the full list
  * @param options  {advanced: true} to include the advanced elements
  */
 const getJsonDomElements = (value, options) => {
     if (value === 'customElement') {
-        return {}
+        // the options of a custom element are in its own $inlineEditor.options, margins are available for all
+        return {options: marginOptions('p_')}
     }
     const cache = getCache()
     if (value) {

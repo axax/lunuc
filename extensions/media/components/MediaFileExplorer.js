@@ -6,6 +6,7 @@ import Util from '../../../client/util/index.mjs'
 import DriveFileRenameOutlineRounded from '@mui/icons-material/DriveFileRenameOutlineRounded';
 import DeleteRounded from '@mui/icons-material/DeleteRounded';
 import CreateNewFolderRounded from '@mui/icons-material/CreateNewFolderRounded';
+import FolderCopyRounded from '@mui/icons-material/FolderCopyRounded';
 import AddPhotoAlternateRoundedIcon from '@mui/icons-material/AddPhotoAlternateRounded';
 import CheckCircleOutlineRounded from '@mui/icons-material/CheckCircleOutlineRounded';
 import LibraryAddCheckRounded from '@mui/icons-material/LibraryAddCheckRounded';
@@ -13,6 +14,19 @@ import SimpleMenu from "../../../client/components/ui/impl/material/SimpleMenu";
 import {getImageSrc} from "../../../client/util/media";
 import {_t} from '../../../util/i18n.mjs'
 import {setUploadTarget, onMediaUploaded, openUploadDialog} from './MediaUploadBar'
+
+// copies a folder with all its subfolders (new groups), the files are not linked to the copy
+// resolves with {_id, name, parent, count}
+export const copyFolderStructure = (item) => {
+    const name = `${item.label || item.name} (${_t('MediaFileExplorer.copySuffix')})`
+    return client.mutate({
+        mutation: 'mutation copyMediaGroupStructure($_id:ID!,$name:String){copyMediaGroupStructure(_id:$_id,name:$name){_id name parent count}}',
+        variables: {_id: item.id, name}
+    }).then(response => {
+        if (response.errors?.length) throw new Error(response.errors[0].message)
+        return response.data.copyMediaGroupStructure
+    })
+}
 
 export const createNewEntry = (item) => {
     return {
@@ -322,6 +336,11 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pa
                         }
                     }
                 })
+            } else if (action.key === 'copy-structure') {
+                copyFolderStructure(item).then(({_id, name, parent}) => {
+                    const parentId = parent || 'root'
+                    explorerRef.current?.addItems(parentId, [createNewEntry({parent: parentId, _id: String(_id), name, createdBy: item.original.createdBy, ownerGroup: item.original.ownerGroup})])
+                }).catch(e => console.error(e))
             } else if (action.key === 'new-file') {
                 setUploadTarget(targetFromItem(item))
                 openUploadDialog()
@@ -409,6 +428,9 @@ export function ContextMenu({anchorPosition, onClose, item, onAction, isPicker, 
     }
     if (item?.fileType !== 'root') {
         actions.push({key: 'edit', name: _t('MediaFileExplorer.edit'), icon: <DriveFileRenameOutlineRounded fontSize="small"/>})
+        if (item?.fileType === 'folder') {
+            actions.push({key: 'copy-structure', name: _t('MediaFileExplorer.copyStructure'), icon: <FolderCopyRounded fontSize="small"/>})
+        }
         actions.push({divider: true, key: 'delete', name: _t('MediaFileExplorer.delete'), icon: <DeleteRounded fontSize="small"/>, danger: true})
     }
 

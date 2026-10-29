@@ -21,7 +21,7 @@ import GenericForm from '../../../client/components/GenericForm'
 import {useKeyValuesGlobal, setKeyValue} from '../../../client/util/keyvalue'
 import {client} from '../../../client/middleware/graphql'
 import config from 'gen/config-client'
-import {isCustomElementVisible, createCustomElementFromCmsPage} from '../util/customElements.mjs'
+import {isCustomElementVisible, createCustomElementFromCmsPage, fetchManualFields, syncOptionsFromManual, getCustomElementCmsSlug} from '../util/customElements.mjs'
 
 const STORAGE_COLLAPSED = 'CmsElement.collapsedGroups'
 const STORAGE_RECENT = 'CmsElement.recent'
@@ -386,6 +386,49 @@ export default function CmsElement(props) {
         setShowCustomElement({element, isNew: !!isNew})
     }
 
+    // button in the dialog: fields added to the manual of the cms page later are taken into the definition
+    // (only in the form, stored with "Save"). The page is the chosen one or the slug of the Cms child.
+    const syncCustomFormFromManual = () => {
+        const notify = message => _app_.dispatcher.addNotification({horizontal: 'right', autoHideDuration: 4000, closeButton: false, message})
+        const current = (editDataForm.current && editDataForm.current.state.fields) || {}
+        let defaults = current.defaults
+        if (typeof defaults === 'string') {
+            try {
+                defaults = JSON.parse(defaults)
+            } catch (e) {
+                notify(_t('CmsElement.custom.invalidJson'))
+                return
+            }
+        }
+        defaults = JSON.parse(JSON.stringify(defaults || {}))
+        const picked = Array.isArray(current.fromCmsPage) ? current.fromCmsPage[0] : current.fromCmsPage
+        const slug = (picked && picked.slug) || getCustomElementCmsSlug(defaults)
+        if (!slug) {
+            notify(_t('CmsElement.custom.noCmsPage'))
+            return
+        }
+        fetchManualFields(client, slug).then(({found, fields}) => {
+            if (!found) {
+                notify(_t('JsonDomHelper.update.options.from.manual.notFound', {slug}))
+                return
+            }
+            if (!fields) {
+                notify(_t('JsonDomHelper.update.options.from.manual.noFields', {slug}))
+                return
+            }
+            const {added, updated, kept} = syncOptionsFromManual(defaults, fields, {prefix: 'c_0_', elementKey: 'customElement'})
+            setCustomForm({
+                key: customForm.key + 1,
+                values: {...current, fromCmsPage: [{slug, __typename: 'CmsPage'}], defaults}
+            })
+            notify(added || updated ? _t('JsonDomHelper.update.options.from.manual.done', {added, updated, kept: kept.length ? kept.join(', ') : '-'}) + ' – ' + _t('CmsElement.custom.saveHint')
+                : _t('JsonDomHelper.update.options.from.manual.unchanged'))
+        }).catch(e => {
+            console.error(e)
+            notify(_t('JsonDomHelper.update.options.from.manual.error', {message: e.message}))
+        })
+    }
+
     // a cms page was chosen in the dialog: options from its manual, the Cms child renders the page
     const applyCmsPage = (value) => {
         const picked = Array.isArray(value) ? value[0] : value
@@ -561,6 +604,11 @@ export default function CmsElement(props) {
                                          maxWidth="md"
                                          key="customElementDialog"
                                          open={!!showCustomElement} onClose={(action) => {
+            if (action && action.key === 'syncManual') {
+                // the dialog stays open
+                syncCustomFormFromManual()
+                return
+            }
             const original = showCustomElement && showCustomElement.element
             const originalName = showCustomElement && !showCustomElement.isNew && original ? original.name : null
             if (action.key === 'save' && editDataForm.current) {
@@ -621,6 +669,10 @@ export default function CmsElement(props) {
                                                  key: 'delete',
                                                  label: _t('core.delete')
                                              }] : []),
+                                             {
+                                                 key: 'syncManual',
+                                                 label: _t('JsonDomHelper.update.options.from.manual')
+                                             },
                                              {
                                                  key: 'no',
                                                  label: _t('core.cancel'),

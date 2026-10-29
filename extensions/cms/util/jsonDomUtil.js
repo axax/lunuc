@@ -214,6 +214,14 @@ export const getHighlightPosition = (node)=>  {
         childMinTop = Infinity,
         childMinLeft = Infinity,
         allAbs = node.childNodes.length>0
+    // children without their margins: used when the node has a box of its own (not only absolute children).
+    // A margin of a child (e.g. margin-bottom of the root element of a component) can collapse through the
+    // node and lie outside of it - with that space in the highlight the pointer leaves the element (mouseout)
+    // while it is still inside the frame, and the highlight disappears before the bottom is reached
+    let rectMaxTop = 0,
+        rectMaxLeft = 0,
+        rectMinTop = Infinity,
+        rectMinLeft = Infinity
 
     if(node.tagName==='SELECT') {
         allAbs=false
@@ -249,6 +257,10 @@ export const getHighlightPosition = (node)=>  {
                     childMaxLeft = Math.max(rectMargin.left + (rectMargin.width ?? 0), childMaxLeft)
                     childMinTop = Math.min(rectMargin.top, childMinTop)
                     childMaxTop = Math.max(rectMargin.top + (rectMargin.height ?? 0), childMaxTop)
+                    rectMinLeft = Math.min(rect.left, rectMinLeft)
+                    rectMaxLeft = Math.max(rect.right, rectMaxLeft)
+                    rectMinTop = Math.min(rect.top, rectMinTop)
+                    rectMaxTop = Math.max(rect.bottom, rectMaxTop)
                 } else {
                     allAbs = false
                 }
@@ -263,10 +275,10 @@ export const getHighlightPosition = (node)=>  {
 
     if(!allAbs) {
         const rect = node.getBoundingClientRect()
-        childMinLeft = Math.min(rect.left, childMinLeft)
-        childMaxLeft = Math.max(rect.left + (rect.width ?? 0), childMaxLeft)
-        childMinTop = Math.min(rect.top, childMinTop)
-        childMaxTop = Math.max(rect.top + (rect.height ?? 0), childMaxTop)
+        childMinLeft = Math.min(rect.left, rectMinLeft)
+        childMaxLeft = Math.max(rect.left + (rect.width ?? 0), rectMaxLeft)
+        childMinTop = Math.min(rect.top, rectMinTop)
+        childMaxTop = Math.max(rect.top + (rect.height ?? 0), rectMaxTop)
     }
 
     const computedStyle = window.getComputedStyle(node)
@@ -424,17 +436,11 @@ export const highlighterHandler = (e, observer, after) => {
                 applyScrollClip(toolbar, clip, pos.top, pos.left)
             }
 
-            const toolbarRichtext = byUid('data-richtext-toolbar')
-            if (toolbarRichtext) {
-                const rect = node.getBoundingClientRect()
-                let top = rect.top - 130
-                if(top<0){
-                    toolbarRichtext.style.top = (Math.abs(top)-65) + 'px'
-                }
-                /*toolbarRichtext.style.top = pos.top + 'px'
-                toolbarRichtext.style.left = pos.left + 'px'
-                toolbarRichtext.style.height = pos.height + 'px'*/
-            }
+            // The rich text toolbar ([data-richtext-toolbar]) is positioned by
+            // JsonDomHelper (caret based, viewport clamped). It must not be
+            // touched here: this handler runs on every hover of ANY element and
+            // overwriting style.top pushed the bar out of the viewport until the
+            // next scroll made react write its own value again.
 
         }
     })

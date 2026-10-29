@@ -42,7 +42,7 @@ import config from 'gen/config-client'
 import {getJsonDomElements, MEDIA_PROJECTION, replaceUidPlaceholder} from '../util/elements'
 import {deepMergeOptional, deepMerge} from '../../../util/deepMerge.mjs'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants/index.mjs'
-import {parseManualFields} from '../util/customElements.mjs'
+import {getCustomElementCmsSlug, fetchManualFields, syncOptionsFromManual} from '../util/customElements.mjs'
 import {isSourceSortable, moveSourceEntry, registerSourceSort} from '../util/sourceSort'
 import {client} from '../../../client/middleware/graphql'
 import {openWindow} from '../../../client/util/window'
@@ -74,6 +74,45 @@ if (typeof document !== 'undefined' && !document.getElementById('lunuc-inline-ed
     styleEl.id = 'lunuc-inline-edit-style'
     styleEl.textContent = '[data-lunuc-editable]:focus,[data-lunuc-editable]:focus-visible{outline:none !important}'
     document.head.appendChild(styleEl)
+}
+
+// full toolbar (instead of only the "+") is shown
+const isFullRichTextBar = (state) => !!(state.richTextHasSelection || state.richTextBarOpened ||
+    state.richTextBarHover || isRichTextBarHold())
+
+/**
+ * Bottom edge of fixed / sticky chrome at the top of the viewport (e.g. an admin
+ * header). The rich text bar must not be placed underneath it.
+ * The editor's own overlays (portaled to body, marked with data-helper-uid) are ignored.
+ */
+const getViewportTopInset = (x) => {
+    if (typeof document === 'undefined' || !document.elementsFromPoint) {
+        return 0
+    }
+    const maxInset = window.innerHeight * 0.4
+    let inset = 0
+    const px = Math.min(Math.max(x || 0, 1), window.innerWidth - 1)
+    for (const el of document.elementsFromPoint(px, 1)) {
+        if (el === document.body || el === document.documentElement) {
+            break
+        }
+        if (el.closest('[data-helper-uid],[data-richtext-toolbar]')) {
+            continue
+        }
+        let cur = el
+        while (cur && cur !== document.body) {
+            const pos = window.getComputedStyle(cur).position
+            if (pos === 'fixed' || pos === 'sticky') {
+                const r = cur.getBoundingClientRect()
+                if (r.top <= 1 && r.bottom > inset && r.bottom < maxInset) {
+                    inset = r.bottom
+                }
+                break
+            }
+            cur = cur.parentElement
+        }
+    }
+    return inset
 }
 
 const CONVERTABLE_ELEMENTS = ['image','layout-1-2','layout-1-3','layout-1-4','layout-1-6','headline','p','richText','link']
@@ -323,7 +362,28 @@ class JsonDomHelper extends React.Component {
         }
     }
 
-    componentDidUpdate(prevProps) {
+    componentDidUpdate(prevProps, prevState) {
+        // only one element is highlighted at a time: a highlight that did not get its mouseout (e.g. the element
+        // was re-rendered or moved under the pointer) is switched off when another element is highlighted
+        if (this.state.hovered && !(prevState && prevState.hovered)) {
+            const previous = JsonDomHelper.hoveredHelper
+            JsonDomHelper.hoveredHelper = this
+            if (previous && previous !== this && previous.state.hovered &&
+                !previous.state.dragging && !previous.state.toolbarMenuOpen && !previous._marginResize) {
+                clearTimeout(previous.helperTimeoutOut)
+                previous.stopWatchPointerLeave()
+                previous.setState({hovered: false, toolbarHovered: false, dividerHovered: false})
+            }
+        } else if (!this.state.hovered && prevState && prevState.hovered && JsonDomHelper.hoveredHelper === this) {
+            JsonDomHelper.hoveredHelper = null
+        }
+        // The full rich text bar was just mounted (selection made, "+" clicked, ...).
+        // Until now only the "+" existed, so the position was clamped with default
+        // dimensions - measure again with the real bar.
+        if (this.state.richTextBarFocused && isFullRichTextBar(this.state) &&
+            !(prevState && prevState.richTextBarFocused && isFullRichTextBar(prevState))) {
+            this.updateRichTextBarPosition(false)
+        }
         // directly editable text: the re-render replaced the text node and the browser put the caret at the
         // start - restore it before the next key is handled (a requestAnimationFrame was too late for fast typing)
         if (this._pendingCaret) {
@@ -442,7 +502,9 @@ class JsonDomHelper extends React.Component {
             if (node && node.contains(e.target)) {
                 return
             }
-            if (checkIfElementOrParentHasDataKey(e.target, ['data-toolbar', 'data-picker'])) {
+            // the margin divider below the element lies outside of it (it covers the space below)
+            if (this._marginResize || this.state.dividerHovered ||
+                checkIfElementOrParentHasDataKey(e.target, ['data-toolbar', 'data-picker', 'data-margin-divider'])) {
                 return
             }
             this.stopWatchPointerLeave()
@@ -585,20 +647,34 @@ class JsonDomHelper extends React.Component {
                 selection.addRange(range)
             }
 
+            const nodeRect = node.getBoundingClientRect()
+
             // Keep the previous position rather than jumping somewhere wrong
             // when a measurement fails - this is what made the bar hop around
-            // while scrolling.
-            if (!rect) {
-                rect = this._lastCaretRect
+            // while scrolling. The last caret rect is stored RELATIVE to the
+            // element: a stored DOMRect holds viewport coordinates, which are
+            // stale as soon as the page has scrolled.
+            if (!rect && this._lastCaretRect) {
+                const last = this._lastCaretRect
+                rect = {
+                    top: nodeRect.top + last.top,
+                    left: nodeRect.left + last.left,
+                    height: last.height,
+                    bottom: nodeRect.top + last.top + last.height
+                }
+            } else if (rect) {
+                this._lastCaretRect = {
+                    top: rect.top - nodeRect.top,
+                    left: rect.left - nodeRect.left,
+                    height: rect.height || 0
+                }
             }
             if (!rect) {
                 return
             }
-            this._lastCaretRect = rect
 
-            const nodeRect = node.getBoundingClientRect()
             this.setState({
-                ...this.clampRichTextBarPosition(rect),
+                ...this.clampRichTextBarPosition(rect, !allowMarker),
                 richTextCaretTop: rect.top + (rect.height || 0) / 2,
                 // left of the drag handle (which sits about 8-24px left of the element)
                 richTextPlusLeft: Math.max(4, nodeRect.left - 54)
@@ -620,16 +696,44 @@ class JsonDomHelper extends React.Component {
      * scrolling upwards, which reads as the bar moving the wrong way.
      * Sticking to the edge keeps the movement monotonic.
      */
-    clampRichTextBarPosition(rect) {
+    clampRichTextBarPosition(rect, scrolling = false) {
         const bar = this._richTextBarNode
         const barHeight = (bar && bar.offsetHeight) || 48
         const barWidth = (bar && bar.offsetWidth) || 320
         const margin = 8
+        const gap = 6
 
-        const minTop = barHeight + margin
+        // fixed header etc. - measured only outside of scrolling (it does not
+        // move while scrolling and elementsFromPoint is not free)
+        if (!scrolling || this._richTextTopInset === undefined) {
+            this._richTextTopInset = getViewportTopInset(rect.left)
+        }
+        const topInset = this._richTextTopInset || 0
+
+        const minTop = topInset + barHeight + margin
         const maxTop = window.innerHeight - margin
+        const lineHeight = rect.height || 0
+        const lineBottom = rect.bottom !== undefined ? rect.bottom : rect.top + lineHeight
 
-        let top = rect.top
+        // Not enough room above the line: put the bar below it instead of
+        // covering the selected text. The side is switched only on caret /
+        // selection changes, never while scrolling - flipping during scroll
+        // made the bar jump against the scroll direction. A hysteresis keeps
+        // it from toggling at the threshold.
+        if (!scrolling) {
+            const roomAbove = rect.top >= minTop
+            const roomBelow = lineBottom + gap + barHeight <= maxTop
+            if (this._richTextBarBelow) {
+                if (rect.top >= minTop + 24 || !roomBelow) {
+                    this._richTextBarBelow = false
+                }
+            } else if (!roomAbove && roomBelow) {
+                this._richTextBarBelow = true
+            }
+        }
+
+        // top is the bar's lower edge (it is drawn with translateY(-100%))
+        let top = this._richTextBarBelow ? lineBottom + gap + barHeight : rect.top
         if (top < minTop) {
             top = minTop
         }
@@ -649,6 +753,31 @@ class JsonDomHelper extends React.Component {
             richTextBarFloating: true,
             richTextBarTop: top,
             richTextBarLeft: left
+        }
+    }
+
+    /**
+     * Ref of the rich text bar. Its content (core/wysiwyg) is rendered
+     * asynchronously, so the size changes after mount - re-position whenever
+     * it does, otherwise the clamping is based on wrong dimensions until the
+     * next scroll.
+     */
+    setRichTextBarNode = (el) => {
+        if (this._richTextBarNode === el) {
+            return
+        }
+        if (this._richTextBarResizeObserver) {
+            this._richTextBarResizeObserver.disconnect()
+            this._richTextBarResizeObserver = null
+        }
+        this._richTextBarNode = el
+        if (el && typeof ResizeObserver !== 'undefined') {
+            this._richTextBarResizeObserver = new ResizeObserver(() => {
+                if (this.state.richTextBarFocused) {
+                    this.updateRichTextBarPosition(false)
+                }
+            })
+            this._richTextBarResizeObserver.observe(el)
         }
     }
 
@@ -739,6 +868,18 @@ class JsonDomHelper extends React.Component {
             target.addEventListener('scroll', this._scrollHandler, {passive: true})
         })
         window.addEventListener('resize', this._scrollHandler, {passive: true})
+
+        // the text moves without any scroll / selectionchange event when the
+        // element (or content above it) changes size, e.g. images loading or a
+        // re-render - re-measure then as well
+        if (typeof ResizeObserver !== 'undefined') {
+            const layout = node.closest && node.closest('[data-layout-content]')
+            this._elementResizeObserver = new ResizeObserver(this._scrollHandler)
+            this._elementResizeObserver.observe(node)
+            if (layout && layout !== node) {
+                this._elementResizeObserver.observe(layout)
+            }
+        }
     }
 
     stopWatchScroll() {
@@ -747,12 +888,20 @@ class JsonDomHelper extends React.Component {
                 target.removeEventListener('scroll', this._scrollHandler)
             })
             window.removeEventListener('resize', this._scrollHandler)
+            if (this._elementResizeObserver) {
+                this._elementResizeObserver.disconnect()
+                this._elementResizeObserver = null
+            }
             this._scrollTargets = null
             this._scrollHandler = null
         }
     }
 
     componentWillUnmount() {
+        if (JsonDomHelper.hoveredHelper === this) {
+            JsonDomHelper.hoveredHelper = null
+        }
+        this.stopMarginResize()
         this.stopWatchToolbarLeave()
         clearTimeout(this.helperTimeoutIn)
         clearTimeout(this.helperTimeoutOut)
@@ -764,6 +913,7 @@ class JsonDomHelper extends React.Component {
             cancelAnimationFrame(this._richTextBarRaf)
             this._richTextBarRaf = null
         }
+        this.setRichTextBarNode(null)
 
         // an unmounted instance must not stay in the selection, otherwise
         // deselectSelected() calls forceUpdate() on a dead component
@@ -1035,10 +1185,11 @@ class JsonDomHelper extends React.Component {
 
     /*
      * Reads the manual of the referenced cms component and merges its "fields" into
-     * $inlineEditor.options of the Cms element. Fields from the manual overwrite existing
-     * options with the same key, options that are not in the manual are kept.
+     * $inlineEditor.options: of the Cms element (prefix '') or of a custom element created from a cms page
+     * (prefix 'c_0_', options of its Cms child). Fields from the manual overwrite existing options with the
+     * same key, options that are not in the manual are kept.
      */
-    async updateOptionsFromManual(componentSlug, subJson, _json) {
+    async updateOptionsFromManual(componentSlug, subJson, _json, prefix = '') {
         const notify = (message) => _app_.dispatcher.addNotification({
             horizontal: 'right',
             autoHideDuration: 4000,
@@ -1046,63 +1197,69 @@ class JsonDomHelper extends React.Component {
             message
         })
         try {
-            const {data} = await client.query({
-                fetchPolicy: 'network-only',
-                query: 'query cmsPages($filter:String,$limit:Int){cmsPages(filter:$filter,limit:$limit){results{_id slug manual}}}',
-                variables: {
-                    limit: 1,
-                    // the manual part in the filter is needed so that the resolver returns the manual field
-                    filter: `slug=="${componentSlug}" && manual!=="__no_manual__"`
-                }
-            })
-            const page = data?.cmsPages?.results?.find(p => p.slug === componentSlug)
-            if (!page) {
+            const {found, fields} = await fetchManualFields(client, componentSlug)
+            if (!found) {
                 notify(_t('JsonDomHelper.update.options.from.manual.notFound', {slug: componentSlug}))
                 return
             }
-            const fields = parseManualFields(page.manual)
             if (!fields) {
                 notify(_t('JsonDomHelper.update.options.from.manual.noFields', {slug: componentSlug}))
                 return
             }
-
-            if (!subJson.$inlineEditor || subJson.$inlineEditor.constructor !== Object) {
-                subJson.$inlineEditor = {elementKey: 'Cms'}
-            }
-            const currentOptions = subJson.$inlineEditor.options || {}
-            const newOptions = {}
-            let added = 0, updated = 0
-
-            // order of the manual first, then options that only exist in the template
-            Object.keys(fields).forEach(key => {
-                if (!currentOptions[key]) {
-                    added++
-                } else if (JSON.stringify(currentOptions[key]) !== JSON.stringify(fields[key])) {
-                    updated++
-                }
-                newOptions[key] = fields[key]
-            })
-            const kept = Object.keys(currentOptions).filter(key => !fields[key])
-            kept.forEach(key => {
-                newOptions[key] = currentOptions[key]
-            })
-
-            if (added === 0 && updated === 0 && Object.keys(currentOptions).length === Object.keys(newOptions).length) {
+            const before = JSON.stringify(subJson.$inlineEditor && subJson.$inlineEditor.options)
+            const {added, updated, kept} = syncOptionsFromManual(subJson, fields, {prefix, elementKey: prefix ? 'customElement' : 'Cms'})
+            if (before === JSON.stringify(subJson.$inlineEditor.options)) {
                 notify(_t('JsonDomHelper.update.options.from.manual.unchanged'))
                 return
             }
-
-            subJson.$inlineEditor.options = newOptions
             this.props._onTemplateChange(_json, true)
-
-            notify(_t('JsonDomHelper.update.options.from.manual.done', {
-                added,
-                updated,
-                kept: kept.length ? kept.join(', ') : '-'
-            }))
+            notify(_t('JsonDomHelper.update.options.from.manual.done', {added, updated, kept: kept.length ? kept.join(', ') : '-'}))
         } catch (e) {
             console.error(e)
             notify(_t('JsonDomHelper.update.options.from.manual.error', {message: e.message}))
+        }
+    }
+
+    /*
+     * resizes the bottom margin of the element by dragging the divider below it. The pointer is followed on the
+     * document (it may leave the divider or the element), the new value is written on mouse up.
+     */
+    startMarginResize(e, {subJson, _json, marginBottomStyle, _onTemplateChange}) {
+        this.stopMarginResize()
+        const startY = e.pageY
+        const start = parseFloat(this.state.marginBottom) || 0
+        const onMove = (ev) => {
+            ev.preventDefault()
+            let value = start + (ev.pageY - startY)
+            if (isNaN(value) || value < 0) {
+                value = 0
+            }
+            this.setState({marginBottomNew: Math.round(value) + 'px', dividerHovered: true})
+        }
+        const onUp = () => {
+            this.stopMarginResize()
+            const {marginBottomNew, marginBottom} = this.state
+            if (marginBottomNew && marginBottomNew !== marginBottom) {
+                const finalValue = recalculatePixelValue(marginBottomStyle, marginBottomNew, marginBottom)
+                setPropertyByPath(finalValue, 'p.style.marginBottom', subJson)
+                _onTemplateChange(_json, true)
+            }
+            this.setState({
+                dividerHovered: false,
+                marginBottom: marginBottomNew || marginBottom,
+                marginBottomNew: false
+            })
+        }
+        this._marginResize = {onMove, onUp}
+        document.addEventListener('mousemove', onMove)
+        document.addEventListener('mouseup', onUp)
+    }
+
+    stopMarginResize() {
+        if (this._marginResize) {
+            document.removeEventListener('mousemove', this._marginResize.onMove)
+            document.removeEventListener('mouseup', this._marginResize.onUp)
+            this._marginResize = null
         }
     }
 
@@ -1591,6 +1748,8 @@ class JsonDomHelper extends React.Component {
                         }
                         if (hasRichTextBar) {
                             this._lastCaretRect = null
+                            this._richTextBarBelow = false
+                            this._richTextTopInset = undefined
                             this.setState({richTextBarFocused: true, richTextBarOpened: false, richTextHasSelection: false})
                             this.updateRichTextBarPosition()
                             this.watchSelectionChange()
@@ -1634,7 +1793,10 @@ class JsonDomHelper extends React.Component {
                                 _onTemplateChange(_json, 'typing')
                             }
                         } else {
-                            setPropertyByPath(value, field, subJson)
+                            // the template is evaluated as js template literal: a backtick in the text (e.g. 12`000
+                            // as thousands separator) is escaped like in the element dialog, otherwise the template
+                            // breaks ("SyntaxError: Unexpected number")
+                            setPropertyByPath(value.replace(/`/g, (m, o, s) => s[o - 1] === '\\' ? m : '\\`'), field, subJson)
                             _onTemplateChange(_json, 'typing')
                         }
                         // fallback, in case the re-render did not go through this component
@@ -1766,49 +1928,33 @@ class JsonDomHelper extends React.Component {
                     {/* resizing the margin changes the template: not for data entries (mode source)
                         and not for elements of a component that can not be edited here */}
                     {_options.mode !== 'source' && (!_dynamic || _forceInlineEditor) && <StyledHorizontalDivider style={{height:this.state.marginBottomNew || this.state.marginBottom}}
+                                             draggable={false}
+                                             data-margin-divider={rest._key}
+                                             onDragStart={(e)=>{
+                                                 // no native drag of the element while the margin is resized
+                                                 e.preventDefault()
+                                                 e.stopPropagation()
+                                             }}
                                              onMouseDown={(e)=>{
-                                                 this.setState({dividerMousePos:e.pageY})
-                                             }}
-                                             onMouseUp={()=>{
-                                                 if(this.state.marginBottomNew) {
-                                                     const finalValue = recalculatePixelValue(marginBottomStyle, this.state.marginBottomNew, this.state.marginBottom)
-                                                     setPropertyByPath(finalValue,'p.style.marginBottom',subJson)
-                                                     _onTemplateChange(_json, true)
-
+                                                 if (e.button !== 0) {
+                                                     return
                                                  }
-                                                 this.setState({dividerMousePos:false,
-                                                     marginBottom: this.state.marginBottomNew,
-                                                     marginBottomNew:false})
-                                             }}
-                                             onMouseMove={(e)=>{
-                                                 if(this.state.dividerMousePos) {
-                                                     const marginBottom = parseFloat(this.state.marginBottom)
-                                                     let newMarginBottom = marginBottom + (e.pageY - this.state.dividerMousePos)
-                                                     if(isNaN(newMarginBottom) || newMarginBottom< 10) {
-                                                         newMarginBottom = 10
-                                                     }
-                                                     this.setState({marginBottomNew: newMarginBottom + 'px'})
-                                                 }
+                                                 // preventDefault: otherwise the (draggable) element starts a native
+                                                 // drag and no further mousemove events arrive
+                                                 e.preventDefault()
+                                                 e.stopPropagation()
+                                                 this.startMarginResize(e, {subJson, _json, marginBottomStyle, _onTemplateChange})
                                              }}
                                              onMouseOver={()=>{
                                                  this.setState({dividerHovered:true})
                                              }}
                                              onMouseOut={(e)=>{
-                                                 const mouseReleased = ()=>{
-                                                     this.setState({
-                                                         dividerHovered: false,
-                                                         dividerMousePos: false,
-                                                         marginBottomNew: false
-                                                     })
-                                                     this.onHelperMouseOut(e)
-                                                     document.removeEventListener('mouseup',mouseReleased)
+                                                 // while resizing the pointer may leave the divider, the drag goes on
+                                                 if (this._marginResize) {
+                                                     return
                                                  }
-                                                 if(e.buttons===1) {
-                                                     // button still pressed
-                                                     document.addEventListener('mouseup',mouseReleased)
-                                                 }else {
-                                                     mouseReleased()
-                                                 }
+                                                 this.setState({dividerHovered: false})
+                                                 this.onHelperMouseOut(e)
                                              }}>{this.state.marginBottom!='0px'?(Math.round(parseFloat(this.state.marginBottomNew || this.state.marginBottom) * 100) / 100 + 'px')+(marginBottomStyle && this.state.marginBottom!=marginBottomStyle?` = ${marginBottomStyle}`:''):''}</StyledHorizontalDivider>}
                 </StyledHighlighter>
 
@@ -1829,8 +1975,7 @@ class JsonDomHelper extends React.Component {
                     </StyledViewportFrame>]
                 }
 
-                const showFullRichTextBar = this.state.richTextHasSelection || this.state.richTextBarOpened ||
-                    this.state.richTextBarHover || isRichTextBarHold()
+                const showFullRichTextBar = isFullRichTextBar(this.state)
                 if (hasRichTextBar && this.state.richTextBarFocused && !showFullRichTextBar) {
                     // only a caret, no selected text: a small "+" next to the line instead of the whole toolbar
                     if (this.state.richTextCaretTop !== undefined) {
@@ -1864,7 +2009,7 @@ class JsonDomHelper extends React.Component {
                     const floating = !!this.state.richTextBarFloating
                     richTextBar = <StyledRichTextBar
                         key={rest._key + '.richtextbar'}
-                        ref={(el)=>{this._richTextBarNode = el}}
+                        ref={this.setRichTextBarNode}
                         data-richtext-toolbar={rest._key}
                         data-helper-uid={this.helperUid}
                         floating={floating}
@@ -2210,15 +2355,17 @@ class JsonDomHelper extends React.Component {
                     })
                 }
 
-                if (isCms && !isInLoop && _options.menu.updateFromManual !== false && Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
-                    const componentSlug = getCmsComponentSlug(subJson)
+                if (!isInLoop && _options.menu.updateFromManual !== false && Util.hasCapability(_app_.user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
+                    // Cms element, or custom element created from a cms page (fields added to the manual later)
+                    const isCustom = !isCms && _options.elementKey === 'customElement'
+                    const componentSlug = isCms ? getCmsComponentSlug(subJson) : isCustom ? getCustomElementCmsSlug(subJson) : null
                     if (componentSlug) {
                         menuItems.push({
                             name: _t('JsonDomHelper.update.options.from.manual'),
                             icon: <TransformIcon/>,
                             onClick: () => {
                                 this.setState({toolbarHovered: false, hovered: false, toolbarMenuOpen: false})
-                                this.updateOptionsFromManual(componentSlug, subJson, _json)
+                                this.updateOptionsFromManual(componentSlug, subJson, _json, isCustom ? 'c_0_' : '')
                             }
                         })
                     }
@@ -2710,7 +2857,12 @@ class JsonDomHelper extends React.Component {
         const newJsonElement = JSON.parse(JSON.stringify(jsonElement))
         delete newJsonElement.defaults
 
-        newJsonElement.options = deepMerge({}, newJsonElement.options, subJson.$inlineEditor && subJson.$inlineEditor.options)
+        if (subJson.$inlineEditor && subJson.$inlineEditor.elementKey === 'customElement') {
+            // custom element: its own options (tabs of the component) first, the general ones (margin) at the end
+            newJsonElement.options = deepMerge({}, subJson.$inlineEditor.options, newJsonElement.options)
+        } else {
+            newJsonElement.options = deepMerge({}, newJsonElement.options, subJson.$inlineEditor && subJson.$inlineEditor.options)
+        }
         newJsonElement.groupOptions = deepMerge({}, newJsonElement.groupOptions, subJson.$inlineEditor && subJson.$inlineEditor.groupOptions)
 
         if(subJson.$inlineEditor && subJson.$inlineEditor.groupOptions){

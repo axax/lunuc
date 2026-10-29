@@ -12,6 +12,7 @@ import {ObjectId} from 'mongodb'
 import {sendMail} from '../../../api/util/mail.mjs'
 import {removeMediaScreenshots, removeMediaVariants} from '../util/index.mjs'
 import {checkRefForMedias, getRefMap} from './mediaRefMap.mjs'
+import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -127,6 +128,65 @@ export default db => ({
                 })
             }
             return result
+        }
+    },
+    Mutation: {
+        // copies a folder incl. all subfolders as new MediaGroups, the media files are not linked to the copy
+        copyMediaGroupStructure: async ({_id, name}, req) => {
+            const {context} = req
+            Util.checkIfUserIsLoggedIn(context)
+            const collection = db.collection('MediaGroup')
+            const source = await collection.findOne({_id: new ObjectId(_id)})
+            if (!source) {
+                throw new Error('Folder with id ' + _id + ' does not exist')
+            }
+            if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)) {
+                const allowedIds = (await Util.userAndJuniorIds(db, context.id)).map(String)
+                if (allowedIds.indexOf(String(source.createdBy)) < 0) {
+                    throw new Error('Error copying folder. You might not have permissions to copy this folder')
+                }
+            }
+
+            // collect all subfolders (breadth first, the visited set protects against cycles)
+            const childrenByParent = new Map()
+            const visited = new Set([String(source._id)])
+            let level = [source._id]
+            while (level.length) {
+                const children = await collection.find({group: {$in: level}}).toArray()
+                level = []
+                for (const child of children) {
+                    const childId = String(child._id)
+                    if (visited.has(childId)) continue
+                    visited.add(childId)
+                    level.push(child._id)
+                    for (const parentId of (child.group || []).map(String)) {
+                        if (!childrenByParent.has(parentId)) childrenByParent.set(parentId, [])
+                        childrenByParent.get(parentId).push(child)
+                    }
+                }
+            }
+
+            let count = 0
+            const copyFolder = async (folder, group, folderName) => {
+                const data = {name: folderName, group}
+                if (folder.ownerGroup && folder.ownerGroup.length) data.ownerGroup = folder.ownerGroup
+                if (folder.autoClean !== undefined && folder.autoClean !== null) data.autoClean = folder.autoClean
+                const created = await GenericResolver.createEntity(db, req, 'MediaGroup', data)
+                count++
+                const newId = new ObjectId(created._id)
+                for (const child of (childrenByParent.get(String(folder._id)) || [])) {
+                    await copyFolder(child, [newId], child.name)
+                }
+                return created
+            }
+
+            const rootCopy = await copyFolder(source, source.group || [], name || (source.name + ' (copy)'))
+            return {
+                _id: rootCopy._id,
+                name: rootCopy.name,
+                parent: source.group && source.group.length ? source.group[0] : null,
+                count
+            }
         }
     }
 })

@@ -383,9 +383,11 @@ export default () => {
             if(value) {
                 const json = JSON.parse(value)
 
+                // GenericData entries are grouped per definition (meta), everything else per collection
                 const groupedLocations = (json.locations || []).reduce((acc, item) => {
-                    if (!acc[item.location]) acc[item.location] = []
-                    acc[item.location].push(item)
+                    const key = item.meta ? `${item.location}:${item.meta}` : item.location
+                    if (!acc[key]) acc[key] = []
+                    acc[key].push(item)
                     return acc
                 }, {})
 
@@ -393,17 +395,21 @@ export default () => {
                     <p><span>Letzte Überprüfung:</span> <strong>{Util.formatDate(json.lastChecked)}</strong></p>
                     {
                         json.locations.length === 0 ? <p>Media wird nicht verwendet</p> :
-                            Object.keys(groupedLocations).map(location => {
-                               // const type = getType(location)
-                                const typeName = _t(location) //(type && (type.label || type.name)) || location
-                                return <div key={location}>
-                                    <p><strong>{typeName}</strong> ({groupedLocations[location].length})</p>
+                            Object.keys(groupedLocations).map(groupKey => {
+                                const items = groupedLocations[groupKey]
+                                const first = items[0]
+                                // GenericData: title of the definition, otherwise translated collection name
+                                const typeName = first.meta ? (first.title || first.meta) : _t(first.location)
+                                return <div key={groupKey}>
+                                    <p><strong>{typeName}</strong> ({items.length})</p>
                                     <ul>
                                         {
-                                            groupedLocations[location].map(item =>
+                                            items.map(item =>
                                                 <li key={item._id}>
                                                     <a target="_blank"
-                                                       href={`/admin/types/${item.location}?open=${item._id}`}>{item.name || item._id}</a>
+                                                       href={item.meta
+                                                           ? `/admin/types/GenericData?fixType=GenericData&title=${encodeURIComponent(item.title || item.meta)}&meta=${encodeURIComponent(item.meta)}&open=${item._id}`
+                                                           : `/admin/types/${item.location}?open=${item._id}`}>{item.name || item._id}</a>
                                                 </li>
                                             )
                                         }

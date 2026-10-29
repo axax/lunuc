@@ -1,6 +1,7 @@
 import {ObjectId} from 'mongodb'
 
-const EMAIL_REGEX = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/
+// Lokalteil: Buchstaben/Ziffern + erlaubte Sonderzeichen (RFC atext), Domain: Labels aus Buchstaben/Ziffern/Bindestrich, mind. ein Punkt
+const EMAIL_REGEX = /^[\p{L}\p{N}.!#$%&'*+/=?^_`{|}~-]+@(?:[\p{L}\p{N}](?:[\p{L}\p{N}-]*[\p{L}\p{N}])?\.)+[\p{L}]{2,}$/u
 const MAX_HEADER_SCAN = 30
 const SAMPLE_COUNT = 3
 
@@ -38,7 +39,17 @@ export const detectHeaderRow = (rows) => {
 
 export const normalizeEmail = (value) => {
     if (value === null || value === undefined) return null
-    let s = String(value).trim().replace(/^mailto:/i, '').replace(/^<|>$/g, '').trim().toLowerCase()
+    let s = String(value)
+        // unsichtbare Zeichen (Zero-Width, BOM, NBSP) entfernen
+        .replace(/[\u200B-\u200D\u2060\uFEFF]/g, '').replace(/\u00A0/g, ' ')
+        .trim()
+    // "Name <abc@def.ch>" -> abc@def.ch
+    const angle = s.match(/<([^<>]+@[^<>]+)>/)
+    if (angle) s = angle[1]
+    s = s.replace(/^mailto:/i, '')
+        // Sonderzeichen am Anfang/Ende entfernen, z.B. abc@def.ch* oder 'abc@def.ch'
+        .replace(/^[^\p{L}\p{N}]+/u, '').replace(/[^\p{L}\p{N}]+$/u, '')
+        .toLowerCase()
     return EMAIL_REGEX.test(s) ? s : null
 }
 

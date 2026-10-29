@@ -31,6 +31,7 @@ import {getImageSrc} from '../../../client/util/media'
 import {_t} from '../../../util/i18n.mjs'
 import {
     ContextMenu,
+    copyFolderStructure,
     createNewEntry,
     createCompare,
     createdTime,
@@ -640,6 +641,14 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
                 break
             case 'edit':
                 editItem(item)
+                break
+            case 'copy-structure':
+                copyFolderStructure(item).then(({_id, name, parent, count}) => {
+                    if (currentFolderRef.current === (parent || '')) {
+                        addItems([createNewEntry({parent: parent || '', _id: String(_id), name})])
+                    }
+                    setMessage(_t('MediaFileExplorer.structureCopied', {count}))
+                }).catch(e => setMessage(e.message))
                 break
             case 'delete':
                 deleteItems(selectedIds.indexOf(item.id) >= 0 && selectedItems.length > 1 ? selectedItems : [item])

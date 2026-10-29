@@ -427,14 +427,25 @@ export const classLayoutOptions = (key, {tabPosition = 0} = {}) => ({
     }
 })
 
+// predefined values for margins / padding (buttons in the field, a custom css value can still be typed in)
+const spacingPresets = () => [
+    {short: '0', name: _t('elements.spacing.none'), value: '0'},
+    {short: 'S', name: _t('elements.spacing.small'), value: '1rem'},
+    {short: 'M', name: _t('elements.spacing.medium'), value: '2rem'},
+    {short: 'L', name: _t('elements.spacing.large'), value: '4rem'}
+]
+
 // one row with the four margins, padding below (css values, e.g. 2rem)
-export const marginOptions = key => ({
-    [`${key}style_marginTop`]: {label: _t('elements.marginTop'), fourthWidth: true, tab: MARGIN_TAB},
-    [`${key}style_marginBottom`]: {label: _t('elements.marginBottom'), fourthWidth: true, tab: MARGIN_TAB},
-    [`${key}style_marginLeft`]: {label: _t('elements.marginLeft'), fourthWidth: true, tab: MARGIN_TAB},
-    [`${key}style_marginRight`]: {label: _t('elements.marginRight'), fourthWidth: true, tab: MARGIN_TAB},
-    [`${key}style_padding`]: {label: _t('elements.padding'), tab: MARGIN_TAB}
-})
+export const marginOptions = key => {
+    const presets = spacingPresets()
+    return {
+        [`${key}style_marginTop`]: {label: _t('elements.marginTop'), fourthWidth: true, tab: MARGIN_TAB, presets},
+        [`${key}style_marginBottom`]: {label: _t('elements.marginBottom'), fourthWidth: true, tab: MARGIN_TAB, presets},
+        [`${key}style_marginLeft`]: {label: _t('elements.marginLeft'), fourthWidth: true, tab: MARGIN_TAB, presets},
+        [`${key}style_marginRight`]: {label: _t('elements.marginRight'), fourthWidth: true, tab: MARGIN_TAB, presets},
+        [`${key}style_padding`]: {label: _t('elements.padding'), tab: MARGIN_TAB, presets}
+    }
+}
 
 export const alignmentOptions = key => ({
     [`${key}style_textAlign`]: {
