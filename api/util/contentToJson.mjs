@@ -23,6 +23,9 @@ import crypto from 'crypto'
 import {ObjectId} from 'mongodb'
 import AdmZip from 'adm-zip'
 import * as cheerio from 'cheerio'
+// swiss thousands separator (12’000 -> 12'000), rich text and text boxes of excel files
+import {normalizeThousands, richTextHtml, excelTextBoxes} from './excelFormat.mjs'
+export {normalizeThousands}
 
 const MAX_IMAGE = 2400
 const MAX_REMOTE_IMAGES = 40
@@ -45,13 +48,6 @@ const genId = () => 'genid_' + crypto.randomBytes(5).toString('hex').slice(0, 8)
 export const escapeTemplateText = str => String(str === undefined || str === null ? '' : str)
     .replace(/`/g, (m, o, s) => s[o - 1] === '\\' ? m : '\\`')
     .replace(/\$\{/g, '$.__ignore__{')
-
-/**
- * thousands separators in swiss notation: 12’000 / 12`000 / 12´000 / 12‘000 -> 12'000
- * (only between a digit and exactly three digits, also an already escaped backtick \` of a template)
- */
-export const normalizeThousands = str => String(str === undefined || str === null ? '' : str)
-    .replace(/(\d)(?:\\`|[`’‘´′ʼ])(?=\d{3}(?!\d))/g, "$1'")
 
 export const richTextElement = html => ({
     t: 'div',
@@ -732,10 +728,12 @@ const formatSwissNumber = v => {
 }
 
 /**
- * bold cells of an xlsx file (SheetJS does not read fonts): {sheetName: Set('row,col')} with 0-based row / col
- * like SheetJS, null for other formats (xls, csv, Numbers) or when the file can not be read
+ * formatting of the cells of an xlsx file (SheetJS does not read fonts):
+ * {sheetName: {bold: Set('row,col'), rich: Map('row,col' -> html)}} with 0-based row / col like SheetJS.
+ * bold: the whole cell is bold, rich: the cell has mixed formatting (e.g. a bold first line).
+ * null for other formats (xls, csv, Numbers) or when the file can not be read
  */
-const excelBoldCells = async buffer => {
+const excelCellFormats = async buffer => {
     // xlsx / xlsm are zip files
     if (!buffer || buffer.length < 4 || buffer[0] !== 0x50 || buffer[1] !== 0x4b) return null
     try {
@@ -745,22 +743,26 @@ const excelBoldCells = async buffer => {
         await wb.xlsx.load(buffer)
         const map = {}
         wb.worksheets.forEach(ws => {
-            const set = new Set()
+            const bold = new Set(), rich = new Map()
             ws.eachRow({includeEmpty: false}, (row, r) => {
                 row.eachCell({includeEmpty: false}, (cell, c) => {
+                    const key = (r - 1) + ',' + (c - 1)
                     const v = cell.value
-                    // rich text: bold when every run with text is bold
-                    const runs = v && typeof v === 'object' && Array.isArray(v.richText) ? v.richText.filter(t => String(t.text || '').trim()) : null
-                    const bold = runs && runs.length ? runs.every(t => (t.font && t.font.bold) || (!t.font && cell.font && cell.font.bold))
-                        : !!(cell.font && cell.font.bold)
-                    if (bold) set.add((r - 1) + ',' + (c - 1))
+                    const runs = v && typeof v === 'object' && Array.isArray(v.richText) ? v.richText : null
+                    const html = runs && richTextHtml(runs, cell.font)
+                    if (html) {
+                        rich.set(key, html)
+                    } else if (runs ? runs.some(t => t.text && t.text.trim()) && runs.every(t => !(t.text || '').trim() || (t.font || cell.font || {}).bold)
+                        : cell.font && cell.font.bold) {
+                        bold.add(key)
+                    }
                 })
             })
-            map[ws.name] = set
+            map[ws.name] = {bold, rich}
         })
         return map
     } catch (e) {
-        console.warn('excelBoldCells', e.message)
+        console.warn('excelCellFormats', e.message)
         return null
     }
 }
@@ -775,13 +777,17 @@ const SWISS_NUMBER = /^[-–]?\s?\d{1,3}('\d{3})+(\.\d+)?$/
  * - the first row of the table is the header, merged cells become colspan / rowspan
  * - numbers are shown in swiss notation (204'400) and right aligned, like their column header,
  *   thousands separators in texts (12’000, 12`000) become '
- * - bold cells (xlsx only, other formats are converted to xlsx with LibreOffice if available) stay bold
+ * - bold cells and cells with mixed formatting (e.g. a bold first line) keep their formatting (xlsx only, other
+ *   formats are converted to xlsx with LibreOffice if available), a single text inside the table is only bold when
+ *   it is bold in the file
+ * - text boxes of the sheet (xlsx) become paragraphs before or after the table, according to their position
  * - empty rows and columns are removed
  */
 export const excelToHtml = async (buffer, {sheet, maxRows = 500} = {}) => {
     const XLSX = (await import('xlsx')).default || (await import('xlsx'))
     const wb = XLSX.read(buffer, {type: 'buffer', cellDates: true})
-    const boldCells = await excelBoldCells(buffer)
+    const formats = await excelCellFormats(buffer)
+    const textBoxes = formats ? excelTextBoxes(buffer) : {}
     const names = sheet ? [sheet] : wb.SheetNames
     const parts = []
     const cellText = c => {
@@ -807,7 +813,7 @@ export const excelToHtml = async (buffer, {sheet, maxRows = 500} = {}) => {
     names.forEach(name => {
         const ws = wb.Sheets[name]
         if (!ws || !ws['!ref']) return
-        const bold = boldCells && boldCells[name]
+        const format = formats && formats[name]
         const range = XLSX.utils.decode_range(ws['!ref'])
         range.e.r = Math.min(range.e.r, range.s.r + maxRows * 2)
         range.e.c = Math.min(range.e.c, range.s.c + 49)
@@ -826,7 +832,10 @@ export const excelToHtml = async (buffer, {sheet, maxRows = 500} = {}) => {
                     continue
                 }
                 const cell = cellText(ws[XLSX.utils.encode_cell({r, c})])
-                if (bold && cell.v !== '' && bold.has(r + ',' + c)) cell.b = true
+                if (format && cell.v !== '') {
+                    if (format.bold.has(r + ',' + c)) cell.b = true
+                    if (format.rich.has(r + ',' + c)) cell.h = format.rich.get(r + ',' + c)
+                }
                 const span = spans[r + ',' + c]
                 if (span) {
                     cell.span = span.cols
@@ -834,15 +843,28 @@ export const excelToHtml = async (buffer, {sheet, maxRows = 500} = {}) => {
                 }
                 cells.push(cell)
             }
-            if (cells.some(c => c && c.v !== '')) rows.push(cells)
+            if (cells.some(c => c && c.v !== '')) {
+                // 1-based row number, for the position of the text boxes
+                cells.row = r + 1
+                rows.push(cells)
+            }
         }
         rows = rows.slice(0, maxRows)
-        if (!rows.length) return
+        const boxes = textBoxes[name] || []
+        if (!rows.length) {
+            if (boxes.length && names.length > 1) parts.push(`<h3>${esc(name)}</h3>`)
+            boxes.forEach(b => parts.push(b.html))
+            return
+        }
         // remove columns that are empty in all rows (and not covered by a merge)
         const width = rows[0].length
         const used = []
         for (let i = 0; i < width; i++) if (rows.some(r => (r[i] && r[i].v !== '') || r[i] === null)) used.push(i)
-        rows = rows.map(r => used.map(i => r[i]))
+        rows = rows.map(r => {
+            const out = used.map(i => r[i])
+            out.row = r.row
+            return out
+        })
         const filled = r => r.filter(c => c && c.v !== '').length
         // the table: from the first to the last row with several values
         const first = rows.findIndex(r => filled(r) >= 2)
@@ -850,20 +872,25 @@ export const excelToHtml = async (buffer, {sheet, maxRows = 500} = {}) => {
         rows.forEach((r, i) => {
             if (filled(r) >= 2) last = i
         })
-        // text rows: {text, bold: every filled cell is bold}
+        const html = c => c.h || cellHtml(c.v)
+        // text rows: {text, html, bold: every filled cell is bold}
         const textRows = list => list.map(r => {
             const cells = r.filter(c => c && c.v !== '')
-            return {text: cells.map(c => c.v).join(' '), bold: cells.length > 0 && cells.every(c => c.b)}
+            return {row: r.row, text: cells.map(c => c.v).join(' '), html: cells.map(html).join(' '), bold: cells.length > 0 && cells.every(c => c.b)}
         })
-        const textHtml = t => t.bold ? `<p><strong>${cellHtml(t.text)}</strong></p>` : `<p>${cellHtml(t.text)}</p>`
+        const textHtml = t => t.box ? t.html : t.bold ? `<p><strong>${t.html}</strong></p>` : `<p>${t.html}</p>`
+        // text boxes in the order of the rows: above the table, the others after it
+        const tableTop = first < 0 ? Infinity : rows[first].row
+        const withBoxes = (list, before) => list.concat(boxes.filter(b => before ? b.row < tableTop : b.row >= tableTop)
+            .map(b => ({row: b.row, html: b.html, box: true}))).sort((x, y) => x.row - y.row)
         if (names.length > 1) parts.push(`<h3>${esc(name)}</h3>`)
         if (first < 0) {
-            textRows(rows).forEach(t => parts.push(textHtml(t)))
+            withBoxes(textRows(rows), true).forEach(t => parts.push(textHtml(t)))
             return
         }
-        textRows(rows.slice(0, first)).forEach((t, i) => {
+        withBoxes(textRows(rows.slice(0, first)), true).forEach((t, i) => {
             // a short first line is the title of the table
-            parts.push(i === 0 && names.length === 1 && t.text.length <= 80 && !/[.:,;]$/.test(t.text) ? `<h3>${esc(t.text)}</h3>` : textHtml(t))
+            parts.push(i === 0 && !t.box && names.length === 1 && t.text.length <= 80 && !/[.:,;]$/.test(t.text) ? `<h3>${esc(t.text)}</h3>` : textHtml(t))
         })
         const table = rows.slice(first, last + 1)
         const cols = table[0].length
@@ -877,11 +904,12 @@ export const excelToHtml = async (buffer, {sheet, maxRows = 500} = {}) => {
             // amounts in the column (numbers that are no year): then a "year" like 1960 is an amount too
             amountCol[i] = body.some(c => c.n && !c.year)
         }
-        const html = table.map((r, ri) => {
+        const tableHtml = table.map((r, ri) => {
             const isHeader = ri === 0 && hasHeader
-            // a row with only one text (e.g. a section title inside the table) spans the whole width
+            // a row with only one text (e.g. a section title inside the table) spans the whole width; bold when it
+            // is bold in the file (without formatting information, e.g. csv: always)
             if (!isHeader && filled(r) === 1 && r[0] && r[0].v !== '' && !r[0].n) {
-                return `<tr><td colspan="${cols}"><strong>${cellHtml(r[0].v)}</strong></td></tr>`
+                return `<tr><td colspan="${cols}">${!format || r[0].b ? `<strong>${html(r[0])}</strong>` : html(r[0])}</td></tr>`
             }
             return '<tr>' + r.map((c, i) => {
                 if (c === null) return ''
@@ -891,11 +919,12 @@ export const excelToHtml = async (buffer, {sheet, maxRows = 500} = {}) => {
                     (right ? ' style="text-align: right"' : '')
                 const v = !isHeader && c.year && amountCol[i] ? formatSwissNumber(c.num) : c.v
                 // bold cells (e.g. sums), the header is bold anyway
-                return `<${tag}${attrs}>${!isHeader && c.b ? `<strong>${cellHtml(v)}</strong>` : cellHtml(v)}</${tag}>`
+                const content = c.h && v === c.v ? c.h : cellHtml(v)
+                return `<${tag}${attrs}>${!isHeader && c.b ? `<strong>${content}</strong>` : content}</${tag}>`
             }).join('') + '</tr>'
         }).join('')
-        parts.push(`<table><tbody>${html}</tbody></table>`)
-        textRows(rows.slice(last + 1)).forEach(t => parts.push(textHtml(t)))
+        parts.push(`<table><tbody>${tableHtml}</tbody></table>`)
+        withBoxes(textRows(rows.slice(last + 1)), false).forEach(t => parts.push(textHtml(t)))
     })
     return parts.join('')
 }
