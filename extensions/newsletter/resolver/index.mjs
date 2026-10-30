@@ -446,7 +446,8 @@ export default db => ({
                 $set.unsubscribeMailing = mailing?new ObjectId(mailing):null
             }
 
-            let result = await collection.findOneAndUpdate({email, token}, {
+            // mergedTokens: tokens of merged duplicate entries (old unsubscribe links)
+            let result = await collection.findOneAndUpdate({email, $or: [{token}, {mergedTokens: token}]}, {
                 $set
             }, {returnOriginal: false, includeResultMetadata: true })
 
