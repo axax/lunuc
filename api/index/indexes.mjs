@@ -87,6 +87,8 @@ export const createAllIndexes = async (rawDb) => {
 
 const createAllIndexesImpl = async (db) => {
 
+    return
+
     console.log(`Creating indexes... ${new Date() - _app_.start}ms`)
     db.collection('KeyValue').createIndex({createdBy: 1, key: 1}, {unique: true})
     db.collection('KeyValueGlobal').createIndex({key: 1}, {unique: true})
