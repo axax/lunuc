@@ -41,7 +41,17 @@ export const imagePickDefaults = (key) => ({
     }
 })
 
-export const imageOptions = (key, {srcKey} = {}) => ({
+export const imageOptions = (key, {srcKey} = {}) => {
+    const options = imageOptionsAll(key, {srcKey})
+    // several pictures (gallery, slider: the key points into a loop): one image section for all of them
+    // makes no sense, the section is chosen per picture
+    if (/\$(loop|for)_/.test(key)) {
+        delete options[`${key}options_crop`]
+    }
+    return options
+}
+
+const imageOptionsAll = (key, {srcKey} = {}) => ({
     [`${key}options_resize_width`]: {
         label: _t('elements.image.resizeWidth'),
         thirdWidth: true,

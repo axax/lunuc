@@ -86,6 +86,7 @@ import {
     setEditorZIndexActive
 } from '../components/jsondomhelper/JsonDomStyledElements'
 import {deepMergeOptional} from '../../../util/deepMerge.mjs'
+import {onExternalHistory} from '../util/editHistory.mjs'
 
 const StyledBox = styled(Box)(({theme})=>({
     display: 'flex',
@@ -115,6 +116,10 @@ const HISTORY_KEY_LABELS = {
     dataResolver: 'Data Resolver'
 }
 
+// what an entry changes, for the menu: label of an external change or the changed keys
+const historyEntryLabel = entry => entry.external ? (entry.external.label || '') :
+    Object.keys(entry.values).map(k => HISTORY_KEY_LABELS[k] || k).join(', ')
+
 const countLines = (value) => value ? value.split('\n').length : 0
 
 /**
@@ -122,6 +127,10 @@ const countLines = (value) => value ? value.split('\n').length : 0
  * intentionally cheap (length based), a real diff is done in the revision view
  */
 const describeHistoryEntry = (entry, currentValues) => {
+    if (entry.external) {
+        // change saved outside of the page (e.g. inline edited content of a data entry)
+        return [{key: 'external', label: entry.external.label || '', lineDiff: 0, charDiff: 0, external: true}]
+    }
     return Object.keys(entry.values).map(key => {
         const to = entry.values[key] || '',
             from = currentValues[key] || ''
@@ -376,6 +385,10 @@ class CmsViewEditorContainer extends React.Component {
             window.addEventListener('beforeunload', this._handleSaveEvent)
             window.addEventListener('blur', this._handleSaveEvent)
             window.addEventListener('keydown', this.handleEditorKeyDown)
+            if (!this.isLocal) {
+                // changes saved outside of the page (GenericDataContent) can be undone with the page history
+                this._offExternalHistory = onExternalHistory(this.pushExternalHistoryEntry)
+            }
             document.addEventListener('focusin', this.reportActivity)
             document.addEventListener('focusout', this.reportActivity)
             this._unblockHistory = history.block(() => {
@@ -396,6 +409,10 @@ class CmsViewEditorContainer extends React.Component {
         if (this._unblockHistory) {
             this._unblockHistory()
             this._unblockHistory = null
+        }
+        if (this._offExternalHistory) {
+            this._offExternalHistory()
+            this._offExternalHistory = null
         }
         if (this._raisedZIndex) {
             this._raisedZIndex = false
@@ -1488,7 +1505,7 @@ class CmsViewEditorContainer extends React.Component {
                     {
                         divider: true,
                         icon: 'replay',
-                        name: `${_t('CmsViewEditorContainer.undochange')} (${this.undoHistory.length}) - ${Object.keys(this.undoHistory[0].values).map(k => HISTORY_KEY_LABELS[k] || k).join(', ')}`,
+                        name: `${_t('CmsViewEditorContainer.undochange')} (${this.undoHistory.length}) - ${historyEntryLabel(this.undoHistory[0])}`,
                         onClick: () => {
                             this.undoLastChange()
                         }
@@ -1499,7 +1516,7 @@ class CmsViewEditorContainer extends React.Component {
                     {
                         divider: this.undoHistory.length === 0,
                         icon: <ReplayIcon style={{transform: 'scaleX(-1)'}}/>,
-                        name: `${_t('CmsViewEditorContainer.redochange')} (${this.redoHistory.length}) - ${Object.keys(this.redoHistory[0].values).map(k => HISTORY_KEY_LABELS[k] || k).join(', ')}`,
+                        name: `${_t('CmsViewEditorContainer.redochange')} (${this.redoHistory.length}) - ${historyEntryLabel(this.redoHistory[0])}`,
                         onClick: () => {
                             this.redoLastChange()
                         }
@@ -1773,6 +1790,21 @@ class CmsViewEditorContainer extends React.Component {
         this.syncHistoryState()
     }
 
+    /**
+     * change saved outside of the page: {label, undo(), redo()} (util/editHistory.mjs)
+     */
+    pushExternalHistoryEntry = (external) => {
+        if (this._isUnmounted) {
+            return
+        }
+        this.undoHistory.unshift({time: Date.now(), values: {}, external})
+        if (this.undoHistory.length > HISTORY_LIMIT) {
+            this.undoHistory.length = HISTORY_LIMIT
+        }
+        this.redoHistory.length = 0
+        this.syncHistoryState()
+    }
+
     undoLastChange() {
         this.applyHistory(this.undoHistory, this.redoHistory)
     }
@@ -1796,6 +1828,24 @@ class CmsViewEditorContainer extends React.Component {
         }
 
         const entry = fromStack.shift()
+        if (entry.external) {
+            // the owner of the change restores it (and saves it), the same entry moves to the other stack
+            try {
+                if (fromStack === this.undoHistory) {
+                    entry.external.undo()
+                } else {
+                    entry.external.redo()
+                }
+            } catch (e) {
+                console.error('history: external change could not be applied', e)
+            }
+            toStack.unshift({...entry, time: Date.now()})
+            if (toStack.length > HISTORY_LIMIT) {
+                toStack.length = HISTORY_LIMIT
+            }
+            this.syncHistoryState()
+            return
+        }
         const currentValues = this.getCurrentHistoryValues()
 
         // the current values become the counterpart entry on the other stack
@@ -1886,12 +1936,12 @@ class CmsViewEditorContainer extends React.Component {
             {rows.map(row => <Box key={row.key}
                                   sx={{display: 'flex', justifyContent: 'space-between', gap: 2, lineHeight: 1.6}}>
                 <span>{row.label}</span>
-                <span style={{
+                {!row.external && <span style={{
                     color: row.charDiff > 0 ? '#81c784' : (row.charDiff < 0 ? '#e57373' : 'inherit'),
                     whiteSpace: 'nowrap'
                 }}>
                     {formatDiff(row.lineDiff, 'Z.')} / {formatDiff(row.charDiff, 'Zeichen')}
-                </span>
+                </span>}
             </Box>)}
             <Box sx={{mt: 0.5, opacity: 0.7, fontSize: '0.75rem'}}>
                 {new Date(entry.time).toLocaleTimeString()}{entry.open ? ' - ' + _t('CmsViewEditorContainer.notSavedYet') : ''}
