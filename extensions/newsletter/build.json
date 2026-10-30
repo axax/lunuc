@@ -424,7 +424,7 @@
           ]
         },
         {
-          "name": "status",
+          "name": "deliveryStatus",
           "enum": [
             "sent",
             "failed"

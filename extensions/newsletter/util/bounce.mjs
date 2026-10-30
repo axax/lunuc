@@ -86,7 +86,7 @@ export const recordMailResult = async (db, {sentId, subscriberId, mailingId, res
     if (sentId) {
         await db.collection('NewsletterSent').updateOne({_id: sentId}, {
             $set: {
-                status: mailResult.failed ? 'failed' : 'sent',
+                deliveryStatus: mailResult.failed ? 'failed' : 'sent', // not 'status', that is reserved by the generated graphql types
                 responseCode: mailResult.responseCode,
                 error: mailResult.error,
                 mailResponse: JSON.parse(JSON.stringify({...mailResult, raw: result}))
