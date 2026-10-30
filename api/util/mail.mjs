@@ -14,10 +14,20 @@ import {isString} from '../../client/util/json.mjs'
  it uses the mail settings from the global key value store
  */
 
-export const sendMail = async (db, context, {settings, recipient, from, fromName, replyTo, subject, body, html, text, slug, headerList, headers, attachments, req}) => {
+export const sendMail = async (db, context, {settings, recipient, cc, from, fromName, replyTo, subject, body, html, text, slug, headerList, headers, attachments, req}) => {
 
-    if (!recipient || !Util.validateEmail(recipient)) {
+    // recipient (and cc) can be a single address or a list separated by comma / semicolon
+    const toAddressList = (value) => (Array.isArray(value) ? value : String(value || '').split(/[,;]/))
+        .map(address => String(address).trim()).filter(Boolean)
+
+    const recipients = toAddressList(recipient)
+    if (recipients.length === 0 || !recipients.every(address => Util.validateEmail(address))) {
         return {error: `Recipient ${recipient} is not valid`}
+    }
+
+    const ccRecipients = toAddressList(cc)
+    if (!ccRecipients.every(address => Util.validateEmail(address))) {
+        return {error: `Cc ${cc} is not valid`}
     }
 
     let mailSettings
@@ -110,7 +120,8 @@ ${finalHtml}
     const message = {
         replyTo: replyToFinal,
         from: fromFinal,
-        to: recipient,
+        to: recipients.join(', '),
+        cc: ccRecipients.length ? ccRecipients.join(', ') : undefined,
         subject: subject,
         text: finalText, //'Plaintext version of the message'
         html: finalHtml,
@@ -159,7 +170,7 @@ ${finalHtml}
             if (currentMailSettings.returnPath) {
                 message.envelope = {
                     from: currentMailSettings.returnPath,
-                    to: recipient
+                    to: recipients.concat(ccRecipients)
                 }
             }else{
                 delete message.envelope

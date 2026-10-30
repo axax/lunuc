@@ -312,7 +312,9 @@ const startListening = async (db, context) => {
                                 const {isSpam, spamScore, reason} = await detectSpam(db, context, {
                                     threshold: mailAccount.spamThreshold,
                                     sender: sender.text,
-                                    text: data.subject + (data.html ? decodeHtmlEntities(removeStyleAndScriptTags(data.html)) : '') + data.text
+                                    text: data.subject + (data.html ? decodeHtmlEntities(removeStyleAndScriptTags(data.html)) : '') + data.text,
+                                    html: data.html || '',
+                                    attachments: data.attachments
                                 })
 
                                 const inbox = await getFolderForMailAccount(db, mailAccount._id, isSpam ? 'Junk' : 'INBOX')

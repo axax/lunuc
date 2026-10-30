@@ -58,7 +58,12 @@ Hook.on(['typeBeforeUpdate'], async ({db, type,data}) => {
                 inbox.modifyIndex++
                 data.modseq = inbox.modifyIndex
 
-                if(!fullMessage.uid){
+                // a message moved to another folder needs a new uid in the target folder,
+                // otherwise it can collide with the uid of an existing message there
+                const movedToOtherFolder = fullMessage.mailAccountFolder &&
+                    String(inbox._id) !== String(fullMessage.mailAccountFolder)
+
+                if(!fullMessage.uid || movedToOtherFolder){
                     data.uid = inbox.uidNext
                     inbox.uidNext++
                 }
