@@ -213,7 +213,8 @@ export const importSubscribers = async ({db, data, sheet, headerRow, emailColumn
                 const existingList = (doc.list || []).map(String)
                 const missingLists = listIds.filter(id => !existingList.includes(String(id)))
 
-                const protectedByUnsub = overwrite && keepUnsubscribed && doc.state === 'unsubscribed'
+                // unsubscribed and invalid (bounced) addresses keep their state
+                const protectedByUnsub = overwrite && keepUnsubscribed && (doc.state === 'unsubscribed' || doc.state === 'invalid')
                 if (protectedByUnsub) stats.skippedUnsubscribed++
 
                 if (overwrite && !protectedByUnsub) {

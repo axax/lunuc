@@ -10,6 +10,7 @@ import path from 'path'
 import genResolver from '../gensrc/resolver.mjs'
 import {replaceRelativeUrls} from '../../../api/util/toAbsoluteUrls.mjs'
 import {analyzeSubscriberFile, importSubscribers, removeSubscribersFromLists} from '../util/subscriberImport.mjs'
+import {recordMailResult} from '../util/bounce.mjs'
 
 export default db => ({
     Query: {
@@ -102,6 +103,7 @@ export default db => ({
             console.log(`sendNewsletter: ${subscribers.length} subscriber(s) selected for mailing ${mailing}`)
 
             const sentToEmailAddresses = []
+            const failedEmailAddresses = []
 
             for (let i = 0; i < subscribers.length; i++) {
                 if (sentToEmailAddresses.length >= batchSize) {
@@ -282,17 +284,33 @@ export default db => ({
                         req,
                         settings
                     })
+                    // counts as processed for the batch, even if delivery failed (NewsletterSent entry exists, no retry)
                     sentToEmailAddresses.push(sub.email)
-                    console.log(`sendNewsletter: sent to ${sub.email} (${sentToEmailAddresses.length}/${batchSize} in this batch)`, result?.messageId || result)
 
-                    if(sentResult && sentResult.insertedId) {
-                        await db.collection('NewsletterSent').updateOne({_id: sentResult.insertedId}, {$set: {mailResponse: result}})
+                    let mailResult
+                    try {
+                        mailResult = await recordMailResult(db, {
+                            sentId: sentResult?.insertedId,
+                            subscriberId: sub.testOnly || sub.userAccountOnly ? null : sub._id,
+                            mailingId: sub.testOnly ? null : mailingId,
+                            result,
+                            email: sub.email
+                        })
+                    }catch (e) {
+                        console.error(`sendNewsletter: could not record mail result for ${sub.email}`, e)
+                    }
+
+                    if(mailResult?.failed){
+                        failedEmailAddresses.push(sub.email)
+                        console.warn(`sendNewsletter: FAILED ${sub.email} (${mailResult.bounceType || 'error'}${mailResult.invalidated ? ', set to invalid' : ''}): ${mailResult.responseCode} ${mailResult.error}`)
+                    }else {
+                        console.log(`sendNewsletter: sent to ${sub.email} (${sentToEmailAddresses.length}/${batchSize} in this batch)`, result?.messageId || result)
                     }
                 }
 
             }
 
-            console.log(`sendNewsletter: finished, sent to ${sentToEmailAddresses.length} recipient(s): ${sentToEmailAddresses.join(', ')}`)
+            console.log(`sendNewsletter: finished, processed ${sentToEmailAddresses.length} recipient(s), ${failedEmailAddresses.length} failed: ${sentToEmailAddresses.join(', ')}`)
 
             if(!testReceiver && mailingId && sentToEmailAddresses.length===0){
                 console.log(`sendNewsletter: no recipients left, marking mailing ${mailing} as finished`)
@@ -307,7 +325,8 @@ export default db => ({
                 }, {$set: {state: 'finished', active:false}})*/
             }
             return {
-                status: 'Newsletter sent to: ' + sentToEmailAddresses.join(',')
+                status: 'Newsletter sent to: ' + sentToEmailAddresses.filter(e => failedEmailAddresses.indexOf(e) < 0).join(',') +
+                    (failedEmailAddresses.length > 0 ? ' / failed: ' + failedEmailAddresses.join(',') : '')
             }
         },
         subscribeNewsletter: async ({email, replyTo, fromEmail, fromName, confirmSlug, location, url, meta, list}, req) => {

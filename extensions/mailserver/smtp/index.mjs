@@ -236,6 +236,19 @@ const startListening = async (db, context) => {
                     let err
                     if(error.errors){
                         err = error
+                        // the combined error of the direct transport has no responseCode itself,
+                        // without it smtp-server answers with a temporary 450 instead of the real (e.g. 550) code
+                        const inner = error.errors[0]?.rejectedErrors?.[0] || error.errors[0]
+                        if(inner && !err.responseCode) {
+                            const code = parseInt(inner.responseCode)
+                            if(code >= 400 && code < 600) {
+                                err.responseCode = code
+                            }
+                            if(inner.response) {
+                                // strip the leading code, smtp-server prepends err.responseCode itself
+                                err.message = String(inner.response).replace(/^\d{3}[\s-]+/, '')
+                            }
+                        }
                     }else {
                         err = new Error(error.message)
                         err.responseCode = error.code

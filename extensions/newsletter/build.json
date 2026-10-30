@@ -79,6 +79,42 @@
           "type": "NewsletterMailing"
         },
         {
+          "name": "bounceCount",
+          "type": "Int",
+          "tab": "bounce",
+          "readOnly": false,
+          "index": 1,
+          "hideColumnInTypesByDefault": true
+        },
+        {
+          "name": "lastBounceAt",
+          "type": "Float",
+          "uitype": "datetime",
+          "tab": "bounce",
+          "hideColumnInTypesByDefault": true
+        },
+        {
+          "name": "lastBounceCode",
+          "type": "String",
+          "tab": "bounce",
+          "hideColumnInTypesByDefault": true
+        },
+        {
+          "name": "lastBounceMessage",
+          "type": "String",
+          "tab": "bounce",
+          "hideColumnInTypesByDefault": true
+        },
+        {
+          "name": "lastBounceMailing",
+          "type": "NewsletterMailing",
+          "fields": [
+            "subject"
+          ],
+          "tab": "bounce",
+          "hideColumnInTypesByDefault": true
+        },
+        {
           "name": "meta",
           "hideColumnInTypes": true,
           "type": "Object",
@@ -386,6 +422,24 @@
           "fields": [
             "subject"
           ]
+        },
+        {
+          "name": "status",
+          "enum": [
+            "sent",
+            "failed"
+          ],
+          "index": 1
+        },
+        {
+          "name": "responseCode",
+          "type": "String",
+          "hideColumnInTypesByDefault": true
+        },
+        {
+          "name": "error",
+          "type": "String",
+          "hideColumnInTypesByDefault": true
         },
         {
           "name": "mailResponse",
