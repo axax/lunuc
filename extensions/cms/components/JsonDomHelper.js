@@ -2264,6 +2264,18 @@ class JsonDomHelper extends React.Component {
                     icon: <EditIcon/>,
                     onClick: this.handleDataSource.bind(this)
                 })
+                // double click opens the form of the entry - not inside content that is edited inline
+                // (there a double click selects a word) and not if the element has its own double click action
+                if (!overrideEvents.onDoubleClick) {
+                    overrideEvents.onDoubleClick = (e) => {
+                        const target = e.target
+                        if (target && target.closest &&
+                            target.closest('[contenteditable="true"],[data-generic-data-content],input,textarea,select,a,button')) {
+                            return
+                        }
+                        this.handleDataSource(e)
+                    }
+                }
             }
 
             if (parsedSource.allowClone) {
@@ -2346,8 +2358,9 @@ class JsonDomHelper extends React.Component {
                         const doEditElement = ()=>{
                             this.handleEditElement({jsonElement, subJson, isCms, json: _json, key: rest._key})
                         }
-                        // editable text: a double click selects a word, the dialog is opened via the toolbar
-                        if(!isContentEditable) {
+                        // editable text: a double click selects a word, the dialog is opened via the toolbar.
+                        // a data entry (mode source) keeps its double click: it opens the form of the entry
+                        if(!isContentEditable && !overrideEvents.onDoubleClick) {
                             overrideEvents.onDoubleClick = doEditElement
                         }
                         menuItems.push({
