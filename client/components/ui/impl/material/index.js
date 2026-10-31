@@ -10,6 +10,7 @@ import CssBaseline from '@mui/material/CssBaseline'
 import {defaultTheme as theme} from './theme-iris'
 import {THEMES, getTheme} from './themes'
 import {THEME_KEY, getThemeName, setThemeName, subscribeThemeName} from './themeState'
+import {enterAdminContext, leaveAdminContext} from 'client/util/themeMode.mjs'
 
 // `theme` is the static default theme (iris). Use useTheme() or getCurrentTheme() to get the active theme.
 export {theme, THEMES, THEME_KEY, getThemeName, setThemeName}
@@ -27,9 +28,18 @@ const emotionCache = createCache({
     speedy: !_app_.ssr && !window._lunucWebParser,
 })
 
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? React.useLayoutEffect : React.useEffect
+
 // Theme provider
-export const UIProvider = ({children, ...rest}) => {
+// adminContext={false}: MUI is used outside of the admin (e.g. public inline editing) -> no admin theme for CmsPages
+export const UIProvider = ({children, adminContext = true, ...rest}) => {
     const themeName = useThemeName()
+    // marks the admin context: CmsPages get the theme (data-theme, --lunuc-* variables) only then
+    useIsomorphicLayoutEffect(() => {
+        if (!adminContext) return
+        enterAdminContext()
+        return leaveAdminContext
+    }, [adminContext])
     return <ThemeProvider theme={getTheme(themeName)} {...rest}>
         <CacheProvider value={emotionCache}>
             {children}

@@ -87,6 +87,7 @@ Rules when editing these files:
 - New CmsPage: new folder with `page.json` without `_id` → created on import, `_id` written back. New CronJobs/Hooks/Apis are **not** created from files (create them in the admin).
 - Secrets (e.g. Api basic-auth passwords) are not exported — don't add them to files.
 - Scripts in these entries run inside lunuc (`this.db`, `this.context`, `this.log`, `requireAsync('@api/…' | '@ext/…')`), not as standalone Node.
+- Admin theme in CmsPages (`client/util/themeMode.mjs`): only in the admin context (admin UI mounted, or iframe of it) `html[data-lunuc-admin]` gets `data-theme="dark|light"` and the variables `--lunuc-bg|surface|subtle|border|border-strong|text|text-muted|primary|primary-contrast|primary-soft|primary-hover|secondary|success|warning|error|info(-soft)|font|radius` (`themeCssVars` in `client/components/ui/impl/material/themes.js`). Pages must work standalone → always with fallback: `var(--lunuc-surface, #fff)`. Examples: `system/notes`, `system/llm` (maps its own `--llm-*` variables under `html[data-lunuc-admin]`).
 
 ### dbscripts/impex/ — declarative data import
 

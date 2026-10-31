@@ -1020,7 +1020,8 @@ class CmsViewEditorContainer extends React.Component {
 
         if (!canViewCmsEditor || props.dynamic) {
             if ((cmsPage && cmsPage.publicEdit) || isTrue(props.forceEditMode) || isTrue(props.forceInlineEditor)) {
-                return <UIProvider>{inner}</UIProvider>
+                // public edit for visitors without editor rights: not the admin context
+                return <UIProvider adminContext={false}>{inner}</UIProvider>
             }
             return inner
         } else {

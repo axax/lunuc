@@ -1344,6 +1344,8 @@ class GenericForm extends React.Component {
                                            variant="contained"
                                            size="small"
                                            disabled={field.readOnly || field.uiReadOnly}
+                                           // space to the next field (field.style can override it)
+                                           sx={{mb: 3}}
                                            style={field.style}
                                            onClick={() => {
 

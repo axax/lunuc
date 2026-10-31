@@ -1,4 +1,4 @@
-import {DEFAULT_THEME, THEMES, isDarkTheme} from './themes'
+import {DEFAULT_THEME, THEMES, isDarkTheme, getThemeCssVars} from './themes'
 import {setThemeMode} from 'client/util/themeMode.mjs'
 
 /*
@@ -27,7 +27,7 @@ const readFromStorage = () => {
 
 let currentThemeName = readFromStorage()
 if (typeof window !== 'undefined' && !_app_.ssr) {
-    setThemeMode({name: currentThemeName, dark: isDarkTheme(currentThemeName)})
+    setThemeMode({name: currentThemeName, dark: isDarkTheme(currentThemeName), vars: getThemeCssVars(currentThemeName)})
 }
 const listeners = new Set()
 
@@ -47,7 +47,7 @@ export const setThemeName = (name) => {
         currentThemeName = name
         listeners.forEach(fn => fn())
     }
-    setThemeMode({name, dark: isDarkTheme(name)})
+    setThemeMode({name, dark: isDarkTheme(name), vars: getThemeCssVars(name)})
 }
 
 export const subscribeThemeName = (fn) => {

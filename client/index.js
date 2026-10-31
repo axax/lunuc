@@ -21,7 +21,7 @@ const hasStorageSupport = () => {
     }
 }
 _app_.noStorage = !hasStorageSupport()
-// light/dark mode of the admin theme for CmsPages (html[data-theme], _app_.theme)
+// admin theme for CmsPages in an iframe of the admin (html[data-theme], --lunuc-* variables, see util/themeMode.mjs)
 initThemeMode()
 
 function addCanonicalTag(href) {
