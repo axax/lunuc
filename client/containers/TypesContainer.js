@@ -482,7 +482,6 @@ class TypesContainer extends React.Component {
                                     style={{
                                         fontWeight: 'bold',
                                         cursor: 'pointer',
-                                        color: '#663366',
                                         textDecoration: 'underline'
                                     }}>{fieldValue}</span></a>
 

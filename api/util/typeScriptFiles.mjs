@@ -17,7 +17,7 @@ import {ObjectId} from 'mongodb'
 import Util from './index.mjs'
 import {createMatchForCurrentUser, userCanUpdateDoc, userCanCreate, filterReadableIds} from './dbquery.mjs'
 import {CAPABILITY_MANAGE_OTHER_USERS} from '../../util/capabilities.mjs'
-import {toPlainJson, fromPlainJson} from './plainJson.mjs'
+import {toPlainJson, fromPlainJson, stableJson} from './plainJson.mjs'
 import {readExportState, writeExportState, hashFields, hashValue, threeWayDiff} from './exportState.mjs'
 import GenericResolver from '../resolver/generic/genericResolver.mjs'
 
@@ -562,7 +562,7 @@ export const importTypeScriptFiles = async ({db, context, type, files, dryRun = 
             }
             const dbValues = comparableValues(type, doc)
             const changed = Object.keys(values).filter(field =>
-                JSON.stringify(values[field] === undefined ? null : values[field]) !== JSON.stringify(dbValues[field] === undefined ? null : dbValues[field]))
+                stableJson(values[field] === undefined ? null : values[field]) !== stableJson(dbValues[field] === undefined ? null : dbValues[field]))
             if (changed.length === 0) {
                 result.unchanged++
                 continue

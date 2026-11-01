@@ -53,3 +53,28 @@ export const fromPlainJson = (value) => {
     }
     return value
 }
+
+/**
+ * json text for comparing a value from a file with the value in the database:
+ * object keys sorted, object properties that are null, undefined or '' are left out
+ * (e.g. a localized name {"en":"x","de":"y","fr":null} equals {"de":"y","en":"x"}).
+ * Arrays keep their order.
+ */
+const normalizeForCompare = (value) => {
+    if (Array.isArray(value)) {
+        return value.map(normalizeForCompare)
+    }
+    if (value && typeof value === 'object') {
+        const result = {}
+        Object.keys(value).sort().forEach(key => {
+            const v = value[key]
+            if (v !== null && v !== undefined && v !== '') {
+                result[key] = normalizeForCompare(v)
+            }
+        })
+        return result
+    }
+    return value
+}
+
+export const stableJson = (value) => JSON.stringify(normalizeForCompare(value))

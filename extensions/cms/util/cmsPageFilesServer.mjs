@@ -24,7 +24,7 @@ import {CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities.mjs'
 import {createMatchForCurrentUser, userCanUpdateDoc, userCanCreate, filterReadableIds} from '../../../api/util/dbquery.mjs'
 import {CAPABILITY_CMS_PAGE_FILES, CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants/index.mjs'
 import {getCmsPageCacheKey} from './cmsPage.mjs'
-import {toPlainJson, fromPlainJson} from '../../../api/util/plainJson.mjs'
+import {toPlainJson, fromPlainJson, stableJson} from '../../../api/util/plainJson.mjs'
 import {buildAiGuideFiles} from './cmsPageAiGuide.mjs'
 import {filesToZip, zipToFiles} from '../../../api/util/zipFiles.mjs'
 import {readExportState, writeExportState, hashFields, hashValue, threeWayDiff} from '../../../api/util/exportState.mjs'
@@ -204,8 +204,8 @@ export const importCmsPages = async ({db, context, pages, _version, createMissin
                 // drop server code that differs from the db (new page: any non empty value) and report it
                 const ignored = SERVER_CODE_FIELDS.filter(field => {
                     if (data[field] === undefined) return false
-                    const current = existing ? JSON.stringify(toPlainJson(existing[field]) ?? '') : '""'
-                    const differs = JSON.stringify(toPlainJson(data[field]) ?? '') !== current
+                    const current = existing ? stableJson(toPlainJson(existing[field]) ?? '') : '""'
+                    const differs = stableJson(toPlainJson(data[field]) ?? '') !== current
                     delete data[field]
                     return differs
                 })
@@ -219,7 +219,8 @@ export const importCmsPages = async ({db, context, pages, _version, createMissin
                 Object.keys(data).forEach(field => {
                     // an empty code file is the export of a script that is not set (null / missing in the db)
                     const emptyValue = CODE_FIELDS.indexOf(field) >= 0 ? '' : null
-                    if (JSON.stringify(toPlainJson(existing[field]) ?? emptyValue) !== JSON.stringify(toPlainJson(data[field]) ?? emptyValue)) {
+                    // stableJson: key order and empty properties (e.g. "fr": null in a localized name) don't count
+                    if (stableJson(toPlainJson(existing[field]) ?? emptyValue) !== stableJson(toPlainJson(data[field]) ?? emptyValue)) {
                         changed[field] = data[field]
                     }
                 })
