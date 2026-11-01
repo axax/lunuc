@@ -4,9 +4,12 @@
  * UserTracking holds one document per page view (millions). Counting it for every chart is slow,
  * so finished days are aggregated once into UserTrackingDaily:
  *
- *   one document per day and host   {_id: '2026-10-14|www.example.ch', date: '2026-10-14', host, views, ...}
- *   one document per day for all     {_id: '2026-10-14|*', host: '*', ...}
- *   UserTrackingDailyState           {_id: '2026-10-14', computedAt, final, hosts}  (marks a day as done)
+ *   one document per day and host   {date: '2026-10-14', host: 'www.example.ch', views, ...}
+ *   one document per day for all     {date: '2026-10-14', host: '*', ...}
+ *   UserTrackingDailyState           {date: '2026-10-14', computedAt, final, hosts}  (marks a day as done)
+ * The types and indexes are declared in extensions/usertracking/build.json (_id is always an ObjectId,
+ * so the entries can be edited and deleted in the admin). UserTrackingSalt is not declared on purpose:
+ * the salts must not be readable over graphql.
  *
  * The current day is aggregated live and kept in memory for a few minutes.
  *
@@ -107,24 +110,52 @@ export const hostVariants = (host) => {
     return [...new Set([host, bare, 'www.' + bare])]
 }
 
-let indexesCreated = false
-const ensureIndexes = async (db) => {
-    if (indexesCreated) {
-        return
+/*
+ * Until 2026-11 UserTrackingDaily and UserTrackingDailyState used string ids ('2026-10-14|host', '2026-10-14').
+ * The generic resolver (admin) only handles ObjectIds, so they are converted:
+ *   - state (one small document per day): once per process, before it is read
+ *   - daily: in the cronjob in batches (migrateDailyIds), reads only use date and host
+ */
+let stateMigration = null
+const migrateStateIds = (db) => {
+    if (!stateMigration) {
+        stateMigration = (async () => {
+            const coll = db.collection(STATE_COLLECTION)
+            // also declared in build.json, here again so the upsert below never creates duplicates
+            await coll.createIndex({date: 1}, {unique: true, partialFilterExpression: {date: {$type: 'string'}}})
+            const old = await coll.find({_id: {$type: 'string'}}).toArray()
+            if (old.length) {
+                await coll.bulkWrite(old.map(({_id, ...rest}) => ({
+                    updateOne: {filter: {date: _id}, update: {$setOnInsert: rest}, upsert: true}
+                })), {ordered: false})
+                await coll.deleteMany({_id: {$in: old.map(d => d._id)}})
+                console.log(`usertracking rollup: ${old.length} state entries converted to ObjectId`)
+            }
+        })().catch(e => {
+            // try again next time
+            stateMigration = null
+            console.warn('usertracking rollup: state migration failed', e.message)
+        })
     }
-    indexesCreated = true
-    try {
-        await db.collection(DAILY_COLLECTION).createIndex({host: 1, date: 1})
-        await db.collection(DAILY_COLLECTION).createIndex({date: 1})
-        // covers the website list of the dashboard (no document has to be read)
-        await db.collection(DAILY_COLLECTION).createIndex({date: 1, host: 1, views: 1, botViews: 1})
-        await db.collection(BEACON_COLLECTION).createIndex({year: 1, month: 1, day: 1})
-        await db.collection(ALERT_COLLECTION).createIndex({date: 1, host: 1})
-        // alerts are removed after 180 days
-        await db.collection(ALERT_COLLECTION).createIndex({createdAt: 1}, {expireAfterSeconds: 180 * 24 * 60 * 60})
-    } catch (e) {
-        console.warn('usertracking rollup: createIndex failed', e.message)
+    return stateMigration
+}
+
+/** converts daily documents with a string id (copy with ObjectId, then delete), idempotent */
+const migrateDailyIds = async (db, {deadline, todayKey}) => {
+    const coll = db.collection(DAILY_COLLECTION)
+    let converted = 0
+    while (Date.now() < deadline) {
+        // today is rewritten by the snapshot anyway (and could be written at the same time)
+        const old = await coll.find({_id: {$type: 'string'}, date: {$lt: todayKey}}).limit(200).toArray()
+        if (old.length === 0) break
+        await coll.bulkWrite(old.map(({_id, date, host, ...rest}) => ({
+            // a newer document of the same day and host wins (date and host come from the filter)
+            updateOne: {filter: {date, host, _id: {$type: 'objectId'}}, update: {$setOnInsert: rest}, upsert: true}
+        })), {ordered: false})
+        await coll.deleteMany({_id: {$in: old.map(d => d._id)}})
+        converted += old.length
     }
+    return converted
 }
 
 // ---------------------------------------------------------------- aggregation of one day
@@ -262,7 +293,7 @@ const dayPipeline = (day) => [
 const emptyHostDoc = (day, host) => {
     const date = dateKey(day)
     const doc = {
-        _id: date + '|' + host, date, year: day.year, month: day.month, day: day.day, host,
+        date, year: day.year, month: day.month, day: day.day, host,
         ...zeroNumeric(),
         hours: new Array(24).fill(0),
         durBuckets: new Array(DURATION_LIMITS.length + 1).fill(0),
@@ -478,7 +509,7 @@ export const aggregateDay = async (db, day) => {
 
 /** aggregates a finished day and stores it */
 export const rollupDay = async (db, day) => {
-    await ensureIndexes(db)
+    await migrateStateIds(db)
     const date = dateKey(day)
     const docs = await aggregateDay(db, day)
     const now = new Date()
@@ -491,7 +522,7 @@ export const rollupDay = async (db, day) => {
     }
     const final = now.getTime() >= dayStart(addDays(day, 1)).getTime() + FINAL_AFTER_MS
     await db.collection(STATE_COLLECTION).updateOne(
-        {_id: date},
+        {date},
         {$set: {computedAt: now, final, hosts: docs.length - 1, views: docs[docs.length - 1].views}},
         {upsert: true}
     )
@@ -509,9 +540,9 @@ export const ensureRollups = async (db, days, {max = 3, deadline, pauseMs = 0} =
         return 0
     }
     const states = await db.collection(STATE_COLLECTION)
-        .find({_id: {$in: past.map(dateKey)}}, {projection: {final: 1}}).toArray()
-    const done = new Set(states.filter(s => s.final).map(s => s._id))
-    const partial = new Set(states.filter(s => !s.final).map(s => s._id))
+        .find({date: {$in: past.map(dateKey)}}, {projection: {date: 1, final: 1}}).toArray()
+    const done = new Set(states.filter(s => s.final).map(s => s.date))
+    const partial = new Set(states.filter(s => !s.final).map(s => s.date))
     // missing first, newest first, then the not final ones
     const todo = past.filter(day => !done.has(dateKey(day))).sort((a, b) => {
         const pa = partial.has(dateKey(a)) ? 1 : 0, pb = partial.has(dateKey(b)) ? 1 : 0
@@ -566,6 +597,7 @@ export const runRollupJob = async (db, {
     const today = dayFromDate(new Date())
     const hour = new Date().getHours()
     const isNight = force || (hour >= nightHours[0] && hour < nightHours[1])
+    await migrateStateIds(db)
 
     // daytime: only the last few days (cheap, normally nothing to do)
     let from = addDays(today, -3)
@@ -576,12 +608,12 @@ export const runRollupJob = async (db, {
         if (oldest[0] && dateKey(oldest[0]) > dateKey(from)) {
             // days before the first raw entry have no data: mark them as done without aggregating
             const emptyDays = dayRange(from, addDays({year: oldest[0].year, month: oldest[0].month, day: oldest[0].day}, -1)).map(dateKey)
-            const existing = new Set((await db.collection(STATE_COLLECTION).find({_id: {$in: emptyDays}}, {projection: {_id: 1}}).toArray()).map(d => d._id))
+            const existing = new Set((await db.collection(STATE_COLLECTION).find({date: {$in: emptyDays}}, {projection: {date: 1}}).toArray()).map(d => d.date))
             const missingEmpty = emptyDays.filter(d => !existing.has(d))
             if (missingEmpty.length) {
                 const now = new Date()
                 await db.collection(STATE_COLLECTION).bulkWrite(missingEmpty.map(d => ({
-                    updateOne: {filter: {_id: d}, update: {$setOnInsert: {computedAt: now, final: true, hosts: 0, views: 0, empty: true}}, upsert: true}
+                    updateOne: {filter: {date: d}, update: {$setOnInsert: {computedAt: now, final: true, hosts: 0, views: 0, empty: true}}, upsert: true}
                 })), {ordered: false})
             }
             from = {year: oldest[0].year, month: oldest[0].month, day: oldest[0].day}
@@ -597,6 +629,14 @@ export const runRollupJob = async (db, {
         log('rollup: snapshot of today failed - ' + e.message)
     }
 
+    // old documents with string ids (see migrateDailyIds)
+    let converted = 0
+    try {
+        converted = await migrateDailyIds(db, {deadline, todayKey: dateKey(today)})
+    } catch (e) {
+        log('rollup: id migration failed - ' + e.message)
+    }
+
     let deleted = 0
     if (isNight && retentionDays > 0 && missing === 0 && Date.now() < deadline) {
         deleted = await deleteOldRawData(db, {retentionDays, deadline, pauseMs, log})
@@ -610,7 +650,7 @@ export const runRollupJob = async (db, {
     }
 
     const summary = `rollup (${isNight ? 'night' : 'day'}): ${days.length} days checked (from ${dateKey(from)}), ${missing} still missing` +
-        (deleted ? `, ${deleted} raw entries deleted` : '') + (alerts.length ? `, ${alerts.length} alerts` : '') +
+        (deleted ? `, ${deleted} raw entries deleted` : '') + (converted ? `, ${converted} daily ids converted` : '') + (alerts.length ? `, ${alerts.length} alerts` : '') +
         `, ${Math.round((Date.now() - started) / 1000)}s`
     log(summary)
     return {missing, days: days.length, deleted, alerts: alerts.length}
@@ -636,6 +676,7 @@ const ALERT_HOURS = [7, 23]
  */
 export const checkAlerts = async (db, {writeLog, now = new Date()} = {}) => {
     const alerts = []
+    await migrateStateIds(db)
     const alertColl = db.collection(ALERT_COLLECTION)
     const today = dayFromDate(now)
 
@@ -646,7 +687,7 @@ export const checkAlerts = async (db, {writeLog, now = new Date()} = {}) => {
         // only if there is usually traffic at this hour (human page views yesterday, same hour)
         let usual = 0
         if (recent.length === 0) {
-            const y = await db.collection(DAILY_COLLECTION).findOne({_id: dateKey(addDays(today, -1)) + '|' + ALL_HOSTS}, {projection: {hours: 1}})
+            const y = await db.collection(DAILY_COLLECTION).findOne({date: dateKey(addDays(today, -1)), host: ALL_HOSTS}, {projection: {hours: 1}})
             usual = y && y.hours ? (y.hours[hour] || 0) + (y.hours[hour - 1] || 0) : 0
         }
         if (recent.length === 0 && usual >= 20) {
@@ -663,7 +704,7 @@ export const checkAlerts = async (db, {writeLog, now = new Date()} = {}) => {
     // daily checks of yesterday, once it is final
     const yesterday = addDays(today, -1)
     const yKey = dateKey(yesterday)
-    const state = await db.collection(STATE_COLLECTION).findOne({_id: yKey})
+    const state = await db.collection(STATE_COLLECTION).findOne({date: yKey})
     if (state && state.final && !state.alertsChecked) {
         const fromKey = dateKey(addDays(yesterday, -14))
         const docs = await db.collection(DAILY_COLLECTION).find(
@@ -709,7 +750,7 @@ export const checkAlerts = async (db, {writeLog, now = new Date()} = {}) => {
         // most important first: all hosts, then by host
         daily.sort((a, b) => (a.host === ALL_HOSTS ? -1 : 0) - (b.host === ALL_HOSTS ? -1 : 0))
         alerts.push(...daily.slice(0, ALERT_MAX_PER_DAY))
-        await db.collection(STATE_COLLECTION).updateOne({_id: yKey}, {$set: {alertsChecked: true}})
+        await db.collection(STATE_COLLECTION).updateOne({date: yKey}, {$set: {alertsChecked: true}})
     }
 
     if (alerts.length) {
@@ -751,7 +792,7 @@ const deleteOldRawData = async (db, {retentionDays, deadline, pauseMs, log}) => 
     const oldest = await coll.find({_id: {$lt: cutoffId}}, {projection: {year: 1, month: 1, day: 1}}).sort({_id: 1}).limit(1).toArray()
     if (!oldest[0] || !oldest[0].year) return 0
     const daysToDelete = dayRange({year: oldest[0].year, month: oldest[0].month, day: oldest[0].day}, addDays(cutoffDay, -1)).map(dateKey)
-    const finalCount = await db.collection(STATE_COLLECTION).countDocuments({_id: {$in: daysToDelete}, final: true})
+    const finalCount = await db.collection(STATE_COLLECTION).countDocuments({date: {$in: daysToDelete}, final: true})
     if (finalCount < daysToDelete.length) {
         log(`rollup: raw data not deleted, ${daysToDelete.length - finalCount} days before ${dateKey(cutoffDay)} are not rolled up yet`)
         return 0
@@ -836,7 +877,7 @@ const sumDocs = (docs) => {
  * @param isAdmin  ips and host list are only returned for admins
  */
 export const buildDashboard = async (db, {host = '', days = 30, isAdmin = false, refresh = false}) => {
-    await ensureIndexes(db)
+    await migrateStateIds(db)
     days = Math.min(Math.max(parseInt(days) || 30, 1), 731)
     const hosts = host ? hostVariants(host) : [ALL_HOSTS]
     const today = dayFromDate(new Date())
@@ -866,7 +907,7 @@ export const buildDashboard = async (db, {host = '', days = 30, isAdmin = false,
         // all queries in parallel
         const [doneDays, numericDocs, topDocs, hostList] = await Promise.all([
             // missing days are only counted here, the cronjob computes them (no aggregation in a request)
-            rangeKeys.length ? db.collection(STATE_COLLECTION).countDocuments({_id: {$in: rangeKeys}}) : 0,
+            rangeKeys.length ? db.collection(STATE_COLLECTION).countDocuments({date: {$in: rangeKeys}}) : 0,
             coll.find(
                 {host: hostMatch, date: {$gte: dateKey(loadFrom), $lte: dateKey(yesterday)}},
                 {projection: NUMERIC_FIELDS.reduce((p, f) => (p[f] = 1, p), {date: 1})}

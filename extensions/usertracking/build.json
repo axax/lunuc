@@ -114,6 +114,556 @@
           "name": "server",
           "tab": "Allgemein",
           "hideColumnInTypes": true
+        },
+        {
+          "name": "vid",
+          "tab": "Allgemein",
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "botReason",
+          "tab": "Allgemein",
+          "hideColumnInTypes": true
+        }
+      ]
+    },
+    {
+      "name": "UserTrackingDaily",
+      "access": {
+        "read": "manage_other_users",
+        "create": "manage_other_users",
+        "update": "manage_other_users",
+        "delete": "manage_other_users"
+      },
+      "noUserRelation": true,
+      "createdByIndex": false,
+      "backupEssential": false,
+      "searchOnKeyDown": false,
+      "subscription": false,
+      "onlyRequestedFields": true,
+      "addMetaDataInQuery": false,
+      "indexes": [
+        {
+          "fields": {
+            "host": 1,
+            "date": 1
+          }
+        },
+        {
+          "fields": {
+            "date": 1
+          }
+        },
+        {
+          "fields": {
+            "date": 1,
+            "host": 1,
+            "views": 1,
+            "botViews": 1
+          }
+        }
+      ],
+      "fields": [
+        {
+          "name": "date",
+          "tab": "Allgemein"
+        },
+        {
+          "name": "host",
+          "tab": "Allgemein"
+        },
+        {
+          "name": "year",
+          "type": "Int",
+          "tab": "Allgemein",
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "month",
+          "type": "Int",
+          "tab": "Allgemein",
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "day",
+          "type": "Int",
+          "tab": "Allgemein",
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "views",
+          "type": "Int",
+          "tab": "Zahlen"
+        },
+        {
+          "name": "botViews",
+          "type": "Int",
+          "tab": "Zahlen"
+        },
+        {
+          "name": "notFound",
+          "type": "Int",
+          "tab": "Zahlen"
+        },
+        {
+          "name": "other",
+          "type": "Int",
+          "tab": "Zahlen",
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "uniq",
+          "type": "Int",
+          "tab": "Zahlen"
+        },
+        {
+          "name": "jsVisitors",
+          "type": "Int",
+          "tab": "Zahlen",
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "jsViews",
+          "type": "Int",
+          "tab": "Zahlen",
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "durSum",
+          "type": "Int",
+          "tab": "Zahlen",
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "sessions",
+          "type": "Int",
+          "tab": "Zahlen",
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "bounces",
+          "type": "Int",
+          "tab": "Zahlen",
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "tv",
+          "type": "Int",
+          "tab": "Zahlen",
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "computedAt",
+          "type": "Float",
+          "tab": "Allgemein",
+          "uitype": "datetime"
+        },
+        {
+          "name": "pages",
+          "type": "Object",
+          "tab": "Listen",
+          "uitype": "json",
+          "vagueSearchable": false,
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "referrers",
+          "type": "Object",
+          "tab": "Listen",
+          "uitype": "json",
+          "vagueSearchable": false,
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "countries",
+          "type": "Object",
+          "tab": "Listen",
+          "uitype": "json",
+          "vagueSearchable": false,
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "orgs",
+          "type": "Object",
+          "tab": "Listen",
+          "uitype": "json",
+          "vagueSearchable": false,
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "devices",
+          "type": "Object",
+          "tab": "Listen",
+          "uitype": "json",
+          "vagueSearchable": false,
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "browsers",
+          "type": "Object",
+          "tab": "Listen",
+          "uitype": "json",
+          "vagueSearchable": false,
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "os",
+          "type": "Object",
+          "tab": "Listen",
+          "uitype": "json",
+          "vagueSearchable": false,
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "notFoundPaths",
+          "type": "Object",
+          "tab": "Listen",
+          "uitype": "json",
+          "vagueSearchable": false,
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "botAgents",
+          "type": "Object",
+          "tab": "Listen",
+          "uitype": "json",
+          "vagueSearchable": false,
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "botReasons",
+          "type": "Object",
+          "tab": "Listen",
+          "uitype": "json",
+          "vagueSearchable": false,
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "entryPages",
+          "type": "Object",
+          "tab": "Listen",
+          "uitype": "json",
+          "vagueSearchable": false,
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "exitPages",
+          "type": "Object",
+          "tab": "Listen",
+          "uitype": "json",
+          "vagueSearchable": false,
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "screens",
+          "type": "Object",
+          "tab": "Listen",
+          "uitype": "json",
+          "vagueSearchable": false,
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "langs",
+          "type": "Object",
+          "tab": "Listen",
+          "uitype": "json",
+          "vagueSearchable": false,
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "campaigns",
+          "type": "Object",
+          "tab": "Listen",
+          "uitype": "json",
+          "vagueSearchable": false,
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "searches",
+          "type": "Object",
+          "tab": "Listen",
+          "uitype": "json",
+          "vagueSearchable": false,
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "ips",
+          "type": "Object",
+          "tab": "Listen",
+          "uitype": "json",
+          "vagueSearchable": false,
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "pageEngagement",
+          "type": "Object",
+          "tab": "Listen",
+          "uitype": "json",
+          "vagueSearchable": false,
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "hours",
+          "type": "Object",
+          "tab": "Listen",
+          "uitype": "json",
+          "vagueSearchable": false,
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "durBuckets",
+          "type": "Object",
+          "tab": "Listen",
+          "uitype": "json",
+          "vagueSearchable": false,
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
+        }
+      ]
+    },
+    {
+      "name": "UserTrackingDailyState",
+      "access": {
+        "read": "manage_other_users",
+        "create": "manage_other_users",
+        "update": "manage_other_users",
+        "delete": "manage_other_users"
+      },
+      "noUserRelation": true,
+      "createdByIndex": false,
+      "backupEssential": false,
+      "searchOnKeyDown": false,
+      "subscription": false,
+      "onlyRequestedFields": true,
+      "addMetaDataInQuery": false,
+      "indexes": [
+        {
+          "fields": {
+            "date": 1
+          },
+          "options": {
+            "unique": true,
+            "partialFilterExpression": {
+              "date": {
+                "$type": "string"
+              }
+            }
+          }
+        }
+      ],
+      "fields": [
+        {
+          "name": "date",
+          "tab": "Allgemein"
+        },
+        {
+          "name": "final",
+          "type": "Boolean",
+          "tab": "Allgemein"
+        },
+        {
+          "name": "alertsChecked",
+          "type": "Boolean",
+          "tab": "Allgemein"
+        },
+        {
+          "name": "empty",
+          "type": "Boolean",
+          "tab": "Allgemein",
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "hosts",
+          "type": "Int",
+          "tab": "Allgemein"
+        },
+        {
+          "name": "views",
+          "type": "Int",
+          "tab": "Allgemein"
+        },
+        {
+          "name": "computedAt",
+          "type": "Float",
+          "tab": "Allgemein",
+          "uitype": "datetime"
+        }
+      ]
+    },
+    {
+      "name": "UserTrackingBeacon",
+      "access": {
+        "read": "manage_other_users",
+        "create": "manage_other_users",
+        "update": "manage_other_users",
+        "delete": "manage_other_users"
+      },
+      "noUserRelation": true,
+      "createdByIndex": false,
+      "backupEssential": false,
+      "searchOnKeyDown": false,
+      "subscription": false,
+      "onlyRequestedFields": true,
+      "addMetaDataInQuery": false,
+      "indexes": [
+        {
+          "fields": {
+            "year": 1,
+            "month": 1,
+            "day": 1
+          }
+        }
+      ],
+      "fields": [
+        {
+          "name": "host",
+          "tab": "Allgemein"
+        },
+        {
+          "name": "path",
+          "tab": "Allgemein"
+        },
+        {
+          "name": "pv",
+          "tab": "Allgemein",
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "vid",
+          "tab": "Allgemein"
+        },
+        {
+          "name": "nav",
+          "tab": "Allgemein"
+        },
+        {
+          "name": "t",
+          "type": "Int",
+          "tab": "Allgemein"
+        },
+        {
+          "name": "s",
+          "type": "Int",
+          "tab": "Allgemein"
+        },
+        {
+          "name": "w",
+          "type": "Int",
+          "tab": "Allgemein",
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "lang",
+          "tab": "Allgemein",
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "isBot",
+          "type": "Boolean",
+          "tab": "Allgemein"
+        },
+        {
+          "name": "day",
+          "type": "Int",
+          "tab": "Allgemein",
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "month",
+          "type": "Int",
+          "tab": "Allgemein",
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "year",
+          "type": "Int",
+          "tab": "Allgemein",
+          "hideColumnInTypes": true
+        }
+      ]
+    },
+    {
+      "name": "UserTrackingAlert",
+      "access": {
+        "read": "manage_other_users",
+        "create": "manage_other_users",
+        "update": "manage_other_users",
+        "delete": "manage_other_users"
+      },
+      "noUserRelation": true,
+      "createdByIndex": false,
+      "backupEssential": false,
+      "searchOnKeyDown": false,
+      "subscription": false,
+      "onlyRequestedFields": true,
+      "addMetaDataInQuery": false,
+      "indexes": [
+        {
+          "fields": {
+            "date": 1,
+            "host": 1
+          }
+        },
+        {
+          "fields": {
+            "createdAt": 1
+          },
+          "options": {
+            "expireAfterSeconds": 15552000
+          }
+        }
+      ],
+      "fields": [
+        {
+          "name": "date",
+          "tab": "Allgemein"
+        },
+        {
+          "name": "host",
+          "tab": "Allgemein"
+        },
+        {
+          "name": "type",
+          "tab": "Allgemein"
+        },
+        {
+          "name": "message",
+          "tab": "Allgemein"
+        },
+        {
+          "name": "value",
+          "type": "Float",
+          "tab": "Allgemein"
+        },
+        {
+          "name": "baseline",
+          "type": "Float",
+          "tab": "Allgemein"
+        },
+        {
+          "name": "createdAt",
+          "type": "Float",
+          "tab": "Allgemein",
+          "uitype": "datetime"
         }
       ]
     }

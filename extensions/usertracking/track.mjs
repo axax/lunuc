@@ -56,6 +56,7 @@ const MAX_TRACKED_IPS = 200000
 let SERVER_NAME = null
 const serverName = () => SERVER_NAME || (SERVER_NAME = Util.systemProperties().hostname)
 
+// daily salt of the visitor id, not declared in build.json on purpose (must not be readable over graphql)
 const SALT_COLLECTION = 'UserTrackingSalt'
 export const BEACON_COLLECTION = 'UserTrackingBeacon'
 // beacons per ip and minute, more are dropped (protection against spam)
@@ -72,7 +73,6 @@ Hook.on('appready', async ({context, db}) => {
         console.warn('usertracking: anonymous user not found', e.message)
     }
     ensureGeo()
-    db.collection(BEACON_COLLECTION).createIndex({year: 1, month: 1, day: 1}).catch(e => console.warn('usertracking: beacon index', e.message))
 
     const flushTimer = setInterval(() => flushBuffer(), 5000)
     flushTimer.unref()
