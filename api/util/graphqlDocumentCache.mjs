@@ -1,6 +1,6 @@
 import {parse, validate} from 'graphql'
 
-// Memoized parse/validate for express-graphql (customParseFn/customValidateFn).
+// Memoized parse/validate for the graphql handler (api/util/graphqlExecute.mjs).
 // The clients send the same few query strings over and over - parsing and
 // validating them against the big schema on every request is pure CPU on the
 // event loop. Semantics stay identical:

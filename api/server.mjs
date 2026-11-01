@@ -1,7 +1,6 @@
 import '../gensrc/extensions-server.mjs'
 import express from 'express'
 import {buildASTSchema} from 'graphql'
-import {graphqlHTTP} from 'express-graphql'
 import bodyParser from 'body-parser'
 import {createServer} from 'http'
 import {schemaString} from './schema/index.mjs'
@@ -19,7 +18,8 @@ import {getDynamicConfig} from '../util/config.mjs'
 import {gunzipJsonBody} from './util/unzip.mjs'
 import {appendServerTiming, timingEntry, eventLoopEntry, SERVER_TIMING_ENABLED} from '../util/serverTiming.mjs'
 import {startEventLoopWatchdog, trackRequestForWatchdog} from '../util/eventLoopWatchdog.mjs'
-import {cachedParse, cachedValidate} from './util/graphqlDocumentCache.mjs'
+import {executeGraphqlRequest} from './util/graphqlExecute.mjs'
+import {graphqlResponseJson} from './util/graphqlResponse.mjs'
 
 const dynamicConfig = getDynamicConfig()
 
@@ -31,27 +31,6 @@ console.debug = (...args) => {
     if (dynamicConfig.DEBUG) {
         originalDebug(...args);
     }
-}
-function removeNullsMutating(obj) {
-    if (Array.isArray(obj)) {
-        // Rückwärts iterieren, damit sich die Indizes beim Löschen nicht verschieben
-        for (let i = obj.length - 1; i >= 0; i--) {
-            if (obj[i] === null || obj[i] === undefined) {
-                obj.splice(i, 1);
-            } else {
-                removeNullsMutating(obj[i]);
-            }
-        }
-    } else if (obj !== null && typeof obj === 'object') {
-        for (const key in obj) {
-            if (obj[key] === null || obj[key] === undefined) {
-                delete obj[key];
-            } else {
-                removeNullsMutating(obj[key]);
-            }
-        }
-    }
-    return obj;
 }
 
 const PORT = (process.env.PORT || process.env.API_PORT || 3000)
@@ -262,45 +241,29 @@ export const start = (done) => {
                     }
                 }
 
-                const originalJson = res.json.bind(res)
-
                 res.json = (body) => {
                     if (res.headersSent) {
                         console.warn('[res.json wrapper] Headers already sent, skipping')
                         return res
                     }
-
-                    if (body?.data?.cmsPage) {
-                        body.data = removeNullsMutating(body.data)
-                    }
                     body.isAuth = !!(req.context && req.context.id)
-                    return originalJson(body)
+
+                    // sent directly instead of express res.json/res.send: those compute an ETag
+                    // (sha1 over the whole body) for every response - useless for POST requests,
+                    // which are never answered with 304 (e.g. ~140µs for 300KB)
+                    const payload = graphqlResponseJson(body)
+                    if (!res.getHeader('Content-Type')) {
+                        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+                    }
+                    res.setHeader('Content-Length', Buffer.byteLength(payload))
+                    res.end(payload)
+                    return res
                 }
 
-                graphqlHTTP({
-                    schema,
-                    rootValue,
-                    // Explicit allow-list instead of a deny-list: GraphiQL (full
-                    // schema introspection UI) is only enabled when NODE_ENV is
-                    // EXACTLY "development". The previous check
-                    // (`!== 'production'`) fails open - if NODE_ENV is ever
-                    // unset, misspelled, or something like "staging", GraphiQL
-                    // would be silently exposed to the internet with full
-                    // schema introspection.
-                    graphiql: process.env.NODE_ENV === 'development',
-                    // parse/validate results are memoized per query text + schema
-                    customParseFn: cachedParse,
-                    customValidateFn: cachedValidate,
-                    customFormatErrorFn: (error)=>{
+                const formatError = (error) => formatAndLogError(db, req, error)
 
-                        return formatAndLogError(db,req,error)
-                    },
-                    /*extensions({document, variables, operationName, result}) {
-
-                        result.isAuth = !!(req.context && req.context.id)
-
-                    }*/
-                })(req, res, next).then(() => {
+                // GraphiQL is not offered: this route only accepts POST
+                executeGraphqlRequest(req, res, {schema, rootValue, formatError}).then(() => {
 
                 }).catch((error) => {
                     console.warn('graphql error', error)
