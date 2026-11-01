@@ -17,7 +17,7 @@ import postQueryConvert from './postQueryConverter.mjs'
 import {unbatchPipeline} from './lookupBatching.mjs'
 import {ApiError} from "../../error.mjs";
 
-// max entries per list query from a graphql client without the capability manage_other_users
+// max entries per list query from a graphql client without login
 export const MAX_GRAPHQL_LIST_LIMIT = 1000
 
 // ─── helpers (module-level, not inside the method) ──────────────────────────
@@ -252,10 +252,11 @@ const GenericResolver = {
         const collectionName = await buildCollectionName(db, context, typeName, _version)
         const userCanManageOtherUsers = await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
 
-        // limit for list queries from graphql clients (graphqlInfo is only set for them) -
-        // otherwise anyone could request e.g. limit:1000000 several times in one request.
-        // Server side calls (cms data resolver, scripts) are not limited.
-        if (graphqlInfo && !userCanManageOtherUsers && parseInt(otherOptions.limit) > MAX_GRAPHQL_LIST_LIMIT) {
+        // limit for list queries of visitors without login from graphql clients (graphqlInfo is
+        // only set for them) - otherwise anyone could request e.g. limit:1000000 several times in
+        // one request. Logged in users (admin tools load up to 100000 entries, e.g. static files)
+        // and server side calls (cms data resolver, scripts) are not limited.
+        if (graphqlInfo && !context.id && parseInt(otherOptions.limit) > MAX_GRAPHQL_LIST_LIMIT) {
             otherOptions.limit = MAX_GRAPHQL_LIST_LIMIT
         }
 
@@ -933,18 +934,6 @@ const GenericResolver = {
                 }
 
 
-                /*const typeDefinition = getType(typeName)
-                let userFilter = true
-                let match
-                if (typeDefinition && typeDefinition?.access?.update &&
-                    await Util.userHasCapability(db, context, typeDefinition.access.update)) {
-                    userFilter = false
-                }
-
-                if (userFilter) {
-                    match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
-                }
-                match = extendWithOwnerGroupMatch(typeDefinition, context, match, userFilter)*/
 
                 Object.keys(updateMatch).forEach(k=>{
                     params[k] = updateMatch[k]

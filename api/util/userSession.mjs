@@ -55,6 +55,21 @@ export const validateContextUser = async (db, context, {noCache = false} = {}) =
     if (isLoginStillValid(user, context)) {
         return context
     }
+    if (!noCache) {
+        // The cache of this process may be outdated: a password change or an unblock on another
+        // api process / node only clears the cache there. Check the db before rejecting, so a
+        // valid login is never thrown out (only happens for rejected logins, so it is rare).
+        try {
+            const fresh = await db.collection('User').findOne({_id: new ObjectId(context.id)})
+            if (isLoginStillValid(fresh, context)) {
+                Util.clearUserCache(context.id)
+                return context
+            }
+        } catch (e) {
+            console.warn('validateContextUser: could not load user', e.message)
+            return withoutLogin()
+        }
+    }
     // blocked, deleted or password changed - the auth cookie can be removed
     return {...withoutLogin(), loginRevoked: true}
 }

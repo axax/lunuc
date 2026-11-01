@@ -10,8 +10,6 @@ import {
     CAPABILITY_MANAGE_BACKUPS
 } from '../util/capabilities.mjs'
 
-import {contextByRequest} from '../api/util/sessionContext.mjs'
-import {validateContextUser} from './util/userSession.mjs'
 
 const {UPLOAD_DIR, DEFAULT_LANGUAGE, HOSTRULES_ABSPATH} = config
 
@@ -38,26 +36,16 @@ const beforeUpload = (res, req, upload_dir) => {
 const ANONYMOUS_MAX_FILE_SIZE = (parseInt(process.env.LUNUC_ANONYMOUS_UPLOAD_MAX_MB) || 100) * 1024 * 1024
 
 const authContextOrError = async (db, res, req, capability) => {
-    // check auth token
-    // req.context is set (and validated) by auth.initialize
-    const authContext = req.context || await validateContextUser(db, contextByRequest(req))
+    // req.context is set (and validated) by auth.initialize, which runs before the upload routes
+    const authContext = req.context
 
-    if (!authContext) {
-        // no auth
+    if (capability && !await Util.userHasCapability(db, authContext, capability)) {
         res.writeHead(401, {'content-type': 'application/json'});
-        res.end('{"status":"error","message":"Upload failed. Unauthorized to upload files"}')
+        res.end('{"status":"error","message":"User has no capability to ' + capability + '"}')
         return null
-    } else {
-
-        if (capability && !await Util.userHasCapability(db, authContext, capability)) {
-            res.writeHead(401, {'content-type': 'application/json'});
-            res.end('{"status":"error","message":"User has no capability to ' + capability + '"}')
-            return null
-        }
-
-
-        return authContext
     }
+
+    return authContext
 }
 
 export const handleUpload = db => async (req, res) => {
@@ -65,18 +53,12 @@ export const handleUpload = db => async (req, res) => {
     const upload_dir = path.join(__dirname, '..' + UPLOAD_DIR)
     if (beforeUpload(res, req, upload_dir)) {
 
-        // req.context is set (and validated) by auth.initialize
-        let context = req.context || await validateContextUser(db, contextByRequest(req))
-
         // anonymous uploads (e.g. attachments of public forms) are limited in size,
         // so nobody can fill up the disk without an account
-        let maxFileSize = 10 * 1024 * 1024 * 1024 // 10GB
-        if (!context.id) {
-            // use anonymous user
-            const anonymousUser = await Util.userByName(db, 'anonymous')
-            context = {username: anonymousUser.username, id: anonymousUser._id.toString()}
-            maxFileSize = ANONYMOUS_MAX_FILE_SIZE
-        }
+        const maxFileSize = req.context.id ? 10 * 1024 * 1024 * 1024 /* 10GB */ : ANONYMOUS_MAX_FILE_SIZE
+
+        // req.context is set (and validated) by auth.initialize; without login the anonymous user
+        let context = await Util.userOrAnonymousContext(db, req.context)
 
 
         if (context.id) {

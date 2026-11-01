@@ -22,6 +22,7 @@ import path from 'path'
 import crypto from 'crypto'
 import {ObjectId} from 'mongodb'
 import AdmZip from 'adm-zip'
+import {isPublicHttpUrl} from '../../util/networkGuard.mjs'
 import * as cheerio from 'cheerio'
 // swiss thousands separator (12’000 -> 12'000), rich text and text boxes of excel files
 import {normalizeThousands, richTextHtml, excelTextBoxes} from './excelFormat.mjs'
@@ -1302,35 +1303,44 @@ export const pdfToHtml = async (buffer) => {
 
 // ---------- remote ----------
 
-const fetchBuffer = async (url, {maxBytes = 15 * 1024 * 1024, timeout = 20000} = {}) => {
+const MAX_REDIRECTS = 5
+
+// checkPublic: every url incl. redirect targets must be public http(s) (SSRF protection) -
+// with redirect 'follow' a public url could redirect to an internal one
+const fetchBuffer = async (url, {maxBytes = 15 * 1024 * 1024, timeout = 20000, checkPublic = false} = {}) => {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), timeout)
     try {
-        const res = await fetch(url, {
-            signal: controller.signal,
-            redirect: 'follow',
-            headers: {'User-Agent': 'Mozilla/5.0 (compatible; lunuc content import)', 'Accept': '*/*'}
-        })
+        let res, currentUrl = url
+        for (let hops = 0; ; hops++) {
+            if (checkPublic && !await isPublicHttpUrl(currentUrl)) {
+                throw new Error('Diese Adresse ist nicht erlaubt')
+            }
+            res = await fetch(currentUrl, {
+                signal: controller.signal,
+                redirect: checkPublic ? 'manual' : 'follow',
+                headers: {'User-Agent': 'Mozilla/5.0 (compatible; lunuc content import)', 'Accept': '*/*'}
+            })
+            const location = res.headers.get('location')
+            if (!checkPublic || res.status < 300 || res.status >= 400 || !location) {
+                break
+            }
+            if (hops >= MAX_REDIRECTS) {
+                throw new Error(`${url}: zu viele Weiterleitungen`)
+            }
+            currentUrl = new URL(location, currentUrl).href
+        }
         if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`)
         const length = parseInt(res.headers.get('content-length') || '0')
         if (length > maxBytes) throw new Error(`${url}: zu gross (${Math.round(length / 1024 / 1024)} MB)`)
         const buffer = Buffer.from(await res.arrayBuffer())
         if (buffer.length > maxBytes) throw new Error(`${url}: zu gross`)
-        return {buffer, contentType: (res.headers.get('content-type') || '').split(';')[0].trim().toLowerCase(), url: res.url || url}
+        return {buffer, contentType: (res.headers.get('content-type') || '').split(';')[0].trim().toLowerCase(), url: res.url || currentUrl}
     } finally {
         clearTimeout(timer)
     }
 }
 
-const isPrivateUrl = (u) => {
-    try {
-        const {hostname, protocol} = new URL(u)
-        if (!/^https?:$/.test(protocol)) return true
-        return /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|0\.|\[?::1\]?|169\.254\.)/i.test(hostname) || hostname.endsWith('.local') || hostname.endsWith('.internal')
-    } catch (e) {
-        return true
-    }
-}
 
 // ---------- other office formats (Pages, Numbers, doc, odt, rtf) ----------
 
@@ -1414,8 +1424,7 @@ export const convertContent = async ({db, context, buffer, fileName = '', mimeTy
     let type, title = ''
 
     if (url) {
-        if (!allowPrivateUrls && isPrivateUrl(url)) throw new Error('Diese Adresse ist nicht erlaubt')
-        const res = await fetchBuffer(url)
+        const res = await fetchBuffer(url, {checkPublic: !allowPrivateUrls})
         buffer = res.buffer
         mimeType = res.contentType
         fileName = baseName(new URL(res.url).pathname) || 'seite.html'
@@ -1523,8 +1532,7 @@ export const convertContent = async ({db, context, buffer, fileName = '', mimeTy
             } else if (b.type === 'img' && importImages && count < MAX_REMOTE_IMAGES && /^https?:/.test(b.src)) {
                 count++
                 try {
-                    if (!allowPrivateUrls && isPrivateUrl(b.src)) throw new Error('Adresse nicht erlaubt')
-                    const img = await fetchBuffer(b.src, {maxBytes: 20 * 1024 * 1024})
+                    const img = await fetchBuffer(b.src, {maxBytes: 20 * 1024 * 1024, checkPublic: !allowPrivateUrls})
                     if (!img.contentType.startsWith('image/')) throw new Error('kein Bild')
                     let name = baseName(new URL(img.url).pathname) || 'bild'
                     if (!ext(name)) name += '.' + (img.contentType.split('/')[1] || 'jpg').replace('jpeg', 'jpg').replace('svg+xml', 'svg')

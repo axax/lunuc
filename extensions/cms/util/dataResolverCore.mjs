@@ -18,6 +18,31 @@ import config from '../../../gensrc/config.mjs'
 import {resolveReduce} from './resolver/resolveReduce.mjs'
 import {fixAndParseJSON} from '../../../client/util/fixJson.mjs'
 
+/*
+ Compiled functions of the data resolver (templates, $if, d, eval) by their code. The code only
+ depends on the segment and the names of the scope keys, so the same function is used again
+ instead of compiling it on every request (same as the fnCache of JsonDom in the browser).
+ LRU: a hit moves the entry to the end of the Map, the first key is the least recently used.
+ */
+const COMPILED_FN_CACHE_MAX = 1000
+const compiledFnCache = new Map()
+
+export const compileCached = (code) => {
+    let fn = compiledFnCache.get(code)
+    if (fn) {
+        compiledFnCache.delete(code)
+        compiledFnCache.set(code, fn)
+        return fn
+    }
+    // throws on syntax errors -> nothing gets cached
+    fn = new Function(code)
+    if (compiledFnCache.size >= COMPILED_FN_CACHE_MAX) {
+        compiledFnCache.delete(compiledFnCache.keys().next().value)
+    }
+    compiledFnCache.set(code, fn)
+    return fn
+}
+
 export function addDebugInfos(resolvedData, segment, startTime, startTimeSegment, debugLog) {
     resolvedData[segment.debug.key || segment.debug] = {
         totalTime: new Date().getTime() - startTime,
@@ -31,6 +56,73 @@ function unescapeControlChars(str) {
 const UNESCAPE_RE = /\\([nrtbf\\'"`])/g;
 const UNESCAPE_MAP = { n:'\n', r:'\r', t:'\t', b:'\b', f:'\f' };
 
+
+const isDynamicValue = (value) => typeof value === 'string' && (value.includes('${') || value.includes('###'))
+
+/**
+ * Makes sure that the inserted values only changed values, not the structure of the segment.
+ *
+ * Values from the request (params, props, page.referer ...) are inserted into the JSON text of
+ * the segment. A value with a quote could otherwise add its own keys or override existing ones
+ * (JSON.parse takes the last of duplicate keys), e.g. "t":"User" or "d"/"$if" - which
+ * typeResolver evaluates as code. So:
+ * - every object must have exactly the keys of the raw segment
+ * - values without a template expression must be unchanged
+ * Values with ${...} may change (also into objects / arrays with "###").
+ * Returns the path of the first difference or null.
+ */
+const normalizeStatic = str => str.replace(/[\s\\]/g, '')
+
+// Returns the path of the first difference or null. The path is only built when a difference
+// is found (this runs for every templated segment of every request).
+export const findSegmentStructureChange = (raw, templated) => {
+    if (raw === templated || isDynamicValue(raw)) {
+        return null
+    }
+    if (raw === null || typeof raw !== 'object') {
+        if (typeof raw === 'string' && typeof templated === 'string') {
+            // static strings: the templating unescapes control characters and backslashes
+            return normalizeStatic(raw) === normalizeStatic(templated) ? null : '/'
+        }
+        return '/'
+    }
+    if (templated === null || typeof templated !== 'object' || Array.isArray(raw) !== Array.isArray(templated)) {
+        return '/'
+    }
+    if (Array.isArray(raw)) {
+        if (raw.length !== templated.length) {
+            // one templated entry can expand into several ("###${list}###")
+            return raw.some(isDynamicValue) ? null : '/'
+        }
+        for (let i = 0; i < raw.length; i++) {
+            const change = findSegmentStructureChange(raw[i], templated[i])
+            if (change) return '/' + i + (change === '/' ? '' : change)
+        }
+        return null
+    }
+
+    // keys can be templated as well ("${cond?'before':'#'}") - each of them results in one key
+    let staticKeyCount = 0, dynamicKeyCount = 0
+    for (const key in raw) {
+        if (key.includes('${')) {
+            dynamicKeyCount++
+            continue
+        }
+        staticKeyCount++
+        if (!(key in templated)) {
+            return '/' + key
+        }
+        const change = findSegmentStructureChange(raw[key], templated[key])
+        if (change) return '/' + key + (change === '/' ? '' : change)
+    }
+    let templatedKeyCount = 0
+    for (const key in templated) templatedKeyCount++
+    if (templatedKeyCount - staticKeyCount > dynamicKeyCount) {
+        const added = Object.keys(templated).filter(key => !(key in raw))
+        return '/' + (added[added.length - 1] || '')
+    }
+    return null
+}
 
 /**
  * Replaces the template expressions of one (raw) segment and returns the
@@ -51,7 +143,7 @@ export const templateSegment = (rawSegment, {scope, resolvedData, context, editm
 
     let segment
     if (needsTemplate) {
-        const tpl = new Function(`
+        const tpl = compileCached(`
             const {${Object.keys(scope).join(',')}} = this.scope
             const {data} = this
             const Util = this.ClientUtil
@@ -78,6 +170,27 @@ export const templateSegment = (rawSegment, {scope, resolvedData, context, editm
             throw new Error(parsedJson.errors[0])
         }
         segment = parsedJson.json
+
+        const change = findSegmentStructureChange(rawSegment, segment)
+        if (change) {
+            // most likely a request value with quotes that tried to inject keys
+            console.warn(`dataResolver: segment structure changed by inserted values at ${change} - segment ignored`)
+            throw new Error('Invalid parameters in data resolver')
+        }
+
+        // "$if" and "d" (as string) are executed as code by the type resolver. If they contain a
+        // template expression, the inserted value could come from the request:
+        // - $if: the result is used as a value (true / false), not executed
+        // - d: not allowed
+        if (isDynamicValue(rawSegment.$if) && typeof segment.$if === 'string') {
+            segment.$if = !['', 'false', '0', 'undefined', 'null', 'NaN'].includes(segment.$if.trim())
+        }
+        if (isDynamicValue(rawSegment.d) && typeof segment.d === 'string') {
+            throw new Error('Template expressions in "d" are not allowed')
+        }
+        if (isDynamicValue(rawSegment.eval)) {
+            throw new Error('Template expressions in "eval" are not allowed')
+        }
     } else {
         const needsUnescape = segmentStr.includes('\\')
         if(needsUnescape || segmentStr.includes('###')){
@@ -99,6 +212,13 @@ export const templateSegment = (rawSegment, {scope, resolvedData, context, editm
 
     if (tempBrowser) {
         segment.website.pipeline = tempBrowser
+    }
+
+    // a website url or pipeline with template expressions may contain values from the request -
+    // the headless browser may then only open public http(s) urls (see browser.mjs)
+    if (segment.website && (isDynamicValue(rawSegment.website?.url) ||
+        (tempBrowser && JSON.stringify(tempBrowser).includes('${')))) {
+        segment.website._restrictNetwork = true
     }
 
     return segment
@@ -142,7 +262,7 @@ export const resolveDataSegment = (segment, resolvedData) => {
 // segment.eval
 export const resolveEvalSegment = (segment, resolvedData, scope, context) => {
     try {
-        const tpl = new Function('const {' + Object.keys(scope).join(',') + '} = this.scope; const {data} = this;' + segment.eval)
+        const tpl = compileCached('const {' + Object.keys(scope).join(',') + '} = this.scope; const {data} = this;' + segment.eval)
         tpl.call({data: resolvedData, scope, context})
     } catch (e) {
         if (!segment.ignoreError)

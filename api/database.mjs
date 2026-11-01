@@ -108,6 +108,14 @@ export const dbConnectionCached = (dburl, cachKey, cb) =>{
 }
 
 /**
+ * Promise version of dbConnectionCached for the web server process (one shared connection).
+ * Resolves with {db, err} - db is null if no connection could be made.
+ */
+export const getServerDb = () => new Promise(resolve => {
+    dbConnectionCached(MONGO_URL, 'server', (err, db) => resolve({db: db || null, err}))
+})
+
+/**
  * true if every host of a mongodb:// url is on this machine (loopback or
  * unix socket). Wire compression brings nothing there - it only costs cpu on
  * mongod and in the driver (inflate runs in the libuv thread pool).

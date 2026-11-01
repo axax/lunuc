@@ -77,7 +77,9 @@ const SHUTDOWN_TIMEOUT_MS = 10000
 const COMPRESSION_LEVEL = 4
 
 // max size of a JSON request body (see the body parser below)
-const JSON_BODY_LIMIT_ANONYMOUS = 5 * 1024 * 1024 // 5 MB
+// without login: public forms send attachments as base64 in the request (e.g. job applications),
+// env LUNUC_ANONYMOUS_JSON_MAX_MB to allow bigger ones
+const JSON_BODY_LIMIT_ANONYMOUS = (parseInt(process.env.LUNUC_ANONYMOUS_JSON_MAX_MB) || 30) * 1024 * 1024 // 5 MB
 const JSON_BODY_LIMIT_LOGGED_IN = 200 * 1024 * 1024 // 200 MB
 
 process.on('SIGINT', () => {
@@ -186,10 +188,6 @@ export const start = (done) => {
             app.use(express.urlencoded({
                 extended: true
             }))
-            // delay response
-            /*  app.use(function (req, res, next) {
-               setTimeout(next, 1000)
-               })*/
 
             // Authentication
             auth.initialize(app, db)

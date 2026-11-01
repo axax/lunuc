@@ -1,4 +1,5 @@
 import React from 'react'
+import {createPaperObserver} from './paperObserver.js'
 import PropTypes from 'prop-types'
 import Button from '@mui/material/Button'
 import Divider from '@mui/material/Divider'
@@ -24,27 +25,11 @@ class SimpleMenu extends React.Component {
     }
 
     menuAction = React.createRef()
-    resizeObserver = null
 
-    // MUI positions the popover only once when it opens. If the content size changes afterwards
-    // (lazy loaded icons, web fonts, expanded sub items) the menu can end up partially outside the viewport.
-    // Observe the paper and reposition whenever its size changes.
-    observePaper = (element) => {
-        this.disconnectObserver()
-        if (element && typeof ResizeObserver !== 'undefined') {
-            this.resizeObserver = new ResizeObserver(() => {
-                this.menuAction.current?.updatePosition()
-            })
-            this.resizeObserver.observe(element)
-        }
-    }
-
-    disconnectObserver = () => {
-        if (this.resizeObserver) {
-            this.resizeObserver.disconnect()
-            this.resizeObserver = null
-        }
-    }
+    // keeps the menu inside the viewport when its size changes (see paperObserver.js)
+    paperObserver = createPaperObserver(() => this.menuAction.current)
+    observePaper = (element) => this.paperObserver.observe(element)
+    disconnectObserver = () => this.paperObserver.disconnect()
 
     componentWillUnmount() {
         this.disconnectObserver()

@@ -50,8 +50,9 @@ function CSVToArray(strData, strDelimiter) {
     return (arrData);
 }
 
-export const csvToJson = (csv) => {
-    var array = CSVToArray(csv)
+// delimiter: default ";"
+export const csvToJson = (csv, delimiter) => {
+    var array = CSVToArray(csv, delimiter)
     var objArray = []
 
 

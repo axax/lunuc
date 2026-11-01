@@ -33,19 +33,42 @@ Hook.on('schema', ({schemas}) => {
 })
 
 
-let uncaughtExceptionCount=0, unhandledRejectionCount=0
+/*
+ Process level errors.
+ Before, the process exited after 21 uncaught exceptions / 11 unhandled rejections in total (over
+ the whole uptime). Anybody who found a request that causes one of them could stop the api with
+ a few requests. Now:
+ - unhandled rejections are logged only (the process state is not affected)
+ - uncaught exceptions end the process only if there are many within a short time
+ - at most MAX_DB_LOG_ENTRIES_PER_MINUTE entries per type are written into the db, so an error
+   that is triggered by requests can't flood the Log collection
+ */
+const ERROR_WINDOW_MS = 60 * 1000
+const MAX_UNCAUGHT_EXCEPTIONS_PER_WINDOW = 20
+const MAX_DB_LOG_ENTRIES_PER_MINUTE = 30
+
+const createWindowCounter = () => {
+    let windowStart = 0, count = 0
+    return () => {
+        const now = Date.now()
+        if (now - windowStart > ERROR_WINDOW_MS) {
+            windowStart = now
+            count = 0
+        }
+        return ++count
+    }
+}
+const countUncaughtException = createWindowCounter()
+const countDbLogUncaught = createWindowCounter()
+const countDbLogRejection = createWindowCounter()
+
 process.on('uncaughtException', async (error, origin) => {
 
-    if(error?.stack?.indexOf('imap-composer.js')>=0) {
-        //ignore
-    }else{
-        uncaughtExceptionCount++
-    }
+    // errors of the imap library are ignored for the exit decision
+    const count = error?.stack?.indexOf('imap-composer.js') >= 0 ? 0 : countUncaughtException()
 
-    if(mydb && error) {
-        // A failing write here would raise a fresh unhandledRejection, which
-        // feeds the counter below and can drive the process into process.exit(1)
-        // on the logger's account rather than on the original error's.
+    if(mydb && error && countDbLogUncaught() <= MAX_DB_LOG_ENTRIES_PER_MINUTE) {
+        // A failing write here would raise a fresh unhandledRejection.
         try {
             await GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {
                 type: 'uncaughtException',
@@ -61,8 +84,8 @@ process.on('uncaughtException', async (error, origin) => {
         }
     }
 
-
-    if(uncaughtExceptionCount>20){
+    if(count > MAX_UNCAUGHT_EXCEPTIONS_PER_WINDOW){
+        console.error(`log: more than ${MAX_UNCAUGHT_EXCEPTIONS_PER_WINDOW} uncaught exceptions within ${ERROR_WINDOW_MS / 1000}s - exit process`)
         process.exit(1)
     }
 
@@ -72,8 +95,7 @@ process.on('uncaughtException', async (error, origin) => {
 process.on('unhandledRejection', async (error) => {
     console.error(error)
 
-    unhandledRejectionCount++
-    if(mydb && error) {
+    if(mydb && error && countDbLogRejection() <= MAX_DB_LOG_ENTRIES_PER_MINUTE) {
         // Without this catch a failing write turns into another
         // unhandledRejection, re-entering this very handler.
         try {
@@ -89,10 +111,6 @@ process.on('unhandledRejection', async (error) => {
         } catch (logError) {
             console.error('log: could not persist unhandledRejection', logError.message)
         }
-    }
-
-    if(unhandledRejectionCount>10){
-        process.exit(1)
     }
 })
 

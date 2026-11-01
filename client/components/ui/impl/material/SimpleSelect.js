@@ -1,4 +1,5 @@
 import React from 'react'
+import {createPaperObserver} from './paperObserver.js'
 import PropTypes from 'prop-types'
 import Chip from '@mui/material/Chip'
 import Select from '@mui/material/Select'
@@ -63,27 +64,11 @@ class SimpleSelect extends React.Component {
 
     searchInputRef = React.createRef()
     menuAction = React.createRef()
-    resizeObserver = null
 
-    // MUI positions the menu only once when it opens. If its size changes afterwards (lazy loaded icons,
-    // web fonts) the menu can end up partially outside the viewport: reposition whenever the paper is
-    // resized (same as in SimpleMenu)
-    observePaper = (element) => {
-        this.disconnectObserver()
-        if (element && typeof ResizeObserver !== 'undefined') {
-            this.resizeObserver = new ResizeObserver(() => {
-                this.menuAction.current?.updatePosition()
-            })
-            this.resizeObserver.observe(element)
-        }
-    }
-
-    disconnectObserver = () => {
-        if (this.resizeObserver) {
-            this.resizeObserver.disconnect()
-            this.resizeObserver = null
-        }
-    }
+    // keeps the menu inside the viewport when its size changes (see paperObserver.js)
+    paperObserver = createPaperObserver(() => this.menuAction.current)
+    observePaper = (element) => this.paperObserver.observe(element)
+    disconnectObserver = () => this.paperObserver.disconnect()
 
     componentWillUnmount() {
         this.disconnectObserver()

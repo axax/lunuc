@@ -43,33 +43,18 @@ export const setAuthCookies = (userData, req, res) => {
 }
 export const removeAuthCookies = (req, res) => {
     const {hostrule} = getBestMatchingHostRule(getHostFromHeaders(req.headers))
-    res.cookie('auth', null, {
-        httpOnly: true,
-        expires: new Date(0),
-        maxAge: 0,
-        sameSite: 'Strict'
-    })
-    res.cookie('authRole', null, {
-        httpOnly: true,
-        expires: new Date(0),
-        maxAge: 0,
-        sameSite: 'Strict'
-    })
-    if(hostrule?.authCookieDomain) {
-        res.cookie('auth', null, {
-            domain: hostrule.authCookieDomain,
-            httpOnly: true,
-            expires: new Date(0),
-            maxAge: 0,
-            sameSite: 'Strict'
-        })
-        res.cookie('authRole', null, {
-            domain: hostrule.authCookieDomain,
-            httpOnly: true,
-            expires: new Date(0),
-            maxAge: 0,
-            sameSite: 'Strict'
-        })
+    // without domain and - if configured - with the cookie domain of the hostrule
+    const domains = hostrule?.authCookieDomain ? [undefined, hostrule.authCookieDomain] : [undefined]
+    for (const domain of domains) {
+        for (const name of ['auth', 'authRole']) {
+            res.cookie(name, null, {
+                ...(domain ? {domain} : {}),
+                httpOnly: true,
+                expires: new Date(0),
+                maxAge: 0,
+                sameSite: 'Strict'
+            })
+        }
     }
 }
 
@@ -79,16 +64,23 @@ export const removeAuthCookies = (req, res) => {
  */
 export const hasLoginToken = (req) => {
     const token = USE_COOKIES ? parseCookies(req).auth : req.headers[AUTH_HEADER]
-    const matches = token && token.match(/(\S+)\s+(\S+)/)
-    if (!matches || matches[1] !== AUTH_SCHEME) {
+    if (!token) {
         return false
     }
-    try {
-        // no logging here - contextByRequest decodes (and logs) the same token right after
-        return !!jwt.verify(matches[2], SECRET_KEY).id
-    } catch (e) {
-        return false
+    // silent - contextByRequest decodes (and logs) an invalid token right after
+    const decoded = decodeToken(token, {silent: true})
+    // contextByRequest reuses a valid result instead of verifying the signature again
+    req._decodedLoginToken = {token, decoded}
+    return !!decoded.id
+}
+
+// a valid token already decoded by hasLoginToken (same request) is not verified again
+const decodeTokenOfRequest = (req, token) => {
+    const cached = req._decodedLoginToken
+    if (cached && cached.token === token && cached.decoded.id) {
+        return {...cached.decoded}
     }
+    return decodeToken(token)
 }
 
 export const contextByRequest = (req, res) => {
@@ -99,7 +91,7 @@ export const contextByRequest = (req, res) => {
     if (USE_COOKIES) {
 
         const cookies = parseCookies(req)
-        context = decodeToken(cookies.auth)
+        context = decodeTokenOfRequest(req, cookies.auth)
 
         if (context.exp) {
             const exp = new Date(context.exp * 1000)
@@ -131,7 +123,7 @@ export const contextByRequest = (req, res) => {
     } else {
 
         // now if auth is needed we can check if the context is available
-        context = decodeToken(req.headers[AUTH_HEADER])
+        context = decodeTokenOfRequest(req, req.headers[AUTH_HEADER])
 
         context.session = req.headers[SESSION_HEADER] || crypto.randomBytes(16).toString('hex')
 

@@ -4,6 +4,12 @@ import Util from '../../../api/util/index.mjs'
 import Cache from '../../../util/cache.mjs'
 import {pubsubDelayed} from '../../../api/subscription.mjs'
 import puppeteer from 'puppeteer'
+import {isPublicHttpUrl} from '../../../util/networkGuard.mjs'
+import {findSegmentStructureChange} from './dataResolverCore.mjs'
+
+// jobs with an url from the request (e.g. ?url= of the screenshot page) - each one starts a
+// browser for up to the page timeout, so only a few may wait
+const MAX_QUEUED_REQUEST_JOBS = 10
 
 
 const {UPLOAD_DIR, UPLOAD_URL} = config
@@ -27,6 +33,12 @@ const addToWebsiteQueue = async (processData) => {
         }
     }
 
+    if (segment.website?._restrictNetwork &&
+        websiteProcessingQueue.filter(job => job.segment.website?._restrictNetwork).length >= MAX_QUEUED_REQUEST_JOBS) {
+        resolvedData[dataKey] = {error: 'Too many requests. Please try again later.', meta: segment.meta}
+        return false
+    }
+
     if (!resolvedData[dataKey]) {
         resolvedData[dataKey] = {}
     }
@@ -42,23 +54,118 @@ const addToWebsiteQueue = async (processData) => {
 }
 
 
+/*
+ One shared headless Chrome for all jobs without own launch args. Starting Chrome costs about
+ 0.5-2s cpu and a few hundred MB per job; now every job only gets its own browser context
+ (separate cookies, storage and cache - like a fresh browser) in the running Chrome.
+ Ignoring certificate errors (acceptInsecureCerts) is set browser wide and applies to all contexts.
+ The Chrome is closed after BROWSER_IDLE_CLOSE_MS without jobs and started again when needed.
+ */
+const BROWSER_IDLE_CLOSE_MS = 5 * 60 * 1000
+const shared = {browser: null, starting: null, users: 0, idleTimer: null}
+
+const closeSharedBrowser = () => {
+    const browser = shared.browser
+    shared.browser = null
+    if (browser) {
+        browser.close().catch(() => {})
+    }
+}
+
+const acquireSharedBrowser = async (launchOptions) => {
+    // counted before the await, so the idle timer can't close it in the meantime
+    shared.users++
+    if (shared.idleTimer) {
+        clearTimeout(shared.idleTimer)
+        shared.idleTimer = null
+    }
+    if (shared.browser && shared.browser.connected) {
+        return shared.browser
+    }
+    if (!shared.starting) {
+        shared.starting = puppeteer.launch(launchOptions).then(browser => {
+            shared.browser = browser
+            browser.on('disconnected', () => {
+                if (shared.browser === browser) {
+                    shared.browser = null
+                }
+            })
+            return browser
+        }).finally(() => {
+            shared.starting = null
+        })
+    }
+    try {
+        return await shared.starting
+    } catch (e) {
+        releaseSharedBrowser()
+        throw e
+    }
+}
+
+const releaseSharedBrowser = () => {
+    shared.users = Math.max(0, shared.users - 1)
+    if (shared.users === 0 && shared.browser && !shared.idleTimer) {
+        shared.idleTimer = setTimeout(() => {
+            shared.idleTimer = null
+            if (shared.users === 0) {
+                closeSharedBrowser()
+            }
+        }, BROWSER_IDLE_CLOSE_MS)
+        shared.idleTimer.unref?.()
+    }
+}
+
+// A job may take at most its page timeout plus this (screenshot, pipeline, closing the browser).
+// Before, a job that never finished (or failed while starting the browser) blocked the queue
+// for good and the page kept waiting for a result.
+const JOB_EXTRA_TIME_MS = 30000
+const DEFAULT_PAGE_TIMEOUT_MS = 30000
+
 async function startProcessingQueue() {
     if (!isQueueProcessing) {
         isQueueProcessing = true
-        while (websiteProcessingQueue.length > 0) {
-            await processWebsiteData(websiteProcessingQueue[0])
-
-            websiteProcessingQueue.shift()
+        try {
+            while (websiteProcessingQueue.length > 0) {
+                try {
+                    await processWebsiteData(websiteProcessingQueue[0])
+                } catch (e) {
+                    console.error('website queue: job failed', e)
+                }
+                websiteProcessingQueue.shift()
+            }
+        } finally {
+            isQueueProcessing = false
         }
-        isQueueProcessing = false
     }
 }
 
 async function processWebsiteData(processData) {
     const {segment, scope, resolvedData, cacheKey, context, dataKey} = processData
 
-
-    const data = await openInBrowser(segment.website, scope, resolvedData)
+    const maxTime = (segment.website.timeout || DEFAULT_PAGE_TIMEOUT_MS) + JOB_EXTRA_TIME_MS
+    // filled by openInBrowser, so a job that runs too long can be stopped
+    const running = {}
+    let timer
+    let data
+    try {
+        data = await Promise.race([
+            openInBrowser(segment.website, scope, resolvedData, running),
+            new Promise(resolve => {
+                timer = setTimeout(() => {
+                    console.warn(`headless browser: job for ${segment.website.url} stopped after ${maxTime}ms`)
+                    if (running.close) {
+                        running.close()
+                    }
+                    resolve({eval: {}, error: 'Timeout: the page took too long'})
+                }, maxTime)
+            })
+        ])
+    } catch (e) {
+        data = {eval: {}, error: e.message}
+    } finally {
+        clearTimeout(timer)
+    }
     if (segment.meta) {
         data.meta = segment.meta
     }
@@ -75,10 +182,15 @@ async function processWebsiteData(processData) {
 
 
 
-const openInBrowser = async (options, scope, resolvedData) => {
+const openInBrowser = async (options, scope, resolvedData, running = {}) => {
 
-    const {url, pipeline, args, images, ignoreSsl, waitUntil, timeout, viewPort, evaluateOnNewDocument} = options
+    const {url, pipeline, args, images, ignoreSsl, waitUntil, timeout, viewPort, evaluateOnNewDocument, _restrictNetwork} = options
     let data = {}, error
+
+    // url from the request: only public http(s), checked before a browser is started
+    if (_restrictNetwork && !await isPublicHttpUrl(url)) {
+        return {eval: data, error: 'URL not allowed'}
+    }
 
 
     const minimal_args = [
@@ -120,12 +232,41 @@ const openInBrowser = async (options, scope, resolvedData) => {
     ]
 
 
-    const browserInstance = await puppeteer.launch({
+    const launchOptions = {
         ignoreHTTPSErrors: true,  /* deprecated */
         acceptInsecureCerts:true,
         args: args || minimal_args /* ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--no-zygote']*/
-    })
-    const page = await browserInstance.newPage()
+    }
+    // own launch args -> own Chrome as before, otherwise a context in the shared Chrome
+    const useShared = !args
+    let browserInstance, browserContext, page
+    try {
+        if (useShared) {
+            browserInstance = await acquireSharedBrowser(launchOptions)
+            browserContext = await browserInstance.createBrowserContext()
+            // job timeout: also restart the shared Chrome, it may be the one that hangs
+            running.close = () => {
+                browserContext.close().catch(() => {})
+                closeSharedBrowser()
+            }
+            page = await browserContext.newPage()
+        } else {
+            browserInstance = await puppeteer.launch(launchOptions)
+            running.close = () => browserInstance.close().catch(() => {})
+            page = await browserInstance.newPage()
+        }
+    } catch (e) {
+        console.error('headless browser: could not start', e)
+        if (browserContext) {
+            browserContext.close().catch(() => {})
+        }
+        if (useShared) {
+            if (browserInstance) releaseSharedBrowser()
+        } else if (browserInstance) {
+            browserInstance.close().catch(() => {})
+        }
+        return {eval: data, error: 'Browser could not be started: ' + e.message}
+    }
 
     console.log(`Open in headless browser ${url}`)
     try {
@@ -134,7 +275,26 @@ const openInBrowser = async (options, scope, resolvedData) => {
             await page.setViewport(viewPort)
         }
 
-        if (images === false) {
+        if (_restrictNetwork) {
+            // every request of the page (redirects, sub resources, fetch) is checked as well -
+            // the host decision is cached, so this is one dns lookup per host
+            await page.setRequestInterception(true)
+            page.on('request', async request => {
+                try {
+                    const requestUrl = request.url()
+                    if (images === false && request.resourceType() === 'image') {
+                        request.abort()
+                    } else if (requestUrl.startsWith('data:') || requestUrl.startsWith('blob:') || await isPublicHttpUrl(requestUrl)) {
+                        request.continue()
+                    } else {
+                        console.warn(`headless browser: blocked request to ${requestUrl}`)
+                        request.abort()
+                    }
+                } catch (e) {
+                    // already handled (e.g. page closed)
+                }
+            })
+        } else if (images === false) {
             await page.setRequestInterception(true)
             page.on('request', request => {
                 if (request.resourceType() === 'image')
@@ -183,8 +343,18 @@ const openInBrowser = async (options, scope, resolvedData) => {
             for (const pipeObj of pipeline) {
 
                 const tpl = new Function('const {' + Object.keys(scope).join(',') + '} = this.scope;const {data} = this; return `' + JSON.stringify(pipeObj) + '`;')
-                const pipeReplaceStr = tpl.call({scope, data: resolvedData})
+                // "###${...}###" inserts a raw value (number, boolean) - same as in templateSegment
+                const pipeReplaceStr = tpl.call({scope, data: resolvedData}).replace(/"###/g, '').replace(/###"/g, '')
                 const pipe = JSON.parse(pipeReplaceStr)
+
+                // same protection as for the segment (see templateSegment): inserted values must
+                // not add or override keys (e.g. an "eval" step)
+                const change = findSegmentStructureChange(pipeObj, pipe)
+                if (change) {
+                    console.warn(`headless browser: pipeline structure changed by inserted values at ${change}`)
+                    error = 'Invalid parameters in pipeline'
+                    break
+                }
 
                 const extractData = async (selectors, all) => {
                     if (selectors !== Array) {
@@ -292,24 +462,6 @@ const openInBrowser = async (options, scope, resolvedData) => {
                     } else {
                         await page.waitForSelector(pipe.waitFor, {timeout: 10000})
                     }
-                    /*} else if (pipe.waitForFunction) {
-                        await page.waitFor(pipe.waitForFunction.expr, {timeout: pipe.waitForFunction.timeout || 10000});*/
-
-
-                    /*const startTime = new Date()
-                    const timeout = pipe.waitFor.timeout || 10000
-                    let isValid = false
-                    while (timeout > (new Date() - startTime)) {
-                        const tmpData = await evalFunc(pipe.waitFor.eval)
-                        if (tmpData) {
-                            isValid = true
-                            break
-                        }
-                        await Util.sleep(50)
-                    }
-                    if (!isValid) {
-                        break
-                    }*/
 
                 } else if (pipe['eval']) {
                     const tmpData = await evalFunc(pipe.eval)
@@ -347,8 +499,14 @@ const openInBrowser = async (options, scope, resolvedData) => {
         console.error(e)
         error = e.message
     }
-    await page.close()
-    browserInstance.close()
+    // closing must never throw or hang the job (the browser may already be closed by the job timeout)
+    await page.close().catch(() => {})
+    if (useShared) {
+        await browserContext.close().catch(() => {})
+        releaseSharedBrowser()
+    } else {
+        browserInstance.close().catch(() => {})
+    }
 
     return {eval: data, error}
 }

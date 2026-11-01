@@ -3,7 +3,6 @@ import {ObjectId} from 'mongodb'
 import {auth} from '../auth.mjs'
 import {ApiError, ValidationError} from '../error.mjs'
 import GenericResolver from './generic/genericResolver.mjs'
-import Cache from '../../util/cache.mjs'
 import {
     CAPABILITY_MANAGE_USER_ROLE,
     CAPABILITY_MANAGE_OTHER_USERS,
@@ -232,7 +231,7 @@ const validateAndHashPassword = async ({password, passwordConfirm, context}) => 
  the current session gets a new token so it stays logged in.
  */
 const renewOwnLogin = async (db, req, userId) => {
-    Cache.remove('User' + userId)
+    Util.clearUserCache(userId)
     if (!USE_COOKIES || !req || !req.res || !req.context || String(req.context.id) !== String(userId)) {
         return
     }
@@ -243,6 +242,8 @@ const renewOwnLogin = async (db, req, userId) => {
         setAuthCookies(result, req, req.res)
     }
 }
+
+const LAST_ACTIVE_WRITE_INTERVAL_MS = 60 * 1000
 
 export const userResolver = (db) => ({
     Query: {
@@ -313,7 +314,15 @@ export const userResolver = (db) => ({
             }
 
             Util.checkIfUserIsLoggedIn(context)
-            const user = await db.collection('User').findOneAndUpdate({_id: new ObjectId(context.id)}, {$set: {lastActive: new Date().getTime()}})
+            // read fresh from the db (not the cache) - the returned document is the one before
+            // updating lastActive, same as with findOneAndUpdate before
+            const user = await db.collection('User').findOne({_id: new ObjectId(context.id)})
+            // me is called on every page load: write lastActive at most once per minute
+            const now = Date.now()
+            if (user && !(user.lastActive > now - LAST_ACTIVE_WRITE_INTERVAL_MS)) {
+                db.collection('User').updateOne({_id: user._id}, {$set: {lastActive: now}})
+                    .catch(e => console.warn('me: could not update lastActive', e.message))
+            }
             if (!user) {
                 throw new Error('User doesn\'t exist')
             }else if(user.blocked){
@@ -350,11 +359,6 @@ export const userResolver = (db) => ({
 
 
             let users = (await userCollection.aggregate([
-                /*{
-                 $match: {
-                 users: {$in: [new ObjectId(context.id)]}
-                 }
-                 },*/
                 {
                     $skip: offset,
                 },
@@ -493,7 +497,7 @@ export const userResolver = (db) => ({
                 $inc: {tokenVersion: 1}
             })
             if (user) {
-                Cache.remove('User' + user._id)
+                Util.clearUserCache(user._id)
             }
 
             Hook.call('newPassword', {context, db, user})
@@ -588,7 +592,7 @@ export const userResolver = (db) => ({
                         const password = generatePassword()
                         const hashedPw = await Util.hashPasswordAsync(password)
                         await db.collection('User').findOneAndUpdate({_id:new ObjectId(id)}, {$set: {requestNewPassword:true, password: hashedPw}, $inc: {tokenVersion: 1}}, {returnOriginal: false})
-                        Cache.remove('User' + id)
+                        Util.clearUserCache(id)
 
                         sendMail(db, context, {
                             fromName,
@@ -861,8 +865,7 @@ export const userResolver = (db) => ({
 
 
             // clear cache
-            Cache.remove('User' + username)
-            Cache.remove('User' + _id)
+            Util.clearUserCache(_id, username)
 
             if (user.password) {
                 await renewOwnLogin(db, req, _id)
@@ -948,7 +951,7 @@ export const userResolver = (db) => ({
                 }
 
                 // clear cache
-                Cache.remove('User' + context.id)
+                Util.clearUserCache(context.id)
 
                 if (user.password) {
                     await renewOwnLogin(db, req, context.id)
@@ -1039,12 +1042,12 @@ export const userResolver = (db) => ({
         deleteUser: async ({_id}, {context}) => {
             const result = await GenericResolver.deleteEnity(db, context, 'User', {_id})
             // the cached user would otherwise keep the login alive (see userSession.mjs)
-            Cache.remove('User' + _id)
+            Util.clearUserCache(_id)
             return result
         },
         deleteUsers: async ({_id}, {context}) => {
             const result = await GenericResolver.deleteEnities(db, context, 'User', {_id})
-            ;(_id || []).forEach(id => Cache.remove('User' + id))
+            ;(_id || []).forEach(id => Util.clearUserCache(id))
             return result
         },
         deleteUserRole: async ({_id}, {context}) => {

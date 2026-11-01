@@ -10,7 +10,9 @@ import {ObjectId} from 'mongodb'
 export const auth = {
     createToken: async ({username, password, domain, db, context}) => {
 
-        const user = await db.collection('User').findOneAndUpdate({domain: domain?{ $in: [ domain, "$ALL" ] }:{ $in: [ null, "", "$ALL" ] }, $or: [{'email': username}, {'username': username}]}, {$set: {lastLogin: new Date().getTime()}})
+        // lastLogin is only written after a successful login (before: on every attempt, also with a
+        // wrong password). The returned user is the document before the update, as before.
+        const user = await db.collection('User').findOne({domain: domain?{ $in: [ domain, "$ALL" ] }:{ $in: [ null, "", "$ALL" ] }, $or: [{'email': username}, {'username': username}]})
 
 
         // "anonymous" is the shared identity of all visitors that are not logged in - never a login
@@ -19,6 +21,7 @@ export const auth = {
         }else if(user.blocked){
             return {error: _t('core.login.blocked', context.lang), token: null, user: null}
         } else if (await Util.compareWithHashedPasswordAsync(password, user.password)) {
+            await db.collection('User').updateOne({_id: user._id}, {$set: {lastLogin: new Date().getTime()}})
             return await auth.signPayload(db, user)
         } else {
             return {error: _t('core.login.invalid', context.lang), token: null, user: null}

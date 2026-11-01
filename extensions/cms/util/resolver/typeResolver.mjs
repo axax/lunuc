@@ -1,5 +1,6 @@
 import Util from 'api/util/index.mjs'
 import GenericResolver from 'api/resolver/generic/genericResolver.mjs'
+import {compileCached} from '../dataResolverCore.mjs'
 
 export const typeResolver = async ({segment, resolvedData, scope, db, req, context, subscriptions}) => {
     const {t, f, l, o, g, p, d, s, $if, cache, includeCount, resultFilter, ...other} = segment
@@ -23,10 +24,15 @@ export const typeResolver = async ({segment, resolvedData, scope, db, req, conte
 
      */
 
-    if ($if) {
+    // true / false: already evaluated by templateSegment (see dataResolverCore.mjs) or written
+    // as "true" / "false" - no need to compile a function for that
+    if ($if === false || $if === 'false') {
+        return
+    }
+    if ($if && $if !== true && $if !== 'true') {
         // check condition
         try {
-            const tpl = new Function(`const {${Object.keys(scope).join(',')}} = this.scope;const {data} = this;return ${$if}`)
+            const tpl = compileCached(`const {${Object.keys(scope).join(',')}} = this.scope;const {data} = this;return ${$if}`)
             if (!tpl.call({scope, data: resolvedData})) {
                 return
             }
@@ -37,7 +43,7 @@ export const typeResolver = async ({segment, resolvedData, scope, db, req, conte
     let fields
     if (d && d.constructor === String) {
         try {
-            fields = Function(`const {${Object.keys(scope).join(',')}} = this.scope;const {data} = this;return ${d}`).bind({
+            fields = compileCached(`const {${Object.keys(scope).join(',')}} = this.scope;const {data} = this;return ${d}`).bind({
                 scope,
                 data: resolvedData
             })()

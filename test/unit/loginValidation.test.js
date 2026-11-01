@@ -9,7 +9,7 @@ import jwt from 'jsonwebtoken'
 import Cache from '../../util/cache.mjs'
 import {SECRET_KEY} from '../../api/constants/index.mjs'
 import {validateContextUser} from '../../api/util/userSession.mjs'
-import {hasLoginToken} from '../../api/util/sessionContext.mjs'
+import {hasLoginToken, contextByRequest} from '../../api/util/sessionContext.mjs'
 import {gunzipJsonBody} from '../../api/util/unzip.mjs'
 import {userResolver} from '../../api/resolver/user.mjs'
 
@@ -74,6 +74,13 @@ describe('login validation', () => {
         const user = newUser({tokenVersion: 1})
         const result = await validateContextUser(createDb([user]), contextFor(user, 0))
         assert.strictEqual(result.id, undefined)
+    })
+
+    it('an outdated cache entry (e.g. unblocked on another node) does not end a valid login', async () => {
+        const user = newUser()
+        const db = createDb([user])
+        Cache.set('User' + user._id, {...user, blocked: true})
+        assert.strictEqual((await validateContextUser(db, contextFor(user))).id, user._id.toString())
     })
 
     it('noCache reads the user from the db', async () => {
@@ -144,5 +151,36 @@ describe('login validation when the db is not reachable', () => {
         const result = await validateContextUser(db, {id: new ObjectId().toString(), username: 'x', session: 's1'})
         assert.strictEqual(result.id, undefined)
         assert.strictEqual(result.loginRevoked, undefined)
+    })
+})
+
+describe('token is verified once per request', () => {
+    it('contextByRequest reuses the result of hasLoginToken', () => {
+        const id = new ObjectId().toString()
+        const token = jwt.sign({id, username: 'x'}, SECRET_KEY)
+        const req = {headers: {cookie: 'auth=JWT%20' + token + '; session=s1'}}
+        assert.strictEqual(hasLoginToken(req), true)
+        req._decodedLoginToken.decoded.username = 'from-cache'
+        assert.strictEqual(contextByRequest(req, null).username, 'from-cache')
+        // an other token is decoded again
+        const other = {headers: {cookie: 'auth=JWT%20' + jwt.sign({id, username: 'y'}, SECRET_KEY) + '; session=s1'}, _decodedLoginToken: req._decodedLoginToken}
+        assert.strictEqual(contextByRequest(other, null).username, 'y')
+    })
+})
+
+describe('me', () => {
+    it('writes lastActive at most once per minute', async () => {
+        const user = newUser({lastActive: Date.now()})
+        let writes = 0
+        const db = {collection: () => ({
+            findOne: async () => ({...user}),
+            updateOne: async () => { writes++ }
+        })}
+        const me = userResolver(db).Query.me
+        await me({}, {context: contextFor(user)}, {fieldNodes: []})
+        assert.strictEqual(writes, 0)
+        user.lastActive = Date.now() - 2 * 60 * 1000
+        await me({}, {context: contextFor(user)}, {fieldNodes: []})
+        assert.strictEqual(writes, 1)
     })
 })

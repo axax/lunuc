@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken'
 import path from 'path'
 import {ZipArchive} from 'archiver'
 import {ObjectId} from 'mongodb'
-import {dbConnectionCached, MONGO_URL} from '../../api/database.mjs'
+import {getServerDb} from '../../api/database.mjs'
 import {getDynamicConfig} from '../../util/config.mjs'
 
 const config = getDynamicConfig()
@@ -37,7 +37,7 @@ export const verifyTokenAndResponse = (req, res, token, parsedUrl) => {
 
 export const zipAndSendMedias = (res, decoded, req) => {
 
-    dbConnectionCached(MONGO_URL, 'server',async (err, db) => {
+    getServerDb().then(async ({db, err}) => {
 
         if (!db) {
             console.error(err)

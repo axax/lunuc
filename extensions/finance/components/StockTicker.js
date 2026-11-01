@@ -30,7 +30,7 @@ class StockTicker extends React.Component {
         }).then(response => {
             if(!this.stop) {
                 this.setState(response.data)
-                setTimeout(() => {
+                this.timeout = setTimeout(() => {
                     this.getData()
                 }, 1000 * 60)
             }

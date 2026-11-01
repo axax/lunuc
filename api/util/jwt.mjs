@@ -3,7 +3,8 @@ import crypto from 'crypto'
 import {AUTH_SCHEME,SECRET_KEY} from '../constants/index.mjs'
 
 
-export const decodeToken = (token) => {
+// silent: no log for an invalid / expired token
+export const decodeToken = (token, {silent = false} = {}) => {
     let result = {}
     if (token) {
         const matches = token.match(/(\S+)\s+(\S+)/)
@@ -12,7 +13,7 @@ export const decodeToken = (token) => {
             jwt.verify(matches[2], SECRET_KEY, (err, decoded) => {
                 if (!err) {
                     result = decoded
-                } else {
+                } else if (!silent) {
                     console.error('decodeToken verify error', err)
                 }
             })

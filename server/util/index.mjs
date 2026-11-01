@@ -2,21 +2,8 @@ import puppeteer from 'puppeteer'
 import ApiUtil from '../../api/util/index.mjs'
 import {isTemporarilyBlocked} from './requestBlocker.mjs'
 import {getRegexCached} from './regexCache.mjs'
-
-// Same private-network check as server/index.mjs's isPrivateNetworkTarget.
-// Duplicated intentionally: this module must stay defensive on its own,
-// even if the caller's check is ever skipped, weakened, or bypassed via a
-// redirect after the caller's check already ran.
-const isPrivateNetworkHost = (hostname) => {
-    if (['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(hostname)) {
-        return true
-    }
-    return hostname.startsWith('10.') ||
-        hostname.startsWith('192.168.') ||
-        hostname.startsWith('169.254.') ||
-        hostname.startsWith('100.') || // CGNAT / tailscale range
-        /^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
-}
+// This module checks on its own (not only the caller), also after redirects of the page.
+import {isPrivateHostname, isPublicHttpUrl} from '../../util/networkGuard.mjs'
 
 // Reasonable upper bound for viewport/clip dimensions coming from
 // user-supplied options - without this an attacker could request an
@@ -52,7 +39,7 @@ export const doScreenCapture = async (url, filename, options, cookies) => {
     } catch (e) {
         return {statusCode: 400}
     }
-    const isSelfRenderCall = isPrivateNetworkHost(initialHostname)
+    const isSelfRenderCall = isPrivateHostname(initialHostname)
 
     const browser = await puppeteer.launch({
         ignoreHTTPSErrors: true, /* deprecated */
@@ -100,20 +87,19 @@ export const doScreenCapture = async (url, filename, options, cookies) => {
         // by design.
         if (!isSelfRenderCall) {
             await page.setRequestInterception(true)
-            page.on('request', (req) => {
-                let reqHostname
+            page.on('request', async (req) => {
                 try {
-                    reqHostname = new URL(req.url()).hostname
+                    const reqUrl = req.url()
+                    // also host names that resolve to internal addresses (dns lookup cached per host)
+                    if (reqUrl.startsWith('data:') || reqUrl.startsWith('blob:') || await isPublicHttpUrl(reqUrl)) {
+                        req.continue()
+                    } else {
+                        console.warn(`doScreenCapture: blocking request to internal host during external capture: ${reqUrl}`)
+                        req.abort()
+                    }
                 } catch (e) {
-                    req.abort()
-                    return
+                    // request already handled (e.g. page closed)
                 }
-                if (isPrivateNetworkHost(reqHostname)) {
-                    console.warn(`doScreenCapture: blocking request to internal host during external capture: ${req.url()}`)
-                    req.abort()
-                    return
-                }
-                req.continue()
             })
         }
     } catch (e) {

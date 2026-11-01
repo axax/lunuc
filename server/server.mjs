@@ -14,7 +14,8 @@ import {ensureDirectoryExistence} from '../util/fileUtil.mjs'
 import {getBestMatchingHostRule, getHostRules, getRootCertContext, resetHostRules} from '../util/hostrules.mjs'
 import {contextByRequest} from '../api/util/sessionContext.mjs'
 import {validateContextUser} from '../api/util/userSession.mjs'
-import {dbConnectionCached, MONGO_URL} from '../api/database.mjs'
+import {isPublicHttpUrl} from '../util/networkGuard.mjs'
+import {getServerDb} from '../api/database.mjs'
 
 // admin only routes of the web server (backup download, server commands, heap dump).
 // The role comes from the token, the user is checked in the db: blocked / deleted users or
@@ -25,7 +26,7 @@ const isValidAdminRequest = async (req) => {
     if (!context.id || context.role !== 'administrator') {
         return false
     }
-    const db = await new Promise(resolve => dbConnectionCached(MONGO_URL, 'server', (err, db) => resolve(db)))
+    const {db} = await getServerDb()
     if (!db) {
         return false
     }
@@ -154,21 +155,6 @@ const safeJoin = (baseDir, ...urlParts) => {
     return null
 }
 
-/**
- * Rough check for private / internal network targets.
- * Not bulletproof (DNS rebinding can bypass hostname checks) but combined
- * with the auth requirement it removes the trivial SSRF vectors.
- */
-const isPrivateNetworkTarget = (hostname) => {
-    if (['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(hostname)) {
-        return true
-    }
-    return hostname.startsWith('10.') ||
-        hostname.startsWith('192.168.') ||
-        hostname.startsWith('169.254.') ||
-        hostname.startsWith('100.') || // CGNAT / tailscale range
-        /^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
-}
 
 
 /* ------------------------------------------------------------------ */
@@ -1105,8 +1091,8 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                                         sendError(res, 400)
                                         return
                                     }
-                                    if (!['http:', 'https:'].includes(parsedTarget.protocol) ||
-                                        isPrivateNetworkTarget(parsedTarget.hostname)) {
+                                    // http(s) to public addresses only (also host names that resolve internally)
+                                    if (!await isPublicHttpUrl(parsedTarget.href)) {
                                         console.log(`screenshot target blocked: ${url} by ${remoteAddress}`)
                                         sendError(res, 403)
                                         return

@@ -86,6 +86,8 @@ export const systemResolver = (db) => ({
             if (SKIP_CAPABILITY_CHECK.indexOf(command) < 0) {
                 await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
             } else {
+                // the commands without capability check still need a login (they show the server's directory)
+                Util.checkIfUserIsLoggedIn(context)
                 // the commands without capability check must not be written into the console of another user
                 await checkExecOwner(db, context, currentId)
             }

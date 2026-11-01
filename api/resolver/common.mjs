@@ -1,3 +1,4 @@
+import Util from '../util/index.mjs'
 import {speechLanguages, translateLanguages} from '../data/common.mjs'
 
 const GOOGLE_TRANSLATE_URL = 'https://translation.googleapis.com/language/translate/v2'
@@ -11,6 +12,8 @@ export const commonResolver = (db) => ({
             return {data: translateLanguages, selection: null}
         },
         translate: async ({text, toIso, fromIso}, {context}) => {
+            // uses the paid Google API key of the installation - not for visitors without login
+            Util.checkIfUserIsLoggedIn(context)
             if (!toIso) {
                 toIso = 'en'
             }

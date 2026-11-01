@@ -623,6 +623,23 @@ const Util = {
         }
         return ids
     },
+    /**
+     * Removes a user from the cache (by id and by name, see userById / userByName).
+     * The cached entry is read first, so also the old name is removed after a rename.
+     */
+    clearUserCache: (id, username) => {
+        if (!id) {
+            return
+        }
+        const cached = Cache.get('User' + id)
+        if (cached && cached.username) {
+            Cache.remove('User' + cached.username)
+        }
+        if (username) {
+            Cache.remove('User' + username)
+        }
+        Cache.remove('User' + id)
+    },
     userByName: async (db, name, domain) => {
         const cacheKeyUser = 'User' + name
         let user = Cache.get(cacheKeyUser)

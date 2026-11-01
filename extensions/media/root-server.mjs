@@ -1,5 +1,5 @@
 import Hook from '../../util/hook.cjs'
-import {dbConnectionCached, MONGO_URL} from "../../api/database.mjs";
+import {getServerDb} from "../../api/database.mjs";
 import Util from "../../api/util/index.mjs";
 import {CAPABILITY_MANAGE_OTHER_USERS} from "../../util/capabilities.mjs";
 import {createMatchForCurrentUser} from "../../api/util/dbquery.mjs";
@@ -13,11 +13,7 @@ import {validateContextUser} from '../../api/util/userSession.mjs'
 
 Hook.on('UploadedFilePrivateAccess', async ({name,context}) => {
 
-    const dbConnection = await (new Promise((resolve) => {
-        dbConnectionCached(MONGO_URL, 'server',async (err, db) => {
-            resolve({err,db})
-        })
-    }))
+    const dbConnection = await getServerDb()
     if(dbConnection.db){
         // blocked / deleted user or password changed since the token was issued
         context = await validateContextUser(dbConnection.db, context, {noCache: true})

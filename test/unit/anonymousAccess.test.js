@@ -15,8 +15,8 @@ import {SECRET_KEY} from '../../api/constants/index.mjs'
 const roleId = new ObjectId()
 const makeDb = (users) => ({
   collection: name => ({
-    findOne: async q => name==='UserRole' ? {_id: roleId, name:'subscriber', capabilities:[]} : users.find(u => Object.keys(q).every(k => String(u[k])===String(q[k]))) || null,
-    findOneAndUpdate: async q => users.find(u => (q.$or||[]).some(c => Object.keys(c).some(k => u[k]===c[k][Object.keys(c[k])[0]]?.[0] || u[k]===c[k]))) || null,
+    findOne: async q => name==='UserRole' ? {_id: roleId, name:'subscriber', capabilities:[]} :
+      users.find(u => q.$or ? q.$or.some(c => Object.keys(c).every(k => u[k]===c[k])) : Object.keys(q).every(k => String(u[k])===String(q[k]))) || null,
     updateOne: async (q, upd) => { const u = users.find(u => String(u._id)===String(q._id)); Object.assign(u, upd.$set) }
   })
 })
@@ -28,6 +28,17 @@ describe('anonymous hardening', () => {
   it('read match for Log without login matches nothing', async () => {
     const m = await createMatchForCurrentUser({typeName: 'Log', db: {}, context: {lang:'en'}})
     assert.deepStrictEqual(m, {createdBy: {$in: []}})
+  })
+  it('login works for a normal user and only then writes lastLogin', async () => {
+    const hash = await Util.hashPasswordAsync('secret123')
+    const users = [{_id: new ObjectId(), username:'user1', password: hash, role: roleId}]
+    const db = makeDb(users)
+    const failed = await auth.createToken({username:'user1', password:'wrong', db, context:{lang:'en'}})
+    assert.strictEqual(failed.token, null)
+    assert.strictEqual(users[0].lastLogin, undefined)
+    const ok = await auth.createToken({username:'user1', password:'secret123', db, context:{lang:'en'}})
+    assert.ok(ok.token)
+    assert.ok(users[0].lastLogin > 0)
   })
   it('login as anonymous is refused', async () => {
     const hash = await Util.hashPasswordAsync('password')
