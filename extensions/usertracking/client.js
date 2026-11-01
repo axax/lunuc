@@ -17,6 +17,9 @@ const MAX_VISIBLE_MS = 2 * 60 * 60 * 1000
 
 const initBeacon = () => {
     if (typeof window === 'undefined' || (window._app_ && _app_.ssr)) return
+    // only one beacon instance per page, even if this code runs more than once
+    if (window.__lunucBeaconActive) return
+    window.__lunucBeaconActive = true
     const nav = window.navigator
     if (!nav || typeof nav.sendBeacon !== 'function' || !window.addEventListener || !window.JSON) return
     // not in the admin and not inside an iframe (cms editor, previews)
@@ -71,7 +74,7 @@ const initBeacon = () => {
         try {
             pause()
             measureScroll()
-            nav.sendBeacon(BEACON_URL, JSON.stringify({
+            const payload = JSON.stringify({
                 pv: state.pv,
                 p: state.path,
                 n: state.nav,
@@ -79,7 +82,13 @@ const initBeacon = () => {
                 s: state.scroll,
                 w: window.screen ? window.screen.width : 0,
                 l: nav.language || ''
-            }))
+            })
+            // nothing new since the last beacon of this page view (e.g. visibilitychange + pagehide,
+            // quick tab switches): only again when at least one more second was visible or more was scrolled
+            const key = Math.floor(state.visible / 1000) + '|' + state.scroll
+            if (key === state.lastKey) return
+            state.lastKey = key
+            nav.sendBeacon(BEACON_URL, payload)
         } catch (e) {
         }
     }
@@ -107,21 +116,22 @@ const initBeacon = () => {
     // old safari without visibilitychange on unload
     window.addEventListener('pagehide', send)
 
-    // navigation inside the app
+    // navigation inside the app: one listener per history object (Routes creates a new one when it mounts again)
+    const onNavigate = () => {
+        if (state && state.path === location.pathname) return
+        send()
+        start('spa')
+    }
+    const listened = []
     const listen = () => {
-        if (window._app_ && _app_.history && _app_.history.listen) {
-            _app_.history.listen(() => {
-                if (state && state.path === location.pathname) return
-                send()
-                start('spa')
-            })
-            return true
-        }
-        return false
+        const history = window._app_ && _app_.history
+        if (!history || !history.listen || listened.indexOf(history) >= 0) return
+        listened.push(history)
+        history.listen(onNavigate)
     }
-    if (!listen()) {
-        Hook.on('Routes', () => setTimeout(listen, 0))
-    }
+    listen()
+    // keyed hook: registered only once, also if Routes mounts again later
+    Hook.on('Routes.usertrackingBeacon', () => setTimeout(listen, 0))
 }
 
 const scheduleBeacon = () => {
