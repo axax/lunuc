@@ -3,10 +3,12 @@ import crypto from 'crypto'
 import {getHostFromHeaders} from '../../../util/host.mjs'
 import {decodeAttestation, parseAuthData} from '../util/attestation.mjs'
 import genResolver from '../gensrc/resolver.mjs'
-import jwt from 'jsonwebtoken'
-import {AUTH_EXPIRES_IN, SECRET_KEY, USE_COOKIES} from '../../../api/constants/index.mjs'
+import {USE_COOKIES} from '../../../api/constants/index.mjs'
 import {setAuthCookies} from "../../../api/util/sessionContext.mjs";
 import jwkToPem from 'jwk-to-pem'
+import {ObjectId} from 'mongodb'
+import {auth} from '../../../api/auth.mjs'
+import {CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities.mjs'
 
 
 const sha256 = (data) => {
@@ -27,12 +29,30 @@ const attestationTypeMap = {
     }
 }
 
-const sessionChallengeMap = {}
+// challenges per session. Anyone can request one (also anonymous), so entries
+// expire and the map is limited - otherwise it would grow without bound.
+const CHALLENGE_TTL_MS = 2 * 60 * 1000
+const CHALLENGE_MAX_ENTRIES = 10000
+const sessionChallengeMap = new Map()
+
+const sweepChallenges = () => {
+    const now = Date.now()
+    for (const [session, entry] of sessionChallengeMap) {
+        if (entry.expires < now) {
+            sessionChallengeMap.delete(session)
+        }
+    }
+    // still too many: drop the oldest (a Map keeps insertion order)
+    while (sessionChallengeMap.size >= CHALLENGE_MAX_ENTRIES) {
+        sessionChallengeMap.delete(sessionChallengeMap.keys().next().value)
+    }
+}
+
 const checkChallenge = (clientDataJson, context) => {
     const challenge = atob(clientDataJson.challenge)
-    const expectedChallenge = sessionChallengeMap[context.session]
-    delete sessionChallengeMap[context.session]
-    if(!challenge || challenge !== expectedChallenge){
+    const entry = sessionChallengeMap.get(context.session)
+    sessionChallengeMap.delete(context.session)
+    if(!challenge || !entry || entry.expires < Date.now() || challenge !== entry.challenge){
         throw Error('Invalid challenge')
     }
 }
@@ -64,9 +84,9 @@ export default (db) => ({
         getWebAuthnChallenge:  async ({}, {context}) => {
 
             const challenge = crypto.randomBytes(32).toString('hex')
-            console.log(`challenge ${challenge} for session ${context.session}`)
 
-            sessionChallengeMap[context.session] = challenge
+            sweepChallenges()
+            sessionChallengeMap.set(context.session, {challenge, expires: Date.now() + CHALLENGE_TTL_MS})
 
             return {challenge}
 
@@ -97,8 +117,10 @@ export default (db) => ({
 
             const credential = await db.collection('WebAuthnCredential').findOne({credId: id})
 
-            if(!credential || !credential.publicKey){
-                throw Error(`Credential does not exist for ${id}`)
+            // a credential only logs in the user it was registered for. Credentials without
+            // owner (created before this check existed) are not accepted any more.
+            if(!credential || !credential.publicKey || !credential.createdBy){
+                throw Error('Invalid credential')
             }
 
             // Let hash be the result of computing a hash over the cData using SHA-256.
@@ -118,19 +140,21 @@ export default (db) => ({
             }
 
 
-            const username = 'admin'
-            const user = await db.collection('User').findOneAndUpdate({$or: [{'email': username}, {'username': username}]}, {$set: {lastLogin: new Date().getTime()}})
+            const user = await db.collection('User').findOneAndUpdate(
+                {_id: new ObjectId(credential.createdBy)},
+                {$set: {lastLogin: new Date().getTime()}}
+            )
+            if (!user || user.blocked || user.username === 'anonymous') {
+                throw new Error('Login not possible')
+            }
 
-            console.log(user)
+            // userHandle is the user id the client set as user.id when the passkey was created
+            if (userHandle && Buffer.from(userHandle, 'base64').toString('utf8') !== user._id.toString()) {
+                throw new Error('Invalid user handle')
+            }
 
-
-            user.role = await Util.getUserRoles(db, user.role)
-
-            // from now on we'll identify the user by the id and the id is the only personalized value that goes into our token
-
-            const payload = {username: user.username, id: user._id, role: user.role.name, domain: user.domain, group: user.group}
-            const token = jwt.sign(payload, SECRET_KEY, {expiresIn: AUTH_EXPIRES_IN})
-            const result = {token, user}
+            // same token content as the password login
+            const result = await auth.signPayload(db, user)
 
             if (USE_COOKIES) {
                 setAuthCookies(result, req, req.res)
@@ -138,12 +162,14 @@ export default (db) => ({
                 delete result.token
             }
 
-            console.log(result)
             return result
 
         },
         addWebAuthnPasskey: async ({id,clientData,attestation}, req) => {
             Util.checkIfUserIsLoggedIn(req.context)
+            if (!req.context.id || req.context.username === 'anonymous') {
+                throw new Error('Not allowed')
+            }
 
             const clientDataJson = JSON.parse(clientData)
 
@@ -189,16 +215,34 @@ export default (db) => ({
             // the new credential with the account that was denoted in the options.user passed to create(), by associating it
             // with the credentialId and credentialPublicKey in the attestedCredentialData in authData, as appropriate for the
             // Relying Party's system.
-            const credential = {
-                credId: authData.attestedCredentialData.credentialId.toString('base64'),
-                publicKey: authData.attestedCredentialData.publicKeyJwk,
-                userAgent: req.headers['user-agent'] || ''
-                //signCount: authData.signCount,
+            const credId = authData.attestedCredentialData.credentialId.toString('base64')
+
+            const collection = db.collection('WebAuthnCredential')
+            if (await collection.findOne({credId})) {
+                throw new Error('Credential already registered')
             }
 
-            const insertResult = await genResolver(db).Mutation.createWebAuthnCredential(credential, req,{})
+            // written directly (not via the generic createWebAuthnCredential, which is closed
+            // for normal users) - the credential always belongs to the logged in user
+            const now = new Date().getTime()
+            const insertResult = await collection.insertOne({
+                credId,
+                publicKey: authData.attestedCredentialData.publicKeyJwk,
+                userAgent: req.headers['user-agent'] || '',
+                createdBy: new ObjectId(req.context.id),
+                modifiedAt: now
+                //signCount: authData.signCount,
+            })
 
-            return insertResult
+            return {_id: insertResult.insertedId, credId, status: 'created'}
+        }
+    },
+    Mutation: {
+        // The generated mutation was open for everyone (access.create "anonymous") and allowed
+        // to store any public key - which then could be used to log in. Only admins may use it.
+        createWebAuthnCredential: async (data, req, options) => {
+            await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_MANAGE_OTHER_USERS)
+            return genResolver(db).Mutation.createWebAuthnCredential(data, req, options)
         }
     }
 })

@@ -4,7 +4,7 @@
       "name": "WebAuthnCredential",
       "subscription": false,
       "access": {
-        "create": "anonymous",
+        "create": "manage_other_users",
         "delete": "manage_other_users",
         "update": {"role":"manage_other_users"}
       },
