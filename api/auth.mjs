@@ -2,7 +2,9 @@ import jwt from 'jsonwebtoken'
 import Util from './util/index.mjs'
 import {_t} from '../util/i18nServer.mjs'
 import {SECRET_KEY,AUTH_EXPIRES_IN} from './constants/index.mjs'
-import {contextByRequest} from './util/sessionContext.mjs'
+import {contextByRequest, removeAuthCookies} from './util/sessionContext.mjs'
+import {validateContextUser} from './util/userSession.mjs'
+import {USE_COOKIES} from './constants/index.mjs'
 import {ObjectId} from 'mongodb'
 
 export const auth = {
@@ -11,7 +13,8 @@ export const auth = {
         const user = await db.collection('User').findOneAndUpdate({domain: domain?{ $in: [ domain, "$ALL" ] }:{ $in: [ null, "", "$ALL" ] }, $or: [{'email': username}, {'username': username}]}, {$set: {lastLogin: new Date().getTime()}})
 
 
-        if (!user || !password) {
+        // "anonymous" is the shared identity of all visitors that are not logged in - never a login
+        if (!user || !password || user.username === 'anonymous') {
             return {error: _t('core.login.invalid', context.lang), token: null, user: null}
         }else if(user.blocked){
             return {error: _t('core.login.blocked', context.lang), token: null, user: null}
@@ -35,6 +38,8 @@ export const auth = {
             domain: user.domain,
             group: user.group,
             junior: user.junior,
+            // increased on password change - older tokens are no longer accepted (see userSession.mjs)
+            tokenVersion: user.tokenVersion || 0,
         ...payload}
         const token = jwt.sign(fullPayload, SECRET_KEY, {expiresIn: AUTH_EXPIRES_IN})
         return {token: token, user}
@@ -42,13 +47,21 @@ export const auth = {
     },
     initialize: (app, db) => {
 
-        app.use((req, res, next) => {
+        app.use(async (req, res, next) => {
+            try {
+                req.isHttps = req.headers['x-forwarded-proto'] === 'https'
 
-            req.isHttps = req.headers['x-forwarded-proto']==='https'
+                const context = contextByRequest(req, res)
 
-            req.context = contextByRequest(req, res)
-
-            next()
+                // blocked / deleted user or password changed since the token was issued
+                req.context = await validateContextUser(db, context)
+                if (req.context.loginRevoked && USE_COOKIES) {
+                    removeAuthCookies(req, res)
+                }
+                next()
+            } catch (e) {
+                next(e)
+            }
         })
     }
 }

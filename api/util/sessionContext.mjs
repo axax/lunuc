@@ -73,6 +73,24 @@ export const removeAuthCookies = (req, res) => {
     }
 }
 
+/**
+ * true if the request carries a valid (signed, not expired) login token. Only the signature is
+ * checked here - used to choose the body size limit before the body is read.
+ */
+export const hasLoginToken = (req) => {
+    const token = USE_COOKIES ? parseCookies(req).auth : req.headers[AUTH_HEADER]
+    const matches = token && token.match(/(\S+)\s+(\S+)/)
+    if (!matches || matches[1] !== AUTH_SCHEME) {
+        return false
+    }
+    try {
+        // no logging here - contextByRequest decodes (and logs) the same token right after
+        return !!jwt.verify(matches[2], SECRET_KEY).id
+    } catch (e) {
+        return false
+    }
+}
+
 export const contextByRequest = (req, res) => {
     let context
 

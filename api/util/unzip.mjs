@@ -26,6 +26,10 @@ export const gunzipJsonBody = (req, res, next) => {
         return next()
     }
 
+    // smaller limit for requests without login (set in api/server.mjs)
+    const maxInflated = Math.min(req._jsonBodyLimit || MAX_INFLATED_BODY_BYTES, MAX_INFLATED_BODY_BYTES)
+    const maxCompressed = Math.min(maxInflated, 10 * 1024 * 1024)
+
     const chunks = []
     let compressedSize = 0
     let settled = false
@@ -59,7 +63,7 @@ export const gunzipJsonBody = (req, res, next) => {
         compressedSize += chunk.length
         // Guard against an oversized compressed payload before we even inflate.
         // A 10 MB gzip body is already far beyond any legitimate request here.
-        if (compressedSize > 10 * 1024 * 1024) {
+        if (compressedSize > maxCompressed) {
             fail(413, 'Compressed body too large')
             return
         }
@@ -70,7 +74,7 @@ export const gunzipJsonBody = (req, res, next) => {
         if (settled) return
         try {
             const inflated = zlib.gunzipSync(Buffer.concat(chunks), {
-                maxOutputLength: MAX_INFLATED_BODY_BYTES
+                maxOutputLength: maxInflated
             })
             const raw = inflated.toString('utf8')
             req.body = raw.length ? JSON.parse(raw) : {}

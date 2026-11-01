@@ -602,13 +602,13 @@ const Util = {
         return user
     },
     userAndJuniorIds: async (db, id) => {
-        let user
+        // Visitors that are not logged in own nothing. Before, they got the id of the user
+        // "anonymous" - and with it read access to everything any visitor or the system had
+        // created without login (logs, tracking, uploads, received mails, history ...).
         if (!id) {
-            user = await Util.userByName(db, 'anonymous')
-            id = user._id.toString()
-        } else {
-            user = await Util.userById(db, id)
+            return []
         }
+        const user = await Util.userById(db, id)
 
         const ids = []
         ids.push(new ObjectId(id))
@@ -675,14 +675,15 @@ const Util = {
         if (typeDefinition.access && typeDefinition.access.subscribe) {
             return await Util.userHasCapability(db, context, typeDefinition.access.subscribe)
         } else {
-            if(payload.userId===context.id){
+            // both undefined = two different visitors without login - not the same user
+            if(context.id && payload.userId && String(payload.userId)===String(context.id)){
                 // same user
                 return true
             }
 
 
             const datas = payload?.[`subscribe${type}`]?.data
-            if(datas && datas.length===1 && datas[0]?.createdBy?._id?.toString()===context.id){
+            if(datas && datas.length===1 && context.id && datas[0]?.createdBy?._id?.toString()===context.id){
                 // data belong to user
                 // TODO: get createdBy of entry because it can be the id of the user that updates the entry
                 return true

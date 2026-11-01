@@ -117,6 +117,11 @@ Hook.on('FileUpload', async ({db, req, context, file, data, response}) => {
     let replaceMode = false
 
     if(data._id){
+        // replacing an existing file needs a login - for visitors without login the
+        // ownership check can't tell one visitor's upload from another one's
+        if (!req.context || !req.context.id) {
+            throw new Error('Login required to replace a file')
+        }
         if( !ObjectId.isValid(data._id)) {
             throw new Error('Invalid _id')
         }

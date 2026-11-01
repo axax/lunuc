@@ -11,6 +11,7 @@ import {Worker} from 'node:worker_threads'
 import {isTemporarilyBlocked} from '../../server/util/requestBlocker.mjs'
 import {isString} from '../../client/util/json.mjs'
 import {decodeToken} from '../../api/util/jwt.mjs'
+import {validateContextUser} from '../../api/util/userSession.mjs'
 
 const CACHE_PREFIX = 'ExtensionsApi-'
 // unknown slugs (bots probing urls) are cached shortly, so they don't hit the db every time
@@ -343,8 +344,10 @@ Hook.on('appready', ({app, db}) => {
 
                         if (!result) {
                             if(api.apiTokenFallback) {
-                                const context = decodeToken((token.indexOf('JWT')<0?'JWT ':'') + token)
-                                if(context.auth){
+                                // decodeToken always sets "auth" (also for an invalid token) - a valid
+                                // login token has an id. The user must still be valid as well.
+                                const context = await validateContextUser(db, decodeToken((token.indexOf('JWT')<0?'JWT ':'') + token))
+                                if(context.id){
                                     req.context = {...req.context,...context}
                                 }else{
                                     console.log(`[API] token fallback invalid: ${slug}`)

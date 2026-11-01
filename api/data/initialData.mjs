@@ -17,6 +17,7 @@ import {
     CAPABILITY_BULK_EDIT, CAPABILITY_EXTRA_OPTIONS, CAPABILITY_ADMIN_OPTIONS, CAPABILITY_EXPORT_IMPORT_DATA
 } from '../../util/capabilities.mjs'
 import {ObjectId} from 'mongodb'
+import crypto from 'crypto'
 import path from 'path'
 import config from '../../gensrc/config.mjs'
 import fs from 'fs'
@@ -143,6 +144,35 @@ export const createUserRoles = async (db) => {
     }
 }
 
+const DEFAULT_PASSWORD = 'password'
+const randomPassword = () => crypto.randomBytes(18).toString('base64url')
+
+/*
+ The user "anonymous" stands for all visitors that are not logged in. Nobody may log in
+ as this user (auth.createToken refuses it as well), so its password is replaced by a random
+ one if it is still the old default "password" (installations restored from initialDb.gz).
+ For admin only a warning is written - changing the password is up to the owner.
+ */
+export const secureDefaultUsers = async (db) => {
+    const userCollection = db.collection('User')
+
+    const anonymousUser = await userCollection.findOne({username: 'anonymous'})
+    if (anonymousUser && anonymousUser.password &&
+        await Util.compareWithHashedPasswordAsync(DEFAULT_PASSWORD, anonymousUser.password)) {
+        await userCollection.updateOne({_id: anonymousUser._id}, {
+            $set: {password: await Util.hashPasswordAsync(randomPassword())}
+        })
+        console.warn('SECURITY: the user "anonymous" had the default password - replaced by a random password')
+    }
+
+    const adminUser = await userCollection.findOne({username: 'admin'})
+    if (adminUser && adminUser.password &&
+        await Util.compareWithHashedPasswordAsync(DEFAULT_PASSWORD, adminUser.password)) {
+        const line = '!'.repeat(80)
+        console.warn(`${line}\nSECURITY WARNING: the user "admin" still has the default password "${DEFAULT_PASSWORD}".\nAnyone can log in as administrator - change the password immediately!\n${line}`)
+    }
+}
+
 export const createUsers = async (db) => {
 
 
@@ -164,7 +194,7 @@ export const createUsers = async (db) => {
                 requestNewPassword: false,
                 email: 'info@lunuc.com',
                 username: 'admin',
-                password: await Util.hashPasswordAsync('password')
+                password: await Util.hashPasswordAsync(DEFAULT_PASSWORD)
             }
         }, {upsert: true})
 
@@ -178,11 +208,17 @@ export const createUsers = async (db) => {
                 requestNewPassword: false,
                 email: '',
                 username: 'anonymous',
-                password: await Util.hashPasswordAsync('password')
+                password: await Util.hashPasswordAsync(randomPassword())
             }
         }, {upsert: true})
     }else{
         // without await
         createUserRoles(db)
+    }
+
+    try {
+        await secureDefaultUsers(db)
+    } catch (e) {
+        console.error('secureDefaultUsers failed', e.message)
     }
 }

@@ -4,6 +4,7 @@ import Util from "../../api/util/index.mjs";
 import {CAPABILITY_MANAGE_OTHER_USERS} from "../../util/capabilities.mjs";
 import {createMatchForCurrentUser} from "../../api/util/dbquery.mjs";
 import {ObjectId} from 'mongodb'
+import {validateContextUser} from '../../api/util/userSession.mjs'
 
 /*Hook.on('UploadedFileAccess', ({name,filename}) => {
     console.log('UploadedFileAccess', filename)
@@ -18,6 +19,11 @@ Hook.on('UploadedFilePrivateAccess', async ({name,context}) => {
         })
     }))
     if(dbConnection.db){
+        // blocked / deleted user or password changed since the token was issued
+        context = await validateContextUser(dbConnection.db, context, {noCache: true})
+        if (!context.id) {
+            return false
+        }
         const userCanManageOtherUsers = await Util.userHasCapability(dbConnection.db, context, CAPABILITY_MANAGE_OTHER_USERS)
         if(userCanManageOtherUsers){
             // has always access

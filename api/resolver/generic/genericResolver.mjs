@@ -17,6 +17,9 @@ import postQueryConvert from './postQueryConverter.mjs'
 import {unbatchPipeline} from './lookupBatching.mjs'
 import {ApiError} from "../../error.mjs";
 
+// max entries per list query from a graphql client without the capability manage_other_users
+export const MAX_GRAPHQL_LIST_LIMIT = 1000
+
 // ─── helpers (module-level, not inside the method) ──────────────────────────
 
 function resolveRequestContext(reqOrContext) {
@@ -248,6 +251,13 @@ const GenericResolver = {
 
         const collectionName = await buildCollectionName(db, context, typeName, _version)
         const userCanManageOtherUsers = await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
+
+        // limit for list queries from graphql clients (graphqlInfo is only set for them) -
+        // otherwise anyone could request e.g. limit:1000000 several times in one request.
+        // Server side calls (cms data resolver, scripts) are not limited.
+        if (graphqlInfo && !userCanManageOtherUsers && parseInt(otherOptions.limit) > MAX_GRAPHQL_LIST_LIMIT) {
+            otherOptions.limit = MAX_GRAPHQL_LIST_LIMIT
+        }
 
         // ── resolve match ──────────────────────────────────────────────────────
         let match = matchOption

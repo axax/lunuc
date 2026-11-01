@@ -5,6 +5,7 @@ import {execute, subscribe} from 'graphql'
 import {USE_COOKIES} from './constants/index.mjs'
 import {parseCookies} from './util/parseCookies.mjs'
 import {decodeToken} from './util/jwt.mjs'
+import {validateContextUser} from './util/userSession.mjs'
 
 // the default PubSub is based on EventEmitters. It can easily
 // be replaced with one different one, e.g. Redis
@@ -44,7 +45,7 @@ const createSubscriptionServer = ({server, schema, rootValue}) => {
                 // Remove the WebSocket from the set
                 //connectedClients.delete(webSocket)
             },
-            onOperation: ({payload}, params, webSocket) => {
+            onOperation: async ({payload}, params, webSocket) => {
                 let context
                 if (USE_COOKIES) {
                     const cookies = parseCookies(webSocket.upgradeReq)
@@ -54,6 +55,9 @@ const createSubscriptionServer = ({server, schema, rootValue}) => {
                     context = decodeToken(payload.auth)
                     context.session = payload.session
                 }
+                // blocked / deleted user or password changed since the token was issued
+                context = await validateContextUser(server._db, context)
+
                 context.lang = payload.lang
 
                 // now if auth is needed we can check if the context is available

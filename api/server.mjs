@@ -8,6 +8,7 @@ import {schemaString} from './schema/index.mjs'
 import {resolver} from './resolver/index.mjs'
 import {dbConnection, dbPreparation, MONGO_URL, BACKUP_MONGO_URL} from './database.mjs'
 import {auth} from './auth.mjs'
+import {hasLoginToken} from './util/sessionContext.mjs'
 import {formatAndLogError} from './error.mjs'
 import {handleUpload, handleMediaDumpUpload, handleDbDumpUpload, handleHostruleDumpUpload} from './upload.mjs'
 import Hook from '../util/hook.cjs'
@@ -74,6 +75,10 @@ const SHUTDOWN_TIMEOUT_MS = 10000
 // as the default (6) at only ~2-5% larger output - a good trade-off for
 // per-request JSON compression in the hot path.
 const COMPRESSION_LEVEL = 4
+
+// max size of a JSON request body (see the body parser below)
+const JSON_BODY_LIMIT_ANONYMOUS = 5 * 1024 * 1024 // 5 MB
+const JSON_BODY_LIMIT_LOGGED_IN = 200 * 1024 * 1024 // 200 MB
 
 process.on('SIGINT', () => {
     console.log('Caught interrupt signal. Exit process')
@@ -151,6 +156,14 @@ export const start = (done) => {
                 }
             }))
 
+            // Max JSON body size. File uploads are multipart (/graphql/upload) and not affected.
+            // Without login a few MB are enough (forms, cms queries). Logged in users need more
+            // for the imports (type files, collections), same as the gzip limit.
+            app.use((req, res, next) => {
+                req._jsonBodyLimit = hasLoginToken(req) ? JSON_BODY_LIMIT_LOGGED_IN : JSON_BODY_LIMIT_ANONYMOUS
+                next()
+            })
+
             // Decompress gzip-encoded request bodies BEFORE body-parser runs.
             // The client only gzips large GraphQL payloads; everything else
             // passes through untouched.
@@ -160,11 +173,13 @@ export const start = (done) => {
             // Skip parsing when gunzipJsonBody already populated req.body,
             // otherwise body-parser would try to read the already-consumed
             // stream and hang the request.
-            const jsonParser = bodyParser.json({limit: '10000mb'})
+            const jsonParserAnonymous = bodyParser.json({limit: JSON_BODY_LIMIT_ANONYMOUS})
+            const jsonParserLoggedIn = bodyParser.json({limit: JSON_BODY_LIMIT_LOGGED_IN})
             app.use((req, res, next) => {
                 if (req._bodyParsed) {
                     return next()
                 }
+                const jsonParser = req._jsonBodyLimit === JSON_BODY_LIMIT_LOGGED_IN ? jsonParserLoggedIn : jsonParserAnonymous
                 return jsonParser(req, res, next)
             })
 

@@ -33,7 +33,7 @@ const register = async (db) => {
 const hasGroupMatch = (group1, group2) => {
    if(group1 && group2){
        for(let i = 0; i < group1.length; i++){
-           if(group2.indexOf(group1[i])){
+           if(group2.indexOf(group1[i]) >= 0){
                return true
            }
        }

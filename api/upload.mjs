@@ -11,6 +11,7 @@ import {
 } from '../util/capabilities.mjs'
 
 import {contextByRequest} from '../api/util/sessionContext.mjs'
+import {validateContextUser} from './util/userSession.mjs'
 
 const {UPLOAD_DIR, DEFAULT_LANGUAGE, HOSTRULES_ABSPATH} = config
 
@@ -38,7 +39,8 @@ const ANONYMOUS_MAX_FILE_SIZE = (parseInt(process.env.LUNUC_ANONYMOUS_UPLOAD_MAX
 
 const authContextOrError = async (db, res, req, capability) => {
     // check auth token
-    const authContext = contextByRequest(req)
+    // req.context is set (and validated) by auth.initialize
+    const authContext = req.context || await validateContextUser(db, contextByRequest(req))
 
     if (!authContext) {
         // no auth
@@ -63,7 +65,8 @@ export const handleUpload = db => async (req, res) => {
     const upload_dir = path.join(__dirname, '..' + UPLOAD_DIR)
     if (beforeUpload(res, req, upload_dir)) {
 
-        let context = contextByRequest(req)
+        // req.context is set (and validated) by auth.initialize
+        let context = req.context || await validateContextUser(db, contextByRequest(req))
 
         // anonymous uploads (e.g. attachments of public forms) are limited in size,
         // so nobody can fill up the disk without an account

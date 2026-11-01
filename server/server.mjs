@@ -13,6 +13,25 @@ import {replacePlaceholders} from '../util/placeholders.mjs'
 import {ensureDirectoryExistence} from '../util/fileUtil.mjs'
 import {getBestMatchingHostRule, getHostRules, getRootCertContext, resetHostRules} from '../util/hostrules.mjs'
 import {contextByRequest} from '../api/util/sessionContext.mjs'
+import {validateContextUser} from '../api/util/userSession.mjs'
+import {dbConnectionCached, MONGO_URL} from '../api/database.mjs'
+
+// admin only routes of the web server (backup download, server commands, heap dump).
+// The role comes from the token, the user is checked in the db: blocked / deleted users or
+// tokens from before a password change are refused (no cache - this process doesn't get the
+// cache invalidation of the api server).
+const isValidAdminRequest = async (req) => {
+    const context = contextByRequest(req)
+    if (!context.id || context.role !== 'administrator') {
+        return false
+    }
+    const db = await new Promise(resolve => dbConnectionCached(MONGO_URL, 'server', (err, db) => resolve(db)))
+    if (!db) {
+        return false
+    }
+    const validated = await validateContextUser(db, context, {noCache: true})
+    return !!validated.id
+}
 import {isLetsEncryptAgent, parseUserAgent} from '../util/userAgent.mjs'
 import {TRACK_IP_HEADER} from '../api/constants/index.mjs'
 import {parseCookies} from '../api/util/parseCookies.mjs'
@@ -859,8 +878,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
         if (isUrlValidForPorxing(urlPathname, hostrule)) {
             await actAsReverseProxy(req, res, {parsedUrl, hostrule, host})
         } else if (urlPathname.startsWith(`/${config.SERVER_COMMAND_PREFIX}/`)) {
-            const context = contextByRequest(req)
-            if (context.id && context.role === 'administrator') {
+            if (await isValidAdminRequest(req)) {
                 const command = urlPathname.substring(`/${config.SERVER_COMMAND_PREFIX}/`.length)
                 console.log(`client server execute command ${command}`)
                 if (command === 'refreshhostrules') {
@@ -898,8 +916,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 verifyTokenAndResponse(req, res, token, parsedUrl)
 
             } else if (urlPathname.startsWith(BACKUP_URL + '/')) {
-                const context = contextByRequest(req)
-                if (context.id && context.role === 'administrator') {
+                if (await isValidAdminRequest(req)) {
                     // only allow download if valid jwt token is set
                     const backup_dir = path.join(ROOT_DIR, BACKUP_DIR)
                     // traversal-safe: must stay inside the backup dir
@@ -915,8 +932,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     sendError(res, 403)
                 }
             } else if (urlPathname === '/createheapdump') {
-                const context = contextByRequest(req)
-                if (context.id && context.role === 'administrator') {
+                if (await isValidAdminRequest(req)) {
 
                     const backup_dir = path.join(ROOT_DIR, BACKUP_DIR + '/heapdump/')
 

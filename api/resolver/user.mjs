@@ -226,6 +226,24 @@ const validateAndHashPassword = async ({password, passwordConfirm, context}) => 
     return await Util.hashPasswordAsync(password)
 }
 
+/*
+ After a password change the tokenVersion of the user is increased, which ends all existing
+ logins of this user (see api/util/userSession.mjs). If the user changed his own password,
+ the current session gets a new token so it stays logged in.
+ */
+const renewOwnLogin = async (db, req, userId) => {
+    Cache.remove('User' + userId)
+    if (!USE_COOKIES || !req || !req.res || !req.context || String(req.context.id) !== String(userId)) {
+        return
+    }
+    const user = await Util.userById(db, userId)
+    if (user) {
+        // copy - signPayload replaces the role of the passed object
+        const result = await auth.signPayload(db, {...user})
+        setAuthCookies(result, req, req.res)
+    }
+}
+
 export const userResolver = (db) => ({
     Query: {
         users: async ({limit, page, offset, filter, sort}, {context, res}) => {
@@ -470,8 +488,13 @@ export const userResolver = (db) => ({
                     requestNewPassword: false,
                     resetToken: null,
                     passwordReset:0
-                }
+                },
+                // ends all existing logins of this user
+                $inc: {tokenVersion: 1}
             })
+            if (user) {
+                Cache.remove('User' + user._id)
+            }
 
             Hook.call('newPassword', {context, db, user})
 
@@ -564,7 +587,8 @@ export const userResolver = (db) => ({
                     )) {
                         const password = generatePassword()
                         const hashedPw = await Util.hashPasswordAsync(password)
-                        await db.collection('User').findOneAndUpdate({_id:new ObjectId(id)}, {$set: {requestNewPassword:true, password: hashedPw}}, {returnOriginal: false})
+                        await db.collection('User').findOneAndUpdate({_id:new ObjectId(id)}, {$set: {requestNewPassword:true, password: hashedPw}, $inc: {tokenVersion: 1}}, {returnOriginal: false})
+                        Cache.remove('User' + id)
 
                         sendMail(db, context, {
                             fromName,
@@ -649,7 +673,8 @@ export const userResolver = (db) => ({
                 return result
             }
         },
-        updateUser: async ({_id, username, email, password, picture, language, emailConfirmed, blocked, requestNewPassword, role, junior, meta, domain, hostrule, group, setting}, {context}) => {
+        updateUser: async ({_id, username, email, password, picture, language, emailConfirmed, blocked, requestNewPassword, role, junior, meta, domain, hostrule, group, setting}, req) => {
+            const {context} = req
             Util.checkIfUserIsLoggedIn(context)
 
             if(!await Util.userHasAccessRights(db,context,{typeName:'User', access:'update'})){
@@ -823,7 +848,12 @@ export const userResolver = (db) => ({
             const payload = {}
             await HookAsync.call('typeBeforeUpdate', {type: 'User', params: match, data: user, db, context, payload})
 
-            const result = await userCollection.findOneAndUpdate(match, {$set: user}, {returnOriginal: false, includeResultMetadata: true})
+            const update = {$set: user}
+            if (user.password) {
+                // ends all existing logins of this user
+                update.$inc = {tokenVersion: 1}
+            }
+            const result = await userCollection.findOneAndUpdate(match, update, {returnOriginal: false, includeResultMetadata: true})
             if (result.ok !== 1) {
                 throw new ApiError('User could not be changed')
             }
@@ -833,6 +863,10 @@ export const userResolver = (db) => ({
             // clear cache
             Cache.remove('User' + username)
             Cache.remove('User' + _id)
+
+            if (user.password) {
+                await renewOwnLogin(db, req, _id)
+            }
 
             return result.value
 
@@ -873,7 +907,8 @@ export const userResolver = (db) => ({
             })
 
         },
-        updateMe: async ({password, passwordConfirm, ...user}, {context}) => {
+        updateMe: async ({password, passwordConfirm, ...user}, req) => {
+            const {context} = req
             Util.checkIfUserIsLoggedIn(context)
 
             if(!await Util.userHasAccessRights(db,context,{typeName:'User', access:'update'})){
@@ -902,13 +937,22 @@ export const userResolver = (db) => ({
                     user.password = await validateAndHashPassword({password, passwordConfirm, context})
                 }
 
-                const result = await userCollection.findOneAndUpdate({_id: new ObjectId(context.id)}, {$set: user}, { includeResultMetadata: true })
+                const update = {$set: user}
+                if (user.password) {
+                    // ends all other logins of this user
+                    update.$inc = {tokenVersion: 1}
+                }
+                const result = await userCollection.findOneAndUpdate({_id: new ObjectId(context.id)}, update, { includeResultMetadata: true })
                 if (result.ok !== 1) {
                     throw new ApiError('User could not be changed')
                 }
 
                 // clear cache
-                Cache.set('User' + context.id, null)
+                Cache.remove('User' + context.id)
+
+                if (user.password) {
+                    await renewOwnLogin(db, req, context.id)
+                }
 
                 return result.value
             }
@@ -993,10 +1037,15 @@ export const userResolver = (db) => ({
             return {value: '', _id: _id}
         },
         deleteUser: async ({_id}, {context}) => {
-            return GenericResolver.deleteEnity(db, context, 'User', {_id})
+            const result = await GenericResolver.deleteEnity(db, context, 'User', {_id})
+            // the cached user would otherwise keep the login alive (see userSession.mjs)
+            Cache.remove('User' + _id)
+            return result
         },
         deleteUsers: async ({_id}, {context}) => {
-            return GenericResolver.deleteEnities(db, context, 'User', {_id})
+            const result = await GenericResolver.deleteEnities(db, context, 'User', {_id})
+            ;(_id || []).forEach(id => Cache.remove('User' + id))
+            return result
         },
         deleteUserRole: async ({_id}, {context}) => {
             return GenericResolver.deleteEnity(db, context, 'UserRole', {_id})
