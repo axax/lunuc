@@ -390,7 +390,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
             res.writeHead(errorFile.statusCode, headers)
             res.write('Error ' + errorFile.statusCode)
             res.end()
-            await doTrackingEvent(req, {event: '404', host})
+            doTrackingEvent(req, {event: '404', host, isBot})
             return
         }
 
@@ -416,7 +416,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
                     modeTime = cacheStats.mtime.getTime() + CACHED_FILES_VALIDATION_TIME
 
                 if (modeTime > now) {
-                    await doTrackingEvent(req, {event: 'visit', host})
+                    doTrackingEvent(req, {event: 'visit', host, isBot})
                     console.log(`cache is not updated for ${cacheFileName}`)
                     return
                 }
@@ -425,7 +425,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
                 // this url is already in flight, don't trigger another one,
                 // the running render will refresh the cache
                 if (pendingRenders.has(cacheFileName)) {
-                    await doTrackingEvent(req, {event: 'visit', host})
+                    doTrackingEvent(req, {event: 'visit', host, isBot})
                     console.log(`render already in flight for ${cacheFileName}`)
                     return
                 }
@@ -763,7 +763,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             return
         }
 
-        if (!req.headers[TRACK_IP_HEADER] && parsedUrl.href !== '/graphql') {
+        if (!req.headers[TRACK_IP_HEADER] && parsedUrl.href !== '/graphql' && parsedUrl.pathname !== '/graphql/tracking/beacon') {
             console.log(`${req.method} ${remoteAddress}: ${req.isHttps ? 'https' : 'http'}://${host}${parsedUrl.href} - ${req.headers['user-agent']}`)
         }
         // check with and without www

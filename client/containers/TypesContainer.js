@@ -1,5 +1,6 @@
 import React from 'react'
-import {loadTypeFilesTypes, exportTypeFilesAsZip, pickZipFile, importTypeFilesFromZip, formatTypeFilesResult} from '../util/typeFiles'
+import {loadTypeFilesTypes, exportTypeFilesAsZip, pickZipFile, importTypeFilesFromZip} from '../util/typeFiles'
+import TypeFilesResult from '../components/TypeFilesResult'
 import PropTypes from 'prop-types'
 import ManageCollectionClones from '../components/types/ManageCollectionClones'
 import SyncCollectionDialog from '../components/types/SyncCollectionDialog'
@@ -785,7 +786,7 @@ class TypesContainer extends React.Component {
                                 this.setState({
                                     simpleDialog: {
                                         title: _t('TypeFiles.import'),
-                                        children: <div style={{whiteSpace: 'pre-wrap'}}>{formatTypeFilesResult(result)}</div>
+                                        children: <TypeFilesResult result={result}/>
                                     }
                                 })
                                 this.getData(this.pageParams, false)

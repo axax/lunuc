@@ -328,16 +328,21 @@ const readEntryFolders = (dir, result) => {
 
 /**
  * imports only what was changed in the files since the last export (three way compare,
- * see exportState.mjs). Entries without baseline and entries that were deleted in the admin
- * are skipped, new entries are never created.
+ * see exportState.mjs). Entries that were deleted in the admin are skipped.
+ *
+ * New entries (createMissing): a folder whose meta.json has no _id, or an _id that is neither
+ * in the database nor in the export state (never exported = new, not deleted), is created.
+ * A generated _id is written back to meta.json, the export state gets the baseline, so the
+ * next import / export treats the entry like any other.
+ * Without createMissing such folders are skipped as before.
  */
-export const importChangedTypeScriptsFromDirectory = async ({db, context, type, dir, dryRun = false, force = false}) => {
+export const importChangedTypeScriptsFromDirectory = async ({db, context, type, dir, dryRun = false, force = false, createMissing = false}) => {
     const definition = TYPE_SCRIPT_DEFINITIONS[type]
     if (!definition) {
         throw new Error(`no script definition for type ${type}`)
     }
     const root = path.resolve(path.isAbsolute(dir) ? dir : path.join(path.resolve(), dir))
-    const result = {type, updated: 0, unchanged: 0, conflicts: 0, skipped: 0, details: [], errors: []}
+    const result = {type, created: 0, updated: 0, unchanged: 0, conflicts: 0, skipped: 0, details: [], errors: []}
     if (!fs.existsSync(root)) {
         result.errors.push(`${root} does not exist`)
         return result
@@ -352,15 +357,51 @@ export const importChangedTypeScriptsFromDirectory = async ({db, context, type, 
             const local = readLocalEntry(folder, definition)
             const meta = {_id: local._id}
             local.errors.forEach(e => result.errors.push(`${label}: ${e}`))
-            if (!meta._id || !ObjectId.isValid(meta._id)) {
+            const hasValidId = meta._id && ObjectId.isValid(meta._id)
+            if (meta._id && !hasValidId) {
+                result.skipped++
+                result.details.push(label + ': invalid _id in meta.json, skipped')
+                continue
+            }
+            if (!hasValidId && !createMissing) {
                 result.skipped++
                 result.details.push(label + ': _id missing in meta.json, skipped')
                 continue
             }
-            const itemState = state.items[meta._id]
+            const itemState = hasValidId ? state.items[meta._id] : null
             if (!itemState) {
-                result.skipped++
-                result.details.push(label + ': no export baseline, skipped (run the export first)')
+                const exists = hasValidId && await db.collection(type).findOne({_id: new ObjectId(meta._id)}, {projection: {_id: 1}})
+                if (!createMissing || exists) {
+                    result.skipped++
+                    result.details.push(label + ': no export baseline, skipped (run the export first)')
+                    continue
+                }
+                // new entry: never exported and not in the database
+                if (!await userCanCreate({db, context, typeName: type})) {
+                    throw new Error('no permission to create')
+                }
+                const newId = hasValidId ? new ObjectId(meta._id) : new ObjectId()
+                if (!dryRun) {
+                    const data = {}
+                    Object.keys(local.fileValues).forEach(field => {
+                        data[field] = scriptFields.indexOf(field) >= 0 ? local.fileValues[field] : fromPlainJson(local.fileValues[field])
+                    })
+                    // triggers typeCreated_<type>, so cronjobs, hooks and apis are registered
+                    await GenericResolver.createEntity(db, {context}, type, {_id: newId, ...data})
+                    if (!hasValidId) {
+                        // write the generated _id back, as first attribute
+                        const metaFile = path.join(folder, META_FILE)
+                        const metaJson = JSON.parse(fs.readFileSync(metaFile, 'utf8'))
+                        delete metaJson._id
+                        fs.writeFileSync(metaFile, JSON.stringify({_id: newId.toString(), ...metaJson}, null, 2) + '\n', 'utf8')
+                    }
+                    const created = await db.collection(type).findOne({_id: newId})
+                    if (created) {
+                        state.items[newId.toString()] = {fields: hashFields(comparableValues(type, created), scriptFields)}
+                    }
+                }
+                result.created++
+                result.details.push(label + ': created' + (hasValidId ? '' : dryRun ? ' (new _id)' : ' (_id ' + newId.toString() + ' written to meta.json)'))
                 continue
             }
             const doc = await db.collection(type).findOne({_id: new ObjectId(meta._id)})

@@ -346,6 +346,7 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pa
                 openUploadDialog()
             }
         }}
+        onRootClick={() => setUploadTarget(null)}
         onItemClick={(event, item, isExpanded) => {
             setUploadTarget(targetFromItem(item))
             if (event.detail === 2) {

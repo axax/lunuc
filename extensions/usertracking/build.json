@@ -1,7 +1,7 @@
 {
   "types": [
     {
-      "access":{
+      "access": {
         "create": "anonymous",
         "subscribe": {
           "role": "access_admin_page"
@@ -26,7 +26,6 @@
       "fields": [
         {
           "name": "ip",
-          "index": 1,
           "tab": "Allgemein",
           "uitype": "ip"
         },
@@ -47,16 +46,6 @@
         },
         {
           "name": "path",
-          "compoundIndex": [
-            {
-              "unique": true,
-              "fields": {
-                "path": 1,
-                "host": 1,
-                "_id": 1
-              }
-            }
-          ],
           "tab": "Allgemein"
         },
         {
@@ -86,30 +75,11 @@
         },
         {
           "name": "event",
-          "compoundIndex": [
-            {
-              "unique": true,
-              "fields": {
-                "event": 1,
-                "host": 1,
-                "_id": 1
-              }
-            }
-          ],
           "tab": "Allgemein"
         },
         {
           "name": "isBot",
           "type": "Boolean",
-          "compoundIndex": [
-            {
-              "unique": false,
-              "fields": {
-                "host": 1,
-                "isBot": 1
-              }
-            }
-          ],
           "tab": "Allgemein"
         },
         {

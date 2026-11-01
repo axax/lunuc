@@ -13,7 +13,8 @@ import Hook from 'util/hook.cjs'
 import Util from 'client/util/index.mjs'
 import {_t} from 'util/i18n.mjs'
 import {CAPABILITY_MANAGE_TYPES, CAPABILITY_EXPORT_IMPORT_DATA} from '../../util/capabilities.mjs'
-import {loadExportAllSources, exportAllTypeFilesAsZip, pickZipFile, importAllTypeFilesFromZip, formatTypeFilesResult, getExportAiGuide, setExportAiGuide} from '../util/typeFiles'
+import {loadExportAllSources, exportAllTypeFilesAsZip, pickZipFile, importAllTypeFilesFromZip, getExportAiGuide, setExportAiGuide} from '../util/typeFiles'
+import TypeFilesResult from '../components/TypeFilesResult'
 import {client, Query} from '../middleware/graphql'
 import styled from '@emotion/styled'
 import SystemUpdatePanel from './SystemUpdatePanel'
@@ -104,7 +105,7 @@ class SystemContainer extends React.Component {
             if (!file) return
             this.setState({exportBusy: true})
             return importAllTypeFilesFromZip(file, {dryRun: true}).then(result => {
-                this.setState({importPreview: {file, text: formatTypeFilesResult(result), changes: result.created + result.updated}})
+                this.setState({importPreview: {file, result, changes: result.created + result.updated}})
             })
         }).catch(e => {
             this.setState({message: e.message})
@@ -116,7 +117,7 @@ class SystemContainer extends React.Component {
     runImportAll(file) {
         this.setState({importPreview: null, exportBusy: true})
         importAllTypeFilesFromZip(file).then(result => {
-            this.setState({message: formatTypeFilesResult(result)})
+            this.setState({importResult: result})
             client.resetStore()
         }).catch(e => {
             this.setState({message: e.message})
@@ -359,7 +360,12 @@ class SystemContainer extends React.Component {
                 {key: 'cancel', label: _t('SystemContainer.cancel')},
                 ...(importPreview.changes > 0 ? [{key: 'import', label: _t('SystemContainer.importNow'), type: 'primary'}] : [])
             ]} title={_t('SystemContainer.importPreview')}>
-                <div style={{whiteSpace: 'pre-wrap'}}>{importPreview.text}</div>
+                <TypeFilesResult result={importPreview.result}/>
+            </SimpleDialog>}
+            {this.state.importResult && <SimpleDialog open={true} onClose={() => {
+                this.setState({importResult: null})
+            }} actions={[{autoFocus: true, key: 'ok', label: 'Ok', type: 'primary'}]} title={_t('TypeFiles.result')}>
+                <TypeFilesResult result={this.state.importResult}/>
             </SimpleDialog>}
             {message && <SimpleDialog open={true} onClose={()=>{
                 this.setState({message:''})

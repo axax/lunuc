@@ -44,6 +44,7 @@ import Util from '../../client/util/index.mjs'
 import {CAPABILITY_MANAGE_OTHER_USERS} from '../../util/capabilities.mjs'
 import {CAPABILITY_CMS_PAGE_FILES} from './constants/index.mjs'
 import {exportCmsPagesAsZip, pickZipFile, importCmsPagesFromZip, formatImportResult, getExportAiGuide, setExportAiGuide} from './util/cmsPageFilesClient'
+import TypeFilesResult from '../../client/components/TypeFilesResult'
 
 registerTrs(translations, 'CmsViewEditorContainer')
 registerTrs(adminTranslations, 'AdminTranslations')
@@ -318,7 +319,7 @@ export default () => {
                                 this.setState({
                                     simpleDialog: {
                                         title: _t('CmsPageFiles.importPages'),
-                                        children: <div style={{whiteSpace: 'pre-wrap'}}>{formatImportResult(result)}</div>
+                                        children: <TypeFilesResult result={result}/>
                                     }
                                 })
                                 if (result.created > 0 || result.updated > 0) {

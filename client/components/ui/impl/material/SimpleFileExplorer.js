@@ -462,6 +462,7 @@ const sortTreeItems = (items, compareItems) => {
 const FileExplorer = React.forwardRef(function FileExplorer({
                                                                 onFetch,
                                                                 onItemClick,
+                                                                onRootClick,
                                                                 ContextMenu,
                                                                 onItemAction,
                                                                 defaultExpandedItems,
@@ -725,7 +726,11 @@ const FileExplorer = React.forwardRef(function FileExplorer({
                     return [];
                 }}
                 onItemClick={(event, id) => {
-                    if (id === 'root' || isCheckboxClick(event)) return;
+                    if (isCheckboxClick(event)) return;
+                    if (id === 'root') {
+                        onRootClick?.(event);
+                        return;
+                    }
 
                     const wasExpanded = expandedItems.includes(id);
                     const item = findById(data, id);

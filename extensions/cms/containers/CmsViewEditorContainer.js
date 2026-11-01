@@ -74,6 +74,7 @@ import PrettyErrorMessage from '../components/PrettyErrorMessage'
 import {useKeyValuesGlobal, setKeyValue} from '../../../client/util/keyvalue'
 import {downloadAs} from '../../../client/util/download'
 import {exportCmsPagesAsZip, pickZipFile, importCmsPagesFromZip, formatImportResult} from '../util/cmsPageFilesClient'
+import TypeFilesResult from '../../../client/components/TypeFilesResult'
 import FileDrop from '../../../client/components/FileDrop'
 import {csvToJson} from '../../../client/util/csv.mjs'
 import GenericSettings from '../../../client/components/GenericSettings'
@@ -1304,7 +1305,7 @@ class CmsViewEditorContainer extends React.Component {
                                         this.setState({
                                             simpleDialog: {
                                                 title: _t('CmsPageFiles.importPages'),
-                                                text: <div style={{whiteSpace: 'pre-wrap'}}>{formatImportResult(result)}</div>,
+                                                text: <TypeFilesResult result={result}/>,
                                                 onClose: () => {
                                                     if (changed) {
                                                         // the current page might have been changed

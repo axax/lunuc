@@ -4,8 +4,8 @@ import genSchema from './gensrc/schema.mjs'
 import genResolver from './gensrc/resolver.mjs'
 import Hook from '../../util/hook.cjs'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
-import {clientAddress, getHostFromHeaders} from '../../util/host.mjs'
-import {trackUser} from './track.mjs'
+import {clientAddress, getHostFromHeaders, isTrustedProxyAddress} from '../../util/host.mjs'
+import {trackUser, trackEvent, trackBeacon} from './track.mjs'
 import React from 'react'
 import Util from '../../api/util/index.mjs'
 import {TRACK_USER_AGENT_HEADER} from '../../api/constants/index.mjs'
@@ -13,6 +13,58 @@ import {TRACK_USER_AGENT_HEADER} from '../../api/constants/index.mjs'
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
     deepMergeToFirst(resolvers, resolver(db), genResolver(db))
+})
+
+// batch of tracking events from the web server (pages served from the html cache), see server/util/tracking.mjs
+// only accepted from localhost / trusted proxies, answers immediately
+Hook.on('appready', ({app}) => {
+    if (!app) return
+    app.post('/tracking/batch', (req, res) => {
+        const remote = req.socket && req.socket.remoteAddress
+        if (!remote || !isTrustedProxyAddress(remote)) {
+            res.status(403).end()
+            return
+        }
+        const events = req.body && Array.isArray(req.body.events) ? req.body.events : []
+        res.status(204).end()
+        for (const e of events.slice(0, 5000)) {
+            if (!e || typeof e !== 'object') continue
+            trackEvent({
+                ip: typeof e.ip === 'string' ? e.ip : '',
+                agent: typeof e.agent === 'string' ? e.agent.substring(0, 1000) : '',
+                host: typeof e.host === 'string' ? e.host.split(':')[0].toLowerCase() : '',
+                path: typeof e.path === 'string' ? e.path.substring(0, 2000) : '',
+                referer: typeof e.referer === 'string' ? e.referer.substring(0, 2000) : '',
+                isBotHeader: e.isBot === true ? true : undefined,
+                event: typeof e.event === 'string' ? e.event : 'visit'
+            })
+        }
+    })
+})
+
+// page view beacon of the browser (navigator.sendBeacon, text/plain json, max 4 KB)
+// answers immediately with 204, the entry is only queued (see track.mjs)
+Hook.on('appready', ({app}) => {
+    if (!app) return
+    app.post('/graphql/tracking/beacon', (req, res) => {
+        let body = '', tooLarge = false
+        req.setEncoding('utf8')
+        req.on('data', chunk => {
+            if (tooLarge) return
+            body += chunk
+            if (body.length > 4096) {
+                tooLarge = true
+                body = ''
+            }
+        })
+        req.on('end', () => {
+            res.status(204).end()
+            if (!tooLarge) trackBeacon({req, body})
+        })
+        req.on('error', () => {
+            if (!res.headersSent) res.status(400).end()
+        })
+    })
 })
 
 // Hook to add mongodb schema
