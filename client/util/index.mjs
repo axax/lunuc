@@ -166,10 +166,18 @@ const Util = {
         return DATE_FORMATS[key] || {format: (d) => d}
     },
     formattedDateFromObjectId: (objectId, options) => {
+        // ids that are no ObjectId (e.g. '2026-11-01|host') have no creation date
+        if (objectId && !Util.isDateId(objectId)) return ''
         return Util.getDateTimeFormat(options).format(Util.dateFromObjectId(objectId, new Date()))
     },
     formattedDatetimeFromObjectId: (objectId) => {
+        if (objectId && !Util.isDateId(objectId)) return ''
         return Util.getDateTimeFormat().format(Util.dateFromObjectId(objectId, new Date()))
+    },
+    /* true for an ObjectId (24 hex) or a tmp id '#timestamp' */
+    isDateId: (id) => {
+        const s = String(id)
+        return /^[0-9a-f]{24}$/i.test(s) || /^#\d+$/.test(s)
     },
     formattedDatetime(stamp, options) {
         if (!stamp) return ''

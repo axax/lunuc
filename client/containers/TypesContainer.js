@@ -568,8 +568,8 @@ class TypesContainer extends React.Component {
                     if (columnsMap['modifiedAt']) {
                         dynamic.modifiedAt = (item.modifiedAt ? Util.formattedDatetime(item.modifiedAt) : '')
                     }
-                    if (columnsMap['date']) {
-                        dynamic.date =
+                    if (columnsMap['_date']) {
+                        dynamic._date =
                             <span><span>{Util.formattedDateFromObjectId(item._id)}</span><br/><small>{item._id}</small></span>
                     }
                     if (columnsMap['_action']) {
@@ -1326,6 +1326,13 @@ class TypesContainer extends React.Component {
         if (s && s.columns && s.columns[id] !== undefined) {
             return s.columns[id]
         }
+        // settings saved before the column was renamed from "date" to "_date"
+        if (id === '_date' && s && s.columns && s.columns.date !== undefined) {
+            const formFieldsDate = getFormFieldsByType(type)
+            if (!formFieldsDate || !formFieldsDate.date) {
+                return s.columns.date
+            }
+        }
 
         // check if field is hidden by default
         const formFields = getFormFieldsByType(type)
@@ -1474,7 +1481,8 @@ class TypesContainer extends React.Component {
         typeColumns.push(
             {
                 title: _t('TypesContainer.createdAt'),
-                id: 'date',
+                // '_' prefix like _user / _action, so a field named "date" does not collide
+                id: '_date',
                 sortid: '_id',
                 sortable: true
 
@@ -1589,7 +1597,7 @@ class TypesContainer extends React.Component {
         // filter: Show only the cols that are marked as active
         columns.forEach((col) => {
             if (col.id !== 'check' && col.id !== '_action' && this.isColumnActive(type, col.id) === active) {
-                if (col.id === 'date') {
+                if (col.id === '_date') {
                     columnsFiltered.push('_id')
                 } else if (col.id === '_user') {
                     columnsFiltered.push('createdBy')
