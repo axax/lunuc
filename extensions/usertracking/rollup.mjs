@@ -116,6 +116,8 @@ const ensureIndexes = async (db) => {
     try {
         await db.collection(DAILY_COLLECTION).createIndex({host: 1, date: 1})
         await db.collection(DAILY_COLLECTION).createIndex({date: 1})
+        // covers the website list of the dashboard (no document has to be read)
+        await db.collection(DAILY_COLLECTION).createIndex({date: 1, host: 1, views: 1, botViews: 1})
         await db.collection(BEACON_COLLECTION).createIndex({year: 1, month: 1, day: 1})
         await db.collection(ALERT_COLLECTION).createIndex({date: 1, host: 1})
         // alerts are removed after 180 days
@@ -588,6 +590,13 @@ export const runRollupJob = async (db, {
     const days = dayRange(from, addDays(today, -1))
     const missing = await ensureRollups(db, days, {max: 100000, deadline, pauseMs: isNight ? pauseMs : 0})
 
+    // snapshot of today: the dashboard reads it from the db instead of aggregating today in a request
+    try {
+        await rollupDay(db, today)
+    } catch (e) {
+        log('rollup: snapshot of today failed - ' + e.message)
+    }
+
     let deleted = 0
     if (isNight && retentionDays > 0 && missing === 0 && Date.now() < deadline) {
         deleted = await deleteOldRawData(db, {retentionDays, deadline, pauseMs, log})
@@ -767,26 +776,50 @@ const deleteOldRawData = async (db, {retentionDays, deadline, pauseMs, log}) => 
 
 const todayCache = {key: null, time: 0, docs: null, promise: null}
 
+const refreshToday = (db, today, key) => {
+    if (todayCache.promise) return todayCache.promise
+    todayCache.promise = aggregateDay(db, today).then(docs => {
+        if (todayCache.key === key) {
+            todayCache.docs = docs
+            todayCache.time = Date.now()
+        }
+        return docs
+    }).finally(() => {
+        todayCache.promise = null
+    })
+    return todayCache.promise
+}
+
+/**
+ * docs of today. Never waits for an aggregation if there is something to show:
+ *   memory cache (refreshed in the background when older than TODAY_CACHE_MS)
+ *   -> snapshot of the cronjob in the db (every 15 minutes)
+ *   -> live aggregation (only if there is nothing else, e.g. before the first cronjob run)
+ */
 const todayDocs = async (db) => {
     const today = dayFromDate(new Date())
     const key = dateKey(today)
-    if (todayCache.key === key && todayCache.docs && Date.now() - todayCache.time < TODAY_CACHE_MS) {
+    if (todayCache.key !== key) {
+        todayCache.key = key
+        todayCache.docs = null
+        todayCache.time = 0
+    }
+    if (todayCache.docs) {
+        if (Date.now() - todayCache.time > TODAY_CACHE_MS) {
+            refreshToday(db, today, key).catch(e => console.warn('usertracking today refresh', e.message))
+        }
         return todayCache.docs
     }
-    if (todayCache.promise && todayCache.key === key) {
-        return todayCache.promise
+    const stored = await db.collection(DAILY_COLLECTION).find({date: key}).toArray()
+    if (stored.length) {
+        todayCache.docs = stored
+        todayCache.time = Math.min(...stored.map(d => d.computedAt ? new Date(d.computedAt).getTime() : 0))
+        if (Date.now() - todayCache.time > TODAY_CACHE_MS) {
+            refreshToday(db, today, key).catch(e => console.warn('usertracking today refresh', e.message))
+        }
+        return stored
     }
-    todayCache.key = key
-    todayCache.promise = aggregateDay(db, today).then(docs => {
-        todayCache.docs = docs
-        todayCache.time = Date.now()
-        todayCache.promise = null
-        return docs
-    }).catch(e => {
-        todayCache.promise = null
-        throw e
-    })
-    return todayCache.promise
+    return refreshToday(db, today, key)
 }
 
 const dashboardCache = new Map()
@@ -816,45 +849,62 @@ export const buildDashboard = async (db, {host = '', days = 30, isAdmin = false,
     const loadFrom = dateKey(prevFrom) < dateKey(monthFrom) ? prevFrom : monthFrom
 
     const cacheKey = [hosts.join(','), days, todayKey, isAdmin].join('|')
-    let past = !refresh && dashboardCache.get(cacheKey)
-    if (!past || Date.now() - past.time > DASHBOARD_CACHE_MS) {
-        // lazy rollup of a few missing days, the cronjob does the rest
-        const pending = await ensureRollups(db, dayRange(rangeFrom, yesterday), {max: 1})
 
+    const loadPast = async () => {
         const coll = db.collection(DAILY_COLLECTION)
         const hostMatch = hosts.length === 1 ? hosts[0] : {$in: hosts}
+        const rangeKeys = dayRange(rangeFrom, yesterday).map(dateKey)
 
-        const numericDocs = await coll.find(
-            {host: hostMatch, date: {$gte: dateKey(loadFrom), $lte: dateKey(yesterday)}},
-            {projection: NUMERIC_FIELDS.reduce((p, f) => (p[f] = 1, p), {date: 1})}
-        ).toArray()
-
-        // the long lists (200 pages per day) are only needed partly for the top 30 of the range
-        const topProjection = {date: 1, hours: 1, durBuckets: 1, pageEngagement: {$slice: 100}}
+        // the lists are merged to the top 30 of the range: longer ranges need fewer entries per day
+        const listLimit = days > 31 ? 40 : 100
+        const topProjection = {date: 1, hours: 1, durBuckets: 1, pageEngagement: {$slice: listLimit}}
         TOP_KEYS.forEach(k => {
-            if (k !== 'ips' || isAdmin) topProjection[k] = k === 'pages' ? {$slice: 100} : 1
+            if (k === 'ips' && !isAdmin) return
+            topProjection[k] = TOP[k] > 30 ? {$slice: k === 'pages' ? listLimit : 30} : 1
         })
-        const topDocs = days > 1 ? await coll.find(
-            {host: hostMatch, date: {$gte: dateKey(rangeFrom), $lte: dateKey(yesterday)}},
-            {projection: topProjection}
-        ).toArray() : []
 
-        let hostList = null
-        if (isAdmin) {
-            hostList = (await coll.aggregate([
+        // all queries in parallel
+        const [doneDays, numericDocs, topDocs, hostList] = await Promise.all([
+            // missing days are only counted here, the cronjob computes them (no aggregation in a request)
+            rangeKeys.length ? db.collection(STATE_COLLECTION).countDocuments({_id: {$in: rangeKeys}}) : 0,
+            coll.find(
+                {host: hostMatch, date: {$gte: dateKey(loadFrom), $lte: dateKey(yesterday)}},
+                {projection: NUMERIC_FIELDS.reduce((p, f) => (p[f] = 1, p), {date: 1})}
+            ).toArray(),
+            days > 1 ? coll.find(
+                {host: hostMatch, date: {$gte: dateKey(rangeFrom), $lte: dateKey(yesterday)}},
+                {projection: topProjection}
+            ).toArray() : [],
+            isAdmin ? coll.aggregate([
                 {$match: {date: {$gte: dateKey(rangeFrom), $lte: dateKey(yesterday)}, host: {$ne: ALL_HOSTS}}},
+                // only fields of the index {date, host, views, botViews}: no document is read
+                {$project: {_id: 0, host: 1, views: 1, botViews: 1}},
                 {$group: {_id: '$host', views: {$sum: '$views'}, botViews: {$sum: '$botViews'}}},
                 {$match: {views: {$gt: 0}}},
                 {$sort: {views: -1}},
                 {$limit: 200}
-            ]).toArray()).map(h => ({host: h._id, views: h.views, botViews: h.botViews}))
-        }
-        past = {time: Date.now(), numericDocs, topDocs, hostList, pending}
-        dashboardCache.set(cacheKey, past)
+            ]).toArray().then(list => list.map(h => ({host: h._id, views: h.views, botViews: h.botViews}))) : null
+        ])
+        const pending = rangeKeys.length - doneDays
+        const result = {time: Date.now(), numericDocs, topDocs, hostList, pending}
+        dashboardCache.set(cacheKey, result)
         // keep the cache small
         if (dashboardCache.size > 100) {
             dashboardCache.delete(dashboardCache.keys().next().value)
         }
+        return result
+    }
+
+    // stale-while-revalidate: an older result is shown at once and refreshed in the background
+    let past = !refresh && dashboardCache.get(cacheKey)
+    if (!past) {
+        past = await loadPast()
+    } else if (Date.now() - past.time > DASHBOARD_CACHE_MS && !past.refreshing) {
+        past.refreshing = true
+        loadPast().catch(e => {
+            past.refreshing = false
+            console.warn('usertracking dashboard refresh', e.message)
+        })
     }
 
     // today live (all hosts are aggregated at once and cached)
@@ -934,7 +984,8 @@ export const buildDashboard = async (db, {host = '', days = 30, isAdmin = false,
         durBuckets,
         pending: past.pending,
         generatedAt: new Date().toISOString(),
-        cachedAt: new Date(past.time).toISOString()
+        cachedAt: new Date(past.time).toISOString(),
+        todayAt: todayCache.time ? new Date(todayCache.time).toISOString() : null
     }
 }
 
