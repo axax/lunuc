@@ -3,7 +3,7 @@ import {ObjectId} from 'mongodb'
 import path from 'path'
 import config from '../../../gensrc/config.mjs'
 import fs from 'fs'
-import {csv2json} from '../../../api/util/csv.mjs'
+import {csv2json} from '../../../util/csv.mjs'
 import {sendMail} from '../../../api/util/mail.mjs'
 import { fileURLToPath } from 'url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))

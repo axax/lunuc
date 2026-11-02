@@ -126,7 +126,7 @@ const TypeFilesResult = ({result}) => {
 
     return <div style={styles.root}>
         <div style={styles.chips}>
-            {counters.map(([key, count, label]) =>
+            {counters.filter(([key, count]) => count !== undefined && count !== null).map(([key, count, label]) =>
                 <span key={key} style={styles.chip(COLORS[key], count > 0)}>
                     <span style={styles.chipCount}>{count || 0}</span>
                     <span>{label}</span>

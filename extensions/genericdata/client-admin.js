@@ -10,6 +10,7 @@ import {client} from 'client/middleware/graphql'
 import config from 'gen/config-client'
 import {_t, registerTrs} from '../../util/i18n.mjs'
 import {performFieldProjection} from '../../util/project.mjs'
+import {toCsv} from '../../util/csv.mjs'
 
 import {translations} from './translations/admin'
 import {propertyByPath, setPropertyByPath} from '../../client/util/json.mjs'
@@ -751,63 +752,85 @@ export default () => {
 
 
     // add some extra data to the table
-    Hook.on('TypeTableAction', function ({type, actions, pageParams}) {
+    Hook.on('TypeTableAction', function ({type, actions, pageParams, data}) {
         if (type === 'GenericData') {
 
-            const filterdActions = actions.filter(f => f.key === 'export_csv')
-
-            if (filterdActions.length > 0) {
-                // replace cvs export function
-                filterdActions[0].onClick = () => {
-                    const items = []
-                    this.state.data.results.forEach(res => {
-                        items.push({date: Util.formattedDatetimeFromObjectId(res._id), ...res.data})
-                    })
-                    const structure = this.state.data.results[0].definition.structure
-                    const fields = structure.fields.reduce((acc, cur, i) => {
-                        acc[cur.name] = cur
-                        return acc
-                    }, {})
-                    const header = Object.keys(items[0])
-                    let csv = items.map(row => header.map(fieldName => {
-
-                        let value = row[fieldName]
-                        if (value) {
-                            if (value.constructor === Array) {
-
-                                value = value.map(item => {
-                                    return item._id
-                                })
-
-
-                            } else if (value.constructor === Object) {
-                                value = JSON.stringify(value)
-                            }
-
-                        } else {
-                            value = ''
-                        }
-                        if(fields[fieldName] && fields[fieldName].csvFormat){
-                            if(fields[fieldName].csvFormat==='date'){
-                                value = Util.formattedDatetime(value,{hour:undefined, minute:undefined, second:undefined})
-                            }
-                        }
-                        return '"' + Util.escapeForJson(value) + '"'
-                    }).join(','))
-                    csv.unshift(header.join(','))
-                    csv = csv.join('\r\n')
-
-
-                    const a = document.createElement('a'),
-                        blob = new Blob([csv], {'type': 'text/comma-separated-values'})
-                    a.href = window.URL.createObjectURL(blob)
-                    a.download = (pageParams.title || 'export') + '.csv'
-                    a.target = '_blank'
-                    a.click()
+            // the import puts columns with the names of the fields of the definition into data (genericdata/server.mjs)
+            const importAction = actions.find(f => f.key === 'import')
+            const first = data && data.results && data.results[0]
+            if (importAction && first && first.definition) {
+                let structure = first.definition.structure
+                if (typeof structure === 'string') {
+                    try {
+                        structure = JSON.parse(structure)
+                    } catch (e) {
+                        structure = null
+                    }
+                }
+                if (structure && structure.fields) {
+                    importAction.knownFields = structure.fields.map(f => f.name)
                 }
             }
 
+            const exportAction = actions.find(f => f.key === 'export')
 
+            if (exportAction) {
+                // the fields are inside data: keep data/definition also for the export of the visible columns
+                exportAction.keepFields = ['data', 'definition']
+
+                // csv with one column per field of the definition
+                exportAction.toCsv = (entries) => {
+                    const parse = v => {
+                        if (typeof v === 'string') {
+                            try {
+                                return JSON.parse(v)
+                            } catch (e) {
+                                return null
+                            }
+                        }
+                        return v
+                    }
+                    const fields = {}, header = ['_id', 'date'], seen = new Set(header)
+                    const items = entries.map(res => {
+                        const definition = parse(res.definition)
+                        const structure = definition && parse(definition.structure)
+                        if (structure && structure.fields) {
+                            structure.fields.forEach(field => {
+                                fields[field.name] = field
+                                if (!seen.has(field.name)) {
+                                    seen.add(field.name)
+                                    header.push(field.name)
+                                }
+                            })
+                        }
+                        const data = parse(res.data) || {}
+                        Object.keys(data).forEach(key => {
+                            if (!seen.has(key)) {
+                                seen.add(key)
+                                header.push(key)
+                            }
+                        })
+                        return {_id: res._id, date: Util.formattedDatetimeFromObjectId(res._id), ...data}
+                    })
+
+                    return toCsv(items, {
+                        separator: ',', header, quoteAll: true,
+                        formatValue: (value, fieldName) => {
+                            if (value === null || value === undefined) {
+                                return ''
+                            }
+                            if (value.constructor === Array) {
+                                // references as comma separated ids (the import splits them again)
+                                return value.map(item => item && item._id ? item._id : item).join(',')
+                            }
+                            if (fields[fieldName] && fields[fieldName].csvFormat === 'date' && value.constructor !== Object) {
+                                return Util.formattedDatetime(value, {hour: undefined, minute: undefined, second: undefined})
+                            }
+                            return value
+                        }
+                    })
+                }
+            }
         }
     })
 

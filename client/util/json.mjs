@@ -229,7 +229,10 @@ export function setPropertyByPath(value, path, obj, separator = '.') {
                         obj = objLast[finalPathLast] = [obj]
                     }
                 }
-                obj[finalPath] = {}
+                // after wrapping into an array the index can exist (the former single child): keep it
+                if (obj[finalPath] == undefined) {
+                    obj[finalPath] = {}
+                }
             }
 
             objLast = obj

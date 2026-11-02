@@ -71,13 +71,13 @@ export const systemSchemaRaw = `
         
     type ImportCollectionResult {
         result: String
+        created: Int
+        updated: Int
+        skipped: Int
+        errors: [String]
     }
         
     type BulkEditResult {
-        result: String
-    }
-    
-    type ExportQueryResult {
         result: String
     }
     
@@ -183,13 +183,12 @@ export const systemSchemaRaw = `
     	ping: PingResult
     	collections (filter: String): CollectionResult
     	collectionAggregate (collection: String!, json: String!): CollectionAggregateResult
-    	importCollection (collection: String!, json: String!, meta: String): ImportCollectionResult
-    	bulkEdit (collection: String!, _id: [ID]!, data: String!, action: String): BulkEditResult,
-    	exportQuery (type: String!, query: String): ExportQueryResult
+    	importCollection (collection: String!, json: String!, meta: String, dryRun: Boolean, createMissing: Boolean): ImportCollectionResult
+    	bulkEdit (collection: String!, _id: [ID]!, data: String!, action: String): BulkEditResult
         getTokenLink(filePath:String,mediaIds: [ID]): TokenLinkResult
         getAllCollectionIndexes: CollectionIndexResult
         typeFilesTypes: [String]
-        exportTypeFiles(type: String!, ids: [ID]!): TypeFilesExport
+        exportTypeFiles(type: String!, ids: [ID]!, aiGuide: Boolean): TypeFilesExport
         exportAllTypeFilesSources: [TypeFilesSource]
         exportAllTypeFiles(aiGuide: Boolean): TypeFilesExport
     }

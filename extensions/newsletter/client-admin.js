@@ -36,7 +36,8 @@ export default () => {
 
     Hook.on('TypeTableAction', function ({type, actions}) {
         if (type === 'NewsletterSubscriber' && Util.hasCapability({userData: _app_.user}, CAPABILITY_SEND_NEWSLETTER)) {
-            actions.splice(4, 0, {
+            const importIndex = actions.findIndex(a => a.key === 'import')
+            actions.splice(importIndex >= 0 ? importIndex + 1 : actions.length, 0, {
                 name: 'Adressen aus Excel importieren',
                 icon: 'upload',
                 onClick: () => this.setState({subscriberImportDialog: true})

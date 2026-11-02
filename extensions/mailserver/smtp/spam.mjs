@@ -21,7 +21,20 @@ const DEFAULT_STRUCTURAL = {
     linkMismatch: 2,             // visible mail/domain differs from href target
     senderNotInBody: 2,          // sender domain unrelated to all mail addresses in the body
     fillerParagraphs: 1,         // many empty &nbsp; paragraphs
-    maxAttachmentScan: 200000    // bytes of attachment content to inspect
+    redirectCloak: 3,            // link on unknown host wraps another url (e.g. evil.com/?https://zefix.ch)
+    authoritySender: 4,          // display name / local part claims to be an authority, domain is not official
+    authorityBody: 1,            // body talks like an authority, sender domain is not official
+    pressurePhrases: 2,          // per category hit (deadline, threat, call to action) if >= 2 categories
+    // known click-tracking services: their embedded target url is used for the mismatch check
+    trackingDomains: ['awstrack.me', 'sendgrid.net', 'list-manage.com', 'mailchimp.com', 'mcsv.net', 'mandrillapp.com',
+        'hubspotlinks.com', 'hs-sites.com', 'mailjet.com', 'sparkpostmail.com', 'rs6.net', 'exacttarget.com',
+        'brevo.com', 'sendibt3.com', 'sendinblue.com', 'mailgun.org', 'cmail19.com', 'cmail20.com', 'mjt.lu', 'safelinks.protection.outlook.com'],
+    // domains allowed to use authority terms
+    officialDomains: ['admin.ch', 'zefix.ch', 'ch.ch', 'post.ch', 'postfinance.ch', 'sif.admin.ch'],
+    authorityTerms: ['ehra', 'handelsregister', 'zefix', 'eidgenössisch', 'eidgenoessisch', 'bundesamt', 'steuerverwaltung',
+        'estv', 'seco', 'kantonspolizei', 'bundespolizei', 'fedpol', 'betreibungsamt', 'zollverwaltung', 'bazg', 'serafe', 'admin.ch'],
+    maxAttachmentScan: 200000,   // bytes of attachment content to inspect
+    maxBodyScan: 500000,         // chars of text/html to inspect
 }
 
 const RISKY_EXT = /\.(html?|shtml|xhtml|svg|js|vbs|hta|lnk|scr|exe|iso|img)$/i
@@ -35,12 +48,48 @@ const rootDomainsRelated = (a, b) => {
     return root(a) === root(b)
 }
 
+// Tracking/redirect services (awstrack.me, sendgrid, mailchimp, ...) wrap the real target
+// URL-encoded in path or query. Returns the innermost target host, or null.
+const EMBEDDED_URL = /https?(?::|%3A)(?:\/\/|%2F%2F)(?:www\.)?([a-z0-9-]{1,63}(?:\.[a-z0-9-]{1,63}){0,8}\.[a-z]{2,24})/gi
+const unwrapTrackingHost = (href, trackingDomains) => {
+    if (trackingDomains) {
+        const host = (href.match(/^https?:\/\/([^/"'?#:]+)/i) || [])[1]?.toLowerCase()
+        if (!host || !trackingDomains.some(d => host === d || host.endsWith('.' + d))) return null
+    }
+    href = href.slice(0, 2048)
+    const rest = href.replace(/^https?:\/\/[^/"'?#]+/i, '')
+    let target = null
+    for (const m of rest.matchAll(EMBEDDED_URL)) target = m[1].toLowerCase()
+    return target
+}
+
+const embeddedHost = (href) => unwrapTrackingHost(href)
+
+// pressure language typical for phishing (de/en/fr)
+const PRESSURE = {
+    deadline: /(\bfrist\b|innerhalb (von )?\d+ (arbeits)?tag|innert \d+|spätestens|sofort|umgehend|within \d+ (business )?days|immediately|dans les \d+ jours)/i,
+    threat: /(sanktion|löschung|loeschung|sperrung|gesperrt|deaktiviert|konsequenzen|strafe|busse|betreibung|suspend|terminated|closed|poursuite|suppression)/i,
+    action: /(daten (jetzt )?(aktualisieren|bestätigen|überprüfen)|konto (bestätigen|verifizieren|aktualisieren)|jetzt (bestätigen|verifizieren|aktualisieren)|verify your|update your (account|details|information)|confirm your|mettre à jour)/i
+}
+
+const escapeRe = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const termsRegex = (terms) => new RegExp(`(^|[^a-zäöü])(${terms.map(escapeRe).join('|')})($|[^a-zäöü])`, 'i')
+
+const extractAddress = (sender) => {
+    if (!sender) return null
+    const m = sender.match(/<([^>]+)>/) || sender.match(/([a-z0-9._%+-]{1,64}@[a-z0-9.-]{1,253}\.[a-z]{2,24})/i)
+    return m ? m[1].trim().toLowerCase() : sender.trim().toLowerCase()
+}
+
 /**
  * Structure based checks (attachments, links, sender vs. content).
  * Complements the keyword list, scores are added to the keyword score.
  */
 export const structuralScore = ({text = '', sender, html, attachments}, options = {}) => {
     const w = {...DEFAULT_STRUCTURAL, ...options}
+    // hard cap so huge mails can't stall the smtp process
+    text = text.slice(0, w.maxBodyScan)
+    if (html) html = html.slice(0, w.maxBodyScan)
     let score = 0
     const reasons = []
     const add = (s, r) => {
@@ -71,29 +120,63 @@ export const structuralScore = ({text = '', sender, html, attachments}, options 
 
     if (html) {
         // visible text looks like mail/domain but href points elsewhere
-        for (const m of html.matchAll(/<a\s[^>]*href\s*=\s*["']https?:\/\/([^/"'?#:]+)[^>]*>([\s\S]*?)<\/a>/gi)) {
-            const host = m[1].toLowerCase().replace(/^www\./, '')
-            const shown = m[2].replace(/<[^>]+>/g, '').match(/[a-z0-9._-]+\.[a-z]{2,}/i)
+        for (const m of html.matchAll(/<a\s[^>]{0,1000}?href\s*=\s*["'](https?:\/\/([^/"'?#:]{1,253})[^"']{0,2048})["'][^>]{0,1000}>([\s\S]{0,2000}?)<\/a>/gi)) {
+            const host = m[2].toLowerCase().replace(/^www\./, '')
+            // resolve click-tracking redirects to the real destination
+            const target = unwrapTrackingHost(m[1], w.trackingDomains) || host
+            const shown = m[3].replace(/<[^>]+>/g, '').match(/[a-z0-9._-]{1,253}\.[a-z]{2,24}/i)
             if (shown) {
                 const shownDomain = shown[0].toLowerCase().split('@').pop().replace(/^www\./, '')
-                if (!rootDomainsRelated(shownDomain, host)) {
-                    add(w.linkMismatch, `link text "${shownDomain}" points to "${host}"`)
+                if (!rootDomainsRelated(shownDomain, host) && !rootDomainsRelated(shownDomain, target)) {
+                    add(w.linkMismatch, `link text "${shownDomain}" points to "${target}"${target !== host ? ` (via ${host})` : ''}`)
                     break
                 }
             }
         }
 
-        const fillers = html.match(/<p[^>]*>\s*(<span[^>]*>)?\s*(&nbsp;| )\s*(<\/span>)?\s*<\/p>/gi)
+        // redirect cloaking: unknown host carrying another url, e.g. https://evil.com/?https://www.zefix.ch
+        for (const m of html.matchAll(/<a\s[^>]{0,1000}?href\s*=\s*["']?(https?:\/\/[^"'\s>]{1,2048})/gi)) {
+            const host = (m[1].match(/^https?:\/\/([^/"'?#:]+)/i) || [])[1]?.toLowerCase().replace(/^www\./, '')
+            const inner = embeddedHost(m[1])
+            if (host && inner && !rootDomainsRelated(host, inner) &&
+                !w.trackingDomains.some(d => host === d || host.endsWith('.' + d))) {
+                add(w.redirectCloak, `link "${host}" disguised as "${inner}"`)
+                break
+            }
+        }
+
+        const fillers = html.match(/<p[^>]{0,500}>\s{0,50}(<span[^>]{0,500}>)?\s{0,50}(&nbsp;| )\s{0,50}(<\/span>)?\s{0,50}<\/p>/gi)
         if (fillers && fillers.length > 5) add(w.fillerParagraphs, 'filler paragraphs')
     }
 
     if (sender) {
-        const fromDomain = (sender.match(/@([a-z0-9.-]+\.[a-z]{2,})/i) || [])[1]
-        const bodyDomains = [...(text + ' ' + (html || '')).matchAll(/[a-z0-9._%+-]+@([a-z0-9.-]+\.[a-z]{2,})/gi)].map(x => x[1].toLowerCase())
+        const fromDomain = (sender.match(/@([a-z0-9.-]{1,253}\.[a-z]{2,24})/i) || [])[1]
+        const bodyDomains = [...(text + ' ' + (html || '')).matchAll(/[a-z0-9._%+-]{1,64}@([a-z0-9.-]{1,253}\.[a-z]{2,24})/gi)].map(x => x[1].toLowerCase())
         if (fromDomain && bodyDomains.length > 0 && !bodyDomains.some(d => rootDomainsRelated(d, fromDomain.toLowerCase()))) {
             add(w.senderNotInBody, `sender domain "${fromDomain.toLowerCase()}" not in body`)
         }
     }
+    const fromAddress = extractAddress(sender) || ''
+    const fromDomainLc = fromAddress.split('@').pop()
+    const isOfficial = fromDomainLc && w.officialDomains.some(d => fromDomainLc === d || fromDomainLc.endsWith('.' + d))
+    if (sender && !isOfficial && w.authorityTerms?.length) {
+        const authRe = termsRegex(w.authorityTerms)
+        // display name + local part, e.g. "ehra auskunft ch <ehrakontakt@...>"
+        const displayName = sender.replace(/<[^>]{0,500}>/, ' ') + ' ' + fromAddress.split('@')[0]
+        const nameHit = displayName.match(authRe) || fromAddress.split('@')[0].match(/(ehra|handelsregister|zefix|estv|admin)/i)
+        if (nameHit) {
+            add(w.authoritySender, `sender claims authority "${(nameHit[2] || nameHit[1]).toLowerCase()}" from "${fromDomainLc}"`)
+        } else {
+            const bodyHit = lowerText.match(authRe)
+            if (bodyHit) add(w.authorityBody, `authority term "${bodyHit[2]}" from non official sender`)
+        }
+    }
+
+    const categories = Object.keys(PRESSURE).filter(k => PRESSURE[k].test(lowerText))
+    if (categories.length >= 2) {
+        add(w.pressurePhrases * categories.length, `pressure language (${categories.join(', ')})`)
+    }
+
     return {score, reasons}
 }
 
@@ -133,6 +216,20 @@ export const detectSpam = async (db, context, {text, sender, threshold, html, at
             }
         }
     }
+    // trusted senders: exact address or domain (incl. subdomains), e.g. "uptimerobot.com"
+    // Note: From is not verified (no SPF/DKIM/DMARC check here), so only whitelist low-risk senders
+    if(sender && spamFilter.senderWhitelist){
+        const address = extractAddress(sender)
+        const domain = address.split('@').pop()
+        const entry = spamFilter.senderWhitelist.find(w => {
+            w = (w || '').toLowerCase().trim()
+            return w && (address === w || domain === w || domain.endsWith('.' + w))
+        })
+        if(entry){
+            return {spamScore: 0, isSpam: false, reason: `"${address}" is in senderWhitelist (${entry})`}
+        }
+    }
+
     if(sender && spamFilter.senderBlacklist){
         const senderLowerCase = sender.toLowerCase()
 

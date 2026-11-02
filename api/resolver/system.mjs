@@ -15,11 +15,13 @@ import {ObjectId} from 'mongodb'
 import {sendMail} from '../util/mail.mjs'
 import {getType} from '../../util/types.mjs'
 import {findAndReplaceObjectIds} from '../util/graphql.js'
-import {listBackups, createBackup, removeBackup, mongoExport} from './backups.mjs'
+import {listBackups, createBackup, removeBackup} from './backups.mjs'
 import {getCollections} from '../util/collection.mjs'
 import {resolver} from './index.mjs'
 import {createRequireForScript} from '../../util/require.mjs'
-import {csv2json} from '../util/csv.mjs'
+import {csvToObjects} from '../../util/csv.mjs'
+
+const IMPORT_BATCH_SIZE = 500
 import {setPropertyByPath} from '../../client/util/json.mjs'
 import Hook from '../../util/hook.cjs'
 import {createAllIndexes} from '../index/indexes.mjs'
@@ -62,8 +64,8 @@ export const systemResolver = (db) => ({
             Util.checkIfUserIsLoggedIn(context)
             return getTypeFilesTypes()
         },
-        exportTypeFiles: async ({type, ids}, {context}) => {
-            return exportTypeFiles({db, context, type, ids})
+        exportTypeFiles: async ({type, ids, aiGuide}, {context}) => {
+            return exportTypeFiles({db, context, type, ids, aiGuide: !!aiGuide})
         },
         // export / import of everything the user has access to (/admin/system), needs capability export_import_data
         exportAllTypeFilesSources: async ({}, {context}) => {
@@ -345,7 +347,7 @@ export const systemResolver = (db) => ({
 
             return {result: JSON.stringify({aggregateTime, data: results[0], explanation})}
         },
-        importCollection: async ({collection,json,meta}, {context}) => {
+        importCollection: async ({collection, json, meta, dryRun = false, createMissing = true}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
 
 
@@ -354,143 +356,242 @@ export const systemResolver = (db) => ({
             }
 
             const typeDefinition = getType(collection)
-            let stats
-            if (typeDefinition) {
-                let jsonParsed
-                try {
-                    jsonParsed = JSON.parse(json)
-                }catch (e){
-                    console.log('import data is not json', e)
-                    const csv = csv2json(json,';'),
-                        csv1 = csv2json(json,'\t')
+            if (!typeDefinition) {
+                return {result: 'imported', created: 0, updated: 0, skipped: 0, errors: []}
+            }
 
-                    if(csv.length>0){
-                        if(Object.keys(csv[0]).length >= Object.keys(csv1[0]).length){
-                            jsonParsed = csv
-                        }else{
-                            jsonParsed = csv1
-                        }
-                    }
+            // BOM of files saved by Excel / of our own csv export
+            json = (json || '').replace(/^\ufeff/, '')
+
+            let jsonParsed, isCsv = false
+            try {
+                jsonParsed = JSON.parse(json)
+            } catch (e) {
+                // csv (separator ; tab or , detected), same parser as the preview of the import dialog
+                const csv = csvToObjects(json)
+                if (csv.items.length > 0) {
+                    jsonParsed = csv.items
+                    isCsv = true
                 }
+            }
 
-                if(!jsonParsed){
-                    return  {result: 'No valid data to import'}
+            if (!jsonParsed) {
+                return {result: 'No valid data to import', created: 0, updated: 0, skipped: 0, errors: ['No valid data to import (JSON or CSV)']}
+            }
+
+            if (jsonParsed.constructor !== Array) {
+                jsonParsed = [jsonParsed]
+            }
+            const stats = {created: 0, updated: 0, skipped: 0, errors: []}
+
+            const OBJECT_ID = /^[0-9a-f]{24}$/i
+            const toObjectId = v => {
+                if (v && v.$oid) {
+                    v = v.$oid
                 }
-
-                if (jsonParsed.constructor !== Array) {
-                    jsonParsed = [jsonParsed]
+                if (v && v.constructor === Object && v._id) {
+                    // referenced entry as exported by the type list (e.g. {_id, name})
+                    v = v._id
                 }
-                stats = {created: 0, updated: 0, errors: []}
+                return v && v.constructor === String && OBJECT_ID.test(v) ? new ObjectId(v) : v
+            }
+            // fields whose values are objects/arrays: in a csv they are written as json into one cell
+            const isStructuredField = field => field.reference || field.localized || field.multi ||
+                field.type === 'Object' || field.uitype === 'json'
 
-                for(let i = 0; i<jsonParsed.length; i++){
+            const col = db.collection(collection)
+            const prepared = []
 
-                    const entry = jsonParsed[i],
-                        match = {},
-                        set = {}
+            for (let i = 0; i < jsonParsed.length; i++) {
 
-                    // convert to proper ObjectId
+                const entry = jsonParsed[i],
+                    match = {},
+                    set = {}
+
+                if (isCsv) {
                     Object.keys(entry).forEach(k => {
-                        if (entry[k] && entry[k].constructor === String && ObjectId.isValid(entry[k])) {
-                            entry[k] = new ObjectId(entry[k])
-                        }else if(k.indexOf('.')>=0){
-                            //dot notation
-                            setPropertyByPath(entry[k], k, entry)
+                        // an empty cell keeps the current value (export without a value for the field)
+                        if (entry[k] === '') {
+                            delete entry[k]
                         }
                     })
+                }
 
-                    if (entry._id) {
-                        if (entry._id.$oid) {
-                            entry._id = entry._id.$oid
-                        }
-                        match._id = entry._id && entry._id.constructor === String ?new ObjectId(entry._id) : entry._id
+                // convert to proper ObjectId
+                Object.keys(entry).forEach(k => {
+                    if (entry[k] && entry[k].constructor === String && OBJECT_ID.test(entry[k])) {
+                        entry[k] = new ObjectId(entry[k])
+                    } else if (k.indexOf('.') >= 0) {
+                        //dot notation
+                        setPropertyByPath(entry[k], k, entry)
+                    }
+                })
+
+                if (entry._id) {
+                    if (entry._id.$oid) {
+                        entry._id = entry._id.$oid
+                    }
+                    match._id = entry._id && entry._id.constructor === String ? new ObjectId(entry._id) : entry._id
+                }
+
+                if (entry.createdBy) {
+                    entry.createdBy = toObjectId(entry.createdBy)
+                    if (entry.createdBy && entry.createdBy.constructor !== ObjectId) {
+                        delete entry.createdBy
+                    }
+                }
+
+                typeDefinition.fields.forEach(field => {
+                    let value = entry[field.name]
+
+                    // fields missing in the import data stay unchanged (e.g. an export of only some columns)
+                    if (value === undefined) {
+                        return
                     }
 
-                    if (entry.createdBy && entry.createdBy.$oid) {
-                        entry.createdBy =new ObjectId(entry.createdBy.$oid)
+                    if (value && value.constructor === String && isStructuredField(field) && /^\s*[\[{]/.test(value)) {
+                        try {
+                            value = JSON.parse(value)
+                        } catch (e) {
+                        }
                     }
 
-                    typeDefinition.fields.forEach(field => {
-
-                        if(entry[field.name] && entry[field.name].$oid){
-                            entry[field.name] = new ObjectId(entry[field.name].$oid)
-                        }
-
-                        // fields missing in the import data stay unchanged (e.g. an export of only some columns)
-                        if (entry[field.name] === undefined) {
-                            return
-                        }
-                        if (field.unique) {
-                            match[field.name] = entry[field.name]
+                    if (field.reference) {
+                        if (Array.isArray(value)) {
+                            value = value.map(toObjectId)
+                        } else if (value && value.constructor === String && field.multi && value.indexOf(',') > 0) {
+                            value = value.split(',').map(v => toObjectId(v.trim()))
                         } else {
-                            set[field.name] = entry[field.name]
+                            value = toObjectId(value)
                         }
-                    })
-
-                    set.createdBy = entry.createdBy || new ObjectId(context.id)
-
-                    const aggHook = Hook.hooks['SystemBeforeCollectionImport']
-                    if (aggHook && aggHook.length) {
-                        for (let i = 0; i < aggHook.length; ++i) {
-                            await aggHook[i].callback({set, match, collection, meta, db,context})
-                        }
+                    } else if (value && value.$oid) {
+                        value = new ObjectId(value.$oid)
                     }
+                    entry[field.name] = value
 
-                    const col = db.collection(collection)
+                    if (field.unique) {
+                        match[field.name] = value
+                    } else {
+                        set[field.name] = value
+                    }
+                })
+
+                set.createdBy = entry.createdBy || new ObjectId(context.id)
+
+                const aggHook = Hook.hooks['SystemBeforeCollectionImport']
+                if (aggHook && aggHook.length) {
+                    for (let j = 0; j < aggHook.length; ++j) {
+                        await aggHook[j].callback({set, match, entry, collection, meta, db, context, dryRun})
+                    }
+                }
+
+                prepared.push({match, set, label: match.slug || match._id || i + 1})
+            }
+
+            // existing entries and writes per batch: one find ($in) and one bulkWrite instead of 2-3 round trips per entry
+            for (let start = 0; start < prepared.length; start += IMPORT_BATCH_SIZE) {
+                const batch = prepared.slice(start, start + IMPORT_BATCH_SIZE)
+
+                const idsOnly = batch.filter(p => Object.keys(p.match).length === 1 && p.match._id !== undefined)
+                const existingIds = new Set()
+                if (idsOnly.length > 0) {
+                    const found = await col.find({_id: {$in: idsOnly.map(p => p.match._id)}}, {projection: {_id: 1}}).toArray()
+                    found.forEach(e => existingIds.add(String(e._id)))
+                }
+
+                const ops = [], opInfo = []
+                for (const {match, set, label} of batch) {
                     try {
                         if (Object.keys(match).length === 0) {
-                            await col.insertOne(set)
-                            stats.created++
-                        } else {
-                            // match on _id AND the unique fields (e.g. slug) fails when the entry comes from another
-                            // system (same slug, other _id): the upsert then inserted a duplicate. Here:
-                            // 1. an entry with the same unique values exists -> update it (keeps its _id)
-                            // 2. otherwise an entry with the same _id exists -> update it, incl. the unique fields
-                            // 3. otherwise insert it
-                            const {_id, ...uniqueMatch} = match
-                            let filter = match
-                            if (_id !== undefined && Object.keys(uniqueMatch).length > 0) {
-                                const byUnique = await col.find(uniqueMatch, {projection: {_id: 1}}).limit(10).toArray()
-                                if (byUnique.length > 1) {
-                                    // duplicates (e.g. from an earlier import): update all of them, otherwise it is
-                                    // random whether the entry that is actually used gets the new content
+                            if (!createMissing) {
+                                stats.skipped++
+                            } else {
+                                ops.push({insertOne: {document: set}})
+                                opInfo.push({label, created: true})
+                            }
+                            continue
+                        }
+
+                        // match on _id AND the unique fields (e.g. slug) fails when the entry comes from another
+                        // system (same slug, other _id): the upsert then inserted a duplicate. Here:
+                        // 1. an entry with the same unique values exists -> update it (keeps its _id)
+                        // 2. otherwise an entry with the same _id exists -> update it, incl. the unique fields
+                        // 3. otherwise insert it
+                        const {_id, ...uniqueMatch} = match
+                        let filter = match, exists
+                        if (_id !== undefined && Object.keys(uniqueMatch).length === 0) {
+                            exists = existingIds.has(String(_id))
+                        } else if (_id !== undefined) {
+                            const byUnique = await col.find(uniqueMatch, {projection: {_id: 1}}).limit(10).toArray()
+                            if (byUnique.length > 1) {
+                                // duplicates (e.g. from an earlier import): update all of them, otherwise it is
+                                // random whether the entry that is actually used gets the new content
+                                if (dryRun) {
+                                    stats.updated += byUnique.length
+                                } else {
                                     const res = await col.updateMany(uniqueMatch, {$set: set})
                                     stats.updated += res.matchedCount
-                                    stats.errors.push(`${match.slug || JSON.stringify(uniqueMatch)} exists ${byUnique.length} times (${byUnique.map(e => e._id).join(', ')}), all updated - please delete the duplicates`)
-                                    continue
                                 }
-                                if (byUnique.length === 1) {
-                                    filter = {_id: byUnique[0]._id}
-                                } else if (await col.findOne({_id}, {projection: {_id: 1}})) {
-                                    filter = {_id}
-                                    Object.assign(set, uniqueMatch)
-                                }
+                                stats.errors.push(`${match.slug || JSON.stringify(uniqueMatch)} exists ${byUnique.length} times (${byUnique.map(e => e._id).join(', ')}), all updated - please delete the duplicates`)
+                                continue
                             }
-                            const res = await col.updateOne(filter, {$set: set}, {upsert: true})
-                            if (res.upsertedCount) {
-                                stats.created++
+                            if (byUnique.length === 1) {
+                                filter = {_id: byUnique[0]._id}
+                                exists = true
+                            } else if (await col.findOne({_id}, {projection: {_id: 1}})) {
+                                filter = {_id}
+                                Object.assign(set, uniqueMatch)
+                                exists = true
                             } else {
-                                stats.updated++
+                                exists = false
                             }
+                        } else {
+                            exists = !!(await col.findOne(match, {projection: {_id: 1}}))
                         }
-                    } catch (e) {
-                        stats.errors.push((match.slug || match._id || i) + ': ' + e.message)
-                    }
 
+                        if (!exists && !createMissing) {
+                            stats.skipped++
+                            continue
+                        }
+                        ops.push({updateOne: {filter, update: {$set: set}, upsert: true}})
+                        opInfo.push({label, created: !exists})
+                    } catch (e) {
+                        stats.errors.push(label + ': ' + e.message)
+                    }
                 }
 
+                const failed = new Set()
+                if (!dryRun && ops.length > 0) {
+                    try {
+                        await col.bulkWrite(ops, {ordered: false})
+                    } catch (e) {
+                        const writeErrors = e.writeErrors || []
+                        if (writeErrors.length === 0) {
+                            throw e
+                        }
+                        writeErrors.forEach(we => {
+                            failed.add(we.index)
+                            stats.errors.push(opInfo[we.index].label + ': ' + (we.errmsg || we.message))
+                        })
+                    }
+                }
+                opInfo.forEach((info, index) => {
+                    if (!failed.has(index)) {
+                        info.created ? stats.created++ : stats.updated++
+                    }
+                })
+            }
+
+            if (!dryRun) {
                 Hook.call('SystemAfterCollectionImport', {collection, db, context})
             }
-            /*findAndReplaceObjectIds(jsonParsed)
-             const startTimeAggregate = new Date()
 
-             let a = await (db.collection(collection).aggregate(jsonParsed, {allowDiskUse: true}).toArray())
-             console.log(`Aggregate time = ${new Date() - startTimeAggregate}ms`)*/
-
-            if (!stats) {
-                return {result: 'imported'}
+            return {
+                ...stats,
+                result: `${dryRun ? 'dry run' : 'imported'}: ${stats.updated} updated, ${stats.created} created` +
+                    (stats.skipped ? `, ${stats.skipped} skipped` : '') +
+                    (stats.errors.length ? `, ${stats.errors.length} errors: ` + stats.errors.join('; ') : '')
             }
-            return {result: `imported: ${stats.updated} updated, ${stats.created} created` +
-                    (stats.errors.length ? `, ${stats.errors.length} errors: ` + stats.errors.join('; ') : '')}
         },
         searchInCollections: async ({search}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
@@ -520,11 +621,6 @@ export const systemResolver = (db) => ({
             }
 
             return {result}
-        },
-        exportQuery: async ({type, query}, {context}) => {
-            await Util.checkIfUserHasCapability(db, context, CAPABILITY_ADMIN_OPTIONS)
-
-            return {result: mongoExport({type, query})}
         },
         getTokenLink: async ({filePath,mediaIds}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_ADMIN_OPTIONS)

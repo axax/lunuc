@@ -48,10 +48,10 @@ export const firstError = (response) => response && response.errors && response.
 /**
  * downloads the entries as zip, returns the number of exported entries
  */
-export const exportTypeFilesAsZip = ({type, ids}) => client.query({
+export const exportTypeFilesAsZip = ({type, ids, aiGuide = false}) => client.query({
     fetchPolicy: 'network-only',
-    query: 'query exportTypeFiles($type:String!,$ids:[ID]!){exportTypeFiles(type:$type,ids:$ids){name count data}}',
-    variables: {type, ids}
+    query: 'query exportTypeFiles($type:String!,$ids:[ID]!,$aiGuide:Boolean){exportTypeFiles(type:$type,ids:$ids,aiGuide:$aiGuide){name count data}}',
+    variables: {type, ids, aiGuide}
 }).then(response => {
     const error = firstError(response)
     if (error) throw error

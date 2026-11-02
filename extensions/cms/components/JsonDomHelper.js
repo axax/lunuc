@@ -2882,6 +2882,14 @@ class JsonDomHelper extends React.Component {
         const newJsonElement = JSON.parse(JSON.stringify(jsonElement))
         delete newJsonElement.defaults
 
+        // a single child can be stored as object instead of array (c: {...}), e.g. galleries of older versions.
+        // The options address children by index (c_0_$loop_d), so the child is wrapped into an array -
+        // otherwise the values are not found and saving would overwrite the child
+        if (subJson.c && subJson.c.constructor === Object && jsonElement.options &&
+            Object.keys(jsonElement.options).some(k => /^c_\d/.test(k))) {
+            subJson.c = [subJson.c]
+        }
+
         if (subJson.$inlineEditor && subJson.$inlineEditor.elementKey === 'customElement') {
             // custom element: its own options (tabs of the component) first, the general ones (margin) at the end
             newJsonElement.options = deepMerge({}, subJson.$inlineEditor.options, newJsonElement.options)

@@ -60,7 +60,7 @@ const handlerFor = async (db, context, type) => {
 /**
  * @returns {name, count, data (base64 zip)}
  */
-export const exportTypeFiles = async ({db, context, type, ids}) => {
+export const exportTypeFiles = async ({db, context, type, ids, aiGuide = false}) => {
     const handler = await handlerFor(db, context, type)
     if (!ids || ids.length === 0) {
         throw new Error('ids are required')
@@ -70,6 +70,16 @@ export const exportTypeFiles = async ({db, context, type, ids}) => {
     const count = files.filter(f => /(^|\/)meta\.json$/.test(f.path)).length || ids.length
     if (!files.length) {
         throw new Error('nothing to export')
+    }
+    if (aiGuide && handler.aiGuideFiles) {
+        // markdown files for LLMs (AGENTS.md, CLAUDE.md, reference docs), ignored by the import
+        const used = new Set(files.map(f => f.path))
+        handler.aiGuideFiles().forEach(f => {
+            if (!used.has(f.path)) {
+                used.add(f.path)
+                files.push(f)
+            }
+        })
     }
     const date = new Date().toISOString().substring(0, 10)
     return {

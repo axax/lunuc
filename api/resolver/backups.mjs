@@ -2,7 +2,7 @@ import path from 'path'
 import Util from '../util/index.mjs'
 import fs from 'fs'
 import config from '../../gensrc/config.mjs'
-import {execFile, execFileSync} from 'child_process'
+import {execFile} from 'child_process'
 
 // suffix for backups that are still being written
 const PARTIAL_SUFFIX = '.part'
@@ -14,8 +14,8 @@ const {BACKUP_DIR, BACKUP_URL, UPLOAD_DIR, HOSTRULES_ABSPATH} = config
 const ABS_UPLOAD_DIR = path.join(path.resolve(), UPLOAD_DIR)
 
 // Whitelist of all allowed backup/export types.
-// type is used both in paths and (for mongoExport) as a collection name,
-// so it MUST be strictly validated.
+// type is used in paths, so it MUST be strictly validated.
+// ('export': old mongoexport dumps, still listed / pruned by the backup cronjob)
 const ALLOWED_TYPES = ['db', 'media', 'hostrule', 'export']
 
 const assertAllowedType = (type) => {
@@ -34,21 +34,6 @@ const assertValidCollectionName = (name) => {
     }
 }
 
-// query must be valid JSON (mongoexport -q expects a JSON query string).
-// This doesn't inherently rule out shell metacharacters like ; ` $() ' "
-// (JSON can contain strings with such characters), but since we use
-// execFileSync without a shell, the string is NEVER interpreted by a
-// shell - it lands 1:1 as a single argument in the mongoexport process.
-// We still check for valid JSON so mongoexport doesn't throw cryptic
-// errors, and to catch at least blatant abuse (e.g. completely malformed
-// payloads) early.
-const assertValidJsonQuery = (query) => {
-    try {
-        JSON.parse(query)
-    } catch (e) {
-        throw new Error(`Invalid query, must be valid JSON: ${e.message}`)
-    }
-}
 
 export const getBackupDir = type => {
     assertAllowedType(type)
@@ -178,30 +163,6 @@ export const createDbBackup = (options = {}) => {
     })
     console.log('createDbDump', 'mongodump', args)
     return {fullName, name, date}
-}
-
-export const mongoExport = ({type, query}) => {
-    // type is used as a MongoDB collection name -> validate strictly
-    assertValidCollectionName(type)
-    // query must be valid JSON
-    assertValidJsonQuery(query)
-
-    const fileName = `${type}-${new Date().getTime()}.json`
-    const outDir = getBackupDir('export')
-    const outFile = path.join(outDir, fileName)
-
-    // execFileSync calls mongoexport WITHOUT a shell - every argument is
-    // passed 1:1 as a process argument, NO shell interpretation of
-    // ; ` $() ' " etc. takes place. This rules out command injection here,
-    // even if "query" should contain malicious shell metacharacters.
-    execFileSync('mongoexport', [
-        '--uri', MONGO_URL,
-        '-c', type,
-        '-q', query,
-        '-o', outFile
-    ])
-
-    return BACKUP_URL + '/exportdumps/' + fileName
 }
 
 export const createMediaBackup = (filesToBackup) => {

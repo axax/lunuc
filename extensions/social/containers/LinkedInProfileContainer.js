@@ -9,7 +9,7 @@ import PrettyResume from '../components/PrettyResume'
 import FileDrop from 'client/components/FileDrop'
 import {_t, registerTrs} from 'util/i18n.mjs'
 import translations from '../translations/translations'
-import {csvToJson} from 'client/util/csv.mjs'
+import {csvToJson} from 'util/csv.mjs'
 
 const withLinkedInCallback = (Container) => {
 

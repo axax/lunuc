@@ -559,13 +559,63 @@ Hook.on(['ExtensionHistoryBeforeDelete'], async ({db, historyEntry}) => {
     }
 })
 
-Hook.on('SystemBeforeCollectionImport', async ({set, match, collection, meta, db, context}) => {
+Hook.on('SystemBeforeCollectionImport', async ({set, match, entry, collection, meta, db, context}) => {
 
-    if (collection === 'GenericData' && meta) {
+    if (collection === 'GenericData') {
 
-        const def = await getGenericTypeDefinitionWithStructure(db, {name: meta})
-        if (def && def?.structure?.title) {
-            set.definition = def._id
+        // data as string (e.g. json export of the type list)
+        if (set.data && set.data.constructor === String) {
+            try {
+                set.data = JSON.parse(set.data)
+            } catch (e) {
+            }
+        }
+
+        if (meta) {
+            const def = await getGenericTypeDefinitionWithStructure(db, {name: meta})
+            if (def && def?.structure?.title) {
+                set.definition = def._id
+            }
+
+            // csv export of GenericData has one column per field of the definition:
+            // put them back into data (dot notation, the other fields of data stay unchanged)
+            let structure = def && def.structure
+            if (structure && structure.constructor === String) {
+                try {
+                    structure = JSON.parse(structure)
+                } catch (e) {
+                    structure = null
+                }
+            }
+            if (entry && set.data === undefined && structure && structure.fields) {
+                structure.fields.forEach(field => {
+                    let value = entry[field.name]
+                    if (value === undefined || field.name === 'data' || field.name === 'definition') {
+                        return
+                    }
+                    // the import converts id strings to ObjectIds, inside data ids are kept as strings
+                    if (value && value._bsontype === 'ObjectId') {
+                        value = value.toString()
+                    }
+                    if (value && value.constructor === String) {
+                        if (/^\s*[\[{]/.test(value)) {
+                            try {
+                                value = JSON.parse(value)
+                            } catch (e) {
+                            }
+                        } else if ((field.genericType || field.reference || field.type === 'Media') && field.multi) {
+                            // references are exported as comma separated ids
+                            value = value.split(',').map(v => v.trim()).filter(v => v)
+                        } else if (field.type === 'Number' || field.type === 'Float' || field.type === 'Int') {
+                            const n = parseFloat(value)
+                            value = isNaN(n) ? value : n
+                        } else if (field.type === 'Boolean') {
+                            value = value === 'true' || value === '1'
+                        }
+                    }
+                    set['data.' + field.name] = value
+                })
+            }
         }
     }
 })

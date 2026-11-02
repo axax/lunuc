@@ -7,6 +7,7 @@ import MenuItem from '@mui/material/MenuItem'
 import ListSubheader from '@mui/material/ListSubheader'
 import ListItemText from '@mui/material/ListItemText'
 import ListItemAvatar from '@mui/material/ListItemAvatar'
+import ListItemIcon from '@mui/material/ListItemIcon'
 import Avatar from '@mui/material/Avatar'
 import InputLabel from '@mui/material/InputLabel';
 import FormControl from '@mui/material/FormControl';
@@ -213,7 +214,7 @@ class SimpleSelect extends React.Component {
 
                                     {Icon ? (Icon.constructor===String?<ListItemAvatar>
                                         <Avatar src={Icon}/>
-                                    </ListItemAvatar>:<Icon />):null}
+                                    </ListItemAvatar>:<ListItemIcon><Icon/></ListItemIcon>):null}
 
                                     <ListItemText primary={item.name} secondary={item.hint}/>
                                 </MenuItem>]

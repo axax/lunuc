@@ -27,7 +27,7 @@ const {DEFAULT_LANGUAGE} = config
 import {SimpleMenu, EditIcon} from 'ui/admin'
 import {client} from '../middleware/graphql'
 import Util from '../util/index.mjs'
-import {csv2json} from '../../api/util/csv.mjs'
+import {csv2json} from 'util/csv.mjs'
 import Hook from '../../util/hook.cjs'
 import GenericForm from './GenericForm'
 import {openWindow} from '../util/window'

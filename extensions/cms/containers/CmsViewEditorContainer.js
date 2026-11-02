@@ -76,7 +76,7 @@ import {downloadAs} from '../../../client/util/download'
 import {exportCmsPagesAsZip, pickZipFile, importCmsPagesFromZip, formatImportResult} from '../util/cmsPageFilesClient'
 import TypeFilesResult from '../../../client/components/TypeFilesResult'
 import FileDrop from '../../../client/components/FileDrop'
-import {csvToJson} from '../../../client/util/csv.mjs'
+import {csvToJson, toCsv} from '../../../util/csv.mjs'
 import GenericSettings from '../../../client/components/GenericSettings'
 import {DEFAULT_STYLE} from '../constants/cmsDefaults.mjs'
 import CmsPageTools from '../components/CmsPageTools'
@@ -155,15 +155,14 @@ const formatDiff = (diff, unit) => {
 function saveTrsAsCsv(data) {
     const json = JSON.parse(data)
     if (json.tr && json.tr[config.DEFAULT_LANGUAGE]) {
-        let csv = '"key";"' + config.LANGUAGES.join('";"') + '"\r\n'
-        Object.keys(json.tr[config.DEFAULT_LANGUAGE]).forEach(key => {
-            const tr = [key]
+        const rows = Object.keys(json.tr[config.DEFAULT_LANGUAGE]).map(key => {
+            const row = {key}
             config.LANGUAGES.forEach(lang => {
-                tr.push(json.tr[lang] && json.tr[lang][key] ? json.tr[lang][key].replace(/"/g, '\\"') : '')
+                row[lang] = json.tr[lang] && json.tr[lang][key] ? json.tr[lang][key] : ''
             })
-            csv += '"' + tr.join('";"') + '"\r\n'
+            return row
         })
-        downloadAs(csv, 'export.csv')
+        downloadAs('\ufeff' + toCsv(rows, {header: ['key', ...config.LANGUAGES], quoteAll: true}), 'export.csv')
     }
 }
 

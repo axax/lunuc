@@ -1,9 +1,10 @@
 import React from 'react'
-import {loadTypeFilesTypes, exportTypeFilesAsZip, pickZipFile, importTypeFilesFromZip} from '../util/typeFiles'
-import TypeFilesResult from '../components/TypeFilesResult'
+import {loadTypeFilesTypes, exportTypeFilesAsZip, importTypeFilesFromZip} from '../util/typeFiles'
 import PropTypes from 'prop-types'
 import ManageCollectionClones from '../components/types/ManageCollectionClones'
 import SyncCollectionDialog from '../components/types/SyncCollectionDialog'
+import ExportDialog from '../components/types/ExportDialog'
+import ImportDialog from '../components/types/ImportDialog'
 import {
     FileCopyIcon,
     DeleteIcon,
@@ -31,7 +32,6 @@ import {
     SaveIcon,
     Divider,
     Paper,
-    CloudUploadIcon,
     SyncIcon,
     Tooltip,
     InfoIcon
@@ -54,13 +54,11 @@ import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {getImageTag} from 'client/util/media'
 import {deepMerge} from 'util/deepMerge.mjs'
 import DomUtil from 'client/util/dom.mjs'
-import {downloadAs} from 'client/util/download.js'
 import {_t} from 'util/i18n.mjs'
 const {ADMIN_BASE_URL, LANGUAGES} = config
 import {COLLECTIONS_QUERY} from '../constants/admin.mjs'
 import GenericForm from '../components/GenericForm'
 import {client, clearFetchById} from '../middleware/graphql'
-import json2csv from 'util/json2csv'
 import styled from '@emotion/styled'
 import {
     CAPABILITY_BULK_EDIT,
@@ -73,6 +71,12 @@ import {parseOrElse} from '../util/json.mjs'
 import {isFieldVisibleForCurrentUser} from '../util/user.mjs'
 import BulkEdit from '../components/BulkEdit'
 import JsonViewer from "../../extensions/cms/components/JsonViewer";
+
+const EXPORT_BATCH_SIZE = 200
+const toIntOr = (v, def) => {
+    const n = parseInt(v)
+    return isNaN(n) || n < 1 ? def : n
+}
 
 
 const DEFAULT_RESULT_LIMIT = 10
@@ -604,8 +608,8 @@ class TypesContainer extends React.Component {
                                 divider:true,
                                 name: _t('TypesContainer.exportEntry'),
                                 disabled: (item.status == 'deleting' || item.status == 'updating'),
-                                onClick: this.handleExportClick.bind(this, item, fields),
-                                icon: <CloudUploadIcon/>
+                                onClick: () => this.setState({exportDialog: {ids: [item._id], single: true}}),
+                                icon: 'download'
                             })
 
                         if (this.types[type].collectionClonable && this.types[type].entryClonable) {
@@ -647,88 +651,15 @@ class TypesContainer extends React.Component {
                 },
                 {
                     divider:true,
-                    key: 'export_csv',
-                    name: 'Export CSV', icon:'download', onClick: () => {
-                        this.setState({
-                            simpleDialog: {
-                                title: 'Export CSV',
-                                actions: [{key: 'close', label: 'Ok'}, {key: 'download', label: 'Download'}],
-                                onClose: (e) => {
-                                    if (e.key === 'download') {
-                                        downloadAs(json2csv(this.state.data.results), 'export.csv')
-                                        this.setState({simpleDialog: false})
-                                    } else {
-                                        this.setState({simpleDialog: false})
-                                    }
-                                },
-                                children: <textarea style={{
-                                    width: '30rem',
-                                    height: '30rem'
-                                }}>{json2csv(this.state.data.results)}</textarea>
-                            }
-                        })
+                    key: 'export',
+                    name: _t('ExportDialog.action'), icon:'download', onClick: () => {
+                        this.setState({exportDialog: true})
                     }
                 },
                 {
-                    name: 'Export JSON', icon:'download', onClick: async () => {
-                        // the list only contains the visible columns: load the entries of the current page with all
-                        // fields, otherwise an import elsewhere would only update these columns (e.g. no template)
-                        let results = this.state.data && this.state.data.results
-                        try {
-                            results = await this.loadAllFieldsOfCurrentPage()
-                        } catch (e) {
-                            console.warn('Export JSON: could not load all fields', e)
-                        }
-                        const json = JSON.stringify(results, null, 2)
-                        this.setState({
-                            simpleDialog: {
-                                title: 'Export',
-                                actions: [{key: 'close', label: 'Ok'}, {key: 'download', label: 'Download'}],
-                                onClose: (e) => {
-                                    if (e.key === 'download') {
-                                        downloadAs(json, 'export.json')
-                                        this.setState({simpleDialog: false})
-                                    } else {
-                                        this.setState({simpleDialog: false})
-                                    }
-                                },
-                                children: <textarea style={{
-                                    width: '30rem',
-                                    height: '30rem'
-                                }} defaultValue={json}/>
-                            }
-                        })
-                    }
-                },
-                {
-                    name: 'Import', icon:'upload', onClick: () => {
-                        this.setState({
-                            simpleDialog: {
-                                maxWidth:'lg',
-                                fullWidth:true,
-                                title: 'Import (JSON, CSV)',
-                                actions: [{key: 'import', label: 'Import'}],
-                                onClose: (e) => {
-                                    if (e.key === 'import') {
-                                        client.query({
-                                            fetchPolicy: 'network-only',
-                                            query: `query importCollection($collection: String!, $json: String!, $meta: String){importCollection(collection:$collection,json:$json,meta:$meta){result}}`,
-                                            variables: {
-                                                collection: type,
-                                                json: document.getElementById('importData').value,
-                                                meta:this.pageParams.meta
-                                            }
-                                        }).then(response => {
-                                            this.setState({simpleDialog: {children: JSON.stringify(response.data.importCollection)}})
-                                        })
-                                    } else {
-                                        this.setState({simpleDialog: false})
-                                    }
-                                },
-                                children: <textarea id="importData"
-                                                    style={{width: '100%', height: '30rem'}}></textarea>
-                            }
-                        })
+                    key: 'import',
+                    name: _t('ImportDialog.action'), icon:'upload', onClick: () => {
+                        this.setState({importDialog: true})
                     }
                 },
                 {
@@ -771,33 +702,14 @@ class TypesContainer extends React.Component {
             }
 
 
-            // export / import as files (zip) for the types with a handler on the server (api/util/typeFiles.mjs)
-            if (this.state.typeFilesTypes && this.state.typeFilesTypes.indexOf(type) >= 0) {
-                multiSelectActions.push({name: _t('TypeFiles.exportSelected'), value: 'exportTypeFiles', icon: 'folderZip'})
-                actions.push({
-                    divider: true,
-                    name: _t('TypeFiles.import'),
-                    icon: 'upload',
-                    onClick: () => {
-                        pickZipFile().then(file => {
-                            if (!file) return
-                            return importTypeFilesFromZip(file, {type}).then(result => {
-                                this.setState({
-                                    simpleDialog: {
-                                        title: _t('TypeFiles.import'),
-                                        children: <TypeFilesResult result={result}/>
-                                    }
-                                })
-                                this.getData(this.pageParams, false)
-                            })
-                        }).catch(e => {
-                            this.setState({simpleDialog: {title: _t('TypeFiles.import'), children: e.message}})
-                        })
-                    }
-                })
-            }
+            // one export dialog for the selected entries (also offers files as zip, see api/util/typeFiles.mjs)
+            multiSelectActions.push({name: _t('ExportDialog.exportSelected'), value: 'export', icon: 'download'})
 
             Hook.call('TypeTableAction', {type, actions, multiSelectActions, pageParams: this.pageParams, data}, this)
+            // hooks can set toCsv / keepFields on the export action (e.g. GenericData)
+            this.exportAction = actions.find(a => a.key === 'export') || null
+            // hooks can set knownFields on the import action (fields that are not fields of the type, e.g. GenericData)
+            this.importAction = actions.find(a => a.key === 'import') || null
             const actionColumn = columnsFiltered.find(c => c.id === '_action')
             if (actionColumn) {
                 actionColumn.title = <SimpleMenu items={actions}/>
@@ -1198,6 +1110,28 @@ class TypesContainer extends React.Component {
                               }}
                               checked={this.state.collectionEmpty}/>
             </SimpleDialog>,
+            this.state.exportDialog && this.pageParams.type &&
+            <ExportDialog key="exportDialog" open={true}
+                          type={this.pageParams.type}
+                          total={this.state.data ? this.state.data.total : 0}
+                          page={toIntOr(this.pageParams.page, 1)}
+                          limit={toIntOr(this.pageParams.limit, 10)}
+                          filterActive={!!(this.pageParams.filter || this.getPrettyFilter())}
+                          filename={this.pageParams.title || this.pageParams.type}
+                          toCsv={this.exportAction && this.exportAction.toCsv}
+                          selectedIds={this.state.exportDialog.ids || []}
+                          single={!!this.state.exportDialog.single}
+                          exportZip={this.getZipHandler('export')}
+                          loadEntries={this.loadEntriesForExport.bind(this)}
+                          onClose={() => this.setState({exportDialog: false})}/>,
+            this.state.importDialog && this.pageParams.type &&
+            <ImportDialog key="importDialog" open={true}
+                          type={this.pageParams.type}
+                          meta={this.pageParams.meta}
+                          knownFields={this.getImportFields(this.pageParams.type)}
+                          importZip={this.getZipHandler('import')}
+                          onImported={() => this.getData(this.pageParams, false)}
+                          onClose={() => this.setState({importDialog: false})}/>,
             simpleDialog &&
             <SimpleDialog key="simpleDialog" fullWidth={simpleDialog.fullWidth} maxWidth={simpleDialog.maxWidth} open={!!simpleDialog} onClose={simpleDialog.onClose || (() => {
                 this.setState({simpleDialog: false})
@@ -1382,12 +1316,10 @@ class TypesContainer extends React.Component {
                 items.push(_id)
             })
             this.setState({dataToBulkEdit:{items,action:action, values:data.results.find(entry=>entry._id===items[0])}})
-        } else if (action === 'exportTypeFiles') {
+        } else if (action === 'export') {
             const ids = Object.keys(selectedRows)
             if (ids.length > 0) {
-                exportTypeFilesAsZip({type: this.pageParams.type, ids}).catch(e => {
-                    this.setState({simpleDialog: {title: _t('TypeFiles.exportSelected'), children: e.message}})
-                })
+                this.setState({exportDialog: {ids}})
             }
         } else {
 
@@ -1677,26 +1609,110 @@ class TypesContainer extends React.Component {
         })
     }
 
-    // entries of the current list page (same filter, sort and paging) with all fields of the type
-    async loadAllFieldsOfCurrentPage() {
-        const {type, page, limit, sort, filter, meta, _version} = this.pageParams
-        const queries = getTypeQueries(type, null, {loadAll: true})
-        const response = await client.query({
-            fetchPolicy: 'network-only',
-            query: queries.query,
-            variables: {limit, page, sort: this.extendSort(sort), meta, _version, filter: this.extendFilter(filter)}
-        })
+    /*
+     entries for the export dialog: loaded in batches with the same sort as the list
+     from/to are 1-based positions, to = 0 means up to the last entry
+     allFields = false exports only the visible columns
+     */
+    async loadEntriesForExport({allFields, useFilter, from = 1, to = 0, ids, idsOnly, onProgress, isCancelled}) {
+        const {type, sort, filter, meta, _version, baseFilter} = this.pageParams
+        const queries = idsOnly ? getTypeQueries(type, ['_id']) :
+            allFields ? getTypeQueries(type, null, {loadAll: true}) : this.getTypeQueriesFiltered(type, {loadAll: false})
+        const storeKey = this.getStoreKey(type)
+        let finalFilter = useFilter ? this.extendFilter(filter) : (baseFilter || '')
+        if (ids && ids.length > 0) {
+            // selected entries
+            finalFilter = ids.map(id => `_id==${id}`).join(' || ')
+            from = 1
+            to = 0
+        }
+        // without an explicit sort the order of the batches is not stable
+        const finalSort = this.extendSort(sort) || '_id desc'
+
+        from = Math.max(1, from)
+        let page = Math.floor((from - 1) / EXPORT_BATCH_SIZE) + 1
+        const firstOffset = (page - 1) * EXPORT_BATCH_SIZE
+        let loaded = [], end = to
+
+        while (true) {
+            if (isCancelled && isCancelled()) {
+                return []
+            }
+            const response = await client.query({
+                fetchPolicy: 'network-only',
+                query: queries.query,
+                variables: {limit: EXPORT_BATCH_SIZE, page, sort: finalSort, meta, _version, filter: finalFilter}
+            })
+            const data = response.data[storeKey]
+            const results = (data && data.results) || []
+            const total = (data && data.total) || 0
+            end = to > 0 ? Math.min(to, total) : total
+            loaded = loaded.concat(results)
+
+            if (onProgress && end >= from) {
+                onProgress(Math.min(1, (firstOffset + loaded.length - from + 1) / (end - from + 1)))
+            }
+            if (page * EXPORT_BATCH_SIZE >= end || results.length < EXPORT_BATCH_SIZE) {
+                break
+            }
+            page++
+        }
+
+        const entries = loaded.slice(from - 1 - firstOffset, Math.max(0, end - firstOffset))
+
+        let keys = null
+        if (idsOnly) {
+            keys = ['_id']
+        } else if (!allFields) {
+            keys = this.getFieldsActiveOrInactive(type, true)
+            if (keys.indexOf('_id') < 0) {
+                keys.unshift('_id')
+            }
+            if (this.exportAction && this.exportAction.keepFields) {
+                keys = keys.concat(this.exportAction.keepFields)
+            }
+        }
+        keys = keys && new Set(keys)
+
         // fields without a value are left out: some list resolvers return null for fields they do not load
         // (e.g. the template of a CmsPage), an import would overwrite the real value with null
-        return response.data[this.getStoreKey(type)].results.map(entry => {
+        return entries.map(entry => {
             const clean = {}
             Object.keys(entry).forEach(key => {
-                if (entry[key] !== null && key !== '__typename') {
+                if (entry[key] !== null && key !== '__typename' && (!keys || keys.has(key))) {
                     clean[key] = entry[key]
                 }
             })
             return clean
         })
+    }
+
+    /*
+     export / import as files (zip): a hook can set exportZip / importZip on the actions (e.g. CmsPage with
+     the version of the collection), otherwise the generic handler of the server (api/util/typeFiles.mjs)
+     */
+    getZipHandler(kind) {
+        const {type} = this.pageParams
+        const action = kind === 'export' ? this.exportAction : this.importAction
+        if (action && action[kind + 'Zip']) {
+            return action[kind + 'Zip']
+        }
+        if (!(this.state.typeFilesTypes && this.state.typeFilesTypes.indexOf(type) >= 0)) {
+            return null
+        }
+        return kind === 'export' ?
+            ({ids, aiGuide}) => exportTypeFilesAsZip({type, ids, aiGuide}) :
+            (file, {dryRun, createMissing}) => importTypeFilesFromZip(file, {type, dryRun, createMissing})
+    }
+
+    // fields the import of json / csv uses (for the preview of the import dialog)
+    getImportFields(type) {
+        const typeDefinition = this.types[type]
+        const fields = typeDefinition && typeDefinition.fields ? typeDefinition.fields.map(f => f.name) : []
+        if (this.importAction && this.importAction.knownFields) {
+            return fields.concat(this.importAction.knownFields)
+        }
+        return fields
     }
 
     getData({type, page, limit, sort, filter, meta, _version}, cacheFirst, typeChanged) {
@@ -2385,26 +2401,6 @@ class TypesContainer extends React.Component {
         })
         this.cloneData({_id: data._id, ...newData}, data)
     }
-    handleExportClick = (data, fields) => {
-
-        const {type} = this.pageParams
-        const query = '{"_id":{"$oid":"' + data._id + '"}}'
-
-        client.query({
-            fetchPolicy: 'network-only',
-            query: `query exportQuery($type: String!, $query: String){exportQuery(type:$type,query:$query){result}}`,
-            variables: {
-                type,
-                query
-            }
-        }).then(response => {
-            const a = document.createElement('a')
-            a.href = response.data.exportQuery.result
-            a.target = '_blank'
-            a.click()
-        })
-    }
-
     handleConfirmDialog = (action) => {
         const {confirmDialog} = this.state
         console.log('handleConfirmDialog', action, confirmDialog)
