@@ -1237,21 +1237,25 @@ function runPipe(reducePipe, rootData, currentData, debugLog, depth, debug) {
                     if (re.assign) {
                         touchPath(re.path, currentData)
                     }
-                    // (only read when value is set, so a missing value fails exactly as before)
                     const lengthBefore = debugInfo !== null && value ? value.length : undefined
-                    const offset = (re.offset || 0)
+                    // a missing value (e.g. a product without images in a loop) is skipped
+                    if (Array.isArray(value)) {
+                        const offset = (re.offset || 0)
 
-                    if (offset > 0) {
-                        value.splice(0, offset)
+                        if (offset > 0) {
+                            value.splice(0, offset)
+                        }
+                        if (value.length > re.limit) {
+                            value.length = re.limit
+                        }
+                        touch(value)
+                    } else if (debugInfo !== null) {
+                        debugInfo.messages.push(`no array at path ${q(re.path)}`)
                     }
-                    if (value.length > re.limit) {
-                        value.length = re.limit
-                    }
-                    touch(value)
                     if (debugInfo !== null) {
                         const stats = debugStats(debugInfo)
                         stats.before = lengthBefore
-                        stats.after = value.length
+                        stats.after = value ? value.length : undefined
                     }
                 }
                 if (re.remove) {
