@@ -3,10 +3,10 @@ import {SimpleDialog, TextField, Typography, LinearProgress, Box, Checkbox, Form
 import Tabs from '@mui/material/Tabs'
 import Tab from '@mui/material/Tab'
 import {client} from 'client/middleware/graphql'
-import {importTypeFilesFromZip, firstError} from 'client/util/typeFiles.js'
+import {firstError} from 'client/util/typeFiles.js'
 import TypeFilesResult from 'client/components/TypeFilesResult'
 import {_t} from 'util/i18n.mjs'
-import {parseCsv, detectCsvSeparator} from 'util/csv.mjs'
+import {csvToObjects} from 'util/csv.mjs'
 
 /*
  Import of entries into the type list: one dialog for
@@ -41,13 +41,12 @@ export const analyzeImportText = (text) => {
             return {format: 'json', error: _t('ImportDialog.invalidJson', {message: e.message})}
         }
     }
-    // csv: same parser and separator detection as the server (util/csv.mjs)
-    const best = parseCsv(text, detectCsvSeparator(text))
-    if (best.length < 2) {
+    // csv: same parser as the server (util/csv.mjs)
+    const csv = csvToObjects(text)
+    if (csv.rows.length === 0) {
         return {format: 'csv', error: _t('ImportDialog.noRows')}
     }
-    const columns = best[0].map(c => c.trim())
-    return {format: 'csv', count: best.length - 1, columns, rows: best.slice(1, MAX_PREVIEW_ROWS + 1)}
+    return {format: 'csv', count: csv.rows.length, columns: csv.columns, rows: csv.rows.slice(0, MAX_PREVIEW_ROWS)}
 }
 
 const cellText = v => {
@@ -78,10 +77,11 @@ const styles = {
 
 /**
  * @param knownFields names of the fields the import uses (other columns are ignored by the server)
- * @param zipAvailable the type has a files handler (zip import)
+ * @param importZip optional (file, {dryRun, createMissing}) => result, for types with a files handler
  * @param onImported called after a real import (refresh of the list)
  */
-const ImportDialog = ({open, onClose, type, meta, knownFields = [], zipAvailable, onImported}) => {
+const ImportDialog = ({open, onClose, type, meta, knownFields = [], importZip, onImported}) => {
+    const zipAvailable = !!importZip
     const [tab, setTab] = React.useState('file')
     const [file, setFile] = React.useState(null)
     const [text, setText] = React.useState('')
@@ -104,7 +104,17 @@ const ImportDialog = ({open, onClose, type, meta, knownFields = [], zipAvailable
     }, [open])
 
     const isZip = !!(file && /\.zip$/i.test(file.name))
-    const analysis = React.useMemo(() => isZip ? null : analyzeImportText(text), [text, isZip])
+    // analysis of large pasted texts only after typing paused
+    const [analyzedText, setAnalyzedText] = React.useState('')
+    React.useEffect(() => {
+        if (text.length < 20000) {
+            setAnalyzedText(text)
+            return
+        }
+        const timeout = setTimeout(() => setAnalyzedText(text), 300)
+        return () => clearTimeout(timeout)
+    }, [text])
+    const analysis = React.useMemo(() => isZip ? null : analyzeImportText(analyzedText), [analyzedText, isZip])
 
     const resetResult = () => {
         setResult(null)
@@ -132,7 +142,7 @@ const ImportDialog = ({open, onClose, type, meta, knownFields = [], zipAvailable
     const known = new Set(['_id', 'createdBy', ...knownFields])
     const knownColumns = analysis && analysis.columns ? analysis.columns.filter(c => known.has(c) || c.indexOf('.') > 0) : []
     const unknownColumns = analysis && analysis.columns ? analysis.columns.filter(c => knownColumns.indexOf(c) < 0) : []
-    const hasData = isZip ? zipAvailable : !!(analysis && !analysis.error && analysis.count > 0)
+    const hasData = isZip ? zipAvailable : !!(analysis && !analysis.error && analysis.count > 0 && analyzedText === text)
 
     const runImport = async (dryRun) => {
         setBusy(true)
@@ -140,7 +150,7 @@ const ImportDialog = ({open, onClose, type, meta, knownFields = [], zipAvailable
         try {
             let res
             if (isZip) {
-                res = await importTypeFilesFromZip(file, {type, dryRun, createMissing})
+                res = await importZip(file, {dryRun, createMissing})
             } else {
                 // importCollection is a query in the schema (api/schema/system.mjs)
                 const response = await client.query({
