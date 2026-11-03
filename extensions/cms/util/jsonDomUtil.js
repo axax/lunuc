@@ -485,6 +485,10 @@ export const scheduleHighlighterUpdate = () => {
     }
 }
 
+// focus in a field with its own key handling (undo, Esc): input, textarea, contenteditable, code editor
+export const isEditableTarget = (target) => !!target && (target.isContentEditable ||
+    !!(target.closest && target.closest('input,textarea,select,.cm-editor,[contenteditable]')))
+
 export const checkIfElementOrParentHasDataKey = (el, attrKeys = [], value) => {
     while (el && el.parentNode && el.parentNode !== window) {
         for (const key of attrKeys) {

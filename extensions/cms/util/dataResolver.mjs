@@ -1,5 +1,5 @@
 import {ObjectId} from 'mongodb'
-import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
+import GenericResolver, {buildCollectionName} from '../../../api/resolver/generic/genericResolver.mjs'
 import Cache from '../../../util/cache.mjs'
 import request from '../../../api/util/request.mjs'
 import ApiUtil from '../../../api/util/index.mjs'
@@ -209,12 +209,30 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
 
                     if (ApiUtil.isUserLoggedIn(context)) {
                         const match = {createdBy: new ObjectId(context.id), key: {$in: segment.keyValues}}
-                        const result = await GenericResolver.entities(db, {headers: req.headers, context}, 'KeyValue', ['key', 'value'], {
-                            match
-                        })
+                        let entries
+                        if (segment.keyValues.length <= 10) {
+                            // Performance: plain find on the unique index {createdBy, key} instead of the
+                            // full GenericResolver pipeline (aggregation, count, query hint). Same collection
+                            // (type versions), same match hook and the same value conversion as
+                            // GenericResolver / postQueryConvert (non-string values are stringified)
+                            Hook.call('enhanceTypeMatch', {type: 'KeyValue', context, match})
+                            const collectionName = await buildCollectionName(db, context, 'KeyValue')
+                            entries = await db.collection(collectionName).find(match, {projection: {_id: 0, key: 1, value: 1}}).toArray()
+                            for (const entry of entries) {
+                                if (entry.value && entry.value.constructor !== String) {
+                                    entry.value = JSON.stringify(entry.value)
+                                }
+                            }
+                        } else {
+                            // more keys than the default limit of GenericResolver (10) - unchanged behaviour
+                            const result = await GenericResolver.entities(db, {headers: req.headers, context}, 'KeyValue', ['key', 'value'], {
+                                match
+                            })
+                            entries = result.results
+                        }
 
-                        if (result.results) {
-                            result.results.map(entry => {
+                        if (entries) {
+                            entries.forEach(entry => {
                                 try {
                                     map[entry.key] = JSON.parse(entry.value)
                                 } catch (e) {

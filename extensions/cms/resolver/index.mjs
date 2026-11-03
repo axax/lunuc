@@ -23,6 +23,35 @@ import {
 import renderReact from '../renderReact.mjs'
 import {appendServerTiming, timingEntry, SERVER_TIMING_ENABLED} from '../../../util/serverTiming.mjs'
 import {createRequireForScript} from '../../../util/require.mjs'
+import {compileCached} from '../util/dataResolverCore.mjs'
+
+// Performance: cmsServerMethod used to scan the serverScript for declared names, create a new
+// require context and compile the whole serverScript (new Function) on every call.
+// Names are cached per serverScript (bounded), the require context once per es6Module mode and
+// the compiled function via compileCached (LRU, keyed by the exact code - every call still runs
+// in its own scope with its own `this`).
+const SERVER_SCRIPT_NAMES_CACHE_MAX = 200
+const serverScriptNamesCache = new Map()
+const declaredNamesOfServerScript = (serverScript) => {
+    let names = serverScriptNamesCache.get(serverScript)
+    if (!names) {
+        names = new Set([...serverScript.matchAll(/(?:function\s*\*?\s*|(?:const|let|var)\s+)([A-Za-z_$][\w$]*)/g)].map(m => m[1]))
+        if (serverScriptNamesCache.size >= SERVER_SCRIPT_NAMES_CACHE_MAX) {
+            serverScriptNamesCache.delete(serverScriptNamesCache.keys().next().value)
+        }
+        serverScriptNamesCache.set(serverScript, names)
+    }
+    return names
+}
+let serverMethodRequireContext = null, serverMethodRequireEs6 = null
+const getServerMethodRequireContext = () => {
+    const es6 = !!_app_.es6Module
+    if (!serverMethodRequireContext || serverMethodRequireEs6 !== es6) {
+        serverMethodRequireContext = createRequireForScript(import.meta.url)
+        serverMethodRequireEs6 = es6
+    }
+    return serverMethodRequireContext
+}
 import {DEFAULT_DATA_RESOLVER, DEFAULT_SCRIPT, DEFAULT_STYLE, DEFAULT_TEMPLATE} from '../constants/cmsDefaults.mjs'
 import {CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities.mjs'
 import {createMatchForCurrentUser} from '../../../api/util/dbquery.mjs'
@@ -658,7 +687,7 @@ export default db => ({
             // methodName is inserted into the generated code - only allow functions that are
             // declared in the serverScript itself. Otherwise globals like eval or Function
             // could be called with client controlled args (remote code execution)
-            const declaredNames = new Set([...serverScript.matchAll(/(?:function\s*\*?\s*|(?:const|let|var)\s+)([A-Za-z_$][\w$]*)/g)].map(m => m[1]))
+            const declaredNames = declaredNamesOfServerScript(serverScript)
             if (!declaredNames.has(methodName)) {
                 throw new Error('Invalid methodName')
             }
@@ -673,7 +702,7 @@ export default db => ({
 
             console.log(`Server methode call ${methodName}`)
             let result
-            const requireContext = createRequireForScript(import.meta.url)
+            const requireContext = getServerMethodRequireContext()
             const scriptExecution = `
             
                     ${requireContext.script}
@@ -690,7 +719,7 @@ export default db => ({
 
             try {
                 const script = await new Promise(resolve => {
-                    const tpl = new Function(scriptExecution)
+                    const tpl = compileCached(scriptExecution)
 
                     tpl.call({
                         require:requireContext.require,

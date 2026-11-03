@@ -36,7 +36,9 @@ import {
     isTargetAbove,
     copyComponent,
     recalculatePixelValue, highlighterHandler, scheduleHighlighterUpdate, getHighlightPosition, getVisibleRect, checkIfElementOrParentHasDataKey,
-    highlighterScrollHandler
+    highlighterScrollHandler,
+    getParentKey,
+    isEditableTarget
 } from '../util/jsonDomUtil'
 import {ALLOW_DROP, JsonDomDraggable, onJsonDomDrag, onJsonDomDragEnd} from '../util/jsonDomDragUtil'
 import config from 'gen/config-client'
@@ -141,6 +143,16 @@ document.addEventListener('keydown', (e) => {
                 JsonDomHelper.disabledSelect.push(el)
             }
         })
+    } else if (e.key === 'Escape' && !e.defaultPrevented && !JsonDomHelper.disableEvents && !isEditableTarget(e.target) &&
+        // an open dialog, menu or popover handles Esc itself
+        !document.querySelector('.MuiModal-root:not(.MuiModal-hidden),dialog[open],[aria-modal="true"]')) {
+        // Esc deselects everything: the highlighted element and the selection (shift click)
+        const hovered = JsonDomHelper.hoveredHelper
+        if (hovered) {
+            hovered.stopWatchPointerLeave()
+            hovered.setState({hovered: false, toolbarHovered: false})
+        }
+        (hovered || JsonDomHelper.selected[0])?.deselectSelected()
     }
 })
 const altKeyReleased = () => {
@@ -2505,7 +2517,7 @@ class JsonDomHelper extends React.Component {
                 // nearest enclosing element with an editor helper (keys without one, e.g. «.$loop», are skipped)
                 let parentHelperKey = parentKey
                 while (parentHelperKey && !JsonDomHelper.instances[parentHelperKey]) {
-                    parentHelperKey = parentHelperKey.substring(0, parentHelperKey.lastIndexOf('.'))
+                    parentHelperKey = getParentKey(parentHelperKey)
                 }
                 if (parentHelperKey) {
                     menuItems.push({

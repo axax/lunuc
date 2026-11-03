@@ -11,6 +11,7 @@ import compose from 'util/compose'
 import {contentVersion} from '../util/contentVersion.mjs'
 import Expandable from 'client/components/Expandable'
 import ErrorHandler from 'client/components/layout/ErrorHandler'
+import {isEditableTarget} from '../util/jsonDomUtil'
 import NotificationHandler from 'client/components/layout/NotificationHandler'
 import DataResolverEditor from '../components/DataResolverEditor'
 import TemplateEditor from '../components/TemplateEditor'
@@ -447,9 +448,7 @@ class CmsViewEditorContainer extends React.Component {
         if (key !== 'z' && key !== 'y') {
             return
         }
-        const target = e.target
-        if (target && (target.isContentEditable ||
-            (target.closest && target.closest('input,textarea,select,.cm-editor,[contenteditable]')))) {
+        if (isEditableTarget(e.target)) {
             return
         }
         if (!Util.hasCapability(this.props.user, CAPABILITY_MANAGE_CMS_CONTENT)) {

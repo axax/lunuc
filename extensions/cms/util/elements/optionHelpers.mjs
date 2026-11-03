@@ -442,7 +442,8 @@ const spacingPresets = () => [
     {short: '0', name: _t('elements.spacing.none'), value: '0'},
     {short: 'S', name: _t('elements.spacing.small'), value: '1rem'},
     {short: 'M', name: _t('elements.spacing.medium'), value: '2rem'},
-    {short: 'L', name: _t('elements.spacing.large'), value: '4rem'}
+    {short: 'L', name: _t('elements.spacing.large'), value: '4rem'},
+    {short: 'XL', name: _t('elements.spacing.xlarge'), value: '8rem'}
 ]
 
 // one row with the four margins, padding below (css values, e.g. 2rem)
