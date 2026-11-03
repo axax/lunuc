@@ -1677,7 +1677,10 @@ class JsonDomHelper extends React.Component {
                     (menuTitle.source || '').replace(/\s+(bearbeiten|editieren|ändern|edit)$/i, '') ||
                     (menuTitle.sourceNew || '').replace(/\s+(erstellen|hinzufügen|create|new|add)$/i, '') ||
                     parsedSource.genericType || parsedSource.type) : ''
-                const label = dataLabel || (_t(`elements.key.${elementKey}`,null,elementKey)) + (rest.id?` (${rest.id})`:(rest.slug?` (${rest.slug})`:''))
+                // plain tags (div, span) are told apart by their first class (e.g. «div (nl-progress)»)
+                const labelSuffix = rest.id || rest.slug ||
+                    (!rest['data-element-key'] && typeof rest.className === 'string' && rest.className.trim().split(/\s+/)[0])
+                const label = dataLabel || _t(`elements.key.${elementKey}`, null, elementKey) + (labelSuffix ? ` (${labelSuffix})` : '')
                 toolbar = <StyledToolbarButton
                     key={rest._key + '.toolbar'}
                     data-in-dialog={this.inDialog ? '' : undefined}

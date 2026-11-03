@@ -41,9 +41,14 @@ const styles = {
         display: 'flex', alignItems: 'baseline', gap: '0.6rem', padding: '0.35rem 0',
         borderBottom: '1px solid rgba(127,127,127,0.18)'
     },
-    selectable: {cursor: 'pointer', userSelect: 'none'},
+    // checkbox and badge share the height of the first text line, so they sit on one line with the name
+    itemTop: {alignItems: 'flex-start'},
+    lead: {flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: '0.5rem', height: '1.45em'},
+    selectable: {cursor: 'pointer', userSelect: 'none', outline: 'none'},
     deselected: {opacity: 0.45},
-    checkbox: {flex: '0 0 auto', margin: 0, alignSelf: 'center', cursor: 'pointer', accentColor: '#d97706'},
+    // display only: the click is handled by the row (a native toggle of a controlled checkbox in a
+    // label can get out of sync with the state in preact)
+    checkbox: {margin: 0, width: '1rem', height: '1rem', pointerEvents: 'none', accentColor: '#d97706'},
     groupHeader: {display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.5rem'},
     groupToggle: {
         border: 0, background: 'none', padding: 0, font: 'inherit', fontSize: '0.75rem', cursor: 'pointer',
@@ -171,17 +176,27 @@ const TypeFilesResult = ({result, excluded, onToggle}) => {
                         const canSelect = selectable && SELECTABLE[e.status]
                         const checked = !excludedSet.has(e.key)
                         const content = <>
-                            {canSelect && <input type="checkbox" style={styles.checkbox} checked={checked}
-                                                 onChange={() => onToggle([e.key], !checked)}/>}
-                            <span style={styles.badge(COLORS[e.status])}>{STATUS_LABEL[e.status]()}</span>
+                            <span style={styles.lead}>
+                                {canSelect && <input type="checkbox" tabIndex={-1} readOnly style={styles.checkbox}
+                                                     checked={checked} key={checked ? 'on' : 'off'}/>}
+                                <span style={styles.badge(COLORS[e.status])}>{STATUS_LABEL[e.status]()}</span>
+                            </span>
                             <span>
                                 <span style={styles.name}>{e.name}</span>
                                 {e.detail && <div style={styles.detail}>{e.detail}</div>}
                             </span>
                         </>
-                        return canSelect ?
-                            <li key={i}><label style={{...styles.item, ...styles.selectable, ...(checked ? {} : styles.deselected)}}>{content}</label></li> :
-                            <li key={i} style={styles.item}>{content}</li>
+                        if (!canSelect) {
+                            return <li key={i} style={{...styles.item, ...styles.itemTop}}>{content}</li>
+                        }
+                        const toggle = (ev) => {
+                            ev.preventDefault()
+                            onToggle([e.key], !checked)
+                        }
+                        return <li key={i} role="checkbox" aria-checked={checked} tabIndex={0}
+                                   style={{...styles.item, ...styles.itemTop, ...styles.selectable, ...(checked ? {} : styles.deselected)}}
+                                   onClick={toggle}
+                                   onKeyDown={ev => (ev.key === ' ' || ev.key === 'Enter') && toggle(ev)}>{content}</li>
                     })}
                 </ul>
             </div>
