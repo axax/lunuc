@@ -6,6 +6,7 @@ import {
     SimpleSelect,
     SimpleDialog,
     SimpleMenu,
+    SimpleButton,
     Row,
     Col,
     FolderIcon,
@@ -31,7 +32,10 @@ const StyledTextField = styled(TextField)(() => ({
     }
 }))
 
-const EXTENSIONS_TO_EDIT = ['','html','js','md','cjs','mjs','text','txt','yml','json','xml','csv','template']
+const SYSTEMD_SPACE = '/etc/systemd/system'
+const SERVICE_NAME_REGEX = /^[a-zA-Z0-9@._-]+\.service$/
+
+const EXTENSIONS_TO_EDIT = ['','html','js','md','cjs','mjs','text','txt','yml','json','xml','csv','template','service']
 
 const CodeEditor = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "codeeditor" */ '../components/CodeEditor')}/>
 
@@ -41,6 +45,7 @@ class FilesContainer extends React.Component {
         {value:config.HOSTRULES_ABSPATH,name:'Hostrules'},
         {value:config.WEBROOT_ABSPATH,name:'Webroot'},
         {value:'/etc/lunuc',name:'Config (etc)'},
+        {value:'/etc/systemd/system',name:'Systemd services'},
         ]
     constructor(props) {
         super(props)
@@ -98,6 +103,19 @@ fi`
                     }}
                 </Query>
             }
+        }
+
+        if (fileEditor && space === SYSTEMD_SPACE && SERVICE_NAME_REGEX.test(file || '')) {
+            const editor = fileEditor
+            fileEditor = <div>
+                <div style={{display: 'flex', gap: '1rem', margin: '0 0 1rem 0'}}>
+                    <SimpleButton variant="contained" size="small"
+                                  onClick={() => this.runSystemctl(file, false)}>daemon-reload</SimpleButton>
+                    <SimpleButton variant="contained" size="small"
+                                  onClick={() => this.runSystemctl(file, true)}>daemon-reload + restart</SimpleButton>
+                </div>
+                {editor}
+            </div>
         }
 
         let content
@@ -380,10 +398,48 @@ fi`
     }
 
 
+    flushFileChange() {
+        if (this._pendingFileChange) {
+            const {file, content} = this._pendingFileChange
+            this._pendingFileChange = null
+            clearTimeout(this._fileChange)
+            return this.saveFile(file, content)
+        }
+        return Promise.resolve()
+    }
+
+    runSystemctl(file, restart) {
+        if (!SERVICE_NAME_REGEX.test(file)) {
+            return
+        }
+        // restart is detached (systemd-run) because restarting lunuc-api would kill the process running this command
+        const command = 'systemctl daemon-reload' + (restart ? ` && systemd-run --on-active=2 --unit="lunuc-restart-$(date +%s)" systemctl restart "${file}"` : '')
+        this.flushFileChange().then(() => client.query({
+            fetchPolicy: 'no-cache',
+            query: COMMAND_QUERY,
+            variables: {sync: true, command: command + ' 2>&1'}
+        })).then(response => {
+            const out = (response.data && response.data.run && response.data.run.response || '').trim()
+            _app_.dispatcher.addNotification({
+                key: 'systemctl',
+                message: (restart ? `daemon-reload done, restart of "${file}" scheduled` : 'daemon-reload done') + (out ? ': ' + out : '')
+            })
+        }).catch(e => {
+            _app_.dispatcher.addNotification({key: 'systemctl', message: 'Error: ' + e.message})
+        })
+    }
+
     fileChange(file, content) {
         clearTimeout(this._fileChange)
+        this._pendingFileChange = {file, content}
         this._fileChange = setTimeout(() => {
-            client.query({
+            this.flushFileChange()
+        }, 1500)
+    }
+
+    saveFile(file, content) {
+        {
+            return client.query({
                 fetchPolicy: 'no-cache',
                 query: COMMAND_QUERY,
                 variables: {
@@ -394,7 +450,7 @@ fi`
             }).then(response => {
                 _app_.dispatcher.addNotification({key: 'fileChange', message: `File "${file}" saved`})
             })
-        }, 1500)
+        }
     }
 }
 
