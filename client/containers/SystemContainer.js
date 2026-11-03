@@ -365,7 +365,7 @@ class SystemContainer extends React.Component {
                                  onToggle={(keys, selected) => {
                                      const excluded = new Set(this.state.importPreview.excluded)
                                      keys.forEach(k => selected ? excluded.delete(k) : excluded.add(k))
-                                     this.setState({importPreview: {...this.state.importPreview, excluded: [...excluded]}})
+                                     this.setState({importPreview: {...this.state.importPreview, excluded: Array.from(excluded)}})  // no [...set]: the loose babel build makes [].concat(set)
                                  }}/>
             </SimpleDialog>}
             {this.state.importResult && <SimpleDialog open={true} onClose={() => {

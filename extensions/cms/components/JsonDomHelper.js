@@ -16,7 +16,8 @@ import {
     ArrowDownwardIcon,
     LowPriorityIcon,
     TransformIcon,
-    LayersIcon
+    LayersIcon,
+    HighlightAltIcon
 } from 'ui/admin'
 import JsonDomAddElementDialog from './jsondomhelper/JsonDomAddElementDialog'
 import AddToBody from './AddToBody'
@@ -310,6 +311,8 @@ class JsonDomHelper extends React.Component {
     static observedLayout = null
     static selected = []
     static instances = {}
+    // set by «select parent»: the elements inside it do not take over the highlight until it is left
+    static hoverLock = null
 
     state = {
         hovered: false,
@@ -376,6 +379,9 @@ class JsonDomHelper extends React.Component {
             }
         } else if (!this.state.hovered && prevState && prevState.hovered && JsonDomHelper.hoveredHelper === this) {
             JsonDomHelper.hoveredHelper = null
+        }
+        if (!this.state.hovered && JsonDomHelper.hoverLock === this) {
+            JsonDomHelper.hoverLock = null
         }
         // The full rich text bar was just mounted (selection made, "+" clicked, ...).
         // Until now only the "+" existed, so the position was clamped with default
@@ -901,6 +907,9 @@ class JsonDomHelper extends React.Component {
         if (JsonDomHelper.hoveredHelper === this) {
             JsonDomHelper.hoveredHelper = null
         }
+        if (JsonDomHelper.hoverLock === this) {
+            JsonDomHelper.hoverLock = null
+        }
         this.stopMarginResize()
         this.stopWatchToolbarLeave()
         clearTimeout(this.helperTimeoutIn)
@@ -972,6 +981,12 @@ class JsonDomHelper extends React.Component {
     onHelperMouseOver(e) {
         if (JsonDomHelper.disableEvents || JsonDomHelper.altKeyDown)
             return
+
+        const lock = JsonDomHelper.hoverLock
+        if (lock && lock !== this && ReactDOM.findDOMNode(lock)?.contains(ReactDOM.findDOMNode(this))) {
+            // the event bubbles on to the locked parent, which stays highlighted
+            return
+        }
 
         // regular hover handling takes over again
         this.stopWatchPointerLeave()
@@ -1657,7 +1672,7 @@ class JsonDomHelper extends React.Component {
                 })
 
                 const flatMenuItems = menuItems.reduce((acc, item) => acc.concat(item, item.items || []), [])
-                const quickActions = ['moveUp', 'moveDown', 'edit', 'clone', 'remove']
+                const quickActions = ['selectParent', 'moveUp', 'moveDown', 'edit', 'clone', 'remove']
                     .map(id => flatMenuItems.find(item => item.id === id))
                     .filter(Boolean)
 
@@ -2486,6 +2501,23 @@ class JsonDomHelper extends React.Component {
                 const subMenuMove = []
                 const parentKey = rest._key.substring(0,rest._key.lastIndexOf('.'))
                 const parentJson = getComponentByKey(parentKey, _json)
+
+                // nearest enclosing element with an editor helper (keys without one, e.g. «.$loop», are skipped)
+                let parentHelperKey = parentKey
+                while (parentHelperKey && !JsonDomHelper.instances[parentHelperKey]) {
+                    parentHelperKey = parentHelperKey.substring(0, parentHelperKey.lastIndexOf('.'))
+                }
+                if (parentHelperKey) {
+                    menuItems.push({
+                        id: 'selectParent',
+                        name: _t('JsonDomHelper.select.parent'),
+                        icon: <HighlightAltIcon/>,
+                        onClick: () => {
+                            JsonDomHelper.hoverLock = JsonDomHelper.instances[parentHelperKey]
+                            this.refreshHighlightAt(parentHelperKey)
+                        }
+                    })
+                }
                 if(parentJson &&
                     _options.menu.move !== false &&
                     parentJson !==subJson && parentJson.c &&

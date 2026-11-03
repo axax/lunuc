@@ -404,7 +404,7 @@ export const StyledInfoBox = styled('div', noForward('variant'))(({variant}) => 
     display: 'inline-block',
     height: '1.1rem',
     // leaves room for the quick action bar in the top right corner, a long label is cut with an ellipsis
-    maxWidth: 'max(3rem, calc(100% - 7.5rem))',
+    maxWidth: 'max(3rem, calc(100% - 8.5rem))',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     padding: '0 6px',
