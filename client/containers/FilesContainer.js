@@ -97,9 +97,12 @@ fi`
                         if (error) return `Error! ${error.message}`
                         if (!data.run) return 'No data'
                         const ext = file.slice((file.lastIndexOf('.') - 1 >>> 0) + 2)
-                        return <CodeEditor lineNumbers height="50rem" onChange={c => {
-                            this.fileChange(space + dir + '/' + file, c)
-                        }} type={ext || 'text'}>{data.run.response}</CodeEditor>
+                        const filePath = space + dir + '/' + file
+                        const loadedContent = data.run.response
+                        // key + identifier -> a new editor instance per file, so a change can never be saved to another file
+                        return <CodeEditor key={filePath} identifier={filePath} lineNumbers height="50rem" onChange={c => {
+                            this.fileChange(filePath, c, loadedContent)
+                        }} type={ext || 'text'}>{loadedContent}</CodeEditor>
                     }}
                 </Query>
             }
@@ -400,10 +403,15 @@ fi`
 
     flushFileChange() {
         if (this._pendingFileChange) {
-            const {file, content} = this._pendingFileChange
+            const {file, content, loadedContent} = this._pendingFileChange
             this._pendingFileChange = null
             clearTimeout(this._fileChange)
-            return this.saveFile(file, content)
+            if (!content || !content.trim()) {
+                // never auto save an empty file (guard against wiping files)
+                _app_.dispatcher.addNotification({key: 'fileChange', message: `Empty content for "${file}" not saved`})
+                return Promise.resolve()
+            }
+            return this.saveFile(file, content, loadedContent)
         }
         return Promise.resolve()
     }
@@ -429,9 +437,14 @@ fi`
         })
     }
 
-    fileChange(file, content) {
+    fileChange(file, content, loadedContent) {
         clearTimeout(this._fileChange)
-        this._pendingFileChange = {file, content}
+        if (content === loadedContent) {
+            // nothing changed compared to what was loaded
+            this._pendingFileChange = null
+            return
+        }
+        this._pendingFileChange = {file, content, loadedContent}
         this._fileChange = setTimeout(() => {
             this.flushFileChange()
         }, 1500)
@@ -439,12 +452,19 @@ fi`
 
     saveFile(file, content) {
         {
+            this._backedUp = this._backedUp || {}
+            let backup = ''
+            if (file.indexOf(SYSTEMD_SPACE + '/') === 0 && !this._backedUp[file]) {
+                // one backup per file and session (systemd ignores files that do not end with .service)
+                this._backedUp[file] = true
+                backup = `[ -f "${file}" ] && cp -p "${file}" "${file}.bak"; `
+            }
             return client.query({
                 fetchPolicy: 'no-cache',
                 query: COMMAND_QUERY,
                 variables: {
                     sync: true,
-                    command: `printf %s "${Util.escapeDoubleQuotes(content.replace(/\\/g, '\\\\').replace(/\$/g, '\\$').replace(/`/g, '\\`'))}" > "${file}"`
+                    command: `${backup}printf %s "${Util.escapeDoubleQuotes(content.replace(/\\/g, '\\\\').replace(/\$/g, '\\$').replace(/`/g, '\\`'))}" > "${file}"`
                 }
 
             }).then(response => {
