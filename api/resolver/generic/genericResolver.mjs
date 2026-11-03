@@ -80,18 +80,38 @@ async function resolveReferences(typeName, result, db, context) {
                     // is a reference
                     if (fields[field].multi) {
 
-                        const newResultList = []
+
+                        // batch all reference ids into a single lookup instead of one query per id (N+1)
                         const list = result[field].constructor === Array ? result[field] : [result[field]]
+                        const distinctIds = []
+                        const seen = new Set()
+                        for (const id of list) {
+                            if (id == null) continue
+                            const key = id.toString()
+                            if (!seen.has(key)) {
+                                seen.add(key)
+                                distinctIds.push(id)
+                            }
+                        }
 
-                        for (const objectId of list) {
+                        const byId = {}
+                        if (distinctIds.length > 0) {
                             const subEntries = await GenericResolver.entities(db, context, fields[field].type, subFields, {
-                                limit:1,
-                                includeCount:false,
-                                match: {_id: objectId}
+                                limit: distinctIds.length,
+                                includeCount: false,
+                                match: {_id: {$in: distinctIds}}
                             })
+                            for (const sub of subEntries.results) {
+                                byId[sub._id.toString()] = sub
+                            }
+                        }
 
-                            if (subEntries.results.length>0) {
-                                newResultList.push(subEntries.results[0])
+                        const newResultList = []
+                        for (const objectId of list) {
+                            if (objectId == null) continue
+                            const sub = byId[objectId.toString()]
+                            if (sub) {
+                                newResultList.push(sub)
                             }
                         }
                         result[field] = newResultList

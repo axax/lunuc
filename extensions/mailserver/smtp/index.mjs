@@ -322,22 +322,27 @@ const startListening = async (db, context) => {
                             for(const mailAccount of mailAccounts) {
                                 const sender = data.headers.get('sender') || data.headers.get('from') || {}
 
-                                const {isSpam, spamScore, reason} = await detectSpam(db, context, {
+                                const {isSpam, spamScore, reason, threshold: spamThreshold} = await detectSpam(db, context, {
                                     threshold: mailAccount.spamThreshold,
                                     sender: sender.text,
                                     text: data.subject + (data.html ? decodeHtmlEntities(removeStyleAndScriptTags(data.html)) : '') + data.text,
                                     html: data.html || '',
-                                    attachments: data.attachments
+                                    attachments: data.attachments,
+                                    messageId: data.messageId,
+                                    subject: data.subject,
+                                    inReplyTo: data.inReplyTo,
+                                    references: data.references,
+                                    plainText: data.text
                                 })
 
                                 const inbox = await getFolderForMailAccount(db, mailAccount._id, isSpam ? 'Junk' : 'INBOX')
 
 
-                                if(isSpam){
-                                   //data.subject = "***SPAM***" + (data.subject || '')
-                                    data.headers.set('x-spam-score', spamScore)
-                                    data.headers.set('x-spam-reason', reason)
-                                }
+                                // always set (also for ham) so near misses can be analyzed;
+                                // set per account, data is shared between the accounts of this loop
+                                data.headers.set('x-spam-status', `${isSpam ? 'Yes' : 'No'}, score=${spamScore} required=${spamThreshold}`)
+                                data.headers.set('x-spam-score', spamScore)
+                                data.headers.set('x-spam-reason', reason || '-')
 
                                 await mailserverResolver(db).Mutation.createMailAccountMessage({
                                     mailAccount: mailAccount._id,

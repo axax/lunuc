@@ -1,8 +1,44 @@
 import https from 'https'
 import http from 'http'
+import dns from 'dns'
+import net from 'net'
 
 const MAX_REDIRECTS = 10
 const REDIRECT_STATUS_CODES = [301, 302, 303, 307, 308]
+
+// SSRF protection (opt-in via option `blockPrivateNetworks: true`):
+// rejects loopback, private, link-local (cloud metadata 169.254.x.x), CGNAT (100.64/10, alibaba metadata) etc.
+const isPrivateIp = (ip) => {
+    if (net.isIPv4(ip)) {
+        const [a, b] = ip.split('.').map(Number)
+        return a === 0 || a === 10 || a === 127 ||
+            (a === 100 && b >= 64 && b <= 127) ||
+            (a === 169 && b === 254) ||
+            (a === 172 && b >= 16 && b <= 31) ||
+            (a === 192 && b === 168) ||
+            (a === 192 && b === 0) ||
+            a >= 224
+    }
+    if (net.isIPv6(ip)) {
+        const l = ip.toLowerCase()
+        if (l === '::' || l === '::1') return true
+        const mapped = l.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/)
+        if (mapped) return isPrivateIp(mapped[1])
+        return l.startsWith('fc') || l.startsWith('fd') || l.startsWith('fe8') || l.startsWith('fe9') || l.startsWith('fea') || l.startsWith('feb')
+    }
+    return true
+}
+
+// checked at connect time (no DNS rebinding) and on every redirect hop
+const safeLookup = (hostname, opts, cb) => {
+    dns.lookup(hostname, opts, (err, address, family) => {
+        if (err) return cb(err)
+        const list = Array.isArray(address) ? address : [{address, family}]
+        const bad = list.find(a => isPrivateIp(a.address))
+        if (bad) return cb(new Error(`Blocked request to private address (${hostname})`))
+        cb(null, address, family)
+    })
+}
 
 export const request = (options) => {
 
@@ -41,6 +77,18 @@ export const request = (options) => {
 
     if (finalOptions.body && !finalOptions.headers['Content-Length']) {
         finalOptions.headers['Content-Length'] = Buffer.byteLength(finalOptions.body)
+    }
+
+    if (finalOptions.blockPrivateNetworks) {
+        if (finalOptions.protocol !== 'http:' && finalOptions.protocol !== 'https:') {
+            return Promise.reject(new Error(`Protocol "${finalOptions.protocol}" not allowed`))
+        }
+        // ip literals skip dns lookup, so check them directly
+        const host = String(finalOptions.hostname || '').replace(/^\[|\]$/g, '')
+        if (net.isIP(host) && isPrivateIp(host)) {
+            return Promise.reject(new Error(`Blocked request to private address (${host})`))
+        }
+        finalOptions.lookup = safeLookup
     }
 
     return new Promise((resolve, reject) => {
