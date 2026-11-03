@@ -204,7 +204,7 @@ export const systemSchemaRaw = `
     	deleteCollection(name: String!): DeleteCollectionResult
     	syncCollectionEntries(fromVersion:String!,toVersion:String!,type:String!,ids:[ID]!): CollectionSyncResult
     	importTypeFiles(type: String!, data: String!, dryRun: Boolean, createMissing: Boolean): TypeFilesImportResult
-    	importAllTypeFiles(data: String!, dryRun: Boolean, createMissing: Boolean): TypeFilesImportResult
+    	importAllTypeFiles(data: String!, dryRun: Boolean, createMissing: Boolean, exclude: [String]): TypeFilesImportResult
     }
     
     type Subscription{

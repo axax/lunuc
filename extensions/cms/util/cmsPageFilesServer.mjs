@@ -583,6 +583,8 @@ export const cmsPageTypeFilesHandler = {
     perType: false,
     // AGENTS.md / CLAUDE.md + Lunuc reference, optional part of "export all"
     aiGuideFiles: () => buildAiGuideFiles(),
+    // the import names pages by slug, not by folder (deselecting entries in the preview)
+    entryName: (metaFile) => metaFile.path.endsWith(CMS_PAGE_META_FILE) ? JSON.parse(metaFile.content).slug : null,
     exportFiles: async ({db, context, ids, all}) => {
         const pages = await getCmsPagesForExport({db, context, ...(all ? {filter: {}} : {ids})})
         return cmsPagesToFiles(pages)

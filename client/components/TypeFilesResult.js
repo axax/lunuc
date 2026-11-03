@@ -6,6 +6,8 @@ import {_t} from '../../util/i18n.mjs'
  folder (cronjobs, apis, cmspages, ...) with a status badge, errors at the end.
 
  result: {created, updated, unchanged, skipped, names | slugs, errors}
+ excluded / onToggle (optional, preview): entries with a change get a checkbox, excluded is an array
+   of entry keys ("cronjobs/System__Foo", "cmspages/home") that are not imported
 
  Entry formats of the server (api/util/typeScriptFiles.mjs, extensions/cms/util/cmsPageFilesServer.mjs):
    "folder/name: created"            "folder/name: script, active"      "folder/name: ..., skipped"
@@ -39,6 +41,14 @@ const styles = {
         display: 'flex', alignItems: 'baseline', gap: '0.6rem', padding: '0.35rem 0',
         borderBottom: '1px solid rgba(127,127,127,0.18)'
     },
+    selectable: {cursor: 'pointer', userSelect: 'none'},
+    deselected: {opacity: 0.45},
+    checkbox: {flex: '0 0 auto', margin: 0, alignSelf: 'center', cursor: 'pointer', accentColor: '#d97706'},
+    groupHeader: {display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.5rem'},
+    groupToggle: {
+        border: 0, background: 'none', padding: 0, font: 'inherit', fontSize: '0.75rem', cursor: 'pointer',
+        color: 'inherit', opacity: 0.6, textDecoration: 'underline'
+    },
     badge: c => ({
         flex: '0 0 auto', fontSize: '0.72rem', fontWeight: 600, padding: '0.05rem 0.5rem',
         borderRadius: '4px', background: c.bg, color: c.color, minWidth: '5.5rem', textAlign: 'center'
@@ -59,7 +69,7 @@ const tr = (key, fallback) => {
     return value && value !== key ? value : fallback
 }
 
-/** "folder/name: text" or "slug (text)" -> {group, name, status, detail} */
+/** "folder/name: text" or "slug (text)" -> {key, group, name, status, detail} (key: "folder/name" as the server names the entry) */
 export const parseEntry = (entry) => {
     let label = entry, text = ''
     const colon = entry.indexOf(': ')
@@ -93,7 +103,7 @@ export const parseEntry = (entry) => {
         // folder names of entries: "System__Visitor_rollup" -> "System: Visitor rollup"
         name = name.replace(/__/g, ': ').replace(/_/g, ' ')
     }
-    return {group, name: name || label, status, detail}
+    return {key: label, group, name: name || label, status, detail}
 }
 
 const STATUS_LABEL = {
@@ -104,8 +114,13 @@ const STATUS_LABEL = {
 }
 
 
-const TypeFilesResult = ({result}) => {
+// only entries that would be written can be deselected
+const SELECTABLE = {created: true, updated: true}
+
+const TypeFilesResult = ({result, excluded, onToggle}) => {
     if (!result) return null
+    const selectable = typeof onToggle === 'function'
+    const excludedSet = new Set(excluded || [])
     const entries = (result.names || result.slugs || []).map(parseEntry)
     const groups = []
     const byGroup = {}
@@ -140,18 +155,37 @@ const TypeFilesResult = ({result}) => {
         {entries.length === 0 && errors.length === 0 &&
             <div style={styles.empty}>{tr('TypeFiles.nothingChanged', 'Keine Änderungen.')}</div>}
 
-        {groups.map(group => <div key={group || '-'} style={styles.group}>
-            {group && <div style={styles.groupTitle}>{GROUP_LABEL[group] || group}</div>}
-            <ul style={styles.list}>
-                {byGroup[group].map((e, i) => <li key={i} style={styles.item}>
-                    <span style={styles.badge(COLORS[e.status])}>{STATUS_LABEL[e.status]()}</span>
-                    <span>
-                        <span style={styles.name}>{e.name}</span>
-                        {e.detail && <div style={styles.detail}>{e.detail}</div>}
-                    </span>
-                </li>)}
-            </ul>
-        </div>)}
+        {groups.map(group => {
+            const groupKeys = selectable ? byGroup[group].filter(e => SELECTABLE[e.status]).map(e => e.key) : []
+            const allSelected = groupKeys.every(k => !excludedSet.has(k))
+            return <div key={group || '-'} style={styles.group}>
+                {(group || groupKeys.length > 1) && <div style={styles.groupHeader}>
+                    <div style={styles.groupTitle}>{group ? GROUP_LABEL[group] || group : ''}</div>
+                    {groupKeys.length > 1 && <button type="button" style={styles.groupToggle}
+                                                     onClick={() => onToggle(groupKeys, !allSelected)}>
+                        {allSelected ? tr('TypeFiles.deselectAll', 'keine') : tr('TypeFiles.selectAll', 'alle')}
+                    </button>}
+                </div>}
+                <ul style={styles.list}>
+                    {byGroup[group].map((e, i) => {
+                        const canSelect = selectable && SELECTABLE[e.status]
+                        const checked = !excludedSet.has(e.key)
+                        const content = <>
+                            {canSelect && <input type="checkbox" style={styles.checkbox} checked={checked}
+                                                 onChange={() => onToggle([e.key], !checked)}/>}
+                            <span style={styles.badge(COLORS[e.status])}>{STATUS_LABEL[e.status]()}</span>
+                            <span>
+                                <span style={styles.name}>{e.name}</span>
+                                {e.detail && <div style={styles.detail}>{e.detail}</div>}
+                            </span>
+                        </>
+                        return canSelect ?
+                            <li key={i}><label style={{...styles.item, ...styles.selectable, ...(checked ? {} : styles.deselected)}}>{content}</label></li> :
+                            <li key={i} style={styles.item}>{content}</li>
+                    })}
+                </ul>
+            </div>
+        })}
 
         {errors.length > 0 && <div style={styles.errors}>
             <div style={styles.errorTitle}>{tr('TypeFiles.count.errors', 'Fehler')}</div>

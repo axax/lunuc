@@ -105,7 +105,7 @@ class SystemContainer extends React.Component {
             if (!file) return
             this.setState({exportBusy: true})
             return importAllTypeFilesFromZip(file, {dryRun: true}).then(result => {
-                this.setState({importPreview: {file, result, changes: result.created + result.updated}})
+                this.setState({importPreview: {file, result, changes: result.created + result.updated, excluded: []}})
             })
         }).catch(e => {
             this.setState({message: e.message})
@@ -114,9 +114,9 @@ class SystemContainer extends React.Component {
         })
     }
 
-    runImportAll(file) {
+    runImportAll(file, exclude) {
         this.setState({importPreview: null, exportBusy: true})
-        importAllTypeFilesFromZip(file).then(result => {
+        importAllTypeFilesFromZip(file, {exclude}).then(result => {
             this.setState({importResult: result})
             client.resetStore()
         }).catch(e => {
@@ -352,15 +352,21 @@ class SystemContainer extends React.Component {
             </SimpleTabPanel>}
             {importPreview && <SimpleDialog open={true} onClose={(e) => {
                 if (e.key === 'import') {
-                    this.runImportAll(importPreview.file)
+                    this.runImportAll(importPreview.file, importPreview.excluded)
                 } else {
                     this.setState({importPreview: null})
                 }
             }} actions={[
                 {key: 'cancel', label: _t('SystemContainer.cancel')},
-                ...(importPreview.changes > 0 ? [{key: 'import', label: _t('SystemContainer.importNow'), type: 'primary'}] : [])
+                ...(importPreview.changes - importPreview.excluded.length > 0 ? [{key: 'import', label: _t('SystemContainer.importNow') +
+                    (importPreview.excluded.length ? ` (${importPreview.changes - importPreview.excluded.length})` : ''), type: 'primary'}] : [])
             ]} title={_t('SystemContainer.importPreview')}>
-                <TypeFilesResult result={importPreview.result}/>
+                <TypeFilesResult result={importPreview.result} excluded={importPreview.excluded}
+                                 onToggle={(keys, selected) => {
+                                     const excluded = new Set(this.state.importPreview.excluded)
+                                     keys.forEach(k => selected ? excluded.delete(k) : excluded.add(k))
+                                     this.setState({importPreview: {...this.state.importPreview, excluded: [...excluded]}})
+                                 }}/>
             </SimpleDialog>}
             {this.state.importResult && <SimpleDialog open={true} onClose={() => {
                 this.setState({importResult: null})

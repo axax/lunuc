@@ -13,7 +13,10 @@
  *       aiGuideFiles: () => [{path: 'AGENTS.md', content: '...'}],  // optional: guide for LLMs, added to the root of "export all" if requested
  *       // ids: selected entries, all: every entry the user has access to (export of everything)
  *       exportFiles: async ({db, context, ids, all}) => [{path: 'a/meta.json', content: '...'}],
- *       importFiles: async ({db, context, files, dryRun, createMissing}) => ({created, updated, unchanged, skipped, names, errors})
+ *       importFiles: async ({db, context, files, dryRun, createMissing}) => ({created, updated, unchanged, skipped, names, errors}),
+ *       // optional: name of an entry as the import reports it, from its meta.json / page.json
+ *       // (default: the folder of the entry). Used to leave out entries deselected in the preview.
+ *       entryName: (metaFile) => JSON.parse(metaFile.content).slug
  *   })
  *
  * "Export / import all" (/admin/system, capability export_import_data) uses the same handlers: it
@@ -168,11 +171,41 @@ export const exportAllTypeFiles = async ({db, context, aiGuide = false}) => {
 }
 
 /**
+ * leaves out the entries the user deselected in the preview: every entry is a folder with a
+ * meta.json / page.json, its files (directly in that folder) are removed, sub folders stay
+ * (they may be other entries, e.g. pages "a" and "a/b").
+ * @returns {files, names} names of the removed entries
+ */
+const removeExcludedEntries = (handler, files, excluded) => {
+    const dropDirs = new Set(), names = []
+    files.forEach(f => {
+        if (!ENTRY_META_RE.test(f.path)) return
+        const dir = f.path.substring(0, f.path.lastIndexOf('/') + 1)
+        let name
+        try {
+            name = handler.entryName ? handler.entryName(f) : dir.replace(/\/$/, '')
+        } catch (e) {
+            return
+        }
+        if (name && excluded.has(name)) {
+            dropDirs.add(dir)
+            names.push(name)
+        }
+    })
+    if (!dropDirs.size) return {files, names}
+    return {
+        files: files.filter(f => !dropDirs.has(f.path.substring(0, f.path.lastIndexOf('/') + 1))),
+        names
+    }
+}
+
+/**
  * imports a zip of exportAllTypeFiles. Folders of types the user has no permission for are
  * rejected (not imported), the rest is imported with the access rights of the user.
+ * exclude: entries not to import, as the preview names them ("cronjobs/System__Foo", "cmspages/home")
  * @returns {created, updated, unchanged, skipped, names, errors}
  */
-export const importAllTypeFiles = async ({db, context, data, dryRun = false, createMissing = true}) => {
+export const importAllTypeFiles = async ({db, context, data, dryRun = false, createMissing = true, exclude}) => {
     const sources = await getExportAllSources({db, context})
     const allowed = {}
     sources.forEach(s => allowed[s.folder] = s.type)
@@ -213,9 +246,24 @@ export const importAllTypeFiles = async ({db, context, data, dryRun = false, cre
             result.skipped++
             continue
         }
+        const handler = handlers[allowed[folder]]
+        let folderFiles = byFolder[folder]
+        if (exclude && exclude.length) {
+            const prefix = folder + '/'
+            const excluded = new Set(exclude.filter(e => e.startsWith(prefix)).map(e => e.substring(prefix.length)))
+            if (excluded.size) {
+                const removed = removeExcludedEntries(handler, folderFiles, excluded)
+                folderFiles = removed.files
+                removed.names.forEach(n => {
+                    result.skipped++
+                    result.names.push(`${folder}/${n}: deselected, skipped`)
+                })
+                if (!folderFiles.some(f => ENTRY_META_RE.test(f.path))) continue
+            }
+        }
         try {
-            const r = await handlers[allowed[folder]].importFiles({
-                db, context, files: byFolder[folder], dryRun: !!dryRun, createMissing: createMissing !== false
+            const r = await handler.importFiles({
+                db, context, files: folderFiles, dryRun: !!dryRun, createMissing: createMissing !== false
             })
             ;['created', 'updated', 'unchanged', 'skipped'].forEach(k => result[k] += r[k] || 0)
             ;(r.names || []).forEach(n => result.names.push(`${folder}/${n}`))

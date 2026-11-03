@@ -716,8 +716,8 @@ export const systemResolver = (db) => ({
         importTypeFiles: async ({type, data, dryRun, createMissing}, {context}) => {
             return importTypeFiles({db, context, type, data, dryRun, createMissing})
         },
-        importAllTypeFiles: async ({data, dryRun, createMissing}, {context}) => {
-            return importAllTypeFiles({db, context, data, dryRun, createMissing})
+        importAllTypeFiles: async ({data, dryRun, createMissing, exclude}, {context}) => {
+            return importAllTypeFiles({db, context, data, dryRun, createMissing, exclude})
         },
         createDbIndexes: async ({}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)

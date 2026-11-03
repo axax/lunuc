@@ -86,10 +86,11 @@ export const exportAllTypeFilesAsZip = ({aiGuide = false} = {}) => client.query(
     return result.count
 })
 
-export const importAllTypeFilesFromZip = (file, {dryRun = false, createMissing = true} = {}) => file.arrayBuffer()
+// exclude: entries deselected in the preview, as the import names them ("cronjobs/Foo", "cmspages/home")
+export const importAllTypeFilesFromZip = (file, {dryRun = false, createMissing = true, exclude} = {}) => file.arrayBuffer()
     .then(buffer => client.mutate({
-        mutation: 'mutation importAllTypeFiles($data:String!,$dryRun:Boolean,$createMissing:Boolean){importAllTypeFiles(data:$data,dryRun:$dryRun,createMissing:$createMissing){created updated unchanged skipped names errors}}',
-        variables: {data: bytesToBase64(buffer), dryRun, createMissing}
+        mutation: 'mutation importAllTypeFiles($data:String!,$dryRun:Boolean,$createMissing:Boolean,$exclude:[String]){importAllTypeFiles(data:$data,dryRun:$dryRun,createMissing:$createMissing,exclude:$exclude){created updated unchanged skipped names errors}}',
+        variables: {data: bytesToBase64(buffer), dryRun, createMissing, exclude: exclude && exclude.length ? exclude : undefined}
     })).then(response => {
         const error = firstError(response)
         if (error) throw error
