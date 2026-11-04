@@ -5,6 +5,7 @@ import Cache from '../../../util/cache.mjs'
 import {pubsubDelayed} from '../../../api/subscription.mjs'
 import puppeteer from 'puppeteer'
 import {isPublicHttpUrl} from '../../../util/networkGuard.mjs'
+import {createSharedBrowser} from '../../../util/sharedBrowser.mjs'
 import {findSegmentStructureChange} from './dataResolverCore.mjs'
 
 // jobs with an url from the request (e.g. ?url= of the screenshot page) - each one starts a
@@ -54,67 +55,11 @@ const addToWebsiteQueue = async (processData) => {
 }
 
 
-/*
- One shared headless Chrome for all jobs without own launch args. Starting Chrome costs about
- 0.5-2s cpu and a few hundred MB per job; now every job only gets its own browser context
- (separate cookies, storage and cache - like a fresh browser) in the running Chrome.
- Ignoring certificate errors (acceptInsecureCerts) is set browser wide and applies to all contexts.
- The Chrome is closed after BROWSER_IDLE_CLOSE_MS without jobs and started again when needed.
- */
-const BROWSER_IDLE_CLOSE_MS = 5 * 60 * 1000
-const shared = {browser: null, starting: null, users: 0, idleTimer: null}
-
-const closeSharedBrowser = () => {
-    const browser = shared.browser
-    shared.browser = null
-    if (browser) {
-        browser.close().catch(() => {})
-    }
-}
-
-const acquireSharedBrowser = async (launchOptions) => {
-    // counted before the await, so the idle timer can't close it in the meantime
-    shared.users++
-    if (shared.idleTimer) {
-        clearTimeout(shared.idleTimer)
-        shared.idleTimer = null
-    }
-    if (shared.browser && shared.browser.connected) {
-        return shared.browser
-    }
-    if (!shared.starting) {
-        shared.starting = puppeteer.launch(launchOptions).then(browser => {
-            shared.browser = browser
-            browser.on('disconnected', () => {
-                if (shared.browser === browser) {
-                    shared.browser = null
-                }
-            })
-            return browser
-        }).finally(() => {
-            shared.starting = null
-        })
-    }
-    try {
-        return await shared.starting
-    } catch (e) {
-        releaseSharedBrowser()
-        throw e
-    }
-}
-
-const releaseSharedBrowser = () => {
-    shared.users = Math.max(0, shared.users - 1)
-    if (shared.users === 0 && shared.browser && !shared.idleTimer) {
-        shared.idleTimer = setTimeout(() => {
-            shared.idleTimer = null
-            if (shared.users === 0) {
-                closeSharedBrowser()
-            }
-        }, BROWSER_IDLE_CLOSE_MS)
-        shared.idleTimer.unref?.()
-    }
-}
+// one shared Chrome for all jobs without own launch args (see util/sharedBrowser.mjs)
+const sharedBrowser = createSharedBrowser({idleCloseMs: 5 * 60 * 1000})
+const acquireSharedBrowser = sharedBrowser.acquire,
+    releaseSharedBrowser = sharedBrowser.release,
+    closeSharedBrowser = sharedBrowser.close
 
 // A job may take at most its page timeout plus this (screenshot, pipeline, closing the browser).
 // Before, a job that never finished (or failed while starting the browser) blocked the queue
@@ -233,7 +178,6 @@ const openInBrowser = async (options, scope, resolvedData, running = {}) => {
 
 
     const launchOptions = {
-        ignoreHTTPSErrors: true,  /* deprecated */
         acceptInsecureCerts:true,
         args: args || minimal_args /* ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--no-zygote']*/
     }

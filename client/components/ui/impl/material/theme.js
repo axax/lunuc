@@ -155,10 +155,4 @@ export const defaultTheme = createTheme({
     }
 })
 
-export const darkTheme = createTheme({
-    palette: {
-        mode: 'dark',
-    },
-})
-
 export default defaultTheme

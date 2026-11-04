@@ -17,14 +17,14 @@ const beforeUpload = (res, req, upload_dir) => {
     if (!Util.ensureDirectoryExistence(upload_dir, true)) {
         // no upload folder
         res.writeHead(500, {'content-type': 'application/json'});
-        res.end(`{"status":"error","message":"Upload folder coud not be created -> ${upload_dir}"}`)
+        res.end(JSON.stringify({status: 'error', message: `Upload folder could not be created -> ${upload_dir}`}))
         return false;
     } else {
         if (req.method.toLowerCase() !== 'post') {
 
             // Method Not Allowed
             res.writeHead(405, {'content-type': 'application/json'});
-            res.end('{"status":"error","message":"Method Not Allowed. You must send data with post method"}')
+            res.end(JSON.stringify({status: 'error', message: 'Method Not Allowed. You must send data with post method'}))
             return false
         }
     }
@@ -41,7 +41,7 @@ const authContextOrError = async (db, res, req, capability) => {
 
     if (capability && !await Util.userHasCapability(db, authContext, capability)) {
         res.writeHead(401, {'content-type': 'application/json'});
-        res.end('{"status":"error","message":"User has no capability to ' + capability + '"}')
+        res.end(JSON.stringify({status: 'error', message: 'User has no capability to ' + capability}))
         return null
     }
 
@@ -131,14 +131,14 @@ export const handleUpload = db => async (req, res) => {
                 console.log('upload error',err)
                 if (!finished) {
                     finished = true
-                    res.end('{"status":"error","message":"' + err.message + '"}')
+                    res.end(JSON.stringify({status: 'error', message: err.message}))
                 }
             })
             form.on('aborted', function (err) {
                 console.log('upload aborted', err)
                 if (!finished) {
                     finished = true
-                    res.end('{"status":"aborted","message":"Upload was aborted"}')
+                    res.end(JSON.stringify({status: 'aborted', message: 'Upload was aborted'}))
                 }
             })
 
@@ -152,146 +152,96 @@ export const handleUpload = db => async (req, res) => {
             })
 
             // parse the incoming request containing the form data
-            form.parse(req)
+            // (without a callback parse returns a promise - errors are handled in the 'error' event)
+            form.parse(req).catch(() => {})
         }
     }
 }
 
-export const handleMediaDumpUpload = db => async (req, res) => {
+// 1GB
+const MAX_DUMP_SIZE = 1024 * 1024 * 1024
 
+/*
+ Upload of backup dumps (media, hostrules, db): parses the form, runs onFile(file) for every
+ received file and sends exactly one json response after the whole form is received.
+ If onFile throws, the response is an error with its message (further files are skipped).
+ */
+const handleDumpUpload = (req, res, formOptions, onFile) => {
+    const form = formidable({keepExtensions: false, ...formOptions})
+
+    res.writeHead(200, {'content-type': 'application/json'})
+
+    // several events can end the upload (error, aborted, end) - only the first one responds
+    let finished = false
+    const send = (body) => {
+        if (!finished) {
+            finished = true
+            res.end(JSON.stringify(body))
+        }
+    }
+
+    let fileError = null
+    form.on('file', (field, file) => {
+        if (fileError || finished) {
+            return
+        }
+        try {
+            onFile(file)
+        } catch (e) {
+            console.error('dump upload: processing failed', file.filepath, e.message)
+            fileError = e.message
+        }
+    })
+
+    form.on('error', (err) => {
+        console.log('dump upload error', err)
+        send({status: 'error', message: err.message})
+    })
+    form.on('aborted', () => {
+        send({status: 'aborted', message: 'Upload was aborted'})
+    })
+
+    // progress is reported for every received chunk - only log every 10%
+    let lastStep = -1
+    form.on('progress', (bytesReceived, bytesExpected) => {
+        const step = bytesExpected ? Math.floor(bytesReceived / bytesExpected * 10) : 0
+        if (step !== lastStep) {
+            lastStep = step
+            console.log(`Uploading dump: ${step * 10}%`)
+        }
+    })
+
+    form.on('end', () => {
+        send(fileError ? {status: 'error', message: fileError} : {status: 'success'})
+    })
+
+    // without a callback parse returns a promise - errors are handled in the 'error' event
+    form.parse(req).catch(() => {})
+}
+
+export const handleMediaDumpUpload = db => async (req, res) => {
     // make sure upload dir exists
     const upload_dir = path.join(__dirname, '../' + UPLOAD_DIR)
-    if (beforeUpload(res, req, upload_dir)) {
-
-        const authContext = await authContextOrError(db, res, req, CAPABILITY_MANAGE_BACKUPS)
-        if (authContext) {
-
-            /* Process the uploads */
-            const form = formidable({
-                maxFileSize: 1014 * 1024 * 1024,
-                keepExtensions: false})
-
-            res.writeHead(200, {'content-type': 'application/json'})
-
-
-            // every time a file has been uploaded successfully,
-            // rename it to it's orignal name
-            form.on('file', function (field, file) {
-                try {
-                    // safeUnzipToDir validates EVERY zip entry against path
-                    // traversal ("zip slip") before anything is written.
-                    // The old code (zipper.sync.unzip(...).save(...)) did NOT
-                    // do that and allowed writing files outside of upload_dir
-                    // (e.g. via "../../../root/xyz" entry names).
-                    safeUnzipToDir(file.filepath, upload_dir)
-                } catch (e) {
-                    console.log(file.filepath)
-                    console.error(e)
-                    res.end('{"status":"error","message":"' + e.message + '"}')
-
-                }
-            })
-
-            // log any errors that occur
-            form.on('error', function (err) {
-                console.log(err)
-                res.end('{"status":"error","message":"' + err.message + '"}')
-            })
-            form.on('aborted', function () {
-                res.end('{"status":"aborted","message":"Upload was aborted"}')
-            })
-
-            form.on('progress', function (bytesReceived, bytesExpected) {
-                const percent = (bytesReceived / bytesExpected * 100) | 0
-                console.log('Uploading: ' + percent + '%')
-            })
-
-
-            // once all the files have been uploaded, send a response to the client
-            form.on('end', function () {
-                res.end('{"status":"success"}')
-            })
-
-            // parse the incoming request containing the form data
-            form.parse(req)
-        }
+    if (beforeUpload(res, req, upload_dir) && await authContextOrError(db, res, req, CAPABILITY_MANAGE_BACKUPS)) {
+        // safeUnzipToDir validates EVERY zip entry against path traversal ("zip slip")
+        // before anything is written - so no file can end up outside of upload_dir
+        handleDumpUpload(req, res, {maxFileSize: MAX_DUMP_SIZE}, file => safeUnzipToDir(file.filepath, upload_dir))
     }
 }
 
 export const handleHostruleDumpUpload = db => async (req, res) => {
-
     // make sure upload dir exists
-    if (beforeUpload(res, req, HOSTRULES_ABSPATH)) {
-
-        const authContext = await authContextOrError(db, res, req, CAPABILITY_MANAGE_BACKUPS)
-        if (authContext) {
-
-            /* Process the uploads */
-            const form = formidable({maxFileSize: 1014 * 1024 * 1024, keepExtensions: false})
-
-            res.writeHead(200, {'content-type': 'application/json'})
-
-
-            // every time a file has been uploaded successfully,
-            // rename it to it's orignal name
-            form.on('file', function (field, file) {
-                try {
-                    // See comment in handleMediaDumpUpload: zip slip protection.
-                    safeUnzipToDir(file.filepath, HOSTRULES_ABSPATH)
-                } catch (e) {
-                    console.log(file.filepath)
-                    console.error(e)
-                    res.end('{"status":"error","message":"' + e.message + '"}')
-
-                }
-            })
-
-            // log any errors that occur
-            form.on('error', function (err) {
-                console.log(err)
-                res.end('{"status":"error","message":"' + err.message + '"}')
-            })
-            form.on('aborted', function () {
-                res.end('{"status":"aborted","message":"Upload was aborted"}')
-            })
-
-            form.on('progress', function (bytesReceived, bytesExpected) {
-                const percent = (bytesReceived / bytesExpected * 100) | 0
-                console.log('Uploading: ' + percent + '%')
-            })
-
-
-            // once all the files have been uploaded, send a response to the client
-            form.on('end', function () {
-                res.end('{"status":"success"}')
-            })
-
-            // parse the incoming request containing the form data
-            form.parse(req)
-        }
+    if (beforeUpload(res, req, HOSTRULES_ABSPATH) && await authContextOrError(db, res, req, CAPABILITY_MANAGE_BACKUPS)) {
+        // zip slip protection: see handleMediaDumpUpload
+        handleDumpUpload(req, res, {maxFileSize: MAX_DUMP_SIZE}, file => safeUnzipToDir(file.filepath, HOSTRULES_ABSPATH))
     }
 }
 
-
 export const handleDbDumpUpload = (db, client) => async (req, res) => {
-
-
     const authContext = await authContextOrError(db, res, req, CAPABILITY_MANAGE_BACKUPS)
     if (authContext) {
-
-        /* Process the uploads */
-        const form = formidable({
-            maxFileSize: 10 * 1024 * 1024 * 1024, // 10GB
-            maxTotalFileSize: 10 * 1024 * 1024 * 1024, // 10GB,
-            keepExtensions: false})
-
-
-        res.writeHead(200, {'content-type': 'application/json'})
-
-        let restoreError = null
-
-        form.on('file', function (field, file) {
-
+        const maxDbDumpSize = 10 * 1024 * 1024 * 1024 // 10GB
+        handleDumpUpload(req, res, {maxFileSize: maxDbDumpSize, maxTotalFileSize: maxDbDumpSize}, file => {
             // execFileSync instead of execSync: no shell parsing, arguments are
             // passed 1:1 to the process. client.s.url and file.filepath don't
             // come directly from the client body, but execFileSync is still
@@ -326,35 +276,10 @@ export const handleDbDumpUpload = (db, client) => async (req, res) => {
                 // mongorestore writes its actual error message to stderr
                 const stderr = e.stderr ? e.stderr.toString() : ''
                 const failedLine = stderr.split('\n').find(l => l.includes('Failed:'))
-                restoreError = failedLine ? failedLine.replace(/^.*Failed:\s*/, '') : e.message
+                const restoreError = failedLine ? failedLine.replace(/^.*Failed:\s*/, '') : e.message
                 console.error('restoreDbDump failed', restoreError, stderr)
+                throw new Error('Restore failed: ' + restoreError)
             }
         })
-
-        // log any errors that occur
-        form.on('error', function (err) {
-            res.end('{"status":"error","message":"' + err.message + '"}')
-        })
-        form.on('aborted', function () {
-            res.end('{"status":"aborted","message":"Upload was aborted"}')
-        })
-
-        form.on('progress', function (bytesReceived, bytesExpected) {
-            const percent = (bytesReceived / bytesExpected * 100) | 0
-            console.log('Uploading: ' + percent + '%')
-        })
-
-
-        // once all the files have been uploaded, send a response to the client
-        form.on('end', function () {
-            if (restoreError) {
-                res.end(JSON.stringify({status: 'error', message: 'Restore failed: ' + restoreError}))
-            } else {
-                res.end('{"status":"success"}')
-            }
-        })
-
-        // parse the incoming request containing the form data
-        form.parse(req)
     }
 }

@@ -129,6 +129,7 @@
     },
     {
       "name": "UserTrackingDaily",
+      "browser": false,
       "access": {
         "read": "manage_other_users",
         "create": "manage_other_users",
@@ -442,6 +443,7 @@
     },
     {
       "name": "UserTrackingDailyState",
+      "browser": false,
       "access": {
         "read": "manage_other_users",
         "create": "manage_other_users",
@@ -511,6 +513,7 @@
     },
     {
       "name": "UserTrackingBeacon",
+      "browser": false,
       "access": {
         "read": "manage_other_users",
         "create": "manage_other_users",
@@ -603,6 +606,7 @@
     },
     {
       "name": "UserTrackingAlert",
+      "browser": false,
       "access": {
         "read": "manage_other_users",
         "create": "manage_other_users",

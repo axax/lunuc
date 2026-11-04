@@ -138,33 +138,46 @@ const tableStyle = theme => ({
     minWidth: '100%'
 })
 
-function ResultTable({data, sumOnly, theme}) {
+// Same look as the preview of the page digithal/jahresbericht-import (green sum rows, section rows, text rows,
+// variant «list»), always on a light background like on the website. Cells with .h are html (escaped by the api).
+const PREVIEW_ROWS = 80
+const PV = {green: '#239442', line: '#241c15', sum: '#ecf2d0', ink: '#1d1d1d'}
+
+const ResultTable = React.memo(function ResultTable({data, sumOnly, variant}) {
     const shown = sumOnly ? sumRowsOnly(data) : data
     const rows = shown.rows || []
-    const header = shown.header || []
-    const border = '1px solid ' + theme.palette.divider
+    const header = (shown.header || []).map(r => Array.isArray(r) ? r : (r.cells || []))
+    const isList = variant === 'list'
     const cell = (c, i, isHeader, row) => {
-        const style = {
-            padding: '3px 8px',
-            textAlign: c.n ? 'right' : 'left',
-            whiteSpace: c.n ? 'nowrap' : 'normal',
-            fontWeight: isHeader || c.b || (row && (row.sum || row.section)) ? 600 : 400,
-            borderBottom: isHeader ? '2px solid ' + theme.palette.text.primary : border,
-            borderTop: row && row.sum ? '1px solid ' + theme.palette.text.primary : undefined,
-            background: row && row.section ? theme.palette.action.hover : undefined,
-            verticalAlign: 'bottom'
+        const isSum = row && row.sum, isSection = row && row.section, isText = row && row.text
+        const style = isHeader ? {
+            color: PV.green, textTransform: 'uppercase', fontSize: '0.78rem', fontWeight: 600, padding: '0.45em 0.5em',
+            textAlign: c.n ? 'right' : (c.a || 'left'), borderBottom: '2px solid ' + PV.line
+        } : {
+            padding: '0.4em 0.5em', verticalAlign: 'top',
+            textAlign: c.a || (c.n ? 'right' : 'left'),
+            whiteSpace: c.n && !isText ? 'nowrap' : undefined,
+            fontWeight: c.b || isSum || isSection ? 700 : 400,
+            borderBottom: isText ? 'none' : '1px solid ' + (isList ? PV.green : PV.line),
+            ...(isText ? {paddingTop: '1em', textAlign: 'left', whiteSpace: 'normal', fontWeight: c.b ? 700 : 400} : {}),
+            ...(isSection ? {paddingTop: '1em'} : {}),
+            ...(isSum ? {background: PV.sum, borderTop: '2px solid ' + PV.green, borderBottom: '2px solid ' + PV.green} : {})
         }
-        const props = {key: i, style, colSpan: c.span || undefined, rowSpan: c.rowspan || undefined}
-        return isHeader ? <th {...props}>{c.v}</th> : <td {...props}>{c.v}</td>
+        const props = {key: i, style, colSpan: c.span > 1 ? c.span : undefined, rowSpan: c.rowspan > 1 ? c.rowspan : undefined}
+        return c.h ? (isHeader ? <th {...props} dangerouslySetInnerHTML={{__html: c.h}}/> : <td {...props} dangerouslySetInnerHTML={{__html: c.h}}/>)
+            : (isHeader ? <th {...props}>{c.v}</th> : <td {...props}>{c.v}</td>)
     }
     if (rows.length === 0 && header.length === 0) {
         return <p style={{margin: 0, opacity: 0.7}}>{_t('ExcelField.noData')}</p>
     }
-    return <table style={tableStyle(theme)}>
-        {header.length > 0 && <thead>{header.map((cells, r) => <tr key={r}>{cells.map((c, i) => cell(c, i, true))}</tr>)}</thead>}
-        <tbody>{rows.map((row, r) => <tr key={r}>{row.cells.map((c, i) => cell(c, i, false, row))}</tr>)}</tbody>
-    </table>
-}
+    return <div style={{color: PV.ink}}>
+        <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', lineHeight: 1.35, marginBottom: '0.5rem'}}>
+            {header.length > 0 && <thead>{header.map((cells, r) => <tr key={r}>{cells.filter(Boolean).map((c, i) => cell(c, i, true))}</tr>)}</thead>}
+            <tbody>{rows.slice(0, PREVIEW_ROWS).map((row, r) => <tr key={r}>{(row.cells || []).filter(Boolean).map((c, i) => cell(c, i, false, row))}</tr>)}</tbody>
+        </table>
+        {rows.length > PREVIEW_ROWS && <small style={{opacity: 0.7}}>… {rows.length - PREVIEW_ROWS} weitere Zeilen</small>}
+    </div>
+})
 
 function SheetGrid({data, range, headerRows, onSelectRange, theme}) {
     const [selection, setSelection] = useState(null)
@@ -265,6 +278,7 @@ export function ExcelPreview({form, field, fieldKey, values}) {
     const headerRows = parseHeaderRows(get('headerRowsField', 'excelHeaderRows'))
     const sumOnlyValue = get('sumOnlyField', 'excelSumOnly')
     const sumOnly = sumOnlyValue === true || sumOnlyValue === 'true'
+    const variant = get('variantField', 'tableVariant') || 'statement'
 
 
     const [mode, setMode] = useState(() => {
@@ -314,7 +328,7 @@ export function ExcelPreview({form, field, fieldKey, values}) {
     } else if (mode === 'sheet') {
         content = <SheetGrid data={data} range={parseRange(range)} headerRows={headerRows} onSelectRange={onSelectRange} theme={theme}/>
     } else {
-        content = <ResultTable data={data} sumOnly={sumOnly} theme={theme}/>
+        content = <ResultTable data={data} sumOnly={sumOnly} variant={variant}/>
     }
 
     return <div key={fieldKey} style={{margin: theme.spacing(1), width: 'calc(100% - ' + theme.spacing(2) + ')'}}>
@@ -348,8 +362,8 @@ export function ExcelPreview({form, field, fieldKey, values}) {
             overflow: 'auto',
             border: '1px solid ' + theme.palette.divider,
             borderRadius: theme.shape.borderRadius,
-            padding: mode === 'sheet' ? 0 : theme.spacing(1),
-            background: theme.palette.background.paper
+            padding: mode === 'sheet' ? 0 : theme.spacing(1.5),
+            background: mode === 'sheet' ? theme.palette.background.paper : '#fff'
         }}>{content}</div>
     </div>
 }

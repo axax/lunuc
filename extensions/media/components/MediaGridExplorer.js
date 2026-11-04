@@ -33,7 +33,6 @@ import {
     ContextMenu,
     copyFolderStructure,
     createNewEntry,
-    createCompare,
     createdTime,
     modifiedTime,
     formatDate,
@@ -41,10 +40,13 @@ import {
     formatKind,
     extractIds,
     SORT_FIELDS,
-    DEFAULT_SORT,
-    SERVER_SORT,
-    DESC_FIRST
-} from './MediaFileExplorer'
+    useMediaSort,
+    getPickerMode,
+    closeWithResult,
+    createMediaData,
+    useTakeSelection
+} from './mediaExplorerCommon'
+import MediaMoveDialog from './MediaMoveDialog'
 
 /*
  * Grid view of the media library ("large icons"), similar to the media manager of Wix:
@@ -299,19 +301,8 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
     const typeSettings = () => TypeContainerRef.getSettingsForType?.('Media', pageParams.meta) || {}
 
     // ── sorting (shared with the tree view) ──
-    const [sort, setSort] = useState(() => {
-        const saved = typeSettings().treeSort
-        return saved && SORT_FIELDS.indexOf(saved.field) >= 0 ? {...DEFAULT_SORT, ...saved} : DEFAULT_SORT
-    })
-    const compareItems = useMemo(() => createCompare(sort), [sort.field, sort.dir])
+    const {sort, compareItems, toggleSort} = useMediaSort(TypeContainerRef, pageParams)
     const [sortAnchor, setSortAnchor] = useState(null)
-    const changeSort = (field) => {
-        const newSort = field === sort.field ?
-            {field, dir: sort.dir === 'asc' ? 'desc' : 'asc'} :
-            {field, dir: DESC_FIRST.indexOf(field) >= 0 ? 'desc' : 'asc'}
-        setSort(newSort)
-        TypeContainerRef.setSettingsForType?.('Media', {treeSort: newSort}, {lazy: true})
-    }
 
     // ── current folder (remembered, so the user comes back to the same place) ──
     // the filter chips (pretty filter) work like the search: flat result over all folders
@@ -332,8 +323,9 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
     const openFolder = (item) => navigate([...path, {_id: item.id, name: item.label}])
 
     // ── picker mode (media view opened from a TypePicker / editor) ──
-    const isPicker = !!(typeof window !== 'undefined' && window.opener && pageParams.opener)
-    const isMulti = pageParams.multi === 'true'
+    const {isPicker, isMulti} = getPickerMode(pageParams)
+    const mediaData = useMemo(() => createMediaData(TypeContainerRef), [TypeContainerRef])
+    const {resolving, takeSelection: takeEntries} = useTakeSelection(mediaData, isMulti)
 
     // ── state ──
     const [items, setItems] = useState([])
@@ -343,38 +335,24 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
     const [selectedIds, setSelectedIds] = useState([])
     const [contextMenu, setContextMenu] = useState(null)
     const [message, setMessage] = useState(null)
-    const [resolving, setResolving] = useState(false)
+    const [moveDialogItems, setMoveDialogItems] = useState(null)
     const [dragId, setDragId] = useState(null)
     const [dragOverId, setDragOverId] = useState(null)
     const requestRef = useRef(0)
 
     // ── data ──
-    const mediaFilter = (filter) => TypeContainerRef.extendFilter ? TypeContainerRef.extendFilter(filter) : filter
-    const serverSort = () => `${SERVER_SORT[sort.field] || 'name'} ${sort.dir}`
-
     const load = async (page = 1) => {
         const requestId = ++requestRef.current
         const folderId = currentFolderId
         setLoading(true)
         try {
-            const mediaQueries = TypeContainerRef.getTypeQueriesFiltered('Media', {loadAll: false})
-            const groupQueries = TypeContainerRef.getTypeQueriesFiltered('MediaGroup', {loadAll: false})
-            const [groupResponse, mediaResponse] = await Promise.all([
-                isSearch || page > 1 ? null : client.query({
-                    query: groupQueries.query, fetchPolicy: 'network-only',
-                    variables: {filter: `group==${folderId}`, limit: 500, sort: sort.field === 'created' ? `_id ${sort.dir}` : `name ${sort.dir}`}
-                }),
-                client.query({
-                    query: mediaQueries.query, fetchPolicy: 'network-only',
-                    variables: {filter: mediaFilter(isSearch ? pageParams.filter : `group==${folderId}`), limit: PAGE_SIZE, page, sort: serverSort()}
-                })
-            ])
+            const {items: newItems, mediaTotal} = await mediaData.loadEntries({
+                folderId, isSearch, searchFilter: pageParams.filter, sort,
+                limit: PAGE_SIZE, page, withFolders: !isSearch && page === 1
+            })
             if (requestId !== requestRef.current) return
-            const medias = mediaResponse?.data?.medias
-            const mapItems = (data) => data?.results?.map(item => createNewEntry({parent: folderId, ...item})) ?? []
-            const newItems = [...mapItems(groupResponse?.data?.mediaGroups), ...mapItems(medias)]
             setItems(prev => page > 1 ? [...prev, ...newItems] : newItems)
-            setMediaTotal(medias?.total || 0)
+            setMediaTotal(mediaTotal)
             setMediaPage(page)
         } catch (e) {
             console.error(e)
@@ -408,43 +386,7 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
     }
 
     // ── picker result ──
-    const closeWithResult = (value) => {
-        window.resultValue = value
-        window.close()
-    }
-
-    const fetchFolderMedia = async (folderId) => {
-        const mediaQueries = TypeContainerRef.getTypeQueriesFiltered('Media', {loadAll: false})
-        const response = await client.query({
-            query: mediaQueries.query, fetchPolicy: 'network-only',
-            variables: {filter: mediaFilter(`group==${folderId}`), limit: 1000}
-        })
-        return response?.data?.medias?.results || []
-    }
-
-    const takeSelection = async (list = selectedItems) => {
-        if (!list.length || resolving) return
-        setResolving(true)
-        try {
-            const result = [], seen = new Set()
-            const add = (media) => {
-                if (media?._id && !seen.has(media._id)) {
-                    seen.add(media._id)
-                    result.push(media)
-                }
-            }
-            for (const item of list) {
-                if (item.fileType === 'folder') {
-                    (await fetchFolderMedia(item.id)).forEach(add)
-                } else {
-                    add(item.original)
-                }
-            }
-            if (result.length) closeWithResult(isMulti ? result : result.slice(0, 1))
-        } finally {
-            setResolving(false)
-        }
-    }
+    const takeSelection = (list = selectedItems) => takeEntries(list)
 
     // ── actions ──
     const removeItems = (ids) => {
@@ -464,17 +406,8 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
         navigator.clipboard?.writeText(url).then(() => setMessage(_t('MediaFileExplorer.linkCopied')))
     }
 
-    const editItem = (item) => {
-        TypeContainerRef.handleEditDataClick(item.original, {
-            type: item.fileType === 'folder' ? 'MediaGroup' : 'Media',
-            callback: ({data, editedData}) => {
-                if (data?.updateMediaGroup || data?.updateMedia) {
-                    item.original.name = editedData.name
-                    setItems(prev => prev.map(entry => entry.id === item.id ? {...entry, name: editedData.name, label: editedData.name} : entry))
-                }
-            }
-        })
-    }
+    const editItem = (item) => mediaData.editItem(item, name =>
+        setItems(prev => prev.map(entry => entry.id === item.id ? {...entry, name, label: name} : entry)))
 
     const deleteItems = (list) => {
         if (!list.length) return
@@ -517,23 +450,35 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
     }
 
     // target: {_id, name} of the folder, null for the top level
-    const moveItem = (item, target) => {
+    const moveItems = (list, target) => {
         const targetId = target ? target._id : ''
-        if (!item || item.id === targetId || targetId === currentFolderId) return
-        const queries = TypeContainerRef.getTypeQueriesFiltered(item.fileType === 'folder' ? 'MediaGroup' : 'Media', {loadAll: false})
+        // in the search the entries come from different folders, otherwise nothing to do in the same folder
+        if (!isSearch && targetId === currentFolderId) return
+        const toMove = list.filter(item => item && item.id !== targetId)
+        if (!toMove.length) return
+        let failed = false
         const onError = (msg) => {
+            if (failed) return
+            failed = true
             setMessage(msg)
             load(1)
         }
-        client.mutate({
-            mutation: queries.update,
-            variables: {_id: item.id, group: targetId ? [targetId] : []}
-        }).then((response) => {
-            if (response?.errors?.length) onError(response.errors[0].message)
-        }).catch(e => onError(e.message))
-        removeItems([item.id])
-        setMessage(_t('MediaFileExplorer.moved', {folder: target ? target.name : _t('MediaFileExplorer.root')}))
+        toMove.forEach(item => {
+            const queries = TypeContainerRef.getTypeQueriesFiltered(item.fileType === 'folder' ? 'MediaGroup' : 'Media', {loadAll: false})
+            client.mutate({
+                mutation: queries.update,
+                variables: {_id: item.id, group: targetId ? [targetId] : []}
+            }).then((response) => {
+                if (response?.errors?.length) onError(response.errors[0].message)
+            }).catch(e => onError(e.message))
+        })
+        if (!isSearch) removeItems(toMove.map(item => item.id))
+        const folder = target ? target.name : _t('MediaFileExplorer.root')
+        setMessage(toMove.length === 1 ?
+            _t('MediaFileExplorer.moved', {folder}) :
+            _t('MediaFileExplorer.movedCount', {count: toMove.length, folder}))
     }
+    const moveItem = (item, target) => moveItems([item], target)
 
     // ── upload: button, drag & drop and progress live in the shared MediaUploadBar ──
     // it uploads into the folder that is open here ...
@@ -650,6 +595,9 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
                     setMessage(_t('MediaFileExplorer.structureCopied', {count}))
                 }).catch(e => setMessage(e.message))
                 break
+            case 'move-to':
+                setMoveDialogItems(selectedIds.indexOf(item.id) >= 0 && selectedItems.length > 1 ? selectedItems : [item])
+                break
             case 'delete':
                 deleteItems(selectedIds.indexOf(item.id) >= 0 && selectedItems.length > 1 ? selectedItems : [item])
                 break
@@ -683,7 +631,7 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
                 </Tooltip>
                 <Menu anchorEl={sortAnchor} open={!!sortAnchor} onClose={() => setSortAnchor(null)}>
                     {SORT_FIELDS.map(field => <MenuItem key={field} selected={sort.field === field} onClick={() => {
-                        changeSort(field)
+                        toggleSort(field)
                         setSortAnchor(null)
                     }}>
                         <ListItemIcon>{sort.field === field && <CheckRounded fontSize="small"/>}</ListItemIcon>
@@ -845,7 +793,15 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
 
         <ContextMenu anchorPosition={contextMenu?.position} item={contextMenu?.item}
                      onClose={() => setContextMenu(null)} onAction={onMenuAction}
-                     isPicker={isPicker} isMulti={isMulti}/>
+                     isPicker={isPicker} isMulti={isMulti} allowMoveTo={true}/>
+
+        <MediaMoveDialog open={!!moveDialogItems} items={moveDialogItems || []}
+                         initialPath={isSearch ? [] : path} sourceFolderId={isSearch ? undefined : currentFolderId}
+                         onClose={() => setMoveDialogItems(null)}
+                         onMove={(target) => {
+                             moveItems(moveDialogItems, target)
+                             setMoveDialogItems(null)
+                         }}/>
 
         <Snackbar open={!!message} autoHideDuration={3000} onClose={() => setMessage(null)} message={message}
                   anchorOrigin={{vertical: 'bottom', horizontal: 'center'}}/>

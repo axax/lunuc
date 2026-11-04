@@ -17,7 +17,6 @@ import {_t} from '../../util/i18nServer.mjs'
 import {getGatewayIp} from '../../util/gatewayIp.mjs'
 import {isExtensionEnabled} from '../../gensrc/extensions-private.mjs'
 
-//import {getHostRules, hostListFromString} from '../../util/hostrules.mjs'
 
 
 // open port 21 on your server
@@ -55,25 +54,6 @@ const startFtpServer = async (db)=> {
         pasv_max: 65535,
         anonymous: false,
         timeout:0,
-        /*SNICallback: (domain, cb) => {
-            console.log('ftp SNICallback',domain)
-            if (domain.startsWith('www.')) {
-                domain = domain.substring(4)
-            }
-            const hostsChecks = hostListFromString(domain)
-            const hostrules = getHostRules(true)
-
-            for (let i = 0; i < hostsChecks.length; i++) {
-                const currentHost = hostsChecks[i]
-                const hostrule = hostrules[currentHost]
-                if (hostrule && hostrule.certContext) {
-                    console.log(`ftp server certContext for ${currentHost}`)
-                    cb(null, hostrule.certContext)
-                    return
-                }
-            }
-            cb()
-        },*/
         greeting: [`${config.APP_NAME} ${config.APP_VERSION}`]
     })
 

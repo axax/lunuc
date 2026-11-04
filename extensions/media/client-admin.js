@@ -367,7 +367,7 @@ export default () => {
 
     Hook.on('GenericFormField', function ({field, value, result}) {
         if (field.uitype === 'mediaReferences') {
-            const btn = <Button color="secondary" onClick={() => {
+            const btn = <Button size="small" variant="outlined" onClick={() => {
                 client.query({
                     fetchPolicy: 'network-only',
                     forceFetch: true,
@@ -379,48 +379,64 @@ export default () => {
                         this.handleInputChange({target: {name: field.name, value: JSON.stringify(json.items[this.state.valuesOri._id].references)}})
                     }
                 })
-            }} variant="contained">Verwendung nochmals prüfen</Button>
-            if(value) {
+            }}>Verwendung nochmals prüfen</Button>
+
+            const header = (checked) => <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap', mb: 2}}>
+                <Box sx={{fontSize: '0.875rem', color: 'text.secondary'}}>
+                    {checked ? <>Letzte Überprüfung: <Box component="strong" sx={{color: 'text.primary'}}>{checked}</Box></> : 'Wurde noch nicht geprüft.'}
+                </Box>
+                {btn}
+            </Box>
+
+            if (value) {
                 const json = JSON.parse(value)
+                const locations = json.locations || []
 
                 // GenericData entries are grouped per definition (meta), everything else per collection
-                const groupedLocations = (json.locations || []).reduce((acc, item) => {
+                const groupedLocations = locations.reduce((acc, item) => {
                     const key = item.meta ? `${item.location}:${item.meta}` : item.location
                     if (!acc[key]) acc[key] = []
                     acc[key].push(item)
                     return acc
                 }, {})
 
-                result.component = <div>
-                    <p><span>Letzte Überprüfung:</span> <strong>{Util.formatDate(json.lastChecked)}</strong></p>
-                    {
-                        json.locations.length === 0 ? <p>Media wird nicht verwendet</p> :
-                            Object.keys(groupedLocations).map(groupKey => {
-                                const items = groupedLocations[groupKey]
-                                const first = items[0]
-                                // GenericData: title of the definition, otherwise translated collection name
-                                const typeName = first.meta ? (first.title || first.meta) : _t(first.location)
-                                return <div key={groupKey}>
-                                    <p><strong>{typeName}</strong> ({items.length})</p>
-                                    <ul>
-                                        {
-                                            items.map(item =>
-                                                <li key={item._id}>
-                                                    <a target="_blank"
-                                                       href={item.meta
-                                                           ? `/admin/types/GenericData?fixType=GenericData&title=${encodeURIComponent(item.title || item.meta)}&meta=${encodeURIComponent(item.meta)}&open=${item._id}`
-                                                           : `/admin/types/${item.location}?open=${item._id}`}>{item.name || item._id}</a>
-                                                </li>
-                                            )
-                                        }
-                                    </ul>
-                                </div>
-                            })
+                result.component = <Box>
+                    {header(Util.formatDate(json.lastChecked))}
+                    {locations.length === 0 ?
+                        <Box sx={{fontSize: '0.875rem', color: 'text.secondary'}}>Media wird nicht verwendet</Box> :
+                        Object.keys(groupedLocations).map(groupKey => {
+                            const items = groupedLocations[groupKey]
+                            const first = items[0]
+                            // GenericData: title of the definition, otherwise translated collection name
+                            const typeName = first.meta ? (first.title || first.meta) : _t(first.location)
+                            return <Box key={groupKey} sx={{border: 1, borderColor: 'divider', borderRadius: 1, mb: 1.5, overflow: 'hidden'}}>
+                                <Box sx={{display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 1, bgcolor: 'action.hover', fontWeight: 600, fontSize: '0.875rem'}}>
+                                    {typeName}
+                                    <Box component="span" sx={{px: 0.75, borderRadius: 1, fontSize: '0.75rem', fontWeight: 500, color: 'text.secondary', bgcolor: 'action.selected'}}>{items.length}</Box>
+                                </Box>
+                                <Box component="ul" sx={{listStyle: 'none', m: 0, p: 0.5, maxHeight: 320, overflowY: 'auto'}}>
+                                    {items.map(item =>
+                                        <li key={item._id}>
+                                            <Box component="a" target="_blank" rel="noopener"
+                                                 href={item.meta
+                                                     ? `/admin/types/GenericData?fixType=GenericData&title=${encodeURIComponent(item.title || item.meta)}&meta=${encodeURIComponent(item.meta)}&open=${item._id}`
+                                                     : `/admin/types/${item.location}?open=${item._id}`}
+                                                 sx={{display: 'flex', alignItems: 'center', gap: 1, px: 1, py: 0.5, borderRadius: 0.5,
+                                                     fontSize: '0.875rem', color: 'text.primary', textDecoration: 'none',
+                                                     '&:hover': {bgcolor: 'action.hover', color: 'primary.main'},
+                                                     '&:hover .open-icon': {opacity: 1}}}>
+                                                <Box component="span" sx={{flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>{item.name || item._id}</Box>
+                                                <OpenInNewIcon className="open-icon" sx={{fontSize: 16, opacity: 0.4}}/>
+                                            </Box>
+                                        </li>
+                                    )}
+                                </Box>
+                            </Box>
+                        })
                     }
-                    {btn}
-                </div>
-            }else{
-                result.component = <div><p>Wurde noch nicht geprüft.</p>{btn}</div>
+                </Box>
+            } else {
+                result.component = <Box>{header(null)}</Box>
             }
         }
     })

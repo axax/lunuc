@@ -16,6 +16,8 @@ import FileDrop from 'client/components/FileDrop'
 import Util from 'client/util/index.mjs'
 import {graphql, Query} from '../middleware/graphql'
 import {getTypes} from '../../util/types.mjs'
+// full type definitions (incl. types with "browser": false, e.g. tracking aggregates) for the collection list
+import '../../util/typesAdmin.mjs'
 import {_t} from 'util/i18n.mjs'
 
 

@@ -66,5 +66,3 @@ export const getIconByKey = (key, defaultIcon) => {
     }
     return defaultIcon
 }
-
-export const preloadIcons = loadIconMap

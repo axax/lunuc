@@ -9,6 +9,8 @@ import {
 import PropTypes from 'prop-types'
 import compose from 'util/compose'
 import {contentVersion} from '../util/contentVersion.mjs'
+import {isRetryableSaveError, getSaveRetryDelay, isOffline, SAVE_RETRY_MAX} from '../util/saveRetry.mjs'
+import {draftKey, createDraft, readDraft, writeDraft, removeDraft, pruneDrafts, evaluateDraft} from '../util/cmsDraft.mjs'
 import Expandable from 'client/components/Expandable'
 import ErrorHandler from 'client/components/layout/ErrorHandler'
 import {isEditableTarget} from '../util/jsonDomUtil'
@@ -234,6 +236,23 @@ const translateInTemplate = async ({template, onChange, overrideTranslations})=>
     }
 }
 
+/**
+ * Translations are written to tr.<current language>. A tr segment with forceLanguage is resolved in that
+ * language only (dataResolver.mjs resolveTranslations), whatever language the page is shown in - a text
+ * edited in another language was saved under tr.<lang> but never displayed. It goes to the forced language,
+ * the one that is shown
+ */
+const forcedLanguagePath = (path, segment) => {
+    if (path && segment && segment.forceLanguage && path.indexOf('tr.') === 0) {
+        const rest = path.substring(3)
+        const dot = rest.indexOf('.')
+        if (dot > 0) {
+            return 'tr.' + segment.forceLanguage + rest.substring(dot)
+        }
+    }
+    return path
+}
+
 class CmsViewEditorContainer extends React.Component {
 
     /* stack of previous values. every entry contains all keys that were changed
@@ -390,6 +409,21 @@ class CmsViewEditorContainer extends React.Component {
                 // changes saved outside of the page (GenericDataContent) can be undone with the page history
                 this._offExternalHistory = onExternalHistory(this.pushExternalHistoryEntry)
             }
+            if (!this.isLocal) {
+                // page is closed while a save is pending or failed: the values are kept as local draft
+                // (registered after _handleSaveEvent, so the save is already on its way)
+                this._handlePageHide = () => this.writeDraftIfUnsaved()
+                window.addEventListener('beforeunload', this._handlePageHide)
+                window.addEventListener('pagehide', this._handlePageHide)
+                // back online: save what failed right away instead of waiting for the next retry
+                this._handleOnline = () => {
+                    this._saveRetryAttempt = 0
+                    this.retryFailedSave()
+                }
+                window.addEventListener('online', this._handleOnline)
+                this._draftEnabled = true
+                this.checkDraft()
+            }
             document.addEventListener('focusin', this.reportActivity)
             document.addEventListener('focusout', this.reportActivity)
             this._unblockHistory = history.block(() => {
@@ -407,6 +441,13 @@ class CmsViewEditorContainer extends React.Component {
             window.removeEventListener('keydown', this.handleEditorKeyDown)
             this._handleSaveEvent = null
         }
+        if (this._handlePageHide) {
+            window.removeEventListener('beforeunload', this._handlePageHide)
+            window.removeEventListener('pagehide', this._handlePageHide)
+            window.removeEventListener('online', this._handleOnline)
+            this._handlePageHide = this._handleOnline = null
+        }
+        clearTimeout(this._saveRetryTimeout)
         if (this._unblockHistory) {
             this._unblockHistory()
             this._unblockHistory = null
@@ -674,6 +715,7 @@ class CmsViewEditorContainer extends React.Component {
                 <Button size="small" color="secondary" variant="contained" onClick={() => {
                     this._keyValueMap = {}
                     clearTimeout(this._saveCmsPageTimeout)
+                    this.clearDraft(this.getDraftKey())
                     this.reloadFromServer(true)
                 }}>{_t('CmsViewEditorContainer.remoteChange.reload')}</Button></span>
         })
@@ -779,8 +821,55 @@ class CmsViewEditorContainer extends React.Component {
             // only if they were saved before)
             this._keyValueMap = {}
             this.setSaveStatus(null)
+            this.clearDraft(this.getDraftKey())
             this.reloadFromServer(true)
         }
+    }
+
+    /**
+     * unsaved changes of an earlier session were found in this browser (see checkDraft)
+     */
+    renderDraftDialog() {
+        const draft = this.state.cmsDraft
+        const fields = draft.fields.map(field => HISTORY_KEY_LABELS[field] || field).join(', ')
+        return <SimpleDialog key="cmsDraft"
+                             open={true}
+                             maxWidth="sm"
+                             title={_t('CmsViewEditorContainer.draft.title')}
+                             onClose={(action) => {
+                                 const key = action && action.key
+                                 if (key === 'restore') {
+                                     this.restoreDraft(draft)
+                                 } else if (key === 'discard') {
+                                     this.discardDraft(draft)
+                                 } else {
+                                     // closed without a decision: the draft stays and is offered again next time
+                                     this.setState({cmsDraft: null})
+                                 }
+                             }}
+                             actions={[
+                                 {key: 'discard', label: _t('CmsViewEditorContainer.draft.discard'), type: 'secondary'},
+                                 {key: 'restore', label: _t('CmsViewEditorContainer.draft.restore'), type: 'primary', variant: 'contained'}
+                             ]}>
+            {_t('CmsViewEditorContainer.draft.text', {
+                time: new Date(draft.time).toLocaleString(),
+                fields
+            })}
+            {draft.status === 'stale' && <><br/><br/><strong>{_t('CmsViewEditorContainer.draft.stale')}</strong></>}
+        </SimpleDialog>
+    }
+
+    restoreDraft(draft) {
+        this.setState({cmsDraft: null})
+        // saved like any other change (undo with Cmd+Z), the draft is removed once the values are on the server
+        this._writtenDrafts[draft.key] = true
+        this.restoreRevision(draft.values)
+    }
+
+    discardDraft(draft) {
+        this.setState({cmsDraft: null})
+        removeDraft(this.getDraftStorage(), draft.key)
+        delete this._writtenDrafts[draft.key]
     }
 
     renderEditors() {
@@ -808,6 +897,32 @@ class CmsViewEditorContainer extends React.Component {
             slugChanged = noCmsPage || props.cmsPage.slug !== this.props.cmsPage.slug
 
         if (slugChanged) {
+            if (this._draftEnabled) {
+                // values that were not sent yet belong to the previous page: keep them as its draft.
+                // a pending retry is for the previous page as well
+                if (this.props.cmsPage && Object.keys(this._keyValueMap).length > 0) {
+                    this.writeDraftNow(false)
+                    // a different page is loaded now: the values must not be sent with its _id (the base
+                    // versions are reset below, so the server would accept them and overwrite that page).
+                    // They are kept in the draft of their own page. Only when the page really changed - while
+                    // the same page is reloading (cmsPage temporarily missing) the values stay
+                    if (props.cmsPage && props.cmsPage._id !== this.props.cmsPage._id) {
+                        this._keyValueMap = {}
+                        clearTimeout(this._saveCmsPageTimeout)
+                        // not during shouldComponentUpdate (setState), and only if nothing new is waiting
+                        setTimeout(() => {
+                            if (Object.keys(this._keyValueMap).length === 0 && !this._inflightSave) {
+                                this.setSaveStatus(null)
+                            }
+                        }, 0)
+                    }
+                }
+                clearTimeout(this._saveRetryTimeout)
+                this._saveRetryAttempt = 0
+                this._failedSavePageId = null
+                this._inflightSave = null
+                setTimeout(() => this.checkDraft(), 0)
+            }
             this._lastSavedValues = {}
             JsonDomHelper.disableEvents = false
             this.watchCmsPageStatus()
@@ -869,6 +984,7 @@ class CmsViewEditorContainer extends React.Component {
             state.saveStatus !== this.state.saveStatus ||
             state.cmsEditors !== this.state.cmsEditors ||
             state.cmsConflict !== this.state.cmsConflict ||
+            state.cmsDraft !== this.state.cmsDraft ||
             state.redoCount !== this.state.redoCount ||
             state.manual !== this.state.manual ||
             state.EditorOptions !== this.state.EditorOptions ||
@@ -969,6 +1085,7 @@ class CmsViewEditorContainer extends React.Component {
                 <RemoteEditorMarkers key="remoteEditorMarkers" editors={this.state.cmsEditors}
                                      typingLabel={_t('CmsViewEditorContainer.editors.typing')}/>,
             this.state.cmsConflict && this.renderConflictDialog(),
+            this.state.cmsDraft && !this.state.cmsConflict && this.renderDraftDialog(),
             simpleDialog && <SimpleDialog open={true}
                                           fullWidth={true}
                                           maxWidth={simpleDialog.maxWidth || 'md'}
@@ -2012,7 +2129,7 @@ class CmsViewEditorContainer extends React.Component {
                     })
                 }
             } else {
-                setPropertyByPath(value, path, segment)
+                setPropertyByPath(value, forcedLanguagePath(path, segment), segment)
             }
             this.handleDataResolverChange(JSON.stringify(dataResolver, null, 2), instantSave)
         }
@@ -2091,6 +2208,157 @@ class CmsViewEditorContainer extends React.Component {
         },timeoutUpdate || 50)
     }
 
+    /* automatic retry of a save that failed without an answer of the server (see util/saveRetry.mjs) */
+    _saveRetryAttempt = 0
+    _saveRetryTimeout = 0
+    _failedSavePageId = null
+    /* the save that is on its way: {id, key, values, baseValues} */
+    _inflightSave = null
+    /* draft keys written by this editor, only those are removed after a successful save */
+    _writtenDrafts = {}
+
+    scheduleSaveRetry() {
+        clearTimeout(this._saveRetryTimeout)
+        if (this._isUnmounted || this.isLocal || this._saveRetryAttempt >= SAVE_RETRY_MAX) {
+            return
+        }
+        if (isOffline()) {
+            // the online event starts the next attempt
+            return
+        }
+        const delay = getSaveRetryDelay(this._saveRetryAttempt)
+        this._saveRetryAttempt++
+        this._saveRetryTimeout = setTimeout(() => this.retryFailedSave(), delay)
+    }
+
+    retryFailedSave() {
+        const {cmsPage} = this.props
+        if (this._isUnmounted || this._conflict || !this._failedSavePageId || !cmsPage ||
+            cmsPage._id !== this._failedSavePageId || Object.keys(this._keyValueMap).length === 0) {
+            return
+        }
+        clearTimeout(this._saveRetryTimeout)
+        clearTimeout(this._saveCmsPageTimeout)
+        this.saveCmsPage().catch(() => {})
+    }
+
+    onSaveSucceeded() {
+        this._saveRetryAttempt = 0
+        this._failedSavePageId = null
+        clearTimeout(this._saveRetryTimeout)
+        this.clearDraft(this.getDraftKey())
+    }
+
+    /**
+     * the value on the server this editor knows of: the last one sent, else the one the page was loaded with
+     */
+    getLastSavedValue(key) {
+        const {cmsPage} = this.props
+        if (this._lastSavedValues && this._lastSavedValues.hasOwnProperty(key)) {
+            return this._lastSavedValues[key]
+        }
+        return cmsPage ? cmsPage[key] : undefined
+    }
+
+    getDraftStorage() {
+        try {
+            return !_app_.noStorage && typeof localStorage !== 'undefined' ? localStorage : null
+        } catch (e) {
+            // access to localStorage can throw (blocked site data)
+            return null
+        }
+    }
+
+    getDraftKey() {
+        const {cmsPage, slug} = this.props
+        if (!this._draftEnabled || !cmsPage || !cmsPage._id) {
+            return null
+        }
+        return draftKey(cmsPage._id, getSlugVersion(slug || cmsPage.slug || '')._version)
+    }
+
+    /**
+     * stores the unsaved values locally. Only called at critical moments (save failed, conflict, page closed),
+     * not on every change
+     * @param includeInflight also the values of the save that is still on its way (page is being closed)
+     */
+    writeDraftNow(includeInflight) {
+        const key = this.getDraftKey()
+        if (!key) {
+            return
+        }
+        const values = {}, baseValues = {}
+        const inflight = includeInflight && this._inflightSave && this._inflightSave.key === key ? this._inflightSave : null
+        if (inflight) {
+            Object.keys(inflight.values).forEach(field => {
+                values[field] = inflight.values[field]
+                baseValues[field] = [inflight.baseValues[field]]
+            })
+        }
+        Object.keys(this._keyValueMap).forEach(field => {
+            values[field] = this._keyValueMap[field]
+            // the server has either the value before the running save or the one of the running save
+            baseValues[field] = inflight && inflight.values.hasOwnProperty(field) ?
+                [inflight.baseValues[field], inflight.values[field]] : [this.getLastSavedValue(field)]
+        })
+        const {cmsPage} = this.props, now = Date.now()
+        const draft = createDraft({pageId: cmsPage._id, slug: cmsPage.slug, values, baseValues, now})
+        if (draft && writeDraft(this.getDraftStorage(), key, draft, now)) {
+            this._writtenDrafts[key] = true
+        }
+    }
+
+    writeDraftIfUnsaved() {
+        if (Object.keys(this._keyValueMap).length > 0 || this._inflightSave) {
+            this.writeDraftNow(true)
+        }
+    }
+
+    clearDraft(key) {
+        if (key && this._writtenDrafts[key]) {
+            removeDraft(this.getDraftStorage(), key)
+            delete this._writtenDrafts[key]
+        }
+    }
+
+    /**
+     * offers a local draft of this page, if there is one that differs from the server
+     */
+    checkDraft() {
+        const {cmsPage, loading, user} = this.props
+        if (this._isUnmounted || !this._draftEnabled || loading || !cmsPage || !cmsPage._id) {
+            return
+        }
+        const key = this.getDraftKey()
+        if (!key || this._draftCheckedKey === key) {
+            return
+        }
+        this._draftCheckedKey = key
+        const storage = this.getDraftStorage()
+        if (!storage) {
+            return
+        }
+        const now = Date.now()
+        if (!CmsViewEditorContainer._draftsPruned) {
+            // expired drafts of other pages, once per session
+            CmsViewEditorContainer._draftsPruned = true
+            pruneDrafts(storage, now, key)
+        }
+        const draft = readDraft(storage, key)
+        if (!draft) {
+            return
+        }
+        const result = evaluateDraft(draft, cmsPage, now)
+        if (result.status === 'none' || result.status === 'saved') {
+            removeDraft(storage, key)
+            return
+        }
+        if (!Util.hasCapability(user, CAPABILITY_MANAGE_CMS_CONTENT)) {
+            return
+        }
+        this.setState({cmsDraft: {key, ...result}})
+    }
+
     saveCmsPage(){
         if (this._saveSettings)
             this._saveSettings()
@@ -2150,6 +2418,11 @@ class CmsViewEditorContainer extends React.Component {
                     baseVersions = JSON.stringify(base)
                 }
             }
+            // base of each sent value, for a draft written while this save is on its way
+            const inflightBaseValues = {}
+            Object.keys(sentValues).forEach(key => {
+                inflightBaseValues[key] = lastSaved(key)
+            })
             const result = updateCmsPage({
                 _id: cmsPage._id,
                 slug: cmsPage.slug,
@@ -2167,15 +2440,26 @@ class CmsViewEditorContainer extends React.Component {
                 }
             })
             const saveId = this._saveId = (this._saveId || 0) + 1
+            this._inflightSave = {id: saveId, key: this.getDraftKey(), values: sentValues, baseValues: inflightBaseValues}
             this.setSaveStatus('saving')
             // returns the mutation promise, so callers can wait until the page is saved (e.g. export)
             return Promise.resolve(result).then(res => {
+                if (this._inflightSave && this._inflightSave.id === saveId) {
+                    this._inflightSave = null
+                }
                 // only the newest save decides the status, and only if nothing new is waiting
                 if (saveId === this._saveId && Object.keys(this._keyValueMap).length === 0) {
                     this.setSaveStatus('saved')
+                    // no result: nothing was sent (e.g. slug mismatch), the draft is kept
+                    if (res) {
+                        this.onSaveSucceeded()
+                    }
                 }
                 return res
             }, error => {
+                if (this._inflightSave && this._inflightSave.id === saveId) {
+                    this._inflightSave = null
+                }
                 // keep the values that were not saved (unless they changed meanwhile), so the next save retries them
                 this._keyValueMap = {...sentValues, ...this._keyValueMap}
                 // not saved: the server still has the previous value (unless a newer save changed the base meanwhile)
@@ -2193,9 +2477,16 @@ class CmsViewEditorContainer extends React.Component {
                     this._conflict = gqlError.data || {}
                     this.setSaveStatus('conflict')
                     this.setState({cmsConflict: this._conflict})
+                    // kept until the decision, also if the page is closed meanwhile
+                    this.writeDraftNow(false)
                     return
                 }
                 this.setSaveStatus('error')
+                this.writeDraftNow(false)
+                if (isRetryableSaveError(error)) {
+                    this._failedSavePageId = cmsPage._id
+                    this.scheduleSaveRetry()
+                }
                 throw error
             })
         }

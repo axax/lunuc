@@ -239,34 +239,6 @@ export const transcodeAndStreamVideo = async ({options, headers, req, res, filen
 
         console.log(`save video as ${options.filename}`)
         video.output(options.filename+ '.temp').run()
-        /*const videoDummy = ffmpeg(SERVER_DIR+'/loading.mp4')
-        res.writeHead(200, {'Content-Type': 'video/mp4', 'Connection': 'keep-alive'});
-        videoDummy.size('640x?')
-            .inputOptions([
-                '-probesize 100M',
-                '-analyzeduration 100M'
-            ])
-            .outputOptions([
-                '-preset ultrafast',
-                '-crf 35',
-                '-movflags frag_keyframe+empty_moov+faststart',
-                '-frag_duration 3600'
-            ])
-            .videoFilter([
-                {filter: 'drawtext',
-                    options: {
-                    fontfile: '/Users/simonscharer/Downloads/open-sans/OpenSans-Bold.ttf',
-                        text: 'Video wird vorbereitet',
-                        fontsize: 40,
-                        fontcolor: 'white',
-                        x: 250,
-                        y: 330
-                }},
-                { filter: 'scale', options: [640, -1] },
-                'fade=in:0:5'
-            ]).videoCodec('libx264').noAudio()
-            .inputFPS(15).fps(5).format('mp4')
-            .pipe(res, {end: true})*/
 
 
         await sendFileFromDir(req,res,{filename:SERVER_DIR+'/loading.mp4',headers:{...headers,...noCacheHeaders}})

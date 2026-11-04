@@ -505,6 +505,18 @@ export const sendFileFromDir = async (req, res, {
 // Q11 cache build twice for the same file
 const inFlightCompressions = new Set()
 
+// Upper bound for concurrent background cache builds (brotli Q11 / gzip 9).
+// They run in the libuv threadpool (4 threads by default) together with ALL
+// async fs calls - without a limit a crawler hitting many new urls queues a
+// Q11 build per url and the stat/read of every other request waits behind
+// them. Above the limit the build is just skipped: the request itself is
+// served with the fast compression as before, a later request builds the file.
+// LUNUC_MAX_BACKGROUND_COMPRESSIONS=0 -> no limit (old behaviour)
+const MAX_BACKGROUND_COMPRESSIONS = (() => {
+    const v = parseInt(process.env.LUNUC_MAX_BACKGROUND_COMPRESSIONS)
+    return isNaN(v) ? 2 : v
+})()
+
 const FAST_BROTLI_QUALITY = 4
 const CACHE_BROTLI_QUALITY = 11
 
@@ -594,7 +606,8 @@ export const sendFile = async (req, res, {headers, filename, fileStat, neverComp
 
             // 2. max-quality cache build in the background (nobody waits for it)
             const cacheKey = filename + fileExt
-            if (inFlightCompressions.has(cacheKey)) {
+            if (inFlightCompressions.has(cacheKey) ||
+                (MAX_BACKGROUND_COMPRESSIONS > 0 && inFlightCompressions.size >= MAX_BACKGROUND_COMPRESSIONS)) {
                 return
             }
             inFlightCompressions.add(cacheKey)
@@ -621,11 +634,18 @@ export const sendFile = async (req, res, {headers, filename, fileStat, neverComp
                 if (err) {
                     console.error('sendFile: cache build error', cacheKey, err)
                 }
+                // pipe() does not propagate errors: close all three streams,
+                // otherwise the tmp file stays open and - more important since
+                // the concurrency limit - the slot is never released
+                cacheRead.destroy()
+                slowCompressor.destroy()
+                writeStream.destroy()
                 fs.unlink(tmpFile, () => {})
                 inFlightCompressions.delete(cacheKey)
             }
             writeStream.on('error', cleanup)
             cacheRead.on('error', cleanup)
+            slowCompressor.on('error', cleanup)
         }
 
         if (!neverCompress && acceptEncoding.match(/\bbr\b/)) {

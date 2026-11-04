@@ -15,6 +15,7 @@ import compression from 'compression'
 import {createSubscriptionServer} from './subscription.mjs'
 import {createUsers} from './data/initialData.mjs'
 import {getDynamicConfig} from '../util/config.mjs'
+import Cache from '../util/cache.mjs'
 import {gunzipJsonBody} from './util/unzip.mjs'
 import {appendServerTiming, timingEntry, eventLoopEntry, SERVER_TIMING_ENABLED} from '../util/serverTiming.mjs'
 import {startEventLoopWatchdog, trackRequestForWatchdog} from '../util/eventLoopWatchdog.mjs'
@@ -32,6 +33,16 @@ console.debug = (...args) => {
         originalDebug(...args);
     }
 }
+// the cache only builds its debug messages when they are printed (same switch as above)
+// (a value set explicitly, e.g. Cache.debug = true in a script, wins - without a setter that assignment would throw)
+let cacheDebugOverride
+Object.defineProperty(Cache, 'debug', {
+    get: () => cacheDebugOverride !== undefined ? cacheDebugOverride : !!dynamicConfig.DEBUG,
+    set: (value) => {
+        cacheDebugOverride = value === undefined ? undefined : !!value
+    },
+    configurable: true
+})
 
 const PORT = (process.env.PORT || process.env.API_PORT || 3000)
 

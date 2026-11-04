@@ -1,9 +1,9 @@
-import puppeteer from 'puppeteer'
 import ApiUtil from '../../api/util/index.mjs'
 import {isTemporarilyBlocked} from './requestBlocker.mjs'
 import {getRegexCached} from './regexCache.mjs'
 // This module checks on its own (not only the caller), also after redirects of the page.
 import {isPrivateHostname, isPublicHttpUrl} from '../../util/networkGuard.mjs'
+import {createSharedBrowser, BASE_BROWSER_ARGS} from '../../util/sharedBrowser.mjs'
 
 // Reasonable upper bound for viewport/clip dimensions coming from
 // user-supplied options - without this an attacker could request an
@@ -17,6 +17,15 @@ const clampDimension = (value, fallback) => {
     }
     return Math.min(n, MAX_DIMENSION)
 }
+
+// screenshots run in one shared Chrome (own context per screenshot) instead of starting a new
+// Chrome for every screenshot - closed after 2 minutes without screenshots
+const screenshotBrowser = createSharedBrowser({idleCloseMs: 2 * 60 * 1000})
+const SCREENSHOT_LAUNCH_OPTIONS = {acceptInsecureCerts: true, protocolTimeout: 60000, args: BASE_BROWSER_ARGS}
+
+// a hanging or crashed Chrome (no answer within protocolTimeout, closed target): the next screenshot
+// starts a new one. A slow page (navigation timeout) or an unreachable url doesn't count.
+const isBrowserFailure = (e) => e?.name === 'ProtocolError' || /Target closed|Session closed|timed out/i.test(e?.message || '')
 
 export const doScreenCapture = async (url, filename, options, cookies) => {
 
@@ -41,16 +50,13 @@ export const doScreenCapture = async (url, filename, options, cookies) => {
     }
     const isSelfRenderCall = isPrivateHostname(initialHostname)
 
-    const browser = await puppeteer.launch({
-        ignoreHTTPSErrors: true, /* deprecated */
-        acceptInsecureCerts:true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--no-zygote']
-    })
-    // If the setup below fails, close the browser before passing the error
-    // on - otherwise the chromium process keeps running.
-    let page
+    // own browser context per screenshot: cookies, storage and cache are not shared
+    // with other screenshots in the same Chrome
+    let browser, context, page
     try {
-        page = await browser.newPage()
+        browser = await screenshotBrowser.acquire(SCREENSHOT_LAUNCH_OPTIONS)
+        context = await browser.createBrowserContext()
+        page = await context.newPage()
 
         // Only forward the requesting user's session cookies for our OWN
         // internal render calls (e.g. rendering an auth-gated page for SSR).
@@ -103,7 +109,9 @@ export const doScreenCapture = async (url, filename, options, cookies) => {
             })
         }
     } catch (e) {
-        await browser.close().catch(() => {})
+        if (isBrowserFailure(e)) screenshotBrowser.close()
+        if (context) await context.close().catch(() => {})
+        if (browser) screenshotBrowser.release()
         throw e
     }
 
@@ -156,11 +164,14 @@ export const doScreenCapture = async (url, filename, options, cookies) => {
             ...safeScreenshotOptions,
             path: filename
         })
-        await page.close()
-    }catch (e){
+    } catch (e) {
         console.warn(`doScreenCapture: capture failed for ${url}`, e.message)
+        if (isBrowserFailure(e)) screenshotBrowser.close()
+    } finally {
+        // closes the page as well
+        await context.close().catch(() => {})
+        screenshotBrowser.release()
     }
-    await browser.close()
     return {statusCode:200}
 }
 

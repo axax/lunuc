@@ -2196,7 +2196,7 @@ class GenericForm extends React.Component {
                                               type={isDateOrTime?'text':uitype}
                                               multiline={uitype === 'textarea'}
                                               placeholder={field.placeholder}
-                                              value={(value===0 && field.type==='Float'?0:value) || field.defaultValue || ''}
+                                              value={(value===0 && (field.type==='Float' || field.type==='Int')?0:value) || field.defaultValue || ''}
                                               name={fieldKey}
                                               onKeyDown={(e) => {
                                                   onKeyDown && onKeyDown(e, value)

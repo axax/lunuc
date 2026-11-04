@@ -2,6 +2,7 @@
   "types": [
     {
       "name": "OAuthClient",
+      "browser": false,
       "fields": [
         {
           "name": "name",
@@ -40,6 +41,7 @@
     },
     {
       "name": "OAuthCode",
+      "browser": false,
       "fields": [
         {
           "type": "String",

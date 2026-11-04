@@ -43,6 +43,12 @@ add Reverse-DNS (PTR-Record) -> service provider
 let serverPorts = {}
 const MAX_EMAIL_SIZE = 500000000 // 500 MB
 
+const normalizeIp = (ip) => String(ip || '').replace(/^::ffff:/i, '')
+const isOwnServerConnection = (session) => {
+    const remote = normalizeIp(session?.remoteAddress)
+    return !!remote && (remote === normalizeIp(session.localAddress) || remote === '127.0.0.1' || remote === '::1')
+}
+
 const startListening = async (db, context) => {
     const settings = {}
     await dynamicSettings({db, context, settings, key:'SMTPServerSettings'})
@@ -332,7 +338,10 @@ const startListening = async (db, context) => {
                                     subject: data.subject,
                                     inReplyTo: data.inReplyTo,
                                     references: data.references,
-                                    plainText: data.text
+                                    plainText: data.text,
+                                    recipients: [data.to, data.cc].flatMap(x => x?.value || []).map(v => v.address),
+                                    // authenticated sends to a local recipient come back via direct transport from this server
+                                    ownServer: isOwnServerConnection(session)
                                 })
 
                                 const inbox = await getFolderForMailAccount(db, mailAccount._id, isSpam ? 'Junk' : 'INBOX')

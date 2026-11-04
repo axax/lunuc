@@ -1829,6 +1829,16 @@ class JsonDomHelper extends React.Component {
                                 trValue = trValue.replace(/\n/g, '')
                             }
                             writeTranslation(_onDataResolverPropertyChange, trOption.trKey, trValue, false)
+                            // the page takes the text from the data resolved by the server (scope.data.tr), which only
+                            // contains the new translation after the save. The re-render caused by the placeholder below
+                            // happens before that: _t found nothing and showed the trKey - and text typed meanwhile was
+                            // saved as "trKey + text". Same escaping as in the resolved data (inserted into the json template)
+                            if (_scope && _scope.data) {
+                                if (!_scope.data.tr) {
+                                    _scope.data.tr = {}
+                                }
+                                _scope.data.tr[trOption.trKey] = Util.escapeForJson(trValue)
+                            }
                             const placeholder = getTrPlaceholder(trOption)
                             if (subJson[field] !== placeholder) {
                                 setPropertyByPath(placeholder, field, subJson)

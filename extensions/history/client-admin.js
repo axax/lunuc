@@ -51,24 +51,4 @@ export default () => {
             }
         }
     })
-
-   /* Hook.on('TypeTable', ({type, dataSource, data}) => {
-        if (type === 'History') {
-            dataSource.forEach((d, i) => {
-                const item = data.results[i]
-                if (item && item.action==='delete' && item.meta) {
-                    try {
-                        const meta = JSON.parse(item.meta)
-                        if(meta.name){
-                            item.type = `${meta.name} (${item.type})`
-                        }
-                        console.log(item)
-                    }catch (e){
-                        console.log(e)
-                    }
-                }
-            })
-        }
-    })*/
-
 }

@@ -349,35 +349,3 @@ export const sortJsonKeysDesc = (keys) => {
         return 0
     })
 }
-
-
-// Quick sanity checks covering each operator
-/*console.log(matchExpr('foo==bar', { foo: 'bar' }))   // false
-console.log(matchExpr('foo==bar', { foo: 'baz' }))   // true
-console.log(matchExpr('x>5', { x: 10 }))            // false
-console.log(matchExpr('x>5', { x: 3 }))             // true*/
-// etc.
-/*console.log(propertyByPath('0',[
-    {
-        "t": "div",
-        "p": {
-            "className": "click-counter-wrapper"
-        },
-        "c": [
-            {
-                "t": "button",
-                "c": "klick mich",
-                "p": {
-                    "id": "button",
-                    "onClick": {
-                        "action": "button"
-                    }
-                }
-            },
-            {
-                "t": "label",
-                "c": "Aktueller Klick-Count: ${this.scope.script.getClickCount()}"
-            }
-        ]
-    }
-]))*/

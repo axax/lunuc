@@ -230,6 +230,14 @@
           "defaultValue": true,
           "index": 1,
           "tab": "elements.generalTab"
+        },
+        {
+          "name": "key",
+          "label": "Technischer Schlüssel",
+          "index": 1,
+          "uiReadOnly": true,
+          "hideColumnInTypesByDefault": true,
+          "tab": "Optionen"
         }
       ]
     },

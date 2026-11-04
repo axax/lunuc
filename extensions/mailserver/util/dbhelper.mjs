@@ -27,11 +27,6 @@ export const getMailAccountByEmail = async (db, address)=> {
 }
 
 
-export const createFolderForMailAccount = async (db, mailAccountId, data) => {
-
-}
-
-
 export const getFoldersForMailAccount  = async (db, mailAccountId) =>  {
     const collectionResult = await db.collection('MailAccountFolder').find({mailAccount:mailAccountId}).toArray()
 

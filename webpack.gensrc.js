@@ -164,11 +164,6 @@ GenSourceCode.prototype.apply = function (compiler) {
 
                         }
 
-                        /*if (fs.existsSync(extensionFolder + file + '/build.js')) {
-                         const extensionBuild = require(extensionFolder + file + '/build.js')
-                         const buildOptions = extensionBuild()
-                         gensrcExtension(file,buildOptions)
-                         }*/
                         if (fs.existsSync(EXTENSION_PATH + file + '/client-admin.js')) {
                             clientAdminContent += `import ${file} from '.${EXTENSION_PATH}${file}/client-admin.js'\nstart(${file},'${file}')\n`
                         }
@@ -246,9 +241,14 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
         // extensions.mjs is also used by the api on the server, so it can't be reduced itself.
         // The attributes removed here are only needed in the admin ui, which loads the full definition
         // from extensions-private.mjs (util/typesAdmin.mjs).
+        // Types with "browser": false (server / admin only, e.g. tracking aggregates) are left out completely.
         const manifestBrowser = JSON.parse(JSON.stringify(manifestJson))
         Object.keys(manifestBrowser).forEach(key => {
-            const types = manifestBrowser[key].options && manifestBrowser[key].options.types
+            const options = manifestBrowser[key].options
+            if (options && options.types) {
+                options.types = options.types.filter(type => type.browser !== false)
+            }
+            const types = options && options.types
             if (types) {
                 for (const type of types) {
                     for (const attr of BROWSER_REMOVE_TYPE_ATTRIBUTES) {

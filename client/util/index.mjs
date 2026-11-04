@@ -569,23 +569,6 @@ const Util = {
         }
         return path + loc.search + loc.hash
     },
-    /*createWorker(fn) {
-        const blob = new Blob([`self.onmessage = (args)=>{
-                ${fn.toString()}
-                self.postMessage(${fn.name}(args))
-            }`], {type: 'text/javascript'}),
-            url = URL.createObjectURL(blob)
-
-        const worker = new Worker(url)
-
-        return {
-            run: (data) => new Promise((resolve) => {
-                    worker.addEventListener('message', resolve, false)
-                    worker.postMessage(data)
-                }
-            )
-        }
-    },*/
     // a simple implementation of the shallowCompare.
     // only compares the first level properties and hence shallow.
     // returns true if not equal

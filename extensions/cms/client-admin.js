@@ -74,18 +74,6 @@ const addAdminComponents = (components) => {
 
 }
 
-/*export class AdminComponents extends React.Component {
-
-    constructor(props) {
-        super(props)
-        addAdminComponents(JsonDom.components)
-    }
-
-    render() {
-        return this.props.children
-    }
-}*/
-
 // size of a generated page preview (rwidth / rheight)
 const PREVIEW_WIDTH = 240, PREVIEW_HEIGHT = 160
 
@@ -569,34 +557,6 @@ export default () => {
                     </Grid>
                 </Grid>
             }
-
-            /*content.splice(3, 0, <Query
-                query={}
-                fetchPolicy="cache-and-network"
-                variables={{
-                    _version,
-                    limit:1000,
-                    page:1
-                }}>
-                {({loading, error, data}) => {
-                    if (loading) return <p>Loading...</p>
-                    if (error) return `Error! ${error.message}`
-                    return data.cmsPageGroups.map(ds=>(<img style={{}}
-                                              width={30} height={20}
-                                                            onClick={()=>{
-
-                                                                this.goTo({baseFilter:`slug=~^${ds.prefix}`})
-                                                            }}
-                                              src={getImageFromCmsPageItem({slug:ds.firstSlug,public:ds.firstPublic})}/>))
-                }}
-            </Query>)*/
         }
     })
-             // add a click event
-             /*Hook.on('TypeTableEntryClick', ({type, item, container}) => {
-              if (type === 'CmsPage') {
-              const {_version} = container.pageParams
-              container.props.history.push('/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + (item.slug ? item.slug.split(';')[0] : ''))
-              }
-              })*/
 }

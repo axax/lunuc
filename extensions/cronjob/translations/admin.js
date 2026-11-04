@@ -25,7 +25,20 @@ export const translations = {
         'CronJob.running.releaseLockHint': 'Gibt nur den Lock frei, das Script läuft weiter',
         'CronJob.running.confirm': 'Bestätigen',
         'CronJob.running.cancel': 'Nein',
-        'CronJob.running.close': 'Schliessen'
+        'CronJob.running.close': 'Schliessen',
+        'CronJob.result.title': 'CronJob Ergebnis',
+        'CronJob.result.state.success': 'Erfolgreich abgeschlossen',
+        'CronJob.result.state.error': 'Mit Fehlern beendet',
+        'CronJob.result.state.failed': 'Ausführung fehlgeschlagen',
+        'CronJob.result.state.started': 'Job gestartet',
+        'CronJob.result.duration': 'Dauer',
+        'CronJob.result.endTime': 'Beendet',
+        'CronJob.result.execution': 'Execution',
+        'CronJob.result.log': 'Log',
+        'CronJob.result.debug': 'Debug',
+        'CronJob.result.error': 'Fehler',
+        'CronJob.result.copy': 'Kopieren',
+        'CronJob.result.empty': 'Keine Ausgabe'
     },
     en: {
         'CronJob.field.scriptLanguage': 'Language',
@@ -51,6 +64,19 @@ export const translations = {
         'CronJob.running.releaseLockHint': 'Only the lock gets released, the script keeps running',
         'CronJob.running.confirm': 'Confirm',
         'CronJob.running.cancel': 'No',
-        'CronJob.running.close': 'Close'
+        'CronJob.running.close': 'Close',
+        'CronJob.result.title': 'CronJob result',
+        'CronJob.result.state.success': 'Finished successfully',
+        'CronJob.result.state.error': 'Finished with errors',
+        'CronJob.result.state.failed': 'Execution failed',
+        'CronJob.result.state.started': 'Job started',
+        'CronJob.result.duration': 'Duration',
+        'CronJob.result.endTime': 'Finished',
+        'CronJob.result.execution': 'Execution',
+        'CronJob.result.log': 'Log',
+        'CronJob.result.debug': 'Debug',
+        'CronJob.result.error': 'Error',
+        'CronJob.result.copy': 'Copy',
+        'CronJob.result.empty': 'No output'
     }
 }

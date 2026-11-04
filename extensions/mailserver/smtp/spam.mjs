@@ -41,6 +41,12 @@ export const DEFAULT_STRUCTURAL = {
     fakeReply: 3,                // subject "Re:/AW:" but no In-Reply-To/References header
     coldOutreach: 3,             // >= 2 typical cold sales phrases ("came across your website", "quick call", ...)
     htmlInPlainText: 1,
+    selfDomainSender: 3,         // unauthenticated mail claims to come from the same domain it is delivered to (spoofed own domain)
+    mailboxLure: 4,              // >= 2 mailbox/webmail lure terms (quota, validate, cpanel, ...) and all links point away from the sender
+    freeHostLink: 2,             // link to a free hosting / preview domain (mypreview.site, pages.dev, ...)
+    freeHostDomains: ['mypreview.site', 'pages.dev', 'workers.dev', 'netlify.app', 'web.app', 'firebaseapp.com', 'weebly.com',
+        'wixsite.com', 'godaddysites.com', 'webflow.io', 'vercel.app', 'glitch.me', 'herokuapp.com', 'github.io', 'blogspot.com',
+        'framer.website', 'carrd.co', 'my.canva.site', 'sites.google.com', 'r2.dev', 'ipfs.io'],
     hiddenLink: 2,               // invisible link (left:-9999px, opacity:0, font-size:0, display:none)
     hypePhrases: 3,              // >= 2 marketing hype / fomo phrases ("gab es noch nie", "fast umsonst", ...)
     energyOffer: 2,              // solar / heat pump offer combined with subsidy / free / tax promises          // text/plain part contains html markup (broken bulk mail template)         // Message-ID without valid domain, e.g. <5$7c$-650$9nf-l@qeq6.i3t>
@@ -81,7 +87,7 @@ export const DEFAULT_STRUCTURAL = {
         cembra: [], migros: [], 'credit suisse': ['credit-suisse', 'ubs'], swica: [], helsana: [], sanitas: [],
         spotify: [], booking: [], 'interactive brokers': ['interactivebrokers', 'ibkr'], ibkr: ['interactivebrokers', 'ibkr'],
         swissquote: [], revolut: [], wise: [], n26: [], binance: [], coinbase: [], kraken: [], degiro: [], postbank: [],
-        sparkasse: [], 'zürcher kantonalbank': ['zkb'], zkb: [], 'valiant': [], 'bancastato': [], yuh: [], neon: []
+        sparkasse: [], stripe: [], 'zürcher kantonalbank': ['zkb'], zkb: [], 'valiant': [], 'bancastato': [], yuh: [], neon: []
     },
     // entries with a dot are domains (root domain must match), others are fragments of the sender domain
     maxAttachmentScan: 200000,   // bytes of attachment content to inspect
@@ -175,6 +181,16 @@ const PERSONAL_DATA = [
     /home address|residential address|wohnadresse|postadresse/, /\bage\b|marital status|zivilstand/, /country.{0,10}city|nationality|nationalitaet/
 ]
 
+// mailbox / webmail credential phishing (applied to umlaut folded lower case text)
+const MAILBOX_LURE = [
+    /(mail(box)?|storage|disk) (storage )?quota|quota .{0,30}(limit|exceed|full)|mailbox (is )?full|speicherplatz|postfach (ist )?voll/,
+    /re-?validate|re-?verify|re-?activate|revalidier|bestaetig\w* sie ihr(e|en)? (postfach|konto|e-?mail)/,
+    /\bcpanel\b|\bwebmail\b|\broundcube\b|\bzimbra\b|\bplesk\b/,
+    /ssl\/?tls|certificate (expir|renew)|zertifikat (laeuft|ablauf)/,
+    /(resolve|restore|upgrade|increase|unlock|release) (your |the )?(mailbox|account|storage|quota|pending (mail|message)s?)|held (mail|message)s?|pending (mail|message)s?/,
+    /(email|mail|account) (will be |has been |is )?(deactivated|suspended|blocked|closed|deleted)|prevent (data|mail) loss|ask your (system )?administrator/
+]
+
 const foldUmlauts = (t) => t.replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
 
 
@@ -191,7 +207,7 @@ const extractAddress = (sender) => {
  * Structure based checks (attachments, links, sender vs. content).
  * Complements the keyword list, scores are added to the keyword score.
  */
-export const structuralScore = ({text = '', sender, html, attachments, messageId, subject, inReplyTo, references, plainText}, options = {}) => {
+export const structuralScore = ({text = '', sender, html, attachments, messageId, subject, inReplyTo, references, plainText, recipients, ownServer}, options = {}) => {
     const w = {...DEFAULT_STRUCTURAL, ...options}
     // hard cap so huge mails can't stall the smtp process
     text = text.slice(0, w.maxBodyScan)
@@ -203,11 +219,12 @@ export const structuralScore = ({text = '', sender, html, attachments, messageId
         reasons.push(r)
     }
     const lowerText = text.toLowerCase()
+    const foldedText = foldUmlauts(lowerText)
 
     const senderDomain = ((extractAddress(sender) || '').split('@')[1] || '')
     const isInvoiceMail = INVOICE.test(lowerText)
     const realAttachments = (attachments || []).filter(a => !(a.contentDisposition === 'inline' && /^image\//i.test(a.contentType || '')))
-    if (isInvoiceMail && realAttachments.length === 0 && ANNOUNCED_ATTACHMENT.test(foldUmlauts(lowerText))) {
+    if (isInvoiceMail && realAttachments.length === 0 && ANNOUNCED_ATTACHMENT.test(foldedText)) {
         add(w.missingAttachment, 'invoice announces an attachment that is missing')
     }
 
@@ -295,6 +312,13 @@ export const structuralScore = ({text = '', sender, html, attachments, messageId
     const fromAddress = extractAddress(sender) || ''
     const fromDomainLc = fromAddress.split('@').pop()
     const isOfficial = fromDomainLc && w.officialDomains.some(d => fromDomainLc === d || fromDomainLc.endsWith('.' + d))
+    // received without authentication (smtp receive branch) but "from" is our own recipient domain;
+    // mails relayed by this server itself (direct transport to its own MX) are excluded
+    if (fromDomainLc && !isOfficial && !ownServer && recipients?.length &&
+        recipients.some(r => String(r || '').toLowerCase().endsWith('@' + fromDomainLc))) {
+        add(w.selfDomainSender, `sender domain "${fromDomainLc}" equals recipient domain (unauthenticated)`)
+    }
+
     if (sender && !isOfficial && w.authorityTerms?.length) {
         const authRe = termsRegex(w.authorityTerms)
         // display name + local part, e.g. "ehra auskunft ch <ehrakontakt@...>"
@@ -321,7 +345,7 @@ export const structuralScore = ({text = '', sender, html, attachments, messageId
     }
 
     // generic: "Interactive Brokers Client Services <x@mail.tongrentangtea.com>"
-    const CORP = /\b(client services?|customer (service|support|care)|kundendienst|kundenservice|support team|service desk|security (team|department)|account (team|services))\b/i
+    const CORP = /\b(client services?|customer (service|support|care)|kundendienst|kundenservice|support team|service desk|security (team|department|update)|system administrator|mail (admin|support|team)|account (team|services))\b/i
     let claimedIdentity = reasons.some(r => r.startsWith('sender name') || r.startsWith('sender claims'))
     if (sender && fromDomainLc && !isOfficial && !claimedIdentity) {
         const displayOnly = sender.replace(/<[^>]{0,500}>/, ' ').replace(/["']/g, '').trim().toLowerCase()
@@ -348,6 +372,16 @@ export const structuralScore = ({text = '', sender, html, attachments, messageId
         const linkHosts = [...new Set(hrefs.map(hostOf).filter(Boolean))]
         const badTld = linkHosts.find(h => w.suspiciousTlds.includes(h.split('.').pop()))
         if (badTld) add(w.suspiciousTld, `link to suspicious tld "${badTld}"`)
+
+        const freeHost = linkHosts.find(h => w.freeHostDomains.some(d => h === d || h.endsWith('.' + d)))
+        if (freeHost) add(w.freeHostLink, `link to free hosting domain "${freeHost}"`)
+
+        // mailbox lure: generic credential phishing without a brand, all links lead away from the sender
+        if (fromDomainLc && linkHosts.length > 0 && linkHosts.every(h => !rootDomainsRelated(h, fromDomainLc) &&
+            !w.trackingDomains.some(d => h === d || h.endsWith('.' + d)))) {
+            const lureHits = MAILBOX_LURE.map(re => (foldedText.match(re) || [])[0]).filter(Boolean)
+            if (lureHits.length >= 2) add(w.mailboxLure, `mailbox lure (${lureHits.slice(0, 3).join(', ')}) with links to "${linkHosts[0]}"`)
+        }
 
         // IDN under local country tlds (xn--zrich-kva.ch) is normal, elsewhere often a lookalike
         const puny = linkHosts.find(h => h.split('.').some(l => l.startsWith('xn--')) && !w.idnTlds.includes(h.split('.').pop()))
@@ -378,8 +412,6 @@ export const structuralScore = ({text = '', sender, html, attachments, messageId
             }
         }
     }
-
-    const foldedText = foldUmlauts(lowerText)
 
     const money = foldedText.match(BIG_MONEY)
     if (money) add(w.bigMoney, `big money amount "${money[0].trim()}"`)
@@ -441,7 +473,7 @@ export const structuralScore = ({text = '', sender, html, attachments, messageId
     return {score, reasons}
 }
 
-export const detectSpam = async (db, context, {text, sender, threshold, html, attachments, messageId, subject, inReplyTo, references, plainText}) => {
+export const detectSpam = async (db, context, {text, sender, threshold, html, attachments, messageId, subject, inReplyTo, references, plainText, recipients, ownServer}) => {
 
     if(threshold===0 || threshold === null){
         return {isSpam:false, spamScore:-1, threshold, reason: 'spam filter disabled for this account'}
@@ -516,7 +548,7 @@ export const detectSpam = async (db, context, {text, sender, threshold, html, at
     }
     const parts = foundKeywords.length ? [`Found keywords: ${foundKeywords.join(', ')}`] : []
     if (!spamFilter.structural || spamFilter.structural.enabled !== false) {
-        const structural = structuralScore({text, sender, html, attachments, messageId, subject, inReplyTo, references, plainText}, spamFilter.structural)
+        const structural = structuralScore({text, sender, html, attachments, messageId, subject, inReplyTo, references, plainText, recipients, ownServer}, spamFilter.structural)
         totalScore += structural.score
         if (structural.reasons.length > 0) {
             parts.push(`Structural: ${structural.reasons.join(', ')}`)
