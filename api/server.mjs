@@ -10,6 +10,7 @@ import {auth} from './auth.mjs'
 import {hasLoginToken} from './util/sessionContext.mjs'
 import {formatAndLogError} from './error.mjs'
 import {handleUpload, handleMediaDumpUpload, handleDbDumpUpload, handleHostruleDumpUpload} from './upload.mjs'
+import {handlePrintPdf} from './util/printPdf.mjs'
 import Hook from '../util/hook.cjs'
 import compression from 'compression'
 import {createSubscriptionServer} from './subscription.mjs'
@@ -192,6 +193,9 @@ export const start = (done) => {
             app.use('/graphql/upload/mediadump', handleMediaDumpUpload(db))
 
             app.use('/graphql/upload/hostrule', handleHostruleDumpUpload(db))
+
+            // server side pdf (Print component with pdfMode="server")
+            app.use('/graphql/printpdf', handlePrintPdf())
 
             // maybe move file upload to another server
             app.use('/graphql/upload', handleUpload(db))

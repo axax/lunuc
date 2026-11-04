@@ -118,7 +118,8 @@ class Print extends React.PureComponent {
                 'Print.prepareLayout': 'Bitte warten... Kopf- und Fusszeilen werden platziert.',
                 'Print.almostDone': 'Bitte warten... Das PDF ist gleich fertiggestellt!',
                 'Print.createPage': 'Bitte warten... Es kann ein wenig dauern... Seite %page% von %numberOfPages% ist erstellt.',
-                'Print.failed': 'Das PDF konnte nicht erstellt werden.'
+                'Print.failed': 'Das PDF konnte nicht erstellt werden.',
+                'Print.server': 'Bitte warten... Das PDF wird auf dem Server erstellt.'
             },
             en: {
                 'Print.prepare': 'Please wait... Preparing the pdf.',
@@ -127,12 +128,16 @@ class Print extends React.PureComponent {
                 'Print.prepareLayout': 'Please wait... Placing headers and footers.',
                 'Print.almostDone': 'Please be patient... We are almost there... Enjoy!',
                 'Print.createPage': 'Please be patient... It might take some time... Page %page% of %numberOfPages% is being produced',
-                'Print.failed': 'The PDF could not be created.'
+                'Print.failed': 'The PDF could not be created.',
+                'Print.server': 'Please wait... The PDF is being created on the server.'
             }
         }, 'Print')
 
-        DomUtil.addScript('/pdfmake.min.js', {id: 'pdfmake'})
-        DomUtil.addScript('/html2canvas.min.js', {id: 'html2canvas'})
+        // the server side variant needs neither of them
+        if (props.pdfMode !== 'server') {
+            DomUtil.addScript('/pdfmake.min.js', {id: 'pdfmake'})
+            DomUtil.addScript('/html2canvas.min.js', {id: 'html2canvas'})
+        }
 
         this.busy = false
         this.simulationScheduled = false
@@ -278,6 +283,11 @@ class Print extends React.PureComponent {
             return false
         }
 
+        if (this.props.pdfMode === 'server') {
+            // the browser breaks the pages on the server, there is nothing to simulate
+            return simulation ? false : this.runServerPdf({overlay, printArea})
+        }
+
         // A simulation runs on every editor keystroke, so it must never flash the
         // overlay and must not pay for the frames a status message costs.
         const status = simulation || !overlay
@@ -386,6 +396,135 @@ class Print extends React.PureComponent {
             printArea.classList.remove('print-area-printing')
             this.cleanup(printArea, printAreaInner, printFooters, !this.props.showPageBreak)
         }
+    }
+
+    /* ------------------------------------------------------------------ *
+     * pdfMode="server": real text pdf rendered by Chrome on the server
+     * ------------------------------------------------------------------ */
+
+    async runServerPdf({overlay, printArea}) {
+        const {pdfName, headerSelector, footerSelector, classes} = this.props
+        try {
+            if (overlay) {
+                overlay.style.display = 'flex'
+                overlay.innerText = _t('Print.server')
+                await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+            }
+            await this.waitForLayout(printArea)
+
+            const clone = printArea.cloneNode(true)
+            // helper elements of the client side variant
+            clone.querySelectorAll('.' + classes.pageBreak + ',[data-is-print-clone="true"]')
+                .forEach(n => n.parentNode && n.parentNode.removeChild(n))
+
+            // header and footer are repeated on every page by the server. The heights are
+            // measured here (in the live dom), the server reserves exactly this space.
+            const take = selector => {
+                if (!selector) {
+                    return {html: '', height: 0}
+                }
+                const live = Array.from(printArea.querySelectorAll(selector))
+                const found = Array.from(clone.querySelectorAll(selector))
+                const html = found.length ? found[0].outerHTML : ''
+                found.forEach(n => n.parentNode && n.parentNode.removeChild(n))
+                return {html, height: this.maxRepeatedHeight(live)}
+            }
+            const header = take(headerSelector)
+            const footer = take(footerSelector)
+
+            const body = {
+                html: clone.outerHTML,
+                header: header.html,
+                headerHeight: header.height,
+                footer: footer.html,
+                footerHeight: footer.height,
+                css: this.collectCss(),
+                baseUrl: document.baseURI,
+                breakBeforeSelector: this.props.manualBreakSelector,
+                keepTogetherSelectors: [this.props.optionalBreakSelector]
+                    .concat(this.props.noBreakClassName || []).filter(Boolean),
+                keepWithNextSelector: this.props.keepWithNextSelector === undefined
+                    ? DEFAULT_KEEP_WITH_NEXT : this.props.keepWithNextSelector,
+                watermark: this.props.watermark
+                    ? new URL(this.props.watermark, document.baseURI).href : undefined,
+                watermarkOption: this.props.watermarkOption
+            }
+
+            const blob = await this.fetchServerPdf(body)
+            const url = URL.createObjectURL(blob)
+
+            if (this.props.openPdf) {
+                if (this.props.closeWindow) {
+                    window.close()
+                }
+                window.open(url, '_blank')
+            } else {
+                const a = document.createElement('a')
+                a.href = url
+                a.download = (pdfName || 'file') + '.pdf'
+                document.body.appendChild(a)
+                a.click()
+                document.body.removeChild(a)
+            }
+            // give the browser time to open / save the file
+            setTimeout(() => URL.revokeObjectURL(url), 60000)
+            return true
+        } finally {
+            if (overlay) {
+                overlay.style.display = 'none'
+            }
+        }
+    }
+
+    async fetchServerPdf(body) {
+        const headers = {'Content-Type': 'application/json'}
+        let payload = JSON.stringify(body)
+        // same as the graphql client: large payloads (the css of the page) are gzipped
+        if (typeof CompressionStream !== 'undefined' && payload.length > 10000) {
+            const stream = new Blob([payload]).stream().pipeThrough(new CompressionStream('gzip'))
+            payload = await new Response(stream).blob()
+            headers['Content-Encoding'] = 'gzip'
+        }
+        const res = await fetch('/graphql/printpdf', {
+            method: 'POST',
+            credentials: 'include',
+            headers,
+            body: payload
+        })
+        if (!res.ok) {
+            let message = 'HTTP ' + res.status
+            try {
+                message = (await res.json()).message || message
+            } catch (e) {
+                // no json body
+            }
+            throw new Error('Print: ' + message)
+        }
+        return res.blob()
+    }
+
+    // all css of the page, the server renders the html without the app
+    collectCss() {
+        const imports = []
+        let css = ''
+        Array.from(document.styleSheets).forEach(sheet => {
+            const media = sheet.media && sheet.media.mediaText
+            if (media === 'print') {
+                return
+            }
+            try {
+                const rules = sheet.cssRules
+                for (let i = 0; i < rules.length; i++) {
+                    css += rules[i].cssText + '\n'
+                }
+            } catch (e) {
+                // cross origin sheet: the server loads it itself
+                if (sheet.href) {
+                    imports.push(`@import url("${sheet.href.replace(/"/g, '%22')}");`)
+                }
+            }
+        })
+        return imports.join('\n') + '\n' + css
     }
 
     loadImage(src) {
@@ -1272,6 +1411,7 @@ Print.propTypes = {
     children: PropTypes.any,
     style: PropTypes.object,
     printAreaInnerStyle: PropTypes.object,
+    pdfMode: PropTypes.oneOf(['client', 'server']), // 'client' (default): rasterized pages, 'server': text pdf rendered by Chrome via /graphql/printpdf
     className: PropTypes.string,
     classes: PropTypes.object.isRequired,
     buttonLabel: PropTypes.string,
