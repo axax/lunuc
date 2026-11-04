@@ -2,18 +2,18 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import Switch from '@mui/material/Switch'
 import FormControlLabel from '@mui/material/FormControlLabel'
-import { grey } from '@mui/material/colors'
 import { alpha, styled } from '@mui/material/styles'
 
 const DarkSwitch = styled(Switch)(({ theme }) => ({
     '& .MuiSwitch-switchBase.Mui-checked': {
-        color: grey[900],
+        color: '#fff',
         '&:hover': {
-            backgroundColor: alpha(grey[600], theme.palette.action.hoverOpacity),
+            backgroundColor: alpha(theme.palette.secondary.main, theme.palette.action.hoverOpacity),
         },
     },
     '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-        backgroundColor: grey[800],
+        backgroundColor: theme.palette.secondary.main,
+        opacity: 1,
     },
 }));
 

@@ -8,8 +8,11 @@ import {getBestMatchingHostRule} from '../../../util/hostrules.mjs'
 import Hook from '../../../util/hook.cjs'
 
 
+// Without _version the page comes from the version that is live (TypesSelectedVersions, see
+// buildCollectionName) - that is not necessarily "default". Both used to share 'cmsPage-default-...':
+// an editor opening @default/<slug> while another version is live filled the entry visitors read.
 export const getCmsPageCacheKey = ({_version, slug, host, inEditor, hostrule, includeNonPublic}) => {
-    return 'cmsPage-' + (_version ? _version + '-' : 'default-') + slug +
+    return 'cmsPage-' + (_version ? _version + '-' : 'live-') + slug +
         (host ? '-' + host : '') +
         (inEditor ? '-inEditor' : '') +
         (hostrule && hostrule.host ? '-' + hostrule.host : '') +
@@ -21,6 +24,18 @@ export const getCmsPageCacheKey = ({_version, slug, host, inEditor, hostrule, in
         // resolver/index.mjs uses Cache.clearStartWith() on the
         // 'cmsPage-<version>-<slug>' prefix, which keeps matching this way.
         (includeNonPublic ? '-nonpublic' : '')
+}
+
+/**
+ * prefixes to clear after a page of the given version changed: its own entries and the ones of the live
+ * version (the changed version can be the live one, which visitors request without _version)
+ */
+export const getCmsPageCacheClearKeys = ({_version, slug}) => {
+    const keys = [getCmsPageCacheKey({_version, slug})]
+    if (_version) {
+        keys.push(getCmsPageCacheKey({slug}))
+    }
+    return keys
 }
 
 function pathMatches(path, pathPatterns) {

@@ -417,27 +417,91 @@ class Print extends React.PureComponent {
             clone.querySelectorAll('.' + classes.pageBreak + ',[data-is-print-clone="true"]')
                 .forEach(n => n.parentNode && n.parentNode.removeChild(n))
 
-            // header and footer are repeated on every page by the server. The heights are
-            // measured here (in the live dom), the server reserves exactly this space.
-            const take = selector => {
+            // Pin images, svgs (e.g. a qr code) and canvases to the size they have in this window.
+            // Many of them are sized by their parent or have no size at all and would fill the
+            // whole width on the server. All reads first, then all writes: one layout only.
+            const live = Array.from(printArea.querySelectorAll('svg,img,canvas,video'))
+            const rects = live.map(el => el.getBoundingClientRect())
+            clone.querySelectorAll('svg,img,canvas,video').forEach((el, i) => {
+                const r = rects[i]
+                if (r && r.width > 0 && r.height > 0) {
+                    el.style.boxSizing = 'border-box'
+                    el.style.width = r.width + 'px'
+                    el.style.height = r.height + 'px'
+                    el.style.maxWidth = 'none'
+                }
+            })
+
+            // canvas content (e.g. a qr code) is not part of the cloned html
+            const liveCanvases = printArea.querySelectorAll('canvas')
+            clone.querySelectorAll('canvas').forEach((c, i) => {
+                try {
+                    const img = document.createElement('img')
+                    img.src = liveCanvases[i].toDataURL('image/png')
+                    img.className = c.className
+                    img.setAttribute('style', c.getAttribute('style') || '')
+                    img.width = liveCanvases[i].clientWidth || liveCanvases[i].width
+                    img.height = liveCanvases[i].clientHeight || liveCanvases[i].height
+                    c.parentNode.replaceChild(img, c)
+                } catch (e) {
+                    // tainted canvas: keep the empty one
+                }
+            })
+
+            // Header and footer stay in place (css that is scoped to a parent keeps matching), they
+            // are only marked. The server repeats the first one on every page and reserves the space
+            // measured here (in the live dom).
+            const mark = (selector, role) => {
                 if (!selector) {
-                    return {html: '', height: 0}
+                    return 0
                 }
                 const live = Array.from(printArea.querySelectorAll(selector))
-                const found = Array.from(clone.querySelectorAll(selector))
-                const html = found.length ? found[0].outerHTML : ''
-                found.forEach(n => n.parentNode && n.parentNode.removeChild(n))
-                return {html, height: this.maxRepeatedHeight(live)}
+                Array.from(clone.querySelectorAll(selector)).forEach((n, i) =>
+                    n.setAttribute('data-print-fixed', i === 0 ? role : 'hidden'))
+                return this.maxRepeatedHeight(live)
             }
-            const header = take(headerSelector)
-            const footer = take(footerSelector)
+            const headerHeight = mark(headerSelector, 'header')
+            const footerHeight = mark(footerSelector, 'footer')
+
+            const areaStyle = window.getComputedStyle(printArea)
+            const px = prop => parseFloat(areaStyle.getPropertyValue(prop)) || 0
+
+            // Css of the page may be scoped to parents of the print area (".page a {...}"). The
+            // parents are rebuilt as empty shells with the same attributes, so those rules still
+            // match; their own box (padding, width, background ...) is neutralized, the print
+            // area alone decides the layout. Fonts and colors are inherited as before.
+            const NEUTRAL = {
+                display: 'block', position: 'static', float: 'none', margin: '0', padding: '0',
+                border: 'none', width: 'auto', minWidth: '0', maxWidth: 'none', height: 'auto',
+                minHeight: '0', maxHeight: 'none', overflow: 'visible', background: 'none',
+                boxShadow: 'none', transform: 'none', filter: 'none', opacity: '1'
+            }
+            let top = clone
+            for (let el = printArea.parentElement; el && el !== document.body && el !== document.documentElement; el = el.parentElement) {
+                const shell = el.cloneNode(false)
+                Object.keys(NEUTRAL).forEach(prop => shell.style.setProperty(
+                    prop.replace(/[A-Z]/g, c => '-' + c.toLowerCase()), NEUTRAL[prop], 'important'))
+                shell.appendChild(top)
+                top = shell
+            }
+            const attrsOf = el => {
+                const attrs = {}
+                Array.from(el.attributes).forEach(a => {
+                    attrs[a.name] = a.value
+                })
+                return attrs
+            }
 
             const body = {
-                html: clone.outerHTML,
-                header: header.html,
-                headerHeight: header.height,
-                footer: footer.html,
-                footerHeight: footer.height,
+                html: top.outerHTML,
+                htmlAttrs: attrsOf(document.documentElement),
+                bodyAttrs: attrsOf(document.body),
+                headerHeight,
+                footerHeight,
+                padding: {
+                    top: px('padding-top'), right: px('padding-right'),
+                    bottom: px('padding-bottom'), left: px('padding-left')
+                },
                 css: this.collectCss(),
                 baseUrl: document.baseURI,
                 breakBeforeSelector: this.props.manualBreakSelector,
@@ -503,26 +567,48 @@ class Print extends React.PureComponent {
         return res.blob()
     }
 
-    // all css of the page, the server renders the html without the app
+    // All css of the page, the server renders the html without the app. Media queries are
+    // evaluated here against the real window: matching ones are inlined, the others dropped, so the
+    // server (other viewport size) renders exactly what this window shows.
     collectCss() {
         const imports = []
-        let css = ''
-        Array.from(document.styleSheets).forEach(sheet => {
-            const media = sheet.media && sheet.media.mediaText
-            if (media === 'print') {
-                return
+        const rulesToCss = rules => {
+            let css = ''
+            for (let i = 0; i < rules.length; i++) {
+                const rule = rules[i]
+                if (typeof CSSMediaRule !== 'undefined' && rule instanceof CSSMediaRule) {
+                    const mediaText = rule.media.mediaText
+                    if (mediaText === 'all' || window.matchMedia(mediaText).matches) {
+                        css += rulesToCss(rule.cssRules)
+                    }
+                } else if (typeof CSSImportRule !== 'undefined' && rule instanceof CSSImportRule) {
+                    // @import is not allowed behind other rules, inline it
+                    css += sheetToCss(rule.styleSheet, rule.href)
+                } else {
+                    css += rule.cssText + '\n'
+                }
+            }
+            return css
+        }
+        const sheetToCss = (sheet, href) => {
+            const media = sheet && sheet.media && sheet.media.mediaText
+            if (!sheet || (media && media !== 'all' && !window.matchMedia(media).matches)) {
+                return ''
             }
             try {
-                const rules = sheet.cssRules
-                for (let i = 0; i < rules.length; i++) {
-                    css += rules[i].cssText + '\n'
-                }
+                return rulesToCss(sheet.cssRules)
             } catch (e) {
                 // cross origin sheet: the server loads it itself
-                if (sheet.href) {
-                    imports.push(`@import url("${sheet.href.replace(/"/g, '%22')}");`)
+                const url = href || sheet.href
+                if (url) {
+                    imports.push(`@import url("${url.replace(/"/g, '%22')}");`)
                 }
+                return ''
             }
+        }
+        let css = ''
+        Array.from(document.styleSheets).forEach(sheet => {
+            css += sheetToCss(sheet)
         })
         return imports.join('\n') + '\n' + css
     }

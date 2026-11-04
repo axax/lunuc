@@ -45,6 +45,13 @@ const updateKeyValueGlobal = async ({_id, key, value, ispublic, createdBy, owner
         // clear caches from dataResolver --> see method createCacheKey
         Cache.clearStartWith('dataresolver_keyValueGlobals')
 
+            // another version was set live: cached pages, data resolver results etc. of the previous one are
+            // stored under keys without the version (cmsPage-live-..., custom cache keys) - drop everything once.
+            // Rare admin action, a cold cache afterwards is the price
+            if (res && res.key === 'TypesSelectedVersions') {
+                Cache.clearAll()
+            }
+
         if(res && res.ispublic){
            await pubsubHooked.publish('subscribeKeyValueGlobal', {session:context.session,userId:context.id,subscribeKeyValueGlobal: {action: 'update', data: [res]}}, db, context)
         }

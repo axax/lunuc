@@ -23,7 +23,7 @@ import Cache from '../../../util/cache.mjs'
 import {CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities.mjs'
 import {createMatchForCurrentUser, userCanUpdateDoc, userCanCreate, filterReadableIds} from '../../../api/util/dbquery.mjs'
 import {CAPABILITY_CMS_PAGE_FILES, CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants/index.mjs'
-import {getCmsPageCacheKey} from './cmsPage.mjs'
+import {getCmsPageCacheClearKeys} from './cmsPage.mjs'
 import {toPlainJson, fromPlainJson, stableJson} from '../../../api/util/plainJson.mjs'
 import {buildAiGuideFiles} from './cmsPageAiGuide.mjs'
 import {filesToZip, zipToFiles} from '../../../api/util/zipFiles.mjs'
@@ -261,7 +261,7 @@ export const importCmsPages = async ({db, context, pages, _version, createMissin
             }
 
             if (!dryRun) {
-                cacheKeysToClear.push(getCmsPageCacheKey({_version, slug}))
+                cacheKeysToClear.push(...getCmsPageCacheClearKeys({_version, slug}))
             }
         } catch (e) {
             result.errors.push(`${slug}: ${e.message}`)
@@ -509,7 +509,7 @@ export const importChangedCmsPagesFromDirectory = async ({db, context, dir, _ver
                     const {_id: ignore, ...meta} = JSON.parse(fs.readFileSync(metaFile, 'utf8'))
                     fs.writeFileSync(metaFile, JSON.stringify({_id: newId, ...meta}, null, 2) + '\n', 'utf8')
                     state.items[newId] = {slug: page.slug, fields: hashFields(comparableFields(page), CODE_FIELDS)}
-                    Cache.clearStartWith(getCmsPageCacheKey({_version, slug: page.slug}))
+                    Cache.clearStartWith(getCmsPageCacheClearKeys({_version, slug: page.slug}))
                 }
                 result.created++
                 result.slugs.push(label + ': new')
@@ -549,9 +549,9 @@ export const importChangedCmsPagesFromDirectory = async ({db, context, dir, _ver
                         data[field] = CODE_FIELDS.indexOf(field) >= 0 ? diff.changed[field] : fromPlainJson(diff.changed[field])
                     })
                     await GenericResolver.updateEntity(db, context, 'CmsPage', {_id: docId, _version, ...data})
-                    Cache.clearStartWith(getCmsPageCacheKey({_version, slug: doc.slug}))
+                    Cache.clearStartWith(getCmsPageCacheClearKeys({_version, slug: doc.slug}))
                     if (data.slug && data.slug !== doc.slug) {
-                        Cache.clearStartWith(getCmsPageCacheKey({_version, slug: data.slug}))
+                        Cache.clearStartWith(getCmsPageCacheClearKeys({_version, slug: data.slug}))
                     }
                 }
                 result.updated++

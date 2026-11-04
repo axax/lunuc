@@ -755,30 +755,37 @@ export const systemResolver = (db) => ({
                 }
             }
 
-            const newName = `${type}_${new Date().getTime()}${customName}`
+            const newName = `${type}_${new Date().getTime()}${customName || ''}`
             const oldCollection = db.collection(type)
             const newCollection = db.collection(newName)
 
-            // this is not the best way to copy a collection
-            // better do it with aggregate function or mongodumb
-            // but for now it is the only solution that worked
-            if(!empty) {
-                const result = await oldCollection.find().forEach((x) => {
-                    newCollection.insert(x)
-                })
+            // copy in batches and wait for every batch: the inserts used to run without await, the
+            // mutation answered "success" while the copy was still running (and an error got lost)
+            if (!empty) {
+                const BATCH_SIZE = 500
+                let batch = []
+                for await (const doc of oldCollection.find()) {
+                    batch.push(doc)
+                    if (batch.length >= BATCH_SIZE) {
+                        await newCollection.insertMany(batch, {ordered: false})
+                        batch = []
+                    }
+                }
+                if (batch.length > 0) {
+                    await newCollection.insertMany(batch, {ordered: false})
+                }
             }
-            //const result = await oldCollection.aggregate([{$out: newName}])
 
             //copy indexes
             const indexes = []
-            await oldCollection.listIndexes().forEach((x) => {
+            for await (const x of oldCollection.listIndexes()) {
                 if (!x.key._id) {
                     delete x.ns
                     indexes.push(x)
                 }
-            })
+            }
             if (indexes.length > 0) {
-                newCollection.createIndexes(indexes)
+                await newCollection.createIndexes(indexes)
             }
 
             Cache.clearStartWith('system-collections')
@@ -811,7 +818,17 @@ export const systemResolver = (db) => ({
         deleteCollection: async ({name}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
 
-            db.collection(name).drop()
+            // the version that is live can not be deleted: TypesSelectedVersions would point to a missing
+            // collection and the type (e.g. all cms pages) would be empty
+            const selected = await Util.keyValueGlobalMap(db, context, ['TypesSelectedVersions'])
+            const selectedVersions = (selected && selected['TypesSelectedVersions']) || {}
+            const liveType = Object.keys(selectedVersions).find(type =>
+                selectedVersions[type] && selectedVersions[type] !== 'default' && name === type + '_' + selectedVersions[type])
+            if (liveType) {
+                throw new Error(`Version ${name} is live for ${liveType} and can not be deleted. Set another version live first.`)
+            }
+
+            await db.collection(name).drop()
 
             Cache.clearStartWith('system-collections')
 

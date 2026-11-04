@@ -316,6 +316,13 @@ const Util = {
             Cache.clearStartWith('KeyValueGlobal_' + key)
             //Cache.clearStartWith('dataresolver_keyValueGlobals')
 
+            // another version was set live: cached pages, data resolver results etc. of the previous one are
+            // stored under keys without the version (cmsPage-live-..., custom cache keys) - drop everything once.
+            // Rare admin action, a cold cache afterwards is the price
+            if (key === 'TypesSelectedVersions') {
+                Cache.clearAll()
+            }
+
             if(newOption.publish && updateData.ispublic){
 
                 if(insertUpdateResult.value && insertUpdateResult.value.constructor === Object){

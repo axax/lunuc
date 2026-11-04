@@ -2,7 +2,6 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {
     DeleteIconButton,
-    BackupIconButton,
     DoneIconButton,
     SimpleList,
     SimpleDialog,
@@ -14,13 +13,15 @@ import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {getCurrentTheme} from 'ui/admin'
 import {client, Query} from '../../middleware/graphql'
 import {_t} from 'util/i18n.mjs'
+import {parseCollectionVersion, isLiveVersion, DEFAULT_VERSION} from 'client/util/collectionVersions.mjs'
+
 
 class ManageCollectionClones extends React.PureComponent {
-
     state = {
         showConfirmDeletion: false,
         dataToDelete: null,
-        setAsDefault: null
+        // version that is about to go live (confirmation)
+        dataToDeploy: null
     }
 
     handleDeleteClick(item) {
@@ -28,11 +29,19 @@ class ManageCollectionClones extends React.PureComponent {
     }
 
     handleSelectClick(item) {
+        // switches the version for all visitors: ask first
+        this.setState({dataToDeploy: item})
+    }
+
+    handleConfirmDeploy(action) {
+        const item = this.state.dataToDeploy
+        this.setState({dataToDeploy: null})
+        if (!item || !action || action.key !== 'yes') {
+            return
+        }
         const {setKeyValueGlobal, keyValueGlobalMap, type} = this.props
-
-        const o = Object.assign({}, keyValueGlobalMap['TypesSelectedVersions'] || {}, {[type]: item.name.substring(item.name.indexOf('_') + 1)})
-
-
+        const value = item.name === DEFAULT_VERSION ? DEFAULT_VERSION : parseCollectionVersion(type, item.name).value
+        const o = Object.assign({}, keyValueGlobalMap['TypesSelectedVersions'] || {}, {[type]: value})
         setKeyValueGlobal({key: 'TypesSelectedVersions', value: o})
     }
 
@@ -43,11 +52,21 @@ class ManageCollectionClones extends React.PureComponent {
         this.setState({showConfirmDeletion: false, dataToDelete: false})
     }
 
+    versionLabel(item) {
+        if (item.name === DEFAULT_VERSION) {
+            return 'Default'
+        }
+        const {name, value} = parseCollectionVersion(this.props.type, item.name)
+        return name || value
+    }
+
     render() {
         const {type, keyValueGlobalMap, loading} = this.props
+
         if (loading) return null
 
-        const {showConfirmDeletion, dataToDelete} = this.state
+        const {showConfirmDeletion, dataToDelete, dataToDeploy} = this.state
+
         return [<Query key="query" query={COLLECTIONS_QUERY}
                        fetchPolicy="cache-first"
                        variables={{filter: '^' + type + '_.*'}}>
@@ -57,45 +76,45 @@ class ManageCollectionClones extends React.PureComponent {
                 if (!data.collections.results) return null
 
                 const versions = keyValueGlobalMap['TypesSelectedVersions'] || {}
+                const liveStyle = {backgroundColor: getCurrentTheme().palette.primary.light}
 
                 const listItems = data.collections.results.reduce((a, item) => {
-                    const value = item.name.substring(item.name.indexOf('_') + 1)
-                    let date, name = 'no name'
-
-                    if (value.indexOf('_') >= 0) {
-                        date = value.substring(0, value.indexOf('_'))
-                        name = value.substring(value.indexOf('_') + 1).replace('_', ' ')
-                    } else {
-                        date = value
-                    }
-
+                    const {value, name, timestamp} = parseCollectionVersion(type, item.name)
+                    const live = isLiveVersion(versions, type, value)
                     a.push({
-                        style: versions[type] === value ? {backgroundColor: getCurrentTheme().palette.primary.light} : {},
+                        style: live ? liveStyle : {},
                         selected: false,
-                        primary: name,
-                        secondary: Util.formattedDatetime(date),
-                        actions: [<Tooltip title="Deploy version" key="select"><DoneIconButton
+                        primary: (name || 'no name') + (live ? ' · ' + _t('ManageCollectionClones.live') : ''),
+                        secondary: timestamp ? Util.formattedDatetime(timestamp) : value,
+                        // ("Set as default" did exactly the same as "Deploy version" and was removed.)
+                        // The live version can not be deleted - the server checks it as well
+                        actions: live ? [] : [<Tooltip title={_t('ManageCollectionClones.deploy')} key="select"><DoneIconButton
                             onClick={this.handleSelectClick.bind(this, item)}/></Tooltip>,
-                            <Tooltip title="Set as default" key="setdefault"><BackupIconButton
-                            onClick={this.handleSelectClick.bind(this, item)}/></Tooltip>,
-                            <DeleteIconButton key="delete" onClick={this.handleDeleteClick.bind(this, item)}/>],
+                            <DeleteIconButton key="delete" onClick={this.handleDeleteClick.bind(this, item)}/>]
                     })
                     return a
                 }, [])
 
+                const defaultLive = isLiveVersion(versions, type, DEFAULT_VERSION)
                 listItems.unshift({
-                    style: !versions || !versions[type] || versions[type] === 'default' ? {backgroundColor: getCurrentTheme().palette.primary.light} : {},
-                    actions: <Tooltip title="Set collection as active" key="select"><DoneIconButton
-                        onClick={this.handleSelectClick.bind(this, {name: "default"})}/></Tooltip>,
-                    primary: 'Default',
+                    style: defaultLive ? liveStyle : {},
+                    actions: defaultLive ? [] : [<Tooltip title={_t('ManageCollectionClones.deploy')} key="select"><DoneIconButton
+                        onClick={this.handleSelectClick.bind(this, {name: DEFAULT_VERSION})}/></Tooltip>],
+                    primary: 'Default' + (defaultLive ? ' · ' + _t('ManageCollectionClones.live') : ''),
                     secondary: _t('ManageCollectionClones.canNotBeDeleted')
                 })
-
 
                 return <SimpleList items={listItems}
                                    count={listItems.length}/>
             }}
         </Query>,
+
+            dataToDeploy &&
+            <SimpleDialog key="deployDialog" open={true} onClose={this.handleConfirmDeploy.bind(this)}
+                          actions={[{key: 'no', label: _t('core.cancel')}, {key: 'yes', label: _t('ManageCollectionClones.deploy'), type: 'primary'}]}
+                          title={_t('ManageCollectionClones.deployTitle')}>
+                {_t('ManageCollectionClones.deployText', {name: this.versionLabel(dataToDeploy)})}
+            </SimpleDialog>,
 
             dataToDelete &&
             <SimpleDialog key="deleteDialog" open={showConfirmDeletion} onClose={this.handleConfirmDeletion.bind(this)}

@@ -59,8 +59,14 @@ type Query {
     cmsPageActivity(slug: String!, typing: Boolean, elementKey: String, elementLabel: String): CmsPageStatus
 }
 
+type CmsPageCopyResult{
+    status: String
+    _id: ID
+}
+
 type Mutation {
     importCmsPages(data: String!, _version: String, createMissing: Boolean, dryRun: Boolean): CmsPagesImportResult
+    copyCmsPageToVersion(slug: String!, _version: String!): CmsPageCopyResult
 }
 
 type Subscription{

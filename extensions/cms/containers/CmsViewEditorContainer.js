@@ -85,6 +85,9 @@ import {DEFAULT_STYLE} from '../constants/cmsDefaults.mjs'
 import CmsPageTools from '../components/CmsPageTools'
 import CmsDataEditDialog from '../components/CmsDataEditDialog'
 import RemoteEditorMarkers from '../components/RemoteEditorMarkers'
+import CmsVersionSwitcher from '../components/CmsVersionSwitcher'
+import {parseCollectionVersion} from '../../../client/util/collectionVersions.mjs'
+import {CAPABILITY_MANAGE_COLLECTION} from '../../../util/capabilities.mjs'
 import CmsContentImport, {addElementsToTemplate} from '../components/CmsContentImport'
 import {
     setEditorZIndexActive
@@ -383,7 +386,14 @@ class CmsViewEditorContainer extends React.Component {
         if (state && state.addNewSite && props.cmsPage && props.cmsPage.slug === state.slug) {
             result.addNewSite = state.addNewSite
         } else if (props.cmsPage && !props.cmsPage._id && !props.cmsLocal) {
-            result.addNewSite = {slugNoExist: props.slug, slug: props.slug}
+            const {_version, slug: plainSlug} = getSlugVersion(props.slug || '')
+            if (_version && Util.hasCapability(props.user, CAPABILITY_MANAGE_COLLECTION)) {
+                // missing in a version (/@<version>/<slug>): only ask whether to create it as a copy of the
+                // online page (copyCmsPageToVersion) - not the empty new page dialog
+                result.copyToVersion = {slug: plainSlug, _version}
+            } else {
+                result.addNewSite = {slugNoExist: props.slug, slug: props.slug}
+            }
         }
 
         return result
@@ -859,6 +869,56 @@ class CmsViewEditorContainer extends React.Component {
         </SimpleDialog>
     }
 
+    /**
+     * the page does not exist in the version that is opened: create it as a copy of the online page
+     */
+    renderCopyToVersionDialog() {
+        const {slug, _version, copying} = this.state.copyToVersion
+        const versionName = _version === 'default' ? 'Default' :
+            (parseCollectionVersion('CmsPage', 'CmsPage_' + _version).name || _version)
+        return <SimpleDialog key="copyToVersion"
+                             open={true}
+                             maxWidth="sm"
+                             title={_t('CmsViewEditorContainer.copyToVersion.title')}
+                             onClose={(action) => {
+                                 if (action && action.key === 'create') {
+                                     if (!copying) {
+                                         this.copyPageToVersion(slug, _version)
+                                     }
+                                 } else {
+                                     // the online page of the same url
+                                     this.setState({copyToVersion: null})
+                                     this.props.history.push('/' + slug)
+                                 }
+                             }}
+                             actions={[
+                                 {key: 'cancel', label: _t('core.cancel'), type: 'secondary'},
+                                 {key: 'create', label: _t('CmsViewEditorContainer.copyToVersion.create'), type: 'primary', variant: 'contained'}
+                             ]}>
+            {_t('CmsViewEditorContainer.copyToVersion.text', {slug, version: versionName})}
+        </SimpleDialog>
+    }
+
+    copyPageToVersion(slug, _version) {
+        this.setState({copyToVersion: {...this.state.copyToVersion, copying: true}})
+        client.mutate({
+            mutation: 'mutation copyCmsPageToVersion($slug:String!,$_version:String!){copyCmsPageToVersion(slug:$slug,_version:$_version){status _id}}',
+            variables: {slug, _version}
+        }).then(res => {
+            const status = res && res.data && res.data.copyCmsPageToVersion && res.data.copyCmsPageToVersion.status
+            if (status === 'created' || status === 'exists') {
+                // load the page of the version (the client cache still has "not found")
+                location.reload()
+            } else {
+                // not online either: a new page as before
+                this.setState({copyToVersion: null, addNewSite: {slugNoExist: this.props.slug, slug: this.props.slug}})
+            }
+        }).catch(() => {
+            // the error message is shown by the graphql client
+            this.setState({copyToVersion: {...this.state.copyToVersion, copying: false}})
+        })
+    }
+
     restoreDraft(draft) {
         this.setState({cmsDraft: null})
         // saved like any other change (undo with Cmd+Z), the draft is removed once the values are on the server
@@ -985,6 +1045,7 @@ class CmsViewEditorContainer extends React.Component {
             state.cmsEditors !== this.state.cmsEditors ||
             state.cmsConflict !== this.state.cmsConflict ||
             state.cmsDraft !== this.state.cmsDraft ||
+            state.copyToVersion !== this.state.copyToVersion ||
             state.redoCount !== this.state.redoCount ||
             state.manual !== this.state.manual ||
             state.EditorOptions !== this.state.EditorOptions ||
@@ -1086,6 +1147,7 @@ class CmsViewEditorContainer extends React.Component {
                                      typingLabel={_t('CmsViewEditorContainer.editors.typing')}/>,
             this.state.cmsConflict && this.renderConflictDialog(),
             this.state.cmsDraft && !this.state.cmsConflict && this.renderDraftDialog(),
+            this.state.copyToVersion && this.renderCopyToVersionDialog(),
             simpleDialog && <SimpleDialog open={true}
                                           fullWidth={true}
                                           maxWidth={simpleDialog.maxWidth || 'md'}
@@ -1834,7 +1896,11 @@ class CmsViewEditorContainer extends React.Component {
                                       this.props.history.push(config.ADMIN_BASE_URL + '/cms' + (_app_._cmsLastSearch ? _app_._cmsLastSearch : ''))
                                   }}><ArrowBackIcon/></IconButton>}
                               toolbarRight={toolbarRight}
-                              title={`${_t('CmsViewEditorContainer.editPage')} "${props.slug}"${cmsPage.online ? ' - Online' : ''}`}>
+                              title={Util.hasCapability(props.user, CAPABILITY_MANAGE_COLLECTION) ?
+                                  // version of the page (live or not) with a switch to the other versions
+                                  <>{`${_t('CmsViewEditorContainer.editPage')} "${getSlugVersion(props.slug).slug}"`}
+                                      <CmsVersionSwitcher slug={props.slug} history={props.history} user={props.user}/></> :
+                                  `${_t('CmsViewEditorContainer.editPage')} "${props.slug}"${cmsPage.online ? ' - Online' : ''}`}>
                     {inner}
                     {!loadingState && this.state.addNewSite && <CmsAddNewSite onClose={() => {
                         this.setState({addNewSite: false})

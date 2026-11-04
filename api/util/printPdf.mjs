@@ -61,7 +61,16 @@ const toSelector = cn => {
     return /^[.#]/.test(s) || s.indexOf('[') >= 0 ? s : '.' + s
 }
 
-const buildHtml = ({html, css, header, footer, headerHeight, footerHeight, baseUrl, watermark, watermarkOption, breakBeforeSelector,
+// attributes of <html> / <body> of the page (class, lang, data-theme ...): css may depend on them
+const attrString = attrs => {
+    if (!attrs || typeof attrs !== 'object') return ''
+    return Object.keys(attrs)
+        .filter(name => /^[a-zA-Z_:][-a-zA-Z0-9_:.]*$/.test(name) && !/^on/i.test(name))
+        .filter(name => typeof attrs[name] === 'string' && attrs[name].length < 2000)
+        .map(name => ` ${name}="${escapeAttr(attrs[name])}"`).join('')
+}
+
+const buildHtml = ({html, css, headerHeight, footerHeight, padding, htmlAttrs, bodyAttrs, baseUrl, watermark, watermarkOption, breakBeforeSelector,
                        keepTogetherSelectors, keepWithNextSelector}) => {
     const rules = []
     const before = safeSelector(breakBeforeSelector)
@@ -84,22 +93,24 @@ const buildHtml = ({html, css, header, footer, headerHeight, footerHeight, baseU
         wm = `<img src="${escapeAttr(watermark)}" style="position:fixed;bottom:${bottom}px;${horizontal}z-index:1000">`
     }
 
-    // Header and footer are fixed as well. The content gets a padding of the same
-    // height on every page (box-decoration-break: clone repeats padding of a fragmented box).
-    const fixed = (html, h, side) => html
-        ? `<div style="position:fixed;left:0;right:0;${side}:0;height:${h}px;overflow:hidden">${html}</div>`
-        : ''
-    const content = `<div class="__print_flow" style="padding:${headerHeight}px 0 ${footerHeight}px 0">${html}</div>`
-        + fixed(header, headerHeight, 'top') + fixed(footer, footerHeight, 'bottom')
+    // Header and footer stay where they are in the html (so every css rule that is scoped to a
+    // parent still matches); the client marked them with data-print-fixed. position: fixed is
+    // repeated on every page by Chrome. The content gets a padding of the same height on every
+    // page (box-decoration-break: clone repeats the padding of a fragmented box).
+    const {top: pt, right: pr, bottom: pb, left: pl} = padding
+    const content = `<div class="__print_flow" style="padding:${pt + headerHeight}px 0 ${pb + footerHeight}px 0">${html}</div>`
 
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><base href="${escapeAttr(baseUrl)}">
+    return `<!DOCTYPE html><html${attrString(htmlAttrs)}><head><meta charset="utf-8"><base href="${escapeAttr(baseUrl)}">
 <style>${css}</style>
 <style>
 html,body{margin:0;padding:0;background:#fff}
 .__print_flow{box-decoration-break:clone;-webkit-box-decoration-break:clone}
-.print-area{height:auto!important;overflow:visible!important;width:100%!important;box-sizing:border-box;box-shadow:none!important;border:none!important}
+.print-area{height:auto!important;overflow:visible!important;width:100%!important;box-sizing:border-box;box-shadow:none!important;border:none!important;padding-top:0!important;padding-bottom:0!important}
+[data-print-fixed="header"]{position:fixed!important;top:${pt}px;left:${pl}px;right:${pr}px;width:auto!important;z-index:1000}
+[data-print-fixed="footer"]{position:fixed!important;bottom:${pb}px;left:${pl}px;right:${pr}px;width:auto!important;z-index:1000}
+[data-print-fixed="hidden"]{display:none!important}
 ${rules.join('\n')}
-</style></head><body>${content}${wm}</body></html>`
+</style></head><body${attrString(bodyAttrs)}>${content}${wm}</body></html>`
 }
 
 const clampHeight = h => Math.min(400, Math.max(1, Math.ceil(Number(h)) || 1))
@@ -108,9 +119,14 @@ const validate = (body) => {
     if (!body || typeof body !== 'object') return 'invalid body'
     if (typeof body.html !== 'string' || !body.html) return 'html missing'
     if (typeof body.css !== 'string') return 'css missing'
-    // heights of the repeated header / footer in px (= size of the page margins)
-    body.headerHeight = body.header ? clampHeight(body.headerHeight) : 0
-    body.footerHeight = body.footer ? clampHeight(body.footerHeight) : 0
+    // heights of the repeated header / footer (0 = none) and the padding of the print area, in px
+    body.headerHeight = body.headerHeight ? clampHeight(body.headerHeight) : 0
+    body.footerHeight = body.footerHeight ? clampHeight(body.footerHeight) : 0
+    const pad = body.padding || {}
+    body.padding = {}
+    ;['top', 'right', 'bottom', 'left'].forEach(side => {
+        body.padding[side] = Math.min(400, Math.max(0, Math.round(Number(pad[side])) || 0))
+    })
     try {
         const u = new URL(body.baseUrl)
         if (u.protocol !== 'http:' && u.protocol !== 'https:') return 'invalid baseUrl'

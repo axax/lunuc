@@ -2,7 +2,7 @@ import GenericResolver, {buildCollectionName} from '../../../api/resolver/generi
 import {contentVersion, VERSIONED_FIELDS} from '../util/contentVersion.mjs'
 import Util from '../../../api/util/index.mjs'
 import ClientUtil from '../../../client/util/index.mjs'
-import {getCmsPage, getCmsPageCacheKey} from '../util/cmsPage.mjs'
+import {getCmsPage, getCmsPageCacheClearKeys} from '../util/cmsPage.mjs'
 import {resolveData} from '../util/dataResolver.mjs'
 import {pubsub, pubsubHooked} from '../../../api/subscription.mjs'
 import {
@@ -53,7 +53,7 @@ const getServerMethodRequireContext = () => {
     return serverMethodRequireContext
 }
 import {DEFAULT_DATA_RESOLVER, DEFAULT_SCRIPT, DEFAULT_STYLE, DEFAULT_TEMPLATE} from '../constants/cmsDefaults.mjs'
-import {CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities.mjs'
+import {CAPABILITY_MANAGE_OTHER_USERS, CAPABILITY_MANAGE_COLLECTION} from '../../../util/capabilities.mjs'
 import {createMatchForCurrentUser} from '../../../api/util/dbquery.mjs'
 import {matchExpr, parseOrElse} from '../../../client/util/json.mjs'
 import {userHasAccessToObject} from '../../../api/util/access.mjs'
@@ -759,6 +759,42 @@ export default db => ({
         }
     },
     Mutation: {
+        /*
+         * A page that is missing in a version (collection CmsPage_<version>) is created there as a copy of the
+         * page in the live version. It keeps its _id, like the pages of a cloned collection, so the versions
+         * can be compared / synced by _id (syncCollectionEntries)
+         */
+        copyCmsPageToVersion: async ({slug, _version}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_CMS_PAGES)
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
+
+            const liveCollectionName = await buildCollectionName(db, context, 'CmsPage')
+            const targetCollectionName = await buildCollectionName(db, context, 'CmsPage', _version)
+            if (liveCollectionName === targetCollectionName) {
+                throw new Error(`Version ${_version} is the live version`)
+            }
+            // only into an existing version - an insert would silently create a new collection
+            const versionExists = await db.listCollections({name: targetCollectionName}, {nameOnly: true}).hasNext()
+            if (!versionExists) {
+                throw new Error(`Version ${_version} does not exist`)
+            }
+            const target = db.collection(targetCollectionName)
+            if (await target.findOne({slug}, {projection: {_id: 1}})) {
+                return {status: 'exists'}
+            }
+            const page = await db.collection(liveCollectionName).findOne({slug})
+            if (!page) {
+                return {status: 'notFound'}
+            }
+            if (await target.findOne({_id: page._id}, {projection: {_id: 1}})) {
+                throw new Error(`The page exists in version ${_version} under another url`)
+            }
+            await target.insertOne(page)
+
+            Cache.clearStartWith(getCmsPageCacheClearKeys({_version, slug}))
+
+            return {status: 'created', _id: page._id.toString()}
+        },
         importCmsPages: async ({data, _version, createMissing, dryRun}, {context}) => {
             // roles with the page files capability may import (author and up). serverScript and
             // dataResolver run on the server: they are only imported with manage_cms_template
@@ -828,9 +864,7 @@ export default db => ({
 
 
             // clear server cache
-            const cacheKey = getCmsPageCacheKey({_version, slug: rest.slug})
-
-            Cache.clearStartWith(cacheKey)
+            Cache.clearStartWith(getCmsPageCacheClearKeys({_version, slug: rest.slug}))
             const result = await GenericResolver.updateEnity(db, context, 'CmsPage', {
                 _id,
                 ownerGroup:(ownerGroup?ownerGroup.reduce((o,id)=>{o.push(new ObjectId(id));return o},[]):ownerGroup),
