@@ -498,6 +498,7 @@ class Print extends React.PureComponent {
                 bodyAttrs: attrsOf(document.body),
                 headerHeight,
                 footerHeight,
+                repeatedElementBackground: this.props.repeatedElementBackground,
                 padding: {
                     top: px('padding-top'), right: px('padding-right'),
                     bottom: px('padding-bottom'), left: px('padding-left')

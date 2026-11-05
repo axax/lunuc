@@ -1899,7 +1899,8 @@ class CmsViewEditorContainer extends React.Component {
                               title={Util.hasCapability(props.user, CAPABILITY_MANAGE_COLLECTION) ?
                                   // version of the page (live or not) with a switch to the other versions
                                   <>{`${_t('CmsViewEditorContainer.editPage')} "${getSlugVersion(props.slug).slug}"`}
-                                      <CmsVersionSwitcher slug={props.slug} history={props.history} user={props.user}/></> :
+                                      <CmsVersionSwitcher slug={props.slug} history={props.history} user={props.user}
+                                                          notPublic={!!cmsPage._id && !this.state.public}/></> :
                                   `${_t('CmsViewEditorContainer.editPage')} "${props.slug}"${cmsPage.online ? ' - Online' : ''}`}>
                     {inner}
                     {!loadingState && this.state.addNewSite && <CmsAddNewSite onClose={() => {

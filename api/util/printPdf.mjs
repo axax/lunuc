@@ -19,6 +19,7 @@ import {isPublicHttpUrl} from '../../util/networkGuard.mjs'
 
 const PRINT_WIDTH_PX = 1020 // same layout width as the client side variant (see Print.js PAGE_WIDTH)
 const A4_WIDTH_PX = 793.7 // 210mm @ 96dpi
+const PRINT_HEIGHT_PX = Math.round(PRINT_WIDTH_PX * 297 / 210) // 1443, one page in layout px
 const PDF_SCALE = A4_WIDTH_PX / PRINT_WIDTH_PX
 const MAX_CONCURRENT = parseInt(process.env.LUNUC_PRINTPDF_CONCURRENCY) || 3
 const MAX_QUEUE = parseInt(process.env.LUNUC_PRINTPDF_QUEUE) || 10
@@ -70,7 +71,7 @@ const attrString = attrs => {
         .map(name => ` ${name}="${escapeAttr(attrs[name])}"`).join('')
 }
 
-const buildHtml = ({html, css, headerHeight, footerHeight, padding, htmlAttrs, bodyAttrs, baseUrl, watermark, watermarkOption, breakBeforeSelector,
+const buildHtml = ({html, css, headerHeight, footerHeight, padding, repeatedBackground, htmlAttrs, bodyAttrs, baseUrl, watermark, watermarkOption, breakBeforeSelector,
                        keepTogetherSelectors, keepWithNextSelector}) => {
     const rules = []
     const before = safeSelector(breakBeforeSelector)
@@ -106,8 +107,8 @@ const buildHtml = ({html, css, headerHeight, footerHeight, padding, htmlAttrs, b
 html,body{margin:0;padding:0;background:#fff}
 .__print_flow{box-decoration-break:clone;-webkit-box-decoration-break:clone}
 .print-area{height:auto!important;overflow:visible!important;width:100%!important;box-sizing:border-box;box-shadow:none!important;border:none!important;padding-top:0!important;padding-bottom:0!important}
-[data-print-fixed="header"]{position:fixed!important;top:${pt}px;left:${pl}px;right:${pr}px;width:auto!important;z-index:1000}
-[data-print-fixed="footer"]{position:fixed!important;bottom:${pb}px;left:${pl}px;right:${pr}px;width:auto!important;z-index:1000}
+[data-print-fixed="header"]{position:fixed!important;top:${pt}px;left:${pl}px;right:${pr}px;width:auto!important;margin:0!important;z-index:1000;background:${repeatedBackground}}
+[data-print-fixed="footer"]{position:fixed!important;top:${PRINT_HEIGHT_PX - pb - footerHeight}px;left:${pl}px;right:${pr}px;width:auto!important;margin:0!important;z-index:1000;background:${repeatedBackground}}
 [data-print-fixed="hidden"]{display:none!important}
 ${rules.join('\n')}
 </style></head><body${attrString(bodyAttrs)}>${content}${wm}</body></html>`
@@ -122,6 +123,10 @@ const validate = (body) => {
     // heights of the repeated header / footer (0 = none) and the padding of the print area, in px
     body.headerHeight = body.headerHeight ? clampHeight(body.headerHeight) : 0
     body.footerHeight = body.footerHeight ? clampHeight(body.footerHeight) : 0
+    // same as the client side variant: the repeated elements are opaque (default white)
+    body.repeatedBackground = typeof body.repeatedElementBackground === 'string'
+        && /^[#a-zA-Z0-9(),.% -]{1,60}$/.test(body.repeatedElementBackground)
+        ? body.repeatedElementBackground : '#ffffff'
     const pad = body.padding || {}
     body.padding = {}
     ;['top', 'right', 'bottom', 'left'].forEach(side => {

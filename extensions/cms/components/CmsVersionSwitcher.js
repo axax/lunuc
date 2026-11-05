@@ -6,6 +6,7 @@ import ListItemIcon from '@mui/material/ListItemIcon'
 import Divider from '@mui/material/Divider'
 import CheckIcon from '@mui/icons-material/Check'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import {SimpleDialog} from 'ui/admin'
 import {client} from '../../../client/middleware/graphql'
 import {COLLECTIONS_QUERY} from '../../../client/constants/admin.mjs'
@@ -24,9 +25,10 @@ const TYPE = 'CmsPage'
  * - lists the versions (loaded only when the menu is opened) and opens the page in another version
  *   (/@<version>/<slug>) - switching only changes what is edited, not what visitors see
  * - "set live" switches the version for all visitors, after a confirmation
+ * - notPublic: the page is not public in its settings - visitors do not see it in any version
  * Only for users who may manage collections (the collections query needs that capability).
  */
-const CmsVersionSwitcher = ({slug, history, user}) => {
+const CmsVersionSwitcher = ({slug, history, user, notPublic}) => {
     const [anchor, setAnchor] = React.useState(null)
     const [versions, setVersions] = React.useState(null)
     const [error, setError] = React.useState(null)
@@ -98,9 +100,17 @@ const CmsVersionSwitcher = ({slug, history, user}) => {
               }}>
             {isLive ? _t('CmsVersionSwitcher.online') : _t('CmsVersionSwitcher.notLive')}
             {' · '}{labelOf(edited)}
+            {notPublic && <>{' · '}<LockOutlinedIcon style={{fontSize: '0.875rem', margin: '0 0.125rem'}}/>
+                {_t('CmsVersionSwitcher.notPublic')}</>}
             <ExpandMoreIcon style={{fontSize: '1rem'}}/>
         </span>
         <Menu anchorEl={anchor} open={!!anchor} onClose={() => setAnchor(null)} sx={{zIndex: 10001}}>
+            {notPublic && <MenuItem disabled sx={{opacity: '1 !important', whiteSpace: 'normal', maxWidth: '20rem'}}>
+                <ListItemIcon><LockOutlinedIcon fontSize="small"/></ListItemIcon>
+                <ListItemText primary={_t('CmsVersionSwitcher.notPublic')}
+                              secondary={_t('CmsVersionSwitcher.notPublicHint')}/>
+            </MenuItem>}
+            {notPublic && <Divider/>}
             {items.map(item => <MenuItem key={item.value} selected={item.value === edited} onClick={() => goTo(item.value)}>
                 <ListItemIcon>{item.value === edited ? <CheckIcon fontSize="small"/> : null}</ListItemIcon>
                 <ListItemText primary={(item.name || item.value) + (item.value === live ? ' · ' + _t('ManageCollectionClones.live') : '')}
