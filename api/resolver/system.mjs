@@ -32,6 +32,7 @@ import {MONGO_URL} from '../database.mjs'
 import {isTemporarilyBlocked} from '../../server/util/requestBlocker.mjs'
 import {clientAddress} from "../../util/host.mjs";
 import {getSystemUpdateInfo, getSystemUpdateStatus, startSystemUpdate} from '../util/systemUpdate.mjs'
+import {startPtySession, writePtySession, resizePtySession, killPtySession, getPtySession} from '../util/ptyShell.mjs'
 
 const SKIP_CAPABILITY_CHECK = ['ls -l', 'pwd', 'ls', 'ping lunuc.com']
 const ENDOFCOMMAND = '__ENDOFCOMMAND__\n'
@@ -41,13 +42,31 @@ const execs = {}
 // a running console belongs to the user (or anonymous session) that started it
 const execOwner = context => context.id || ('session:' + context.session)
 const checkExecOwner = async (db, context, id) => {
-    if (execs[id] && execs[id].owner !== execOwner(context) &&
+    const running = execs[id] || getPtySession(id)
+    if (running && running.owner !== execOwner(context) &&
         !await Util.userHasCapability(db, context, CAPABILITY_RUN_COMMAND)) {
         throw new Error('Not allowed to access this console')
     }
 }
 
+// answers of the lunuc commands (console: `lu <command>`)
+const luCommand = (command) => {
+    if (command === 'clearcache') {
+        const size = Cache.size()
+        // also notifies cache listeners (e.g. dataResolver workers)
+        Cache.clearAll()
+        return `${size} cached items cleared.`
+    } else if (command === 'memusage') {
+        const mem = process.memoryUsage()
+        return `heap used: ${(mem.heapUsed / 1024 / 1024).toFixed(1)} MB, rss: ${(mem.rss / 1024 / 1024).toFixed(1)} MB`
+    } else if (command === 'connectedclients') {
+        return clientIps().join('\n')
+    }
+    throw new Error(`Unknown command: ${command}`)
+}
+
 const killExec = (id) => {
+    killPtySession(id)
     if (execs[id]) {
         //execs[id].kill('SIGINT')
         if (execs[id].exitCode === null) {
@@ -82,8 +101,7 @@ export const systemResolver = (db) => ({
         run: async ({command, scope, id, sync, timeout}, {context}) => {
             let response = ''
 
-            const currentId = id || (context.id + String((new Date()).getTime()))
-
+            const currentId = id || (context.id + String(Date.now()))
 
             if (SKIP_CAPABILITY_CHECK.indexOf(command) < 0) {
                 await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
@@ -94,54 +112,20 @@ export const systemResolver = (db) => ({
                 await checkExecOwner(db, context, currentId)
             }
 
-
             if (scope === 'lu') {
-                // lu commands
-
-                if (command === 'clearcache') {
+                try {
                     pubsub.publish('subscribeRun', {
                         userId: context.id,
-                        subscribeRun: {
-                            event: 'end',
-                            response: `${Cache.size()} cached items cleared.`,
-                            id: currentId
-                        }
+                        subscribeRun: {event: 'end', response: luCommand(command), id: currentId}
                     })
-
-
-                    //rmDir(path.join(ABS_UPLOAD_DIR, '/screenshots'), true)
-
-
-                    // also notifies cache listeners (e.g. dataResolver workers)
-                    Cache.clearAll()
-
-                } else if (command === 'memusage') {
-                    const memusage = process.memoryUsage().heapUsed / 1024 / 1024
-
+                } catch (e) {
                     pubsub.publish('subscribeRun', {
                         userId: context.id,
-                        subscribeRun: {event: 'end', response: memusage, id: currentId}
-                    })
-
-
-                } else if (command === 'connectedclients') {
-
-                    pubsub.publish('subscribeRun', {
-                        userId: context.id,
-                        subscribeRun: {event: 'end', response: clientIps().join('\n'), id: currentId}
-                    })
-
-                } else {
-                    pubsub.publish('subscribeRun', {
-                        userId: context.id,
-                        subscribeRun: {event: 'error', error: 'Unknown command', id: currentId}
+                        subscribeRun: {event: 'error', error: e.message, id: currentId}
                     })
                 }
-
-
             } else {
-                //Shell
-
+                // one bash per console id; the end of a command is detected by an echoed marker
                 if (!command) {
                     throw new Error('No command to execute.')
                 }
@@ -151,14 +135,6 @@ export const systemResolver = (db) => ({
                         shell: '/bin/bash'
                     })
                 } else {
-                    /*execs[id] = spawn(command, options, (err, stdout, stderr) => {
-                     console.log(stdout)
-                     pubsub.publish('subscribeRun', {
-                     userId: context.id,
-                     subscribeRun: {response: stdout, error: stderr, id}
-                     })
-                     })*/
-
                     if (!execs[currentId] || execs[currentId].exitCode !== null) {
                         execs[currentId] = spawn('bash', [], {detached: true})
                         execs[currentId].owner = execOwner(context)
@@ -197,18 +173,14 @@ export const systemResolver = (db) => ({
                             })
                         })
                     }
-                    console.log('is running',execs[currentId].isRunning,`-${command}-`)
-                    execs[currentId].stdin.write(`${command}`)
-                    if(!execs[currentId].isRunning) {
-                        execs[currentId].stdin.write(` ; echo ${ENDOFCOMMAND}`)
-                    }else{
-                        execs[currentId].stdin.write(`\n`)
-                    }
-                    execs[currentId].isRunning = true
+                    // while a command runs the input goes to its stdin
+                    const exec = execs[currentId]
+                    exec.stdin.write(exec.isRunning ? `${command}\n` : `${command} ; echo ${ENDOFCOMMAND}`)
+                    exec.isRunning = true
 
-                    clearTimeout(execs[currentId].execTimeout)
-                    if(timeout!==0) {
-                        execs[currentId].execTimeout = setTimeout(function () {
+                    clearTimeout(exec.execTimeout)
+                    if (timeout !== 0) {
+                        exec.execTimeout = setTimeout(() => {
                             killExec(currentId)
                             pubsub.publish('subscribeRun', {
                                 userId: context.id,
@@ -709,6 +681,31 @@ export const systemResolver = (db) => ({
         }
     },
     Mutation: {
+        // interactive shell of the console page (see api/util/ptyShell.mjs)
+        ptyStart: async ({id, cols, rows}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
+            const currentId = id || (context.id + String(Date.now()))
+            await checkExecOwner(db, context, currentId)
+            const userId = context.id
+            const {mode, replay} = startPtySession({
+                id: currentId, owner: execOwner(context), cols, rows,
+                publish: subscribeRun => pubsub.publish('subscribeRun', {userId, subscribeRun}),
+                luHandler: luCommand
+            })
+            return {id: currentId, event: mode, response: replay}
+        },
+        ptyWrite: async ({id, data}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
+            await checkExecOwner(db, context, id)
+            writePtySession(id, data)
+            return {id}
+        },
+        ptyResize: async ({id, cols, rows}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
+            await checkExecOwner(db, context, id)
+            await resizePtySession(id, cols, rows)
+            return {id}
+        },
         startSystemUpdate: async ({restart, force}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
             return startSystemUpdate({restart: restart || 'all', force: !!force})

@@ -195,7 +195,10 @@ export const systemSchemaRaw = `
     
       
     type Mutation {   	
-    	createDbIndexes: GenericResult    
+    	createDbIndexes: GenericResult
+    	ptyStart(id: String, cols: Int, rows: Int): RunResult
+    	ptyWrite(id: String!, data: String!): RunResult
+    	ptyResize(id: String!, cols: Int!, rows: Int!): RunResult
     	startSystemUpdate(restart: String, force: Boolean): SystemUpdateStatus
     	dropDbIndexes(name: String!, indexes: [String]!): GenericResult   	
     	createBackup(type: String!, options: String): Backup    	
