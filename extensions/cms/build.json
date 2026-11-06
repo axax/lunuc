@@ -36,7 +36,7 @@
           "bulkEditable": true,
           "fullWidth": true,
           "vagueSearchable": false,
-          "Tab": "elements.generalTab"
+          "tab": "seo"
         },
         {
           "name": "keyword",
@@ -45,7 +45,7 @@
           "uitype": "textarea",
           "fullWidth": true,
           "hideColumnInTypesByDefault": true,
-          "Tab": "elements.generalTab"
+          "tab": "seo"
         },
         {
           "name": "description",
@@ -54,7 +54,7 @@
           "uitype": "textarea",
           "fullWidth": true,
           "hideColumnInTypesByDefault": true,
-          "Tab": "elements.generalTab"
+          "tab": "seo"
         },
         {
           "name": "hostRule",
