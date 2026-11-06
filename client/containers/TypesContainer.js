@@ -371,6 +371,12 @@ class TypesContainer extends React.Component {
             if (typeChanged) {
                 this.trackRecentType(pageParams.type, true)
             }
+            if ((typeChanged || metaChanged) && (state.selectAllRows || Object.keys(state.selectedRows).length > 0)) {
+                // the selection belongs to the previous type: drop it. Set directly on the next state
+                // (setState is not allowed here); React keeps it even if no render follows.
+                state.selectedRows = {}
+                state.selectAllRows = false
+            }
             this.getData(pageParams, true, typeChanged || metaChanged)
 
             // Alternative views (grid / tree of media) load their own data, so nobody would set the state and
