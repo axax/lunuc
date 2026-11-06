@@ -1,4 +1,5 @@
 import React from 'react'
+import Box from '@mui/material/Box'
 import PropTypes from 'prop-types'
 import compose from 'util/compose'
 import {
@@ -7,7 +8,8 @@ import {
     TextField,
     DeleteIconButton,
     Chip,
-    ContentBlock,
+    Card,
+    Avatar,
     SimpleSelect,
     THEMES,
     useThemeName
@@ -16,6 +18,7 @@ import {saveUserTheme} from '../util/theme'
 import {graphql} from '../middleware/graphql'
 import {_t} from 'util/i18n.mjs'
 import TypePicker from '../components/TypePicker'
+import {getImageSrc} from '../util/media'
 
 const ThemeSelect = () => {
     const themeName = useThemeName()
@@ -29,6 +32,16 @@ const ThemeSelect = () => {
         items={THEMES.map(({value, name}) => ({value, name}))}
     />
 }
+
+const Section = ({title, hint, children, sx}) => <Card sx={{height: '100%', borderRadius: '6px', '&:hover': {transform: 'none'}, ...sx}}>
+    <Typography variant="h5" component="h2" sx={{fontWeight: 600}} gutterBottom={!hint}>{title}</Typography>
+    {hint && <Typography variant="body2" color="text.secondary" gutterBottom>{hint}</Typography>}
+    <Box sx={{display: 'flex', flexDirection: 'column', gap: 2, mt: 2}}>
+        {children}
+    </Box>
+</Card>
+
+const Actions = ({children}) => <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 2, flexWrap: 'wrap'}}>{children}</Box>
 
 class UserProfileContainer extends React.Component {
 
@@ -190,7 +203,7 @@ class UserProfileContainer extends React.Component {
         let noteElements = []
         if (note) {
             note.forEach(
-                (o) => noteElements.push(<div key={o._id} style={{display:'flex'}}>
+                (o) => noteElements.push(<div key={o._id} style={{display:'flex', alignItems:'flex-start'}}>
                     <TextField multiline name="note" id={o._id} onBlur={this.handleBlur}
                                onChange={this.handleInputChange}
                                fullWidth={true}
@@ -200,60 +213,69 @@ class UserProfileContainer extends React.Component {
             )
         }
 
-        return <>
-                <Typography variant="h3" component="h1" gutterBottom>{_t('Profile.title')}</Typography>
+        const pictureSrc = picture && picture.length > 0 ? getImageSrc(picture[0], 'thumbnail') : undefined
 
+        return <Box sx={{maxWidth: 1100}}>
+            <Box sx={{display: 'flex', alignItems: 'center', gap: 3, mb: 4, flexWrap: 'wrap'}}>
+                <Avatar src={pictureSrc} alt={username} sx={{
+                    width: 84, height: 84, fontSize: '2rem', fontWeight: 600,
+                    bgcolor: 'primary.main', color: 'primary.contrastText',
+                    boxShadow: 3
+                }}>{(username || '?').charAt(0).toUpperCase()}</Avatar>
+                <Box sx={{minWidth: 0}}>
+                    <Typography variant="h3" component="h1">{username || _t('Profile.title')}</Typography>
+                    <Typography color="text.secondary">{email}</Typography>
+                    {me.role && <Chip size="small" color="primary" variant="outlined" label={me.role.name} sx={{mt: 1}}/>}
+                </Box>
+            </Box>
 
-                <ContentBlock style={{maxWidth: '600px'}}>
-                    <TextField fullWidth={true} type="text" label="Benutzername" name="username" value={username} onChange={this.handleInputChange}/>
+            <Box sx={{display: 'grid', gap: 3, gridTemplateColumns: {xs: '1fr', md: '1fr 1fr'}, alignItems: 'start'}}>
+
+                <Section title={_t('Profile.title')}>
+                    <TextField fullWidth={true} type="text" label="Benutzername" name="username" value={username}
+                               error={!!usernameError} helperText={usernameError || undefined}
+                               onChange={this.handleInputChange}/>
                     <TextField fullWidth={true} type="email" label="Email" name="email" value={email} onChange={this.handleInputChange}/>
+                    <TypePicker onChange={this.handleInputChange} filter="mimeType=image" multi={false} value={picture}
+                                name="picture" fullWidth={true} placeholder={_t('Profile.picture')} type="Media"/>
+                    <Actions>
+                        <Button onClick={this.updateProfile.bind(this)} disabled={loading} variant="contained" color="primary">{_t('core.save')}</Button>
+                    </Actions>
+                </Section>
 
-                    <TypePicker onChange={this.handleInputChange} filter="mimeType=image" multi={false} value={picture} name="picture" fullWidth={true} placeholder={_t('Profile.picture')}
-                                type="Media"/>
+                <Box sx={{display: 'flex', flexDirection: 'column', gap: 3}}>
+                    <Section title={_t('Profile.appearance')}>
+                        <ThemeSelect/>
+                    </Section>
 
-                    <Button onClick={this.updateProfile.bind(this)} variant="contained" color="primary">{_t('core.save')}</Button>
-                    {usernameError ? <strong>{usernameError}</strong> : ''}
+                    <Section title={_t('Profile.roleCapabilities')} hint={_t('Profile.roleHint')}>
+                        <Typography variant="subtitle1" component="p">{_t('Profile.currentRole', me.role)}</Typography>
+                        <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 1}}>
+                            {me.role.capabilities.map((v, i) => <Chip key={i} size="small" label={v}/>)}
+                        </Box>
+                    </Section>
+                </Box>
 
-                </ContentBlock>
+                <Section title={_t('Profile.changePassword')}>
+                    <TextField fullWidth={true} type="password" label="Password" name="password" autoComplete="new-password"
+                               value={password || ''} onChange={this.handleInputChange}/>
+                    <TextField fullWidth={true} type="password" label="Passwort bestätigen" name="passwordConfirm" autoComplete="new-password"
+                               value={passwordConfirm || ''} error={!!passwordError} helperText={passwordError || undefined}
+                               onChange={this.handleInputChange}/>
+                    <Actions>
+                        {passwordMessage && <Typography variant="body2" color="success.main">{passwordMessage}</Typography>}
+                        <Button onClick={this.updatePassword.bind(this)} disabled={loading} variant="contained" color="primary">{_t('core.save')}</Button>
+                    </Actions>
+                </Section>
 
-                <Typography variant="h4" component="h2" gutterBottom>{_t('Profile.appearance')}</Typography>
-
-                <ContentBlock style={{maxWidth: '600px'}}>
-                    <ThemeSelect/>
-                </ContentBlock>
-
-                <Typography variant="h4" component="h2" gutterBottom>{_t('Profile.changePassword')}</Typography>
-
-
-                <ContentBlock style={{maxWidth: '600px'}}>
-                    <TextField fullWidth={true} type="password" label="Password" name="password" value={password} onChange={this.handleInputChange}/>
-                    <TextField fullWidth={true} type="password" label="Passwort bestätigen" name="passwordConfirm" value={passwordConfirm} onChange={this.handleInputChange}/>
-                    <Button onClick={this.updatePassword.bind(this)} variant="contained" color="primary">{_t('core.save')}</Button>
-                    {passwordError ? <strong>{passwordError}</strong> : ''}
-                    {passwordMessage ? <strong>{passwordMessage}</strong> : ''}
-                </ContentBlock>
-
-                <Typography variant="h4" component="h2" gutterBottom>{_t('Profile.roleCapabilities')}</Typography>
-                <Typography variant="subtitle2" component="p" gutterBottom>{_t('Profile.roleHint')}</Typography>
-
-
-                <ContentBlock style={{maxWidth: '600px'}}>
-                    <Typography variant="subtitle1" component="p" gutterBottom>{_t('Profile.currentRole', me.role)}</Typography>
-                    {
-                        me.role.capabilities.map((v, i) => {
-                            return <Chip key={i} label={v}/>
-                        })
-                    }
-                </ContentBlock>
-
-
-                <Typography variant="h4" component="h2" gutterBottom>{_t('Profile.note')}</Typography>
-                <ContentBlock>
+                <Section title={_t('Profile.note')}>
                     {noteElements}
-                    <br/>
-                    <Button variant="contained" color="primary" onClick={this.createNote}>{_t('Profile.addNote')}</Button>
-                </ContentBlock>
-            </>
+                    <Actions>
+                        <Button variant="outlined" color="primary" onClick={this.createNote}>{_t('Profile.addNote')}</Button>
+                    </Actions>
+                </Section>
+            </Box>
+        </Box>
     }
 }
 

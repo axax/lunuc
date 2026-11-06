@@ -83,6 +83,51 @@ Hook.on('typeBeforeDelete', async ({db, type, data}) => {
     }
 })
 
+// ─── folder hierarchy guard ───────────────────────────────────────────────────
+// a folder (MediaGroup) must never be its own parent or end up inside one of its own
+// subfolders - it would disappear from the root of the media views together with
+// everything inside it. Checked on every create / update (edit, move, bulk edit, import).
+const toObjectIds = (value) => {
+    if (value === undefined || value === null || value === '') return []
+    return (Array.isArray(value) ? value : [value])
+        .map(v => (v && typeof v === 'object' && v._id) ? v._id : v)
+        .filter(v => v && ObjectId.isValid(v))
+        .map(v => new ObjectId(v.toString()))
+}
+
+const assertNoFolderCycle = async (db, folderId, parentIds) => {
+    if (!folderId || !parentIds.length) return
+    const selfId = folderId.toString()
+    const visited = new Set()
+    let level = parentIds
+    // walk up the parents level by level (one query per level, only _id and group)
+    while (level.length) {
+        if (level.some(id => id.toString() === selfId)) {
+            throw new Error(_t('media.group.cycle.error'))
+        }
+        level.forEach(id => visited.add(id.toString()))
+        const parents = await db.collection('MediaGroup')
+            .find({_id: {$in: level}}, {projection: {group: 1}}).toArray()
+        level = parents.flatMap(p => toObjectIds(p.group)).filter(id => !visited.has(id.toString()))
+    }
+}
+
+Hook.on('typeBeforeUpdate', async ({db, type, data, params}) => {
+    if (type !== 'MediaGroup' || !data || data.group === undefined) return
+    let folderId = params?._id || data._id
+    if (!folderId && params && Object.keys(params).length) {
+        const doc = await db.collection('MediaGroup').findOne(params, {projection: {_id: 1}})
+        folderId = doc?._id
+    }
+    await assertNoFolderCycle(db, folderId, toObjectIds(data.group))
+})
+
+Hook.on('typeBeforeCreate', async ({db, type, data}) => {
+    // a new folder has no children yet, only a given _id (import) can point to itself
+    if (type !== 'MediaGroup' || !data?._id || data.group === undefined) return
+    await assertNoFolderCycle(db, data._id, toObjectIds(data.group))
+})
+
 const addFilePrefix = (result) => {
     const fileName = path.join(__dirname, '../../' + UPLOAD_DIR + '/' + result._id)
     const fileNamePrivate = path.join(__dirname, '../../' + UPLOAD_DIR + '/private' + result._id)

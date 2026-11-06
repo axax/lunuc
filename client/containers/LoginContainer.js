@@ -1,13 +1,14 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {Link, Redirect} from '../util/route'
-import {Card, SimpleButton, TextField, Row, Col, Typography, VisibilityIconButton, VisibilityOffIconButton} from 'ui/admin'
+import {Card, SimpleButton, TextField, Typography, VisibilityIconButton, VisibilityOffIconButton} from 'ui/admin'
 import config from 'gen/config-client'
 import Util from 'client/util/index.mjs'
 import DomUtil from '../util/dom.mjs'
 import {client} from 'client/middleware/graphql'
 import {_t} from 'util/i18n.mjs'
 import Hook from '../../util/hook'
+import {AuthLayout, cardSx} from '../components/AuthLayout'
 
 class LoginContainer extends React.Component {
 
@@ -198,10 +199,8 @@ class LoginContainer extends React.Component {
 
 
 
-        return <Row style={{marginTop: '5rem'}}>
-            <Col xs={1} sm={2} md={4}></Col>
-            <Col xs={10} sm={8} md={4}>
-                {resetToken && <Card sx={{mb:2}}>
+        return <AuthLayout>
+                {resetToken && <Card sx={cardSx}>
                     <form noValidate autoComplete="off" action="/graphql/newPassword" method="post">
                         <Typography variant="h3" gutterBottom>{_t('Login.changePasswordTitle')}</Typography>
 
@@ -242,7 +241,7 @@ class LoginContainer extends React.Component {
                     </form>
                 </Card>}
 
-                {forgotPassword && <Card sx={{mb:2}}>
+                {forgotPassword && <Card sx={cardSx}>
                     <form noValidate autoComplete="off" action="/graphql/forgotPassword" method="post">
                         <Typography variant="h3" gutterBottom>{_t('Login.forgotPassword')}</Typography>
 
@@ -275,7 +274,7 @@ class LoginContainer extends React.Component {
                 </Card>}
 
                 {!resetToken && !forgotPassword &&
-                    <><Card sx={{mb:2}}><form noValidate autoComplete="off" action="/graphql/login" method="post">
+                    <><Card sx={cardSx}><form noValidate autoComplete="off" action="/graphql/login" method="post">
                     <Typography variant="h3" gutterBottom>{_t('Login.title')}</Typography>
 
                     <Typography gutterBottom>{_t('Login.subtitle', {pathname: from})}</Typography>
@@ -349,10 +348,7 @@ class LoginContainer extends React.Component {
                     {loginAlternatives}</>
 
                 }
-            </Col>
-            <Col xs={1} sm={2} md={4}>
-            </Col>
-        </Row>
+</AuthLayout>
     }
 }
 

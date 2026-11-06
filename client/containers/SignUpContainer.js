@@ -2,8 +2,9 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import config from 'gen/config-client'
 import {Link} from 'client/util/route'
-import {Card, SimpleButton, TextField, Row, Col, Typography} from 'ui/admin'
+import {Card, SimpleButton, TextField, Typography} from 'ui/admin'
 import {client} from '../middleware/graphql'
+import {AuthLayout, cardSx} from '../components/AuthLayout'
 
 class SignUpContainer extends React.Component {
     state = {
@@ -88,10 +89,8 @@ class SignUpContainer extends React.Component {
 
         const {signupFinished, email, username, password, loading, usernameError, passwordError, emailError} = this.state
 
-        return <Row style={{marginTop: '5rem'}}>
-                <Col xs={1} sm={2} md={4}></Col>
-                <Col xs={10} sm={8} md={4}>
-                    <Card>
+        return <AuthLayout>
+                    <Card sx={cardSx}>
                         <Typography variant="h3" gutterBottom>Sign up</Typography>
 
                         {signupFinished ?
@@ -148,9 +147,7 @@ class SignUpContainer extends React.Component {
                             </form>
                         }
                     </Card>
-                </Col>
-                <Col xs={1} sm={2} md={4}></Col>
-            </Row>
+            </AuthLayout>
     }
 }
 
