@@ -25,9 +25,8 @@ import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded'
 import LinkRounded from '@mui/icons-material/LinkRounded'
 import CloudUploadOutlined from '@mui/icons-material/CloudUploadOutlined'
 import {client} from '../../../client/middleware/graphql'
-import Util from '../../../client/util/index.mjs'
 import {setUploadTarget, getUploadTarget, hasUploadTarget, onMediaUploaded, openUploadDialog} from './MediaUploadBar'
-import {getImageSrc} from '../../../client/util/media'
+import {getImageSrc, getMediaPlaybackSrc, isExternalMedia} from '../../../client/util/media'
 import {_t} from '../../../util/i18n.mjs'
 import {
     ContextMenu,
@@ -268,6 +267,8 @@ const DocGraphic = ({item}) => (
 )
 
 const mediaUrl = (item) => getImageSrc(item, null)
+// placeholders resolved, media server through the proxy
+const playbackUrl = (item) => getMediaPlaybackSrc(item.original || item)
 
 const thumbUrl = (item, width) => {
     const src = mediaUrl(item)
@@ -283,7 +284,8 @@ const Thumbnail = ({item, size = 320}) => {
         return <img src={thumbUrl(item, size)} alt={item.alt || item.label} loading="lazy" draggable={false}
                     onError={() => setFailed(true)}/>
     }
-    if (!failed && mimeType.startsWith('video/')) {
+    // external videos have no frame as thumbnail: one request per tile to the media server is too expensive
+    if (!failed && mimeType.startsWith('video/') && !isExternalMedia(item)) {
         return <>
             <video src={mediaUrl(item) + '#t=0.5'} preload="metadata" muted playsInline onError={() => setFailed(true)}/>
             <Box sx={{
@@ -396,13 +398,13 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
 
     const addItems = (newItems) => setItems(prev => [...prev.filter(item => !newItems.some(entry => entry.id === item.id)), ...newItems])
 
+    // external media (e.g. http://stinkis.lunuc.com:9001/${name}) with resolved placeholders / through the proxy
     const openInNewTab = (item) => {
-        const imageData = Util.getImageObject(item, {})
-        window.open(imageData?.src || mediaUrl(item), '_blank')?.focus()
+        window.open(playbackUrl(item), '_blank')?.focus()
     }
 
     const copyLink = (item) => {
-        const url = new URL(mediaUrl(item), window.location.origin).href
+        const url = new URL(playbackUrl(item), window.location.origin).href
         navigator.clipboard?.writeText(url).then(() => setMessage(_t('MediaFileExplorer.linkCopied')))
     }
 
@@ -745,7 +747,7 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
             {detailItem ? <>
                 <div className="panel-preview">
                     {(detailItem.mimeType || '').startsWith('video/') ?
-                        <video src={mediaUrl(detailItem)} controls preload="metadata"/> :
+                        <video key={detailItem.id} src={playbackUrl(detailItem)} controls preload="metadata"/> :
                         <Thumbnail key={detailItem.id} item={detailItem} size={600}/>}
                 </div>
                 <div className="panel-name">{detailItem.label}</div>

@@ -27,6 +27,7 @@
           "tab": "Optionen",
           "vagueSearchable": false,
           "hideColumnInTypesByDefault": true,
+          "alwaysLoad": true,
           "access": {
             "ui": {
               "role": "manage_types"

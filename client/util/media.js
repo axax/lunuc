@@ -1,5 +1,6 @@
 import React from 'react'
 import config from 'gen/config-client'
+import {replacePlaceholders} from '../../util/placeholders.mjs'
 
 const {UPLOAD_URL} = config
 
@@ -38,4 +39,16 @@ const getImageTag = (item, {size,...props}) => {
 }
 
 
-export {getImageSrc,isValidImage,getImageTag}
+// media server behind DynDNS: the api simple/proxy resolves the host (KeyValueGlobal DynDNSService)
+const MEDIA_HOST_REGEX = /^https?:\/\/stinkis\.lunuc\.com:900[12]/
+
+// media with an external source (src is an absolute url, e.g. http://stinkis.lunuc.com:9001/${name})
+const isExternalMedia = (item) => !!(item && item.src && /^https?:\/\//i.test(item.src))
+
+// url to play / show the original file: placeholders in src resolved, media server through the proxy
+const getMediaPlaybackSrc = (item) => {
+    const src = replacePlaceholders(getImageSrc(item, null), item)
+    return MEDIA_HOST_REGEX.test(src) ? `/lunucapi/simple/proxy/-/${src}` : src
+}
+
+export {getImageSrc,isValidImage,getImageTag,isExternalMedia,getMediaPlaybackSrc}

@@ -11,10 +11,7 @@ import {
 } from 'ui/admin'
 import Async from '../../../client/components/Async.js'
 import UploadUtil from "../../../client/util/upload";
-
-// Media server behind DynDNS: sources on this host go through the simple proxy api,
-// which resolves the host (KeyValueGlobal DynDNSService)
-const MEDIA_HOST_REGEX = /^https?:\/\/stinkis\.lunuc\.com:900[12]/
+import {getMediaPlaybackSrc, isExternalMedia} from '../../../client/util/media'
 
 const SimpleSwitch = (props) => <Async {...props} expose="SimpleSwitch" load={() =>import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
 const TypePicker = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "admin" */ '../../../client/components/TypePicker')}/>
@@ -35,19 +32,18 @@ export const MediaEditorWrapper = ({children, dataToEdit, meta}) => {
     )
     const mediaData = Util.getImageObject(dataToEdit)
 
-    // resolve placeholders like ${name} in the source (only evaluated when the source changes)
-    const resolvedSrc = useMemo(
-        () => Util.replacePlaceholders(mediaData.src, dataToEdit),
-        [mediaData.src, dataToEdit.name, dataToEdit._id]
+    // placeholders like ${name} resolved, media server through the proxy (only evaluated when the source changes)
+    const previewSrc = useMemo(
+        () => getMediaPlaybackSrc(dataToEdit),
+        [dataToEdit.src, dataToEdit.name, dataToEdit._id]
     )
-    const isMediaHostSrc = MEDIA_HOST_REGEX.test(resolvedSrc)
+    // external sources: no transcoding parameters
+    const isMediaHostSrc = isExternalMedia(dataToEdit)
 
     const [previewError, setPreviewError] = useState(false)
     useEffect(() => {
         setPreviewError(false)
-    }, [resolvedSrc])
-
-    const previewSrc = isMediaHostSrc ? `/lunucapi/simple/proxy/-/${resolvedSrc}` : resolvedSrc
+    }, [previewSrc])
 
     let editor
 
@@ -158,7 +154,7 @@ export const MediaEditorWrapper = ({children, dataToEdit, meta}) => {
                    style={{width: '100%', maxWidth: '60rem', maxHeight: 'calc(100vh - 24rem)', background: '#000'}}>
                 <source src={src} type={isMediaHostSrc ? undefined : 'video/mp4'}/>
             </video>
-            {previewError && <p style={{color: 'crimson'}}>Vorschau konnte nicht geladen werden. Source: <code>{resolvedSrc}</code></p>}
+            {previewError && <p style={{color: 'crimson'}}>Vorschau konnte nicht geladen werden. Source: <code>{previewSrc}</code></p>}
         </>
     } else if (dataToEdit.mimeType && dataToEdit.mimeType.indexOf('audio') === 0) {
 
