@@ -11,13 +11,9 @@ import {
 } from 'ui/admin'
 import Async from '../../../client/components/Async.js'
 import UploadUtil from "../../../client/util/upload";
-import {client} from '../../../client/middleware/graphql'
-import {QUERY_KEY_VALUES_GLOBAL} from '../../../client/util/keyvalue'
-import {parseOrElse} from '../../../client/util/json.mjs'
 
-// Media server behind DynDNS (same resolution as in lunucapps/tv): the host name from the source is
-// replaced by the ip of KeyValueGlobal DynDNSService and the request goes through the simple proxy api
-const MEDIA_HOST_NAME = 'stinkis.lunuc.com'
+// Media server behind DynDNS: sources on this host go through the simple proxy api,
+// which resolves the host (KeyValueGlobal DynDNSService)
 const MEDIA_HOST_REGEX = /^https?:\/\/stinkis\.lunuc\.com:900[12]/
 
 const SimpleSwitch = (props) => <Async {...props} expose="SimpleSwitch" load={() =>import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
@@ -46,57 +42,12 @@ export const MediaEditorWrapper = ({children, dataToEdit, meta}) => {
     )
     const isMediaHostSrc = MEDIA_HOST_REGEX.test(resolvedSrc)
 
-    const previewActive = tabValue === 1
     const [previewError, setPreviewError] = useState(false)
-
-    // undefined = not loaded yet, null = no DynDNS entry
-    const [mediaHost, setMediaHost] = useState(undefined)
-    useEffect(() => {
-        // the host is only needed when the preview tab is shown (no request for the settings tab)
-        if (!isMediaHostSrc || !previewActive || mediaHost !== undefined) {
-            return
-        }
-        let cancelled = false
-        client.query({
-            query: QUERY_KEY_VALUES_GLOBAL,
-            variables: {keys: ['DynDNSService']}
-        }).then(({data}) => {
-            const result = data?.keyValueGlobals?.results?.[0]
-            const entry = result && parseOrElse(result.value)?.[MEDIA_HOST_NAME]
-            if (!cancelled) {
-                setMediaHost(entry && entry.ip ? {ip: entry.ip, basePath: entry.basePath || ''} : null)
-            }
-        }).catch(e => {
-            console.warn('DynDNSService could not be loaded', e)
-            if (!cancelled) {
-                setMediaHost(null)
-            }
-        })
-        return () => {
-            cancelled = true
-        }
-    }, [isMediaHostSrc, previewActive])
-
     useEffect(() => {
         setPreviewError(false)
-    }, [resolvedSrc, mediaHost])
+    }, [resolvedSrc])
 
-    let previewSrc = resolvedSrc
-    if (isMediaHostSrc && !previewActive) {
-        previewSrc = '' // nothing to load before the preview tab is opened
-    } else if (isMediaHostSrc) {
-        if (mediaHost === undefined) {
-            previewSrc = '' // still resolving
-        } else {
-            if (mediaHost) {
-                previewSrc = resolvedSrc.replace(MEDIA_HOST_REGEX, `http://${mediaHost.ip}${mediaHost.basePath}/media`)
-            } else {
-                console.warn(`DynDNSService: no entry for ${MEDIA_HOST_NAME}`)
-            }
-            previewSrc = `/lunucapi/simple/proxy/-/${previewSrc}`
-        }
-    }
-
+    const previewSrc = isMediaHostSrc ? `/lunucapi/simple/proxy/-/${resolvedSrc}` : resolvedSrc
 
     let editor
 
@@ -198,7 +149,7 @@ export const MediaEditorWrapper = ({children, dataToEdit, meta}) => {
         if (!isMediaHostSrc && dataToEdit.mimeType === 'video/mpeg') {
             src += '?ext=mp4&transcode={"audioQuality":2,"videoBitrate":2000,"fps":15,"size":"320x?","crf":25}'
         }
-        editor = !src ? <p>Lade Vorschau…</p> : <>
+        editor = <>
             <video key={src}
                    controls
                    preload="metadata"
