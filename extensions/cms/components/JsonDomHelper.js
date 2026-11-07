@@ -790,10 +790,17 @@ class JsonDomHelper extends React.Component {
         }
         this._richTextBarNode = el
         if (el && typeof ResizeObserver !== 'undefined') {
+            // deferred to the next frame (one per frame): changing layout inside the observer callback
+            // causes "ResizeObserver loop completed with undelivered notifications"
+            let rafId = 0
             this._richTextBarResizeObserver = new ResizeObserver(() => {
-                if (this.state.richTextBarFocused) {
-                    this.updateRichTextBarPosition(false)
-                }
+                if (rafId) return
+                rafId = requestAnimationFrame(() => {
+                    rafId = 0
+                    if (this.state.richTextBarFocused) {
+                        this.updateRichTextBarPosition(false)
+                    }
+                })
             })
             this._richTextBarResizeObserver.observe(el)
         }
@@ -892,7 +899,16 @@ class JsonDomHelper extends React.Component {
         // re-render - re-measure then as well
         if (typeof ResizeObserver !== 'undefined') {
             const layout = node.closest && node.closest('[data-layout-content]')
-            this._elementResizeObserver = new ResizeObserver(this._scrollHandler)
+            // deferred to the next frame (one per frame) to avoid ResizeObserver loop errors
+            let rafId = 0
+            const scrollHandler = this._scrollHandler
+            this._elementResizeObserver = new ResizeObserver(() => {
+                if (rafId) return
+                rafId = requestAnimationFrame(() => {
+                    rafId = 0
+                    if (this._scrollHandler === scrollHandler) scrollHandler()
+                })
+            })
             this._elementResizeObserver.observe(node)
             if (layout && layout !== node) {
                 this._elementResizeObserver.observe(layout)

@@ -324,7 +324,13 @@ if (DEV_MODE) {
             })))
         ],
         client: {
-            logging: 'info'
+            logging: 'info',
+            overlay: {
+                errors: true,
+                warnings: false,
+                // harmless browser notice, not a real error
+                runtimeErrors: (error) => !/ResizeObserver loop/.test(error && error.message || '')
+            }
         },
         liveReload:true,
         hot:true,

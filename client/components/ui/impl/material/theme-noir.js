@@ -64,5 +64,9 @@ export const noirColors = {
 
     textPrimary: '#09090b',
     textSecondary: '#71717a',
-    tooltipText: '#fafafa'
+    tooltipText: '#fafafa',
+
+    // text selection: primaryXLight equals the table row hover (bgSubtle), so use a distinct emerald tint
+    selectionBg: '#a7f3d0',
+    selectionText: '#09090b'
 }

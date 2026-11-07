@@ -25,6 +25,7 @@
     "pretest": "npm run mongodb",
     "test": "export PORT=3001;export MONGO_URL=mongodb://localhost:27018; jest",
     "posttest": "npm run mongodb:clear",
+    "test:cmspages": "node test/cmspages/run.mjs",
     "client": "export API_PORT=3000; node ./server/index.mjs",
     "client:inspect": "export API_PORT=3000; node --inspect ./server/index.mjs",
     "client:commonjs": "export BABEL_ENV=client;API_PORT=3000 node ./server/index.js",

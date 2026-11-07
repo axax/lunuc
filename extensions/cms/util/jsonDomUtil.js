@@ -338,8 +338,14 @@ const syncResizeObserver = (nodes) => {
         return
     }
     if (!resizeObserver) {
+        // deferred to the next frame (one per frame) to avoid ResizeObserver loop errors
+        let rafId = 0
         resizeObserver = new ResizeObserver(() => {
-            highlighterHandler(null, null, true)
+            if (rafId) return
+            rafId = requestAnimationFrame(() => {
+                rafId = 0
+                highlighterHandler(null, null, true)
+            })
         })
     }
     observedNodes.forEach(node => {

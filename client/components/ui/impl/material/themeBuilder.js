@@ -124,8 +124,9 @@ export const buildTheme = (colors, mode = 'light') => createTheme({
                     MozOsxFontSmoothing: 'grayscale',
                 },
                 '::selection': {
-                    backgroundColor: colors.primaryXLight,
-                    color: colors.primaryOnLight,
+                    // selectionBg/selectionText: optional, for themes where primaryXLight equals the hover color
+                    backgroundColor: colors.selectionBg || colors.primaryXLight,
+                    color: colors.selectionText || colors.primaryOnLight,
                 },
                 '::-webkit-scrollbar': { width: '6px', height: '6px' },
                 '::-webkit-scrollbar-track': { background: 'transparent' },

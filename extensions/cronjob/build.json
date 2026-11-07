@@ -8,6 +8,21 @@
           "capability": "admin_options"
         }
       },
+      "indexes": [
+        {
+          "fields": {
+            "key": 1
+          },
+          "options": {
+            "unique": true,
+            "partialFilterExpression": {
+              "key": {
+                "$gt": ""
+              }
+            }
+          }
+        }
+      ],
       "fields": [
         {
           "tab": "Script",
@@ -25,6 +40,12 @@
           "required": true,
           "clone": "${name} (copy)",
           "index": 1
+        },
+        {
+          "tab": "Script",
+          "name": "key",
+          "label": "Key",
+          "clone": false
         },
         {
           "tab": "elements.generalTab",
