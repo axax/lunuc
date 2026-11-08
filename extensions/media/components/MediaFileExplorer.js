@@ -19,7 +19,8 @@ import {
     getPickerMode,
     closeWithResult,
     createMediaData,
-    useTakeSelection
+    useTakeSelection,
+    getSearchScope
 } from './mediaExplorerCommon'
 
 // tree view of the media library (Finder like list with columns)
@@ -31,7 +32,7 @@ const COLUMNS = [
     {key: 'type', label: 'MediaFileExplorer.sort.type', width: 150, hideBelow: 'md', render: formatKind}
 ]
 
-const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pageParams}) => {
+const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pageParams, searchScope: searchScopeProp}) => {
 
     // Gives access to the tree's state so changes actually trigger a re-render
     const explorerRef = useRef(null)
@@ -45,6 +46,8 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pa
 
     // search expression or filter chips: flat result instead of the folder structure
     const isSearch = !!(pageParams.filter || pageParams.prettyFilter)
+    // search: files and folders, only folders or only files (chosen in the media toolbar)
+    const searchScope = getSearchScope(searchScopeProp)
 
     const {isPicker, isMulti} = getPickerMode(pageParams)
     const [selectedIds, setSelectedIds] = useState([])
@@ -92,7 +95,7 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pa
         isItemSelectionDisabled={(item) => item?.fileType === 'root' || (item?.fileType === 'folder' && (!isPicker || !isMulti))}
         onSelectionChange={setSelectedIds}
         defaultExpandedItems={defaultExpandedItems}
-        key={'mediaTree' + (pageParams.filter || '') + (pageParams.prettyFilter || '')}
+        key={'mediaTree' + (pageParams.filter || '') + (pageParams.prettyFilter || '') + (isSearch ? searchScope : '')}
         ContextMenu={PickerContextMenu}
         enableDragAndDrop={true}
         onItemAction={(item, action, parentItem) => {
@@ -196,9 +199,10 @@ const MediaFileExplorer = ({_version, TypeContainerRef, defaultExpandedItems, pa
                 }, 500)
             }
         }}
+        // the search result is the top level, a found folder shows its whole content when it is expanded
         onFetch={async ({id}) => (await mediaData.loadEntries({
-            folderId: id, isSearch, searchFilter: pageParams.filter, sort: sortRef.current,
-            limit: 500, fetchPolicy: 'cache-and-network'
+            folderId: id, isSearch: isSearch && !id, searchFilter: pageParams.filter, prettyFilter: pageParams.prettyFilter,
+            searchScope, sort: sortRef.current, limit: 500, fetchPolicy: 'cache-and-network'
         })).items}/>
         {isPicker && selectedIds.length > 0 &&
         <AppBar position="fixed" color="primary" style={{top: 'auto', bottom: 0}}>

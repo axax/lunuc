@@ -962,6 +962,8 @@ class TypesContainer extends React.Component {
         // one chip per criterion (removable on its own) and a chip to add another one
         const filterChips = prettyFilter ? this.prettyFilterChips(prettyFilter) : []
         const openFilterDialog = () => this.setState({viewFilterDialog: true})
+        // the gap spaces the chips: the margins of the theme (chips, buttons) would shift them out of line,
+        // so they are reset on the elements themselves (a rule on the parent loses against the theme)
         renderOptions.stack.unshift(<Stack key="activeFilters" direction="row"
                                            sx={{flexWrap: 'wrap', alignItems: 'center', gap: 1}}>
             {filterChips.map(chip => <Chip
@@ -972,6 +974,7 @@ class TypesContainer extends React.Component {
                 onDelete={chip.removable ? () => this.removePrettyFilterKey(chip.key) : undefined}
                 variant="outlined"
                 color="primary"
+                sx={{m: 0}}
             />)}
             <Chip
                 size="small"
@@ -979,9 +982,11 @@ class TypesContainer extends React.Component {
                 label={_t('TypesContainer.filter.add')}
                 onClick={openFilterDialog}
                 variant="outlined"
+                sx={{m: 0}}
             />
             {(filterChips.length > 1 || this.pageParams.filter) &&
-                <Button size="small" onClick={() => this.resetFilters()}>{_t('TypesContainer.filter.reset')}</Button>}
+                <Button size="small" sx={{m: 0, height: 30, minWidth: 0, px: 1.5}}
+                        onClick={() => this.resetFilters()}>{_t('TypesContainer.filter.reset')}</Button>}
         </Stack>)
 
         const content = [
@@ -1073,10 +1078,11 @@ class TypesContainer extends React.Component {
 
                 <Stack
                     direction="row"
-                    spacing={2}
                     sx={{
                         justifyContent: "space-between",
                         alignItems: "center",
+                        flexWrap: "wrap",
+                        gap: 2,
                         mb:1,
                         mt:1
                     }}

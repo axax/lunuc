@@ -344,15 +344,21 @@ export const MediaUploadBar = ({settings, view, container}) => {
     }, [])
 
     return <>
-        <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+        <Box sx={{display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, flex: {xs: '1 1 auto', sm: '0 1 auto'}}}>
             {/* grid / tree: the target is the open folder. The flat table always uploads into the root. */}
-            {(!isTable || target) && <Typography variant="body2" color="text.secondary" noWrap sx={{maxWidth: 220}}>
+            {(!isTable || target) && <Typography variant="body2" color="text.secondary" noWrap sx={{maxWidth: 220, minWidth: 0, flex: '0 1 auto'}}>
                 {_t('MediaFileExplorer.uploadTo', {folder: targetName})}
             </Typography>}
+            {/* phones: only the icon, the label would push the other controls out of the screen */}
             <Button variant="contained" disableElevation size="small" startIcon={<AddRounded/>}
-                    sx={{height: 32, borderRadius: 5, textTransform: 'none', px: 2, whiteSpace: 'nowrap'}}
+                    aria-label={_t('MediaFileExplorer.upload')}
+                    sx={{
+                        height: 32, borderRadius: 5, textTransform: 'none', px: {xs: 0, sm: 2}, whiteSpace: 'nowrap', flexShrink: 0,
+                        minWidth: {xs: 32, sm: 64}, ml: {xs: 'auto', sm: 0},
+                        '& .MuiButton-startIcon': {mx: {xs: 0, sm: undefined}}
+                    }}
                     onClick={() => openUploadDialog()}>
-                {_t('MediaFileExplorer.upload')}
+                <Box component="span" sx={{display: {xs: 'none', sm: 'inline'}}}>{_t('MediaFileExplorer.upload')}</Box>
             </Button>
             <Tooltip title={_t('MediaFileExplorer.uploadOptions')}>
                 <IconButton size="small" sx={{height: 32, width: 32}} onClick={(e) => setOptionsAnchor(e.currentTarget)}><TuneRounded/></IconButton>

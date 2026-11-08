@@ -153,6 +153,46 @@ export const useMediaSort = (TypeContainerRef, pageParams) => {
     return {sort, compareItems, toggleSort}
 }
 
+// ─── Search scope ─────────────────────────────────────────────────────────────
+// what the search of the media views finds: files and folders, only folders or only files
+export const SEARCH_SCOPES = ['all', 'folders', 'files']
+export const getSearchScope = (value) => SEARCH_SCOPES.indexOf(value) >= 0 ? value : 'all'
+
+// filter chips (pageParams.prettyFilter is a JSON string, "{}" means no chips)
+const hasPrettyFilter = (prettyFilter) => {
+    if (!prettyFilter) return false
+    if (typeof prettyFilter !== 'string') return Object.keys(prettyFilter).length > 0
+    try {
+        const parsed = JSON.parse(prettyFilter)
+        return !!parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0
+    } catch (e) {
+        return true
+    }
+}
+
+// fields a folder (MediaGroup) can be searched by, other field expressions (e.g. mimeType=pdf) only exist on Media
+const FOLDER_SEARCH_FIELDS = ['name', 'key', '_id']
+const FIELD_EXPRESSION = /(?:^|[\s(&|])([A-Za-z_$][\w$.]*)\s*(?:!==|!=|==|>=|<=|!~~|!~|~~|~|=|>|<)/g
+
+/*
+ * the search expression for the folders or null when folders can't be searched with it:
+ * free text (e.g. "jahresbericht 2024") and name / key / _id work, filter chips and other fields not
+ * (the generic resolver would ignore an unknown field and return all folders)
+ */
+export const folderSearchFilter = (filter, prettyFilter) => {
+    if (!filter || !filter.trim() || hasPrettyFilter(prettyFilter)) return null
+    // exec loop instead of matchAll (no polyfill for old browsers)
+    FIELD_EXPRESSION.lastIndex = 0
+    let match
+    while ((match = FIELD_EXPRESSION.exec(filter))) {
+        if (FOLDER_SEARCH_FIELDS.indexOf(match[1].split('.')[0]) < 0) {
+            FIELD_EXPRESSION.lastIndex = 0
+            return null
+        }
+    }
+    return filter
+}
+
 // picker mode: the media view was opened from a TypePicker / editor to choose media
 export const getPickerMode = (pageParams) => ({
     isPicker: !!(typeof window !== 'undefined' && window.opener && pageParams.opener),
@@ -165,6 +205,19 @@ export const closeWithResult = (value) => {
     window.close()
 }
 
+// max. folders in a search result (they come first, before the media)
+const SEARCH_FOLDER_LIMIT = 100
+// protects the path resolution against broken data
+const MAX_FOLDER_DEPTH = 30
+// only what the path needs
+const FOLDER_PATH_QUERY = 'query mediaGroups($filter:String,$limit:Int){mediaGroups(filter:$filter,limit:$limit){results{_id name group{_id}}}}'
+// a folder can have several parents (group is multi), the path follows the first one
+const firstGroupId = (group) => {
+    const first = Array.isArray(group) ? group[0] : group
+    const id = first && typeof first === 'object' ? first._id : first
+    return id ? String(id) : ''
+}
+
 // queries of the media views, bound to the TypesContainer
 export const createMediaData = (TypeContainerRef) => {
     const queries = (type) => TypeContainerRef.getTypeQueriesFiltered(type, {loadAll: false})
@@ -174,20 +227,25 @@ export const createMediaData = (TypeContainerRef) => {
 
     /*
      * entries of a folder (folders first, then media) as explorer entries
-     * isSearch: flat result over all folders (filter expression searchFilter) instead of the folder content,
-     *           without folders
+     * isSearch: flat result over all folders (filter expression searchFilter) instead of the folder content
+     * searchScope: 'all' | 'folders' | 'files', what the search finds
+     *              (folders only with a filter folderSearchFilter accepts, never with filter chips)
      * withFolders: false -> only media (e.g. further pages)
+     * Both queries run in parallel, the folder search does not slow down the search.
      */
-    const loadEntries = async ({folderId, isSearch, searchFilter, sort, limit, page, withFolders = !isSearch, fetchPolicy = 'network-only'}) => {
+    const loadEntries = async ({folderId, isSearch, searchFilter, prettyFilter, searchScope = 'all', sort, limit, page, withFolders = true, fetchPolicy = 'network-only'}) => {
+        const folderFilter = !withFolders ? null :
+            isSearch ? (searchScope !== 'files' ? folderSearchFilter(searchFilter, prettyFilter) : null) : `group==${folderId}`
+        const withMedia = !isSearch || searchScope !== 'folders'
         const [groupResponse, mediaResponse] = await Promise.all([
-            withFolders ? client.query({
+            folderFilter ? client.query({
                 query: queries('MediaGroup').query, fetchPolicy,
-                variables: {filter: `group==${folderId}`, limit: 500, sort: groupServerSort(sort)}
+                variables: {filter: folderFilter, limit: isSearch ? SEARCH_FOLDER_LIMIT : 500, sort: groupServerSort(sort)}
             }) : null,
-            client.query({
+            withMedia ? client.query({
                 query: queries('Media').query, fetchPolicy,
                 variables: {filter: mediaFilter(isSearch ? searchFilter : `group==${folderId}`), limit, ...(page ? {page} : {}), sort: mediaServerSort(sort)}
-            })
+            }) : null
         ])
         const medias = mediaResponse?.data?.medias
         const mapItems = (data) => data?.results?.map(item => createNewEntry({parent: folderId, ...item})) ?? []
@@ -195,6 +253,40 @@ export const createMediaData = (TypeContainerRef) => {
             items: [...mapItems(groupResponse?.data?.mediaGroups), ...mapItems(medias)],
             mediaTotal: medias?.total || 0
         }
+    }
+
+    /*
+     * parent folders of found folders / media (search result), one query per level for all entries together
+     * resolves with {[entryId]: [{_id, name}, ...]} from the top level down to the direct parent
+     * (a parent the user can't read ends the path)
+     */
+    const resolvePaths = async (entries) => {
+        const folders = new Map() // id -> {name, parent}
+        const parentOf = (entry) => firstGroupId(entry.original?.group ?? entry.group)
+        let missing = new Set(entries.map(parentOf).filter(Boolean))
+        for (let depth = 0; missing.size && depth < MAX_FOLDER_DEPTH; depth++) {
+            const ids = [...missing]
+            const response = await client.query({
+                query: FOLDER_PATH_QUERY, fetchPolicy: 'network-only',
+                variables: {filter: `_id==[${ids.join(',')}]`, limit: ids.length}
+            })
+            ;(response?.data?.mediaGroups?.results || []).forEach(folder =>
+                folders.set(String(folder._id), {name: folder.name, parent: firstGroupId(folder.group)}))
+            ids.forEach(id => !folders.has(id) && folders.set(id, null))
+            missing = new Set(ids.map(id => folders.get(id)?.parent).filter(id => id && !folders.has(id)))
+        }
+        const result = {}
+        entries.forEach(entry => {
+            const path = [], visited = new Set()
+            let id = parentOf(entry)
+            while (id && folders.get(id) && !visited.has(id)) {
+                visited.add(id)
+                path.unshift({_id: id, name: folders.get(id).name})
+                id = folders.get(id).parent
+            }
+            result[entry.id] = path
+        })
+        return result
     }
 
     // all media that are directly inside a folder
@@ -238,7 +330,7 @@ export const createMediaData = (TypeContainerRef) => {
         })
     }
 
-    return {queries, loadEntries, resolveMedia, editItem}
+    return {queries, loadEntries, resolvePaths, resolveMedia, editItem}
 }
 
 // picker: resolves the chosen entries and returns them to the opener

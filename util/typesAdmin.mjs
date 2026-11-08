@@ -15,6 +15,7 @@ import extensions from '../gensrc/extensions.mjs'
 import {propertyByPath} from '../client/util/json.mjs'
 import Util from '../client/util/index.mjs'
 import {client, Query} from '../client/middleware/graphql.js'
+import {userSettingCreateEdit, userSettingBeforeSave} from '../client/components/types/userSettingKeyValues.js'
 
 console.log(`replace / merge extension definition with extended version ${new Date() - _app_.start}ms`)
 Object.keys(extensionsPrivate).forEach(key => {
@@ -625,9 +626,9 @@ Hook.on('Types', ({types}) => {
     }
 })
 
-Hook.on('TypeCreateEdit', function ({type, props, dataToEdit}) {
+Hook.on('TypeCreateEdit', function ({type, props, dataToEdit, parentRef}) {
     if(type === 'UserSetting'){
-        props.children = [props.children, <p>BaseLayoutSettings-_id</p>]
+        userSettingCreateEdit({props, dataToEdit, parentRef})
     }else if (type === 'User' && dataToEdit && dataToEdit._id) {
         props.actions.unshift({key: 'setNewPassword', label: _t('user.send.new.password')})
     } else if(type==='KeyValueGlobal' && dataToEdit && dataToEdit.value){
@@ -648,6 +649,11 @@ Hook.on('TypeCreateEdit', function ({type, props, dataToEdit}) {
                 </Query>
             </>]
         }
+    }
+})
+Hook.on('TypeCreateEditBeforeSave', function (args) {
+    if (args.type === 'UserSetting') {
+        userSettingBeforeSave(args)
     }
 })
 Hook.on('TypeCreateEditAction', function ({type, action, dataToEdit, meta}) {

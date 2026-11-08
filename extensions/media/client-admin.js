@@ -20,6 +20,7 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import {getIconByKey} from '../../client/components/ui/impl/material/icon'
 import MediaFileExplorer from './components/MediaFileExplorer'
 import MediaGridExplorer from './components/MediaGridExplorer'
+import {SEARCH_SCOPES, getSearchScope} from './components/mediaExplorerCommon'
 import {MediaUploadBar, initUploadTarget} from './components/MediaUploadBar'
 import {ExcelSheetSelect, ExcelPreview} from './components/ExcelFields'
 
@@ -63,6 +64,25 @@ function ViewToggleButton({onChange, value}) {
             <ToggleButton value="table" title={_t('MediaFileExplorer.view.table')}><ViewIcon/></ToggleButton>
         </ToggleButtonGroup>
     )
+}
+
+// search in the grid / tree view: files and folders, only folders or only files
+function SearchScopeToggle({onChange, value}) {
+    const [scope, setScope] = React.useState(getSearchScope(value))
+    // phones: own row over the full width, the three buttons share it
+    return <ToggleButtonGroup color="primary" value={scope} exclusive size="small"
+                              sx={{width: {xs: '100%', sm: 'auto'}}}
+                              aria-label={_t('MediaFileExplorer.searchScope')}
+                              onChange={(event, newScope) => {
+                                  // clicking the active button would deselect it
+                                  if (!newScope) return
+                                  setScope(newScope)
+                                  onChange(newScope)
+                              }}>
+        {SEARCH_SCOPES.map(key => <ToggleButton key={key} value={key} sx={{textTransform: 'none', px: 1.5, flex: {xs: 1, sm: 'none'}, whiteSpace: 'nowrap'}}>
+            {_t('MediaFileExplorer.searchScope.' + key)}
+        </ToggleButton>)}
+    </ToggleButtonGroup>
 }
 
 export default () => {
@@ -469,8 +489,16 @@ export default () => {
     Hook.on('TypesContainerBeforeRender', function ({type,typeSettings, renderOptions, pageParams}) {
         if (type === 'Media') {
             initUploadTarget(typeSettings.uploadTarget)
+            const isExplorerView = typeSettings.view === 'tree' || typeSettings.view === 'grid'
+            const isSearch = !!(pageParams.filter || pageParams.prettyFilter)
             // upload and view switch share the right side of the toolbar above the list
-            renderOptions.stack.push(<Box key="mediaToolbar" sx={{display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap', justifyContent: 'flex-end'}}>
+            renderOptions.stack.push(<Box key="mediaToolbar" sx={{
+                display: 'flex', alignItems: 'center', gap: {xs: 1.5, sm: 2}, flexWrap: 'wrap', justifyContent: 'flex-end',
+                ml: 'auto', minWidth: 0, maxWidth: '100%', width: {xs: '100%', sm: 'auto'}
+            }}>
+                {isExplorerView && isSearch && <SearchScopeToggle value={typeSettings.searchScope} onChange={(searchScope) => {
+                    this.setSettingsForType(type, {searchScope})
+                }}/>}
                 <MediaUploadBar settings={this.settings} view={typeSettings.view} container={this}/>
                 <ViewToggleButton onChange={(e,view)=>{
                     this.setSettingsForType(type, {view})
@@ -478,9 +506,9 @@ export default () => {
             </Box>)
 
             if( typeSettings.view === 'tree'){
-                renderOptions.alternativeView = <MediaFileExplorer pageParams={pageParams} TypeContainerRef={this} />
+                renderOptions.alternativeView = <MediaFileExplorer pageParams={pageParams} TypeContainerRef={this} searchScope={typeSettings.searchScope}/>
             } else if (typeSettings.view === 'grid') {
-                renderOptions.alternativeView = <MediaGridExplorer pageParams={pageParams} TypeContainerRef={this} />
+                renderOptions.alternativeView = <MediaGridExplorer pageParams={pageParams} TypeContainerRef={this} searchScope={typeSettings.searchScope}/>
             }
 
         }

@@ -323,7 +323,7 @@ class TypeEdit extends React.Component {
         // we need another object with the already resolved references for the ui
         const optimisticData = Object.assign({}, editedData)
 
-        Hook.call('TypeCreateEditBeforeSave', {type, dataToEdit, editedData, optimisticData, formFields})
+        Hook.call('TypeCreateEditBeforeSave', {type, dataToEdit, editedData, optimisticData, formFields, typeEdit: this, action})
 
         const callback = ({errors, data}) => {
             // server side validation

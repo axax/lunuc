@@ -43,7 +43,9 @@ import {
     getPickerMode,
     closeWithResult,
     createMediaData,
-    useTakeSelection
+    useTakeSelection,
+    getSearchScope,
+    folderSearchFilter
 } from './mediaExplorerCommon'
 import MediaMoveDialog from './MediaMoveDialog'
 
@@ -57,10 +59,10 @@ const PAGE_SIZE = 200
 const DRAG_TYPE = 'application/x-lunuc-media'
 
 // ─── Styled components ───────────────────────────────────────────────────────
+// no gap: the context menu renders an empty element into the root, a gap would indent the content
 const Root = styled('div')(({theme}) => ({
     display: 'flex',
     alignItems: 'flex-start',
-    gap: theme.spacing(2),
     position: 'relative'
 }))
 
@@ -158,6 +160,10 @@ const Tile = styled('div')(({theme}) => ({
     '&:hover .tile-actions, &:focus-within .tile-actions, &:hover .tile-check, &[data-selected] .tile-check, &[data-picker-multi] .tile-check': {
         opacity: 1
     },
+    // touch devices have no hover: the menu button stays visible (iOS has no long press context menu either)
+    '@media (hover: none)': {
+        '& .tile-actions': {opacity: 1}
+    },
     '&[data-selected] .tile-thumb': {
         borderColor: theme.palette.primary.main,
         background: alpha(theme.palette.primary.main, 0.1)
@@ -179,7 +185,31 @@ const Tile = styled('div')(({theme}) => ({
         whiteSpace: 'nowrap',
         padding: theme.spacing(0, 0.5)
     },
-    '&[data-selected] .tile-name': {color: theme.palette.primary.main, fontWeight: 500}
+    // search result: where the folder is
+    '& .tile-path': {
+        width: '100%',
+        marginTop: theme.spacing(-0.75),
+        textAlign: 'center',
+        fontSize: '0.75rem',
+        lineHeight: 1.3,
+        minHeight: '1.3em',
+        color: theme.palette.text.secondary,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        padding: theme.spacing(0, 0.5)
+    },
+    '&[data-selected] .tile-name': {color: theme.palette.primary.main, fontWeight: 500},
+    // phones: narrow tiles, the name gets two lines
+    [theme.breakpoints.down('sm')]: {
+        '& .tile-name': {
+            whiteSpace: 'normal',
+            wordBreak: 'break-word',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical'
+        }
+    }
 }))
 
 const RoundAction = styled(IconButton)(({theme}) => ({
@@ -193,6 +223,7 @@ const RoundAction = styled(IconButton)(({theme}) => ({
 const Panel = styled('aside')(({theme}) => ({
     width: 300,
     flexShrink: 0,
+    marginLeft: theme.spacing(2),
     position: 'sticky',
     top: 82, // below the fixed admin header
     background: theme.palette.background.paper,
@@ -298,7 +329,7 @@ const Thumbnail = ({item, size = 320}) => {
 }
 
 // ─── Main component ──────────────────────────────────────────────────────────
-const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
+const MediaGridExplorer = ({TypeContainerRef, pageParams, searchScope: searchScopeProp}) => {
 
     const typeSettings = () => TypeContainerRef.getSettingsForType?.('Media', pageParams.meta) || {}
 
@@ -309,6 +340,10 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
     // ── current folder (remembered, so the user comes back to the same place) ──
     // the filter chips (pretty filter) work like the search: flat result over all folders
     const isSearch = !!(pageParams.filter || pageParams.prettyFilter)
+    // search: files and folders, only folders or only files (chosen in the media toolbar)
+    const searchScope = getSearchScope(searchScopeProp)
+    // folders can only be searched by free text / name, not with field filters or filter chips
+    const folderSearchUnavailable = isSearch && searchScope !== 'files' && !folderSearchFilter(pageParams.filter, pageParams.prettyFilter)
     const [path, setPath] = useState(() => {
         const saved = typeSettings().gridPath
         return Array.isArray(saved) ? saved.filter(entry => entry && entry._id) : []
@@ -322,7 +357,23 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
         setPath(newPath)
         TypeContainerRef.setSettingsForType?.('Media', {gridPath: newPath.map(({_id, name}) => ({_id, name}))}, {lazy: true})
     }
-    const openFolder = (item) => navigate([...path, {_id: item.id, name: item.label}])
+    // in the search the folder opens with its full path and the search ends, so all its files are visible
+    const openFolder = async (item) => {
+        if (!isSearch) {
+            navigate([...path, {_id: item.id, name: item.label}])
+            return
+        }
+        let ancestors = folderPaths[item.id]
+        if (!ancestors) {
+            try {
+                ancestors = (await mediaData.resolvePaths([item]))[item.id]
+            } catch (e) {
+                console.error(e)
+            }
+        }
+        navigate([...(ancestors || []), {_id: item.id, name: item.label}])
+        TypeContainerRef.resetFilters()
+    }
 
     // ── picker mode (media view opened from a TypePicker / editor) ──
     const {isPicker, isMulti} = getPickerMode(pageParams)
@@ -340,6 +391,8 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
     const [moveDialogItems, setMoveDialogItems] = useState(null)
     const [dragId, setDragId] = useState(null)
     const [dragOverId, setDragOverId] = useState(null)
+    // search: parent folders of the found folders {[id]: [{_id, name}]}
+    const [folderPaths, setFolderPaths] = useState({})
     const requestRef = useRef(0)
 
     // ── data ──
@@ -349,8 +402,8 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
         setLoading(true)
         try {
             const {items: newItems, mediaTotal} = await mediaData.loadEntries({
-                folderId, isSearch, searchFilter: pageParams.filter, sort,
-                limit: PAGE_SIZE, page, withFolders: !isSearch && page === 1
+                folderId, isSearch, searchFilter: pageParams.filter, prettyFilter: pageParams.prettyFilter,
+                searchScope, sort, limit: PAGE_SIZE, page, withFolders: page === 1
             })
             if (requestId !== requestRef.current) return
             setItems(prev => page > 1 ? [...prev, ...newItems] : newItems)
@@ -367,7 +420,21 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
     useEffect(() => {
         setSelectedIds([])
         load(1)
-    }, [currentFolderId, sort.field, sort.dir, pageParams.filter, pageParams.prettyFilter, pageParams.baseFilter])
+    }, [currentFolderId, sort.field, sort.dir, pageParams.filter, pageParams.prettyFilter, pageParams.baseFilter, searchScope])
+
+    // search: resolve the paths of the found folders after they are shown (one query per folder level)
+    useEffect(() => {
+        if (!isSearch) return
+        const folders = items.filter(item => item.fileType === 'folder' && !folderPaths[item.id])
+        if (!folders.length) return
+        let cancelled = false
+        mediaData.resolvePaths(folders)
+            .then(paths => !cancelled && setFolderPaths(prev => ({...prev, ...paths})))
+            .catch(e => console.error(e))
+        return () => {
+            cancelled = true
+        }
+    }, [items, isSearch])
 
     const sortedItems = useMemo(() => [...items].sort(compareItems), [items, compareItems])
     const loadedMediaCount = items.filter(item => item.fileType === 'doc').length
@@ -475,6 +542,8 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
             }).catch(e => onError(e.message))
         })
         if (!isSearch) removeItems(toMove.map(item => item.id))
+        // the paths of moved folders changed
+        else if (toMove.some(item => item.fileType === 'folder')) setFolderPaths({})
         const folder = target ? target.name : _t('MediaFileExplorer.root')
         setMessage(toMove.length === 1 ?
             _t('MediaFileExplorer.moved', {folder}) :
@@ -654,14 +723,20 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
                           openMenu(e, {id: currentFolderId || 'root', fileType: 'root', original: {createdBy: _app_.user}})
                       }}>
 
+                {folderSearchUnavailable && <Box sx={{gridColumn: '1 / -1', fontSize: '0.875rem', color: 'text.secondary'}}>
+                    {_t('MediaFileExplorer.folderSearchUnavailable')}
+                </Box>}
+
                 {sortedItems.map(item => {
                     const selected = selectedIds.indexOf(item.id) >= 0
                     const isFolder = item.fileType === 'folder'
                     const canCheck = isPicker && !isFolder
+                    const folderPath = isSearch && isFolder && folderPaths[item.id] ?
+                        [rootLabel, ...folderPaths[item.id].map(entry => entry.name)].join(' › ') : null
                     return <Tile key={item.id}
                                  tabIndex={0}
                                  role="button"
-                                 title={item.label}
+                                 title={folderPath ? `${folderPath} › ${item.label}` : item.label}
                                  data-file={isFolder ? undefined : ''}
                                  data-selected={selected ? '' : undefined}
                                  data-dragging={dragId === item.id ? '' : undefined}
@@ -706,6 +781,7 @@ const MediaGridExplorer = ({TypeContainerRef, pageParams}) => {
                             </div>
                         </div>
                         <div className="tile-name">{item.label}</div>
+                        {isSearch && isFolder && <div className="tile-path">{folderPath}</div>}
                     </Tile>
                 })}
 
