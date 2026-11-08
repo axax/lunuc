@@ -74,31 +74,43 @@ const lruSet = (cache, key, value, max) => {
     cache.set(key, value)
 }
 
-const compile = (code, loc, es5 = true) => {
+// throws on syntax errors
+const createFn = (code, loc, es5) => new Function(withSourceURL(es5 ? DomUtil.toES5(code) : code, loc))
+
+const compile = (code, loc, es5 = true, cache = fnCache, max = FN_CACHE_MAX) => {
     const cacheKey = loc + '\n' + code
-    let fn = lruGet(fnCache, cacheKey)
+    let fn = lruGet(cache, cacheKey)
     if (!fn) {
         // throws on syntax errors -> nothing gets cached
-        fn = new Function(withSourceURL(es5 ? DomUtil.toES5(code) : code, loc))
-        lruSet(fnCache, cacheKey, fn, FN_CACHE_MAX)
+        fn = createFn(code, loc, es5)
+        lruSet(cache, cacheKey, fn, max)
     }
     return fn
 }
+
+// Loop templates get their own cache: the template of an inner loop already contains the
+// values of the outer loop, so there is a new function for every row of the outer loop.
+// In the shared cache these one-off functions would evict the hot ones (page template,
+// script, style), which then had to be compiled again on the next render.
+const LOOP_FN_CACHE_MAX = 1000
+const loopFnCache = new Map()
+const compileLoop = (code, loc) => compile(code, loc, true, loopFnCache, LOOP_FN_CACHE_MAX)
 
 // "\nconst a=this.scope.a\nconst b=this.scope.b..." - makes all scope keys accessible by name
 const scopeConsts = (scope) => Object.keys(scope).reduce((str, key) => str + '\nconst ' + key + '=this.scope.' + key, '')
 
 // The function of a $if condition only depends on the condition and the names of the
 // scope keys - cache it by exactly that, so the scopeConsts code (one line per scope
-// key) is not rebuilt for every evaluation. On a miss the function is created by
-// compile() from the identical code as before.
+// key) is not rebuilt for every evaluation. On a miss the function is created from the
+// identical code as before. (Not additionally stored in the shared function cache - $if
+// conditions inside loops can contain values and would evict the hot functions there.)
 const IF_FN_CACHE_MAX = 1000
 const ifFnCache = new Map()
 const compileIf = ($if, loc, scope) => {
     const cacheKey = loc + '\n' + $if + '\n' + JSON.stringify(Object.keys(scope))
     let fn = lruGet(ifFnCache, cacheKey)
     if (!fn) {
-        fn = compile(`${scopeConsts(scope)};return  ${$if}`, loc, false)
+        fn = createFn(`${scopeConsts(scope)};return  ${$if}`, loc, false)
         lruSet(ifFnCache, cacheKey, fn, IF_FN_CACHE_MAX)
     }
     return fn
@@ -147,6 +159,33 @@ const POST_TEMPLATE_REPLACE_REGEX = new RegExp(
     'g'
 )
 
+
+/**
+ * Code of the template function (see JsonDom.renderTemplate). Pure function of the template
+ * string and the comma separated scope keys.
+ */
+const buildTemplateCode = (template, keyList) => {
+    let str = template.trim()
+    // Simple content type detection
+    if (str.indexOf('<') == 0) {
+        //It is html
+        str = JSON.stringify({
+            t: 'div.JsonDom-html',
+            $c: Util.escapeForJson(str)
+        })
+    } else if (str.indexOf('{') == 0 || str.indexOf('[') == 0) {
+        //It is json
+        // replace control character
+        str = str.replace(PRE_TEMPLATE_REPLACE_REGEX, m => PRE_TEMPLATE_REPLACEMENTS[m])
+    } else {
+        //Is other
+        str = JSON.stringify({
+            t: 'MarkDown.JsonDom-markdown',
+            c: Util.escapeForJson(str)
+        }).replace(/`/g, '\\`')
+    }
+    return `const {${keyList}}=this.scope${SCRIPT_UTIL_PART}data),_r=this.addToPostRender;return \`${str}\``
+}
 
 /**
  * Image value of SmartImage (media object, JSON string of it, array of it, url or path) -> single value.
@@ -944,6 +983,15 @@ class JsonDom extends React.Component {
         if(removeMarked && isLoading){
             return
         }
+        // Elements are only marked for deletion by this method (data-json-dom-id-delete=instanceId).
+        // If this instance hasn't marked any since the last sweep, there is nothing to search
+        // for - saves a querySelectorAll over the whole document on every update.
+        if(removeMarked){
+            if(!this._hasMarkedElements){
+                return
+            }
+            this._hasMarkedElements = false
+        }
         //DomUtil.removeElements(`[data-json-dom-id="${this.instanceId}"]`)
 
         // remove instanceId from data attribute
@@ -952,6 +1000,7 @@ class JsonDom extends React.Component {
         els.forEach(el=>{
             if(isLoading){
                 // mark only for deletion
+                this._hasMarkedElements = true
                 el.dataset.jsonDomIdDelete=this.instanceId
             }else {
                 const ids = el.dataset.jsonDomId.split(' ')
@@ -1157,7 +1206,7 @@ class JsonDom extends React.Component {
                     } else {
                         if (isString(d)) {
                             try {
-                                data = compile(`${scopeConsts(scope)};const Util = this.Util;return ${d}`, 'loopdata-' + (this.props.slug || ''), false).call({
+                                data = compile(`${scopeConsts(scope)};const Util = this.Util;return ${d}`, 'loopdata-' + (this.props.slug || ''), false, loopFnCache, LOOP_FN_CACHE_MAX).call({
                                     scope,
                                     Util,
                                     serverMethod: (name, args) => {
@@ -1226,9 +1275,10 @@ class JsonDom extends React.Component {
                                 .replace('"$.' + s + '"', '${JSON.stringify(this.' + s + ')}')
                                 .replace(re2, '')
 
+                        const loopLoc = 'loop-' + (this.props.slug || '')
                         let tpl
                         if ($for) {
-                            tpl = compile(`const ${s}=this.${s}${SCRIPT_UTIL_PART}this.scope.data);${loopOrFor.eval ? loopOrFor.eval : ''};return \`${cStr}\``, 'loop-' + (this.props.slug || ''))
+                            tpl = compileLoop(`const ${s}=this.${s}${SCRIPT_UTIL_PART}this.scope.data);${loopOrFor.eval ? loopOrFor.eval : ''};return \`${cStr}\``, loopLoc)
                         }
                         data.forEach((loopChild, childIdx) => {
                             if (loopOrFor.convert === 'String') {
@@ -1244,7 +1294,7 @@ class JsonDom extends React.Component {
                             loopChild._index = childIdx
 
                             if ($loop) {
-                                tpl = compile(`const {${Object.keys(loopChild).join(',')}}=this.${s}${SCRIPT_UTIL_PART}this.scope.data);return \`${cStr}\``, 'loop-' + (this.props.slug || ''))
+                                tpl = compileLoop(`const {${Object.keys(loopChild).join(',')}}=this.${s}${SCRIPT_UTIL_PART}this.scope.data);return \`${cStr}\``, loopLoc)
                             }
 
                             // remove tabs and parse
@@ -1349,7 +1399,9 @@ class JsonDom extends React.Component {
                                     let cur = eleProps[curKey]
                                     if (cur) {
                                         if(curKey==='style'){
-                                            eleProps[curKey] = Object.assign(parseStyles(cur), parseStyles(pValue))
+                                            // new object: cur can be the style object of the template itself
+                                            // (parseStyles returns objects unchanged) - don't modify this.json
+                                            eleProps[curKey] = Object.assign({}, parseStyles(cur), parseStyles(pValue))
                                         }else if (isString(cur)) {
                                             eleProps[curKey] = cur + ' ' + pValue
                                         } else if (cur.constructor === Object) {
@@ -1670,30 +1722,23 @@ class JsonDom extends React.Component {
     }
 
     renderTemplate(str, scope) {
-        str = str.trim()
-        // Simple content type detection
-        if (str.indexOf('<') == 0) {
-            //It is html
-            str = JSON.stringify({
-                t: 'div.JsonDom-html',
-                $c: Util.escapeForJson(str)
-            })
-        } else if (str.indexOf('{') == 0 || str.indexOf('[') == 0) {
-            //It is json
-            // replace control character
-            str = str.replace(PRE_TEMPLATE_REPLACE_REGEX, m => PRE_TEMPLATE_REPLACEMENTS[m])
-        } else {
-            //Is other
-            str = JSON.stringify({
-                t: 'MarkDown.JsonDom-markdown',
-                c: Util.escapeForJson(str)
-            }).replace(/`/g, '\\`')
+        // The code only depends on the template, the names of the scope keys and the slug (loc).
+        // Keep it (and the compiled function) for the next render, so the preprocessing of the whole
+        // template and the cache lookup with the full code as key are not repeated every time.
+        const keyList = Object.keys(scope).join(','),
+            loc = 'template-' + (this.props.slug || '')
+        let memo = this._templateMemo
+        if (!memo || memo.src !== str || memo.keys !== keyList || memo.loc !== loc) {
+            memo = this._templateMemo = {src: str, keys: keyList, loc, code: buildTemplateCode(str, keyList), fn: undefined}
         }
-
-        const code = `const {${Object.keys(scope).join(',')}}=this.scope${SCRIPT_UTIL_PART}data),_r=this.addToPostRender;return \`${str}\``
+        const code = memo.code
         try {
+            if (!memo.fn) {
+                // throws on syntax errors -> stays undefined
+                memo.fn = compile(code, loc)
+            }
             // Scope properties get destructed so they can be accessed directly by property name
-            return compile(code, 'template-' + (this.props.slug || '')).call({
+            return memo.fn.call({
                 scope,
                 parent: this.props._parentRef,
                 Util,

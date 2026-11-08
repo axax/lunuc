@@ -91,6 +91,7 @@
     "cheerio": "^1.2.0",
     "classnames": "^2.5.1",
     "compression": "^1.8.2",
+    "echarts": "^5.6.0",
     "exif-reader": "^2.0.3",
     "express": "^5.3.0",
     "formidable": "^3.5.4",
