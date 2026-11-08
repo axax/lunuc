@@ -13,6 +13,7 @@ import InputLabel from '@mui/material/InputLabel';
 import FormControl from '@mui/material/FormControl';
 import FormHelperText from '@mui/material/FormHelperText';
 import TextField from '@mui/material/TextField'
+import Autocomplete from '@mui/material/Autocomplete'
 import InputAdornment from '@mui/material/InputAdornment'
 import styled from '@emotion/styled'
 import {getIconByKey} from './icon'
@@ -119,7 +120,47 @@ class SimpleSelect extends React.Component {
         }
     }
 
+    // select with the option to enter any custom value (single value only)
+    renderFreeSolo() {
+        const {onChange, slotProps = {}, items, label, readOnly, className, disabled, hint, fullWidth, error, style, sx} = this.props
+        const name = this.props.name
+        const value = this.props.value === undefined || this.props.value === null ? '' : this.props.value
+        const emit = (newValue) => onChange({target: {name, value: newValue || ''}})
+        return <Autocomplete
+            freeSolo
+            className={className}
+            sx={sx}
+            style={style}
+            fullWidth={fullWidth}
+            disabled={disabled}
+            readOnly={readOnly}
+            options={items.map(item => item.constructor === Object ? item.value : item)}
+            getOptionLabel={option => String(this.itemNameByValue(option))}
+            value={value}
+            onChange={(e, newValue) => emit(newValue)}
+            onInputChange={(e, newValue, reason) => {
+                // typed text is the value; 'reset' is only the label of a selected option
+                if (reason === 'input') {
+                    emit(newValue)
+                }
+            }}
+            renderInput={params => <TextField
+                {...params}
+                label={label}
+                error={error}
+                helperText={hint}
+                slotProps={{
+                    ...params.slotProps,
+                    inputLabel: {...params.slotProps?.inputLabel, shrink: true, ...slotProps.inputLabel}
+                }}
+            />}
+        />
+    }
+
     render() {
+        if (this.props.freeSolo && !this.props.multi) {
+            return this.renderFreeSolo()
+        }
         const {onChange, slotProps = {}, items, label, readOnly, className, multi, disabled, hint, fullWidth, error, style, sx, searchable, searchPlaceholder} = this.props
         const name = this.props.name || ('name_' + Math.random())
         let value = this.props.value===undefined?'':this.props.value
@@ -240,6 +281,7 @@ SimpleSelect.propTypes = {
     name: PropTypes.string,
     hint: PropTypes.string,
     searchable: PropTypes.bool,
+    freeSolo: PropTypes.bool,
     searchPlaceholder: PropTypes.string
 }
 

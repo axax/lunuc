@@ -51,7 +51,7 @@ const COMMON_MONGO_TYPES = ['String', 'Int', 'ID', 'Float', 'Boolean', 'Object']
 // attributes of the type definitions that are not needed in the browser outside of the admin ui
 // (see extensions-browser.mjs below)
 const BROWSER_REMOVE_TYPE_ATTRIBUTES = ['onlyRequestedFields', 'searchOnKeyDown', 'createdByIndex', 'subscription']
-const BROWSER_REMOVE_FIELD_ATTRIBUTES = ['uitype', 'html', 'enum', 'Tab', 'defaultValue', 'searchable', 'invisible',
+const BROWSER_REMOVE_FIELD_ATTRIBUTES = ['uitype', 'html', 'enum', 'freeSolo', 'Tab', 'defaultValue', 'searchable', 'invisible',
     'dynamic', 'replacePlaceholders', 'unique', 'alwaysUpdate', 'hash', 'default']
 
 var APP_VALUES = false

@@ -2058,6 +2058,7 @@ class GenericForm extends React.Component {
                     name={fieldKey}
                     onChange={this.handleInputChange}
                     items={field.enum}
+                    freeSolo={field.freeSolo}
                     error={!!this.state.fieldErrors[fieldKey]}
                     hint={this.state.fieldErrors[fieldKey]}
                     multi={field.multi}
