@@ -18,6 +18,12 @@
           "uitype": "json",
           "type": "Object",
           "vagueSearchable": true
+        },
+        {
+          "name": "modifiedAt",
+          "label": "Geändert am",
+          "hidden": false,
+          "type": "Float"
         }
       ]
     },

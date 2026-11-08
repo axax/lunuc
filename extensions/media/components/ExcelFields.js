@@ -1,12 +1,15 @@
 import React, {useEffect, useRef, useState} from 'react'
-import {useTheme, alpha} from '@mui/material/styles'
+import {useTheme} from '@mui/material/styles'
 import TextField from '@mui/material/TextField'
 import MenuItem from '@mui/material/MenuItem'
 import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import CircularProgress from '@mui/material/CircularProgress'
 import {_t} from 'util/i18n.mjs'
-import {excelApiUrl, fetchExcelJson, mediaIdFromValue, colLetters, parseRange, parseHeaderRows, sumRowsOnly} from '../util/excel.mjs'
+import {getSxProps} from 'client/components/GenericForm'
+import {excelApiUrl, fetchExcelJson, mediaIdFromValue, colLetters, parseHeaderRows} from '../util/excel.mjs'
+// range picker and preview (desktop / phone) in plain DOM, shared with the cms page digithal/jahresbericht-import
+import {previewTable, rangePicker, mobileMode, MOBILE_NAMES} from '../util/excelUi.mjs'
 
 /*
  * Form fields for excel files (uitype excelSheet / excelPreview), registered in client-admin.js.
@@ -33,16 +36,8 @@ const useDebounced = (value, delay) => {
     return debounced
 }
 
-const fieldSx = (field, theme) => ({
-    margin: 1,
-    display: 'inline-flex',
-    width: 'calc(100% - ' + theme.spacing(2) + ')',
-    ...(!field.fullWidth && {
-        [theme.breakpoints.up('md')]: {
-            width: `calc(${field.twoThirdWidth ? '66.66' : field.fourthWidth ? '25' : field.thirdWidth ? '33.33' : '50'}% - ${theme.spacing(2)})`
-        }
-    })
-})
+// same widths as the other fields of the form (thirdWidth, fourthWidth …)
+const fieldSx = getSxProps
 
 /* list of the sheets of the selected excel file */
 const useSheets = mediaId => {
@@ -129,145 +124,7 @@ export function ExcelSheetSelect({form, field, fieldKey, value, values}) {
     </TextField>
 }
 
-const tableStyle = theme => ({
-    borderCollapse: 'collapse',
-    fontSize: '12px',
-    lineHeight: 1.4,
-    color: theme.palette.text.primary,
-    width: 'max-content',
-    minWidth: '100%'
-})
-
-// Same look as the preview of the page digithal/jahresbericht-import (green sum rows, section rows, text rows,
-// variant «list»), always on a light background like on the website. Cells with .h are html (escaped by the api).
-const PREVIEW_ROWS = 80
-const PV = {green: '#239442', line: '#241c15', sum: '#ecf2d0', ink: '#1d1d1d'}
-
-const ResultTable = React.memo(function ResultTable({data, sumOnly, variant}) {
-    const shown = sumOnly ? sumRowsOnly(data) : data
-    const rows = shown.rows || []
-    const header = (shown.header || []).map(r => Array.isArray(r) ? r : (r.cells || []))
-    const isList = variant === 'list'
-    const cell = (c, i, isHeader, row) => {
-        const isSum = row && row.sum, isSection = row && row.section, isText = row && row.text
-        const style = isHeader ? {
-            color: PV.green, textTransform: 'uppercase', fontSize: '0.78rem', fontWeight: 600, padding: '0.45em 0.5em',
-            textAlign: c.n ? 'right' : (c.a || 'left'), borderBottom: '2px solid ' + PV.line
-        } : {
-            padding: '0.4em 0.5em', verticalAlign: 'top',
-            textAlign: c.a || (c.n ? 'right' : 'left'),
-            whiteSpace: c.n && !isText ? 'nowrap' : undefined,
-            fontWeight: c.b || isSum || isSection ? 700 : 400,
-            borderBottom: isText ? 'none' : '1px solid ' + (isList ? PV.green : PV.line),
-            ...(isText ? {paddingTop: '1em', textAlign: 'left', whiteSpace: 'normal', fontWeight: c.b ? 700 : 400} : {}),
-            ...(isSection ? {paddingTop: '1em'} : {}),
-            ...(isSum ? {background: PV.sum, borderTop: '2px solid ' + PV.green, borderBottom: '2px solid ' + PV.green} : {})
-        }
-        const props = {key: i, style, colSpan: c.span > 1 ? c.span : undefined, rowSpan: c.rowspan > 1 ? c.rowspan : undefined}
-        return c.h ? (isHeader ? <th {...props} dangerouslySetInnerHTML={{__html: c.h}}/> : <td {...props} dangerouslySetInnerHTML={{__html: c.h}}/>)
-            : (isHeader ? <th {...props}>{c.v}</th> : <td {...props}>{c.v}</td>)
-    }
-    if (rows.length === 0 && header.length === 0) {
-        return <p style={{margin: 0, opacity: 0.7}}>{_t('ExcelField.noData')}</p>
-    }
-    return <div style={{color: PV.ink}}>
-        <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', lineHeight: 1.35, marginBottom: '0.5rem'}}>
-            {header.length > 0 && <thead>{header.map((cells, r) => <tr key={r}>{cells.filter(Boolean).map((c, i) => cell(c, i, true))}</tr>)}</thead>}
-            <tbody>{rows.slice(0, PREVIEW_ROWS).map((row, r) => <tr key={r}>{(row.cells || []).filter(Boolean).map((c, i) => cell(c, i, false, row))}</tr>)}</tbody>
-        </table>
-        {rows.length > PREVIEW_ROWS && <small style={{opacity: 0.7}}>… {rows.length - PREVIEW_ROWS} weitere Zeilen</small>}
-    </div>
-})
-
-function SheetGrid({data, range, headerRows, onSelectRange, theme}) {
-    const [selection, setSelection] = useState(null)
-    const dragging = useRef(false)
-    const selectionRef = useRef(null)
-    selectionRef.current = selection
-
-    useEffect(() => {
-        const up = () => {
-            if (!dragging.current) return
-            dragging.current = false
-            const sel = selectionRef.current
-            if (sel) {
-                const r = {
-                    top: Math.min(sel.start.r, sel.end.r), bottom: Math.max(sel.start.r, sel.end.r),
-                    left: Math.min(sel.start.c, sel.end.c), right: Math.max(sel.start.c, sel.end.c)
-                }
-                onSelectRange(`${colLetters(r.left)}${r.top}:${colLetters(r.right)}${r.bottom}`)
-            }
-            setSelection(null)
-        }
-        document.addEventListener('mouseup', up)
-        return () => document.removeEventListener('mouseup', up)
-    }, [onSelectRange])
-
-    const active = selection ? {
-        top: Math.min(selection.start.r, selection.end.r), bottom: Math.max(selection.start.r, selection.end.r),
-        left: Math.min(selection.start.c, selection.end.c), right: Math.max(selection.start.c, selection.end.c)
-    } : range
-
-    const cols = data.cols || 0
-    const hiddenCols = new Set(data.hiddenCols || [])
-    const border = '1px solid ' + theme.palette.divider
-    const headBg = theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[100]
-    const sticky = {position: 'sticky', background: headBg, zIndex: 1, fontWeight: 400, color: theme.palette.text.secondary, border, padding: '2px 6px', textAlign: 'center'}
-    const inRange = (r, c) => active && r >= active.top && r <= active.bottom && c >= active.left && c <= active.right
-
-    const colNumbers = []
-    for (let c = 1; c <= cols; c++) colNumbers.push(c)
-
-    return <table style={{...tableStyle(theme), userSelect: 'none', cursor: 'cell'}}>
-        <thead>
-        <tr>
-            <th style={{...sticky, top: 0, left: 0, zIndex: 2}}/>
-            {colNumbers.map(c => <th key={c} style={{
-                ...sticky, top: 0,
-                opacity: hiddenCols.has(c) ? 0.4 : 1,
-                background: inRange(active ? active.top : 0, c) ? alpha(theme.palette.primary.main, 0.25) : headBg
-            }}>{colLetters(c)}</th>)}
-        </tr>
-        </thead>
-        <tbody>
-        {data.rows.map(row => {
-            const rowInRange = active && row.r >= active.top && row.r <= active.bottom
-            const isHeaderRow = !selection && range && rowInRange && row.r < range.top + headerRows
-            return <tr key={row.r} style={{opacity: row.hidden ? 0.4 : 1}}>
-                <th style={{...sticky, left: 0, background: rowInRange ? alpha(theme.palette.primary.main, 0.25) : headBg}}>{row.r}</th>
-                {colNumbers.map(c => {
-                    const cell = row.cells[c - 1]
-                    const selected = inRange(row.r, c)
-                    return <td key={c}
-                               onMouseDown={e => {
-                                   e.preventDefault()
-                                   dragging.current = true
-                                   setSelection({start: {r: row.r, c}, end: {r: row.r, c}})
-                               }}
-                               onMouseEnter={() => {
-                                   if (dragging.current) {
-                                       setSelection(s => s ? {...s, end: {r: row.r, c}} : s)
-                                   }
-                               }}
-                               style={{
-                                   border,
-                                   padding: '2px 6px',
-                                   maxWidth: 260,
-                                   overflow: 'hidden',
-                                   textOverflow: 'ellipsis',
-                                   whiteSpace: 'nowrap',
-                                   textAlign: cell && cell.n ? 'right' : 'left',
-                                   fontWeight: cell && cell.b ? 600 : 400,
-                                   opacity: hiddenCols.has(c) ? 0.4 : 1,
-                                   background: selected ? alpha(theme.palette.primary.main, isHeaderRow ? 0.28 : 0.12) : undefined
-                               }}
-                               title={cell && cell.v ? cell.v : undefined}>{cell ? cell.v : ''}</td>
-                })}
-            </tr>
-        })}
-        </tbody>
-    </table>
-}
+const MODES = ['result', 'phone', 'sheet']
 
 export function ExcelPreview({form, field, fieldKey, values}) {
     const theme = useTheme()
@@ -279,20 +136,25 @@ export function ExcelPreview({form, field, fieldKey, values}) {
     const sumOnlyValue = get('sumOnlyField', 'excelSumOnly')
     const sumOnly = sumOnlyValue === true || sumOnlyValue === 'true'
     const variant = get('variantField', 'tableVariant') || 'statement'
+    const mobileView = get('mobileViewField', 'mobileView') || 'auto'
 
-
+    // result = as on the website (desktop), phone = mobile display, sheet = whole sheet to choose range / header rows
     const [mode, setMode] = useState(() => {
         try {
-            return localStorage.getItem('ExcelPreview.mode') || 'result'
+            const m = localStorage.getItem('ExcelPreview.mode')
+            return MODES.includes(m) ? m : 'result'
         } catch (e) {
             return 'result'
         }
     })
+    // selected column of the column switch in the phone preview
+    const [col, setCol] = useState(null)
     const [state, setState] = useState({data: null, loading: false, error: ''})
 
+    // «nur Summen» and the layout for the phone are computed (and cached) by the api
     const params = useDebounced(mode === 'sheet' ?
         {mediaId, format: 'grid', sheet} :
-        {mediaId, format: 'data', sheet, range, headerRows}, 400)
+        {mediaId, format: 'data', sheet, range, headerRows, sumOnly: sumOnly ? 1 : '', layout: 1}, 400)
     const url = params.mediaId ? apiUrl(params) : ''
 
     useEffect(() => {
@@ -311,24 +173,51 @@ export function ExcelPreview({form, field, fieldKey, values}) {
     }, [url])
 
     const rangeKey = relatedKey(fieldKey, field.rangeField || 'excelRange')
-    const onSelectRange = React.useCallback(newRange => {
-        form.handleInputChange({target: {name: rangeKey, value: newRange}})
-    }, [form, rangeKey])
+    const headerRowsKey = relatedKey(fieldKey, field.headerRowsField || 'excelHeaderRows')
+    // chosen in the sheet: range (and header rows) into the fields of the form
+    const onPick = React.useCallback(async (newRange, newHeaderRows) => {
+        await form.handleInputChange({target: {name: rangeKey, value: newRange}})
+        if (newHeaderRows !== null && newHeaderRows !== undefined) {
+            // wait until the range is in the form state, the next change is based on it
+            await new Promise(resolve => form.setState({}, resolve))
+            await form.handleInputChange({target: {name: headerRowsKey, value: newHeaderRows}})
+        }
+    }, [form, rangeKey, headerRowsKey])
 
     const {data, loading, error} = state
-    const dataMatchesMode = data && (mode === 'sheet' ? !!data.rows && data.cols !== undefined : !!data.header)
+    const dataMatchesMode = !!data && (mode === 'sheet' ? !!data.rows && data.cols !== undefined : !!data.header)
 
-    let content
+    // the plain DOM ui is rendered into this box; the picker is only created again for another sheet / file
+    const boxRef = useRef(null)
+    const pickerRef = useRef(null)
+    useEffect(() => {
+        const box = boxRef.current
+        if (!box) return
+        pickerRef.current = null
+        if (!dataMatchesMode || error) {
+            box.replaceChildren()
+            return
+        }
+        if (mode === 'sheet') {
+            pickerRef.current = rangePicker(box, data, {range, headerRows, onPick})
+        } else {
+            box.replaceChildren(previewTable(data, {
+                variant, view: mode === 'phone' ? 'phone' : 'desktop', mobileView, col, onCol: setCol, emptyText: _t('ExcelField.noData')
+            }))
+        }
+        // range / header rows are not dependencies: the result gets new data anyway, the picker is synced below
+    }, [data, dataMatchesMode, error, mode, variant, mobileView, col, onPick])
+    useEffect(() => {
+        if (pickerRef.current) pickerRef.current.sync(range, headerRows)
+    }, [range, headerRows])
+
+    let message = null
     if (!mediaId) {
-        content = <p style={{margin: 0, opacity: 0.7}}>{_t('ExcelField.selectFileFirst')}</p>
+        message = <p style={{margin: 0, opacity: 0.7}}>{_t('ExcelField.selectFileFirst')}</p>
     } else if (error) {
-        content = <p style={{margin: 0, color: theme.palette.error.main}}>{error === 'Invalid range: ' + range ? _t('ExcelField.invalidRange', {range}) : error}</p>
+        message = <p style={{margin: 0, color: theme.palette.error.main}}>{error === 'Invalid range: ' + range ? _t('ExcelField.invalidRange', {range}) : error}</p>
     } else if (!dataMatchesMode) {
-        content = <CircularProgress size={24}/>
-    } else if (mode === 'sheet') {
-        content = <SheetGrid data={data} range={parseRange(range)} headerRows={headerRows} onSelectRange={onSelectRange} theme={theme}/>
-    } else {
-        content = <ResultTable data={data} sumOnly={sumOnly} variant={variant}/>
+        message = <CircularProgress size={24}/>
     }
 
     return <div key={fieldKey} style={{margin: theme.spacing(1), width: 'calc(100% - ' + theme.spacing(2) + ')'}}>
@@ -344,26 +233,30 @@ export function ExcelPreview({form, field, fieldKey, values}) {
                 }
             }}>
                 <ToggleButton value="result">{_t('ExcelField.modeResult')}</ToggleButton>
+                <ToggleButton value="phone">{_t('ExcelField.modePhone')}</ToggleButton>
                 <ToggleButton value="sheet">{_t('ExcelField.modeSheet')}</ToggleButton>
             </ToggleButtonGroup>
             {loading && dataMatchesMode && <CircularProgress size={16}/>}
             <small style={{opacity: 0.7}}>
-                {mode === 'sheet' ? _t('ExcelField.sheetHint') :
+                {mode === 'sheet' ? (dataMatchesMode && data.truncated ? _t('ExcelField.truncated', {rows: data.rows.length, total: data.rowCount}) : '') :
                     (dataMatchesMode ? _t('ExcelField.resultInfo', {
                         sheet: data.sheet,
                         range: range || _t('ExcelField.wholeSheet'),
                         rows: (data.rows || []).length
-                    }) : '')}
-                {mode === 'sheet' && dataMatchesMode && data.truncated ? ' ' + _t('ExcelField.truncated', {rows: data.rows.length, total: data.rowCount}) : ''}
+                    }) + (mode === 'phone' ? ' · ' + _t('ExcelField.phoneMode', {mode: MOBILE_NAMES[mobileMode(data, mobileView)]}) : '') : '')}
             </small>
         </div>
-        <div style={{
-            maxHeight: field.maxHeight || 480,
-            overflow: 'auto',
-            border: '1px solid ' + theme.palette.divider,
-            borderRadius: theme.shape.borderRadius,
-            padding: mode === 'sheet' ? 0 : theme.spacing(1.5),
-            background: mode === 'sheet' ? theme.palette.background.paper : '#fff'
-        }}>{content}</div>
+        {message}
+        <div ref={boxRef} style={{
+            display: message ? 'none' : 'block',
+            ...(mode === 'sheet' ? {} : {
+                maxHeight: field.maxHeight || 640,
+                overflow: 'auto',
+                border: '1px solid ' + theme.palette.divider,
+                borderRadius: theme.shape.borderRadius,
+                padding: theme.spacing(1.5),
+                background: '#fff'
+            })
+        }}/>
     </div>
 }

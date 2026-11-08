@@ -284,7 +284,8 @@ const StyledCmsElementsHeader = styled('div')(({theme, collapsed}) => ({
     letterSpacing: '0.04em'
 }))
 
-const getSxProps = (field,theme) => {
+// also used by fields of extensions (e.g. extensions/media/components/ExcelFields.js), so they have the same widths
+export const getSxProps = (field,theme) => {
     if (field.placement === 'header') {
         // field in the header of the dialog (see renderHeaderFields): only as wide as its content
         return {margin: 0, display: 'inline-flex', width: 'auto', verticalAlign: 'middle'}

@@ -1,6 +1,7 @@
 /*
  * Helpers for excel files (Media) shown through the api system/excel2html.
- * Used by the admin form fields (components/ExcelFields.js) and the cms component ExcelTable.
+ * Used by the admin form fields (components/ExcelFields.js), the cms component ExcelTable and util/excelUi.mjs.
+ * «nur Summen» (sumOnly) and the layout for the mobile display are computed by the api (params sumOnly=1, layout=1).
  */
 
 export const EXCEL_API = '/lunucapi/system/excel2html'
@@ -72,47 +73,3 @@ export const parseRange = range => {
 }
 
 export const parseHeaderRows = value => value === undefined || value === null || value === '' ? 1 : (parseInt(value) || 0)
-
-/*
- * «gestufter Ausweis»: only the sum rows (the last one highlighted) and one header row
- * (the header rows are merged per column, the first column gets the text of a leading section row, e.g. «in CHF»).
- * Same logic as the page digithal/element/jahresbericht/bereich.
- * data = response of format=data: {header: [[cell]], rows: [{cells, sum, section}]}
- */
-export const sumRowsOnly = data => {
-    if (!data || !data.rows || data.rows.length === 0) {
-        return data
-    }
-    const section = data.rows.find(r => r.section && r.cells && r.cells[0] && r.cells[0].v)
-    const sums = data.rows.filter(r => r.sum)
-    const rows = sums.map((r, i) => Object.assign({}, r, {sum: i === sums.length - 1, section: false}))
-    let header = data.header || []
-    if (header.length > 0) {
-        const columns = []
-        header.forEach(cellsOfRow => {
-            let col = 0
-            cellsOfRow.forEach(h => {
-                while (columns[col] && columns[col].rowspanLeft > 0) {
-                    columns[col].rowspanLeft--
-                    col++
-                }
-                const span = parseInt(h.span) || 1
-                if (!columns[col]) {
-                    columns[col] = {v: '', n: h.n, span, rowspanLeft: 0}
-                }
-                if (h.v) {
-                    columns[col].v = columns[col].v ? columns[col].v + ' ' + h.v : h.v
-                }
-                columns[col].n = columns[col].n || h.n
-                columns[col].rowspanLeft = (parseInt(h.rowspan) || 1) - 1
-                col += span
-            })
-        })
-        const cells = columns.filter(Boolean).map(c => ({v: c.v, n: c.n, span: c.span > 1 ? c.span : undefined}))
-        if (cells[0] && section) {
-            cells[0] = Object.assign({}, cells[0], {v: section.cells[0].v, n: false})
-        }
-        header = [cells]
-    }
-    return Object.assign({}, data, {header, rows})
-}

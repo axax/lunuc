@@ -28,6 +28,12 @@ Hook.on('JsonDom', ({components}) => {
     components['ExcelTable'] = ExcelTable
 })
 
+// excel ui (range picker of a sheet, preview desktop / phone) for scripts of cms pages, e.g. digithal/jahresbericht-import:
+// const ui = await _app_.excelUi()  -> loaded on demand as own chunk (nothing is added to the main bundle)
+if (typeof _app_ !== 'undefined') {
+    _app_.excelUi = () => import(/* webpackChunkName: "excelui" */ './util/excelUi.mjs')
+}
+
 // Hook to add user capabilities
 Hook.on('userCapabilities', ({capabilities}) => {
     capabilities.push(CAPABILITY_MEDIA_REFERENCES)

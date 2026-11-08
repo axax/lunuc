@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react'
-import {excelApiUrl, fetchExcelJson, mediaIdFromValue, parseHeaderRows, sumRowsOnly} from '../util/excel.mjs'
+import {excelApiUrl, fetchExcelJson, mediaIdFromValue, parseHeaderRows} from '../util/excel.mjs'
 
 /*
  * Cms component ExcelTable (element «Excel-Tabelle» in extensions/cms/util/elements/advancedElements.mjs):
@@ -10,7 +10,9 @@ import {excelApiUrl, fetchExcelJson, mediaIdFromValue, parseHeaderRows, sumRowsO
  */
 export default function ExcelTable({excel, sheet, range, headerRows, sumOnly, caption, emptyText, className, children, ...rest}) {
     const mediaId = mediaIdFromValue(excel)
-    const url = mediaId ? excelApiUrl({mediaId, format: 'data', sheet, range, headerRows: parseHeaderRows(headerRows)}) : ''
+    const sumOnlyActive = sumOnly === true || sumOnly === 'true'
+    // «nur Summen» is computed (and cached) by the api
+    const url = mediaId ? excelApiUrl({mediaId, format: 'data', sheet, range, headerRows: parseHeaderRows(headerRows), sumOnly: sumOnlyActive ? 1 : ''}) : ''
     const [state, setState] = useState({data: null, error: ''})
 
     useEffect(() => {
@@ -28,8 +30,7 @@ export default function ExcelTable({excel, sheet, range, headerRows, sumOnly, ca
     }, [url])
 
     const wrapperClass = 'excel-table' + (className ? ' ' + className : '')
-    const sumOnlyActive = sumOnly === true || sumOnly === 'true'
-    const data = state.data && sumOnlyActive ? sumRowsOnly(state.data) : state.data
+    const data = state.data
 
     let content
     if (!mediaId) {
