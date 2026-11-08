@@ -12,6 +12,7 @@ import {isTemporarilyBlocked} from '../../server/util/requestBlocker.mjs'
 import {isString} from '../../client/util/json.mjs'
 import {decodeToken} from '../../api/util/jwt.mjs'
 import {validateContextUser} from '../../api/util/userSession.mjs'
+import GenericResolver from '../../api/resolver/generic/genericResolver.mjs'
 
 const CACHE_PREFIX = 'ExtensionsApi-'
 // unknown slugs (bots probing urls) are cached shortly, so they don't hit the db every time
@@ -288,6 +289,28 @@ const checkBasicAuth = async (req, res, auth)=>  {
     return true
 }
 
+// Access log for api tokens with scopes.accessLog = true (fire and forget, never blocks the response).
+// The token itself is never logged (it is sent in the Authorization header, not in the url).
+const logTokenAccess = ({db, req, slug, token, status, startTime}) => {
+    const ip = req.headers['x-forwarded-for'] || req.socket?.remoteAddress
+    GenericResolver.createEntity(db, {context: {lang: 'en'}}, 'Log', {
+        location: 'api-access',
+        type: 'apiAccess',
+        message: `${req.method} /${slug} ${status} (${token.name})`,
+        meta: {
+            token: token.name,
+            tokenId: token._id.toString(),
+            method: req.method,
+            url: req.originalUrl || req.url,
+            status,
+            ip,
+            userAgent: req.headers['user-agent'],
+            durationMs: new Date().getTime() - startTime,
+            ...(req.apiAccessInfo ? {info: req.apiAccessInfo} : {})
+        }
+    }, {skipCheck: true}).catch(e => console.warn('[API] access log failed', e.message))
+}
+
 // Hook when db is ready
 Hook.on('appready', ({app, db}) => {
 
@@ -357,11 +380,32 @@ Hook.on('appready', ({app, db}) => {
                                 console.log(`[API] token invalid: ${slug}`)
                                 return res.status(401).json({error: 'API Bearer Token is invalid or expired'});
                             }
-                        }else if(result.userContext !== null){
-                            const user = await Util.userById(db, result.userContext)
-                            if(user) {
-                                req.context = {...req.context, junior: user.junior, domain:user.domain, group: user.group,
-                                    role: user.role, username: user.username, id: user._id.toString()}
+                        }else{
+                            // the matched token (without the secret) is available to the script as this.req.apiToken,
+                            // e.g. to restrict what it may do with token.scopes
+                            req.apiToken = {_id: result._id, name: result.name, scopes: result.scopes || null}
+
+                            const scopes = result.scopes && result.scopes.constructor === Object ? result.scopes : null
+                            if (scopes && scopes.rateLimit && isTemporarilyBlocked({
+                                requestTimeInMs: (scopes.rateLimit.perSeconds || 60) * 1000,
+                                requestPerTime: scopes.rateLimit.requests || 60,
+                                requestBlockForInMs: (scopes.rateLimit.blockSeconds || scopes.rateLimit.perSeconds || 60) * 1000,
+                                key: 'apiToken-' + result._id})) {
+                                console.warn(`[API] BLOCKED (token rate limit): ${slug} | token=${result.name}`)
+                                logTokenAccess({db, req, slug, token: result, status: 429, startTime})
+                                res.set('Retry-After', String(scopes.rateLimit.blockSeconds || scopes.rateLimit.perSeconds || 60))
+                                return res.status(429).json({error: 'Too many requests. Please try again later.'})
+                            }
+                            if (scopes && scopes.accessLog) {
+                                res.on('finish', () => logTokenAccess({db, req, slug, token: result, status: res.statusCode, startTime}))
+                            }
+
+                            if(result.userContext !== null && result.userContext !== undefined){
+                                const user = await Util.userById(db, result.userContext)
+                                if(user) {
+                                    req.context = {...req.context, junior: user.junior, domain:user.domain, group: user.group,
+                                        role: user.role, username: user.username, id: user._id.toString()}
+                                }
                             }
                         }
                     }

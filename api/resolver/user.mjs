@@ -28,6 +28,7 @@ import HookAsync from '../../util/hookAsync.mjs'
 import {parseOrElse} from '../../client/util/json.mjs'
 import {getBestMatchingHostRule} from '../../util/hostrules.mjs'
 import {isTemporarilyBlocked} from '../../server/util/requestBlocker.mjs'
+import {applyUserMetaWhitelist, getUserMetaWhitelist} from '../util/userMetaWhitelist.mjs'
 
 /*
  The reset link in the password mail must point to one of our own hosts.
@@ -176,7 +177,8 @@ export const createUser = async ({username, role, junior, group, setting, passwo
         picture,
         meta,
         language: language || context.lang,
-        signupToken: signupToken
+        signupToken: signupToken,
+        modifiedAt: Date.now()
     }
 
     if (domain) {
@@ -624,6 +626,8 @@ export const userResolver = (db) => ({
             const options = {override: false}
 
             meta = meta && meta.constructor !== Object ? JSON.parse(meta) : {}
+            // only keys a user may set himself (not e.g. virtualId or mobileVerified)
+            meta = applyUserMetaWhitelist(meta, null, await getUserMetaWhitelist(db, domain)).meta
 
             const newUserData = {username, email, password, meta, domain}
             if (Hook.hooks['beforeSignUp'] && Hook.hooks['beforeSignUp'].length) {
@@ -849,6 +853,9 @@ export const userResolver = (db) => ({
                 }
             }
 
+            // e.g. for synchronisations of external systems (changed since)
+            user.modifiedAt = Date.now()
+
             const payload = {}
             await HookAsync.call('typeBeforeUpdate', {type: 'User', params: match, data: user, db, context, payload})
 
@@ -933,12 +940,23 @@ export const userResolver = (db) => ({
 
 
                 if (user.meta !== undefined) {
-                    user.meta = JSON.parse(user.meta)
+                    // the browser sends the whole meta: only allowed keys are taken, all others keep
+                    // the value from the db (written by the server, e.g. virtualId, mobileVerified)
+                    const current = await userCollection.findOne({_id: new ObjectId(context.id)}, {projection: {meta: 1, domain: 1}})
+                    const {meta, ignored} = applyUserMetaWhitelist(JSON.parse(user.meta), current && current.meta,
+                        await getUserMetaWhitelist(db, current && current.domain))
+                    if (ignored.length > 0) {
+                        console.warn(`updateMe: meta keys not in UserMetaWhitelist ignored for ${context.username}: ${ignored.join(', ')}`)
+                    }
+                    user.meta = meta
                 }
 
                 if (password && passwordConfirm) {
                     user.password = await validateAndHashPassword({password, passwordConfirm, context})
                 }
+
+                // e.g. for synchronisations of external systems (changed since), same as updateUser
+                user.modifiedAt = Date.now()
 
                 const update = {$set: user}
                 if (user.password) {

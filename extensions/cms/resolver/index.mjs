@@ -666,7 +666,8 @@ export default db => ({
         },
         cmsServerMethod: async ({slug, methodName, args, query, props, dynamic, _version}, req) => {
 
-            if (!methodName.match(/^[0-9a-zA-Z_]+$/) || methodName.trim() === 'require') {
+            // names starting with _ are private helpers of the serverScript and can't be called by a client
+            if (!methodName.match(/^[0-9a-zA-Z_]+$/) || methodName.startsWith('_') || methodName.trim() === 'require') {
                 throw new Error('Invalid methodName')
             }
 
